@@ -14,16 +14,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -37,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -239,7 +243,7 @@ class SolveExchangeTest {
 
         for (Animateur animateur : prepared.getAnimateurs()) {
             assertThat(payload)
-                    .doesNotContain("\"" + animateur.getId() + "\"")
+                    .doesNotContain(animateur.getId())
                     .doesNotContain(animateur.getEmail())
                     .doesNotContain(animateur.getTelephone())
                     .doesNotContain(animateur.getAccessToken())
@@ -264,6 +268,50 @@ class SolveExchangeTest {
                 .as("the way back knows everybody")
                 .containsAll(
                         prepared.getAnimateurs().stream().map(Animateur::getId).toList());
+    }
+
+    @Test
+    void aPayloadOfAnotherFormatIsRefusedAsSuch() throws IOException {
+        byte[] json = new GZIPInputStream(new ByteArrayInputStream(exchange.write(prepared))).readAllBytes();
+        String newer = new String(json, StandardCharsets.UTF_8)
+                .replaceFirst("\"format\":1", "\"format\":2")
+                .replaceFirst("\"postes\":\\[", "\"postes\":\"a shape this side does not know\",\"was\":[");
+        ByteArrayOutputStream zipped = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(zipped)) {
+            gzip.write(newer.getBytes(StandardCharsets.UTF_8));
+        }
+
+        assertThatThrownBy(() -> exchange.read(zipped.toByteArray()))
+                .isInstanceOf(SolveExchange.Refused.class)
+                .hasMessageContaining("format 2");
+    }
+
+    @Test
+    void aTimeslotWithoutAnIdCannotTravel() {
+        PosteAffectation seat = prepared.getPostes().get(0);
+        Long id = seat.getCreneau().getId();
+        seat.getCreneau().setId(null);
+        try {
+            assertThatThrownBy(() -> exchange.outbound(prepared))
+                    .isInstanceOf(SolveExchange.Refused.class)
+                    .hasMessageContaining("timeslot without an id");
+        } finally {
+            seat.getCreneau().setId(id);
+        }
+    }
+
+    @Test
+    void aProblemReadBackSharesItsStandsAndTimeslotsAgain() {
+        PlanningEvenement readBack = exchange.read(exchange.write(prepared));
+
+        Map<String, Stand> stands = new HashMap<>();
+        Map<Long, Creneau> creneaux = new HashMap<>();
+        assertThat(readBack.getPostes()).allSatisfy(poste -> {
+            assertThat(stands.computeIfAbsent(poste.getStand().getId(), id -> poste.getStand()))
+                    .isSameAs(poste.getStand());
+            assertThat(creneaux.computeIfAbsent(poste.getCreneau().getId(), id -> poste.getCreneau()))
+                    .isSameAs(poste.getCreneau());
+        });
     }
 
     @Test

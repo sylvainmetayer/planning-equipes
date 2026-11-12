@@ -8,11 +8,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreDateeStand;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -79,6 +82,12 @@ public final class SolveExchange {
     static final int FORMAT = 1;
 
     private static final LocalDate ADULT = LocalDate.of(1970, Month.JANUARY, 1);
+
+    /** Days judged on either side of the event when a stand-in birth date is checked. */
+    private static final int MARGIN_DAYS = 7;
+
+    /** Twenty times a real event: enough for any, and a ceiling on what a payload may unzip to. */
+    private static final int MAX_JSON_BYTES = 256 * 1024 * 1024;
 
     private final ObjectMapper mapper;
 
@@ -149,21 +158,30 @@ public final class SolveExchange {
      * dates, no identity, no free text. {@code prepared} itself is not touched.
      */
     public Outbound outbound(PlanningEvenement prepared) {
-        PlanningEvenement copy = read(write(prepared));
+        PlanningEvenement copy = parse(json(prepared));
         Map<String, String> realIds = pseudonymise(copy);
-        return new Outbound(write(copy), realIds);
+        return new Outbound(gzip(json(copy)), realIds);
     }
 
     /** The problem a payload carries, its references tied back together and its weights laid on. */
     public PlanningEvenement read(byte[] payload) {
+        return parse(gunzip(payload));
+    }
+
+    private PlanningEvenement parse(byte[] json) {
         Envelope envelope;
-        try (InputStream json = new GZIPInputStream(new ByteArrayInputStream(payload))) {
-            envelope = mapper.readValue(json, Envelope.class);
+        try {
+            // The format first, on the bare tree: a payload of another format
+            // must be refused as such, not fail somewhere in the mapping of a
+            // shape this side does not know.
+            JsonNode tree = mapper.readTree(json);
+            int format = tree.path("format").asInt(-1);
+            if (format != FORMAT || !tree.hasNonNull("problem")) {
+                throw new Refused("Unknown exchange format " + format + ", this side reads " + FORMAT);
+            }
+            envelope = mapper.treeToValue(tree, Envelope.class);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-        if (envelope.format() != FORMAT || envelope.problem() == null) {
-            throw new Refused("Unknown exchange format " + envelope.format() + ", this side reads " + FORMAT);
         }
         PlanningEvenement problem = envelope.problem();
         reattach(problem);
@@ -212,15 +230,29 @@ public final class SolveExchange {
         for (int i = 0; i < postes.size(); i++) {
             postes.get(i).setAnimateur(holders.get(i));
         }
-        HardMediumSoftScore score = solutionManager.update(prepared);
+        HardMediumSoftScore score;
+        try {
+            score = solutionManager.update(prepared);
+        } catch (RuntimeException e) {
+            restore(prepared, before, solutionManager);
+            throw e;
+        }
         if (!score.toString().equals(result.score())) {
-            for (int i = 0; i < postes.size(); i++) {
-                postes.get(i).setAnimateur(before.get(i));
-            }
-            solutionManager.update(prepared);
+            restore(prepared, before, solutionManager);
             throw new Refused("The plan scores " + score + " here, not the " + result.score() + " it claims");
         }
         return score;
+    }
+
+    private static void restore(
+            PlanningEvenement prepared,
+            List<Animateur> before,
+            SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager) {
+        List<PosteAffectation> postes = prepared.getPostes();
+        for (int i = 0; i < postes.size(); i++) {
+            postes.get(i).setAnimateur(before.get(i));
+        }
+        solutionManager.update(prepared);
     }
 
     /** Who the answer puts on each seat of {@code prepared}, in seat order — or a refusal, before anything moved. */
@@ -249,8 +281,20 @@ public final class SolveExchange {
         return holders;
     }
 
-    /** The envelope of {@code problem} as it stands, ids untouched: what {@link #outbound} reads back before pseudonymising. */
+    /** The envelope of {@code problem} as it stands, ids untouched and gzipped: what a test reads back to prove the format alone. */
     byte[] write(PlanningEvenement problem) {
+        return gzip(json(problem));
+    }
+
+    private byte[] json(PlanningEvenement problem) {
+        for (PosteAffectation poste : problem.getPostes()) {
+            if (poste.getCreneau() == null || poste.getCreneau().getId() == null) {
+                // Two timeslots without an id are equal only to themselves
+                // (Creneau#equals), and JSON keeps no identity: the seats of
+                // one such timeslot would read back as seats of several.
+                throw new Refused("Seat " + poste.getId() + " sits on a timeslot without an id, which cannot travel");
+            }
+        }
         Map<String, String> weights = new LinkedHashMap<>();
         ConstraintWeightOverrides<HardMediumSoftScore> overrides = problem.getPonderationsContraintes();
         if (overrides != null) {
@@ -258,37 +302,75 @@ public final class SolveExchange {
                 weights.put(name, overrides.getConstraintWeight(name).toString());
             }
         }
-        // Compressed here, not left to the transport: JSON writes the stand,
-        // the timeslot and the holder again under every seat, so a real event
-        // is thirteen megabytes raw — past the default HTTP body limit — and
-        // a hundred times less zipped.
+        try {
+            return mapper.writeValueAsBytes(new Envelope(FORMAT, problem, weights));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Compressed here, not left to the transport: JSON writes the stand, the
+     * timeslot and the holder again under every seat, so a real event is
+     * thirteen megabytes raw — past the default HTTP body limit — and a hundred
+     * times less zipped.
+     */
+    private static byte[] gzip(byte[] json) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (OutputStream json = new GZIPOutputStream(bytes)) {
-            mapper.writeValue(json, new Envelope(FORMAT, problem, weights));
+        try (OutputStream zipped = new GZIPOutputStream(bytes)) {
+            zipped.write(json);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         return bytes.toByteArray();
     }
 
+    /** Bounded: a few kilobytes of gzip can claim gigabytes, and this is read from the network. */
+    private static byte[] gunzip(byte[] payload) {
+        try (InputStream zipped = new GZIPInputStream(new ByteArrayInputStream(payload))) {
+            byte[] json = zipped.readNBytes(MAX_JSON_BYTES + 1);
+            if (json.length > MAX_JSON_BYTES) {
+                throw new Refused("The payload unzips past " + MAX_JSON_BYTES + " bytes");
+            }
+            return json;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     /**
-     * One {@link Animateur} instance per person again: JSON wrote a copy under
-     * every seat and every ad hoc exception, and the pseudonymisation relies
-     * on renaming each person once.
+     * One instance per person, per stand and per timeslot again: JSON wrote a
+     * copy under every seat and every ad hoc exception. The pseudonymisation
+     * relies on renaming each person once; for stands and timeslots it is the
+     * memory of a few thousand copies of their opening hours that is saved.
      */
     private static void reattach(PlanningEvenement problem) {
         Map<String, Animateur> byId = new HashMap<>();
         problem.getAnimateurs().forEach(animateur -> byId.put(animateur.getId(), animateur));
+        Map<String, Stand> stands = new HashMap<>();
+        Map<Long, Creneau> creneaux = new HashMap<>();
         for (PosteAffectation poste : problem.getPostes()) {
             if (poste.getAnimateur() != null) {
                 poste.setAnimateur(known(byId, poste.getAnimateur()));
             }
+            poste.setStand(shared(stands, poste.getStand(), Stand::getId));
+            poste.setCreneau(shared(creneaux, poste.getCreneau(), Creneau::getId));
         }
         for (ContrainteAdHoc contrainte : problem.getContraintesAdHoc()) {
             contrainte.setAnimateursConcernes(new ArrayList<>(contrainte.getAnimateursConcernes().stream()
                     .map(animateur -> known(byId, animateur))
                     .toList()));
+            contrainte.setStand(shared(stands, contrainte.getStand(), Stand::getId));
+            contrainte.setCreneau(shared(creneaux, contrainte.getCreneau(), Creneau::getId));
         }
+    }
+
+    /** The first copy read under an id stands for all of them; a copy without an id stays itself. */
+    private static <K, T> T shared(Map<K, T> seen, T copy, Function<T, K> idOf) {
+        if (copy == null || idOf.apply(copy) == null) {
+            return copy;
+        }
+        return seen.computeIfAbsent(idOf.apply(copy), id -> copy);
     }
 
     private static Animateur known(Map<String, Animateur> byId, Animateur copy) {
@@ -350,26 +432,31 @@ public final class SolveExchange {
      * bracket for the whole event gets the bracket's stand-in, and only
      * somebody who turns 16 or 18 <i>during</i> the event keeps their real
      * date: the answer changes mid-event, and nothing else can say when. Each
-     * stand-in is checked against every date before it is used, so a wrong
-     * guess here costs a real date sent, never a wrong answer.</p>
+     * stand-in is checked against every day of the event, a week of margin on
+     * each side, before it is used: a wrong guess here costs a real date sent,
+     * never a wrong answer.</p>
      */
     static LocalDate standInBirthDate(LocalDate real, TreeSet<LocalDate> dates) {
         if (real == null || dates.isEmpty()) {
             return real;
         }
-        for (LocalDate standIn :
-                List.of(ADULT, dates.first().minusYears(17), dates.last().minusYears(10))) {
-            if (sameBrackets(real, standIn, dates)) {
+        // Every day from a week before the first seat to a week after the
+        // last, not only the days that carry one: a rule may judge an age on
+        // the Monday of a week, or on the day after a seat.
+        LocalDate from = dates.first().minusDays(MARGIN_DAYS);
+        LocalDate to = dates.last().plusDays(MARGIN_DAYS);
+        for (LocalDate standIn : List.of(ADULT, from.minusYears(17), to.minusYears(10))) {
+            if (sameBrackets(real, standIn, from, to)) {
                 return standIn;
             }
         }
         return real;
     }
 
-    private static boolean sameBrackets(LocalDate real, LocalDate standIn, TreeSet<LocalDate> dates) {
+    private static boolean sameBrackets(LocalDate real, LocalDate standIn, LocalDate from, LocalDate to) {
         Animateur asReal = born(real);
         Animateur asStandIn = born(standIn);
-        for (LocalDate date : dates) {
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
             if (asReal.isMineurOn(date) != asStandIn.isMineurOn(date)
                     || asReal.isUnder16On(date) != asStandIn.isUnder16On(date)) {
                 return false;
