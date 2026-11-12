@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HexFormat;
@@ -77,7 +78,7 @@ public final class SolveExchange {
     /** Bumped when the envelope changes shape: a reader refuses a format it does not know. */
     static final int FORMAT = 1;
 
-    private static final LocalDate ADULT = LocalDate.of(1970, 1, 1);
+    private static final LocalDate ADULT = LocalDate.of(1970, Month.JANUARY, 1);
 
     private final ObjectMapper mapper;
 
@@ -103,12 +104,28 @@ public final class SolveExchange {
     record Envelope(int format, PlanningEvenement problem, Map<String, String> weights) {}
 
     /**
-     * A problem ready to leave, and the way back from its pseudonyms.
-     *
-     * @param payload what is sent: the envelope as JSON, gzipped
-     * @param realIds the real id of each pseudonym; stays in the application
+     * A problem ready to leave, and the way back from its pseudonyms. A class
+     * rather than a record: a record would compare its payload by reference.
      */
-    public record Outbound(byte[] payload, Map<String, String> realIds) {}
+    public static final class Outbound {
+        private final byte[] payload;
+        private final Map<String, String> realIds;
+
+        Outbound(byte[] payload, Map<String, String> realIds) {
+            this.payload = payload;
+            this.realIds = realIds;
+        }
+
+        /** What is sent: the envelope as JSON, gzipped. */
+        public byte[] payload() {
+            return payload;
+        }
+
+        /** The real id of each pseudonym; stays in the application. */
+        public Map<String, String> realIds() {
+            return realIds;
+        }
+    }
 
     /**
      * What comes back.
@@ -189,6 +206,26 @@ public final class SolveExchange {
             Map<String, String> realIds,
             SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager) {
         List<PosteAffectation> postes = prepared.getPostes();
+        List<Animateur> holders = holdersFor(prepared, result, realIds);
+        List<Animateur> before =
+                postes.stream().map(PosteAffectation::getAnimateur).toList();
+        for (int i = 0; i < postes.size(); i++) {
+            postes.get(i).setAnimateur(holders.get(i));
+        }
+        HardMediumSoftScore score = solutionManager.update(prepared);
+        if (!score.toString().equals(result.score())) {
+            for (int i = 0; i < postes.size(); i++) {
+                postes.get(i).setAnimateur(before.get(i));
+            }
+            solutionManager.update(prepared);
+            throw new Refused("The plan scores " + score + " here, not the " + result.score() + " it claims");
+        }
+        return score;
+    }
+
+    /** Who the answer puts on each seat of {@code prepared}, in seat order — or a refusal, before anything moved. */
+    private static List<Animateur> holdersFor(PlanningEvenement prepared, Result result, Map<String, String> realIds) {
+        List<PosteAffectation> postes = prepared.getPostes();
         Map<String, Animateur> byId = new HashMap<>();
         prepared.getAnimateurs().forEach(animateur -> byId.put(animateur.getId(), animateur));
         if (result.holders() == null || result.holders().size() != postes.size()) {
@@ -209,20 +246,7 @@ public final class SolveExchange {
             }
             holders.add(holder);
         }
-        List<Animateur> before =
-                postes.stream().map(PosteAffectation::getAnimateur).toList();
-        for (int i = 0; i < postes.size(); i++) {
-            postes.get(i).setAnimateur(holders.get(i));
-        }
-        HardMediumSoftScore score = solutionManager.update(prepared);
-        if (!score.toString().equals(result.score())) {
-            for (int i = 0; i < postes.size(); i++) {
-                postes.get(i).setAnimateur(before.get(i));
-            }
-            solutionManager.update(prepared);
-            throw new Refused("The plan scores " + score + " here, not the " + result.score() + " it claims");
-        }
-        return score;
+        return holders;
     }
 
     /** The envelope of {@code problem} as it stands, ids untouched: what {@link #outbound} reads back before pseudonymising. */
