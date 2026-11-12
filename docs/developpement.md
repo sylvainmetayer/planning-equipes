@@ -1270,6 +1270,38 @@ points qui ne s'y voient pas :
   à la racine — périmètre, chemins de couverture, et chaque exclusion de règle
   avec sa raison.
 
+## Verrou des actions
+
+Les actions sont épinglées par SHA dans les workflows **et** verrouillées dans
+`.github/workflows/actions.lock` ([github/gh-actions-lock](https://github.com/github/gh-actions-lock),
+extension `gh` en préversion, format encore mouvant). Le verrou fige chaque
+action, directe ou transitive, à un commit, avec les identifiants numériques du
+propriétaire et du dépôt ; le runner le revérifie au démarrage de chaque job, et
+`verify-lockfile.yml` lance `gh actions-lock --verify` sur chaque PR et sur
+`main`. Les SHA restent en ligne (`@<sha> # vX`) : le verrou s'ajoute, il ne
+remplace pas les épingles.
+
+Après tout ajout ou changement d'un `uses:` :
+
+```bash
+gh extension install github/gh-actions-lock --pin v0.4.1
+gh actions-lock --no-narrow   # SANS --no-narrow, l'outil réécrit les SHA en tags
+gh actions-lock --verify      # lecture seule, comme la CI
+```
+
+Le verrou ne s'édite pas à la main. Renovate le régénère à chaque montée d'une
+action (il appelle l'outil avec `--no-narrow`), et un gestionnaire `custom.regex`
+suit la version de l'extension elle-même (`--pin vX.Y.Z` de
+`verify-lockfile.yml`), en PR à part comme le reste, sans automerge.
+
+Les trois `uses: ./.github/workflows/e2e-suite.yml` restent en `./` (la règle
+`self-repository` de zizmor est coupée, `.github/zizmor.yml`) : l'outil les
+accepte, le workflow appelé a sa propre entrée dans le verrou. Non couverts : les
+images de conteneur sans `@sha256` (`postgres`, `mailpit`, l'image Playwright, et
+celle de `scorecard-action` ; l'outil avertit sans bloquer). zizmor ne lit le
+verrou qu'à partir de la 1.32 ; il tourne ici en 1.31.1 et juge donc les épingles
+SHA seules.
+
 ## Contexte de construction de l'image
 
 Le démon Docker reçoit le contexte **entier** avant que le moindre `COPY` du

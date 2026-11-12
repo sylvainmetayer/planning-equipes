@@ -62,6 +62,14 @@
     },
     {
       "customType": "regex",
+      "description": "The gh-actions-lock extension of verify-lockfile.yml, pinned by `--pin vX.Y.Z` in a `run:` step the github-actions manager does not read. No automerge here (none anywhere): the extension is 0.x and the lockfile format still moves",
+      "managerFilePatterns": [".github/workflows/verify-lockfile.yml"],
+      "matchStrings": ["--pin (?<currentValue>v\\d+\\.\\d+\\.\\d+)"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "github/gh-actions-lock"
+    },
+    {
+      "customType": "regex",
       "description": "Maven in mise.toml: the mise manager extracts it but finds no version to propose, so the wrapper moved alone and ToolchainPinsStructuralTest failed the PR. Read here as the Maven Central artifact the wrapper uses, it joins the « maven » group",
       "managerFilePatterns": ["mise.toml"],
       "matchStrings": ["\\bmaven\\s*=\\s*\"(?<currentValue>[^\"]+)\""],
