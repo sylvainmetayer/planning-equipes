@@ -26,6 +26,19 @@ class DatabaseDumpSchemaVersionTest {
                 .contains("7.1");
     }
 
+    /**
+     * A header line made of a hundred thousand version segments — an uploaded
+     * script is anybody's text — is read without exhausting the stack: the
+     * repetition of the version pattern does not backtrack.
+     */
+    @Test
+    void anEndlessVersionLineDoesNotOverflowTheStack() {
+        String version = "1" + ".1".repeat(100_000);
+
+        assertThat(DatabaseDumpService.schemaVersionOf("-- Schema version: " + version + "\nDELETE FROM stand;"))
+                .contains(version);
+    }
+
     @Test
     void onlyTheLeadingCommentsAreRead() {
         assertThat(DatabaseDumpService.schemaVersionOf("DELETE FROM stand;\n-- Schema version: 121\n"))

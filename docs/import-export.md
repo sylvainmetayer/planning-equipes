@@ -157,10 +157,11 @@ Pour revenir en arrière, deux gestes, avec l'en-tête `X-Edition-Id` :
 
 1. lister les sauvegardes de l'édition, la plus récente d'abord :
    `GET /api/planning/sauvegardes-avant-vidage`. Chaque ligne dit son origine
-   (`RESET`, `IMPORT`, `RESTORE`) et sa date ; une ligne `RESTORE` dit aussi
-   quelle sauvegarde cette restauration visait (`restaureId`) et si elle a
-   abouti (`restaurationAboutie`) — une restauration non aboutie a laissé
-   l'édition à moitié restaurée, et sa ligne est l'état juste avant elle. Le fichier
+   (`RESET`, `IMPORT`, `RESTORE`), sa date et son heure (`creeLe`) ; une ligne
+   `RESTORE` dit aussi quelle sauvegarde cette restauration visait
+   (`restaureId`, vide si celle-ci a été supprimée) et l'issue enregistrée
+   (`restaurationAboutie` : `true` aboutie, `false` non aboutie ou issue
+   inconnue) ; sa ligne est l'état juste avant cette restauration. Le fichier
    d'une sauvegarde se lit par `GET /api/planning/sauvegardes-avant-vidage/{id}` ;
 2. la restaurer : `POST /api/planning/sauvegardes-avant-vidage/{id}/restauration`.
 
@@ -185,13 +186,15 @@ métier, `500` pour une panne, avec le même message au journal. **Reprise** :
 restaurer cette sauvegarde remet l'édition comme elle était ; on peut aussi
 relancer la restauration une fois la cause levée. Chaque tentative sauvegarde
 l'édition qu'elle remplace (sauf état identique à la dernière sauvegarde) : le
-travail fait entre deux tentatives n'est jamais perdu. Après plusieurs échecs
-de suite, l'erreur nomme deux sauvegardes : l'état le plus récent, juste avant
-la tentative, et **l'état d'origine**, d'avant la première tentative de la
-série — c'est celle-là qu'il faut restaurer pour revenir avant toute
-tentative ; si la série n'est pas certaine, l'erreur renvoie à la liste. Une
-restauration réussie dont l'issue n'a pas pu être notée dans la liste est
-rapportée réussie, avec un avertissement.
+travail fait entre deux tentatives n'est jamais perdu. L'erreur ne nomme que
+cette sauvegarde-là : pour revenir à un état plus ancien — avant une série de
+tentatives, par exemple —, on le choisit dans la liste, d'après les dates,
+les origines, les sauvegardes visées et les issues. Des relances après un
+échec à mi-chemin écrivent **une ligne par tentative** (chaque échec laisse un
+état différent, les créneaux recréés changeant d'identifiant) : elles
+s'accumulent, et se nettoient par la suppression manuelle. Une restauration
+réussie dont l'issue n'a pas pu être notée dans la liste est rapportée
+réussie, avec un avertissement ; sa ligne reste « non aboutie ».
 
 Le planning se retrouve sur ce qui ne change pas au réimport : un créneau par
 sa date et ses heures, un animateur par son adresse puis par ses prénom et nom,

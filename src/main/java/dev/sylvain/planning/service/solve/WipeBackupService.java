@@ -74,9 +74,12 @@ public class WipeBackupService {
     /**
      * One backup, without its content.
      *
-     * @param restaureId          for a {@link Trigger#RESTORE}, the backup that restore put back
-     * @param restaurationAboutie for a {@link Trigger#RESTORE}, whether that restore went through: one that did not
-     *                            left a half-restored edition, and this backup is the state before its first attempt
+     * @param creeLe              when the backup was taken, to the second
+     * @param restaureId          for a {@link Trigger#RESTORE}, the backup that restore put back; {@code null} once
+     *                            that backup was deleted
+     * @param restaurationAboutie for a {@link Trigger#RESTORE}, the outcome recorded: {@code true} when it went
+     *                            through, {@code false} when it did not or its outcome could not be recorded —
+     *                            this backup is then the state right before that attempt
      */
     public record WipeBackup(long id, Trigger origine, Instant creeLe, Long restaureId, Boolean restaurationAboutie) {}
 
@@ -87,16 +90,12 @@ public class WipeBackupService {
      *
      * @param sauvegardeAvant  the backup holding the edition as it was right before this restore — restoring it
      *                         undoes this one; {@code null} when the edition held nothing
-     * @param sauvegardeOrigine when this restore follows failed attempts of the same restore, one after the other,
-     *                         the backup taken before the first of them: the edition as it was before the whole
-     *                         series; {@code null} otherwise
      * @param referentielNonRestaure the stands and timeslots no seat tied to the rest that could not be created again
      * @param score            the score of the restored plan, locks included, {@code null} when it could not be
      *                         analysed
      */
     public record Restoration(
             Long sauvegardeAvant,
-            Long sauvegardeOrigine,
             int affectationsRestaurees,
             List<String> affectationsNonRestaurees,
             int verrouillagesRestaures,
@@ -122,8 +121,8 @@ public class WipeBackupService {
 
     /**
      * Besides what a reset empties, what an import overwrites and the scenario
-     * carries: an edition holding only its parameters, weights or day
-     * templates still has something to lose.
+     * carries: an edition holding only its parameters, weights, day
+     * templates, game categories or locations still has something to lose.
      */
     private static final List<String> TABLES_ECRASEES = List.of(
             "parametres_legaux",
@@ -131,7 +130,10 @@ public class WipeBackupService {
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",
-            "journee_type");
+            "journee_type",
+            // Upserted by an import (a label, a code rewritten), never by a reset.
+            "typologie",
+            "emplacement");
 
     private final JdbcEditionScope scope;
 
@@ -257,41 +259,6 @@ public class WipeBackupService {
         return false;
     }
 
-    /**
-     * The backup taken before the first of the failed attempts at restoring
-     * {@code target} that {@code avant} closes: the rows of the restores of
-     * that backup that did not go through, one right after the other, read
-     * back from {@code avant}. Empty when {@code avant} is not such a row (a
-     * state already backed up, under another origin) or starts the series
-     * itself — and when anything else stands in between, since the series is
-     * then no longer certain.
-     */
-    private Optional<Long> firstOfFailedSeries(long avant, long target) {
-        List<WipeBackup> lignes = list();
-        int index = -1;
-        for (int i = 0; i < lignes.size(); i++) {
-            if (lignes.get(i).id() == avant) {
-                index = i;
-            }
-        }
-        if (index < 0 || !failedRestoreOf(lignes.get(index), target)) {
-            return Optional.empty();
-        }
-        int premiere = index;
-        while (premiere + 1 < lignes.size() && failedRestoreOf(lignes.get(premiere + 1), target)) {
-            premiere++;
-        }
-        return premiere == index
-                ? Optional.empty()
-                : Optional.of(lignes.get(premiere).id());
-    }
-
-    private static boolean failedRestoreOf(WipeBackup ligne, long target) {
-        return ligne.origine() == Trigger.RESTORE
-                && Long.valueOf(target).equals(ligne.restaureId())
-                && Boolean.FALSE.equals(ligne.restaurationAboutie());
-    }
-
     private List<LockBackup> locks() {
         return referenceDataService.listVerrouillages().stream()
                 .map(v -> new LockBackup(
@@ -373,10 +340,12 @@ public class WipeBackupService {
      * <p><b>Not atomic</b>: the repository has no transaction spanning several
      * services (ADR 0084, after the choice of A5). A failure after step 2
      * leaves the edition half restored and says at which step, with the id of
-     * the backup of step 2, the state right before this attempt — and, when
-     * this attempt closes a series of failed ones, the backup taken before the
-     * first of them ({@link #firstOfFailedSeries}). Restoring either puts the
-     * edition back as it was then, the technical ids apart. The restored referential gets new ids too: what
+     * the backup of step 2, the state right before this attempt, and nothing
+     * else: which earlier backup was the state before a whole series of
+     * attempts is the reader's choice, from the list — the table cannot tell
+     * it for certain (a gesture that writes no backup leaves no trace in it).
+     * Restoring that backup puts the edition back as it was right before this
+     * attempt, the technical ids apart. The restored referential gets new ids too: what
      * named the old ones outside the backup (snapshots, day reviews, swap
      * requests, the journal) no longer finds them.</p>
      *
@@ -396,17 +365,16 @@ public class WipeBackupService {
         Long avant = scope.writeAndReturn(
                 "Failed to back the edition up before a restore",
                 connection -> insert(connection, Trigger.RESTORE, id).orElse(null));
-        Optional<Long> origine = avant == null ? Optional.empty() : firstOfFailedSeries(avant, id);
         String etape = "import du scénario";
         Restoration restoration;
         try {
             List<String> referentielNonRestaure = scenarioImportService.importForRestore(yaml);
             etape = "réapplication du planning";
             ScenarioDto scenario = ScenarioYamlReader.parseScenarioText(yaml);
-            restoration = reapply(id, plan, scenario, avant, origine.orElse(null), referentielNonRestaure);
+            restoration = reapply(id, plan, scenario, avant, referentielNonRestaure);
         } catch (RuntimeException e) {
             String message = "Restauration de la sauvegarde " + id + " interrompue à l'étape « " + etape + " » : "
-                    + e.getMessage() + " " + recourse(avant, origine);
+                    + e.getMessage() + " " + recourse(avant);
             if (e instanceof BusinessError) {
                 throw new BusinessError.Conflict(message);
             }
@@ -435,28 +403,19 @@ public class WipeBackupService {
         return restoration;
     }
 
-    /** What a failed restore says to go back: the state right before it, and the one before its series. */
-    private static String recourse(Long avant, Optional<Long> origine) {
+    /** What a failed restore says to go back: the backup of the state right before it, and the list. */
+    private static String recourse(Long avant) {
+        String liste = " Pour un état plus ancien, choisissez dans la liste des sauvegardes de l'édition : chacune y"
+                + " dit sa date, son origine et, pour une restauration, la sauvegarde visée et son issue.";
         if (avant == null) {
-            return "L'édition était vide juste avant cette tentative.";
+            return "L'édition était vide juste avant cette tentative." + liste;
         }
-        if (origine.isEmpty()) {
-            return "L'état juste avant cette tentative est dans la sauvegarde " + avant
-                    + " : restaurez-la pour revenir en arrière ; la liste des sauvegardes donne les états plus anciens.";
-        }
-        return "L'état juste avant cette tentative, le plus récent, est dans la sauvegarde " + avant
-                + " ; l'état d'origine, d'avant la première des tentatives échouées de cette restauration, est dans "
-                + "la sauvegarde " + origine.get() + " : restaurez celle-ci pour revenir à l'état d'avant toute "
-                + "tentative, celle-là pour retrouver votre état le plus récent.";
+        return "L'état de l'édition juste avant cette tentative est dans la sauvegarde " + avant
+                + " : la restaurer remet l'édition comme elle était à ce moment-là." + liste;
     }
 
     private Restoration reapply(
-            long id,
-            PlanBackup plan,
-            ScenarioDto scenario,
-            Long avant,
-            Long origine,
-            List<String> referentielNonRestaure) {
+            long id, PlanBackup plan, ScenarioDto scenario, Long avant, List<String> referentielNonRestaure) {
         List<Stand> standsActuels = referenceDataService.listStands();
         List<Animateur> animateursActuels = referenceDataService.listAnimateurs();
         Map<String, String> stands = matchStands(scenario.stands(), standsActuels);
@@ -581,7 +540,6 @@ public class WipeBackupService {
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         return new Restoration(
                 avant,
-                origine,
                 assises,
                 nonRestaurees,
                 verrous,

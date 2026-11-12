@@ -126,22 +126,31 @@ prévue :
 - un échec plus loin laisse l'édition à moitié restaurée. La réponse d'erreur
   dit **à quelle étape** l'opération s'est arrêtée et nomme **la sauvegarde
   de l'état juste avant cette tentative** ; la restaurer remet l'édition comme
-  elle était alors, aux identifiants techniques près. Quand la tentative
-  suit d'autres tentatives échouées de la même restauration, l'une après
-  l'autre, elle nomme aussi **la sauvegarde prise avant la première** —
-  l'état d'origine —, retrouvée en remontant les lignes `RESTORE` non
-  abouties de même cible ; si une autre sauvegarde s'intercale, la série
-  n'est pas certaine et le message renvoie à la liste plutôt que de deviner.
-  Une erreur métier répond `409`, une panne `500` avec le même message au
-  journal ;
+  elle était alors, aux identifiants techniques près. Elle ne nomme **rien
+  d'autre** : pour un état plus ancien, elle renvoie à la liste, où chaque
+  ligne donne sa date, son origine et, pour une restauration, la sauvegarde
+  visée et l'issue enregistrée (« aboutie », ou « non aboutie ou issue
+  inconnue »). Le choix revient au lecteur. Une erreur métier répond `409`,
+  une panne `500` avec le même message au journal ;
 - relancer une restauration sauvegarde l'état qu'elle remplace, comme toute
   restauration : le travail fait à la main depuis un échec n'est jamais écrasé
-  sans copie. Aucune sauvegarde ne disparaît en chemin.
+  sans copie. Aucune sauvegarde ne disparaît en chemin. En contrepartie, des
+  relances après un échec à mi-chemin écrivent **une ligne par tentative** :
+  chaque échec laisse un état différent (les créneaux recréés changent
+  d'identifiant), que le dédoublonnage ne fusionne pas. Ces lignes
+  s'accumulent ; on les nettoie par la suppression manuelle.
 - Une première forme réutilisait, à la relance, la sauvegarde de la première
   tentative au lieu d'en prendre une : rien ne garantissait que l'édition
   n'avait pas changé depuis — les modifications à la main, les résolutions et
   les verrous n'écrivent rien dans cette table —, et la relance écrasait ce
   travail sans copie. Elle a été retirée.
+- Une deuxième forme nommait, après plusieurs échecs, un « état d'origine »,
+  retrouvé en remontant les lignes `RESTORE` non abouties de même cible. La
+  table ne permet pas de l'établir avec certitude : une restauration réussie
+  dont l'issue n'a pas pu être notée y reste « non aboutie », et un geste qui
+  n'écrit aucune ligne (import dédoublonné, réparation à la main) ne rompt
+  pas la suite apparente. Le message poussait alors à restaurer le mauvais
+  état ; il a été retiré au profit de la liste.
 
 ## Alternatives écartées
 

@@ -8,6 +8,7 @@ import static org.awaitility.Awaitility.await;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -20,6 +21,7 @@ import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferentialFamily;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.solve.WipeBackupService.Restoration;
 import dev.sylvain.planning.service.solve.WipeBackupService.Trigger;
@@ -455,12 +457,12 @@ class WipeBackupServiceTest {
 
     /**
      * A restore that fails five times half way, then goes through: each
-     * attempt backs up the edition it replaces, the first one names that
-     * backup, every later one names it as the state of origin beside its own,
-     * and it still brings back the state before the whole series.
+     * attempt backs up the edition it replaces and its message names that
+     * backup alone — no guess at a state of origin —, and the backup the
+     * first attempt took still brings back the state before them all.
      */
     @Test
-    void retriesOfAFailedRestoreNameTheStateBeforeTheSeries() {
+    void eachFailedAttemptNamesTheStateRightBeforeIt() {
         inANewEdition(() -> {
             long backup = editionWithABackupAndAnotherState();
             List<String> stands = standNames();
@@ -470,28 +472,102 @@ class WipeBackupServiceTest {
 
             List<String> messages = failedRestores(backup, 5, "poste_affectation", "false");
             List<WipeBackup> backups = wipeBackup.list();
-            WipeBackup premiere = backups.get(4);
             assertThat(backups).hasSize(lignes + 5);
             assertThat(backups.subList(0, 5)).allSatisfy(ligne -> {
                 assertThat(ligne.origine()).isEqualTo(Trigger.RESTORE);
                 assertThat(ligne.restaureId()).isEqualTo(backup);
                 assertThat(ligne.restaurationAboutie()).isFalse();
             });
-            assertThat(messages.getFirst())
-                    .contains("dans la sauvegarde " + premiere.id() + " : restaurez-la")
-                    .doesNotContain("état d'origine");
-            assertThat(messages.subList(1, 5))
-                    .allSatisfy(message ->
-                            assertThat(message).contains("la sauvegarde " + premiere.id() + " : restaurez celle-ci"));
+            for (int i = 0; i < 5; i++) {
+                assertThat(messages.get(i))
+                        .contains("dans la sauvegarde " + backups.get(4 - i).id() + " : la restaurer")
+                        .contains("liste des sauvegardes")
+                        .doesNotContain("état d'origine");
+            }
 
-            Restoration restoration = wipeBackup.restore(backup);
+            wipeBackup.restore(backup);
 
-            assertThat(restoration.sauvegardeOrigine()).isEqualTo(premiere.id());
             assertThat(wipeBackup.list().getFirst().restaurationAboutie()).isTrue();
-            wipeBackup.restore(premiere.id());
+            wipeBackup.restore(backups.get(4).id());
             assertThat(standNames()).isEqualTo(stands);
             assertThat(plan()).isEqualTo(plan);
             assertThat(locks()).isEqualTo(verrous);
+        });
+    }
+
+    /**
+     * A restore that went through but could not be noted as such, then work by
+     * hand, then a restore of the same backup that fails half way: the message
+     * names the backup it just took, never the older one of the restore that
+     * went through.
+     */
+    @Test
+    void aRestoreNotNotedAsGoneThroughIsNeverNamedAsAnOrigin() {
+        inANewEdition(() -> {
+            long backup = editionWithABackupAndAnotherState();
+            try {
+                sql("ALTER TABLE sauvegarde_avant_vidage ADD CONSTRAINT test_refus"
+                        + " CHECK (restauration_aboutie IS NOT TRUE) NOT VALID");
+                wipeBackup.restore(backup);
+            } finally {
+                sql("ALTER TABLE sauvegarde_avant_vidage DROP CONSTRAINT test_refus");
+            }
+            long ancienne = wipeBackup.list().getFirst().id();
+            homonyme("a-la-main@exemple.org");
+
+            String message =
+                    failedRestores(backup, 1, "poste_affectation", "false").getFirst();
+
+            long recente = wipeBackup.list().getFirst().id();
+            assertThat(message)
+                    .contains("dans la sauvegarde " + recente + " : la restaurer")
+                    .doesNotContain("sauvegarde " + ancienne + " ")
+                    .doesNotContain("état d'origine");
+        });
+    }
+
+    /**
+     * A restore that fails before writing anything, then an import whose
+     * backup is deduplicated, then a restore that fails half way: the message
+     * names the backup the last attempt took, and nothing of the first.
+     */
+    @Test
+    void aGestureWritingNoBackupBetweenTwoAttemptsIsNotMistakenForASeries() {
+        inANewEdition(() -> {
+            long backup = editionWithABackupAndAnotherState();
+            failedRestores(backup, 1, "parametres_legaux", "false");
+            long premiere = wipeBackup.list().getFirst().id();
+            int lignes = wipeBackup.list().size();
+            scenarioImportService.importBundled(SCENARIO);
+            assertThat(wipeBackup.list()).hasSize(lignes);
+
+            String message =
+                    failedRestores(backup, 1, "poste_affectation", "false").getFirst();
+
+            long derniere = wipeBackup.list().getFirst().id();
+            assertThat(derniere).isNotEqualTo(premiere);
+            assertThat(message)
+                    .contains("dans la sauvegarde " + derniere + " : la restaurer")
+                    .doesNotContain("sauvegarde " + premiere + " ")
+                    .doesNotContain("état d'origine");
+        });
+    }
+
+    /** An edition holding only game categories and locations is backed up before an import overwrites them. */
+    @Test
+    void gameCategoriesAndLocationsAloneAreBackedUp() {
+        inANewEdition(() -> {
+            referenceDataService.createTypologie(
+                    new TypologieItem(null, "STRATEGIE", "Stratégie maison", false, null, null, null));
+            referenceDataService.createEmplacement(new Emplacement(null, "Hall B", 47.2184, -1.5536));
+
+            scenarioImportService.importBundled(SCENARIO);
+
+            assertThat(wipeBackup.list())
+                    .singleElement()
+                    .satisfies(ligne -> assertThat(wipeBackup.loadContent(ligne.id()))
+                            .contains("Stratégie maison")
+                            .contains("Hall B"));
         });
     }
 
@@ -513,16 +589,16 @@ class WipeBackupServiceTest {
             assertThat(messages)
                     .hasSize(3)
                     .allSatisfy(
-                            message -> assertThat(message).contains("dans la sauvegarde " + avant + " : restaurez-la"));
+                            message -> assertThat(message).contains("dans la sauvegarde " + avant + " : la restaurer"));
         });
     }
 
     /**
      * Work done by hand between two failed attempts is backed up by the next
-     * one, and its message names both: that state, and the one of origin.
+     * one, and its message names that backup alone.
      */
     @Test
-    void workBetweenTwoFailedAttemptsIsBackedUpAndBothAreNamed() {
+    void workBetweenTwoFailedAttemptsIsBackedUpAndNamed() {
         inANewEdition(() -> {
             long backup = editionWithABackupAndAnotherState();
             failedRestores(backup, 1, "poste_affectation", "false");
@@ -536,8 +612,8 @@ class WipeBackupServiceTest {
             assertThat(recent).isNotEqualTo(origine);
             assertThat(wipeBackup.loadContent(recent)).contains("a-la-main@exemple.org");
             assertThat(message)
-                    .contains("le plus récent, est dans la sauvegarde " + recent)
-                    .contains("la sauvegarde " + origine + " : restaurez celle-ci");
+                    .contains("dans la sauvegarde " + recent + " : la restaurer")
+                    .doesNotContain("sauvegarde " + origine + " ");
         });
     }
 
@@ -641,7 +717,7 @@ class WipeBackupServiceTest {
                 assertThatThrownBy(() -> wipeBackup.restore(backup))
                         .isInstanceOf(IllegalStateException.class)
                         .hasMessageContaining("« réapplication du planning »")
-                        .hasMessageContaining("L'état juste avant cette tentative est dans la sauvegarde");
+                        .hasMessageContaining("juste avant cette tentative est dans la sauvegarde");
             } finally {
                 sql("ALTER TABLE poste_affectation DROP CONSTRAINT test_refus");
             }
