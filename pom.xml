@@ -55,9 +55,9 @@
              refusée au démarrage. -->
         <it.admin.password>it-admin-Hs3vQ9zR</it.admin.password>
         <surefire-plugin.version>3.6.1</surefire-plugin.version>
-        <spotless-plugin.version>3.10.4</spotless-plugin.version>
+        <spotless-plugin.version>3.11.0</spotless-plugin.version>
         <palantir-java-format.version>2.98.0</palantir-java-format.version>
-        <license-plugin.version>2.7.1</license-plugin.version>
+        <license-plugin.version>2.9.0</license-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
              PlanningServiceScenarioCompletTest, PlanningServiceScenarioContinuTest)
              solve a ~2000-poste problem to hard-feasibility and take ~25-75s
@@ -549,7 +549,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.6.4</version>
+                        <version>3.7.0</version>
                         <executions>
                             <execution>
                                 <id>generate-scenario-schema</id>
@@ -583,7 +583,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.6.4</version>
+                        <version>3.7.0</version>
                         <executions>
                             <execution>
                                 <id>generate-diagrams</id>
@@ -637,7 +637,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.8.15</version>
+                        <version>0.8.16</version>
                         <executions>
                             <execution>
                                 <id>prepare-agent</id>
@@ -680,7 +680,7 @@
                     <plugin>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-maven</artifactId>
-                        <version>1.30.1</version>
+                        <version>1.30.2</version>
                         <dependencies>
                             <dependency>
                                 <groupId>org.pitest</groupId>
