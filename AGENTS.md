@@ -155,7 +155,18 @@ Single Quarkus service, no separate solver microservice. Package root:
     yet: what the public JSON hides from a caller travels, an animateur leaves
     as an allow-list under a pseudonym and a stand-in birth date, free text
     stays home, and the plan that comes back is scored again before it is
-    believed), `PlanningWhatIf` (everything the application answers about a
+    believed), the remote solve of ADR 0086 — `RemoteSolves` (where a full
+    solve runs when not here: a permanent worker's address, or a machine
+    asked of the operator's launcher through an HTTP hook, kept until idle
+    and found again after a restart; **a remote failure fails the job, never
+    falls back here**), `RemoteSolver` (a worker behind Timefold's `Solver`
+    interface, so the queue, the stop and the score curve do not know where
+    the search runs), `WorkerClient` (every call to a worker, its certificate
+    pinned), and the worker itself, `SolveWorker` behind `SolveWorkerServer`:
+    **a plain Java program with no CDI container**, started from the same
+    image by `docker/entrypoint.sh` under `SOLVER_WORKER_MODE=true` — nothing
+    in those two classes may inject a bean, read the instance's
+    configuration or open the database — `PlanningWhatIf` (everything the application answers about a
     plan without solving it again — explanation, repair, échange,
     availability; still four responsibilities in one class), `ProblemBuilder`
     (the edition's reference data turned into a problem to solve — from

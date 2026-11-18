@@ -87,6 +87,9 @@ public class SolvePipeline {
     /** Counts a synchronous solve against the operator's hourly quota, as a job counts. */
     private final SolverQuota quota;
 
+    /** Where a solve runs when its job asked for a worker. */
+    private final RemoteSolves remoteSolves;
+
     @Inject
     public SolvePipeline(
             PlanSnapshotService snapshotService,
@@ -102,7 +105,9 @@ public class SolvePipeline {
             ValidationJourneeService validationService,
             SolveBudgetPolicy budgetPolicy,
             PlanDosageRepository planDosage,
-            SolverQuota quota) {
+            SolverQuota quota,
+            RemoteSolves remoteSolves) {
+        this.remoteSolves = remoteSolves;
         this.budgetPolicy = budgetPolicy;
         this.quota = quota;
         this.planDosage = planDosage;
@@ -267,7 +272,11 @@ public class SolvePipeline {
         PlanningDiagnosticService.PlanningDiagnostic diagnosticBefore = diagnosticOfReplacedPlan(replaced, scoreBefore);
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
-        SolveRunner.Solved solved = planningService.solveReporting(planningOf.apply(probleme), budget, attacheSolveur);
+        // On a worker when the job asked for it (ADR 0086), here otherwise;
+        // everything before and after is the same solve.
+        SolveRunner.Solved solved = attacheSolveur instanceof SolveListener listener && listener.remote() != null
+                ? remoteSolves.solve(planningService, planningOf.apply(probleme), budget, listener)
+                : planningService.solveReporting(planningOf.apply(probleme), budget, attacheSolveur);
         PlanningEvenement resolu = solved.planning();
         // What the solver was handed, never the edition as it stands at the
         // end: a weight changed while the solve runs, or toggles a client sent

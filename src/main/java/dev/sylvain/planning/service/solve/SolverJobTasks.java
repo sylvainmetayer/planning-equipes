@@ -58,7 +58,7 @@ public class SolverJobTasks {
     /** A one-off solve of a problem that came in the request body — never replayable, the body is not stored. */
     JobTask solve(PlanningEvenement problem, SolveBudget budget, BooleanSupplier shutdownRequested) {
         return job -> resultatSolve(
-                pipeline.execute(job.getEditionNom(), problem, budget, onSolverReady(job), shutdownRequested));
+                pipeline.execute(job.getEditionNom(), problem, budget, onSolverReady(job, null), shutdownRequested));
     }
 
     /** Rebuilds the work of a replayable job from its persisted intention. */
@@ -83,7 +83,7 @@ public class SolverJobTasks {
                     () -> planningService.buildFromReferenceData(reamorcage),
                     ProblemBuilder.ProblemeReamorce::planning,
                     budget,
-                    onSolverReady(job),
+                    onSolverReady(job, job.isRemote() ? shutdownRequested : null),
                     shutdownRequested);
             ProblemBuilder.ProblemeReamorce probleme = resolution.probleme();
             return new ResultatSolve(
@@ -109,7 +109,8 @@ public class SolverJobTasks {
                     () -> planningService.buildIncrementalFromReferenceData(scope),
                     ProblemBuilder.ProblemeIncremental::planning,
                     budget,
-                    onSolverReady(job),
+                    // Always here: its minute of budget is what a machine takes to start.
+                    onSolverReady(job, null),
                     shutdownRequested);
             ProblemBuilder.ProblemeIncremental probleme = resolution.probleme();
             return new ResultatSolveIncremental(
@@ -135,7 +136,12 @@ public class SolverJobTasks {
                 resolution.feasibilityFirst());
     }
 
-    private SolveListener onSolverReady(SolverJob job) {
+    /**
+     * @param remoteShutdown whether the server is going down, for a job whose
+     *                       search runs on a worker; {@code null} for one that
+     *                       solves here
+     */
+    private SolveListener onSolverReady(SolverJob job, BooleanSupplier remoteShutdown) {
         // A solve may hand over two solvers, one per stage (FeasibilityFirstSolve):
         // the job holds the latest, the curve goes on from the first.
         AtomicBoolean followed = new AtomicBoolean();
@@ -150,6 +156,16 @@ public class SolverJobTasks {
             @Override
             public void accept(Solver<PlanningEvenement> solver) {
                 handOver(job, solver, followed);
+            }
+
+            @Override
+            public RemoteTicket remote() {
+                return remoteShutdown == null
+                        ? null
+                        : new RemoteTicket(job.getId(), remoteShutdown, stage -> {
+                            job.setRemoteStage(stage);
+                            jobStream.publish();
+                        });
             }
         };
     }

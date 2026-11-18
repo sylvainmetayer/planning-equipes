@@ -13,6 +13,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { MachineCalculApi } from '../../core/api/machine-calcul-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { NotificationService } from '../../core/notification.service';
@@ -32,6 +33,7 @@ import {
   ConstraintsView,
   ConstraintDiagnostic,
   FeasibilityReport,
+  MachineCalcul,
   JobView,
   PlanningDiagnostic,
   PreviousPlan,
@@ -72,6 +74,20 @@ function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagno
     plancherSoft: 0,
     pivotEcarts: [],
     lecture: [],
+    ...overrides,
+  };
+}
+
+/** The compute machine view; `configured: false` is an instance without one. */
+function machine(overrides: Partial<MachineCalcul> = {}): MachineCalcul {
+  return {
+    configured: false,
+    onDemand: false,
+    remoteByDefault: false,
+    state: null,
+    stopsAt: null,
+    billedHoursThisMonth: null,
+    lastStopError: null,
     ...overrides,
   };
 }
@@ -205,6 +221,7 @@ describe('SolverPage', () => {
     exportBundle: vi.fn(),
   };
   const planningState = { set: vi.fn(), require: vi.fn() };
+  const machineApi = { read: vi.fn(), prepare: vi.fn(), stop: vi.fn() };
   const solverSettings = {
     refresh: vi.fn(),
     secondsLimit: () => 600,
@@ -267,6 +284,8 @@ describe('SolverPage', () => {
     ]) {
       stub.mockClear();
     }
+    machineApi.read.mockReset();
+    machineApi.read.mockResolvedValue(machine());
     jobs.listJobs.mockResolvedValue([]);
     planningApi.persistedCount.mockResolvedValue({});
     planningApi.publicationPreview.mockResolvedValue({});
@@ -280,6 +299,7 @@ describe('SolverPage', () => {
         // The page links to « Export & publication » since issue #320.
         provideRouter([]),
         { provide: PlanningApi, useValue: planningApi },
+        { provide: MachineCalculApi, useValue: machineApi },
         { provide: SolverJobService, useValue: jobs },
         { provide: PlanningStateService, useValue: planningState },
         { provide: SolverSettingsService, useValue: solverSettings },
@@ -762,7 +782,12 @@ describe('SolverPage', () => {
 
       await page['onTimefoldSolve']();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        undefined,
+      );
     });
 
     it('asks before starting over from scratch, and does nothing when refused', async () => {
@@ -808,7 +833,12 @@ describe('SolverPage', () => {
 
       await page['onRecommencerDeZero']();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUCUN');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUCUN',
+        undefined,
+      );
     });
 
     // ADR 0069: the reviewed days a cold start keeps are named before it runs.
@@ -931,7 +961,12 @@ describe('SolverPage', () => {
 
       await page['onTimefoldSolve']();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        undefined,
+      );
     });
 
     // Two dialogs on one click would be one too many: the blocking question
@@ -978,7 +1013,12 @@ describe('SolverPage', () => {
 
       await page['onTimefoldSolve']();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        undefined,
+      );
     });
 
     it('changes nothing when nothing is being typed', async () => {
@@ -1171,6 +1211,87 @@ describe('SolverPage', () => {
       TestBed.tick();
 
       expect(page['output']()).toBe('');
+    });
+  });
+
+  // ADR 0086: a full solve may run on a compute machine instead of here.
+  describe('the compute machine', () => {
+    it('shows nothing of it on an instance without one, and sends no choice', async () => {
+      const page = createPage();
+      await fixture.whenStable();
+
+      expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).toBeNull();
+      expect(racine().querySelector('app-machine-calcul-card')).toBeNull();
+      await page['onTimefoldSolve']();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        undefined,
+      );
+    });
+
+    it('preselects the instance default and sends the choice made', async () => {
+      machineApi.read.mockResolvedValue(
+        machine({ configured: true, remoteByDefault: true, state: 'PERMANENT' }),
+      );
+      const page = createPage();
+      await fixture.whenStable();
+
+      expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).not.toBeNull();
+      // A permanent worker: the choice, and no machine panel.
+      expect(racine().querySelector('app-machine-calcul-card')).toBeNull();
+      await page['onTimefoldSolve']();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenLastCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        true,
+      );
+
+      page['distant'].set(false);
+      await page['onTimefoldSolve']();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenLastCalledWith(
+        undefined,
+        false,
+        'AUTO',
+        false,
+      );
+    });
+
+    it('shows the machine panel for a machine created on demand', async () => {
+      machineApi.read.mockResolvedValue(
+        machine({ configured: true, onDemand: true, state: 'ABSENT' }),
+      );
+      createPage();
+      await fixture.whenStable();
+
+      expect(racine().querySelector('app-machine-calcul-card')?.textContent).toContain(
+        'Préparer la machine',
+      );
+    });
+
+    it('says the machine is being prepared while the job waits for it', async () => {
+      const page = createPage();
+      activeJob.set(tracked({ remote: true, remoteStage: 'PREPARING' }));
+      await fixture.whenStable();
+
+      expect(page['etapeDistante']()).toContain('Préparation de la machine de calcul');
+      expect(racine().textContent).toContain('Préparation de la machine de calcul');
+
+      activeJob.set(tracked({ remote: true, remoteStage: 'SOLVING' }));
+      expect(page['etapeDistante']()).toBe('Calcul en cours sur la machine de calcul.');
+    });
+
+    it('re-reads the machine when a job starts', async () => {
+      createPage();
+      await fixture.whenStable();
+      const reads = machineApi.read.mock.calls.length;
+
+      activeJob.set(tracked());
+      TestBed.tick();
+
+      expect(machineApi.read.mock.calls.length).toBe(reads + 1);
     });
   });
 });

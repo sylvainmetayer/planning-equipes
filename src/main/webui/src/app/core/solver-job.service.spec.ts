@@ -204,6 +204,35 @@ describe('SolverJobService', () => {
       expect(service.activeJob()).toBeNull();
     });
 
+    it('sends where to solve only when asked, beside the start point', async () => {
+      api.activeResponses = [{ status: 204, body: null }];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+      api.postResult = job({ id: 'job-9', status: 'QUEUED' });
+
+      await service.submitSolveFromReferenceData(undefined, false, 'AUCUN', true);
+      await service.submitSolveFromReferenceData(undefined, false);
+
+      expect(api.postPreservingHttpError.mock.calls[0][0]).toBe(
+        '/api/solve/async/reference-data?reamorcage=AUCUN&distant=true',
+      );
+      expect(api.postPreservingHttpError.mock.calls[1][0]).toBe('/api/solve/async/reference-data');
+    });
+
+    it('starts no end estimate while the compute machine is being prepared', async () => {
+      api.activeResponses = [
+        {
+          status: 200,
+          body: job({ id: 'job-3', status: 'RUNNING', remote: true, remoteStage: 'PREPARING' }),
+        },
+      ];
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(service.activeJob()?.remoteStage).toBe('PREPARING');
+      expect(service.estimatedEndMs()).toBeNull();
+    });
+
     it('reconnaît comme sienne la tâche qu’elle a planifiée quand elle démarre', async () => {
       api.activeResponses = [{ status: 204, body: null }];
       service.start();

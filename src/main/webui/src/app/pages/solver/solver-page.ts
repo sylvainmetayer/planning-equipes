@@ -5,6 +5,7 @@ import {
   computed,
   effect,
   inject,
+  linkedSignal,
   OnInit,
   signal,
   untracked,
@@ -15,6 +16,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MachineCalculApi } from '../../core/api/machine-calcul-api';
 import { MatDialog } from '@angular/material/dialog';
 import { PlanningApi } from '../../core/api/planning-api';
 import { libelleJour } from '../../core/horaire-stand';
@@ -27,6 +30,7 @@ import {
   ImpactPublication,
   ImpactValidations,
   KeptReading,
+  MachineCalcul,
   PerimetreReplanification,
   ScoreSentence,
   PlanningDiagnostic,
@@ -63,6 +67,7 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { IncrementalResult } from './incremental-result';
+import { MachineCalculCard } from './machine-calcul-card';
 import { ReplanificationData, ReplanificationDialog } from './replanification-dialog';
 import { RouterLink } from '@angular/router';
 import { ScoreCurveCard } from './score-curve-card';
@@ -143,6 +148,8 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     VersionsRecentes,
     ValidationBanner,
     RouterLink,
+    MatButtonToggleModule,
+    MachineCalculCard,
   ],
   templateUrl: './solver-page.html',
   styleUrls: ['./solver.css', './replanification.css', './score-curve.css'],
@@ -210,6 +217,26 @@ export class SolverPage implements OnInit {
    * edition, or a score that could not be established.
    */
   protected readonly planPrecedent = signal<PreviousPlan | null>(null);
+
+  /* ----------------------------- Compute machine -- ---------------------------- */
+
+  /** The compute machine of ADR 0086; null until read, and nothing of it shows unless `configured`. */
+  protected readonly machine = signal<MachineCalcul | null>(null);
+  protected readonly machineConfiguree = computed(() => this.machine()?.configured === true);
+  private readonly remoteByDefault = computed(() => this.machine()?.remoteByDefault ?? false);
+  /** « Sur la machine de calcul » for the next full solve; follows the instance default until chosen. */
+  protected readonly distant = linkedSignal(() => this.remoteByDefault());
+
+  /** Where the running solve stands on the compute machine, said beside its state. */
+  protected readonly etapeDistante = computed(() => {
+    const job = this.jobs.activeJob();
+    if (job?.remoteStage === 'PREPARING') {
+      return $localize`:@@solver.distant.preparation:Préparation de la machine de calcul… le temps de calcul ne court pas encore.`;
+    }
+    return job?.remote
+      ? $localize`:@@solver.distant.calcul:Calcul en cours sur la machine de calcul.`
+      : '';
+  });
 
   /** The server-side lock, not a local flag: it also covers other browsers. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
@@ -345,8 +372,27 @@ export class SolverPage implements OnInit {
   private readonly crud = inject(ReferenceCrudService);
   private readonly validations = inject(ValidationsStore);
   private readonly store = inject(ReferenceDataStore);
+  private readonly machineApi = inject(MachineCalculApi);
 
   constructor() {
+    // The machine's state moves with the jobs: re-read when one starts, ends
+    // or changes stage — the first run of this effect is the initial read.
+    const jobStage = computed(() => {
+      const job = this.jobs.activeJob();
+      return `${job?.id ?? ''}|${job?.remoteStage ?? ''}`;
+    });
+    effect(() => {
+      jobStage();
+      untracked(() => void this.loadMachine());
+    });
+    // And slowly while a machine is up: it stops by itself after an idle delay.
+    const poll = setInterval(() => {
+      const machine = this.machine();
+      if (machine?.onDemand && machine.state !== 'ABSENT') {
+        void this.loadMachine();
+      }
+    }, 15_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(poll));
     void this.problemes.reload();
     void this.crud.reload();
     void this.validations.reload();
@@ -733,7 +779,12 @@ export class SolverPage implements OnInit {
       // builds it when it starts, not now — the edition can keep being prepared.
       // No duration either: the server applies the edition's budget —
       // duration, plateau and the instance's ceiling — to whoever launches.
-      await this.jobs.submitSolveFromReferenceData(undefined, enFile, reamorcage);
+      await this.jobs.submitSolveFromReferenceData(
+        undefined,
+        enFile,
+        reamorcage,
+        this.machineConfiguree() ? this.distant() : undefined,
+      );
       this.output.set(
         enFile
           ? $localize`:@@solver.planned:Calcul planifié : il démarrera de lui-même sur cette édition dès que la tâche en cours sera terminée.`
@@ -792,6 +843,15 @@ export class SolverPage implements OnInit {
       this.output.set(errorPrefix(error));
     } finally {
       this.arretEnCours.set(false);
+    }
+  }
+
+  /** Best-effort: without an answer the screen stays as it is, as on an instance without a machine. */
+  protected async loadMachine(): Promise<void> {
+    try {
+      this.machine.set(await this.machineApi.read());
+    } catch {
+      // Keep the last view rather than blanking the choice.
     }
   }
 

@@ -752,6 +752,35 @@ réponse illisible ou un service muet n'est jamais propagé : il est noté
 (« injoignable depuis… ») et dit une fois à l'administrateur au deuxième jour.
 `METEO_ENABLED=false` coupe la fonctionnalité pour l'instance.
 
+## Calcul déporté : ce qui sort, et vers qui
+
+Une instance peut confier ses résolutions à un *worker* sur une autre machine
+([ADR 0086](decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md),
+mise en place dans [`exploitation.md`](exploitation.md) § Résoudre sur une
+autre machine). Sans configuration, rien ne sort.
+
+| Sujet | Ce qui est fait |
+| --- | --- |
+| Sens des connexions | Toutes partent de l'application. Le worker et le lanceur n'appellent personne |
+| Authentification du worker | Un secret partagé sur chaque appel, comparé en temps constant. Pour une machine à la demande il est **dérivé** (HMAC du secret du crochet et d'un aléa par machine) : jamais stocké, et sans valeur pour une autre machine |
+| Chiffrement | HTTPS, certificat **épinglé** par son empreinte SHA-256. Un worker sans certificat n'écoute que la boucle locale, et l'application refuse de démarrer sur une adresse `http://` qui n'y est pas. Le lanceur, lui, est accepté en `http://` sur la boucle locale ou un réseau privé seulement : son secret voyage dans chaque appel |
+| Ce que le worker reçoit | Le problème sous pseudonymes : ni nom, ni adresse, ni téléphone, ni jeton, ni texte libre (voir [`rgpd.md`](rgpd.md) §7) |
+| Ce que le worker garde | Rien sur disque ; un problème et son plan en mémoire, remplacés par le suivant |
+| Le plan qui revient | Rescoré par l'application sur son propre problème ; un score différent de celui annoncé, un siège inconnu ou épinglé déplacé, et le plan est refusé |
+| Création de machines | Hors de l'application : elle ne détient aucun jeton d'hébergeur. Aucun outil MCP ne prépare ni n'arrête une machine |
+| Adresses du worker et du lanceur | Celles de l'exploitant, en variables d'instance : la garde anti-SSRF des webhooks ne s'y applique pas, comme pour `METEO_URL` |
+
+Trois limites à connaître :
+
+- les secrets d'une machine à la demande (secret du worker, clé de son
+  certificat) transitent par le cloud-init : l'hébergeur les voit, et le
+  service de métadonnées de la machine les rend à tout processus local. Ils ne
+  valent que pour cette machine et pour sa durée de vie ;
+- le worker ne limite pas le débit des appels refusés : sa protection est un
+  secret de 256 bits et un pare-feu qui n'ouvre son port qu'à l'application ;
+- le lanceur d'exemple est un exemple : il n'est pas exposé, pas durci, et son
+  jeton doit être celui d'un projet qui ne contient que des workers.
+
 ## Analyses automatiques
 
 Ce qu'un outil trouve seul est vérifié à chaque poussée, pas découvert par un

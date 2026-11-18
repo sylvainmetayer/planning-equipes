@@ -134,7 +134,7 @@ class ReparationMcpToolsTest {
         awaitSolverIdle();
         scenarioTools.resetData("E1");
         scenarioTools.importScenario("scenario.yml", "E1");
-        JobMcpView job = solveurTools.startSolver(1L, null, null, "E1");
+        JobMcpView job = solveurTools.startSolver(1L, null, null, null, "E1");
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
         return planningTools.listAffectations(null, null, null, null, null, "E1").affectations().stream()
                 .filter(vue -> vue.animateurId() != null)

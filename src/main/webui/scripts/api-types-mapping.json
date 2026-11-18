@@ -11,6 +11,7 @@
     "expose une autre forme — chacun avec sa raison."
   ],
   "renommes": {
+    "MachineCalcul": "ComputeMachine",
     "ViolationDure": "HardViolation",
     "ParametreContrainte": "ConstraintParameter",
     "PlancherContrainte": "ConstraintFloor",

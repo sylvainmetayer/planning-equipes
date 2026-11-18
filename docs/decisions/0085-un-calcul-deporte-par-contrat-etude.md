@@ -1,6 +1,6 @@
 # 0085 — Déporter le calcul sur un worker, par un contrat et non par un hébergeur : étude
 
-- **Statut** : **proposé** · étude ; aucune ligne de production n'est écrite
+- **Statut** : étude close, **mise en œuvre et révisée sur trois points par [0086](0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md)**
 - **Date** : novembre 2026
 - **Portée** : résolution (`service/solve`), déploiement
 - **Voisine de** : [0008](0008-file-sequentielle-avant-parallelisme.md) (un calcul à la fois), [0075](0075-quota-de-calcul-de-l-instance-dans-l-application.md) (le quota de l'exploitant), [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) (l'autre étude de calcul hors de l'application)

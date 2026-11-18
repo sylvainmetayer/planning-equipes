@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -451,6 +453,21 @@ public class PlanningService {
     public PlanningEvenement solve(
             PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         return solveRunner.solve(problem, budget, onSolverReady);
+    }
+
+    /** @see SolveRunner#prepareToSolve */
+    void prepareToSolve(PlanningEvenement problem, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        solveRunner.prepareToSolve(problem, onSolverReady);
+    }
+
+    /** @see SolverConfiguration#searchSettings */
+    SolverConfiguration.SearchSettings searchSettings(SolveBudget budget) {
+        return solverConfiguration.searchSettings(budget);
+    }
+
+    /** The manager a plan come back from a worker is scored with, before it is believed. */
+    SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager() {
+        return solverConfiguration.solutionManager();
     }
 
     /** @see SolveRunner#solveReporting */

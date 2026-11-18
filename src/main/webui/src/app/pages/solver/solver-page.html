@@ -44,11 +44,21 @@
         </p>
       </li>
     </ul>
+    @if (machineConfiguree()) {
+      <mat-button-toggle-group class="solver-lieu" [value]="distant()" (change)="distant.set($event.value)"
+                               aria-label="Où calculer le planning" i18n-aria-label="@@solver.lieu.label">
+        <mat-button-toggle [value]="false" i18n="@@solver.lieu.surPlace">Sur place</mat-button-toggle>
+        <mat-button-toggle [value]="true" i18n="@@solver.lieu.distant">Sur la machine de calcul</mat-button-toggle>
+      </mat-button-toggle-group>
+    }
     @if (pointDeDepart()) {
       <p class="calendar-meta solver-depart">{{ pointDeDepart() }}</p>
     }
     @if (raisonVerrou()) {
       <app-status-message [text]="raisonVerrou()" tone="info" />
+    }
+    @if (etapeDistante()) {
+      <p class="calendar-meta">{{ etapeDistante() }}</p>
     }
   </mat-card-content>
   @if (solverBusy()) {
@@ -90,6 +100,11 @@
   }
   <app-solver-queue (failed)="output.set($event)" />
 </mat-card>
+
+@if (machine()?.configured && machine()?.onDemand) {
+  <app-machine-calcul-card [machine]="machine()!" (changed)="machine.set($event)"
+                           (failed)="output.set($event); loadMachine()" />
+}
 
 <!-- The live curve sits by the progress while a solve runs; once it is over
      it steps below the result, foldable, rather than ahead of it. -->

@@ -79,9 +79,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void aSolveCanWaitForItsTurnInsteadOfFailing() {
         loadScenario();
-        JobMcpView premier = solveurTools.startSolver(4L, null, null, "E1");
+        JobMcpView premier = solveurTools.startSolver(4L, null, null, null, "E1");
 
-        JobMcpView enFile = solveurTools.startSolver(1L, true, null, "E1");
+        JobMcpView enFile = solveurTools.startSolver(1L, true, null, null, "E1");
 
         assertThat(enFile.status()).isEqualTo(JobStatus.QUEUED.name());
         assertThat(enFile.id()).isNotEqualTo(premier.id());
@@ -91,9 +91,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void withoutQueueingAConcurrentSolveIsRefused() {
         loadScenario();
-        JobMcpView premier = solveurTools.startSolver(4L, null, null, "E1");
+        JobMcpView premier = solveurTools.startSolver(4L, null, null, null, "E1");
 
-        assertThatThrownBy(() -> solveurTools.startSolver(1L, false, null, "E1"))
+        assertThatThrownBy(() -> solveurTools.startSolver(1L, false, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining(premier.id())
@@ -105,7 +105,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void theIncrementalSolveStartsFromThePersistedPlanning() {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, "E1").id())
+        assertThat(awaitFinished(solveurTools
+                                .startSolver(1L, null, null, null, "E1")
+                                .id())
                         .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
         int affectations = planningTools.planningState("E1").affectationsPersistees();
@@ -125,7 +127,9 @@ class SolveurMcpToolsQueueTest {
     @Test
     void aScopeWithoutTargetSolvesWhatTheChangesInvalidated() {
         loadScenario();
-        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, "E1").id())
+        assertThat(awaitFinished(solveurTools
+                                .startSolver(1L, null, null, null, "E1")
+                                .id())
                         .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
 

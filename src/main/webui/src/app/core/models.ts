@@ -1945,8 +1945,33 @@ export interface JobView {
    * improves quality, and stopping keeps that plan.
    */
   feasibleAtSeconds?: number | null;
+  /** Whether the search runs on the instance's compute machine rather than here (ADR 0086). */
+  remote?: boolean;
+  /** Where a remote solve under way stands; null for a solve run here, and once the job is over. */
+  remoteStage?: RemoteStage | null;
   error: string | null;
   result: unknown;
+}
+
+/** `PREPARING` while the compute machine comes up — the time budget does not run yet. */
+export type RemoteStage = 'PREPARING' | 'SOLVING';
+
+/** State of the compute machine; `PERMANENT` for a worker that is always there. */
+export type MachineCalculState = 'PERMANENT' | 'ABSENT' | 'PREPARING' | 'READY' | 'SOLVING';
+
+/** `GET /api/machine-calcul`: the machine a full solve may run on instead of here (ADR 0086). */
+export interface MachineCalcul {
+  /** False: the instance has no compute machine, and nothing of it is shown. */
+  configured: boolean;
+  /** True when the machine is created by a launcher and stopped after an idle delay. */
+  onDemand: boolean;
+  remoteByDefault: boolean;
+  state: MachineCalculState | null;
+  /** When an idle machine will be stopped, or null. */
+  stopsAt: string | null;
+  billedHoursThisMonth: number | null;
+  /** A rented machine that could not be stopped, and keeps costing: shown as a warning. */
+  lastStopError: string | null;
 }
 
 /**

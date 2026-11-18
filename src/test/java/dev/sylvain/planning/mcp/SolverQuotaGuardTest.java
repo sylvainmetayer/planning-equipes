@@ -139,7 +139,7 @@ class SolverQuotaGuardTest {
                 .isEqualTo(204);
 
         // Over MCP: a tool result in error carrying the same sentence.
-        assertThatThrownBy(() -> solveurTools.startSolver(1L, null, null, "E1"))
+        assertThatThrownBy(() -> solveurTools.startSolver(1L, null, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageMatching(QUOTA_SPENT);

@@ -47,8 +47,8 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * The form a <b>prepared</b> problem takes to be solved somewhere else, and
- * the form its answer comes back in (ADR 0085). Nothing calls it yet: it is
- * the piece a remote solve stands on, written and tested before the transport.
+ * the form its answer comes back in (ADR 0085): the piece a remote solve
+ * stands on ({@link RemoteSolver}, the worker's {@link SolveWorker}).
  *
  * <p><b>Not the API's JSON.</b> The public JSON of {@link PlanningEvenement}
  * leaves out, on purpose, what a caller must not be able to set: the published

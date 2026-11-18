@@ -85,7 +85,12 @@ class IdColumnsInventoryStructuralTest {
                     "sauvegarde_avant_vidage.plan",
                     "standId, creneauId and animateurId of every seat and lock as they were before the wipe — found"
                             + " again by natural keys on restore, never joined on (ADR 0084)"),
-            Map.entry("solver_job.perimetre", "animateurIds and standIds of a queued solve, replayed at startup"));
+            Map.entry("solver_job.perimetre", "animateurIds and standIds of a queued solve, replayed at startup"),
+            Map.entry(
+                    "resolution_distante.job_id",
+                    "the solver job a remote solve belongs to (ADR 0086): a row of solver_job, itself global and"
+                            + " purged on its own; the line goes when the job ends"),
+            Map.entry("resolution_distante.solve_id", "the id a worker gave the solve: no row of this database"));
 
     @Inject
     DataSource dataSource;
