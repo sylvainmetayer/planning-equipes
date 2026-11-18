@@ -17,6 +17,7 @@ import dev.sylvain.planning.service.referentiel.ParametresQualiteDefaults;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -467,6 +468,29 @@ final class SolverConfiguration {
         termination.setMillisecondsSpentLimit(millis);
         adaptToProblem(solverConfig, problem);
         return SolverFactory.create(solverConfig);
+    }
+
+    /**
+     * Everything the search reads from this deployment, resolved for one
+     * solve: what a worker is handed in place of its own settings (ADR 0086),
+     * so that a variable forgotten on that machine cannot change a plan.
+     */
+    public record SearchSettings(long seconds, long plateauSeconds, double plateauGainMediumPerSeat) {}
+
+    SearchSettings searchSettings(SolveBudget budget) {
+        return new SearchSettings(secondsOf(budget), plateauOf(budget), plateauGainMediumPerSeat);
+    }
+
+    /**
+     * The configuration of a worker for one solve: {@code settings} and nothing
+     * of the machine it runs on — no configuration source is read, and there is
+     * no reference data to complete a problem with.
+     */
+    static SolverConfiguration ofSettings(SearchSettings settings) {
+        Config config = new SmallRyeConfigBuilder()
+                .withDefaultValue(PLATEAU_GAIN_PROPERTY, String.valueOf(settings.plateauGainMediumPerSeat()))
+                .build();
+        return new SolverConfiguration(settings.seconds(), settings.plateauSeconds(), null, null, config);
     }
 
     /** The duration {@code budget} resolves to, the deployment's when it names none. */

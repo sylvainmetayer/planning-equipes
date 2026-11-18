@@ -104,10 +104,17 @@ public class SolveurMcpTools {
                                     + "PLAN_COURANT (échoue s'il n'y a pas de plan), AUCUN (calcul de zéro)",
                             required = false)
                     String reamorcage,
+            @ToolArg(
+                            description =
+                                    "Où tourne le calcul quand l'instance a une machine de calcul : true sur elle, "
+                                            + "false sur place ; par défaut, le réglage de l'instance. Refusé à true sans "
+                                            + "machine de calcul configurée",
+                            required = false)
+                    Boolean distant,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Reamorcage depart = Reamorcage.parse(reamorcage);
-        return submit(
-                () -> solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile), depart));
+        return submit(() ->
+                solverJobService.submitSolveFromReferenceData(secondes, Boolean.TRUE.equals(enFile), depart, distant));
     }
 
     @Tool(
@@ -255,7 +262,21 @@ public class SolveurMcpTools {
 
     /** The answer of {@code statut_solveur} when nothing runs: no job, and a status no job ever carries. */
     static final JobMcpView IDLE = new JobMcpView(
-            null, null, "IDLE", null, null, null, null, null, 0L, null, null, "Aucun solveur ne tourne.", null, null);
+            null,
+            null,
+            "IDLE",
+            null,
+            null,
+            null,
+            null,
+            null,
+            0L,
+            null,
+            null,
+            null,
+            "Aucun solveur ne tourne.",
+            null,
+            null);
 
     @Tool(
             name = "lister_jobs",
@@ -395,6 +416,7 @@ public class SolveurMcpTools {
                 job.getFinishedAt(),
                 job.getElapsedSeconds(),
                 job.getFeasibleAtSeconds(),
+                job.getRemoteStage(),
                 job.getError(),
                 avertissement(job.getBudgetWarning(), job.getResult()),
                 job.getEditionId(),
@@ -454,6 +476,8 @@ public class SolveurMcpTools {
             long elapsedSeconds,
             /** Seconds into the run at which the best plan first became feasible; null until it does. */
             Long feasibleAtSeconds,
+            /** Where a solve run on the instance's worker stands (PREPARING, SOLVING); null for one run here. */
+            String calculDistant,
             String error,
             String avertissement,
             String editionId,

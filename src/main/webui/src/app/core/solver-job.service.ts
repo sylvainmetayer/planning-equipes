@@ -34,6 +34,7 @@ import {
   ImpactValidations,
   PreviousPlan,
   Reamorcage,
+  RemoteStage,
   ReamorcageEffectue,
   ResultatSolve,
   ResultatSolveIncremental,
@@ -130,6 +131,15 @@ export interface TrackedJob {
    * was adopted.
    */
   feasibleAtSeconds?: number | null;
+  /** Whether the search runs on the compute machine (ADR 0086). */
+  remote?: boolean;
+  /** `PREPARING` while that machine comes up: no budget runs, so no end is estimated. */
+  remoteStage?: RemoteStage | null;
+  /**
+   * When the time budget started, if seen later than {@link startedAtMs}: the
+   * moment this client saw a remote job leave `PREPARING`.
+   */
+  budgetStartMs?: number;
 }
 
 /**
@@ -247,10 +257,10 @@ export class SolverJobService {
    */
   readonly estimatedEndMs = computed(() => {
     const job = this.activeJob();
-    if (job?.secondsLimit == null || job.secondsLimit <= 0) {
+    if (job?.secondsLimit == null || job.secondsLimit <= 0 || job.remoteStage === 'PREPARING') {
       return null;
     }
-    return job.startedAtMs + job.secondsLimit * 1000;
+    return (job.budgetStartMs ?? job.startedAtMs) + job.secondsLimit * 1000;
   });
 
   /** Seconds left before {@link estimatedEndMs}, floored at 0; null when unknown. */
@@ -419,12 +429,18 @@ export class SolverJobService {
     seconds?: number,
     enFile = false,
     reamorcage: Reamorcage = 'AUTO',
+    distant?: boolean,
   ): Promise<JobView> {
-    // AUTO is the server's default too: only a deliberate choice travels.
-    const endpoint =
-      reamorcage === 'AUTO'
-        ? '/api/solve/async/reference-data'
-        : `/api/solve/async/reference-data?reamorcage=${reamorcage}`;
+    // AUTO is the server's default too: only a deliberate choice travels —
+    // and so for `distant`, absent meaning the instance's default.
+    const params = new URLSearchParams();
+    if (reamorcage !== 'AUTO') {
+      params.set('reamorcage', reamorcage);
+    }
+    if (distant !== undefined) {
+      params.set('distant', String(distant));
+    }
+    const endpoint = '/api/solve/async/reference-data' + (params.size > 0 ? `?${params}` : '');
     return this.submit(endpoint, {}, 'SOLVE', seconds, enFile);
   }
 
@@ -736,10 +752,25 @@ export class SolverJobService {
     const tracked = this.activeJob();
     if (tracked?.id === job.id) {
       const feasibleAtSeconds = job.feasibleAtSeconds ?? null;
-      if ((mine && !tracked.mine) || feasibleAtSeconds !== (tracked.feasibleAtSeconds ?? null)) {
-        // The feasibility instant is the one thing a running job learns
-        // after it was adopted; the rest of the entry stays as it was.
-        this._activeJob.set({ ...tracked, mine: tracked.mine || mine, feasibleAtSeconds });
+      const remoteStage = job.remoteStage ?? null;
+      const stageChanged = remoteStage !== (tracked.remoteStage ?? null);
+      if (
+        (mine && !tracked.mine) ||
+        feasibleAtSeconds !== (tracked.feasibleAtSeconds ?? null) ||
+        stageChanged
+      ) {
+        // The feasibility instant and the remote stage are what a running job
+        // learns after it was adopted; the rest of the entry stays as it was.
+        this._activeJob.set({
+          ...tracked,
+          mine: tracked.mine || mine,
+          feasibleAtSeconds,
+          remoteStage,
+          budgetStartMs:
+            stageChanged && tracked.remoteStage === 'PREPARING'
+              ? Date.now()
+              : tracked.budgetStartMs,
+        });
       }
       return;
     }
@@ -761,6 +792,8 @@ export class SolverJobService {
       cappedFromPlateauSeconds:
         job.cappedFromPlateauSeconds == null ? null : Number(job.cappedFromPlateauSeconds),
       feasibleAtSeconds: job.feasibleAtSeconds == null ? null : Number(job.feasibleAtSeconds),
+      remote: job.remote ?? false,
+      remoteStage: job.remoteStage ?? null,
     };
     this._activeJob.set(entry);
     // A submit() adopts its job without waiting for the next poll: start the

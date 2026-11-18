@@ -228,6 +228,10 @@ public class DatabaseDumpService {
      *       already carries, every animateur's identity included, once per
      *       wipe and with no purge: the file an admin downloads must not hold
      *       it again.</li>
+     *   <li>{@code machine_calcul}, {@code resolution_distante} — the rented
+     *       machine of this instance and the solve it runs (ADR 0086): the
+     *       state of a machine, not the dataset. Restored elsewhere, another
+     *       instance would believe it owns a machine it never started.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -245,7 +249,9 @@ public class DatabaseDumpService {
             "webhook",
             "webhook_livraison",
             "journal_connexion",
-            "sauvegarde_avant_vidage");
+            "sauvegarde_avant_vidage",
+            "machine_calcul",
+            "resolution_distante");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

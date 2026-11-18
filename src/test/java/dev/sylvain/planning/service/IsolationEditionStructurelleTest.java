@@ -182,6 +182,11 @@ class IsolationEditionStructurelleTest {
      *       form login is handled before any request names an edition, and a
      *       login opens every edition at once: there is no edition to file
      *       it under, and the screen shows it whatever edition is chosen.</li>
+     *   <li>{@code machine_calcul}, {@code resolution_distante} — the machine
+     *       a solve is run on and the solve a job left there (ADR 0086). One
+     *       machine serves every edition, as the queue is one for the whole
+     *       instance, and a restart looks for both before any request names
+     *       an edition; the job a remote solve belongs to carries its edition.</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -195,7 +200,9 @@ class IsolationEditionStructurelleTest {
             "version_applicative",
             "webhook",
             "webhook_livraison",
-            "journal_connexion");
+            "journal_connexion",
+            "machine_calcul",
+            "resolution_distante");
 
     /**
      * The deliberately cross-edition statements, and why.

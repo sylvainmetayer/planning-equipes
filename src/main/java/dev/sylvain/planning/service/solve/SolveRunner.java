@@ -106,10 +106,20 @@ final class SolveRunner {
      */
     Solved solveReporting(
             PlanningEvenement problem, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        prepareToSolve(problem, onSolverReady);
+        return solvePrepared(problem, budget, onSolverReady);
+    }
+
+    /**
+     * Everything a solve does to a problem before searching it: completed
+     * from the edition, the past pinned, its starting score announced. What
+     * comes out is what {@link #solvePrepared} searches here, or what
+     * {@link SolveExchange} sends to a worker.
+     */
+    void prepareToSolve(PlanningEvenement problem, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
         tellStartingScore(problem, onSolverReady);
-        return solvePrepared(problem, budget, onSolverReady);
     }
 
     /**

@@ -141,3 +141,8 @@ app-solve-recap > .mat-mdc-card-content:last-child {
   font-weight: 500;
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* « Sur place / Sur la machine de calcul », under the three ways to launch (ADR 0086). */
+.solver-lieu {
+  margin-top: 1rem;
+}

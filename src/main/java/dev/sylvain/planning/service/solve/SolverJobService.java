@@ -151,6 +151,9 @@ public class SolverJobService {
     /** The operator's hourly quota and queue cap, checked at submission only — never on a replay. */
     private final SolverQuota quota;
 
+    /** Where a solve runs when not here, and what a restart finds of one left on a worker. */
+    private final RemoteSolves remoteSolves;
+
     @Inject
     public SolverJobService(
             SolverJobTasks tasks,
@@ -164,8 +167,10 @@ public class SolverJobService {
             ReferenceData referenceData,
             Event<SolveStarting> solveStarting,
             SolverQuota quota,
+            RemoteSolves remoteSolves,
             @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
                     boolean replayAtStartup) {
+        this.remoteSolves = remoteSolves;
         this.solveStarting = solveStarting;
         this.quota = quota;
         this.budgetPolicy = budgetPolicy;
@@ -280,8 +285,29 @@ public class SolverJobService {
      * was asked to.
      */
     public SolverJob submitSolveFromReferenceData(Long secondsLimit, boolean enFile, Reamorcage reamorcage) {
+        return submitSolveFromReferenceData(secondsLimit, enFile, reamorcage, null);
+    }
+
+    /**
+     * Same, saying where the search runs (ADR 0086): {@code true} on the
+     * instance's worker, {@code false} here, {@code null} wherever the
+     * instance defaults to. Refused when a worker is asked for and none is
+     * configured.
+     */
+    public SolverJob submitSolveFromReferenceData(
+            Long secondsLimit, boolean enFile, Reamorcage reamorcage, Boolean remote) {
+        boolean onWorker = remoteSolves.resolvePlace(remote);
         SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceData.getParametresSolveur());
-        return submitReplayable(JobType.SOLVE, budget, null, reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
+        Reamorcage depart = reamorcage == null ? Reamorcage.AUTO : reamorcage;
+        return submit(
+                JobType.SOLVE,
+                budget,
+                enFile,
+                null,
+                depart,
+                true,
+                onWorker,
+                tasks.replayable(JobType.SOLVE, budget, null, depart, this::isShutdownRequested));
     }
 
     /**
@@ -371,6 +397,19 @@ public class SolverJobService {
             Reamorcage reamorcage,
             boolean rejouable,
             SolverJobTasks.JobTask task) {
+        return submit(type, budget, enFile, scope, reamorcage, rejouable, false, task);
+    }
+
+    @SuppressWarnings("java:S107") // what a job is: each parameter is one of its persisted fields
+    private synchronized SolverJob submit(
+            JobType type,
+            SolveBudget budget,
+            boolean enFile,
+            ReplanificationScope scope,
+            Reamorcage reamorcage,
+            boolean rejouable,
+            boolean remote,
+            SolverJobTasks.JobTask task) {
         purgeExpiredJobs();
         Optional<SolverJob> actif = findActive();
         if (actif.isPresent() && !enFile) {
@@ -391,6 +430,7 @@ public class SolverJobService {
         // at startup is neither refused nor counted twice.
         quota.consume();
         SolverJob job = new SolverJob(type, budget, editionId, nomEdition(editionId), scope, reamorcage, rejouable);
+        job.remote = remote;
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
             job.markQueued();
@@ -521,6 +561,12 @@ public class SolverJobService {
         // on the run's real final score — whether it completed, failed, or was
         // stopped by hand.
         scoreTrace.finish(job.getId());
+        if (failure instanceof RemoteSolver.Detached) {
+            // The worker goes on solving and the job is not over: its line
+            // stays RUNNING, which is what restaurer() follows it again from.
+            LOG.infof("Solver job %s left solving on its worker; the next start follows it again", job.getId());
+            return;
+        }
         SolvePipeline.Interruption interruption = interruptionOf(result);
         boolean refused = false;
         if (failure != null) {
@@ -532,6 +578,15 @@ public class SolverJobService {
                 // is lost, the persisted plan stands.
                 LOG.warnf(failure, "Solver job %s was stopped by the server shutdown and its run is lost", job.getId());
                 job.markInterrompu(SHUTDOWN_RUN_LOST, null);
+            } else if (failure instanceof RemoteSolver.Failed) {
+                // A machine that did not come up, a worker lost, a plan
+                // refused on its way back (ADR 0086): an operating failure the
+                // operator reads on the job, not a bug to page anyone for.
+                job.markFailed(failure);
+                metrics.failed(job);
+                LOG.warnf(
+                        "Solver job %s (%s, edition %s) failed on its worker: %s",
+                        job.getId(), job.getType(), job.getEditionId(), failure.getMessage());
             } else if (failure instanceof BusinessError) {
                 // A refusal from the domain — nothing left to plan, every
                 // seat already past (ADR 0044) — is the job's answer, not a
@@ -837,7 +892,23 @@ public class SolverJobService {
             jobs.put(job.getId(), job);
             SolverJobTasks.JobTask task =
                     ligne.statut() == JobStatus.QUEUED && ligne.rejouable() ? taskOrNothing(ligne) : null;
-            if (task != null) {
+            SolverJobTasks.JobTask resumed = task == null && leftOnAWorker(ligne) ? taskOrNothing(ligne) : null;
+            if (resumed != null) {
+                // Was solving on a worker when the application stopped (ADR
+                // 0086): the worker never noticed. First in the queue, and
+                // followed rather than sent again.
+                job.remote = true;
+                job.markPending();
+                file.addFirst(new QueuedTask(job, resumed));
+                rejoues++;
+            } else if (task != null) {
+                // Where a replayed job runs is the instance's default: the
+                // choice made at its launch is not stored. Only a full solve
+                // can run on a worker.
+                // shortcut: a queued job asked « sur place » replays on the worker
+                // of an instance that defaults to it; store the choice in
+                // solver_job if that ever matters.
+                job.remote = job.getType() == JobType.SOLVE && remoteSolves.remoteByDefault();
                 file.addLast(new QueuedTask(job, task));
                 rejoues++;
             } else if (!job.isFinished()) {
@@ -853,6 +924,19 @@ public class SolverJobService {
             startNext();
         }
         return rejoues;
+    }
+
+    private boolean leftOnAWorker(LigneJob ligne) {
+        try {
+            return (ligne.statut() == JobStatus.RUNNING || ligne.statut() == JobStatus.PENDING)
+                    && ligne.rejouable()
+                    && remoteSolves.configured()
+                    && remoteSolves.hasPending(ligne.id());
+        } catch (RuntimeException e) {
+            LOG.warnf(
+                    e, "Solver job %s: its remote solve could not be looked up; it comes back interrupted", ligne.id());
+            return false;
+        }
     }
 
     /**
@@ -976,6 +1060,12 @@ public class SolverJobService {
          * the run produced, and a restart forgets both together.
          */
         private volatile Long feasibleAtSeconds;
+
+        /** Whether the search runs on the instance's worker (ADR 0086). Set before the job is handed over. */
+        private volatile boolean remote;
+
+        /** Where a remote solve stands; {@code null} for a solve run here, and before it starts. */
+        private volatile SolveListener.RemoteStage remoteStage;
 
         private final AtomicReference<Solver<PlanningEvenement>> solver = new AtomicReference<>();
 
@@ -1112,6 +1202,20 @@ public class SolverJobService {
             if (currentSolver != null) {
                 currentSolver.terminateEarly();
             }
+        }
+
+        public boolean isRemote() {
+            return remote;
+        }
+
+        /** {@code PREPARING} or {@code SOLVING} while a remote solve is under way; {@code null} otherwise. */
+        public String getRemoteStage() {
+            SolveListener.RemoteStage stage = remoteStage;
+            return isFinished() || stage == null ? null : stage.name();
+        }
+
+        void setRemoteStage(SolveListener.RemoteStage stage) {
+            this.remoteStage = stage;
         }
 
         boolean isCancelRequested() {

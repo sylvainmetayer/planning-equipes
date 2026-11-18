@@ -82,6 +82,7 @@ RUN apt-get update \
     && ln -s /backup /backups \
     && chown -h 1000:1000 /backups
 COPY --from=build --chown=1000:1000 /workspace/target/quarkus-app/ /app/
+COPY --chmod=0555 docker/entrypoint.sh /app/entrypoint.sh
 USER 1000
 EXPOSE 8080
 # Le solveur vit de sa mémoire : sa recherche locale alloue sans relâche, et
@@ -98,4 +99,5 @@ EXPOSE 8080
 # lit, et un exploitant le remplace entièrement en le redéfinissant dans son
 # environnement. Voir docs/exploitation.md § La mémoire de l'application.
 ENV JDK_JAVA_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseParallelGC"
-ENTRYPOINT ["java", "-jar", "/app/quarkus-run.jar"]
+# The application, or the solve worker under SOLVER_WORKER_MODE=true (ADR 0086).
+ENTRYPOINT ["/app/entrypoint.sh"]

@@ -114,6 +114,11 @@ public class SolverJobResource {
      * the case that loses the plan already reached, hence not the default —
      * for a script as much as for the screen.</p>
      *
+     * <p>{@code distant} says where the search runs when the instance has a
+     * worker (ADR 0086): {@code true} on it, {@code false} here, absent
+     * wherever the instance defaults to. {@code true} without a worker is a
+     * {@code 400}.</p>
+     *
      * <p>Without {@code seconds}, the job runs the edition's budget — duration
      * and plateau, {@code GET /api/parametres-solveur}. With it, that duration
      * instead, refused in {@code 400} above the instance's ceiling.</p>
@@ -124,9 +129,10 @@ public class SolverJobResource {
     public Response solveFromReferenceData(
             @QueryParam("seconds") Long secondsLimit,
             @QueryParam("enFile") @DefaultValue("false") boolean enFile,
-            @QueryParam("reamorcage") String reamorcage) {
-        SolverJob job =
-                solverJobService.submitSolveFromReferenceData(secondsLimit, enFile, Reamorcage.parse(reamorcage));
+            @QueryParam("reamorcage") String reamorcage,
+            @QueryParam("distant") Boolean remote) {
+        SolverJob job = solverJobService.submitSolveFromReferenceData(
+                secondsLimit, enFile, Reamorcage.parse(reamorcage), remote);
         return Response.accepted(JobView.withoutResult(job)).build();
     }
 
@@ -524,6 +530,14 @@ public class SolverJobResource {
              * solver only improves quality, and stopping keeps that plan.
              */
             Long feasibleAtSeconds,
+            /** Whether the search runs on the instance's worker rather than here (ADR 0086). */
+            boolean remote,
+            /**
+             * Where a remote solve under way stands — {@code PREPARING} while
+             * its machine comes up, {@code SOLVING} once the worker has the
+             * problem; null for a solve run here, and once the job is over.
+             */
+            String remoteStage,
             String error,
             Object result) {
 
@@ -558,6 +572,8 @@ public class SolverJobResource {
                     job.getFinishedAt(),
                     job.getElapsedSeconds(),
                     job.getFeasibleAtSeconds(),
+                    job.isRemote(),
+                    job.getRemoteStage(),
                     job.getError(),
                     result);
         }

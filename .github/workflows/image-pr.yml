@@ -15,6 +15,7 @@ on:
   pull_request:
     paths:
       - 'Dockerfile'
+      - 'docker/entrypoint.sh'
       - '.dockerignore'
       - 'mise.toml'
       - 'pom.xml'

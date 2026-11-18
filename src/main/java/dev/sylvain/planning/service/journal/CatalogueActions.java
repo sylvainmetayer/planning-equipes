@@ -102,6 +102,8 @@ public final class CatalogueActions {
     private static final String SOLVE_INCREMENTAL_LANCE = "SOLVE_INCREMENTAL_LANCE";
     private static final String SOLVE_ARRETE = "SOLVE_ARRETE";
     private static final String JOB_SUPPRIME = "JOB_SUPPRIME";
+    private static final String MACHINE_CALCUL_PREPAREE = "MACHINE_CALCUL_PREPAREE";
+    private static final String MACHINE_CALCUL_ARRETEE = "MACHINE_CALCUL_ARRETEE";
     private static final String PLANNING_REINITIALISE = "PLANNING_REINITIALISE";
     private static final String PLANNING_RESTAURE_SAUVEGARDE = "PLANNING_RESTAURE_SAUVEGARDE";
     private static final String SAUVEGARDE_VIDAGE_SUPPRIMEE = "SAUVEGARDE_VIDAGE_SUPPRIMEE";
@@ -316,6 +318,12 @@ public final class CatalogueActions {
         action(SOLVE_INCREMENTAL_LANCE, "Replanification incrémentale lancée", Entite.PLANNING);
         action(SOLVE_ARRETE, "Résolution arrêtée", Entite.PLANNING);
         action(JOB_SUPPRIME, "Tâche de résolution retirée", Entite.PLANNING);
+        // The machine a solve runs on instead of here (ADR 0086): the two
+        // gestures of an operator. What the application does to it on its own
+        // — started for a solve, stopped once idle — belongs to no edition
+        // and is in the log, not here.
+        action(MACHINE_CALCUL_PREPAREE, "Machine de calcul préparée", Entite.PLANNING);
+        action(MACHINE_CALCUL_ARRETEE, "Machine de calcul arrêtée", Entite.PLANNING);
         // A solve of a made-up team (ADR 0071): it touches neither the plan
         // nor the problem, but an organiser sizing a team comes back to read
         // the trail of sizes tried — the launch is theirs, the end the
@@ -556,6 +564,8 @@ public final class CatalogueActions {
         route("StaffingResource#verify", VERIFICATION_BESOIN_LANCEE);
         route("SolverJobResource#solveIncremental", SOLVE_INCREMENTAL_LANCE);
         route("SolverJobResource#cancelJob", SOLVE_ARRETE);
+        route("ComputeMachineResource#prepare", MACHINE_CALCUL_PREPAREE);
+        route("ComputeMachineResource#stop", MACHINE_CALCUL_ARRETEE);
         route("SolverJobResource#deleteJob", JOB_SUPPRIME);
         route("AffectationExplanationResource#applyDeplacement", AFFECTATION_DEPLACEE);
         route("AffectationExplanationResource#applyReparation", AFFECTATION_POSEE);

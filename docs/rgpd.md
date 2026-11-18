@@ -571,6 +571,26 @@ complètes. Quatre points sont connus et se consignent :
   exactement la copie qu'on voulait éviter — c'est une case à cocher, pas un
   garde-fou.
 
+### Le calcul déporté envoie un problème pseudonymisé à un sous-traitant de plus
+
+Quand l'instance résout sur une machine louée
+([`exploitation.md`](exploitation.md) § Résoudre sur une autre machine), le
+problème quitte l'application le temps du calcul. **Ne partent jamais** : nom,
+prénom, adresse électronique, téléphone, jetons, textes libres. **Partent** :
+les compétences, souhaits et jours d'indisponibilité de chaque animateur, sous
+un **identifiant tiré au hasard à chaque résolution**, et une date de
+naissance **de substitution** de la même tranche d'âge (moins de 16 ans, 16-17
+ans, majeur) — la date réelle seulement pour qui franchit 16 ou 18 ans pendant
+l'événement, parce que la règle change alors de réponse en cours de route.
+
+Cela reste une donnée personnelle : des disponibilités rattachées à une
+tranche d'âge, que la table de correspondance — gardée dans la base de
+l'application, le temps du calcul — permet de rattacher à une personne. À
+consigner : l'hébergeur de la machine de calcul comme **sous-traitant
+ultérieur**, la région choisie, et le fait que la machine ne garde rien sur
+disque et est détruite après usage. Un worker installé sur le site même ne
+change rien au registre.
+
 ## 8. Rythme de tenue
 
 | Quand | Quoi |

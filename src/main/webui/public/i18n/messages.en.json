@@ -5301,5 +5301,20 @@
   "comparerEditions.parNom": "{$famille}: {$n} matched by their name",
   "editions.action.comparerDeux": "Compare two editions",
   "editions.action.comparer": "Compare with the edition in view",
-  "aide.editions.comparer": "“Compare two editions”, on the Editions page, says what changed in the referential from one to the other — last year and the edition being prepared, or an edition and its variant: stands, animateurs, game categories, locations, day templates, timeslots, settings and adjustments (counted by type; locks are not compared), and the volumetry of both side by side. No planning is read, nothing is modified. “Compare with the edition in view”, on a row of the table, opens the pair ready-made. Nothing is matched by id, two editions numbering their records from the same counter: a stand, a game category or a location by its code, then by its name (flagged, to check); an animateur by their e-mail, then by first name, last name and birth date; a day template by its name; the timeslots by the rank of the opening day, then by start time. An edition with no animateur at all, duplicated without the people, is flagged: all those of the other one show as gone, and the list stays folded. “Open in” leads to the record in the edition holding it and switches the browser to that edition. The CSV export names no animateur."
+  "aide.editions.comparer": "“Compare two editions”, on the Editions page, says what changed in the referential from one to the other — last year and the edition being prepared, or an edition and its variant: stands, animateurs, game categories, locations, day templates, timeslots, settings and adjustments (counted by type; locks are not compared), and the volumetry of both side by side. No planning is read, nothing is modified. “Compare with the edition in view”, on a row of the table, opens the pair ready-made. Nothing is matched by id, two editions numbering their records from the same counter: a stand, a game category or a location by its code, then by its name (flagged, to check); an animateur by their e-mail, then by first name, last name and birth date; a day template by its name; the timeslots by the rank of the opening day, then by start time. An edition with no animateur at all, duplicated without the people, is flagged: all those of the other one show as gone, and the list stays folded. “Open in” leads to the record in the edition holding it and switches the browser to that edition. The CSV export names no animateur.",
+  "solver.machine.title": "Compute machine",
+  "solver.machine.heures": "{$INTERPOLATION} h of machine time this month",
+  "solver.machine.preparer": "Prepare the machine",
+  "solver.machine.arreter": "Stop the machine now",
+  "solver.machine.etat.preparation": "Starting up.",
+  "solver.machine.etat.prete": "Ready.",
+  "solver.machine.etat.calcul": "Solving.",
+  "solver.machine.etat.absente": "Absent: it will be created by the next remote solve.",
+  "solver.machine.arretPrevu": "Scheduled to stop at {$heure}.",
+  "solver.machine.erreurArret": "The machine could not be stopped and is still being billed: {$erreur}",
+  "solver.distant.preparation": "Preparing the compute machine… the solving time has not started yet.",
+  "solver.distant.calcul": "Solving on the compute machine.",
+  "solver.lieu.label": "Where to solve the planning",
+  "solver.lieu.surPlace": "On this server",
+  "solver.lieu.distant": "On the compute machine"
 }
