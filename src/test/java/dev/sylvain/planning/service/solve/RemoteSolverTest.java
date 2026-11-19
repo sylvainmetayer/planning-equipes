@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -87,11 +88,16 @@ class RemoteSolverTest {
     }
 
     private RemoteSolver solver(long seconds, String secret, String version, RemoteSolver.Resume resume) {
+        return solver(seconds, secret, version, resume, SolverEngine.TIMEFOLD);
+    }
+
+    private RemoteSolver solver(
+            long seconds, String secret, String version, RemoteSolver.Resume resume, SolverEngine engine) {
         return new RemoteSolver(
                 cancelled -> client(secret),
                 new SolveExchange(new ObjectMapper()),
                 configuration.solutionManager(),
-                new SolverConfiguration.SearchSettings(seconds, 0, 0, SolverEngine.TIMEFOLD),
+                new SolverConfiguration.SearchSettings(seconds, 0, 0, engine),
                 version,
                 resume,
                 (solveId, realIds) -> submitted.set(new RemoteSolver.Resume(solveId, realIds)),
@@ -121,6 +127,38 @@ class RemoteSolverTest {
                 .containsExactlyInAnyOrderElementsOf(
                         prepared.getAnimateurs().stream().map(Animateur::getId).toList());
         assertThat(worker.isSolving()).isFalse();
+    }
+
+    /**
+     * The engine is the instance's, carried with the problem: the worker reads
+     * it from the request, not from a variable of its own machine. Told apart
+     * over HTTP by what only one of them does — a published plan is solved in
+     * two stages by Timefold, in one by the direct engine (ADR 0087).
+     */
+    @Test
+    void theWorkerSolvesWithTheEngineTheApplicationNames() {
+        PosteAffectation seat = prepared.getPostes().get(0);
+        prepared.setAffectationsPubliees(List.of(new AffectationPubliee(
+                seat.getStand().getId(),
+                seat.getCreneau().getDate(),
+                seat.getCreneau().getHeureDebut(),
+                seat.getCreneau().getHeureFin(),
+                prepared.getAnimateurs().get(0).getId())));
+        RemoteSolver direct = solver(2, SECRET, VERSION, null, SolverEngine.HAND);
+        List<Long> times = new CopyOnWriteArrayList<>();
+        direct.addEventListener(event -> times.add(event.getTimeMillisSpent()));
+
+        PlanningEvenement solved = direct.solve(prepared);
+
+        assertThat(solved.getScore().isFeasible()).isTrue();
+        assertThat(solved.getScore()).isEqualTo(configuration.solutionManager().update(solved));
+        assertThat(times).isNotEmpty().isSorted();
+        assertThat(direct.feasibilityFirst()).isNull();
+
+        prepared.getPostes().forEach(poste -> poste.setAnimateur(null));
+        RemoteSolver timefold = solver(2, SECRET, VERSION, null, SolverEngine.TIMEFOLD);
+        timefold.solve(prepared);
+        assertThat(timefold.feasibilityFirst()).isNotNull();
     }
 
     @Test
