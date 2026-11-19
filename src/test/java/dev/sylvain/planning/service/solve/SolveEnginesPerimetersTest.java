@@ -74,6 +74,12 @@ class SolveEnginesPerimetersTest {
         assertThat(built.postesFiges()).isPositive();
         assertThat(built.postesLiberesManuellement()).isPositive();
         Map<String, String> pinned = pinnedHolders(problem);
+        // Read off the dates, not off what the builder says it pinned: the perimeter is the re-opened day.
+        assertThat(pinned.keySet())
+                .isEqualTo(problem.getPostes().stream()
+                        .filter(poste -> !poste.getCreneau().getDate().equals(days.get(3)))
+                        .map(PosteAffectation::getId)
+                        .collect(Collectors.toSet()));
 
         PlanningEvenement solved = solve(engine, loaded, 2);
 
@@ -189,8 +195,10 @@ class SolveEnginesPerimetersTest {
 
         assertThat(solved.getScore()).isGreaterThanOrEqualTo(start);
         // The plan in place is the published one: leaving it must have paid for itself.
+        // Neither engine moves a seat here today; without the published plan the direct one moves most of
+        // them (the reseeded line of the full-size comparison). One in twenty leaves room for a move that pays.
         assertThat(FeasibilityFirstSolve.publishedSeatsChanged(solved))
-                .isLessThan(solved.getPostes().size() / 4);
+                .isLessThanOrEqualTo(solved.getPostes().size() / 20);
         assertSolvedAndRefereed(loaded, solved);
     }
 
@@ -274,17 +282,18 @@ class SolveEnginesPerimetersTest {
         SolverConfiguration ofSettings =
                 SolverConfiguration.ofSettings(new SolverConfiguration.SearchSettings(seconds, 0, 0, engine));
         return new SolveRunner(ofSettings, null, null)
-                .solvePrepared(
-                        loaded.problem(),
-                        new SolveBudget(seconds, 0L, null),
-                        solver -> solver.addEventListener(event -> {
-                            if (feasibleAt.get() < 0
-                                    && event.isNewBestSolutionInitialized()
-                                    && event.getNewBestScore() instanceof HardMediumSoftScore score
-                                    && score.isFeasible()) {
-                                feasibleAt.set(event.getTimeMillisSpent());
-                            }
-                        }))
+                .solvePrepared(loaded.problem(), new SolveBudget(seconds, 0L, null), solver -> {
+                    // Without this every assertion here would hold with the setting ignored.
+                    assertThat(solver instanceof HandSearchSolver).isEqualTo(engine == SolverEngine.HAND);
+                    solver.addEventListener(event -> {
+                        if (feasibleAt.get() < 0
+                                && event.isNewBestSolutionInitialized()
+                                && event.getNewBestScore() instanceof HardMediumSoftScore score
+                                && score.isFeasible()) {
+                            feasibleAt.set(event.getTimeMillisSpent());
+                        }
+                    });
+                })
                 .planning();
     }
 
