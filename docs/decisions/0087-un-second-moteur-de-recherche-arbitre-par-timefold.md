@@ -183,3 +183,7 @@ La décision tient ; trois points de son texte ne décrivent plus le code.
   Timefold, référence par référence (`Plateau`) : il repartait du score de sa
   dernière relance, ce qui finissait une résolution jusqu'à une fenêtre plus
   tôt.
+- **Fin de partie.** Pendant la recherche, un siège vide pèse le double de
+  ce que le score compte : le combler peut alors coûter un autre point dur
+  en chemin, et les derniers sièges vides ne sont plus un palier dont on
+  sort par chance. Le score annoncé, gardé et arbitré reste le vrai.

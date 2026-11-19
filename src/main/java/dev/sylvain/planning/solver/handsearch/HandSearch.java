@@ -67,6 +67,15 @@ public final class HandSearch {
     private static final int CHAIN_TRIALS = 15_000;
     private static final int CHAIN_DEPTH = 3;
 
+    /**
+     * What an empty seat weighs for the search, in seats: twice what the score
+     * counts, so that filling one may cost another hard point on the way. At
+     * its real weight the last empty seats are a plateau the search leaves by
+     * luck — a feasible plan anywhere between half a minute and three on a
+     * full edition, by the seed. The score announced and kept is the real one.
+     */
+    private static final long EMPTY_WEIGHT = 2;
+
     /** Trials of a chain between two looks at the clock and the stop flag. */
     private static final int CHAIN_LOOK = 256;
 
@@ -88,6 +97,8 @@ public final class HandSearch {
     public HandSearch(PlanningEvenement prepared) {
         this.flat = new FlatProblem(prepared);
         this.score = new IncrementalScore(flat);
+        score.emptyExtra = (EMPTY_WEIGHT - 1) * flat.hardUnit[Rule.POSTE_DOIT_ETRE_POURVU.ordinal()];
+        score.load(score.assign.clone());
     }
 
     /**
@@ -119,8 +130,9 @@ public final class HandSearch {
         long best = total;
         long bestHard = totalHard;
         int[] bestPlan = score.assign.clone();
+        int bestEmpty = score.emptyAhead;
         Runnable layBest = () -> lay(bestPlan);
-        listener.best(millisSince(start), decoded(bestHard, best), layBest);
+        listener.best(millisSince(start), decoded(bestHard - score.emptyExtra * bestEmpty, best), layBest);
         long announced = best;
         long announcedHard = bestHard;
         long lastAnnounce = System.nanoTime();
@@ -136,7 +148,7 @@ public final class HandSearch {
                 long now = System.nanoTime();
                 if (before(bestHard, best, announcedHard, announced)
                         && (now - lastAnnounce >= ANNOUNCE_EVERY_NANOS || (bestHard == 0) != (announcedHard == 0))) {
-                    listener.best(millisSince(start), decoded(bestHard, best), layBest);
+                    listener.best(millisSince(start), decoded(bestHard - score.emptyExtra * bestEmpty, best), layBest);
                     announced = best;
                     announcedHard = bestHard;
                     lastAnnounce = now;
@@ -169,6 +181,7 @@ public final class HandSearch {
                     if (before(totalHard, total, bestHard, best)) {
                         best = total;
                         bestHard = totalHard;
+                        bestEmpty = score.emptyAhead;
                         System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                     }
                     lastChain = System.nanoTime();
@@ -244,6 +257,7 @@ public final class HandSearch {
                 if (before(totalHard, total, bestHard, best)) {
                     best = total;
                     bestHard = totalHard;
+                    bestEmpty = score.emptyAhead;
                     System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                 }
             } else {
@@ -255,7 +269,7 @@ public final class HandSearch {
 
         // Laid first: should the check below fail, the plan is there to be read.
         lay(bestPlan);
-        HardMediumSoftScore exact = rebuilt(bestPlan, bestHard, best);
+        HardMediumSoftScore exact = rebuilt(bestPlan, bestHard - score.emptyExtra * bestEmpty, best);
         if (before(bestHard, best, announcedHard, announced)) {
             listener.best(millisSince(start), exact, layBest);
         }
@@ -352,11 +366,14 @@ public final class HandSearch {
             long bestDeltaHard = 0;
             int bestHolder = -1;
             for (int a : flat.elig[s]) {
+                // Weighed alone: re-reading everyone the candidate touches doubles the construction for the same plan.
+                score.alone = true;
                 score.begin();
                 score.move(s, a);
                 long delta = score.finish();
                 long deltaHard = score.deltaHard;
                 score.undo();
+                score.alone = false;
                 if (before(deltaHard, delta, bestDeltaHard, bestDelta)) {
                     bestDelta = delta;
                     bestDeltaHard = deltaHard;
@@ -444,7 +461,7 @@ public final class HandSearch {
             score.begin();
             score.move(x, a);
             score.finish();
-            if (score.deltaHard <= -1) {
+            if (score.deltaHard <= -1 - score.emptyExtra) {
                 return true;
             }
             score.undo();
