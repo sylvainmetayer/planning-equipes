@@ -82,6 +82,27 @@ flux des jobs. Un seul consommateur reçoit donc le solveur, ce qui évite que
 les deux besoins se désynchronisent. Échantillonnage et cloisonnement dans
 [`api.md`](api.md#courbe-de-score-en-direct).
 
+### Deux moteurs derrière le même solveur
+
+`planning.solver.engine` choisit qui cherche le plan d'un problème préparé, et
+`SolveRunner.solvePrepared` est le seul endroit qui le lit :
+
+- `timefold` (défaut) — la recherche locale de Timefold sur les contraintes en
+  flux, en deux temps quand un plan est publié ;
+- `hand` — `HandSearchSolver`, qui fait chercher `solver/handsearch` (un score
+  tenu à jour mouvement par mouvement, les 47 règles écrites une seconde
+  fois) puis **fait re-scorer le plan par Timefold**. Deux scores différents
+  font échouer la tâche ; il n'y a pas de repli.
+
+Les deux sont des `Solver` : la file, l'arrêt, la courbe de score et le worker
+du calcul déporté ne savent pas lequel tourne, et le worker reçoit le choix de
+l'instance avec le reste des réglages de recherche. Le paquet
+`solver/handsearch` ne dépend ni de `ai.timefold.solver.core.impl`, ni d'un
+conteneur d'injection, ni d'une configuration. La vérification du besoin et
+les résolutions « jusqu'à la faisabilité » restent sur Timefold. Le pourquoi,
+ce que ça coûte et le filet de tests :
+[`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md).
+
 ## Le diagnostic ne passe plus par l'API réservée de Timefold
 
 Décomposer le score contrainte par contrainte alimente beaucoup de monde : les

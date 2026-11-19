@@ -132,6 +132,21 @@ Single Quarkus service, no separate solver microservice. Package root:
   rules live in `solver/constraints/` split by family (`AffectationConstraints`,
   `LegalConstraints`, `AdHocConstraints`, `QualiteConstraints`,
   `PreferenceConstraints`), one private method per constraint.
+- `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
+  written by hand (`HandSearch`) over a score kept up to date move by move
+  (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
+  47 rules are written **a second time**. Off by default
+  (`planning.solver.engine=hand`, `SOLVER_ENGINE`). It is never believed:
+  `service/solve/HandSearchSolver` has Timefold score the plan again and
+  **fails the job on a different score — never a fallback**. Nothing in that
+  package may import `ai.timefold.solver.core.impl`, inject a bean or read a
+  configuration: it runs as is in the worker. **Every new or changed
+  constraint is written there too** — its constant in `Rule`, its term in
+  `IncrementalScore` (or `FlatProblem.staticTerms` when it reads one seat and
+  its holder) — and `HandSearchCoverageStructuralTest` fails by name on a
+  constraint only one engine knows, `HandSearchDifferentialTest` on a rule
+  the two score differently, constraint by constraint, and on a rule it never
+  compared on a non-zero score.
 - `solver/ConstraintCatalog.java` — business description of every constraint,
   served by `GET /api/constraints`; **every new constraint must be registered
   there too**. It also carries the two indexes the rest of the application
@@ -161,7 +176,12 @@ Single Quarkus service, no separate solver microservice. Package root:
     and found again after a restart; **a remote failure fails the job, never
     falls back here**), `RemoteSolver` (a worker behind Timefold's `Solver`
     interface, so the queue, the stop and the score curve do not know where
-    the search runs), `WorkerClient` (every call to a worker, its certificate
+    the search runs), `HandSearchSolver` (the direct engine of ADR 0087 behind
+    the same interface, refereed by Timefold; `SolveRunner.solvePrepared` is
+    the one place that reads `SolverEngine`, which travels to a worker in
+    `SearchSettings`; under it a published plan is not solved in two stages,
+    and the staffing check and the solves until feasibility stay on Timefold),
+    `WorkerClient` (every call to a worker, its certificate
     pinned), and the worker itself, `SolveWorker` behind `SolveWorkerServer`:
     **a plain Java program with no CDI container**, started from the same
     image by `docker/entrypoint.sh` under `SOLVER_WORKER_MODE=true` — nothing
@@ -703,6 +723,11 @@ i18n rule at the top of this file:
   combinations would cost a user a legitimate exception with no way around it.
   A numeric budget on how many exceptions may exist was explicitly rejected —
   `docs/decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md`.
+- **A constraint exists twice** (ADR 0087): in the constraint streams, which
+  define it, and in the direct engine (`solver/handsearch`), which must score
+  it alike. Changing what a rule counts, its level or the facts it reads means
+  changing both; the differential test is what says the second writing is
+  right, so a change is not done while it fails.
 - Every constraint has an isolated unit test in the matching
   `solver/constraints/*ConstraintsTest` (Timefold `ConstraintVerifier`, no
   Quarkus/DB, shared `ConstraintTestBase`): at least one penalized case and one
