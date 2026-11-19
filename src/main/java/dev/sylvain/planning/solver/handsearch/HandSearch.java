@@ -71,10 +71,10 @@ public final class HandSearch {
      * What an empty seat weighs when the search decides whether to take a
      * move, in seats: twice what the score counts, so that filling one while
      * breaking one other rule is still a step forward. At its real weight the
-     * last empty seats are a plateau the search leaves by luck — a feasible
-     * plan anywhere between half a minute and three on a full edition, by the
-     * seed. Only acceptance reads that weight: the best plan is chosen,
-     * announced and returned on the real score.
+     * last empty seats are a plateau the search leaves by luck, and when a
+     * full edition gets its feasible plan depends on the seed. Only acceptance
+     * reads that weight: the best plan is chosen, announced and returned on
+     * the real score.
      */
     private static final long EMPTY_WEIGHT = 2;
 
