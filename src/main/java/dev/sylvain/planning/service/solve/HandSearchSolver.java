@@ -48,7 +48,11 @@ final class HandSearchSolver implements Solver<PlanningEvenement> {
     private final SolverConfiguration.SearchSettings settings;
     private final long plateauGainMedium;
     private final long seed;
-    private final SolutionManager<PlanningEvenement, HardMediumSoftScore> referee;
+    /**
+     * Scores the plan a problem carries and writes that score on it: the
+     * constraint provider's {@link SolutionManager#update} in production.
+     */
+    private final Function<PlanningEvenement, HardMediumSoftScore> referee;
 
     /** The search itself; replaced by the tests that need a plan the referee refuses. */
     private final Function<PlanningEvenement, HardMediumSoftScore> search;
@@ -71,21 +75,21 @@ final class HandSearchSolver implements Solver<PlanningEvenement> {
             long plateauGainMedium,
             SolutionManager<PlanningEvenement, HardMediumSoftScore> referee,
             long seed) {
+        this(settings, plateauGainMedium, referee::update, seed, null);
+    }
+
+    /** For the tests: a referee of their own, and a search of their own when {@code search} is not null. */
+    HandSearchSolver(
+            SolverConfiguration.SearchSettings settings,
+            long plateauGainMedium,
+            Function<PlanningEvenement, HardMediumSoftScore> referee,
+            long seed,
+            Function<PlanningEvenement, HardMediumSoftScore> search) {
         this.settings = settings;
         this.plateauGainMedium = plateauGainMedium;
         this.referee = referee;
         this.seed = seed;
-        this.search = this::search;
-    }
-
-    HandSearchSolver(
-            SolutionManager<PlanningEvenement, HardMediumSoftScore> referee,
-            Function<PlanningEvenement, HardMediumSoftScore> search) {
-        this.settings = null;
-        this.plateauGainMedium = 0;
-        this.seed = 0;
-        this.referee = referee;
-        this.search = search;
+        this.search = search == null ? this::search : search;
     }
 
     @Override
@@ -95,28 +99,82 @@ final class HandSearchSolver implements Solver<PlanningEvenement> {
         for (PosteAffectation poste : prepared.getPostes()) {
             before.add(poste.getAnimateur());
         }
+        HardMediumSoftScore scoreBefore = prepared.getScore();
         try {
             HardMediumSoftScore claimed = search.apply(prepared);
-            HardMediumSoftScore judged = referee.update(prepared);
-            if (!judged.equals(claimed)) {
-                throw new Failed(
-                        "Le moteur direct et Timefold ne donnent pas le même score au plan trouvé (" + claimed
-                                + " contre " + judged + ") : plan refusé, le plan enregistré n'a pas été touché.",
-                        null);
-            }
+            judge(prepared, claimed);
             return prepared;
+        } catch (Failed e) {
+            throw restored(prepared, before, scoreBefore, e);
         } catch (HandSearchException e) {
+            if (e.isDefect()) {
+                // The plan is on the problem: both readings of it, for whoever fixes the engine.
+                LOG.errorf(
+                        "The direct engine contradicted itself: %s. Read from scratch, rule by rule: %s;"
+                                + " the referee scores that plan %s",
+                        e.getMessage(), nonZero(breakdownOrNothing(prepared)), scoreOrNothing(prepared));
+                throw restored(
+                        prepared,
+                        before,
+                        scoreBefore,
+                        new Failed(
+                                "Le moteur direct s'est contredit dans son propre score : " + e.getMessage()
+                                        + " ; plan refusé, le plan enregistré n'a pas été touché.",
+                                e));
+            }
             throw restored(
                     prepared,
                     before,
+                    scoreBefore,
                     new Failed("Le moteur direct ne peut pas résoudre ce problème : " + e.getMessage() + ".", e));
-        } catch (Failed e) {
-            LOG.errorf(
-                    "The direct engine's score diverged from the referee's: %s Its own score, rule by rule: %s",
-                    e.getMessage(), nonZero(HandSearch.breakdown(prepared)));
-            throw restored(prepared, before, e);
+        } catch (RuntimeException e) {
+            // Anything else is a bug of the engine or of what it was handed: the job says so in
+            // a sentence, and the problem goes back as it came like after any other failure.
+            throw restored(
+                    prepared,
+                    before,
+                    scoreBefore,
+                    new Failed(
+                            "Le moteur direct a échoué sur une erreur inattendue (" + e
+                                    + ") ; le plan enregistré n'a pas été touché.",
+                            e));
         } finally {
             solving = false;
+        }
+    }
+
+    /**
+     * Has the constraint provider score the plan the problem carries, and
+     * fails the solve when it does not score it as the engine claims.
+     */
+    private void judge(PlanningEvenement prepared, HardMediumSoftScore claimed) {
+        HardMediumSoftScore judged = referee.apply(prepared);
+        if (judged.equals(claimed)) {
+            return;
+        }
+        Failed failure = new Failed(
+                "Le moteur direct et Timefold ne donnent pas le même score au plan trouvé (" + claimed + " contre "
+                        + judged + ") : plan refusé, le plan enregistré n'a pas été touché.",
+                null);
+        LOG.errorf(
+                "The direct engine's score diverged from the referee's: %s Its own score, rule by rule: %s",
+                failure.getMessage(), nonZero(breakdownOrNothing(prepared)));
+        throw failure;
+    }
+
+    private static Map<String, Long> breakdownOrNothing(PlanningEvenement prepared) {
+        try {
+            return HandSearch.breakdown(prepared);
+        } catch (RuntimeException _) {
+            return Map.of();
+        }
+    }
+
+    private String scoreOrNothing(PlanningEvenement prepared) {
+        try {
+            return String.valueOf(referee.apply(prepared));
+        } catch (RuntimeException e) {
+            return "(" + e + ")";
         }
     }
 
@@ -126,19 +184,33 @@ final class HandSearchSolver implements Solver<PlanningEvenement> {
         return kept;
     }
 
-    /** Puts every seat back on the holder it came with, and hands the failure back to be thrown. */
-    private static Failed restored(PlanningEvenement prepared, List<Animateur> before, Failed failure) {
+    /**
+     * Puts every seat back on the holder it came with and the score back as it
+     * was, and hands the failure back to be thrown.
+     */
+    private static Failed restored(
+            PlanningEvenement prepared, List<Animateur> before, HardMediumSoftScore scoreBefore, Failed failure) {
         for (int i = 0; i < before.size(); i++) {
             prepared.getPostes().get(i).setAnimateur(before.get(i));
         }
+        prepared.setScore(scoreBefore);
         return failure;
     }
 
     private HardMediumSoftScore search(PlanningEvenement prepared) {
         HandSearch.Limits limits =
                 new HandSearch.Limits(settings.seconds(), settings.plateauSeconds(), plateauGainMedium, seed);
-        return new HandSearch(prepared)
-                .solve(limits, () -> stopRequested, (millis, score) -> fire(new BestScore(millis, score)));
+        boolean[] feasibilityRefereed = {false};
+        return new HandSearch(prepared).solve(limits, () -> stopRequested, (millis, score, lay) -> {
+            // « Faisable à N s » is a promise a job makes its operator: the first feasible plan
+            // is refereed before it is announced, like the last one before it is returned.
+            if (score.isFeasible() && !feasibilityRefereed[0]) {
+                lay.run();
+                judge(prepared, score);
+                feasibilityRefereed[0] = true;
+            }
+            fire(new BestScore(millis, score));
+        });
     }
 
     private void fire(BestScore event) {

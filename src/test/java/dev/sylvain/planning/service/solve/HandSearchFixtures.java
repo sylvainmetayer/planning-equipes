@@ -124,7 +124,7 @@ final class HandSearchFixtures {
     /** Searches for {@code seconds} with the direct engine and leaves its plan on the problem. */
     static HardMediumSoftScore search(PlanningEvenement problem, long seconds, long seed) {
         return new HandSearch(problem)
-                .solve(new HandSearch.Limits(seconds, 0, 0, seed), () -> false, (millis, score) -> {});
+                .solve(new HandSearch.Limits(seconds, 0, 0, seed), () -> false, (millis, score, lay) -> {});
     }
 
     /* ------------------------------- plans ------------------------------- */
@@ -182,6 +182,20 @@ final class HandSearchFixtures {
         }
     }
 
+    /**
+     * Nobody anywhere but on the remainders of split seats: a stand held by
+     * remainders alone has no crew to compare its faces to.
+     */
+    static void remaindersOnlyPlan(PlanningEvenement problem, SplittableRandom random) {
+        emptyPlan(problem);
+        List<Animateur> animateurs = problem.getAnimateurs();
+        for (PosteAffectation poste : problem.getPostes()) {
+            if (movable(poste) && poste.getSuiteDe() != null) {
+                poste.setAnimateur(animateurs.get(random.nextInt(animateurs.size())));
+            }
+        }
+    }
+
     /** One movable seat in ten handed to anybody. */
     static void perturb(PlanningEvenement problem, SplittableRandom random) {
         List<Animateur> animateurs = problem.getAnimateurs();
@@ -198,10 +212,10 @@ final class HandSearchFixtures {
      * Lays on a problem <b>carrying a plan</b> the branches no versioned
      * scenario has: locks on an animateur and on an animateur × timeslot,
      * pinned seats, a first day already past, a published plan, stands a kilometre apart, seats split on
-     * the day, game-category ceilings, the five kinds of ad hoc exception —
+     * the day — on a premium stand, and after midnight on a timeslot that crosses it —, game-category ceilings, the five kinds of ad hoc exception —
      * one forced assignment on the past day —, the supervision of minors and
-     * the hard run of consecutive days switched on, and birthdays inside the
-     * event. Then empties every seat that is neither pinned nor past.
+     * the hard run of consecutive days switched on, birthdays inside the
+     * event, and two birth dates nobody knows. Then empties every seat that is neither pinned nor past.
      *
      * <p>The case is over-constrained on purpose and often has no feasible
      * plan: it is there to be scored, not solved.</p>
@@ -264,24 +278,26 @@ final class HandSearchFixtures {
             }
         }
 
-        // seats split on the day: the origin keeps the first half, a remainder seat takes the second
+        // seats split on the day: the origin keeps the first half, a remainder seat takes the second —
+        // and the last quarter, past midnight, on a timeslot that crosses it
         List<PosteAffectation> all = new ArrayList<>(postes);
         int split = 0;
+        int splitOvernight = 0;
         for (PosteAffectation poste : postes) {
             int minutes = poste.getDureeEffectiveMinutes();
-            if (split < 12
-                    && poste.getCreneau().getDate().equals(splitDay)
-                    && minutes >= 120
-                    && !poste.isVerrouille()
-                    && poste.getHeureFinEffective() == null) {
-                LocalTime middle = poste.heureDebutEffectif().plusMinutes(minutes / 2);
-                PosteAffectation remainder =
-                        new PosteAffectation(poste.getId() + "-suite", poste.getStand(), poste.getCreneau());
-                remainder.setSuiteDe(poste.getId());
-                remainder.setHeureDebutEffective(middle);
-                remainder.setHeureFinEffective(poste.heureFinEffectif());
-                poste.setHeureFinEffective(middle);
-                all.add(remainder);
+            Creneau creneau = poste.getCreneau();
+            boolean overnight =
+                    creneau.getHeureFin() != null && creneau.getHeureFin().isBefore(creneau.getHeureDebut());
+            boolean chosen = overnight
+                    ? splitOvernight < 6
+                    : split < 12 && creneau.getDate().equals(splitDay);
+            if (chosen && minutes >= 120 && !poste.isVerrouille() && poste.getHeureFinEffective() == null) {
+                if (overnight) {
+                    splitOvernight++;
+                } else if (split == 0) {
+                    poste.getStand().setPremium(true);
+                }
+                all.add(splitAfter(poste, overnight ? minutes * 3 / 4 : minutes / 2));
                 split++;
             }
         }
@@ -371,7 +387,26 @@ final class HandSearchFixtures {
                             : first.minusYears(17).minusDays(30);
             animateurs.get(order[order.length - 1 - i]).setDateNaissance(birth);
         }
+        // two more whose birth date is unknown: neither minors nor adults for any rule of an age bracket
+        for (int i = young; i < Math.min(young + 2, animateurs.size() / 2); i++) {
+            animateurs.get(order[order.length - 1 - i]).setDateNaissance(null);
+        }
         emptyPlan(problem);
+    }
+
+    /**
+     * Splits a seat on the day (ADR 0066): it now ends {@code minutes} after
+     * its start, and the seat returned — its remainder — takes over from there.
+     */
+    static PosteAffectation splitAfter(PosteAffectation poste, int minutes) {
+        LocalTime at = poste.heureDebutEffectif().plusMinutes(minutes);
+        PosteAffectation remainder =
+                new PosteAffectation(poste.getId() + "-suite", poste.getStand(), poste.getCreneau());
+        remainder.setSuiteDe(poste.getId());
+        remainder.setHeureDebutEffective(at);
+        remainder.setHeureFinEffective(poste.heureFinEffectif());
+        poste.setHeureFinEffective(at);
+        return remainder;
     }
 
     private static ContrainteAdHoc adHoc(

@@ -1,7 +1,6 @@
 package dev.sylvain.planning.solver.handsearch;
 
 import static dev.sylvain.planning.solver.handsearch.FlatProblem.FORFAIT;
-import static dev.sylvain.planning.solver.handsearch.FlatProblem.HARD;
 import static dev.sylvain.planning.solver.handsearch.FlatProblem.MEDIUM;
 
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
@@ -33,10 +32,12 @@ import java.util.Arrays;
  *       whoever depends on the seat that moved.</li>
  * </ul>
  *
- * <p>Plans are ordered on a single {@code long}, hard above medium above soft
- * ({@link FlatProblem#HARD}, {@link FlatProblem#MEDIUM}); {@link #levels} is
- * the exact score, level by level, and {@link #checkRange} refuses a plan that
- * number cannot order. Nothing here is trusted on its own word: the solver
+ * <p>A cost is two {@code long}s: the hard points, and one number for medium
+ * above soft ({@link FlatProblem#MEDIUM}). Every method that returns a cost
+ * returns the second and adds the first to {@link #hardOut}, which its caller
+ * reads; {@link #levels} is the exact score, level by level, and
+ * {@link #checkRange} refuses a plan whose medium and soft no longer fit side
+ * by side. Nothing here is trusted on its own word: the solver
  * that drives this class has Timefold score the final plan again.</p>
  *
  * <p>Not thread-safe: one instance per solve.</p>
@@ -47,23 +48,27 @@ final class IncrementalScore {
 
     private static final MathContext SIX_DIGITS = new MathContext(6, RoundingMode.HALF_EVEN);
 
-    /** A level beyond which the single number stops ordering plans exactly. */
-    private static final long LEVEL_LIMIT = MEDIUM / 2;
+    /** The soft and medium points beyond which their shared number stops ordering plans exactly. */
+    static final long SOFT_LIMIT = MEDIUM / 2;
 
-    private static final long HARD_LIMIT = Long.MAX_VALUE / HARD / 2;
+    static final long MEDIUM_LIMIT = Long.MAX_VALUE / MEDIUM / 4;
 
     final FlatProblem flat;
     private final long[] unit;
+    private final long[] hardUnit;
 
     // the plan: who holds each seat, and each animateur's seats sorted by start
     final int[] assign;
     final int[][] seatsOf;
     final int[] countOf;
     final long[] costOf;
+    final long[] hardOf;
     int unassignedMovable;
 
     // shared counts: per line, per premium stand, per timeslot, per forced assignment, and the two balances
     private long shared;
+    private long sharedHard;
+    private long globalHard;
     private long sumSq;
     private long held;
     private long aheadHeld;
@@ -93,12 +98,21 @@ final class IncrementalScore {
     // the move under way: who it touched and what they cost before, and how to take it back
     private int[] aff = new int[64];
     private long[] affOld = new long[64];
+    private long[] affOldHard = new long[64];
     private int[] affDues = new int[64];
     private int nAff;
     private final int[] uS = new int[8];
     private final int[] uA = new int[8];
     private int nU;
     private long globalBefore;
+    private long globalHardBefore;
+
+    /** Hard points charged since a caller last reset it: the first half of every cost computed here. */
+    private long hardOut;
+
+    /** The hard points the last {@link #finish} changed, beside the delta it returned. */
+    long deltaHard;
+
     private boolean tracking;
 
     // what eval() writes while it reads one animateur
@@ -136,6 +150,7 @@ final class IncrementalScore {
     IncrementalScore(FlatProblem flat) {
         this.flat = flat;
         this.unit = flat.unit;
+        this.hardUnit = flat.hardUnit;
         int nS = flat.nS;
         int nA = flat.nA;
         assign = new int[nS];
@@ -144,6 +159,7 @@ final class IncrementalScore {
         countOf = new int[nA];
         dCount = new int[nA];
         costOf = new long[nA];
+        hardOf = new long[nA];
         dues = new int[nA];
         lHeld = new int[flat.nLines];
         lAhead = new int[flat.nLines];
@@ -197,6 +213,7 @@ final class IncrementalScore {
         if (explain) {
             acc[rule.ordinal()] += n;
         }
+        hardOut += n * hardUnit[rule.ordinal()];
         return n * unit[rule.ordinal()];
     }
 
@@ -216,7 +233,7 @@ final class IncrementalScore {
         }
         long[] points = new long[acc.length];
         for (int r = 0; r < acc.length; r++) {
-            points[r] = unit[r] == 0 ? 0 : acc[r] * flat.weightAbs[r];
+            points[r] = unit[r] == 0 && hardUnit[r] == 0 ? 0 : acc[r] * flat.weightAbs[r];
         }
         return points;
     }
@@ -232,18 +249,16 @@ final class IncrementalScore {
     }
 
     /**
-     * Refuses a plan whose levels no longer fit side by side in the single
-     * number plans are ordered by: beyond that, a medium point could weigh
-     * less than soft ones and the search would rank plans wrong without a
-     * word.
+     * Refuses a plan whose medium and soft no longer fit side by side in the
+     * number they share: beyond that, a medium point could weigh less than
+     * soft ones and the search would rank plans wrong without a word. The
+     * hard level has a number of its own and no such limit.
      */
     static void checkRange(long[] levels) {
-        if (Math.abs(levels[0]) > HARD_LIMIT
-                || Math.abs(levels[1]) > LEVEL_LIMIT
-                || Math.abs(levels[2]) > LEVEL_LIMIT) {
-            throw new HandSearchException("le score " + -levels[0] + "hard/" + -levels[1] + "medium/" + -levels[2]
-                    + "soft sort de ce que le moteur sait ordonner (" + LEVEL_LIMIT
-                    + " points par niveau medium ou soft)");
+        if (Math.abs(levels[1]) >= MEDIUM_LIMIT || Math.abs(levels[2]) >= SOFT_LIMIT) {
+            throw HandSearchException.refused("le score " + -levels[0] + "hard/" + -levels[1] + "medium/"
+                    + -levels[2] + "soft sort de ce que le moteur sait ordonner (" + SOFT_LIMIT
+                    + " points soft)");
         }
     }
 
@@ -270,7 +285,11 @@ final class IncrementalScore {
         for (int l : flat.standLines[st]) {
             crew = Math.max(crew, lHeld[l]);
         }
-        return stDistinct[st] > crew ? cost(Rule.EVITER_ROULEMENT_STANDS_PREMIUM, stDistinct[st] - crew) : 0;
+        // No crew at all — every held seat the remainder of a split one — and the streams' join on
+        // the crew finds nothing to compare the faces to.
+        return crew > 0 && stDistinct[st] > crew
+                ? cost(Rule.EVITER_ROULEMENT_STANDS_PREMIUM, stDistinct[st] - crew)
+                : 0;
     }
 
     private long slotCost(int cr) {
@@ -311,10 +330,28 @@ final class IncrementalScore {
                         : Math.round(scaled));
     }
 
+    /** The shared part of the cost; its hard points are left in {@link #globalHard}. */
     private long global() {
-        return shared
+        hardOut = 0;
+        long rest = shared
                 + balance(Rule.EQUILIBRER_CHARGE, sumSq, held, active, aheadHeld)
                 + balance(Rule.EQUILIBRER_CRENEAUX_PENIBLES, dSumSq, dHeld, dActive, dAhead);
+        globalHard = sharedHard + hardOut;
+        return rest;
+    }
+
+    /** Adds or takes away what the counts around seat s cost, on both numbers. */
+    private void countLocal(int s, int sign) {
+        hardOut = 0;
+        shared += sign * local(s);
+        sharedHard += sign * hardOut;
+    }
+
+    /** Re-reads one animateur into {@link #costOf} and {@link #hardOf}. */
+    private void read(int a) {
+        hardOut = 0;
+        costOf[a] = eval(a);
+        hardOf[a] = hardOut;
     }
 
     /** The rules kept as shared counts, read again from those counts. */
@@ -334,15 +371,20 @@ final class IncrementalScore {
         }
         for (int s = 0; s < flat.nS; s++) {
             if (assign[s] < 0) {
-                c += (flat.sPast[s] ? 0 : cost(Rule.POSTE_DOIT_ETRE_POURVU, 1))
-                        + cost(Rule.STABILITE_DU_PLAN_PUBLIE, flat.published[s]);
+                c += emptyCost(s);
             }
         }
         return c;
     }
 
-    /** The whole cost from scratch, nothing read from a cache: what {@link #total} must equal. */
+    /**
+     * Every rule read again from the counts and the seats, no cost taken from
+     * a cache; its hard points are left in {@link #hardOut}. The counts
+     * themselves are the ones {@link #set} kept: a search checks those by
+     * building a second instance from the plan alone.
+     */
     long recompute() {
+        hardOut = 0;
         long c = balance(Rule.EQUILIBRER_CHARGE, sumSq, held, active, aheadHeld)
                 + balance(Rule.EQUILIBRER_CRENEAUX_PENIBLES, dSumSq, dHeld, dActive, dAhead)
                 + sharedCost();
@@ -360,14 +402,16 @@ final class IncrementalScore {
                 set(s, plan[s]);
             }
         }
+        hardOut = 0;
         shared = sharedCost();
+        sharedHard = hardOut;
         for (int a = 0; a < flat.nA; a++) {
-            costOf[a] = eval(a);
+            read(a);
         }
         return total();
     }
 
-    /** The cost of the working plan, from what each move kept up to date. */
+    /** The medium and soft cost of the working plan, from what each move kept up to date. */
     long total() {
         long total = global();
         for (int a = 0; a < flat.nA; a++) {
@@ -376,11 +420,27 @@ final class IncrementalScore {
         return total;
     }
 
+    /** Its hard points, likewise. */
+    long totalHard() {
+        global();
+        long total = globalHard;
+        for (int a = 0; a < flat.nA; a++) {
+            total += hardOf[a];
+        }
+        return total;
+    }
+
+    /** The hard points the last {@link #recompute} read. */
+    long recomputedHard() {
+        return hardOut;
+    }
+
     /** Opens a move: every {@link #move} until {@link #finish} belongs to it. */
     void begin() {
         nAff = 0;
         nU = 0;
         globalBefore = global();
+        globalHardBefore = globalHard;
         tracking = true;
     }
 
@@ -393,10 +453,12 @@ final class IncrementalScore {
         if (nAff == aff.length) {
             aff = Arrays.copyOf(aff, nAff * 2);
             affOld = Arrays.copyOf(affOld, nAff * 2);
+            affOldHard = Arrays.copyOf(affOldHard, nAff * 2);
             affDues = Arrays.copyOf(affDues, nAff * 2);
         }
         aff[nAff] = a;
         affDues[nAff] = dues[a];
+        affOldHard[nAff] = hardOf[a];
         affOld[nAff++] = costOf[a];
     }
 
@@ -417,15 +479,24 @@ final class IncrementalScore {
         set(s, to);
     }
 
-    /** Re-reads everybody the move touched and returns what it changed of the total. */
+    /**
+     * Re-reads everybody the move touched and returns what it changed of the
+     * medium and soft total; what it changed of the hard points is left in
+     * {@link #deltaHard}.
+     */
     long finish() {
         tracking = false;
         long delta = global() - globalBefore;
+        long hard = globalHard - globalHardBefore;
         for (int i = 0; i < nAff; i++) {
-            long c = eval(aff[i]);
-            delta += c - costOf[aff[i]];
-            costOf[aff[i]] = c;
+            int a = aff[i];
+            delta -= costOf[a];
+            hard -= hardOf[a];
+            read(a);
+            delta += costOf[a];
+            hard += hardOf[a];
         }
+        deltaHard = hard;
         return delta;
     }
 
@@ -437,6 +508,7 @@ final class IncrementalScore {
         }
         for (int i = 0; i < nAff; i++) {
             costOf[aff[i]] = affOld[i];
+            hardOf[aff[i]] = affOldHard[i];
             dues[aff[i]] = affDues[i];
         }
     }
@@ -464,7 +536,7 @@ final class IncrementalScore {
             }
         }
         int ahead = flat.sPast[s] ? 0 : 1;
-        shared -= local(s);
+        countLocal(s, -1);
         if (from >= 0) {
             int c = countOf[from];
             sumSq += (long) (c - 1) * (c - 1) - (long) c * c;
@@ -498,8 +570,7 @@ final class IncrementalScore {
                 fSat[f] -= flat.fConc[f][from] ? 1 : 0;
             }
         } else {
-            shared -= (flat.sPast[s] ? 0 : unit[Rule.POSTE_DOIT_ETRE_POURVU.ordinal()])
-                    + flat.published[s] * unit[Rule.STABILITE_DU_PLAN_PUBLIE.ordinal()];
+            countEmpty(s, -1);
             unassignedMovable -= flat.sFixed[s] ? 0 : 1;
         }
         if (to >= 0) {
@@ -535,15 +606,26 @@ final class IncrementalScore {
                 fSat[f] += flat.fConc[f][to] ? 1 : 0;
             }
         } else {
-            shared += (flat.sPast[s] ? 0 : unit[Rule.POSTE_DOIT_ETRE_POURVU.ordinal()])
-                    + flat.published[s] * unit[Rule.STABILITE_DU_PLAN_PUBLIE.ordinal()];
+            countEmpty(s, 1);
             unassignedMovable += flat.sFixed[s] ? 0 : 1;
         }
         assign[s] = to;
-        shared += local(s);
+        countLocal(s, 1);
     }
 
     /** Counts seat s, held by a, in or out of what its stand x timeslot line shows. */
+    /** Adds or takes away what seat s costs while nobody holds it. */
+    private void countEmpty(int s, int sign) {
+        hardOut = 0;
+        shared += sign * emptyCost(s);
+        sharedHard += sign * hardOut;
+    }
+
+    private long emptyCost(int s) {
+        return (flat.sPast[s] ? 0 : cost(Rule.POSTE_DOIT_ETRE_POURVU, 1))
+                + cost(Rule.STABILITE_DU_PLAN_PUBLIE, flat.published[s]);
+    }
+
     private void present(int s, int a, int sign) {
         int line = flat.sLine[s], stand = flat.sStand[s];
         lAhead[line] += flat.sPast[s] ? 0 : sign;
@@ -551,7 +633,7 @@ final class IncrementalScore {
         lDeb[line] += flat.isDeb[stand][a] ? sign : 0;
         if (flat.minorAt[a][flat.sDay[s]]) {
             lMin[line] += sign;
-        } else {
+        } else if (flat.adultAt[a][flat.sDay[s]]) {
             lMaj[line] += sign;
         }
     }
@@ -647,6 +729,8 @@ final class IncrementalScore {
             k++;
             int from = i;
             boolean minor = flat.minorAt[a][d];
+            // Neither with an unknown birth date: no rule of an age bracket applies then.
+            boolean aged = minor || flat.adultAt[a][d];
             int cap = minor
                     ? PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES
                     : PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES;
@@ -668,8 +752,8 @@ final class IncrementalScore {
                     int minutes = seqEnd - seqStart;
                     int pauses = minutes <= cap ? 0 : Math.ceilDiv(minutes - cap, cap + pause);
                     breaks += pauses * pause;
-                    owed += pauses;
-                    for (int q = 1; q <= pauses; q++) {
+                    owed += aged ? pauses : 0;
+                    for (int q = 1; aged && q <= pauses; q++) {
                         int limit = seqStart + q * cap + (q - 1) * pause;
                         int tenu = -1, after = -1, before = -1;
                         for (int j = seqFrom; j < i; j++) {
@@ -702,15 +786,23 @@ final class IncrementalScore {
                 }
                 int s = list[i];
                 dur += flat.sDur[s];
-                cost += explain ? flat.staticTerms(s, a, acc) : flat.stat[s][a];
+                if (explain) {
+                    flat.hardOut = 0;
+                    cost += flat.staticTerms(s, a, acc);
+                    hardOut += flat.hardOut;
+                } else {
+                    cost += flat.stat[s][a];
+                    hardOut += flat.statHard[s][a];
+                }
                 if (minor && flat.supervision && !flat.sPast[s]) {
                     boolean supervised = false;
                     for (int mate : flat.lineSeats[flat.sLine[s]]) {
                         int other = assign[mate];
+                        // PosteAffectation.overlaps: measured from the timeslot's start, across midnight
                         supervised |= other >= 0
-                                && !flat.minorAt[other][d]
-                                && flat.sStart[mate] < flat.sEnd[s]
-                                && flat.sStart[s] < flat.sEnd[mate];
+                                && flat.adultAt[other][d]
+                                && flat.sFromSlot[mate] < flat.sFromSlot[s] + flat.sDur[s]
+                                && flat.sFromSlot[s] < flat.sFromSlot[mate] + flat.sDur[mate];
                     }
                     if (!supervised) {
                         cost += cost(Rule.MINEUR_NECESSITE_ENCADREMENT_MAJEUR, FORFAIT);
@@ -755,7 +847,7 @@ final class IncrementalScore {
             int dailyCap = minor
                     ? PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(flat.under16At[a][d])
                     : PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES;
-            if (live && effective > dailyCap) {
+            if (aged && live && effective > dailyCap) {
                 cost += minor
                         ? cost(Rule.DUREE_QUOTIDIENNE_MAX_MINEUR, FORFAIT + effective - dailyCap)
                         : cost(Rule.DUREE_QUOTIDIENNE_MAX_MAJEUR, effective - dailyCap);
@@ -765,7 +857,7 @@ final class IncrementalScore {
                 wMin[w] += effective;
                 wAheadMin[w] |= live;
                 wMinorMask[w] |= 1 << Math.floorMod(d + flat.weekShift, 7);
-            } else {
+            } else if (aged) {
                 wMaj[w] += effective;
                 wAheadMaj[w] |= live;
             }

@@ -1,6 +1,5 @@
 package dev.sylvain.planning.solver.handsearch;
 
-import static dev.sylvain.planning.solver.handsearch.FlatProblem.HARD;
 import static dev.sylvain.planning.solver.handsearch.FlatProblem.MEDIUM;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
@@ -31,17 +30,26 @@ import java.util.function.BooleanSupplier;
 public final class HandSearch {
 
     /**
-     * When to stop: after {@code seconds}, or — {@code plateauSeconds} above
-     * zero — once the plan is feasible and {@code plateauSeconds} went by
-     * without the best medium score gaining {@code plateauGainMedium} points
-     * (without any better plan at all when that gain is zero).
+     * When to stop: {@code seconds} after this search was built, or —
+     * {@code plateauSeconds} above zero — once the plan is feasible and
+     * {@code plateauSeconds} went by without the best medium score gaining
+     * {@code plateauGainMedium} points (without any better plan at all when
+     * that gain is zero).
      */
     public record Limits(long seconds, long plateauSeconds, long plateauGainMedium, long seed) {}
 
     /** Told each new best score, at most a few times a second. */
     @FunctionalInterface
     public interface Listener {
-        void best(long millisSpent, HardMediumSoftScore score);
+
+        /**
+         * @param score the engine's own score of its best plan — a claim, until
+         *              somebody has the plan scored again
+         * @param lay   puts that plan on the problem's movable seats, for a
+         *              caller that wants it refereed before it believes the
+         *              score; only meaningful during the call
+         */
+        void best(long millisSpent, HardMediumSoftScore score, Runnable lay);
     }
 
     /** Scores kept by late acceptance: a move is taken when it beats the plan of that many moves ago. */
@@ -60,11 +68,21 @@ public final class HandSearch {
     private static final int CHAIN_TRIALS = 15_000;
     private static final int CHAIN_DEPTH = 3;
 
+    /** Trials of a chain between two looks at the clock and the stop flag. */
+    private static final int CHAIN_LOOK = 256;
+
+    private final long start = System.nanoTime();
     private final FlatProblem flat;
     private final IncrementalScore score;
     private long chainBudget;
+    private long deadline;
+    private BooleanSupplier stop;
+    private boolean over;
 
     /**
+     * Lays the problem flat; the time it takes counts in the budget of
+     * {@link #solve}.
+     *
      * @throws HandSearchException when the problem has a shape the engine does
      *                             not score (see {@link FlatProblem})
      */
@@ -78,48 +96,57 @@ public final class HandSearch {
      * problem's movable seats and returns its score.
      *
      * @throws HandSearchException when a plan leaves the range the engine can
-     *                             order, or its running total stopped matching
-     *                             the score read from scratch
+     *                             order, or — a defect — its running total
+     *                             stopped matching the score rebuilt from the
+     *                             plan alone
      */
-    @SuppressWarnings("java:S3776") // one loop, read top to bottom; splitting it would only pass its ten locals around
-    public HardMediumSoftScore solve(Limits limits, BooleanSupplier stop, Listener listener) {
-        long start = System.nanoTime();
-        long deadline = start + limits.seconds() * 1_000_000_000L;
+    @SuppressWarnings("java:S3776") // one loop, read top to bottom; splitting it would only pass its locals around
+    public HardMediumSoftScore solve(Limits limits, BooleanSupplier stopRequested, Listener listener) {
+        this.deadline = start + limits.seconds() * 1_000_000_000L;
+        this.stop = stopRequested;
         SplittableRandom random = new SplittableRandom(limits.seed());
         IncrementalScore.checkRange(score.levels());
-        long total = greedy(stop, deadline);
+        greedy();
         IncrementalScore.checkRange(score.levels());
-        listener.best(millisSince(start), decoded(total));
+        long totalHard = score.totalHard();
+        long total = score.total();
+        int nS = flat.nS;
+        int nA = flat.nA;
 
         long[] history = new long[LATE_ACCEPTANCE];
+        long[] historyHard = new long[LATE_ACCEPTANCE];
         Arrays.fill(history, total);
+        Arrays.fill(historyHard, totalHard);
         long best = total;
+        long bestHard = totalHard;
         int[] bestPlan = score.assign.clone();
-        long announced = total;
+        Runnable layBest = () -> lay(bestPlan);
+        listener.best(millisSince(start), decoded(bestHard, best), layBest);
+        long announced = best;
+        long announcedHard = bestHard;
         long lastAnnounce = System.nanoTime();
         long lastCheck = lastAnnounce;
         long lastChain = lastAnnounce;
         // The plateau is judged from feasibility, against the best medium score it last started from.
         long plateauSince = -1;
         long plateauFrom = 0;
-        int nS = flat.nS;
-        int nA = flat.nA;
         // Nobody to seat, or every seat pinned or past: the plan is scored as it stands.
         boolean movable = nA > 0 && !allFixed();
         for (long move = 0; movable; move++) {
             if (move % TICK == 0) {
                 long now = System.nanoTime();
-                if (best < announced
-                        && (now - lastAnnounce >= ANNOUNCE_EVERY_NANOS || (best < HARD) != (announced < HARD))) {
-                    listener.best(millisSince(start), decoded(best));
+                if (before(bestHard, best, announcedHard, announced)
+                        && (now - lastAnnounce >= ANNOUNCE_EVERY_NANOS || (bestHard == 0) != (announcedHard == 0))) {
+                    listener.best(millisSince(start), decoded(bestHard, best), layBest);
                     announced = best;
+                    announcedHard = bestHard;
                     lastAnnounce = now;
                 }
                 if (now - lastCheck >= CHECK_EVERY_NANOS) {
                     IncrementalScore.checkRange(score.levels());
                     lastCheck = now;
                 }
-                if (best < HARD && limits.plateauSeconds() > 0) {
+                if (bestHard == 0 && limits.plateauSeconds() > 0) {
                     long medium = Math.floorDiv(best + MEDIUM / 2, MEDIUM);
                     boolean gained = limits.plateauGainMedium() > 0
                             ? plateauFrom - medium >= limits.plateauGainMedium()
@@ -137,10 +164,14 @@ public final class HandSearch {
                 if (score.unassignedMovable > 0
                         && score.unassignedMovable <= CHAIN_SEATS
                         && now - lastChain >= CHAIN_EVERY_NANOS) {
-                    total = chainEmptySeats(random, stop);
+                    chainEmptySeats(random);
+                    totalHard = score.totalHard();
+                    total = score.total();
                     Arrays.fill(history, total);
-                    if (total < best) {
+                    Arrays.fill(historyHard, totalHard);
+                    if (before(totalHard, total, bestHard, best)) {
                         best = total;
+                        bestHard = totalHard;
                         System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                     }
                     lastChain = System.nanoTime();
@@ -163,10 +194,10 @@ public final class HandSearch {
                 if ((kind & 1) == 0) {
                     eject(s, a, random);
                 }
-            } else if (total >= HARD && kind < 9) {
+            } else if (totalHard > 0 && kind < 9) {
                 // somebody carrying a hard breach: move one of their seats, or trade it
                 int a = random.nextInt(nA);
-                for (int looked = 0; score.costOf[a] < HARD && looked < nA; looked++) {
+                for (int looked = 0; score.hardOf[a] == 0 && looked < nA; looked++) {
                     a = a + 1 == nA ? 0 : a + 1;
                 }
                 if (score.countOf[a] == 0) {
@@ -207,36 +238,68 @@ public final class HandSearch {
                 continue;
             }
             long candidate = total + score.finish();
+            long candidateHard = totalHard + score.deltaHard;
             int slot = (int) (move % LATE_ACCEPTANCE);
-            if (candidate <= total || candidate <= history[slot]) {
+            if (!before(totalHard, total, candidateHard, candidate)
+                    || !before(historyHard[slot], history[slot], candidateHard, candidate)) {
                 total = candidate;
-                if (total < best) {
+                totalHard = candidateHard;
+                if (before(totalHard, total, bestHard, best)) {
                     best = total;
+                    bestHard = totalHard;
                     System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                 }
             } else {
                 score.undo();
             }
             history[slot] = total;
+            historyHard[slot] = totalHard;
         }
 
-        score.load(bestPlan);
-        long[] levels = score.levels();
-        IncrementalScore.checkRange(levels);
-        HardMediumSoftScore exact = HardMediumSoftScore.of(-levels[0], -levels[1], -levels[2]);
-        if (!exact.equals(decoded(best)) || score.recompute() != best) {
-            throw new HandSearchException("le total tenu au fil des mouvements (" + decoded(best)
-                    + ") a dérivé du score relu (" + exact + ")");
-        }
-        for (int s = 0; s < nS; s++) {
-            if (!flat.sFixed[s]) {
-                flat.postes.get(s).setAnimateur(bestPlan[s] < 0 ? null : flat.animateurs.get(bestPlan[s]));
-            }
-        }
-        if (best < announced) {
-            listener.best(millisSince(start), exact);
+        // Laid first: should the check below fail, the plan is there to be read.
+        lay(bestPlan);
+        HardMediumSoftScore exact = rebuilt(bestPlan, bestHard, best);
+        if (before(bestHard, best, announcedHard, announced)) {
+            listener.best(millisSince(start), exact, layBest);
         }
         return exact;
+    }
+
+    /**
+     * The score of the best plan, by a second instance built from that plan
+     * alone: every count {@link IncrementalScore#set} kept up to date through
+     * the search is rebuilt, where re-reading them would only repeat a count
+     * that had drifted.
+     */
+    private HardMediumSoftScore rebuilt(int[] plan, long hard, long total) {
+        IncrementalScore fresh = new IncrementalScore(flat);
+        long freshTotal = fresh.load(plan);
+        long freshHard = fresh.totalHard();
+        long[] levels = fresh.levels();
+        IncrementalScore.checkRange(levels);
+        HardMediumSoftScore exact = HardMediumSoftScore.of(-levels[0], -levels[1], -levels[2]);
+        if (freshHard != hard || freshTotal != total || !exact.equals(decoded(hard, total))) {
+            throw HandSearchException.defect("le score tenu au fil des mouvements (" + decoded(hard, total)
+                    + ") n'est pas celui du plan relu de zéro (" + exact + ")");
+        }
+        return exact;
+    }
+
+    private void lay(int[] plan) {
+        for (int s = 0; s < flat.nS; s++) {
+            if (!flat.sFixed[s]) {
+                flat.postes.get(s).setAnimateur(plan[s] < 0 ? null : flat.animateurs.get(plan[s]));
+            }
+        }
+    }
+
+    private boolean allFixed() {
+        for (boolean fixed : flat.sFixed) {
+            if (!fixed) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -254,33 +317,28 @@ public final class HandSearch {
         return byName;
     }
 
-    private boolean allFixed() {
-        for (boolean fixed : flat.sFixed) {
-            if (!fixed) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static long millisSince(long start) {
         return (System.nanoTime() - start) / 1_000_000L;
     }
 
-    /** The score a total stands for; exact inside the range {@link IncrementalScore#checkRange} holds. */
-    private static HardMediumSoftScore decoded(long total) {
-        long hard = hardPoints(total);
-        long rest = total - hard * HARD;
+    /** Whether the first cost is strictly the better one: fewer hard points, then less of the rest. */
+    private static boolean before(long hard, long rest, long otherHard, long otherRest) {
+        return hard < otherHard || (hard == otherHard && rest < otherRest);
+    }
+
+    /** The score two numbers stand for; exact inside the range {@link IncrementalScore#checkRange} holds. */
+    private static HardMediumSoftScore decoded(long hard, long rest) {
         long medium = Math.floorDiv(rest + MEDIUM / 2, MEDIUM);
         return HardMediumSoftScore.of(-hard, -medium, -(rest - medium * MEDIUM));
     }
 
-    private static long hardPoints(long delta) {
-        return Math.floorDiv(delta + HARD / 2, HARD);
+    private boolean expired() {
+        over = over || System.nanoTime() >= deadline || stop.getAsBoolean();
+        return over;
     }
 
     /** Fills the empty seats, scarcest first, each with whoever it costs least; leaves the ones that only cost. */
-    private long greedy(BooleanSupplier stop, long deadline) {
+    private void greedy() {
         Integer[] order = new Integer[flat.nS];
         for (int s = 0; s < flat.nS; s++) {
             order[s] = s;
@@ -290,18 +348,21 @@ public final class HandSearch {
             if (flat.sFixed[s] || score.assign[s] >= 0) {
                 continue;
             }
-            if (stop.getAsBoolean() || System.nanoTime() >= deadline) {
+            if (expired()) {
                 break;
             }
             long bestDelta = 0;
+            long bestDeltaHard = 0;
             int bestHolder = -1;
             for (int a : flat.elig[s]) {
                 score.begin();
                 score.move(s, a);
                 long delta = score.finish();
+                long deltaHard = score.deltaHard;
                 score.undo();
-                if (delta < bestDelta) {
+                if (before(deltaHard, delta, bestDeltaHard, bestDelta)) {
                     bestDelta = delta;
+                    bestDeltaHard = deltaHard;
                     bestHolder = a;
                 }
             }
@@ -311,7 +372,6 @@ public final class HandSearch {
                 score.finish();
             }
         }
-        return score.total();
     }
 
     /** As part of the move under way: hands another seat of {@code a}, on a day around seat s, to somebody else. */
@@ -351,15 +411,20 @@ public final class HandSearch {
         return true;
     }
 
-    /** One ejection chain per empty seat; returns the total after them. */
-    private long chainEmptySeats(SplittableRandom random, BooleanSupplier stop) {
-        for (int s = 0; s < flat.nS && !stop.getAsBoolean(); s++) {
+    /** One ejection chain per empty seat, as long as the budget and the caller allow. */
+    private void chainEmptySeats(SplittableRandom random) {
+        for (int s = 0; s < flat.nS && !expired(); s++) {
             if (score.assign[s] < 0 && !flat.sFixed[s]) {
                 chainBudget = CHAIN_TRIALS;
                 place(s, 0, random);
             }
         }
-        return score.total();
+    }
+
+    /** Counts one trial of a chain; false once its budget, the solve's or the caller's patience is spent. */
+    private boolean trial() {
+        chainBudget--;
+        return chainBudget > 0 && (chainBudget % CHAIN_LOOK != 0 || !expired());
     }
 
     /**
@@ -381,38 +446,42 @@ public final class HandSearch {
             int a = candidates[(i + offset) % candidates.length];
             score.begin();
             score.move(x, a);
-            if (hardPoints(score.finish()) <= -1) {
+            score.finish();
+            if (score.deltaHard <= -1) {
                 return true;
             }
             score.undo();
-            chainBudget--;
+            if (!trial()) {
+                return false;
+            }
         }
         if (depth >= CHAIN_DEPTH) {
             return false;
         }
-        for (int i = 0; i < candidates.length && chainBudget > 0; i++) {
+        for (int i = 0; i < candidates.length; i++) {
             int a = candidates[(i + offset) % candidates.length];
             int[] theirs = Arrays.copyOf(score.seatsOf[a], score.countOf[a]);
-            for (int y = 0; y < theirs.length && chainBudget > 0; y++) {
-                int released = theirs[y];
+            for (int released : theirs) {
                 if (flat.sFixed[released] || Math.abs(flat.sWeek[released] - flat.sWeek[x]) > 1) {
                     continue;
                 }
                 score.begin();
                 score.move(x, a);
                 score.move(released, -1);
-                chainBudget--;
-                if (hardPoints(score.finish()) > 0) {
-                    score.undo();
-                    continue;
-                }
-                if (place(released, depth + 1, random)) {
-                    return true;
-                }
-                score.begin();
-                score.move(released, a);
-                score.move(x, -1);
                 score.finish();
+                if (score.deltaHard > 0) {
+                    score.undo();
+                } else if (place(released, depth + 1, random)) {
+                    return true;
+                } else {
+                    score.begin();
+                    score.move(released, a);
+                    score.move(x, -1);
+                    score.finish();
+                }
+                if (!trial()) {
+                    return false;
+                }
             }
         }
         return false;

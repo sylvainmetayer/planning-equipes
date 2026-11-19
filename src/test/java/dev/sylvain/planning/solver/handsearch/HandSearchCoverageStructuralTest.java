@@ -65,13 +65,17 @@ class HandSearchCoverageStructuralTest {
     @Test
     void aScoreTheSingleNumberCannotOrderIsRefused() {
         IncrementalScore.checkRange(new long[] {120, 40_000, -3_000});
+        // The hard level has a number of its own: five thousand seats on somebody who may not hold them fit.
+        IncrementalScore.checkRange(new long[] {50_000_000_000L, 40_000, IncrementalScore.SOFT_LIMIT - 1});
 
-        assertThatThrownBy(() -> IncrementalScore.checkRange(new long[] {0, 600_000, 0}))
+        // At the limit itself already: decoding would round such a soft into the medium level.
+        assertThatThrownBy(() -> IncrementalScore.checkRange(new long[] {0, 0, IncrementalScore.SOFT_LIMIT}))
                 .isInstanceOf(HandSearchException.class)
-                .hasMessageContaining("600000medium");
-        assertThatThrownBy(() -> IncrementalScore.checkRange(new long[] {0, 0, 600_000}))
+                .hasMessageContaining(IncrementalScore.SOFT_LIMIT + "soft")
+                .matches(refusal -> !((HandSearchException) refusal).isDefect());
+        assertThatThrownBy(() -> IncrementalScore.checkRange(new long[] {0, 0, -IncrementalScore.SOFT_LIMIT}))
                 .isInstanceOf(HandSearchException.class);
-        assertThatThrownBy(() -> IncrementalScore.checkRange(new long[] {5_000_000, 0, 0}))
+        assertThatThrownBy(() -> IncrementalScore.checkRange(new long[] {0, IncrementalScore.MEDIUM_LIMIT, 0}))
                 .isInstanceOf(HandSearchException.class);
     }
 }

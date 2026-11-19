@@ -2,7 +2,11 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SplittableRandom;
@@ -24,7 +28,8 @@ import org.junit.jupiter.params.provider.CsvSource;
  * scenario carries ({@link HandSearchFixtures#fabricateBranches}), on plans
  * chosen to break things: empty, random with double bookings everywhere,
  * random without them, everything on three people, the plan a short search
- * reaches, and that plan perturbed. A rule the engine scores a point off anywhere fails the case with
+ * reaches — whose score, kept move by move, must be the constraint provider's
+ * too — and that plan perturbed. A rule the engine scores a point off anywhere fails the case with
  * its name and both values.</p>
  *
  * <p>An equality at zero proves little, so {@link #everyRuleWasScoredAboveZero}
@@ -41,7 +46,7 @@ class HandSearchDifferentialTest {
     private static final Set<String> CASES_RUN = new ConcurrentSkipListSet<>();
 
     /** The cases of the default suite: {@link #everyRuleWasScoredAboveZero} only judges a complete run. */
-    private static final int DEFAULT_CASES = 10;
+    private static final int DEFAULT_CASES = 11;
 
     /**
      * Rules no small scenario makes bite, with what covers them instead. Empty
@@ -58,6 +63,7 @@ class HandSearchDifferentialTest {
         "gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml, false",
         "gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml, true",
         "gamme-10-4j-8stands-20animateurs-journees-types-multiples.yaml, true",
+        "gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit.yaml, true",
         "gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml, true",
         "gamme-13-7j-12stands-30animateurs-premium-epuisants.yaml, false",
         "gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes.yaml, true",
@@ -65,6 +71,39 @@ class HandSearchDifferentialTest {
     void scoresEveryRuleLikeTheConstraintProvider(String scenario, boolean fabricated) {
         compare(scenario, fabricated, 1);
         CASES_RUN.add(scenario + fabricated);
+    }
+
+    /**
+     * A premium stand whose only held seats are remainders of split seats: the
+     * constraint provider finds it no crew to compare its faces to and says
+     * nothing, where counting « faces beyond a crew of none » would charge it.
+     */
+    @Test
+    void aPremiumStandHeldByRemaindersAloneIsNotChargedForItsFaces() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-13-7j-12stands-30animateurs-premium-epuisants.yaml");
+        List<PosteAffectation> seats = new ArrayList<>(loaded.problem().getPostes());
+        PosteAffectation first = seats.stream()
+                .filter(poste -> poste.getStand().isPremium())
+                .findFirst()
+                .orElseThrow();
+        List<PosteAffectation> remainders = seats.stream()
+                .filter(poste -> poste.getStand().equals(first.getStand()))
+                .limit(3)
+                .map(poste -> HandSearchFixtures.splitAfter(poste, poste.getDureeEffectiveMinutes() / 2))
+                .toList();
+        seats.addAll(remainders);
+        loaded.problem().setPostes(seats);
+        for (int i = 0; i < remainders.size(); i++) {
+            remainders.get(i).setAnimateur(loaded.problem().getAnimateurs().get(i));
+        }
+        agree(loaded, "remainders alone");
+
+        // One origin held again and the stand has a crew of one: three faces for it.
+        first.setAnimateur(loaded.problem().getAnimateurs().get(5));
+        agree(loaded, "one origin back");
+        assertThat(loaded.refereeBreakdown().get("eviterRoulementStandsPremium"))
+                .isPositive();
     }
 
     /** The same on a full-size grid with windows narrowed inside a line, which the small ones do not have. */
@@ -82,6 +121,8 @@ class HandSearchDifferentialTest {
         if (fabricated) {
             HandSearchFixtures.search(loaded.problem(), 1, 0);
             HandSearchFixtures.fabricateBranches(loaded.problem(), random);
+            HandSearchFixtures.remaindersOnlyPlan(loaded.problem(), random);
+            agree(loaded, "remainders only");
         }
         agree(loaded, "empty");
         for (int i = 0; i < 3; i++) {
@@ -94,8 +135,13 @@ class HandSearchDifferentialTest {
         }
         HandSearchFixtures.overloadedPlan(loaded.problem());
         agree(loaded, "overloaded");
+        // The one plan reached move by move: the score the search kept through every one of its
+        // moves is the constraint provider's, which no comparison of freshly built scores shows.
         HandSearchFixtures.emptyPlan(loaded.problem());
-        HandSearchFixtures.search(loaded.problem(), searchSeconds, 0);
+        HardMediumSoftScore kept = HandSearchFixtures.search(loaded.problem(), searchSeconds, 0);
+        assertThat(kept)
+                .as("the score the search kept move by move, against the constraint provider's")
+                .isEqualTo(loaded.configuration().solutionManager().update(loaded.problem()));
         agree(loaded, "searched");
         for (int i = 0; i < 2; i++) {
             HandSearchFixtures.perturb(loaded.problem(), random);

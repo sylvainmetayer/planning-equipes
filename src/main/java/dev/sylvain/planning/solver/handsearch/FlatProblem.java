@@ -3,11 +3,13 @@ package dev.sylvain.planning.solver.handsearch;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.MinutesOfDay;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -42,26 +44,40 @@ import java.util.Set;
  * several passes. A seat is <em>fixed</em> when it is pinned or past — the
  * search reads its holder and never moves it.</p>
  *
- * <p>Three shapes of problem are refused here rather than scored wrongly:
- * more than 64 game categories (the set of categories one animateur holds is
- * a {@code long}), a break longer than {@link #RELAY_REACH_MINUTES} (a relay is
- * looked for on the same stand within that reach), and a seat without hours.
- * See {@link HandSearchException}.</p>
+ * <p>Some shapes of problem are refused here rather than scored wrongly: more
+ * than 64 game categories (the set of categories one animateur holds is a
+ * {@code long}), a break longer than {@link #RELAY_REACH_MINUTES} (a relay is
+ * looked for on the same stand within that reach), a seat without a stand or
+ * without both its hours, a seat held by somebody the problem does not list,
+ * and a fact carried twice — two states of one constraint, two ceilings of one
+ * game category, two sets of parameters — which the streams would charge
+ * twice and no table can hold. See {@link HandSearchException}.</p>
  */
 final class FlatProblem {
 
-    /** One hard point and one medium point on the single number the search orders plans by. */
-    static final long HARD = 1_000_000_000_000L;
-
-    static final long MEDIUM = 1_000_000L;
+    /**
+     * One medium point on the number medium and soft share. The hard level is
+     * counted apart, in a {@code long} of its own: a plan handed in with
+     * hundreds of seats on somebody no longer allowed there — 10 000 points
+     * each — would not fit beside the other two.
+     */
+    static final long MEDIUM = 1_000_000_000L;
 
     static final int FORFAIT = ExclusionEligibilite.FORFAIT;
 
     /** How far around a seat, in minutes, a colleague's seat on the same stand is looked at as a relay. */
     static final int RELAY_REACH_MINUTES = 60;
 
-    /** The cost of one unit of each rule on that number — 0 for a rule switched off — and its bare weight. */
+    /**
+     * What one unit of each rule costs: hard points for a hard rule, the
+     * shared number for a medium or soft one — both 0 for a rule switched off.
+     */
+    final long[] hardUnit = new long[Rule.values().length];
+
     final long[] unit = new long[Rule.values().length];
+
+    /** Hard points charged by {@link #cost} since a caller last reset it: the second half of every cost. */
+    long hardOut;
 
     final long[] weightAbs = new long[Rule.values().length];
 
@@ -88,6 +104,13 @@ final class FlatProblem {
     // duration, line, stand, timeslot, hours of its timeslot, location, "its vacation was published"
     int[] sStart;
     int[] sEnd;
+    /**
+     * Minutes from the start of the seat's timeslot to its own start: what two
+     * seats of one line are compared on, so that the remainder of a night
+     * timeslot split after midnight still overlaps the seats of the evening.
+     */
+    int[] sFromSlot;
+
     int[] sDay;
     int[] sDayNo;
     int[] sWeek;
@@ -124,9 +147,18 @@ final class FlatProblem {
     /** What one seat costs one animateur whoever else is around: {@link #staticTerms}, computed once. */
     long[][] stat;
 
+    long[][] statHard;
+
     boolean[][] isRef;
     boolean[][] isDeb;
+    /**
+     * Whether each animateur is a minor, and an adult, on each day. Not each
+     * other's negation: somebody whose birth date is unknown is neither, and
+     * no rule written for one age bracket applies to them.
+     */
     boolean[][] minorAt;
+
+    boolean[][] adultAt;
     boolean[][] under16At;
     boolean[][] far;
     long[][] liked;
@@ -168,36 +200,51 @@ final class FlatProblem {
      */
     record PairTerm(int kind, int other, boolean[] scope, int tolerance) {}
 
-    /** What n units of a rule cost, added to {@code breakdown} when one is being filled. */
+    /**
+     * What n units of a rule cost on the shared number; its hard points go to
+     * {@link #hardOut}, and its units to {@code breakdown} when one is being
+     * filled.
+     */
     long cost(Rule rule, long n, long[] breakdown) {
         if (breakdown != null) {
             breakdown[rule.ordinal()] += n;
         }
+        hardOut += n * hardUnit[rule.ordinal()];
         return n * unit[rule.ordinal()];
     }
 
     private void weights() {
+        Set<String> toggled = new HashSet<>();
+        for (ConstraintToggle toggle : problem.getConstraintsDesactivees()) {
+            if (!toggled.add(toggle.getNom())) {
+                // The streams switch a rule off as soon as one of its toggles says so, on when one
+                // says so: two of them is a state no table can hold, and nothing to guess at.
+                throw HandSearchException.refused("la contrainte " + toggle.getNom() + " porte deux états");
+            }
+        }
         for (Rule rule : Rule.values()) {
             String name = rule.constraintName();
             ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
             Objects.requireNonNull(definition, name);
-            long scale =
-                    switch (definition.niveau()) {
-                        case HARD -> HARD;
-                        case MEDIUM -> MEDIUM;
-                        case SOFT -> 1;
-                    };
+            int scoredOn = definition.niveau().ordinal();
             long w = 1;
             HardMediumSoftScore override = problem.getPonderationsContraintes().getConstraintWeight(name);
             if (override != null) {
-                w = (long) override.hardScore() + override.mediumScore() + override.softScore();
-                scale = override.hardScore() != 0 ? HARD : override.mediumScore() != 0 ? MEDIUM : 1;
+                w = override.hardScore() + override.mediumScore() + override.softScore();
+                scoredOn = override.hardScore() != 0 ? 0 : override.mediumScore() != 0 ? 1 : 2;
             }
             weightAbs[rule.ordinal()] = w;
-            level[rule.ordinal()] = scale == HARD ? 0 : scale == MEDIUM ? 1 : 2;
-            unit[rule.ordinal()] =
-                    ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), name) ? w * scale : 0;
+            level[rule.ordinal()] = scoredOn;
+            if (ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), name)) {
+                hardUnit[rule.ordinal()] = scoredOn == 0 ? w : 0;
+                unit[rule.ordinal()] = scoredOn == 0 ? 0 : scoredOn == 1 ? w * MEDIUM : w;
+            }
         }
+    }
+
+    /** Whether a rule is switched on and weighs something. */
+    boolean charged(Rule rule) {
+        return hardUnit[rule.ordinal()] != 0 || unit[rule.ordinal()] != 0;
     }
 
     static boolean scope(ContrainteAdHoc c, PosteAffectation poste) {
@@ -222,22 +269,38 @@ final class FlatProblem {
         postes = problem.getPostes();
         animateurs = problem.getAnimateurs();
         legal = problem.parametresLegaux();
+        // A join on a fact carried twice charges twice: one of each, or nothing is scored.
+        if (problem.getParametresLegaux().size() != 1
+                || problem.getParametresQualite().size() != 1) {
+            throw HandSearchException.refused(
+                    "le problème ne porte pas exactement un jeu de paramètres légaux et un de qualité");
+        }
         qualite = problem.getParametresQualite().get(0);
         weights();
         pauseMinor = legal.dureePauseMinutes(true);
         pauseAdult = legal.dureePauseMinutes(false);
         if (Math.max(legal.dureePauseMinutes(true), legal.dureePauseMinutes(false)) > RELAY_REACH_MINUTES) {
-            throw new HandSearchException("la pause dépasse " + RELAY_REACH_MINUTES
+            throw HandSearchException.refused("la pause dépasse " + RELAY_REACH_MINUTES
                     + " minutes, ce que la recherche d'un relais ne couvre pas");
         }
+        Set<String> known = new HashSet<>();
+        animateurs.forEach(animateur -> known.add(animateur.getId()));
         for (PosteAffectation poste : postes) {
             Creneau creneau = poste.getCreneau();
             if (poste.getStand() == null
                     || creneau == null
                     || creneau.getDate() == null
                     || creneau.getHeureDebut() == null
-                    || poste.heureDebutEffectif() == null) {
-                throw new HandSearchException("le siège " + poste.getId() + " n'a pas de stand ou pas d'horaire");
+                    || poste.heureDebutEffectif() == null
+                    || poste.heureFinEffectif() == null) {
+                // Without an end a seat lasts nothing, and the streams' overlap then matches nothing.
+                throw HandSearchException.refused(
+                        "le siège " + poste.getId() + " n'a pas de stand ou pas d'horaire complet");
+            }
+            if (poste.getAnimateur() != null
+                    && !known.contains(poste.getAnimateur().getId())) {
+                throw HandSearchException.refused(
+                        "le siège " + poste.getId() + " est tenu par un animateur absent du problème");
             }
         }
         nS = postes.size();
@@ -255,6 +318,7 @@ final class FlatProblem {
         LocalDate first = LocalDate.ofEpochDay(minDay);
         sStart = new int[nS];
         sEnd = new int[nS];
+        sFromSlot = new int[nS];
         sDay = new int[nS];
         sDayNo = new int[nS];
         sWeek = new int[nS];
@@ -298,6 +362,7 @@ final class FlatProblem {
             sDur[s] = poste.getDureeEffectiveMinutes();
             sStart[s] = sDay[s] * 1440 + poste.heureDebutEffectif().toSecondOfDay() / 60;
             sEnd[s] = sStart[s] + sDur[s];
+            sFromSlot[s] = MinutesOfDay.minutesAfter(creneau.getHeureDebut(), poste.heureDebutEffectif());
             cStart[s] = creneau.getHeureDebut().toSecondOfDay() / 60;
             cEnd[s] = creneau.getHeureFin() == null ? -1 : creneau.getHeureFin().toSecondOfDay() / 60;
             sStand[s] = stands.computeIfAbsent(stand, k -> {
@@ -350,7 +415,7 @@ final class FlatProblem {
             origin[s] = suiteDe == null ? -1 : seatById.getOrDefault(suiteDe, -1);
         }
         nLines = lines.size();
-        supervision = unit[Rule.MINEUR_NECESSITE_ENCADREMENT_MAJEUR.ordinal()] != 0;
+        supervision = charged(Rule.MINEUR_NECESSITE_ENCADREMENT_MAJEUR);
         List<List<Integer>> seatsOfLine = new ArrayList<>();
         for (int l = 0; l < nLines; l++) {
             seatsOfLine.add(new ArrayList<>());
@@ -395,15 +460,19 @@ final class FlatProblem {
         Arrays.fill(quota, -1);
         hasQuota = false;
         for (QuotaTypologie q : problem.getQuotasTypologies()) {
+            if (quota[typos.get(q.getTypologie())] >= 0) {
+                throw HandSearchException.refused("la typologie " + q.getTypologie() + " porte deux plafonds");
+            }
             quota[typos.get(q.getTypologie())] = q.getMaxCreneaux();
             hasQuota = true;
         }
         if (nTypo > 64) {
-            throw new HandSearchException(nTypo + " typologies de jeu, pour 64 au plus");
+            throw HandSearchException.refused(nTypo + " typologies de jeu, pour 64 au plus");
         }
 
         // per animateur
         minorAt = new boolean[nA][nDays];
+        adultAt = new boolean[nA][nDays];
         under16At = new boolean[nA][nDays];
         ninja = new boolean[nA];
         isRef = new boolean[nStands][nA];
@@ -416,6 +485,7 @@ final class FlatProblem {
             ninjaTotal += ninja[a] ? 1 : 0;
             for (int d = 0; d < nDays; d++) {
                 minorAt[a][d] = animateur.isMineurOn(first.plusDays(d));
+                adultAt[a][d] = animateur.isMajeurOn(first.plusDays(d));
                 under16At[a][d] = animateur.isUnder16On(first.plusDays(d));
             }
             for (int st = 0; st < nStands; st++) {
@@ -567,14 +637,17 @@ final class FlatProblem {
 
         // what one seat costs one animateur, whoever else is around
         stat = new long[nS][nA];
+        statHard = new long[nS][nA];
         eligible = new boolean[nS][nA];
         elig = new int[nS][];
         int[] buffer = new int[nA];
         for (int s = 0; s < nS; s++) {
             int n = 0;
             for (int a = 0; a < nA; a++) {
+                hardOut = 0;
                 stat[s][a] = staticTerms(s, a, null);
-                if (stat[s][a] < HARD) {
+                statHard[s][a] = hardOut;
+                if (hardOut == 0) {
                     eligible[s][a] = true;
                     buffer[n++] = a;
                 }
