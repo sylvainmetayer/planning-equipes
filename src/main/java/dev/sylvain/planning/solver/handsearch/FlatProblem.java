@@ -44,11 +44,11 @@ import java.util.Set;
  * several passes. A seat is <em>fixed</em> when it is pinned or past — the
  * search reads its holder and never moves it.</p>
  *
- * <p>Some shapes of problem are refused here rather than scored wrongly: more
- * than 64 game categories (the set of categories one animateur holds is a
- * {@code long}), a break longer than {@link #RELAY_REACH_MINUTES} (a relay is
- * looked for on the same stand within that reach), a seat without a stand or
- * without both its hours, a seat held by somebody the problem does not list,
+ * <p>Some shapes of problem are refused here rather than scored wrongly: an
+ * animateur appreciated for more than 64 game categories (the set of those
+ * they hold is a {@code long}), a seat without a stand or without both its
+ * hours — the streams have a branch for it that no generated seat takes, and
+ * writing it here would touch every rule that reads a time —, a seat held by somebody the problem does not list,
  * and a fact carried twice — two states of one constraint, two ceilings of one
  * game category, two sets of parameters — which the streams would charge
  * twice and no table can hold. See {@link HandSearchException}.</p>
@@ -64,9 +64,6 @@ final class FlatProblem {
     static final long MEDIUM = 1_000_000_000L;
 
     static final int FORFAIT = ExclusionEligibilite.FORFAIT;
-
-    /** How far around a seat, in minutes, a colleague's seat on the same stand is looked at as a relay. */
-    static final int RELAY_REACH_MINUTES = 60;
 
     /**
      * What one unit of each rule costs: hard points for a hard rule, the
@@ -291,10 +288,6 @@ final class FlatProblem {
         weights();
         pauseMinor = legal.dureePauseMinutes(true);
         pauseAdult = legal.dureePauseMinutes(false);
-        if (Math.max(legal.dureePauseMinutes(true), legal.dureePauseMinutes(false)) > RELAY_REACH_MINUTES) {
-            throw HandSearchException.refused("la pause dépasse " + RELAY_REACH_MINUTES
-                    + " minutes, ce que la recherche d'un relais ne couvre pas");
-        }
         Set<String> known = new HashSet<>();
         animateurs.forEach(animateur -> known.add(animateur.getId()));
         for (PosteAffectation poste : postes) {
@@ -354,7 +347,7 @@ final class FlatProblem {
         List<Stand> standsInOrder = new ArrayList<>();
         List<Emplacement> placeList = new ArrayList<>();
         List<List<Integer>> linesOfStand = new ArrayList<>();
-        Map<Object, List<Integer>> byStandDay = new HashMap<>();
+        Map<Integer, List<Integer>> byStand = new HashMap<>();
         Map<String, Set<String>> publishedHolders = new HashMap<>();
         for (AffectationPubliee publiee : problem.getAffectationsPubliees()) {
             publishedHolders
@@ -410,9 +403,7 @@ final class FlatProblem {
                     stand.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()));
             publishedBy.add(sPast[s] ? null : holders);
             published[s] = sPast[s] || holders == null ? 0 : 1;
-            byStandDay
-                    .computeIfAbsent(List.of(sStand[s], sDay[s]), k -> new ArrayList<>())
-                    .add(s);
+            byStand.computeIfAbsent(sStand[s], k -> new ArrayList<>()).add(s);
         }
         // a seat split on the day (ADR 0066): the origin ended where its remainder starts
         origin = new int[nS];
@@ -443,13 +434,14 @@ final class FlatProblem {
         nStands = stands.size();
         nSlots = slots.size();
         nbr = new int[nS][];
-        for (List<Integer> group : byStandDay.values()) {
+        // A break is owed at an instant inside the seat held, or in the gap — shorter than the
+        // break — right before it, and its relay covers that instant and the break after it: the
+        // relay overlaps the seat held, whatever the break lasts and whichever side of midnight.
+        for (List<Integer> group : byStand.values()) {
             for (int s : group) {
                 nbr[s] = group.stream()
                         .mapToInt(Integer::intValue)
-                        .filter(o -> o != s
-                                && sStart[o] <= sEnd[s] + RELAY_REACH_MINUTES
-                                && sEnd[o] >= sStart[s] - RELAY_REACH_MINUTES)
+                        .filter(o -> o != s && sStart[o] <= sEnd[s] && sEnd[o] >= sStart[s])
                         .toArray();
             }
         }
@@ -478,9 +470,6 @@ final class FlatProblem {
             quota[typos.get(q.getTypologie())] = q.getMaxCreneaux();
             hasQuota = true;
         }
-        if (nTypo > 64) {
-            throw HandSearchException.refused(nTypo + " typologies de jeu, pour 64 au plus");
-        }
 
         // per animateur
         minorAt = new boolean[nA][nDays];
@@ -500,14 +489,23 @@ final class FlatProblem {
                 adultAt[a][d] = animateur.isMajeurOn(first.plusDays(d));
                 under16At[a][d] = animateur.isUnder16On(first.plusDays(d));
             }
+            // The categories this animateur is appreciated for, numbered for them alone: the set
+            // of those they hold is a long, and an edition may have as many categories as it likes.
+            Map<String, Integer> own = new HashMap<>();
+            animateur.getCompetences().keySet().forEach(t -> own.put(t, own.size()));
+            if (own.size() > Long.SIZE) {
+                throw HandSearchException.refused("l'animateur " + animateur.getId() + " est apprécié sur " + own.size()
+                        + " typologies de jeu, pour " + Long.SIZE + " au plus");
+            }
             for (int st = 0; st < nStands; st++) {
                 Stand stand = standsInOrder.get(st);
                 isRef[st][a] = animateur.isReferentFor(stand);
                 isDeb[st][a] = animateur.isDebutantFor(stand);
                 long mask = 0;
                 for (String t : stand.getTypologiesProposees()) {
-                    if (animateur.getCompetences().containsKey(t)) {
-                        mask |= 1L << (typos.get(t) & 63);
+                    Integer bit = own.get(t);
+                    if (bit != null) {
+                        mask |= 1L << bit;
                     }
                 }
                 liked[st][a] = mask;

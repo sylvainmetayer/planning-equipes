@@ -7,11 +7,14 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicReference;
@@ -209,14 +212,18 @@ class HandSearchSolverTest {
     @Test
     void aProblemTheEngineDoesNotScoreIsRefusedInWords() {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
-        loaded.problem().parametresLegaux().setDureePauseMinutes(90);
+        Map<String, NiveauCompetence> everything = new HashMap<>();
+        for (int i = 0; i < 65; i++) {
+            everything.put("TYPOLOGIE-" + i, NiveauCompetence.AUTONOME);
+        }
+        loaded.problem().getAnimateurs().get(0).setCompetences(everything);
         HandSearchSolver solver =
                 new HandSearchSolver(hand(3), 0, loaded.configuration().solutionManager());
 
         assertThatThrownBy(() -> solver.solve(loaded.problem()))
                 .isInstanceOf(HandSearchSolver.Failed.class)
                 .hasMessageContaining("Le moteur direct ne peut pas résoudre ce problème")
-                .hasMessageContaining("la pause dépasse 60 minutes");
+                .hasMessageContaining("65 typologies de jeu, pour 64 au plus");
     }
 
     @Test

@@ -3,9 +3,14 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +108,75 @@ class HandSearchDifferentialTest {
         first.setAnimateur(loaded.problem().getAnimateurs().get(5));
         agree(loaded, "one origin back");
         assertThat(loaded.refereeBreakdown().get("eviterRoulementStandsPremium"))
+                .isPositive();
+    }
+
+    /**
+     * A break of an hour and a half: the relay of a break is looked for among
+     * the seats that overlap the one held, however long the break.
+     */
+    @Test
+    void aBreakLongerThanAnHourIsRelayedAlike() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-08-3j-5stands-16animateurs-relais-midi-reduit.yaml");
+        loaded.problem().parametresLegaux().setDureePauseMinutes(90);
+        SplittableRandom random = new SplittableRandom(8);
+        long relayed = 0;
+        for (int i = 0; i < 6; i++) {
+            if (i < 3) {
+                HandSearchFixtures.randomPlan(loaded.problem(), random);
+            } else {
+                HandSearchFixtures.sparsePlan(loaded.problem(), random);
+            }
+            agree(loaded, "break of 90 minutes " + i);
+            relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
+        }
+        HandSearchFixtures.overloadedPlan(loaded.problem());
+        agree(loaded, "break of 90 minutes, overloaded");
+        relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
+        assertThat(relayed).as("unrelayed breaks compared").isPositive();
+    }
+
+    /**
+     * More game categories than a {@code long} has bits: each animateur's are
+     * numbered for them alone, so the edition may have as many as it likes.
+     */
+    @Test
+    void anEditionWithMoreThanSixtyFourGameCategoriesIsScoredAlike() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml");
+        List<Stand> stands = loaded.problem().getPostes().stream()
+                .map(PosteAffectation::getStand)
+                .distinct()
+                .toList();
+        for (int i = 0; i < 90; i++) {
+            Stand stand = stands.get(i % stands.size());
+            Set<String> offered = new HashSet<>(stand.getTypologiesProposees());
+            offered.add("EXTRA-" + i);
+            stand.setTypologiesProposees(offered);
+        }
+        List<Animateur> animateurs = loaded.problem().getAnimateurs();
+        for (int a = 0; a < animateurs.size(); a++) {
+            Map<String, NiveauCompetence> competences =
+                    new HashMap<>(animateurs.get(a).getCompetences());
+            for (int i = 0; i < 20; i++) {
+                competences.put("EXTRA-" + (a * 7 + i * 4) % 90, NiveauCompetence.AUTONOME);
+            }
+            animateurs.get(a).setCompetences(competences);
+        }
+        SplittableRandom random = new SplittableRandom(9);
+        long spread = 0;
+        for (int i = 0; i < 6; i++) {
+            if (i < 3) {
+                HandSearchFixtures.randomPlan(loaded.problem(), random);
+            } else {
+                HandSearchFixtures.sparsePlan(loaded.problem(), random);
+            }
+            agree(loaded, "ninety more game categories " + i);
+            spread += loaded.refereeBreakdown().getOrDefault("limiterTypologiesDistinctesParAnimateur", 0L);
+        }
+        assertThat(spread)
+                .as("animateurs spread over too many categories, compared")
                 .isPositive();
     }
 
