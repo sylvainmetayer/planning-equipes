@@ -31,10 +31,9 @@ public final class HandSearch {
 
     /**
      * When to stop: {@code seconds} after this search was built, or —
-     * {@code plateauSeconds} above zero — once the plan is feasible and
-     * {@code plateauSeconds} went by without the best medium score gaining
-     * {@code plateauGainMedium} points (without any better plan at all when
-     * that gain is zero).
+     * {@code plateauSeconds} above zero — once the plan is feasible and has
+     * stopped gaining {@code plateauGainMedium} medium points a window of
+     * {@code plateauSeconds}, as {@link Plateau} judges it.
      */
     public record Limits(long seconds, long plateauSeconds, long plateauGainMedium, long seed) {}
 
@@ -127,9 +126,9 @@ public final class HandSearch {
         long lastAnnounce = System.nanoTime();
         long lastCheck = lastAnnounce;
         long lastChain = lastAnnounce;
-        // The plateau is judged from feasibility, against the best medium score it last started from.
-        long plateauSince = -1;
-        long plateauFrom = 0;
+        Plateau plateau = new Plateau(limits.plateauSeconds() * 1_000_000_000L, limits.plateauGainMedium());
+        boolean plateauOpen = false;
+        long plateauSeen = 0;
         // Nobody to seat, or every seat pinned or past: the plan is scored as it stands.
         boolean movable = nA > 0 && !allFixed();
         for (long move = 0; movable; move++) {
@@ -146,15 +145,13 @@ public final class HandSearch {
                     IncrementalScore.checkRange(score.levels());
                     lastCheck = now;
                 }
-                if (bestHard == 0 && limits.plateauSeconds() > 0) {
-                    long medium = Math.floorDiv(best + MEDIUM / 2, MEDIUM);
-                    boolean gained = limits.plateauGainMedium() > 0
-                            ? plateauFrom - medium >= limits.plateauGainMedium()
-                            : best < plateauFrom;
-                    if (plateauSince < 0 || gained) {
-                        plateauSince = now;
-                        plateauFrom = limits.plateauGainMedium() > 0 ? medium : best;
-                    } else if (now - plateauSince >= limits.plateauSeconds() * 1_000_000_000L) {
+                if (bestHard == 0) {
+                    if (!plateauOpen || best < plateauSeen) {
+                        plateau.best(now, Math.floorDiv(best + MEDIUM / 2, MEDIUM));
+                        plateauOpen = true;
+                        plateauSeen = best;
+                    }
+                    if (plateau.over(now)) {
                         break;
                     }
                 }
