@@ -588,6 +588,17 @@ propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
   quinze minutes par scénario répond pour toutes les variantes, en minutes
   gagnées contre medium et soft abandonnés.
 
+Pour mesurer comme sur l'hôte de production, la JVM du banc se borne par
+`-DargLine` — le tas à 75 % de la limite du conteneur et le ramasse-miettes
+de l'image :
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=SolverBenchTest \
+    "-DargLine=-Xmx1536m -XX:+UseParallelGC -XX:ActiveProcessorCount=2" \
+    -Dbench.scenario=festival-hivernal.yaml -Dbench.engine=hand \
+    -Dbench.seconds=300 -Dbench.seed=0 -Dbench.label=petite-machine
+```
+
 Les mesures publiées dans `solverConfig.xml` et les décisions du solveur
 viennent de là ; les graines étant fixées, deux runs d'une même
 configuration tracent la même courbe, aux secondes près.
