@@ -179,11 +179,19 @@ La décision tient ; trois points de son texte ne décrivent plus le code.
 - **Résolution incrémentale et réamorçage** sont vérifiés sous les deux
   moteurs (`SolveEnginesPerimetersTest`) et de bout en bout par la file
   (`SolverJobHandEngineTest`).
-- **Arrêt sur plateau.** Celui du moteur direct est désormais celui de
-  Timefold, référence par référence (`Plateau`) : il repartait du score de sa
-  dernière relance, ce qui finissait une résolution jusqu'à une fenêtre plus
-  tôt.
-- **Fin de partie.** Pendant la recherche, un siège vide pèse le double de
-  ce que le score compte : le combler peut alors coûter un autre point dur
-  en chemin, et les derniers sièges vides ne sont plus un palier dont on
-  sort par chance. Le score annoncé, gardé et arbitré reste le vrai.
+- **Arrêt sur plateau.** Celui du moteur direct suit désormais les sources
+  des deux terminaisons de Timefold (`Plateau`) : l'horloge part avec la
+  recherche, le plan de départ n'est pas une référence, chaque meilleur plan
+  — faisable ou non — en est une, une fois, le plus ancien d'abord. Il
+  repartait du score de sa dernière relance, ce qui finissait une résolution
+  jusqu'à une fenêtre plus tôt. `PlateauTest` compare à des instants déduits
+  de ces sources à la main : il ne fait pas tourner les classes de Timefold,
+  internes et construites autour de portées de solveur. Un écart reste : le
+  moteur date un meilleur plan au pointage suivant, quelques milliers de
+  mouvements plus tard.
+- **Fin de partie.** Pour décider d'accepter un mouvement, un siège vide pèse
+  le double de ce que le score compte : en combler un en enfreignant une
+  autre règle reste un pas en avant, et les derniers sièges vides ne sont
+  plus un palier dont on sort par chance. Ce poids ne sert qu'à
+  l'acceptation : le meilleur plan est choisi, annoncé et rendu sur le vrai
+  score, et la construction décide elle aussi sur les vrais points durs.

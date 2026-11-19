@@ -480,10 +480,10 @@ Trois autres classes tiennent ce qui entoure la recherche :
 
   | Périmètre | Moteur | Sièges épinglés | Sièges changés | Faisable à | Score à 30 s |
   | --- | --- | --- | --- | --- | --- |
-  | Un jour rouvert | Timefold | 3 205 sur 3 438 | 233 | 7,1 s | 0hard/-27590medium/-99000soft |
-  | Un jour rouvert | direct | 3 205 sur 3 438 | 233 | 0,3 s | 0hard/-27435medium/-98690soft |
-  | Réamorcé | Timefold | 0 | 665 | 0,0 s | 0hard/-26840medium/-95615soft |
-  | Réamorcé | direct | 0 | 3 195 | 0,2 s | 0hard/-25020medium/-96310soft |
+  | Un jour rouvert | Timefold | 3 205 sur 3 438 | 233 | 10,7 s | 0hard/-28070medium/-97735soft |
+  | Un jour rouvert | direct | 3 205 sur 3 438 | 233 | 0,3 s | 0hard/-27910medium/-97760soft |
+  | Réamorcé | Timefold | 0 | 608 | 0,2 s | 0hard/-27300medium/-95290soft |
+  | Réamorcé | direct | 0 | 3 155 | 0,1 s | 0hard/-25365medium/-95625soft |
 
   Aucun siège hors périmètre ne bouge. Réamorcé, le moteur direct déplace
   bien plus de sièges que Timefold dans le même temps : rien ne retient un
@@ -494,8 +494,9 @@ Trois autres classes tiennent ce qui entoure la recherche :
   passé par la file laisse sa courbe, son plan enregistré et son analyse des
   contraintes, s'arrête quand on l'arrête, en résolution complète, réamorcée
   et incrémentale. Elle démarre l'application : `container-tests.txt`.
-- `PlateauTest` — l'arrêt sur plateau du moteur direct est celui de Timefold,
-  cas par cas, sur des suites de scores datées à la main.
+- `PlateauTest` — l'arrêt sur plateau du moteur direct, sur des suites de
+  scores datées à la main ; les instants attendus sont déduits des sources
+  des terminaisons de Timefold, que le test ne fait pas tourner.
 
 ### Les tests de mutation
 
