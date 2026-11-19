@@ -46,8 +46,14 @@ configuration et n'ouvre rien : il tourne tel quel dans un worker (0086).
 
 Le score du moteur n'est jamais cru. `HandSearchSolver` pose le meilleur plan
 sur le problème, puis le fait **re-scorer par les contraintes en flux** — par
-le `SolutionManager`, la voie sans licence de 0013. Tout ce que l'application
-montre, enregistre et explique vient de ce second calcul.
+le `SolutionManager`, la voie sans licence de 0013. Ce que l'application
+enregistre et explique vient de ce second calcul.
+
+Pendant la recherche, la courbe de score est celle du moteur : arbitrer
+chaque meilleur plan coûterait ce que le moteur fait gagner. Deux instants
+sont arbitrés, ceux sur lesquels l'application s'engage : **le premier plan
+sans écart dur**, avant que la tâche annonce « faisable à N s », et **le plan
+final**, avant qu'il soit rendu.
 
 **Deux scores différents font échouer la résolution** : tâche en erreur, plan
 enregistré intact, message qui donne les deux scores. Jamais de repli sur
@@ -58,9 +64,19 @@ injoignable, cette panne-là est un défaut du code : elle est remontée comme
 telle.
 
 Le moteur refuse de lui-même, en clair, ce qu'il ne sait pas scorer : plus de
-64 typologies de jeu, une pause de plus d'une heure, un siège sans horaire, un
-score qui sort de ce que son nombre unique sait ordonner (500 000 points par
-niveau medium ou soft).
+64 typologies de jeu, une pause de plus d'une heure, un siège sans horaire
+complet, un siège tenu par quelqu'un que le problème ne connaît pas, un fait
+porté en double (deux états pour une contrainte, deux plafonds pour une
+typologie, deux jeux de paramètres), et un score medium ou soft qui sort de ce
+que leur nombre commun sait ordonner (500 millions de points soft). Le niveau
+dur est compté à part et n'a pas de plafond : un plan de départ dont des
+centaines de sièges sont tenus par quelqu'un qui n'y a plus droit, à 10 000
+points chacun, se résout comme un autre.
+
+Une troisième issue n'est ni un refus ni un désaccord : le moteur se contredit
+lui-même — le score qu'il a tenu au fil des mouvements n'est pas celui du plan
+relu par une seconde instance construite du plan seul. C'est un défaut du
+moteur, dit comme tel sur la tâche et journalisé avec le détail par règle.
 
 ### 3. Le filet est dans la suite de tests, pas dans la discipline
 

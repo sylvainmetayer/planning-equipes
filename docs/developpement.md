@@ -446,11 +446,14 @@ exemplaires de diverger :
   moteur. C'est lui qui échoue le premier, par son nom, quand une contrainte
   est ajoutée d'un seul côté.
 - `HandSearchDifferentialTest` — le score du moteur égale celui des
-  contraintes **contrainte par contrainte**, sur dix cas (cinq à six petits
+  contraintes **contrainte par contrainte**, sur onze cas (de petits
   scénarios de la gamme, tels quels ou avec les branches fabriquées par
   `HandSearchFixtures.fabricateBranches` : verrous, sièges épinglés, passé,
-  plan publié, sièges scindés, plafonds, exceptions ad hoc, anniversaires) et
-  dix plans par cas. Il se termine par une vérification de couverture : toute
+  plan publié, sièges scindés — dont après minuit —, plafonds, exceptions ad
+  hoc, anniversaires, dates de naissance inconnues) et une douzaine de plans
+  par cas. Le plan trouvé par une courte recherche y est comparé deux fois :
+  son score relu de zéro, et **le score que la recherche a tenu mouvement par
+  mouvement**, qui doit être celui des contraintes lui aussi. Il se termine par une vérification de couverture : toute
   contrainte doit avoir été comparée sur un score non nul au moins une fois,
   sinon elle est nommée. Un cas de taille réelle (`festival-hivernal`,
   `gamme-25`) est tagué `scenario-lent`.
