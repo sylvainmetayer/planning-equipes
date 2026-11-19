@@ -1,6 +1,6 @@
 # 0087 — Un second moteur de recherche, écrit à la main, que Timefold arbitre
 
-- **Statut** : accepté · le moteur est livré **désactivé** ; l'activer est un réglage d'instance
+- **Statut** : accepté · le moteur est livré **désactivé** ; l'activer est un réglage d'instance · complétée par la note en fin de page
 - **Date** : novembre 2026
 - **Portée** : recherche d'un plan (`solver/handsearch`, `service/solve`), rien du modèle ni des règles
 - **Voisine de** : [0013](0013-diagnostic-par-le-score-director.md) (le score sans l'API réservée), [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) et [0082](0082-la-fenetre-de-plateau-part-de-la-faisabilite.md) (la recherche de Timefold réglée au plus près), [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) (le solveur exact, étudié pour une autre question), [0086](0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md) (dont elle reprend l'interface et la politique d'échec)
@@ -163,3 +163,23 @@ historique fixe ne le travaille pas une fois le medium à plat.
   et que les tests unitaires de contraintes vérifient une par une. Le moteur
   direct est un accélérateur qui doit leur rendre des comptes, pas une
   seconde vérité.
+
+## Note de révision — ce qui a bougé depuis
+
+La décision tient ; trois points de son texte ne décrivent plus le code.
+
+- **Refus.** Une pause de plus d'une heure et une édition de plus de 64
+  typologies ne sont plus refusées : le relais d'une pause se cherche parmi
+  les sièges qui chevauchent le siège tenu, et les typologies se numérotent
+  par animateur (64 est ce qu'une fiche peut porter d'appréciations). S'y
+  ajoute un refus de taille : au-delà de 15 millions de couples siège ×
+  animateur — le seuil de la construction échantillonnée de
+  [0036](0036-construction-echantillonnee-des-tres-gros-problemes.md) — la
+  table du moteur prendrait l'essentiel d'un gigaoctet.
+- **Résolution incrémentale et réamorçage** sont vérifiés sous les deux
+  moteurs (`SolveEnginesPerimetersTest`) et de bout en bout par la file
+  (`SolverJobHandEngineTest`).
+- **Arrêt sur plateau.** Celui du moteur direct est désormais celui de
+  Timefold, référence par référence (`Plateau`) : il repartait du score de sa
+  dernière relance, ce qui finissait une résolution jusqu'à une fenêtre plus
+  tôt.
