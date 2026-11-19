@@ -194,6 +194,23 @@ class HandSearchSolverTest {
         assertThat(loaded.disagreements()).isEmpty();
     }
 
+    /**
+     * Forty million seat × animateur couples: the table the engine keeps of
+     * them would take most of a gigabyte and minutes to fill. Refused, at the
+     * size where the other search switches to its sampled construction.
+     */
+    @Test
+    void aProblemTooLargeForTheEnginesTableIsRefusedInWords() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("extreme-09-120j-400stands-1000animateurs-cumul.yaml");
+
+        assertThatThrownBy(() -> new HandSearchSolver(
+                                hand(1), 0, loaded.configuration().solutionManager())
+                        .solve(loaded.problem()))
+                .isInstanceOf(HandSearchSolver.Failed.class)
+                .hasMessageContaining("couples siège × animateur");
+    }
+
     @Test
     void aFactCarriedTwiceIsRefusedRatherThanGuessedAt() {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);

@@ -399,8 +399,8 @@ public final class HandSearch {
                 || a1 == a2
                 || a1 < 0
                 || a2 < 0
-                || !flat.eligible[s1][a2]
-                || !flat.eligible[s2][a1]) {
+                || flat.statHard[s1][a2] != 0
+                || flat.statHard[s2][a1] != 0) {
             return false;
         }
         score.move(s1, a2);

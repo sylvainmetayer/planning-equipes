@@ -66,6 +66,15 @@ final class FlatProblem {
     static final int FORFAIT = ExclusionEligibilite.FORFAIT;
 
     /**
+     * The size past which the problem is refused: the engine keeps what every
+     * seat costs every animateur, some fifteen bytes and a microsecond a couple
+     * — tens of megabytes and under a second for an edition, most of a
+     * gigabyte and two minutes for forty million couples. The same threshold
+     * as the sampled construction the other search switches to (ADR 0036).
+     */
+    static final long MAX_SEATS_TIMES_ANIMATEURS = 15_000_000L;
+
+    /**
      * What one unit of each rule costs: hard points for a hard rule, the
      * shared number for a medium or soft one — both 0 for a rule switched off.
      */
@@ -127,10 +136,9 @@ final class FlatProblem {
     boolean[] sExhausting;
     boolean[] sDemanding;
     int[][] sTypos;
-    /** Who may hold each seat without a hard point of its own, as a list and as a table. */
+    /** Who may hold each seat without a hard point of its own; {@link #statHard} is the table of it. */
     int[][] elig;
 
-    boolean[][] eligible;
     /** The other seats of the same stand around each seat: where a relay or a supervising adult is looked for. */
     int[][] nbr;
 
@@ -144,7 +152,10 @@ final class FlatProblem {
     /** What one seat costs one animateur whoever else is around: {@link #staticTerms}, computed once. */
     long[][] stat;
 
-    long[][] statHard;
+    int[][] statHard;
+
+    private List<List<ContrainteAdHoc>> forcedOffOf;
+    private List<List<VerrouillagePlanning>> locksOf;
 
     boolean[][] isRef;
     boolean[][] isDeb;
@@ -310,6 +321,11 @@ final class FlatProblem {
         }
         nS = postes.size();
         nA = animateurs.size();
+        if ((long) nS * nA > MAX_SEATS_TIMES_ANIMATEURS) {
+            throw HandSearchException.refused(nS + " sièges pour " + nA + " animateurs : au-delà de "
+                    + MAX_SEATS_TIMES_ANIMATEURS + " couples siège × animateur, la table du moteur ne tient plus"
+                    + " dans la mémoire d'une petite machine");
+        }
         Map<String, Integer> byId = new HashMap<>();
         for (int a = 0; a < nA; a++) {
             byId.put(animateurs.get(a).getId(), a);
@@ -645,10 +661,22 @@ final class FlatProblem {
                     forcedOfSeat.get(s).stream().mapToInt(Integer::intValue).toArray();
         }
 
+        // the forced unavailabilities and the locks that name each animateur: read for every seat below
+        forcedOffOf = new ArrayList<>(nA);
+        locksOf = new ArrayList<>(nA);
+        for (Animateur animateur : animateurs) {
+            forcedOffOf.add(problem.getContraintesAdHoc().stream()
+                    .filter(adHoc ->
+                            adHoc.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE && concerns(adHoc, animateur))
+                    .toList());
+            locksOf.add(problem.getVerrouillages().stream()
+                    .filter(lock -> animateur.getId().equals(lock.getAnimateurId()))
+                    .toList());
+        }
+
         // what one seat costs one animateur, whoever else is around
         stat = new long[nS][nA];
-        statHard = new long[nS][nA];
-        eligible = new boolean[nS][nA];
+        statHard = new int[nS][nA];
         elig = new int[nS][];
         int[] buffer = new int[nA];
         for (int s = 0; s < nS; s++) {
@@ -656,9 +684,8 @@ final class FlatProblem {
             for (int a = 0; a < nA; a++) {
                 hardOut = 0;
                 stat[s][a] = staticTerms(s, a, null);
-                statHard[s][a] = hardOut;
+                statHard[s][a] = Math.toIntExact(hardOut);
                 if (hardOut == 0) {
-                    eligible[s][a] = true;
                     buffer[n++] = a;
                 }
             }
@@ -707,18 +734,13 @@ final class FlatProblem {
         if (!animateur.hasSouhaitFor(stand)) {
             c += cost(Rule.SOUHAITS_INCOMPATIBLES, 1, breakdown);
         }
-        for (ContrainteAdHoc adHoc : problem.getContraintesAdHoc()) {
-            if (adHoc.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
-                    && concerns(adHoc, animateur)
-                    && scope(adHoc, poste)) {
+        for (ContrainteAdHoc adHoc : forcedOffOf.get(a)) {
+            if (scope(adHoc, poste)) {
                 c += cost(Rule.INDISPONIBILITE_FORCEE, 1, breakdown);
             }
         }
         if (!sLocked[s]) {
-            for (VerrouillagePlanning lock : problem.getVerrouillages()) {
-                if (!animateur.getId().equals(lock.getAnimateurId())) {
-                    continue;
-                }
+            for (VerrouillagePlanning lock : locksOf.get(a)) {
                 if (lock.getType() == TypeVerrouillage.ANIMATEUR) {
                     c += cost(Rule.ANIMATEUR_VERROUILLE_FIGE, 1, breakdown);
                 } else if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
