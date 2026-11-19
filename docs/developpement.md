@@ -480,10 +480,10 @@ Trois autres classes tiennent ce qui entoure la recherche :
 
   | Périmètre | Moteur | Sièges épinglés | Sièges changés | Faisable à | Score à 30 s |
   | --- | --- | --- | --- | --- | --- |
-  | Un jour rouvert | Timefold | 3 205 sur 3 438 | 233 | 10,7 s | 0hard/-28070medium/-97735soft |
-  | Un jour rouvert | direct | 3 205 sur 3 438 | 233 | 0,3 s | 0hard/-27910medium/-97760soft |
-  | Réamorcé | Timefold | 0 | 608 | 0,2 s | 0hard/-27300medium/-95290soft |
-  | Réamorcé | direct | 0 | 3 155 | 0,1 s | 0hard/-25365medium/-95625soft |
+  | Un jour rouvert | Timefold | 3 205 sur 3 438 | 233 | 6,4 s | 0hard/-25580medium/-96850soft |
+  | Un jour rouvert | direct | 3 205 sur 3 438 | 233 | 0,3 s | 0hard/-25505medium/-96860soft |
+  | Réamorcé | Timefold | 0 | 861 | 0,0 s | 0hard/-25205medium/-94095soft |
+  | Réamorcé | direct | 0 | 3 109 | 0,1 s | 0hard/-24050medium/-92775soft |
 
   Aucun siège hors périmètre ne bouge. Réamorcé, le moteur direct déplace
   bien plus de sièges que Timefold dans le même temps : rien ne retient un
