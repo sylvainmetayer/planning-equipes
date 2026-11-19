@@ -496,6 +496,8 @@ final class FlatProblem {
         isDeb = new boolean[nStands][nA];
         liked = new long[nStands][nA];
         ninjaTotal = 0;
+        Set<String> offered = new HashSet<>();
+        standsInOrder.forEach(stand -> offered.addAll(stand.getTypologiesProposees()));
         for (int a = 0; a < nA; a++) {
             Animateur animateur = animateurs.get(a);
             ninja[a] = animateur.isNinja();
@@ -505,13 +507,15 @@ final class FlatProblem {
                 adultAt[a][d] = animateur.isMajeurOn(first.plusDays(d));
                 under16At[a][d] = animateur.isUnder16On(first.plusDays(d));
             }
-            // The categories this animateur is appreciated for, numbered for them alone: the set
-            // of those they hold is a long, and an edition may have as many categories as it likes.
+            // The categories this animateur is appreciated for and a stand offers, numbered for them
+            // alone: the set of those they hold is a long, and an edition may have as many as it likes.
             Map<String, Integer> own = new HashMap<>();
-            animateur.getCompetences().keySet().forEach(t -> own.put(t, own.size()));
+            animateur.getCompetences().keySet().stream()
+                    .filter(offered::contains)
+                    .forEach(t -> own.put(t, own.size()));
             if (own.size() > Long.SIZE) {
                 throw HandSearchException.refused("l'animateur " + animateur.getId() + " est apprécié sur " + own.size()
-                        + " typologies de jeu, pour " + Long.SIZE + " au plus");
+                        + " typologies de jeu proposées par un stand, pour " + Long.SIZE + " au plus");
             }
             for (int st = 0; st < nStands; st++) {
                 Stand stand = standsInOrder.get(st);
