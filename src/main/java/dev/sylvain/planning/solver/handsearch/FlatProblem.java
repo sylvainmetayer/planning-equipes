@@ -198,7 +198,19 @@ final class FlatProblem {
      * A rule between two animateurs, charged to the one who owns the term:
      * kind 0 an incompatibility, 1 an affinity, 2 a grouped arrival.
      */
-    record PairTerm(int kind, int other, boolean[] scope, int tolerance) {}
+    static final class PairTerm {
+        final int kind;
+        final int other;
+        final boolean[] scope;
+        final int tolerance;
+
+        PairTerm(int kind, int other, boolean[] scope, int tolerance) {
+            this.kind = kind;
+            this.other = other;
+            this.scope = scope;
+            this.tolerance = tolerance;
+        }
+    }
 
     /**
      * What n units of a rule cost on the shared number; its hard points go to

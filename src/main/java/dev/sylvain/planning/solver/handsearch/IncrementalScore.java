@@ -209,7 +209,7 @@ final class IncrementalScore {
         load(assign.clone());
     }
 
-    private long cost(Rule rule, long n) {
+    private long cost(Rule rule, int n) {
         if (explain) {
             acc[rule.ordinal()] += n;
         }
@@ -326,8 +326,8 @@ final class IncrementalScore {
                                 .sqrt(SIX_DIGITS)
                                 .multiply(BigDecimal.TEN)
                                 .setScale(0, RoundingMode.HALF_UP)
-                                .longValue()
-                        : Math.round(scaled));
+                                .intValueExact()
+                        : Math.toIntExact(Math.round(scaled)));
     }
 
     /** The shared part of the cost; its hard points are left in {@link #globalHard}. */
@@ -613,7 +613,6 @@ final class IncrementalScore {
         countLocal(s, 1);
     }
 
-    /** Counts seat s, held by a, in or out of what its stand x timeslot line shows. */
     /** Adds or takes away what seat s costs while nobody holds it. */
     private void countEmpty(int s, int sign) {
         hardOut = 0;
@@ -978,7 +977,9 @@ final class IncrementalScore {
                                 && flat.sEnd[sx] < flat.sStart[sy]
                                 && flat.walk[ex][flat.sEmpl[sy]] >= 0) {
                             int missing = WalkingTime.missingMinutes(
-                                    flat.walk[ex][flat.sEmpl[sy]], flat.sStart[sy] - flat.sEnd[sx], flat.walkTolerance);
+                                    flat.walk[ex][flat.sEmpl[sy]],
+                                    (long) flat.sStart[sy] - flat.sEnd[sx],
+                                    flat.walkTolerance);
                             if (missing > 0) {
                                 boolean between = false;
                                 for (int z = from; z < to; z++) {
@@ -1076,14 +1077,14 @@ final class IncrementalScore {
     /** An ad hoc rule between two people, charged to the one who owns the term. */
     private long pair(int a, PairTerm term) {
         long cost = 0;
-        int other = term.other();
-        if (term.kind() == 2) {
+        int other = term.other;
+        if (term.kind == 2) {
             dayBounds(a, dayHas, dayStartOf, dayEndOf, dayAhead);
             dayBounds(other, otherHas, otherStart, otherEnd, otherAhead);
             for (int j = 0; j < dayHas.length; j++) {
                 if (dayHas[j] && otherHas[j]) {
-                    int gap = Math.max(0, Math.abs(dayStartOf[j] - otherStart[j]) - term.tolerance())
-                            + Math.max(0, Math.abs(dayEndOf[j] - otherEnd[j]) - term.tolerance());
+                    int gap = Math.max(0, Math.abs(dayStartOf[j] - otherStart[j]) - term.tolerance)
+                            + Math.max(0, Math.abs(dayEndOf[j] - otherEnd[j]) - term.tolerance);
                     if (gap > 0 && (dayAhead[j] || otherAhead[j])) {
                         cost += cost(Rule.ARRIVEE_GROUPEE, gap);
                     }
@@ -1096,15 +1097,15 @@ final class IncrementalScore {
         int[] mine = seatsOf[a], theirs = seatsOf[other];
         for (int x = 0; x < countOf[a]; x++) {
             int sx = mine[x];
-            if (!term.scope()[sx]) {
+            if (!term.scope[sx]) {
                 continue;
             }
             for (int y = 0; y < countOf[other]; y++) {
                 int sy = theirs[y];
-                if (flat.sSlot[sx] != flat.sSlot[sy] || !term.scope()[sy] || (flat.sPast[sx] && flat.sPast[sy])) {
+                if (flat.sSlot[sx] != flat.sSlot[sy] || !term.scope[sy] || (flat.sPast[sx] && flat.sPast[sy])) {
                     continue;
                 }
-                if (term.kind() == 0) {
+                if (term.kind == 0) {
                     cost += cost(Rule.INCOMPATIBILITE_AD_HOC, 1);
                 } else if (flat.sStand[sx] == flat.sStand[sy]) {
                     cost += cost(Rule.AFFINITE_AD_HOC, -1);
