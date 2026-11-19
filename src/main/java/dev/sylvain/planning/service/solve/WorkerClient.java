@@ -97,7 +97,8 @@ final class WorkerClient {
         String query = "solves?version=" + java.net.URLEncoder.encode(version, java.nio.charset.StandardCharsets.UTF_8)
                 + "&seconds=" + settings.seconds()
                 + "&plateau=" + settings.plateauSeconds()
-                + "&gain=" + settings.plateauGainMediumPerSeat();
+                + "&gain=" + settings.plateauGainMediumPerSeat()
+                + "&engine=" + settings.engine().configValue();
         HttpRequest.Builder request = request(query)
                 .header("Content-Type", "application/octet-stream")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(payload));

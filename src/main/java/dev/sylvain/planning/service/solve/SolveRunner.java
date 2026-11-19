@@ -129,6 +129,18 @@ final class SolveRunner {
      */
     Solved solvePrepared(
             PlanningEvenement prepared, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        if (configuration.engine() == SolverEngine.HAND) {
+            // One stage, whatever is published: the two stages of
+            // FeasibilityFirstSolve answer a slowness of the other search.
+            Solver<PlanningEvenement> direct = new HandSearchSolver(
+                    configuration.searchSettings(budget),
+                    configuration.plateauGainMedium(prepared),
+                    configuration.solutionManager());
+            if (onSolverReady != null) {
+                onSolverReady.accept(direct);
+            }
+            return new Solved(direct.solve(prepared), null);
+        }
         if (FeasibilityFirstSolve.applies(prepared)) {
             return solveFeasibilityFirst(prepared, budget, onSolverReady);
         }

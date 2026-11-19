@@ -184,7 +184,8 @@ public final class SolveWorkerServer implements AutoCloseable {
         SolverConfiguration.SearchSettings settings = new SolverConfiguration.SearchSettings(
                 Long.parseLong(required(query, "seconds")),
                 Long.parseLong(required(query, "plateau")),
-                Double.parseDouble(required(query, "gain")));
+                Double.parseDouble(required(query, "gain")),
+                SolverEngine.of(required(query, "engine")));
         answer(exchange, 201, Map.of("id", worker.submit(payload, settings)));
     }
 
