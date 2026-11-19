@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -46,9 +47,16 @@ public final class FailureLockout {
 
     private final Map<String, Run> byKey = new ConcurrentHashMap<>();
     private final int maxKeys;
+    private final Clock clock;
 
     public FailureLockout(int maxKeys) {
+        this(maxKeys, Clock.systemUTC());
+    }
+
+    /** A clock a test can move, so a lock's lifting never depends on how fast the machine is. */
+    FailureLockout(int maxKeys, Clock clock) {
         this.maxKeys = maxKeys;
+        this.clock = clock;
     }
 
     /**
@@ -63,7 +71,7 @@ public final class FailureLockout {
         if (run == null || run.failures() < maxFailures) {
             return 0;
         }
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         if (run.last().plus(duration).isBefore(now)) {
             byKey.computeIfPresent(key, (ignore, current) -> current.inFlight() > 0 ? current.cleared() : null);
             return 0;
@@ -83,7 +91,7 @@ public final class FailureLockout {
         if (maxFailures <= 0) {
             return 0;
         }
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         makeRoomFor(key, now, duration);
         long[] wait = {0};
         byKey.compute(key, (ignore, current) -> {
@@ -107,7 +115,7 @@ public final class FailureLockout {
      * — no credential was actually tried — does neither.
      */
     public void settle(String key, Outcome outcome, Duration duration) {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         byKey.computeIfPresent(key, (ignore, current) -> {
             int inFlight = Math.max(0, current.inFlight() - 1);
             Run run =
@@ -131,7 +139,7 @@ public final class FailureLockout {
      *         knows the lock has just engaged when it equals its ceiling
      */
     public int recordFailure(String key, Duration duration) {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         makeRoomFor(key, now, duration);
         int[] failures = {0};
         byKey.compute(key, (ignore, current) -> {

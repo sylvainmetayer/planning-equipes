@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
@@ -45,8 +46,16 @@ public class SlidingWindowCounter {
         this(0);
     }
 
+    private final Clock clock;
+
     private SlidingWindowCounter(int maxKeys) {
+        this(maxKeys, Clock.systemUTC());
+    }
+
+    /** A clock a test can move, so a window's reopening never depends on how fast the machine is. */
+    SlidingWindowCounter(int maxKeys, Clock clock) {
         this.maxKeys = maxKeys;
+        this.clock = clock;
     }
 
     /** At most {@code maxKeys} keys at once: for keys the caller chooses, such as a source address. */
@@ -63,7 +72,7 @@ public class SlidingWindowCounter {
      * {@code Retry-After}.
      */
     public RateLimitVerdict use(String key, int ceiling, Duration window) {
-        Instant maintenant = Instant.now();
+        Instant maintenant = clock.instant();
         makeRoomFor(key, maintenant, window);
         Window apres = byKey.compute(key, (ignore, courante) -> {
             if (courante == null || courante.debut().plus(window).isBefore(maintenant)) {
@@ -85,7 +94,7 @@ public class SlidingWindowCounter {
      * asks for every one of them once.
      */
     public RateLimitVerdict useDistinct(String key, String element, int ceiling, Duration window) {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         makeRoomFor(key, now, window);
         Window after = byKey.compute(key, (ignore, current) -> {
             Window live = current == null || current.debut().plus(window).isBefore(now)
