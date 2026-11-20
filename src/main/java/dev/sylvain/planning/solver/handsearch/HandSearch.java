@@ -132,10 +132,13 @@ public final class HandSearch {
         int nS = flat.nS;
         int nA = flat.nA;
 
+        int away = score.away;
         long[] history = new long[LATE_ACCEPTANCE];
         long[] historyHard = new long[LATE_ACCEPTANCE];
+        int[] historyAway = new int[LATE_ACCEPTANCE];
         Arrays.fill(history, total);
         Arrays.fill(historyHard, totalHard);
+        Arrays.fill(historyAway, away);
         // The best plan is judged on the real hard points; totalHard carries the search's weight of an empty seat.
         long best = total;
         long bestHard = totalHard - score.emptyExtra * score.emptyAhead;
@@ -183,8 +186,10 @@ public final class HandSearch {
                     chainEmptySeats(random);
                     totalHard = score.totalHard();
                     total = score.total();
+                    away = score.away;
                     Arrays.fill(history, total);
                     Arrays.fill(historyHard, totalHard);
+                    Arrays.fill(historyAway, away);
                     long realHard = totalHard - score.emptyExtra * score.emptyAhead;
                     if (before(realHard, total, bestHard, best)) {
                         best = total;
@@ -199,10 +204,18 @@ public final class HandSearch {
                 long candidate = total + score.finish();
                 long candidateHard = totalHard + score.deltaHard;
                 int slot = (int) (move % LATE_ACCEPTANCE);
-                if (!before(totalHard, total, candidateHard, candidate)
-                        || !before(historyHard[slot], history[slot], candidateHard, candidate)) {
+                int candidateAway = score.away;
+                if (!before(totalHard, total, away, candidateHard, candidate, candidateAway)
+                        || !before(
+                                historyHard[slot],
+                                history[slot],
+                                historyAway[slot],
+                                candidateHard,
+                                candidate,
+                                candidateAway)) {
                     total = candidate;
                     totalHard = candidateHard;
+                    away = candidateAway;
                     long realHard = totalHard - score.emptyExtra * score.emptyAhead;
                     if (before(realHard, total, bestHard, best)) {
                         best = total;
@@ -214,6 +227,7 @@ public final class HandSearch {
                 }
                 history[slot] = total;
                 historyHard[slot] = totalHard;
+                historyAway[slot] = away;
             }
         }
 
@@ -371,6 +385,18 @@ public final class HandSearch {
     /** Whether the first cost is strictly the better one: fewer hard points, then less of the rest. */
     private static boolean before(long hard, long rest, long otherHard, long otherRest) {
         return hard < otherHard || (hard == otherHard && rest < otherRest);
+    }
+
+    /**
+     * The same for a move to accept, with the seats away from the plan the
+     * search started on as a last key. A search that takes every move of equal
+     * score swaps people the rules cannot tell apart, and a plan solved again
+     * comes back with two seats in three changed for nothing: at equal score
+     * it now stays where it was. No move that betters the score is refused
+     * for it, and the score never reads it — a fresh solve has no such plan.
+     */
+    private static boolean before(long hard, long rest, int away, long otherHard, long otherRest, int otherAway) {
+        return before(hard, rest, otherHard, otherRest) || (hard == otherHard && rest == otherRest && away < otherAway);
     }
 
     /** The score two numbers stand for; exact inside the range {@link IncrementalScore#checkRange} holds. */

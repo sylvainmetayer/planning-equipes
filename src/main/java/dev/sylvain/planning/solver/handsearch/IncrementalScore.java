@@ -65,6 +65,9 @@ final class IncrementalScore {
     final long[] hardOf;
     int unassignedMovable;
 
+    /** Seats that had a holder when the problem was handed in and are not with them now. */
+    int away;
+
     /** Empty seats still ahead, pinned ones included. */
     int emptyAhead;
 
@@ -216,6 +219,7 @@ final class IncrementalScore {
         }
         for (int s = 0; s < nS; s++) {
             if (flat.initial[s] >= 0) {
+                away++; // counted away until set() below hands the seat back
                 set(s, flat.initial[s]);
             }
         }
@@ -530,6 +534,10 @@ final class IncrementalScore {
         int from = assign[s];
         if (from == to) {
             return;
+        }
+        int initial = flat.initial[s];
+        if (initial >= 0) {
+            away += (to != initial ? 1 : 0) - (from != initial ? 1 : 0);
         }
         touch(from);
         touch(to);
