@@ -91,7 +91,7 @@ class RemoteSolverTest {
                 cancelled -> client(secret),
                 new SolveExchange(new ObjectMapper()),
                 configuration.solutionManager(),
-                new SolverConfiguration.SearchSettings(seconds, 0, 0),
+                new SolverConfiguration.SearchSettings(seconds, 0, 0, SolverEngine.TIMEFOLD),
                 version,
                 resume,
                 (solveId, realIds) -> submitted.set(new RemoteSolver.Resume(solveId, realIds)),
@@ -172,7 +172,8 @@ class RemoteSolverTest {
     @Test
     void aWorkerSolvesOneProblemAtATimeAndForgetsAnIdItNeverGave() {
         SolveExchange exchange = new SolveExchange(new ObjectMapper());
-        SolverConfiguration.SearchSettings settings = new SolverConfiguration.SearchSettings(30, 0, 0);
+        SolverConfiguration.SearchSettings settings =
+                new SolverConfiguration.SearchSettings(30, 0, 0, SolverEngine.TIMEFOLD);
         WorkerClient client = client(SECRET);
         String id = client.submit(exchange.outbound(prepared).payload(), settings, VERSION);
 
@@ -382,7 +383,7 @@ class RemoteSolverTest {
         return client(SECRET)
                 .submit(
                         new SolveExchange(new ObjectMapper()).outbound(prepared).payload(),
-                        new SolverConfiguration.SearchSettings(1, 0, 0),
+                        new SolverConfiguration.SearchSettings(1, 0, 0, SolverEngine.TIMEFOLD),
                         VERSION);
     }
 }

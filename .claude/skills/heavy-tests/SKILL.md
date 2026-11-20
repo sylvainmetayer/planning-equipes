@@ -41,6 +41,11 @@ close.
 Add the same tag to any future test in this weight class instead of letting
 it slow down the default loop.
 
+`HandSearchDifferentialTest` keeps one `scenario-lent` case beside its ten
+default ones: the direct engine's score against the constraint provider's,
+constraint by constraint, on `festival-hivernal` and `gamme-25` (ADR 0087). A
+change to a rule, in either engine, wants it run.
+
 Two more `scenario-lent` classes in `service/solve` **measure** rather than
 validate, and run only with their system properties: `SolverBenchTest`
 (`-Dbench.scenario=<name or absolute path>`, one full solve of the production
@@ -48,7 +53,8 @@ search with its best-score curve written to `target/bench/`;
 `-Dbench.stopWhenFeasible=true` for the feasibility phase alone,
 `-Dbench.calculations=N` for a fixed number of score calculations, the
 equality check of a constraint rewrite; `-Dbench.jfr=<file>` for a Flight
-Recorder profile of the solve) and `TerminationReplayTest`
+Recorder profile of the solve; `-Dbench.engine=hand` to measure the direct
+engine of ADR 0087 instead of Timefold's search) and `TerminationReplayTest`
 (`-Dreplay.curve=<csv>`, which replays the termination rules on a recorded
 curve). Every solver tuning committed with figures was measured with them —
 see *Le banc du solveur* in `docs/developpement.md`.

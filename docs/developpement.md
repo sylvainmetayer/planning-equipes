@@ -433,6 +433,40 @@ Quand il échoue sur un nom légitime : le renommer, ou l'ajouter à
 `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un troisième test vérifie que chaque
 exception correspond encore à du code réel.
 
+### Le moteur direct : deux tests qui tiennent les règles en double
+
+`solver/handsearch` écrit les 47 règles une seconde fois, pour chercher sans
+traverser les contraintes en flux
+([`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)).
+Deux tests de la suite par défaut, sans conteneur, empêchent les deux
+exemplaires de diverger :
+
+- `HandSearchCoverageStructuralTest` — toute contrainte de `ConstraintCatalog`
+  a sa constante dans `Rule`, et toute constante est comptée dans le score du
+  moteur. C'est lui qui échoue le premier, par son nom, quand une contrainte
+  est ajoutée d'un seul côté.
+- `HandSearchDifferentialTest` — le score du moteur égale celui des
+  contraintes **contrainte par contrainte**, sur onze cas (de petits
+  scénarios de la gamme, tels quels ou avec les branches fabriquées par
+  `HandSearchFixtures.fabricateBranches` : verrous, sièges épinglés, passé,
+  plan publié, sièges scindés — dont après minuit —, plafonds, exceptions ad
+  hoc, anniversaires, dates de naissance inconnues) et une douzaine de plans
+  par cas. Le plan trouvé par une courte recherche y est comparé deux fois :
+  son score relu de zéro, et **le score que la recherche a tenu mouvement par
+  mouvement**, qui doit être celui des contraintes lui aussi. Il se termine par une vérification de couverture : toute
+  contrainte doit avoir été comparée sur un score non nul au moins une fois,
+  sinon elle est nommée. Un cas de taille réelle (`festival-hivernal`,
+  `gamme-25`) est tagué `scenario-lent`.
+
+Ajouter une contrainte, c'est donc trois écritures : le flux
+(`solver/constraints`), le catalogue, et son terme dans `IncrementalScore` —
+ou dans `FlatProblem.staticTerms` si elle ne lit qu'un siège et son
+titulaire. Quand le différentiel échoue, son message donne la contrainte et
+les deux valeurs, « moteur / contraintes », sur le plan fautif.
+
+`HandSearchSolverTest` couvre le reste : le moteur derrière l'interface du
+solveur, l'arrêt, et le refus d'un plan que l'arbitre ne score pas pareil.
+
 ### Les tests de mutation
 
 La couverture dit qu'une ligne a tourné, pas qu'un test échouerait si elle
@@ -509,7 +543,11 @@ propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
   changé que le coût), `bench.drWindow` / `bench.drRatio` (une terminaison
   par rendements décroissants à la place du plateau), `bench.seed`, et
   `bench.jfr=<fichier>` qui enregistre le solve seul au Java Flight Recorder
-  (réglage `profile`), à lire avec `jfr print --events jdk.ExecutionSample`.
+  (réglage `profile`), à lire avec `jfr print --events jdk.ExecutionSample`,
+  et `bench.engine=hand` qui mesure le moteur direct à la place de la
+  recherche de Timefold, sous le même budget, le même plateau et la même
+  graine — les options qui réécrivent la terminaison de Timefold
+  (`calculations`, `stopWhenFeasible`, `drWindow`) sont alors sans effet.
 - `TerminationReplayTest` rejoue des règles d'arrêt sur une courbe
   enregistrée (`-Dreplay.curve=<csv>`) : le plateau à plusieurs durées, les
   rendements décroissants de Timefold à plusieurs fenêtres et ratios, un gain
@@ -718,6 +756,7 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | `planning.solver.seconds-limit` | `900` (`3` en `%test`) | Budget de résolution |
 | `planning.solver.unimproved-seconds-limit` | `180` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** : la fenêtre, que chaque édition règle |
 | `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` en `%test`) | Ce que la fenêtre doit gagner en medium, par siège du problème, pour que le calcul continue ; `0` est le plateau strict (pas un point), qui ne se déclenchait jamais — voir [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) |
+| `planning.solver.engine` | `timefold` (`SOLVER_ENGINE`) | Le moteur qui cherche : `timefold`, ou `hand` pour le moteur direct de [`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md) — voir *Le moteur direct* plus bas |
 | `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; démarrage refusé s'il est sous `seconds-limit` |
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
 | `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |

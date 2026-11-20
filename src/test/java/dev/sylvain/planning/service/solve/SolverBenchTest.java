@@ -58,6 +58,10 @@ import org.junit.jupiter.api.Test;
  *   <li>{@code bench.seed} — the random seed, in place of the one
  *       {@code solverConfig.xml} pins: what the comparison of seeds of the
  *       parallel-solves experiment draws on;</li>
+ *   <li>{@code bench.engine} — {@code hand} measures the direct engine
+ *       ({@link HandSearchSolver}) instead of Timefold's search, under the
+ *       same budget, plateau and seed; the three options above that rewrite
+ *       Timefold's termination are then ignored;</li>
  *   <li>{@code bench.label} — a word naming the run in the results;</li>
  *   <li>{@code bench.out} — the Markdown file the result line is appended
  *       to, {@code target/bench/results.md} by default;</li>
@@ -137,8 +141,15 @@ class SolverBenchTest {
             solverConfig.setRandomSeed(seed);
         }
         SolverConfiguration.adaptToProblem(solverConfig, problem);
-        Solver<PlanningEvenement> solver =
-                SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
+        // The direct engine (ADR 0087) under the same budget and plateau, on the
+        // same curve: the options that rewrite Timefold's termination do not apply.
+        Solver<PlanningEvenement> solver = "hand".equals(System.getProperty("bench.engine"))
+                ? new HandSearchSolver(
+                        new SolverConfiguration.SearchSettings(seconds, plateau, 0, SolverEngine.HAND),
+                        configuration.plateauGainMedium(problem),
+                        configuration.solutionManager(),
+                        seed == null ? 0L : seed)
+                : SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
 
         List<Sample> samples = new ArrayList<>();
         long[] firstInitialized = {-1};

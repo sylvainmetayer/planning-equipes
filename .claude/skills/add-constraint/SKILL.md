@@ -1,6 +1,6 @@
 ---
 name: add-constraint
-description: Scaffold a new Timefold constraint end-to-end (constraint method, ConstraintCatalog entry, unit test, hard-constraint regression test). Use when the user asks to add, create, or implement a new planning constraint for planning-equipes.
+description: Scaffold a new Timefold constraint end-to-end (constraint method, ConstraintCatalog entry, its second writing in the direct engine, unit test, hard-constraint regression test). Use when the user asks to add, create, or implement a new planning constraint for planning-equipes.
 ---
 
 # Add a new constraint
@@ -47,7 +47,27 @@ Add a matching entry to
 must appear here — this is enforced by convention, not by the compiler, so
 don't skip it.
 
-## 4. Write the unit test
+## 4. Write it a second time, in the direct engine
+
+The rules exist twice (ADR 0087): the direct engine of
+`src/main/java/dev/sylvain/planning/solver/handsearch/` scores plans without
+going through the constraint streams, and must score them alike.
+
+- Add the constant to `Rule`, under the constraint's name in upper snake case
+  (`posteDoitEtrePourvu` → `POSTE_DOIT_ETRE_POURVU`).
+- Charge it with `cost(Rule.X, n)` where its shape belongs — the class javadoc
+  of `IncrementalScore` lists the four: one seat and its holder
+  (`FlatProblem.staticTerms`), the sorted seats of one animateur (`eval`), a
+  shared count (`lineCost`, `standCost`, `slotCost`, `balance`, kept by
+  `set`), or one animateur's cost reading somebody else's seats (then `set`
+  must re-read whoever depends on the seat that moved).
+- Respect what the stream respects: past seats (`PastSeats`), the toggle and
+  the weight come for free through `cost`, the rest is yours.
+- Run `HandSearchCoverageStructuralTest` and `HandSearchDifferentialTest`. The
+  second must compare the new rule on a non-zero score: if no case makes it
+  bite, give `HandSearchFixtures.fabricateBranches` what it takes.
+
+## 5. Write the unit test
 
 Add a test method to the matching
 `src/test/java/dev/sylvain/planning/solver/constraints/*ConstraintsTest.java`
@@ -57,14 +77,14 @@ At minimum:
 - one case that triggers the penalty,
 - one valid case that doesn't.
 
-## 5. Hard constraints only: extend the regression test
+## 6. Hard constraints only: extend the regression test
 
 If the new constraint is `HardScore`, extend
 `src/test/java/dev/sylvain/planning/solver/PlanningHardConstraintsTest.java`
 so `solved.getScore().hardScore()` stays zero on the nominal scenario. Don't
 consider the change done until this passes.
 
-## 6. Update documentation
+## 7. Update documentation
 
 The constraint's business description lives in `ConstraintCatalog` (step
 above), which `GET /api/constraints` serves: that is the documentation the
@@ -75,7 +95,7 @@ constraint introduces a new business capability visible to end users, also
 check whether `README.md` section *Fonctionnalités métier* needs a line —
 but keep that section free of class names/file paths.
 
-## 7. Verify
+## 8. Verify
 
 Run the targeted test class, then the full suite before wrapping up:
 

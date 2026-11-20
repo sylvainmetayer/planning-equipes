@@ -65,6 +65,9 @@ final class SolverConfiguration {
      */
     private final double plateauGainMediumPerSeat;
 
+    /** The search of this deployment; see {@link #ENGINE_PROPERTY}. */
+    private final SolverEngine engine;
+
     /**
      * The deployment-wide weight of every constraint, read once from
      * {@code application.properties}. An edition may override any of them
@@ -91,6 +94,7 @@ final class SolverConfiguration {
             ReferenceData referenceDataService,
             Config config) {
         this.plateauGainMediumPerSeat = readPlateauGainMediumPerSeat(config);
+        this.engine = readEngine(config);
         SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
@@ -333,6 +337,18 @@ final class SolverConfiguration {
      */
     static final String PLATEAU_GAIN_PROPERTY = "planning.solver.plateau-gain-medium-per-seat";
 
+    /**
+     * Which search solves a prepared problem: {@code planning.solver.engine},
+     * {@code timefold} unless the deployment says {@code hand} (ADR 0087).
+     */
+    static final String ENGINE_PROPERTY = "planning.solver.engine";
+
+    static SolverEngine readEngine(Config config) {
+        return config.getOptionalValue(ENGINE_PROPERTY, String.class)
+                .map(SolverEngine::of)
+                .orElse(SolverEngine.TIMEFOLD);
+    }
+
     static double readPlateauGainMediumPerSeat(Config config) {
         return Math.max(
                 0, config.getOptionalValue(PLATEAU_GAIN_PROPERTY, Double.class).orElse(0.0));
@@ -475,10 +491,15 @@ final class SolverConfiguration {
      * solve: what a worker is handed in place of its own settings (ADR 0086),
      * so that a variable forgotten on that machine cannot change a plan.
      */
-    public record SearchSettings(long seconds, long plateauSeconds, double plateauGainMediumPerSeat) {}
+    public record SearchSettings(
+            long seconds, long plateauSeconds, double plateauGainMediumPerSeat, SolverEngine engine) {}
 
     SearchSettings searchSettings(SolveBudget budget) {
-        return new SearchSettings(secondsOf(budget), plateauOf(budget), plateauGainMediumPerSeat);
+        return new SearchSettings(secondsOf(budget), plateauOf(budget), plateauGainMediumPerSeat, engine);
+    }
+
+    SolverEngine engine() {
+        return engine;
     }
 
     /**
@@ -489,6 +510,7 @@ final class SolverConfiguration {
     static SolverConfiguration ofSettings(SearchSettings settings) {
         Config config = new SmallRyeConfigBuilder()
                 .withDefaultValue(PLATEAU_GAIN_PROPERTY, String.valueOf(settings.plateauGainMediumPerSeat()))
+                .withDefaultValue(ENGINE_PROPERTY, settings.engine().configValue())
                 .build();
         return new SolverConfiguration(settings.seconds(), settings.plateauSeconds(), null, null, config);
     }

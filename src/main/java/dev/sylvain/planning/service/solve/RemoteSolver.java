@@ -1,12 +1,10 @@
 package dev.sylvain.planning.service.solve;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
-import ai.timefold.solver.core.api.score.Score;
 import ai.timefold.solver.core.api.solver.SolutionManager;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.change.ProblemChange;
 import ai.timefold.solver.core.api.solver.event.BestSolutionChangedEvent;
-import ai.timefold.solver.core.api.solver.event.EventProducerId;
 import ai.timefold.solver.core.api.solver.event.SolverEventListener;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import java.io.UncheckedIOException;
@@ -209,7 +207,7 @@ final class RemoteSolver implements Solver<PlanningEvenement> {
                 SolveWorker.Status status = worker.status(solveId, cursor);
                 lastContact = System.nanoTime();
                 for (SolveWorker.Point point : status.points()) {
-                    fire(new Best(
+                    fire(new BestScore(
                             offsetMs + point.timeMs(),
                             HardMediumSoftScore.of(point.hard(), point.medium(), point.soft())));
                 }
@@ -273,42 +271,6 @@ final class RemoteSolver implements Solver<PlanningEvenement> {
     private void fire(BestSolutionChangedEvent<PlanningEvenement> event) {
         for (SolverEventListener<PlanningEvenement> listener : listeners) {
             listener.bestSolutionChanged(event);
-        }
-    }
-
-    /** A best score announced by the worker. It carries no solution: the plan only exists here once landed. */
-    private record Best(long timeMillisSpent, HardMediumSoftScore score)
-            implements BestSolutionChangedEvent<PlanningEvenement> {
-
-        @Override
-        public long getTimeMillisSpent() {
-            return timeMillisSpent;
-        }
-
-        @Override
-        public EventProducerId getProducerId() {
-            return null;
-        }
-
-        @Override
-        public PlanningEvenement getNewBestSolution() {
-            return null;
-        }
-
-        @SuppressWarnings({"rawtypes", "unchecked"})
-        @Override
-        public Score getNewBestScore() {
-            return score;
-        }
-
-        @Override
-        public boolean isNewBestSolutionInitialized() {
-            return true;
-        }
-
-        @Override
-        public boolean isEveryProblemChangeProcessed() {
-            return true;
         }
     }
 
