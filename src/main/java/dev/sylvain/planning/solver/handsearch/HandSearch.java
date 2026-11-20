@@ -78,6 +78,11 @@ public final class HandSearch {
      */
     private static final long EMPTY_WEIGHT = 2;
 
+    // how a step of the chain ended: the seat is placed, the budget is spent, or neither yet
+    private static final int PLACED = 1;
+    private static final int SPENT = -1;
+    private static final int NOT_YET = 0;
+
     /** Trials of a chain between two looks at the clock and the stop flag. */
     private static final int CHAIN_LOOK = 256;
 
@@ -112,7 +117,9 @@ public final class HandSearch {
      *                             stopped matching the score rebuilt from the
      *                             plan alone
      */
-    @SuppressWarnings("java:S3776") // one loop, read top to bottom; splitting it would only pass its locals around
+    // One loop whose bookkeeping — the best plan, what was announced, the plateau, the chain — is a dozen
+    // locals: in fields they would be read and written through this on every move.
+    @SuppressWarnings("java:S3776")
     public HardMediumSoftScore solve(Limits limits, BooleanSupplier stopRequested, Listener listener) {
         this.deadline = start + limits.seconds() * 1_000_000_000L;
         this.stop = stopRequested;
@@ -167,10 +174,7 @@ public final class HandSearch {
                     plateauFedHard = bestHard;
                 }
                 // Only a feasible plan ends on the plateau: reaching one is what the budget is for.
-                if (bestHard == 0 && plateau.over(now)) {
-                    break;
-                }
-                if (now >= deadline || stop.getAsBoolean()) {
+                if ((bestHard == 0 && plateau.over(now)) || now >= deadline || stop.getAsBoolean()) {
                     break;
                 }
                 if (score.unassignedMovable > 0
@@ -191,83 +195,26 @@ public final class HandSearch {
                 }
             }
             score.begin();
-            int kind = random.nextInt(16);
-            if (score.unassignedMovable > 0 && kind < 4) {
-                // an empty seat: fill it, and half the time hand a colliding seat to a colleague
-                int s = random.nextInt(nS);
-                while (score.assign[s] >= 0 || flat.sFixed[s]) {
-                    s = s + 1 == nS ? 0 : s + 1;
-                }
-                int[] candidates = flat.elig[s];
-                if (candidates.length == 0) {
-                    continue;
-                }
-                int a = candidates[random.nextInt(candidates.length)];
-                score.move(s, a);
-                if ((kind & 1) == 0) {
-                    eject(s, a, random);
-                }
-            } else if (totalHard > 0 && kind < 9) {
-                // somebody carrying a hard breach: move one of their seats, or trade it
-                int a = random.nextInt(nA);
-                for (int looked = 0; score.hardOf[a] == 0 && looked < nA; looked++) {
-                    a = a + 1 == nA ? 0 : a + 1;
-                }
-                if (score.countOf[a] == 0) {
-                    continue;
-                }
-                int s = score.seatsOf[a][random.nextInt(score.countOf[a])];
-                if (flat.sFixed[s]) {
-                    continue;
-                }
-                if ((kind & 1) == 0) {
-                    int[] candidates = flat.elig[s];
-                    if (candidates.length == 0) {
-                        continue;
+            if (propose(random, totalHard)) {
+                long candidate = total + score.finish();
+                long candidateHard = totalHard + score.deltaHard;
+                int slot = (int) (move % LATE_ACCEPTANCE);
+                if (!before(totalHard, total, candidateHard, candidate)
+                        || !before(historyHard[slot], history[slot], candidateHard, candidate)) {
+                    total = candidate;
+                    totalHard = candidateHard;
+                    long realHard = totalHard - score.emptyExtra * score.emptyAhead;
+                    if (before(realHard, total, bestHard, best)) {
+                        best = total;
+                        bestHard = realHard;
+                        System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                     }
-                    int b = candidates[random.nextInt(candidates.length)];
-                    if (b == a) {
-                        continue;
-                    }
-                    score.move(s, b);
-                    if (kind < 7) {
-                        eject(s, b, random);
-                    }
-                } else if (!swap(s, random.nextInt(nS))) {
-                    continue;
+                } else {
+                    score.undo();
                 }
-            } else if ((kind & 1) == 0) {
-                int s = random.nextInt(nS);
-                int[] candidates = flat.elig[s];
-                if (flat.sFixed[s] || candidates.length == 0) {
-                    continue;
-                }
-                int a = candidates[random.nextInt(candidates.length)];
-                if (a == score.assign[s]) {
-                    continue;
-                }
-                score.move(s, a);
-            } else if (!swap(random.nextInt(nS), random.nextInt(nS))) {
-                continue;
+                history[slot] = total;
+                historyHard[slot] = totalHard;
             }
-            long candidate = total + score.finish();
-            long candidateHard = totalHard + score.deltaHard;
-            int slot = (int) (move % LATE_ACCEPTANCE);
-            if (!before(totalHard, total, candidateHard, candidate)
-                    || !before(historyHard[slot], history[slot], candidateHard, candidate)) {
-                total = candidate;
-                totalHard = candidateHard;
-                long realHard = totalHard - score.emptyExtra * score.emptyAhead;
-                if (before(realHard, total, bestHard, best)) {
-                    best = total;
-                    bestHard = realHard;
-                    System.arraycopy(score.assign, 0, bestPlan, 0, nS);
-                }
-            } else {
-                score.undo();
-            }
-            history[slot] = total;
-            historyHard[slot] = totalHard;
         }
 
         // Laid first: should the check below fail, the plan is there to be read.
@@ -277,6 +224,92 @@ public final class HandSearch {
             listener.best(millisSince(start), exact, layBest);
         }
         return exact;
+    }
+
+    /**
+     * Draws one move onto the score, already opened: an empty seat filled, a
+     * seat of somebody carrying a hard breach moved, any seat handed to
+     * somebody eligible, or two seats swapped. False when the draw gave
+     * nothing to try — the turn is then lost, as a turn of the search.
+     */
+    private boolean propose(SplittableRandom random, long totalHard) {
+        int kind = random.nextInt(16);
+        if (score.unassignedMovable > 0 && kind < 4) {
+            return fillEmptySeat(random, kind);
+        }
+        if (totalHard > 0 && kind < 9) {
+            return moveBreach(random, kind);
+        }
+        if ((kind & 1) == 0) {
+            return moveAnySeat(random);
+        }
+        return swap(random.nextInt(flat.nS), random.nextInt(flat.nS));
+    }
+
+    /** An empty seat: fill it, and half the time hand a colliding seat to a colleague. */
+    private boolean fillEmptySeat(SplittableRandom random, int kind) {
+        int nS = flat.nS;
+        int s = random.nextInt(nS);
+        while (score.assign[s] >= 0 || flat.sFixed[s]) {
+            s = s + 1 == nS ? 0 : s + 1;
+        }
+        int[] candidates = flat.elig[s];
+        if (candidates.length == 0) {
+            return false;
+        }
+        int a = candidates[random.nextInt(candidates.length)];
+        score.move(s, a);
+        if ((kind & 1) == 0) {
+            eject(s, a, random);
+        }
+        return true;
+    }
+
+    /** Somebody carrying a hard breach: move one of their seats, or trade it. */
+    private boolean moveBreach(SplittableRandom random, int kind) {
+        int nA = flat.nA;
+        int a = random.nextInt(nA);
+        for (int looked = 0; score.hardOf[a] == 0 && looked < nA; looked++) {
+            a = a + 1 == nA ? 0 : a + 1;
+        }
+        if (score.countOf[a] == 0) {
+            return false;
+        }
+        int s = score.seatsOf[a][random.nextInt(score.countOf[a])];
+        if (flat.sFixed[s]) {
+            return false;
+        }
+        if ((kind & 1) != 0) {
+            return swap(s, random.nextInt(flat.nS));
+        }
+        int[] candidates = flat.elig[s];
+        if (candidates.length == 0) {
+            return false;
+        }
+        int b = candidates[random.nextInt(candidates.length)];
+        if (b == a) {
+            return false;
+        }
+        score.move(s, b);
+        if (kind < 7) {
+            eject(s, b, random);
+        }
+        return true;
+    }
+
+    /** Any seat, handed to somebody eligible for it who does not hold it. */
+    private boolean moveAnySeat(SplittableRandom random) {
+        int s = random.nextInt(flat.nS);
+        int[] candidates = flat.elig[s];
+        if (flat.sFixed[s] || candidates.length == 0) {
+            return false;
+        }
+        int a = candidates[random.nextInt(candidates.length)];
+        if (a == score.assign[s]) {
+            return false;
+        }
+        score.move(s, a);
+        return true;
     }
 
     /**
@@ -359,36 +392,40 @@ public final class HandSearch {
         }
         Arrays.sort(order, Comparator.comparingInt(s -> flat.elig[s].length));
         for (int s : order) {
-            if (flat.sFixed[s] || score.assign[s] >= 0) {
-                continue;
-            }
-            if (expired()) {
-                break;
-            }
-            long bestDelta = 0;
-            long bestDeltaHard = 0;
-            int bestHolder = -1;
-            for (int a : flat.elig[s]) {
-                // Weighed alone: re-reading everyone the candidate touches doubles the construction for the same plan.
-                score.alone = true;
-                score.begin();
-                score.move(s, a);
-                long delta = score.finish();
-                // Filling s takes its search weight off: put back, the delta is the real one.
-                long deltaHard = score.deltaHard + score.emptyExtra;
-                score.undo();
-                score.alone = false;
-                if (before(deltaHard, delta, bestDeltaHard, bestDelta)) {
-                    bestDelta = delta;
-                    bestDeltaHard = deltaHard;
-                    bestHolder = a;
+            if (!flat.sFixed[s] && score.assign[s] < 0) {
+                if (expired()) {
+                    break;
                 }
+                seatTheBest(s);
             }
-            if (bestHolder >= 0) {
-                score.begin();
-                score.move(s, bestHolder);
-                score.finish();
+        }
+    }
+
+    /** Gives the empty seat s to whoever costs the plan least, when somebody costs it less than leaving it empty. */
+    private void seatTheBest(int s) {
+        long bestDelta = 0;
+        long bestDeltaHard = 0;
+        int bestHolder = -1;
+        for (int a : flat.elig[s]) {
+            // Weighed alone: re-reading everyone the candidate touches doubles the construction for the same plan.
+            score.alone = true;
+            score.begin();
+            score.move(s, a);
+            long delta = score.finish();
+            // Filling s takes its search weight off: put back, the delta is the real one.
+            long deltaHard = score.deltaHard + score.emptyExtra;
+            score.undo();
+            score.alone = false;
+            if (before(deltaHard, delta, bestDeltaHard, bestDelta)) {
+                bestDelta = delta;
+                bestDeltaHard = deltaHard;
+                bestHolder = a;
             }
+        }
+        if (bestHolder >= 0) {
+            score.begin();
+            score.move(s, bestHolder);
+            score.finish();
         }
     }
 
@@ -460,48 +497,65 @@ public final class HandSearch {
             return false;
         }
         int offset = random.nextInt(candidates.length);
+        int taken = takeFreely(x, candidates, offset);
+        if (taken != NOT_YET || depth >= CHAIN_DEPTH) {
+            return taken == PLACED;
+        }
+        for (int i = 0; i < candidates.length; i++) {
+            int a = candidates[(i + offset) % candidates.length];
+            int[] theirs = Arrays.copyOf(score.seatsOf[a], score.countOf[a]);
+            for (int released : theirs) {
+                int given = giveUp(x, a, released, depth, random);
+                if (given != NOT_YET) {
+                    return given == PLACED;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Somebody takes the empty seat x and the plan loses a hard point for it: the chain ends here. */
+    private int takeFreely(int x, int[] candidates, int offset) {
         for (int i = 0; i < candidates.length; i++) {
             int a = candidates[(i + offset) % candidates.length];
             score.begin();
             score.move(x, a);
             score.finish();
             if (score.deltaHard <= -1 - score.emptyExtra) {
-                return true;
+                return PLACED;
             }
             score.undo();
             if (!trial()) {
-                return false;
+                return SPENT;
             }
         }
-        if (depth >= CHAIN_DEPTH) {
-            return false;
+        return NOT_YET;
+    }
+
+    /**
+     * Animateur a takes the empty seat x and gives up {@code released}, a
+     * seat of theirs within a week of it: followed a level deeper only when
+     * the exchange costs no hard point, and taken back when nobody is found
+     * for the seat released.
+     */
+    private int giveUp(int x, int a, int released, int depth, SplittableRandom random) {
+        if (flat.sFixed[released] || Math.abs(flat.sWeek[released] - flat.sWeek[x]) > 1) {
+            return NOT_YET;
         }
-        for (int i = 0; i < candidates.length; i++) {
-            int a = candidates[(i + offset) % candidates.length];
-            int[] theirs = Arrays.copyOf(score.seatsOf[a], score.countOf[a]);
-            for (int released : theirs) {
-                if (flat.sFixed[released] || Math.abs(flat.sWeek[released] - flat.sWeek[x]) > 1) {
-                    continue;
-                }
-                score.begin();
-                score.move(x, a);
-                score.move(released, -1);
-                score.finish();
-                if (score.deltaHard > 0) {
-                    score.undo();
-                } else if (place(released, depth + 1, random)) {
-                    return true;
-                } else {
-                    score.begin();
-                    score.move(released, a);
-                    score.move(x, -1);
-                    score.finish();
-                }
-                if (!trial()) {
-                    return false;
-                }
-            }
+        score.begin();
+        score.move(x, a);
+        score.move(released, -1);
+        score.finish();
+        if (score.deltaHard > 0) {
+            score.undo();
+        } else if (place(released, depth + 1, random)) {
+            return PLACED;
+        } else {
+            score.begin();
+            score.move(released, a);
+            score.move(x, -1);
+            score.finish();
         }
-        return false;
+        return trial() ? NOT_YET : SPENT;
     }
 }
