@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.service.FailureLockout.Outcome;
 import java.time.Duration;
@@ -63,17 +62,21 @@ class FailureLockoutTest {
 
     @Test
     void theLockLiftsAFullDurationAfterTheLastFailure() {
-        FailureLockout lockout = new FailureLockout(100);
-        Duration shortDuration = Duration.ofMillis(20);
-        lockout.recordFailure("k", shortDuration);
-        lockout.recordFailure("k", shortDuration);
-        assertThat(lockout.lockoutSeconds("k", 2, shortDuration)).isEqualTo(1);
+        MovableClock clock = new MovableClock();
+        FailureLockout lockout = new FailureLockout(100, clock);
+        Duration lock = Duration.ofSeconds(10);
+        lockout.recordFailure("k", lock);
+        clock.advance(Duration.ofSeconds(6));
+        lockout.recordFailure("k", lock);
+        assertThat(lockout.lockoutSeconds("k", 2, lock)).isEqualTo(10);
 
-        // The lockout reads the wall clock: only time passing lifts it.
-        await().pollDelay(Duration.ofMillis(50))
-                .untilAsserted(() -> assertThat(lockout.lockoutSeconds("k", 2, shortDuration))
-                        .isZero());
-        assertThat(lockout.reserve("k", 2, shortDuration)).isZero();
+        // Counted from the last failure: past the first one's duration, still locked.
+        clock.advance(Duration.ofSeconds(5));
+        assertThat(lockout.lockoutSeconds("k", 2, lock)).isEqualTo(5);
+
+        clock.advance(Duration.ofSeconds(6));
+        assertThat(lockout.lockoutSeconds("k", 2, lock)).isZero();
+        assertThat(lockout.reserve("k", 2, lock)).isZero();
     }
 
     /** Past the ceiling the oldest run goes — but never one with an attempt still in flight. */
