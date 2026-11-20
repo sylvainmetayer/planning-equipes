@@ -176,11 +176,12 @@ class HandSearchSolverTest {
      * published to hold it — for a million and a half moves. The search used
      * to take every move of equal score, and came back with nine seats in ten
      * swapped between people the rules cannot tell apart; at equal score it
-     * now stays on the plan it was handed, and what moves — a quarter of the
-     * seats at most here — moves for a better score.
+     * now prefers the plan it was handed, and a third of the seats at most
+     * move here. The bound on seats changed is the proof; the score cannot
+     * come back worse than it left, whatever the search does.
      */
     @Test
-    void aPlanSolvedAgainFromItselfMovesOnlyWhatBettersIt() {
+    void aPlanSolvedAgainFromItselfKeepsMostSeats() {
         HandSearchFixtures.Loaded loaded =
                 HandSearchFixtures.load("gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml");
         List<PosteAffectation> postes = loaded.problem().getPostes();
