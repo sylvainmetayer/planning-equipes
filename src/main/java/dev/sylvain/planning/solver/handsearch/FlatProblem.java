@@ -154,8 +154,8 @@ final class FlatProblem {
 
     int[][] statHard;
 
-    private List<List<ContrainteAdHoc>> forcedOffOf;
-    private List<List<VerrouillagePlanning>> locksOf;
+    private final List<List<ContrainteAdHoc>> forcedOffOf = new ArrayList<>();
+    private final List<List<VerrouillagePlanning>> locksOf = new ArrayList<>();
 
     boolean[][] isRef;
     boolean[][] isDeb;
@@ -251,15 +251,31 @@ final class FlatProblem {
             HardMediumSoftScore override = problem.getPonderationsContraintes().getConstraintWeight(name);
             if (override != null) {
                 w = override.hardScore() + override.mediumScore() + override.softScore();
-                scoredOn = override.hardScore() != 0 ? 0 : override.mediumScore() != 0 ? 1 : 2;
+                scoredOn = levelOf(override);
             }
             weightAbs[rule.ordinal()] = w;
             level[rule.ordinal()] = scoredOn;
             if (ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), name)) {
                 hardUnit[rule.ordinal()] = scoredOn == 0 ? w : 0;
-                unit[rule.ordinal()] = scoredOn == 0 ? 0 : scoredOn == 1 ? w * MEDIUM : w;
+                unit[rule.ordinal()] = restUnit(scoredOn, w);
             }
         }
+    }
+
+    /** The level a weight sits on: 0 hard, 1 medium, 2 soft — the first it is not zero on. */
+    private static int levelOf(HardMediumSoftScore weight) {
+        if (weight.hardScore() != 0) {
+            return 0;
+        }
+        return weight.mediumScore() != 0 ? 1 : 2;
+    }
+
+    /** What one unit of a rule weighs on the number medium and soft share; nothing for a hard rule. */
+    private static long restUnit(int scoredOn, long w) {
+        if (scoredOn == 0) {
+            return 0;
+        }
+        return scoredOn == 1 ? w * MEDIUM : w;
     }
 
     /** Whether a rule is switched on and weighs something. */
@@ -283,7 +299,6 @@ final class FlatProblem {
                                 t -> t != null && t.getId() != null && t.getId().equals(animateur.getId()));
     }
 
-    @SuppressWarnings({"java:S3776", "java:S138", "java:S6541"}) // one pass over the problem, read top to bottom
     FlatProblem(PlanningEvenement problem) {
         this.problem = problem;
         postes = problem.getPostes();
@@ -297,8 +312,52 @@ final class FlatProblem {
         }
         qualite = problem.getParametresQualite().get(0);
         weights();
-        pauseMinor = legal.dureePauseMinutes(true);
-        pauseAdult = legal.dureePauseMinutes(false);
+        refuseSeatsNoTableHolds();
+        nS = postes.size();
+        nA = animateurs.size();
+        if ((long) nS * nA > MAX_SEATS_TIMES_ANIMATEURS) {
+            throw HandSearchException.refused(nS + " sièges pour " + nA + " animateurs : au-delà de "
+                    + MAX_SEATS_TIMES_ANIMATEURS + " couples siège × animateur, la table du moteur ne tient plus"
+                    + " dans la mémoire d'une petite machine");
+        }
+        Map<String, Integer> byId = new HashMap<>();
+        for (int a = 0; a < nA; a++) {
+            byId.put(animateurs.get(a).getId(), a);
+        }
+        long minDay = postes.stream()
+                .mapToLong(x -> x.getCreneau().getDate().toEpochDay())
+                .min()
+                .orElse(0);
+        LocalDate first = LocalDate.ofEpochDay(minDay);
+        Numbering numbering = new Numbering();
+        seats(byId, minDay, numbering);
+        splitSeats();
+        linesAndStands(numbering);
+        gameCategories(numbering.typos);
+        people(first, numbering.standsInOrder);
+        distances(numbering.standsInOrder, numbering.placeList);
+        parameters(first);
+        pairs(byId);
+        forcedAssignments();
+        locksAndForcedUnavailabilities();
+        staticTable();
+    }
+
+    /** What the seats are numbered against while they are read: stands, lines, timeslots, places, game categories. */
+    private static final class Numbering {
+        final Map<Object, Integer> lines = new HashMap<>();
+        final Map<Object, Integer> stands = new HashMap<>();
+        final Map<Object, Integer> slots = new HashMap<>();
+        final Map<Emplacement, Integer> places = new HashMap<>();
+        final Map<String, Integer> typos = new HashMap<>();
+        final List<Stand> standsInOrder = new ArrayList<>();
+        final List<Emplacement> placeList = new ArrayList<>();
+        final List<List<Integer>> linesOfStand = new ArrayList<>();
+        final Map<Integer, List<Integer>> byStand = new HashMap<>();
+    }
+
+    /** The seats refused rather than scored wrongly: one without a stand or its hours, one held by a stranger. */
+    private void refuseSeatsNoTableHolds() {
         Set<String> known = new HashSet<>();
         animateurs.forEach(animateur -> known.add(animateur.getId()));
         for (PosteAffectation poste : postes) {
@@ -319,24 +378,12 @@ final class FlatProblem {
                         "le siège " + poste.getId() + " est tenu par un animateur absent du problème");
             }
         }
-        nS = postes.size();
-        nA = animateurs.size();
-        if ((long) nS * nA > MAX_SEATS_TIMES_ANIMATEURS) {
-            throw HandSearchException.refused(nS + " sièges pour " + nA + " animateurs : au-delà de "
-                    + MAX_SEATS_TIMES_ANIMATEURS + " couples siège × animateur, la table du moteur ne tient plus"
-                    + " dans la mémoire d'une petite machine");
-        }
-        Map<String, Integer> byId = new HashMap<>();
-        for (int a = 0; a < nA; a++) {
-            byId.put(animateurs.get(a).getId(), a);
-        }
-        long minDay = postes.stream()
-                .mapToLong(x -> x.getCreneau().getDate().toEpochDay())
-                .min()
-                .orElse(0);
+    }
+
+    /** Everything read from one seat alone: its hours, its day and week, what it is numbered against, its holder. */
+    private void seats(Map<String, Integer> byId, long minDay, Numbering numbering) {
         long firstMonday = Math.floorDiv(minDay + 3, 7);
-        weekShift = (int) Math.floorMod(minDay + 3, 7);
-        LocalDate first = LocalDate.ofEpochDay(minDay);
+        weekShift = Math.floorMod(minDay + 3, 7);
         sStart = new int[nS];
         sEnd = new int[nS];
         sFromSlot = new int[nS];
@@ -357,13 +404,6 @@ final class FlatProblem {
         sExhausting = new boolean[nS];
         sDemanding = new boolean[nS];
         sTypos = new int[nS][];
-        Map<Object, Integer> lines = new HashMap<>(), stands = new HashMap<>(), slots = new HashMap<>();
-        Map<Emplacement, Integer> places = new HashMap<>();
-        Map<String, Integer> typos = new HashMap<>();
-        List<Stand> standsInOrder = new ArrayList<>();
-        List<Emplacement> placeList = new ArrayList<>();
-        List<List<Integer>> linesOfStand = new ArrayList<>();
-        Map<Integer, List<Integer>> byStand = new HashMap<>();
         Map<String, Set<String>> publishedHolders = new HashMap<>();
         for (AffectationPubliee publiee : problem.getAffectationsPubliees()) {
             publishedHolders
@@ -386,29 +426,9 @@ final class FlatProblem {
             sFromSlot[s] = MinutesOfDay.minutesAfter(creneau.getHeureDebut(), poste.heureDebutEffectif());
             cStart[s] = creneau.getHeureDebut().toSecondOfDay() / 60;
             cEnd[s] = creneau.getHeureFin() == null ? -1 : creneau.getHeureFin().toSecondOfDay() / 60;
-            sStand[s] = stands.computeIfAbsent(stand, k -> {
-                standsInOrder.add(stand);
-                linesOfStand.add(new ArrayList<>());
-                return stands.size();
-            });
-            int before = lines.size();
-            sLine[s] = lines.computeIfAbsent(List.of(stand, creneau), k -> lines.size());
-            if (lines.size() > before) {
-                linesOfStand.get(sStand[s]).add(sLine[s]);
-            }
-            sSlot[s] = slots.computeIfAbsent(creneau, k -> slots.size());
-            Emplacement emplacement = stand.getEmplacement();
-            sEmpl[s] = emplacement == null
-                    ? -1
-                    : places.computeIfAbsent(emplacement, k -> {
-                        placeList.add(emplacement);
-                        return places.size();
-                    });
+            number(s, stand, creneau, numbering);
             sExhausting[s] = stand.getNiveauEffort() == NiveauEffort.EPUISANT;
             sDemanding[s] = sExhausting[s] || stand.isPremium();
-            sTypos[s] = stand.getTypologiesProposees().stream()
-                    .mapToInt(t -> typos.computeIfAbsent(t, k -> typos.size()))
-                    .toArray();
             sPast[s] = poste.isPasse();
             sLocked[s] = poste.isVerrouille();
             sFixed[s] = sPast[s] || sLocked[s];
@@ -419,9 +439,42 @@ final class FlatProblem {
                     stand.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()));
             publishedBy.add(sPast[s] ? null : holders);
             published[s] = sPast[s] || holders == null ? 0 : 1;
-            byStand.computeIfAbsent(sStand[s], k -> new ArrayList<>()).add(s);
         }
-        // a seat split on the day (ADR 0066): the origin ended where its remainder starts
+    }
+
+    /** Numbers seat s against its stand, its line, its timeslot, its place and the game categories of its stand. */
+    private void number(int s, Stand stand, Creneau creneau, Numbering numbering) {
+        Map<Object, Integer> stands = numbering.stands;
+        Map<Object, Integer> lines = numbering.lines;
+        Map<Object, Integer> slots = numbering.slots;
+        Map<Emplacement, Integer> places = numbering.places;
+        Map<String, Integer> typos = numbering.typos;
+        sStand[s] = stands.computeIfAbsent(stand, k -> {
+            numbering.standsInOrder.add(stand);
+            numbering.linesOfStand.add(new ArrayList<>());
+            return stands.size();
+        });
+        int before = lines.size();
+        sLine[s] = lines.computeIfAbsent(List.of(stand, creneau), k -> lines.size());
+        if (lines.size() > before) {
+            numbering.linesOfStand.get(sStand[s]).add(sLine[s]);
+        }
+        sSlot[s] = slots.computeIfAbsent(creneau, k -> slots.size());
+        Emplacement emplacement = stand.getEmplacement();
+        sEmpl[s] = emplacement == null
+                ? -1
+                : places.computeIfAbsent(emplacement, k -> {
+                    numbering.placeList.add(emplacement);
+                    return places.size();
+                });
+        sTypos[s] = stand.getTypologiesProposees().stream()
+                .mapToInt(t -> typos.computeIfAbsent(t, k -> typos.size()))
+                .toArray();
+        numbering.byStand.computeIfAbsent(sStand[s], k -> new ArrayList<>()).add(s);
+    }
+
+    /** A seat split on the day (ADR 0066): the origin ended where its remainder starts. */
+    private void splitSeats() {
         origin = new int[nS];
         remainder = new boolean[nS];
         Map<String, Integer> seatById = new HashMap<>();
@@ -433,7 +486,11 @@ final class FlatProblem {
             remainder[s] = suiteDe != null;
             origin[s] = suiteDe == null ? -1 : seatById.getOrDefault(suiteDe, -1);
         }
-        nLines = lines.size();
+    }
+
+    /** The seats of each line, the lines of each stand, the neighbours a relay is looked for among, and the sizes. */
+    private void linesAndStands(Numbering numbering) {
+        nLines = numbering.lines.size();
         supervision = charged(Rule.MINEUR_NECESSITE_ENCADREMENT_MAJEUR);
         List<List<Integer>> seatsOfLine = new ArrayList<>();
         for (int l = 0; l < nLines; l++) {
@@ -447,13 +504,13 @@ final class FlatProblem {
             lineSeats[l] =
                     seatsOfLine.get(l).stream().mapToInt(Integer::intValue).toArray();
         }
-        nStands = stands.size();
-        nSlots = slots.size();
+        nStands = numbering.stands.size();
+        nSlots = numbering.slots.size();
         nbr = new int[nS][];
         // A break is owed at an instant inside the seat held, or in the gap — shorter than the
         // break — right before it, and its relay covers that instant and the break after it: the
         // relay overlaps the seat held, whatever the break lasts and whichever side of midnight.
-        for (List<Integer> group : byStand.values()) {
+        for (List<Integer> group : numbering.byStand.values()) {
             for (int s : group) {
                 nbr[s] = group.stream()
                         .mapToInt(Integer::intValue)
@@ -464,15 +521,18 @@ final class FlatProblem {
         standLines = new int[nStands][];
         premium = new boolean[nStands];
         for (int st = 0; st < nStands; st++) {
-            standLines[st] =
-                    linesOfStand.get(st).stream().mapToInt(Integer::intValue).toArray();
-            premium[st] = standsInOrder.get(st).isPremium();
+            standLines[st] = numbering.linesOfStand.get(st).stream()
+                    .mapToInt(Integer::intValue)
+                    .toArray();
+            premium[st] = numbering.standsInOrder.get(st).isPremium();
         }
         nDays = Arrays.stream(sDay).max().orElse(0) + 2;
         nWeeks = Arrays.stream(sWeek).max().orElse(0) + 3;
         nDayNos = Arrays.stream(sDayNo).max().orElse(0) + 2;
+    }
 
-        // quotas and typologies
+    /** The game categories the edition knows — offered, capped or appreciated — and the ceiling of each. */
+    private void gameCategories(Map<String, Integer> typos) {
         problem.getQuotasTypologies().forEach(q -> typos.computeIfAbsent(q.getTypologie(), k -> typos.size()));
         animateurs.forEach(a -> a.getCompetences().keySet().forEach(t -> typos.computeIfAbsent(t, k -> typos.size())));
         nTypo = typos.size();
@@ -486,8 +546,10 @@ final class FlatProblem {
             quota[typos.get(q.getTypologie())] = q.getMaxCreneaux();
             hasQuota = true;
         }
+    }
 
-        // per animateur
+    /** Everything read from one animateur alone: their age on each day, and what they are for each stand. */
+    private void people(LocalDate first, List<Stand> standsInOrder) {
         minorAt = new boolean[nA][nDays];
         adultAt = new boolean[nA][nDays];
         under16At = new boolean[nA][nDays];
@@ -521,21 +583,30 @@ final class FlatProblem {
                 Stand stand = standsInOrder.get(st);
                 isRef[st][a] = animateur.isReferentFor(stand);
                 isDeb[st][a] = animateur.isDebutantFor(stand);
-                long mask = 0;
-                for (String t : stand.getTypologiesProposees()) {
-                    Integer bit = own.get(t);
-                    if (bit != null) {
-                        mask |= 1L << bit;
-                    }
-                }
-                liked[st][a] = mask;
+                liked[st][a] = likedMask(stand, own);
             }
         }
+    }
+
+    /** The game categories a stand offers among those an animateur numbered for themself, as bits. */
+    private static long likedMask(Stand stand, Map<String, Integer> own) {
+        long mask = 0;
+        for (String t : stand.getTypologiesProposees()) {
+            Integer bit = own.get(t);
+            if (bit != null) {
+                mask |= 1L << bit;
+            }
+        }
+        return mask;
+    }
+
+    /** Which stands are far from each other, and the minutes of walk between two places. */
+    private void distances(List<Stand> standsInOrder, List<Emplacement> placeList) {
         far = new boolean[nStands][nStands];
         for (int x = 0; x < nStands; x++) {
             for (int y = 0; y < nStands; y++) {
-                Emplacement ex = standsInOrder.get(x).getEmplacement(),
-                        ey = standsInOrder.get(y).getEmplacement();
+                Emplacement ex = standsInOrder.get(x).getEmplacement();
+                Emplacement ey = standsInOrder.get(y).getEmplacement();
                 Double metres = ex == null || ey == null ? null : ex.distanceMetresTo(ey);
                 far[x][y] = !standsInOrder.get(x).equals(standsInOrder.get(y)) && metres != null && metres > 300.0;
             }
@@ -548,6 +619,12 @@ final class FlatProblem {
                 walk[x][y] = minutes == null || placeList.get(x).equals(placeList.get(y)) ? -1 : minutes;
             }
         }
+    }
+
+    /** The legal and quality parameters the rules read, and the meal windows day by day. */
+    private void parameters(LocalDate first) {
+        pauseMinor = legal.dureePauseMinutes(true);
+        pauseAdult = legal.dureePauseMinutes(false);
         adultWeekly = legal.getDureeHebdomadaireMaxMinutes();
         minorWeekly = legal.getDureeHebdomadaireMaxMineurMinutes();
         maxConsec = qualite.joursConsecutifsMax();
@@ -574,9 +651,10 @@ final class FlatProblem {
                 mwOn[m][d] = f.appliesTo(first.plusDays(d));
             }
         }
+    }
 
-        // ad hoc
-        List<ContrainteAdHoc> forced = new ArrayList<>();
+    /** The ad hoc rules between two people — incompatibility, affinity, grouped arrival — and who depends on whom. */
+    private void pairs(Map<String, Integer> byId) {
         List<List<PairTerm>> terms = new ArrayList<>();
         List<Set<Integer>> dependents = new ArrayList<>();
         for (int a = 0; a < nA; a++) {
@@ -585,48 +663,10 @@ final class FlatProblem {
         }
         for (ContrainteAdHoc c : problem.getContraintesAdHoc()) {
             TypeContrainteAdHoc type = c.getType();
-            if (type == TypeContrainteAdHoc.AFFECTATION_FORCEE) {
-                forced.add(c);
-            } else if (type == TypeContrainteAdHoc.INCOMPATIBILITE || type == TypeContrainteAdHoc.AFFINITE) {
-                List<Animateur> members = c.getAnimateursConcernes();
-                if (members == null || members.size() < 2 || members.get(0) == null || members.get(1) == null) {
-                    continue;
-                }
-                String firstId = members.get(0).getId(),
-                        secondId = members.get(1).getId();
-                if (firstId == null || secondId == null || firstId.equals(secondId)) {
-                    continue;
-                }
-                Integer x = byId.get(firstId), y = byId.get(secondId);
-                if (x == null || y == null) {
-                    continue; // nobody of that id holds a seat: the join is empty
-                }
-                boolean[] inScope = new boolean[nS];
-                for (int s = 0; s < nS; s++) {
-                    inScope[s] = scope(c, postes.get(s));
-                }
-                terms.get(x).add(new PairTerm(type == TypeContrainteAdHoc.INCOMPATIBILITE ? 0 : 1, y, inScope, 0));
-                dependents.get(y).add(x);
+            if (type == TypeContrainteAdHoc.INCOMPATIBILITE || type == TypeContrainteAdHoc.AFFINITE) {
+                twoPeople(c, byId, terms, dependents);
             } else if (type == TypeContrainteAdHoc.ARRIVEE_GROUPEE && c.getAnimateursConcernes() != null) {
-                List<String> ids = c.getAnimateursConcernes().stream()
-                        .filter(Objects::nonNull)
-                        .map(Animateur::getId)
-                        .filter(Objects::nonNull)
-                        .distinct()
-                        .toList();
-                for (int i = 0; i < ids.size(); i++) {
-                    for (int j = i + 1; j < ids.size(); j++) {
-                        Integer x = byId.get(ids.get(i)), y = byId.get(ids.get(j));
-                        if (x == null && y == null) {
-                            continue;
-                        }
-                        int owner = x != null ? x : y, other = x != null ? (y == null ? -1 : y) : -1;
-                        terms.get(owner).add(new PairTerm(2, other, null, qualite.toleranceArriveeGroupeeMinutes()));
-                        if (other >= 0) {
-                            dependents.get(other).add(owner);
-                        }
-                    }
-                }
+                groupedArrival(c, byId, terms, dependents);
             }
         }
         pairTerms = new PairTerm[nA][];
@@ -635,6 +675,67 @@ final class FlatProblem {
             pairTerms[a] = terms.get(a).toArray(new PairTerm[0]);
             deps[a] = dependents.get(a).stream().mapToInt(Integer::intValue).toArray();
         }
+    }
+
+    /** An incompatibility or an affinity between its first two people, when the problem knows both. */
+    private void twoPeople(
+            ContrainteAdHoc c, Map<String, Integer> byId, List<List<PairTerm>> terms, List<Set<Integer>> dependents) {
+        List<Animateur> members = c.getAnimateursConcernes();
+        if (members == null || members.size() < 2 || members.get(0) == null || members.get(1) == null) {
+            return;
+        }
+        String firstId = members.get(0).getId();
+        String secondId = members.get(1).getId();
+        if (firstId == null || secondId == null || firstId.equals(secondId)) {
+            return;
+        }
+        Integer x = byId.get(firstId);
+        Integer y = byId.get(secondId);
+        if (x == null || y == null) {
+            return; // nobody of that id holds a seat: the join is empty
+        }
+        boolean[] inScope = new boolean[nS];
+        for (int s = 0; s < nS; s++) {
+            inScope[s] = scope(c, postes.get(s));
+        }
+        terms.get(x).add(new PairTerm(c.getType() == TypeContrainteAdHoc.INCOMPATIBILITE ? 0 : 1, y, inScope, 0));
+        dependents.get(y).add(x);
+    }
+
+    /** A grouped arrival: one term for every two of its people, owned by the first the problem knows. */
+    private void groupedArrival(
+            ContrainteAdHoc c, Map<String, Integer> byId, List<List<PairTerm>> terms, List<Set<Integer>> dependents) {
+        List<String> ids = c.getAnimateursConcernes().stream()
+                .filter(Objects::nonNull)
+                .map(Animateur::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        for (int i = 0; i < ids.size(); i++) {
+            for (int j = i + 1; j < ids.size(); j++) {
+                arriveTogether(byId.get(ids.get(i)), byId.get(ids.get(j)), terms, dependents);
+            }
+        }
+    }
+
+    /** Two people of a grouped arrival, either of whom the problem may not know: nothing when it knows neither. */
+    private void arriveTogether(Integer x, Integer y, List<List<PairTerm>> terms, List<Set<Integer>> dependents) {
+        if (x == null && y == null) {
+            return;
+        }
+        int owner = x != null ? x : y;
+        int other = x != null && y != null ? y : -1;
+        terms.get(owner).add(new PairTerm(2, other, null, qualite.toleranceArriveeGroupeeMinutes()));
+        if (other >= 0) {
+            dependents.get(other).add(owner);
+        }
+    }
+
+    /** The forced assignments: the seats each covers, the people each names, and those the past already settled. */
+    private void forcedAssignments() {
+        List<ContrainteAdHoc> forced = problem.getContraintesAdHoc().stream()
+                .filter(c -> c.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
+                .toList();
         int nF = forced.size();
         fScope = new boolean[nF][nS];
         fConc = new boolean[nF][nA];
@@ -645,7 +746,8 @@ final class FlatProblem {
         }
         for (int f = 0; f < nF; f++) {
             ContrainteAdHoc c = forced.get(f);
-            boolean anyPast = false, anyAhead = false;
+            boolean anyPast = false;
+            boolean anyAhead = false;
             for (int s = 0; s < nS; s++) {
                 fScope[f][s] = scope(c, postes.get(s));
                 if (fScope[f][s]) {
@@ -664,10 +766,10 @@ final class FlatProblem {
             forcedScope[s] =
                     forcedOfSeat.get(s).stream().mapToInt(Integer::intValue).toArray();
         }
+    }
 
-        // the forced unavailabilities and the locks that name each animateur: read for every seat below
-        forcedOffOf = new ArrayList<>(nA);
-        locksOf = new ArrayList<>(nA);
+    /** The forced unavailabilities and the locks that name each animateur: read for every seat of the table. */
+    private void locksAndForcedUnavailabilities() {
         for (Animateur animateur : animateurs) {
             forcedOffOf.add(problem.getContraintesAdHoc().stream()
                     .filter(adHoc ->
@@ -677,8 +779,10 @@ final class FlatProblem {
                     .filter(lock -> animateur.getId().equals(lock.getAnimateurId()))
                     .toList());
         }
+    }
 
-        // what one seat costs one animateur, whoever else is around
+    /** What one seat costs one animateur, whoever else is around, and who may hold each seat at no hard point. */
+    private void staticTable() {
         stat = new long[nS][nA];
         statHard = new int[nS][nA];
         elig = new int[nS][];
@@ -712,22 +816,11 @@ final class FlatProblem {
         if (sPast[s]) {
             return c;
         }
-        boolean minor = animateur.isMineurOn(date);
         if (animateur.isIndisponibleOn(date)) {
             c += cost(Rule.ANIMATEUR_DISPONIBLE, FORFAIT, breakdown);
         }
-        if (minor && stand.isReserveMajeurs()) {
-            c += cost(Rule.STAND_RESERVE_AUX_MAJEURS, FORFAIT, breakdown);
-        }
-        if (minor
-                && creneau.chevaucheNuit(
-                        animateur.isUnder16On(date)
-                                ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS
-                                : Creneau.DEBUT_NUIT_16_A_18_ANS)) {
-            c += cost(Rule.TRAVAIL_DE_NUIT_INTERDIT_POUR_MINEUR, FORFAIT, breakdown);
-        }
-        if (minor && JoursFeries.isFerieInFrance(date)) {
-            c += cost(Rule.TRAVAIL_INTERDIT_JOUR_FERIE_MINEUR, FORFAIT, breakdown);
+        if (animateur.isMineurOn(date)) {
+            c += minorTerms(poste, animateur, breakdown);
         }
         if (stand.isPremium() && animateur.isDebutantFor(stand)) {
             c += cost(Rule.EXPERIENCE_REQUISE_POUR_STANDS_PREMIUM, 1, breakdown);
@@ -744,14 +837,39 @@ final class FlatProblem {
             }
         }
         if (!sLocked[s]) {
-            for (VerrouillagePlanning lock : locksOf.get(a)) {
-                if (lock.getType() == TypeVerrouillage.ANIMATEUR) {
-                    c += cost(Rule.ANIMATEUR_VERROUILLE_FIGE, 1, breakdown);
-                } else if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
-                        && lock.getCreneauId() != null
-                        && lock.getCreneauId().equals(creneau.getId())) {
-                    c += cost(Rule.ANIMATEUR_VERROUILLE_CRENEAU_FIGE, 1, breakdown);
-                }
+            c += lockTerms(a, creneau, breakdown);
+        }
+        return c;
+    }
+
+    /** What the law forbids a minor on this seat: a stand for adults, the night, a public holiday. */
+    private long minorTerms(PosteAffectation poste, Animateur animateur, long[] breakdown) {
+        Creneau creneau = poste.getCreneau();
+        LocalDate date = creneau.getDate();
+        long c = 0;
+        if (poste.getStand().isReserveMajeurs()) {
+            c += cost(Rule.STAND_RESERVE_AUX_MAJEURS, FORFAIT, breakdown);
+        }
+        if (creneau.chevaucheNuit(
+                animateur.isUnder16On(date) ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS : Creneau.DEBUT_NUIT_16_A_18_ANS)) {
+            c += cost(Rule.TRAVAIL_DE_NUIT_INTERDIT_POUR_MINEUR, FORFAIT, breakdown);
+        }
+        if (JoursFeries.isFerieInFrance(date)) {
+            c += cost(Rule.TRAVAIL_INTERDIT_JOUR_FERIE_MINEUR, FORFAIT, breakdown);
+        }
+        return c;
+    }
+
+    /** A seat that is not itself locked, taken by somebody a lock freezes: for the event, or on this timeslot. */
+    private long lockTerms(int a, Creneau creneau, long[] breakdown) {
+        long c = 0;
+        for (VerrouillagePlanning lock : locksOf.get(a)) {
+            if (lock.getType() == TypeVerrouillage.ANIMATEUR) {
+                c += cost(Rule.ANIMATEUR_VERROUILLE_FIGE, 1, breakdown);
+            } else if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
+                    && lock.getCreneauId() != null
+                    && lock.getCreneauId().equals(creneau.getId())) {
+                c += cost(Rule.ANIMATEUR_VERROUILLE_CRENEAU_FIGE, 1, breakdown);
             }
         }
         return c;
