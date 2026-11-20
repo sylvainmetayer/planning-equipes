@@ -138,6 +138,9 @@ final class IncrementalScore {
     private final boolean[] wAheadMin;
     private final boolean[] wAhead;
     private final boolean[] wSeatAhead;
+    /** The stretches of time eval() found its animateur taken on: {@code occS} and {@code occE} up to here. */
+    private int occ;
+
     private int[] occS = new int[64];
     private int[] occE = new int[64];
     private final int[] tCnt;
@@ -530,99 +533,148 @@ final class IncrementalScore {
         }
         touch(from);
         touch(to);
+        touchAround(s, from, to);
+        countLocal(s, -1);
+        if (from >= 0) {
+            release(s, from);
+        } else {
+            countEmptied(s, -1);
+        }
+        if (to >= 0) {
+            hold(s, to);
+        } else {
+            countEmptied(s, 1);
+        }
+        assign[s] = to;
+        countLocal(s, 1);
+    }
+
+    /** Marks for re-reading the others a change of holder on seat s reaches: a break relayed, a minor supervised. */
+    private void touchAround(int s, int from, int to) {
+        if (alone) {
+            return;
+        }
         // a relay exists or not: only a seat that fills or empties changes it for the others
-        for (int nb : alone || (from >= 0 && to >= 0) ? NONE : flat.nbr[s]) {
+        for (int nb : from >= 0 && to >= 0 ? NONE : flat.nbr[s]) {
             if (assign[nb] >= 0 && dues[assign[nb]] > 0) {
                 touch(assign[nb]);
             }
         }
-        int line = flat.sLine[s], stand = flat.sStand[s], cr = flat.sSlot[s], day = flat.sDay[s];
-        if (flat.supervision && !alone) {
+        if (flat.supervision) {
             // the minors of the line may gain or lose the adult who supervises them
-            for (int mate : flat.lineSeats[line]) {
+            int day = flat.sDay[s];
+            for (int mate : flat.lineSeats[flat.sLine[s]]) {
                 if (assign[mate] >= 0 && flat.minorAt[assign[mate]][day]) {
                     touch(assign[mate]);
                 }
             }
         }
+    }
+
+    /** Seat s gains (sign 1) or loses (-1) the state of a seat nobody holds. */
+    private void countEmptied(int s, int sign) {
+        countEmpty(s, sign);
+        emptyAhead += flat.sPast[s] ? 0 : sign;
+        unassignedMovable += flat.sFixed[s] ? 0 : sign;
+    }
+
+    /** Takes seat s away from {@code from} in every shared count; {@code assign[s]} still names them. */
+    private void release(int s, int from) {
+        unweigh(s, from);
+        remove(from, s);
+        lHeld[flat.sLine[s]] -= flat.remainder[s] ? 0 : 1;
+        if (succHeld[s] == 0) {
+            present(s, from, -1);
+        }
+        int origin = flat.origin[s];
+        if (origin >= 0 && --succHeld[origin] == 0 && assign[origin] >= 0) {
+            present(origin, assign[origin], 1);
+        }
+        releaseScarce(s, from);
+    }
+
+    /** The counts only some seats and some people enter: premium stands, polyvalent animateurs, forced assignments. */
+    private void releaseScarce(int s, int from) {
+        int stand = flat.sStand[s];
+        int cr = flat.sSlot[s];
         int ahead = flat.sPast[s] ? 0 : 1;
-        countLocal(s, -1);
-        if (from >= 0) {
-            int c = countOf[from];
-            sumSq += (long) (c - 1) * (c - 1) - (long) c * c;
-            active -= c == 1 ? 1 : 0;
-            held--;
-            aheadHeld -= ahead;
-            if (flat.sDemanding[s]) {
-                int d = dCount[from]--;
-                dSumSq += (long) (d - 1) * (d - 1) - (long) d * d;
-                dActive -= d == 1 ? 1 : 0;
-                dHeld--;
-                dAhead -= ahead;
-            }
-            remove(from, s);
-            lHeld[line] -= flat.remainder[s] ? 0 : 1;
-            if (succHeld[s] == 0) {
-                present(s, from, -1);
-            }
-            if (flat.origin[s] >= 0 && --succHeld[flat.origin[s]] == 0 && assign[flat.origin[s]] >= 0) {
-                present(flat.origin[s], assign[flat.origin[s]], 1);
-            }
-            if (flat.premium[stand]) {
-                stAhead[stand] -= ahead;
-                stDistinct[stand] -= --standCount[stand][from] == 0 ? 1 : 0;
-            }
-            if (flat.ninja[from]) {
-                crAhead[cr] -= ahead;
-                crOcc[cr] -= --ninjaCount[cr][from] == 0 ? 1 : 0;
-            }
-            for (int f : flat.forcedScope[s]) {
-                fSat[f] -= flat.fConc[f][from] ? 1 : 0;
-            }
-        } else {
-            countEmpty(s, -1);
-            emptyAhead -= flat.sPast[s] ? 0 : 1;
-            unassignedMovable -= flat.sFixed[s] ? 0 : 1;
+        if (flat.premium[stand]) {
+            stAhead[stand] -= ahead;
+            stDistinct[stand] -= --standCount[stand][from] == 0 ? 1 : 0;
         }
-        if (to >= 0) {
-            int c = countOf[to];
-            sumSq += (long) (c + 1) * (c + 1) - (long) c * c;
-            active += c == 0 ? 1 : 0;
-            held++;
-            aheadHeld += ahead;
-            if (flat.sDemanding[s]) {
-                int d = dCount[to]++;
-                dSumSq += (long) (d + 1) * (d + 1) - (long) d * d;
-                dActive += d == 0 ? 1 : 0;
-                dHeld++;
-                dAhead += ahead;
-            }
-            add(to, s);
-            lHeld[line] += flat.remainder[s] ? 0 : 1;
-            if (flat.origin[s] >= 0 && succHeld[flat.origin[s]]++ == 0 && assign[flat.origin[s]] >= 0) {
-                present(flat.origin[s], assign[flat.origin[s]], -1);
-            }
-            if (succHeld[s] == 0) {
-                present(s, to, 1);
-            }
-            if (flat.premium[stand]) {
-                stAhead[stand] += ahead;
-                stDistinct[stand] += standCount[stand][to]++ == 0 ? 1 : 0;
-            }
-            if (flat.ninja[to]) {
-                crAhead[cr] += ahead;
-                crOcc[cr] += ninjaCount[cr][to]++ == 0 ? 1 : 0;
-            }
-            for (int f : flat.forcedScope[s]) {
-                fSat[f] += flat.fConc[f][to] ? 1 : 0;
-            }
-        } else {
-            countEmpty(s, 1);
-            emptyAhead += flat.sPast[s] ? 0 : 1;
-            unassignedMovable += flat.sFixed[s] ? 0 : 1;
+        if (flat.ninja[from]) {
+            crAhead[cr] -= ahead;
+            crOcc[cr] -= --ninjaCount[cr][from] == 0 ? 1 : 0;
         }
-        assign[s] = to;
-        countLocal(s, 1);
+        for (int f : flat.forcedScope[s]) {
+            fSat[f] -= flat.fConc[f][from] ? 1 : 0;
+        }
+    }
+
+    /** Gives seat s to {@code to} in every shared count; {@code assign[s]} does not name them yet. */
+    private void hold(int s, int to) {
+        weigh(s, to);
+        add(to, s);
+        lHeld[flat.sLine[s]] += flat.remainder[s] ? 0 : 1;
+        int origin = flat.origin[s];
+        if (origin >= 0 && succHeld[origin]++ == 0 && assign[origin] >= 0) {
+            present(origin, assign[origin], -1);
+        }
+        if (succHeld[s] == 0) {
+            present(s, to, 1);
+        }
+        holdScarce(s, to);
+    }
+
+    private void holdScarce(int s, int to) {
+        int stand = flat.sStand[s];
+        int cr = flat.sSlot[s];
+        int ahead = flat.sPast[s] ? 0 : 1;
+        if (flat.premium[stand]) {
+            stAhead[stand] += ahead;
+            stDistinct[stand] += standCount[stand][to]++ == 0 ? 1 : 0;
+        }
+        if (flat.ninja[to]) {
+            crAhead[cr] += ahead;
+            crOcc[cr] += ninjaCount[cr][to]++ == 0 ? 1 : 0;
+        }
+        for (int f : flat.forcedScope[s]) {
+            fSat[f] += flat.fConc[f][to] ? 1 : 0;
+        }
+    }
+
+    /** One seat fewer for {@code from} in the two balances — every seat, and the demanding ones. */
+    private void unweigh(int s, int from) {
+        int ahead = flat.sPast[s] ? 0 : 1;
+        int c = countOf[from];
+        sumSq += (long) (c - 1) * (c - 1) - (long) c * c;
+        active -= c == 1 ? 1 : 0;
+        held--;
+        aheadHeld -= ahead;
+        if (flat.sDemanding[s]) {
+            int d = dCount[from]--;
+            dSumSq += (long) (d - 1) * (d - 1) - (long) d * d;
+            dActive -= d == 1 ? 1 : 0;
+            dHeld--;
+            dAhead -= ahead;
+        }
+    }
+
+    /** One seat more for {@code to} in the two balances. */
+    private void weigh(int s, int to) {
+        int ahead = flat.sPast[s] ? 0 : 1;
+        int c = countOf[to];
+        sumSq += (long) (c + 1) * (c + 1) - (long) c * c;
+        active += c == 0 ? 1 : 0;
+        held++;
+        aheadHeld += ahead;
+        if (flat.sDemanding[s]) {
+            int d = dCount[to]++;
+            dSumSq += (long) (d + 1) * (d + 1) - (long) d * d;
+            dActive += d == 0 ? 1 : 0;
+            dHeld++;
+            dAhead += ahead;
+        }
     }
 
     /** Adds or takes away what seat s costs while nobody holds it. */
@@ -641,7 +693,8 @@ final class IncrementalScore {
     }
 
     private void present(int s, int a, int sign) {
-        int line = flat.sLine[s], stand = flat.sStand[s];
+        int line = flat.sLine[s];
+        int stand = flat.sStand[s];
         lAhead[line] += flat.sPast[s] ? 0 : sign;
         lRef[line] += flat.isRef[stand][a] ? sign : 0;
         lDeb[line] += flat.isDeb[stand][a] ? sign : 0;
@@ -700,7 +753,8 @@ final class IncrementalScore {
         }
         int[] list = seatsOf[a];
         for (int i = 0; i < countOf[a]; i++) {
-            int s = list[i], j = flat.sDayNo[s];
+            int s = list[i];
+            int j = flat.sDayNo[s];
             if (!has[j]) {
                 has[j] = true;
                 start[j] = flat.sStart[s];
@@ -714,6 +768,19 @@ final class IncrementalScore {
         }
     }
 
+    /**
+     * What animateur a costs on their own seats: the ad hoc rules they own,
+     * then their seats read once, a day at a time, and what the days added up
+     * for each week and for the event.
+     *
+     * <p>One method for everything read day by day, on purpose: cut into a
+     * method a day, one for its seats and one for each family of rules, every
+     * step was a call the JIT left out of line and every running value a
+     * field instead of a register — the search lost about one move in
+     * twenty. Only what is read once the days are over has its own
+     * methods.</p>
+     */
+    @SuppressWarnings({"java:S3776", "java:S138", "java:S6541"})
     private long eval(int a) {
         int[] list = seatsOf[a];
         int n = countOf[a];
@@ -731,7 +798,7 @@ final class IncrementalScore {
             wMaj[w] = wMin[w] = wDays[w] = wMinorMask[w] = 0;
             wAheadMaj[w] = wAheadMin[w] = wAhead[w] = wSeatAhead[w] = false;
         }
-        int occ = 0;
+        occ = 0;
         long likedMask = 0;
         boolean likedAhead = false;
         int run = 0, longest = 0;
@@ -1014,6 +1081,16 @@ final class IncrementalScore {
             }
         }
         dues[a] = owed;
+        cost += overTheEvent(a, longest, likedMask, likedAhead);
+        for (int w = firstWeek; w <= lastWeek; w++) {
+            cost += week(w);
+        }
+        return cost;
+    }
+
+    /** The rules read over all the seats of animateur a: the run of days, the spread of game categories, their ceilings. */
+    private long overTheEvent(int a, int longest, long likedMask, boolean likedAhead) {
+        long cost = 0;
         if (longest > flat.maxConsec) {
             cost += cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES, longest - flat.maxConsec)
                     + cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES_DUR, longest - flat.maxConsec);
@@ -1022,111 +1099,136 @@ final class IncrementalScore {
             cost += cost(Rule.LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR, Long.bitCount(likedMask) - flat.maxTypo);
         }
         if (flat.hasQuota) {
-            for (int x = 0; x < n; x++) {
+            int[] list = seatsOf[a];
+            for (int x = 0; x < countOf[a]; x++) {
                 for (int t : flat.sTypos[list[x]]) {
-                    if (tCnt[t] > 0) {
-                        if (flat.quota[t] >= 0 && tAhead[t] > 0 && tCnt[t] > flat.quota[t]) {
-                            cost += cost(Rule.PLAFOND_CRENEAUX_PAR_TYPOLOGIE, tCnt[t] - flat.quota[t]);
-                        }
-                        tCnt[t] = 0;
-                        tAhead[t] = 0;
-                    }
-                }
-            }
-        }
-        for (int w = firstWeek; w <= lastWeek; w++) {
-            if (wAheadMaj[w] && wMaj[w] > flat.adultWeekly) {
-                cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX, wMaj[w] - flat.adultWeekly);
-            }
-            if (wAheadMin[w] && wMin[w] > flat.minorWeekly) {
-                cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX_MINEUR, wMin[w] - flat.minorWeekly);
-            }
-            if (wMaj[w] >= flat.adultWeekly && wMaj[w + 1] >= flat.adultWeekly && (wAheadMaj[w] || wAheadMaj[w + 1])) {
-                cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX_DEUX_SEMAINES, 1);
-            }
-            if (wAhead[w] && wDays[w] > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE) {
-                cost += cost(
-                        Rule.MAX_JOURS_TRAVAILLES_PAR_SEMAINE,
-                        wDays[w] - PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE);
-            }
-            if (wAheadMin[w]) {
-                int free = 0, longestFree = 0;
-                for (int b = 0; b < 7; b++) {
-                    free = (wMinorMask[w] & (1 << b)) != 0 ? 0 : free + 1;
-                    longestFree = Math.max(longestFree, free);
-                }
-                if (longestFree < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE) {
-                    cost += cost(
-                            Rule.REPOS_HEBDOMADAIRE_MINEUR,
-                            PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE - longestFree);
-                }
-            }
-            if (wSeatAhead[w]) {
-                // the longest credited rest of the week (LegalConstraints.creditReposMinutes)
-                int weekStart = (w * 7 - flat.weekShift) * 1440, weekEnd = weekStart + 7 * 1440;
-                int best = 0;
-                for (int o = 0; o <= occ; o++) {
-                    boolean openStart = o == 0, openEnd = o == occ;
-                    int restStart = openStart ? weekStart : occE[o - 1], restEnd = openEnd ? weekEnd : occS[o];
-                    int lo = openStart || restStart < weekStart ? weekStart : restStart;
-                    int hi = openEnd || restEnd > weekEnd ? weekEnd : restEnd;
-                    if (hi <= lo) {
-                        continue;
-                    }
-                    int credit = hi - lo + 660;
-                    if (!openStart && !openEnd) {
-                        credit = Math.min(credit, restEnd - restStart);
-                    }
-                    best = Math.max(best, credit);
-                }
-                if (best < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
-                    cost += cost(
-                            Rule.REPOS_HEBDOMADAIRE_MINIMAL,
-                            PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - best);
+                    cost += ceiling(t);
                 }
             }
         }
         return cost;
     }
 
+    /** What the seats counted on game category t cost over its ceiling; the count is given back for the next read. */
+    private long ceiling(int t) {
+        long cost = 0;
+        if (tCnt[t] > 0) {
+            if (flat.quota[t] >= 0 && tAhead[t] > 0 && tCnt[t] > flat.quota[t]) {
+                cost = cost(Rule.PLAFOND_CRENEAUX_PAR_TYPOLOGIE, tCnt[t] - flat.quota[t]);
+            }
+            tCnt[t] = 0;
+            tAhead[t] = 0;
+        }
+        return cost;
+    }
+
+    /** The weekly rules on week w, from what the days of eval() added up. */
+    private long week(int w) {
+        long cost = 0;
+        if (wAheadMaj[w] && wMaj[w] > flat.adultWeekly) {
+            cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX, wMaj[w] - flat.adultWeekly);
+        }
+        if (wAheadMin[w] && wMin[w] > flat.minorWeekly) {
+            cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX_MINEUR, wMin[w] - flat.minorWeekly);
+        }
+        if (wMaj[w] >= flat.adultWeekly && wMaj[w + 1] >= flat.adultWeekly && (wAheadMaj[w] || wAheadMaj[w + 1])) {
+            cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX_DEUX_SEMAINES, 1);
+        }
+        if (wAhead[w] && wDays[w] > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE) {
+            cost += cost(
+                    Rule.MAX_JOURS_TRAVAILLES_PAR_SEMAINE,
+                    wDays[w] - PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE);
+        }
+        if (wAheadMin[w]) {
+            cost += minorWeeklyRest(w);
+        }
+        if (wSeatAhead[w]) {
+            cost += weeklyRest(w);
+        }
+        return cost;
+    }
+
+    /** A minor's two consecutive days off in week w, from the days the week's mask marks as worked. */
+    private long minorWeeklyRest(int w) {
+        int free = 0;
+        int longestFree = 0;
+        for (int b = 0; b < 7; b++) {
+            free = (wMinorMask[w] & (1 << b)) != 0 ? 0 : free + 1;
+            longestFree = Math.max(longestFree, free);
+        }
+        return longestFree < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
+                ? cost(
+                        Rule.REPOS_HEBDOMADAIRE_MINEUR,
+                        PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE - longestFree)
+                : 0;
+    }
+
+    /** The longest credited rest of week w (LegalConstraints.creditReposMinutes) against the weekly minimum. */
+    private long weeklyRest(int w) {
+        int weekStart = (w * 7 - flat.weekShift) * 1440;
+        int weekEnd = weekStart + 7 * 1440;
+        int best = 0;
+        for (int o = 0; o <= occ; o++) {
+            // the rest before the first stretch and after the last is open: it runs to the week's edge and beyond
+            boolean open = o == 0 || o == occ;
+            int restStart = o == 0 ? weekStart : occE[o - 1];
+            int restEnd = o == occ ? weekEnd : occS[o];
+            int inWeek = Math.min(restEnd, weekEnd) - Math.max(restStart, weekStart);
+            if (inWeek > 0) {
+                int credit = open ? inWeek + 660 : Math.min(inWeek + 660, restEnd - restStart);
+                best = Math.max(best, credit);
+            }
+        }
+        return best < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES
+                ? cost(Rule.REPOS_HEBDOMADAIRE_MINIMAL, PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - best)
+                : 0;
+    }
+
     /** An ad hoc rule between two people, charged to the one who owns the term. */
     private long pair(int a, PairTerm term) {
+        return term.kind == 2 ? groupedArrival(a, term) : sameTimeslot(a, term);
+    }
+
+    /** Two people asked to arrive and leave together: the minutes their days differ by, beyond the tolerance. */
+    private long groupedArrival(int a, PairTerm term) {
         long cost = 0;
-        int other = term.other;
-        if (term.kind == 2) {
-            dayBounds(a, dayHas, dayStartOf, dayEndOf, dayAhead);
-            dayBounds(other, otherHas, otherStart, otherEnd, otherAhead);
-            for (int j = 0; j < dayHas.length; j++) {
-                if (dayHas[j] && otherHas[j]) {
-                    int gap = Math.max(0, Math.abs(dayStartOf[j] - otherStart[j]) - term.tolerance)
-                            + Math.max(0, Math.abs(dayEndOf[j] - otherEnd[j]) - term.tolerance);
-                    if (gap > 0 && (dayAhead[j] || otherAhead[j])) {
-                        cost += cost(Rule.ARRIVEE_GROUPEE, gap);
-                    }
-                } else if ((dayHas[j] && dayAhead[j]) || (otherHas[j] && otherAhead[j])) {
-                    cost += cost(Rule.ARRIVEE_GROUPEE, 120);
+        dayBounds(a, dayHas, dayStartOf, dayEndOf, dayAhead);
+        dayBounds(term.other, otherHas, otherStart, otherEnd, otherAhead);
+        for (int j = 0; j < dayHas.length; j++) {
+            if (dayHas[j] && otherHas[j]) {
+                int gap = Math.max(0, Math.abs(dayStartOf[j] - otherStart[j]) - term.tolerance)
+                        + Math.max(0, Math.abs(dayEndOf[j] - otherEnd[j]) - term.tolerance);
+                if (gap > 0 && (dayAhead[j] || otherAhead[j])) {
+                    cost += cost(Rule.ARRIVEE_GROUPEE, gap);
                 }
+            } else if ((dayHas[j] && dayAhead[j]) || (otherHas[j] && otherAhead[j])) {
+                cost += cost(Rule.ARRIVEE_GROUPEE, 120);
             }
-            return cost;
         }
-        int[] mine = seatsOf[a], theirs = seatsOf[other];
+        return cost;
+    }
+
+    /** An incompatibility (kind 0) or an affinity: every pair of their seats on one timeslot, within the rule's scope. */
+    private long sameTimeslot(int a, PairTerm term) {
+        long cost = 0;
+        int[] mine = seatsOf[a];
+        int[] theirs = seatsOf[term.other];
         for (int x = 0; x < countOf[a]; x++) {
             int sx = mine[x];
-            if (!term.scope[sx]) {
-                continue;
-            }
-            for (int y = 0; y < countOf[other]; y++) {
+            for (int y = 0; term.scope[sx] && y < countOf[term.other]; y++) {
                 int sy = theirs[y];
-                if (flat.sSlot[sx] != flat.sSlot[sy] || !term.scope[sy] || (flat.sPast[sx] && flat.sPast[sy])) {
-                    continue;
-                }
-                if (term.kind == 0) {
-                    cost += cost(Rule.INCOMPATIBILITE_AD_HOC, 1);
-                } else if (flat.sStand[sx] == flat.sStand[sy]) {
-                    cost += cost(Rule.AFFINITE_AD_HOC, -1);
+                if (flat.sSlot[sx] == flat.sSlot[sy] && term.scope[sy] && !(flat.sPast[sx] && flat.sPast[sy])) {
+                    cost += together(term, sx, sy);
                 }
             }
         }
         return cost;
+    }
+
+    private long together(PairTerm term, int sx, int sy) {
+        if (term.kind == 0) {
+            return cost(Rule.INCOMPATIBILITE_AD_HOC, 1);
+        }
+        return flat.sStand[sx] == flat.sStand[sy] ? cost(Rule.AFFINITE_AD_HOC, -1) : 0;
     }
 }
