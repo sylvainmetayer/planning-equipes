@@ -172,6 +172,42 @@ class HandSearchSolverTest {
     }
 
     /**
+     * A plan solved, then solved again from itself — a réamorçage with nothing
+     * published to hold it — for a million and a half moves. The search used
+     * to take every move of equal score, and came back with nine seats in ten
+     * swapped between people the rules cannot tell apart; at equal score it
+     * now stays on the plan it was handed, and what moves — a quarter of the
+     * seats at most here — moves for a better score.
+     */
+    @Test
+    void aPlanSolvedAgainFromItselfMovesOnlyWhatBettersIt() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml");
+        List<PosteAffectation> postes = loaded.problem().getPostes();
+        HandSearchFixtures.emptyPlan(loaded.problem());
+        stoppedAfter(loaded, postes.size() + 1_500, 11);
+        Map<String, Animateur> inPlace = new HashMap<>();
+        postes.forEach(poste -> inPlace.put(poste.getId(), poste.getAnimateur()));
+        HardMediumSoftScore start = loaded.configuration().solutionManager().update(loaded.problem());
+
+        HardMediumSoftScore again = stoppedAfter(loaded, 400, 0);
+
+        assertThat(again).isGreaterThanOrEqualTo(start);
+        assertThat(postes.stream()
+                        .filter(poste -> poste.getAnimateur() != inPlace.get(poste.getId()))
+                        .count())
+                .as("seats changed, of %d", postes.size())
+                .isLessThanOrEqualTo(postes.size() / 3);
+    }
+
+    /** The search from the plan the problem carries, stopped after a fixed number of looks at its stop flag. */
+    private static HardMediumSoftScore stoppedAfter(HandSearchFixtures.Loaded loaded, int looks, long seed) {
+        int[] looked = {0};
+        return new HandSearch(loaded.problem())
+                .solve(new HandSearch.Limits(3_600, 0, 0, seed), () -> ++looked[0] > looks, (millis, score, lay) -> {});
+    }
+
+    /**
      * A plan handed in — reseeded, incremental — may carry hundreds of seats on
      * somebody the rules no longer allow there, 10 000 hard points each: the
      * hard level has no ceiling a real plan reaches, and the solve goes on.
