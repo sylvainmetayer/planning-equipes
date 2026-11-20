@@ -129,7 +129,7 @@ final class HandSearchFixtures {
 
     /* ------------------------------- plans ------------------------------- */
 
-    private static boolean movable(PosteAffectation poste) {
+    static boolean movable(PosteAffectation poste) {
         return !poste.isVerrouille() && !poste.isPasse();
     }
 
