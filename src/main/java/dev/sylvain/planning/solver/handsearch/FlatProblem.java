@@ -154,8 +154,8 @@ final class FlatProblem {
 
     int[][] statHard;
 
-    private List<List<ContrainteAdHoc>> forcedOffOf;
-    private List<List<VerrouillagePlanning>> locksOf;
+    private final List<List<ContrainteAdHoc>> forcedOffOf = new ArrayList<>();
+    private final List<List<VerrouillagePlanning>> locksOf = new ArrayList<>();
 
     boolean[][] isRef;
     boolean[][] isDeb;
@@ -770,8 +770,6 @@ final class FlatProblem {
 
     /** The forced unavailabilities and the locks that name each animateur: read for every seat of the table. */
     private void locksAndForcedUnavailabilities() {
-        forcedOffOf = new ArrayList<>(nA);
-        locksOf = new ArrayList<>(nA);
         for (Animateur animateur : animateurs) {
             forcedOffOf.add(problem.getContraintesAdHoc().stream()
                     .filter(adHoc ->
