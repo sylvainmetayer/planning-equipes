@@ -79,6 +79,48 @@ public final class IncrementalProbe {
         }
     }
 
+    /**
+     * A seeded descent of {@code count} draws — a seat handed to somebody
+     * eligible, a swap, anybody, a seat emptied — kept when it does not cost,
+     * and once in sixteen anyway. Returns every delta folded into one number:
+     * two engines that score alike return the same one, whatever their speed,
+     * which makes this both a fixed amount of work to time and the proof that
+     * the work was the same.
+     */
+    public long descend(SplittableRandom random, int count) {
+        long fold = 17;
+        for (int i = 0; i < count; i++) {
+            score.begin();
+            int kind = random.nextInt(8);
+            int s = random.nextInt(flat.nS);
+            int s2 = random.nextInt(flat.nS);
+            if (!flat.sFixed[s] && !(kind >= 4 && kind < 6 && (flat.sFixed[s2] || s2 == s))) {
+                if (kind < 4) {
+                    int[] candidates = flat.elig[s];
+                    score.move(s, candidates.length == 0 ? -1 : candidates[random.nextInt(candidates.length)]);
+                } else if (kind < 6) {
+                    int a1 = score.assign[s];
+                    int a2 = score.assign[s2];
+                    score.move(s, a2);
+                    score.move(s2, a1);
+                } else {
+                    score.move(s, kind == 6 ? random.nextInt(flat.nA) : -1);
+                }
+                long delta = score.finish();
+                long deltaHard = score.deltaHard;
+                fold = fold * 1_000_003L + delta * 31 + deltaHard;
+                if (deltaHard < 0 || (deltaHard == 0 && delta <= 0) || random.nextInt(16) == 0) {
+                    total += delta;
+                    hard += deltaHard;
+                } else {
+                    score.undo();
+                }
+                moves++;
+            }
+        }
+        return fold;
+    }
+
     private int seat(SplittableRandom random) {
         return movable[random.nextInt(movable.length)];
     }

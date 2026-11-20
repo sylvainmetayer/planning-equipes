@@ -587,6 +587,13 @@ propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
   Chaque divergence s'écrit dans `-Dfuzz.out=<dossier>` avec de quoi rejouer
   son tour (`-Dfuzz.seed=S -Dfuzz.round=N`), sans rien d'autre que des
   identifiants ; le test échoue à la fin s'il en a trouvé.
+- `HandSearchThroughputTest` chronomètre le moteur direct sur un travail
+  fixé (`-Dthroughput.scenario=…`) : une descente semée du score incrémental
+  et une recherche arrêtée après un nombre donné de regards sur son drapeau
+  d'arrêt, en mouvements par seconde, après quelques passes de chauffe. Deux
+  versions qui décident pareil font les mêmes mouvements : le temps ne mesure
+  que leur vitesse, et le condensé imprimé avec lui dit si le travail était
+  bien le même.
 - `TerminationReplayTest` rejoue des règles d'arrêt sur une courbe
   enregistrée (`-Dreplay.curve=<csv>`) : le plateau à plusieurs durées, les
   rendements décroissants de Timefold à plusieurs fenêtres et ratios, un gain
