@@ -31,10 +31,9 @@ public final class HandSearch {
 
     /**
      * When to stop: {@code seconds} after this search was built, or —
-     * {@code plateauSeconds} above zero — once the plan is feasible and
-     * {@code plateauSeconds} went by without the best medium score gaining
-     * {@code plateauGainMedium} points (without any better plan at all when
-     * that gain is zero).
+     * {@code plateauSeconds} above zero — once the plan is feasible and has
+     * stopped gaining {@code plateauGainMedium} medium points a window of
+     * {@code plateauSeconds}, as {@link Plateau} judges it.
      */
     public record Limits(long seconds, long plateauSeconds, long plateauGainMedium, long seed) {}
 
@@ -68,6 +67,17 @@ public final class HandSearch {
     private static final int CHAIN_TRIALS = 15_000;
     private static final int CHAIN_DEPTH = 3;
 
+    /**
+     * What an empty seat weighs when the search decides whether to take a
+     * move, in seats: twice what the score counts, so that filling one while
+     * breaking one other rule is still a step forward. At its real weight the
+     * last empty seats are a plateau the search leaves by luck, and when a
+     * full edition gets its feasible plan depends on the seed. Only acceptance
+     * reads that weight: the best plan is chosen, announced and returned on
+     * the real score.
+     */
+    private static final long EMPTY_WEIGHT = 2;
+
     /** Trials of a chain between two looks at the clock and the stop flag. */
     private static final int CHAIN_LOOK = 256;
 
@@ -89,6 +99,8 @@ public final class HandSearch {
     public HandSearch(PlanningEvenement prepared) {
         this.flat = new FlatProblem(prepared);
         this.score = new IncrementalScore(flat);
+        score.emptyExtra = (EMPTY_WEIGHT - 1) * flat.hardUnit[Rule.POSTE_DOIT_ETRE_POURVU.ordinal()];
+        score.load(score.assign.clone());
     }
 
     /**
@@ -117,8 +129,9 @@ public final class HandSearch {
         long[] historyHard = new long[LATE_ACCEPTANCE];
         Arrays.fill(history, total);
         Arrays.fill(historyHard, totalHard);
+        // The best plan is judged on the real hard points; totalHard carries the search's weight of an empty seat.
         long best = total;
-        long bestHard = totalHard;
+        long bestHard = totalHard - score.emptyExtra * score.emptyAhead;
         int[] bestPlan = score.assign.clone();
         Runnable layBest = () -> lay(bestPlan);
         listener.best(millisSince(start), decoded(bestHard, best), layBest);
@@ -127,9 +140,11 @@ public final class HandSearch {
         long lastAnnounce = System.nanoTime();
         long lastCheck = lastAnnounce;
         long lastChain = lastAnnounce;
-        // The plateau is judged from feasibility, against the best medium score it last started from.
-        long plateauSince = -1;
-        long plateauFrom = 0;
+        // Fed at the tick that follows a better plan: a few thousand moves late, against a window in seconds.
+        Plateau plateau =
+                new Plateau(lastAnnounce, limits.plateauSeconds() * 1_000_000_000L, limits.plateauGainMedium());
+        long plateauFed = best;
+        long plateauFedHard = bestHard;
         // Nobody to seat, or every seat pinned or past: the plan is scored as it stands.
         boolean movable = nA > 0 && !allFixed();
         for (long move = 0; movable; move++) {
@@ -146,17 +161,14 @@ public final class HandSearch {
                     IncrementalScore.checkRange(score.levels());
                     lastCheck = now;
                 }
-                if (bestHard == 0 && limits.plateauSeconds() > 0) {
-                    long medium = Math.floorDiv(best + MEDIUM / 2, MEDIUM);
-                    boolean gained = limits.plateauGainMedium() > 0
-                            ? plateauFrom - medium >= limits.plateauGainMedium()
-                            : best < plateauFrom;
-                    if (plateauSince < 0 || gained) {
-                        plateauSince = now;
-                        plateauFrom = limits.plateauGainMedium() > 0 ? medium : best;
-                    } else if (now - plateauSince >= limits.plateauSeconds() * 1_000_000_000L) {
-                        break;
-                    }
+                if (before(bestHard, best, plateauFedHard, plateauFed)) {
+                    plateau.best(now, bestHard, Math.floorDiv(best + MEDIUM / 2, MEDIUM));
+                    plateauFed = best;
+                    plateauFedHard = bestHard;
+                }
+                // Only a feasible plan ends on the plateau: reaching one is what the budget is for.
+                if (bestHard == 0 && plateau.over(now)) {
+                    break;
                 }
                 if (now >= deadline || stop.getAsBoolean()) {
                     break;
@@ -169,9 +181,10 @@ public final class HandSearch {
                     total = score.total();
                     Arrays.fill(history, total);
                     Arrays.fill(historyHard, totalHard);
-                    if (before(totalHard, total, bestHard, best)) {
+                    long realHard = totalHard - score.emptyExtra * score.emptyAhead;
+                    if (before(realHard, total, bestHard, best)) {
                         best = total;
-                        bestHard = totalHard;
+                        bestHard = realHard;
                         System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                     }
                     lastChain = System.nanoTime();
@@ -244,9 +257,10 @@ public final class HandSearch {
                     || !before(historyHard[slot], history[slot], candidateHard, candidate)) {
                 total = candidate;
                 totalHard = candidateHard;
-                if (before(totalHard, total, bestHard, best)) {
+                long realHard = totalHard - score.emptyExtra * score.emptyAhead;
+                if (before(realHard, total, bestHard, best)) {
                     best = total;
-                    bestHard = totalHard;
+                    bestHard = realHard;
                     System.arraycopy(score.assign, 0, bestPlan, 0, nS);
                 }
             } else {
@@ -355,11 +369,15 @@ public final class HandSearch {
             long bestDeltaHard = 0;
             int bestHolder = -1;
             for (int a : flat.elig[s]) {
+                // Weighed alone: re-reading everyone the candidate touches doubles the construction for the same plan.
+                score.alone = true;
                 score.begin();
                 score.move(s, a);
                 long delta = score.finish();
-                long deltaHard = score.deltaHard;
+                // Filling s takes its search weight off: put back, the delta is the real one.
+                long deltaHard = score.deltaHard + score.emptyExtra;
                 score.undo();
+                score.alone = false;
                 if (before(deltaHard, delta, bestDeltaHard, bestDelta)) {
                     bestDelta = delta;
                     bestDeltaHard = deltaHard;
@@ -402,8 +420,8 @@ public final class HandSearch {
                 || a1 == a2
                 || a1 < 0
                 || a2 < 0
-                || !flat.eligible[s1][a2]
-                || !flat.eligible[s2][a1]) {
+                || flat.statHard[s1][a2] != 0
+                || flat.statHard[s2][a1] != 0) {
             return false;
         }
         score.move(s1, a2);
@@ -447,7 +465,7 @@ public final class HandSearch {
             score.begin();
             score.move(x, a);
             score.finish();
-            if (score.deltaHard <= -1) {
+            if (score.deltaHard <= -1 - score.emptyExtra) {
                 return true;
             }
             score.undo();

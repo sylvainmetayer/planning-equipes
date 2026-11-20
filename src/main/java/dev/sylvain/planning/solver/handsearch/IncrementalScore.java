@@ -65,6 +65,15 @@ final class IncrementalScore {
     final long[] hardOf;
     int unassignedMovable;
 
+    /** Empty seats still ahead, pinned ones included. */
+    int emptyAhead;
+
+    /** Hard points an empty seat weighs for the search beyond the one the score counts. */
+    long emptyExtra;
+
+    /** Set while a candidate is only being weighed: the others it would touch are not re-read. */
+    boolean alone;
+
     // shared counts: per line, per premium stand, per timeslot, per forced assignment, and the two balances
     private long shared;
     private long sharedHard;
@@ -200,6 +209,7 @@ final class IncrementalScore {
         otherHas = new boolean[flat.nDayNos];
         for (int s = 0; s < nS; s++) {
             unassignedMovable += flat.sFixed[s] ? 0 : 1;
+            emptyAhead += flat.sPast[s] ? 0 : 1;
         }
         for (int s = 0; s < nS; s++) {
             if (flat.initial[s] >= 0) {
@@ -521,13 +531,13 @@ final class IncrementalScore {
         touch(from);
         touch(to);
         // a relay exists or not: only a seat that fills or empties changes it for the others
-        for (int nb : from >= 0 && to >= 0 ? NONE : flat.nbr[s]) {
+        for (int nb : alone || (from >= 0 && to >= 0) ? NONE : flat.nbr[s]) {
             if (assign[nb] >= 0 && dues[assign[nb]] > 0) {
                 touch(assign[nb]);
             }
         }
         int line = flat.sLine[s], stand = flat.sStand[s], cr = flat.sSlot[s], day = flat.sDay[s];
-        if (flat.supervision) {
+        if (flat.supervision && !alone) {
             // the minors of the line may gain or lose the adult who supervises them
             for (int mate : flat.lineSeats[line]) {
                 if (assign[mate] >= 0 && flat.minorAt[assign[mate]][day]) {
@@ -571,6 +581,7 @@ final class IncrementalScore {
             }
         } else {
             countEmpty(s, -1);
+            emptyAhead -= flat.sPast[s] ? 0 : 1;
             unassignedMovable -= flat.sFixed[s] ? 0 : 1;
         }
         if (to >= 0) {
@@ -607,6 +618,7 @@ final class IncrementalScore {
             }
         } else {
             countEmpty(s, 1);
+            emptyAhead += flat.sPast[s] ? 0 : 1;
             unassignedMovable += flat.sFixed[s] ? 0 : 1;
         }
         assign[s] = to;
@@ -621,6 +633,9 @@ final class IncrementalScore {
     }
 
     private long emptyCost(int s) {
+        if (!explain && !flat.sPast[s]) {
+            hardOut += emptyExtra;
+        }
         return (flat.sPast[s] ? 0 : cost(Rule.POSTE_DOIT_ETRE_POURVU, 1))
                 + cost(Rule.STABILITE_DU_PLAN_PUBLIE, flat.published[s]);
     }

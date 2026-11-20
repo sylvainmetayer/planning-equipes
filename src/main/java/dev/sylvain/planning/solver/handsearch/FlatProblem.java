@@ -44,11 +44,11 @@ import java.util.Set;
  * several passes. A seat is <em>fixed</em> when it is pinned or past — the
  * search reads its holder and never moves it.</p>
  *
- * <p>Some shapes of problem are refused here rather than scored wrongly: more
- * than 64 game categories (the set of categories one animateur holds is a
- * {@code long}), a break longer than {@link #RELAY_REACH_MINUTES} (a relay is
- * looked for on the same stand within that reach), a seat without a stand or
- * without both its hours, a seat held by somebody the problem does not list,
+ * <p>Some shapes of problem are refused here rather than scored wrongly: an
+ * animateur appreciated for more than 64 game categories (the set of those
+ * they hold is a {@code long}), a seat without a stand or without both its
+ * hours — the streams have a branch for it that no generated seat takes, and
+ * writing it here would touch every rule that reads a time —, a seat held by somebody the problem does not list,
  * and a fact carried twice — two states of one constraint, two ceilings of one
  * game category, two sets of parameters — which the streams would charge
  * twice and no table can hold. See {@link HandSearchException}.</p>
@@ -65,8 +65,14 @@ final class FlatProblem {
 
     static final int FORFAIT = ExclusionEligibilite.FORFAIT;
 
-    /** How far around a seat, in minutes, a colleague's seat on the same stand is looked at as a relay. */
-    static final int RELAY_REACH_MINUTES = 60;
+    /**
+     * The size past which the problem is refused: the engine keeps what every
+     * seat costs every animateur, some fifteen bytes and a microsecond a couple
+     * — tens of megabytes and under a second for an edition, most of a
+     * gigabyte and two minutes for forty million couples. The same threshold
+     * as the sampled construction the other search switches to (ADR 0036).
+     */
+    static final long MAX_SEATS_TIMES_ANIMATEURS = 15_000_000L;
 
     /**
      * What one unit of each rule costs: hard points for a hard rule, the
@@ -130,10 +136,9 @@ final class FlatProblem {
     boolean[] sExhausting;
     boolean[] sDemanding;
     int[][] sTypos;
-    /** Who may hold each seat without a hard point of its own, as a list and as a table. */
+    /** Who may hold each seat without a hard point of its own; {@link #statHard} is the table of it. */
     int[][] elig;
 
-    boolean[][] eligible;
     /** The other seats of the same stand around each seat: where a relay or a supervising adult is looked for. */
     int[][] nbr;
 
@@ -147,7 +152,10 @@ final class FlatProblem {
     /** What one seat costs one animateur whoever else is around: {@link #staticTerms}, computed once. */
     long[][] stat;
 
-    long[][] statHard;
+    int[][] statHard;
+
+    private List<List<ContrainteAdHoc>> forcedOffOf;
+    private List<List<VerrouillagePlanning>> locksOf;
 
     boolean[][] isRef;
     boolean[][] isDeb;
@@ -291,10 +299,6 @@ final class FlatProblem {
         weights();
         pauseMinor = legal.dureePauseMinutes(true);
         pauseAdult = legal.dureePauseMinutes(false);
-        if (Math.max(legal.dureePauseMinutes(true), legal.dureePauseMinutes(false)) > RELAY_REACH_MINUTES) {
-            throw HandSearchException.refused("la pause dépasse " + RELAY_REACH_MINUTES
-                    + " minutes, ce que la recherche d'un relais ne couvre pas");
-        }
         Set<String> known = new HashSet<>();
         animateurs.forEach(animateur -> known.add(animateur.getId()));
         for (PosteAffectation poste : postes) {
@@ -317,6 +321,11 @@ final class FlatProblem {
         }
         nS = postes.size();
         nA = animateurs.size();
+        if ((long) nS * nA > MAX_SEATS_TIMES_ANIMATEURS) {
+            throw HandSearchException.refused(nS + " sièges pour " + nA + " animateurs : au-delà de "
+                    + MAX_SEATS_TIMES_ANIMATEURS + " couples siège × animateur, la table du moteur ne tient plus"
+                    + " dans la mémoire d'une petite machine");
+        }
         Map<String, Integer> byId = new HashMap<>();
         for (int a = 0; a < nA; a++) {
             byId.put(animateurs.get(a).getId(), a);
@@ -354,7 +363,7 @@ final class FlatProblem {
         List<Stand> standsInOrder = new ArrayList<>();
         List<Emplacement> placeList = new ArrayList<>();
         List<List<Integer>> linesOfStand = new ArrayList<>();
-        Map<Object, List<Integer>> byStandDay = new HashMap<>();
+        Map<Integer, List<Integer>> byStand = new HashMap<>();
         Map<String, Set<String>> publishedHolders = new HashMap<>();
         for (AffectationPubliee publiee : problem.getAffectationsPubliees()) {
             publishedHolders
@@ -410,9 +419,7 @@ final class FlatProblem {
                     stand.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()));
             publishedBy.add(sPast[s] ? null : holders);
             published[s] = sPast[s] || holders == null ? 0 : 1;
-            byStandDay
-                    .computeIfAbsent(List.of(sStand[s], sDay[s]), k -> new ArrayList<>())
-                    .add(s);
+            byStand.computeIfAbsent(sStand[s], k -> new ArrayList<>()).add(s);
         }
         // a seat split on the day (ADR 0066): the origin ended where its remainder starts
         origin = new int[nS];
@@ -443,13 +450,14 @@ final class FlatProblem {
         nStands = stands.size();
         nSlots = slots.size();
         nbr = new int[nS][];
-        for (List<Integer> group : byStandDay.values()) {
+        // A break is owed at an instant inside the seat held, or in the gap — shorter than the
+        // break — right before it, and its relay covers that instant and the break after it: the
+        // relay overlaps the seat held, whatever the break lasts and whichever side of midnight.
+        for (List<Integer> group : byStand.values()) {
             for (int s : group) {
                 nbr[s] = group.stream()
                         .mapToInt(Integer::intValue)
-                        .filter(o -> o != s
-                                && sStart[o] <= sEnd[s] + RELAY_REACH_MINUTES
-                                && sEnd[o] >= sStart[s] - RELAY_REACH_MINUTES)
+                        .filter(o -> o != s && sStart[o] <= sEnd[s] && sEnd[o] >= sStart[s])
                         .toArray();
             }
         }
@@ -478,9 +486,6 @@ final class FlatProblem {
             quota[typos.get(q.getTypologie())] = q.getMaxCreneaux();
             hasQuota = true;
         }
-        if (nTypo > 64) {
-            throw HandSearchException.refused(nTypo + " typologies de jeu, pour 64 au plus");
-        }
 
         // per animateur
         minorAt = new boolean[nA][nDays];
@@ -491,6 +496,8 @@ final class FlatProblem {
         isDeb = new boolean[nStands][nA];
         liked = new long[nStands][nA];
         ninjaTotal = 0;
+        Set<String> offered = new HashSet<>();
+        standsInOrder.forEach(stand -> offered.addAll(stand.getTypologiesProposees()));
         for (int a = 0; a < nA; a++) {
             Animateur animateur = animateurs.get(a);
             ninja[a] = animateur.isNinja();
@@ -500,14 +507,25 @@ final class FlatProblem {
                 adultAt[a][d] = animateur.isMajeurOn(first.plusDays(d));
                 under16At[a][d] = animateur.isUnder16On(first.plusDays(d));
             }
+            // The categories this animateur is appreciated for and a stand offers, numbered for them
+            // alone: the set of those they hold is a long, and an edition may have as many as it likes.
+            Map<String, Integer> own = new HashMap<>();
+            animateur.getCompetences().keySet().stream()
+                    .filter(offered::contains)
+                    .forEach(t -> own.put(t, own.size()));
+            if (own.size() > Long.SIZE) {
+                throw HandSearchException.refused("l'animateur " + animateur.getId() + " est apprécié sur " + own.size()
+                        + " typologies de jeu proposées par un stand, pour " + Long.SIZE + " au plus");
+            }
             for (int st = 0; st < nStands; st++) {
                 Stand stand = standsInOrder.get(st);
                 isRef[st][a] = animateur.isReferentFor(stand);
                 isDeb[st][a] = animateur.isDebutantFor(stand);
                 long mask = 0;
                 for (String t : stand.getTypologiesProposees()) {
-                    if (animateur.getCompetences().containsKey(t)) {
-                        mask |= 1L << (typos.get(t) & 63);
+                    Integer bit = own.get(t);
+                    if (bit != null) {
+                        mask |= 1L << bit;
                     }
                 }
                 liked[st][a] = mask;
@@ -647,10 +665,22 @@ final class FlatProblem {
                     forcedOfSeat.get(s).stream().mapToInt(Integer::intValue).toArray();
         }
 
+        // the forced unavailabilities and the locks that name each animateur: read for every seat below
+        forcedOffOf = new ArrayList<>(nA);
+        locksOf = new ArrayList<>(nA);
+        for (Animateur animateur : animateurs) {
+            forcedOffOf.add(problem.getContraintesAdHoc().stream()
+                    .filter(adHoc ->
+                            adHoc.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE && concerns(adHoc, animateur))
+                    .toList());
+            locksOf.add(problem.getVerrouillages().stream()
+                    .filter(lock -> animateur.getId().equals(lock.getAnimateurId()))
+                    .toList());
+        }
+
         // what one seat costs one animateur, whoever else is around
         stat = new long[nS][nA];
-        statHard = new long[nS][nA];
-        eligible = new boolean[nS][nA];
+        statHard = new int[nS][nA];
         elig = new int[nS][];
         int[] buffer = new int[nA];
         for (int s = 0; s < nS; s++) {
@@ -658,9 +688,8 @@ final class FlatProblem {
             for (int a = 0; a < nA; a++) {
                 hardOut = 0;
                 stat[s][a] = staticTerms(s, a, null);
-                statHard[s][a] = hardOut;
+                statHard[s][a] = Math.toIntExact(hardOut);
                 if (hardOut == 0) {
-                    eligible[s][a] = true;
                     buffer[n++] = a;
                 }
             }
@@ -709,18 +738,13 @@ final class FlatProblem {
         if (!animateur.hasSouhaitFor(stand)) {
             c += cost(Rule.SOUHAITS_INCOMPATIBLES, 1, breakdown);
         }
-        for (ContrainteAdHoc adHoc : problem.getContraintesAdHoc()) {
-            if (adHoc.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
-                    && concerns(adHoc, animateur)
-                    && scope(adHoc, poste)) {
+        for (ContrainteAdHoc adHoc : forcedOffOf.get(a)) {
+            if (scope(adHoc, poste)) {
                 c += cost(Rule.INDISPONIBILITE_FORCEE, 1, breakdown);
             }
         }
         if (!sLocked[s]) {
-            for (VerrouillagePlanning lock : problem.getVerrouillages()) {
-                if (!animateur.getId().equals(lock.getAnimateurId())) {
-                    continue;
-                }
+            for (VerrouillagePlanning lock : locksOf.get(a)) {
                 if (lock.getType() == TypeVerrouillage.ANIMATEUR) {
                     c += cost(Rule.ANIMATEUR_VERROUILLE_FIGE, 1, breakdown);
                 } else if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU

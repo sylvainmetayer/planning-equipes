@@ -3,9 +3,18 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,6 +27,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * The net under the direct engine (ADR 0087): its score, rule by rule, equals
@@ -103,6 +113,145 @@ class HandSearchDifferentialTest {
         first.setAnimateur(loaded.problem().getAnimateurs().get(5));
         agree(loaded, "one origin back");
         assertThat(loaded.refereeBreakdown().get("eviterRoulementStandsPremium"))
+                .isPositive();
+    }
+
+    /**
+     * A break of an hour and a half, which the setting gives minors as well:
+     * the relay of a break is looked for among the seats that overlap the one
+     * held, however long the break. The second grid has minors and nights that
+     * end after midnight, where the relay may be a seat dated the day before.
+     */
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "gamme-08-3j-5stands-16animateurs-relais-midi-reduit.yaml",
+                "gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes.yaml"
+            })
+    void aBreakLongerThanAnHourIsRelayedAlike(String scenario) {
+        HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(scenario);
+        loaded.problem().parametresLegaux().setDureePauseMinutes(90);
+        SplittableRandom random = new SplittableRandom(8);
+        // A solved plan first: dense and legal, it is where a break is owed and somebody does cover it.
+        HandSearchFixtures.search(loaded.problem(), 2, 0);
+        agree(loaded, "break of 90 minutes, solved");
+        long relayed = 0;
+        long minors = 0;
+        for (int i = 0; i < 6; i++) {
+            if (i < 3) {
+                HandSearchFixtures.randomPlan(loaded.problem(), random);
+            } else {
+                HandSearchFixtures.sparsePlan(loaded.problem(), random);
+            }
+            agree(loaded, "break of 90 minutes " + i);
+            relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
+            minors += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMineur", 0L);
+        }
+        HandSearchFixtures.overloadedPlan(loaded.problem());
+        agree(loaded, "break of 90 minutes, overloaded");
+        relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
+        assertThat(relayed).as("unrelayed breaks compared").isPositive();
+        if (scenario.contains("mineurs")) {
+            assertThat(minors).as("unrelayed breaks of minors compared").isPositive();
+        }
+    }
+
+    /**
+     * A stretch from 18:30 to 1:00 owes its break at half past midnight, on a
+     * seat dated the day before; the only colleague there holds a seat dated
+     * the next day. That seat relays the break, and without its holder the
+     * break is unrelayed — under both scores.
+     */
+    @Test
+    void aBreakDueAfterMidnightIsRelayedByASeatDatedTheNextDay() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit.yaml");
+        PlanningEvenement problem = loaded.problem();
+        PosteAffectation night = problem.getPostes().stream()
+                .filter(poste -> LocalTime.of(21, 0).equals(poste.getCreneau().getHeureDebut()))
+                .findFirst()
+                .orElseThrow();
+        Creneau evening = night.getCreneau();
+        LocalDate day = evening.getDate();
+        PosteAffectation early = new PosteAffectation(
+                "EARLY",
+                night.getStand(),
+                new Creneau(9_001L, evening.getJour(), day, LocalTime.of(18, 30), LocalTime.of(21, 0)));
+        PosteAffectation afterMidnight = new PosteAffectation(
+                "AFTER-MIDNIGHT",
+                night.getStand(),
+                new Creneau(9_002L, evening.getJour() + 1, day.plusDays(1), LocalTime.MIDNIGHT, LocalTime.of(1, 0)));
+        List<PosteAffectation> postes = new ArrayList<>(problem.getPostes());
+        postes.add(early);
+        postes.add(afterMidnight);
+        problem.setPostes(postes);
+        HandSearchFixtures.emptyPlan(problem);
+        List<Animateur> adults = problem.getAnimateurs().stream()
+                .filter(animateur -> animateur.isMajeurOn(day))
+                .toList();
+        early.setAnimateur(adults.get(0));
+        night.setAnimateur(adults.get(0));
+
+        afterMidnight.setAnimateur(adults.get(1));
+        agree(loaded, "break after midnight, relayed");
+        assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L))
+                .isZero();
+
+        afterMidnight.setAnimateur(null);
+        agree(loaded, "break after midnight, nobody to relay it");
+        assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L))
+                .isPositive();
+    }
+
+    /**
+     * More game categories than a {@code long} has bits: each animateur's are
+     * numbered for them alone, so the edition may have as many as it likes.
+     */
+    @Test
+    void anEditionWithMoreThanSixtyFourGameCategoriesIsScoredAlike() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml");
+        List<Stand> stands = loaded.problem().getPostes().stream()
+                .map(PosteAffectation::getStand)
+                .distinct()
+                .toList();
+        for (int i = 0; i < 90; i++) {
+            Stand stand = stands.get(i % stands.size());
+            Set<String> offered = new HashSet<>(stand.getTypologiesProposees());
+            offered.add("EXTRA-" + i);
+            stand.setTypologiesProposees(offered);
+        }
+        List<Animateur> animateurs = loaded.problem().getAnimateurs();
+        for (int a = 0; a < animateurs.size(); a++) {
+            Map<String, NiveauCompetence> competences =
+                    new HashMap<>(animateurs.get(a).getCompetences());
+            for (int i = 0; i < 20; i++) {
+                competences.put("EXTRA-" + (a * 7 + i * 4) % 90, NiveauCompetence.AUTONOME);
+            }
+            animateurs.get(a).setCompetences(competences);
+        }
+        // One fiche at the very limit — sixty-four categories a stand offers — and ten more nobody offers.
+        Map<String, NiveauCompetence> atTheLimit = new HashMap<>();
+        for (int i = 0; i < 64; i++) {
+            atTheLimit.put("EXTRA-" + i, NiveauCompetence.AUTONOME);
+        }
+        for (int i = 0; i < 10; i++) {
+            atTheLimit.put("NOWHERE-" + i, NiveauCompetence.AUTONOME);
+        }
+        animateurs.get(0).setCompetences(atTheLimit);
+        SplittableRandom random = new SplittableRandom(9);
+        long spread = 0;
+        for (int i = 0; i < 6; i++) {
+            if (i < 3) {
+                HandSearchFixtures.randomPlan(loaded.problem(), random);
+            } else {
+                HandSearchFixtures.sparsePlan(loaded.problem(), random);
+            }
+            agree(loaded, "ninety more game categories " + i);
+            spread += loaded.refereeBreakdown().getOrDefault("limiterTypologiesDistinctesParAnimateur", 0L);
+        }
+        assertThat(spread)
+                .as("animateurs spread over too many categories, compared")
                 .isPositive();
     }
 

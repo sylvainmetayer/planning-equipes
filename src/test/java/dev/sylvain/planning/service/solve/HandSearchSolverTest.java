@@ -7,11 +7,15 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.solver.handsearch.HandSearch;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.concurrent.atomic.AtomicReference;
@@ -191,6 +195,70 @@ class HandSearchSolverTest {
         assertThat(loaded.disagreements()).isEmpty();
     }
 
+    /**
+     * A team too small for its grid: no plan is feasible, and the search
+     * trades empty seats — which it weighs double to decide a move — against
+     * other breaches. The plan it keeps is chosen on the real score all the
+     * same: the curve never steps back, and what comes out is its last point.
+     */
+    @ParameterizedTest
+    @ValueSource(longs = {0, 1, 2, 3})
+    void anUnderstaffedSolveNeverReturnsAPlanWorseThanOneItAnnounced(long seed) {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml");
+        List<Animateur> team = loaded.problem().getAnimateurs();
+        loaded.problem().setAnimateurs(new ArrayList<>(team.subList(0, team.size() * 7 / 10)));
+        HandSearchFixtures.emptyPlan(loaded.problem());
+        List<HardMediumSoftScore> announced = new ArrayList<>();
+
+        HardMediumSoftScore returned = new HandSearch(loaded.problem())
+                .solve(new HandSearch.Limits(3, 0, 0, seed), () -> false, (millis, score, lay) -> announced.add(score));
+
+        assertThat(returned.isFeasible()).isFalse();
+        assertThat(announced).isSorted();
+        assertThat(returned).isEqualTo(announced.get(announced.size() - 1));
+        assertThat(returned).isEqualTo(loaded.configuration().solutionManager().update(loaded.problem()));
+    }
+
+    /**
+     * A plateau of one second on a team too small for its grid: the window is
+     * spent many times over and the solve still runs its four seconds — under
+     * both engines the plateau ends a feasible plan only (the configuration
+     * ANDs it with feasibility), since reaching one is what the budget is for.
+     */
+    @Test
+    void thePlateauNeverEndsASolveThatHasNoFeasiblePlanYet() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml");
+        List<Animateur> team = loaded.problem().getAnimateurs();
+        loaded.problem().setAnimateurs(new ArrayList<>(team.subList(0, team.size() * 7 / 10)));
+        HandSearchFixtures.emptyPlan(loaded.problem());
+
+        long start = System.nanoTime();
+        HardMediumSoftScore returned = new HandSearch(loaded.problem())
+                .solve(new HandSearch.Limits(4, 1, 0, 0), () -> false, (millis, score, lay) -> {});
+
+        assertThat(returned.isFeasible()).isFalse();
+        assertThat(System.nanoTime() - start).isGreaterThan(3_500_000_000L);
+    }
+
+    /**
+     * Forty million seat × animateur couples: the table the engine keeps of
+     * them would take most of a gigabyte and minutes to fill. Refused, at the
+     * size where the other search switches to its sampled construction.
+     */
+    @Test
+    void aProblemTooLargeForTheEnginesTableIsRefusedInWords() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("extreme-09-120j-400stands-1000animateurs-cumul.yaml");
+
+        assertThatThrownBy(() -> new HandSearchSolver(
+                                hand(1), 0, loaded.configuration().solutionManager())
+                        .solve(loaded.problem()))
+                .isInstanceOf(HandSearchSolver.Failed.class)
+                .hasMessageContaining("couples siège × animateur");
+    }
+
     @Test
     void aFactCarriedTwiceIsRefusedRatherThanGuessedAt() {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
@@ -209,14 +277,20 @@ class HandSearchSolverTest {
     @Test
     void aProblemTheEngineDoesNotScoreIsRefusedInWords() {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
-        loaded.problem().parametresLegaux().setDureePauseMinutes(90);
+        Map<String, NiveauCompetence> everything = new HashMap<>();
+        for (int i = 0; i < 65; i++) {
+            everything.put("TYPOLOGIE-" + i, NiveauCompetence.AUTONOME);
+        }
+        loaded.problem().getAnimateurs().get(0).setCompetences(everything);
+        // Only what a stand offers counts: a fiche may list as many other categories as it likes.
+        loaded.problem().getPostes().get(0).getStand().setTypologiesProposees(everything.keySet());
         HandSearchSolver solver =
                 new HandSearchSolver(hand(3), 0, loaded.configuration().solutionManager());
 
         assertThatThrownBy(() -> solver.solve(loaded.problem()))
                 .isInstanceOf(HandSearchSolver.Failed.class)
                 .hasMessageContaining("Le moteur direct ne peut pas résoudre ce problème")
-                .hasMessageContaining("la pause dépasse 60 minutes");
+                .hasMessageContaining("65 typologies de jeu proposées par un stand, pour 64 au plus");
     }
 
     @Test
