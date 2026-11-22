@@ -108,6 +108,22 @@ class HandSearchFuzzTest {
         try {
             HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(scenario);
             PlanningEvenement problem = loaded.problem();
+            if (problem.getPostes().isEmpty() || problem.getAnimateurs().isEmpty()) {
+                // No seat, or nobody to draw a holder from: the fixtures cannot vary it, so the
+                // empty plan and one search are all there is to compare.
+                plan = "empty";
+                compare(loaded, round, variations, plan);
+                plan = "search";
+                HardMediumSoftScore kept = new HandSearch(problem)
+                        .solve(new HandSearch.Limits(2, 0, 0, random.nextLong()), () -> false, (m, s, l) -> {});
+                compare(loaded, round, variations, "search result");
+                HardMediumSoftScore referee =
+                        loaded.configuration().solutionManager().update(problem);
+                if (!kept.equals(referee)) {
+                    diverged(round, variations, "search result", "the score the search kept", kept + " / " + referee);
+                }
+                return;
+            }
             vary(problem, random, variations);
 
             plan = "empty";
