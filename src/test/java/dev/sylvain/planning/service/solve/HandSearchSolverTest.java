@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.solver.handsearch.HandSearch;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -357,17 +358,18 @@ class HandSearchSolverTest {
         assertThat(loaded.disagreements()).isEmpty();
     }
 
-    /** The path a worker takes: settings alone, no reference data, the engine named by the settings. */
+    /** Since ADR 0088 an instance that says nothing searches with the direct engine. */
     @Test
     void theDirectEngineIsTheDefaultAndTheVariableGivesTimefoldBack() {
-        assertThat(SolverConfiguration.readEngine(new io.smallrye.config.SmallRyeConfigBuilder().build()))
+        assertThat(SolverConfiguration.readEngine(new SmallRyeConfigBuilder().build()))
                 .isEqualTo(SolverEngine.HAND);
-        assertThat(SolverConfiguration.readEngine(new io.smallrye.config.SmallRyeConfigBuilder()
+        assertThat(SolverConfiguration.readEngine(new SmallRyeConfigBuilder()
                         .withDefaultValue(SolverConfiguration.ENGINE_PROPERTY, "timefold")
                         .build()))
                 .isEqualTo(SolverEngine.TIMEFOLD);
     }
 
+    /** The path a worker takes: settings alone, no reference data, the engine named by the settings. */
     @Test
     void theEngineNamedByTheSettingsIsTheOneAPreparedProblemIsSolvedWith() {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);

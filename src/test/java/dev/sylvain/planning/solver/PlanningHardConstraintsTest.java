@@ -12,10 +12,12 @@ import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningService;
+import dev.sylvain.planning.service.solve.TimefoldEngineConfig;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
@@ -48,6 +50,10 @@ class PlanningHardConstraintsTest {
      *                    overwrites the field before scoring anything.
      */
     private static PlanningService service(PlanSnapshotService publication) {
+        return service(publication, ConfigProvider.getConfig());
+    }
+
+    private static PlanningService service(PlanSnapshotService publication, Config config) {
         return new PlanningService(
                 3L,
                 2L,
@@ -56,7 +62,7 @@ class PlanningHardConstraintsTest {
                 new FeasibilityAnalyzer(),
                 null,
                 publication,
-                ConfigProvider.getConfig());
+                config);
     }
 
     @Test
@@ -83,6 +89,21 @@ class PlanningHardConstraintsTest {
         // sends is overwritten before it is scored.
         PosteAffectation premier = problem.getPostes().get(0);
         PlanningEvenement solved = service(publishedPlan(problem, premier)).solve(problem);
+
+        assertThat(solved.getScore()).isNotNull();
+        assertThat(solved.getScore().hardScore()).isZero();
+    }
+
+    /**
+     * The same under {@code SOLVER_ENGINE=timefold}, the way back of ADR 0088:
+     * its two stages must keep a published plan feasible as well.
+     */
+    @Test
+    void publishedSeatsNeverOutweighAHardRuleUnderTimefold() {
+        PlanningEvenement problem = planningService.buildSimpleExample();
+        PosteAffectation first = problem.getPostes().get(0);
+        PlanningEvenement solved = service(publishedPlan(problem, first), TimefoldEngineConfig.get())
+                .solve(problem);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();

@@ -11,11 +11,11 @@ import org.eclipse.microprofile.config.Config;
  * to {@code timefold} instead of following the default, which is {@code hand}
  * since ADR 0088. Everything else reads the real default.
  */
-final class TimefoldEngineConfig {
+public final class TimefoldEngineConfig {
 
     private TimefoldEngineConfig() {}
 
-    static Config get() {
+    public static Config get() {
         return new SmallRyeConfigBuilder()
                 .addDefaultSources()
                 .addDiscoveredSources()
