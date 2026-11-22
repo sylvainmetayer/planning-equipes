@@ -17,7 +17,7 @@ règle (`HandSearchDifferentialTest`).
 
 Rester sur `timefold` par défaut, c'est donner à toute nouvelle instance le
 moteur le plus lent, et à toute mise à jour la même recherche qu'avant, alors
-que l'autre atteint un plan sans écart dur trois à quatre fois plus tôt.
+que l'autre atteint un plan sans écart dur nettement plus tôt (mesure plus bas).
 
 ## Décision
 
@@ -63,19 +63,27 @@ propre score » : signaler le défaut, rendre la main à Timefold en attendant.
 ## Mesure
 
 Celle de 0087, reproductible : `festival-hivernal` (3 438 sièges, 153
-animateurs), 300 s, sans arrêt sur plateau, graine 0, chaque moteur seul
-(`SolverBenchTest`, avec `-Dbench.engine=hand` pour le moteur direct).
+animateurs), 300 s, sans arrêt sur plateau, graine 0, chaque moteur seul sur la
+machine de développement (`SolverBenchTest`, avec `-Dbench.engine=hand` pour le
+moteur direct) ; des secondes, donc des chiffres propres à cette machine.
 
 | Moteur | Zéro écart dur | Score à 60 s | à 120 s | à 300 s |
 | --- | --- | --- | --- | --- |
 | Timefold | 36 s | −34 140 medium / −91 025 soft | −30 495 / −90 005 | −27 380 / −92 190 |
-| direct | 10 s | −24 910 / −93 965 | −23 575 / −93 830 | −22 915 / −94 845 |
+| direct | 10 s (dont 8 s de remplissage glouton) | −24 910 / −93 965 | −23 575 / −93 830 | −22 915 / −94 845 |
 
-Le moteur direct est faisable trois à quatre fois plus tôt et passe en une
-minute sous le medium que Timefold atteint en cinq. Il cède environ 3 % de soft
+Le moteur direct est faisable plus tôt, avec une fin de partie qui varie du
+simple au quadruple selon la graine (0087), et passe en une minute sous le
+medium que Timefold atteint en cinq. Il cède environ 3 % de soft
 à 300 s ; ce prix est connu et accepté (le niveau qui cède aux deux autres).
 
 ## Ce que ça coûte
+
+- La résolution incrémentale et le réamorçage passent désormais par le moteur
+  direct pour toutes les instances. `SolveEnginesPerimetersTest` les joue sous
+  les deux moteurs sur des scénarios versionnés (sièges hors périmètre
+  intacts, arbitre d'accord) ; leur qualité n'est pas mesurée au-delà, ce qui
+  est accepté ici comme une limite connue.
 
 - Une suite de tests qui joue le défaut réel doit aussi garder des cas qui
   forcent `timefold` pour ce qui lui est propre (deux temps, filtres et
