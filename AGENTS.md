@@ -135,8 +135,9 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  47 rules are written **a second time**. Off by default
-  (`planning.solver.engine=hand`, `SOLVER_ENGINE`). It is never believed:
+  47 rules are written **a second time**. The default engine since 3.0.0
+  (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
+  former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
   **fails the job on a different score — never a fallback**. Nothing in that
   package may import `ai.timefold.solver.core.impl`, inject a bean or read a

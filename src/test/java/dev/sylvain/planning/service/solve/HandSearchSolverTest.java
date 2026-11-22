@@ -359,6 +359,16 @@ class HandSearchSolverTest {
 
     /** The path a worker takes: settings alone, no reference data, the engine named by the settings. */
     @Test
+    void theDirectEngineIsTheDefaultAndTheVariableGivesTimefoldBack() {
+        assertThat(SolverConfiguration.readEngine(new io.smallrye.config.SmallRyeConfigBuilder().build()))
+                .isEqualTo(SolverEngine.HAND);
+        assertThat(SolverConfiguration.readEngine(new io.smallrye.config.SmallRyeConfigBuilder()
+                        .withDefaultValue(SolverConfiguration.ENGINE_PROPERTY, "timefold")
+                        .build()))
+                .isEqualTo(SolverEngine.TIMEFOLD);
+    }
+
+    @Test
     void theEngineNamedByTheSettingsIsTheOneAPreparedProblemIsSolvedWith() {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
         SolverConfiguration ofWorker = SolverConfiguration.ofSettings(hand(2));

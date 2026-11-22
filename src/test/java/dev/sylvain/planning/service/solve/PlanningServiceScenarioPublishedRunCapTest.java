@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -94,7 +93,7 @@ class PlanningServiceScenarioPublishedRunCapTest {
                 new FeasibilityAnalyzer(),
                 null,
                 snapshots,
-                ConfigProvider.getConfig());
+                TimefoldEngineConfig.get());
 
         PlanningEvenement published =
                 planningService.solveUntilFeasible(build(planningService), PUBLISHED_SOLVE_LIMIT_SECONDS);

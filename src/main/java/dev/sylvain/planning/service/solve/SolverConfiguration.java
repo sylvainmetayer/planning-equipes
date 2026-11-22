@@ -339,14 +339,14 @@ final class SolverConfiguration {
 
     /**
      * Which search solves a prepared problem: {@code planning.solver.engine},
-     * {@code timefold} unless the deployment says {@code hand} (ADR 0087).
+     * {@code hand} unless the deployment says {@code timefold} (ADR 0087, default moved by 0088).
      */
     static final String ENGINE_PROPERTY = "planning.solver.engine";
 
     static SolverEngine readEngine(Config config) {
         return config.getOptionalValue(ENGINE_PROPERTY, String.class)
                 .map(SolverEngine::of)
-                .orElse(SolverEngine.TIMEFOLD);
+                .orElse(SolverEngine.HAND);
     }
 
     static double readPlateauGainMediumPerSeat(Config config) {

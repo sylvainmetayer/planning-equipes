@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -56,7 +55,7 @@ class FeasibilityFirstStopTest {
                 new FeasibilityAnalyzer(),
                 null,
                 snapshots,
-                ConfigProvider.getConfig());
+                TimefoldEngineConfig.get());
     }
 
     private PlanningEvenement problem() {

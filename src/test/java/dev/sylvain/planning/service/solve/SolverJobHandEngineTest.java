@@ -21,8 +21,6 @@ import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolve;
 import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolveIncremental;
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
-import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -40,8 +38,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * The application started under {@code planning.solver.engine=hand} (ADR
- * 0087): a real job goes through the queue and everything a job owes the
+ * The application started with the default engine, {@code hand} (ADR 0087,
+ * default since 0088: no profile override, so this is the real default): a
+ * real job goes through the queue and everything a job owes the
  * operator is there at the end — its score curve, a stop that is honoured, the
  * plan persisted, the constraint analysis written — whichever engine searched.
  *
@@ -50,16 +49,8 @@ import org.junit.jupiter.api.TestMethodOrder;
  * pipeline around it does not care.</p>
  */
 @QuarkusTest
-@TestProfile(SolverJobHandEngineTest.Profile.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class SolverJobHandEngineTest {
-
-    public static class Profile implements QuarkusTestProfile {
-        @Override
-        public Map<String, String> getConfigOverrides() {
-            return Map.of("planning.solver.engine", "hand");
-        }
-    }
 
     private static final LocalDate FIRST_DAY = LocalDate.of(2030, 9, 3);
     private static final int STANDS = 3;
