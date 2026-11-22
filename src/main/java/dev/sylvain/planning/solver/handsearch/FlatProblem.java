@@ -139,6 +139,9 @@ final class FlatProblem {
     /** Who may hold each seat without a hard point of its own; {@link #statHard} is the table of it. */
     int[][] elig;
 
+    /** Those of {@link #elig} who are referents of the seat's stand: whom a line short of a referent is given to. */
+    int[][] refElig;
+
     /** The other seats of the same stand around each seat: where a relay or a supervising adult is looked for. */
     int[][] nbr;
 
@@ -798,6 +801,11 @@ final class FlatProblem {
                 }
             }
             elig[s] = Arrays.copyOf(buffer, n);
+        }
+        refElig = new int[nS][];
+        for (int s = 0; s < nS; s++) {
+            boolean[] referent = isRef[sStand[s]];
+            refElig[s] = Arrays.stream(elig[s]).filter(a -> referent[a]).toArray();
         }
     }
 

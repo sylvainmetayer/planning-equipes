@@ -279,6 +279,11 @@ final class IncrementalScore {
         }
     }
 
+    /** Whether the line is charged for having no referent: staffed, still ahead, and nobody on it who is one. */
+    boolean lacksReferent(int l) {
+        return lAhead[l] > 0 && lRef[l] == 0;
+    }
+
     private long lineCost(int l) {
         long c = 0;
         if (lAhead[l] > 0) {

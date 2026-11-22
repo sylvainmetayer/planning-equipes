@@ -54,6 +54,12 @@ public final class HandSearch {
     /** Scores kept by late acceptance: a move is taken when it beats the plan of that many moves ago. */
     private static final int LATE_ACCEPTANCE = 500;
 
+    /** Draws of sixteen that aim at a line with no referent, taken from the any-seat and swap moves. */
+    private static final int REFERENT_SHARE = 2;
+
+    /** Lines drawn at random before giving up on finding one with no referent. */
+    private static final int REFERENT_LINE_TRIES = 16;
+
     /** Moves between two looks at the clock, the stop flag and the best score. */
     private static final int TICK = 4096;
 
@@ -254,10 +260,50 @@ public final class HandSearch {
         if (totalHard > 0 && kind < 9) {
             return moveBreach(random, kind);
         }
+        if (kind >= 16 - REFERENT_SHARE) {
+            return referentToLine(random);
+        }
         if ((kind & 1) == 0) {
             return moveAnySeat(random);
         }
         return swap(random.nextInt(flat.nS), random.nextInt(flat.nS));
+    }
+
+    /**
+     * A seat of a line charged for having no referent, handed to a referent of
+     * its stand — or traded for one of that referent's seats the same day,
+     * when they are busy. The random moves reach such a pair one draw in
+     * (seats × referents), which is why the lines in default of one stay.
+     */
+    private boolean referentToLine(SplittableRandom random) {
+        int nL = flat.nLines;
+        int l = -1;
+        for (int tries = 0; tries < REFERENT_LINE_TRIES && l < 0; tries++) {
+            int c = random.nextInt(nL);
+            l = score.lacksReferent(c) ? c : -1;
+        }
+        if (l < 0) {
+            return moveAnySeat(random);
+        }
+        int[] seats = flat.lineSeats[l];
+        int s = seats[random.nextInt(seats.length)];
+        int[] referents = flat.refElig[s];
+        // Nobody to aim at (no referent for this stand, the seat held in place): the turn is an ordinary move's.
+        if (flat.sFixed[s] || referents.length == 0) {
+            return moveAnySeat(random);
+        }
+        int a = referents[random.nextInt(referents.length)];
+        if (a == score.assign[s]) {
+            return false;
+        }
+        if (score.countOf[a] > 0 && random.nextBoolean()) {
+            int other = score.seatsOf[a][random.nextInt(score.countOf[a])];
+            if (flat.sDay[other] == flat.sDay[s]) {
+                return swap(s, other);
+            }
+        }
+        score.move(s, a);
+        return true;
     }
 
     /** An empty seat: fill it, and half the time hand a colliding seat to a colleague. */

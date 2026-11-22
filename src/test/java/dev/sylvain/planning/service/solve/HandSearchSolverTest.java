@@ -201,6 +201,35 @@ class HandSearchSolverTest {
                 .isLessThanOrEqualTo(postes.size() / 3);
     }
 
+    /**
+     * A staffed line with no referent of its stand is charged, and the random
+     * moves rarely find the one referent free to take it: the move aimed at
+     * such lines leaves far fewer of them in the plan after the same work.
+     */
+    @Test
+    void aimedMoveLeavesFewerLinesWithoutReferent() {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes.yaml");
+        HandSearchFixtures.emptyPlan(loaded.problem());
+
+        stoppedAfter(loaded, 1_500, 11);
+
+        Map<List<Object>, Boolean> hasReferent = new HashMap<>();
+        for (PosteAffectation poste : loaded.problem().getPostes()) {
+            if (poste.getAnimateur() != null) {
+                hasReferent.merge(
+                        List.of(poste.getStand().getId(), poste.getCreneau().getId()),
+                        poste.getAnimateur().isReferentFor(poste.getStand()),
+                        Boolean::logicalOr);
+            }
+        }
+        long without = hasReferent.values().stream().filter(has -> !has).count();
+        // About 270 of 720 without the aimed move, about 170 with it, for the same 1 500 looks.
+        assertThat(without)
+                .as("lines without a referent, of %d", hasReferent.size())
+                .isLessThan(220);
+    }
+
     /** The search from the plan the problem carries, stopped after a fixed number of looks at its stop flag. */
     private static HardMediumSoftScore stoppedAfter(HandSearchFixtures.Loaded loaded, int looks, long seed) {
         int[] looked = {0};
