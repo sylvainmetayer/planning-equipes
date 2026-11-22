@@ -103,6 +103,7 @@ final class HandSearchSolver implements Solver<PlanningEvenement> {
         try {
             HardMediumSoftScore claimed = search.apply(prepared);
             judge(prepared, claimed);
+            LOG.infof("The direct engine's plan is refereed by Timefold at the same score, %s", claimed);
             return prepared;
         } catch (Failed e) {
             throw restored(prepared, before, scoreBefore, e);

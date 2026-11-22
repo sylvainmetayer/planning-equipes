@@ -129,6 +129,8 @@ final class SolveRunner {
      */
     Solved solvePrepared(
             PlanningEvenement prepared, SolveBudget budget, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        // The one line that says, after the fact, which search a solve ran under.
+        LOG.infof("Solve with the %s engine", configuration.engine());
         if (configuration.engine() == SolverEngine.HAND) {
             // One stage, whatever is published: the two stages of
             // FeasibilityFirstSolve answer a slowness of the other search.
