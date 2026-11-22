@@ -10,10 +10,10 @@ import java.util.Locale;
  */
 public enum SolverEngine {
 
-    /** Timefold's local search over the constraint streams: the default. */
+    /** Timefold's local search over the constraint streams: the former default, {@code SOLVER_ENGINE=timefold}. */
     TIMEFOLD,
 
-    /** The search written by hand over an incremental score, refereed by Timefold ({@link HandSearchSolver}). */
+    /** The search written by hand over an incremental score, refereed by Timefold ({@link HandSearchSolver}): the default. */
     HAND;
 
     static SolverEngine of(String value) {

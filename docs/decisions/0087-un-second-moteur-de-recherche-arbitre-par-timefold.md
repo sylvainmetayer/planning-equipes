@@ -1,6 +1,6 @@
 # 0087 — Un second moteur de recherche, écrit à la main, que Timefold arbitre
 
-- **Statut** : accepté · le moteur est livré **désactivé** ; l'activer est un réglage d'instance · complétée par la note en fin de page
+- **Statut** : accepté · le moteur est livré **désactivé** ; l'activer est un réglage d'instance · complétée par la note en fin de page · **son défaut est révisé par [0088](0088-le-moteur-direct-devient-le-moteur-par-defaut.md)** : le moteur direct est le défaut depuis la 3.0.0
 - **Date** : novembre 2026
 - **Portée** : recherche d'un plan (`solver/handsearch`, `service/solve`), rien du modèle ni des règles
 - **Voisine de** : [0013](0013-diagnostic-par-le-score-director.md) (le score sans l'API réservée), [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) et [0082](0082-la-fenetre-de-plateau-part-de-la-faisabilite.md) (la recherche de Timefold réglée au plus près), [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) (le solveur exact, étudié pour une autre question), [0086](0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md) (dont elle reprend l'interface et la politique d'échec)

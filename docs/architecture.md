@@ -87,9 +87,9 @@ les deux besoins se désynchronisent. Échantillonnage et cloisonnement dans
 `planning.solver.engine` choisit qui cherche le plan d'un problème préparé, et
 `SolveRunner.solvePrepared` est le seul endroit qui le lit :
 
-- `timefold` (défaut) — la recherche locale de Timefold sur les contraintes en
-  flux, en deux temps quand un plan est publié ;
-- `hand` — `HandSearchSolver`, qui fait chercher `solver/handsearch` (un score
+- `timefold` — la recherche locale de Timefold sur les contraintes en
+  flux, en deux temps quand un plan est publié (l'ancien défaut, `SOLVER_ENGINE=timefold`) ;
+- `hand` (défaut depuis la 3.0.0, [0088](decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)) — `HandSearchSolver`, qui fait chercher `solver/handsearch` (un score
   tenu à jour mouvement par mouvement, les 47 règles écrites une seconde
   fois) puis **fait re-scorer le plan par Timefold**. Deux scores différents
   font échouer la tâche ; il n'y a pas de repli.
