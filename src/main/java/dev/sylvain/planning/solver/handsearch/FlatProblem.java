@@ -286,6 +286,19 @@ final class FlatProblem {
         return hardUnit[rule.ordinal()] != 0 || unit[rule.ordinal()] != 0;
     }
 
+    /**
+     * The lines a referent could be given: one seat of it moves and has a referent eligible for it. A line
+     * with none stays in default whatever the search does, and is not worth a draw.
+     */
+    int[] aimableLines() {
+        if (!charged(Rule.STAND_COMPLEXE_AVEC_REFERENT)) {
+            return new int[0];
+        }
+        return java.util.stream.IntStream.range(0, nLines)
+                .filter(l -> Arrays.stream(lineSeats[l]).anyMatch(s -> !sFixed[s] && refElig[s].length > 0))
+                .toArray();
+    }
+
     static boolean scope(ContrainteAdHoc c, PosteAffectation poste) {
         boolean creneauOk = c.getCreneau() == null
                 || (c.getCreneau().getId() != null

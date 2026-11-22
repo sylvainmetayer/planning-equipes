@@ -95,6 +95,7 @@ public final class HandSearch {
     private final long start = System.nanoTime();
     private final FlatProblem flat;
     private final IncrementalScore score;
+    private final int[] aimable;
     private long chainBudget;
     private long deadline;
     private BooleanSupplier stop;
@@ -110,6 +111,7 @@ public final class HandSearch {
     public HandSearch(PlanningEvenement prepared) {
         this.flat = new FlatProblem(prepared);
         this.score = new IncrementalScore(flat);
+        this.aimable = flat.aimableLines();
         score.emptyExtra = (EMPTY_WEIGHT - 1) * flat.hardUnit[Rule.POSTE_DOIT_ETRE_POURVU.ordinal()];
         score.load(score.assign.clone());
     }
@@ -260,8 +262,9 @@ public final class HandSearch {
         if (totalHard > 0 && kind < 9) {
             return moveBreach(random, kind);
         }
-        if (kind >= 16 - REFERENT_SHARE) {
-            return referentToLine(random);
+        // Each aimed draw keeps the parity of the move it replaces, and falls back on it.
+        if (kind >= 16 - REFERENT_SHARE && aimable.length > 0 && referentToLine(random)) {
+            return true;
         }
         if ((kind & 1) == 0) {
             return moveAnySeat(random);
@@ -276,27 +279,27 @@ public final class HandSearch {
      * (seats × referents), which is why the lines in default of one stay.
      */
     private boolean referentToLine(SplittableRandom random) {
-        int nL = flat.nLines;
         int l = -1;
         for (int tries = 0; tries < REFERENT_LINE_TRIES && l < 0; tries++) {
-            int c = random.nextInt(nL);
+            int c = aimable[random.nextInt(aimable.length)];
             l = score.lacksReferent(c) ? c : -1;
         }
         if (l < 0) {
-            return moveAnySeat(random);
+            return false;
         }
         int[] seats = flat.lineSeats[l];
         int s = seats[random.nextInt(seats.length)];
         int[] referents = flat.refElig[s];
-        // Nobody to aim at (no referent for this stand, the seat held in place): the turn is an ordinary move's.
+        // Nobody to aim at (this seat is held in place, or no referent may take it): an ordinary move's turn.
         if (flat.sFixed[s] || referents.length == 0) {
-            return moveAnySeat(random);
+            return false;
         }
         int a = referents[random.nextInt(referents.length)];
         if (a == score.assign[s]) {
             return false;
         }
-        if (score.countOf[a] > 0 && random.nextBoolean()) {
+        // An empty seat cannot be traded: it is simply filled.
+        if (score.assign[s] >= 0 && score.countOf[a] > 0 && random.nextBoolean()) {
             int other = score.seatsOf[a][random.nextInt(score.countOf[a])];
             if (flat.sDay[other] == flat.sDay[s]) {
                 return swap(s, other);
