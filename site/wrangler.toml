@@ -1,6 +1,12 @@
 # Cloudflare Pages reads this file from the project's root directory (site/);
 # the project, its domain, its build settings and the Web Analytics token are
 # defined in homelab (build command `npm run build`, output `_site`).
+# With a wrangler.toml, Pages ignores the dashboard variables and does not read
+# mise.toml: the Node version of the build comes from [vars] below, and must
+# equal site/mise.toml and site/.node-version (test/node-version.test.mjs).
 name = "planning-equipes"
 pages_build_output_dir = "_site"
 compatibility_date = "2026-10-01"
+
+[vars]
+NODE_VERSION = "26.13.0"

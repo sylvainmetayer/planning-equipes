@@ -21,9 +21,19 @@
     "maven-wrapper",
     "mise",
     "npm",
+    "nodenv",
     "custom.regex"
   ],
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "NODE_VERSION of site/wrangler.toml (Cloudflare Pages build), kept equal to site/mise.toml and site/.node-version",
+      "managerFilePatterns": ["/^site/wrangler\\.toml$/"],
+      "matchStrings": ["NODE_VERSION\\s*=\\s*\"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "node",
+      "datasourceTemplate": "node-version",
+      "versioningTemplate": "node"
+    },
     {
       "customType": "regex",
       "description": "Images started by a workflow `run:`: the github-actions manager only reads `uses:`, `container:` and `services:`. A `# renovate: datasource=… depName=…` comment above a `SOME_IMAGE: name:tag` env var catches them",
@@ -78,6 +88,12 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "The Node version of the vitrine moves in one PR: wrangler.toml, mise.toml and .node-version must stay equal",
+      "matchFileNames": ["site/wrangler.toml", "site/mise.toml", "site/.node-version"],
+      "matchDepNames": ["node"],
+      "groupName": "site Node version"
+    },
     {
       "description": "Wait a week before proposing a newly published version: a compromised release is usually pulled within days. Said once, for every package: a rule below that does not repeat it is not exempt from it",
       "matchPackageNames": ["*"],

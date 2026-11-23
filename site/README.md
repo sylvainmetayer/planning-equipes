@@ -203,12 +203,14 @@ ref.sylvain.dev et www.sylvain.dev ; le projet, son domaine et le site Web
 Analytics sont décrits dans le dépôt homelab. Le projet Pages est relié au dépôt
 par l'application GitHub de Cloudflare avec le dossier racine `site`, la
 **commande de build `npm run build`**, la sortie `_site` (relue dans
-`wrangler.toml`) et une variable `NODE_VERSION` alignée sur `.node-version` ; ses
+`wrangler.toml`) ; ses
 chemins surveillés se limitent à `site/**`, pour qu'un commit de l'application ne
 redéploie rien. Chaque merge sur `main` qui touche `site/` publie ; une PR reçoit
 un déploiement d'aperçu, que Pages sert en `noindex` et sans la mesure
 d'audience (`ELEVENTY_ENV=preview`, posé par `eleventy.config.js` depuis
 `CF_PAGES_BRANCH`).
+
+**La version de Node vient de `wrangler.toml`** (`[vars] NODE_VERSION`, une version complète) : avec ce fichier, Pages ignore les variables du dashboard et ne lit pas `mise.toml`. Elle doit être égale à celle de `mise.toml` et de `.node-version` (`test/node-version.test.mjs`), et Renovate les met à jour ensemble.
 
 Le jeton du beacon est dans `src/_data/site.json` : la valeur est celle de
 `tofu output -raw web_analytics_token` côté homelab.
