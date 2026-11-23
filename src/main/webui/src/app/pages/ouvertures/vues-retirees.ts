@@ -3,7 +3,8 @@
 // Their addresses still work — a bookmark, a link of the help, a « Que
 // faire ? » action — and land where the same question is now answered, with
 // their query params carried along. Pure, so the mapping is tested without a
-// router; `app.routes.ts` wires it as a guard of `/ouvertures`.
+// router; `app.routes.ts` wires it as a guard of `/creneaux`, whose
+// « Horaires des stands » tab is the former `/ouvertures`.
 
 import { inject } from '@angular/core';
 import { CanActivateFn, Params, Router } from '@angular/router';
@@ -40,7 +41,7 @@ export function retiredViewTarget(params: Params, planComputed: boolean): string
     }
   }
   if (view === 'calendrier') {
-    return `/ouvertures${query(kept)}`;
+    return `/creneaux${query({ onglet: 'horaires', ...kept })}`;
   }
   const date = kept['date'];
   if (planComputed) {
@@ -58,7 +59,7 @@ export function retiredViewTarget(params: Params, planComputed: boolean): string
     kept['du'] = date;
     kept['au'] = date;
   }
-  return `/ouvertures${query(kept)}`;
+  return `/creneaux${query({ onglet: 'horaires', ...kept })}`;
 }
 
 /**
@@ -73,7 +74,7 @@ async function planComputed(api: PlanningApi): Promise<boolean> {
   }
 }
 
-/** Guard of `/ouvertures`: a retired view's address is redirected, anything else goes through. */
+/** Guard of `/creneaux` (its Horaires tab): a retired view's address is redirected, anything else goes through. */
 export const retiredOpeningsViews: CanActivateFn = (route) => {
   const view = route.queryParamMap.get('vue');
   if (view !== 'journee' && view !== 'calendrier') {

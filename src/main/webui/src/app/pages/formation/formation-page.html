@@ -23,7 +23,7 @@
       } @else if (plan.aucuneCompetence) {
         <p class="empty-hint">
           <ng-container i18n="@@formation.aucuneCompetence">Aucune appréciation n'est saisie : sans compétence déclarée, personne n'est candidat.</ng-container>
-          <a routerLink="/competences" i18n="@@formation.versCompetences">Saisir les compétences</a>
+          <a routerLink="/animateurs" [queryParams]="{ onglet: 'competences' }" i18n="@@formation.versCompetences">Saisir les compétences</a>
         </p>
       } @else if (plan.typologies.length === 0) {
         <p class="empty-hint" i18n="@@formation.aucunDeficit">Aucune typologie en déficit : ni le besoin ni la fragilité ne signalent de manque.</p>
@@ -35,12 +35,12 @@
         @for (ligne of plan.typologies; track ligne.typologie) {
           <section class="formation-typologie">
             <h3>
-              <a routerLink="/typologies" [queryParams]="{ edit: ligne.typologie }">{{ ligne.label || ligne.typologie }}</a>
+              <a routerLink="/stands" [queryParams]="{ onglet: 'typologies', edit: ligne.typologie }">{{ ligne.label || ligne.typologie }}</a>
             </h3>
             <p class="formation-deficit">
               {{ resumeDeficit(ligne) }}
               <!-- The gesture of this section: the competences grid on this game category. -->
-              <a class="formation-lien" routerLink="/competences" [queryParams]="{ typologies: ligne.typologie }"
+              <a class="formation-lien" routerLink="/animateurs" [queryParams]="{ onglet: 'competences', typologies: ligne.typologie }"
                  i18n="@@formation.versCompetencesTypologie">Compétences de cette typologie</a>
             </p>
             @if (ligne.joursTension.length > 0) {
@@ -71,7 +71,7 @@
                   @for (candidat of ligne.candidats; track candidat.animateurId) {
                     <tr>
                       <td>
-                        <a routerLink="/competences" [queryParams]="{ q: candidat.nom || candidat.animateurId, typologies: ligne.typologie }">{{ candidat.nom || candidat.animateurId }}</a>
+                        <a routerLink="/animateurs" [queryParams]="{ onglet: 'competences', q: candidat.nom || candidat.animateurId, typologies: ligne.typologie }">{{ candidat.nom || candidat.animateurId }}</a>
                       </td>
                       <td>{{ libelleNiveau(candidat.niveau) }}</td>
                       <td>

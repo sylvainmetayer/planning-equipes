@@ -54,20 +54,26 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`mat-toolbar` + `mat-sidenav`, the solver `app-job-monitor`, the logout
   button) lives in `app/shell/admin-shell.ts`, a layout route wrapping every
   admin page. The drawer is **one menu for everybody**, grouped by moment of
-  the edition's cycle — Accueil / Planning / Préparer / Construire / Diffuser /
-  Aujourd'hui / Administrer — with no simple or advanced mode: a rare screen
-  goes down its group, it is never hidden. Its foot lists the news and the
+  the edition's cycle — Accueil / Préparer / Planifier / Diffuser /
+  Aujourd'hui / Administrer — in **thirteen entries**: a screen answering a
+  variant of another's question is one of its tabs, hosted through
+  `core/onglet-hote.ts` (the tab read from `?onglet=` and followed, written
+  once when the reader moves, a hosted screen with unsaved entries asked
+  before it is left — on the tab as on the route's `canDeactivate`; a hosted
+  screen whose own tabs write `onglet` names the host's tab instead of the
+  bare address). The help is the toolbar's « ? » icon, the editions open from
+  « Gérer » of the edition bar. Its foot lists the news and the
   four legal pages in text (the accessibility statement must be one click
   away from every page). While this browser has not opened the news of the
-  running version (`core/news-seen`, a chrome preference), a small
-  « nouveautés » link to them sits next to the Aide entry, and the foot's
-  news link carries a dot, still in sight when the group is folded.
+  running version (`core/news-seen`, a chrome preference), the foot's news
+  link carries a dot.
   `shell/nav-groups.ts` is the one
   table behind the drawer, the command palette and the `g`+letter shortcuts:
   `buildNavGroups()` the menu, each entry with its icon (never shared by two
   entries), its letter and the tabs or views the palette indexes;
   `buildOffMenuLinks()` the **routes served but listed in no group** —
   `/debug` (raw technical information, reached by Ctrl+K or its address),
+  `/editions` (« Gérer »), `/aide` (the toolbar's icon),
   `/nouveautes` (the foot of the menu), `/editions/comparer` (opened from the
   Éditions page) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
@@ -133,9 +139,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and the API docs, and the checks — test notification, test exception, test
   mail, Mailpit, pgAdmin; a guard on the route sends its former
   `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
-  `/mcp-client`,
-  `/parametres` (« Paramètres » — three tabs chosen by
-  `?onglet=edition|mural|instance`: the edition's own settings that no rule
+  `/mcp-client` (a redirect to `/parametres?onglet=mcp`),
+  `/parametres` (« Paramètres » — five tabs chosen by
+  `?onglet=edition|mural|instance|historique|mcp` — the last two the former
+  `/historique` (its « Connexions » tab `?onglet=connexions`) and
+  `/mcp-client`: the edition's own settings that no rule
   reads — its name, the freeze of its referential (the only place it is
   edited), its guichets (the collection of availabilities, the foire au
   planning, the covoiturage that follows the collection — each opened and
@@ -156,7 +164,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   hourglass links to; `?onglet=globaux`, its former name, reads as
   `instance`, and a guard sends `?onglet=legaux` to `/regles?onglet=legal`
   and `?onglet=emails` to `#emails`), `/regles`
-  (« Règles du planning » — three tabs chosen by `?onglet=legal|qualite|calcul`:
+  (« Règles du planning » — six tabs chosen by
+  `?onglet=ajustements|verrouillages|consignes|legal|qualite|calcul`: first
+  the three of the former `/consignes-solveur` (described there), the
+  adjustments the default; then
   one dense row per hard rule — short label, article, on/off, the thresholds
   it reads edited on the row —, the same table for the medium and soft rules
   with their importance in three positions (faible 1 / normale 5 / forte 25,
@@ -165,7 +176,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
   exact weight, history of its settings — on its own tab, the stable address
   the Diagnostic and the reading of the score link to),
-  `/stands` (« Stands » — two tabs chosen by `?onglet=`: the table, filtered
+  `/stands` (« Stands » — three tabs chosen by `?onglet=`, the third
+  `?onglet=typologies`, the former `/typologies` (described there): the table, filtered
   by `q` and by the `?typologie=` and `?emplacement=` chips, every column
   sorted by `?sort=&dir=`, a name — or Entrée — leading to the fiche with
   that sort, a game category to `/typologies`, a location to the other tab,
@@ -199,7 +211,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   behind « Modifier les règles ». « précédent / suivant » walk the table in
   the order of its `?sort=`, over the pure `pages/stands/stand-order.ts` the
   table reads too),
-  `/animateurs` (every name a link to the fiche, Entrée on a row too,
+  `/animateurs` (« Animateurs » — three tabs chosen by `?onglet=`: the
+  roster, `?onglet=competences` the former `/competences` and
+  `?onglet=disponibilites` the former `/disponibilites`, whose own
+  `covoiturage` tab is `?onglet=covoiturage`; the roster: every name a link to the fiche, Entrée on a row too,
   carrying the list's view — `q`, `sort`/`dir`, the acknowledgement,
   category, wish, minor and manager filters — in the fiche's URL; the
   consultation dialog is gone), `/animateurs/:id` (« Fiche animateur »
@@ -225,7 +240,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the competences edited in place — one person's, the grid staying the bulk
   entry —, the fragility with « Verrouiller » and « Former », the follow-up.
   Every animateur name of the application links here), `/competences`
-  (« Compétences » — the animateur × typologie
+  (a redirect to `/animateurs?onglet=competences`: « Compétences » — the animateur × typologie
   grid of appreciations and wishes — the heart of a cell, or S —, saved row by
   row; a spreadsheet block pastes from the current cell after a preview,
   `?animateur=` narrows it to the person the Animateurs form or the fiche sent
@@ -266,15 +281,20 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   shared by the two tables through the page-provided `PublicationSelection`,
   never the URL. « Documents »: the four files the plan becomes, each saying
   who it is for; a screen of its own since issue #320, so the solver page only
-  solves), `/export-csv`, `/creneaux` (one path
+  solves), `/export-csv`, `/creneaux` (« Calendrier » — two tabs chosen by
+  `?onglet=`: the timeslots, and `?onglet=horaires` the former `/ouvertures`
+  (described there), whose retired views the route's guard still redirects;
+  the timeslots: one path
   first — day templates laid on the calendar, or applied without being kept;
   a single timeslot, recognition and derivation from the stands' hours sit in
   one « Autres façons de créer la grille » menu; the grid check is a band read
-  by itself on every visit and after every write), `/typologies` (every count
+  by itself on every visit and after every write), `/typologies` (a redirect
+  to `/stands?onglet=typologies`: every count
   links to the list it counts, the ninja category is ticked in the table, and
   three columns read the computed plan: seats, hours, assigned without the
   skill),
-  `/consignes-solveur` (« Consignes au solveur » — what the next solve must
+  `/consignes-solveur` (now a redirect to `/regles`, its `onglet` and params
+  kept: « Consignes au solveur » — what the next solve must
   respect, three tabs chosen by `?onglet=ajustements|verrouillages|consignes`:
   the manual adjustments (the API path and the domain type keep the
   `ContrainteAdHoc` name; `?personne=` narrows the table to the rows naming
@@ -401,21 +421,25 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and `mesure` (what a figure counts beyond a statut: the colleague's answer,
   the requests a delay was measured over) read by the server, `statuts`,
   `dirigees`, `prevalidee`, `jour`, `stand`, `contrainte` — shown as removable
-  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — the day-of hub,
+  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — two tabs chosen by
+  `?onglet=`: the day-of hub, and `?onglet=realise` the former `/realise`
+  (described there); the hub:
   `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
   search over the whole roster — name, id or phone —, mark somebody absent,
   repair the seats they held — the timeslot under way included, split at
   « now » server-side (ADR 0066) —, « Chercher plus loin » when the first
   twenty candidates hold nobody viable, the new holes told from the published ones, « Prévenir les N
   personnes » through the targeted publication, « Fermer des stands demain »,
-  the TV link), `/realise` (« Réalisé vs planifié » — the gap between the
+  the TV link), `/realise` (a redirect to `/aujourdhui?onglet=realise`:
+  « Réalisé vs planifié » — the gap between the
   published plan and the plan held over the elapsed days, read from
   `GET /api/planning/realise`: the declared-realised notice, the event's
   figures, the shared `pages/planning-grille` with one line per stand and one
   column per counted day, each cell coloured by its worst gap and opening its
   shifts under the grid — holders named, on this admin screen only — kept as
   `?jour=&stand=`, the totals per game category, and the CSV without any
-  person), `/versions` (« Versions du
+  person), `/versions` (a redirect to `/solveur?onglet=versions`, the
+  Solveur's second tab: « Versions du
   plan » — the finished solves and the snapshots of the edition in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
   edition's; two ticked rows, or one and « Plan en place », open the A/B
@@ -424,7 +448,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   to `?editions=toutes` —, the replay of the former Autopsie is gone; the Solveur shows its five latest rows;
   under the table, `pages/versions/edition-precedente.ts` says the Réalisé vs
   planifié measure the previous edition froze, and nothing when there is none),
-  `/ouvertures` (« Horaires des stands » — three
+  `/ouvertures` (a redirect to `/creneaux?onglet=horaires`: « Horaires des stands » — three
   views chosen by `?vue=`: the grid, the default, read and typed in one place —
   one field per stand and timeslot, an empty cell is closed, and behind each
   field the bars of the layers ticked in `?couches=` (the result, the stand's
@@ -438,7 +462,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   are redirected by the route's guard, `vues-retirees.ts`, to `/journee` once
   a plan is computed or to the grid narrowed to the day, and to the grid with
   its layers),
-  `/disponibilites` (what the animateurs
+  `/disponibilites` (a redirect to `/animateurs?onglet=disponibilites`: what the animateurs
   declared), `/editions`, `/editions/comparer` (« Comparer deux éditions » — the
   referential delta of `GET /api/editions/{a}/delta/{b}`, the pair in `?a=&b=`,
   served without a menu entry and opened from the Éditions page: a summary
@@ -446,7 +470,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   side by side, one foldable panel per family, each line saying what matched it
   and opening its fiche in the edition holding it through `EditionStore.openIn`,
   which switches the browser's edition),
-  `/historique` (« Historique des actions » — the nature
+  `/historique` (a redirect to `/parametres?onglet=historique`: « Historique des actions » — the nature
   (`?nature=exports|donnees`) and the period (`?depuis=&jusqua=`, instants,
   `depuis` exclusive as the server counts) asked of the server, the other
   filters applied to the lines loaded, « Charger plus » asking the next page by

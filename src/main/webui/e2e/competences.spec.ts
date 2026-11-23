@@ -69,7 +69,9 @@ function cellule(page: Page, animateurId: string, typologieId: string) {
 
 async function ouvrirLaGrille(page: Page, typologies: string[] = []): Promise<void> {
   await page.goto(
-    typologies.length ? `/competences?typologies=${typologies.join(',')}` : '/competences',
+    typologies.length
+      ? `/animateurs?onglet=competences&typologies=${typologies.join(',')}`
+      : '/animateurs?onglet=competences',
   );
   await expect(page.locator('#contenu')).toContainText('Compétences');
   await expect(cellule(page, IDS.alice, TYPOLOGIE)).toBeVisible();

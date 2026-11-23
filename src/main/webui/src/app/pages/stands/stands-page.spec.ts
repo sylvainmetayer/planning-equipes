@@ -679,7 +679,7 @@ describe('StandsPage table', () => {
     // The step before the stands is named, and still to do.
     const vide = racine().querySelector('.empty-state')!;
     expect(vide.textContent).toContain('Un stand propose des typologies');
-    expect(vide.querySelector('a[href="/typologies"]')!.textContent).toContain(
+    expect(vide.querySelector('a[href="/stands?onglet=typologies"]')!.textContent).toContain(
       'Saisir les typologies',
     );
 
@@ -810,7 +810,7 @@ describe('StandsPage table', () => {
     expect(header.some((texte) => texte.endsWith('Compacter les horaires'))).toBe(false);
     expect(header.some((texte) => texte.endsWith('Saisir en grille'))).toBe(false);
     expect((await moreMenuItem('Saisir en grille')).getAttribute('href')).toBe(
-      '/ouvertures?vue=saisie',
+      '/creneaux?onglet=horaires&vue=saisie',
     );
 
     // Nothing ticked: the bulk edit takes every stand the table shows.

@@ -36,11 +36,11 @@ class ApplicationLinksTest {
         LocalDate jour = LocalDate.of(2026, 7, 15);
 
         assertThat(ApplicationLinks.consigneRoute(jour, "P 1", true))
-                .isEqualTo("/consignes-solveur?onglet=consignes&date=2026-07-15&nouvelle=1&prereglage=P+1");
+                .isEqualTo("/regles?onglet=consignes&date=2026-07-15&nouvelle=1&prereglage=P+1");
         assertThat(ApplicationLinks.consigneRoute(jour, "P1", false))
-                .isEqualTo("/consignes-solveur?onglet=consignes&date=2026-07-15");
+                .isEqualTo("/regles?onglet=consignes&date=2026-07-15");
         assertThat(linksTo("https://planning.example.org/").consigneScreen(jour, null, true))
-                .contains("https://planning.example.org/consignes-solveur?onglet=consignes&date=2026-07-15&nouvelle=1");
+                .contains("https://planning.example.org/regles?onglet=consignes&date=2026-07-15&nouvelle=1");
         assertThat(linksTo("https://planning.example.org").parametresMeteoScreen())
                 .contains("https://planning.example.org/parametres?onglet=edition#meteo");
         assertThat(linksTo("https://planning.example.org").publicationScreen())

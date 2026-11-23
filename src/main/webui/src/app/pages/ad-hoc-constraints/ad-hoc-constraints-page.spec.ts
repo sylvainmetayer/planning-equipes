@@ -151,7 +151,7 @@ describe('AdHocConstraintsPage', () => {
       expect(boutons.every((bouton) => bouton.disabled)).toBe(true);
       expect(boutons[0].getAttribute('aria-label')).toContain('Disponibilités > Covoiturage');
       const lien = issue.querySelector('a') as HTMLAnchorElement;
-      expect(lien.getAttribute('href')).toBe('/disponibilites?onglet=covoiturage');
+      expect(lien.getAttribute('href')).toBe('/animateurs?onglet=covoiturage');
 
       const main = actionsOf(root, 'C2');
       expect([...main.querySelectorAll('button')].some((bouton) => bouton.disabled)).toBe(false);

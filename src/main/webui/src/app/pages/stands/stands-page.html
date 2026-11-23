@@ -14,6 +14,10 @@
         <mat-icon>place</mat-icon>
         <ng-container i18n="@@stands.onglet.lieux">Lieux ({{ store.emplacements().length }})</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="typologies">
+        <mat-icon>category</mat-icon>
+        <ng-container i18n="@@stands.onglet.typologies">Typologies ({{ store.typologies().length }})</ng-container>
+      </mat-button-toggle>
     </mat-button-toggle-group>
   </mat-card-content>
 </mat-card>
@@ -25,6 +29,8 @@
   } @placeholder {
     <p class="empty-hint" i18n="@@stands.lieux.chargement">Chargement de la carte des lieux…</p>
   }
+} @else if (onglet() === 'typologies') {
+  <app-typologies-page />
 } @else {
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -56,7 +62,7 @@
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
     <mat-menu #plus="matMenu">
-      <a mat-menu-item routerLink="/ouvertures" [queryParams]="{ vue: 'saisie' }"
+      <a mat-menu-item routerLink="/creneaux" [queryParams]="{ onglet: 'horaires', vue: 'saisie' }"
          i18n-matTooltip="@@stands.grille.tooltip"
          matTooltip="Les horaires de tous les stands en une grille stand × jour × créneau, un effectif par case, comme dans un tableur.">
         <mat-icon>grid_on</mat-icon>
@@ -93,7 +99,7 @@
                             [filtre]="!!filtre()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
       @if (comparaisonParams(); as params) {
-        <a matButton routerLink="/ouvertures" [queryParams]="params" data-test="stands-comparer">
+        <a matButton routerLink="/creneaux" [queryParams]="params" data-test="stands-comparer">
           <mat-icon>compare</mat-icon>
           <ng-container i18n="@@stands.comparerOuvertures">Comparer les ouvertures</ng-container>
         </a>
@@ -146,7 +152,7 @@
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@stands.column.typologies">Typologies</th>
         <td mat-cell *matCellDef="let stand">
           @for (typologie of typologiesOf(stand); track typologie.id; let last = $last) {
-            <a routerLink="/typologies" [queryParams]="{ q: typologie.label }">{{ typologie.label }}</a>@if (!last) {, }
+            <a routerLink="/stands" [queryParams]="{ onglet: 'typologies', q: typologie.label }">{{ typologie.label }}</a>@if (!last) {, }
           } @empty {
             —
           }
@@ -192,7 +198,7 @@
     }
     @if (store.stands().length === 0) {
       <app-empty-state [addDisabled]="standsLocked()" (add)="openCreate()"
-                       [previous]="{ route: '/typologies', label: previousStepLabel(), missing: store.typologies().length === 0 }">
+                       [previous]="{ route: '/stands', queryParams: { onglet: 'typologies' }, label: previousStepLabel(), missing: store.typologies().length === 0 }">
         <ng-container i18n="@@stands.empty">Un stand propose des typologies et ouvre sur les créneaux : saisissez-les d'abord, puis ajoutez les stands ici.</ng-container>
         <app-import-button empty-state-import card="stands" [disabled]="standsLocked()" />
       </app-empty-state>

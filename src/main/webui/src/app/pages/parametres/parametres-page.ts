@@ -22,6 +22,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { HistoriquePage } from '../historique/historique-page';
+import { McpPage } from '../mcp/mcp-page';
 import { AdminApi } from '../../core/api/admin-api';
 import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
@@ -85,6 +87,8 @@ export const REPLACE_KEYWORD = 'REMPLACER';
   selector: 'app-parametres-page',
   imports: [
     AffichageMuralLinks,
+    HistoriquePage,
+    McpPage,
     ContactOrganisationCard,
     GuichetsCard,
     SingleKeyShortcutsToggle,
@@ -173,9 +177,13 @@ export class ParametresPage implements OnInit {
           : readOngletParametres(demande),
       );
     });
-    keepViewInQueryParams(() => ({
-      onglet: this.onglet() === 'edition' ? null : this.onglet(),
-    }));
+    // The Historique tab writes `onglet` itself — `historique` or its own
+    // `connexions` —: two writers on one key would race on arrival.
+    keepViewInQueryParams(() =>
+      this.onglet() === 'historique'
+        ? {}
+        : { onglet: this.onglet() === 'edition' ? null : this.onglet() },
+    );
     void this.problemes.reloadFeasibility();
     // `#guichets`, `#emails`, `#contact`: the card a link named — the former
     // `?onglet=emails` lands on its section. Programmatic, like the help's

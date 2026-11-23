@@ -1,8 +1,7 @@
 // The navigation drawer's content, the command palette's destinations and the
 // `g`+letter table, in one place: data, kept apart from the shell that renders
-// it. The drawer is one menu for everybody (no « simple » / « avancé » mode),
-// grouped by moment of the edition's cycle; a screen that is rare goes down
-// its group, it is not hidden.
+// it. The drawer is one menu for everybody, grouped by moment of the edition's
+// cycle; a screen answering a variant of another's question is one of its tabs.
 
 /**
  * A tab or a view of a page, reachable from the palette as « Page › Tab »:
@@ -48,8 +47,9 @@ export interface NavGroup {
 }
 
 /**
- * The menu, one group per moment of the cycle: Accueil, Planning, Préparer,
- * Construire, Diffuser, Aujourd'hui, Administrer.
+ * The menu, one group per moment of the cycle: Accueil, Préparer, Planifier,
+ * Diffuser, Aujourd'hui, Administrer — thirteen entries, a screen that answers
+ * a variant of another's question being one of its tabs.
  *
  * <p>Built lazily (called from a constructor, not at module scope): $localize
  * resolves translations from whatever `loadTranslations()` has registered at
@@ -75,93 +75,16 @@ export function buildNavGroups(): NavGroup[] {
       ],
     },
     {
-      // The plan read from every angle: the Planning page and its axes, and
-      // the one reading its chantiers have not absorbed yet, the margin.
-      id: 'planning',
-      title: $localize`:@@nav.group.planning:Planning`,
-      links: [
-        {
-          // The page every reading of the plan starts from (issue #712): the
-          // former Journée, which absorbed the month calendar, the intendance
-          // and the graph.
-          path: '/journee',
-          label: $localize`:@@nav.link.journee:Planning`,
-          icon: 'view_day',
-          shortcut: 'p',
-          // The bench left the Diagnostic for the Siège panel of this page:
-          // « banc » still finds where it went; the screens it absorbed too.
-          keywords: $localize`:@@nav.keywords.journee:journée calendrier banc de touche siège remplaçant placer imprimer`,
-          tabs: [
-            tab(
-              'vue',
-              'calendrier',
-              $localize`:@@journee.vue.calendrier:Tableau`,
-              $localize`:@@nav.keywords.journeeTableau:calendrier des affectations`,
-            ),
-            tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
-            tab(
-              'vue',
-              'carte',
-              $localize`:@@journee.vue.carte:Carte`,
-              $localize`:@@nav.keywords.journeeCarte:plan emplacements graphe`,
-            ),
-            tab(
-              'vue',
-              'pauses',
-              $localize`:@@journee.vue.pauses:Pauses et repas`,
-              $localize`:@@nav.keywords.journeePauses:relais intendance sandwichs`,
-            ),
-            tab('vue', 'changements', $localize`:@@journee.vue.changements:Changements`),
-            // The two grids and the table (issue #713), where the Heures, the
-            // Équité, the Jours de repos, the Heatmap, the Répartition des
-            // heures and the Planning par typologie went.
-            tab(
-              'axe',
-              'stand',
-              $localize`:@@planning.axe.stand:Par stand`,
-              $localize`:@@nav.keywords.axeStand:heatmap couverture répartition des heures treemap`,
-            ),
-            tab(
-              'axe',
-              'personne',
-              $localize`:@@planning.axe.personne:Par personne`,
-              $localize`:@@nav.keywords.axePersonne:heures paie équité jours de repos soirées frise`,
-            ),
-            tab(
-              'axe',
-              'typologie',
-              $localize`:@@planning.axe.typologie:Par typologie`,
-              $localize`:@@nav.keywords.axeTypologie:planning par typologie compétents`,
-            ),
-          ],
-        },
-      ],
-    },
-    {
-      // In the order an edition fills up: everything starts from the game
-      // categories, the timeslots give the edition its dates before the
-      // stands say when they open (ADR 0032), and a stand stands on a
-      // location.
+      // In the order an edition fills up: the stands and what they offer, the
+      // calendar they open on, the people, and the files that fill all three.
       id: 'preparer',
       title: $localize`:@@nav.group.preparer:Préparer`,
       links: [
         {
-          path: '/typologies',
-          label: $localize`:@@nav.link.typologies:Typologies`,
-          icon: 'category',
-          shortcut: 't',
-        },
-        {
-          path: '/creneaux',
-          label: $localize`:@@nav.link.creneaux:Créneaux`,
-          icon: 'schedule',
-          shortcut: 'c',
-        },
-        {
           path: '/stands',
           label: $localize`:@@nav.link.stands:Stands`,
           icon: 'storefront',
-          // The locations became a tab of the stands, map included.
+          keywords: $localize`:@@nav.keywords.stands:typologies catégories de jeu emplacements`,
           tabs: [
             tab(
               'onglet',
@@ -169,21 +92,23 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@stands.onglet.lieuxCourt:Lieux`,
               $localize`:@@nav.keywords.lieux:emplacements carte`,
             ),
+            tab('onglet', 'typologies', $localize`:@@nav.link.typologies:Typologies`),
           ],
         },
         {
-          path: '/ouvertures',
-          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
-          icon: 'door_front',
-          shortcut: 'h',
-          keywords: $localize`:@@nav.keywords.ouvertures:ouvertures saisie calendrier combiné`,
+          // The timeslots and the stands' opening hours over them.
+          path: '/creneaux',
+          label: $localize`:@@nav.link.calendrier:Calendrier`,
+          icon: 'schedule',
+          shortcut: 'c',
+          keywords: $localize`:@@nav.keywords.calendrier:créneaux journées types horaires ouvertures`,
           tabs: [
             tab(
-              'vue',
-              'journees-types',
-              $localize`:@@ouvertures.vue.journeesTypes:Par journée type`,
+              'onglet',
+              'horaires',
+              $localize`:@@nav.link.ouvertures:Horaires des stands`,
+              $localize`:@@nav.keywords.ouvertures:ouvertures saisie calendrier combiné`,
             ),
-            tab('vue', 'comparer', $localize`:@@ouvertures.vue.comparer:Comparer`),
           ],
         },
         {
@@ -192,17 +117,11 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'groups',
           // `a` is Aujourd'hui's, the page of the day of the event.
           shortcut: 'n',
-        },
-        {
-          path: '/competences',
-          label: $localize`:@@nav.link.competences:Compétences`,
-          icon: 'grid_on',
-        },
-        {
-          path: '/disponibilites',
-          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
-          icon: 'event_available',
-          tabs: [tab('onglet', 'covoiturage', $localize`:@@dispo.onglet.covoiturage:Covoiturage`)],
+          tabs: [
+            tab('onglet', 'competences', $localize`:@@nav.link.competences:Compétences`),
+            tab('onglet', 'disponibilites', $localize`:@@nav.link.disponibilites:Disponibilités`),
+            tab('onglet', 'covoiturage', $localize`:@@dispo.onglet.covoiturage:Covoiturage`),
+          ],
         },
         {
           // Imports, Export and the end-of-event archive: one page, three tabs.
@@ -260,9 +179,10 @@ export function buildNavGroups(): NavGroup[] {
       ],
     },
     {
-      // What the next solve receives, the solve itself and what it produced.
-      id: 'construire',
-      title: $localize`:@@nav.group.construire:Construire`,
+      // The solve, the plan it produced read from every angle, what blocks
+      // it, and what the next solve must respect.
+      id: 'planifier',
+      title: $localize`:@@nav.group.planifier:Planifier`,
       links: [
         {
           path: '/solveur',
@@ -270,6 +190,69 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'play_circle',
           shortcut: 's',
           keywords: $localize`:@@nav.keywords.solver:calculer résolution`,
+          tabs: [
+            tab(
+              'onglet',
+              'versions',
+              $localize`:@@nav.link.versions:Versions du plan`,
+              $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
+            ),
+          ],
+        },
+        {
+          // The page every reading of the plan starts from (issue #712): the
+          // former Journée, which absorbed the month calendar, the intendance
+          // and the graph.
+          path: '/journee',
+          label: $localize`:@@nav.link.journee:Planning`,
+          icon: 'view_day',
+          shortcut: 'p',
+          // The bench left the Diagnostic for the Siège panel of this page:
+          // « banc » still finds where it went; the screens it absorbed too.
+          keywords: $localize`:@@nav.keywords.journee:journée calendrier banc de touche siège remplaçant placer imprimer`,
+          tabs: [
+            tab(
+              'vue',
+              'calendrier',
+              $localize`:@@journee.vue.calendrier:Tableau`,
+              $localize`:@@nav.keywords.journeeTableau:calendrier des affectations`,
+            ),
+            tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
+            tab(
+              'vue',
+              'carte',
+              $localize`:@@journee.vue.carte:Carte`,
+              $localize`:@@nav.keywords.journeeCarte:plan emplacements graphe`,
+            ),
+            tab(
+              'vue',
+              'pauses',
+              $localize`:@@journee.vue.pauses:Pauses et repas`,
+              $localize`:@@nav.keywords.journeePauses:relais intendance sandwichs`,
+            ),
+            tab('vue', 'changements', $localize`:@@journee.vue.changements:Changements`),
+            // The two grids and the table (issue #713), where the Heures, the
+            // Équité, the Jours de repos, the Heatmap, the Répartition des
+            // heures and the Planning par typologie went.
+            tab(
+              'axe',
+              'stand',
+              $localize`:@@planning.axe.stand:Par stand`,
+              $localize`:@@nav.keywords.axeStand:heatmap couverture répartition des heures treemap`,
+            ),
+            tab(
+              'axe',
+              'personne',
+              $localize`:@@planning.axe.personne:Par personne`,
+              $localize`:@@nav.keywords.axePersonne:heures paie équité jours de repos soirées frise`,
+            ),
+            tab(
+              'axe',
+              'typologie',
+              $localize`:@@planning.axe.typologie:Par typologie`,
+              $localize`:@@nav.keywords.axeTypologie:planning par typologie compétents`,
+            ),
+          ],
         },
         {
           path: '/diagnostic',
@@ -295,13 +278,14 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          // What the next solve must respect (issue #719): the adjustments,
-          // the locks and the consignes (ADR 0043), one page in three tabs.
-          // No shortcut: its initial is Créneaux's.
-          path: '/consignes-solveur',
-          label: $localize`:@@nav.link.consignesSolveur:Consignes au solveur`,
-          icon: 'assignment_late',
-          keywords: $localize`:@@nav.keywords.consignesSolveur:ajustements manuels verrouillages consignes arrêté canicule fermeture`,
+          // What the next solve must respect: the adjustments, the locks and
+          // the consignes (issue #719, ADR 0043), then the rules and their
+          // thresholds, their importance, and the solve budget (issue #720).
+          path: '/regles',
+          label: $localize`:@@nav.link.regles:Règles du planning`,
+          icon: 'fact_check',
+          shortcut: 'r',
+          keywords: $localize`:@@nav.keywords.regles:contraintes poids importance paramètres légaux seuils consignes au solveur`,
           tabs: [
             tab(
               'onglet',
@@ -321,18 +305,6 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
               $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
             ),
-          ],
-        },
-        {
-          // Every setting that decides the plan (issue #720): the hard rules
-          // and their thresholds, the quality rules and their importance, the
-          // solve budget.
-          path: '/regles',
-          label: $localize`:@@nav.link.regles:Règles du planning`,
-          icon: 'fact_check',
-          shortcut: 'r',
-          keywords: $localize`:@@nav.keywords.regles:contraintes poids importance paramètres légaux seuils`,
-          tabs: [
             tab('onglet', 'legal', $localize`:@@regles.onglet.legal:Légal`),
             tab('onglet', 'qualite', $localize`:@@regles.onglet.qualite:Qualité`),
             tab(
@@ -342,15 +314,6 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@nav.keywords.reglesCalcul:budget durée ninja soirée`,
             ),
           ],
-        },
-        {
-          // The finished solves and the snapshots in one chronology, the
-          // comparator beside it (issue #702).
-          path: '/versions',
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-          icon: 'history',
-          shortcut: 'v',
-          keywords: $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
         },
       ],
     },
@@ -396,16 +359,16 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'emergency',
           shortcut: 'a',
           keywords: $localize`:@@nav.keywords.aujourdhui:jour J absent remplacer téléphone TV mural`,
-        },
-        {
-          // The days already held, read against what had been published:
-          // during the event for the elapsed days, and after it.
-          path: '/realise',
-          label: $localize`:@@nav.link.realise:Réalisé vs planifié`,
-          icon: 'balance',
-          // `r` is the Règles': `l` of « réalisé ».
-          shortcut: 'l',
-          keywords: $localize`:@@nav.keywords.realise:écart bilan absences remplacements tenu publié jour J`,
+          tabs: [
+            // The days already held, read against what had been published:
+            // during the event for the elapsed days, and after it.
+            tab(
+              'onglet',
+              'realise',
+              $localize`:@@nav.link.realise:Réalisé vs planifié`,
+              $localize`:@@nav.keywords.realise:écart bilan absences remplacements tenu publié jour J`,
+            ),
+          ],
         },
       ],
     },
@@ -413,7 +376,6 @@ export function buildNavGroups(): NavGroup[] {
       id: 'administrer',
       title: $localize`:@@nav.group.administrer:Administrer`,
       links: [
-        { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
         {
           path: '/parametres',
           label: $localize`:@@nav.link.parametres:Paramètres`,
@@ -437,24 +399,21 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@parametres.onglet.instance:Instance`,
               $localize`:@@nav.keywords.instance:sauvegarde sql raccourcis date simulée horloge globaux`,
             ),
-          ],
-        },
-        {
-          path: '/historique',
-          label: $localize`:@@nav.link.historique:Historique`,
-          icon: 'manage_search',
-          keywords: $localize`:@@nav.keywords.historique:journal actions`,
-          tabs: [
+            tab(
+              'onglet',
+              'historique',
+              $localize`:@@nav.link.historique:Historique`,
+              $localize`:@@nav.keywords.historique:journal actions`,
+            ),
             tab(
               'onglet',
               'connexions',
               $localize`:@@historique.onglet.connexions:Connexions`,
               $localize`:@@nav.keywords.historiqueConnexions:connexion login mot de passe verrouillage adresse`,
             ),
+            tab('onglet', 'mcp', $localize`:@@nav.link.mcp:MCP`, 'assistant ia'),
           ],
         },
-        { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
-        { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
       ],
     },
   ];
@@ -462,7 +421,7 @@ export function buildNavGroups(): NavGroup[] {
 
 /**
  * The screens served everywhere but listed in no group: the raw technical
- * page, the news and the Quarkus Dev UI. The palette finds
+ * page, the editions, the help, the news and the Quarkus Dev UI. The palette finds
  * them on a query and never on an empty one; an address still answers.
  */
 export function buildOffMenuLinks(devMode: boolean): NavLink[] {
@@ -487,6 +446,10 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
         ),
       ],
     },
+    // Reached by « Gérer » of the edition bar, above every page.
+    { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
+    // The toolbar's « ? » icon, on every admin page.
+    { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
     // Opened from the Éditions page with the pair to compare; reached here
     // too, on the edition this tab works in and the first other one.
     {

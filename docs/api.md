@@ -1227,7 +1227,7 @@ loin de la date réelle répond `outOfForecast`.
 
 **Rien n'est jamais appliqué.** Une alerte est une ligne de `GET /api/alertes`
 (`type` `METEO_ALERTE`, clé `date|PHÉNOMÈNE|palier`) dont `lien` mène à
-`/consignes-solveur?onglet=consignes&date=…&nouvelle=1&prereglage=…` : le
+`/regles?onglet=consignes&date=…&nouvelle=1&prereglage=…` : le
 formulaire s'ouvre rempli, l'admin relit les stands et enregistre lui-même. Une
 consigne déjà posée sur la date est nommée par l'alerte au lieu d'une
 suggestion. Une alerte sur **aujourd'hui** (selon l'horloge du jour J) ne

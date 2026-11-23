@@ -1,10 +1,10 @@
-// The two tabs of the Stands page, read from `?onglet=`: pure, so the menu's
+// The tabs of the Stands page, read from `?onglet=`: pure, so the menu's
 // spec checks the palette's « Stands › Lieux » against the page's own reader.
 
-/** The two tabs of the page: the stands, and the places they stand on. */
-export type OngletStands = 'stands' | 'lieux';
+/** The tabs of the page: the stands, the places they stand on, the game categories they offer. */
+export type OngletStands = 'stands' | 'lieux' | 'typologies';
 
-/** `?onglet=lieux` for the places; anything else is the stands, the default. */
+/** `?onglet=lieux` or `?onglet=typologies`; anything else is the stands, the default. */
 export function readOngletStands(value: string | null): OngletStands {
-  return value === 'lieux' ? 'lieux' : 'stands';
+  return value === 'lieux' || value === 'typologies' ? value : 'stands';
 }

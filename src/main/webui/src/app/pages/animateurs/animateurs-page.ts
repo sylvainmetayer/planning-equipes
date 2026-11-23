@@ -7,10 +7,12 @@ import {
   inject,
   OnInit,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -88,6 +90,10 @@ import {
 import { resumeRelance } from './relance-resume';
 import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { ImportButton } from '../../shared/import-button';
+import { ongletHote } from '../../core/onglet-hote';
+import { CompetencesPage } from '../competences/competences-page';
+import { DisponibilitesPage } from '../disponibilites/disponibilites-page';
+import { readOngletAnimateurs } from './animateurs-onglet';
 import { copyEspaceLink } from '../../core/clipboard';
 import { espaceUrl } from '../../core/app-links';
 
@@ -113,7 +119,10 @@ import { espaceUrl } from '../../core/app-links';
 @Component({
   selector: 'app-animateurs-page',
   imports: [
+    CompetencesPage,
+    DisponibilitesPage,
     ImportButton,
+    MatButtonToggleModule,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,
@@ -143,6 +152,27 @@ import { espaceUrl } from '../../core/app-links';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateursPage implements OnInit {
+  private readonly competences = viewChild(CompetencesPage);
+
+  /**
+   * Three tabs (`?onglet=`): the roster, the grid of competences, and what the
+   * animateurs declared — the former `/competences` and `/disponibilites`.
+   */
+  protected readonly ongletsPage = ongletHote(readOngletAnimateurs, 'liste', () => this.canLeave());
+
+  /** The grid's unsaved cells ask before the route or the tab is left. */
+  canLeave(): Promise<boolean> {
+    return this.competences()?.canLeave() ?? Promise.resolve(true);
+  }
+
+  /** A tab refused (unsaved cells kept) puts the toggle back on the tab on screen. */
+  protected async changerOnglet(event: MatButtonToggleChange): Promise<void> {
+    await this.ongletsPage.changer(event.value);
+    if (event.source.buttonToggleGroup) {
+      event.source.buttonToggleGroup.value = this.ongletsPage.onglet();
+    }
+  }
+
   /** The seats of the persisted plan, by animateur; `null` while no plan holds anybody. */
   protected readonly seatsByAnimateur = signal<ReadonlyMap<string, number> | null>(null);
 

@@ -52,7 +52,7 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
       key: 'locks',
       count: inputs.locks,
       text: $localize`:@@solver.entrees.verrous:${inputs.locks}:count: verrouillage(s)`,
-      route: '/consignes-solveur',
+      route: '/regles',
       queryParams: { onglet: 'verrouillages' },
       warning: false,
     },
@@ -60,7 +60,7 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
       key: 'adjustments',
       count: inputs.adjustments,
       text: $localize`:@@solver.entrees.ajustements:${inputs.adjustments}:count: ajustement(s) manuel(s)`,
-      route: '/consignes-solveur',
+      route: '/regles',
       queryParams: { onglet: 'ajustements' },
       warning: false,
     },
@@ -71,7 +71,7 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
         inputs.consignes.length === 0
           ? $localize`:@@solver.entrees.consignes.aucune:0 consigne`
           : $localize`:@@solver.entrees.consignes:${inputs.consignes.length}:count: consigne(s) (${dates}:dates:)`,
-      route: '/consignes-solveur',
+      route: '/regles',
       queryParams: { onglet: 'consignes' },
       warning: false,
     },
@@ -79,8 +79,8 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
       key: 'declarations',
       count: inputs.pendingDeclarations,
       text: $localize`:@@solver.entrees.declarations:${inputs.pendingDeclarations}:count: déclaration(s) de disponibilité non traitée(s), que le calcul ne verra pas`,
-      route: '/disponibilites',
-      queryParams: { statut: 'en-attente' },
+      route: '/animateurs',
+      queryParams: { onglet: 'disponibilites', statut: 'en-attente' },
       warning: true,
     },
     {
@@ -95,11 +95,14 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
       key: 'changes',
       count: inputs.changesSinceSolve,
       text: $localize`:@@solver.entrees.modifications:${inputs.changesSinceSolve}:count: modification(s) depuis la dernière résolution`,
-      route: '/historique',
+      route: '/parametres',
       // The very selection the server counted: the changes a solve is given,
       // after the instant the plan was written — the history then shows
       // exactly these lines.
-      queryParams: inputs.solvedAt ? { depuis: inputs.solvedAt, nature: 'donnees' } : {},
+      queryParams: {
+        onglet: 'historique',
+        ...(inputs.solvedAt ? { depuis: inputs.solvedAt, nature: 'donnees' } : {}),
+      },
       warning: false,
     },
   ];
@@ -145,7 +148,7 @@ export function solveInputLines(inputs: SolveInputs): SolveInputLine[] {
       <mat-card-actions class="card-actions">
         <!-- A consigne cannot touch a day already begun: tomorrow is the
              nearest date it can close. -->
-        <a matButton routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: 'demain', nouvelle: '1' }">
+        <a matButton routerLink="/regles" [queryParams]="{ onglet: 'consignes', date: 'demain', nouvelle: '1' }">
           <mat-icon>gavel</mat-icon>
           <ng-container i18n="@@consignes.fermerDemain">Fermer des stands demain</ng-container>
         </a>

@@ -89,13 +89,21 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         },
       ],
       links: [
-        { route: '/historique', label: $localize`:@@nav.link.historique:Historique` },
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'historique' },
+          label: $localize`:@@nav.link.historique:Historique`,
+        },
         {
           route: '/',
           fragment: 'a-traiter',
           label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
         },
-        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+        {
+          route: '/solveur',
+          queryParams: { onglet: 'versions' },
+          label: $localize`:@@nav.link.versions:Versions du plan`,
+        },
       ],
     },
     {
@@ -189,9 +197,21 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         },
       ],
       links: [
-        { route: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP` },
-        { route: '/historique', label: $localize`:@@nav.link.historique:Historique` },
-        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'mcp' },
+          label: $localize`:@@nav.link.mcp:MCP`,
+        },
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'historique' },
+          label: $localize`:@@nav.link.historique:Historique`,
+        },
+        {
+          route: '/solveur',
+          queryParams: { onglet: 'versions' },
+          label: $localize`:@@nav.link.versions:Versions du plan`,
+        },
       ],
     },
     {

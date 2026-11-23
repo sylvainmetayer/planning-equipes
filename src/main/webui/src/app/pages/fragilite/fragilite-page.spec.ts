@@ -409,7 +409,7 @@ describe('FragilitePage gestures', () => {
 
     expect(hrefs).toEqual([
       '/journee?creneau=12&stand=S1&animateur=a1',
-      '/competences?typologies=ESCAPE,QUIZ',
+      '/animateurs?onglet=competences&typologies=ESCAPE,QUIZ',
     ]);
   });
 

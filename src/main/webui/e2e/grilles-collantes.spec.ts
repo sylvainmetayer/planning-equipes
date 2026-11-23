@@ -172,7 +172,7 @@ test('la grille de saisie des ouvertures garde son en-tête et sa colonne de sta
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/ouvertures?vue=saisie');
+  await page.goto('/creneaux?onglet=horaires&vue=saisie');
   const grille = page.locator('.grille-saisie');
   await expect(grille).toBeVisible();
   await expect(grille.locator('tbody tr').nth(LIGNE_DEPART)).toBeVisible();
@@ -214,7 +214,7 @@ test('la grille des compétences garde son en-tête et sa colonne d’animateurs
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/competences');
+  await page.goto('/animateurs?onglet=competences');
   const grille = page.locator('.competences-grille');
   await expect(grille).toBeVisible();
   await expect(grille.locator('tbody tr').nth(LIGNE_DEPART)).toBeVisible();

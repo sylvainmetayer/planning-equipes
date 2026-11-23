@@ -122,7 +122,7 @@ describe('HistoriquePage', () => {
       ...FIRST_PAGE,
       nature: 'exports',
     });
-    expect(lastAddress()).toBe('/historique?nature=exports');
+    expect(lastAddress()).toBe('/historique?onglet=historique&nature=exports');
   });
 
   /**
@@ -141,7 +141,9 @@ describe('HistoriquePage', () => {
       depuis: '2026-09-12T10:00:00.123456Z',
     });
     expect(page['nature']()).toBe('DONNEES');
-    expect(lastAddress()).toBe('/historique?nature=donnees&depuis=2026-09-12T10%3A00%3A00.123456Z');
+    expect(lastAddress()).toBe(
+      '/historique?onglet=historique&nature=donnees&depuis=2026-09-12T10%3A00%3A00.123456Z',
+    );
   });
 
   /**
@@ -223,13 +225,15 @@ describe('HistoriquePage', () => {
     expect(analysesApi.actionHistory).toHaveBeenLastCalledWith({ ...FIRST_PAGE, depuis });
     expect(page['depuisLocal']()).toBe('2026-09-12T08:30');
     TestBed.tick();
-    expect(lastAddress()).toBe(`/historique?depuis=${encodeURIComponent(depuis)}`);
+    expect(lastAddress()).toBe(
+      `/historique?onglet=historique&depuis=${encodeURIComponent(depuis)}`,
+    );
 
     page['reinitialiser']();
     await vi.waitFor(() => expect(page['chargement']()).toBe(false));
     expect(analysesApi.actionHistory).toHaveBeenLastCalledWith(FIRST_PAGE);
     TestBed.tick();
-    expect(lastAddress()).toBe('/historique');
+    expect(lastAddress()).toBe('/historique?onglet=historique');
   });
 
   it('opens the logins tab from the address, and writes it back', async () => {
@@ -242,7 +246,7 @@ describe('HistoriquePage', () => {
 
     page['changeOnglet']('actions');
     TestBed.tick();
-    expect(lastAddress()).toBe('/historique');
+    expect(lastAddress()).toBe('/historique?onglet=historique');
   });
 
   /** The logins tab names no edition: opened there, the page reads nothing of the history. */

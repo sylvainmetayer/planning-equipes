@@ -414,7 +414,7 @@ describe('ProblemesPage — « Que faire ? »', () => {
     const links = Array.from(pauses.querySelectorAll('a.probleme-action-bouton')).map((link) =>
       link.getAttribute('href'),
     );
-    expect(links).toEqual(['/ouvertures?vue=saisie&stand=S2', '/creneaux?edit=7']);
+    expect(links).toEqual(['/creneaux?onglet=horaires&vue=saisie&stand=S2', '/creneaux?edit=7']);
     // Written here and translated: no `lang` forcing French on them.
     expect(pauses.querySelector('a.probleme-action-bouton')!.getAttribute('lang')).toBeNull();
     // Où: the stand and the timeslot of the break; Qui: the person left alone.

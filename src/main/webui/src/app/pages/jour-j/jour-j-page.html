@@ -1,6 +1,22 @@
+<h1 class="page-title" i18n="@@nav.link.aujourdhui">Aujourd'hui</h1>
+<mat-button-toggle-group class="page-onglets" [value]="ongletsPage.onglet()" (change)="ongletsPage.changer($event.value)"
+                         aria-label="Onglet de la page Aujourd'hui" i18n-aria-label="@@aujourdhui.onglet.label">
+  <mat-button-toggle value="jour">
+    <mat-icon>emergency</mat-icon>
+    <ng-container i18n="@@aujourdhui.onglet.jour">La journée</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="realise">
+    <mat-icon>balance</mat-icon>
+    <ng-container i18n="@@nav.link.realise">Réalisé vs planifié</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (ongletsPage.onglet() === 'realise') {
+  <app-realise-page />
+} @else {
 <mat-card appearance="outlined" class="page-card jour-j-entete">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@aujourdhui.title">Aujourd'hui</h1>
+    <h2 mat-card-title i18n="@@aujourdhui.title">Aujourd'hui</h2>
     <mat-card-subtitle>
       @if (etat(); as etat) {
         <span class="aujourdhui-date" i18n="@@aujourdhui.date">{{ etat.date }} · {{ heureServeur() }} (heure du serveur)</span>
@@ -32,7 +48,7 @@
         }
         @if (consigne()) {
           <li>
-            <a matButton routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: etat.date }" i18n="@@aujourdhui.compteur.consigne">Consigne du jour</a>
+            <a matButton routerLink="/regles" [queryParams]="{ onglet: 'consignes', date: etat.date }" i18n="@@aujourdhui.compteur.consigne">Consigne du jour</a>
           </li>
         }
       </ul>
@@ -40,7 +56,7 @@
         <app-aujourdhui-tv />
         <!-- A consigne cannot touch a day already begun: tomorrow is the nearest
              date it can close (issue #719). -->
-        <a matButton="tonal" routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: 'demain', nouvelle: '1' }">
+        <a matButton="tonal" routerLink="/regles" [queryParams]="{ onglet: 'consignes', date: 'demain', nouvelle: '1' }">
           <mat-icon>gavel</mat-icon>
           <ng-container i18n="@@consignes.fermerDemain">Fermer des stands demain</ng-container>
         </a>
@@ -129,7 +145,7 @@
       <mat-icon>gavel</mat-icon>
       <div>
         <p i18n="@@jourJ.consigne">Horaires modifiés par décision de l'organisation : tous les stands fermés de {{ consigne.bande }} — {{ consigne.motif }}</p>
-        <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes' }" i18n="@@jourJ.consigne.lien">Voir les consignes</a>
+        <a routerLink="/regles" [queryParams]="{ onglet: 'consignes' }" i18n="@@jourJ.consigne.lien">Voir les consignes</a>
       </div>
     </mat-card-content>
   </mat-card>
@@ -372,4 +388,5 @@
       </ul>
     </mat-card-content>
   </mat-card>
+}
 }

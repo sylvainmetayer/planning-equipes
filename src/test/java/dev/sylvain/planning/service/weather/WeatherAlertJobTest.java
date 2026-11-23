@@ -175,7 +175,7 @@ class WeatherAlertJobTest {
                 .contains("36 °C prévus à Kiosque météo (seuil 33 °C)")
                 .contains("Suggestion : Plan canicule");
         assertThat(alerte.getString("[0].lien"))
-                .startsWith("/consignes-solveur?onglet=consignes&date=" + jour)
+                .startsWith("/regles?onglet=consignes&date=" + jour)
                 .contains("nouvelle=1")
                 .endsWith("prereglage=" + prereglage);
         assertThat(mailbox.getMailsSentTo(ADMIN)).hasSize(1);

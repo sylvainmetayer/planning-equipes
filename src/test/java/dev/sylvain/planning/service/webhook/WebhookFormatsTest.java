@@ -254,7 +254,7 @@ class WebhookFormatsTest {
                         1,
                         2,
                         "P1",
-                        "https://planning.example.org/consignes-solveur?onglet=consignes&date=2026-07-15")));
+                        "https://planning.example.org/regles?onglet=consignes&date=2026-07-15")));
         WebhookEmitter.Occurrence occurrence =
                 WebhookEmitter.occurrence(alerte, LINKS).orElseThrow();
         WebhookMessage message = new WebhookMessage(

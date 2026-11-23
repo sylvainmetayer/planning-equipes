@@ -100,7 +100,7 @@ test.describe('accessibilité — administration', () => {
     '/',
     '/solveur',
     '/animateurs',
-    '/ouvertures',
+    '/creneaux?onglet=horaires',
     '/regles',
     '/regles?onglet=qualite',
     '/journee',

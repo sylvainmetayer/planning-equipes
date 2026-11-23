@@ -199,7 +199,7 @@ describe('StandFichePage', () => {
     const liens = Array.from(root().querySelectorAll<HTMLAnchorElement>('mat-card-subtitle a')).map(
       (lien) => lien.getAttribute('href'),
     );
-    expect(liens).toContain('/typologies?q=Enfance');
+    expect(liens).toContain('/stands?onglet=typologies&q=Enfance');
     expect(liens).toContain('/stands?onglet=lieux&q=Place%20du%20march%C3%A9');
   });
 

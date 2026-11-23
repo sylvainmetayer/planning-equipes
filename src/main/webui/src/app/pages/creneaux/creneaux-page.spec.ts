@@ -607,9 +607,9 @@ describe('CreneauxPage rendering', () => {
   it('counts the stands open on each timeslot and its seats, linking to that day of their hours', async () => {
     await renderAndRead([creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
 
-    const lien = racine().querySelector('tbody td a[href^="/ouvertures"]')!;
+    const lien = racine().querySelector('tbody td a[href^="/creneaux?onglet=horaires"]')!;
     expect(lien.textContent!.trim()).toBe('2 · 3');
-    expect(lien.getAttribute('href')).toBe('/ouvertures?du=2026-08-01&au=2026-08-01');
+    expect(lien.getAttribute('href')).toBe('/creneaux?onglet=horaires&du=2026-08-01&au=2026-08-01');
   });
 
   it('locks the writing actions, and says why, while a solve is running', async () => {

@@ -1,6 +1,31 @@
+<h1 class="page-title" i18n="@@nav.link.animateurs">Animateurs</h1>
+<mat-button-toggle-group class="page-onglets" [value]="ongletsPage.onglet()" (change)="changerOnglet($event)"
+                         aria-label="Onglet de la page Animateurs" i18n-aria-label="@@animateurs.onglet.label">
+  <mat-button-toggle value="liste">
+    <mat-icon>groups</mat-icon>
+    <ng-container i18n="@@animateurs.onglet.liste">Liste</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="competences">
+    <mat-icon>grid_on</mat-icon>
+    <ng-container i18n="@@nav.link.competences">Compétences</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="disponibilites">
+    <mat-icon>event_available</mat-icon>
+    <ng-container i18n="@@nav.link.disponibilites">Disponibilités</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@switch (ongletsPage.onglet()) {
+@case ('competences') {
+  <app-competences-page />
+}
+@case ('disponibilites') {
+  <app-disponibilites-page />
+}
+@default {
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@animateurs.list.title">Animateurs ({{ store.animateurs().length }})</h1>
+    <h2 mat-card-title i18n="@@animateurs.list.title">Animateurs ({{ store.animateurs().length }})</h2>
     <mat-card-subtitle i18n="@@animateurs.form.description">
       Le statut mineur/majeur est déduit de la date de naissance ; un animateur est disponible sauf si un jour est listé.
     </mat-card-subtitle>
@@ -225,7 +250,7 @@
     }
     @if (store.animateurs().length === 0) {
       <app-empty-state [addDisabled]="editingLocked()" (add)="openCreate()"
-                       [previous]="{ route: '/typologies', label: previousStepLabel(), missing: store.typologies().length === 0 }">
+                       [previous]="{ route: '/stands', queryParams: { onglet: 'typologies' }, label: previousStepLabel(), missing: store.typologies().length === 0 }">
         <ng-container i18n="@@animateurs.referentiel.vide">Un animateur maîtrise des typologies et s'absente certains jours de l'édition : saisissez d'abord les typologies et les créneaux, puis les animateurs ici.</ng-container>
         <app-import-button empty-state-import card="animateurs" [disabled]="editingLocked()" />
       </app-empty-state>
@@ -234,3 +259,5 @@
     }
   </mat-card-content>
 </mat-card>
+}
+}

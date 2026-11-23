@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { pageRoutes } from '../core/testing/page-routes';
-import {
-  ONGLETS_CONSIGNES_SOLVEUR,
-  readOngletConsignesSolveur,
-} from '../pages/consignes-solveur/consignes-solveur';
+import { readOngletAnimateurs } from '../pages/animateurs/animateurs-onglet';
+import { readOngletCalendrier } from '../pages/creneaux/calendrier-onglet';
+import { readOngletAujourdhui } from '../pages/jour-j/aujourdhui-onglet';
+import { readOngletSolveur } from '../pages/solver/solveur-onglet';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
-import { readDisponibilitesTab } from '../pages/disponibilites/declarations-filter';
 import { readHistoriqueTab } from '../pages/historique/historique';
 import { readEchangesTab } from '../pages/echanges/echanges-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
 import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journee/journee';
-import { OPENINGS_VIEW_PARAMS, readOpeningsView } from '../pages/ouvertures/ouvertures';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
 import { readOngletDiffuser } from '../pages/publication/onglet';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
@@ -20,10 +18,6 @@ import { readOngletStands } from '../pages/stands/stands-onglet';
 import { NavLink, buildLegalLinks, buildNavGroups, buildOffMenuLinks } from './nav-groups';
 
 const menuLinks = (): NavLink[] => buildNavGroups().flatMap((group) => group.links);
-
-/** The non-null values of a « view → param » table: what the page ever writes in its URL. */
-const written = (params: Readonly<Record<string, string | null>>): string[] =>
-  Object.values(params).filter((value): value is string => value !== null);
 
 /**
  * How each page with tabs reads its address, from the page's own reader: the
@@ -46,21 +40,26 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
       values: PLANNING_AXES.filter((axe) => axe !== 'jour'),
     },
   ],
-  '/ouvertures': {
-    param: 'vue',
-    opens: (v) => OPENINGS_VIEW_PARAMS[readOpeningsView(v)] === v,
-    values: written(OPENINGS_VIEW_PARAMS),
-  },
-  '/disponibilites': {
+  // The roster is the default tab; « covoiturage », the second tab of the
+  // Disponibilités screen, opens that screen.
+  '/animateurs': {
     param: 'onglet',
-    opens: (v) => readDisponibilitesTab(v) === v,
-    values: ['covoiturage'],
+    opens: (v) =>
+      readOngletAnimateurs(v) === v ||
+      (v === 'covoiturage' && readOngletAnimateurs(v) === 'disponibilites'),
+    values: ['competences', 'disponibilites', 'covoiturage'],
   },
-  // The actions are the default tab: only the logins are named.
-  '/historique': {
+  // The timeslots are the default tab: only the opening hours are named.
+  '/creneaux': {
     param: 'onglet',
-    opens: (v) => readHistoriqueTab(v) === v,
-    values: ['connexions'],
+    opens: (v) => readOngletCalendrier(v) === v,
+    values: ['horaires'],
+  },
+  '/solveur': { param: 'onglet', opens: (v) => readOngletSolveur(v) === v, values: ['versions'] },
+  '/aujourdhui': {
+    param: 'onglet',
+    opens: (v) => readOngletAujourdhui(v) === v,
+    values: ['realise'],
   },
   // The requests are the default tab: only the statistics are named.
   '/echanges': { param: 'onglet', opens: (v) => readEchangesTab(v) === v, values: ['stats'] },
@@ -79,20 +78,22 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     opens: (v) => readOngletDiffuser(v) === v,
     values: ['envoyer', 'documents'],
   },
-  '/consignes-solveur': {
-    param: 'onglet',
-    opens: (v) => readOngletConsignesSolveur(v) === v,
-    values: ONGLETS_CONSIGNES_SOLVEUR,
-  },
+  // « connexions », the second tab of the Historique screen, opens that screen.
   '/parametres': {
     param: 'onglet',
-    opens: (v) => readOngletParametres(v) === v,
-    values: ONGLETS_PARAMETRES,
+    opens: (v) =>
+      readOngletParametres(v) === v ||
+      (readOngletParametres(v) === 'historique' && readHistoriqueTab(v) === v),
+    values: [...ONGLETS_PARAMETRES, 'connexions'],
   },
   '/regles': { param: 'onglet', opens: (v) => readOngletRegles(v) === v, values: ONGLETS_REGLES },
   '/debug': { param: 'onglet', opens: (v) => readOngletDebug(v) === v, values: ONGLETS_DEBUG },
-  // The stands are the default tab: only the locations are named.
-  '/stands': { param: 'onglet', opens: (v) => readOngletStands(v) === v, values: ['lieux'] },
+  // The stands are the default tab: only the locations and the game categories are named.
+  '/stands': {
+    param: 'onglet',
+    opens: (v) => readOngletStands(v) === v,
+    values: ['lieux', 'typologies'],
+  },
 };
 
 describe('buildNavGroups', () => {
@@ -100,19 +101,25 @@ describe('buildNavGroups', () => {
   it('groups the menu by moment of the cycle', () => {
     expect(buildNavGroups().map((group) => group.id)).toEqual([
       'accueil',
-      'planning',
       'preparer',
-      'construire',
+      'planifier',
       'diffuser',
       'aujourdhui',
       'administrer',
     ]);
   });
 
-  it('lists neither Débogage nor the legal pages in a group', () => {
+  // The thirteen entries: a screen answering a variant of another's question is one of its tabs.
+  it('keeps the menu to thirteen entries', () => {
+    expect(menuLinks()).toHaveLength(13);
+  });
+
+  it('lists neither Débogage, Éditions, Aide nor the legal pages in a group', () => {
     const paths = menuLinks().map((link) => link.path);
 
     expect(paths).not.toContain('/debug');
+    expect(paths).not.toContain('/editions');
+    expect(paths).not.toContain('/aide');
     for (const legal of buildLegalLinks()) {
       expect(paths).not.toContain(legal.path);
     }

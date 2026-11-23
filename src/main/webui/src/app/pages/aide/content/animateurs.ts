@@ -83,7 +83,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
         { route: '/publication', label: $localize`:@@nav.link.diffuser:Diffuser` },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
@@ -128,11 +128,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturageDecision:Valider ou écarter un covoiturage`,
-              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail (chaque membre pour une validation, le demandeur pour un écart), et un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis l'onglet Ajustements de Consignes au solveur : il s'annule d'ici.`,
+              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail (chaque membre pour une validation, le demandeur pour un écart), et un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis l'onglet Ajustements des Règles du planning : il s'annule d'ici.`,
             },
             {
               term: $localize`:@@aide.dispo.term.covoiturageAnnulation:Annuler une arrivée groupée validée`,
-              text: $localize`:@@aide.dispo.def.covoiturageAnnulation:Dans « Déjà traitées », un groupe validé porte « Annuler l'arrivée groupée ». Un motif facultatif (500 caractères au plus, jamais recopié dans le journal ni rendu à l'assistant) est lu par chaque membre dans son espace. L'ajustement « Arrivée groupée » est supprimé, toutes les demandes validées avec lui passent « Annulée » et restent dans l'historique avec le motif, et chaque membre reçoit un e-mail qui nomme les autres : il peut envoyer une nouvelle demande si la collecte est ouverte, sinon il est invité à s'adresser à vous. Un envoi qui échoue n'annule pas l'annulation. Le planning n'en tient compte qu'à la prochaine résolution. Tant qu'une demande validée s'appuie sur une arrivée groupée, l'onglet Ajustements de Consignes au solveur la montre sans permettre de la modifier ni de la supprimer : c'est ici que le groupe est prévenu.`,
+              text: $localize`:@@aide.dispo.def.covoiturageAnnulation:Dans « Déjà traitées », un groupe validé porte « Annuler l'arrivée groupée ». Un motif facultatif (500 caractères au plus, jamais recopié dans le journal ni rendu à l'assistant) est lu par chaque membre dans son espace. L'ajustement « Arrivée groupée » est supprimé, toutes les demandes validées avec lui passent « Annulée » et restent dans l'historique avec le motif, et chaque membre reçoit un e-mail qui nomme les autres : il peut envoyer une nouvelle demande si la collecte est ouverte, sinon il est invité à s'adresser à vous. Un envoi qui échoue n'annule pas l'annulation. Le planning n'en tient compte qu'à la prochaine résolution. Tant qu'une demande validée s'appuie sur une arrivée groupée, l'onglet Ajustements des Règles du planning la montre sans permettre de la modifier ni de la supprimer : c'est ici que le groupe est prévenu.`,
             },
             {
               term: $localize`:@@aide.dispo.term.competences:Ce qui ne se déclare pas`,
@@ -142,11 +142,15 @@ export function buildAnimateurSideSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
+        {
+          route: '/animateurs',
+          queryParams: { onglet: 'disponibilites' },
+          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
+        },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'ajustements' },
           label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },

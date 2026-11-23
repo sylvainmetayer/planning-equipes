@@ -348,3 +348,24 @@
 .ninja-select {
   min-width: 18rem;
 }
+
+/* After a write on an adjustment, lock or consigne tab: the relaunch offered in place. */
+.regles-relancer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* The Verrouillages tab: what the target would freeze, and where to see it. */
+.verrouillages-apercu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}

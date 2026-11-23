@@ -156,28 +156,9 @@ mat-sidenav-content {
   }
 }
 
-/* #706: the news of an update, signalled next to the Aide entry by a small
-   link of its own, laid over the right end of that row. */
+/* One row of the menu. */
 .nav-entry {
   position: relative;
-}
-
-.nav-news-marker {
-  position: absolute;
-  top: 50%;
-  right: 0.75rem;
-  transform: translateY(-50%);
-  padding: 0 0.5rem;
-  border-radius: var(--mat-sys-corner-full);
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-  font: var(--mat-sys-label-small);
-  line-height: 1.5rem;
-  text-decoration: none;
-}
-
-.nav-news-marker:hover {
-  text-decoration: underline;
 }
 
 /* The same news on the foot's link, which stays in sight when the group folds. */

@@ -996,7 +996,7 @@ Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
 
 La matrice animateurs × typologies des appréciations **ne s'échange plus par
 fichier** : ni export ni import CSV, elle se saisit exclusivement à l'écran
-`/competences` ([décision 0050](decisions/0050-identifiants-generes-par-edition.md), D6).
+`/animateurs?onglet=competences` ([décision 0050](decisions/0050-identifiants-generes-par-edition.md), D6).
 Son import additif ([décision 0030](decisions/0030-grille-competences-import-additif.md))
 est retiré.
 

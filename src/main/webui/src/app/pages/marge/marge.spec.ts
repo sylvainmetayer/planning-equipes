@@ -258,8 +258,8 @@ describe('lienCellule', () => {
 
   it('opens that day of the stand openings before a solve, where the margin is still moved', () => {
     expect(lienCellule('AVANT', 42, '2026-07-10')).toEqual({
-      route: '/ouvertures',
-      queryParams: { du: '2026-07-10', au: '2026-07-10' },
+      route: '/creneaux',
+      queryParams: { onglet: 'horaires', du: '2026-07-10', au: '2026-07-10' },
     });
   });
 

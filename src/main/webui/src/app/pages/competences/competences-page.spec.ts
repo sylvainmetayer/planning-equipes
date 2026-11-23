@@ -720,6 +720,6 @@ describe('CompetencesPage', () => {
     expect(noms.map((nom) => nom.getAttribute('href'))).toEqual(['/animateurs/B2']);
     expect(root(fixture).textContent).toContain('Seul « Bruno Lefèvre » est affiché.');
     const entete = root(fixture).querySelector('th.colonne-typologie a')!;
-    expect(entete.getAttribute('href')).toBe('/typologies?edit=jeux');
+    expect(entete.getAttribute('href')).toBe('/stands?onglet=typologies&edit=jeux');
   });
 });

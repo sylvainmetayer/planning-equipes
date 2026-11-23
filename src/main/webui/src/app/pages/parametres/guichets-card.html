@@ -43,7 +43,7 @@
           <mat-icon>save</mat-icon>
           <ng-container i18n="@@common.save">Enregistrer</ng-container>
         </button>
-        <a matButton routerLink="/disponibilites" i18n="@@parametres.guichets.versDisponibilites">Voir les déclarations</a>
+        <a matButton routerLink="/animateurs" [queryParams]="{ onglet: 'disponibilites' }" i18n="@@parametres.guichets.versDisponibilites">Voir les déclarations</a>
       </div>
     </section>
 
@@ -90,7 +90,7 @@
           <ng-container i18n="@@parametres.guichets.covoiturageFerme">Fermé avec la collecte : il suit ses dates et son interrupteur.</ng-container>
         }
       </p>
-      <a matButton routerLink="/disponibilites" [queryParams]="{ onglet: 'covoiturage' }"
+      <a matButton routerLink="/animateurs" [queryParams]="{ onglet: 'covoiturage' }"
          i18n="@@parametres.guichets.versCovoiturage">Voir les demandes de covoiturage</a>
     </section>
     <section class="parametres-guichet" aria-labelledby="guichet-signalements">

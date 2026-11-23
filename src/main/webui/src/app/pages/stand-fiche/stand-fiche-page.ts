@@ -314,8 +314,8 @@ export class StandFichePage {
       return;
     }
     const id = this.standId();
-    void this.router.navigate(['/ouvertures'], {
-      queryParams: { vue: 'comparer', stands: `${id},${otherId}`, ref: id },
+    void this.router.navigate(['/creneaux'], {
+      queryParams: { onglet: 'horaires', vue: 'comparer', stands: `${id},${otherId}`, ref: id },
     });
   }
 

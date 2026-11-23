@@ -190,13 +190,13 @@ export function coherenceLink(ligne: CoherenceIssue): LienEtat {
       };
     case 'CONTRAINTE_AD_HOC':
       return {
-        route: '/consignes-solveur',
+        route: '/regles',
         queryParams: id ? { onglet: 'ajustements', edit: id } : { onglet: 'ajustements' },
         libelle: $localize`:@@accueil.coherence.lien.adHoc:Ajustement manuel`,
       };
     case 'VERROUILLAGE':
       return {
-        route: '/consignes-solveur',
+        route: '/regles',
         queryParams: { onglet: 'verrouillages' },
         libelle: $localize`:@@accueil.coherence.lien.verrouillages:Verrouillages`,
       };
@@ -227,7 +227,8 @@ function editionLink(famille: CoherenceFamily): LienEtat {
       };
     case 'STANDS':
       return {
-        route: '/ouvertures',
+        route: '/creneaux',
+        queryParams: { onglet: 'horaires' },
         libelle: $localize`:@@accueil.coherence.lien.ouvertures:Horaires des stands`,
       };
     case 'ANIMATEURS':
@@ -237,7 +238,7 @@ function editionLink(famille: CoherenceFamily): LienEtat {
       };
     case 'AJUSTEMENTS':
       return {
-        route: '/consignes-solveur',
+        route: '/regles',
         queryParams: { onglet: 'ajustements' },
         libelle: $localize`:@@accueil.coherence.lien.adHocListe:Ajustements manuels`,
       };

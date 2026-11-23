@@ -151,7 +151,8 @@ export class DisponibilitesPage implements OnInit {
       this.tab.set(readDisponibilitesTab(params.get('onglet')));
     });
     keepViewInQueryParams(() => ({
-      onglet: this.tab() === 'declarations' ? null : this.tab(),
+      // A tab of Animateurs now: the declarations name the host's tab, never the bare address.
+      onglet: this.tab() === 'declarations' ? 'disponibilites' : this.tab(),
       statut: this.pendingOnly() ? PENDING : null,
     }));
   }

@@ -592,3 +592,9 @@ a.referentiel-nom {
   margin-top: 0;
   color: var(--mat-sys-error);
 }
+
+/* The tabs of a page whose tabs are other screens (`core/onglet-hote.ts`). */
+.page-onglets {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}

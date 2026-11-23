@@ -24,6 +24,10 @@
       [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
     >notifications</mat-icon>
   </a>
+  <!-- The help, out of the menu: one icon on every admin page. -->
+  <a matIconButton routerLink="/aide" i18n-aria-label="@@shell.aide" aria-label="Aide">
+    <mat-icon>help_outline</mat-icon>
+  </a>
   <button matIconButton class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()"
           [attr.data-theme-preference]="theme.preference()">
     <mat-icon>{{ themeIcon() }}</mat-icon>
@@ -78,13 +82,6 @@
                   <mat-icon matListItemIcon>{{ link.icon }}</mat-icon>
                   <span matListItemTitle>{{ link.label }}</span>
                 </a>
-                @if (link.path === '/aide' && news.unseen()) {
-                  <!-- #706: the news of an update are signalled next to Aide,
-                       by a link of their own — the one page that clears it. -->
-                  <a class="nav-news-marker" routerLink="/nouveautes" (click)="onNavigate()"
-                     aria-label="Nouveautés non lues" i18n-aria-label="@@shell.newsMarker.label"
-                     i18n="@@shell.newsMarker">nouveautés</a>
-                }
               </div>
             }
           </div>
@@ -99,8 +96,6 @@
            [attr.aria-current]="rlaNews.isActive ? 'page' : null" (click)="onNavigate()">
           <span i18n="@@nav.link.nouveautes">Nouveautés</span>
           @if (news.unseen()) {
-            <!-- Seen when the Administrer group is folded, where the marker
-                 next to Aide is not. -->
             <span class="nav-news-dot" aria-hidden="true"></span>
             <span class="visually-hidden" i18n="@@shell.newsUnseen">(non lues)</span>
           }

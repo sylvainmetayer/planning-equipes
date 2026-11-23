@@ -86,7 +86,7 @@ export class AnimateurFormDialog {
   private readonly router = inject(Router);
   private readonly gel = injectGelReferentiel();
   /**
-   * The appreciations are typed in the grid of `/competences`, and the form
+   * The appreciations are typed in the grid of `/animateurs?onglet=competences`, and the form
    * only reads them — except on a creation under a COMPETENCES freeze (ADR
    * 0052): the freeze covers the fiches already in the roster and locks that
    * grid, while a new animateur still arrives with theirs, so the form takes
@@ -306,7 +306,9 @@ export class AnimateurFormDialog {
    */
   protected async openGrid(id: string): Promise<void> {
     if (await this.formDraft.close()) {
-      void this.router.navigate(['/competences'], { queryParams: { animateur: id } });
+      void this.router.navigate(['/animateurs'], {
+        queryParams: { onglet: 'competences', animateur: id },
+      });
     }
   }
 

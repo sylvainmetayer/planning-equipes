@@ -133,7 +133,7 @@ describe('ReferenceCrudService', () => {
     // pour les ajustements, dont la route ne porte pas le même nom.
     it.each([
       ['animateurs', 'A1', '/animateurs'],
-      ['contraintes-ad-hoc', 'AH1', '/consignes-solveur'],
+      ['contraintes-ad-hoc', 'AH1', '/regles'],
     ])('relie l’avertissement de %s à la fiche sur son écran', async (resource, id, route) => {
       store.save.mockResolvedValueOnce({
         id,

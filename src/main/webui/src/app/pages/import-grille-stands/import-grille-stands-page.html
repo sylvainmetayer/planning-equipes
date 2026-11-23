@@ -25,7 +25,7 @@
         <mat-icon>download</mat-icon>
         <span i18n="@@importGrille.fichier.exemple">Télécharger la grille actuelle comme modèle</span>
       </button>
-      <a matButton routerLink="/ouvertures" [queryParams]="{ vue: 'saisie' }">
+      <a matButton routerLink="/creneaux" [queryParams]="{ onglet: 'horaires', vue: 'saisie' }">
         <mat-icon>grid_on</mat-icon>
         <span i18n="@@importGrille.fichier.versGrille">La saisir à l'écran plutôt</span>
       </a>

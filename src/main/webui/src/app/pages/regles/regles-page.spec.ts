@@ -117,8 +117,9 @@ describe('ReglesPage', () => {
   let allowsDisabling: ReturnType<typeof vi.fn>;
   let ask: ReturnType<typeof vi.fn>;
 
+  // The rule tabs: the adjustments, the default tab, are another page's spec.
   async function rendre(
-    params: Record<string, string> = {},
+    params: Record<string, string> = { onglet: 'legal' },
     contraintes: ConstraintView[] = [PLACES, HEBDO, CHARGE],
   ): Promise<void> {
     constraintsApi = {

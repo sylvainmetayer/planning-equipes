@@ -284,7 +284,7 @@ export function ficheUrl(family: EntityFamily | 'CRENEAU', id: string | null): s
     case 'ANIMATEUR':
       return `/animateurs/${encodeURIComponent(id)}`;
     case 'TYPOLOGIE':
-      return '/typologies';
+      return '/stands?onglet=typologies';
     case 'EMPLACEMENT':
       return '/stands?onglet=lieux';
     case 'JOURNEE_TYPE':

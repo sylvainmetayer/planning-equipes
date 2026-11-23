@@ -167,8 +167,9 @@ describe('app.routes', () => {
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic;
-    // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another.
-    expect(titrees).toHaveLength(41);
+    // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another;
+    // the nine screens that became tabs of another page gave theirs up.
+    expect(titrees).toHaveLength(32);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
@@ -460,18 +461,18 @@ describe('app.routes', () => {
           personne: 'Alice',
           paires: 'AFFINITE',
         }),
-      ).toBe('/consignes-solveur?onglet=ajustements&personne=Alice');
+      ).toBe('/regles?onglet=ajustements&personne=Alice');
       expect(redirectTarget('ad-hoc-constraints', { ids: 'A1,A2' })).toBe(
-        '/consignes-solveur?onglet=ajustements&ids=A1%2CA2',
+        '/regles?onglet=ajustements&ids=A1%2CA2',
       );
     });
 
     it('garde les paramètres des verrouillages et des consignes', () => {
       expect(redirectTarget('verrouillages', { animateur: 'a1' })).toBe(
-        '/consignes-solveur?onglet=verrouillages&animateur=a1',
+        '/regles?onglet=verrouillages&animateur=a1',
       );
       expect(redirectTarget('consignes', { date: '2026-08-02', nouvelle: '1' })).toBe(
-        '/consignes-solveur?onglet=consignes&date=2026-08-02&nouvelle=1',
+        '/regles?onglet=consignes&date=2026-08-02&nouvelle=1',
       );
     });
   });
@@ -479,7 +480,9 @@ describe('app.routes', () => {
   /** The Autopsie, the Instantanés and the Comparateur became « Versions du plan » (issue #702). */
   it('mène les trois anciennes adresses des versions à la nouvelle page', () => {
     for (const path of ['instantanes', 'comparateur']) {
-      expect(allRoutes(routes).find((route) => route.path === path)?.redirectTo).toBe('/versions');
+      expect(allRoutes(routes).find((route) => route.path === path)?.redirectTo).toBe(
+        '/solveur?onglet=versions',
+      );
     }
     expect(allRoutes(routes).find((route) => route.path === 'kpi')?.redirectTo).toBe(
       redirectKpiToVersions,
@@ -505,9 +508,9 @@ describe('app.routes', () => {
   /** The Autopsie became « Versions du plan » (issue #702): its every-edition view survives. */
   describe("l'ancienne adresse de l'Autopsie", () => {
     it('keeps the every-edition view, and that one alone', () => {
-      expect(kpiTarget({ edition: '*' })).toBe('/versions?editions=toutes');
-      expect(kpiTarget({ edition: 'E1', rang: '2' })).toBe('/versions');
-      expect(kpiTarget({})).toBe('/versions');
+      expect(kpiTarget({ edition: '*' })).toBe('/solveur?onglet=versions&editions=toutes');
+      expect(kpiTarget({ edition: 'E1', rang: '2' })).toBe('/solveur?onglet=versions');
+      expect(kpiTarget({})).toBe('/solveur?onglet=versions');
     });
   });
 

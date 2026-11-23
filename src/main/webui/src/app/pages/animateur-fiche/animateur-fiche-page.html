@@ -221,7 +221,7 @@
                     @for (seat of outcome.lockedSeatsKept; track seat.posteId; let last = $last) {
                       {{ seatLabel(seat) }}@if (!last) {, }
                     }
-                    <a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'verrouillages', animateur: fiche.animateur.id }" i18n="@@fiche.jour.gererVerrous">Gérer les verrous</a>
+                    <a routerLink="/regles" [queryParams]="{ onglet: 'verrouillages', animateur: fiche.animateur.id }" i18n="@@fiche.jour.gererVerrous">Gérer les verrous</a>
                   </p>
                 }
                 @if (freedLines().length > 0) {
@@ -295,7 +295,7 @@
         @if (fiche.declarationEnAttente; as declaration) {
           <p class="fiche-alerte">
             <ng-container i18n="@@fiche.dispo.declaration">Déclaration en attente depuis le {{ declaration.creeLe | date: 'short' }} : {{ declaration.joursIndisponibles.length }} jour(s) indisponible(s).</ng-container>
-            <a routerLink="/disponibilites" i18n="@@fiche.dispo.traiter">La traiter</a>
+            <a routerLink="/animateurs" [queryParams]="{ onglet: 'disponibilites' }" i18n="@@fiche.dispo.traiter">La traiter</a>
           </p>
         }
       </details>
@@ -457,7 +457,7 @@
           <button matButton type="button" [disabled]="!competencesModified() || competencesBusy()" (click)="resetCompetences()">
             <ng-container i18n="@@fiche.competences.annuler">Annuler les modifications</ng-container>
           </button>
-          <a routerLink="/competences" [queryParams]="{ animateur: animateurId() }" i18n="@@fiche.competences.lien">Grille des compétences</a>
+          <a routerLink="/animateurs" [queryParams]="{ onglet: 'competences', animateur: animateurId() }" i18n="@@fiche.competences.lien">Grille des compétences</a>
         </div>
       </details>
 
@@ -597,7 +597,7 @@
             }
           </ul>
           <p>
-            <a routerLink="/consignes-solveur" [queryParams]="{ personne: fiche.animateur.id }" i18n="@@fiche.suivi.voirAjustements">Voir tous ses ajustements</a>
+            <a routerLink="/regles" [queryParams]="{ personne: fiche.animateur.id }" i18n="@@fiche.suivi.voirAjustements">Voir tous ses ajustements</a>
           </p>
         }
 
@@ -619,7 +619,7 @@
               </li>
             }
           </ul>
-          <p><a routerLink="/consignes-solveur" [queryParams]="{ onglet: 'verrouillages' }" i18n="@@fiche.suivi.lienVerrous">Ouvrir les verrouillages</a></p>
+          <p><a routerLink="/regles" [queryParams]="{ onglet: 'verrouillages' }" i18n="@@fiche.suivi.lienVerrous">Ouvrir les verrouillages</a></p>
         }
       </details>
     }

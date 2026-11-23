@@ -246,7 +246,7 @@ describe('construireProblemes', () => {
       ['/stands', 'a'],
       ['/stands', 'b'],
       ['/stands', 'c'],
-      ['/ouvertures', undefined],
+      ['/creneaux', undefined],
       ['/diagnostic', undefined],
     ]);
   });
@@ -372,7 +372,7 @@ describe('construireProblemes', () => {
     expect(probleme.niveau).toBe('BLOQUANT');
     expect(probleme.titre).not.toContain('sous-effectif');
     expect(probleme.details.join(' ')).toContain('C1, C2');
-    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/consignes-solveur']);
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles']);
   });
 
   it('attributes an ad hoc rule violations to the exceptions that caused them', () => {
@@ -391,7 +391,7 @@ describe('construireProblemes', () => {
     expect(probleme.details[0]).toContain('C2 (1)');
     // The per-match lines stay: the attribution is prepended, not a replacement.
     expect(probleme.details).toContain('P1');
-    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles', '/consignes-solveur']);
+    expect(probleme.liens.map((lien) => lien.route)).toEqual(['/regles', '/regles']);
   });
 
   it('leaves a rule no ad hoc exception contributed to untouched', () => {
@@ -636,7 +636,7 @@ describe('actionsOfRule', () => {
     expect(actions[0].queryParams).toEqual({ onglet: 'banc' });
     expect(actions.at(-1)).toMatchObject({
       code: 'REVOIR_AJUSTEMENTS',
-      route: '/consignes-solveur',
+      route: '/regles',
       queryParams: { onglet: 'ajustements', ids: 'C1,C2' },
     });
   });
