@@ -19,10 +19,10 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy('src/og-fr.png');
   eleventyConfig.addPassthroughCopy('src/og-en.png');
   eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/favicon.svg': 'favicon.svg' });
-  eleventyConfig.addPassthroughCopy({ 'src/assets/external.svg': 'assets/external.svg' });
+  eleventyConfig.addPassthroughCopy({ 'src/assets/external.svg': 'assets/external.svg', 'src/assets/popin.js': 'assets/popin.js' });
   eleventyConfig.addPassthroughCopy({
-    [`node_modules/${fonts}/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2`]: 'assets/fonts/big-shoulders-display.woff2',
-    [`node_modules/${fonts}/golos-text/files/golos-text-latin-wght-normal.woff2`]: 'assets/fonts/golos-text.woff2',
+    [`node_modules/${fonts}/rethink-sans/files/rethink-sans-latin-wght-normal.woff2`]: 'assets/fonts/rethink-sans.woff2',
+    [`node_modules/${fonts}/figtree/files/figtree-latin-wght-normal.woff2`]: 'assets/fonts/figtree.woff2',
   });
   eleventyConfig.addWatchTarget('src/assets/*.css');
   eleventyConfig.addWatchTarget('src/_data/pages/');

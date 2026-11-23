@@ -47,15 +47,17 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
 
 ## Le parti pris
 
-- **Une affiche de festival, pas une page de logiciel.** Papier chaud, encre
-  brune, titres en capitales Big Shoulders Display sur un texte en Golos Text,
-  filets de 2 px, une ombre portée dure, et deux couleurs qui ne se mélangent
-  jamais : le moutarde (le bouton principal, le tableau des refus) et le
-  bordeaux (les filets, le bandeau du devis). Les captures et les films sont
-  ceux de l'application, épinglés comme des tirages. Le thème s'appelle
-  Carnival (skill Hallmark, réglage `cold-snap`), en clair seulement ; les
-  couleurs ne sont écrites qu'une fois, en variables (`tokens.css`), et
-  `design.md` décrit le système pour les pages à venir.
+- **Le livret de règles d'un jeu de société.** Papier crème, titres nets en
+  Rethink Sans sur un texte en Figtree, en casse de phrase, et des chapitres
+  qui suivent un livret : contenu de la boîte, règle d'or, mise en place, ce
+  que reçoit chaque animateur, déroulement d'une journée, questions, pour
+  commencer une partie. Quatre couleurs de joueurs, sourdes, servent de
+  repères (une barre sur chaque chapitre, le liseré des cartes), jamais
+  d'aplats. Les captures sont celles de l'application, en cartes à coins
+  arrondis ; un clic les ouvre en grand. Le thème est sur mesure (skill
+  Hallmark), clair ou sombre selon le visiteur ; les couleurs ne sont écrites
+  qu'une fois, en variables (`tokens.css`), et `design.md` décrit le système
+  pour les pages à venir.
 - **Les organisateurs d'abord, puis ceux qui hébergent.** L'accueil suit ce
   qu'un organisateur se demande : le planning est-il légal ? que se passe-t-il
   le jour J ? que reçoivent les animateurs ? comment calcule-t-il ? à quoi
@@ -70,12 +72,14 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
 ## Ce que la page s'interdit
 
 - **Aucune dépendance côté visiteur, une seule requête externe.** Les polices
-  (Big Shoulders Display et Golos Text, `@fontsource-variable`) sont servies par
-  le site lui-même (`font-src 'self'`) ; pas de CDN, pas de script à elle. La
+  (Rethink Sans et Figtree, `@fontsource-variable`) sont servies par
+  le site lui-même (`font-src 'self'`) ; pas de CDN, aucun script venu d'ailleurs. La
   seule exception est le beacon Cloudflare Web Analytics, sans cookie ni
   identifiant persistant, que la CSP de `src/_headers` est seule à autoriser ;
   le pied de page le dit. L'application, elle, n'en a pas et n'en aura pas.
-  Il n'y a pas de JavaScript de la page : tout se lit sans.
+  Le seul JavaScript de la page, `src/assets/popin.js`, ouvre les captures en
+  grand dans un `<dialog>` ; sans lui, chaque lien ouvre l'image : tout se lit
+  sans.
 - **Aucune capture qui ne soit pas fictive.** Les captures et les vidéos
   viennent de données inventées (le scénario `vitrine-fete-du-jeu-de-pierrefeuille.yaml`),
   et rien d'autre n'y entre : pas de données d'exploitation, pas de page de

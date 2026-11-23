@@ -1,11 +1,12 @@
 # Headers served by Cloudflare Pages (ignored elsewhere).
-# CSP: the page has no inline script or style of its own, and its fonts are
+# CSP: the page has no inline script or style of its own (its one script,
+# /assets/popin.js, enlarges the screenshots), and its fonts are
 # its own (self-hosted, @fontsource); only the Cloudflare Web Analytics beacon
 # comes from elsewhere, and it reports to cloudflareinsights.com. connect-src also
 # allows the site itself: Lighthouse fetches robots.txt from the page and a CSP
 # without it fails the audit.
 /*
-  Content-Security-Policy: default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; media-src 'self'; script-src https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; media-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   Strict-Transport-Security: max-age=63072000; includeSubDomains
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff

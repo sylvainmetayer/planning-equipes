@@ -9,7 +9,7 @@
   "heroAlt": "Planning par jour de l'application : chaque stand, chaque créneau et les personnes affectées.",
   "heroLegende": "Une journée de la Fête du jeu de Pierrefeuille, festival fictif.",
   "loi": {
-    "h2": "Dix articles, jamais franchis.",
+    "h2": "La règle d'or",
     "reponse": "Le calcul applique dix articles du Code du travail, dont cinq pour les mineurs. Quand il refuse un poste, **il cite l'article**.",
     "refusTitre": "Un samedi, quatre postes refusés",
     "refusColonnes": [
@@ -49,8 +49,8 @@
     "mention": "Le logiciel aide à décider. L'organisation qui publie le planning reste l'employeur."
   },
   "jourj": {
-    "h2": "Samedi, 15 h : quelqu'un manque.",
-    "intro": "L'écran Aujourd'hui montre la place vide et propose qui peut la tenir sans enfreindre une règle.",
+    "h2": "Déroulement d'une journée",
+    "intro": "Samedi, 15 h, quelqu'un manque. L'écran Aujourd'hui montre la place vide et propose qui peut la tenir sans enfreindre une règle.",
     "points": [
       "Une consigne canicule ferme tous les stands l'après-midi, sans refaire la grille.",
       "La télé de la salle de contrôle se met à jour chaque minute.",
@@ -59,7 +59,7 @@
     "film": "jourj"
   },
   "equipes": {
-    "h2": "Chacun son planning, sur son téléphone.",
+    "h2": "Ce que reçoit chaque animateur",
     "texte": "Un lien et un code par e-mail ouvrent l'espace de chacun. **Rien à installer.**",
     "tuiles": [
       {
@@ -84,7 +84,8 @@
     "film": "espace"
   },
   "cas": {
-    "h2": "Le calcul, de zéro au planning.",
+    "h2": "Mise en place",
+    "intro": "Vous saisissez les stands, les créneaux et les disponibilités. Le calcul place ensuite chacun, dans cet ordre.",
     "niveaux": [
       {
         "titre": "D'abord la loi",
@@ -103,8 +104,8 @@
     "film": "calcul"
   },
   "images": {
-    "h2": "Les écrans, un par un.",
-    "intro": "Données fictives, horloge arrêtée en plein festival : d'où l'heure en rouge.",
+    "h2": "Contenu de la boîte",
+    "intro": "Neuf écrans, données fictives, horloge arrêtée en plein festival : d'où l'heure en rouge.",
     "films": [
       {
         "id": "calcul",
@@ -202,8 +203,8 @@
     ]
   },
   "ensemble": {
-    "h2": "Combien de personnes, combien de jours ?",
-    "prix": "Le tarif dépend de la taille de l'événement. Dites-le-nous, on vous envoie un chiffre.",
+    "h2": "Pour commencer une partie",
+    "prix": "Dites-nous combien de personnes et combien de jours. Le tarif dépend de la taille de l'événement : on vous envoie un chiffre.",
     "etapes": [
       {
         "titre": "On regarde vos données",
@@ -227,9 +228,10 @@
     "soiMeme": "Vous préférez l'héberger vous-même ?"
   },
   "faq": {
-    "h2": "Les questions qu'on nous pose.",
+    "h2": "Questions fréquentes",
     "toutes": "Toutes les questions"
   },
+  "ticketTitre": "Poste refusé",
   "en": {
     "titre": "Staff and volunteer scheduling software | Planning Équipes",
     "description": "Your staff and volunteer rota in minutes: French Labour Code and under-18s checked, the rota on everyone's phone.",
@@ -241,7 +243,7 @@
     "heroAlt": "The schedule by day in the application: every stand, every time slot and the people assigned.",
     "heroLegende": "One day of the Fête du jeu de Pierrefeuille, a fictional festival.",
     "loi": {
-      "h2": "Ten articles, never broken.",
+      "h2": "The golden rule",
       "reponse": "The solver applies ten articles of the French Labour Code, five of them for under-18s. When it refuses a shift, **it cites the article**.",
       "refusTitre": "One Saturday, four shifts refused",
       "refusColonnes": [
@@ -281,8 +283,8 @@
       "mention": "The software helps you decide. The organisation that publishes the rota remains the employer."
     },
     "jourj": {
-      "h2": "Saturday, 15:00: someone is missing.",
-      "intro": "The Today screen shows the empty seat and proposes who can hold it without breaking a rule.",
+      "h2": "How a day plays out",
+      "intro": "Saturday, 15:00, someone is missing. The Today screen shows the empty seat and proposes who can hold it without breaking a rule.",
       "points": [
         "A heatwave consigne closes every stand in the afternoon, without rebuilding the grid.",
         "The control-room TV refreshes every minute.",
@@ -291,7 +293,7 @@
       "film": "jourj"
     },
     "equipes": {
-      "h2": "Everyone's rota, on their own phone.",
+      "h2": "What each team member gets",
       "texte": "A link and a code by e-mail open each person's page. **Nothing to install.**",
       "tuiles": [
         {
@@ -316,7 +318,8 @@
       "film": "espace"
     },
     "cas": {
-      "h2": "The solver, from nothing to a rota.",
+      "h2": "Setting up",
+      "intro": "You enter the stands, the shifts and the availability. The solver then places everyone, in this order.",
       "niveaux": [
         {
           "titre": "The law first",
@@ -335,8 +338,8 @@
       "film": "calcul"
     },
     "images": {
-      "h2": "The screens, one by one.",
-      "intro": "Fictional data, the clock stopped mid-festival: hence the time in red.",
+      "h2": "What's in the box",
+      "intro": "Nine screens, fictional data, the clock stopped mid-festival: hence the time in red.",
       "films": [
         {
           "id": "calcul",
@@ -434,8 +437,8 @@
       ]
     },
     "ensemble": {
-      "h2": "How many people, how many days?",
-      "prix": "The price depends on the size of the event. Tell us, and we send you a figure.",
+      "h2": "To start a game",
+      "prix": "Tell us how many people and how many days. The price depends on the size of the event: we send you a figure.",
       "etapes": [
         {
           "titre": "We look at your data",
@@ -459,8 +462,9 @@
       "soiMeme": "Would you rather host it yourself?"
     },
     "faq": {
-      "h2": "Questions we get asked.",
+      "h2": "Frequently asked questions",
       "toutes": "All the questions"
-    }
+    },
+    "ticketTitre": "Shift refused"
   }
 }

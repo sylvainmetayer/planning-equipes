@@ -1,5 +1,4 @@
 :root {
-  color-scheme: light;
   --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
   --text-xs: 0.8125rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5625rem; --text-2xl: 1.953rem; --text-3xl: 2.441rem;
   --text-display-s: clamp(2.25rem, 4vw + 0.5rem, 3.75rem); --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
@@ -9,12 +8,41 @@
   --color-error: oklch(52% 0.19 27); --color-success: oklch(50% 0.12 150);
   --container: 1440px; --gutter: 64px; --gap-columns: 32px; --section-gap-s: 120px; --section-gap: 144px; --section-gap-l: 176px;
   --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
-  --color-paper: oklch(92% 0.045 50); --color-paper-2: oklch(88% 0.050 45); --color-paper-3: oklch(82% 0.060 40);
-  --color-ink: oklch(18% 0.080 20); --color-ink-2: oklch(28% 0.060 25); --color-muted: oklch(42% 0.050 30);
-  --color-rule: oklch(40% 0.21 25); --color-accent: oklch(86% 0.18 95); --color-accent-2: oklch(40% 0.21 25);
-  --color-accent-ink: oklch(18% 0.080 20); --color-focus: oklch(40% 0.21 25);
-  --font-display: "Big Shoulders Display", Impact, sans-serif; --font-body: "Golos Text", system-ui, sans-serif;
-  --font-outlier: var(--font-body);
-  --radius-card: 2px; --radius-pill: 2px; --rule-hair: 1px; --rule-bar: 2px; --shadow-card: 4px 4px 0 var(--color-ink);
-  --tracking-display: 0.015em; --display-weight: 800;
+  --color-paper: oklch(96.6% 0.018 85); --color-paper-2: oklch(93.6% 0.024 82); --color-paper-3: oklch(89.5% 0.028 80);
+  --color-ink: oklch(25% 0.022 60); --color-ink-2: oklch(36% 0.022 60); --color-muted: oklch(46% 0.022 65);
+  --color-rule: oklch(84% 0.026 76);
+  --color-p1: oklch(48% 0.085 238); --color-p2: oklch(47% 0.08 158); --color-p3: oklch(52% 0.1 68); --color-p4: oklch(45% 0.085 350);
+  --color-p1-wash: oklch(91% 0.03 238); --color-p2-wash: oklch(91% 0.03 158); --color-p3-wash: oklch(91% 0.045 80); --color-p4-wash: oklch(91% 0.03 350);
+  --color-accent: var(--color-p2); --color-accent-ink: oklch(97% 0.012 85); --color-focus: oklch(46% 0.12 158);
+  --color-button: var(--color-ink); --color-button-ink: var(--color-paper); --color-card: oklch(98.6% 0.01 85);
+  --font-display: "Rethink Sans", ui-sans-serif, system-ui, sans-serif; --font-body: "Figtree", ui-sans-serif, system-ui, sans-serif; --font-outlier: var(--font-display);
+  --radius-card: 14px; --radius-inner: 8px; --radius-pill: 10px; --rule-hair: 1px; --rule-bar: 4px;
+  --shadow-card: 0 1px 2px oklch(25% 0.022 60 / 0.07);
+  --tracking-display: -0.02em;
+}
+
+/* Dark: the same rulebook read at night, derived, never inverted */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-paper: oklch(20% 0.014 70); --color-paper-2: oklch(24% 0.016 70); --color-paper-3: oklch(29% 0.018 70);
+    --color-ink: oklch(93% 0.016 85); --color-ink-2: oklch(84% 0.018 85); --color-muted: oklch(74% 0.02 80);
+    --color-rule: oklch(36% 0.02 72);
+    --color-p1: oklch(76% 0.08 238); --color-p2: oklch(76% 0.08 158); --color-p3: oklch(80% 0.1 80); --color-p4: oklch(76% 0.08 350);
+    --color-p1-wash: oklch(30% 0.04 238); --color-p2-wash: oklch(30% 0.04 158); --color-p3-wash: oklch(31% 0.05 75); --color-p4-wash: oklch(30% 0.04 350);
+    --color-accent-ink: oklch(20% 0.014 70); --color-focus: oklch(78% 0.11 158);
+    --color-card: oklch(23% 0.015 70);
+    --shadow-card: 0 0 0 1px oklch(10% 0.01 70 / 0.4);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: oklch(20% 0.014 70); --color-paper-2: oklch(24% 0.016 70); --color-paper-3: oklch(29% 0.018 70);
+  --color-ink: oklch(93% 0.016 85); --color-ink-2: oklch(84% 0.018 85); --color-muted: oklch(74% 0.02 80);
+  --color-rule: oklch(36% 0.02 72);
+  --color-p1: oklch(76% 0.08 238); --color-p2: oklch(76% 0.08 158); --color-p3: oklch(80% 0.1 80); --color-p4: oklch(76% 0.08 350);
+  --color-p1-wash: oklch(30% 0.04 238); --color-p2-wash: oklch(30% 0.04 158); --color-p3-wash: oklch(31% 0.05 75); --color-p4-wash: oklch(30% 0.04 350);
+  --color-accent-ink: oklch(20% 0.014 70); --color-focus: oklch(78% 0.11 158);
+  --color-card: oklch(23% 0.015 70);
+  --shadow-card: 0 0 0 1px oklch(10% 0.01 70 / 0.4);
 }

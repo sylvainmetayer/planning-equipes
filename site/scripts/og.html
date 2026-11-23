@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Source of src/og-fr.png and src/og-en.png (1200x630 social preview), same palette
-     and faces as the site (Carnival tokens, src/assets/tokens.css). Regenerate: see
+     and faces as the site (the rulebook tokens, src/assets/tokens.css). Regenerate: see
      "Image de partage" in README.md. #en selects English. The headline follows the h1
      of the home page. -->
 <html lang="fr">
@@ -8,38 +8,40 @@
 <meta charset="utf-8">
 <title>Planning Équipes, image de partage</title>
 <style>
-  @font-face { font-family: "Big Shoulders Display"; font-weight: 100 900; src: url("../node_modules/@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2") format("woff2"); }
-  @font-face { font-family: "Golos Text"; font-weight: 400 900; src: url("../node_modules/@fontsource-variable/golos-text/files/golos-text-latin-wght-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Rethink Sans"; font-weight: 400 800; src: url("../node_modules/@fontsource-variable/rethink-sans/files/rethink-sans-latin-wght-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Figtree"; font-weight: 300 900; src: url("../node_modules/@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2") format("woff2"); }
   :root {
-    --paper: oklch(92% 0.045 50); --ink: oklch(18% 0.080 20); --accent: oklch(86% 0.18 95); --accent-2: oklch(40% 0.21 25);
+    --paper: oklch(96.6% 0.018 85); --ink: oklch(25% 0.022 60); --ink-2: oklch(36% 0.022 60); --rule: oklch(84% 0.026 76); --card: oklch(98.6% 0.01 85);
+    --p1: oklch(48% 0.085 238); --p2: oklch(47% 0.08 158); --p3: oklch(52% 0.1 68); --p4: oklch(45% 0.085 350);
   }
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
-  body {
-    position: relative; box-sizing: border-box; padding: 64px 72px;
-    background: var(--paper); color: var(--ink);
-    font: 400 30px/1.3 "Golos Text", system-ui, sans-serif;
-    border-bottom: 16px solid var(--accent-2);
-  }
-  .name { margin: 0 0 28px; font: 800 40px/1 "Big Shoulders Display", Impact, sans-serif; letter-spacing: 0.015em; text-transform: uppercase; }
-  h1 { margin: 0 0 28px; max-width: 13ch; font: 800 116px/0.98 "Big Shoulders Display", Impact, sans-serif; letter-spacing: 0.015em; text-transform: uppercase; }
-  p { margin: 0; max-width: 34ch; }
-  .ticket { position: absolute; right: 72px; bottom: 96px; padding: 20px 28px; background: var(--accent); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); transform: rotate(-2deg); font: 800 64px/1 "Big Shoulders Display", Impact, sans-serif; }
+  body { position: relative; box-sizing: border-box; padding: 72px 80px; background: var(--paper); color: var(--ink); font: 400 30px/1.35 "Figtree", system-ui, sans-serif; }
+  .players { display: flex; gap: 12px; margin-bottom: 40px; }
+  .players i { width: 64px; height: 10px; border-radius: 5px; }
+  .name { margin: 0 0 20px; font: 700 34px/1 "Rethink Sans", system-ui, sans-serif; letter-spacing: -0.02em; }
+  h1 { margin: 0 0 28px; max-width: 13ch; font: 700 92px/1.02 "Rethink Sans", system-ui, sans-serif; letter-spacing: -0.03em; }
+  p { margin: 0; max-width: 30ch; color: var(--ink-2); }
+  .card { position: absolute; right: 80px; bottom: 80px; width: 300px; box-sizing: border-box; padding: 24px; border: 1px solid var(--rule); border-top: 8px solid var(--p4); border-radius: 18px; background: var(--card); transform: rotate(-3deg); font-size: 24px; }
+  .card b { display: flex; justify-content: space-between; font-weight: 600; }
+  .card b span:last-child { color: var(--p4); }
   [lang="en"] { display: none; }
   body.en [lang="fr"] { display: none; }
   body.en [lang="en"] { display: block; }
 </style>
 </head>
 <body>
+<div class="players" aria-hidden="true"><i style="background: var(--p1)"></i><i style="background: var(--p2)"></i><i style="background: var(--p3)"></i><i style="background: var(--p4)"></i></div>
 <p class="name">Planning Équipes</p>
 <div lang="fr">
   <h1>Planifiez en minutes, pas en&nbsp;week-ends.</h1>
   <p>Animateurs, bénévoles et mineurs, Code du travail compris</p>
+  <div class="card"><b><span>Poste refusé</span><span>L3163-1</span></b>Jade, 16 ans : aucun poste après 22 h.</div>
 </div>
 <div lang="en">
   <h1>Schedule in minutes, not weekends.</h1>
   <p>Staff, volunteers and under-18s, French Labour Code included</p>
+  <div class="card"><b><span>Shift refused</span><span>L3163-1</span></b>Jade, 16: no shift after 22:00.</div>
 </div>
-<div class="ticket">L3163-1</div>
 <script>if (location.hash === '#en') document.body.className = 'en';</script>
 </body>
 </html>
