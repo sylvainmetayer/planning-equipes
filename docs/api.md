@@ -746,9 +746,10 @@ complet la recalcule mais fige tout siège qu'un verrou couvre et tout jour
 passé. Quand la levée ajoute des minutes-siège à la journée et qu'au moins un
 animateur disponible ce jour-là tient déjà un siège figé sur chacun des six
 autres jours de sa semaine ISO, l'aperçu le compte (`animateursSansJourLibre`),
-nomme les journées verrouillées à rouvrir pour les lui rendre
-(`joursADeverrouiller`) — un avertissement, jamais un refus : la journée
-peut encore tenir sans eux.
+nomme les journées verrouillées `JOUR` à rouvrir (`joursADeverrouiller`) et
+dit combien elles en libèrent (`animateursLiberes`) — un siège retenu par un
+autre verrou ou déjà commencé ne l'est par aucune. Un avertissement, jamais
+un refus : la journée peut encore tenir sans eux.
 Personne n'est nommé, seulement compté. Le calcul ne lance pas le solveur.
 
 **Poser ou lever retire la validation de relecture** des journées touchées,
