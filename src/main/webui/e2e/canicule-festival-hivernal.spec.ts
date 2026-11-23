@@ -540,14 +540,16 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
       expect(week, `${day} is outside the week of ${DAY3}`).toContain(day);
     }
     await expect(lifting).toContainText(
-      `${animateursSansJourLibre} animateur(s) disponible(s) ce jour-là travaillent déjà six jours de la semaine`,
+      animateursSansJourLibre === 1
+        ? '1 animateur disponible ce jour-là travaille déjà six jours de la semaine'
+        : `${animateursSansJourLibre} animateurs disponibles ce jour-là travaillent déjà six jours de la semaine`,
     );
     for (const day of toUnlock) {
       await expect(lifting).toContainText(dayLabel(day));
     }
   } else {
     expect(toUnlock).toEqual([]);
-    await expect(lifting).not.toContainText('travaillent déjà six jours de la semaine');
+    await expect(lifting).not.toContainText('déjà six jours de la semaine');
   }
   await lifting.getByRole('button', { name: 'Lever', exact: true }).click();
   await expect(page.getByText('Consigne levée.')).toBeVisible();

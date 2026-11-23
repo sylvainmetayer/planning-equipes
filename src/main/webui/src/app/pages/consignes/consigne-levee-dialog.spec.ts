@@ -54,15 +54,28 @@ describe('ConsigneLeveeDialog — the frozen week', () => {
   it('says the risk, the day to unlock and how many it frees, a space between the sentences', async () => {
     const text = await previewed(apercu(3, 2));
 
-    expect(text).toContain('3 animateur(s) disponible(s)');
+    expect(text).toContain(
+      '3 animateurs disponibles ce jour-là travaillent déjà six jours de la semaine sur des journées figées',
+    );
     expect(text).toMatch(/tenue\. Déverrouiller \S+/);
     expect(text).toContain('en rendrait 2 au calcul.');
-    expect(text).toMatch(/au calcul\. 1 restent retenus/);
+    expect(text).toMatch(/au calcul\. 1 reste retenu par un jour passé/);
   });
 
-  it('names no day when nothing reopenable holds them, and says why', async () => {
+  it('speaks of one person in the singular', async () => {
+    const text = await previewed(apercu(1, 0));
+
+    expect(text).toContain(
+      '1 animateur disponible ce jour-là travaille déjà six jours de la semaine sur des journées figées',
+    );
+    expect(text).not.toContain('Déverrouiller');
+    expect(text).toMatch(/tenue\. 1 reste retenu par un jour passé ou un autre verrou\./);
+  });
+
+  it('speaks of several in the plural, and names no day when nothing reopenable holds them', async () => {
     const text = await previewed(apercu(2, 0));
 
+    expect(text).toContain('2 animateurs disponibles ce jour-là travaillent déjà');
     expect(text).not.toContain('Déverrouiller');
     expect(text).toMatch(/tenue\. 2 restent retenus par un jour passé ou un autre verrou\./);
   });
