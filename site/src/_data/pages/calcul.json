@@ -1,0 +1,72 @@
+{
+  "slug": "comment-marche-le-calcul",
+  "titre": "Comment marche le calcul du planning d'un événement",
+  "description": "Un moteur d'optimisation construit le planning : règles impératives d'abord, puis équité et souhaits. Ce qu'il fait, ce qu'il refuse, ce qu'il vous dit.",
+  "h1": "Comment marche le calcul du planning ?",
+  "reponse": "Vous saisissez les stands, les créneaux et les disponibilités. Le logiciel construit un planning qui respecte d'abord les règles impératives, puis améliore l'équité, les souhaits et la continuité. Il vous dit dès qu'un plan faisable existe, et pourquoi quand il n'en trouve pas.",
+  "sections": [
+    {
+      "h2": "Trois niveaux d'exigence",
+      "texte": "1. **Les règles impératives**, jamais franchies : le cadre légal, les incompatibilités et les affectations imposées.\n2. **La couverture des postes** : chaque place à pourvoir est tenue.\n3. **La qualité** : l'équité entre les personnes, leurs souhaits et leur confort, par exemple moins de jours d'affilée et des journées continues.\n\nUn niveau ne se paie jamais sur celui du dessus : le calcul ne sacrifie pas une règle impérative pour un souhait."
+    },
+    {
+      "h2": "Ce que le calcul affiche en route",
+      "texte": "Dès qu'un plan faisable existe, toutes les places pourvues et toutes les règles impératives tenues, l'écran Solveur le dit et compte depuis combien de temps. La suite ne fait qu'améliorer la qualité, et un bouton permet d'arrêter et de garder ce plan. Les trois niveaux du score se tracent en direct, pour voir quand le calcul plafonne."
+    },
+    {
+      "h2": "Trois façons de le lancer",
+      "texte": "- **Calculer le planning** repart du plan enregistré et cherche à l'améliorer.\n- **Corriger après un changement** fige ce qui tient et ne recalcule que les places rouvertes, en quelques dizaines de secondes.\n- **Recommencer de zéro** abandonne l'acquis, et le dit avant de commencer.\n\nAvant de lancer, la page dit ce que le calcul recevra : verrouillages, ajustements manuels, consignes, déclarations de disponibilité en attente et règles désactivées."
+    },
+    {
+      "h2": "Quand il ne trouve aucune solution",
+      "texte": "Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque juste quelqu'un un samedi soir. Le diagnostic des effectifs le signale avant même le premier calcul : il donne l'équipe minimale qui peut tenir les stands, et les compétences à former."
+    },
+    {
+      "h2": "Après la publication",
+      "texte": "Une fois le planning envoyé, chaque personne déplacée coûte au calcul : un recalcul après un changement tardif bouge le minimum de gens déjà prévenus. Le jour J, une absence ne relance rien : la place vide apparaît, et les remplaçants proposés respectent déjà les règles."
+    },
+    {
+      "h2": "Ce qui tourne sous le capot",
+      "texte": "Le calcul s'appuie sur le moteur d'optimisation [Timefold Solver](https://timefold.ai/). Le code des règles est ouvert, sous licence AGPL-3.0, et documenté : [pourquoi chaque règle existe](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md)."
+    }
+  ],
+  "cta": "Vous voulez le voir sur vos données ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": ["legal", "benevoles", "faq"],
+  "en": {
+    "slug": "how-the-calculation-works",
+    "titre": "How the rota calculation works for an event",
+    "description": "An optimisation engine builds the rota: mandatory rules first, then fairness and wishes. What it does, what it refuses, what it tells you.",
+    "h1": "How does the rota calculation work?",
+    "reponse": "You enter the stands, the shifts and the availability. The software builds a rota that meets the mandatory rules first, then improves fairness, wishes and continuity. It tells you as soon as a feasible plan exists, and why when it finds none.",
+    "sections": [
+      {
+        "h2": "Three levels of requirement",
+        "texte": "1. **Mandatory rules**, never crossed: the legal framework, incompatibilities and imposed assignments.\n2. **Seat coverage**: every seat to fill is held.\n3. **Quality**: fairness between people, their wishes and their comfort, for example fewer days in a row and continuous days.\n\nA level never pays for the one above it: the solver does not sacrifice a mandatory rule for a wish."
+      },
+      {
+        "h2": "What the solver shows along the way",
+        "texte": "As soon as a feasible plan exists, with every seat filled and every mandatory rule met, the Solver screen says so and counts how long it has held. The rest only improves quality, and a button stops the run and keeps this plan. The three levels of the score are drawn live, to see when the run levels off."
+      },
+      {
+        "h2": "Three ways to start it",
+        "texte": "- **Calculate the schedule** starts from the saved plan and tries to improve it.\n- **Fix after a change** locks what holds and only recalculates the reopened seats, in a few dozen seconds.\n- **Start over from scratch** drops what was achieved, and says so before it starts.\n\nBefore you start, the page says what the run will take into account: locks, manual adjustments, consignes, pending availability declarations and disabled rules."
+      },
+      {
+        "h2": "When it finds no solution",
+        "texte": "It shows which rule is blocking, on which shifts and for whom. Usually someone is just missing on a Saturday evening. The staffing check flags it before the first run: it gives the smallest team that can hold the stands, and the skills to train."
+      },
+      {
+        "h2": "After publication",
+        "texte": "Once the rota is sent out, every person moved costs the solver: a recalculation after a late change moves as few already-notified people as possible. On the day, an absence does not restart anything: the empty seat appears, and the suggested replacements already meet the rules."
+      },
+      {
+        "h2": "What runs under the hood",
+        "texte": "The calculation relies on the [Timefold Solver](https://timefold.ai/) optimisation engine. The rules' code is open, under the AGPL-3.0 licence, and documented: [why each rule exists](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md) (in French)."
+      }
+    ],
+    "cta": "Want to see it on your own data?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": ["legal", "benevoles", "faq"]
+  }
+}

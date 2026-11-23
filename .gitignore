@@ -60,6 +60,7 @@ __pycache__/
 src/main/resources/scenarios/reel-*.yaml
 docs/reel-*.yaml
 assets/
+!site/src/assets/
 
 # Worktrees des agents
 .claude/worktrees/

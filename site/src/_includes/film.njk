@@ -1,0 +1,17 @@
+{% macro film(f, lang, labels, phone) %}
+{%- set src = '/videos/' + lang + '/' + f.id + '.mp4' -%}
+<div class="film{% if phone %} film--phone{% endif %}">
+<figure>
+  <video controls muted preload="none" playsinline width="{{ 412 if phone else 1280 }}" height="800" poster="/images/{{ lang }}/film-{{ f.id }}.webp" aria-label="{{ f.titre }}">
+    <source src="{{ src }}" type="video/mp4">
+    <track kind="captions" src="/videos/{{ lang }}/{{ f.id }}.vtt" srclang="{{ lang }}" label="{{ labels.sansSon }}" default>
+    <a href="{{ src }}">{{ labels.telecharger }} (MP4, {{ src | weight(labels.unite) | typo(lang) }})</a>
+  </video>
+  <figcaption><b>{{ f.titre }}, {{ f.secondes }}&nbsp;{{ labels.duree }}.</b> {{ f.legende | typo(lang) }}</figcaption>
+  </figure>
+  <details>
+    <summary>{{ labels.transcription }}</summary>
+    <ol>{% for s in f.transcription %}<li>{{ s | typo(lang) }}</li>{% endfor %}</ol>
+  </details>
+</div>
+{% endmacro %}

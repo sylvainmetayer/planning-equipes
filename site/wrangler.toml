@@ -1,5 +1,6 @@
 # Cloudflare Pages reads this file from the project's root directory (site/);
-# the project, its domain and the Web Analytics token are defined in homelab.
+# the project, its domain, its build settings and the Web Analytics token are
+# defined in homelab (build command `npm run build`, output `_site`).
 name = "planning-equipes"
-pages_build_output_dir = "."
+pages_build_output_dir = "_site"
 compatibility_date = "2026-10-01"

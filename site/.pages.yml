@@ -1,0 +1,535 @@
+# Pages CMS (https://pagescms.org) : l'admin de la vitrine planning.sylvain.dev.
+# Connexion GitHub, rien à héberger ; chaque enregistrement est un commit.
+# Périmètre : les textes (français à la racine du fichier, anglais sous la clé
+# « en »), les questions fréquentes, les légendes et transcriptions des vidéos,
+# les images. Ne s'éditent pas ici : les articles du Code du travail
+# (src/_data/articles.js, testés contre ConstraintCatalog), le jeton de mesure
+# d'audience (src/_data/site.json) et le code.
+#
+# Chaque fichier déclare TOUS ses champs : un champ non déclaré peut être perdu à
+# l'enregistrement. Un champ ajouté au JSON doit l'être ici aussi, dans les deux
+# langues (le bloc « en » recopie les champs français) : `npm test` le vérifie.
+# Les articles cités dans un texte (L3131-1…) doivent exister dans ConstraintCatalog :
+# `npm test` le vérifie.
+
+media:
+  - name: images
+    label: Captures et images
+    input: src/images
+    output: /images
+    extensions: [webp, png]
+  - name: videos
+    label: Vidéos
+    input: src/videos
+    output: /videos
+    extensions: [mp4]
+
+content:
+  - name: commun
+    label: Commun (menu, pied de page, page 404)
+    type: file
+    path: src/_data/pages/commun.json
+    format: json
+    fields:
+      - name: nav
+        label: Menu
+        type: object
+        fields:
+          - { name: label, label: Nom du menu (lecteurs d'écran), type: string, required: true }
+          - { name: accueil, label: Accueil, type: string, required: true }
+          - { name: legal, label: Code du travail, type: string, required: true }
+          - { name: benevoles, label: Bénévoles, type: string, required: true }
+          - { name: calcul, label: Le calcul, type: string, required: true }
+          - { name: faq, label: Questions, type: string, required: true }
+          - { name: contact, label: Bouton de contact, type: string, required: true }
+          - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
+          - { name: langueLabel, label: Lien vers l'autre langue (lecteurs d'écran), type: string, required: true }
+      - { name: skip, label: Lien d'évitement, type: string, required: true }
+      - { name: logoLabel, label: Logo (lecteurs d'écran), type: string, required: true }
+      - { name: contactSujet, label: Objet des e-mails de contact, type: string, required: true }
+      - { name: voirAussi, label: Titre « à lire aussi », type: string, required: true }
+      - name: pied
+        label: Pied de page
+        type: object
+        fields:
+          - { name: licence, label: Licence, type: string, required: true }
+          - { name: codeSource, label: Lien code source, type: string, required: true }
+          - { name: fictif, label: Mention « données fictives », type: string, required: true }
+          - { name: editeur, label: Éditeur et hébergeur, type: text, required: true }
+          - { name: liens, label: Nom de la liste (lecteurs d'écran), type: string, required: true }
+          - { name: mentions, label: Lien mentions légales, type: string, required: true }
+          - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
+          - { name: probleme, label: Lien signaler un problème, type: string, required: true }
+      - name: introuvable
+        label: Page 404
+        type: object
+        fields:
+          - { name: titre, label: Titre de l'onglet, type: string, required: true }
+          - { name: description, label: Description, type: string, required: true }
+          - { name: h1, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte, type: text, required: true }
+          - { name: retour, label: Bouton de retour, type: string, required: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - name: nav
+            label: Menu
+            type: object
+            fields:
+              - { name: label, label: Nom du menu (lecteurs d'écran), type: string, required: true }
+              - { name: accueil, label: Accueil, type: string, required: true }
+              - { name: legal, label: Code du travail, type: string, required: true }
+              - { name: benevoles, label: Bénévoles, type: string, required: true }
+              - { name: calcul, label: Le calcul, type: string, required: true }
+              - { name: faq, label: Questions, type: string, required: true }
+              - { name: contact, label: Bouton de contact, type: string, required: true }
+              - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
+              - { name: langueLabel, label: Lien vers l'autre langue (lecteurs d'écran), type: string, required: true }
+          - { name: skip, label: Lien d'évitement, type: string, required: true }
+          - { name: logoLabel, label: Logo (lecteurs d'écran), type: string, required: true }
+          - { name: contactSujet, label: Objet des e-mails de contact, type: string, required: true }
+          - { name: voirAussi, label: Titre « à lire aussi », type: string, required: true }
+          - name: pied
+            label: Pied de page
+            type: object
+            fields:
+              - { name: licence, label: Licence, type: string, required: true }
+              - { name: codeSource, label: Lien code source, type: string, required: true }
+              - { name: fictif, label: Mention « données fictives », type: string, required: true }
+              - { name: editeur, label: Éditeur et hébergeur, type: text, required: true }
+              - { name: liens, label: Nom de la liste (lecteurs d'écran), type: string, required: true }
+              - { name: mentions, label: Lien mentions légales, type: string, required: true }
+              - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
+              - { name: probleme, label: Lien signaler un problème, type: string, required: true }
+          - name: introuvable
+            label: Page 404
+            type: object
+            fields:
+              - { name: titre, label: Titre de l'onglet, type: string, required: true }
+              - { name: description, label: Description, type: string, required: true }
+              - { name: h1, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte, type: text, required: true }
+              - { name: retour, label: Bouton de retour, type: string, required: true }
+
+  - name: accueil
+    label: Accueil
+    type: file
+    path: src/_data/pages/accueil.json
+    format: json
+    description: "Le texte de la page d'accueil. Les captures et vidéos se remplacent dans « Captures et images » et « Vidéos » (mêmes noms de fichier)."
+    fields:
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: ogTitre, label: Titre des réseaux sociaux, type: string, required: true }
+      - { name: h1, label: Titre de la page (7 mots au plus), type: string, required: true }
+      - { name: lede, label: Phrase d'accroche, type: string, required: true }
+      - { name: cta, label: Bouton principal, type: string, required: true }
+      - { name: cta2, label: Bouton secondaire, type: string, required: true }
+      - { name: heroAlt, label: Description de la capture d'accueil, type: string, required: true }
+      - { name: heroLegende, label: Légende de la capture d'accueil, type: string, required: true }
+      - name: loi
+        label: Section Code du travail
+        type: object
+        fields:
+          - { name: h2, label: Question, type: string, required: true }
+          - { name: reponse, label: Réponse (Markdown, gras permis), type: text, required: true }
+          - { name: colonnes, label: Titres des colonnes, type: string, list: true }
+          - { name: refusTitre, label: Titre du tableau, type: string, required: true }
+          - { name: refusColonnes, label: Colonnes du tableau, type: string, list: true }
+          - name: refus
+            label: Postes refusés (exemples fictifs)
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{qui}" }
+            fields:
+              - { name: qui, label: Personne, type: string, required: true }
+              - { name: poste, label: Poste refusé, type: string, required: true }
+              - { name: raison, label: Raison, type: string, required: true }
+              - { name: article, label: Article (doit exister dans ConstraintCatalog), type: string, required: true, pattern: { regex: "^[LRD][0-9]{4}-[0-9]+$", message: "Ex. L3131-1" } }
+          - { name: exemple, label: Mention « exemple fictif », type: string, required: true }
+          - { name: lien, label: Lien vers la page détaillée, type: string, required: true }
+          - { name: mention, label: Mention sur l'employeur, type: string, required: true }
+      - name: jourj
+        label: Section jour J
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: intro, label: Introduction, type: text, required: true }
+          - { name: points, label: Points, type: string, list: true }
+          - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
+      - name: equipes
+        label: Section animateurs et bénévoles
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown, gras permis), type: text, required: true }
+          - { name: puces, label: Puces, type: string, list: true }
+          - { name: lien, label: Lien vers la page bénévoles, type: string, required: true }
+          - { name: outilsH, label: Titre « outils », type: string, required: true }
+          - { name: outils, label: Texte « outils », type: text, required: true }
+          - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
+      - name: images
+        label: Section en images (captures et vidéos)
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: intro, label: Introduction, type: text, required: true }
+          - name: films
+            label: Vidéos
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{titre}" }
+            fields:
+              - { name: id, label: Identifiant (nom du fichier .mp4), type: string, required: true }
+              - { name: titre, label: Titre, type: string, required: true }
+              - { name: secondes, label: Durée (secondes), type: number, required: true }
+              - { name: legende, label: Légende, type: text, required: true }
+              - { name: transcription, label: Transcription (une étape par ligne), type: text, list: true, required: true }
+          - name: filmsLabels
+            label: Mots des vidéos
+            type: object
+            fields:
+              - { name: transcription, label: Titre de la transcription, type: string, required: true }
+              - { name: sansSon, label: Sous-titre unique des vidéos sans son, type: string, required: true }
+              - { name: telecharger, label: Lien de téléchargement, type: string, required: true }
+              - { name: unite, label: Unité du poids (ko ou kB), type: string, required: true }
+              - { name: duree, label: Unité de durée, type: string, required: true }
+          - { name: ecransH, label: Titre des écrans, type: string, required: true }
+          - name: ecrans
+            label: Écrans
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{titre}" }
+            fields:
+              - { name: id, label: Identifiant (nom du fichier .webp), type: string, required: true }
+              - { name: titre, label: Titre, type: string, required: true }
+              - { name: alt, label: Description de la capture, type: string, required: true }
+      - name: ensemble
+        label: Section « comment on travaille ensemble »
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - name: etapes
+            label: Étapes
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{titre}" }
+            fields:
+              - { name: titre, label: Titre, type: string, required: true }
+              - { name: vous, label: Ce que vous faites, type: text, required: true }
+              - { name: nous, label: Ce que nous faisons, type: text, required: true }
+          - { name: vous, label: Mot « Vous », type: string, required: true }
+          - { name: nous, label: Mot « Nous », type: string, required: true }
+          - { name: prix, label: Tarif (Markdown, gras permis), type: text, required: true }
+          - { name: cta, label: Bouton, type: string, required: true }
+      - name: faq
+        label: Section questions
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: toutes, label: Lien vers toutes les questions, type: string, required: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: ogTitre, label: Titre des réseaux sociaux, type: string, required: true }
+          - { name: h1, label: Titre de la page (7 mots au plus), type: string, required: true }
+          - { name: lede, label: Phrase d'accroche, type: string, required: true }
+          - { name: cta, label: Bouton principal, type: string, required: true }
+          - { name: cta2, label: Bouton secondaire, type: string, required: true }
+          - { name: heroAlt, label: Description de la capture d'accueil, type: string, required: true }
+          - { name: heroLegende, label: Légende de la capture d'accueil, type: string, required: true }
+          - name: loi
+            label: Section Code du travail
+            type: object
+            fields:
+              - { name: h2, label: Question, type: string, required: true }
+              - { name: reponse, label: Réponse (Markdown, gras permis), type: text, required: true }
+              - { name: colonnes, label: Titres des colonnes, type: string, list: true }
+              - { name: refusTitre, label: Titre du tableau, type: string, required: true }
+              - { name: refusColonnes, label: Colonnes du tableau, type: string, list: true }
+              - name: refus
+                label: Postes refusés (exemples fictifs)
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{qui}" }
+                fields:
+                  - { name: qui, label: Personne, type: string, required: true }
+                  - { name: poste, label: Poste refusé, type: string, required: true }
+                  - { name: raison, label: Raison, type: string, required: true }
+                  - { name: article, label: Article (doit exister dans ConstraintCatalog), type: string, required: true, pattern: { regex: "^[LRD][0-9]{4}-[0-9]+$", message: "Ex. L3131-1" } }
+              - { name: exemple, label: Mention « exemple fictif », type: string, required: true }
+              - { name: lien, label: Lien vers la page détaillée, type: string, required: true }
+              - { name: mention, label: Mention sur l'employeur, type: string, required: true }
+          - name: jourj
+            label: Section jour J
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: intro, label: Introduction, type: text, required: true }
+              - { name: points, label: Points, type: string, list: true }
+              - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
+          - name: equipes
+            label: Section animateurs et bénévoles
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown, gras permis), type: text, required: true }
+              - { name: puces, label: Puces, type: string, list: true }
+              - { name: lien, label: Lien vers la page bénévoles, type: string, required: true }
+              - { name: outilsH, label: Titre « outils », type: string, required: true }
+              - { name: outils, label: Texte « outils », type: text, required: true }
+              - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
+          - name: images
+            label: Section en images (captures et vidéos)
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: intro, label: Introduction, type: text, required: true }
+              - name: films
+                label: Vidéos
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{titre}" }
+                fields:
+                  - { name: id, label: Identifiant (nom du fichier .mp4), type: string, required: true }
+                  - { name: titre, label: Titre, type: string, required: true }
+                  - { name: secondes, label: Durée (secondes), type: number, required: true }
+                  - { name: legende, label: Légende, type: text, required: true }
+                  - { name: transcription, label: Transcription (une étape par ligne), type: text, list: true, required: true }
+              - name: filmsLabels
+                label: Mots des vidéos
+                type: object
+                fields:
+                  - { name: transcription, label: Titre de la transcription, type: string, required: true }
+                  - { name: sansSon, label: Sous-titre unique des vidéos sans son, type: string, required: true }
+                  - { name: telecharger, label: Lien de téléchargement, type: string, required: true }
+                  - { name: unite, label: Unité du poids (ko ou kB), type: string, required: true }
+                  - { name: duree, label: Unité de durée, type: string, required: true }
+              - { name: ecransH, label: Titre des écrans, type: string, required: true }
+              - name: ecrans
+                label: Écrans
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{titre}" }
+                fields:
+                  - { name: id, label: Identifiant (nom du fichier .webp), type: string, required: true }
+                  - { name: titre, label: Titre, type: string, required: true }
+                  - { name: alt, label: Description de la capture, type: string, required: true }
+          - name: ensemble
+            label: Section « comment on travaille ensemble »
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - name: etapes
+                label: Étapes
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{titre}" }
+                fields:
+                  - { name: titre, label: Titre, type: string, required: true }
+                  - { name: vous, label: Ce que vous faites, type: text, required: true }
+                  - { name: nous, label: Ce que nous faisons, type: text, required: true }
+              - { name: vous, label: Mot « Vous », type: string, required: true }
+              - { name: nous, label: Mot « Nous », type: string, required: true }
+              - { name: prix, label: Tarif (Markdown, gras permis), type: text, required: true }
+              - { name: cta, label: Bouton, type: string, required: true }
+          - name: faq
+            label: Section questions
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: toutes, label: Lien vers toutes les questions, type: string, required: true }
+
+  - name: legal
+    label: Page Code du travail et mineurs
+    type: file
+    path: src/_data/pages/legal.json
+    format: json
+    description: "Les dix articles et leurs règles ne s'éditent pas ici : src/_data/articles.js, testé contre ConstraintCatalog."
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+
+  - name: benevoles
+    label: Page bénévoles
+    type: file
+    path: src/_data/pages/benevoles.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+
+  - name: calcul
+    label: Page « comment marche le calcul »
+    type: file
+    path: src/_data/pages/calcul.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+
+  - name: faq
+    label: Questions fréquentes
+    type: file
+    path: src/_data/pages/faq.json
+    format: json
+    description: "Les questions cochées « accueil » apparaissent aussi sur la page d'accueil. Les réponses sont reprises mot pour mot dans les données structurées."
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Titre de la page, type: string, required: true }
+      - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+      - name: items
+        label: Questions
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{q}" }
+        fields:
+          - { name: id, label: Ancre (lien direct), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: accueil, label: Aussi sur la page d'accueil, type: boolean }
+          - { name: q, label: Question, type: string, required: true }
+          - { name: a, label: Réponse, type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: h1, label: Titre de la page, type: string, required: true }
+          - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+          - name: items
+            label: Questions
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{q}" }
+            fields:
+              - { name: id, label: Ancre (lien direct), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+              - { name: accueil, label: Aussi sur la page d'accueil, type: boolean }
+              - { name: q, label: Question, type: string, required: true }
+              - { name: a, label: Réponse, type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }

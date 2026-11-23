@@ -15,6 +15,9 @@ name: Tests
 #
 # Le job `e2e` a son propre filtre, plus étroit : il saute aussi les documents
 # réinclus ci-dessous, que seul un test backend relit (voir `e2e-scope`).
+#
+# La vitrine (site/) a son propre workflow, site.yml : elle ne rejoue pas non plus
+# la suite de l'application.
 on:
   push:
     branches:
@@ -23,6 +26,7 @@ on:
       - '**'
       - '!docs/**'
       - '!**/*.md'
+      - '!site/**'
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
       - 'docs/decisions/**'
@@ -42,6 +46,7 @@ on:
       - '**'
       - '!docs/**'
       - '!**/*.md'
+      - '!site/**'
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
       - 'docs/decisions/**'

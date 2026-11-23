@@ -1,0 +1,15 @@
+---
+permalink: /robots.txt
+eleventyExcludeFromCollections: true
+---
+User-agent: *
+Allow: /
+
+# AI crawlers and assistants: explicitly welcome, the page is meant to be quoted.
+{%- for bot in ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'CCBot'] %}
+
+User-agent: {{ bot }}
+Allow: /
+{%- endfor %}
+
+Sitemap: {{ site.url }}/sitemap.xml
