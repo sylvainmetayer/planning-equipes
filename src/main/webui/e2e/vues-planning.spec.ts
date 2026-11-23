@@ -56,7 +56,7 @@ test('le besoin en effectif se calcule sur les stands et créneaux ensemencés',
 
 test('la grille des ouvertures montre les stands ensemencés', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/ouvertures');
+  await page.goto('/creneaux?onglet=horaires');
   await expect(page.locator('#contenu')).toContainText('Stand E2E un');
   await expect(page.locator('#contenu')).toContainText('Stand E2E deux');
   await page.context().close();

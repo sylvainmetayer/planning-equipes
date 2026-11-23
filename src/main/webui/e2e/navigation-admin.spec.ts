@@ -47,7 +47,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/regles?onglet=qualite', sheet: 'regles-importance' },
   { path: '/regles?onglet=calcul', marker: 'Budget de calcul' },
   { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
-  { path: '/versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
+  { path: '/solveur?onglet=versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },
   { path: '/nouveautes', marker: 'Nouveautés', sheet: 'news-release' },
   { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
@@ -57,9 +57,9 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/stands/E2E-S1', marker: 'Horaires et effectifs', sheet: 'stand-grille' },
   { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
   { path: '/animateurs/E2E-A', marker: 'Identité et contact', sheet: 'fiche-section' },
-  { path: '/competences', marker: 'Compétences', sheet: 'competences-legende' },
+  { path: '/animateurs?onglet=competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
-  { path: '/typologies', marker: 'Typologies (' },
+  { path: '/stands?onglet=typologies', marker: 'Typologies (' },
   // Fichiers: three tabs, and under Importer one card per file (the
   // referentials share a card, the two older imports are rendered as they are).
   { path: '/fichiers', marker: 'Fichiers', sheet: 'fichiers-onglets' },
@@ -105,7 +105,11 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/journee?axe=personne&vue=frise', sheet: 'personne-frise-ligne' },
   { path: '/journee?axe=personne&vue=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
   { path: '/journee?axe=typologie', marker: 'Compétents', sheet: 'planning-typologie-table' },
-  { path: '/ouvertures', marker: 'Horaires des stands', sheet: 'ouvertures-synthese' },
+  {
+    path: '/creneaux?onglet=horaires',
+    marker: 'Horaires des stands',
+    sheet: 'ouvertures-synthese',
+  },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   // « À former » is the foot of Besoin now: the old tab lands there.
   { path: '/diagnostic?onglet=former', marker: 'À former', sheet: 'staffing-former' },
@@ -116,7 +120,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/aujourdhui', marker: "Aujourd'hui", sheet: 'jour-j-entete' },
-  { path: '/realise', marker: 'Réalisé vs planifié', sheet: 'realise-toolbar' },
+  { path: '/aujourdhui?onglet=realise', marker: 'Réalisé vs planifié', sheet: 'realise-toolbar' },
   // The former Marge disponible lands on the Diagnostic's Tension tab.
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
@@ -127,7 +131,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     marker: 'Emplacements à cette heure-là',
     sheet: 'carte-jour-curseur',
   },
-  { path: '/historique', sheet: 'historique-controles' },
+  { path: '/parametres?onglet=historique', sheet: 'historique-controles' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
   // The meal intendance, under the breaks since the Planning page absorbed it.
   {
@@ -140,20 +144,20 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     marker: 'Changements de la journée',
     sheet: 'journee-changements-toolbar',
   },
-  { path: '/disponibilites', sheet: 'espace-dispo-intro' },
+  { path: '/animateurs?onglet=disponibilites', sheet: 'espace-dispo-intro' },
   // Three screens became the tabs of « Consignes au solveur » (issue #719):
   // the default tab, and the other two by their `?onglet=`.
   {
-    path: '/consignes-solveur',
+    path: '/regles',
     marker: 'Ce que le prochain calcul doit respecter',
     sheet: 'consignes-solveur-onglets',
   },
   {
-    path: '/consignes-solveur?onglet=verrouillages',
+    path: '/regles?onglet=verrouillages',
     marker: 'Verrouiller une partie du planning',
   },
   {
-    path: '/consignes-solveur?onglet=consignes',
+    path: '/regles?onglet=consignes',
     marker: 'Poser une consigne',
     sheet: 'consigne-prereglage',
   },
@@ -169,7 +173,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   // Its former name is still read.
   { path: '/parametres?onglet=globaux', marker: 'Sauvegarde automatique' },
-  { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
+  { path: '/parametres?onglet=mcp', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
   { path: '/debug', marker: 'Dernière analyse', sheet: 'debug-onglets' },
   { path: '/debug?onglet=verifications', marker: 'Envoyer un mail de test' },
   // The two tabs Débogage gave up land on their Fichiers cards.
@@ -355,7 +359,7 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
 
   // A view of the page already on screen: the router reuses the page, which
   // must follow its address rather than keep the view it was built with.
-  await page.goto('/consignes-solveur');
+  await page.goto('/regles');
   await expect(page.locator('#contenu')).toContainText('Ce que le prochain calcul doit respecter');
   await expect(page.locator('#contenu app-verrouillages-page')).toHaveCount(0);
   await page.keyboard.press('Control+k');

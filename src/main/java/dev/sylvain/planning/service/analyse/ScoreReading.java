@@ -97,8 +97,8 @@ public final class ScoreReading {
 
     private static final String ROUTE_RULES = "/regles";
     private static final String ROUTE_DAY = "/journee";
-    /** « Consignes au solveur », whose default tab is the adjustments. */
-    private static final String ROUTE_ADJUSTMENTS = "/consignes-solveur";
+    /** « Règles du planning », whose default tab is the adjustments. */
+    private static final String ROUTE_ADJUSTMENTS = "/regles";
 
     private static final String SEATS_RULE = "posteDoitEtrePourvu";
     private static final String ECART = "écart";

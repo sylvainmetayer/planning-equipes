@@ -18,6 +18,14 @@
     <mat-icon>dns</mat-icon>
     <ng-container i18n="@@parametres.onglet.instance">Instance</ng-container>
   </mat-button-toggle>
+  <mat-button-toggle value="historique">
+    <mat-icon>manage_search</mat-icon>
+    <ng-container i18n="@@nav.link.historique">Historique</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="mcp">
+    <mat-icon>smart_toy</mat-icon>
+    <ng-container i18n="@@nav.link.mcp">MCP</ng-container>
+  </mat-button-toggle>
 </mat-button-toggle-group>
 
 <p class="parametres-renvoi-regles">
@@ -26,6 +34,12 @@
 </p>
 
 @switch (onglet()) {
+  @case ('historique') {
+    <app-historique-page />
+  }
+  @case ('mcp') {
+    <app-mcp-page />
+  }
   @case ('mural') {
     <app-affichage-mural-links />
   }

@@ -265,7 +265,9 @@ describe('AnimateurFormDialog', () => {
     cliquer(fixture, 'Saisir dans la grille (ligne pré-filtrée)');
     await fixture.whenStable();
     expect(close).toHaveBeenCalledWith(false);
-    expect(navigate).toHaveBeenCalledWith(['/competences'], { queryParams: { animateur: 'a1' } });
+    expect(navigate).toHaveBeenCalledWith(['/animateurs'], {
+      queryParams: { onglet: 'competences', animateur: 'a1' },
+    });
   });
 
   it('asks before leaving a modified form for the grid, and stays when told to', async () => {

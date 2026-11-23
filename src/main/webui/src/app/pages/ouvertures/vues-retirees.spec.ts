@@ -16,14 +16,14 @@ describe('retiredViewTarget', () => {
 
   it('narrows the grid to that day before any plan, keeping the other params', () => {
     expect(retiredViewTarget({ vue: 'journee', date: '2026-07-08', stand: 'S1' }, false)).toBe(
-      '/ouvertures?stand=S1&du=2026-07-08&au=2026-07-08',
+      '/creneaux?onglet=horaires&stand=S1&du=2026-07-08&au=2026-07-08',
     );
-    expect(retiredViewTarget({ vue: 'journee' }, false)).toBe('/ouvertures');
+    expect(retiredViewTarget({ vue: 'journee' }, false)).toBe('/creneaux?onglet=horaires');
   });
 
   it('opens the grid on the calendar week, its layers kept', () => {
     expect(
       retiredViewTarget({ vue: 'calendrier', du: '2026-07-11', couches: 'stand,resultat' }, false),
-    ).toBe('/ouvertures?du=2026-07-11&couches=stand%2Cresultat');
+    ).toBe('/creneaux?onglet=horaires&du=2026-07-11&couches=stand%2Cresultat');
   });
 });

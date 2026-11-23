@@ -608,7 +608,7 @@ describe('StaffingPage', () => {
       );
       expect(liens.map((lien) => lien.getAttribute('href'))).toEqual([
         '/animateurs?typologie=ESCAPE',
-        '/competences?typologies=ESCAPE',
+        '/animateurs?onglet=competences&typologies=ESCAPE',
       ]);
       expect(root.querySelectorAll('tr.staffing-goulot')).toHaveLength(1);
     });
@@ -660,7 +660,7 @@ describe('StaffingPage', () => {
       const hrefs = Array.from(root.querySelectorAll<HTMLAnchorElement>('a')).map((lien) =>
         lien.getAttribute('href'),
       );
-      expect(hrefs).toContain('/ouvertures?du=2026-09-01&au=2026-09-01');
+      expect(hrefs).toContain('/creneaux?onglet=horaires&du=2026-09-01&au=2026-09-01');
       expect(hrefs).toContain('/regles?onglet=legal&regle=coupureRepasObligatoire');
       expect(hrefs).toContain('/regles?onglet=legal&regle=maxJoursConsecutifsTravaillesDur');
       expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');

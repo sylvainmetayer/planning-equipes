@@ -154,11 +154,11 @@ class WeatherAlertRulesTest {
         String demain = AUJOURDHUI.plusDays(1) + "|HEAT|0";
 
         assertThat(WeatherAlertService.consigneRoute(demain, Set.of(), REGLAGES, AUJOURDHUI))
-                .contains("/consignes-solveur?onglet=consignes&date=" + AUJOURDHUI.plusDays(1)
-                        + "&nouvelle=1&prereglage=canicule");
+                .contains(
+                        "/regles?onglet=consignes&date=" + AUJOURDHUI.plusDays(1) + "&nouvelle=1&prereglage=canicule");
         // Under a consigne already: the date's consigne is shown, no form.
         assertThat(WeatherAlertService.consigneRoute(demain, Set.of(AUJOURDHUI.plusDays(1)), REGLAGES, AUJOURDHUI))
-                .contains("/consignes-solveur?onglet=consignes&date=" + AUJOURDHUI.plusDays(1));
+                .contains("/regles?onglet=consignes&date=" + AUJOURDHUI.plusDays(1));
         assertThat(WeatherAlertService.consigneRoute(AUJOURDHUI + "|HEAT|0", Set.of(), REGLAGES, AUJOURDHUI))
                 .isEmpty();
         assertThat(WeatherAlertService.consigneRoute(

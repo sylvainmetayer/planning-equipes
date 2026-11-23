@@ -83,7 +83,11 @@ export function buildGettingStartedSections(): HelpSection[] {
           queryParams: { cible: 'animateurs' },
           label: $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`,
         },
-        { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
+        {
+          route: '/animateurs',
+          queryParams: { onglet: 'disponibilites' },
+          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
+        },
         { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },

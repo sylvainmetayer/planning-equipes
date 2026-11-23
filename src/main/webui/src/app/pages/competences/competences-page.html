@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@competences.title">Compétences</h1>
+    <h2 mat-card-title i18n="@@competences.title">Compétences</h2>
     <mat-card-subtitle i18n="@@competences.subtitle">
       L'appréciation de chaque animateur sur chaque typologie, saisie en grille ; les souhaits déclarés y sont visibles en regard.
     </mat-card-subtitle>
@@ -33,7 +33,7 @@
       <p class="empty-hint" i18n="@@competences.sansTypologie">
         Aucune typologie dans l'édition : créez-en depuis la page Typologies pour saisir des compétences.
       </p>
-      <a matButton routerLink="/typologies">
+      <a matButton routerLink="/stands" [queryParams]="{ onglet: 'typologies' }">
         <mat-icon>category</mat-icon>
         <ng-container i18n="@@competences.versTypologies">Aller aux typologies</ng-container>
       </a>
@@ -87,7 +87,7 @@
                   @if (typologie.ninja) {
                     <mat-icon class="ninja-icone" aria-hidden="true">all_inclusive</mat-icon>
                   }
-                  <a class="colonne-typologie-lien" routerLink="/typologies" [queryParams]="{ edit: typologie.id }">{{ typologie.label || typologie.code || typologie.id }}</a>
+                  <a class="colonne-typologie-lien" routerLink="/stands" [queryParams]="{ onglet: 'typologies', edit: typologie.id }">{{ typologie.label || typologie.code || typologie.id }}</a>
                   @if (typologie.label && typologie.code) {
                     <span class="visually-hidden"> ({{ typologie.code }})</span>
                   }

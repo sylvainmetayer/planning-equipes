@@ -100,7 +100,7 @@ describe('buildRaccourcisNavigation', () => {
     const parRoute = new Map(raccourcis.map((raccourci) => [raccourci.route, raccourci.touche]));
     expect(parRoute.get('/animateurs')).toBe('n');
     expect(parRoute.get('/creneaux')).toBe('c');
-    expect(parRoute.get('/typologies')).toBe('t');
+    expect(parRoute.get('/fichiers')).toBe('f');
     expect(parRoute.get('/')).toBe('g');
   });
 
@@ -124,7 +124,6 @@ describe('buildRaccourcisNavigation', () => {
     expect(keyByRoute.get('/aujourdhui')).toBe('a');
     expect(keyByRoute.get('/publication')).toBe('d');
     expect(keyByRoute.get('/journee')).toBe('p');
-    expect(keyByRoute.get('/ouvertures')).toBe('h');
     expect(keyByRoute.get('/diagnostic')).toBe('i');
   });
 });

@@ -78,7 +78,7 @@ export function buildSolverSections(): HelpSection[] {
       links: [
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
@@ -127,7 +127,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
-              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible au lieu de masquer un problème. Quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Consignes au solveur, sur un animateur par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel : voir l'encart « Ajustement manuel ou verrouillage ? ».`,
+              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible au lieu de masquer un problème. Quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ils se posent sur l'onglet Verrouillages de la page Règles du planning, sur un animateur par défaut ; avant d'enregistrer, l'aperçu compte les affectations que le verrou figera et mène à la Journée qui les montre. Ce n'est pas un ajustement manuel : voir l'encart « Ajustement manuel ou verrouillage ? ».`,
             },
           ],
         },
@@ -149,7 +149,7 @@ export function buildSolverSections(): HelpSection[] {
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
@@ -219,7 +219,11 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
+        {
+          route: '/creneaux',
+          queryParams: { onglet: 'horaires' },
+          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
+        },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         {
@@ -329,7 +333,11 @@ export function buildSolverSections(): HelpSection[] {
           route: '/journee',
           label: $localize`:@@aide.link.dayCalendar:Tableau de la journée`,
         },
-        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+        {
+          route: '/solveur',
+          queryParams: { onglet: 'versions' },
+          label: $localize`:@@nav.link.versions:Versions du plan`,
+        },
       ],
     },
     {
@@ -397,12 +405,12 @@ export function buildSolverSections(): HelpSection[] {
         },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'ajustements' },
           label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
@@ -416,7 +424,7 @@ export function buildSolverSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Il se saisit sur le premier onglet de la page Consignes au solveur, qui porte aussi les verrouillages et les consignes. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
+          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Il se saisit sur le premier onglet de la page Règles du planning, qui porte aussi les verrouillages et les consignes. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
         },
         {
           kind: 'callout',
@@ -505,13 +513,13 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'ajustements' },
           label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },

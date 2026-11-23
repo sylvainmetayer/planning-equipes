@@ -54,6 +54,9 @@ import { LegalText } from '../../shared/legal-text';
 import { RelancerCalcul } from '../../shared/relancer-calcul';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
+import { AdHocConstraintsPage } from '../ad-hoc-constraints/ad-hoc-constraints-page';
+import { ConsignesPage } from '../consignes/consignes-page';
+import { VerrouillagesPage } from '../verrouillages/verrouillages-page';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
 import {
   OngletRegles,
@@ -63,6 +66,7 @@ import {
   hasChanges,
   mergeSettings,
   ongletOfRule,
+  isRuleTab,
   readOngletRegles,
   rulesOfTab,
   shownValue,
@@ -98,10 +102,13 @@ function importanceLabel(importance: Importance): string {
 }
 
 /**
- * « Règles du planning » (issue #720): every setting that decides the plan,
- * on one screen, in three tabs carried by `?onglet=` —
+ * « Règles du planning » (issue #720): everything the next solve must
+ * respect, on one screen, in tabs carried by `?onglet=` — first the three of
+ * the former « Consignes au solveur » (issue #719): the adjustments (the
+ * default), the locks and the consignes, each emitting `changed` after a
+ * write, upon which « Relancer le calcul » is offered in place; then —
  *
- * - « Légal » (default) — one row per hard rule: its short label, the article
+ * - « Légal » — one row per hard rule: its short label, the article
  *   that founds it, on/off, the thresholds it reads edited on the row itself
  *   (weekly caps, the break, the meal window…), the breaches of the last
  *   analysis. The detail — the long text, the history of its settings — opens
@@ -121,6 +128,8 @@ function importanceLabel(importance: Importance): string {
 @Component({
   selector: 'app-regles-page',
   imports: [
+    AdHocConstraintsPage,
+    ConsignesPage,
     FeasibilityBanner,
     LegalText,
     MatButtonModule,
@@ -134,6 +143,7 @@ function importanceLabel(importance: Importance): string {
     ReglesCalcul,
     RouterLink,
     StatusMessage,
+    VerrouillagesPage,
     WeightHistoryView,
   ],
   templateUrl: './regles-page.html',
@@ -181,16 +191,34 @@ export class ReglesPage implements OnInit {
   protected readonly onglet = computed<OngletRegles>(() => {
     const choisi = this.ongletChoisi();
     const rule = this.selectedRule();
-    if (rule && choisi !== 'calcul' && choisi !== ongletOfRule(rule)) {
+    if (rule && (choisi === null || isRuleTab(choisi)) && choisi !== ongletOfRule(rule)) {
       return ongletOfRule(rule);
     }
-    return choisi ?? 'legal';
+    return choisi ?? 'ajustements';
   });
+
+  protected readonly isRuleTab = isRuleTab;
+
+  /**
+   * How « Relancer le calcul » runs once an adjustment, a lock or a consigne
+   * was written on its tab, `null` before: a correction while only consignes
+   * were — a band shut or reopened removes or adds seats, which is what a
+   * correction re-fills —, the full solve as soon as anything else was, since
+   * an incremental re-solve pins every seat still valid and would re-open
+   * nothing after a forced assignment, an incompatibility or a lock lifted.
+   */
+  protected readonly relance = signal<'correction' | 'calcul' | null>(null);
+
+  protected onConsigneChanged(onglet: OngletRegles): void {
+    this.relance.update((mode) =>
+      onglet === 'consignes' && mode !== 'calcul' ? 'correction' : 'calcul',
+    );
+  }
 
   /** The rows of the tab on screen. */
   protected readonly rows = computed(() => {
     const onglet = this.onglet();
-    return onglet === 'calcul' ? [] : rulesOfTab(this.view()?.contraintes ?? [], onglet);
+    return isRuleTab(onglet) ? rulesOfTab(this.view()?.contraintes ?? [], onglet) : [];
   });
 
   /* ---------------------------- Pending changes ----------------------------- */
@@ -277,7 +305,7 @@ export class ReglesPage implements OnInit {
       this.regle.set(params.get('regle'));
     });
     keepViewInQueryParams(() => ({
-      onglet: this.onglet() === 'legal' ? null : this.onglet(),
+      onglet: this.onglet() === 'ajustements' ? null : this.onglet(),
       regle: optionalParam(this.regle()),
     }));
     // A solve that lands writes a fresh analysis: its breaches are the column

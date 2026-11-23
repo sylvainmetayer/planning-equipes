@@ -154,7 +154,7 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
 
   // Visible on the admin screen before any solve.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/consignes-solveur');
+  await page.goto('/regles');
   await expect(page.locator('#contenu')).toContainText('Paula indisponible le matin');
   await expect(page.locator('#contenu')).toContainText('Quentin imposé sur Stand Solve un');
   await expect(page.locator('#contenu')).toContainText('Rita et Tom incompatibles');
@@ -164,7 +164,7 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   await page.goto('/solveur');
   await expect(page.getByRole('link', { name: /ajustement\(s\) manuel\(s\)/ })).toHaveAttribute(
     'href',
-    '/consignes-solveur?onglet=ajustements',
+    '/regles?onglet=ajustements',
   );
 
   const job = await lancerSolve(admin, 6);
@@ -272,7 +272,7 @@ test('un échange accepté survit à la régénération du planning', async ({ b
 
   // The two ANIMATEUR_CRENEAU pins are visible on the verrouillages screen.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/consignes-solveur?onglet=verrouillages');
+  await page.goto('/regles?onglet=verrouillages');
   await expect(page.getByText('Animateur sur un créneau').first()).toBeVisible();
   await expect(page.locator('#contenu')).toContainText(`Échange validé (demande ${demandeId})`);
   await page.context().close();

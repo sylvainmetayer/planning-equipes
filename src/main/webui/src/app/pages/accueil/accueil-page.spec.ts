@@ -248,8 +248,8 @@ describe('AccueilPage', () => {
     expect(hrefs).toEqual([
       '/stands',
       '/parametres?onglet=edition#gel-referentiel',
-      '/disponibilites',
-      '/ouvertures',
+      '/animateurs?onglet=disponibilites',
+      '/creneaux?onglet=horaires',
       '/diagnostic?onglet=besoin',
       '/solveur',
       '/diagnostic?onglet=problemes',

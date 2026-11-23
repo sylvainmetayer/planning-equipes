@@ -129,11 +129,13 @@ describe('DisponibilitesPage « en attente »', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     expect(root.textContent).toContain('Déjà traitées');
-    expect(replaceState).toHaveBeenLastCalledWith('/disponibilites');
+    expect(replaceState).toHaveBeenLastCalledWith('/disponibilites?onglet=disponibilites');
 
     fixture.componentInstance['pendingOnly'].set(true);
     await fixture.whenStable();
-    expect(replaceState).toHaveBeenLastCalledWith('/disponibilites?statut=en-attente');
+    expect(replaceState).toHaveBeenLastCalledWith(
+      '/disponibilites?onglet=disponibilites&statut=en-attente',
+    );
     expect(root.textContent).not.toContain('Déjà traitées');
   });
 

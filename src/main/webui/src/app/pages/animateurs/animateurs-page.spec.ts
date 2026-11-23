@@ -635,7 +635,7 @@ describe('AnimateursPage table', () => {
 
     const vide = racine().querySelector('.empty-state')!;
     expect(vide.textContent).toContain('Un animateur maîtrise des typologies');
-    expect(vide.querySelector('a[href="/typologies"]')).not.toBeNull();
+    expect(vide.querySelector('a[href="/stands?onglet=typologies"]')).not.toBeNull();
   });
 
   it('ticks only the displayed rows on "tout sélectionner", and warns that the scope is filtered', async () => {

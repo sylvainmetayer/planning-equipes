@@ -6,10 +6,27 @@
 import { ConstraintView, ParametresLegaux, ParametresQualite } from '../../core/models';
 import { segmenterArticles } from '../../core/legifrance';
 
-/** The three tabs, and the values of the `onglet` query param. */
-export type OngletRegles = 'legal' | 'qualite' | 'calcul';
+/**
+ * The six tabs, and the values of the `onglet` query param: what the next solve
+ * must respect — the adjustments, the locks, the consignes (the former
+ * « Consignes au solveur ») —, then the rules themselves and the solve budget.
+ */
+export type OngletRegles =
+  'ajustements' | 'verrouillages' | 'consignes' | 'legal' | 'qualite' | 'calcul';
 
-export const ONGLETS_REGLES: readonly OngletRegles[] = ['legal', 'qualite', 'calcul'];
+export const ONGLETS_REGLES: readonly OngletRegles[] = [
+  'ajustements',
+  'verrouillages',
+  'consignes',
+  'legal',
+  'qualite',
+  'calcul',
+];
+
+/** The tabs that list rules, one row each. */
+export function isRuleTab(onglet: OngletRegles): onglet is 'legal' | 'qualite' {
+  return onglet === 'legal' || onglet === 'qualite';
+}
 
 /** Reads the `onglet` query param; anything unknown is `null`, so the page can fall back on the rule it was asked. */
 export function readOngletRegles(value: string | null): OngletRegles | null {

@@ -16,6 +16,7 @@ import { ReferenceDataStore } from '../core/reference-data.store';
 /** The step an empty referential comes after: its screen, and what the button calls it. */
 export interface PreviousStep {
   route: string;
+  queryParams?: Record<string, string>;
   label: string;
   /** The step is still to do: the button says so first. */
   missing: boolean;
@@ -30,7 +31,7 @@ export interface PreviousStep {
       <div class="empty-state-actions">
         @if (previous(); as step) {
           @if (step.missing) {
-            <a matButton="filled" [routerLink]="step.route">
+            <a matButton="filled" [routerLink]="step.route" [queryParams]="step.queryParams">
               <mat-icon>arrow_back</mat-icon>
               {{ step.label }}
             </a>

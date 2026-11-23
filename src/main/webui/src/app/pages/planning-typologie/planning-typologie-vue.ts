@@ -98,7 +98,7 @@ import { StatusMessage } from '../../shared/status-message';
                   </td>
                   <td class="planning-typologie-nombre"
                       [class.planning-typologie-alerte]="ligne.affectesSansCompetence.length > 0">
-                    <a routerLink="/competences" [queryParams]="{ typologies: ligne.typologie }"
+                    <a routerLink="/animateurs" [queryParams]="{ onglet: 'competences', typologies: ligne.typologie }"
                        [title]="competencesLabel">{{ ligne.affectesSansCompetence.length }}</a>
                     @if (ligne.affectesSansCompetence.length > 0) {
                       <span class="planning-typologie-noms">

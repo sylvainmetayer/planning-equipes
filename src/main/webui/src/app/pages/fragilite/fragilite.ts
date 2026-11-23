@@ -158,7 +158,10 @@ export function trainingLink(
     ...new Set(ligne.postes.flatMap((poste) => standTypologies.get(poste.standId) ?? [])),
   ].sort(compareCodeUnits);
   return {
-    route: '/competences',
-    queryParams: typologies.length > 0 ? { typologies: typologies.join(',') } : {},
+    route: '/animateurs',
+    queryParams: {
+      onglet: 'competences',
+      ...(typologies.length > 0 ? { typologies: typologies.join(',') } : {}),
+    },
   };
 }

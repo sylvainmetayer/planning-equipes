@@ -251,15 +251,15 @@ describe('buildLignes', () => {
       '3 stands · 5 animateurs · 4 créneaux · 2 typologie(s) orpheline(s)',
     );
     expect(referentiels.lien).toMatchObject({
-      route: '/typologies',
-      queryParams: { etat: 'orpheline' },
+      route: '/stands',
+      queryParams: { onglet: 'typologies', etat: 'orpheline' },
     });
   });
 
   it('links every line to the screen that moves it, with the tab or the filter it needs', () => {
     const liens = new Map(buildLignes(etatComplet()).map((ligne) => [ligne.id, ligne.lien]));
-    expect(liens.get('collecte')?.route).toBe('/disponibilites');
-    expect(liens.get('ouvertures')?.route).toBe('/ouvertures');
+    expect(liens.get('collecte')?.route).toBe('/animateurs');
+    expect(liens.get('ouvertures')?.route).toBe('/creneaux');
     expect(liens.get('besoin')).toMatchObject({
       route: '/diagnostic',
       queryParams: { onglet: 'besoin' },
@@ -684,8 +684,8 @@ describe('buildToday', () => {
     expect(byId.get('donnees')!.lien.route).toBe('/solveur');
     expect(byId.get('prevenir')!.lien.route).toBe('/publication');
     expect(byId.get('declarations')!.lien).toMatchObject({
-      route: '/disponibilites',
-      queryParams: { statut: 'en-attente' },
+      route: '/animateurs',
+      queryParams: { onglet: 'disponibilites', statut: 'en-attente' },
     });
     expect(byId.get('echanges')!.lien).toMatchObject({
       route: '/echanges',

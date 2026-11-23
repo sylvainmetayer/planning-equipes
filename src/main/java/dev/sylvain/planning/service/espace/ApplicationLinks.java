@@ -36,8 +36,10 @@ public class ApplicationLinks {
     /** Admin screen listing the constraints a solved plan still breaks. */
     private static final String ECRAN_PROBLEMES = "problemes";
 
-    /** Admin screen where self-service declarations are applied or refused. */
-    private static final String ECRAN_DISPONIBILITES = "disponibilites";
+    /** Admin screen where self-service declarations are applied or refused: a tab of Animateurs. */
+    private static final String ECRAN_ANIMATEURS = "animateurs";
+
+    private static final String ONGLET_DISPONIBILITES = "disponibilites";
 
     /**
      * Admin screen of the day under way, where an absence reported from an
@@ -62,8 +64,8 @@ public class ApplicationLinks {
     /** Its weather block, an anchor of the page. */
     private static final String ANCRE_METEO = "meteo";
 
-    /** Admin screen « Consignes au solveur », and the tab where the consignes are posed. */
-    private static final String ECRAN_CONSIGNES = "consignes-solveur";
+    /** Admin screen « Règles du planning », and the tab where the consignes are posed. */
+    private static final String ECRAN_CONSIGNES = "regles";
 
     private static final String ONGLET_CONSIGNES = "consignes";
 
@@ -122,8 +124,11 @@ public class ApplicationLinks {
     }
 
     public Optional<String> disponibilitesScreen() {
-        return base.map(url ->
-                UriBuilder.fromUri(url).path(ECRAN_DISPONIBILITES).build().toString());
+        return base.map(url -> UriBuilder.fromUri(url)
+                .path(ECRAN_ANIMATEURS)
+                .queryParam(TAB_PARAM, ONGLET_DISPONIBILITES)
+                .build()
+                .toString());
     }
 
     /** The weather alert's settings, which the mail saying the service stopped answering links to. */

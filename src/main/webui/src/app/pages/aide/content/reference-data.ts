@@ -57,9 +57,13 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
         },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
         {
-          route: '/consignes-solveur',
+          route: '/solveur',
+          queryParams: { onglet: 'versions' },
+          label: $localize`:@@nav.link.versions:Versions du plan`,
+        },
+        {
+          route: '/regles',
           queryParams: { onglet: 'consignes' },
           label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
         },
@@ -109,12 +113,12 @@ export function buildReferenceDataSections(): HelpSection[] {
       links: [
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'consignes' },
           label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
         },
@@ -188,7 +192,11 @@ export function buildReferenceDataSections(): HelpSection[] {
           queryParams: { onglet: 'lieux' },
           label: $localize`:@@stands.onglet.lieuxCourt:Lieux`,
         },
-        { route: '/typologies', label: $localize`:@@nav.link.typologies:Typologies` },
+        {
+          route: '/stands',
+          queryParams: { onglet: 'typologies' },
+          label: $localize`:@@nav.link.typologies:Typologies`,
+        },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'besoin' },
@@ -307,7 +315,11 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
+        {
+          route: '/creneaux',
+          queryParams: { onglet: 'horaires' },
+          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
+        },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
@@ -336,10 +348,22 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/competences', label: $localize`:@@nav.link.competences:Compétences` },
+        {
+          route: '/animateurs',
+          queryParams: { onglet: 'competences' },
+          label: $localize`:@@nav.link.competences:Compétences`,
+        },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/typologies', label: $localize`:@@nav.link.typologies:Typologies` },
-        { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
+        {
+          route: '/stands',
+          queryParams: { onglet: 'typologies' },
+          label: $localize`:@@nav.link.typologies:Typologies`,
+        },
+        {
+          route: '/animateurs',
+          queryParams: { onglet: 'disponibilites' },
+          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
+        },
       ],
     },
     {
@@ -442,7 +466,11 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        { route: '/ouvertures', label: $localize`:@@nav.link.ouvertures:Horaires des stands` },
+        {
+          route: '/creneaux',
+          queryParams: { onglet: 'horaires' },
+          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
+        },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },

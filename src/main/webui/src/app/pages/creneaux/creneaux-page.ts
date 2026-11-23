@@ -15,7 +15,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatButtonToggleChange, MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -28,6 +28,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ongletHote } from '../../core/onglet-hote';
+import { OuverturesPage } from '../ouvertures/ouvertures-page';
+import { readOngletCalendrier } from './calendrier-onglet';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   NO_SORT,
@@ -110,6 +113,7 @@ import { HhmmPipe } from '../../shared/hhmm-pipe';
 @Component({
   selector: 'app-creneaux-page',
   imports: [
+    OuverturesPage,
     HhmmPipe,
     ImportButton,
     ImportedRowsFilter,
@@ -148,6 +152,30 @@ import { HhmmPipe } from '../../shared/hhmm-pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreneauxPage implements OnInit {
+  private readonly horairesTab = viewChild(OuverturesPage);
+
+  /**
+   * « Calendrier », two tabs (`?onglet=`): the grid of timeslots, and
+   * `?onglet=horaires` the stands' opening hours over it — the former
+   * `/ouvertures`.
+   */
+  protected readonly ongletsPage = ongletHote(readOngletCalendrier, 'creneaux', () =>
+    this.canLeave(),
+  );
+
+  /** The opening grid's unsaved cells ask before the route or the tab is left. */
+  canLeave(): Promise<boolean> {
+    return this.horairesTab()?.canLeave() ?? Promise.resolve(true);
+  }
+
+  /** A tab refused (unsaved cells kept) puts the toggle back on the tab on screen. */
+  protected async changerOnglet(event: MatButtonToggleChange): Promise<void> {
+    await this.ongletsPage.changer(event.value);
+    if (event.source.buttonToggleGroup) {
+      event.source.buttonToggleGroup.value = this.ongletsPage.onglet();
+    }
+  }
+
   /** Bounds the dialog callbacks: this page is lazy and rebuilt on every visit, a callback on a dead one writes into nothing. */
   private readonly destroyRef = inject(DestroyRef);
   protected readonly store = inject(ReferenceDataStore);

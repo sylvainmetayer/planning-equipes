@@ -113,7 +113,7 @@ describe('FormationPage', () => {
     const racine = fixture.nativeElement as HTMLElement;
 
     expect(racine.textContent).toContain('Aucune appréciation n');
-    expect(racine.querySelector('a[href="/competences"]')).not.toBeNull();
+    expect(racine.querySelector('a[href="/animateurs?onglet=competences"]')).not.toBeNull();
   });
 
   it('warns that only the staffing need speaks without a persisted plan', async () => {

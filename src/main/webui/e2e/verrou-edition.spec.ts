@@ -86,7 +86,7 @@ test("pendant un solve, la saisie n'est verrouillée que sur l'édition du job",
   const page = await pageAdmin(browser, admin);
   // Warm the SPA (cold lazy-chunk loads are slow) BEFORE starting the solve:
   // every assertion below must land while the job is still running.
-  await page.goto('/typologies');
+  await page.goto('/stands?onglet=typologies');
   await expect(page.getByRole('button', { name: 'Ajouter' })).toBeEnabled();
 
   const lancement = await admin.post('/api/solve/async/reference-data?seconds=120');
@@ -111,7 +111,7 @@ test("pendant un solve, la saisie n'est verrouillée que sur l'édition du job",
       (id) => localStorage.setItem('planning-equipes.editionId', id),
       EDITION_B.id,
     );
-    await page.goto('/typologies');
+    await page.goto('/stands?onglet=typologies');
     await expect(page.getByRole('button', { name: 'Ajouter' })).toBeEnabled();
 
     // …and scenario imports stay open there too.

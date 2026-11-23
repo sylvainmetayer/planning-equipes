@@ -2,8 +2,8 @@ import { inject } from '@angular/core';
 import { editionChosenGuard } from './core/edition.guard';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
-import type { CompetencesPage } from './pages/competences/competences-page';
-import type { OuverturesPage } from './pages/ouvertures/ouvertures-page';
+import type { AnimateursPage } from './pages/animateurs/animateurs-page';
+import type { CreneauxPage } from './pages/creneaux/creneaux-page';
 import { retiredOpeningsViews } from './pages/ouvertures/vues-retirees';
 import type { ReglesPage } from './pages/regles/regles-page';
 import type { StandFichePage } from './pages/stand-fiche/stand-fiche-page';
@@ -175,7 +175,7 @@ export function timelineToFiche(queryParams: Params): string {
  */
 export function standEditToFicheUrl(queryParams: Params): string | null {
   const edit = queryParams['edit'];
-  if (typeof edit !== 'string' || edit.trim() === '' || queryParams['onglet'] === 'lieux') {
+  if (typeof edit !== 'string' || edit.trim() === '' || queryParams['onglet'] !== undefined) {
     return null;
   }
   return `/stands/${encodeURIComponent(edit.trim())}?modifier=1`;
@@ -310,7 +310,9 @@ export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fra
  * filter has nothing left to land on.
  */
 export const redirectKpiToVersions: RedirectFunction = ({ queryParams }) =>
-  queryParams['edition'] === '*' ? '/versions?editions=toutes' : '/versions';
+  queryParams['edition'] === '*'
+    ? '/solveur?onglet=versions&editions=toutes'
+    : '/solveur?onglet=versions';
 
 /**
  * Two tabs of Paramètres left the page (issue #720): the legal parameters are
@@ -408,13 +410,9 @@ const adminRoutes: Routes = [
   // The former address, kept for the bookmarks and the links already sent;
   // its query parameters travel with it.
   { path: 'jour-j', redirectTo: redirectKeepingQuery('aujourdhui') },
-  {
-    // The gap between the published plan and the plan held, per stand and
-    // per elapsed day — the event read afterwards.
-    path: 'realise',
-    title: () => $localize`:@@route.realise:Réalisé vs planifié`,
-    loadComponent: () => import('./pages/realise/realise-page').then((m) => m.RealisePage),
-  },
+  // The gap between the published plan and the plan held, per stand and per
+  // elapsed day, became the « Réalisé vs planifié » tab of Aujourd'hui.
+  { path: 'realise', redirectTo: redirectToOnglet('aujourdhui', 'realise') },
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
@@ -433,29 +431,33 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.echanges:Échanges`,
     loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage),
   },
+  // What the animateurs declared became a tab of Animateurs, its covoiturage tab kept.
   {
     path: 'disponibilites',
-    title: () => $localize`:@@route.disponibilites:Disponibilités`,
-    loadComponent: () =>
-      import('./pages/disponibilites/disponibilites-page').then((m) => m.DisponibilitesPage),
+    redirectTo: (route) =>
+      redirectToOnglet(
+        'animateurs',
+        route.queryParams['onglet'] === 'covoiturage' ? 'covoiturage' : 'disponibilites',
+      )(route),
   },
-  {
-    // Not `/mcp`: that very path is the backend's MCP transport endpoint —
-    // the SPA would never be served there (405 on GET).
-    path: 'mcp-client',
-    title: () => $localize`:@@route.mcp:MCP`,
-    loadComponent: () => import('./pages/mcp/mcp-page').then((m) => m.McpPage),
-  },
+  // Not `/mcp`: that very path is the backend's MCP transport endpoint. The
+  // screen became the « MCP » tab of Paramètres.
+  { path: 'mcp-client', redirectTo: redirectToOnglet('parametres', 'mcp') },
   {
     path: 'parametres',
     title: () => $localize`:@@route.parametres:Paramètres`,
     canActivate: [parametresOngletsDeplaces],
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
+  // The journal became the « Historique » tab of Paramètres, its own
+  // « Connexions » tab kept under `onglet=connexions`.
   {
     path: 'historique',
-    title: () => $localize`:@@route.historique:Historique des actions`,
-    loadComponent: () => import('./pages/historique/historique-page').then((m) => m.HistoriquePage),
+    redirectTo: (route) =>
+      redirectToOnglet(
+        'parametres',
+        route.queryParams['onglet'] === 'connexions' ? 'connexions' : 'historique',
+      )(route),
   },
   {
     // What the running version brought, read from the repository's history at
@@ -469,20 +471,16 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.aide:Aide`,
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
   },
-  {
-    // The finished solves and the snapshots of the edition in one chronology,
-    // the comparator as a panel beside it (issue #702).
-    path: 'versions',
-    title: () => $localize`:@@route.versions:Versions du plan`,
-    loadComponent: () => import('./pages/versions/versions-page').then((m) => m.VersionsPage),
-  },
+  // The finished solves and the snapshots of the edition, the comparator
+  // beside them (issue #702), became the « Versions du plan » tab of the Solveur.
+  { path: 'versions', redirectTo: redirectToOnglet('solveur', 'versions') },
   // The Autopsie, the Instantanés and the Comparateur became that one page.
   // Their params named the replay (`edition`, `rang`) and a dosage filter,
   // neither of which survived: the address alone is kept — but for the
   // Autopsie's every-edition view, which the page keeps as a view of its own.
   { path: 'kpi', redirectTo: redirectKpiToVersions },
-  { path: 'instantanes', redirectTo: '/versions' },
-  { path: 'comparateur', redirectTo: '/versions' },
+  { path: 'instantanes', redirectTo: '/solveur?onglet=versions' },
+  { path: 'comparateur', redirectTo: '/solveur?onglet=versions' },
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,
@@ -534,6 +532,8 @@ const adminRoutes: Routes = [
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage),
+    // Unsaved cells of the Compétences tab would silently survive, invisible, until the next reload.
+    canDeactivate: [(page: AnimateursPage) => page.canLeave()],
   },
   {
     path: 'animateurs/:id',
@@ -541,18 +541,19 @@ const adminRoutes: Routes = [
     loadComponent: () =>
       import('./pages/animateur-fiche/animateur-fiche-page').then((m) => m.AnimateurFichePage),
   },
+  // The grid of competences became a tab of Animateurs.
+  { path: 'competences', redirectTo: redirectToOnglet('animateurs', 'competences') },
   {
-    path: 'competences',
-    title: () => $localize`:@@route.competences:Compétences`,
-    loadComponent: () =>
-      import('./pages/competences/competences-page').then((m) => m.CompetencesPage),
-    // Unsaved cells would silently survive, invisible, until the next reload: the page asks first.
-    canDeactivate: [(page: CompetencesPage) => page.canLeave()],
-  },
-  {
+    // « Calendrier »: the timeslots, and the stands' opening hours over them
+    // (`?onglet=horaires`, the former `/ouvertures`).
     path: 'creneaux',
-    title: () => $localize`:@@route.creneaux:Créneaux`,
+    title: () => $localize`:@@route.calendrier:Calendrier`,
+    // `?vue=journee` and `?vue=calendrier` of the openings were folded into
+    // the grid: their addresses land where the same question is now answered.
+    canActivate: [retiredOpeningsViews],
     loadComponent: () => import('./pages/creneaux/creneaux-page').then((m) => m.CreneauxPage),
+    // The opening grid carries links away (a stand's fiche, an anomaly's): unsaved cells ask first.
+    canDeactivate: [(page: CreneauxPage) => page.canLeave()],
   },
   {
     // Imports, Export and the end-of-event archive: the two halves of one
@@ -574,29 +575,20 @@ const adminRoutes: Routes = [
   { path: 'exports', redirectTo: redirectToFichiers('exporter') },
   // The CSV archive was the whole screen until the scenario export joined it.
   { path: 'export-csv', redirectTo: redirectToFichiers('exporter') },
-  {
-    path: 'typologies',
-    title: () => $localize`:@@route.typologies:Typologies`,
-    loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage),
-  },
-  {
-    // What the next solve must respect, in three tabs (issue #719): the
-    // adjustments, the locks and the consignes, which were three screens.
-    path: 'consignes-solveur',
-    title: () => $localize`:@@route.consignesSolveur:Consignes au solveur`,
-    loadComponent: () =>
-      import('./pages/consignes-solveur/consignes-solveur-page').then(
-        (m) => m.ConsignesSolveurPage,
-      ),
-  },
+  // The game categories became the « Typologies » tab of the Stands page.
+  { path: 'typologies', redirectTo: redirectToOnglet('stands', 'typologies') },
+  // What the next solve must respect, in three tabs (issue #719) — the
+  // adjustments, the locks and the consignes — became the first three tabs
+  // of Règles du planning, under the same `onglet` values.
+  { path: 'consignes-solveur', redirectTo: redirectKeepingQuery('regles') },
   // The network of pairs (`?vue=reseau`, `?paires=`) is gone: its `?personne=`
   // narrows the list of adjustments instead.
   {
     path: 'ad-hoc-constraints',
-    redirectTo: redirectToOnglet('consignes-solveur', 'ajustements', ['vue', 'paires']),
+    redirectTo: redirectToOnglet('regles', 'ajustements', ['vue', 'paires']),
   },
-  { path: 'verrouillages', redirectTo: redirectToOnglet('consignes-solveur', 'verrouillages') },
-  { path: 'consignes', redirectTo: redirectToOnglet('consignes-solveur', 'consignes') },
+  { path: 'verrouillages', redirectTo: redirectToOnglet('regles', 'verrouillages') },
+  { path: 'consignes', redirectTo: redirectToOnglet('regles', 'consignes') },
   {
     // « Planning » (issue #712): the Journée became the page every reading of
     // the plan starts from; the address stayed, for the links already out.
@@ -650,16 +642,8 @@ const adminRoutes: Routes = [
     canDeactivate: [(page: ReglesPage) => page.canLeave()],
   },
   { path: 'constraints', redirectTo: redirectConstraintsToRegles },
-  {
-    path: 'ouvertures',
-    title: () => $localize`:@@route.ouvertures:Horaires des stands`,
-    // `?vue=journee` and `?vue=calendrier` were folded into the grid: their
-    // addresses land where the same question is now answered.
-    canActivate: [retiredOpeningsViews],
-    loadComponent: () => import('./pages/ouvertures/ouvertures-page').then((m) => m.OuverturesPage),
-    // The grid carries links away (a stand's fiche, the panel's, an anomaly's): unsaved cells ask first.
-    canDeactivate: [(page: OuverturesPage) => page.canLeave()],
-  },
+  // The opening hours became the « Horaires des stands » tab of the Calendrier.
+  { path: 'ouvertures', redirectTo: redirectToOnglet('creneaux', 'horaires') },
   // The timeline became the « Planning » section of the fiche animateur.
   { path: 'timeline', redirectTo: ({ queryParams }) => timelineToFiche(queryParams) },
   { path: '**', redirectTo: '' },

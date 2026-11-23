@@ -1,4 +1,19 @@
 <h1 class="page-title" i18n="@@nav.link.solver">Solveur</h1>
+<mat-button-toggle-group class="page-onglets" [value]="ongletsPage.onglet()" (change)="ongletsPage.changer($event.value)"
+                         aria-label="Onglet de la page Solveur" i18n-aria-label="@@solver.onglet.label">
+  <mat-button-toggle value="calcul">
+    <mat-icon>play_circle</mat-icon>
+    <ng-container i18n="@@solver.onglet.calcul">Calcul</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="versions">
+    <mat-icon>history</mat-icon>
+    <ng-container i18n="@@nav.link.versions">Versions du plan</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (ongletsPage.onglet() === 'versions') {
+  <app-versions-page />
+} @else {
 
 <!-- (1) What stands in the way, before anything is launched (issue #719). -->
 <app-feasibility-banner [report]="feasibility()" [hardScore]="hardScore()" [hardIssues]="hardIssues()" />
@@ -163,3 +178,4 @@
 <app-solver-volumetry />
 
 <app-output-panel [text]="output()" />
+}

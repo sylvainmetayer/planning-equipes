@@ -186,7 +186,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(page.locator('body')).toContainText(EDITION_NOM);
 
   // 2. Typologies et emplacements.
-  await page.goto('/typologies');
+  await page.goto('/stands?onglet=typologies');
   await page.getByRole('button', { name: 'Ajouter' }).click();
   let dialog = await dialogueOuvert(page);
   await dialog.getByLabel('Libellé').fill('Jeux E2E');
@@ -242,7 +242,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
     await creerStand(page, stand.code, stand.nom);
   }
 
-  await page.goto('/ouvertures?vue=saisie');
+  await page.goto('/creneaux?onglet=horaires&vue=saisie');
   await expect(page.locator('.grille-saisie')).toBeVisible();
   // Stand deux : le matin seulement. Stand trois : l'après-midi seulement, et
   // fermé le premier jour.
@@ -266,7 +266,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
 
   // 4 bis. La même grille lue par journée type (ADR 0033) : six colonnes au
   // lieu de dix, et une case qui vaut pour les deux jours normaux d'un coup.
-  await page.goto('/ouvertures?vue=journees-types');
+  await page.goto('/creneaux?onglet=horaires&vue=journees-types');
   await expect(page.locator('.grille-journees-types')).toBeVisible();
   // Six colonnes — quatre vacations de « Jour normal », deux de « Nocturne » —
   // là où la grille par date en aligne dix.
@@ -313,7 +313,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   // 5. La grille relue : une case vide est fermée, et un clic sur une case
   // explique d'où vient son ouverture — ici, la fenêtre de 07:00 qu'aucune
   // vacation ne couvre, qu'aucune case ne sait dire.
-  await page.goto('/ouvertures');
+  await page.goto('/creneaux?onglet=horaires');
   await expect(page.locator('.grille-saisie')).toBeVisible();
   await expect(page.locator('.grille-saisie tbody tr:not(.ligne-masquee)')).toHaveCount(3);
   await expect(cellule(page, 'Stand trois E2E', JOUR1, '09-12')).toHaveValue('');
@@ -324,7 +324,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(explication.getByRole('link', { name: /Fiche du stand/ })).toBeVisible();
   await expect(page.locator('.ouvertures-anomalies-bloc summary')).toContainText('Anomalies');
   // L'ancienne vue Journée, avant tout calcul, ouvre la grille sur ce jour.
-  await page.goto(`/ouvertures?vue=journee&date=${JOUR3}`);
+  await page.goto(`/creneaux?onglet=horaires&vue=journee&date=${JOUR3}`);
   await expect(page).toHaveURL(new RegExp(`du=${JOUR3}&au=${JOUR3}`));
   await expect(page.locator('.grille-saisie .entete-jour-saisie')).toHaveCount(1);
 
@@ -347,7 +347,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(page.getByRole('row', { name: /Journee/ })).toHaveCount(3);
   // Their levels go in the skills grid, the only place they are entered: the
   // edition has one game category, so each row has one cell, autonome (2).
-  await page.goto('/competences');
+  await page.goto('/animateurs?onglet=competences');
   await page.getByLabel('Filtrer par nom').fill('Journee');
   await page.getByLabel('Filtrer par nom').press('ArrowDown');
   for (const _animateur of ANIMATEURS) {
@@ -393,7 +393,7 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(page.locator('body')).not.toContainText('bloquant(s)');
   // Le plan calculé, l'ancienne vue Journée des ouvertures mène au planning du
   // jour. Le deuxième : l'adresse de la Journée tait le premier, son jour par défaut.
-  await page.goto(`/ouvertures?vue=journee&date=${JOUR2}`);
+  await page.goto(`/creneaux?onglet=horaires&vue=journee&date=${JOUR2}`);
   await expect(page).toHaveURL(new RegExp(String.raw`/journee\?date=${JOUR2}`));
 
   await page.evaluate(() => localStorage.removeItem('planning-equipes.editionId'));

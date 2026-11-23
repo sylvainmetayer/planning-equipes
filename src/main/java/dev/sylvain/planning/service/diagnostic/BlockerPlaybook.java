@@ -123,12 +123,12 @@ public final class BlockerPlaybook {
 
     static final String ROUTE_SKILLS = "/competences";
     static final String ROUTE_OPENINGS = "/ouvertures";
-    /** « Consignes au solveur », whose default tab is the adjustments. */
-    static final String ROUTE_ADJUSTMENTS = "/consignes-solveur";
+    /** « Règles du planning », whose default tab is the adjustments. */
+    static final String ROUTE_ADJUSTMENTS = "/regles";
 
     static final String ROUTE_ANIMATEURS = "/animateurs";
     /** The same page, on its « Verrouillages » tab ({@link #TAB_LOCKS}). */
-    static final String ROUTE_LOCKS = "/consignes-solveur";
+    static final String ROUTE_LOCKS = "/regles";
 
     static final String TAB_LOCKS = "verrouillages";
     /** « Règles du planning »: one line per rule, on the tab of its level. */
@@ -537,7 +537,7 @@ public final class BlockerPlaybook {
         return new ActionType(
                 CODE_LIFT_LOCK,
                 "Lever le verrou",
-                "C'est un verrou posé à la main : levez-le depuis l'onglet Verrouillages des Consignes au solveur"
+                "C'est un verrou posé à la main : levez-le depuis l'onglet Verrouillages des Règles du planning"
                         + " s'il n'a plus lieu d'être.",
                 ROUTE_LOCKS,
                 context.animateurIds().isEmpty()
@@ -649,7 +649,7 @@ public final class BlockerPlaybook {
                 CODE_REVIEW_ADJUSTMENTS,
                 "Revoir l'ajustement",
                 "C'est un ajustement écrit à la main : revoyez-le ou supprimez-le depuis l'onglet Ajustements"
-                        + " des Consignes au solveur.",
+                        + " des Règles du planning.",
                 ROUTE_ADJUSTMENTS,
                 idsParam(contrainteIds));
     }

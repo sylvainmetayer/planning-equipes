@@ -39,12 +39,12 @@ describe('solveInputLines', () => {
       '5 modification(s) depuis la dernière résolution',
     ]);
     expect(lines[0]).toMatchObject({
-      route: '/consignes-solveur',
+      route: '/regles',
       queryParams: { onglet: 'verrouillages' },
     });
     expect(lines[3]).toMatchObject({
-      route: '/disponibilites',
-      queryParams: { statut: 'en-attente' },
+      route: '/animateurs',
+      queryParams: { onglet: 'disponibilites', statut: 'en-attente' },
       warning: true,
     });
   });
@@ -52,12 +52,12 @@ describe('solveInputLines', () => {
   /** The history then shows the very lines the server counted. */
   it('opens the changes since the solve, as the server counted them', () => {
     expect(solveInputLines(inputs())[5]).toMatchObject({
-      route: '/historique',
-      queryParams: { depuis: '2026-08-01T10:00:00Z', nature: 'donnees' },
+      route: '/parametres',
+      queryParams: { onglet: 'historique', depuis: '2026-08-01T10:00:00Z', nature: 'donnees' },
     });
     expect(
       solveInputLines(inputs({ changesSinceSolve: 0, solvedAt: null }))[5].queryParams,
-    ).toEqual({});
+    ).toEqual({ onglet: 'historique' });
   });
 
   it('names no date when no consigne is laid', () => {
@@ -95,9 +95,7 @@ describe('SolveInputsCard', () => {
     const racine = await monter(inputs());
 
     const locks = racine.querySelectorAll('li')[0];
-    expect(locks.querySelector('a')?.getAttribute('href')).toBe(
-      '/consignes-solveur?onglet=verrouillages',
-    );
+    expect(locks.querySelector('a')?.getAttribute('href')).toBe('/regles?onglet=verrouillages');
     const rules = racine.querySelectorAll('li')[4];
     expect(rules.classList).toContain('solve-inputs-zero');
     expect(rules.querySelector('a')).toBeNull();
@@ -109,9 +107,7 @@ describe('SolveInputsCard', () => {
     const lien = Array.from(racine.querySelectorAll('a')).find((each) =>
       each.textContent!.includes('Fermer des stands demain'),
     );
-    expect(lien?.getAttribute('href')).toBe(
-      '/consignes-solveur?onglet=consignes&date=demain&nouvelle=1',
-    );
+    expect(lien?.getAttribute('href')).toBe('/regles?onglet=consignes&date=demain&nouvelle=1');
   });
 
   it('reads the counts again when the page says a solve landed', async () => {

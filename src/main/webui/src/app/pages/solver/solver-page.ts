@@ -17,6 +17,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { ongletHote } from '../../core/onglet-hote';
+import { VersionsPage } from '../versions/versions-page';
+import { readOngletSolveur } from './solveur-onglet';
 import { MachineCalculApi } from '../../core/api/machine-calcul-api';
 import { MatDialog } from '@angular/material/dialog';
 import { PlanningApi } from '../../core/api/planning-api';
@@ -130,6 +133,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
 @Component({
   selector: 'app-solver-page',
   imports: [
+    VersionsPage,
     VoirPlanningButton,
     MatProgressBarModule,
     StatusMessage,
@@ -158,6 +162,12 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SolverPage implements OnInit {
+  /**
+   * Two tabs (`?onglet=`): the solve, and `?onglet=versions` the finished
+   * solves and the snapshots — the former `/versions`.
+   */
+  protected readonly ongletsPage = ongletHote(readOngletSolveur, 'calcul');
+
   protected readonly output = signal('');
   protected readonly feasibility = signal<FeasibilityReport | null>(null);
   protected readonly hardScore = signal<number | null>(null);

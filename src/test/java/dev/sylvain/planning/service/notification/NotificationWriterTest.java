@@ -201,7 +201,7 @@ class NotificationWriterTest {
                                 1,
                                 1,
                                 "P1",
-                                "https://planning.example.org/consignes-solveur?onglet=consignes&date=2026-07-15"),
+                                "https://planning.example.org/regles?onglet=consignes&date=2026-07-15"),
                         new Notification.WeatherAlert.Line(
                                 LocalDate.of(2026, 7, 16),
                                 "orage",
@@ -218,7 +218,7 @@ class NotificationWriterTest {
         assertThat(courrier.corps())
                 .contains("36 °C prévus à Kiosque")
                 .contains("orage prévu à Kiosque")
-                .contains("Préparer la consigne : https://planning.example.org/consignes-solveur")
+                .contains("Préparer la consigne : https://planning.example.org/regles")
                 .contains("Rien n'a été appliqué")
                 .contains("Open-Meteo.com (CC BY 4.0)");
         assertThat(courrier.html()).contains("Open-Meteo.com").contains("CC BY 4.0");
@@ -253,7 +253,7 @@ class NotificationWriterTest {
         assertThat(courrier.corps()).contains("3 jours d'indisponibilité");
         assertThat(courrier.corps()).contains("2 souhaits");
         assertThat(courrier.corps()).contains("Rien n'est appliqué");
-        assertThat(courrier.corps()).contains("https://planning.example.org/disponibilites");
+        assertThat(courrier.corps()).contains("https://planning.example.org/animateurs?onglet=disponibilites");
         // The days themselves stay out of the mailbox: the screen shows them,
         // the mail only says that something is waiting.
         assertThat(courrier.corps()).doesNotMatch("(?s).*\\d{4}-\\d{2}-\\d{2}.*");

@@ -97,8 +97,8 @@ function referentiels(etat: EtatEdition): LigneEtat {
         ' · ' +
         $localize`:@@accueil.detail.referentiels.orphelines:${typologiesOrphelines}:count: typologie(s) orpheline(s)`,
       lien: {
-        route: '/typologies',
-        queryParams: { etat: 'orpheline' },
+        route: '/stands',
+        queryParams: { onglet: 'typologies', etat: 'orpheline' },
         libelle: $localize`:@@accueil.lien.referentiels.orphelines:Voir les typologies orphelines`,
       },
     };
@@ -205,7 +205,8 @@ function collecte(etat: EtatEdition): LigneEtat {
     statut,
     detail,
     lien: {
-      route: '/disponibilites',
+      route: '/animateurs',
+      queryParams: { onglet: 'disponibilites' },
       libelle: $localize`:@@accueil.lien.collecte:Ouvrir les disponibilités`,
     },
   };
@@ -235,7 +236,8 @@ function ouvertures(etat: EtatEdition): LigneEtat {
     statut,
     detail,
     lien: {
-      route: '/ouvertures',
+      route: '/creneaux',
+      queryParams: { onglet: 'horaires' },
       libelle: $localize`:@@accueil.lien.ouvertures:Voir les ouvertures`,
     },
   };
@@ -596,9 +598,9 @@ function requestItems(bloc: EtatEdition['aTraiter']): TodayItem[] {
         : $localize`:@@accueil.aTraiter.declarationsSansDate:${count}:count: déclaration(s) de disponibilité à appliquer ou refuser`,
       alerte: false,
       lien: {
-        route: '/disponibilites',
+        route: '/animateurs',
         // The pending ones only, the oldest first: the declarations this line counts.
-        queryParams: { statut: 'en-attente' },
+        queryParams: { onglet: 'disponibilites', statut: 'en-attente' },
         libelle: $localize`:@@accueil.aTraiter.lien.declarations:Traiter les déclarations`,
       },
     });

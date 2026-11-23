@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title #pageTitle tabindex="-1" i18n="@@ouvertures.title">Horaires des stands</h1>
+    <h2 mat-card-title #pageTitle tabindex="-1" i18n="@@ouvertures.title">Horaires des stands</h2>
     <mat-card-subtitle i18n="@@ouvertures.subtitle">
       Ce que le solveur lira : l'effectif de chaque stand sur chaque créneau, saisi et relu au même endroit.
     </mat-card-subtitle>
@@ -226,7 +226,7 @@
                 }
               </a>
               @if (e.consigne) {
-                <a matButton routerLink="/consignes-solveur" [queryParams]="{ onglet: 'consignes', date: e.date }">
+                <a matButton routerLink="/regles" [queryParams]="{ onglet: 'consignes', date: e.date }">
                   <mat-icon>gavel</mat-icon>
                   <ng-container i18n="@@ouvertures.explication.consigne">Consigne du jour</ng-container>
                 </a>

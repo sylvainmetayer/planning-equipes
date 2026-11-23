@@ -71,17 +71,19 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
    **État de l'édition** s'affiche : la checklist du cycle, chaque étape avec
    son état et un lien vers l'écran qui la fait avancer. Le menu latéral, le
-   même pour tout le monde, suit le cycle d'une édition : Accueil, Planning,
-   Préparer, Construire, Diffuser, Aujourd'hui, Administrer ; les pages
-   légales et les Nouveautés sont en pied de menu. **Ctrl+K** ouvre la palette,
+   même pour tout le monde, suit le cycle d'une édition en treize entrées :
+   Accueil, Préparer, Planifier, Diffuser, Aujourd'hui, Administrer ; un écran
+   qui répond à une variante de la question d'un autre en est un onglet, l'Aide
+   est l'icône « ? » de la barre, les Éditions s'ouvrent par « Gérer », et les
+   pages légales et les Nouveautés sont en pied de menu. **Ctrl+K** ouvre la palette,
    qui trouve aussi un onglet (« problèmes », « mural ») et les écrans hors
    menu comme **Débogage**.
 2. Charger la démonstration : sur **Fichiers** (groupe Préparer), onglet
    *Importer*, carte **Exemples**, choisir « Festival réaliste — canicule »
    puis **Charger cet exemple** — ou, sur une édition vide, le lien
    **Charger un exemple** du bloc *Démarrer* de l'accueil. Les référentiels
-   sont ensuite modifiables depuis **Stands** (et son onglet
-   **Lieux**), **Animateurs**, **Créneaux** et **Typologies**.
+   sont ensuite modifiables depuis **Stands** (et ses onglets **Lieux** et
+   **Typologies**), **Animateurs** et **Calendrier**.
 3. Ouvrir **Solveur** et cliquer sur **Calculer le planning** : la résolution
    part en tâche de fond (plusieurs minutes sur le scénario complet), la
    navigation reste libre, le score se trace en direct et une notification
@@ -239,7 +241,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Stabilité du plan publié | Une fois le planning envoyé, chaque personne déplacée coûte au solveur : un recalcul après un changement tardif bouge le minimum de gens déjà prévenus, et le récapitulatif dit combien la publication préviendrait |
 | Trois façons de lancer le solveur | « Calculer le planning » repart du plan enregistré s'il existe et cherche à l'améliorer, sans rien figer hormis les verrouillages ; « Corriger après un changement » fige ce qui tient et ne recalcule que les postes rouverts ; « Recommencer de zéro » abandonne l'acquis, et le dit avant. Chaque bouton porte sa phrase sur la page. La page annonce d'où partira le prochain calcul et d'où le dernier est parti ; après un calcul, son résultat se lit en phrases, et voir le planning, relire la première journée pas encore relue et publier sont à un clic |
 | Ce que le calcul recevra | Avant de lancer, la page Solveur dit ce que le calcul prendra en compte : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente — que le calcul ne verra pas —, les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; la faisabilité et les alertes viennent avant, la volumétrie du problème est repliée en bas |
-| Consignes au solveur | Les ajustements manuels, les verrouillages et les consignes réunis sur une page à trois onglets, sous un même sous-titre : ce que le prochain calcul doit respecter. Après chaque saisie, relancer le calcul est proposé sur place — une correction après une consigne, qui ne rouvre que les places qu'elle a ôtées ou ajoutées, un calcul complet repartant du plan après un ajustement ou un verrou. Ajustements et verrouillages se cochent à plusieurs — « Tout sélectionner » suit le filtre — et se suppriment ou se déverrouillent d'un geste, après une seule confirmation ; le compte rendu dit ce qui est passé et ce qui a été refusé |
+| Consignes au solveur | Les ajustements manuels, les verrouillages et les consignes sont les trois premiers onglets de Règles du planning : ce que le prochain calcul doit respecter. Après chaque saisie, relancer le calcul est proposé sur place — une correction après une consigne, qui ne rouvre que les places qu'elle a ôtées ou ajoutées, un calcul complet repartant du plan après un ajustement ou un verrou. Ajustements et verrouillages se cochent à plusieurs — « Tout sélectionner » suit le filtre — et se suppriment ou se déverrouillent d'un geste, après une seule confirmation ; le compte rendu dit ce qui est passé et ce qui a été refusé |
 | Budget de calcul par édition | Chaque édition règle combien de temps un calcul peut durer et quand il s'arrête faute de progrès — seulement une fois le planning faisable, jamais tant que des places restent à pourvoir — sous un plafond que fixe l'exploitant de l'instance, affiché sur l'écran Règles du planning, onglet Calcul. « Revenir au défaut » rend l'édition aux valeurs de l'instance |
 | File d'attente du solveur | Planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours, elle, est perdue et signalée comme interrompue |
 | Courbe de score en direct | Les trois niveaux de score se tracent pendant la résolution, chacun à sa propre échelle, pour voir quand le calcul plafonne et l'arrêter à propos plutôt qu'attendre la fin du budget. Seule la résolution en cours est tracée |

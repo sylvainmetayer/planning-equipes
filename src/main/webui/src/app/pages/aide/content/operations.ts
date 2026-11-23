@@ -49,7 +49,7 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.link.changementsJour:Changements de la journée`,
         },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
@@ -63,7 +63,7 @@ export function buildOperationsSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignes.intro:Un arrêté préfectoral tombe la veille au soir : de midi à 18 heures, plus personne dehors, pendant trois jours d'un événement qui en dure dix. Puis il est prolongé, puis levé. L'onglet Consignes de la page Consignes au solveur tient ce geste en une ligne par date : la bande fermée, le motif (obligatoire ; il est imprimé partout où la journée est dite modifiée) et les stands rouverts en compensation, le soir ou le matin.`,
+          text: $localize`:@@aide.consignes.intro:Un arrêté préfectoral tombe la veille au soir : de midi à 18 heures, plus personne dehors, pendant trois jours d'un événement qui en dure dix. Puis il est prolongé, puis levé. L'onglet Consignes de la page Règles du planning tient ce geste en une ligne par date : la bande fermée, le motif (obligatoire ; il est imprimé partout où la journée est dite modifiée) et les stands rouverts en compensation, le soir ou le matin.`,
         },
         {
           kind: 'paragraph',
@@ -100,7 +100,7 @@ export function buildOperationsSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'consignes' },
           label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
         },
@@ -135,7 +135,7 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.lien.parametresMeteo:Paramètres › Alerte météo`,
         },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'consignes' },
           label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
         },
@@ -198,7 +198,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.trace:Chaque absence marquée est un ajustement manuel enregistré, avec sa raison, son auteur et son horodatage : elle se retrouve le lendemain sur l'onglet Ajustements de Consignes au solveur. Elle s'annule créneau par créneau ou d'un bloc, mais les postes déjà réaffectés ne reviennent pas d'eux-mêmes.`,
+          text: $localize`:@@aide.jourJ.trace:Chaque absence marquée est un ajustement manuel enregistré, avec sa raison, son auteur et son horodatage : elle se retrouve le lendemain sur l'onglet Ajustements des Règles du planning. Elle s'annule créneau par créneau ou d'un bloc, mais les postes déjà réaffectés ne reviennent pas d'eux-mêmes.`,
         },
         {
           kind: 'paragraph',
@@ -208,12 +208,12 @@ export function buildOperationsSections(): HelpSection[] {
       links: [
         { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'ajustements' },
           label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
         },
         {
-          route: '/consignes-solveur',
+          route: '/regles',
           queryParams: { onglet: 'verrouillages' },
           label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
         },
@@ -283,9 +283,17 @@ export function buildOperationsSections(): HelpSection[] {
         },
       ],
       links: [
-        { route: '/realise', label: $localize`:@@nav.link.realise:Réalisé vs planifié` },
+        {
+          route: '/aujourdhui',
+          queryParams: { onglet: 'realise' },
+          label: $localize`:@@nav.link.realise:Réalisé vs planifié`,
+        },
         { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
-        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+        {
+          route: '/solveur',
+          queryParams: { onglet: 'versions' },
+          label: $localize`:@@nav.link.versions:Versions du plan`,
+        },
       ],
     },
     {
@@ -426,7 +434,11 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.link.former:À former`,
         },
         { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Planning)` },
-        { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+        {
+          route: '/solveur',
+          queryParams: { onglet: 'versions' },
+          label: $localize`:@@nav.link.versions:Versions du plan`,
+        },
       ],
     },
     {

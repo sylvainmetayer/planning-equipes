@@ -131,7 +131,7 @@ describe('buildHelpSections', () => {
     expect(text).toContain('Ni nom, ni prénom, ni date de naissance, ni adresse e-mail');
     // And what an assistant does is traced, where the previous section reads it.
     expect(text).toContain('historique des actions');
-    expect((section as HelpSection).links.map((link) => link.route)).toContain('/mcp-client');
+    expect((section as HelpSection).links.map((link) => link.route)).toContain('/parametres');
     for (const mot of ['assistant', 'MCP', 'clé']) {
       expect(
         filterHelpSections(sections, mot).map((each) => each.id),
@@ -379,7 +379,7 @@ describe('parametrer-pour-un-planning-complet', () => {
   it('links every screen the guide names, and only real routes', () => {
     expect(section.links.map((link) => link.route)).toEqual([
       '/stands',
-      '/ouvertures',
+      '/creneaux',
       '/creneaux',
       '/regles',
       '/diagnostic',
@@ -390,7 +390,7 @@ describe('parametrer-pour-un-planning-complet', () => {
     // Four screens became two pages: a link names which tab or rendering.
     expect(section.links.map((link) => link.queryParams)).toEqual([
       undefined,
-      undefined,
+      { onglet: 'horaires' },
       undefined,
       undefined,
       { onglet: 'besoin' },

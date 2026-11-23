@@ -170,7 +170,8 @@ export class HistoriquePage {
       }
     });
     keepViewInQueryParams(() => ({
-      onglet: this.onglet() === 'actions' ? null : this.onglet(),
+      // A tab of Paramètres now: the actions name the host's tab, never the bare address.
+      onglet: this.onglet() === 'actions' ? 'historique' : this.onglet(),
       acteur: this.acteur() === 'TOUS' ? null : this.acteur(),
       resultat: this.resultat() === 'TOUS' ? null : this.resultat(),
       nature: natureQuery(this.nature()),

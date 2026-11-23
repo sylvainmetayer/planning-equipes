@@ -42,11 +42,11 @@ const MAX_AVERTISSEMENTS_DETAILLES = 3;
 /**
  * The screen of a resource whose route is not its API name. The manual
  * adjustments are `contraintes-ad-hoc` on the wire and the default tab of
- * `/consignes-solveur` in the router: « Voir la fiche » on their warning led
+ * `/regles` in the router: « Voir la fiche » on their warning led
  * to a page that does not exist.
  */
 const ROUTE_PAR_RESSOURCE: Readonly<Record<string, string>> = {
-  'contraintes-ad-hoc': '/consignes-solveur',
+  'contraintes-ad-hoc': '/regles',
 };
 
 /**

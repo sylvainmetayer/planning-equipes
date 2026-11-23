@@ -430,7 +430,7 @@ describe('TypologiesPage table', () => {
       Array.from(cellules[index].querySelectorAll('a')).map((lien) => lien.getAttribute('href'));
     expect(liens(5)).toEqual([
       '/animateurs?typologie=ambiance',
-      '/competences?typologies=ambiance',
+      '/animateurs?onglet=competences&typologies=ambiance',
     ]);
     expect(liens(6)).toEqual(['/animateurs?souhait=ambiance']);
     expect(liens(7)).toEqual(['/stands?typologie=ambiance']);

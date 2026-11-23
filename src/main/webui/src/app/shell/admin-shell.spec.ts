@@ -560,7 +560,7 @@ describe('AdminShell', () => {
     });
   });
 
-  describe('the news marker next to Aide (#706)', () => {
+  describe('the news marker (#706)', () => {
     const marker = (fixture: ComponentFixture<AdminShell>): Element | null =>
       (fixture.nativeElement as HTMLElement).querySelector('.nav-news-marker');
     const dot = (fixture: ComponentFixture<AdminShell>): Element | null =>
@@ -574,25 +574,8 @@ describe('AdminShell', () => {
       expect(localStorage.getItem(NEWS_STORAGE_KEY)).not.toBeNull();
     });
 
-    // Aide leads to the help, and only the news page clears the marker: the
-    // marker is a link of its own, to the page that turns it off.
-    it('lights up after an update as a link to the news, next to the Aide entry', () => {
-      localStorage.setItem(NEWS_STORAGE_KEY, 'une-version-precedente');
-
-      const fixture = createFixture();
-
-      const lien = marker(fixture);
-      expect(lien?.tagName).toBe('A');
-      expect(lien?.getAttribute('href')).toBe('/nouveautes');
-      expect(lien?.getAttribute('aria-label')).toBe('Nouveautés non lues');
-      expect(
-        lien?.closest('.nav-entry')?.querySelector('a[mat-list-item]')?.getAttribute('href'),
-      ).toBe('/aide');
-    });
-
-    // The Administrer group may be folded, hiding the marker: the foot of the
-    // menu, always in sight, says it too.
-    it('marks the news link at the foot of the menu as well', () => {
+    // The foot of the menu, always in sight, says it.
+    it('marks the news link at the foot of the menu', () => {
       localStorage.setItem(NEWS_STORAGE_KEY, 'une-version-precedente');
 
       const fixture = createFixture();

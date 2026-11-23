@@ -34,6 +34,7 @@ import {
 } from '../../core/models';
 import { typologieLabels } from '../../core/typologie-colors';
 import { EmplacementsPage } from '../emplacements/emplacements-page';
+import { TypologiesPage } from '../typologies/typologies-page';
 import { OngletStands, readOngletStands } from './stands-onglet';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { EmptyState } from '../../shared/empty-state';
@@ -121,6 +122,7 @@ const SORTED_COLUMNS = [
     TableFilter,
     GelNotice,
     EmplacementsPage,
+    TypologiesPage,
   ],
   templateUrl: './stands-page.html',
   styleUrls: ['../../../styles/horaires-stand.css', './stands-page.css'],
@@ -376,7 +378,7 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       arrived = true;
     });
     keepViewInQueryParams(() => ({
-      onglet: this.onglet() === 'lieux' ? 'lieux' : null,
+      onglet: this.onglet() === 'stands' ? null : this.onglet(),
       typologie: optionalParam(this.typologieFilter()),
       emplacement: optionalParam(this.emplacementFilter()),
     }));
@@ -393,8 +395,8 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     this.typologieFilter.set(params.get('typologie') ?? '');
     this.emplacementFilter.set(params.get('emplacement') ?? '');
     this.onglet.set(readOngletStands(params.get('onglet')));
-    if (this.onglet() === 'lieux') {
-      // The filter and the sort the address carries are the Lieux table's.
+    if (this.onglet() !== 'stands') {
+      // The filter and the sort the address carries are the other tab's table's.
       this.tabSwitched = false;
       this.filtre.set('');
       this.sort.set(NO_SORT);
@@ -587,7 +589,7 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
   protected readonly comparaisonParams = computed(() => {
     const ids = this.selection.selectedIds();
     return ids.length >= MIN_STANDS_COMPARES && ids.length <= MAX_STANDS_COMPARES
-      ? { vue: 'comparer', stands: ids.join(',') }
+      ? { onglet: 'horaires', vue: 'comparer', stands: ids.join(',') }
       : null;
   });
 

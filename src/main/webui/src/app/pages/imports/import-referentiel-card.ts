@@ -40,7 +40,6 @@ import { takeFile } from '../../core/take-file';
 export function referentialRouteOf(target: ReferentielImportTarget): string {
   switch (target) {
     case 'TYPOLOGIES':
-      return '/typologies';
     case 'EMPLACEMENTS':
     case 'STANDS':
       return '/stands';
@@ -50,9 +49,15 @@ export function referentialRouteOf(target: ReferentielImportTarget): string {
   }
 }
 
-/** The tab of that screen the rows are on: the locations are the « Lieux » tab of the Stands page. */
+/**
+ * The tab of that screen the rows are on: the locations and the game
+ * categories are the « Lieux » and « Typologies » tabs of the Stands page.
+ */
 export function referentialParamsOf(target: ReferentielImportTarget): Record<string, string> {
-  return target === 'EMPLACEMENTS' ? { onglet: 'lieux' } : {};
+  if (target === 'EMPLACEMENTS') {
+    return { onglet: 'lieux' };
+  }
+  return target === 'TYPOLOGIES' ? { onglet: 'typologies' } : {};
 }
 
 /** « Voir les stands »: the link when the imported rows cannot be singled out on that screen. */

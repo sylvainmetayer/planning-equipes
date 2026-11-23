@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@typologies.list.title">Typologies ({{ store.typologies().length }})</h1>
+    <h2 mat-card-title i18n="@@typologies.list.title">Typologies ({{ store.typologies().length }})</h2>
   </mat-card-header>
   <mat-card-content>
     <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
@@ -91,7 +91,7 @@
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.competents">Compétents</th>
         <td mat-cell *matCellDef="let typologie" class="typologies-compteur">
           <a routerLink="/animateurs" [queryParams]="{ typologie: typologie.id }" [matTooltip]="competentsHint(usage(typologie))">{{ usage(typologie).competents }}</a>
-          <a matIconButton class="typologies-grille" routerLink="/competences" [queryParams]="{ typologies: typologie.id }"
+          <a matIconButton class="typologies-grille" routerLink="/animateurs" [queryParams]="{ onglet: 'competences', typologies: typologie.id }"
              [attr.aria-label]="gridLabel(typologie)" [matTooltip]="gridLabel(typologie)">
             <mat-icon>grid_on</mat-icon>
           </a>
@@ -121,7 +121,7 @@
         <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@typologies.column.sansCompetence">Affectés sans la compétence</th>
         <td mat-cell *matCellDef="let typologie" class="typologies-compteur">
           @if (effectsByTypologie()?.get(typologie.id)?.sansCompetence; as sans) {
-            <a routerLink="/competences" [queryParams]="{ typologies: typologie.id }">{{ sans }}</a>
+            <a routerLink="/animateurs" [queryParams]="{ onglet: 'competences', typologies: typologie.id }">{{ sans }}</a>
           } @else {
             0
           }
@@ -165,7 +165,7 @@
             <mat-icon>favorite</mat-icon>
             <span i18n="@@typologies.etat.action.souhaits">Voir qui l'a souhaitée</span>
           </a>
-          <a mat-menu-item routerLink="/competences" [queryParams]="{ typologies: typologie.id }">
+          <a mat-menu-item routerLink="/animateurs" [queryParams]="{ onglet: 'competences', typologies: typologie.id }">
             <mat-icon>grid_on</mat-icon>
             <span i18n="@@typologies.etat.action.competences">Saisir des appréciations</span>
           </a>

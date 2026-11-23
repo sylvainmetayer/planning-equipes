@@ -84,7 +84,7 @@ test('une exception contradictoire est refusée à la saisie, en nommant les deu
 
   // Refused means not written: the screen lists the first one and only it.
   const page = await pageAdmin(browser, admin);
-  await page.goto('/consignes-solveur');
+  await page.goto('/regles');
   await expect(page.locator('#contenu')).toContainText(RAISON_INDISPO);
   await expect(page.locator('#contenu')).not.toContainText(RAISON_FORCEE);
   await page.context().close();
@@ -154,7 +154,7 @@ test('flags a contradiction already in the database before any solve', async ({ 
   await expect(page.locator('#contenu')).toContainText(FORCEE);
 
   // And the rows themselves are badged, on the screen that owns them.
-  await page.goto('/consignes-solveur');
+  await page.goto('/regles');
   // Anchored on the Id cell, not a substring of the row's accessible name:
   // since issue #39 the badge is exposed to assistive tech, and its name is the
   // contradiction sentence — which names *both* exceptions. A bare

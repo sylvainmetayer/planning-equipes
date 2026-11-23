@@ -125,7 +125,7 @@ test.describe('fiche animateur', () => {
 test.describe('typologies', () => {
   test('créer puis supprimer une typologie', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
-    await page.goto('/typologies');
+    await page.goto('/stands?onglet=typologies');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
@@ -150,7 +150,7 @@ test.describe('typologies', () => {
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
-    await page.goto('/typologies');
+    await page.goto('/stands?onglet=typologies');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
@@ -199,7 +199,7 @@ test.describe('typologies', () => {
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
-    await page.goto('/typologies');
+    await page.goto('/stands?onglet=typologies');
 
     await page.getByRole('button', { name: 'Ajouter' }).click();
     const dialog = await dialogueOuvert(page);
@@ -357,7 +357,7 @@ test.describe('horaires de stand', () => {
 
     // The openings grid reads the store afresh: the seeded day now opens at 11:00,
     // which the cells of that day say on hover.
-    await page.goto('/ouvertures');
+    await page.goto('/creneaux?onglet=horaires');
     await expect(page.getByRole('button', { name: 'Actualiser' })).toBeVisible();
     const ligneOuvertures = page.getByRole('row', { name: /Stand E2E deux/ });
     await expect(ligneOuvertures).toBeVisible();

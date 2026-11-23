@@ -28,7 +28,7 @@ test('deux lignes cochées ouvrent la comparaison à côté du tableau, et l’a
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/versions');
+  await page.goto('/solveur?onglet=versions');
 
   const ligne = (libelle: string) => page.getByRole('row', { name: new RegExp(libelle) });
   await expect(ligne(LIBELLES[0])).toBeVisible();

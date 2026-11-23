@@ -100,7 +100,7 @@
     <mat-card-content>
       <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
       <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
-      <a matButton routerLink="/typologies">
+      <a matButton routerLink="/stands" [queryParams]="{ onglet: 'typologies' }">
         <mat-icon>category</mat-icon>
         <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
       </a>

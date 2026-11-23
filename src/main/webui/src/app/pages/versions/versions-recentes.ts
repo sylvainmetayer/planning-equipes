@@ -71,7 +71,7 @@ export const VERSIONS_RECENTES = 5;
         }
       </mat-card-content>
       <mat-card-actions class="card-actions">
-        <a matButton routerLink="/versions">
+        <a matButton routerLink="/solveur" [queryParams]="{ onglet: 'versions' }">
           <mat-icon>history</mat-icon>
           <ng-container i18n="@@versions.recentes.toutes">Toutes les versions</ng-container>
         </a>
