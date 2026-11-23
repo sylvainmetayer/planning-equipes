@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "label": "Navigation principale",
+    "accueil": "Accueil",
+    "legal": "Code du travail",
+    "benevoles": "Bénévoles",
+    "calcul": "Le calcul",
+    "faq": "Questions",
+    "contact": "Écrire",
+    "langue": "English",
+    "langueLabel": "Read this page in English"
+  },
+  "skip": "Aller au contenu",
+  "logoLabel": "Planning Équipes, accueil",
+  "contactSujet": "Planning Équipes",
+  "voirAussi": "À lire aussi",
+  "pied": {
+    "licence": "logiciel libre sous licence AGPL-3.0, hébergeable chez vous.",
+    "codeSource": "Code source",
+    "fictif": "La Fête du jeu de Pierrefeuille, ses lieux et ses prénoms sont fictifs.",
+    "editeur": "Édité par Sylvain Métayer. Textes, illustrations et code sous la même licence. Hébergé par Cloudflare Pages. Mesure d'audience Cloudflare Web Analytics, sans cookie.",
+    "liens": "Informations sur le site",
+    "mentions": "Mentions légales et confidentialité",
+    "nouveautes": "Nouveautés",
+    "probleme": "Signaler un problème"
+  },
+  "introuvable": {
+    "titre": "Page introuvable",
+    "description": "Cette page n'existe pas. Retour à l'accueil de Planning Équipes.",
+    "h1": "Cette page n'existe pas.",
+    "texte": "Le lien est peut-être ancien. Revenez à l'accueil, ou écrivez-nous si vous cherchiez quelque chose de précis.",
+    "retour": "Retour à l'accueil"
+  },
+  "en": {
+    "nav": {
+      "label": "Main navigation",
+      "accueil": "Home",
+      "legal": "Labour Code",
+      "benevoles": "Volunteers",
+      "calcul": "The solver",
+      "faq": "Questions",
+      "contact": "Write to us",
+      "langue": "Français",
+      "langueLabel": "Lire cette page en français"
+    },
+    "skip": "Skip to content",
+    "logoLabel": "Planning Équipes, home",
+    "contactSujet": "Planning Équipes",
+    "voirAussi": "Keep reading",
+    "pied": {
+      "licence": "free software under the AGPL-3.0 licence, yours to host.",
+      "codeSource": "Source code",
+      "fictif": "The Fête du jeu de Pierrefeuille, its places and its first names are fictional.",
+      "editeur": "Published by Sylvain Métayer. Text, illustrations and code under the same licence. Hosted by Cloudflare Pages. Audience measured with Cloudflare Web Analytics, no cookie.",
+      "liens": "About this site",
+      "mentions": "Legal notice and privacy (in French)",
+      "nouveautes": "Release notes",
+      "probleme": "Report a problem"
+    },
+    "introuvable": {
+      "titre": "Page not found",
+      "description": "This page does not exist. Back to the Planning Équipes home page.",
+      "h1": "This page does not exist.",
+      "texte": "The link may be old. Go back to the home page, or write to us if you were looking for something specific.",
+      "retour": "Back to the home page"
+    }
+  }
+}

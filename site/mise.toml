@@ -1,0 +1,36 @@
+[tools]
+node = "26"
+
+[tasks.install]
+description = "Installe les dépendances npm"
+run = "npm install"
+sources = ["package.json", "package-lock.json"]
+outputs = ["node_modules/.package-lock.json"]
+
+[tasks.dev]
+description = "Serveur de dev avec rechargement"
+depends = ["install"]
+run = "npm start"
+
+[tasks.build]
+description = "Génère le site dans _site/"
+depends = ["install", "clean"]
+run = "npx eleventy"
+
+[tasks.preview]
+description = "Émulateur Cloudflare Pages sur :8788 (avec _headers)"
+depends = ["build"]
+run = "npx -y wrangler@4 pages dev _site --port 8788"
+
+[tasks.clean]
+description = "Supprime _site/"
+run = "rm -rf _site"
+
+[tasks.test]
+description = "Construit le site puis joue les tests (articles, FR/EN, .pages.yml, liens, JSON-LD)"
+depends = ["install"]
+run = "npm test"
+
+[tasks.tournage]
+description = "Retourne les captures et les vidéos de l'application (Docker, ffmpeg, ImageMagick requis)"
+run = "scripts/tournage/tourner.sh"

@@ -1,0 +1,55 @@
+{% set c = copy[lang][key] %}
+{% set mail = 'mailto:' + site.email + '?subject=' + (copy[lang].commun.contactSujet | urlencode) %}
+<article class="page">
+  <div class="container page__in">
+    <h1>{{ c.h1 | typo(lang) }}</h1>
+    <p class="answer cut">{{ c.reponse | mdi(lang) | safe }}</p>
+
+    {% if key == 'legal' %}
+    <section class="prose" aria-labelledby="art-t">
+      <h2 id="art-t">{{ c.articlesH }}</h2>
+      <div class="cut ledger-wrap" role="group" aria-label="{{ c.articlesH }}" tabindex="0">
+        <table class="ledger">
+          <thead><tr>{% for h in c.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
+          <tbody>
+            {% for a in articles %}
+            <tr id="{{ a.number }}"><th scope="row" class="num">{{ a.number }}</th><td>{{ a[lang].subject }}</td><td>{{ a[lang].rule | typo(lang) }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="fine"><a href="{{ site.legifrance }}">Légifrance</a></p>
+    </section>
+    {% endif %}
+
+    {% if c.sections %}
+    <div class="prose">
+      {% for s in c.sections %}
+      <h2>{{ s.h2 | typo(lang) }}</h2>
+      {{ s.texte | md(lang) | safe }}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if key == 'faq' %}
+    <div class="faq faq--page">
+      {% for i in c.items %}
+      <details id="{{ i.id }}"><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | typo(lang) }}</p></details>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="price cut">
+      <p><b>{{ c.cta | typo(lang) }}</b></p>
+      <p class="acts"><a class="key key--primary" href="{{ mail }}">{{ c.bouton }}</a></p>
+    </div>
+
+    <nav class="related" aria-label="{{ copy[lang].commun.voirAussi }}">
+      <h2>{{ copy[lang].commun.voirAussi }}</h2>
+      <ul>
+        {% for k in c.liens %}<li><a href="{{ urls[lang][k] }}">{{ copy[lang][k].h1 | typo(lang) }}</a></li>{% endfor %}
+        <li><a href="{{ urls[lang].accueil }}">{{ copy[lang].commun.nav.accueil }}</a></li>
+      </ul>
+    </nav>
+  </div>
+</article>

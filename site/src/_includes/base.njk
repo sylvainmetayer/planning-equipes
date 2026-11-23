@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title | typo(lang) }}</title>
+<meta name="description" content="{{ description }}">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f9fafd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16191f" media="(prefers-color-scheme: dark)">
+{% if noindex %}<meta name="robots" content="noindex">{% endif %}
+{% if canonical %}
+<link rel="canonical" href="{{ site.url }}{{ canonical }}">
+<link rel="alternate" hreflang="{{ lang }}" href="{{ site.url }}{{ canonical }}">
+<link rel="alternate" hreflang="{{ altLang }}" href="{{ site.url }}{{ altUrl }}">
+<link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ canonical if lang == 'fr' else altUrl }}">
+<link rel="alternate" type="text/markdown" href="{{ site.url }}{{ canonical }}index.md">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:title" content="{{ (ogTitle or title) | typo(lang) }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:url" content="{{ site.url }}{{ canonical }}">
+<meta property="og:locale" content="{{ 'fr_FR' if lang == 'fr' else 'en_GB' }}">
+<meta property="og:locale:alternate" content="{{ 'en_GB' if lang == 'fr' else 'fr_FR' }}">
+<meta property="og:image" content="{{ site.url }}/og-{{ lang }}.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ ogAlt }}">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{{ p | jsonld(build.modified) | safe }}
+</script>
+{% endif %}
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/familjen-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+{% set common = copy[lang].commun %}
+<a class="skip" href="#contenu">{{ common.skip }}</a>
+<header class="top">
+  <div class="container top__in">
+    <a class="logo" href="{{ urls[lang].accueil }}" aria-label="{{ common.logoLabel }}">
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect class="lg-box" width="32" height="32" rx="8"/><rect class="lg-hot" x="7" y="8" width="18" height="4" rx="2"/><rect class="lg-bar" x="7" y="14" width="10" height="4" rx="2"/><rect class="lg-bar" x="7" y="20" width="15" height="4" rx="2"/></svg>
+      <span>{{ site.name }}</span>
+    </a>
+    <nav aria-label="{{ common.nav.label }}">
+      <ul>
+        {% for k in ['legal', 'benevoles', 'calcul', 'faq'] %}
+        <li><a href="{{ urls[lang][k] }}"{% if k == key %} aria-current="page"{% endif %}>{{ common.nav[k] }}</a></li>
+        {% endfor %}
+        <li><a href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a></li>
+        <li><a class="key key--primary key--sm" href="mailto:{{ site.email }}?subject={{ common.contactSujet | urlencode }}">{{ common.nav.contact }}</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="contenu">
+{{ content | safe }}
+</main>
+<footer class="foot">
+  <div class="container foot__in">
+    <p><b>{{ site.name }}</b>, {{ common.pied.licence }} <a href="{{ site.repo }}">{{ common.pied.codeSource }}</a></p>
+    <p>{{ common.pied.fictif }}</p>
+    <p>{{ common.pied.editeur }}</p>
+    <ul class="foot__links" aria-label="{{ common.pied.liens }}">
+      <li><a href="{{ site.legalUrl }}">{{ common.pied.mentions }}</a></li>
+      <li><a href="{{ site.repo }}/releases">{{ common.pied.nouveautes }}</a></li>
+      <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
+    </ul>
+  </div>
+</footer>
+{% if build.analytics %}<!-- Cloudflare Web Analytics: no cookie. Token in site.json, from `tofu output -raw web_analytics_token` in homelab -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ site.beaconToken }}"}'></script>{% endif %}
+</body>
+</html>

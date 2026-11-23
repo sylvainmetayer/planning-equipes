@@ -1,0 +1,16 @@
+---
+permalink: /sitemap.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+{%- for p in allPages %}
+  <url>
+    <loc>{{ site.url }}{{ p.url }}</loc>
+    <lastmod>{{ build.modified }}</lastmod>
+    <xhtml:link rel="alternate" hreflang="{{ p.lang }}" href="{{ site.url }}{{ p.url }}"/>
+    <xhtml:link rel="alternate" hreflang="{{ p.altLang }}" href="{{ site.url }}{{ p.altUrl }}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ p.url if p.lang == 'fr' else p.altUrl }}"/>
+  </url>
+{%- endfor %}
+</urlset>

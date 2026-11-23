@@ -1,0 +1,22 @@
+---
+permalink: /llms.txt
+eleventyExcludeFromCollections: true
+---
+{#- https://llmstxt.org : the site for LLMs, each page with its Markdown twin -#}
+# {{ site.name }}
+
+> {{ copy.fr.accueil.description }} Logiciel libre (AGPL-3.0), français et anglais. Tarif sur devis.
+
+## Français
+{% for p in allPages %}{% if p.lang == 'fr' %}
+- [{{ copy.fr[p.key].h1 }}]({{ site.url }}{{ p.url }}index.md) : {{ p.description }}
+{%- endif %}{% endfor %}
+
+## English
+{% for p in allPages %}{% if p.lang == 'en' %}
+- [{{ copy.en[p.key].h1 }}]({{ site.url }}{{ p.url }}index.md): {{ p.description }}
+{%- endif %}{% endfor %}
+
+## Source
+- [Code source et documentation]({{ site.repo }}): {{ site.name }} on GitHub
+- [Why each rule exists]({{ site.repo }}/blob/main/docs/contraintes.md): the reasoning behind every legal rule

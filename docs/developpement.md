@@ -1506,6 +1506,18 @@ Toute image doit porter une balise explicite, y compris dans
 `docker-compose.yml` : sans balise ou sous `latest`, Renovate n'a rien à
 proposer et la version installée dépend du jour du `pull`.
 
+## La vitrine (`site/`)
+
+La page de présentation est un site Eleventy à part, dans `site/`, avec ses
+dépendances (`site/package.json`, aucune n'entre dans l'application), son
+workflow (`.github/workflows/site.yml`, filtré sur `site/**` et sur
+`ConstraintCatalog.java`, dont les articles du Code du travail sont relus par
+`site/test/articles.test.mjs`) et sa publication par Cloudflare Pages. Les
+textes s'éditent dans Pages CMS. Tout ce qui la concerne — commandes, tests,
+tournage des captures, réglages Cloudflare — est dans `site/README.md`. Le
+scénario `vitrine-fete-du-jeu-de-pierrefeuille.yaml`, livré avec les autres, est
+le décor de ses captures : il ne change pas sans qu'on les refasse.
+
 ## Licences des dépendances
 
 L'image est distribuée sous AGPL-3.0-only, mais elle redistribue aussi ses

@@ -1,0 +1,131 @@
+{% from "film.njk" import film %}
+{% set c = copy[lang].accueil %}
+{% set labels = c.images.filmsLabels %}
+{% set mail = 'mailto:' + site.email + '?subject=' + (copy[lang].commun.contactSujet | urlencode) %}
+
+<section class="hero" aria-labelledby="titre">
+  <div class="container hero__in">
+    <div>
+      <h1 id="titre">{{ c.h1 | typo(lang) }}</h1>
+      <p class="lead">{{ c.lede | typo(lang) }}</p>
+      <p class="acts">
+        <a class="key key--primary" href="{{ mail }}">{{ c.cta }}</a>
+        <a class="key" href="#images">{{ c.cta2 }}</a>
+      </p>
+    </div>
+    <figure class="shot cut">
+      <a href="/images/{{ lang }}/planning.webp">
+        <img src="/images/{{ lang }}/vignettes/planning.webp" srcset="/images/{{ lang }}/vignettes/planning.webp 800w, /images/{{ lang }}/planning.webp 1440w" sizes="(min-width: 60rem) 58vw, 100vw" width="800" height="500" fetchpriority="high" alt="{{ c.heroAlt }}">
+      </a>
+      <figcaption>{{ c.heroLegende | typo(lang) }}</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="loi" aria-labelledby="loi-t">
+  <div class="container split">
+    <div class="split__say">
+      <h2 id="loi-t">{{ c.loi.h2 | typo(lang) }}</h2>
+      <p>{{ c.loi.reponse | mdi(lang) | safe }}</p>
+      <p><a href="{{ urls[lang].legal }}">{{ c.loi.lien }}</a></p>
+      <p class="fine">{{ c.loi.mention }}</p>
+    </div>
+    <div class="cut ledger-wrap" role="group" aria-label="{{ c.loi.refusTitre }}" tabindex="0">
+      <table class="ledger">
+        <caption>{{ c.loi.refusTitre }}</caption>
+        <thead><tr>{% for h in c.loi.refusColonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for r in c.loi.refus %}
+          <tr><th scope="row">{{ r.qui }}</th><td>{{ r.poste }}</td><td>{{ r.raison | typo(lang) }}</td><td class="num">{{ r.article }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="fine ledger-note">{{ c.loi.exemple }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--alt" id="jour-j" aria-labelledby="j-titre">
+  <div class="container split">
+    <div class="split__say">
+      <h2 id="j-titre">{{ c.jourj.h2 | typo(lang) }}</h2>
+      <p>{{ c.jourj.intro | typo(lang) }}</p>
+      <ul class="points">{% for p in c.jourj.points %}<li>{{ p | typo(lang) }}</li>{% endfor %}</ul>
+    </div>
+    {{ film(c.images.films | byId(c.jourj.film), lang, labels, false) }}
+  </div>
+</section>
+
+<section class="sec" id="equipes" aria-labelledby="e-titre">
+  <div class="container split">
+    {{ film(c.images.films | byId(c.equipes.film), lang, labels, true) }}
+    <div class="split__say">
+      <h2 id="e-titre">{{ c.equipes.h2 | typo(lang) }}</h2>
+      <p>{{ c.equipes.texte | mdi(lang) | safe }}</p>
+      <ul class="chips" aria-label="{{ c.equipes.h2 }}">{% for p in c.equipes.puces %}<li>{{ p | typo(lang) }}</li>{% endfor %}</ul>
+      <p><a href="{{ urls[lang].benevoles }}">{{ c.equipes.lien }}</a></p>
+      <div class="tools">
+        <h3>{{ c.equipes.outilsH | typo(lang) }}</h3>
+        <p>{{ c.equipes.outils | typo(lang) }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--alt" id="images" aria-labelledby="images-t">
+  <div class="container">
+    <div class="sec__head">
+      <h2 id="images-t">{{ c.images.h2 | typo(lang) }}</h2>
+      <p>{{ c.images.intro | typo(lang) }}</p>
+    </div>
+    <div class="split">
+      {{ film(c.images.films | byId('calcul'), lang, labels, false) }}
+      <div>
+        <h3>{{ c.images.ecransH | typo(lang) }}</h3>
+        <ul class="shots">
+          {% for e in c.images.ecrans %}
+          <li>
+            <a class="cut" href="/images/{{ lang }}/{{ e.id }}.webp"><img src="/images/{{ lang }}/vignettes/{{ e.id }}.webp" width="800" height="{{ 450 if e.id == 'mural' else 500 }}" loading="lazy" decoding="async" alt="{{ e.alt | typo(lang) }}"></a>
+            <p>{{ e.titre }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="ensemble" aria-labelledby="ensemble-t">
+  <div class="container">
+    <div class="sec__head"><h2 id="ensemble-t">{{ c.ensemble.h2 | typo(lang) }}</h2></div>
+    <ol class="steps">
+      {% for e in c.ensemble.etapes %}
+      <li class="cut">
+        <h3>{{ e.titre | typo(lang) }}</h3>
+        <dl class="who">
+          <div><dt>{{ c.ensemble.vous }}</dt><dd>{{ e.vous | typo(lang) }}</dd></div>
+          <div><dt>{{ c.ensemble.nous }}</dt><dd>{{ e.nous | typo(lang) }}</dd></div>
+        </dl>
+      </li>
+      {% endfor %}
+    </ol>
+    <div class="price cut" id="contact">
+      <p>{{ c.ensemble.prix | mdi(lang) | safe }}</p>
+      <p class="acts"><a class="key key--primary" href="{{ mail }}">{{ c.ensemble.cta }}</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--alt" id="questions" aria-labelledby="faq-t">
+  <div class="container split">
+    <div class="split__say">
+      <h2 id="faq-t">{{ c.faq.h2 | typo(lang) }}</h2>
+      <p><a href="{{ urls[lang].faq }}">{{ c.faq.toutes }}</a></p>
+    </div>
+    <div class="faq">
+      {% for i in copy[lang].faq.items %}{% if i.accueil %}
+      <details><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | typo(lang) }}</p></details>
+      {% endif %}{% endfor %}
+    </div>
+  </div>
+</section>

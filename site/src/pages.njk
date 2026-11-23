@@ -1,0 +1,20 @@
+---
+layout: base.njk
+pagination:
+  data: allPages
+  size: 1
+  alias: p
+permalink: "{{ p.url }}index.html"
+eleventyExcludeFromCollections: true
+eleventyComputed:
+  lang: "{{ p.lang }}"
+  key: "{{ p.key }}"
+  altLang: "{{ p.altLang }}"
+  altUrl: "{{ p.altUrl }}"
+  canonical: "{{ p.url }}"
+  title: "{{ p.title }}"
+  description: "{{ p.description }}"
+  ogTitle: "{{ copy[p.lang][p.key].ogTitre }}"
+  ogAlt: "{{ copy[p.lang].accueil.ogTitre }}"
+---
+{% if p.key == 'accueil' %}{% include "home.njk" %}{% else %}{% include "answer.njk" %}{% endif %}

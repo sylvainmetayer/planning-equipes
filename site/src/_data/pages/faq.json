@@ -1,0 +1,50 @@
+{
+  "slug": "questions",
+  "titre": "Questions fréquentes sur Planning Équipes",
+  "description": "Données personnelles, mineurs, bénévoles, tarif, hébergement, licence : les réponses aux questions que se posent les organisateurs d'événements.",
+  "h1": "Les questions qu'on nous pose",
+  "reponse": "Les réponses courtes aux questions des organisateurs : ce que devient la donnée, qui est mineur, ce que coûte le logiciel, ce qu'il faut chez vous. Une question manque ? Écrivez-nous.",
+  "items": [
+    { "id": "aucune-solution", "accueil": true, "q": "Et si le calcul ne trouve aucune solution ?", "a": "Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque juste quelqu'un un samedi soir. Le diagnostic des effectifs le signale avant même le premier calcul." },
+    { "id": "donnees", "accueil": true, "q": "Que deviennent les données de nos animateurs ?", "a": "Elles restent chez vous, et on ne demande que ce dont le planning a besoin. La date de naissance sert uniquement à savoir qui est mineur le jour du créneau. L'assistant IA ne la voit jamais, et les messageries ne reçoivent que des chiffres, pas de noms." },
+    { "id": "informaticien", "accueil": true, "q": "Faut-il un informaticien chez nous ?", "a": "Non, si on héberge pour vous. Tout se fait dans le navigateur, en français ou en anglais, et les animateurs n'installent rien." },
+    { "id": "mineurs", "accueil": true, "q": "Comment sont gérés les animateurs mineurs ?", "a": "L'âge se déduit de la date de naissance, à la date de chaque créneau. Durée, pauses, travail de nuit, repos et jours fériés suivent alors les articles propres aux mineurs, et un poste interdit est refusé." },
+    { "id": "benevoles", "accueil": true, "q": "Peut-on planifier des bénévoles ?", "a": "Oui. Le tableur de bénévoles s'importe tel quel, et le calcul les planifie comme les autres animateurs, avec les mêmes règles." },
+    { "id": "taille", "q": "Pour combien de personnes et de stands ?", "a": "Le logiciel est conçu pour environ 150 animateurs. Il est éprouvé sur des scénarios de 320 animateurs et 150 stands sur 30 jours." },
+    { "id": "tarif", "q": "Combien ça coûte ?", "a": "Le tarif dépend de la taille de votre événement : dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre. Le logiciel est libre, vous pouvez aussi l'héberger vous-même." },
+    { "id": "licence", "q": "Est-ce un logiciel libre ?", "a": "Oui, sous licence AGPL-3.0. Le code source, y compris celui des règles du Code du travail, est publié sur GitHub." },
+    { "id": "convention", "q": "Applique-t-il ma convention collective ?", "a": "Non. Il applique le Code du travail, et lui seul, avec des seuils réglables pour certaines règles. Ce qui relève d'une convention ou d'un accord d'entreprise est à vérifier de votre côté. L'organisation qui publie le planning reste l'employeur." },
+    { "id": "recevoir", "q": "Comment les animateurs reçoivent-ils leur planning ?", "a": "Par un lien et un code envoyés par e-mail, qui ouvrent leur espace sur leur téléphone. Ils peuvent aussi télécharger une feuille PDF avec un QR code, ou s'abonner à leur agenda." },
+    { "id": "echanges", "q": "Peut-on échanger des créneaux entre animateurs ?", "a": "Oui, en libre-service : un animateur propose un échange depuis son espace, et l'organisation l'arbitre." },
+    { "id": "absent", "q": "Et si quelqu'un est absent le jour J ?", "a": "On le marque absent depuis l'écran Aujourd'hui. La place vide apparaît, et l'application propose des remplaçants qui respectent déjà toutes les règles." },
+    { "id": "ia", "q": "Peut-on piloter l'application depuis un assistant IA ?", "a": "Oui, sans qu'il voie jamais un nom ni une date de naissance. Les annonces peuvent aussi partir dans Slack, Discord ou Telegram, avec des chiffres et pas de noms." }
+  ],
+  "cta": "Une question manque ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": ["legal", "benevoles", "calcul"],
+  "en": {
+    "slug": "questions",
+    "titre": "Planning Équipes: frequently asked questions",
+    "description": "Personal data, under-18s, volunteers, price, hosting, licence: answers to the questions event organisers ask.",
+    "h1": "Questions we get asked",
+    "reponse": "Short answers to organisers' questions: what happens to the data, who counts as under 18, what the software costs, what you need on your side. A question missing? Write to us.",
+    "items": [
+      { "id": "aucune-solution", "accueil": true, "q": "What if the solver finds no solution?", "a": "It shows which rule is blocking, on which shifts and for whom. Usually someone is just missing on a Saturday evening. The staffing check flags it before the first run." },
+      { "id": "donnees", "accueil": true, "q": "What happens to our staff's data?", "a": "It stays with you, and we only ask for what scheduling needs. The date of birth is only used to know who is under 18 on the day of a shift. The AI assistant never sees it, and team chats only get numbers, never names." },
+      { "id": "informaticien", "accueil": true, "q": "Do we need someone technical?", "a": "Not if we host it for you. Everything happens in the browser, in English or French, and your staff install nothing." },
+      { "id": "mineurs", "accueil": true, "q": "How are under-18 staff handled?", "a": "Age is worked out from the date of birth, on the date of each shift. Working hours, breaks, night work, rest and public holidays then follow the articles specific to under-18s, and a shift they may not work is refused." },
+      { "id": "benevoles", "accueil": true, "q": "Can we schedule volunteers?", "a": "Yes. Your volunteer spreadsheet imports as it is, and the solver schedules volunteers like your other staff, under the same rules." },
+      { "id": "taille", "q": "For how many people and stands?", "a": "The software is designed for about 150 staff. It is tested on scenarios of 320 staff and 150 stands over 30 days." },
+      { "id": "tarif", "q": "How much does it cost?", "a": "The price depends on the size of your event: tell us how many people and how many days, and we'll send you a figure. The software is free software, so you can also host it yourself." },
+      { "id": "licence", "q": "Is it free software?", "a": "Yes, under the AGPL-3.0 licence. The source code, including the Labour Code rules, is published on GitHub." },
+      { "id": "convention", "q": "Does it apply my collective agreement?", "a": "No. It applies the French Labour Code and nothing else, with adjustable thresholds for some rules. Anything that comes from a collective agreement or a company agreement is for you to check. The organisation that publishes the rota remains the employer." },
+      { "id": "recevoir", "q": "How do staff receive their rota?", "a": "By a link and a code sent by e-mail, which open their space on their phone. They can also download a PDF sheet with a QR code, or subscribe to their calendar." },
+      { "id": "echanges", "q": "Can staff swap shifts?", "a": "Yes, self-service: a team member proposes a swap from their space, and the organisation decides." },
+      { "id": "absent", "q": "What if someone is absent on the day?", "a": "You mark them absent from the Today screen. The empty seat appears, and the application proposes replacements that already meet every rule." },
+      { "id": "ia", "q": "Can an AI assistant run the application?", "a": "Yes, without ever seeing a name or a date of birth. Announcements can also go to Slack, Discord or Telegram, with numbers and no names." }
+    ],
+    "cta": "A question missing?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": ["legal", "benevoles", "calcul"]
+  }
+}

@@ -1,14 +1,13 @@
 # Headers served by Cloudflare Pages (ignored elsewhere).
-# CSP: the page has no inline script or style of its own; only the Cloudflare
-# Web Analytics beacon comes from elsewhere, and it reports to
-# cloudflareinsights.com.
+# CSP: the page has no inline script or style of its own, and its fonts are
+# its own (self-hosted, @fontsource); only the Cloudflare Web Analytics beacon
+# comes from elsewhere, and it reports to cloudflareinsights.com.
 /*
-  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; media-src 'self'; script-src https://static.cloudflareinsights.com; connect-src https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; media-src 'self'; script-src https://static.cloudflareinsights.com; connect-src https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   Strict-Transport-Security: max-age=63072000; includeSubDomains
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
-  X-XSS-Protection: 1; mode=block
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 # Captures and videos weigh the most and rarely change; no hash in their names,
@@ -18,8 +17,7 @@
 /videos/*
   Cache-Control: public, max-age=86400
 
-# Repository files published along with the folder: not to be indexed.
-/README.md
-  X-Robots-Tag: noindex
-/wrangler.toml
-  X-Robots-Tag: noindex
+# Fonts: names without a hash, long but not immutable, like ref.sylvain.dev.
+/assets/fonts/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+

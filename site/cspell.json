@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "import": ["@cspell/dict-fr-fr/cspell-ext.json"],
+  "language": "fr,en",
+  "files": ["src/_data/pages/*.json", "src/_data/articles.js"],
+  "ignoreRegExpList": ["/\"[A-Za-z0-9_-]+\"\\s*:/g", "/\\]\\([^)]*\\)/g", "/https?:\\/\\/\\S+/g", "/\\b[LRD]\\d{4}-\\d+\\b/g", "/(fr|en): \\{/g", "/\\b(?:number|subject|rule)\\b:/g"],
+  "dictionaryDefinitions": [{ "name": "site-words", "path": "./cspell-words.txt", "addWords": true }],
+  "dictionaries": ["site-words"]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "planning-equipes-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Page vitrine de Planning Équipes (planning.sylvain.dev)",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "start": "ELEVENTY_ENV=development eleventy --serve",
+    "build": "eleventy",
+    "test": "eleventy && node --test test/*.test.mjs",
+    "check:spelling": "cspell --no-progress",
+    "validate": "html-validate \"_site/**/*.html\"",
+    "check:a11y": "node scripts/check-a11y.mjs _site"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.8",
+    "@cspell/dict-fr-fr": "^2.3.2",
+    "@fontsource-variable/familjen-grotesk": "^5.3.0",
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "cspell": "^10.0.0",
+    "esbuild": "^0.28.2",
+    "html-validate": "^11.16.2",
+    "markdown-it": "^15.0.2",
+    "pa11y-ci": "^5.0.0",
+    "yaml": "^2.9.1"
+  },
+  "overrides": {
+    "pa11y-ci": {
+      "pa11y": "^10.0.0",
+      "puppeteer": "^25.9.0"
+    }
+  }
+}

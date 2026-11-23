@@ -1,0 +1,19 @@
+---
+layout: base.njk
+permalink: 404.html
+eleventyExcludeFromCollections: true
+lang: fr
+key: introuvable
+noindex: true
+eleventyComputed:
+  altLang: "en"
+  title: "{{ copy.fr.commun.introuvable.titre }}, Planning Équipes"
+  description: "{{ copy.fr.commun.introuvable.description }}"
+---
+{% for l in ['fr', 'en'] %}{% set n = copy[l].commun.introuvable %}
+<section class="container lost" lang="{{ l }}">
+  <h1>{{ n.h1 }}</h1>
+  <p class="lead">{{ n.texte }}</p>
+  <p class="acts"><a class="key key--primary" href="{{ urls[l].accueil }}">{{ n.retour }}</a></p>
+</section>
+{% endfor %}

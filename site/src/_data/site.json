@@ -1,0 +1,16 @@
+{
+  "name": "Planning Équipes",
+  "url": "https://planning.sylvain.dev",
+  "email": "planning@sylvain.dev",
+  "repo": "https://github.com/sylvainmetayer/planning-equipes",
+  "author": {
+    "name": "Sylvain Métayer",
+    "id": "https://www.sylvain.dev/#me",
+    "url": "https://www.sylvain.dev/",
+    "sameAs": ["https://github.com/sylvainmetayer"]
+  },
+  "legalUrl": "https://www.sylvain.dev/mentions-legales/",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "legifrance": "https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/",
+  "beaconToken": "17b1290265cd42898c41ba810b9bb7c2"
+}

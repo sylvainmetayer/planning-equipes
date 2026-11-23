@@ -1,0 +1,256 @@
+{
+  "titre": "Logiciel de planning d'équipes pour festivals | Planning Équipes",
+  "description": "Logiciel de planning pour festivals et événements : animateurs et bénévoles planifiés en minutes, Code du travail vérifié, mineurs compris.",
+  "ogTitre": "Planning Équipes : planifiez vos équipes en minutes, pas en week-ends",
+  "h1": "Planifiez en minutes, pas en week-ends.",
+  "lede": "Le logiciel construit le planning et vérifie le Code du travail.",
+  "cta": "Demander un chiffre",
+  "cta2": "Voir l'application",
+  "heroAlt": "Planning par jour de l'application : chaque stand, chaque créneau et les personnes affectées.",
+  "heroLegende": "Le planning d'une journée, tel que l'application l'affiche.",
+  "loi": {
+    "h2": "Le planning respecte-t-il le Code du travail ?",
+    "reponse": "**Oui.** Le calcul applique dix articles du Code du travail et ne peut pas les enfreindre. Quand il refuse une affectation, il cite l'article.",
+    "colonnes": ["Article", "Règle"],
+    "refusTitre": "Quatre postes refusés un samedi, avec la raison",
+    "refusColonnes": ["Personne", "Poste refusé", "Raison", "Article"],
+    "refus": [
+      { "qui": "Tom", "poste": "Accueil, samedi matin", "raison": "11 h de repos après sa soirée de vendredi", "article": "L3131-1" },
+      { "qui": "Jade, 16 ans", "poste": "Ludothèque, samedi soir", "raison": "aucun poste après 22 h", "article": "L3163-1" },
+      { "qui": "Hugo", "poste": "Escape box, samedi après-midi", "raison": "déjà 48 h cette semaine", "article": "L3121-20" },
+      { "qui": "Iris, 17 ans", "poste": "Coin des petits, samedi soir", "raison": "8 h par jour au plus", "article": "L3162-1" }
+    ],
+    "exemple": "Exemple fictif.",
+    "lien": "Les dix articles et les règles pour les mineurs",
+    "mention": "Le logiciel aide à décider. L'organisation qui publie le planning reste l'employeur."
+  },
+  "jourj": {
+    "h2": "Le jour J, un seul écran suffit.",
+    "intro": "L'écran Aujourd'hui montre la journée en cours. Un animateur prévient qu'il ne viendra pas, la place vide apparaît, et l'application propose qui peut la tenir.",
+    "points": [
+      "La consigne canicule ferme tous les stands l'après-midi, sans refaire la grille.",
+      "Les chiffres du jour : absents, places vides, échanges en attente.",
+      "Les remplaçants proposés respectent déjà toutes les règles.",
+      "La télé de la salle de contrôle se met à jour toutes les minutes.",
+      "L'alerte météo du matin et les rappels de 22 h partent tout seuls."
+    ],
+    "film": "jourj"
+  },
+  "equipes": {
+    "h2": "Et pour les animateurs et les bénévoles ?",
+    "texte": "Chacun reçoit un lien et un code par e-mail, et retrouve son planning sur son téléphone. **Rien à installer.**",
+    "puces": ["Espace mobile", "PDF avec QR code", "Abonnement agenda", "Échanges en libre-service", "« J'ai lu et je serai là »"],
+    "lien": "Planifier des bénévoles",
+    "outilsH": "Et nos outils ?",
+    "outils": "Les annonces (planning publié, échanges à valider) arrivent dans la messagerie de votre équipe : Slack, Discord ou Telegram. Votre assistant IA peut aussi piloter l'application, sans jamais voir un nom ni une date de naissance.",
+    "film": "espace"
+  },
+  "images": {
+    "h2": "Le logiciel en images",
+    "intro": "Trois parcours sans le son, puis les écrans un par un. Toutes les données sont fictives, et l'horloge est arrêtée en plein festival, d'où l'heure affichée en rouge.",
+    "films": [
+      {
+        "id": "calcul",
+        "titre": "Le calcul",
+        "secondes": 30,
+        "legende": "En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.",
+        "transcription": [
+          "L'écran Solveur résume ce dont le calcul tiendra compte : verrouillages, ajustements, consignes, déclarations de disponibilité non traitées et règles désactivées.",
+          "On choisit « Recommencer de zéro » et on confirme : le plan enregistré ne servira pas de point de départ.",
+          "La barre de progression avance. Un message annonce qu'un plan faisable existe et que le calcul améliore maintenant la qualité (équité, souhaits, continuité). Un bouton permet d'arrêter et de garder ce plan.",
+          "Le résultat indique que le planning respecte toutes les règles impératives.",
+          "Le planning par jour s'ouvre : chaque stand, chaque créneau et les noms affectés."
+        ]
+      },
+      {
+        "id": "jourj",
+        "titre": "Une absence le jour J",
+        "secondes": 22,
+        "legende": "On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.",
+        "transcription": [
+          "L'écran Aujourd'hui, le 10 août 2027 à 15 h : 25 stands ouverts, une vacation restante, aucun absent.",
+          "On cherche une personne par son nom, on signale son absence avec la raison « Malade », puis on la confirme pour la suite de la journée.",
+          "Les compteurs passent à 1 absent, 1 place vide nouvelle et 1 personne à prévenir. La place vide apparaît, de 15 h à 18 h, avec les candidats éligibles.",
+          "On choisit « Remplacer sur le reste du créneau ». Un message confirme qui prend ce poste.",
+          "Il ne reste aucune place vide nouvelle, et un bouton propose « Prévenir les 2 personnes »."
+        ]
+      },
+      {
+        "id": "espace",
+        "titre": "Côté animateur",
+        "secondes": 20,
+        "legende": "Un code reçu par e-mail ouvre l'espace sur le téléphone. On confirme son planning, on le parcourt, on retrouve ses coéquipiers et ses échanges.",
+        "transcription": [
+          "Sur le téléphone, l'écran « Accès à votre espace » : un code est envoyé par e-mail, valable 10 minutes. On le saisit, puis on choisit « Ouvrir mon espace ».",
+          "« Mon planning » annonce le prochain poste. On appuie sur « J'ai lu et je serai là », et la présence confirmée s'affiche avec sa date.",
+          "La vue Aperçu, « Tout mon planning », totalise les heures, les créneaux, les stands et les jours, puis détaille chaque journée.",
+          "La vue Coéquipiers, « Suis-je avec quelqu'un ? », liste les personnes et les créneaux partagés.",
+          "L'onglet « Mes échanges » permet de proposer un échange : créneau concerné, personne et motif."
+        ]
+      }
+    ],
+    "filmsLabels": {
+      "transcription": "Transcription (vidéo sans son)",
+      "sansSon": "Vidéo sans son : la transcription est sous la vidéo.",
+      "telecharger": "Télécharger la vidéo",
+      "unite": "ko",
+      "duree": "s"
+    },
+    "ecransH": "Les écrans, un par un",
+    "ecrans": [
+      { "id": "accueil", "titre": "État de l'édition", "alt": "État de l'édition : ce qu'il reste à faire aujourd'hui, étape par étape." },
+      { "id": "planning", "titre": "Planning par jour", "alt": "Planning par jour : qui tient quel stand, créneau par créneau." },
+      { "id": "rail", "titre": "Vue rail", "alt": "Vue rail : la journée de chacun sur un axe horaire." },
+      { "id": "personne", "titre": "Planning par personne", "alt": "Planning par personne : la semaine de chaque animateur, heures et soirées comprises." },
+      { "id": "horaires", "titre": "Horaires des stands", "alt": "Horaires des stands : l'effectif de chaque stand, jour par jour." },
+      { "id": "regles", "titre": "Règles du planning", "alt": "Règles du planning : chaque règle légale, son article et son réglage." },
+      { "id": "diagnostic", "titre": "Diagnostic", "alt": "Diagnostic : ce qui bloque, ce qui manque et ce qui est fragile, avec quoi faire." },
+      { "id": "diffuser", "titre": "Diffuser", "alt": "Diffuser : qui a reçu quelle version, et qui a confirmé." },
+      { "id": "mural", "titre": "Affichage TV", "alt": "Affichage TV : la salle de contrôle voit qui tient quel stand en ce moment." }
+    ]
+  },
+  "ensemble": {
+    "h2": "Comment on travaille ensemble",
+    "etapes": [
+      { "titre": "On regarde vos données", "vous": "envoyez vos fichiers actuels, vos stands, vos règles maison.", "nous": "vous disons si l'outil vous convient. Et s'il ne convient pas, on vous le dit aussi." },
+      { "titre": "On installe et on paramètre", "nous": "installons votre instance, paramétrons vos règles et importons vos équipes.", "vous": "n'avez rien à héberger ni à administrer." },
+      { "titre": "On reste joignable pendant l'événement", "vous": "planifiez, publiez et gérez le jour J.", "nous": "répondons vite, surtout les jours où le planning bouge." }
+    ],
+    "vous": "Vous",
+    "nous": "Nous",
+    "prix": "**Le tarif dépend de la taille de votre événement.** Dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre.",
+    "cta": "Écrire à planning@sylvain.dev"
+  },
+  "faq": {
+    "h2": "Les questions qu'on nous pose",
+    "toutes": "Toutes les questions"
+  },
+  "en": {
+    "titre": "Event staff scheduling software for festivals | Planning Équipes",
+    "description": "Scheduling software for festivals and events: staff and volunteers rostered in minutes, French Labour Code checked, under-18s included.",
+    "ogTitre": "Planning Équipes: schedule your teams in minutes, not weekends",
+    "h1": "Schedule in minutes, not weekends.",
+    "lede": "The software builds the rota and checks the French Labour Code.",
+    "cta": "Ask for a quote",
+    "cta2": "See the application",
+    "heroAlt": "The schedule by day in the application: every stand, every time slot and the people assigned.",
+    "heroLegende": "One day's schedule, as the application shows it.",
+    "loi": {
+      "h2": "Does the rota comply with the French Labour Code?",
+      "reponse": "**Yes.** The solver applies ten articles of the French Labour Code and cannot break them. When it refuses an assignment, it cites the article.",
+      "colonnes": ["Article", "Rule"],
+      "refusTitre": "Four shifts refused on a Saturday, with the reason",
+      "refusColonnes": ["Person", "Shift refused", "Reason", "Article"],
+      "refus": [
+        { "qui": "Tom", "poste": "Welcome desk, Saturday morning", "raison": "11 hours' rest after his Friday evening", "article": "L3131-1" },
+        { "qui": "Jade, 16", "poste": "Games library, Saturday evening", "raison": "no shift after 22:00", "article": "L3163-1" },
+        { "qui": "Hugo", "poste": "Escape box, Saturday afternoon", "raison": "already 48 hours this week", "article": "L3121-20" },
+        { "qui": "Iris, 17", "poste": "Little ones' corner, Saturday evening", "raison": "8 hours a day at most", "article": "L3162-1" }
+      ],
+      "exemple": "Fictional example.",
+      "lien": "The ten articles and the rules for under-18s",
+      "mention": "The software helps you decide. The organisation that publishes the rota remains the employer."
+    },
+    "jourj": {
+      "h2": "On the day, one screen is enough.",
+      "intro": "The Today screen shows the day under way. A team member says they can't come, the empty seat appears, and the application proposes who can hold it.",
+      "points": [
+        "The heatwave order closes every stand in the afternoon, without rebuilding the grid.",
+        "Today's numbers: absences, empty seats, pending swaps.",
+        "Suggested replacements already meet every rule.",
+        "The control-room TV refreshes every minute.",
+        "The morning weather alert and the 22:00 reminders go out on their own."
+      ],
+      "film": "jourj"
+    },
+    "equipes": {
+      "h2": "What about your staff and volunteers?",
+      "texte": "Everyone gets a link and a code by e-mail and sees their schedule on their phone. **Nothing to install.**",
+      "puces": ["Mobile page", "PDF with QR code", "Calendar subscription", "Self-service swaps", "“I have read it and I will be there”"],
+      "lien": "Scheduling volunteers",
+      "outilsH": "And our tools?",
+      "outils": "Updates (rota published, swaps to approve) arrive in your team's chat: Slack, Discord or Telegram. Your AI assistant can also run the app, without ever seeing a name or a date of birth.",
+      "film": "espace"
+    },
+    "images": {
+      "h2": "The software on screen",
+      "intro": "Three silent walkthroughs, then the screens one by one. All the data is fictional, and the clock is stopped mid-festival, which is why the time shows in red.",
+      "films": [
+        {
+          "id": "calcul",
+          "titre": "The calculation",
+          "secondes": 29,
+          "legende": "In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.",
+          "transcription": [
+            "The Solver screen sums up what the run will take into account: locks, manual adjustments, consignes, unprocessed availability declarations and disabled rules.",
+            "We choose “Start over from scratch” and confirm: the saved plan will not be used as a starting point.",
+            "The progress bar moves. A message says a feasible plan exists and the solver is now improving its quality. A button stops the run and keeps this plan.",
+            "The result says the schedule meets every mandatory rule.",
+            "The schedule by day opens: each stand, each time slot and the names assigned."
+          ]
+        },
+        {
+          "id": "jourj",
+          "titre": "An absence on the day",
+          "secondes": 22,
+          "legende": "You find the person and mark them absent, the empty seat appears, and the application proposes who can hold it. All that is left is to notify those affected.",
+          "transcription": [
+            "The Today screen, on 10 August 2027 at 15:00: 25 stands open, one shift left, nobody absent.",
+            "We search for a person by name, choose “Mark absent”, then confirm the absence for the rest of the day.",
+            "The counters move to 1 absent, 1 new empty seat and 1 person to notify. The empty seat appears, from 15:00 to 18:00, with the eligible candidates.",
+            "We choose “Replace for the rest of the time slot”. A message confirms who takes this seat.",
+            "No new empty seat is left, and a button offers “Notify the 2 people”."
+          ]
+        },
+        {
+          "id": "espace",
+          "titre": "The staff side",
+          "secondes": 20,
+          "legende": "A code received by email opens their space on the phone. They confirm their schedule, browse it, and find their teammates and swaps.",
+          "transcription": [
+            "On the phone, the “Access to your space” screen: a code is sent by e-mail, valid for 10 minutes. We enter it, then choose “Open my space”.",
+            "“My schedule” shows the next shift. We tap “I have read it and I will be there”, and the confirmed attendance appears with its date.",
+            "The Overview view, “My whole planning”, totals the hours, shifts, stands and days, then details each day.",
+            "The Teammates view, “Am I with anyone?”, lists the people and the shifts shared with them.",
+            "The “My swaps” tab is where a swap is proposed: time slot, person and reason."
+          ]
+        }
+      ],
+      "filmsLabels": {
+        "transcription": "Transcript (silent video)",
+        "sansSon": "Silent video: the transcript is below the video.",
+        "telecharger": "Download the video",
+        "unite": "kB",
+        "duree": "s"
+      },
+      "ecransH": "The screens, one by one",
+      "ecrans": [
+        { "id": "accueil", "titre": "Edition status", "alt": "Edition status: what is left to do today, step by step." },
+        { "id": "planning", "titre": "Schedule by day", "alt": "Schedule by day: who holds which stand, time slot by time slot." },
+        { "id": "rail", "titre": "Rail view", "alt": "Rail view: everyone's day on a time axis." },
+        { "id": "personne", "titre": "Schedule by person", "alt": "Schedule by person: each team member's week, hours and evenings included." },
+        { "id": "horaires", "titre": "Stand opening hours", "alt": "Stand opening hours: each stand's headcount, day by day." },
+        { "id": "regles", "titre": "Schedule rules", "alt": "Schedule rules: each legal rule, its article and its setting." },
+        { "id": "diagnostic", "titre": "Diagnostic", "alt": "Diagnostic: what blocks, what is missing and what is fragile, with what to do." },
+        { "id": "diffuser", "titre": "Send out", "alt": "Send out: who received which version, and who confirmed." },
+        { "id": "mural", "titre": "TV display", "alt": "TV display: the control room sees who holds which stand right now." }
+      ]
+    },
+    "ensemble": {
+      "h2": "How we work together",
+      "etapes": [
+        { "titre": "We look at your data", "vous": "send your current files, your stands, your in-house rules.", "nous": "tell you whether the tool fits. If it doesn't, we say so." },
+        { "titre": "We install and configure", "nous": "set up your instance, configure your rules and import your teams.", "vous": "have nothing to host or administer." },
+        { "titre": "We stay within reach during the event", "vous": "schedule, publish and run the event day.", "nous": "answer quickly, especially on days when the rota keeps changing." }
+      ],
+      "vous": "You",
+      "nous": "We",
+      "prix": "**The price depends on the size of your event.** Tell us how many people and how many days, and we'll send you a figure.",
+      "cta": "Email planning@sylvain.dev"
+    },
+    "faq": {
+      "h2": "Questions we get asked",
+      "toutes": "All the questions"
+    }
+  }
+}

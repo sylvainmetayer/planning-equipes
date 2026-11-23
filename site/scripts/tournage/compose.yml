@@ -1,0 +1,11 @@
+# Surcharge de docker-compose.yml (à la racine du dépôt) pour le tournage des
+# captures de la vitrine : une horloge que le script peut figer, et rien de plus.
+# L'application, PostgreSQL et Mailpit sont ceux du profil `app` du dépôt.
+services:
+  app:
+    image: ${APP_IMAGE:-ghcr.io/sylvainmetayer/planning-equipes:main}
+    environment:
+      HORLOGE_SIMULEE_AUTORISEE: "true"
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?tourner.sh le fournit}
+  pgadmin:
+    profiles: ["jamais"]

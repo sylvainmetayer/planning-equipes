@@ -1,0 +1,59 @@
+name: Site
+
+# La vitrine (site/, Eleventy, publiée par Cloudflare Pages) : build, tests,
+# orthographe, HTML valide, accessibilité, liens. Rien ici ne touche
+# l'application ; le filtre de chemins fait que l'inverse est vrai aussi.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'site/**'
+      - '.github/workflows/site.yml'
+      - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'
+  pull_request:
+    paths:
+      - 'site/**'
+      - '.github/workflows/site.yml'
+      - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'
+  schedule:
+    - cron: '0 7 * * 1' # liens externes, le lundi
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: site
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # dateModified et lastmod se lisent dans l'historique git
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: site/.node-version
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      # Build, puis ses tests : articles contre ConstraintCatalog, structure FR/EN,
+      # .pages.yml, liens internes, JSON-LD, hreflang, sitemap
+      - run: npm test
+      - run: npm run check:spelling
+      - run: npm run validate
+      - name: Accessibilité (WCAG 2 AA)
+        run: npm run check:a11y
+        env:
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+      - name: Liens
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          # Hors ligne sauf le lundi : un lien externe cassé ne bloque pas une PR
+          args: --config site/lychee.toml ${{ github.event_name != 'schedule' && '--offline' || '' }} --root-dir ${{ github.workspace }}/site/_site 'site/_site/**/*.html'
+          fail: true

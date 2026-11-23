@@ -1,0 +1,17 @@
+# Liens du site construit (_site/), vérifiés par .github/workflows/site.yml :
+# hors ligne à chaque poussée, tous les liens chaque lundi.
+scheme = ["https", "http"]
+
+exclude = [
+  # Le site lui-même : couvert par test/build.test.mjs
+  '^https://planning\.sylvain\.dev',
+  # Le jeton de la page est une URL de beacon, pas une page
+  '^https://static\.cloudflareinsights\.com/',
+]
+
+# 429 : limite de requêtes atteinte, le lien n'est pas cassé pour autant
+accept = ["200..=299", "429"]
+max_concurrency = 8
+timeout = 20
+max_retries = 2
+no_progress = true
