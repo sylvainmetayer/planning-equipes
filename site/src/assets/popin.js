@@ -7,6 +7,7 @@ if (dialog && typeof dialog.showModal === 'function') {
   const caption = dialog.querySelector('figcaption');
   // The <img> is made here: an empty one in the markup would carry no src
   const img = new Image();
+  img.alt = '';
   caption.before(img);
   const prev = dialog.querySelector('[data-popin-prev]');
   const next = dialog.querySelector('[data-popin-next]');
