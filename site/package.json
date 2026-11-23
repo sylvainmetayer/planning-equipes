@@ -2,7 +2,7 @@
   "name": "planning-equipes-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Page vitrine de Planning Équipes (planning.sylvain.dev)",
+  "description": "Page vitrine de Planning \u00c9quipes (planning.sylvain.dev)",
   "type": "module",
   "license": "AGPL-3.0-only",
   "scripts": {
@@ -11,7 +11,8 @@
     "test": "eleventy && node --test test/*.test.mjs",
     "check:spelling": "cspell --no-progress",
     "validate": "html-validate \"_site/**/*.html\"",
-    "check:a11y": "node scripts/check-a11y.mjs _site"
+    "check:a11y": "node scripts/check-a11y.mjs _site",
+    "check:lighthouse": "node scripts/check-lighthouse.mjs _site"
   },
   "engines": {
     "node": ">=24"
@@ -21,9 +22,11 @@
     "@cspell/dict-fr-fr": "^2.3.2",
     "@fontsource-variable/familjen-grotesk": "^5.3.0",
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "chrome-launcher": "^1.2.3",
     "cspell": "^10.0.0",
     "esbuild": "^0.28.2",
     "html-validate": "^11.16.2",
+    "lighthouse": "^13.6.0",
     "markdown-it": "^15.0.2",
     "pa11y-ci": "^5.0.0",
     "yaml": "^2.9.1"
