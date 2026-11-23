@@ -18,6 +18,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ongletHote } from '../../core/onglet-hote';
+import { reglagesAvances } from '../../core/reglages-avances';
+import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { VersionsPage } from '../versions/versions-page';
 import { readOngletSolveur } from './solveur-onglet';
 import { MachineCalculApi } from '../../core/api/machine-calcul-api';
@@ -133,6 +135,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
 @Component({
   selector: 'app-solver-page',
   imports: [
+    ReglagesAvancesToggle,
     VersionsPage,
     VoirPlanningButton,
     MatProgressBarModule,
@@ -167,6 +170,12 @@ export class SolverPage implements OnInit {
    * solves and the snapshots — the former `/versions`.
    */
   protected readonly ongletsPage = ongletHote(readOngletSolveur, 'calcul');
+
+  /**
+   * Where the solve runs, the compute machine, the score curve once the solve
+   * is over and the volumetry: read when a solve surprises, folded otherwise.
+   */
+  protected readonly avance = reglagesAvances();
 
   protected readonly output = signal('');
   protected readonly feasibility = signal<FeasibilityReport | null>(null);

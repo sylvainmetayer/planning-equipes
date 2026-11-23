@@ -22,6 +22,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { reglagesAvances } from '../../core/reglages-avances';
+import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { HistoriquePage } from '../historique/historique-page';
 import { McpPage } from '../mcp/mcp-page';
 import { AdminApi } from '../../core/api/admin-api';
@@ -86,6 +88,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
 @Component({
   selector: 'app-parametres-page',
   imports: [
+    ReglagesAvancesToggle,
     AffichageMuralLinks,
     HistoriquePage,
     McpPage,
@@ -144,6 +147,13 @@ export class ParametresPage implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly editions = inject(EditionStore);
   private readonly editionsApi = inject(EditionsApi);
+
+  /**
+   * What the operator configured for the whole database, the journal and the
+   * AI assistant's access: their tabs show under « Réglages avancés », or
+   * when the address names one.
+   */
+  protected readonly avance = reglagesAvances();
 
   protected readonly onglet = signal<OngletParametres>('edition');
 

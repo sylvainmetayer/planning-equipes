@@ -151,13 +151,16 @@
               }
             </mat-select>
           </mat-form-field>
+          @if (avance.ouvert()) {
           <fieldset class="couches-choix">
             <legend i18n="@@ouvertures.couches.choix">Afficher dans les cases</legend>
             @for (couche of allLayers; track couche) {
               <mat-checkbox [checked]="visibleLayers().has(couche)" (change)="toggleLayer(couche, $event.checked)">{{ libelleCouche(couche) }}</mat-checkbox>
             }
           </fieldset>
+          }
         }
+        <app-reglages-avances [etat]="avance" />
         @if (viewChanged()) {
           <button matButton type="button" (click)="resetView()">
             <mat-icon>filter_alt_off</mat-icon>
@@ -173,6 +176,7 @@
       }
 
       @if (view() === 'GRILLE') {
+        @if (avance.ouvert()) {
         <div class="ouvertures-legende">
           <span><i class="pastille legende-vide"></i><ng-container i18n="@@ouvertures.legende.vide">Case vide : fermé</ng-container></span>
           <span><i class="pastille legende-sans-saisie">2</i><ng-container i18n="@@ouvertures.legende.sansSaisie">En italique : aucun horaire saisi, le stand est ouvert par défaut</ng-container></span>
@@ -182,6 +186,7 @@
           <span><i class="pastille legende-bande"></i><ng-container i18n="@@ouvertures.legende.bande">Bande fermée par consigne</ng-container></span>
           <span><i class="pastille legende-ajoutee"></i><ng-container i18n="@@ouvertures.legende.ajoutee">Créneau ajouté par la consigne</ng-container></span>
         </div>
+        }
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
           L'effectif dans chaque case ; vide, « - » ou 0 pour fermer. Flèches, Entrée et collage depuis un tableur. Une colonne se scinde depuis son en-tête.
         </p>

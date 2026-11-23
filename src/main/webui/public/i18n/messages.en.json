@@ -5319,5 +5319,6 @@
   "nav.group.planifier": "Plan",
   "nav.keywords.stands": "categories game categories locations",
   "nav.keywords.calendrier": "time slots day templates opening hours openings",
-  "shell.aide": "Help"
+  "shell.aide": "Help",
+  "reglagesAvances.bouton": "Advanced settings"
 }
