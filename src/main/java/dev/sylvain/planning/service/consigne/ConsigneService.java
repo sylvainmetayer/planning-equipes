@@ -796,21 +796,34 @@ public class ConsigneService {
         return apercu;
     }
 
-    /** What lifting {@code dates} would do. */
+    /**
+     * What lifting {@code dates} would do.
+     *
+     * @param animateursSansJourLibre animateurs available that day whose frozen days already fill its week
+     *                                (see {@link LiftStaffingRisk}); 0 when the lift is not at risk
+     * @param joursADeverrouiller     the JOUR-locked days to reopen to get them back
+     */
     @Schema(
             requiredProperties = {
                 "date",
                 "sousConsigne",
                 "creneauxARetirer",
                 "validationRetiree",
-                "animateursSurLesCreneauxRetires"
+                "animateursSurLesCreneauxRetires",
+                "animateursSansJourLibre",
+                "joursADeverrouiller"
             })
     public record ApercuLevee(
             LocalDate date,
             boolean sousConsigne,
             List<VacationRef> creneauxARetirer,
             boolean validationRetiree,
-            int animateursSurLesCreneauxRetires) {}
+            int animateursSurLesCreneauxRetires,
+            int animateursSansJourLibre,
+            List<LocalDate> joursADeverrouiller) {}
+
+    /** The constraint whose week the lift may find full: switched off, no risk is read. */
+    private static final String RULE_WEEKLY_DAYS = "maxJoursTravaillesParSemaine";
 
     public List<ApercuLevee> apercuLevee(List<LocalDate> dates) {
         checkDates(dates);
@@ -819,7 +832,7 @@ public class ConsigneService {
         for (LocalDate date : new LinkedHashSet<>(dates)) {
             ConsigneEdition consigne = contexte.existantes().get(date);
             if (consigne == null) {
-                apercu.add(new ApercuLevee(date, false, List.of(), false, 0));
+                apercu.add(new ApercuLevee(date, false, List.of(), false, 0, 0, List.of()));
                 continue;
             }
             Set<Long> ajoutes = new HashSet<>(consigne.creneauxAjoutes());
@@ -835,10 +848,40 @@ public class ConsigneService {
                     .map(poste -> poste.getAnimateur().getId())
                     .distinct()
                     .count();
-            apercu.add(
-                    new ApercuLevee(date, true, retires, contexte.joursValides().contains(date), assis));
+            Optional<LiftStaffingRisk.Risk> risk = liftRisk(date, consigne, contexte);
+            apercu.add(new ApercuLevee(
+                    date,
+                    true,
+                    retires,
+                    contexte.joursValides().contains(date),
+                    assis,
+                    risk.map(LiftStaffingRisk.Risk::animateursSansJourLibre).orElse(0),
+                    risk.map(LiftStaffingRisk.Risk::joursADeverrouiller).orElse(List.of())));
         }
         return apercu;
+    }
+
+    /** The day's seat-minutes under its consigne and once lifted, read against the days kept frozen. */
+    private Optional<LiftStaffingRisk.Risk> liftRisk(LocalDate date, ConsigneEdition consigne, Contexte contexte) {
+        if (Boolean.FALSE.equals(referenceDataService.getEtatsContraintes().get(RULE_WEEKLY_DAYS))) {
+            return Optional.empty();
+        }
+        Set<Long> ajoutes = new HashSet<>(consigne.creneauxAjoutes());
+        List<Creneau> duJour = creneauxOfDay(contexte.creneaux(), date);
+        List<Creneau> nominale =
+                duJour.stream().filter(c -> !ajoutes.contains(c.getId())).toList();
+        List<Stand> sous = nominal(referenceDataService.listStands(), duJour);
+        ConsigneResolver.apply(sous, List.of(consigne), duJour);
+        int now = minutes(ProblemBuilder.buildPostes(sous, duJour));
+        int after = minutes(ProblemBuilder.buildPostes(nominal(referenceDataService.listStands(), nominale), nominale));
+        return LiftStaffingRisk.assess(
+                date,
+                now,
+                after,
+                contexte.animateurs(),
+                contexte.persiste().getPostes(),
+                contexte.verrouillages(),
+                clock.today());
     }
 
     /**

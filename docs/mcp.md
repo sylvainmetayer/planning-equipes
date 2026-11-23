@@ -1033,7 +1033,10 @@ La séquence, le soir de l'arrêté :
    la bande vide toute la journée aussi, lue sur le plan publié précédent.
 
 Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés
-qui partiraient avec leurs sièges et compte les personnes assises dessus ;
+qui partiraient avec leurs sièges, compte les personnes assises dessus et
+avertit quand les journées figées (verrouillées ou passées) épuisent les jours
+de la semaine de gens disponibles ce jour-là, avec les journées à
+déverrouiller — l'aperçu que `lever_consigne` rend aussi, lu juste avant ;
 `lever_consigne` les retire, rend aux stands leurs horaires, retire la
 validation de relecture des journées, et refuse une date passée ou en cours —
 un jour travaillé garde la consigne qui l'a gouverné. Relancer ensuite

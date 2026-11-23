@@ -33,6 +33,15 @@
                 <ng-container i18n="@@consignes.apercu.validationRetiree">La validation de relecture de cette journée sera retirée.</ng-container>
               </span>
             }
+            @if (jour.animateursSansJourLibre > 0) {
+              <span class="consigne-apercu-alerte">
+                <mat-icon inline>warning</mat-icon>
+                <ng-container i18n="@@consignes.levee.joursFigesSatures">{{ jour.animateursSansJourLibre }} animateur(s) disponible(s) ce jour-là travaillent déjà six jours de la semaine sur des journées figées : la journée risque de ne pas être tenue.</ng-container>
+                @if (jour.joursADeverrouiller.length > 0) {
+                  <ng-container i18n="@@consignes.levee.joursADeverrouiller">Si le calcul échoue, déverrouillez {{ libellesDates(jour.joursADeverrouiller) }}.</ng-container>
+                }
+              </span>
+            }
           }
         </li>
       }

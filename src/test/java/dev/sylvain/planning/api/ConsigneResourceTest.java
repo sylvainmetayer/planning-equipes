@@ -321,7 +321,10 @@ class ConsigneResourceTest {
                 .then()
                 .statusCode(200)
                 .body("[0].sousConsigne", is(true))
-                .body("[0].creneauxARetirer", hasSize(1));
+                .body("[0].creneauxARetirer", hasSize(1))
+                // nothing locked, nothing past: no week is frozen full
+                .body("[0].animateursSansJourLibre", is(0))
+                .body("[0].joursADeverrouiller", hasSize(0));
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
                 .body(Map.of("dates", List.of(JOUR)))

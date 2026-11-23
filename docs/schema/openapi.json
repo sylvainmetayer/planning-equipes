@@ -907,7 +907,7 @@
         }
       },
       "ApercuLevee" : {
-        "required" : [ "date", "sousConsigne", "creneauxARetirer", "validationRetiree", "animateursSurLesCreneauxRetires" ],
+        "required" : [ "date", "sousConsigne", "creneauxARetirer", "validationRetiree", "animateursSurLesCreneauxRetires", "animateursSansJourLibre", "joursADeverrouiller" ],
         "type" : "object",
         "properties" : {
           "date" : {
@@ -928,6 +928,18 @@
           "animateursSurLesCreneauxRetires" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "animateursSansJourLibre" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "joursADeverrouiller" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
           }
         }
       },

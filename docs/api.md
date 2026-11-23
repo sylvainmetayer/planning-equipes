@@ -740,6 +740,17 @@ grille. Les vacations nominales de la bande, elles, n'ont jamais bougé : elles
 retrouvent leurs sièges à la levée, et la stabilité du plan publié rend
 l'après-midi à son titulaire à la résolution suivante.
 
+**L'aperçu de la levée avertit quand les journées figées vident la semaine**
+(ADR 0089). Une levée rend à la journée sa grille nominale ; un calcul
+complet la recalcule mais fige tout siège qu'un verrou couvre et tout jour
+passé. Quand la levée ajoute des minutes-siège à la journée et qu'au moins un
+animateur disponible ce jour-là tient déjà un siège figé sur chacun des six
+autres jours de sa semaine ISO, l'aperçu le compte (`animateursSansJourLibre`),
+nomme les journées verrouillées à rouvrir pour les lui rendre
+(`joursADeverrouiller`) — un avertissement, jamais un refus : la journée
+peut encore tenir sans eux.
+Personne n'est nommé, seulement compté. Le calcul ne lance pas le solveur.
+
 **Poser ou lever retire la validation de relecture** des journées touchées,
 **verrou ou non** — là où une résolution la conserve sur une journée
 verrouillée ([*Publication*](#publication), ADR 0039). Un verrou fige des

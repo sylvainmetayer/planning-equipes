@@ -96,6 +96,10 @@ export class ConsigneLeveeDialog {
     return libelleDate(date);
   }
 
+  protected libellesDates(dates: string[]): string {
+    return dates.map((date) => libelleDate(date)).join(', ');
+  }
+
   protected vacations(refs: VacationRef[]): string {
     return refs.map((ref) => bandeLabel(ref.heureDebut, ref.heureFin)).join(', ');
   }

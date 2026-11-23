@@ -3133,6 +3133,8 @@
   "consignes.levee.pasSousConsigne": ": not under consigne, nothing to lift.",
   "consignes.levee.detail": ": {$INTERPOLATION} time slot(s) to remove, {$INTERPOLATION_1} staff member(s) seated on them.",
   "consignes.levee.confirmer": "Lift",
+  "consignes.levee.joursFigesSatures": "{$INTERPOLATION} staff member(s) available that day already work six days of the week on frozen days: the day may not be staffable.",
+  "consignes.levee.joursADeverrouiller": "If the solve fails, unlock {$INTERPOLATION}.",
   "consignes.prereglage.form.editTitle": "Modify the preset",
   "consignes.prereglage.form.newTitle": "New preset",
   "consignes.prereglage.field.nom": "Name",

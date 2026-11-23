@@ -122,6 +122,19 @@ async function lockDaysExcept(free: readonly string[]): Promise<void> {
   }
 }
 
+/** Removes the `JOUR` locks of `days`: what the lifting preview asks the organiser to reopen. */
+async function unlockDays(days: readonly string[]): Promise<void> {
+  const response = await admin.get('/api/verrouillages');
+  expect(response.ok()).toBe(true);
+  const locks = (await response.json()) as { id: string; type: string; jour: string | null }[];
+  for (const lock of locks) {
+    if (lock.type === 'JOUR' && lock.jour && days.includes(lock.jour)) {
+      const removal = await admin.delete(`/api/verrouillages/${lock.id}`);
+      expect(removal.ok(), await removal.text()).toBe(true);
+    }
+  }
+}
+
 /** The hard score of the last analysed plan, as the Contraintes screen reads it. */
 async function constraintsHardScore(): Promise<number | null> {
   const response = await admin.get('/api/constraints');
@@ -482,13 +495,26 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   expect(mail).toContain(MOTIF);
   expect((await publicationPreview()).nombreConcernes).toBe(0);
 
-  // 4. Levée: the alert is lifted on the third day only, from its row.
+  // 4. Levée: the two days still under consigne are published and validated,
+  //    locked first, so only the lifted day moves; then the alert is lifted
+  //    on the third day only, from its row.
+  await lockDaysExcept([DAY3]);
   await page.goto('/consignes-solveur?onglet=consignes');
   await page.locator(`tr[data-date="${DAY3}"]`).getByRole('button', { name: 'Lever' }).click();
   const lifting = await dialogueOuvert(page);
   await expect(lifting).toContainText('Lever une consigne');
   await lifting.getByRole('button', { name: 'Aperçu' }).click();
   await expect(lifting).toContainText(dayLabel(DAY3));
+  // Whether the frozen days leave the lifted day short depends on whom the
+  // solve under consigne put on them: the preview says so (ADR 0089), and the
+  // organiser reopens the days it names. Read as the dialog read it.
+  const liftPreview = (await (
+    await admin.post('/api/consignes/levee/apercu', { data: { dates: [DAY3] } })
+  ).json()) as { animateursSansJourLibre: number; joursADeverrouiller: string[] }[];
+  const toUnlock = liftPreview[0].joursADeverrouiller;
+  if (liftPreview[0].animateursSansJourLibre > 0) {
+    await expect(lifting).toContainText('travaillent déjà six jours de la semaine');
+  }
   await lifting.getByRole('button', { name: 'Lever', exact: true }).click();
   await expect(page.getByText('Consigne levée.')).toBeVisible();
   await expect(page.locator(`tr[data-date="${DAY3}"]`)).toHaveCount(0);
@@ -516,9 +542,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
       .sort((a, b) => a.localeCompare(b)),
   ).toEqual(nominalGridDay3);
 
-  // The two days still under consigne are published and validated: locked
-  // too, so only the lifted day moves.
-  await lockDaysExcept([DAY3]);
+  await unlockDays(toUnlock);
   const afterLifting = await solveFromReferenceData();
   expect(afterLifting.result?.diagnostic.hardScore, 'the nominal day must be feasible again').toBe(
     0,
@@ -537,11 +561,14 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   // The other two days still run under their consigne.
   expect(seatsOf(planAfterLifting, DAY1).some((seat) => !!seat.heureDebutEffective)).toBe(true);
 
-  // And the publication announces the third day, and nothing else.
+  // And the publication announces the third day, and only the days reopened besides.
   const previewAfterLifting = await publicationPreview();
   expect(previewAfterLifting.nombreConcernes).toBeGreaterThan(0);
   const daysAfterLifting = changedDays(previewAfterLifting);
-  expect([...daysAfterLifting]).toEqual([dayMonth(DAY3)]);
+  expect(daysAfterLifting.has(dayMonth(DAY3))).toBe(true);
+  for (const day of daysAfterLifting) {
+    expect([DAY3, ...toUnlock].map(dayMonth), `a change dated ${day} was frozen`).toContain(day);
+  }
   const thirdPublication = await publishByApi();
   expect(thirdPublication.envoyes).toBeGreaterThan(0);
   expect((await publicationPreview()).nombreConcernes).toBe(0);
