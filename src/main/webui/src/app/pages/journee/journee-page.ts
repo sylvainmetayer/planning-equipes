@@ -18,6 +18,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
+import { reglagesAvances } from '../../core/reglages-avances';
+import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceChangementsParam } from '../../core/api/journees-api';
 import { dayNavigation } from '../../core/day-navigation';
@@ -195,6 +197,7 @@ interface Option {
 @Component({
   selector: 'app-journee-page',
   imports: [
+    ReglagesAvancesToggle,
     StatusMessage,
     MatButtonModule,
     MatButtonToggleModule,
@@ -464,6 +467,9 @@ export class JourneePage implements OnInit {
    * shown: a filter drawn and then ignored narrows nothing while saying it
    * does. A hidden filter keeps its value, for the rendering that reads it.
    */
+  /** The emplacement and game category filters, folded by default (`?avance=1`). */
+  protected readonly avance = reglagesAvances();
+
   protected readonly shownFilters = computed<ShownFilters>(() =>
     filtersShown(this.axe(), this.standView(), this.view(), this.comparaisonActive()),
   );

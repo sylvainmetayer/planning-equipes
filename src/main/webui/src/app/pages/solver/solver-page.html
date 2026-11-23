@@ -59,7 +59,7 @@
         </p>
       </li>
     </ul>
-    @if (machineConfiguree()) {
+    @if (machineConfiguree() && avance.ouvert()) {
       <mat-button-toggle-group class="solver-lieu" [value]="distant()" (change)="distant.set($event.value)"
                                aria-label="Où calculer le planning" i18n-aria-label="@@solver.lieu.label">
         <mat-button-toggle [value]="false" i18n="@@solver.lieu.surPlace">Sur place</mat-button-toggle>
@@ -116,7 +116,7 @@
   <app-solver-queue (failed)="output.set($event)" />
 </mat-card>
 
-@if (machine()?.configured && machine()?.onDemand) {
+@if (machine()?.configured && machine()?.onDemand && avance.ouvert()) {
   <app-machine-calcul-card [machine]="machine()!" (changed)="machine.set($event)"
                            (failed)="output.set($event); loadMachine()" />
 }
@@ -167,15 +167,18 @@
   <app-incremental-result [stats]="stats" [changements]="incrementalChangements()" />
 }
 
-@if (!solverBusy()) {
-  <app-score-curve-card />
-}
+<app-reglages-avances [etat]="avance">
+  <ng-template>
+    @if (!solverBusy()) {
+      <app-score-curve-card />
+    }
+    <app-solver-volumetry />
+  </ng-template>
+</app-reglages-avances>
 
 <!-- (5) The last lines of « Versions du plan » (issue #702). -->
 <app-versions-recentes [version]="solvesLanded()" />
 
-<!-- (6) Folded: read when a solve surprises. -->
-<app-solver-volumetry />
 
 <app-output-panel [text]="output()" />
 }

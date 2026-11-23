@@ -598,3 +598,11 @@ a.referentiel-nom {
   flex-wrap: wrap;
   margin-bottom: 1rem;
 }
+
+/* « Réglages avancés » (`shared/reglages-avances.ts`): folded by default. */
+.reglages-avances-contenu {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}

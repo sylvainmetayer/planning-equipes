@@ -52,6 +52,8 @@ import { keepViewInQueryParams, optionalParam } from '../../core/view-query-para
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { LegalText } from '../../shared/legal-text';
+import { reglagesAvances } from '../../core/reglages-avances';
+import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { RelancerCalcul } from '../../shared/relancer-calcul';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
@@ -140,6 +142,7 @@ function importanceLabel(importance: Importance): string {
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    ReglagesAvancesToggle,
     RelancerCalcul,
     ReglesCalcul,
     RouterLink,
@@ -200,6 +203,12 @@ export class ReglesPage implements OnInit {
   });
 
   protected readonly isRuleTab = isRuleTab;
+
+  /**
+   * The rules themselves and the solve budget are an expert's settings: their
+   * tabs show under « Réglages avancés », or when the address names one.
+   */
+  protected readonly avance = reglagesAvances();
 
   /**
    * How « Relancer le calcul » runs once an adjustment, a lock or a consigne

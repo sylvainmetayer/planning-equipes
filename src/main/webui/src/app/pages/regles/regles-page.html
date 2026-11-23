@@ -17,6 +17,7 @@
     <mat-icon>policy</mat-icon>
     <ng-container i18n="@@consignesSolveur.onglet.consignes">Consignes</ng-container>
   </mat-button-toggle>
+  @if (avance.ouvert() || onglet() === 'legal' || onglet() === 'qualite' || onglet() === 'calcul') {
   <mat-button-toggle value="legal">
     <mat-icon>gavel</mat-icon>
     <ng-container i18n="@@regles.onglet.legal">Légal</ng-container>
@@ -29,7 +30,9 @@
     <mat-icon>timer</mat-icon>
     <ng-container i18n="@@regles.onglet.calcul">Calcul</ng-container>
   </mat-button-toggle>
+  }
 </mat-button-toggle-group>
+<app-reglages-avances [etat]="avance" />
 
 @if (relance(); as mode) {
   @if (!isRuleTab(onglet()) && onglet() !== 'calcul') {

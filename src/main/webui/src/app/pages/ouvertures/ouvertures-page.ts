@@ -42,6 +42,8 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { keepViewInQueryParams } from '../../core/view-query-params';
+import { reglagesAvances } from '../../core/reglages-avances';
+import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
@@ -210,6 +212,7 @@ export interface ExplicationCellule {
 @Component({
   selector: 'app-ouvertures-page',
   imports: [
+    ReglagesAvancesToggle,
     FormsModule,
     MatCardModule,
     MatButtonModule,
@@ -773,6 +776,9 @@ export class OuverturesPage implements OnInit {
   });
 
   private readonly injector = inject(Injector);
+  /** The layers drawn in the cells and the legend of their colours, folded by default. */
+  protected readonly avance = reglagesAvances();
+
   private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
   private readonly splitTime = viewChild<ElementRef<HTMLInputElement>>('scissionHeure');
 

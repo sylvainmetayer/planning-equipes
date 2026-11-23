@@ -82,13 +82,14 @@
                              label="Animateur" i18n-label="@@journee.filter.animateur"
                              placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
   }
-  @if (shownFilters().emplacement) {
+  <!-- The emplacement and game category filters are an expert's: folded, unless one narrows the plan. -->
+  @if (shownFilters().emplacement && (avance.ouvert() || emplacement() !== '')) {
     <app-selection-recherche class="planning-filtre" [compact]="true" [options]="emplacementsOptions()"
                              [valeurs]="emplacementChoisi()" (valeursChange)="choisirEmplacement($event)"
                              label="Emplacement" i18n-label="@@planning.filter.emplacement"
                              placeholder="Tous" i18n-placeholder="@@journee.filter.tous" />
   }
-  @if (shownFilters().typologie) {
+  @if (shownFilters().typologie && (avance.ouvert() || typologie() !== '')) {
     <app-selection-recherche class="planning-filtre" [compact]="true" [options]="typologiesOptions()"
                              [valeurs]="typologieChoisie()" (valeursChange)="choisirTypologie($event)"
                              label="Typologie" i18n-label="@@planning.filter.typologie"
@@ -103,6 +104,9 @@
       placeholder="Nom, stand…"
       i18n-placeholder="@@journee.filter.placeholder"
     />
+  }
+  @if (shownFilters().emplacement || shownFilters().typologie) {
+    <app-reglages-avances [etat]="avance" />
   }
   <span class="planning-barre-espace"></span>
   @if (comparableView() && jours().length > 1 && comparerDemande() === null) {

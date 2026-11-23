@@ -62,7 +62,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   before it is left — on the tab as on the route's `canDeactivate`; a hosted
   screen whose own tabs write `onglet` names the host's tab instead of the
   bare address). The help is the toolbar's « ? » icon, the editions open from
-  « Gérer » of the edition bar. Its foot lists the news and the
+  « Gérer » of the edition bar. **An expert's setting is folded, never
+  unreachable** (ADR 0090): each screen puts what only an expert sets —
+  thresholds and weights, the compute machine, the instance's plumbing, a
+  grid's layers — behind its « Réglages avancés » button
+  (`shared/reglages-avances.ts` over `core/reglages-avances.ts`), closed by
+  default and opened by `?avance=1`; a folded tab still shows when the
+  address names it, a folded filter while it filters, and the palette finds
+  every tab. Its foot lists the news and the
   four legal pages in text (the accessibility statement must be one click
   away from every page). While this browser has not opened the news of the
   running version (`core/news-seen`, a chrome preference), the foot's news

@@ -14,6 +14,7 @@
     <mat-icon>tv</mat-icon>
     <ng-container i18n="@@parametres.onglet.mural">Affichage mural</ng-container>
   </mat-button-toggle>
+  @if (avance.ouvert() || onglet() === 'instance' || onglet() === 'historique' || onglet() === 'mcp') {
   <mat-button-toggle value="instance">
     <mat-icon>dns</mat-icon>
     <ng-container i18n="@@parametres.onglet.instance">Instance</ng-container>
@@ -26,11 +27,13 @@
     <mat-icon>smart_toy</mat-icon>
     <ng-container i18n="@@nav.link.mcp">MCP</ng-container>
   </mat-button-toggle>
+  }
 </mat-button-toggle-group>
+<app-reglages-avances [etat]="avance" />
 
 <p class="parametres-renvoi-regles">
   <ng-container i18n="@@parametres.renvoiRegles">Ce qui décide du plan — paramètres légaux, seuils, importance des règles, budget de calcul — est dans</ng-container>
-  <a routerLink="/regles" i18n="@@nav.link.regles">Règles du planning</a>.
+  <a routerLink="/regles" [queryParams]="{ onglet: 'legal' }" i18n="@@nav.link.regles">Règles du planning</a>.
 </p>
 
 @switch (onglet()) {
