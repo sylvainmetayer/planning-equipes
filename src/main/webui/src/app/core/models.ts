@@ -5362,6 +5362,10 @@ export interface ApercuLeveeConsigne {
   creneauxARetirer: VacationRef[];
   validationRetiree: boolean;
   animateursSurLesCreneauxRetires: number;
+  /** Available that day, yet their frozen days (locked or past) already fill its week: 0 when the lift is not at risk. */
+  animateursSansJourLibre: number;
+  /** The JOUR-locked days whose reopening gives them a day back. */
+  joursADeverrouiller: string[];
 }
 
 /** A consigne as the espace animateur states it: the dates where this person holds a seat. */

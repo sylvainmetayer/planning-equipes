@@ -222,7 +222,9 @@ public class ConsigneMcpTools {
     @Tool(
             name = "simuler_levee_consigne",
             description = "Simule la levée d'une consigne sans rien écrire : par date, les créneaux ajoutés qui "
-                    + "seraient retirés avec leurs sièges, et combien de personnes y sont assises.",
+                    + "seraient retirés avec leurs sièges, combien de personnes y sont assises, et le risque que "
+                    + "les journées figées (verrouillées ou passées) laissent la journée en sous-effectif, avec les "
+                    + "journées à déverrouiller.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -252,8 +254,10 @@ public class ConsigneMcpTools {
             @ToolArg(description = "Dates à lever (AAAA-MM-JJ), séparées par des virgules") String dates,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         List<LocalDate> levees = dates(dates);
+        // Read before the write: the risk compares the day under its consigne with the day lifted.
+        List<ApercuLevee> apercu = consignes.apercuLevee(levees);
         consignes.lever(levees);
-        return new LeveeResult(levees, true);
+        return new LeveeResult(levees, true, apercu);
     }
 
     @Tool(
@@ -485,6 +489,6 @@ public class ConsigneMcpTools {
     public record ConsignesView(
             LocalDate aujourdhui, List<ConsigneView> consignes, List<PrereglageConsigne> prereglages) {}
 
-    /** The dates lifted. */
-    public record LeveeResult(List<LocalDate> dates, boolean levee) {}
+    /** The dates lifted, and the preview read just before (see {@code simuler_levee_consigne}). */
+    public record LeveeResult(List<LocalDate> dates, boolean levee, List<ApercuLevee> apercu) {}
 }
