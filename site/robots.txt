@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://planning.sylvain.dev/sitemap.xml
