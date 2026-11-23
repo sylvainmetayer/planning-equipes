@@ -14,5 +14,10 @@ interactive = true
 [tasks.dev]
 run = "podman compose up -d"
 
+[tasks.site]
+description = "Vitrine (site/) : installe les dépendances si besoin et lance le serveur Eleventy (http://localhost:8080)"
+dir = "site"
+run = "mise run dev"
+
 [env]
 MAIL_ADMIN="admin@localhost"

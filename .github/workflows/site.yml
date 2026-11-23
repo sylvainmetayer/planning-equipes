@@ -51,6 +51,13 @@ jobs:
         run: npm run check:a11y
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+      # Sans le beacon d'audience (build de prévisualisation) : Lighthouse mesure la page,
+      # pas un script tiers, et un réseau capricieux ne doit pas faire échouer la PR
+      - name: Lighthouse (mobile et bureau, 95 au moins partout)
+        run: npx eleventy --quiet && npm run check:lighthouse
+        env:
+          ELEVENTY_ENV: preview
+          CHROME_PATH: /usr/bin/google-chrome
       - name: Liens
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:

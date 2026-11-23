@@ -1513,7 +1513,8 @@ dépendances (`site/package.json`, aucune n'entre dans l'application), son
 workflow (`.github/workflows/site.yml`, filtré sur `site/**` et sur
 `ConstraintCatalog.java`, dont les articles du Code du travail sont relus par
 `site/test/articles.test.mjs`) et sa publication par Cloudflare Pages. Les
-textes s'éditent dans Pages CMS. Tout ce qui la concerne — commandes, tests,
+textes s'éditent dans Pages CMS. Pour la voir en local : `mise run site` (depuis la racine) installe ses dépendances
+et lance le serveur Eleventy. Tout ce qui la concerne — commandes, tests,
 tournage des captures, réglages Cloudflare — est dans `site/README.md`. Le
 scénario `vitrine-fete-du-jeu-de-pierrefeuille.yaml`, livré avec les autres, est
 le décor de ses captures : il ne change pas sans qu'on les refasse.

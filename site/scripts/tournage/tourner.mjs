@@ -158,6 +158,7 @@ async function ecrans(browser, etat, lang) {
 
   // L'affichage TV est public : un jeton, aucune session
   const tv = await browser.newContext({ viewport: TV, locale: lang === 'en' ? 'en-GB' : 'fr-FR', colorScheme: 'light' });
+  await tv.addInitScript((langue) => localStorage.setItem('planning-equipes.locale', langue), lang);
   const ecran = await tv.newPage();
   await ecran.goto(`${BASE}/mural/${etat.muralToken}`);
   await pause(4000);
@@ -273,9 +274,8 @@ async function filmCalcul(page, { accelerer, lang, etat }) {
     }
   });
   await pause(3500);
-  await page.goto(`${BASE}/journee`);
-  await page.locator('mat-toolbar').first().waitFor();
-  await pause(4000);
+  await ouvrir(page, '/journee');
+  await pause(3500);
 }
 
 /** Une absence le jour J : recherche, absence, place vide, remplaçant, prévenir. */
@@ -333,12 +333,20 @@ async function main() {
   try {
     for (const lang of LANGS) {
       console.log(`== ${lang}`);
-      const etat = await preparer();
-      if (!ONLY || ONLY === 'ecrans') await ecrans(browser, etat, lang);
-      if (!ONLY || ONLY === 'jourj') await filmer(browser, etat, lang, 'jourj', FILM, (page, outils) => filmJourJ(page, { ...outils, lang, etat }));
-      if (!ONLY || ONLY === 'espace') await filmer(browser, etat, lang, 'espace', TELEPHONE, (page, outils) => filmEspace(page, { ...outils, lang, etat }));
-      if (!ONLY || ONLY === 'calcul') await filmer(browser, etat, lang, 'calcul', FILM, (page, outils) => filmCalcul(page, { ...outils, lang, etat }));
-      await etat.api.dispose();
+      // Chaque morceau repart d'un état neuf : une absence, une présence confirmée ou un calcul
+      // ne doivent pas se voir dans le film suivant
+      const morceaux = {
+        ecrans: (etat) => ecrans(browser, etat, lang),
+        calcul: (etat) => filmer(browser, etat, lang, 'calcul', FILM, (page, outils) => filmCalcul(page, { ...outils, lang, etat })),
+        jourj: (etat) => filmer(browser, etat, lang, 'jourj', FILM, (page, outils) => filmJourJ(page, { ...outils, lang, etat })),
+        espace: (etat) => filmer(browser, etat, lang, 'espace', TELEPHONE, (page, outils) => filmEspace(page, { ...outils, lang, etat })),
+      };
+      for (const [nom, jouer] of Object.entries(morceaux)) {
+        if (ONLY && ONLY !== nom) continue;
+        const etat = await preparer();
+        await jouer(etat);
+        await etat.api.dispose();
+      }
     }
   } finally {
     await browser.close();

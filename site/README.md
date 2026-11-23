@@ -24,6 +24,10 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 
 ## Travailler dessus
 
+Depuis la racine du dépôt, `mise run site` installe les dépendances si besoin et
+lance le serveur de développement (il délègue à la tâche `dev` de `site/mise.toml`).
+Depuis `site/` :
+
 ```bash
 cd site
 mise run install   # ou npm install
@@ -32,8 +36,9 @@ mise run build     # génère _site/
 mise run preview   # émulateur Cloudflare Pages sur :8788, en-têtes compris
 npm test           # build + tests : articles, FR/EN, .pages.yml, liens, JSON-LD, hreflang
 npm run check:spelling   # cspell, français et anglais
-npm run validate         # html-validate sur _site/
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser npm run check:a11y   # pa11y-ci, WCAG 2 AA
+CHROME_PATH=/usr/bin/chromium-browser npm run check:lighthouse           # Lighthouse, mobile et bureau, 95 au moins partout
+npm run validate         # html-validate sur _site/
 ```
 
 La CI (`.github/workflows/site.yml`, filtrée sur `site/**` et sur

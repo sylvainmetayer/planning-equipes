@@ -3,6 +3,7 @@
 // request only selects an entry of that index and never builds a file path, so
 // nothing outside the build can be read.
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
 
@@ -70,7 +71,15 @@ export function serveDist(dist, { transform } = {}) {
       res.writeHead(500).end();
       return;
     }
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream' });
-    res.end(transform ? transform(file, content) : content);
+    const type = TYPES[extname(file)] || 'application/octet-stream';
+    let body = transform ? transform(file, content) : content;
+    const headers = { 'Content-Type': type };
+    // Like Cloudflare, text is sent compressed: Lighthouse scores it
+    if (/^(text|application\/(xml|json))|svg/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '')) {
+      body = gzipSync(body);
+      headers['Content-Encoding'] = 'gzip';
+    }
+    res.writeHead(200, headers);
+    res.end(body);
   });
 }

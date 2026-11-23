@@ -47,8 +47,9 @@ for lang in fr en; do
   for film in calcul jourj espace; do
     source_video="$brut/$lang/film-$film.webm"
     marques="$brut/$lang/film-$film.marks"
-    # La première seconde montre le chargement de l'application : elle est coupée
+    # Le début montre le chargement de l'application, puis le menu qui se referme : il est coupé
     debut=0.8
+    [ "$film" = espace ] || debut=3.0
     filtre="[0:v]trim=start=$debut,setpts=PTS-STARTPTS[v]"
     if [ -s "$marques" ]; then
       read -r de a cible < "$marques"
