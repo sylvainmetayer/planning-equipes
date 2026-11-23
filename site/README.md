@@ -47,19 +47,22 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
 
 ## Le parti pris
 
-- **Dans le prolongement de l'application, en plus sobre.** Le bleu azur de
-  l'application est le seul accent ; la page est un papier froid, des filets
-  d'un pixel, des touches de clavier en guise de boutons, et des captures réelles
-  de l'application : ce qu'un organisateur voit est ce qu'il aura. Le thème
-  s'appelle Cobalt (skill Hallmark, `modern-minimal`), il suit le thème clair ou
-  sombre du visiteur. Les couleurs ne sont écrites qu'une fois, en variables
-  (`tokens.css`).
-- **Courte, et menée par les questions.** L'accueil répond dans l'ordre aux
-  questions d'un organisateur : le planning est-il légal ? que se passe-t-il le
-  jour J ? et pour les animateurs, les bénévoles ? comment travaille-t-on
-  ensemble ? Chaque réponse longue a sa page (`/code-du-travail-mineurs/`,
-  `/benevoles/`, `/comment-marche-le-calcul/`, `/questions/`), en français et en
-  anglais. Une section qui s'allonge est une section à couper ou à déplacer.
+- **Une affiche de festival, pas une page de logiciel.** Papier chaud, encre
+  brune, titres en capitales Big Shoulders Display sur un texte en Golos Text,
+  filets de 2 px, une ombre portée dure, et deux couleurs qui ne se mélangent
+  jamais : le moutarde (le bouton principal, le tableau des refus) et le
+  bordeaux (les filets, le bandeau du devis). Les captures et les films sont
+  ceux de l'application, épinglés comme des tirages. Le thème s'appelle
+  Carnival (skill Hallmark, réglage `cold-snap`), en clair seulement ; les
+  couleurs ne sont écrites qu'une fois, en variables (`tokens.css`), et
+  `design.md` décrit le système pour les pages à venir.
+- **Les organisateurs d'abord, puis ceux qui hébergent.** L'accueil suit ce
+  qu'un organisateur se demande : le planning est-il légal ? que se passe-t-il
+  le jour J ? que reçoivent les animateurs ? comment calcule-t-il ? à quoi
+  ressemblent les écrans ? combien ça coûte ? Chaque réponse longue a sa page
+  (`/code-du-travail-mineurs/`, `/benevoles/`, `/comment-marche-le-calcul/`,
+  `/heberger/`, `/questions/`), en français et en anglais ; `/heberger/` parle
+  à l'équipe technique qui l'installerait elle-même.
 - **Une phrase qui répond, puis le détail.** Chaque page commence par sa
   réponse en une ou deux phrases (c'est ce qu'un moteur de recherche ou un
   assistant cite), puis les sections, puis une invitation à écrire.
@@ -67,7 +70,7 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
 ## Ce que la page s'interdit
 
 - **Aucune dépendance côté visiteur, une seule requête externe.** Les polices
-  (Familjen Grotesk et IBM Plex Sans, `@fontsource-variable`) sont servies par
+  (Big Shoulders Display et Golos Text, `@fontsource-variable`) sont servies par
   le site lui-même (`font-src 'self'`) ; pas de CDN, pas de script à elle. La
   seule exception est le beacon Cloudflare Web Analytics, sans cookie ni
   identifiant persistant, que la CSP de `src/_headers` est seule à autoriser ;

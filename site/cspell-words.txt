@@ -11,3 +11,5 @@ recognises
 recalcul
 hébergeable
 Équipes
+hebergement
+heberger

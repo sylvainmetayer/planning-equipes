@@ -40,6 +40,7 @@ content:
           - { name: legal, label: Code du travail, type: string, required: true }
           - { name: benevoles, label: Bénévoles, type: string, required: true }
           - { name: calcul, label: Le calcul, type: string, required: true }
+          - { name: hebergement, label: Héberger, type: string, required: true }
           - { name: faq, label: Questions, type: string, required: true }
           - { name: contact, label: Bouton de contact, type: string, required: true }
           - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
@@ -60,6 +61,7 @@ content:
           - { name: mentions, label: Lien mentions légales, type: string, required: true }
           - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
           - { name: probleme, label: Lien signaler un problème, type: string, required: true }
+          - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
       - name: introuvable
         label: Page 404
         type: object
@@ -82,6 +84,7 @@ content:
               - { name: legal, label: Code du travail, type: string, required: true }
               - { name: benevoles, label: Bénévoles, type: string, required: true }
               - { name: calcul, label: Le calcul, type: string, required: true }
+              - { name: hebergement, label: Héberger, type: string, required: true }
               - { name: faq, label: Questions, type: string, required: true }
               - { name: contact, label: Bouton de contact, type: string, required: true }
               - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
@@ -102,6 +105,8 @@ content:
               - { name: mentions, label: Lien mentions légales, type: string, required: true }
               - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
               - { name: probleme, label: Lien signaler un problème, type: string, required: true }
+              - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
+          - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
           - name: introuvable
             label: Page 404
             type: object
@@ -123,18 +128,17 @@ content:
       - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
       - { name: ogTitre, label: Titre des réseaux sociaux, type: string, required: true }
       - { name: h1, label: Titre de la page (7 mots au plus), type: string, required: true }
-      - { name: lede, label: Phrase d'accroche, type: string, required: true }
+      - { name: lede, label: Phrase d'accroche (12 mots au plus), type: string, required: true }
       - { name: cta, label: Bouton principal, type: string, required: true }
       - { name: cta2, label: Bouton secondaire, type: string, required: true }
       - { name: heroAlt, label: Description de la capture d'accueil, type: string, required: true }
       - { name: heroLegende, label: Légende de la capture d'accueil, type: string, required: true }
       - name: loi
-        label: Section Code du travail
+        label: Section Code du travail (le premier refus s'affiche aussi sur la capture d'accueil)
         type: object
         fields:
-          - { name: h2, label: Question, type: string, required: true }
+          - { name: h2, label: Titre, type: string, required: true }
           - { name: reponse, label: Réponse (Markdown, gras permis), type: text, required: true }
-          - { name: colonnes, label: Titres des colonnes, type: string, list: true }
           - { name: refusTitre, label: Titre du tableau, type: string, required: true }
           - { name: refusColonnes, label: Colonnes du tableau, type: string, list: true }
           - name: refus
@@ -156,7 +160,7 @@ content:
         fields:
           - { name: h2, label: Titre, type: string, required: true }
           - { name: intro, label: Introduction, type: text, required: true }
-          - { name: points, label: Points, type: string, list: true }
+          - { name: points, label: Points (trois), type: string, list: true }
           - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
       - name: equipes
         label: Section animateurs et bénévoles
@@ -164,13 +168,34 @@ content:
         fields:
           - { name: h2, label: Titre, type: string, required: true }
           - { name: texte, label: Texte (Markdown, gras permis), type: text, required: true }
-          - { name: puces, label: Puces, type: string, list: true }
+          - name: tuiles
+            label: Tuiles (quatre)
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{titre}" }
+            fields:
+              - { name: titre, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte, type: string, required: true }
           - { name: lien, label: Lien vers la page bénévoles, type: string, required: true }
-          - { name: outilsH, label: Titre « outils », type: string, required: true }
-          - { name: outils, label: Texte « outils », type: text, required: true }
+          - { name: outils, label: Texte « messageries », type: text, required: true }
+          - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
+      - name: cas
+        label: Section le calcul
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - name: niveaux
+            label: Niveaux (trois)
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{titre}" }
+            fields:
+              - { name: titre, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte, type: string, required: true }
+          - { name: lien, label: Lien vers la page du calcul, type: string, required: true }
           - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
       - name: images
-        label: Section en images (captures et vidéos)
+        label: Section les écrans (captures et vidéos)
         type: object
         fields:
           - { name: h2, label: Titre, type: string, required: true }
@@ -195,7 +220,6 @@ content:
               - { name: telecharger, label: Lien de téléchargement, type: string, required: true }
               - { name: unite, label: Unité du poids (ko ou kB), type: string, required: true }
               - { name: duree, label: Unité de durée, type: string, required: true }
-          - { name: ecransH, label: Titre des écrans, type: string, required: true }
           - name: ecrans
             label: Écrans
             type: object
@@ -204,12 +228,13 @@ content:
             fields:
               - { name: id, label: Identifiant (nom du fichier .webp), type: string, required: true }
               - { name: titre, label: Titre, type: string, required: true }
-              - { name: alt, label: Description de la capture, type: string, required: true }
+              - { name: alt, label: "Description (« Nom : ce qu'il montre », la partie après les deux-points s'affiche)", type: string, required: true }
       - name: ensemble
-        label: Section « comment on travaille ensemble »
+        label: Section devis
         type: object
         fields:
           - { name: h2, label: Titre, type: string, required: true }
+          - { name: prix, label: Tarif, type: text, required: true }
           - name: etapes
             label: Étapes
             type: object
@@ -221,8 +246,8 @@ content:
               - { name: nous, label: Ce que nous faisons, type: text, required: true }
           - { name: vous, label: Mot « Vous », type: string, required: true }
           - { name: nous, label: Mot « Nous », type: string, required: true }
-          - { name: prix, label: Tarif (Markdown, gras permis), type: text, required: true }
           - { name: cta, label: Bouton, type: string, required: true }
+          - { name: soiMeme, label: Lien vers la page héberger, type: string, required: true }
       - name: faq
         label: Section questions
         type: object
@@ -237,18 +262,17 @@ content:
           - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
           - { name: ogTitre, label: Titre des réseaux sociaux, type: string, required: true }
           - { name: h1, label: Titre de la page (7 mots au plus), type: string, required: true }
-          - { name: lede, label: Phrase d'accroche, type: string, required: true }
+          - { name: lede, label: Phrase d'accroche (12 mots au plus), type: string, required: true }
           - { name: cta, label: Bouton principal, type: string, required: true }
           - { name: cta2, label: Bouton secondaire, type: string, required: true }
           - { name: heroAlt, label: Description de la capture d'accueil, type: string, required: true }
           - { name: heroLegende, label: Légende de la capture d'accueil, type: string, required: true }
           - name: loi
-            label: Section Code du travail
+            label: Section Code du travail (le premier refus s'affiche aussi sur la capture d'accueil)
             type: object
             fields:
-              - { name: h2, label: Question, type: string, required: true }
+              - { name: h2, label: Titre, type: string, required: true }
               - { name: reponse, label: Réponse (Markdown, gras permis), type: text, required: true }
-              - { name: colonnes, label: Titres des colonnes, type: string, list: true }
               - { name: refusTitre, label: Titre du tableau, type: string, required: true }
               - { name: refusColonnes, label: Colonnes du tableau, type: string, list: true }
               - name: refus
@@ -270,7 +294,7 @@ content:
             fields:
               - { name: h2, label: Titre, type: string, required: true }
               - { name: intro, label: Introduction, type: text, required: true }
-              - { name: points, label: Points, type: string, list: true }
+              - { name: points, label: Points (trois), type: string, list: true }
               - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
           - name: equipes
             label: Section animateurs et bénévoles
@@ -278,13 +302,34 @@ content:
             fields:
               - { name: h2, label: Titre, type: string, required: true }
               - { name: texte, label: Texte (Markdown, gras permis), type: text, required: true }
-              - { name: puces, label: Puces, type: string, list: true }
+              - name: tuiles
+                label: Tuiles (quatre)
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{titre}" }
+                fields:
+                  - { name: titre, label: Titre, type: string, required: true }
+                  - { name: texte, label: Texte, type: string, required: true }
               - { name: lien, label: Lien vers la page bénévoles, type: string, required: true }
-              - { name: outilsH, label: Titre « outils », type: string, required: true }
-              - { name: outils, label: Texte « outils », type: text, required: true }
+              - { name: outils, label: Texte « messageries », type: text, required: true }
+              - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
+          - name: cas
+            label: Section le calcul
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - name: niveaux
+                label: Niveaux (trois)
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{titre}" }
+                fields:
+                  - { name: titre, label: Titre, type: string, required: true }
+                  - { name: texte, label: Texte, type: string, required: true }
+              - { name: lien, label: Lien vers la page du calcul, type: string, required: true }
               - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
           - name: images
-            label: Section en images (captures et vidéos)
+            label: Section les écrans (captures et vidéos)
             type: object
             fields:
               - { name: h2, label: Titre, type: string, required: true }
@@ -309,7 +354,6 @@ content:
                   - { name: telecharger, label: Lien de téléchargement, type: string, required: true }
                   - { name: unite, label: Unité du poids (ko ou kB), type: string, required: true }
                   - { name: duree, label: Unité de durée, type: string, required: true }
-              - { name: ecransH, label: Titre des écrans, type: string, required: true }
               - name: ecrans
                 label: Écrans
                 type: object
@@ -318,12 +362,13 @@ content:
                 fields:
                   - { name: id, label: Identifiant (nom du fichier .webp), type: string, required: true }
                   - { name: titre, label: Titre, type: string, required: true }
-                  - { name: alt, label: Description de la capture, type: string, required: true }
+                  - { name: alt, label: "Description (« Nom : ce qu'il montre », la partie après les deux-points s'affiche)", type: string, required: true }
           - name: ensemble
-            label: Section « comment on travaille ensemble »
+            label: Section devis
             type: object
             fields:
               - { name: h2, label: Titre, type: string, required: true }
+              - { name: prix, label: Tarif, type: text, required: true }
               - name: etapes
                 label: Étapes
                 type: object
@@ -335,8 +380,8 @@ content:
                   - { name: nous, label: Ce que nous faisons, type: text, required: true }
               - { name: vous, label: Mot « Vous », type: string, required: true }
               - { name: nous, label: Mot « Nous », type: string, required: true }
-              - { name: prix, label: Tarif (Markdown, gras permis), type: text, required: true }
               - { name: cta, label: Bouton, type: string, required: true }
+              - { name: soiMeme, label: Lien vers la page héberger, type: string, required: true }
           - name: faq
             label: Section questions
             type: object
@@ -368,7 +413,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -390,7 +435,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
 
   - name: benevoles
     label: Page bénévoles
@@ -415,7 +460,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -437,7 +482,54 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+
+  - name: hebergement
+    label: Page héberger soi-même
+    type: file
+    path: src/_data/pages/hebergement.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
 
   - name: calcul
     label: Page « comment marche le calcul »
@@ -462,7 +554,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -484,7 +576,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
 
   - name: faq
     label: Questions fréquentes
@@ -510,7 +602,7 @@ content:
           - { name: a, label: Réponse, type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -532,4 +624,4 @@ content:
               - { name: a, label: Réponse, type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }

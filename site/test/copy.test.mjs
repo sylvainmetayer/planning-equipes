@@ -51,7 +51,7 @@ test('every capture, poster, thumbnail and video exists in both languages', () =
     for (const e of c.images.ecrans) {
       for (const f of [`images/${lang}/${e.id}.webp`, `images/${lang}/vignettes/${e.id}.webp`]) assert.ok(existsSync(join(root, 'src', f)), f);
     }
-    for (const f of [...c.images.films.map((x) => x.id), c.jourj.film, c.equipes.film]) {
+    for (const f of [...c.images.films.map((x) => x.id), c.jourj.film, c.equipes.film, c.cas.film]) {
       for (const p of [`images/${lang}/film-${f}.webp`, `videos/${lang}/${f}.mp4`]) assert.ok(existsSync(join(root, 'src', p)), p);
     }
   }

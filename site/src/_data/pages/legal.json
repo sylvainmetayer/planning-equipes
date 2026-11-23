@@ -3,66 +3,82 @@
   "titre": "Planning et Code du travail, mineurs compris | Planning Équipes",
   "description": "Dix articles du Code du travail appliqués au planning de votre événement, dont les règles pour les mineurs : durée, nuit, repos, jours fériés.",
   "h1": "Le planning respecte-t-il le Code du travail ?",
-  "reponse": "**Oui.** Le calcul applique dix articles du Code du travail et ne peut pas les enfreindre : une affectation qui en viole un est refusée, et le refus cite l'article. Cette page dit lesquels, ce qu'ils imposent, et comment l'âge des mineurs est traité.",
+  "reponse": "**Oui.** Le calcul applique dix articles du Code du travail et ne peut pas les enfreindre : un poste qui en viole un est refusé, et le refus cite l'article.",
   "articlesH": "Les dix articles appliqués",
-  "colonnes": ["Article", "Sujet", "Ce que le calcul impose"],
+  "colonnes": [
+    "Article",
+    "Sujet",
+    "Ce que le calcul impose"
+  ],
   "sections": [
     {
-      "h2": "Comment le logiciel reconnaît un mineur",
-      "texte": "L'âge se déduit de la date de naissance, **à la date de chaque créneau**. Ce n'est jamais une case cochée : une personne qui a 15 ans le 10 août et 16 ans le 20 août change de régime au milieu de l'événement, et le calcul le suit.\n\nLa date de naissance ne sert qu'à cela. Elle n'apparaît ni sur l'affichage de la salle de contrôle, ni dans les messages envoyés à la messagerie de l'équipe, ni pour l'assistant IA."
+      "h2": "Comment il reconnaît un mineur",
+      "texte": "L'âge se déduit de la date de naissance, **à la date de chaque créneau**, jamais d'une case cochée. Quelqu'un qui a 16 ans au milieu de l'événement change de régime ce jour-là.\n\nLa date de naissance ne sert qu'à cela : ni la télé de la salle de contrôle, ni la messagerie de l'équipe, ni l'assistant IA ne la voient."
     },
     {
       "h2": "Les seuils selon l'âge",
-      "texte": "- **Avant 16 ans** : 7 heures par jour au plus, aucun poste entre 20 h et 6 h, 14 heures de repos entre deux journées.\n- **De 16 à moins de 18 ans** : 8 heures par jour et 35 heures par semaine au plus, aucun poste entre 22 h et 6 h, 12 heures de repos entre deux journées.\n- **Pour tous les mineurs** : une pause d'au moins 30 minutes après 4 h 30 de travail continu, deux jours de repos consécutifs dans chaque semaine, et aucun poste un jour férié légal.\n- **Un majeur** : 10 heures par jour, 48 heures par semaine (réglable), 11 heures de repos entre deux journées et une pause après 6 heures de travail continu."
+      "texte": "- **Avant 16 ans** : 7 heures par jour, aucun poste entre 20 h et 6 h, 14 heures de repos entre deux journées.\n- **De 16 à 18 ans** : 8 heures par jour et 35 par semaine, aucun poste entre 22 h et 6 h, 12 heures de repos.\n- **Tous les mineurs** : une pause de 30 minutes après 4 h 30, deux jours de repos consécutifs par semaine, aucun jour férié.\n- **Un majeur** : 10 heures par jour, 48 par semaine (réglable), 11 heures de repos, une pause après 6 heures."
     },
     {
-      "h2": "Une pause est un trou, ou un relais",
-      "texte": "Quand une pause est due, le calcul la place de deux manières seulement : un trou dans la grille d'au moins la durée réglée, ou un collègue du même stand qui tient une place pendant toute la pause. Sans l'un ni l'autre, le plan est refusé, comme il le serait pour un dépassement d'horaire."
+      "h2": "Une pause, c'est un trou ou un relais",
+      "texte": "Une pause due se place de deux façons seulement : un trou dans la grille, ou un collègue du même stand qui tient la place pendant toute la pause. Sinon, le plan est refusé."
     },
     {
       "h2": "Ce que le logiciel ne décide pas",
-      "texte": "Il aide à décider. **L'organisation qui publie le planning reste l'employeur**, et seule elle répond du planning diffusé. Désactiver une règle légale demande une confirmation qui le rappelle, et l'écran montre en permanence ce qui est désactivé.\n\nLa page n'affirme aucune conformité à une convention collective : seul le Code du travail est appliqué, avec des seuils réglables pour certains. Une dérogation sectorielle, par exemple celle de l'article R3164-2 pour les mineurs, n'est pas appliquée d'office."
+      "texte": "**L'organisation qui publie le planning reste l'employeur.** Désactiver une règle légale demande une confirmation, et l'écran montre ce qui est désactivé.\n\nSeul le Code du travail est appliqué, pas une convention collective. Une dérogation, comme celle de l'article R3164-2 pour les mineurs, n'est pas appliquée d'office."
     },
     {
       "h2": "Où lire les règles exactes",
-      "texte": "Le texte de chaque règle est dans l'application, sur l'écran « Règles du planning », avec son article, son état et ses seuils. Le pourquoi de chaque règle et ce qu'elle coûte est dans [la documentation du code](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md). Les articles eux-mêmes sont sur [Légifrance](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/)."
+      "texte": "Dans l'application, sur l'écran « Règles du planning ». Le pourquoi de chaque règle est dans [la documentation du code](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md), les articles sur [Légifrance](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/)."
     }
   ],
   "cta": "Vous voulez vérifier vos propres règles ?",
   "bouton": "Écrire à planning@sylvain.dev",
-  "liens": ["benevoles", "calcul", "faq"],
+  "liens": [
+    "benevoles",
+    "calcul",
+    "faq"
+  ],
   "en": {
     "slug": "labour-code-minors",
     "titre": "Rota software and the French Labour Code: under-18s, rest, breaks",
     "description": "Ten articles of the French Labour Code applied to your event's rota, including the rules for under-18s: hours, nights, rest, public holidays.",
     "h1": "Does the rota comply with the French Labour Code?",
-    "reponse": "**Yes.** The solver applies ten articles of the French Labour Code and cannot break them: an assignment that breaks one is refused, and the refusal cites the article. This page says which ones, what they require, and how the age of under-18s is handled.",
+    "reponse": "**Yes.** The solver applies ten articles of the French Labour Code and cannot break them: a shift that breaks one is refused, and the refusal cites the article.",
     "articlesH": "The ten articles applied",
-    "colonnes": ["Article", "Subject", "What the solver enforces"],
+    "colonnes": [
+      "Article",
+      "Subject",
+      "What the solver enforces"
+    ],
     "sections": [
       {
-        "h2": "How the software recognises an under-18",
-        "texte": "Age is worked out from the date of birth, **on the date of each shift**. It is never a ticked box: someone who is 15 on 10 August and 16 on 20 August changes regime in the middle of the event, and the solver follows.\n\nThe date of birth is used for that and nothing else. It does not appear on the control-room display, in the messages sent to the team chat, or to the AI assistant."
+        "h2": "How it recognises an under-18",
+        "texte": "Age comes from the date of birth, **on the date of each shift**, never from a ticked box. Someone who turns 16 mid-event changes regime that day.\n\nThe date of birth is used for that alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it."
       },
       {
-        "h2": "The thresholds by age",
-        "texte": "- **Under 16**: 7 hours a day at most, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to under 18**: 8 hours a day and 35 hours a week at most, no shift between 22:00 and 06:00, 12 hours' rest between two days.\n- **All under-18s**: a break of at least 30 minutes after 4 hours 30 of continuous work, two consecutive rest days in every week, and no shift on a public holiday.\n- **Adults**: 10 hours a day, 48 hours a week (adjustable), 11 hours' rest between two days and a break after 6 hours of continuous work."
+        "h2": "Thresholds by age",
+        "texte": "- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours."
       },
       {
-        "h2": "A break is a gap, or a relief",
-        "texte": "When a break is due, the solver places it in only two ways: a gap in the grid at least as long as the configured duration, or a colleague on the same stand holding a seat for the whole break. With neither, the plan is refused, just as it would be for exceeding the hours."
+        "h2": "A break is a gap or a relief",
+        "texte": "A break that is due fits in two ways only: a gap in the grid, or a colleague on the same stand holding the seat for the whole break. Otherwise the plan is refused."
       },
       {
         "h2": "What the software does not decide",
-        "texte": "It helps you decide. **The organisation that publishes the rota remains the employer**, and answers for the rota it sends out. Disabling a legal rule asks for a confirmation that says so, and the screen always shows what is disabled.\n\nThe page claims no compliance with any collective agreement: only the Labour Code is applied, with adjustable thresholds for some rules. A sector exemption, for example the one in article R3164-2 for under-18s, is not applied automatically."
+        "texte": "**The organisation that publishes the rota remains the employer.** Disabling a legal rule asks for confirmation, and the screen shows what is disabled.\n\nOnly the Labour Code is applied, not a collective agreement. A derogation, such as article R3164-2 for under-18s, is not applied by default."
       },
       {
         "h2": "Where to read the exact rules",
-        "texte": "The text of each rule is in the application, on the “Schedule rules” screen, with its article, its state and its thresholds. Why each rule exists and what it costs is in [the code documentation](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md) (in French). The articles themselves are on [Légifrance](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/) (in French)."
+        "texte": "In the application, on the “Schedule rules” screen. Why each rule exists is in [the code documentation](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md), the articles on [Légifrance](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/) (in French)."
       }
     ],
     "cta": "Want to check your own rules?",
     "bouton": "Email planning@sylvain.dev",
-    "liens": ["benevoles", "calcul", "faq"]
+    "liens": [
+      "benevoles",
+      "calcul",
+      "faq"
+    ]
   }
 }

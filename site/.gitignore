@@ -1,3 +1,5 @@
 node_modules
 _site
 .wrangler
+# Hallmark's local records: screenshots, before/after comparison, build log
+.hallmark

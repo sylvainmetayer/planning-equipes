@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ title | typo(lang) }}</title>
 <meta name="description" content="{{ description }}">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f9fafd" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16191f" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6dfc9">
 {% if noindex %}<meta name="robots" content="noindex">{% endif %}
 {% if canonical %}
 <link rel="canonical" href="{{ site.url }}{{ canonical }}">
@@ -33,8 +32,8 @@
 </script>
 {% endif %}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/assets/fonts/familjen-grotesk.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/golos-text.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
@@ -42,19 +41,18 @@
 <a class="skip" href="#contenu">{{ common.skip }}</a>
 <header class="top">
   <div class="container top__in">
-    <a class="logo" href="{{ urls[lang].accueil }}" aria-label="{{ common.logoLabel }}">
-      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect class="lg-box" width="32" height="32" rx="8"/><rect class="lg-hot" x="7" y="8" width="18" height="4" rx="2"/><rect class="lg-bar" x="7" y="14" width="10" height="4" rx="2"/><rect class="lg-bar" x="7" y="20" width="15" height="4" rx="2"/></svg>
-      <span>{{ site.name }}</span>
-    </a>
-    <nav aria-label="{{ common.nav.label }}">
+    <nav class="top__nav" aria-label="{{ common.nav.label }}">
       <ul>
-        {% for k in ['legal', 'benevoles', 'calcul', 'faq'] %}
+        {% for k in ['legal', 'benevoles', 'calcul', 'hebergement', 'faq'] %}
         <li><a href="{{ urls[lang][k] }}"{% if k == key %} aria-current="page"{% endif %}>{{ common.nav[k] }}</a></li>
         {% endfor %}
-        <li><a href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a></li>
-        <li><a class="key key--primary key--sm" href="mailto:{{ site.email }}?subject={{ common.contactSujet | urlencode }}">{{ common.nav.contact }}</a></li>
       </ul>
     </nav>
+    <a class="mark" href="{{ urls[lang].accueil }}" aria-label="{{ common.logoLabel }}"{% if key == 'accueil' %} aria-current="page"{% endif %}>{{ site.name }}</a>
+    <p class="top__acts">
+      <a class="top__lang" href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a>
+      <a class="btn btn--sm" href="mailto:{{ site.email }}?subject={{ common.contactSujet | urlencode }}">{{ common.nav.contact }}</a>
+    </p>
   </div>
 </header>
 <main id="contenu">
@@ -62,14 +60,18 @@
 </main>
 <footer class="foot">
   <div class="container foot__in">
-    <p><b>{{ site.name }}</b>, {{ common.pied.licence }} <a href="{{ site.repo }}">{{ common.pied.codeSource }}</a></p>
-    <p>{{ common.pied.fictif }}</p>
-    <p>{{ common.pied.editeur }}</p>
+    <p class="foot__mark">{{ site.name }}</p>
     <ul class="foot__links" aria-label="{{ common.pied.liens }}">
-      <li><a href="{{ site.legalUrl }}">{{ common.pied.mentions }}</a></li>
+      <li><a href="mailto:{{ site.email }}?subject={{ common.contactSujet | urlencode }}">{{ common.pied.ecrire }}</a></li>
+      <li><a href="{{ site.repo }}">{{ common.pied.codeSource }}</a></li>
       <li><a href="{{ site.repo }}/releases">{{ common.pied.nouveautes }}</a></li>
       <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
+      <li><a href="{{ site.legalUrl }}">{{ common.pied.mentions }}</a></li>
     </ul>
+    <div class="foot__fine">
+      <p>{{ site.name }}, {{ common.pied.licence }} {{ common.pied.fictif }}</p>
+      <p>{{ common.pied.editeur }}</p>
+    </div>
   </div>
 </footer>
 {% if build.analytics %}<!-- Cloudflare Web Analytics: no cookie. Token in site.json, from `tofu output -raw web_analytics_token` in homelab -->
