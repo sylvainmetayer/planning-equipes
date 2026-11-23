@@ -130,6 +130,7 @@ public class DatabaseDumpService {
             "parametres_signalement",
             "parametres_notifications",
             "contact_organisation",
+            "parametres_responsables",
             // What the animateurs themselves said. Wishes and declarations are
             // the input the plan is built from, not a by-product of it, and a
             // restore that dropped them handed the organiser an edition whose
@@ -194,6 +195,10 @@ public class DatabaseDumpService {
      *       — the wall display links: token hashes, credentials of this
      *       instance like the espace sessions. A restore elsewhere would reopen
      *       screens nobody there handed out.</li>
+     *   <li>{@code compte}, {@code habilitation}, {@code habilitation_stand}
+     *       — who may sign in to this instance and what they may do. Restoring
+     *       them would hand another instance's people access here, or strip
+     *       this one's.</li>
      *   <li>{@code solver_job} — the queue, replayed at startup. A restore
      *       would make the receiving instance run somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
@@ -237,10 +242,13 @@ public class DatabaseDumpService {
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
             "horloge_jour_j",
             "backup_settings",
-            "espace_acces",
-            "espace_session",
             "lien_affichage_mural",
             "lien_affichage_mural_emplacement",
+            "espace_acces",
+            "espace_session",
+            "compte",
+            "habilitation",
+            "habilitation_stand",
             "solver_job",
             "journal_action",
             "verification_besoin",

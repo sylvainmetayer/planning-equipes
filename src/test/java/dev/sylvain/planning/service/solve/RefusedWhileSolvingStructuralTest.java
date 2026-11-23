@@ -232,6 +232,9 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#updateContactOrganisation(ContactOrganisation)",
                     "ParametresService#updateContactOrganisation(ContactOrganisation)"),
             Map.entry(
+                    "ReferenceDataService#updateParametresResponsables(ParametresResponsables)",
+                    "ParametresService#updateParametresResponsables(ParametresResponsables)"),
+            Map.entry(
                     "ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)",
                     "ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)"),
             Map.entry(
@@ -283,6 +286,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("ParametresService#updateNotifications(ParametresNotifications)", NOT_LANDED),
             Map.entry("ParametresService#updateQualite(ParametresQualite)", NOT_LANDED),
             Map.entry("ParametresService#updateContactOrganisation(ContactOrganisation)", NOT_LANDED),
+            Map.entry("ParametresService#updateParametresResponsables(ParametresResponsables)", NOT_LANDED),
             Map.entry("ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#recordInheritedDosage(String)", NOT_LANDED),

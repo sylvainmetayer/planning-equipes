@@ -90,6 +90,32 @@ la session d'administration confirmée
 `style-src` garde `'unsafe-inline'` dans tous les cas : Angular Material écrit
 ses styles dans la page.
 
+## Connexion par un annuaire (OIDC)
+
+Facultative, éteinte par défaut : voir [`oidc.md`](oidc.md) et
+[l'ADR 0077](decisions/0077-comptes-nominatifs-par-un-fournisseur-oidc.md).
+Ce qui en relève ici :
+
+- `/api` exige le rôle `admin`, **nommé** (politique `role-admin`) et non
+  « toute personne connectée » : un fournisseur connaît bien plus de monde que
+  les administrateurs. Le rôle vient du compte local, d'un droit `ADMIN`
+  accordé dans l'application, ou d'un rôle que le fournisseur porte dans ses
+  jetons. Le rôle ordinaire `user` d'un fournisseur n'ouvre rien.
+  `/api/responsable/*` n'ouvre qu'au rôle `responsable-stand`.
+- Un jeton sans adresse — ou sans `email_verified`, sauf
+  `OIDC_REQUIRE_EMAIL_VERIFIED=false` pour un annuaire dont les adresses font
+  foi — ne porte **aucun** rôle. Un compte désactivé dans l'application perd
+  tous ses rôles, ceux du fournisseur compris.
+- Second facteur des administrateurs : celui du fournisseur
+  (`OIDC_ADMIN_MFA=provider`), ou vérifié par l'application dans le claim
+  `amr` (`token`).
+- Le compte local reste ouvert par défaut ; derrière un fournisseur, le fermer
+  (`ADMIN_SECOURS_ENABLED=false`) : `/j_security_check` répond alors `409`
+  quel que soit le préfixe du chemin, et une session ouverte avant perd son
+  rôle.
+- Le client OIDC est confidentiel, avec PKCE ; son secret (32 caractères au
+  moins en production) chiffre aussi l'état PKCE.
+
 ## Plafonds du serveur HTTP
 
 | Variable | Défaut | Ce qu'elle borne |

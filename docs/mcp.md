@@ -11,9 +11,13 @@ reste dehors est énuméré en fin de document, avec sa raison.
 
 ## Authentification : clé API partagée
 
-L'application n'a pas de modèle utilisateur, donc pas d'OAuth2 — il supposerait
-un consentement qui n'existe pas ici. La clé se présente dans un en-tête
-configurable (`X-MCP-Api-Key` par défaut) ou en `Authorization: Bearer`.
+La clé se présente dans un en-tête configurable (`X-MCP-Api-Key` par défaut)
+ou en `Authorization: Bearer`. C'est la seule voie tant qu'aucun annuaire n'est
+branché ; avec un fournisseur OIDC ([`oidc.md`](oidc.md)), `/mcp` accepte en
+plus un jeton OAuth 2 qui porte l'audience `OIDC_MCP_AUDIENCE` et le rôle
+`mcp`, et publie ses métadonnées RFC 9728. La clé reste alors le repli — pour
+un client qui ne sait pas obtenir de jeton, ou derrière un proxy qui consomme
+`Authorization`.
 
 ![Un appel d'outil MCP, de la clé au service](diagrammes/mcp.svg)
 

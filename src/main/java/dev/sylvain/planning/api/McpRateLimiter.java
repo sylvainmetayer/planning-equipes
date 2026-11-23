@@ -97,7 +97,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @ApplicationScoped
 public class McpRateLimiter {
 
-    /** The MCP transport: {@code /mcp} itself (streamable HTTP) and everything under it ({@code /mcp/sse}). */
+    /** The MCP transport: {@code /mcp} itself (streamable HTTP) and everything under it, the closed historical SSE paths included. */
     static final String MCP_PATH = "/mcp";
 
     /** After the security headers, before anything handles the request — as for the login lock. */
@@ -176,7 +176,7 @@ public class McpRateLimiter {
                 return;
             }
         }
-        if (McpApiKeyAuthenticationMechanism.presentedKey(context, config.apiKeyHeader()) != null) {
+        if (McpApiKeyAuthenticationMechanism.presentedKeyAttempt(context, config.apiKeyHeader()) != null) {
             long wait = wrongKeys.reserve(address, maxFailures, config.lockout().duration());
             if (wait > 0) {
                 refuse(context, wait, "Trop de clés refusées : réessayez dans " + minutes(wait) + " minute(s).");

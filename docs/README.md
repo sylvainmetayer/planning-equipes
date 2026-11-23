@@ -10,6 +10,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`domaine.md`](domaine.md) | Modèle Timefold (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, `PlanningEvenement`) et mapping vers les contraintes |
 | [`contraintes.md`](contraintes.md) | Catalogue des contraintes implémentées (dur / medium / soft) et règles d'ajout |
 | [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
+| [`oidc.md`](oidc.md) | Brancher un annuaire (OIDC) : un ADFS en direct, ou un Keycloak / Zitadel en intermédiaire ; comptes et droits, second facteur, compte local, MCP en OAuth2 |
 | [`mcp.md`](mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
 | [`import-export.md`](import-export.md) | Formats d'import / export : dump SQL, PDF, ICS, schéma de validation des scénarios |
 | [`memoire-du-projet.md`](memoire-du-projet.md) | **Ce que l'historique portait** : les mesures qui ont tranché un réglage du solveur, les pistes abandonnées, et l'incident précis derrière chaque garde-fou. Complément des décisions, à lire quand on se demande « pourquoi est-ce écrit comme ça ? »

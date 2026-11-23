@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.espace.EspaceAccesService;
+import dev.sylvain.planning.service.espace.OidcAuthentication;
 import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -34,6 +35,11 @@ import java.util.Locale;
  * a weaker one. The link alone still is not enough: the address has to match
  * the fiche the token designates, so a proxy-authenticated animateur cannot
  * open a colleague's espace by picking up their link.</p>
+ *
+ * <p>A session with the instance's OIDC provider is the same fact again, by
+ * the same rule: its address must be the fiche's ({@link
+ * OidcAuthentication}, ADR 0077). It never replaces the code for anyone
+ * else — the animateurs have no account, and nothing here creates one.</p>
  */
 @Provider
 @EspaceSessionRequired
@@ -46,6 +52,8 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
 
     private final RemoteUserAuthentication remoteUser;
 
+    private final OidcAuthentication oidc;
+
     private final EditionRequestScope editionRequestScope;
 
     @Inject
@@ -53,10 +61,12 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
             EspaceTokenFilter tokenFilter,
             EspaceAccesService espaceAccesService,
             RemoteUserAuthentication remoteUser,
+            OidcAuthentication oidc,
             EditionRequestScope editionRequestScope) {
         this.tokenFilter = tokenFilter;
         this.espaceAccesService = espaceAccesService;
         this.remoteUser = remoteUser;
+        this.oidc = oidc;
         this.editionRequestScope = editionRequestScope;
     }
 
@@ -68,7 +78,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
         }
         // The owner's edition is bound to the request by now, so the session
         // lookup — like every call below — is already correctly scoped.
-        if (proxyAtteste(contexte, owner)) {
+        if (proxyAtteste(contexte, owner) || fournisseurAtteste(owner)) {
             editionRequestScope.markIdentityProven();
             return;
         }
@@ -81,6 +91,16 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
                     .entity(new ValidationError("Authentification requise : demandez un code d'accès par e-mail."))
                     .build());
         }
+    }
+
+    /** True when the OIDC session asserts the address carried by this token's fiche. */
+    private boolean fournisseurAtteste(TokenOwner owner) {
+        if (owner.email() == null || owner.email().isBlank()) {
+            return false;
+        }
+        return oidc.trustedEmail()
+                .filter(email -> email.equals(OidcAuthentication.normalize(owner.email())))
+                .isPresent();
     }
 
     /**

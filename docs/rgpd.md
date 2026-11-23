@@ -571,6 +571,22 @@ complètes. Quatre points sont connus et se consignent :
   exactement la copie qu'on voulait éviter — c'est une case à cocher, pas un
   garde-fou.
 
+### Les comptes nominatifs et les responsables de stand
+
+Branchée sur un annuaire ([`oidc.md`](oidc.md)), l'application tient une table
+`compte` (adresse, nom, dernière connexion, désactivation) et les droits
+accordés (`habilitation`), jamais supprimés : c'est l'historique de qui avait
+quel droit. Ces tables restent hors du dump, comme les sessions de l'espace.
+Les animateurs n'y figurent pas — ils n'ont pas de compte.
+
+Un **responsable de stand** voit le planning publié de ses stands : des
+effectifs par défaut, les prénoms et noms seulement si l'organisateur l'allume
+pour l'édition ou pour ce droit, jamais de coordonnées ni de date de naissance.
+C'est une catégorie de destinataires de plus, souvent bénévole, mineurs
+compris dans ce qu'elle lit : à porter au registre, avec l'engagement de
+confidentialité que l'organisation lui fait signer. Le droit expire
+obligatoirement.
+
 ### Le calcul déporté envoie un problème pseudonymisé à un sous-traitant de plus
 
 Quand l'instance résout sur une machine louée

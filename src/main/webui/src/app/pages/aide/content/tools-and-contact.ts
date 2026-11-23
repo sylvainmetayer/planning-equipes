@@ -1,5 +1,5 @@
-// Imports, exports and tools — the action history and the MCP endpoint
-// included — and who to write to.
+// Imports, exports and tools — the action history, the MCP endpoint and the
+// accounts included — and who to write to.
 //
 // One theme of the organisers' guide; `aide-content.ts` assembles the
 // themes in reading order. Built lazily, never at module scope: `$localize`
@@ -192,6 +192,43 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         { route: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP` },
         { route: '/historique', label: $localize`:@@nav.link.historique:Historique` },
         { route: '/versions', label: $localize`:@@nav.link.versions:Versions du plan` },
+      ],
+    },
+    {
+      id: 'comptes-et-droits',
+      icon: 'manage_accounts',
+      title: $localize`:@@aide.comptes.title:Comptes et droits`,
+      summary: $localize`:@@aide.comptes.summary:Qui peut se connecter, et quels droits délégués lui sont accordés — sans jamais rien supprimer.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.comptes.intro:Quand l'application est branchée sur un fournisseur d'identité (l'annuaire de votre structure, par exemple un ADFS), chaque personne qui s'y connecte a un compte nominatif ici, créé à sa première connexion. La page Comptes et droits les liste, avec leur dernière connexion et leur état. « Ajouter un compte » en crée un d'avance, à partir de l'adresse e-mail de la personne : c'est ce qui permet de lui accorder un droit avant qu'elle n'arrive — sa première connexion avec cette adresse retrouve le compte.`,
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.comptes.term.roles:Les deux rôles délégués`,
+              text: $localize`:@@aide.comptes.def.roles:RH, en lecture seule, pour une édition ou pour toutes. Responsable de stand, toujours dans une édition et pour au moins un de ses stands. Un droit peut porter une date de fin : passé ce jour, il n'ouvre plus rien. Ces rôles n'ouvrent encore aucun écran — tout leur est refusé par défaut, en attendant les travaux qui construiront leurs vues.`,
+            },
+            {
+              term: $localize`:@@aide.comptes.term.desactivation:Désactiver plutôt que supprimer`,
+              text: $localize`:@@aide.comptes.def.desactivation:Un compte désactivé perd tous ses rôles dans l'application, y compris ceux que l'annuaire lui donne — le rôle admin aussi. Désactiver son propre compte ferme donc l'administration à soi-même : l'écran prévient avant. Un compte se réactive, il ne se supprime jamais ; un droit se retire par « Retirer » et reste listé, daté : l'historique doit pouvoir dire qui détenait quoi, et quand.`,
+            },
+            {
+              term: $localize`:@@aide.comptes.term.admin:Nommer un administrateur`,
+              text: $localize`:@@aide.comptes.def.admin:« Nommer un administrateur » accorde le droit administrateur à une adresse, pour toute l'instance : le compte est créé s'il n'existait pas, et rien n'est envoyé — la personne se connecte avec le compte d'annuaire qu'elle a déjà. Pour retirer ce droit, retirez-le dans la liste ou désactivez le compte.`,
+            },
+            {
+              term: $localize`:@@aide.comptes.term.keycloak:Ce qui reste à l'annuaire`,
+              text: $localize`:@@aide.comptes.def.keycloak:Le mot de passe et le second facteur se règlent dans l'annuaire, jamais ici. Les animateurs n'ont pas de compte : ils ouvrent leur espace avec leur lien et le code reçu par e-mail. La marche à suivre pour brancher un annuaire est dans la documentation d'exploitation (docs/oidc.md).`,
+            },
+          ],
+        },
+      ],
+      links: [
+        { route: '/comptes', label: $localize`:@@nav.link.comptes:Comptes et droits` },
+        { route: '/historique', label: $localize`:@@nav.link.historique:Historique` },
       ],
     },
     {

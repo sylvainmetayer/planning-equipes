@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.ParametresResponsables;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
@@ -146,6 +147,23 @@ public class ParametresResource {
     @Path("/parametres-contact")
     public ContactOrganisation getContactOrganisation() {
         return referenceDataService.getContactOrganisation();
+    }
+
+    /**
+     * Whether the responsables de stand of this edition read names or head
+     * counts (issue #295). An edition that never chose answers
+     * {@code nominatif: false}.
+     */
+    @GET
+    @Path("/parametres-responsables")
+    public ParametresResponsables getParametresResponsables() {
+        return referenceDataService.getParametresResponsables();
+    }
+
+    @PUT
+    @Path("/parametres-responsables")
+    public ParametresResponsables updateParametresResponsables(ParametresResponsables parametres) {
+        return referenceDataService.updateParametresResponsables(parametres);
     }
 
     /** Saves it; 400 with an explanation when a half cannot be a number or an address. */

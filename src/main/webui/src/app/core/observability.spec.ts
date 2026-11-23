@@ -26,6 +26,8 @@ const CONFIG: AppConfig = {
   dragDropEnabled: false,
   version: '',
   mailMock: false,
+  authOidc: true,
+  authSecours: false,
 };
 
 describe('loadAppConfig', () => {
@@ -51,6 +53,8 @@ describe('loadAppConfig', () => {
       dragDropEnabled: false,
       version: '',
       mailMock: false,
+      authOidc: true,
+      authSecours: false,
     });
   });
 
@@ -64,6 +68,8 @@ describe('loadAppConfig', () => {
       dragDropEnabled: false,
       version: '',
       mailMock: false,
+      authOidc: true,
+      authSecours: false,
     });
   });
 });

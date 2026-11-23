@@ -1,0 +1,108 @@
+/* Comptes page: the two standing notes, the state of an account in the table,
+   the rights panel and its greyed-out ended rights, and the two dialogs. */
+
+.comptes-notes {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.comptes-notes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.comptes-notes mat-icon {
+  flex-shrink: 0;
+}
+
+.comptes-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font: var(--mat-sys-label-small);
+  white-space: nowrap;
+}
+
+.comptes-muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.comptes-state-inactive {
+  color: var(--mat-sys-error);
+}
+
+tr.comptes-row-inactive td.mat-column-email,
+tr.comptes-row-inactive td.mat-column-nom,
+tr.comptes-row-inactive td.mat-column-droits {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.comptes-rights-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comptes-right {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.comptes-right-main,
+.comptes-right-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.comptes-right-meta,
+.comptes-right-stands {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+/* Expired and withdrawn rights stay listed — the history is the point — but
+   read as over. Colour and background, not opacity: the text keeps its
+   contrast. */
+.comptes-right.comptes-right-ended {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.comptes-dialog-note {
+  margin: 0 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.comptes-dialog-field {
+  width: 100%;
+}
+
+.comptes-grant-form {
+  display: grid;
+  gap: 0.25rem;
+}
+
+@media (max-width: 740px) {
+  .comptes-right {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

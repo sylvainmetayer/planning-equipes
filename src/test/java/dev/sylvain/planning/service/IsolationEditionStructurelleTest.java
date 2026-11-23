@@ -103,8 +103,6 @@ class IsolationEditionStructurelleTest {
             "demande_echange",
             "parametres_echange",
             "parametres_signalement",
-            "espace_session",
-            "espace_acces",
             "plan_snapshot",
             "publication_destinataire",
             "envoi_planning",
@@ -116,6 +114,7 @@ class IsolationEditionStructurelleTest {
             "confirmation_planning",
             "parametres_notifications",
             "contact_organisation",
+            "parametres_responsables",
             "notification_planifiee",
             "journal_action",
             "verification_besoin",
@@ -187,6 +186,16 @@ class IsolationEditionStructurelleTest {
      *       machine serves every edition, as the queue is one for the whole
      *       instance, and a restart looks for both before any request names
      *       an edition; the job a remote solve belongs to carries its edition.</li>
+     *   <li>{@code compte} — a person, not a fiche (ADR 0049): one Keycloak
+     *   <li>{@code compte} — a person, not a fiche (ADR 0070): one Keycloak
+     *   <li>{@code compte} — a person, not a fiche (ADR 0077): one OIDC
+     *       identity serves every edition, so the table has no edition to be
+     *       partitioned by.</li>
+     *   <li>{@code habilitation}, {@code habilitation_stand} — what that person
+     *       may do, read for the whole account at once when their identity is
+     *       built, before any edition is bound to the request. The edition is
+     *       a <em>column</em> of the right ({@code NULL} = every edition), the
+     *       scope it grants, not a partition of the table.</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -202,7 +211,10 @@ class IsolationEditionStructurelleTest {
             "webhook_livraison",
             "journal_connexion",
             "machine_calcul",
-            "resolution_distante");
+            "resolution_distante",
+            "compte",
+            "habilitation",
+            "habilitation_stand");
 
     /**
      * The deliberately cross-edition statements, and why.
@@ -217,9 +229,9 @@ class IsolationEditionStructurelleTest {
      *       no header anybody may trust.</li>
      *   <li>The wall display token, for the same reason again: a television
      *       opens it on a bare {@code GET}, and only its hash is looked up.</li>
-     *   <li>The e-mail address collision is checked when the "trusted header"
-     *       mode boots, which has no edition to consider and wants to know
-     *       whether the collision exists anywhere at all.</li>
+     *   <li>Whether an e-mail address is still carried by a fiche of any
+     *       edition, asked by the Keycloak provisioning before it disables the
+     *       person's account: one account serves every edition.</li>
      *   <li>{@code PlanSnapshotService.listAllEditions} lists every edition's
      *       snapshots for the A/B comparator: since a variant <b>is</b> another
      *       edition, scoping this listing would hide exactly the pair the user
@@ -1013,7 +1025,7 @@ class IsolationEditionStructurelleTest {
     void leScanVoitUneRequeteNonCloisonneePasseeParVariable(@TempDir Path racine) throws IOException {
         assertThat(griefs(racine, "Locale", """
                 class Locale {
-                    void lire() {
+                    void read() {
                         String sql = "SELECT id FROM stand WHERE nom = ?";
                         scope.prepareScoped(connection, sql);
                     }
@@ -1025,7 +1037,7 @@ class IsolationEditionStructurelleTest {
         assertThat(griefs(racine, "Constante", """
                 class Constante {
                     private static final String SELECT_SQL = "SELECT id FROM stand WHERE nom = ?";
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, SELECT_SQL);
                     }
                 }
@@ -1036,7 +1048,7 @@ class IsolationEditionStructurelleTest {
         assertThat(griefs(racine, "Concatenation", """
                 class Concatenation {
                     private static final String SELECT_SQL = "SELECT id FROM stand";
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, SELECT_SQL + " ORDER BY nom");
                     }
                 }
@@ -1054,7 +1066,7 @@ class IsolationEditionStructurelleTest {
         assertThat(griefs(racine, "Cloisonne", """
                 class Cloisonne {
                     private static final String SELECT_SQL = "SELECT id FROM stand WHERE edition_id = ?";
-                    void lire() {
+                    void read() {
                         String sql = "DELETE FROM stand WHERE edition_id = ? AND id = ?";
                         scope.prepareScoped(connection, sql);
                         scope.prepareScoped(connection, SELECT_SQL + " ORDER BY nom");
@@ -1073,7 +1085,7 @@ class IsolationEditionStructurelleTest {
     void leScanSignaleUneFormeQuIlNeSaitPasSuivre(@TempDir Path racine) throws IOException {
         assertThat(griefs(racine, "Builder", """
                 class Builder {
-                    void lire() {
+                    void read() {
                         StringBuilder sql = new StringBuilder("SELECT id FROM stand");
                         for (String colonne : colonnes) {
                             sql.append(" AND ").append(colonne).append(" = ?");
@@ -1087,7 +1099,7 @@ class IsolationEditionStructurelleTest {
 
         assertThat(griefs(racine, "Jointure", """
                 class Jointure {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, "SELECT id FROM stand WHERE " + String.join(" AND ", filtres));
                     }
                 }
@@ -1097,7 +1109,7 @@ class IsolationEditionStructurelleTest {
 
         assertThat(griefs(racine, "Heritee", """
                 class Heritee {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, AutreClasse.SELECT_SQL);
                     }
                 }
@@ -1129,7 +1141,7 @@ class IsolationEditionStructurelleTest {
 
         assertThat(griefs(racine, "Formatte", """
                 class Formatte {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, "SELECT id FROM %s WHERE nom = ?".formatted(table));
                     }
                 }
@@ -1139,7 +1151,7 @@ class IsolationEditionStructurelleTest {
 
         assertThat(griefs(racine, "BlocSuivi", """
                 class BlocSuivi {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, \"""
                                 SELECT id FROM stand
                                 WHERE nom = ?\""".stripIndent());
@@ -1196,7 +1208,7 @@ class IsolationEditionStructurelleTest {
     void leScanLitUneConstanteDeclareeApresSonUsage(@TempDir Path racine) throws IOException {
         assertThat(griefs(racine, "ConstanteEnBas", """
                 class ConstanteEnBas {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, SELECT_STANDS);
                     }
 
@@ -1208,7 +1220,7 @@ class IsolationEditionStructurelleTest {
 
         assertThat(griefs(racine, "ConstanteEnBasNue", """
                 class ConstanteEnBasNue {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, SELECT_STANDS);
                     }
 
@@ -1230,7 +1242,7 @@ class IsolationEditionStructurelleTest {
     void unBlocCatchNestPasUneMethode(@TempDir Path racine) throws IOException {
         assertThat(griefs(racine, "Reprise", """
                 class Reprise {
-                    void lire() {
+                    void read() {
                         preparer("SELECT id FROM stand WHERE edition_id = ?");
                     }
 
@@ -1248,7 +1260,7 @@ class IsolationEditionStructurelleTest {
 
         assertThat(griefs(racine, "RepriseNue", """
                 class RepriseNue {
-                    void lire() {
+                    void read() {
                         preparer("SELECT id FROM stand");
                     }
 
@@ -1275,7 +1287,7 @@ class IsolationEditionStructurelleTest {
     void uneTableTemporaireNeReclamePasDePredicat(@TempDir Path racine) throws IOException {
         assertThat(griefs(racine, "Remap", """
                 class Remap {
-                    void lire() {
+                    void read() {
                         scope.prepareScoped(connection, "SELECT nouvel_id FROM creneau_remap WHERE ancien_id = ?");
                     }
                 }

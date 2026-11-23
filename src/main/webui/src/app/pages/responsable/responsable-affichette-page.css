@@ -1,0 +1,72 @@
+.affichette-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 50rem;
+  padding: 1rem;
+}
+
+.affichette-feuille {
+  margin: 0 auto;
+  max-width: 50rem;
+  padding: 0 1rem 2rem;
+}
+
+.affichette-feuille h1 {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.affichette-feuille header p {
+  font-size: 1.25rem;
+  margin: 0.25rem 0 1.5rem;
+}
+
+.affichette-table {
+  border-collapse: collapse;
+  font-size: 1.25rem;
+  width: 100%;
+}
+
+.affichette-table th,
+.affichette-table td {
+  border: 1px solid currentColor;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.affichette-heure {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+  width: 12rem;
+}
+
+.affichette-vide {
+  border-bottom: 1px dashed currentColor;
+  min-height: 1.5rem;
+}
+
+.affichette-feuille footer {
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+@media print {
+  .affichette-actions {
+    display: none;
+  }
+
+  .affichette-feuille {
+    color: #000;
+    max-width: none;
+    padding: 0;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+}

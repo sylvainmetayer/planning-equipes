@@ -187,6 +187,15 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-elytron-security-properties-file</artifactId>
         </dependency>
+        <!-- OpenID Connect login (docs/oidc.md, ADR 0077). Two tenants: the
+             default one is a web-app tenant for the admin and animateur browser
+             sessions, the "mcp" one a service tenant validating bearer tokens on
+             /mcp. Off by default (OIDC_ENABLED): any OpenID Connect provider, the
+             embedded account above staying the local door. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-oidc</artifactId>
+        </dependency>
         <dependency>
             <groupId>ai.timefold.solver</groupId>
             <artifactId>timefold-solver-core</artifactId>
@@ -309,6 +318,16 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Signs real JWTs for the OIDC tests without a Keycloak container:
+             OidcWiremockTestResource publishes the JWKS, so the role mapping,
+             the audience check, the espace animateur and the /mcp bearer path
+             run on the real code path in a suite that stays Docker-free. The
+             code flow itself is the provider's. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-oidc-server</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

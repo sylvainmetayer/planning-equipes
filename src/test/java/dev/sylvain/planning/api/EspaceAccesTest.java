@@ -122,6 +122,38 @@ class EspaceAccesTest {
                 .statusCode(200);
     }
 
+    /**
+     * A session with the instance's OIDC provider is the code's fact proved
+     * another way: its verified address opens the espace of the fiche carrying
+     * it, without a code — and no other one, nor with an unverified address.
+     */
+    @Test
+    void aProviderSessionOnTheFichesAddressOpensItsEspaceOnly() {
+        String alice = "Bearer "
+                + dev.sylvain.planning.OidcJetons.jeton("acces-alice", List.of(), "planning-app", EMAIL_ALICE, true);
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", alice)
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ACCES-A"))
+                .then()
+                .statusCode(200)
+                .body("animateurId", equalTo("ACCES-A"));
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", alice)
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ACCES-B"))
+                .then()
+                .statusCode(401);
+        String nonVerifiee = "Bearer "
+                + dev.sylvain.planning.OidcJetons.jeton("acces-alice", List.of(), "planning-app", EMAIL_ALICE, false);
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", nonVerifiee)
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ACCES-A"))
+                .then()
+                .statusCode(401);
+    }
+
     /** The session is bound to ONE animateur: it does not open a colleague's espace. */
     @Test
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {

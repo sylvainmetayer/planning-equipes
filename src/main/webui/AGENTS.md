@@ -84,7 +84,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   — « Imprimer cette journée » of the Planning page: the same print layout of
   `pages/mural`, route data `apercu`, read under the admin session from
   `GET /api/affichage-mural/apercu`, never through a token; a 401 sends to
-  `/login` like any admin call). The espace has
+  `/login` like any admin call). So do `/responsable` (the responsable de
+  stand's screen: the published plan of their stands, opened by an OIDC
+  session alone, over the pure `pages/responsable/responsable.ts`) and
+  `/responsable/affichette` (one stand's day on an A4 sheet). With an OIDC
+  provider plugged in (`/api/config` `authOidc`, off by default), `/login`
+  offers its button — a full-page navigation to
+  `/api/auth/oidc/login?redirect=…`, the frontend holding no OIDC library and
+  no token — beside the local form, which is then worded as the emergency
+  door (`authSecours`); without one, the local form alone, plainly. The espace
+  keeps its link and e-mailed code either way. The espace has
   five child routes of its own: `/animateur/:jeton` (« Mon planning » — three
   tabs chosen by `?onglet=jour|apercu|coequipiers`, the day on screen carried by
   `?jour=`: the day with its strip, its state band and its seat cards; the
@@ -456,6 +465,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   instance — logins, failures, lockouts, with time and address, the same
   whatever edition is selected —, `pages/historique/connexions-admin`, paged
   the same way),
+  `/comptes` (« Comptes et droits » — the named accounts of the OIDC sign-in
+  and the rights granted to them, ADR 0077: an instance-wide administrator
+  (« Nommer un administrateur »), RH, responsable de stand per edition with an
+  expiry; an account is deactivated and a right withdrawn, never deleted; the
+  credentials and the second factor stay the provider's; the stands of a
+  right in another edition are read with an explicit `X-Edition-Id`,
+  `StandsApi.listInEdition`),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from
   the repository's commit subjects collected at build time by
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted

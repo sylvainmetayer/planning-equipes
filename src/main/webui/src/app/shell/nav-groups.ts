@@ -454,6 +454,11 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
+        {
+          path: '/comptes',
+          label: $localize`:@@nav.link.comptes:Comptes et droits`,
+          icon: 'manage_accounts',
+        },
         { path: '/mcp-client', label: $localize`:@@nav.link.mcp:MCP`, icon: 'smart_toy' },
       ],
     },

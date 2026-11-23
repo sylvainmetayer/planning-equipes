@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.ParametresResponsables;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
@@ -131,6 +132,16 @@ public class ParametresService {
         ParametresValidator.checkContactOrganisation(cleaned);
         repository.saveContactOrganisation(cleaned);
         return cleaned;
+    }
+
+    public ParametresResponsables getParametresResponsables() {
+        return repository.getParametresResponsables();
+    }
+
+    public ParametresResponsables updateParametresResponsables(ParametresResponsables parametres) {
+        ParametresResponsables valeur = parametres == null ? ParametresResponsables.defaults() : parametres;
+        repository.saveParametresResponsables(valeur);
+        return valeur;
     }
 
     private static String blankToNull(String value) {

@@ -422,11 +422,27 @@ Single Quarkus service, no separate solver microservice. Package root:
   the order its sections are applied in lives in `ScenarioImportService`, and
   `ReferenceDataResource` is left turning the outcome into a body. The endpoint
   list is the published OpenAPI.
-- HTTP security (issue #165): everything under `/api` requires the admin form
-  login (single `admin` account from config) **except**
-  `/api/espace-animateur/*` (its URL token is the credential and resolves the
-  edition by itself), `/api/abonnements/*`, `/api/mural/*`, `/api/auth/*` and
-  `/api/config`; `/mcp` keeps its own API-key mechanism.
+- HTTP security (issue #165, ADR 0077): everything under `/api` requires the
+  **`admin` role** (policy `role-admin`; `PolitiquesHttpStructuralTest` pins
+  every `permit` exception) **except** `/api/espace-animateur/*` (its URL
+  token is the credential and resolves the edition by itself),
+  `/api/abonnements/*`, `/api/mural/*`, `/api/auth/*` and `/api/config`, and
+  `/api/responsable/*`, which the `responsable-stand` role alone opens; `/mcp`
+  keeps its own API-key mechanism. The `admin` role comes from the local form
+  login (single `admin` account from config, `planning.auth.secours`, open by
+  default) or, when an **OIDC provider** is plugged in (`OIDC_ENABLED`, off by
+  default; any provider — an ADFS, a Keycloak, a Zitadel — and no code
+  specific to one, `docs/oidc.md`), from the rights of the person's account in
+  the application (`service/compte/`: `compte`, `habilitation` with an
+  instance-wide `ADMIN`, `RH` and per-edition `RESPONSABLE_STAND`, expiring
+  and withdrawn, never deleted) or a role the provider maps into its tokens.
+  The provider authenticates, the application authorises
+  (`CompteIdentityAugmentor`, which also strips `admin` under
+  `OIDC_ADMIN_MFA=token` when `amr` names no second factor). Animateurs have
+  no account: the espace keeps its link and e-mailed code, and an OIDC session
+  whose address is the fiche's opens it without the code (`SessionEspaceFilter`).
+  `%test` runs with OIDC on against an in-memory server (`OidcTestServer`,
+  hybrid mode, tokens from `OidcJetons`).
   **`/api/abonnements/{token}/planning.ics` is the one route a URL alone
   opens** (issue #324): a calendar client subscribed to a feed carries no
   cookie and cannot answer a challenge, so the espace's e-mail-code session is
