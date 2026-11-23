@@ -45,3 +45,9 @@ secret:
     # en %prod le temps du `verify`.
     - name: "@QuarkusIntegrationTest, compte admin (#405)"
       match: 997b8be165f243b507927a428df87164d46bf28280d077684dfcd31d3f174101
+
+    # site/src/_data/site.json : le jeton de Cloudflare Web Analytics est écrit en
+    # clair dans chaque page servie (c'est son principe : un identifiant de site,
+    # pas un secret).
+    - name: "vitrine, jeton public du beacon Cloudflare Web Analytics"
+      match: cef3a416193a5cf2fced65a70b0ad0b2741c5d511087abd437e403d22356db10
