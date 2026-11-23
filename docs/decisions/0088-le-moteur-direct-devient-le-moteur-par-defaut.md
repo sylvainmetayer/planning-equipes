@@ -77,6 +77,36 @@ simple au quadruple selon la graine (0087), et passe en une minute sous le
 medium que Timefold atteint en cinq. Il cède environ 3 % de soft
 à 300 s ; ce prix est connu et accepté (le niveau qui cède aux deux autres).
 
+### Sur le banc des scénarios versionnés
+
+Tous les scénarios de `src/main/resources/scenarios/`, chaque moteur seul,
+300 s avec arrêt sur un plateau de 120 s, graine 1, partant de zéro ; les
+secondes sont celles d'une machine de calcul à 16 cœurs, pas une constante :
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=SolverBenchTest \
+  -Dbench.scenario=<fichier>.yaml -Dbench.seconds=300 -Dbench.plateau=120 \
+  -Dbench.seed=1 [-Dbench.engine=hand]
+```
+
+- **Faisabilité** : le moteur direct atteint zéro écart dur partout où
+  Timefold l'atteint, et plus tôt — `festival-hivernal` 2 s contre 18 s,
+  `gamme-25-30j-150stands-320animateurs-edition-complete` 3 s contre 34 s.
+- **Medium** : meilleur ou égal sur presque tous les scénarios ; moins bon
+  sur quatre :
+
+  | Scénario | direct | Timefold |
+  | --- | --- | --- |
+  | `gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc` | −330 | −270 |
+  | `gamme-29-infaisable-mineurs-en-soiree` | −50 | −30 |
+  | `extreme-04-120j-10stands-14animateurs-sans-relache` | −15 780 | −15 260 |
+  | `gamme-12-7j-10stands-24animateurs-semaine-complete-ferie` | −1 645 | −1 635 |
+
+- **Taille** : `extreme-09-120j-400stands-1000animateurs-cumul` (41 370
+  sièges × 1 000 animateurs, soit 41 millions de couples) dépasse la garde
+  mémoire du moteur direct (15 millions de couples siège × animateur) : il le
+  refuse, sans plan, là où Timefold en rend un.
+
 ## Ce que ça coûte
 
 - La résolution incrémentale et le réamorçage passent désormais par le moteur
@@ -93,7 +123,10 @@ medium que Timefold atteint en cinq. Il cède environ 3 % de soft
 - Une édition hors du périmètre du moteur direct (plus de 15 millions de
   couples siège × animateur, plus de 64 appréciations de typologies par fiche)
   est refusée par un message : l'exploitant qui en dépend règle
-  `SOLVER_ENGINE=timefold`.
+  `SOLVER_ENGINE=timefold`. Avec `hand` par défaut, ce refus **fait échouer la
+  tâche** : aucun repli sur Timefold, la résolution ne rend aucun plan. Une
+  édition de la taille d'`extreme-09-120j-400stands-1000animateurs-cumul`
+  (41 370 sièges, 1 000 animateurs) ne se résout donc plus sans ce réglage.
 
 ## Alternatives écartées
 
