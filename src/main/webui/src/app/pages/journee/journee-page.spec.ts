@@ -445,7 +445,11 @@ describe('JourneePage', () => {
   });
 
   it('puts the plan at the top: one title, the day selector, the filters as autocompletes', async () => {
-    await mount();
+    const page = await mount();
+    // Location and game category are folded under « Réglages avancés » (ADR 0090).
+    page['avance'].basculer();
+    TestBed.tick();
+    await fixture.whenStable();
 
     expect(racine().querySelector('h1')?.textContent?.trim()).toBe('Planning');
     expect(racine().querySelector('app-mini-mois')).not.toBeNull();
@@ -582,6 +586,9 @@ describe('JourneePage', () => {
   // nothing.
   it('shows only the filters the rendering on screen reads, and counts only those', async () => {
     const page = await mount({ emplacement: 'aucun' });
+    page['avance'].basculer();
+    TestBed.tick();
+    await fixture.whenStable();
     const filtres = () =>
       Array.from(racine().querySelectorAll('.planning-barre .planning-filtre')).map((filtre) =>
         filtre.querySelector('mat-label')?.textContent?.trim(),

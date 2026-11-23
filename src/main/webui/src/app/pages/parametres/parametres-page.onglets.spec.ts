@@ -204,7 +204,20 @@ describe('ParametresPage — onglets', () => {
     );
   }
 
+  /** The instance's tabs are folded under « Réglages avancés » (ADR 0090): opened first. */
+  async function ouvrirAvance(): Promise<void> {
+    const bouton = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Réglages avancés'),
+    );
+    if (bouton && bouton.getAttribute('aria-expanded') !== 'true') {
+      bouton.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+  }
+
   async function cliquerOnglet(nom: string): Promise<void> {
+    await ouvrirAvance();
     const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
       each.textContent!.includes(nom),
     );
@@ -218,7 +231,9 @@ describe('ParametresPage — onglets', () => {
     await rendre();
   });
 
-  it('names its tabs and opens on the edition', () => {
+  it('names its tabs, the instance ones folded, and opens on the edition', async () => {
+    expect(onglets()).toEqual(['Édition', 'Affichage mural']);
+    await ouvrirAvance();
     expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Instance', 'Historique', 'MCP']);
     expect(textOf()).toContain("Nom de l'édition");
     expect(textOf()).toContain('Gel du référentiel');

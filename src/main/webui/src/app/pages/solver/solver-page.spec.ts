@@ -1237,6 +1237,9 @@ describe('SolverPage', () => {
       );
       const page = createPage();
       await fixture.whenStable();
+      // Where the solve runs is folded under « Réglages avancés » (ADR 0090).
+      page['avance'].basculer();
+      await fixture.whenStable();
 
       expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).not.toBeNull();
       // A permanent worker: the choice, and no machine panel.
@@ -1263,7 +1266,7 @@ describe('SolverPage', () => {
       machineApi.read.mockResolvedValue(
         machine({ configured: true, onDemand: true, state: 'ABSENT' }),
       );
-      createPage();
+      createPage()['avance'].basculer();
       await fixture.whenStable();
 
       expect(racine().querySelector('app-machine-calcul-card')?.textContent).toContain(
