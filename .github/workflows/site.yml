@@ -41,7 +41,8 @@ jobs:
           node-version-file: site/.node-version
           cache: npm
           cache-dependency-path: site/package-lock.json
-      - run: npm ci
+      # Sans scripts de cycle de vie : rien dans le build n'en a besoin (esbuild et Chromium s'installent par leur paquet)
+      - run: npm ci --ignore-scripts
       # Build, puis ses tests : articles contre ConstraintCatalog, structure FR/EN,
       # .pages.yml, liens internes, JSON-LD, hreflang, sitemap
       - run: npm test
@@ -54,7 +55,7 @@ jobs:
       # Sans le beacon d'audience (build de prévisualisation) : Lighthouse mesure la page,
       # pas un script tiers, et un réseau capricieux ne doit pas faire échouer la PR
       - name: Lighthouse (mobile et bureau, 95 au moins partout)
-        run: npx eleventy --quiet && npm run check:lighthouse
+        run: npm run build -- --quiet && npm run check:lighthouse
         env:
           ELEVENTY_ENV: preview
           CHROME_PATH: /usr/bin/google-chrome

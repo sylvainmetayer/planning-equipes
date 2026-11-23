@@ -10,7 +10,7 @@ export function typo(text, lang) {
   if (lang !== 'fr') return apostrophes;
   return apostrophes
     .replace(/ ([?!:;»])/g, ' $1')
-    .replace(/« /g, '« ')
+    .replaceAll('« ', '«\u00a0')
     .replace(/(\d) (h|ko)\b/g, '$1 $2');
 }
 
