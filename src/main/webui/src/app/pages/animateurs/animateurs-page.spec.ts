@@ -323,7 +323,7 @@ describe('AnimateursPage table', () => {
       person('bob', { prenom: 'Bob', nom: 'Ados', dateNaissance: '2015-01-01' }),
     ]);
 
-    expect(racine().querySelector('h1')!.textContent!).toContain('Animateurs (2)');
+    expect(racine().querySelector('h2')!.textContent!).toContain('Animateurs (2)');
     expect(lignes()[0][1]).toBe('Amélie NothombManager');
     // The regime is derived from the birth date, never stored — and said, not a yes/no.
     expect(lignes()[0][2]).toMatch(/^\d+ ans$/);

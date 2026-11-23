@@ -209,7 +209,7 @@ describe('TypologiesPage table', () => {
       { id: 'T2', label: 'Expert' },
     ]);
 
-    expect(racine().querySelector('h1')!.textContent!).toContain('Typologies (2)');
+    expect(racine().querySelector('h2')!.textContent!).toContain('Typologies (2)');
     // The drawn id, then the code the import files cite — empty when none was given.
     expect(lignes().map((row) => [row[1], row[2], row[3]])).toEqual([
       ['T1', 'AMBIANCE', 'Ambiance'],
