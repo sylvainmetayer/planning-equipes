@@ -504,6 +504,9 @@ describe('OuverturesPage — saisie', () => {
     await new Promise((resolve) => setTimeout(resolve));
     await fixture.whenStable();
     const page = fixture.componentInstance;
+    // The layer choice is folded under « Réglages avancés » (ADR 0090).
+    page['avance'].basculer();
+    await fixture.whenStable();
 
     expect(layers).toHaveBeenCalledWith('2026-07-08', '2026-07-09');
     // Stand A, 10-12: its rule (top lane) and its seats (bottom lane), no band.

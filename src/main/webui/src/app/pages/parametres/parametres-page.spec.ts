@@ -267,6 +267,14 @@ describe('ParametresPage rendering', () => {
 
   /** Clicks a tab of the toggle group, as a reader does — the cards under it are then rendered. */
   async function openTab(nom: string): Promise<void> {
+    // The instance's tabs are folded under « Réglages avancés » (ADR 0090).
+    const avance = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Réglages avancés'),
+    );
+    if (avance && avance.getAttribute('aria-expanded') !== 'true') {
+      avance.click();
+      await fixture.whenStable();
+    }
     const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
       each.textContent!.includes(nom),
     );
@@ -325,7 +333,7 @@ describe('ParametresPage rendering', () => {
   it('points to « Règles du planning » for what decides the plan', async () => {
     await rendre();
 
-    const lien = racine().querySelector('a[href="/regles"]');
+    const lien = racine().querySelector('a[href="/regles?onglet=legal"]');
     expect(lien?.textContent).toContain('Règles du planning');
   });
 
