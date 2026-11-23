@@ -93,7 +93,7 @@ describe('FormationPage', () => {
     );
     // A typologie in shortage opens the competences grid on it.
     expect(sections[0].querySelector('a.formation-lien')!.getAttribute('href')).toMatch(
-      /^\/competences\?typologies=/,
+      /^\/animateurs\?onglet=competences&typologies=/,
     );
     expect(sections[0].querySelector('.formation-jours')!.textContent).toContain('10/07');
     const lignes = Array.from(sections[0].querySelectorAll('tbody tr')).map((tr) =>
