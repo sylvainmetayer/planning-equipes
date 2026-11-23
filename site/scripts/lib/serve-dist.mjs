@@ -25,6 +25,8 @@ const TYPES = {
   '.vtt': 'text/vtt',
 };
 
+const COMPRESSIBLE = /^(?:text\/.+|application\/(?:xml|json)|image\/svg\+xml)$/;
+
 // URL path → file: "/cv/pdf/index.html", and "/cv/pdf/" and "/cv/pdf" for an index
 function indexFiles(dist) {
   const files = new Map();
@@ -75,7 +77,7 @@ export function serveDist(dist, { transform } = {}) {
     let body = transform ? transform(file, content) : content;
     const headers = { 'Content-Type': type };
     // Like Cloudflare, text is sent compressed: Lighthouse scores it
-    if (/^(text|application\/(xml|json))|svg/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '')) {
+    if (COMPRESSIBLE.test(type) && (req.headers['accept-encoding'] ?? '').includes('gzip')) {
       body = gzipSync(body);
       headers['Content-Encoding'] = 'gzip';
     }

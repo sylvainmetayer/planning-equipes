@@ -3,10 +3,13 @@
 // back to today.
 import { execFileSync } from 'node:child_process';
 
+// Absolute path: the build must not run whatever `git` a modified PATH would find
+const GIT = '/usr/bin/git';
+
 export default function () {
   let modified = new Date().toISOString().slice(0, 10);
   try {
-    const out = execFileSync('git', ['log', '-1', '--format=%cs', '--', '.'], { encoding: 'utf8' }).trim();
+    const out = execFileSync(GIT, ['log', '-1', '--format=%cs', '--', '.'], { encoding: 'utf8' }).trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(out)) modified = out;
   } catch {
     // no git: keep today

@@ -49,9 +49,9 @@ for lang in fr en; do
     marques="$brut/$lang/film-$film.marks"
     # Le début montre le chargement de l'application, puis le menu qui se referme : il est coupé
     debut=0.8
-    [ "$film" = espace ] || debut=3.0
+    [[ "$film" == espace ]] || debut=3.0
     filtre="[0:v]trim=start=$debut,setpts=PTS-STARTPTS[v]"
-    if [ -s "$marques" ]; then
+    if [[ -s "$marques" ]]; then
       read -r de a cible < "$marques"
       filtre="[0:v]split=3[x][y][z];[x]trim=start=$debut:end=$de,setpts=PTS-STARTPTS[v0];[y]trim=start=$de:end=$a,setpts=(PTS-STARTPTS)*$cible/($a-$de)[v1];[z]trim=start=$a,setpts=PTS-STARTPTS[v2];[v0][v1][v2]concat=n=3:v=1:a=0[v]"
     fi

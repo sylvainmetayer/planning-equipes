@@ -8,7 +8,7 @@
 // sends the _headers) it audits that origin. The pages are the ones of the
 // sitemap. The browser is CHROME_PATH, or the one chrome-launcher finds.
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import lighthouse from 'lighthouse';
 import desktop from 'lighthouse/core/config/desktop-config.js';
 import * as chromeLauncher from 'chrome-launcher';
@@ -18,16 +18,21 @@ const target = process.argv[2] ?? '_site';
 const MIN = 95;
 const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo'];
 
+// The argument is a build folder inside the project or the origin of a running server
+const isUrl = /^https?:\/\//.test(target);
+const folder = resolve(isUrl ? '_site' : target);
+if (!isUrl && !folder.startsWith(process.cwd() + sep)) throw new Error(`${folder} : le dossier du build doit être dans le projet`);
+if (isUrl) new URL(target); // refuses anything that is not a URL
+
 let base = target;
 let server;
-if (!/^https?:/.test(target)) {
-  server = serveDist(resolve(target));
+if (!isUrl) {
+  server = serveDist(folder);
   await new Promise((done) => server.listen(0, '127.0.0.1', done));
   base = `http://127.0.0.1:${server.address().port}`;
 }
-const distFolder = /^https?:/.test(target) ? '_site' : target;
-const sitemap = readFileSync(resolve(distFolder, 'sitemap.xml'), 'utf8');
-const pages = [...sitemap.matchAll(/<loc>https?:\/\/[^/]+([^<]*)<\/loc>/g)].map((m) => m[1]);
+const sitemap = readFileSync(resolve(folder, 'sitemap.xml'), 'utf8');
+const pages = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
 
 const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless=new', '--no-sandbox'] });
 const rows = [];
