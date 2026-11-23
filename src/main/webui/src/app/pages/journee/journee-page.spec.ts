@@ -739,30 +739,6 @@ describe('JourneePage', () => {
     expect(racine().querySelector('app-siege-panel')).not.toBeNull();
   });
 
-  it('narrows the rendering on what a relecture chip counts, and widens it back', async () => {
-    const page = await mount({ vue: 'rail' });
-
-    page['applyChip']('vides');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(page['view']()).toBe('calendrier');
-    expect(TestBed.inject(Location).path()).toContain('sieges=vides');
-
-    page['applyChip']('pauses');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(page['view']()).toBe('pauses');
-    expect(TestBed.inject(Location).path()).toContain('relais=sans');
-    expect(TestBed.inject(Location).path()).not.toContain('sieges=');
-
-    page['applyChip']('changements');
-    page['applyChip']('aucune');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(page['view']()).toBe('calendrier');
-    expect(TestBed.inject(Location).path()).not.toContain('relais=');
-  });
-
   it('carries the shared filters in the URL and clears them all in one action', async () => {
     const page = await mount({ stand: 'Tir', q: 'ali', lignes: 'libres' });
     expect(page['viewChanged']()).toBe(true);

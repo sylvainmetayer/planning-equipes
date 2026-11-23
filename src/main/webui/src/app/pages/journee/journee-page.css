@@ -114,48 +114,9 @@
   gap: 0.375rem;
 }
 
-.relecture-barre-titre {
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-label-large);
-}
-
-.relecture-pastille {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.7rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 999px;
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-label-large);
-  cursor: pointer;
-}
-
-.relecture-pastille:hover,
-.relecture-pastille:focus-visible {
-  border-color: var(--app-accent);
-}
-
-.relecture-pastille:disabled {
-  cursor: default;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.relecture-pastille-alerte {
-  border-color: var(--mat-sys-error);
-  color: var(--mat-sys-error);
-}
-
-.relecture-pastille-attention {
-  border-color: var(--mat-sys-tertiary);
-  color: var(--mat-sys-tertiary);
-}
-
-/* The chip narrowing the rendering now: filled, and aria-pressed for the ear. */
-.relecture-pastille-active {
-  background: var(--mat-sys-secondary-container);
-  color: var(--mat-sys-on-secondary-container);
-  border-color: var(--mat-sys-secondary);
+/* Something left to look at before accepting the day. */
+.relecture-compteur-alerte {
+  --mat-button-text-label-text-color: var(--mat-sys-error);
 }
 
 .journee-consigne {

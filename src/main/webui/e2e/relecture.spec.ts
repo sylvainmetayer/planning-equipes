@@ -49,7 +49,10 @@ test('accepter une journée la marque relue, sans rien figer', async ({ browser 
   await page.goto('/journee');
 
   const barre = page.locator('.relecture-barre');
-  await expect(barre.locator('.relecture-pastille')).toHaveCount(4);
+  await expect(barre.getByRole('link', { name: /à relire/ })).toHaveAttribute(
+    'href',
+    '/diagnostic?onglet=problemes',
+  );
   await expect(barre).toContainText('À relire');
 
   const dialogue = await ouvrirRelecture(page);
@@ -127,19 +130,13 @@ test('la progression se lit sur le sélecteur de jour et sur le solveur', async 
   await page.context().close();
 });
 
-test("une pastille de relecture filtre le rendu sur ce qu'elle compte", async ({ browser }) => {
+test('un seul compteur dit ce qui reste à relire, et mène aux problèmes', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/journee?vue=rail');
 
-  const pastille = page.locator('.relecture-pastille', { hasText: 'vide(s)' });
-  await pastille.click();
-  await expect(page).toHaveURL(/sieges=vides/);
-  await expect(page).not.toHaveURL(/vue=rail/);
-  await expect(pastille).toHaveAttribute('aria-pressed', 'true');
-
-  // Pressed again, the chip gives the whole day back.
-  await pastille.click();
-  await expect(page).not.toHaveURL(/sieges=/);
+  const compteur = page.locator('.relecture-barre').getByRole('link', { name: /à relire/ });
+  await compteur.click();
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=problemes/);
 
   await page.context().close();
 });

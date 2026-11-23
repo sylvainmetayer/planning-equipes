@@ -186,8 +186,7 @@
     <!-- A reading covers one whole day, never a pair: hidden while two are on screen. -->
     @if (!comparaisonActive() && jourCourant(); as courant) {
       <app-relecture-barre [jour]="jour" [numero]="courant.jour" [postes]="planning()?.postes ?? []"
-                           [pauses]="pauses()" [filtre]="filtreActif()" [active]="pastilleActive()"
-                           (pastille)="applyChip($event)" (reported)="message.set($event)" />
+                           [pauses]="pauses()" [filtre]="filtreActif()" (reported)="message.set($event)" />
     }
     <app-consigne-ligne [jour]="jour" />
   </div>

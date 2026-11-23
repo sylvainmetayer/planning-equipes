@@ -16,7 +16,6 @@
 } @else {
 <mat-card appearance="outlined" class="page-card jour-j-entete">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@aujourdhui.title">Aujourd'hui</h2>
     <mat-card-subtitle>
       @if (etat(); as etat) {
         <span class="aujourdhui-date" i18n="@@aujourdhui.date">{{ etat.date }} · {{ heureServeur() }} (heure du serveur)</span>

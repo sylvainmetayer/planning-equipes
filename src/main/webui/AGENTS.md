@@ -322,10 +322,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   each day marked with its empty seats, its reading, its lock and its
   consigne, « aujourd'hui » being the server's date from `ConsignesStore`;
   the stand and animateur filters as `shared/selection-recherche` autocompletes;
-  the relecture as one line of four chips (`relecture-barre.ts`) — empty
-  seats, breaks without relay, locked seats, changes — each **narrowing** the
-  rendering on what it counts (`?sieges=vides|verrous` on the table,
-  `?relais=sans` on the breaks, the Changements rendering), the comment and
+  the relecture as one line (`relecture-barre.ts`) — one count of the empty
+  seats and the breaks without relay, leading to the Diagnostic's problems
+  (`?sieges=vides|verrous` and `?relais=sans` still narrow the table and the
+  breaks from the address), the comment and
   « Relu et accepté » in its menu (`relecture-dialog.ts` over the former
   panel); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
   journée » (`/impression/:date`) and « Afficher sur la TV » (Paramètres ›
@@ -452,7 +452,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   edition's; two ticked rows, or one and « Plan en place », open the A/B
   comparator as a panel beside the table, `?comparer=a,b` keeping the pair;
   `/kpi`, `/instantanes` and `/comparateur` redirect there — `/kpi?edition=*`
-  to `?editions=toutes` —, the replay of the former Autopsie is gone; the Solveur shows its five latest rows;
+  to `?editions=toutes` —, the replay of the former Autopsie is gone;
   under the table, `pages/versions/edition-precedente.ts` says the Réalisé vs
   planifié measure the previous edition froze, and nothing when there is none),
   `/ouvertures` (a redirect to `/creneaux?onglet=horaires`: « Horaires des stands » — three
