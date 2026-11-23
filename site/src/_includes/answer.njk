@@ -1,6 +1,7 @@
 {% set c = copy[lang][key] %}
 {% set mail = 'mailto:' + site.email + '?subject=' + (copy[lang].commun.contactSujet | urlencode) %}
-<article>
+{% set player = 4 if key == 'legal' else (3 if key == 'benevoles' else (1 if key == 'hebergement' else 2)) %}
+<article data-player="{{ player }}">
   <header class="ask">
     <div class="container">
       <h1>{{ c.h1 | typo(lang) }}</h1>
@@ -10,20 +11,22 @@
   </header>
 
   {% if key == 'legal' %}
-  <section class="band band--a" aria-labelledby="art-t">
+  <section class="sec sec--tint" aria-labelledby="art-t">
     <div class="container">
       <div class="head"><h2 id="art-t">{{ c.articlesH }}</h2></div>
-      <div class="scroll" role="group" aria-label="{{ c.articlesH }}" tabindex="0">
-        <table class="rows rows--law">
-          <thead><tr>{% for h in c.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
-          <tbody>
-            {% for a in articles %}
-            <tr id="{{ a.number }}"><th scope="row" class="art">{{ a.number }}</th><td>{{ a[lang].subject }}</td><td>{{ a[lang].rule | typo(lang) }}</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="example">
+        <div class="scroll" role="group" aria-label="{{ c.articlesH }}" tabindex="0">
+          <table class="rows rows--law">
+            <thead><tr>{% for h in c.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for a in articles %}
+              <tr id="{{ a.number }}"><th scope="row" class="art">{{ a.number }}</th><td>{{ a[lang].subject }}</td><td>{{ a[lang].rule | typo(lang) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="example__note"><a href="{{ site.legifrance }}">Légifrance</a></p>
       </div>
-      <p class="foot-note"><a href="{{ site.legifrance }}">Légifrance</a></p>
     </div>
   </section>
   {% endif %}
@@ -31,7 +34,7 @@
   {% if c.sections %}
   <section class="container chapters" aria-label="{{ c.h1 | typo(lang) }}">
     {% for s in c.sections %}
-    <div class="chapter">
+    <div class="chapter" data-player="{{ ((loop.index0 + player) % 4) + 1 }}">
       <h2>{{ s.h2 | typo(lang) }}</h2>
       <div class="prose">{{ s.texte | md(lang) | safe }}</div>
     </div>
@@ -47,10 +50,10 @@
   </section>
   {% endif %}
 
-  <section class="band band--b" aria-labelledby="cta-t">
+  <section class="sec sec--close" aria-labelledby="cta-t">
     <div class="container close">
-      <h2 id="cta-t" class="statement">{{ c.cta | typo(lang) }}</h2>
-      <p class="acts"><a class="btn btn--paper" href="{{ mail }}">{{ c.bouton }}</a></p>
+      <h2 id="cta-t">{{ c.cta | typo(lang) }}</h2>
+      <p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a></p>
     </div>
   </section>
 

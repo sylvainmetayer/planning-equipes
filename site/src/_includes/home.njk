@@ -15,95 +15,28 @@
       </p>
     </div>
     <figure class="hero__shot">
-      <a class="print" href="/images/{{ lang }}/planning.webp">
-        <img src="/images/{{ lang }}/planning.webp" srcset="/images/{{ lang }}/vignettes/planning.webp 800w, /images/{{ lang }}/planning.webp 1440w" sizes="(min-width: 60rem) 62vw, 100vw" width="1440" height="900" fetchpriority="high" alt="{{ c.heroAlt }}">
+      <a class="shot" href="/images/{{ lang }}/planning.webp" data-popin="hero" data-caption="{{ c.heroLegende | typo(lang) }}">
+        <img src="/images/{{ lang }}/planning.webp" srcset="/images/{{ lang }}/vignettes/planning.webp 800w, /images/{{ lang }}/planning.webp 1440w" sizes="(min-width: 60rem) 56vw, 100vw" width="1440" height="900" fetchpriority="high" alt="{{ c.heroAlt }}">
       </a>
-      <p class="ticket">
-        <span class="ticket__art">{{ ticket.article }}</span>
-        <span>{{ (ticket.qui + ', ' + ticket.poste + (' : ' if lang == 'fr' else ': ') + ticket.raison + '.') | typo(lang) }}</span>
-      </p>
+      <div class="rule-card" role="note" aria-label="{{ c.ticketTitre }}, {{ ticket.article }}">
+        <p class="rule-card__top"><span>{{ c.ticketTitre }}</span><span class="rule-card__art">{{ ticket.article }}</span></p>
+        <p>{{ (ticket.qui + ', ' + ticket.poste + (' : ' if lang == 'fr' else ': ') + ticket.raison + '.') | typo(lang) }}</p>
+      </div>
       <figcaption class="caption">{{ c.heroLegende | typo(lang) }}</figcaption>
     </figure>
   </div>
 </section>
 
-<section class="band band--a" id="loi" aria-labelledby="loi-t">
-  <div class="container">
-    <div class="head">
-      <h2 id="loi-t">{{ c.loi.h2 | typo(lang) }}</h2>
-      <p class="lead">{{ c.loi.reponse | mdi(lang) | safe }}</p>
-    </div>
-    <div class="scroll" role="group" aria-label="{{ c.loi.refusTitre }}" tabindex="0">
-      <table class="rows">
-        <caption class="visually-hidden">{{ c.loi.refusTitre }}</caption>
-        <thead><tr>{% for h in c.loi.refusColonnes %}<th scope="col"{% if loop.last %} class="end"{% endif %}>{{ h }}</th>{% endfor %}</tr></thead>
-        <tbody>
-          {% for r in c.loi.refus %}
-          <tr><th scope="row">{{ r.qui }}</th><td>{{ r.poste }}</td><td>{{ r.raison | typo(lang) }}</td><td class="art">{{ r.article }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="foot-note">
-      <p><a href="{{ urls[lang].legal }}">{{ c.loi.lien }}</a></p>
-      <p>{{ c.loi.exemple }} {{ c.loi.mention }}</p>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="jour-j" aria-labelledby="j-titre">
-  <div class="container">
-    <div class="head">
-      <h2 id="j-titre">{{ c.jourj.h2 | typo(lang) }}</h2>
-      <p class="lead">{{ c.jourj.intro | typo(lang) }}</p>
-    </div>
-    <div class="show">
-      {{ film(c.images.films | byId(c.jourj.film), lang, labels, false) }}
-      <ul class="facts">{% for p in c.jourj.points %}<li>{{ p | typo(lang) }}</li>{% endfor %}</ul>
-    </div>
-  </div>
-</section>
-
-<section class="sec sec--rule" id="equipes" aria-labelledby="e-titre">
-  <div class="container bento">
-    <div class="bento__phone">{{ film(c.images.films | byId(c.equipes.film), lang, labels, true) }}</div>
-    <div class="bento__head">
-      <h2 id="e-titre">{{ c.equipes.h2 | typo(lang) }}</h2>
-      <p class="lead">{{ c.equipes.texte | mdi(lang) | safe }}</p>
-    </div>
-    <ul class="tiles">
-      {% for t in c.equipes.tuiles %}<li class="well"><h3>{{ t.titre | typo(lang) }}</h3><p>{{ t.texte | typo(lang) }}</p></li>{% endfor %}
-    </ul>
-    <div class="bento__foot">
-      <p>{{ c.equipes.outils | typo(lang) }}</p>
-      <p><a href="{{ urls[lang].benevoles }}">{{ c.equipes.lien }}</a></p>
-    </div>
-  </div>
-</section>
-
-<section class="sec sec--rule" id="calcul" aria-labelledby="cas-t">
-  <div class="container pinned">
-    <div class="pinned__stage">{{ film(c.images.films | byId(c.cas.film), lang, labels, false) }}</div>
-    <div class="pinned__panels">
-      <h2 id="cas-t">{{ c.cas.h2 | typo(lang) }}</h2>
-      <ol class="levels">
-        {% for n in c.cas.niveaux %}<li><h3>{{ n.titre | typo(lang) }}</h3><p>{{ n.texte | typo(lang) }}</p></li>{% endfor %}
-      </ol>
-      <p><a href="{{ urls[lang].calcul }}">{{ c.cas.lien }}</a></p>
-    </div>
-  </div>
-</section>
-
-<section class="sec sec--rule" id="ecrans" aria-labelledby="ecrans-t">
+<section class="sec" data-player="1" id="ecrans" aria-labelledby="ecrans-t">
   <div class="container">
     <div class="head">
       <h2 id="ecrans-t">{{ c.images.h2 | typo(lang) }}</h2>
       <p class="lead">{{ c.images.intro | typo(lang) }}</p>
     </div>
-    <ul class="index">
+    <ul class="cards">
       {% for e in c.images.ecrans %}
-      <li>
-        <a class="index__pic" href="/images/{{ lang }}/{{ e.id }}.webp"><img src="/images/{{ lang }}/vignettes/{{ e.id }}.webp" width="800" height="{{ 450 if e.id == 'mural' else 500 }}" loading="lazy" decoding="async" alt="{{ e.alt | typo(lang) }}"></a>
+      <li class="card" data-player="{{ (loop.index0 % 4) + 1 }}">
+        <a class="card__pic" href="/images/{{ lang }}/{{ e.id }}.webp" data-popin="ecrans" data-caption="{{ e.alt | typo(lang) }}"><img src="/images/{{ lang }}/vignettes/{{ e.id }}.webp" width="800" height="{{ 450 if e.id == 'mural' else 500 }}" loading="lazy" decoding="async" alt="{{ e.alt | typo(lang) }}"></a>
         <h3>{{ e.titre }}</h3>
         <p>{{ e.alt | after(':') | cap | typo(lang) }}</p>
       </li>
@@ -112,11 +45,80 @@
   </div>
 </section>
 
-<section class="sec sec--rule" id="questions" aria-labelledby="faq-t">
+<section class="sec sec--tint" data-player="4" id="loi" aria-labelledby="loi-t">
+  <div class="container">
+    <div class="head">
+      <h2 id="loi-t">{{ c.loi.h2 | typo(lang) }}</h2>
+      <p class="lead">{{ c.loi.reponse | mdi(lang) | safe }}</p>
+    </div>
+    <div class="example">
+      <p class="example__title">{{ c.loi.refusTitre }}</p>
+      <div class="scroll" role="group" aria-label="{{ c.loi.refusTitre }}" tabindex="0">
+        <table class="rows">
+          <caption class="visually-hidden">{{ c.loi.refusTitre }}</caption>
+          <thead><tr>{% for h in c.loi.refusColonnes %}<th scope="col"{% if loop.last %} class="end"{% endif %}>{{ h }}</th>{% endfor %}</tr></thead>
+          <tbody>
+            {% for r in c.loi.refus %}
+            <tr><th scope="row">{{ r.qui }}</th><td>{{ r.poste }}</td><td>{{ r.raison | typo(lang) }}</td><td class="art">{{ r.article }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="example__note">{{ c.loi.exemple }} {{ c.loi.mention }}</p>
+    </div>
+    <p class="more"><a href="{{ urls[lang].legal }}">{{ c.loi.lien }}</a></p>
+  </div>
+</section>
+
+<section class="sec" data-player="2" id="calcul" aria-labelledby="cas-t">
+  <div class="container pinned">
+    <div class="pinned__stage">{{ film(c.images.films | byId(c.cas.film), lang, labels, false) }}</div>
+    <div class="pinned__panels">
+      <h2 id="cas-t">{{ c.cas.h2 | typo(lang) }}</h2>
+      <p class="lead">{{ c.cas.intro | typo(lang) }}</p>
+      <ol class="levels">
+        {% for n in c.cas.niveaux %}<li data-player="{{ loop.index }}"><h3>{{ n.titre | typo(lang) }}</h3><p>{{ n.texte | typo(lang) }}</p></li>{% endfor %}
+      </ol>
+      <p class="more"><a href="{{ urls[lang].calcul }}">{{ c.cas.lien }}</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--tint" data-player="3" id="equipes" aria-labelledby="e-titre">
+  <div class="container bento">
+    <div class="bento__phone">{{ film(c.images.films | byId(c.equipes.film), lang, labels, true) }}</div>
+    <div class="bento__head">
+      <h2 id="e-titre">{{ c.equipes.h2 | typo(lang) }}</h2>
+      <p class="lead">{{ c.equipes.texte | mdi(lang) | safe }}</p>
+    </div>
+    <ul class="tiles">
+      {% for t in c.equipes.tuiles %}<li class="card card--text" data-player="{{ loop.index }}"><h3>{{ t.titre | typo(lang) }}</h3><p>{{ t.texte | typo(lang) }}</p></li>{% endfor %}
+    </ul>
+    <div class="bento__foot">
+      <p>{{ c.equipes.outils | typo(lang) }}</p>
+      <p class="more"><a href="{{ urls[lang].benevoles }}">{{ c.equipes.lien }}</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" data-player="1" id="jour-j" aria-labelledby="j-titre">
+  <div class="container">
+    <div class="head">
+      <h2 id="j-titre">{{ c.jourj.h2 | typo(lang) }}</h2>
+      <p class="lead">{{ c.jourj.intro | typo(lang) }}</p>
+    </div>
+    <div class="show">
+      {{ film(c.images.films | byId(c.jourj.film), lang, labels, false) }}
+      <ul class="facts">{% for p in c.jourj.points %}<li data-player="{{ loop.index + 1 }}">{{ p | typo(lang) }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+
+<section class="sec" data-player="2" id="questions" aria-labelledby="faq-t">
   <div class="container asks">
     <div class="asks__head">
       <h2 id="faq-t">{{ c.faq.h2 | typo(lang) }}</h2>
-      <p><a href="{{ urls[lang].faq }}">{{ c.faq.toutes }}</a></p>
+      <p class="more"><a href="{{ urls[lang].faq }}">{{ c.faq.toutes }}</a></p>
     </div>
     <div class="asks__list">
       {% for i in copy[lang].faq.items %}{% if i.accueil %}
@@ -126,23 +128,26 @@
   </div>
 </section>
 
-<section class="band band--b" id="contact" aria-labelledby="devis-t">
+<section class="sec sec--close" data-player="4" id="contact" aria-labelledby="devis-t">
   <div class="container">
-    <h2 id="devis-t" class="statement">{{ c.ensemble.h2 | typo(lang) }}</h2>
-    <div class="close">
-      <p class="lead">{{ c.ensemble.prix | typo(lang) }}</p>
-      <p class="acts"><a class="btn btn--paper" href="{{ mail }}">{{ c.ensemble.cta }}</a></p>
+    <div class="head">
+      <h2 id="devis-t">{{ c.ensemble.h2 | typo(lang) }}</h2>
+      <div class="close">
+        <p class="lead">{{ c.ensemble.prix | typo(lang) }}</p>
+        <p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.ensemble.cta }}</a></p>
+      </div>
     </div>
-    <div class="scroll" role="group" aria-label="{{ c.ensemble.h2 }}" tabindex="0">
-      <table class="rows rows--who">
-        <thead><tr><th scope="col"><span class="visually-hidden">{{ c.ensemble.h2 }}</span></th><th scope="col">{{ c.ensemble.vous }}</th><th scope="col">{{ c.ensemble.nous }}</th></tr></thead>
-        <tbody>
-          {% for e in c.ensemble.etapes %}
-          <tr><th scope="row">{{ e.titre | typo(lang) }}</th><td>{{ e.vous | cap | typo(lang) }}</td><td>{{ e.nous | cap | typo(lang) }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <p class="close__self"><a href="{{ urls[lang].hebergement }}">{{ c.ensemble.soiMeme }}</a></p>
+    <ol class="turns">
+      {% for e in c.ensemble.etapes %}
+      <li class="card card--text" data-player="{{ loop.index }}">
+        <h3>{{ e.titre | typo(lang) }}</h3>
+        <dl>
+          <div><dt>{{ c.ensemble.vous }}</dt><dd>{{ e.vous | cap | typo(lang) }}</dd></div>
+          <div><dt>{{ c.ensemble.nous }}</dt><dd>{{ e.nous | cap | typo(lang) }}</dd></div>
+        </dl>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="more"><a href="{{ urls[lang].hebergement }}">{{ c.ensemble.soiMeme }}</a></p>
   </div>
 </section>

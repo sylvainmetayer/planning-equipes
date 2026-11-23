@@ -62,6 +62,14 @@ content:
           - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
           - { name: probleme, label: Lien signaler un problème, type: string, required: true }
           - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
+      - name: popin
+        label: Agrandissement des captures
+        type: object
+        fields:
+          - { name: label, label: Nom de la fenêtre (lecteurs d'écran), type: string, required: true }
+          - { name: fermer, label: Bouton fermer, type: string, required: true }
+          - { name: precedente, label: Bouton précédente, type: string, required: true }
+          - { name: suivante, label: Bouton suivante, type: string, required: true }
       - name: introuvable
         label: Page 404
         type: object
@@ -107,6 +115,14 @@ content:
               - { name: probleme, label: Lien signaler un problème, type: string, required: true }
               - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
           - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
+          - name: popin
+            label: Agrandissement des captures
+            type: object
+            fields:
+              - { name: label, label: Nom de la fenêtre (lecteurs d'écran), type: string, required: true }
+              - { name: fermer, label: Bouton fermer, type: string, required: true }
+              - { name: precedente, label: Bouton précédente, type: string, required: true }
+              - { name: suivante, label: Bouton suivante, type: string, required: true }
           - name: introuvable
             label: Page 404
             type: object
@@ -133,6 +149,7 @@ content:
       - { name: cta2, label: Bouton secondaire, type: string, required: true }
       - { name: heroAlt, label: Description de la capture d'accueil, type: string, required: true }
       - { name: heroLegende, label: Légende de la capture d'accueil, type: string, required: true }
+      - { name: ticketTitre, label: Titre de la carte règle sur la capture, type: string, required: true }
       - name: loi
         label: Section Code du travail (le premier refus s'affiche aussi sur la capture d'accueil)
         type: object
@@ -184,6 +201,7 @@ content:
         type: object
         fields:
           - { name: h2, label: Titre, type: string, required: true }
+          - { name: intro, label: Introduction, type: text, required: true }
           - name: niveaux
             label: Niveaux (trois)
             type: object
@@ -267,6 +285,7 @@ content:
           - { name: cta2, label: Bouton secondaire, type: string, required: true }
           - { name: heroAlt, label: Description de la capture d'accueil, type: string, required: true }
           - { name: heroLegende, label: Légende de la capture d'accueil, type: string, required: true }
+          - { name: ticketTitre, label: Titre de la carte règle sur la capture, type: string, required: true }
           - name: loi
             label: Section Code du travail (le premier refus s'affiche aussi sur la capture d'accueil)
             type: object
@@ -318,6 +337,7 @@ content:
             type: object
             fields:
               - { name: h2, label: Titre, type: string, required: true }
+              - { name: intro, label: Introduction, type: text, required: true }
               - name: niveaux
                 label: Niveaux (trois)
                 type: object
