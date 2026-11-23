@@ -55,7 +55,7 @@ import { ChangementsReading, readReading, readReference } from './changements';
 import { ChangementsView } from './changements-vue';
 import { ConsigneLigne } from './consigne-ligne';
 import { MiniMois } from './mini-mois';
-import { PastilleRelecture, RelectureBarre } from './relecture-barre';
+import { RelectureBarre } from './relecture-barre';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
 import {
   DensiteStand,
@@ -508,18 +508,6 @@ export class JourneePage implements OnInit {
     return null;
   });
 
-  /** The chip of the relecture bar the rendering is narrowed by, read back from the state it set. */
-  protected readonly pastilleActive = computed<PastilleRelecture>(() => {
-    const view = this.view();
-    if (view === 'calendrier' && this.sieges() !== 'tous') {
-      return this.sieges() === 'vides' ? 'vides' : 'verrous';
-    }
-    if (view === 'pauses' && this.withoutRelais()) {
-      return 'pauses';
-    }
-    return view === 'changements' ? 'changements' : 'aucune';
-  });
-
   /**
    * The sort the address carries: the person axis's, except a summary column's
    * on the day grid, which shows only the names — kept in memory for the
@@ -867,34 +855,6 @@ export class JourneePage implements OnInit {
 
   protected changeView(view: JourneeView): void {
     this.view.set(view);
-  }
-
-  /**
-   * A relecture chip: the rendering narrowed to what it counts — the table on
-   * its empty or locked seats, the breaks without relay, the changes — or
-   * widened back when the active chip is pressed again.
-   */
-  protected applyChip(pastille: PastilleRelecture): void {
-    this.sieges.set('tous');
-    this.withoutRelais.set(false);
-    switch (pastille) {
-      case 'vides':
-      case 'verrous':
-        this.sieges.set(pastille);
-        this.view.set('calendrier');
-        break;
-      case 'pauses':
-        this.withoutRelais.set(true);
-        this.view.set('pauses');
-        break;
-      case 'changements':
-        this.view.set('changements');
-        break;
-      default:
-        if (this.view() === 'changements') {
-          this.view.set('calendrier');
-        }
-    }
   }
 
   protected choisirStand(ids: string[]): void {

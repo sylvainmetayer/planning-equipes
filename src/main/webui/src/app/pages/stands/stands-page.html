@@ -1,26 +1,19 @@
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h1 mat-card-title i18n="@@nav.link.stands">Stands</h1>
-    <mat-card-subtitle i18n="@@stands.form.description">Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <mat-button-toggle-group class="stands-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
-                             aria-label="Onglet de la page Stands" i18n-aria-label="@@stands.onglet.label">
-      <mat-button-toggle value="stands">
-        <mat-icon>storefront</mat-icon>
-        <ng-container i18n="@@stands.onglet.stands">Stands ({{ store.stands().length }})</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="lieux">
-        <mat-icon>place</mat-icon>
-        <ng-container i18n="@@stands.onglet.lieux">Lieux ({{ store.emplacements().length }})</ng-container>
-      </mat-button-toggle>
-      <mat-button-toggle value="typologies">
-        <mat-icon>category</mat-icon>
-        <ng-container i18n="@@stands.onglet.typologies">Typologies ({{ store.typologies().length }})</ng-container>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
-  </mat-card-content>
-</mat-card>
+<h1 class="page-title" i18n="@@nav.link.stands">Stands</h1>
+<mat-button-toggle-group class="page-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                         aria-label="Onglet de la page Stands" i18n-aria-label="@@stands.onglet.label">
+  <mat-button-toggle value="stands">
+    <mat-icon>storefront</mat-icon>
+    <ng-container i18n="@@stands.onglet.stands">Stands ({{ store.stands().length }})</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="lieux">
+    <mat-icon>place</mat-icon>
+    <ng-container i18n="@@stands.onglet.lieux">Lieux ({{ store.emplacements().length }})</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="typologies">
+    <mat-icon>category</mat-icon>
+    <ng-container i18n="@@stands.onglet.typologies">Typologies ({{ store.typologies().length }})</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
 
 @if (onglet() === 'lieux') {
   <!-- The map pulls Leaflet: a chunk of its own, never the table's. -->

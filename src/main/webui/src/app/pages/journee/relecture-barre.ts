@@ -3,60 +3,46 @@ import {
   Component,
   computed,
   DestroyRef,
-  effect,
   inject,
   input,
   output,
-  signal,
-  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { JourneesApi } from '../../core/api/journees-api';
+import { RouterLink } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PosteAffectation, RapportPauses } from '../../core/models';
 import { ValidationsStore } from '../../core/validations.store';
-import { VerrouillageStore } from '../../core/verrouillage.store';
 import { syntheseJournee } from './journee';
 import { RelectureDialog, RelectureDialogData } from './relecture-dialog';
 
-/** Which of the four chips narrows the rendering; `aucune` when none does. */
-export type PastilleRelecture = 'aucune' | 'vides' | 'pauses' | 'verrous' | 'changements';
-
 /**
- * The relecture of the day on screen, in one line (issue #712): four chips
- * that count what to look at before accepting the day — seats nobody holds,
- * breaks nobody can relieve, seats a lock freezes, changes since the last
- * publication — each of them **filtering** the rendering on what it counts,
- * and a menu holding the reading itself: its state, « Relu et accepté… » (the
- * comment and the lock in a dialog), and the withdrawal.
+ * The relecture of the day on screen, in one line (issue #712): what is left
+ * to look at before accepting the day — seats nobody holds and breaks nobody
+ * can relieve — as one count leading to the Diagnostic's problems, and a menu
+ * holding the reading itself: its state, « Relu et accepté… » (the comment
+ * and the lock in a dialog), and the withdrawal.
  *
- * <p>It replaced a card of four prerequisites a thousand pixels above the
- * list they described. The counts are read from the plan the page already
- * holds, and from the breaks report it already read; only the changes are
- * asked of the server, one call per day.</p>
+ * <p>It replaced four chips that each narrowed the rendering: one count is
+ * read at a glance, and the problems are detailed in one place. The count is
+ * read from the plan the page already holds and the breaks report it already
+ * read: nothing is asked of the server.</p>
  */
 @Component({
   selector: 'app-relecture-barre',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
   template: `
     <div class="relecture-barre" role="group" [attr.aria-label]="groupeLabel">
-      <span class="relecture-barre-titre" i18n="@@journee.relecture.titre">Relecture :</span>
-      <button type="button" class="relecture-pastille" [class.relecture-pastille-alerte]="vides() > 0"
-              [class.relecture-pastille-active]="active() === 'vides'" [attr.aria-pressed]="active() === 'vides'"
-              (click)="basculer('vides')" i18n="@@journee.relecture.vides">{{ vides() }} siège(s) vide(s)</button>
-      <button type="button" class="relecture-pastille" [class.relecture-pastille-attention]="(unrelievedBreaks() ?? 0) > 0"
-              [class.relecture-pastille-active]="active() === 'pauses'" [attr.aria-pressed]="active() === 'pauses'"
-              [disabled]="unrelievedBreaks() === null" (click)="basculer('pauses')">{{ pausesLabel() }}</button>
-      <button type="button" class="relecture-pastille"
-              [class.relecture-pastille-active]="active() === 'verrous'" [attr.aria-pressed]="active() === 'verrous'"
-              (click)="basculer('verrous')" i18n="@@journee.relecture.verrous">{{ verrouilles() }} siège(s) verrouillé(s)</button>
-      <button type="button" class="relecture-pastille"
-              [class.relecture-pastille-active]="active() === 'changements'" [attr.aria-pressed]="active() === 'changements'"
-              [disabled]="changements() === null" (click)="basculer('changements')">{{ changementsLabel() }}</button>
+      <a
+        matButton
+        routerLink="/diagnostic"
+        [queryParams]="{ onglet: 'problemes' }"
+        [class.relecture-compteur-alerte]="aRelire() > 0"
+        >{{ aRelireLabel() }}</a
+      >
       <button matButton type="button" class="relecture-menu" [matMenuTriggerFor]="menu">
         <mat-icon>{{ relue() ? 'task_alt' : 'fact_check' }}</mat-icon>
         {{ etatLabel() }}
@@ -77,9 +63,7 @@ export type PastilleRelecture = 'aucune' | 'vides' | 'pauses' | 'verrous' | 'cha
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RelectureBarre {
-  private readonly journeesApi = inject(JourneesApi);
   private readonly validations = inject(ValidationsStore);
-  private readonly verrous = inject(VerrouillageStore);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -88,14 +72,10 @@ export class RelectureBarre {
   /** The day's number in the plan, which the seats and the breaks are keyed by. */
   readonly numero = input.required<number>();
   readonly postes = input<readonly PosteAffectation[]>([]);
-  /** Null when the breaks could not be read: the chip then says nothing. */
+  /** Null when the breaks could not be read: they then count for nothing. */
   readonly pauses = input<RapportPauses | null>(null);
   /** Whether a filter of the page narrows the rendering: the reading still covers the whole day. */
   readonly filtre = input(false);
-  /** The chip narrowing the rendering now. */
-  readonly active = input<PastilleRelecture>('aucune');
-  /** A chip was pressed: the page narrows the rendering — or widens it back, on the active one. */
-  readonly pastille = output<PastilleRelecture>();
   /** A sentence for the page: the reading was recorded, or withdrawn. */
   readonly reported = output<string>();
 
@@ -104,33 +84,16 @@ export class RelectureBarre {
   private readonly synthese = computed(() =>
     syntheseJournee(this.postes(), this.numero(), this.pauses()),
   );
-  protected readonly vides = computed(() => this.synthese().vides ?? 0);
-  protected readonly unrelievedBreaks = computed(() => this.synthese().unrelievedBreaks);
-  protected readonly verrouilles = computed(() => {
-    const jourVerrouille = this.verrous.estJourVerrouille(this.jour());
-    return this.postes().filter(
-      (poste) =>
-        poste.creneau?.jour === this.numero() &&
-        poste.stand &&
-        (jourVerrouille ||
-          this.verrous.estStandVerrouille(poste.stand.id) ||
-          this.verrous.estCreneauVerrouille(poste.creneau.id)),
-    ).length;
+  /** Empty seats and breaks without relay: what the day still asks to look at. */
+  protected readonly aRelire = computed(() => {
+    const synthese = this.synthese();
+    return (synthese.vides ?? 0) + (synthese.unrelievedBreaks ?? 0);
   });
-  /** Seats changed since the reference; null while unknown or when there is nothing to compare to. */
-  protected readonly changements = signal<number | null>(null);
-
-  protected readonly pausesLabel = computed(() => {
-    const count = this.unrelievedBreaks();
-    return count === null
-      ? $localize`:@@journee.relecture.pauses.inconnu:Pauses : non lues`
-      : $localize`:@@journee.relecture.pauses:${count}:count: pause(s) sans relais`;
-  });
-  protected readonly changementsLabel = computed(() => {
-    const count = this.changements();
-    return count === null
-      ? $localize`:@@journee.relecture.changements.inconnu:Changements : rien à comparer`
-      : $localize`:@@journee.relecture.changements:${count}:count: changement(s)`;
+  protected readonly aRelireLabel = computed(() => {
+    const count = this.aRelire();
+    return count === 0
+      ? $localize`:@@journee.relecture.rien:Rien à relire`
+      : $localize`:@@journee.relecture.aRelireN:${count}:count: point(s) à relire`;
   });
 
   protected readonly relue = computed(() => this.validations.acceptedDays().has(this.jour()));
@@ -145,19 +108,6 @@ export class RelectureBarre {
     const quand = new Date(validation.valideLe).toLocaleDateString(intlLocale());
     return $localize`:@@journee.relecture.relueLe:Relue le ${quand}:date:`;
   });
-
-  constructor() {
-    effect(() => {
-      const jour = this.jour();
-      // Re-read with the plan: a solve or a gesture moves the count.
-      this.postes();
-      untracked(() => void this.readChanges(jour));
-    });
-  }
-
-  protected basculer(pastille: PastilleRelecture): void {
-    this.pastille.emit(this.active() === pastille ? 'aucune' : pastille);
-  }
 
   protected open(): void {
     const data: RelectureDialogData = { jour: this.jour(), filtre: this.filtre() };
@@ -174,21 +124,5 @@ export class RelectureBarre {
           this.reported.emit(message);
         }
       });
-  }
-
-  private async readChanges(jour: string): Promise<void> {
-    try {
-      const lu = await this.journeesApi.changements(jour);
-      if (jour === this.jour()) {
-        this.changements.set(lu.referenceDisponible ? lu.parVacation.length : null);
-      }
-    } catch {
-      // The chip goes quiet rather than failing the page: the Changements
-      // rendering, one click away, says what went wrong. A failure for a day
-      // left since says nothing of the day on screen.
-      if (jour === this.jour()) {
-        this.changements.set(null);
-      }
-    }
   }
 }

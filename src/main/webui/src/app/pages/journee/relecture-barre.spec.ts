@@ -1,15 +1,14 @@
-// The relecture bar of the Planning page (#712): four chips counting what to
-// look at on the day, each narrowing the rendering on what it counts.
+// The relecture bar of the Planning page (#712): one count of what to look at
+// on the day, leading to the Diagnostic's problems, and the reading's menu.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import { JourneesApi } from '../../core/api/journees-api';
 import { PosteAffectation, RapportPauses } from '../../core/models';
 import { ValidationsStore } from '../../core/validations.store';
-import { VerrouillageStore } from '../../core/verrouillage.store';
-import { PastilleRelecture, RelectureBarre } from './relecture-barre';
+import { RelectureBarre } from './relecture-barre';
 
 const STAND = { id: 'S1', nom: 'Tir' } as PosteAffectation['stand'];
 const CRENEAU = { id: 1, jour: 1, date: '2026-09-05', heureDebut: '10:00', heureFin: '12:00' };
@@ -66,30 +65,12 @@ function pausesReport(): RapportPauses {
   };
 }
 
-async function monter(
-  options: {
-    actif?: PastilleRelecture;
-    relus?: string[];
-    changements?: (jour: string) => Promise<unknown>;
-  } = {},
-) {
+async function monter(options: { relus?: string[] } = {}) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      {
-        provide: JourneesApi,
-        useValue: {
-          changements: vi.fn(
-            options.changements ??
-              (() =>
-                Promise.resolve({
-                  referenceDisponible: true,
-                  parVacation: [{}, {}, {}],
-                })),
-          ),
-        },
-      },
+      provideRouter([]),
       {
         provide: ValidationsStore,
         useValue: {
@@ -103,14 +84,6 @@ async function monter(
           ),
         },
       },
-      {
-        provide: VerrouillageStore,
-        useValue: {
-          estJourVerrouille: () => false,
-          estStandVerrouille: () => false,
-          estCreneauVerrouille: (id: number | undefined) => id === 1,
-        },
-      },
       { provide: MatDialog, useValue: { open: vi.fn() } },
     ],
   });
@@ -119,56 +92,19 @@ async function monter(
   fixture.componentRef.setInput('numero', 1);
   fixture.componentRef.setInput('postes', [poste('p1', true), poste('p2', false)]);
   fixture.componentRef.setInput('pauses', pausesReport());
-  fixture.componentRef.setInput('active', options.actif ?? 'aucune');
   await fixture.whenStable();
-  const pastilles = (): HTMLButtonElement[] =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.relecture-pastille'));
-  return { fixture, pastilles };
+  const compteur = (): HTMLAnchorElement =>
+    (fixture.nativeElement as HTMLElement).querySelector('.relecture-barre a')!;
+  return { fixture, compteur };
 }
 
 describe('RelectureBarre', () => {
-  it('counts the empty seats, the breaks without relay, the locked seats and the changes', async () => {
-    const { pastilles } = await monter();
+  it('counts the empty seats and the breaks without relay, leading to the problems', async () => {
+    const { compteur } = await monter();
 
-    expect(pastilles().map((pastille) => pastille.textContent!.trim())).toEqual([
-      '1 siège(s) vide(s)',
-      '1 pause(s) sans relais',
-      '2 siège(s) verrouillé(s)',
-      '3 changement(s)',
-    ]);
-    expect(pastilles()[0].classList).toContain('relecture-pastille-alerte');
-  });
-
-  it('asks the page to narrow the rendering, and to widen it back on the active chip', async () => {
-    const { fixture, pastilles } = await monter({ actif: 'verrous' });
-    const emis: PastilleRelecture[] = [];
-    fixture.componentInstance.pastille.subscribe((pastille) => emis.push(pastille));
-
-    pastilles()[0].click();
-    pastilles()[2].click();
-
-    expect(emis).toEqual(['vides', 'aucune']);
-    expect(pastilles()[2].getAttribute('aria-pressed')).toBe('true');
-  });
-
-  it('keeps the count of the day on screen when the read of a day left since fails', async () => {
-    let echouer: (raison: Error) => void = () => undefined;
-    const { fixture, pastilles } = await monter({
-      changements: (jour) =>
-        jour === '2026-09-05'
-          ? new Promise((_, reject) => {
-              echouer = reject;
-            })
-          : Promise.resolve({ referenceDisponible: true, parVacation: [{}, {}, {}] }),
-    });
-
-    fixture.componentRef.setInput('jour', '2026-09-06');
-    await fixture.whenStable();
-    expect(pastilles()[3].textContent!.trim()).toBe('3 changement(s)');
-
-    echouer(new Error('hors ligne'));
-    await fixture.whenStable();
-    expect(pastilles()[3].textContent!.trim()).toBe('3 changement(s)');
+    expect(compteur().textContent!.trim()).toBe('2 point(s) à relire');
+    expect(compteur().classList).toContain('relecture-compteur-alerte');
+    expect(compteur().getAttribute('href')).toBe('/diagnostic?onglet=problemes');
   });
 
   it('says whether the day was read, in the button of its menu', async () => {
