@@ -34,14 +34,24 @@ date, un **avertissement** — deux champs, que l'écran met en phrase — quand
 1. la levée **ajoute des minutes-siège** à la journée (sous consigne contre
    grille nominale, mêmes stands résolus) ;
 2. au moins un animateur **disponible** ce jour-là tient, dans le plan
-   enregistré, un siège **figé** — couvert par un verrou, ou sur un jour
-   passé — sur chacun des six autres jours de la semaine ISO.
+   enregistré, un siège **figé** — couvert par un verrou, quel qu'il soit,
+   ou déjà commencé — sur chacun des six autres jours de la semaine ISO.
+
+« Déjà commencé » est la notion du calcul (0044) : `FrozenPast.isPast` sur
+l'horizon que la résolution prendrait à cet instant, l'heure de début
+effective comprise ; rien n'est passé quand le passé figé est désactivé.
 
 Il compte ces personnes (`animateursSansJourLibre`) sans en nommer aucune, et
-nomme les journées verrouillées `JOUR` à rouvrir pour leur rendre un jour
-(`joursADeverrouiller`) : la plus petite liste trouvée gloutonnement, la
-journée qui en libère le plus d'abord, la plus proche de la journée levée à
-égalité. Il n'est rien vérifié si la règle hebdomadaire est désactivée.
+nomme les journées verrouillées `JOUR` à rouvrir (`joursADeverrouiller`).
+Une journée ne compte comme à rouvrir pour une personne que si **le seul**
+verrou qui y tient ses sièges est celui de la journée : un verrou par
+animateur, par stand ou par créneau, ou un siège déjà commencé, la retiennent
+quoi qu'on déverrouille. `animateursLiberes` dit combien des personnes
+comptées les journées nommées libèrent ; l'écart avec le total, l'écran le
+dit aussi. Les journées sont choisies gloutonnement : celle qui en libère le
+plus d'abord, la plus proche de la journée levée à égalité, puis la plus
+tôt. Il n'est rien vérifié si la règle hebdomadaire est désactivée
+(`ParametresService.disabledContraintes`).
 
 C'est un **risque**, pas une preuve, et jamais un refus : la journée peut
 tenir sans ces personnes, et la levée est faite de toute façon. La phrase dit

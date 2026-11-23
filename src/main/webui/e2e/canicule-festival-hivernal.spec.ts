@@ -510,10 +510,44 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   // organiser reopens the days it names. Read as the dialog read it.
   const liftPreview = (await (
     await admin.post('/api/consignes/levee/apercu', { data: { dates: [DAY3] } })
-  ).json()) as { animateursSansJourLibre: number; joursADeverrouiller: string[] }[];
+  ).json()) as {
+    animateursSansJourLibre: number;
+    animateursLiberes: number;
+    joursADeverrouiller: string[];
+  }[];
+  const { animateursSansJourLibre, animateursLiberes } = liftPreview[0];
   const toUnlock = liftPreview[0].joursADeverrouiller;
-  if (liftPreview[0].animateursSansJourLibre > 0) {
-    await expect(lifting).toContainText('travaillent déjà six jours de la semaine');
+  const atRisk = animateursSansJourLibre > 0;
+  test.info().annotations.push({
+    type: 'levée',
+    description: atRisk
+      ? `${animateursSansJourLibre} animateur(s) sans jour libre, journées rouvertes : ${toUnlock.join(', ')}`
+      : 'aucun risque signalé, rien de rouvert',
+  });
+  // What the scenario can justify, checked apart from the code under test:
+  // every frozen day here is a whole JOUR-locked day, so whoever is out of
+  // days is freed by reopening one; the six other days of DAY3's ISO week
+  // are the only candidates, and one or two of them suffice.
+  const week = [-4, -3, -2, -1, 1, 2].map((offset) => {
+    const [year, month, day] = DAY3.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day + offset)).toISOString().slice(0, 10);
+  });
+  if (atRisk) {
+    expect(animateursLiberes).toBe(animateursSansJourLibre);
+    expect(toUnlock.length).toBeGreaterThan(0);
+    expect(toUnlock.length).toBeLessThanOrEqual(2);
+    for (const day of toUnlock) {
+      expect(week, `${day} is outside the week of ${DAY3}`).toContain(day);
+    }
+    await expect(lifting).toContainText(
+      `${animateursSansJourLibre} animateur(s) disponible(s) ce jour-là travaillent déjà six jours de la semaine`,
+    );
+    for (const day of toUnlock) {
+      await expect(lifting).toContainText(dayLabel(day));
+    }
+  } else {
+    expect(toUnlock).toEqual([]);
+    await expect(lifting).not.toContainText('travaillent déjà six jours de la semaine');
   }
   await lifting.getByRole('button', { name: 'Lever', exact: true }).click();
   await expect(page.getByText('Consigne levée.')).toBeVisible();

@@ -907,7 +907,7 @@
         }
       },
       "ApercuLevee" : {
-        "required" : [ "date", "sousConsigne", "creneauxARetirer", "validationRetiree", "animateursSurLesCreneauxRetires", "animateursSansJourLibre", "joursADeverrouiller" ],
+        "required" : [ "date", "sousConsigne", "creneauxARetirer", "validationRetiree", "animateursSurLesCreneauxRetires", "animateursSansJourLibre", "animateursLiberes", "joursADeverrouiller" ],
         "type" : "object",
         "properties" : {
           "date" : {
@@ -930,6 +930,10 @@
             "format" : "int32"
           },
           "animateursSansJourLibre" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateursLiberes" : {
             "type" : "integer",
             "format" : "int32"
           },

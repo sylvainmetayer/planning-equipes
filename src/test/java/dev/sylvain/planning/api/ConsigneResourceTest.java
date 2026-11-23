@@ -8,11 +8,18 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import dev.sylvain.planning.config.DevMode;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
+import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.arc.ClientProxy;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,6 +29,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +65,12 @@ class ConsigneResourceTest {
 
     @Inject
     ConsigneRepository consigneRepository;
+
+    @Inject
+    PlanningPersistenceService persistence;
+
+    @Inject
+    ParametresService parametres;
 
     /** A server launched with {@code quarkus:dev}, as far as the guard can tell. */
     private static final class DevModeActif extends DevMode {
@@ -340,6 +354,66 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .body("consignes", hasSize(0));
         assertThat(creneaux().getList("heureDebut")).containsExactlyInAnyOrder("09:00:00", "14:00:00");
+    }
+
+    @Test
+    void liftingUnderAWeekLockedFullCountsWhoIsOutOfDaysAndNamesTheDayToReopen() {
+        // Somebody seated on the six other days of the ISO week (Mon 6 to Sun 12 July), every one JOUR-locked.
+        Animateur plein = new Animateur("FIG-A", "Prénom", "Semaine", LocalDate.of(1990, 1, 1), false);
+        Stand stand = new Stand("FIG-S", "Stand de la semaine", Set.of(), 1, 1, false);
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int d = 0; d < 7; d++) {
+            LocalDate day = LocalDate.of(2026, 7, 6).plusDays(d);
+            if (!day.toString().equals(JOUR)) {
+                PosteAffectation poste = new PosteAffectation(
+                        "FIG-P" + d, stand, new Creneau(9800L + d, 0, day, LocalTime.of(9, 0), LocalTime.of(12, 0)));
+                poste.setAnimateur(plein);
+                postes.add(poste);
+                given().header("X-Edition-Id", "E1")
+                        .contentType("application/json")
+                        .body(Map.of("type", "JOUR", "jour", day.toString(), "raison", "semaine figée"))
+                        .when()
+                        .post("/api/verrouillages")
+                        .then()
+                        .statusCode(200);
+            }
+        }
+        persistence.persist(new PlanningEvenement(LocalDate.of(2026, 7, 6), List.of(plein), postes));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(demande(List.of(ouverture(standStrat))))
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+
+        // the lift gives the afternoon back: the one person out of days, freed by the nearest locked day
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("dates", List.of(JOUR)))
+                .when()
+                .post("/api/consignes/levee/apercu")
+                .then()
+                .statusCode(200)
+                .body("[0].animateursSansJourLibre", is(1))
+                .body("[0].animateursLiberes", is(1))
+                .body("[0].joursADeverrouiller", equalTo(List.of("2026-07-07")));
+
+        // the weekly rule switched off, the week no longer holds anybody
+        parametres.setContrainteActive("maxJoursTravaillesParSemaine", false, WeightChangeOrigin.SCREEN);
+        try {
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
+                    .body(Map.of("dates", List.of(JOUR)))
+                    .when()
+                    .post("/api/consignes/levee/apercu")
+                    .then()
+                    .statusCode(200)
+                    .body("[0].animateursSansJourLibre", is(0))
+                    .body("[0].joursADeverrouiller", hasSize(0));
+        } finally {
+            parametres.setContrainteActive("maxJoursTravaillesParSemaine", true, WeightChangeOrigin.SCREEN);
+        }
     }
 
     @Test

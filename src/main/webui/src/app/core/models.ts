@@ -5364,6 +5364,8 @@ export interface ApercuLeveeConsigne {
   animateursSurLesCreneauxRetires: number;
   /** Available that day, yet their frozen days (locked or past) already fill its week: 0 when the lift is not at risk. */
   animateursSansJourLibre: number;
+  /** How many of them reopening `joursADeverrouiller` frees; the others are held by the past or another lock. */
+  animateursLiberes: number;
   /** The JOUR-locked days whose reopening gives them a day back. */
   joursADeverrouiller: string[];
 }

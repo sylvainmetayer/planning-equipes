@@ -18,11 +18,14 @@ import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
+import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.validation.ValidationJourneeService;
+import dev.sylvain.planning.solver.handsearch.Rule;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
@@ -92,6 +95,11 @@ public class ConsigneService {
 
     private final JourJClock clock;
 
+    private final ParametresService parametres;
+
+    /** Read for the past as the solve judges it (ADR 0044), nothing else. */
+    private final PlanningService planning;
+
     @Inject
     public ConsigneService(
             ConsigneRepository repository,
@@ -100,7 +108,9 @@ public class ConsigneService {
             PlanningPersistenceService persistence,
             ValidationJourneeService validations,
             ReferenceDataChangeTracker changeTracker,
-            JourJClock clock) {
+            JourJClock clock,
+            ParametresService parametres,
+            PlanningService planning) {
         this.repository = repository;
         this.scope = scope;
         this.referenceDataService = referenceDataService;
@@ -108,6 +118,8 @@ public class ConsigneService {
         this.validations = validations;
         this.changeTracker = changeTracker;
         this.clock = clock;
+        this.parametres = parametres;
+        this.planning = planning;
     }
 
     /* --------------------------------- reads --------------------------------- */
@@ -801,7 +813,9 @@ public class ConsigneService {
      *
      * @param animateursSansJourLibre animateurs available that day whose frozen days already fill its week
      *                                (see {@link LiftStaffingRisk}); 0 when the lift is not at risk
-     * @param joursADeverrouiller     the JOUR-locked days to reopen to get them back
+     * @param animateursLiberes       how many of them reopening {@code joursADeverrouiller} frees; the others
+     *                                are held by the past or by a lock other than a day's
+     * @param joursADeverrouiller     the JOUR-locked days to reopen
      */
     @Schema(
             requiredProperties = {
@@ -811,6 +825,7 @@ public class ConsigneService {
                 "validationRetiree",
                 "animateursSurLesCreneauxRetires",
                 "animateursSansJourLibre",
+                "animateursLiberes",
                 "joursADeverrouiller"
             })
     public record ApercuLevee(
@@ -820,10 +835,11 @@ public class ConsigneService {
             boolean validationRetiree,
             int animateursSurLesCreneauxRetires,
             int animateursSansJourLibre,
+            int animateursLiberes,
             List<LocalDate> joursADeverrouiller) {}
 
     /** The constraint whose week the lift may find full: switched off, no risk is read. */
-    private static final String RULE_WEEKLY_DAYS = "maxJoursTravaillesParSemaine";
+    private static final String RULE_WEEKLY_DAYS = Rule.MAX_JOURS_TRAVAILLES_PAR_SEMAINE.constraintName();
 
     public List<ApercuLevee> apercuLevee(List<LocalDate> dates) {
         checkDates(dates);
@@ -832,7 +848,7 @@ public class ConsigneService {
         for (LocalDate date : new LinkedHashSet<>(dates)) {
             ConsigneEdition consigne = contexte.existantes().get(date);
             if (consigne == null) {
-                apercu.add(new ApercuLevee(date, false, List.of(), false, 0, 0, List.of()));
+                apercu.add(new ApercuLevee(date, false, List.of(), false, 0, 0, 0, List.of()));
                 continue;
             }
             Set<Long> ajoutes = new HashSet<>(consigne.creneauxAjoutes());
@@ -856,6 +872,7 @@ public class ConsigneService {
                     contexte.joursValides().contains(date),
                     assis,
                     risk.map(LiftStaffingRisk.Risk::animateursSansJourLibre).orElse(0),
+                    risk.map(LiftStaffingRisk.Risk::animateursLiberes).orElse(0),
                     risk.map(LiftStaffingRisk.Risk::joursADeverrouiller).orElse(List.of())));
         }
         return apercu;
@@ -863,7 +880,7 @@ public class ConsigneService {
 
     /** The day's seat-minutes under its consigne and once lifted, read against the days kept frozen. */
     private Optional<LiftStaffingRisk.Risk> liftRisk(LocalDate date, ConsigneEdition consigne, Contexte contexte) {
-        if (Boolean.FALSE.equals(referenceDataService.getEtatsContraintes().get(RULE_WEEKLY_DAYS))) {
+        if (parametres.disabledContraintes().contains(RULE_WEEKLY_DAYS)) {
             return Optional.empty();
         }
         Set<Long> ajoutes = new HashSet<>(consigne.creneauxAjoutes());
@@ -881,7 +898,7 @@ public class ConsigneService {
                 contexte.animateurs(),
                 contexte.persiste().getPostes(),
                 contexte.verrouillages(),
-                clock.today());
+                planning.pastHorizon());
     }
 
     /**

@@ -38,7 +38,10 @@
                 <mat-icon inline>warning</mat-icon>
                 <ng-container i18n="@@consignes.levee.joursFigesSatures">{{ jour.animateursSansJourLibre }} animateur(s) disponible(s) ce jour-là travaillent déjà six jours de la semaine sur des journées figées : la journée risque de ne pas être tenue.</ng-container>
                 @if (jour.joursADeverrouiller.length > 0) {
-                  <ng-container i18n="@@consignes.levee.joursADeverrouiller">Si le calcul échoue, déverrouillez {{ libellesDates(jour.joursADeverrouiller) }}.</ng-container>
+                  &ngsp;<ng-container i18n="@@consignes.levee.joursADeverrouiller">Déverrouiller {{ libellesDates(jour.joursADeverrouiller) }} en rendrait {{ jour.animateursLiberes }} au calcul.</ng-container>
+                }
+                @if (jour.animateursLiberes < jour.animateursSansJourLibre) {
+                  &ngsp;<ng-container i18n="@@consignes.levee.joursFigesRetenus">{{ jour.animateursSansJourLibre - jour.animateursLiberes }} restent retenus par un jour passé ou un autre verrou.</ng-container>
                 }
               </span>
             }
