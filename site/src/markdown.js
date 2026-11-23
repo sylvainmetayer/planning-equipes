@@ -12,25 +12,31 @@ export function toMarkdown(p) {
   const { lang, key } = p;
   const page = copy[lang][key];
   const out = [`# ${page.h1}`];
+  const sep = lang === 'fr' ? ' : ' : ': ';
   if (key === 'accueil') {
-    out.push(page.lede, `## ${page.loi.h2}`, page.loi.reponse);
+    out.push(page.lede, `## ${page.loi.h2}`, page.loi.reponse, page.loi.refus.map((r) => `- ${r.qui}, ${r.poste}${sep}${r.raison} (${r.article})`).join('\n'));
     out.push(
-      articles.map((a) => `- ${a.number} (${a[lang].subject}) : ${a[lang].rule}`).join('\n'),
+      articles.map((a) => `- ${a.number} (${a[lang].subject})${sep}${a[lang].rule}`).join('\n'),
       `## ${page.jourj.h2}`,
       page.jourj.intro,
       page.jourj.points.map((x) => `- ${x}`).join('\n'),
       `## ${page.equipes.h2}`,
       page.equipes.texte,
+      page.equipes.tuiles.map((t) => `- **${t.titre}**${sep}${t.texte}`).join('\n'),
       page.equipes.outils,
+      `## ${page.cas.h2}`,
+      page.cas.niveaux.map((n, i) => `${i + 1}. **${n.titre}**${sep}${n.texte}`).join('\n'),
+      `## ${page.images.h2}`,
+      page.images.ecrans.map((e) => `- ${e.alt}`).join('\n'),
       `## ${page.ensemble.h2}`,
-      page.ensemble.etapes.map((e) => `- **${e.titre}**`).join('\n'),
       page.ensemble.prix,
+      page.ensemble.etapes.map((e) => `- **${e.titre}**${sep}${page.ensemble.vous} ${e.vous} ${page.ensemble.nous} ${e.nous}`).join('\n'),
       `## ${copy[lang].faq.h1}`,
       copy[lang].faq.items.filter((i) => i.accueil).map((i) => `### ${i.q}\n\n${i.a}`).join('\n\n'),
     );
   } else {
     out.push(page.reponse);
-    if (key === 'legal') out.push(`## ${page.articlesH}`, articles.map((a) => `- **${a.number}**, ${a[lang].subject} : ${a[lang].rule}`).join('\n'));
+    if (key === 'legal') out.push(`## ${page.articlesH}`, articles.map((a) => `- **${a.number}**, ${a[lang].subject}${sep}${a[lang].rule}`).join('\n'));
     if (page.sections) out.push(sections(page.sections));
     if (key === 'faq') out.push(page.items.map((i) => `## ${i.q}\n\n${i.a}`).join('\n\n'));
   }

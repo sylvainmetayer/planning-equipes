@@ -21,8 +21,8 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/favicon.svg': 'favicon.svg' });
   eleventyConfig.addPassthroughCopy({ 'src/assets/external.svg': 'assets/external.svg' });
   eleventyConfig.addPassthroughCopy({
-    [`node_modules/${fonts}/familjen-grotesk/files/familjen-grotesk-latin-wght-normal.woff2`]: 'assets/fonts/familjen-grotesk.woff2',
-    [`node_modules/${fonts}/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2`]: 'assets/fonts/ibm-plex-sans.woff2',
+    [`node_modules/${fonts}/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2`]: 'assets/fonts/big-shoulders-display.woff2',
+    [`node_modules/${fonts}/golos-text/files/golos-text-latin-wght-normal.woff2`]: 'assets/fonts/golos-text.woff2',
   });
   eleventyConfig.addWatchTarget('src/assets/*.css');
   eleventyConfig.addWatchTarget('src/_data/pages/');
@@ -47,8 +47,10 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter('markdownTwin', toMarkdown);
   // Weight of a published file, in the unit of the language ("547 ko", "547 kB")
   eleventyConfig.addFilter('weight', (path, unit) => `${Math.round(statSync(`src${path}`).size / 1000)} ${unit}`);
+  // The part of a sentence after its first separator ("Planning par jour : qui…" gives "qui…")
+  eleventyConfig.addFilter('after', (text, sep) => text.slice(text.indexOf(sep) + 1).trim());
+  eleventyConfig.addFilter('cap', (text) => text.charAt(0).toUpperCase() + text.slice(1));
   eleventyConfig.addFilter('byId', (items, id) => items.find((i) => i.id === id));
-  eleventyConfig.addFilter('frames', (items, wide) => items.filter((i) => (i.id === 'mural') === wide));
 
   return {
     dir: { input: 'src', output: '_site' },

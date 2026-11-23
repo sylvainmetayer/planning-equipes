@@ -1,0 +1,80 @@
+{
+  "slug": "heberger",
+  "titre": "Héberger Planning Équipes soi-même : Docker, PostgreSQL, AGPL",
+  "description": "Installer Planning Équipes chez vous : une image Docker et PostgreSQL, 2,5 Go de mémoire, sauvegarde chaque nuit, calcul sur une autre machine.",
+  "h1": "Peut-on l'héberger soi-même ?",
+  "reponse": "**Oui.** C'est un logiciel libre sous licence AGPL-3.0 : une application et une base PostgreSQL, en conteneurs. On peut aussi l'héberger pour vous.",
+  "sections": [
+    {
+      "h2": "Ce qu'il faut",
+      "texte": "- un nom de domaine et un certificat TLS : les liens imprimés sur les PDF doivent rester joignables ;\n- un relais SMTP, car codes d'accès et plannings partent par e-mail ;\n- un reverse proxy devant l'application ;\n- 2,5 Go de mémoire : 2 Go pour l'application, 512 Mo pour PostgreSQL.\n\nLe guide complet est dans [la documentation d'exploitation](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/exploitation.md)."
+    },
+    {
+      "h2": "Les sauvegardes",
+      "texte": "L'application sauvegarde toute la base chaque nuit à 4 h, avec `pg_dump`, et garde les copies les plus récentes. Restaurer reste un geste d'administrateur, hors de l'application : aucun bouton ne remplace tout d'un clic."
+    },
+    {
+      "h2": "La sécurité",
+      "texte": "En-têtes de sécurité, plafonds de débit, verrouillage de la connexion admin après des échecs, jetons distincts pour l'agenda et la télé. Un mode facultatif délègue la connexion à votre proxy d'accès, avec un secret partagé. Le détail est dans [le guide de durcissement](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/securite.md)."
+    },
+    {
+      "h2": "Calculer sur une autre machine",
+      "texte": "Le calcul ne se sert que d'un cœur. Un petit serveur peut confier les calculs complets à un poste plus rapide, allumé en permanence ou loué le temps du calcul. Toutes les connexions partent de l'application, qui peut rester sans port ouvert."
+    },
+    {
+      "h2": "Un assistant IA branché dessus",
+      "texte": "Un serveur MCP, protégé par une clé, expose les mêmes fonctions à un assistant IA. Il ne lui transmet jamais un nom, un prénom ni une date de naissance."
+    },
+    {
+      "h2": "Les versions",
+      "texte": "Chaque version porte un numéro `vX.Y.Z` qui suit SemVer, et ses notes disent ce qui demande une action à la mise à jour. On déploie une version précise, jamais `latest`."
+    }
+  ],
+  "cta": "Vous préférez qu'on l'héberge pour vous ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": [
+    "calcul",
+    "legal",
+    "faq"
+  ],
+  "en": {
+    "slug": "self-hosting",
+    "titre": "Self-hosting Planning Équipes: Docker, PostgreSQL, AGPL",
+    "description": "Run Planning Équipes yourself: a Docker image and PostgreSQL, 2.5 GB of memory, nightly backup, the solver on another machine.",
+    "h1": "Can we host it ourselves?",
+    "reponse": "**Yes.** It is free software under the AGPL-3.0 licence: one application and one PostgreSQL database, in containers. We can also host it for you.",
+    "sections": [
+      {
+        "h2": "What you need",
+        "texte": "- a domain name and a TLS certificate: the links printed on the PDFs must stay reachable;\n- an SMTP relay, since access codes and rotas go out by e-mail;\n- a reverse proxy in front of the application;\n- 2.5 GB of memory: 2 GB for the application, 512 MB for PostgreSQL.\n\nThe full guide is in [the operations documentation](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/exploitation.md) (in French)."
+      },
+      {
+        "h2": "Backups",
+        "texte": "The application backs up the whole database every night at 04:00, with `pg_dump`, and keeps the most recent copies. Restoring stays an administrator's job, outside the application: no button replaces everything in one click."
+      },
+      {
+        "h2": "Security",
+        "texte": "Security headers, rate limits, an admin login lockout after failures, separate tokens for the calendar and the TV. An optional mode hands the login to your access proxy, with a shared secret. The details are in [the hardening guide](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/securite.md) (in French)."
+      },
+      {
+        "h2": "Solve on another machine",
+        "texte": "The solver uses one core only. A small server can hand full runs to a faster machine, always on or rented for the duration. Every connection leaves from the application, which can keep every port closed."
+      },
+      {
+        "h2": "An AI assistant on top",
+        "texte": "An MCP server, protected by a key, gives an AI assistant the same functions. It never passes on a name, a first name or a date of birth."
+      },
+      {
+        "h2": "Versions",
+        "texte": "Each version carries a `vX.Y.Z` number that follows SemVer, and its notes say what needs action at upgrade. You deploy a precise version, never `latest`."
+      }
+    ],
+    "cta": "Would you rather we hosted it for you?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": [
+      "calcul",
+      "legal",
+      "faq"
+    ]
+  }
+}

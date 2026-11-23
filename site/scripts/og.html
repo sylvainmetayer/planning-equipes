@@ -1,55 +1,45 @@
 <!doctype html>
-<!-- Source of src/og-fr.png and src/og-en.png (1200x630 social preview), same logo and
-     palette as the site (Cobalt tokens). Regenerate: see "Image de partage" in README.md.
-     #en selects English. The headline follows the h1 of the home page. -->
+<!-- Source of src/og-fr.png and src/og-en.png (1200x630 social preview), same palette
+     and faces as the site (Carnival tokens, src/assets/tokens.css). Regenerate: see
+     "Image de partage" in README.md. #en selects English. The headline follows the h1
+     of the home page. -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <title>Planning Équipes, image de partage</title>
 <style>
-  @font-face { font-family: "Familjen Grotesk"; font-weight: 400 700; src: url("../node_modules/@fontsource-variable/familjen-grotesk/files/familjen-grotesk-latin-wght-normal.woff2") format("woff2"); }
-  @font-face { font-family: "IBM Plex Sans"; font-weight: 100 700; src: url("../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Big Shoulders Display"; font-weight: 100 900; src: url("../node_modules/@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Golos Text"; font-weight: 400 900; src: url("../node_modules/@fontsource-variable/golos-text/files/golos-text-latin-wght-normal.woff2") format("woff2"); }
   :root {
-    --paper: oklch(98.6% 0.005 250); --ink: oklch(21% 0.028 262); --muted: oklch(36% 0.022 260);
-    --accent: oklch(52% 0.19 258); --accent-wash: oklch(95% 0.028 256); --rule: oklch(83% 0.012 252);
-    --glyph: oklch(81% 0.045 255);
+    --paper: oklch(92% 0.045 50); --ink: oklch(18% 0.080 20); --accent: oklch(86% 0.18 95); --accent-2: oklch(40% 0.21 25);
   }
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
   body {
-    display: grid; grid-template-columns: 220px 1fr; align-items: center; gap: 72px;
-    box-sizing: border-box; padding: 0 96px;
-    background-color: var(--paper); color: var(--ink);
-    background-image: radial-gradient(var(--glyph) 2px, transparent 2px); background-size: 16px 32px;
-    font: 400 32px/1.3 "IBM Plex Sans", system-ui, sans-serif;
-    border-bottom: 12px solid var(--accent);
+    position: relative; box-sizing: border-box; padding: 64px 72px;
+    background: var(--paper); color: var(--ink);
+    font: 400 30px/1.3 "Golos Text", system-ui, sans-serif;
+    border-bottom: 16px solid var(--accent-2);
   }
-  svg { width: 220px; height: 220px; }
-  .name { margin: 0 0 20px; font: 600 34px/1 "Familjen Grotesk", system-ui, sans-serif; color: var(--accent); }
-  h1 { margin: 0 0 28px; font: 600 88px/1 "Familjen Grotesk", system-ui, sans-serif; letter-spacing: -0.028em; }
-  p { margin: 0; color: var(--muted); }
+  .name { margin: 0 0 28px; font: 800 40px/1 "Big Shoulders Display", Impact, sans-serif; letter-spacing: 0.015em; text-transform: uppercase; }
+  h1 { margin: 0 0 28px; max-width: 13ch; font: 800 116px/0.98 "Big Shoulders Display", Impact, sans-serif; letter-spacing: 0.015em; text-transform: uppercase; }
+  p { margin: 0; max-width: 34ch; }
+  .ticket { position: absolute; right: 72px; bottom: 96px; padding: 20px 28px; background: var(--accent); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); transform: rotate(-2deg); font: 800 64px/1 "Big Shoulders Display", Impact, sans-serif; }
   [lang="en"] { display: none; }
   body.en [lang="fr"] { display: none; }
   body.en [lang="en"] { display: block; }
 </style>
 </head>
 <body>
-<svg viewBox="0 0 32 32" aria-hidden="true">
-  <rect width="32" height="32" rx="8" fill="var(--accent)"/>
-  <rect x="7" y="8" width="18" height="4" rx="2" fill="var(--accent-wash)"/>
-  <rect x="7" y="14" width="10" height="4" rx="2" fill="var(--paper)"/>
-  <rect x="7" y="20" width="15" height="4" rx="2" fill="var(--paper)"/>
-</svg>
-<div>
-  <p class="name">Planning Équipes</p>
-  <div lang="fr">
-    <h1>Planifiez en minutes, pas en&nbsp;week-ends.</h1>
-    <p>Festivals et événements, Code du travail vérifié, mineurs compris</p>
-  </div>
-  <div lang="en">
-    <h1>Schedule in minutes, not weekends.</h1>
-    <p>Festivals and events, French Labour Code checked, under-18s included</p>
-  </div>
+<p class="name">Planning Équipes</p>
+<div lang="fr">
+  <h1>Planifiez en minutes, pas en&nbsp;week-ends.</h1>
+  <p>Animateurs, bénévoles et mineurs, Code du travail compris</p>
 </div>
+<div lang="en">
+  <h1>Schedule in minutes, not weekends.</h1>
+  <p>Staff, volunteers and under-18s, French Labour Code included</p>
+</div>
+<div class="ticket">L3163-1</div>
 <script>if (location.hash === '#en') document.body.className = 'en';</script>
 </body>
 </html>
