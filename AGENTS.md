@@ -804,6 +804,9 @@ The doc layout is intentional — respect it when adding or updating docs.
    figures are allowed only when they are reproducible on a scenario versioned
    under `src/main/resources/scenarios/`.
 7. Don't create planning/notes/tracking Markdown files in the repository.
+   `site/design.md` is not one of them: it is the specification of the
+   showcase's design system (tokens, faces, rules, controls), read before any
+   change to `site/`, and it changes with the design it describes.
 
 ## Dependency updates
 
