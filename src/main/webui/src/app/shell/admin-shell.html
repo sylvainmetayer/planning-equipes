@@ -25,7 +25,7 @@
     >notifications</mat-icon>
   </a>
   <!-- The help, out of the menu: one icon on every admin page. -->
-  <a matIconButton routerLink="/aide" i18n-aria-label="@@shell.aide" aria-label="Aide">
+  <a matIconButton routerLink="/aide" [fragment]="aideSection()" i18n-aria-label="@@shell.aide" aria-label="Aide">
     <mat-icon>help_outline</mat-icon>
   </a>
   <button matIconButton class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()"

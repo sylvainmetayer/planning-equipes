@@ -23,7 +23,14 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatDialog } from '@angular/material/dialog';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AdminApi } from '../core/api/admin-api';
 import {
@@ -112,6 +119,9 @@ export class AdminShell {
   protected readonly locale: AppLocale = getStoredLocale();
 
   private readonly router = inject(Router);
+  private readonly _aideSection = signal<string | undefined>(undefined);
+  /** The guide's section for the screen on display (`data.aide` of its route), if it names one. */
+  protected readonly aideSection = this._aideSection.asReadonly();
   private readonly document = inject(DOCUMENT);
   private readonly dialog = inject(MatDialog);
   private readonly shortcuts = inject(KeyboardShortcutsService);
@@ -220,7 +230,10 @@ export class AdminShell {
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => queueMicrotask(() => this.annoncerNavigation()));
+      .subscribe(() => {
+        this._aideSection.set(this.sectionAide());
+        queueMicrotask(() => this.annoncerNavigation());
+      });
     // Global keyboard shortcuts (issue #314), armed for the admin session only:
     // /login and the espace animateur render outside this shell and have
     // neither a palette nor any of these destinations.
@@ -228,6 +241,16 @@ export class AdminShell {
     destroyRef.onDestroy(() => this.shortcuts.stop());
     this.ecouterKonami();
     this.ecarterLeBandeauDuMenu();
+  }
+
+  private sectionAide(): string | undefined {
+    let snapshot: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
+    let section: string | undefined;
+    while (snapshot) {
+      section = (snapshot.data['aide'] as string | undefined) ?? section;
+      snapshot = snapshot.firstChild;
+    }
+    return section;
   }
 
   /**

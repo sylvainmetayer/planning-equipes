@@ -39,6 +39,22 @@ function textOf(section: HelpSection): string {
 describe('buildHelpSections', () => {
   const sections = buildHelpSections();
 
+  it('names, for every route carrying data.aide, a section that exists', () => {
+    const ids = sections.map((section) => section.id);
+    const shell = routes.find((route) => route.path === '' && route.children !== undefined);
+    const named = (shell?.children ?? []).filter((route) => route.data?.['aide'] !== undefined);
+    expect(named.length).toBeGreaterThan(10);
+    for (const route of named) {
+      expect(ids, `route ${route.path}`).toContain(route.data?.['aide']);
+    }
+  });
+
+  it('tells how to place or rule out someone without a forced assignment', () => {
+    const section = sections.find((candidate) => candidate.id === 'sans-affectation-forcee')!;
+    expect(textOf(section)).toContain('verrouillez');
+    expect(textOf(section)).toContain('indisponibilités');
+  });
+
   it('gives every section a unique anchor id', () => {
     const ids = sections.map((section) => section.id);
     expect(new Set(ids).size).toBe(ids.length);
