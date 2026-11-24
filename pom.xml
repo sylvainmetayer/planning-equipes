@@ -28,10 +28,10 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
-        <timefold.solver.version>2.7.1</timefold.solver.version>
+        <quarkus.platform.version>3.40.1.2</quarkus.platform.version>
+        <timefold.solver.version>2.8.0</timefold.solver.version>
         <quinoa.version>2.9.3</quinoa.version>
-        <sentry.version>8.61.1</sentry.version>
+        <sentry.version>8.64.0</sentry.version>
         <!-- Jackson for the whole classpath, through jackson-bom imported
              ahead of the Quarkus BOM below: Quarkus 3.39.5 managed 2.22.2,
              whose jackson-core and jackson-databind carry four HIGH CVEs
@@ -41,9 +41,9 @@
              2.22.3 or later itself. The YAML/JSR-310
              modules of the scenario DTOs use it too, so every Jackson module
              stays on one release. -->
-        <jackson.version>2.22.4</jackson.version>
-        <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
-        <mcp-server.version>2.0.4</mcp-server.version>
+        <jackson.version>2.23.0</jackson.version>
+        <jsonschema-generator.version>5.0.0</jsonschema-generator.version>
+        <mcp-server.version>2.1.0</mcp-server.version>
         <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
              generate-diagrams) and lets DiagramsStructuralTest decode the
              source each SVG embeds. Test scope, so it stays out of the image
@@ -55,9 +55,9 @@
              refusée au démarrage. -->
         <it.admin.password>it-admin-Hs3vQ9zR</it.admin.password>
         <surefire-plugin.version>3.6.1</surefire-plugin.version>
-        <spotless-plugin.version>3.11.0</spotless-plugin.version>
+        <spotless-plugin.version>3.12.0</spotless-plugin.version>
         <palantir-java-format.version>2.98.0</palantir-java-format.version>
-        <license-plugin.version>2.9.0</license-plugin.version>
+        <license-plugin.version>2.10.0</license-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
              PlanningServiceScenarioCompletTest, PlanningServiceScenarioContinuTest)
              solve a ~2000-poste problem to hard-feasibility and take ~25-75s
@@ -195,7 +195,7 @@
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
-            <version>3.0.5</version>
+            <version>3.0.6</version>
         </dependency>
         <!-- QR encoding only: OpenPDF draws no barcode of its own, and the
              espace's link is what an animateur scans off their printed PDF.
