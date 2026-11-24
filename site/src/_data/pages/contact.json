@@ -1,7 +1,7 @@
 {
   "slug": "contact",
-  "titre": "Parlons de votre événement | Planning Équipes",
-  "description": "Décrivez votre événement et votre équipe : nous vous répondons pour en discuter ensemble. Formulaire de contact de Planning Équipes.",
+  "titre": "Planning de votre événement : parlons-en | Planning Équipes",
+  "description": "Décrivez votre événement et votre équipe : nous répondons, puis nous vous disons si le logiciel de planning vous convient, et à quel tarif.",
   "h1": "Parlons de votre événement",
   "reponse": "Sept questions sur votre événement et votre équipe, puis on en discute ensemble.",
   "formTitre": "Formulaire de contact",
@@ -14,8 +14,8 @@
   ],
   "en": {
     "slug": "contact",
-    "titre": "Tell us about your event | Planning Équipes",
-    "description": "Describe your event and your team: we reply so we can talk it through. Planning Équipes contact form.",
+    "titre": "Festival staff rota software: let's talk | Planning Équipes",
+    "description": "Describe your event and your team: we reply, and tell you whether the scheduling software fits, and at what price.",
     "h1": "Tell us about your event",
     "reponse": "Seven questions about your event and your team, then we talk it through together.",
     "formTitre": "Contact form",

@@ -64,7 +64,12 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
   ressemblent les écrans ? combien ça coûte ? Chaque réponse longue a sa page
   (`/code-du-travail/`, `/organiser-son-equipe/`, `/comment-marche-le-calcul/`,
   `/heberger/`, `/questions/`), en français et en anglais ; `/heberger/` parle
-  à l'équipe technique qui l'installerait elle-même.
+  à l'équipe technique qui l'installerait elle-même. Cinq pages de plus
+  répondent à une recherche précise, liées de l'accueil et des pages voisines
+  mais absentes du menu : un type d'événement chacune (`/planning-festival/`,
+  `/planning-salon-foire/`, `/planning-evenement-sportif/`), le comparatif
+  `/tableur-ou-logiciel-de-planning/` et les questions sur les mineurs
+  `/animateurs-mineurs/` (la seule, avec `/questions/`, à porter un `FAQPage`).
 - **Une phrase qui répond, puis le détail.** Chaque page commence par sa
   réponse en une ou deux phrases (c'est ce qu'un moteur de recherche ou un
   assistant cite), puis les sections, puis une invitation à écrire.
@@ -127,21 +132,26 @@ Ce que Pages CMS ne permet pas de modifier, et c'est voulu : les articles
 
 - **Titre et description** : le `<title>` commence par ce qu'on cherche
   (« logiciel de planning d'équipes pour festivals ») et finit par le nom ; le
-  slogan reste dans le `<h1>` et dans `og:title`. 70 caractères au plus pour le
-  titre, 160 pour la description (testé).
+  slogan reste dans le `<h1>` et dans `og:title`. 65 caractères au plus pour le
+  titre, 155 pour la description (testé).
 - **Aperçus** : Open Graph et `twitter:card`, avec une image par langue.
 - **Données structurées** : un bloc JSON-LD par page, généré depuis les mêmes
   données que le HTML (`Person`, `WebSite`, `WebPage` ou `FAQPage`,
   `BreadcrumbList` ; sur l'accueil `SoftwareApplication` avec ses
   captures, `FAQPage` et un `VideoObject` par film). Les questions et réponses de
   `FAQPage` sont celles des `<details>` au mot près, puisque les deux viennent du
-  même fichier. Pas d'`offers` : le tarif est sur devis.
+  même fichier. Pas d'`offers` : le tarif se donne après échange.
 - **Pour les assistants** : `/llms.txt` liste les pages, et chaque page a un
   jumeau Markdown (`<adresse>index.md`, annoncé par `<link rel="alternate"
   type="text/markdown">`). `robots.txt` autorise explicitement les robots d'IA
   (GPTBot, ClaudeBot, PerplexityBot…) : la page est faite pour être citée.
-- **Dates** : `dateModified` et `lastmod` sont la date du dernier commit qui
-  touche `site/`, lue dans git au build ; rien à écrire à la main.
+- **Dates** : `dateModified` est la date du dernier commit qui touche `site/`,
+  lue dans git au build ; le `lastmod` du sitemap est celle du dernier commit
+  qui touche le fichier de la page (`src/_data/pages/<page>.json`, et pour
+  l'accueil ses gabarits). Dans un clone superficiel (Cloudflare Pages) ou sans
+  git, `lastmod` est omis plutôt que faux. Rien à écrire à la main.
+- **Pages hors index** : les mentions légales portent `noindex` et ne figurent
+  ni dans le sitemap ni dans `llms.txt` (`NOINDEX_KEYS` de `src/lib.js`).
 - **Recherches visées** : festivals et événements, conformité au Code du travail
   et mineurs, bénévoles. Le calcul ne distingue pas un bénévole d'un autre
   animateur : la page ne dit rien de plus sur leur statut.

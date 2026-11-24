@@ -1,0 +1,92 @@
+{
+  "slug": "planning-festival",
+  "titre": "Planning de festival : équipe et bénévoles | Planning Équipes",
+  "description": "Planning d'un festival ou d'une convention : stands, créneaux, compétences, disponibilités sur téléphone, mineurs, jour J. Le logiciel place chacun.",
+  "h1": "Comment faire le planning d'un festival ou d'une convention ?",
+  "reponse": "**On saisit les stands, les créneaux et les animateurs, et le logiciel place chacun.** Il tient le Code du travail, les compétences et les disponibilités, puis chacun reçoit son planning sur son téléphone.",
+  "sections": [
+    {
+      "h2": "Ce qui rend un festival difficile",
+      "texte": "Beaucoup de stands ouverts en même temps, des horaires qui changent d'un jour à l'autre, des soirées tardives, une équipe qui mêle salariés, bénévoles et mineurs. Chaque case du planning doit répondre à la fois à une compétence, à une disponibilité et à une règle de droit. Faite à la main, cette grille se casse au premier changement."
+    },
+    {
+      "h2": "Des stands, des créneaux, des postes",
+      "texte": "Chaque stand a ses horaires d'ouverture (des règles qui se répètent, des exceptions datées), un effectif minimum et maximum, et la ou les catégories de jeu qu'il demande. Les créneaux se posent par **journées types** : une journée type regroupe les vacations d'une sorte de journée, et se pose sur le calendrier en un geste, après un aperçu chiffré.\n\nLe calcul crée une place à pourvoir par poste, puis place chaque animateur selon ses compétences, sans jamais enfreindre une règle impérative."
+    },
+    {
+      "h2": "Les disponibilités, sur les téléphones",
+      "texte": "L'organisation ouvre une période de collecte : chacun déclare, depuis son téléphone, les jours où il ne peut pas venir. **Sans déclaration, une personne est disponible.** L'organisation relit les déclarations avant qu'elles entrent dans le calcul."
+    },
+    {
+      "h2": "Des mineurs et des soirées tardives",
+      "texte": "Le droit de chacun est celui de son âge réel à la date de chaque créneau, sans rien saisir de plus que la date de naissance. Un poste interdit à un mineur est refusé, et le refus cite l'article. Le détail est sur la page [Code du travail](/code-du-travail/) et dans [les questions sur les mineurs](/animateurs-mineurs/)."
+    },
+    {
+      "h2": "Quand le programme change",
+      "texte": "Une autorité ferme une tranche horaire pour tous les stands ? La **consigne** la pose sur les dates concernées, propose les stands qui perdent des heures et les fenêtres de compensation, avec un aperçu chiffré avant d'appliquer. Après un changement tardif, un calcul incrémental fige ce qui tient et ne recalcule que les places rouvertes."
+    },
+    {
+      "h2": "Le jour J",
+      "texte": "L'écran *Aujourd'hui* tient dans la poche : on marque un absent, l'application propose des remplaçants qui respectent déjà les règles, et prévient les seules personnes concernées. Pour la salle de contrôle, l'**affichage mural** montre sur une télé les stands ouverts, les places libres et la consigne du jour, et se met à jour chaque minute. Les animateurs, eux, proposent leurs échanges de créneaux depuis leur espace ; l'organisation arbitre."
+    },
+    {
+      "h2": "Ce que reçoit chacun",
+      "texte": "Un lien et un code par e-mail pour son espace sur téléphone, une feuille PDF avec un QR code, un abonnement à son agenda (ICS). Seules les personnes dont l'emploi du temps a changé reçoivent la nouvelle version."
+    }
+  ],
+  "cta": "Votre festival ou votre convention se prépare ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": [
+    "equipe",
+    "legal",
+    "calcul",
+    "salon",
+    "sport"
+  ],
+  "en": {
+    "slug": "festival-staff-rota",
+    "titre": "Festival staff rota: teams and volunteers | Planning Équipes",
+    "description": "Staff rota for a festival or convention: stands, shifts, skills, availability from phones, under-18s, event day. The software places everyone.",
+    "h1": "How do you schedule the staff of a festival or convention?",
+    "reponse": "**You enter the stands, the shifts and the staff, and the software places everyone.** It keeps to the French Labour Code, skills and availability, then everyone gets their rota on their phone.",
+    "sections": [
+      {
+        "h2": "What makes a festival hard",
+        "texte": "Many stands open at once, hours that change from one day to the next, late evenings, a team mixing paid staff, volunteers and under-18s. Every cell of the rota has to answer a skill, an availability and a rule of law at the same time. Done by hand, that grid breaks at the first change."
+      },
+      {
+        "h2": "Stands, shifts, seats",
+        "texte": "Each stand has its opening hours (recurring rules, dated exceptions), a minimum and maximum headcount, and the game categories it needs. Shifts are laid down as **typical days**: a typical day groups the shifts of one kind of day, and goes onto the calendar in one step, after a preview with figures.\n\nThe solver creates one seat to fill per post, then places each person according to their skills, never breaking a mandatory rule."
+      },
+      {
+        "h2": "Availability, from phones",
+        "texte": "The organisation opens a collection period: everyone declares, from their phone, the days they cannot come. **With no declaration, a person is available.** The organisation reviews the declarations before they enter the calculation."
+      },
+      {
+        "h2": "Under-18s and late evenings",
+        "texte": "Each person gets the law of their real age on the date of every shift, with nothing to enter beyond the date of birth. A shift an under-18 may not work is refused, and the refusal cites the article. The detail is on the [Labour Code](/en/labour-code/) page and in the [questions about under-18s](/en/under-18-staff/)."
+      },
+      {
+        "h2": "When the programme changes",
+        "texte": "An authority shuts a time band for every stand? The **consigne** lays it on the dates concerned, proposes the stands that lose hours and the compensation windows, with a preview with figures before applying. After a late change, an incremental run freezes what holds and recalculates only the reopened seats."
+      },
+      {
+        "h2": "On the day",
+        "texte": "The *Today* screen fits in a pocket: you mark someone absent, the application suggests replacements who already respect the rules, and notifies only the people concerned. For the control room, the **wall display** shows the open stands, the free seats and the day's consigne on a TV, refreshed every minute. Staff propose swaps from their own space; the organisation arbitrates."
+      },
+      {
+        "h2": "What everyone receives",
+        "texte": "A link and a code by e-mail for their space on a phone, a PDF sheet with a QR code, a subscription to their calendar (ICS). Only the people whose schedule changed receive the new version."
+      }
+    ],
+    "cta": "Preparing a festival or a convention?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": [
+      "equipe",
+      "legal",
+      "calcul",
+      "salon",
+      "sport"
+    ]
+  }
+}

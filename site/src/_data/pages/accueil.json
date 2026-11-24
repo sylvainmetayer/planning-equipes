@@ -1,5 +1,5 @@
 {
-  "titre": "Logiciel de planning d'animateurs et de bénévoles | Planning Équipes",
+  "titre": "Logiciel de planning animateurs et bénévoles | Planning Équipes",
   "description": "Le planning de vos animateurs et bénévoles en quelques minutes : Code du travail et mineurs vérifiés, planning sur le téléphone de chacun.",
   "ogTitre": "Planning Équipes : planifiez en minutes, pas en week-ends",
   "h1": "Planifiez en minutes, pas en week-ends.",
@@ -465,6 +465,14 @@
       "h2": "Frequently asked questions",
       "toutes": "All the questions"
     },
-    "ticketTitre": "Shift refused"
+    "ticketTitre": "Shift refused",
+    "types": {
+      "h2": "Which kind of event?",
+      "intro": "Festival, trade show, race or tournament: what the software changes depending on what you run."
+    }
+  },
+  "types": {
+    "h2": "Pour quel événement ?",
+    "intro": "Festival, salon, course ou tournoi : ce que le logiciel change selon ce que vous organisez."
   }
 }

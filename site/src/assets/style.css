@@ -117,6 +117,10 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 .rows--law tbody tr:first-child > :first-child { padding-left: 0; }
 .rows--law td:nth-child(2) { font-weight: 600; white-space: nowrap; }
 .rows--law .art { text-align: left; }
+.rows--cmp tbody tr:first-child > * { background: none; }
+.rows--cmp tbody tr:first-child > :first-child { padding-left: 0; }
+.rows--cmp tbody th { white-space: normal; }
+.rows--cmp td { vertical-align: top; }
 .sec > .container > .more { margin-top: var(--space-lg); }
 
 /* Setting up: the solver film stays while the three levels pass */

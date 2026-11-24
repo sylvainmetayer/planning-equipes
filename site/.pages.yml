@@ -154,8 +154,8 @@ content:
     format: json
     description: "Le texte de la page d'accueil. Les captures et vidéos se remplacent dans « Captures et images » et « Vidéos » (mêmes noms de fichier)."
     fields:
-      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: ogTitre, label: Titre des réseaux sociaux, type: string, required: true }
       - { name: h1, label: Titre de la page (7 mots au plus), type: string, required: true }
       - { name: lede, label: Phrase d'accroche (12 mots au plus), type: string, required: true }
@@ -286,12 +286,18 @@ content:
         fields:
           - { name: h2, label: Titre, type: string, required: true }
           - { name: toutes, label: Lien vers toutes les questions, type: string, required: true }
+      - name: types
+        label: Section « Pour quel événement ? »
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: intro, label: Introduction, type: string, required: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
-          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: ogTitre, label: Titre des réseaux sociaux, type: string, required: true }
           - { name: h1, label: Titre de la page (7 mots au plus), type: string, required: true }
           - { name: lede, label: Phrase d'accroche (12 mots au plus), type: string, required: true }
@@ -422,6 +428,12 @@ content:
             fields:
               - { name: h2, label: Titre, type: string, required: true }
               - { name: toutes, label: Lien vers toutes les questions, type: string, required: true }
+          - name: types
+            label: Section « Pour quel événement ? »
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: intro, label: Introduction, type: string, required: true }
 
   - name: legal
     label: Page Code du travail et mineurs
@@ -431,8 +443,8 @@ content:
     description: "Les dix articles et leurs règles ne s'éditent pas ici : src/_data/articles.js, testé contre ConstraintCatalog."
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Question de la page, type: string, required: true }
       - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
       - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -447,14 +459,14 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
           - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: h1, label: Question de la page, type: string, required: true }
           - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
           - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -469,7 +481,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
 
   - name: equipe
     label: Page équipe
@@ -478,8 +490,8 @@ content:
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Question de la page, type: string, required: true }
       - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
       - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -494,14 +506,14 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
           - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: h1, label: Question de la page, type: string, required: true }
           - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
           - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -516,7 +528,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
 
   - name: hebergement
     label: Page héberger soi-même
@@ -525,8 +537,8 @@ content:
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Question de la page, type: string, required: true }
       - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
       - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -541,14 +553,14 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
           - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: h1, label: Question de la page, type: string, required: true }
           - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
           - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -563,7 +575,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
 
   - name: calcul
     label: Page « comment marche le calcul »
@@ -572,8 +584,8 @@ content:
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Question de la page, type: string, required: true }
       - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
       - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -588,14 +600,14 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
           - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: h1, label: Question de la page, type: string, required: true }
           - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
           - { name: articlesH, label: Titre du tableau des articles, type: string }
@@ -610,7 +622,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
 
   - name: faq
     label: Questions fréquentes
@@ -620,8 +632,8 @@ content:
     description: "Les questions cochées « accueil » apparaissent aussi sur la page d'accueil. Les réponses sont reprises mot pour mot dans les données structurées."
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Titre de la page, type: string, required: true }
       - { name: reponse, label: Introduction (Markdown), type: text, required: true }
       - name: items
@@ -636,14 +648,14 @@ content:
           - { name: a, label: Réponse, type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
           - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-          - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-          - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: h1, label: Titre de la page, type: string, required: true }
           - { name: reponse, label: Introduction (Markdown), type: text, required: true }
           - name: items
@@ -658,7 +670,7 @@ content:
               - { name: a, label: Réponse, type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
 
   - name: contact
     label: Page contact (formulaire)
@@ -667,27 +679,27 @@ content:
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Titre de la page, type: string, required: true }
       - { name: reponse, label: Introduction (Markdown), type: text, required: true }
       - { name: formTitre, label: Titre du formulaire (lecteurs d'écran), type: string, required: true }
       - { name: lien, label: Lien vers le formulaire sur tally.so, type: string, required: true }
       - { name: ecrire, label: Texte devant l'adresse e-mail, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
         - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-        - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-        - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+        - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+        - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
         - { name: h1, label: Titre de la page, type: string, required: true }
         - { name: reponse, label: Introduction (Markdown), type: text, required: true }
         - { name: formTitre, label: Titre du formulaire (lecteurs d'écran), type: string, required: true }
         - { name: lien, label: Lien vers le formulaire sur tally.so, type: string, required: true }
         - { name: ecrire, label: Texte devant l'adresse e-mail, type: string, required: true }
-        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions), type: string, list: true }
 
   - name: mentions
     label: Page mentions légales
@@ -696,8 +708,8 @@ content:
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Titre de la page, type: string, required: true }
       - { name: reponse, label: Introduction (Markdown), type: text, required: true }
       - name: sections
@@ -708,14 +720,14 @@ content:
         fields:
           - { name: h2, label: Titre, type: string, required: true }
           - { name: texte, label: Texte (Markdown), type: text, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
         fields:
         - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
-        - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
-        - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+        - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+        - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
         - { name: h1, label: Titre de la page, type: string, required: true }
         - { name: reponse, label: Introduction (Markdown), type: text, required: true }
         - name: sections
@@ -726,4 +738,273 @@ content:
           fields:
             - { name: h2, label: Titre, type: string, required: true }
             - { name: texte, label: Texte (Markdown), type: text, required: true }
-        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions), type: string, list: true }
+
+  - name: festival
+    label: Page festival ou convention
+    type: file
+    path: src/_data/pages/festival.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+
+
+  - name: salon
+    label: Page salon ou foire
+    type: file
+    path: src/_data/pages/salon.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+
+
+  - name: sport
+    label: Page événement sportif
+    type: file
+    path: src/_data/pages/sport.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+
+
+  - name: tableur
+    label: Page tableur ou logiciel
+    type: file
+    path: src/_data/pages/tableur.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Question de la page, type: string, required: true }
+      - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+      - { name: articlesH, label: Titre du tableau des articles, type: string }
+      - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - name: tableau
+        label: Tableau comparatif
+        type: object
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: colonnes, label: Colonnes (trois), type: string, list: true }
+          - name: lignes
+            label: Lignes
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{q}" }
+            fields:
+              - { name: q, label: Question, type: string, required: true }
+              - { name: tableur, label: Avec un tableur, type: text, required: true }
+              - { name: logiciel, label: Avec le logiciel, type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+          - { name: h1, label: Question de la page, type: string, required: true }
+          - { name: reponse, label: Réponse directe (Markdown), type: text, required: true }
+          - { name: articlesH, label: Titre du tableau des articles, type: string }
+          - { name: colonnes, label: Colonnes du tableau des articles, type: string, list: true }
+          - name: sections
+            label: Sections
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{h2}" }
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: texte, label: Texte (Markdown), type: text, required: true }
+          - name: tableau
+            label: Tableau comparatif
+            type: object
+            fields:
+              - { name: h2, label: Titre, type: string, required: true }
+              - { name: colonnes, label: Colonnes (trois), type: string, list: true }
+              - name: lignes
+                label: Lignes
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{q}" }
+                fields:
+                  - { name: q, label: Question, type: string, required: true }
+                  - { name: tableur, label: Avec un tableur, type: text, required: true }
+                  - { name: logiciel, label: Avec le logiciel, type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+
+
+  - name: mineurs
+    label: Page mineurs (questions)
+    type: file
+    path: src/_data/pages/mineurs.json
+    format: json
+    description: "Les réponses sont reprises mot pour mot dans les données structurées (FAQPage). Les articles cités doivent exister dans ConstraintCatalog."
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Titre de la page, type: string, required: true }
+      - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+      - name: items
+        label: Questions
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{q}" }
+        fields:
+          - { name: id, label: Ancre (lien direct), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: q, label: Question, type: string, required: true }
+          - { name: a, label: Réponse, type: text, required: true }
+      - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+      - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+          - { name: h1, label: Titre de la page, type: string, required: true }
+          - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+          - name: items
+            label: Questions
+            type: object
+            list:
+              collapsible: { collapsed: true, summary: "{q}" }
+            fields:
+              - { name: id, label: Ancre (lien direct), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+              - { name: q, label: Question, type: string, required: true }
+              - { name: a, label: Réponse, type: text, required: true }
+          - { name: cta, label: Invitation à nous écrire, type: string, required: true }
+          - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
+

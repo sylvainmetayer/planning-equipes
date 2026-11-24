@@ -39,7 +39,8 @@ export function toMarkdown(p) {
     out.push(page.reponse);
     if (key === 'legal') out.push(`## ${page.articlesH}`, articles.map((a) => `- **${a.number}**, ${a[lang].subject}${sep}${a[lang].rule}`).join('\n'));
     if (page.sections) out.push(sections(page.sections));
-    if (key === 'faq') out.push(page.items.map((i) => `## ${i.q}\n\n${i.a}`).join('\n\n'));
+    if (page.tableau) out.push(`## ${page.tableau.h2}`, [`| ${page.tableau.colonnes.join(' | ')} |`, '| --- | --- | --- |', ...page.tableau.lignes.map((l) => `| ${l.q} | ${l.tableur} | ${l.logiciel} |`)].join('\n'));
+    if (page.items) out.push(page.items.map((i) => `## ${i.q}\n\n${i.a}`).join('\n\n'));
   }
   if (key === 'contact') out.push(`${page.lien}${sep}https://tally.so/r/${site.tally[lang]}`, `${page.ecrire} ${site.email}`);
   else if (page.cta) out.push(`${page.cta} ${site.url}${urlOf(copy, lang, 'contact')} ${site.email}`);

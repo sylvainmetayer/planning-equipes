@@ -31,8 +31,8 @@ test('titles and descriptions fit a search result', () => {
     const { fr, en } = split(file);
     for (const [lang, copy] of [['fr', fr], ['en', en]]) {
       if (!copy.titre) continue;
-      assert.ok(copy.titre.length <= 70, `${name} ${lang} : titre de ${copy.titre.length} caractères`);
-      assert.ok(copy.description.length <= 160, `${name} ${lang} : description de ${copy.description.length} caractères`);
+      assert.ok(copy.titre.length <= 65, `${name} ${lang} : titre de ${copy.titre.length} caractères`);
+      assert.ok(copy.description.length <= 155, `${name} ${lang} : description de ${copy.description.length} caractères`);
     }
   }
 });

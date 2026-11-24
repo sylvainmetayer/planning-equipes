@@ -1,0 +1,150 @@
+{
+  "slug": "tableur-ou-logiciel-de-planning",
+  "titre": "Tableur ou logiciel de planning ? | Planning Équipes",
+  "description": "Un tableur suffit pour une petite équipe sur un jour. Au-delà : règles légales, mineurs, absences, envoi à chacun. Le comparatif honnête.",
+  "h1": "Tableur ou logiciel de planning : lequel choisir ?",
+  "reponse": "**Un tableur suffit pour une petite équipe, sur un jour, avec des règles que vous connaissez par cœur.** Au-delà, ce qui coûte du temps, ce sont les vérifications légales, les changements de dernière minute et l'envoi à chacun : c'est là qu'un logiciel sert.",
+  "sections": [
+    {
+      "h2": "Quand le tableur suffit",
+      "texte": "Une équipe réduite, un seul jour ou presque, peu de postes, personne de mineur, des horaires qui ne bougent pas : un tableur partagé fait très bien l'affaire, il est gratuit et tout le monde sait s'en servir. Dans ce cas, **n'installez rien**. Nous vous le dirons aussi si vous nous écrivez."
+    },
+    {
+      "h2": "Ce qui casse quand l'événement grandit",
+      "texte": "Les règles de durée, de pause et de repos se vérifient à la main, pour chaque personne et chaque jour. L'âge change le droit applicable, selon la date. Une indisponibilité annoncée tard, une absence le jour J, et c'est toute la grille qu'il faut revérifier. Puis il faut envoyer à chacun sa version. Un logiciel automatise ces quatre travaux, et surtout il les refait à chaque changement."
+    }
+  ],
+  "tableau": {
+    "h2": "Ce qui change, point par point",
+    "colonnes": [
+      "Question",
+      "Tableur",
+      "Logiciel de planning"
+    ],
+    "lignes": [
+      {
+        "q": "Règles légales (durée, repos, pauses)",
+        "tableur": "Vérifiées à la main, ou par des formules à écrire et à tenir à jour.",
+        "logiciel": "Dix articles du Code du travail appliqués : un poste interdit est refusé, avec l'article."
+      },
+      {
+        "q": "Mineurs",
+        "tableur": "Calculer l'âge à chaque date, penser aux heures de nuit et aux jours fériés.",
+        "logiciel": "Le droit de l'âge réel à la date de chaque créneau."
+      },
+      {
+        "q": "Disponibilités",
+        "tableur": "Relances une à une, réponses recopiées.",
+        "logiciel": "Déclarées par chacun sur son téléphone, relues puis appliquées."
+      },
+      {
+        "q": "Absent de dernière minute",
+        "tableur": "On cherche un remplaçant, on revérifie toute la grille.",
+        "logiciel": "La place vide apparaît, avec des remplaçants qui respectent déjà les règles."
+      },
+      {
+        "q": "Équité entre les animateurs",
+        "tableur": "À l'œil.",
+        "logiciel": "Le calcul l'améliore après avoir tenu les règles impératives."
+      },
+      {
+        "q": "Échanges entre collègues",
+        "tableur": "Des messages dans tous les sens.",
+        "logiciel": "Des échanges en libre-service, que l'organisation arbitre."
+      },
+      {
+        "q": "Envoyer à chacun son planning",
+        "tableur": "Copies, captures, e-mails à la main.",
+        "logiciel": "Un lien, un PDF avec QR code, un agenda ; seules les personnes déplacées sont prévenues."
+      },
+      {
+        "q": "Coût",
+        "tableur": "Gratuit, déjà là.",
+        "logiciel": "Logiciel libre (AGPL-3.0) ; tarif après échange si on l'héberge pour vous."
+      }
+    ]
+  },
+  "cta": "Vous hésitez entre les deux ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": [
+    "calcul",
+    "equipe",
+    "legal",
+    "faq"
+  ],
+  "en": {
+    "slug": "spreadsheet-or-scheduling-software",
+    "titre": "Spreadsheet or scheduling software? | Planning Équipes",
+    "description": "A spreadsheet is enough for a small team on one day. Beyond that: legal rules, under-18s, absences, sending everyone their rota. An honest comparison.",
+    "h1": "Spreadsheet or scheduling software: which one?",
+    "reponse": "**A spreadsheet is enough for a small team, on one day, with rules you know by heart.** Beyond that, what eats time is legal checks, last-minute changes and sending everyone their rota: that is where software helps.",
+    "sections": [
+      {
+        "h2": "When a spreadsheet is enough",
+        "texte": "A small team, one day or close to it, few posts, no under-18s, hours that do not move: a shared spreadsheet does the job very well, it is free and everybody can use it. In that case, **install nothing**. We will tell you so too, if you write to us."
+      },
+      {
+        "h2": "What breaks as the event grows",
+        "texte": "Rules on hours, breaks and rest are checked by hand, for each person and each day. Age changes the law that applies, depending on the date. A late unavailability, an absence on the day, and the whole grid has to be checked again. Then everyone has to be sent their version. Software automates those four jobs, and above all redoes them at every change."
+      }
+    ],
+    "tableau": {
+      "h2": "What changes, point by point",
+      "colonnes": [
+        "Question",
+        "Spreadsheet",
+        "Scheduling software"
+      ],
+      "lignes": [
+        {
+          "q": "Legal rules (hours, rest, breaks)",
+          "tableur": "Checked by hand, or with formulas you write and keep up to date.",
+          "logiciel": "Ten articles of the French Labour Code applied: a forbidden shift is refused, with the article."
+        },
+        {
+          "q": "Under-18s",
+          "tableur": "Work out the age on each date, remember night hours and public holidays.",
+          "logiciel": "The law of the real age on the date of each shift."
+        },
+        {
+          "q": "Availability",
+          "tableur": "Chasing one by one, answers copied over.",
+          "logiciel": "Declared by each person on their phone, reviewed, then applied."
+        },
+        {
+          "q": "Last-minute absence",
+          "tableur": "Look for a replacement, check the whole grid again.",
+          "logiciel": "The empty seat appears, with replacements who already respect the rules."
+        },
+        {
+          "q": "Fairness between staff",
+          "tableur": "By eye.",
+          "logiciel": "The solver improves it once the mandatory rules hold."
+        },
+        {
+          "q": "Swaps between colleagues",
+          "tableur": "Messages in every direction.",
+          "logiciel": "Self-service swaps, arbitrated by the organisation."
+        },
+        {
+          "q": "Sending everyone their rota",
+          "tableur": "Copies, screenshots, e-mails by hand.",
+          "logiciel": "A link, a PDF with a QR code, a calendar; only the people who moved are told."
+        },
+        {
+          "q": "Cost",
+          "tableur": "Free, already there.",
+          "logiciel": "Free software (AGPL-3.0); price after a conversation if we host it for you."
+        }
+      ]
+    },
+    "cta": "Torn between the two?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": [
+      "calcul",
+      "equipe",
+      "legal",
+      "faq"
+    ]
+  }
+}

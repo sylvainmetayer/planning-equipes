@@ -1,0 +1,124 @@
+{
+  "slug": "animateurs-mineurs",
+  "titre": "Planning et mineurs : le Code du travail | Planning Équipes",
+  "description": "Un animateur de 16 ans peut-il travailler après 22 h ? Durée, pause, nuit, repos, jours fériés : les règles des mineurs, article par article.",
+  "h1": "Que dit le Code du travail sur les animateurs mineurs ?",
+  "reponse": "**Le logiciel applique à chaque mineur le droit de son âge réel, à la date de chaque créneau.** Ces questions-réponses citent l'article de chaque règle. Il applique le Code du travail seul : ni convention collective, ni dérogation d'office.",
+  "items": [
+    {
+      "id": "apres-22h",
+      "q": "Un animateur de 16 ans peut-il travailler après 22 h ?",
+      "a": "Non. Aucun poste entre 22 h et 6 h de 16 à 18 ans (article L3163-1), et dès 20 h avant 16 ans. Le calcul refuse un tel poste et cite l'article."
+    },
+    {
+      "id": "heures",
+      "q": "Combien d'heures par jour et par semaine pour un mineur ?",
+      "a": "8 heures par jour et 35 par semaine au plus, ramenées à 7 heures par jour avant 16 ans (article L3162-1)."
+    },
+    {
+      "id": "pause",
+      "q": "Un mineur a-t-il droit à une pause ?",
+      "a": "Oui : une pause d'au moins 30 minutes après 4 h 30 de travail continu (article L3162-3). Elle se place comme pour tous les autres : un trou dans la grille, ou un collègue du stand qui tient la place."
+    },
+    {
+      "id": "repos-quotidien",
+      "q": "Quel repos entre deux journées de travail ?",
+      "a": "12 heures pour un mineur de 16 à 18 ans, 14 heures avant 16 ans (article L3164-1). Pour un majeur, c'est 11 heures (article L3131-1)."
+    },
+    {
+      "id": "repos-hebdomadaire",
+      "q": "Combien de jours de repos par semaine ?",
+      "a": "Deux jours de repos consécutifs dans chaque semaine, du lundi au dimanche (article L3164-2)."
+    },
+    {
+      "id": "holidays",
+      "q": "Un mineur peut-il travailler un jour férié ?",
+      "a": "Non : aucun poste un jour férié légal (article L3164-6). Le logiciel n'applique aucune dérogation d'office : celle de l'article R3164-2 reste à instruire de votre côté."
+    },
+    {
+      "id": "age",
+      "q": "Quel âge compte, celui du premier jour ou du jour du créneau ?",
+      "a": "Celui du jour de chaque créneau. Quelqu'un qui fête ses 16 ans pendant l'événement change de régime ce jour-là. La date de naissance ne sert qu'à ce calcul."
+    },
+    {
+      "id": "convention",
+      "q": "Le logiciel applique-t-il une convention collective ou une dérogation ?",
+      "a": "Non. Il applique le Code du travail, et lui seul. Une convention, un accord d'entreprise ou une dérogation sont à vérifier de votre côté, et l'organisation qui publie le planning reste l'employeur."
+    },
+    {
+      "id": "benevoles",
+      "q": "Ces règles valent-elles aussi pour des bénévoles mineurs ?",
+      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire."
+    }
+  ],
+  "cta": "Une règle à vérifier pour votre événement ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": [
+    "legal",
+    "equipe",
+    "faq",
+    "sport"
+  ],
+  "en": {
+    "slug": "under-18-staff",
+    "titre": "Rota and under-18s: the French Labour Code | Planning Équipes",
+    "description": "Can a 16-year-old work after 10 pm? Hours, breaks, nights, rest, public holidays: the rules for under-18s, article by article.",
+    "h1": "What does the French Labour Code say about under-18 staff?",
+    "reponse": "**The software applies to each under-18 the law of their real age, on the date of every shift.** These questions and answers cite the article behind each rule. It applies the Labour Code alone: no collective agreement, no derogation by default.",
+    "items": [
+      {
+        "id": "apres-22h",
+        "q": "Can a 16-year-old work after 10 pm?",
+        "a": "No. No shift between 22:00 and 06:00 from 16 to 18 (article L3163-1), and from 20:00 before 16. The solver refuses such a shift and cites the article."
+      },
+      {
+        "id": "heures",
+        "q": "How many hours a day and a week for an under-18?",
+        "a": "At most 8 hours a day and 35 a week, down to 7 hours a day before 16 (article L3162-1)."
+      },
+      {
+        "id": "pause",
+        "q": "Is an under-18 entitled to a break?",
+        "a": "Yes: a break of at least 30 minutes after 4 hours 30 of continuous work (article L3162-3). It fits as for everyone else: a gap in the grid, or a colleague on the stand holding the seat."
+      },
+      {
+        "id": "repos-quotidien",
+        "q": "How much rest between two working days?",
+        "a": "12 hours for an under-18 from 16 to 18, 14 hours before 16 (article L3164-1). For an adult, it is 11 hours (article L3131-1)."
+      },
+      {
+        "id": "repos-hebdomadaire",
+        "q": "How many rest days a week?",
+        "a": "Two consecutive rest days in every week, Monday to Sunday (article L3164-2)."
+      },
+      {
+        "id": "holidays",
+        "q": "Can an under-18 work on a public holiday?",
+        "a": "No: no shift on a legal public holiday (article L3164-6). The software applies no derogation by default: the one in article R3164-2 is for you to look into."
+      },
+      {
+        "id": "age",
+        "q": "Which age counts, the first day's or the shift's?",
+        "a": "The age on the day of each shift. Someone who turns 16 mid-event changes regime that day. The date of birth is used for that calculation alone."
+      },
+      {
+        "id": "convention",
+        "q": "Does the software apply a collective agreement or a derogation?",
+        "a": "No. It applies the Labour Code, and only the Labour Code. A collective agreement, a company agreement or a derogation is for you to check, and the organisation that publishes the rota remains the employer."
+      },
+      {
+        "id": "benevoles",
+        "q": "Do these rules apply to volunteers under 18 too?",
+        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call."
+      }
+    ],
+    "cta": "A rule to check for your event?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": [
+      "legal",
+      "equipe",
+      "faq",
+      "sport"
+    ]
+  }
+}
