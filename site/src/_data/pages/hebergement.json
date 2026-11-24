@@ -27,7 +27,7 @@
     },
     {
       "h2": "Les versions",
-      "texte": "Chaque version porte un numéro `vX.Y.Z` qui suit SemVer, et ses notes disent ce qui demande une action à la mise à jour. On déploie une version précise, jamais `latest`."
+      "texte": "Chaque version porte un numéro `vX.Y.Z` qui suit [SemVer](https://semver.org/lang/fr/), et ses notes disent ce qui demande une action à la mise à jour. On déploie une version précise, jamais `latest`."
     }
   ],
   "cta": "Vous préférez qu'on l'héberge pour vous ?",
@@ -66,7 +66,7 @@
       },
       {
         "h2": "Versions",
-        "texte": "Each version carries a `vX.Y.Z` number that follows SemVer, and its notes say what needs action at upgrade. You deploy a precise version, never `latest`."
+        "texte": "Each version carries a `vX.Y.Z` number that follows [SemVer](https://semver.org/), and its notes say what needs action at upgrade. You deploy a precise version, never `latest`."
       }
     ],
     "cta": "Would you rather we hosted it for you?",
