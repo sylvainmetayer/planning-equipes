@@ -32,7 +32,7 @@ Un composant sous double licence compte dans chacune des deux.
 | Licence | Dépendances Java | Paquets npm |
 | --- | ---: | ---: |
 | 0BSD | — | 1 |
-| Apache-2.0 | 200 | 5 |
+| Apache-2.0 | 198 | 5 |
 | BSD-2-Clause | 3 | 2 |
 | CC-BY-4.0 | — | 1 |
 | CC0-1.0 | 2 | — |
@@ -46,7 +46,7 @@ Un composant sous double licence compte dans chacune des deux.
 | MIT-0 | 1 | — |
 | MPL-2.0 | 1 | — |
 | Public Domain | 1 | — |
-| **Total** | **229** | **86** |
+| **Total** | **227** | **86** |
 
 ## Dépendances Java
 
@@ -70,7 +70,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.23.0 | Apache-2.0 |
 | `com.fasterxml:classmate` | 1.7.1 | Apache-2.0 |
 | `com.github.librepdf:openpdf` | 3.0.6 | LGPL-2.1 ou MPL-2.0 |
-| `com.github.victools:jsonschema-generator` | 5.0.0 | Apache-2.0 |
+| `com.github.victools:jsonschema-generator` | 4.38.0 | Apache-2.0 |
 | `com.google.zxing:core` | 3.5.4 | Apache-2.0 |
 | `com.sun.istack:istack-commons-runtime` | 4.1.2 | EDL-1.0 |
 | `io.agroal:agroal-api` | 3.2.1 | Apache-2.0 |
@@ -283,8 +283,6 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `org.wildfly.security:wildfly-elytron-x500-cert` | 2.9.2.SP1 | Apache-2.0 |
 | `org.wildfly.security:wildfly-elytron-x500-cert-util` | 2.9.2.SP1 | Apache-2.0 |
 | `org.yaml:snakeyaml` | 2.7 | Apache-2.0 |
-| `tools.jackson.core:jackson-core` | 3.0.3 | Apache-2.0 |
-| `tools.jackson.core:jackson-databind` | 3.0.3 | Apache-2.0 |
 
 ## Paquets npm
 
