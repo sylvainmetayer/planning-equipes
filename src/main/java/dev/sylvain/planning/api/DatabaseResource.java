@@ -23,6 +23,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * both routes answer 404 unless {@code planning.outillage-test.dump-sql} is on —
  * as it is under {@code %test}, {@code %dev} and the E2E stack.
  */
+@InstanceOnly
 @Path("/database")
 public class DatabaseResource {
 

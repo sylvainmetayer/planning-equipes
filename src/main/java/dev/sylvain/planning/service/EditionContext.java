@@ -1,10 +1,14 @@
 package dev.sylvain.planning.service;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.compte.Compte;
+import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.edition.EditionRepository;
 import io.quarkus.arc.Arc;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -121,7 +125,7 @@ public class EditionContext {
         }
         String demande = editionIdDemande();
         if (demande != null) {
-            if (!idsConnus().contains(demande)) {
+            if (!idsConnus().contains(demande) || !visibleToCaller(demande)) {
                 throw new BusinessError.EditionRefused(
                         BusinessError.EditionRefused.Reason.INCONNUE,
                         "L'édition « " + demande + " » n'existe pas (ou plus) : choisissez-en une autre.");
@@ -137,6 +141,31 @@ public class EditionContext {
                 .orElseThrow(() -> new BusinessError.EditionRefused(
                         BusinessError.EditionRefused.Reason.REQUISE,
                         "Aucune édition désignée, et aucune édition n'est active."));
+    }
+
+    /**
+     * Whether the signed-in caller may see {@code editionId}. An organiser
+     * account sees the editions its rights in force name and no other — one
+     * outside them is refused exactly as one that does not exist. The
+     * administrators, the MCP key, an espace token and a request with no
+     * identity are not narrowed here.
+     */
+    public boolean visibleToCaller(String editionId) {
+        Compte compte = organiserOfRequest();
+        return compte == null
+                || CompteService.editionScope(compte, Instant.now()).test(editionId);
+    }
+
+    private static Compte organiserOfRequest() {
+        var container = Arc.container();
+        if (container == null || !container.requestContext().isActive()) {
+            return null;
+        }
+        SecurityIdentity identity = container.instance(SecurityIdentity.class).get();
+        if (identity == null || identity.isAnonymous() || identity.hasRole("admin")) {
+            return null;
+        }
+        return identity.getAttribute(Compte.IDENTITY_ATTRIBUTE);
     }
 
     /**

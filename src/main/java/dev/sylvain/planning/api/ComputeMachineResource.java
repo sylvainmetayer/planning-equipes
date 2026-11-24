@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.MediaType;
  * <p>Nothing here configures it: where the worker is, and the launcher that
  * starts it, are instance settings.</p>
  */
+@InstanceOnly
 @Path("/machine-calcul")
 @Produces(MediaType.APPLICATION_JSON)
 public class ComputeMachineResource {
