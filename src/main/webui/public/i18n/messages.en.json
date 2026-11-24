@@ -488,7 +488,7 @@
   "changements.famille.restaurations": "database restores",
   "changements.famille.restauration": "database restore",
   "solver.previousPlan.comparison": "Before: {$INTERPOLATION} → after: {$INTERPOLATION_1}",
-  "solver.scoreHorsPlancher": "Score net of floors: {$score} — the floor (wishes or referents not declared) is a constant that missing data explains; no rule is removed from the solve.",
+  "solver.scoreHorsPlancher": "Score net of floors: {$score} — the floor (rules that penalise almost everything, often for lack of declared wishes or referents) is a constant; no rule is removed from the solve.",
   "solver.previousPlan.degraded": "This solve made the saved schedule worse.",
   "solver.previousPlan.restoreAction": "Go back to the previous plan",
   "solver.previousPlan.restore.title": "Go back to the previous plan?",
@@ -5010,7 +5010,7 @@
   "aide.realise.declare": "The realised is declared: it is the plan as the tool recorded it, absences marked on the Today screen and replacements included, and the frozen past keeps a solve from rewriting it. It is not a presence check-in. If the frozen past is switched off on the instance, the screen warns that the realised is no longer guaranteed.",
   "aide.realise.compteurs": "For each cell: the published seats; the absences, that is the published holders marked absent on their time slot; the replacements, seats held by someone other than the published person; the seats left empty, and the hours they cost. A seat cut short by an absence during its shift counts as an absence: taken over for the rest, as a replacement; left empty, as a seat left empty, of which only the hours not held are lost. Someone moved from one time slot to another of the same stand leaves their published seat empty and takes a new one. A seat taken out by a consigne, or whose time slot was deleted after the publication, counts as « removed », never as an absence. A swap published before the day is not a gap. A night shift belongs to the day it starts on.",
   "aide.realise.detail": "A cell opens the list of its shifts that changed, with the names: they are shown here only. The totals by game category count a stand with several game categories in each. The CSV export holds only the stands, the days and the counters, no person, and it is recorded in the action history.",
-  "aide.realise.historique": "The night after the last time slot of an edition, its measure is frozen by game category, once and for all: a correction made afterwards no longer changes it. It is kept even if the edition is deleted. The next edition, the one whose event starts afterwards, finds it under the Plan versions table and, for information only, in a column of the Need tab of the Diagnostic: no computation uses it. A replaced publication that was in force when an elapsed day started can no longer be deleted from Plan versions: deleting it would rewrite that day's gap.",
+  "aide.realise.historique": "Once the last time slot of an edition has passed, its measure is computed then frozen by game category, once and for all, at the first reading of the screen, of the next edition's Versions, or when the edition is deleted: a correction made afterwards no longer changes it. It is kept even if the edition is deleted. The next edition, the one whose event starts afterwards, finds it under the Plan versions table and, for information only, in a column of the Need tab of the Diagnostic: no computation uses it. A replaced publication that was in force when an elapsed day started can no longer be deleted from Plan versions: deleting it would rewrite that day's gap.",
   "staffing.verification.majeurs": "Adults",
   "staffing.verification.mineurs": "Minors",
   "staffing.verification.duree": "Max time (s)",
@@ -5312,7 +5312,7 @@
   "journee.relecture.aRelireN": "{$count} point(s) to review",
   "aide.sansForcee.title": "Placing or ruling out someone without a forced assignment",
   "aide.sansForcee.summary": "Two gestures simpler than a manual adjustment, each undone in a click.",
-  "aide.sansForcee.verrou": "Keep someone on a timeslot: place them on the seat from the Planning page (“Place”, with “Keep them at the next solve” ticked), or lock their seat. The lock ties that person to that timeslot; the next solve respects it and leaves the rest of their day alone.",
+  "aide.sansForcee.verrou": "Keep someone on a timeslot: place them on the seat from the Planning page (“Place”, with “Keep them at the next solve” ticked), or lock their seat. The lock ties that person to that timeslot; the next solve respects it, and the rest of their day stays free for the solve.",
   "aide.sansForcee.indisponibilite": "Rule someone out of a day: add that day to their unavailable days, on their fiche (“Unavailable that day”). They are no longer offered that day, and their seats of the day are freed in the same gesture.",
-  "aide.sansForcee.quand": "Keep the manual adjustment for exceptions that must survive a solve starting from scratch: a lock only protects the plan in place."
+  "aide.sansForcee.quand": "Keep the manual adjustment for exceptions that must hold even without a saved plan (reset, import, new edition): a lock freezes what the saved plan carries, nothing more."
 }

@@ -243,11 +243,16 @@ export class AdminShell {
     this.ecarterLeBandeauDuMenu();
   }
 
+  /** The guide's section of the screen on display: its tab's own when `aideOnglets` names it, else the route's. */
   private sectionAide(): string | undefined {
     let snapshot: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
     let section: string | undefined;
     while (snapshot) {
-      section = (snapshot.data['aide'] as string | undefined) ?? section;
+      const onglet = snapshot.queryParams['onglet'] as string | undefined;
+      const parOnglet = (snapshot.data['aideOnglets'] as Record<string, string> | undefined)?.[
+        onglet ?? ''
+      ];
+      section = parOnglet ?? (snapshot.data['aide'] as string | undefined) ?? section;
       snapshot = snapshot.firstChild;
     }
     return section;

@@ -223,7 +223,7 @@ export class SolveRecap {
     if (!brut || !net || net === brut) {
       return '';
     }
-    return $localize`:@@solver.scoreHorsPlancher:Score hors plancher : ${net}:score: — le plancher (souhaits ou référents non déclarés) est une constante que des données absentes expliquent ; aucune règle n'est retirée du calcul.`;
+    return $localize`:@@solver.scoreHorsPlancher:Score hors plancher : ${net}:score: — le plancher (des règles qui pénalisent presque tout, souvent faute de souhaits ou de référents déclarés) est une constante ; aucune règle n'est retirée du calcul.`;
   });
 
   /** The comparison is only worth showing when both scores are known. */

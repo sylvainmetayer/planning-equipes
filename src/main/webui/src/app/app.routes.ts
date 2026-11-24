@@ -411,7 +411,7 @@ const adminRoutes: Routes = [
     // The event day's hub (ADR 0066): what « Mode jour J » became.
     path: 'aujourdhui',
     title: () => $localize`:@@route.aujourdhui:Aujourd'hui`,
-    data: { aide: 'jour-j' },
+    data: { aide: 'jour-j', aideOnglets: { realise: 'realise' } },
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
   },
   // The former address, kept for the bookmarks and the links already sent;
@@ -455,7 +455,15 @@ const adminRoutes: Routes = [
   {
     path: 'parametres',
     title: () => $localize`:@@route.parametres:Paramètres`,
-    data: { aide: 'configuration-solveur' },
+    data: {
+      aide: 'configuration-solveur',
+      aideOnglets: {
+        mural: 'affichage-mural',
+        instance: 'webhooks',
+        historique: 'historique-des-actions',
+        mcp: 'assistant-mcp',
+      },
+    },
     canActivate: [parametresOngletsDeplaces],
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
@@ -502,6 +510,7 @@ const adminRoutes: Routes = [
     // Served without a menu entry: the Éditions page opens it.
     path: 'editions/comparer',
     title: () => $localize`:@@route.comparerEditions:Comparer deux éditions`,
+    data: { aide: 'editions' },
     loadComponent: () =>
       import('./pages/comparer-editions/comparer-editions-page').then(
         (m) => m.ComparerEditionsPage,
@@ -544,7 +553,10 @@ const adminRoutes: Routes = [
   {
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,
-    data: { aide: 'donnees' },
+    data: {
+      aide: 'donnees',
+      aideOnglets: { disponibilites: 'disponibilites', covoiturage: 'disponibilites' },
+    },
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage),
     // Unsaved cells of the Compétences tab would silently survive, invisible, until the next reload.
     canDeactivate: [(page: AnimateursPage) => page.canLeave()],
@@ -576,7 +588,7 @@ const adminRoutes: Routes = [
     // gesture and what closes an edition, on one page of three tabs.
     path: 'fichiers',
     title: () => $localize`:@@route.fichiers:Fichiers`,
-    data: { aide: 'import-csv-animateurs' },
+    data: { aide: 'import-csv-animateurs', aideOnglets: { exporter: 'echanges' } },
     loadComponent: () => import('./pages/fichiers/fichiers-page').then((m) => m.FichiersPage),
   },
   // The two screens Fichiers gathers, kept for the bookmarks: the Imports
@@ -656,7 +668,10 @@ const adminRoutes: Routes = [
     // importance, and the solve budget.
     path: 'regles',
     title: () => $localize`:@@route.regles:Règles du planning`,
-    data: { aide: 'ajustements-manuels' },
+    data: {
+      aide: 'ajustements-manuels',
+      aideOnglets: { consignes: 'consignes', calcul: 'configuration-solveur' },
+    },
     loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),
     // A row edited and not saved would silently survive, invisible, until the next reload.
     canDeactivate: [(page: ReglesPage) => page.canLeave()],
