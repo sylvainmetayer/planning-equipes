@@ -36,6 +36,7 @@ import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
 import org.openpdf.text.Phrase;
 import org.openpdf.text.Rectangle;
+import org.openpdf.text.pdf.PdfOutline;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
@@ -109,15 +110,19 @@ public class GlobalPlanningPdf {
 
         PlanView plan = new PlanView(planning, lignes, TypologiePalette.of(typologies));
 
+        PdfOutline racine = writer.getRootOutline();
         addSommaire(document, plan);
+        PdfTheme.bookmark(racine, DEST_SOMMAIRE, "Sommaire");
         document.newPage();
         addOverview(document, plan);
+        PdfTheme.bookmark(racine, DEST_ENSEMBLE, TITLE_OVERVIEW);
         document.newPage();
-        addByDay(document, plan);
+        addByDay(document, plan, PdfTheme.bookmark(racine, destJour(plan.dates.get(0)), TITLE_BY_DAY));
         document.newPage();
-        addByStand(document, plan);
+        addByStand(document, plan, racine);
         document.newPage();
         addAnimateurs(document, plan);
+        PdfTheme.bookmark(racine, DEST_ANIMATEURS, TITLE_ANIMATEURS);
 
         document.close();
         return output.toByteArray();
@@ -715,7 +720,7 @@ public class GlobalPlanningPdf {
 
     // --- 3 · By day ------------------------------------------------------------
 
-    private void addByDay(Document document, PlanView plan) {
+    private void addByDay(Document document, PlanView plan, PdfOutline signets) {
         boolean premier = true;
         for (LocalDate date : plan.dates) {
             if (!premier) {
@@ -735,6 +740,10 @@ public class GlobalPlanningPdf {
                             + plan.presentsParJour.getOrDefault(date, 0) + " animateurs · " + etat,
                     destJour(date),
                     TITLE_BY_DAY));
+            PdfTheme.bookmark(
+                    signets,
+                    destJour(date),
+                    "Jour " + plan.numeroDuJour.get(date) + " — " + PdfTheme.formatFrenchDayDate(date));
             document.add(tableauFenetres(plan, duJour, true));
         }
     }
@@ -934,8 +943,9 @@ public class GlobalPlanningPdf {
 
     // --- 4 · By stand --------------------------------------------------------------
 
-    private void addByStand(Document document, PlanView plan) {
+    private void addByStand(Document document, PlanView plan, PdfOutline racine) {
         boolean premier = true;
+        PdfOutline signets = null;
         for (Map.Entry<String, List<Stand>> entree : plan.standsByLieu.entrySet()) {
             for (Stand stand : entree.getValue()) {
                 List<LigneAffectation> duStand = plan.duStand(stand);
@@ -946,6 +956,10 @@ public class GlobalPlanningPdf {
                     document.add(separateur());
                 }
                 premier = false;
+                if (signets == null) {
+                    signets = PdfTheme.bookmark(racine, destStand(stand), "Par stand");
+                }
+                PdfTheme.bookmark(signets, destStand(stand), stand.getNom());
                 long jours =
                         duStand.stream().map(LigneAffectation::date).distinct().count();
                 long personnes = duStand.stream()

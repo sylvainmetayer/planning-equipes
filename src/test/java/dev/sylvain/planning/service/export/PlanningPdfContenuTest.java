@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.openpdf.text.pdf.PdfDictionary;
 import org.openpdf.text.pdf.PdfName;
 import org.openpdf.text.pdf.PdfReader;
+import org.openpdf.text.pdf.SimpleBookmark;
 import org.openpdf.text.pdf.parser.PdfTextExtractor;
 
 /**
@@ -536,6 +537,41 @@ class PlanningPdfContenuTest {
                 assertThat(catalogue.get(PdfName.STRUCTTREEROOT)).isNull();
                 assertThat(catalogue.get(PdfName.MARKINFO)).isNull();
             }
+        }
+    }
+
+    /** Opquast 241: each document opens with an outline mirroring its headings, days and stands under their section. */
+    @Test
+    void everyPdfCarriesAnOutlineOfItsHeadings() throws IOException {
+        PlanningEvenement planning = planning();
+
+        assertThat(outlineOf(service.exportAnimateurPdf(planning, "A-ADA")))
+                .contains("Vos journées", "Avec qui, et où")
+                .anyMatch(titre -> titre.contains("14 août"));
+        assertThat(outlineOf(service.exportAnimateurPdf(planning, "A-ADA", FormatPlanning.FEUILLE)))
+                .containsExactly("Calendrier", "Avec qui, et où");
+        assertThat(outlineOf(service.exportGlobalPdf(planning)))
+                .contains("Sommaire", "Par journée", "Par stand", "Animateurs", "Stratèges Associés")
+                .anyMatch(titre -> titre.startsWith("Jour 1 — "));
+    }
+
+    /** Every bookmark title of the document, children after their parent. */
+    private static List<String> outlineOf(byte[] pdf) throws IOException {
+        try (PdfReader reader = new PdfReader(pdf)) {
+            List<String> titles = new ArrayList<>();
+            collect(SimpleBookmark.getBookmarkList(reader), titles);
+            return titles;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void collect(List<Map<String, Object>> bookmarks, List<String> titles) {
+        if (bookmarks == null) {
+            return;
+        }
+        for (Map<String, Object> bookmark : bookmarks) {
+            titles.add((String) bookmark.get("Title"));
+            collect((List<Map<String, Object>>) bookmark.get("Kids"), titles);
         }
     }
 

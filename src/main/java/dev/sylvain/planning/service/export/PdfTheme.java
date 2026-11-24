@@ -27,8 +27,10 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.Rectangle;
 import org.openpdf.text.pdf.BaseFont;
 import org.openpdf.text.pdf.ColumnText;
+import org.openpdf.text.pdf.PdfAction;
 import org.openpdf.text.pdf.PdfContentByte;
 import org.openpdf.text.pdf.PdfName;
+import org.openpdf.text.pdf.PdfOutline;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPCellEvent;
 import org.openpdf.text.pdf.PdfPTable;
@@ -412,6 +414,11 @@ public class PdfTheme {
         document.addTitle(title);
         writer.getExtraCatalog().put(PdfName.LANG, new PdfString("fr-FR"));
         writer.setViewerPreferences(PdfWriter.DisplayDocTitle);
+    }
+
+    /** One bookmark under {@code parent} jumping to the named local destination a heading carries (Opquast 241). */
+    static PdfOutline bookmark(PdfOutline parent, String destination, String title) {
+        return new PdfOutline(parent, PdfAction.gotoLocalPage(destination, false), title);
     }
 
     /** {@code part} of {@code couleur} over {@code fond} — no alpha in a PDF fill, so the blend is computed. */

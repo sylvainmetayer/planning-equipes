@@ -37,6 +37,8 @@ import org.openpdf.text.pdf.PdfWriter;
 @ApplicationScoped
 public class AnimateurFeuillePdf implements DocumentAnimateur {
 
+    private static final String DEST_CALENDRIER = "section-calendrier";
+    private static final String DEST_VERSO = "section-verso";
     private static final float LARGEUR = PageSize.A4.getHeight() - 60f;
 
     private static final List<DayOfWeek> SEMAINE = List.of(
@@ -80,11 +82,13 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
             document.close();
             return output.toByteArray();
         }
+        PdfTheme.bookmark(writer.getRootOutline(), DEST_CALENDRIER, "Calendrier");
         document.add(calendrier(view));
         document.add(reperes(view));
 
         document.newPage();
         document.add(titreVerso(view));
+        PdfTheme.bookmark(writer.getRootOutline(), DEST_VERSO, "Avec qui, et où");
         document.add(verso(view));
 
         document.close();
@@ -108,7 +112,9 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         eyebrow.add(chunk);
         eyebrow.setSpacingAfter(2f);
         identite.addElement(eyebrow);
-        Paragraph nom = new Paragraph(view.nom(), theme.nameFont());
+        Chunk nomAncre = new Chunk(view.nom(), theme.nameFont());
+        nomAncre.setLocalDestination(DEST_CALENDRIER);
+        Paragraph nom = new Paragraph(nomAncre);
         nom.setSpacingAfter(2f);
         identite.addElement(nom);
         // The édition under the name, as the booklet says it (issue #608): two
@@ -366,7 +372,9 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         cell.setBorderColorBottom(theme.headline());
         cell.setBorderWidthBottom(1f);
         cell.setPaddingBottom(5f);
-        cell.addElement(new Paragraph("Avec qui, et où", theme.nameFont()));
+        Chunk ancre = new Chunk("Avec qui, et où", theme.nameFont());
+        ancre.setLocalDestination(DEST_VERSO);
+        cell.addElement(new Paragraph(ancre));
         cell.addElement(new Paragraph(view.nom() + " · " + view.periode(), theme.sousTitreFont()));
         table.addCell(cell);
         return table;
