@@ -438,7 +438,7 @@ public class CreneauGridService {
                     libelle(creneau) + " : vacation de " + duree + " min alors que le repos "
                             + "quotidien minimal de " + legaux.getReposQuotidienMinimalMinutes()
                             + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
-                            + " min. Toute affectation sur ce créneau violera une contrainte dure."));
+                            + " min. Toute affectation sur ce créneau ferait un écart à une règle impérative."));
         }
         if (creneau.isCouverturePause() && !insideMealWindow(creneau, fenetresRepas)) {
             anomalies.add(new GridAnomaly(

@@ -349,7 +349,7 @@ public class PlanningMcpTools {
     @Tool(
             name = "expliquer_affectation",
             description = "Explique le score d'un poste du dernier planning persisté, lu sous les règles de "
-                    + "l'édition (contraintes désactivées, poids) : contraintes violées et contraintes respectées le "
+                    + "l'édition (contraintes désactivées, poids) : contraintes non tenues et contraintes respectées le "
                     + "concernant. Ne relance aucune résolution.",
             annotations =
                     @Tool.Annotations(
@@ -398,7 +398,7 @@ public class PlanningMcpTools {
     @Tool(
             name = "suggerer_reparations",
             description = "Cherche qui pourrait tenir un poste du dernier planning persisté et chiffre chaque "
-                    + "candidat : score après, delta, violations résolues et violations introduites. Là où simuler_swap "
+                    + "candidat : score après, delta, écarts résolus et écarts introduits. Là où simuler_swap "
                     + "note un animateur qu'on lui désigne, celui-ci les cherche. Ne persiste rien et ne relance aucune "
                     + "résolution ; le coût est borné par plafond, et candidatsEligibles/candidatsEvalues disent si la "
                     + "recherche a été exhaustive. Sans candidat viable, rappeler avec depuis = depuis + "

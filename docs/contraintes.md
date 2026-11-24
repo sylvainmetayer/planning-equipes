@@ -50,10 +50,7 @@ l'API (`violations`, `violationsParContrainte`, `violationsIntroduites`),
 `ViolationFormatter`. Le renommer romprait le contrat JSON et donc tout client
 MCP existant, pour un gain de lecture seulement. **Le décalage est délibéré** :
 ne pas « corriger » un libellé vers `violation` ni un identifiant vers `écart`.
-Pour la même raison, `docs/rgpd.md` et `docs/securite.md` parlent bien de
-violation — de données et de CSP —, deux termes juridiques et techniques qui
-n'ont rien à voir avec celui-ci, et les documents datés (audit RH, ADR, revues)
-gardent les mots de leur époque.
+Les documents datés (audit RH, ADR, revues) gardent les mots de leur époque.
 
 ## Fenêtre effective : ce qui la lit, et ce qui ne la lit pas délibérément
 

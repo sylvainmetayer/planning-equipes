@@ -143,7 +143,7 @@ class NotificationWriterTest {
     // --- End of a solve (admin) --------------------------------------------
 
     @Test
-    void laFinDeResolutionAnnonceLEditionLeScoreEtLaFaisabilite() {
+    void endOfSolveAnnouncesEditionScoreAndFeasibility() {
         MailDraft courrier =
                 rediger(new Notification.ResolutionTerminee("Année 2026", "0hard/-3medium/-120soft", true));
 
@@ -154,7 +154,7 @@ class NotificationWriterTest {
         assertThat(courrier.corps())
                 .contains("Édition : Année 2026")
                 .contains("Score : 0hard/-3medium/-120soft")
-                .contains("aucune contrainte dure violée")
+                .contains("toutes les règles impératives sont tenues")
                 .contains("https://planning.example.org/problemes");
     }
 

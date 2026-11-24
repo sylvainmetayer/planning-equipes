@@ -30,7 +30,7 @@ body:
     id: observe
     attributes:
       label: Comportement observé
-      description: Ce qui se passe réellement — score affiché, contrainte violée, valeur exportée…
+      description: Ce qui se passe réellement — score affiché, écart à une règle, valeur exportée…
     validations:
       required: true
   - type: textarea

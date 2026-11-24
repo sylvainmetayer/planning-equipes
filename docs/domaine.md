@@ -548,7 +548,7 @@ référentiel.
 | Créneau déjà commencé ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | **Épinglée telle que travaillée**, avant toute autre règle : titulaire gardé même invalidé depuis, vide restée vide, jamais rouverte par le périmètre. Comptée à part (`postesPasses`) |
 | Désignée par le périmètre demandé | Libérée quoi qu'il arrive : l'utilisateur dit « refais ça » |
 | Titulaire encore valable | **Épinglée** |
-| Titulaire invalidé par un changement tardif — supprimé, indisponible, ou couvert par une indisponibilité forcée | Libérée. L'épingler figerait une violation dure que plus personne ne pourrait corriger. Le test de validité **réutilise le prédicat du solveur**, pour que les deux ne puissent pas diverger |
+| Titulaire invalidé par un changement tardif — supprimé, indisponible, ou couvert par une indisponibilité forcée | Libérée. L'épingler figerait un écart dur que plus personne ne pourrait corriger. Le test de validité **réutilise le prédicat du solveur**, pour que les deux ne puissent pas diverger |
 | Jamais pourvue, ou nouvelle | Laissée libre |
 
 Deux choix à connaître :
@@ -721,7 +721,7 @@ existe. L'autre réponse est de couper la journée en deux vacations. Le seuil v
 maintenant à partir de quand la grille est signalée.
 
 Le repos quotidien donne un second plafond, celui-là bloquant : une vacation
-plus longue que `1440 − reposQuotidienMinimalMinutes` garantit une violation de
+plus longue que `1440 − reposQuotidienMinimalMinutes` garantit un écart à une
 contrainte dure, et le contrôle la remonte en erreur.
 
 ### Les familles de relais ont été retirées
@@ -970,7 +970,7 @@ pour la règle elle-même.
 
 Un fait par fenêtre plutôt qu'un objet portant les deux : la contrainte joint la
 fenêtre qu'elle juge, donc une journée à cheval sur midi *et* sur le soir
-produit **une violation par fenêtre**, chacune nommant ses propres horaires,
+produit **un écart par fenêtre**, chacune nommant ses propres horaires,
 plutôt qu'un agrégat sur lequel personne ne peut agir.
 
 Les valeurs vivent avec les paramètres légaux, dans `ParametresLegaux`

@@ -185,7 +185,7 @@ public class SolveurMcpTools {
             description = "Diagnostic du planning persisté : score global et score de chaque contrainte, nombre de "
                     + "correspondances, postes non pourvus, et la lecture du score en quelques phrases. Recalculé à la demande sur le plan en base, avec les "
                     + "contraintes et pondérations actives du moment — aucune résolution n'est lancée. Pour le détail "
-                    + "des violations dures, enchaîner avec expliquer_echec_contraintes_dures.",
+                    + "des écarts durs, enchaîner avec expliquer_echec_contraintes_dures.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -334,8 +334,8 @@ public class SolveurMcpTools {
 
     @Tool(
             name = "expliquer_echec_contraintes_dures",
-            description = "Détaille les contraintes de niveau HARD encore violées lors de la dernière analyse "
-                    + "(solve ou analyze), avec le message de chaque violation et les actions types qui la "
+            description = "Détaille les contraintes de niveau HARD encore non tenues lors de la dernière analyse "
+                    + "(solve ou analyze), avec le message de chaque écart et les actions types qui la "
                     + "règlent (code, geste, explication). Liste vide si la dernière analyse est "
                     + "entièrement faisable, ou s'il n'y a jamais eu d'analyse.",
             annotations =

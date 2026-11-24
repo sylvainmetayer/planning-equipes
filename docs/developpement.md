@@ -294,7 +294,7 @@ coûte peu à l'écriture, les rattraper coûte cher.
   `e2e/accessibilite.spec.ts`, qui passe axe-core sur les écrans représentatifs
   — les quatre de l'espace animateur rejoués dans le projet `mobile` — contre
   une ligne de base gelée qui ne peut que décroître. Un écran qui y entre avec
-  une violation *serious* ou *critical* la corrige, ou l'inscrit dans
+  une anomalie *serious* ou *critical* la corrige, ou l'inscrit dans
   `LIGNE_DE_BASE` avec sa raison.
 - **Toute couleur écrite par ce dépôt est mesurée avant d'être commise** —
   hors jetons `--mat-sys-*`, qui viennent de `mat.theme()` et sont réputés

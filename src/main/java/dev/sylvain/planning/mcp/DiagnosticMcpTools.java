@@ -395,7 +395,7 @@ public class DiagnosticMcpTools {
     @Tool(
             name = "lister_kpi_historique",
             description = "Historique des KPI, une ligne par résolution terminée, toutes éditions confondues et de "
-                    + "la plus récente à la plus ancienne : score, couverture des postes, heures et violations par "
+                    + "la plus récente à la plus ancienne : score, couverture des postes, heures et écarts par "
                     + "contrainte. Sert à comparer une édition à la précédente.",
             annotations =
                     @Tool.Annotations(

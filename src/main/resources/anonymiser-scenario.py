@@ -117,7 +117,7 @@ def anonymiser(donnees, edition_id, edition_nom):
             stand["emplacementId"] = emplacements[stand["emplacementId"]]
 
     for animateur in donnees.get("animateurs", []):
-        # Le nom reprend l'id : une violation affichée « Animateur A17 (A17) »
+        # Le nom reprend l'id : un écart affiché « Animateur A17 (A17) »
         # reste lisible dans un échec de test, sans rien identifier.
         animateur["prenom"] = "Animateur"
         animateur["nom"] = animateur["id"]

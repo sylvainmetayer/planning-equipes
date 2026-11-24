@@ -41,7 +41,7 @@ public class McpResources {
         return TextResourceContents.create("planning://contraintes", """
                 # Contraintes du solveur
 
-                Trois niveaux, du plus contraignant au moins contraignant. Une contrainte HARD violée
+                Trois niveaux, du plus contraignant au moins contraignant. Une contrainte HARD non tenue
                 rend le planning **infaisable** : aucun compromis ne la rachète, et c'est le seul
                 niveau qui doit atteindre zéro. MEDIUM et SOFT s'échangent entre eux — le solveur y
                 cherche le meilleur compromis, pas la perfection.

@@ -7,7 +7,7 @@ d'héberger l'instance de quelqu'un d'autre, et **ce qui se tient ensuite**.
 Trois obligations, et elles ne se déclenchent pas au premier euro mais au
 **premier hébergement, même gratuit** : une convention de sous-traitance
 (art. 28), un registre des traitements (art. 30) et une procédure de
-notification de violation (art. 33). Aucune n'est un document qu'on produit une
+notification d'atteinte aux données (art. 33). Aucune n'est un document qu'on produit une
 fois : la convention se signe avant la mise en production, le registre se
 tient, et la procédure se décide **avant** d'en avoir besoin — un dimanche de
 festival n'est pas le moment de chercher qui appeler.
@@ -48,7 +48,7 @@ l'annexe sans être réécrit.
 | Catégories de données et de personnes | Voir le socle du §4 — dont des **mineurs**. Ce mot n'est pas décoratif : il justifie les mesures renforcées |
 | Obligations du sous-traitant | N'agir que sur instruction documentée, confidentialité des personnes autorisées, mesures de sécurité (§4), **pas de sous-traitance ultérieure sans autorisation** — donc les briques du §1 sont nommées dans l'écrit |
 | Sort des données en fin de contrat | Restitution ou suppression, **au choix du responsable**, à trancher explicitement. La restitution s'appuie sur l'export SQL (`import-export.md`), la suppression sur la procédure de purge (`exploitation.md` §6) |
-| Assistance | Aide à répondre aux demandes d'exercice de droits, et **notification de violation sans délai** — la procédure et le délai engagé sont au §6, et c'est de là que se recopie la clause |
+| Assistance | Aide à répondre aux demandes d'exercice de droits, et **notification d'atteinte sans délai** — la procédure et le délai engagé sont au §6, et c'est de là que se recopie la clause |
 | Audit | Mise à disposition des informations nécessaires pour démontrer la conformité : ce document, le registre, et `securite.md` |
 
 ### Ce qu'il ne faut pas signer
@@ -134,7 +134,7 @@ dans le même document que le registre :
 Une purge manuelle sans écrit ne prouve rien : c'est ce journal qui rend tenable
 la durée annoncée par `LEGAL_CONSERVATION`, pas la procédure seule.
 
-## 6. Notification de violation (art. 33)
+## 6. Notification d'atteinte aux données (art. 33)
 
 Décider **qui on appelle et sous quel délai** coûte dix minutes maintenant.
 L'improviser un dimanche de festival coûte la relation.
@@ -145,9 +145,9 @@ notifier l'autorité — il dispose de 72 heures **à compter du moment où
 l'hébergeur l'a prévenu**. Tout retard pris ici est pris sur son délai à lui :
 c'est la seule raison pour laquelle l'engagement doit être chiffré.
 
-### Ce qui compte comme violation
+### Ce qui compte comme atteinte
 
-Une violation n'est pas seulement une intrusion : c'est toute atteinte à la
+Une atteinte n'est pas seulement une intrusion : c'est tout ce qui touche à la
 **confidentialité**, à l'**intégrité** ou à la **disponibilité** des données,
 accidentelle ou non. Les trois se notifient, même si elles ne se traitent pas
 pareil.
@@ -156,9 +156,9 @@ pareil.
 | --- | --- |
 | Dump égaré : sauvegarde déposée en clair, envoyée par un canal non maîtrisé, oubliée sur une machine cédée | Ce qu'il contenait — un dump est **complet** : noms, dates de naissance de mineurs, adresses, jetons d'espace (`exploitation.md` §5) |
 | Accès non autorisé à l'administration | Depuis quand, ce qui a été consulté ou modifié, et si le mot de passe d'administration a servi ailleurs |
-| Fuite de jetons d'espace animateur, d'abonnement au calendrier ou d'affichage mural | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une violation, pas une négligence sans suite (`securite.md`, dernière section). Un jeton d'abonnement fuité est **immédiatement exploitable sans second facteur**, et il apparaît dans ces journaux à chaque synchronisation d'un agenda, donc bien plus souvent que l'autre |
-| Base ou sauvegarde perdue sans copie | C'est une violation de **disponibilité** : elle se notifie, même sans le moindre accès d'un tiers |
-| Envoi d'un planning individuel à la mauvaise adresse | Violation aussi, à sa mesure — l'erreur de destinataire est le cas le plus fréquent en pratique |
+| Fuite de jetons d'espace animateur, d'abonnement au calendrier ou d'affichage mural | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une atteinte, pas une négligence sans suite (`securite.md`, dernière section). Un jeton d'abonnement fuité est **immédiatement exploitable sans second facteur**, et il apparaît dans ces journaux à chaque synchronisation d'un agenda, donc bien plus souvent que l'autre |
+| Base ou sauvegarde perdue sans copie | C'est une atteinte à la **disponibilité** : elle se notifie, même sans le moindre accès d'un tiers |
+| Envoi d'un planning individuel à la mauvaise adresse | Atteinte aussi, à sa mesure — l'erreur de destinataire est le cas le plus fréquent en pratique |
 
 Deux cas qui n'en sont **pas** : une panne de l'instance sans perte de données
 (c'est un incident d'exploitation, §7 d'`exploitation.md`), et un animateur qui
@@ -190,7 +190,7 @@ d'arriver.
 L'art. 33.3 fixe le contenu ; le responsable reprendra ces éléments tels quels
 pour la CNIL :
 
-- la nature de la violation, et les **catégories et le nombre approximatif** de
+- la nature de l'atteinte, et les **catégories et le nombre approximatif** de
   personnes et d'enregistrements concernés ;
 - les conséquences probables ;
 - les mesures prises ou proposées, y compris pour en atténuer les effets ;
@@ -200,9 +200,9 @@ Le nombre de personnes concernées se lit dans l'application : c'est l'effectif
 des éditions touchées. Le rappeler ici évite d'avoir à le chercher sous
 pression.
 
-### Le journal des violations
+### Le journal des atteintes
 
-L'art. 33.5 impose de **documenter toute violation, y compris celle qu'on ne
+L'art. 33.5 impose de **documenter toute atteinte, y compris celle qu'on ne
 notifie pas** — c'est ce registre qui permet de démontrer qu'on a bien qualifié
 les faits. Il vit avec le registre des traitements et le journal des purges
 (§5) :
@@ -212,7 +212,7 @@ les faits. Il vit avec le registre des traitements et le journal des purges
 | Découverte | Date et heure de la **prise de connaissance**, pas de la survenue : c'est elle qui déclenche les délais |
 | Faits | Ce qui s'est passé, et par quel canal on l'a appris (sonde, suivi d'erreurs, signalement d'un animateur) |
 | Périmètre | Éditions et catégories de données touchées, volume approximatif |
-| Qualification | Violation ou non — **et pourquoi**, y compris quand la réponse est non |
+| Qualification | Atteinte ou non — **et pourquoi**, y compris quand la réponse est non |
 | Notification | Qui a été prévenu, quand, par quel moyen |
 | Suites | Mesures correctives, et ce qu'elles changent aux mesures de sécurité déclarées au registre |
 
@@ -598,7 +598,7 @@ change rien au registre.
 | Avant chaque première mise en production | Convention de sous-traitance signée des deux côtés (§2), puis création de l'entrée de registre (§4) |
 | À chaque changement de brique tierce | Mise à jour des sous-traitants ultérieurs et des transferts — un changement de variable d'environnement est un changement de registre |
 | À chaque purge ou restauration | Une ligne dans le journal (§5) |
-| À chaque violation, notifiée ou non | Une ligne dans le journal des violations (§6) — l'art. 33.5 ne distingue pas |
+| À chaque atteinte, notifiée ou non | Une ligne dans le journal des atteintes (§6) — l'art. 33.5 ne distingue pas |
 | Une fois par an, après l'événement | Relecture de toutes les entrées, en même temps que la purge |
 | En fin d'hébergement | Sort des données tranché et exécuté, date portée au registre |
 
