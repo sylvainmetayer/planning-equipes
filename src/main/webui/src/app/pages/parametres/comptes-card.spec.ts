@@ -101,8 +101,8 @@ describe('ComptesCard', () => {
 
   it('grants an organiser right on every edition when none is chosen', async () => {
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as { octroyer(c: Compte): Promise<void> };
-    await card.octroyer(compte('autre'));
+    const card = fixture.componentInstance as unknown as { grantRight(c: Compte): Promise<void> };
+    await card.grantRight(compte('autre'));
     expect(api.grant).toHaveBeenCalledWith('autre', {
       role: 'ORGANISATEUR',
       editionId: null,

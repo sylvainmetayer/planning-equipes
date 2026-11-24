@@ -31,7 +31,7 @@ import {
 } from './comptes';
 
 /** The edition field's value for « every edition »: a select cannot hold `null`. */
-const TOUTES = '*';
+const ALL_EDITIONS = '*';
 
 /**
  * « Comptes » of Paramètres, for the administrators: who may sign in, with
@@ -62,7 +62,7 @@ export class ComptesCard implements OnInit {
 
   protected readonly roles = ROLES;
   protected readonly editions = this.editionStore.editions;
-  protected readonly toutes = TOUTES;
+  protected readonly allEditions = ALL_EDITIONS;
 
   private readonly liste = signal<Compte[]>([]);
   protected readonly comptes = computed(() => sortAccounts(this.liste()));
@@ -72,9 +72,9 @@ export class ComptesCard implements OnInit {
   protected readonly nom = signal('');
 
   /** The account whose grant form is open, and what it holds. */
-  protected readonly octroiPour = signal<string | null>(null);
+  protected readonly grantFor = signal<string | null>(null);
   protected readonly role = signal<RoleHabilitation>('ORGANISATEUR');
-  protected readonly edition = signal<string>(TOUTES);
+  protected readonly edition = signal<string>(ALL_EDITIONS);
 
   ngOnInit(): void {
     void this.load();
@@ -89,11 +89,11 @@ export class ComptesCard implements OnInit {
   }
 
   protected editionLabel(id: string): string {
-    return editionLabel(id === TOUTES ? null : id, this.editions());
+    return editionLabel(id === ALL_EDITIONS ? null : id, this.editions());
   }
 
   /** The rights that still open something: expired and withdrawn ones stay in the history. */
-  protected enVigueur(compte: Compte): Habilitation[] {
+  protected inForce(compte: Compte): Habilitation[] {
     const now = new Date();
     return compte.habilitations.filter((h) => rightState(h, now) === 'active');
   }
@@ -120,20 +120,20 @@ export class ComptesCard implements OnInit {
     );
   }
 
-  protected ouvrirOctroi(compte: Compte): void {
-    this.octroiPour.set(this.octroiPour() === compte.id ? null : compte.id);
+  protected openGrant(compte: Compte): void {
+    this.grantFor.set(this.grantFor() === compte.id ? null : compte.id);
   }
 
-  protected async octroyer(compte: Compte): Promise<void> {
+  protected async grantRight(compte: Compte): Promise<void> {
     const role = this.role();
     const edition = this.edition();
     await this.run(async () => {
       await this.api.grant(compte.id, {
         role,
-        editionId: role === 'ADMIN' || edition === TOUTES ? null : edition,
+        editionId: role === 'ADMIN' || edition === ALL_EDITIONS ? null : edition,
         expireLe: null,
       });
-      this.octroiPour.set(null);
+      this.grantFor.set(null);
     });
   }
 

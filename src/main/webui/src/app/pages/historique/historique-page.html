@@ -19,10 +19,12 @@
         <mat-icon>manage_search</mat-icon>
         <ng-container i18n="@@historique.onglet.actions">Actions</ng-container>
       </mat-button-toggle>
-      <mat-button-toggle value="connexions">
-        <mat-icon>login</mat-icon>
-        <ng-container i18n="@@historique.onglet.connexions">Connexions</ng-container>
-      </mat-button-toggle>
+      @if (session.isAdmin()) {
+        <mat-button-toggle value="connexions">
+          <mat-icon>login</mat-icon>
+          <ng-container i18n="@@historique.onglet.connexions">Connexions</ng-container>
+        </mat-button-toggle>
+      }
     </mat-button-toggle-group>
 
     @if (onglet() === 'connexions') {

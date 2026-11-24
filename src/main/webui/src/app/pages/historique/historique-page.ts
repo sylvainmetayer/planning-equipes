@@ -20,6 +20,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SessionStore } from '../../core/session.store';
 import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
@@ -89,6 +90,7 @@ const PERIOD_DEBOUNCE_MS = 600;
 })
 export class HistoriquePage {
   private readonly analysesApi = inject(AnalysesApi);
+  protected readonly session = inject(SessionStore);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly entrees = signal<EntreeHistorique[]>([]);
@@ -156,7 +158,9 @@ export class HistoriquePage {
     // Followed rather than read once: the palette's link to the tab reuses
     // the component when the page is already open.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
-      this.onglet.set(readHistoriqueTab(query.get('onglet')));
+      const demande = readHistoriqueTab(query.get('onglet'));
+      // The connections journal is the administrators' (the route answers 403 to an organiser).
+      this.onglet.set(demande === 'connexions' && !this.session.isAdmin() ? 'actions' : demande);
     });
     // The edition's actions are read the first time their tab shows: opened
     // on « Connexions », the page asks nothing of the history.
