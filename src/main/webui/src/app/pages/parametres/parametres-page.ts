@@ -11,7 +11,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
+import { DatePipe, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -159,6 +159,7 @@ export class ParametresPage implements OnInit {
   protected readonly renommage = signal(false);
 
   private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
 
   constructor() {
     // Followed rather than read once, like Diagnostic: clicking « Paramètres »
@@ -200,6 +201,12 @@ export class ParametresPage implements OnInit {
   }
 
   protected changerOnglet(onglet: OngletParametres): void {
+    // The Historique tab's own keys (`?date=`, `?type=`…) mean nothing to the
+    // others: the address is reset when entering or leaving it.
+    if (onglet !== this.onglet() && (onglet === 'historique' || this.onglet() === 'historique')) {
+      const [chemin] = this.location.path().split('?');
+      this.location.replaceState(chemin || '/');
+    }
     this.onglet.set(onglet);
   }
 

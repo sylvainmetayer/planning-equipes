@@ -2,6 +2,7 @@
 // what stays above the tabs, and the case a tab group gets wrong — a page that
 // reads its query param once and never again.
 
+import { Location } from '@angular/common';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
@@ -258,6 +259,20 @@ describe('ParametresPage — onglets', () => {
     fixture.detectChanges();
 
     expect(textOf()).toContain('Sauvegarde automatique');
+  });
+
+  /** The Historique tab's own keys mean nothing to the others: leaving it resets the address. */
+  it('drops the keys of the historique tab when another tab opens', async () => {
+    await rendre({ onglet: 'historique' });
+    const location = TestBed.inject(Location);
+    location.replaceState('/parametres?onglet=connexions&type=ECHEC');
+
+    (fixture.componentInstance as unknown as { changerOnglet(o: string): void }).changerOnglet(
+      'instance',
+    );
+    fixture.detectChanges();
+
+    expect(location.path()).toBe('/parametres?onglet=instance');
   });
 
   /** « Globaux » became « Instance »: a bookmark of the old name lands on the same cards. */
