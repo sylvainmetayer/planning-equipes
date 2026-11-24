@@ -128,6 +128,21 @@ public class CompteService {
         return required(compteId);
     }
 
+    /**
+     * What to show for the account an actor id designates (a name, else its
+     * address), or {@code null} when it is no account (the configuration's
+     * own, the MCP key, nobody): resolved at read time, never stored.
+     */
+    public String nomAffiche(String acteurId) {
+        if (acteurId == null) {
+            return null;
+        }
+        return repository
+                .findById(acteurId)
+                .map(c -> c.nom() != null ? c.nom() : c.email())
+                .orElse(null);
+    }
+
     /** Called when an edition is deleted: the rights scoped to it open nothing any more. */
     public void withdrawForEdition(String editionId) {
         repository.withdrawForEdition(editionId, Instant.now(), Compte.SYSTEME_ID);

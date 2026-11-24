@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer.RapportPauses;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -62,13 +63,17 @@ public class ValidationPrerequisService {
 
     private final ValidationJourneeService validationService;
 
+    private final CompteService comptes;
+
     @Inject
     public ValidationPrerequisService(
             PlanningPersistenceService persistenceService,
             ConstraintAnalysisStore analysisStore,
             PauseAnalyzer pauseAnalyzer,
             FragiliteAnalyzer fragiliteAnalyzer,
-            ValidationJourneeService validationService) {
+            ValidationJourneeService validationService,
+            CompteService comptes) {
+        this.comptes = comptes;
         this.persistenceService = persistenceService;
         this.analysisStore = analysisStore;
         this.pauseAnalyzer = pauseAnalyzer;
@@ -97,6 +102,9 @@ public class ValidationPrerequisService {
      *                      exactly the one it is showing; {@code null} when
      *                      the day is not accepted
      * @param valideeLe     when it was, {@code null} when it is not
+     * @param valideParNom  the name (else the address) of the account that
+     *                      accepted it, resolved at read time; {@code null}
+     *                      when that is no account
      */
     @Schema(requiredProperties = {"jour", "prerequis", "tousSatisfaits", "validee"})
     public record PrerequisJournee(
@@ -105,6 +113,7 @@ public class ValidationPrerequisService {
             String validationId,
             Instant valideeLe,
             String validePar,
+            String valideParNom,
             String commentaire,
             List<Prerequis> prerequis,
             boolean tousSatisfaits) {}
@@ -144,13 +153,24 @@ public class ValidationPrerequisService {
                 .filter(candidate -> jour.equals(candidate.jour()))
                 .findFirst()
                 .orElse(null);
-        return assemble(
+        PrerequisJournee lu = assemble(
                 jour,
                 validation,
                 plan,
                 analyse == null ? null : analyse.diagnostic(),
                 pauseAnalyzer.analyze(plan),
                 fragiliteAnalyzer.analyze(plan));
+        // The name is read, never stored: the pure assembly above knows no account.
+        return new PrerequisJournee(
+                lu.jour(),
+                lu.validee(),
+                lu.validationId(),
+                lu.valideeLe(),
+                lu.validePar(),
+                comptes.nomAffiche(lu.validePar()),
+                lu.commentaire(),
+                lu.prerequis(),
+                lu.tousSatisfaits());
     }
 
     /**
@@ -179,6 +199,7 @@ public class ValidationPrerequisService {
                 validation == null ? null : validation.id(),
                 validation == null ? null : validation.valideLe(),
                 validation == null ? null : validation.validePar(),
+                null,
                 validation == null ? null : validation.commentaire(),
                 prerequis,
                 tous);
