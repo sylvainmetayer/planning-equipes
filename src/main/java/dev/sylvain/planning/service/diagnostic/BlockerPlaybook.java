@@ -121,8 +121,6 @@ public final class BlockerPlaybook {
 
     // ---- routes -----------------------------------------------------------
 
-    static final String ROUTE_SKILLS = "/competences";
-    static final String ROUTE_OPENINGS = "/ouvertures";
     /** « Règles du planning », whose default tab is the adjustments. */
     static final String ROUTE_ADJUSTMENTS = "/regles";
 
@@ -137,7 +135,6 @@ public final class BlockerPlaybook {
     static final String ROUTE_DAY = "/journee";
     static final String ROUTE_STANDS = "/stands";
     static final String ROUTE_TIMESLOTS = "/creneaux";
-    static final String ROUTE_TYPOLOGIES = "/typologies";
 
     // ---- action codes -----------------------------------------------------
 
@@ -462,14 +459,16 @@ public final class BlockerPlaybook {
                 "Saisir la compétence",
                 "Faire apprécier la typologie du stand par d'autres animateurs élargit le vivier de qui peut le"
                         + " tenir.",
-                ROUTE_SKILLS,
+                ROUTE_ANIMATEURS,
                 context.typologieIds().isEmpty()
-                        ? Map.of()
-                        : Map.of("typologies", String.join(",", context.typologieIds())));
+                        ? Map.of(PARAM_ONGLET, "competences")
+                        : Map.of(
+                                PARAM_ONGLET, "competences", "typologies", String.join(",", context.typologieIds())));
     }
 
     private static ActionType lowerStaffingAction(Context context) {
         Map<String, String> params = new LinkedHashMap<>();
+        params.put(PARAM_ONGLET, "horaires");
         params.put("vue", "saisie");
         putDate(params, context);
         putStand(params, context);
@@ -478,7 +477,7 @@ public final class BlockerPlaybook {
                 "Baisser l'effectif demandé",
                 "Moins de places ouvertes ce jour-là : l'écran Ouvertures montre ce que le planning retiendra avant"
                         + " d'enregistrer.",
-                ROUTE_OPENINGS,
+                ROUTE_TIMESLOTS,
                 params);
     }
 
@@ -671,8 +670,8 @@ public final class BlockerPlaybook {
                 CODE_TYPOLOGIE_CAP,
                 "Régler le plafond de la typologie",
                 "Le plafond de créneaux se règle typologie par typologie.",
-                ROUTE_TYPOLOGIES,
-                Map.of());
+                ROUTE_STANDS,
+                Map.of(PARAM_ONGLET, "typologies"));
     }
 
     private static ActionType mealWindowAction() {
