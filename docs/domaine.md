@@ -1067,6 +1067,12 @@ toutes les éditions) :
   et `ORGANISATEUR`, d'une édition ou de toutes. Un rôle futur (la lecture d'un
   stand par un compte organisateur, par exemple) s'ajoute par une migration qui
   élargit le `CHECK` de `role` et par les routes qu'il ouvre.
+- **Il reste toujours un administrateur actif** : retirer le dernier droit
+  `ADMIN` en vigueur ou désactiver le dernier compte qui le porte est refusé
+  (409), atomiquement ; on ne désactive pas non plus son propre compte. Un même
+  droit ne s'accorde pas deux fois tant qu'il est en vigueur, et la suppression
+  d'une édition retire (par `systeme`) les droits qui lui étaient propres.
+  `/api/comptes` est réservé au rôle `admin`.
 - **Le compte `admin` de la configuration n'est pas une ligne** : c'est un
   compte implicite, d'identifiant `admin`, que le journal nomme tant qu'aucun
   compte n'est lié à la session. Tant que la connexion n'est pas branchée sur

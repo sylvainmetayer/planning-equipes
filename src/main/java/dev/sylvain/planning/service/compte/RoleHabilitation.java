@@ -1,7 +1,5 @@
 package dev.sylvain.planning.service.compte;
 
-import java.util.Locale;
-
 /**
  * The roles an administrator grants <b>in this application</b>, per edition,
  * with an expiry. Code, not configuration: a configurable permission matrix is
@@ -13,13 +11,8 @@ import java.util.Locale;
  * {@code habilitation}, and with the routes it opens — nothing else reads it.</p>
  */
 public enum RoleHabilitation {
-    /** The whole instance, like the configuration's account: never scoped to an edition. */
+    /** The whole instance, like the configuration's account: never scoped to an edition, never expiring. */
     ADMIN,
     /** An organiser of one edition, or of all of them. */
-    ORGANISATEUR;
-
-    /** The name carried by a {@code SecurityIdentity}, the HTTP policies' spelling. */
-    public String securityRole() {
-        return name().toLowerCase(Locale.ROOT).replace('_', '-');
-    }
+    ORGANISATEUR
 }

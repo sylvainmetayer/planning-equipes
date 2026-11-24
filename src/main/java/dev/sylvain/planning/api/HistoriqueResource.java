@@ -112,10 +112,7 @@ public class HistoriqueResource {
             @QueryParam("avant") Long avant) {
         List<EntreeJournal> entrees = journal.page(
                 nature(nature), optionalInstant(depuis, "depuis"), optionalInstant(jusqua, "jusqua"), avant, limite);
-        Map<String, String> noms = referenceData.listAnimateurs().stream()
-                .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
-        // An admin actor is an account id: named here, at read time, like an animateur.
-        comptes.list().forEach(c -> noms.putIfAbsent(c.id(), c.nom() != null ? c.nom() : c.email()));
+        Map<String, String> noms = noms();
         Map<Long, StaffingVerification> checks = verifications.findAll(entrees.stream()
                 .map(HistoriqueResource::verificationId)
                 .filter(Objects::nonNull)
@@ -166,10 +163,7 @@ public class HistoriqueResource {
     @Path("/changements")
     public ChangementsView changements(@QueryParam("depuis") String depuis) {
         ReferenceDataChanges changements = journal.changesSince(instant(depuis), RECENT_LINES);
-        Map<String, String> noms = changements.dernieres().isEmpty()
-                ? Map.of()
-                : referenceData.listAnimateurs().stream()
-                        .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
+        Map<String, String> noms = changements.dernieres().isEmpty() ? Map.of() : noms();
         return new ChangementsView(
                 changements.total(),
                 changements.parEntite().stream()
@@ -261,6 +255,14 @@ public class HistoriqueResource {
                         action.export()))
                 .sorted((a, b) -> a.libelle().compareToIgnoreCase(b.libelle()))
                 .toList();
+    }
+
+    /** Names joined at read time: animateurs, and the accounts an admin actor id designates. */
+    private Map<String, String> noms() {
+        Map<String, String> noms = referenceData.listAnimateurs().stream()
+                .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
+        comptes.list().forEach(c -> noms.putIfAbsent(c.id(), c.nom() != null ? c.nom() : c.email()));
+        return noms;
     }
 
     private static EntreeHistoriqueView view(

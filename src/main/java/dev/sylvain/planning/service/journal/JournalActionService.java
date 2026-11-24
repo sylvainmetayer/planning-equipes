@@ -36,6 +36,9 @@ public class JournalActionService {
 
     private static final Logger LOG = Logger.getLogger(JournalActionService.class);
 
+    /** The identity of the MCP key, named as such: an assistant is not the configuration's account. */
+    private static final String ROLE_MCP = "mcp";
+
     /** What one page of the screen shows when the caller does not say. */
     static final int LIMITE_DEFAUT = 200;
 
@@ -243,7 +246,7 @@ public class JournalActionService {
 
     /**
      * Who the admin is, for the journal: the id of the account the session is
-     * bound to, {@link Compte#CONFIG_ID} for the configuration's own account,
+     * bound to, {@code "mcp"} for the MCP key, {@link Compte#CONFIG_ID} for the configuration's own account,
      * {@code null} when the request carries no identity. Never the principal's
      * name, which is an address on some sign-in modes.
      */
@@ -251,6 +254,9 @@ public class JournalActionService {
         try {
             if (identity == null || identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;
+            }
+            if (identity.hasRole(ROLE_MCP)) {
+                return ROLE_MCP;
             }
             Compte compte = identity.getAttribute(Compte.IDENTITY_ATTRIBUTE);
             return compte == null ? Compte.CONFIG_ID : compte.id();

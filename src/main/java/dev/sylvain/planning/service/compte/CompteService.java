@@ -2,11 +2,13 @@ package dev.sylvain.planning.service.compte;
 
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -21,11 +23,21 @@ import java.util.UUID;
 @ApplicationScoped
 public class CompteService {
 
+    private static final String DERNIER_ADMINISTRATEUR =
+            "Il doit rester au moins un administrateur actif : nommez-en un autre d'abord.";
+
+    static final int EMAIL_MAX = 320;
+
+    static final int NOM_MAX = 255;
+
     @Inject
     CompteRepository repository;
 
     @Inject
     EditionRepository editions;
+
+    @Inject
+    JournalActionService journal;
 
     public List<Compte> list() {
         return repository.list();
@@ -34,34 +46,45 @@ public class CompteService {
     /** Creates an account, to grant it a right before the person arrives. */
     public Compte create(String email, String nom) {
         String cle = normalize(email);
-        if (!repository.insertIfAbsent(UUID.randomUUID().toString(), cle, blankToNull(nom))) {
+        String nomPropre = blankToNull(nom);
+        if (nomPropre != null && nomPropre.length() > NOM_MAX) {
+            throw new BusinessError.Invalid("Nom trop long (" + NOM_MAX + " caractères au plus).");
+        }
+        if (!repository.insertIfAbsent(UUID.randomUUID().toString(), cle, nomPropre)) {
             throw new BusinessError.Conflict("Un compte existe déjà pour cette adresse.");
         }
         return repository.findByEmail(cle).orElseThrow();
     }
 
+    /** Refused for the account of the caller (one cannot lock oneself out) and for the last administrator. */
     public Compte deactivate(String id) {
-        return setDeactivated(id, Instant.now());
+        String par = acteur();
+        if (id != null && id.equals(par)) {
+            throw new BusinessError.Conflict("Vous ne pouvez pas désactiver votre propre compte.");
+        }
+        return setDeactivated(id, Instant.now(), par);
     }
 
     public Compte reactivate(String id) {
-        return setDeactivated(id, null);
+        return setDeactivated(id, null, acteur());
     }
 
-    private Compte setDeactivated(String id, Instant le) {
-        if (!repository.setDeactivated(id, le)) {
-            throw new BusinessError.NotFound("Compte inconnu : " + id);
+    private Compte setDeactivated(String id, Instant le, String par) {
+        switch (repository.setDeactivated(id, le, par)) {
+            case NOT_FOUND -> throw new BusinessError.NotFound("Compte inconnu : " + id);
+            case LAST_ADMIN -> throw new BusinessError.Conflict(DERNIER_ADMINISTRATEUR);
+            case DONE -> {}
         }
         return required(id);
     }
 
     /**
-     * Grants a right. An administrator is one of the whole instance, and an
-     * expiry already past would be a right that never opened anything.
-     *
-     * @param creePar the id of the account granting it, see {@link Compte#CONFIG_ID}
+     * Grants a right, in the name of the caller. An administrator is one of
+     * the whole instance and never expires (an expiry would be a way to lose
+     * the last one without anybody acting); an expiry already past would be a
+     * right that never opened anything; the same right twice is a conflict.
      */
-    public Compte grant(String compteId, RoleHabilitation role, String editionId, Instant expireLe, String creePar) {
+    public Compte grant(String compteId, RoleHabilitation role, String editionId, Instant expireLe) {
         required(compteId);
         if (role == null) {
             throw new BusinessError.Invalid("Rôle manquant.");
@@ -70,23 +93,44 @@ public class CompteService {
         if (role == RoleHabilitation.ADMIN && edition != null) {
             throw new BusinessError.Invalid("Un administrateur l'est de toute l'instance, pas d'une édition.");
         }
+        if (role == RoleHabilitation.ADMIN && expireLe != null) {
+            throw new BusinessError.Invalid("Un droit d'administrateur n'expire pas : retirez-le quand il prend fin.");
+        }
         if (edition != null && !editions.exists(edition)) {
             throw new BusinessError.Invalid("Édition inconnue : " + edition);
         }
         if (expireLe != null && !expireLe.isAfter(Instant.now())) {
             throw new BusinessError.Invalid("La date d'expiration est déjà passée.");
         }
-        repository.insertHabilitation(
-                compteId, new Habilitation(UUID.randomUUID().toString(), role, edition, expireLe, creePar, null, null));
+        Habilitation droit =
+                new Habilitation(UUID.randomUUID().toString(), role, edition, expireLe, acteur(), null, null, null);
+        if (!repository.insertHabilitation(compteId, droit)) {
+            throw new BusinessError.Conflict("Ce compte a déjà ce droit en vigueur.");
+        }
         return required(compteId);
     }
 
+    /** Refused when it is the last administrator right in force. */
     public Compte withdraw(String compteId, String habilitationId) {
         required(compteId);
-        if (!repository.withdrawHabilitation(compteId, habilitationId, Instant.now())) {
-            throw new BusinessError.NotFound("Aucune habilitation en vigueur " + habilitationId + " sur ce compte.");
+        switch (repository.withdrawHabilitation(compteId, habilitationId, Instant.now(), acteur())) {
+            case NOT_FOUND ->
+                throw new BusinessError.NotFound(
+                        "Aucune habilitation en vigueur " + habilitationId + " sur ce compte.");
+            case LAST_ADMIN -> throw new BusinessError.Conflict(DERNIER_ADMINISTRATEUR);
+            case DONE -> {}
         }
         return required(compteId);
+    }
+
+    /** Called when an edition is deleted: the rights scoped to it open nothing any more. */
+    public void withdrawForEdition(String editionId) {
+        repository.withdrawForEdition(editionId, Instant.now(), Compte.SYSTEME_ID);
+    }
+
+    /** Who acts: an account id, never an address; the configuration's account when nobody is bound. */
+    private String acteur() {
+        return Optional.ofNullable(journal.nomAdmin()).orElse(Compte.CONFIG_ID);
     }
 
     private Compte required(String id) {
@@ -99,6 +143,9 @@ public class CompteService {
             throw new BusinessError.Invalid("Adresse e-mail manquante.");
         }
         String cle = email.trim().toLowerCase(Locale.ROOT);
+        if (cle.length() > EMAIL_MAX) {
+            throw new BusinessError.Invalid("Adresse e-mail trop longue (" + EMAIL_MAX + " caractères au plus).");
+        }
         if (!cle.matches("[^@\\s]+@[^@\\s]+")) {
             throw new BusinessError.Invalid("Adresse e-mail invalide.");
         }
