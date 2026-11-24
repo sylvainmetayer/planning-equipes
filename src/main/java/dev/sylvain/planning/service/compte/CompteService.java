@@ -9,7 +9,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Named accounts and what they may do: the person ({@code compte}) and the
@@ -17,8 +19,9 @@ import java.util.UUID;
  * them, an expiry). Nothing deletes: an account is deactivated, a right is
  * withdrawn, so the journal can still say who held what, and when.
  *
- * <p>Until sign-in is bound to these accounts, nothing here opens or closes a
- * door: the administrator of the configuration is the only way in.</p>
+ * <p>Sign-in through an OIDC provider is bound to them by {@link #identify}: no
+ * account, no entry. The administrator of the configuration stays outside this
+ * table, behind its own (closed-by-default) door.</p>
  */
 @ApplicationScoped
 public class CompteService {
@@ -131,6 +134,46 @@ public class CompteService {
     /** Who acts: an account id, never an address; the configuration's account when nobody is bound. */
     private String acteur() {
         return Optional.ofNullable(journal.nomAdmin()).orElse(Compte.CONFIG_ID);
+    }
+
+    /**
+     * The account a provider's session belongs to, or empty: <b>nobody is
+     * created by signing in</b>. An organiser is added here first (by their
+     * address), then the provider vouches for them.
+     *
+     * <p>The stable subject is the key. An account without one is claimed by
+     * the first session whose address matches — {@code emailTrusted}, the
+     * provider vouching for it — and then belongs to that subject for good: the
+     * same address held later by somebody else at the provider opens nothing,
+     * and a changed address does not lock the owner out. A deactivated account
+     * is returned as such, for the caller to refuse.</p>
+     */
+    public Optional<Compte> identify(String sujet, String email, boolean emailTrusted) {
+        if (sujet == null || sujet.isBlank()) {
+            return Optional.empty();
+        }
+        Optional<Compte> parSujet = repository.findBySubject(sujet);
+        if (parSujet.isEmpty() && emailTrusted && email != null && !email.isBlank()) {
+            parSujet =
+                    repository.findByEmail(email.trim()).filter(compte -> repository.bindSubject(compte.id(), sujet));
+        }
+        parSujet.ifPresent(compte -> repository.touchSignIn(compte.id()));
+        return parSujet;
+    }
+
+    /** An account not deactivated. */
+    public static boolean isActive(Compte compte) {
+        return compte.desactiveLe() == null;
+    }
+
+    /** The roles an account carries on a request: the unscoped rights in force, and only those. */
+    public static Set<String> globalRoles(Compte compte, Instant now) {
+        return compte.habilitations().stream()
+                .filter(h -> h.editionId() == null
+                        && h.retireeLe() == null
+                        && (h.expireLe() == null || h.expireLe().isAfter(now)))
+                .map(h -> h.role().name().toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
     }
 
     private Compte required(String id) {

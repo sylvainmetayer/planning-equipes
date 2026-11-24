@@ -184,3 +184,6 @@ dev/sylvain/planning/service/solve/SolverMetricsTest.java
 dev/sylvain/planning/service/solve/WipeBackupServiceTest.java
 dev/sylvain/planning/service/validation/ValidationJourneeServiceTest.java
 dev/sylvain/planning/service/weather/WeatherAlertJobTest.java
+dev/sylvain/planning/api/OidcSignInTest.java
+dev/sylvain/planning/api/FormLoginSecoursFermeTest.java
+dev/sylvain/planning/api/FormLoginSecoursOuvertTest.java

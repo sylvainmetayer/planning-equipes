@@ -1,6 +1,7 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.config.ConfigMcp;
+import dev.sylvain.planning.config.ConfigOidc;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
@@ -53,11 +54,17 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
 
     static final String PRINCIPAL = "mcp";
 
+    /** {@code AuthResource#oidcLogin} and the logout, which must be answered a redirect, not a 401. */
+    private static final String CHEMIN_CONNEXION_OIDC = "/api/auth/oidc/";
+
     private final ConfigMcp config;
 
+    private final ConfigOidc oidc;
+
     @Inject
-    McpApiKeyAuthenticationMechanism(ConfigMcp config) {
+    McpApiKeyAuthenticationMechanism(ConfigMcp config, ConfigOidc oidc) {
         this.config = config;
+        this.oidc = oidc;
     }
 
     @Override
@@ -104,9 +111,18 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         });
     }
 
+    /**
+     * A bare 401 everywhere — except on the OIDC login route, whose whole
+     * purpose is the redirect to the authorization endpoint. This mechanism
+     * wins every challenge by priority, which is what {@code /api} wants (never
+     * a 302 to an HTML page, issue #165); standing aside there hands that one
+     * route to the OIDC mechanism. Only when OIDC is on: with it off, standing
+     * aside would hand the route to form auth, whose challenge is the 302.
+     */
     @Override
     public Uni<ChallengeData> getChallenge(RoutingContext context) {
-        return Uni.createFrom().item(new ChallengeData(401));
+        boolean cedeLaMain = oidc.enabled() && context.normalizedPath().startsWith(CHEMIN_CONNEXION_OIDC);
+        return cedeLaMain ? Uni.createFrom().nullItem() : Uni.createFrom().item(new ChallengeData(401));
     }
 
     /**

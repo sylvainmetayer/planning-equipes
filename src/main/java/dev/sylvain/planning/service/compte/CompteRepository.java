@@ -57,6 +57,40 @@ public class CompteRepository {
         return find(SELECT_COMPTE + " WHERE lower(email) = lower(?)", email);
     }
 
+    public Optional<Compte> findBySubject(String sujet) {
+        return find(SELECT_COMPTE + " WHERE oidc_sujet = ?", sujet);
+    }
+
+    /**
+     * Ties the provider's subject to the account if it has none yet; answers
+     * whether it is now tied to <b>this</b> subject. The condition is in the
+     * statement, not in a prior read: two first sign-ins must not both win.
+     */
+    public boolean bindSubject(String id, String sujet) {
+        return scope.writeAndReturn("Failed to bind an account to its subject", connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE compte SET oidc_sujet = ? WHERE id = ? AND (oidc_sujet IS NULL OR oidc_sujet = ?)")) {
+                ps.setString(1, sujet);
+                ps.setString(2, id);
+                ps.setString(3, sujet);
+                return ps.executeUpdate() == 1;
+            }
+        });
+    }
+
+    /** Stamps the last sign-in, at most once an hour: this runs on every request. */
+    public void touchSignIn(String id) {
+        scope.write("Failed to stamp a sign-in", connection -> {
+            try (PreparedStatement ps = connection.prepareStatement("""
+                    UPDATE compte SET derniere_connexion_le = now()
+                    WHERE id = ? AND (derniere_connexion_le IS NULL
+                                      OR derniere_connexion_le < now() - interval '1 hour')""")) {
+                ps.setString(1, id);
+                ps.executeUpdate();
+            }
+        });
+    }
+
     private Optional<Compte> find(String sql, String valeur) {
         return scope.read("Failed to read an account", connection -> {
             try (PreparedStatement ps = connection.prepareStatement(sql)) {

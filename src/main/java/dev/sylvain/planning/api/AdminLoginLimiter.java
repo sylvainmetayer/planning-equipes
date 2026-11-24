@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigAdminLogin;
+import dev.sylvain.planning.config.ConfigOidc;
 import dev.sylvain.planning.config.TrustedProxies;
 import dev.sylvain.planning.service.FailureLockout;
 import dev.sylvain.planning.service.journal.LoginJournalEntry;
@@ -79,12 +80,25 @@ public class AdminLoginLimiter {
     /** Target of the Quarkus form login ({@code quarkus.http.auth.form.post-location} by default). */
     static final String CHEMIN_CONNEXION = "/j_security_check";
 
+    /**
+     * Whether {@code path} is one the form mechanism treats as a login. Quarkus'
+     * {@code FormAuthenticationMechanism} accepts any POST whose path
+     * <em>ends</em> with the post location — {@code /api/j_security_check} logs
+     * in as well as {@code /j_security_check} — so every guard of that door
+     * matches the same way, or a prefix walks around it.
+     */
+    static boolean isLoginPath(String path) {
+        return path != null && path.endsWith(CHEMIN_CONNEXION);
+    }
+
     /** After the security headers, before anything handles the request. */
     private static final int PRIORITE = 250;
 
     private final ConfigAdminLogin config;
 
     private final LoginJournalService journal;
+
+    private final ConfigOidc oidc;
 
     /** Read from the configuration so the two can never drift apart. */
     private final String nomCookieSession;
@@ -93,9 +107,11 @@ public class AdminLoginLimiter {
     public AdminLoginLimiter(
             ConfigAdminLogin config,
             LoginJournalService journal,
+            ConfigOidc oidc,
             @ConfigProperty(name = "quarkus.http.auth.form.cookie-name") String nomCookieSession) {
         this.config = config;
         this.journal = journal;
+        this.oidc = oidc;
         this.nomCookieSession = nomCookieSession;
     }
 
@@ -148,7 +164,7 @@ public class AdminLoginLimiter {
     }
 
     private void apply(RoutingContext contexte) {
-        if (!CHEMIN_CONNEXION.equals(contexte.normalizedPath())) {
+        if (!isLoginPath(contexte.normalizedPath())) {
             contexte.next();
             return;
         }
@@ -166,7 +182,10 @@ public class AdminLoginLimiter {
         contexte.addEndHandler(issue -> {
             if (issue.succeeded() && successfulLogin(contexte)) {
                 failures.clear(address);
-                record(false, List.of(new LoginJournalEntry(0, Instant.now(), Evenement.CONNEXION, address)));
+                // Behind an OIDC provider a form login is the break-glass door:
+                // the journal says so, it is the line an operator looks for.
+                Evenement evenement = oidc.enabled() ? Evenement.CONNEXION_SECOURS : Evenement.CONNEXION;
+                record(false, List.of(new LoginJournalEntry(0, Instant.now(), evenement, address)));
             }
         });
         contexte.next();
@@ -176,7 +195,7 @@ public class AdminLoginLimiter {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
         // The other mechanisms (MCP key, remote-user header, session already
         // open) raise the same event and have nothing to do with this lock.
-        if (!(contexte instanceof RoutingContext routage) || !CHEMIN_CONNEXION.equals(routage.normalizedPath())) {
+        if (!(contexte instanceof RoutingContext routage) || !isLoginPath(routage.normalizedPath())) {
             return;
         }
         String address = address(routage);

@@ -23,6 +23,14 @@ public record LoginJournalEntry(long id, Instant survenuLe, Evenement evenement,
         /** Wrong credentials. */
         ECHEC,
         /** The failure that reached the ceiling: the address is now refused for a while. */
-        VERROUILLAGE
+        VERROUILLAGE,
+        /**
+         * The break-glass account was left open at startup behind an OIDC
+         * provider, where it is closed by default ({@code adresse} is then
+         * {@code demarrage}).
+         */
+        SECOURS_OUVERT,
+        /** A session opened through the break-glass account, while an OIDC provider is plugged in. */
+        CONNEXION_SECOURS
     }
 }

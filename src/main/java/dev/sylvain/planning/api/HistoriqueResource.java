@@ -230,7 +230,8 @@ public class HistoriqueResource {
     /**
      * One attempt on the admin form login — never what was typed.
      *
-     * @param evenement {@code CONNEXION}, {@code ECHEC} or {@code VERROUILLAGE}
+     * @param evenement {@code CONNEXION}, {@code ECHEC}, {@code VERROUILLAGE}, {@code SECOURS_OUVERT}
+     *                  or {@code CONNEXION_SECOURS}
      * @param adresse   the client address the login lock counts against
      */
     @Schema(requiredProperties = {"id", "survenuLe", "evenement", "adresse"})
@@ -238,7 +239,7 @@ public class HistoriqueResource {
             long id,
             Instant survenuLe,
 
-            @Schema(enumeration = {"CONNEXION", "ECHEC", "VERROUILLAGE"})
+            @Schema(enumeration = {"CONNEXION", "ECHEC", "VERROUILLAGE", "SECOURS_OUVERT", "CONNEXION_SECOURS"})
             String evenement,
 
             String adresse) {}
