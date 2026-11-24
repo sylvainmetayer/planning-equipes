@@ -12,7 +12,7 @@
 
   {% if key == 'contact' %}
   <section class="container form" aria-label="{{ c.h1 | typo(lang) }}">
-    <iframe class="form__frame" src="https://tally.so/embed/{{ site.tally[lang] }}?alignLeft=1&amp;hideTitle=1&amp;transparentBackground=1" title="{{ c.formTitre }}" loading="lazy"></iframe>
+    <div class="form__sheet"><iframe class="form__frame" src="https://tally.so/embed/{{ site.tally[lang] }}?alignLeft=1&amp;hideTitle=1&amp;transparentBackground=1&amp;dynamicHeight=1" title="{{ c.formTitre }}" loading="lazy"></iframe></div>
     <p class="form__alt"><a href="https://tally.so/r/{{ site.tally[lang] }}">{{ c.lien }}</a> {{ c.ecrire }} <a href="mailto:{{ site.email }}?subject={{ copy[lang].commun.contactSujet | urlencode }}">{{ site.email }}</a></p>
   </section>
   {% endif %}

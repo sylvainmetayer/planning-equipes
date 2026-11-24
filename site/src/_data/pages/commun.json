@@ -7,7 +7,7 @@
     "calcul": "Le calcul",
     "hebergement": "Héberger",
     "faq": "Questions",
-    "contact": "Devis",
+    "contact": "Parlons-en",
     "langue": "English",
     "langueLabel": "Read this page in English"
   },
@@ -24,7 +24,7 @@
     "mentions": "Mentions légales et confidentialité",
     "nouveautes": "Nouveautés",
     "probleme": "Signaler un problème",
-    "ecrire": "Écrire pour un devis"
+    "ecrire": "Nous écrire"
   },
   "introuvable": {
     "titre": "Page introuvable",
@@ -32,6 +32,11 @@
     "h1": "Cette page n'existe pas.",
     "texte": "Le lien est peut-être ancien. Revenez à l'accueil, ou écrivez-nous si vous cherchiez quelque chose de précis.",
     "retour": "Retour à l'accueil"
+  },
+  "theme": {
+    "auto": "Thème : automatique, selon votre appareil. Passer au thème clair",
+    "clair": "Thème : clair. Passer au thème sombre",
+    "sombre": "Thème : sombre. Passer au thème automatique"
   },
   "popin": {
     "label": "Capture en grand",
@@ -48,7 +53,7 @@
       "calcul": "The solver",
       "hebergement": "Self-hosting",
       "faq": "Questions",
-      "contact": "Quote",
+      "contact": "Let's talk",
       "langue": "Français",
       "langueLabel": "Lire cette page en français"
     },
@@ -65,7 +70,7 @@
       "mentions": "Legal notice and privacy",
       "nouveautes": "Release notes",
       "probleme": "Report a problem",
-      "ecrire": "Write for a quote"
+      "ecrire": "Write to us"
     },
     "introuvable": {
       "titre": "Page not found",
@@ -73,6 +78,11 @@
       "h1": "This page does not exist.",
       "texte": "The link may be old. Go back to the home page, or write to us if you were looking for something specific.",
       "retour": "Back to the home page"
+    },
+    "theme": {
+      "auto": "Theme: automatic, following your device. Switch to light",
+      "clair": "Theme: light. Switch to dark",
+      "sombre": "Theme: dark. Switch to automatic"
     },
     "popin": {
       "label": "Enlarged screenshot",

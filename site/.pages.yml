@@ -61,7 +61,14 @@ content:
           - { name: mentions, label: Lien mentions légales, type: string, required: true }
           - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
           - { name: probleme, label: Lien signaler un problème, type: string, required: true }
-          - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
+          - { name: ecrire, label: Lien « nous écrire », type: string, required: true }
+      - name: theme
+        label: Bouton de thème (nom lu par les lecteurs d'écran, selon l'état courant)
+        type: object
+        fields:
+          - { name: auto, label: État automatique, type: string, required: true }
+          - { name: clair, label: État clair, type: string, required: true }
+          - { name: sombre, label: État sombre, type: string, required: true }
       - name: popin
         label: Agrandissement des captures
         type: object
@@ -113,8 +120,15 @@ content:
               - { name: mentions, label: Lien mentions légales, type: string, required: true }
               - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
               - { name: probleme, label: Lien signaler un problème, type: string, required: true }
-              - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
-          - { name: ecrire, label: Lien « écrire pour un devis », type: string, required: true }
+              - { name: ecrire, label: Lien « nous écrire », type: string, required: true }
+          - { name: ecrire, label: Lien « nous écrire », type: string, required: true }
+          - name: theme
+            label: Bouton de thème (nom lu par les lecteurs d'écran, selon l'état courant)
+            type: object
+            fields:
+              - { name: auto, label: État automatique, type: string, required: true }
+              - { name: clair, label: État clair, type: string, required: true }
+              - { name: sombre, label: État sombre, type: string, required: true }
           - name: popin
             label: Agrandissement des captures
             type: object
@@ -248,7 +262,7 @@ content:
               - { name: titre, label: Titre, type: string, required: true }
               - { name: alt, label: "Description (« Nom : ce qu'il montre », la partie après les deux-points s'affiche)", type: string, required: true }
       - name: ensemble
-        label: Section devis
+        label: Section contact
         type: object
         fields:
           - { name: h2, label: Titre, type: string, required: true }
@@ -384,7 +398,7 @@ content:
                   - { name: titre, label: Titre, type: string, required: true }
                   - { name: alt, label: "Description (« Nom : ce qu'il montre », la partie après les deux-points s'affiche)", type: string, required: true }
           - name: ensemble
-            label: Section devis
+            label: Section contact
             type: object
             fields:
               - { name: h2, label: Titre, type: string, required: true }
@@ -647,7 +661,7 @@ content:
           - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
 
   - name: contact
-    label: Page contact (formulaire de devis)
+    label: Page contact (formulaire)
     type: file
     path: src/_data/pages/contact.json
     format: json

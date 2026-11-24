@@ -1,10 +1,10 @@
 {
   "slug": "contact",
-  "titre": "Demander un devis pour Planning Équipes",
-  "description": "Décrivez votre événement et votre équipe : nous vous répondons avec un devis. Formulaire de contact de Planning Équipes.",
-  "h1": "Demander un devis",
-  "reponse": "**Dites-nous ce qu'il vous faut.** Sept questions sur votre événement et votre équipe, et nous vous répondons avec un devis.",
-  "formTitre": "Formulaire de demande de devis",
+  "titre": "Parlons de votre événement | Planning Équipes",
+  "description": "Décrivez votre événement et votre équipe : nous vous répondons pour en discuter ensemble. Formulaire de contact de Planning Équipes.",
+  "h1": "Parlons de votre événement",
+  "reponse": "Sept questions sur votre événement et votre équipe, puis on en discute ensemble.",
+  "formTitre": "Formulaire de contact",
   "lien": "Ouvrir le formulaire sur tally.so",
   "ecrire": "ou écrivez-nous à",
   "liens": [
@@ -14,11 +14,11 @@
   ],
   "en": {
     "slug": "contact",
-    "titre": "Request a quote for Planning Équipes",
-    "description": "Describe your event and your team: we reply with a quote. Planning Équipes contact form.",
-    "h1": "Request a quote",
-    "reponse": "**Tell us what you need.** Seven questions about your event and your team, and we reply with a quote.",
-    "formTitre": "Quote request form",
+    "titre": "Tell us about your event | Planning Équipes",
+    "description": "Describe your event and your team: we reply so we can talk it through. Planning Équipes contact form.",
+    "h1": "Tell us about your event",
+    "reponse": "Seven questions about your event and your team, then we talk it through together.",
+    "formTitre": "Contact form",
     "lien": "Open the form on tally.so",
     "ecrire": "or write to us at",
     "liens": [
