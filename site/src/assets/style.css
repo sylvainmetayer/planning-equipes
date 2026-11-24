@@ -70,7 +70,7 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 .shot, .card__pic { display: block; overflow: hidden; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); color: var(--color-ink); box-shadow: var(--shadow-card); cursor: zoom-in; }
 .shot img { width: 100%; height: auto; }
 .shot:focus-visible, .card__pic:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
-.rule-card { position: absolute; left: calc(-1 * var(--space-2xl)); bottom: 0; z-index: var(--z-raised); display: grid; gap: var(--space-xs); width: min(22rem, 80%); padding: var(--space-lg); border: var(--rule-hair) solid var(--color-rule); border-top: var(--rule-bar) solid var(--color-p4); border-radius: var(--radius-card); background: var(--color-card); color: var(--color-ink); box-shadow: var(--shadow-card); transform: rotate(-2deg); }
+.rule-card { position: absolute; left: calc(-1 * var(--space-2xl)); bottom: 0; z-index: var(--z-raised); display: grid; gap: var(--space-xs); width: min(22rem, 80%); padding: var(--space-lg); border: var(--rule-hair) solid var(--color-rule); border-top: var(--rule-bar) solid var(--color-p4); border-radius: var(--radius-card); background: var(--color-card); color: var(--color-ink); box-shadow: var(--shadow-card); }
 .rule-card__top { display: flex; justify-content: space-between; gap: var(--space-md); font-weight: 600; }
 .rule-card__art { color: var(--color-p4); font-variant-numeric: tabular-nums; }
 .caption { margin-top: var(--space-md); padding-left: calc(22rem - var(--space-xl)); font-size: var(--text-sm); color: var(--color-muted); }
