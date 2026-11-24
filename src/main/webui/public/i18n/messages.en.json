@@ -10,6 +10,8 @@
   "shell.theme.announce.light": "Light theme.",
   "shell.theme.announce.dark": "Dark theme.",
   "footer.version": "Version",
+  "footer.site": "The project's website",
+  "footer.siteUrl": "https://planning.sylvain.dev/en/",
   "nav.group.planning": "Planning",
   "nav.link.accueil": "Edition status",
   "nav.link.solver": "Solver",
