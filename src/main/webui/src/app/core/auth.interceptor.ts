@@ -5,13 +5,14 @@ import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 /**
- * Sends the visitor to /login whenever an admin API call answers 401 (the
- * session is missing or expired, issue #165) or 403 (a person the OIDC provider
- * signed in but this application gave no `admin` right: `/api/*` answers 403
- * for that and nothing else — business refusals are 400, 404 or 409 — and the
- * login page explains instead of letting every panel fail one by one). The espace animateur, the wall display and
- * the auth endpoints are left alone: they are public by design, a 401 there would be a real error
- * to surface, not a login redirect.
+ * Sends the visitor to /login whenever an admin API call answers 401: the
+ * session is missing or expired (issue #165). A 403 is not a login problem —
+ * an organiser is refused the instance's settings and keeps working — so it
+ * stays an error the screen shows; the person signed in with no right at all is
+ * taken to /login by `SessionStore` once the session is read. The espace
+ * animateur, the wall display and the auth endpoints are left alone: they are
+ * public by design, a 401 there would be a real error to surface, not a login
+ * redirect.
  *
  * The drafts are left alone: recovering an entry after the session expired
  * is what they are for, and the fiche animateur's lives in this tab's
@@ -24,7 +25,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       if (
         error instanceof HttpErrorResponse &&
-        (error.status === 401 || error.status === 403) &&
+        error.status === 401 &&
         request.url.startsWith('/api/') &&
         !request.url.startsWith('/api/espace-animateur/') &&
         !request.url.startsWith('/api/mural/') &&

@@ -79,7 +79,7 @@ describe('HistoriquePage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideFake(AnalysesApi, analysesApi),
-        { provide: SessionStore, useValue: { isAdmin: () => admin } },
+        { provide: SessionStore, useValue: { isAdmin: () => admin, known: () => true } },
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: Location, useValue: location },
         {

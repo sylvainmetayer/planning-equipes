@@ -74,13 +74,27 @@ export interface CommandePalette {
  * <p>Built lazily, never at module scope: `$localize` only resolves once
  * `main.ts` has loaded the catalog. Same reasoning as `buildNavGroups()`.</p>
  */
-export function buildDestinationsNavigation(devMode = false): CommandePalette[] {
+export function buildDestinationsNavigation(devMode = false, admin = true): CommandePalette[] {
   const menu = buildNavGroups().flatMap((group) => group.links);
-  return [
+  const all = [
     ...menu.flatMap((link) => destinations(link, true)),
     ...buildOffMenuLinks(devMode).flatMap((link) => destinations(link, false)),
     ...buildLegalLinks().flatMap((link) => destinations(link, false)),
   ];
+  // What the server refuses to an organiser is not offered: the instance tabs of
+  // Paramètres, the connections journal, and the raw technical page.
+  return admin ? all : all.filter((entry) => !adminOnly(entry));
+}
+
+/** The tabs of Paramètres the server refuses to an organiser (`ONGLETS_ADMIN` there, plus the connections journal). */
+const ONGLETS_PARAMETRES_ADMIN = ['comptes', 'instance', 'mcp', 'connexions'];
+
+function adminOnly(entry: CommandePalette): boolean {
+  const onglet = entry.queryParams?.['onglet'];
+  return (
+    entry.route === '/debug' ||
+    (entry.route === '/parametres' && !!onglet && ONGLETS_PARAMETRES_ADMIN.includes(onglet))
+  );
 }
 
 /** A link and its tabs, as palette entries. */

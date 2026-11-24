@@ -18,7 +18,7 @@ import { Router } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
 import { APP_CONFIG } from '../../core/app-config';
 import { BRANDING } from '../../core/branding';
-import { signedInWithoutAdminRole } from '../../core/session';
+import { signedInWithoutAccess } from '../../core/session';
 import { BrandLogo } from '../../shared/brand-logo';
 
 /**
@@ -82,7 +82,7 @@ export class LoginPage implements OnInit {
   ngOnInit(): void {
     void this.adminApi
       .session()
-      .then((statut) => this.noRights.set(signedInWithoutAdminRole(statut)))
+      .then((statut) => this.noRights.set(signedInWithoutAccess(statut)))
       // Anonymous, or the probe is unreachable: the ordinary card is right.
       .catch(() => this.noRights.set(false));
   }

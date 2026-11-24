@@ -24,6 +24,7 @@ import {
   buildDestinationsNavigation,
   chercherCommandes,
 } from '../core/keyboard-shortcuts';
+import { SessionStore } from '../core/session.store';
 import { injectAppConfig } from '../core/app-config';
 import { ReferenceDataStore } from '../core/reference-data.store';
 
@@ -158,7 +159,10 @@ export class CommandPaletteDialog {
   private readonly store = inject(ReferenceDataStore);
 
   protected readonly query = signal('');
-  private readonly destinations = buildDestinationsNavigation(injectAppConfig().devMode);
+  private readonly destinations = buildDestinationsNavigation(
+    injectAppConfig().devMode,
+    inject(SessionStore).isAdmin(),
+  );
 
   protected readonly resultats = computed(() =>
     chercherCommandes(this.query(), {

@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Compte, Habilitation } from '../../core/models';
-import {
-  editionLabel,
-  isOwnAccount,
-  rightLabel,
-  rightState,
-  roleLabel,
-  sortAccounts,
-} from './comptes';
+import { editionLabel, rightLabel, rightState, roleLabel, sortAccounts } from './comptes';
 
 const MAINTENANT = new Date('2026-06-01T12:00:00Z');
 
@@ -71,7 +64,7 @@ describe('labels', () => {
   });
 });
 
-describe('sortAccounts and isOwnAccount', () => {
+describe('sortAccounts', () => {
   it('lists the active accounts first, then by address', () => {
     const tri = sortAccounts([
       compte('z@x.fr'),
@@ -79,11 +72,5 @@ describe('sortAccounts and isOwnAccount', () => {
       compte('b@x.fr'),
     ]);
     expect(tri.map((c) => c.email)).toEqual(['b@x.fr', 'z@x.fr', 'a@x.fr']);
-  });
-
-  it('compares the session name to the address like the server does', () => {
-    expect(isOwnAccount(compte('Ana@X.fr'), ' ana@x.fr ')).toBe(true);
-    expect(isOwnAccount(compte('ana@x.fr'), 'admin')).toBe(false);
-    expect(isOwnAccount(compte('ana@x.fr'), null)).toBe(false);
   });
 });

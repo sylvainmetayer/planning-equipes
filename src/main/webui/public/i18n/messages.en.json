@@ -5261,7 +5261,7 @@
   "comptes.derniereConnexion": "Last sign-in on {$INTERPOLATION}",
   "comptes.jamaisConnecte": "Never signed in",
   "comptes.sansDroit": "No right in force",
-  "comptes.retirer.label": "Withdraw this right",
+  "comptes.retirer.label": "Withdraw the right “{$INTERPOLATION}” of {$INTERPOLATION_1}",
   "comptes.retirer.titre": "Withdraw this right?",
   "comptes.retirer.message": "“{$droit}” will no longer open anything for this account; it stays in the history.",
   "comptes.retirer.confirmer": "Withdraw",
@@ -5278,5 +5278,11 @@
   "comptes.role.admin": "Administrator",
   "comptes.role.organisateur": "Organiser",
   "comptes.droit": "{$role} — {$edition}",
-  "nav.keywords.comptes": "users organisers administrators rights permissions access"
+  "nav.keywords.comptes": "users organisers administrators rights permissions access",
+  "comptes.chargement": "Loading the accounts…",
+  "comptes.desactiver.titre": "Deactivate this account?",
+  "comptes.desactiver.message": "“{$nom}” will no longer be able to sign in, whatever their rights. The account and its history are kept.",
+  "comptes.retirer.soi.titre": "Withdraw your own administrator right?",
+  "comptes.retirer.soi.message": "You will no longer be able to administer the instance, nor come back to this screen, unless another administrator gives you the right back.",
+  "api.forbidden": "Reserved to the administrators."
 }

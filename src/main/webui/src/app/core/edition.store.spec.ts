@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { provideSession } from './testing/session';
 import { ApiService } from './api.service';
 import { EditionStore } from './edition.store';
 import { Edition, EditionSituation } from './models';
@@ -17,7 +18,11 @@ describe('EditionStore', () => {
   beforeEach(() => {
     get.mockReset();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: ApiService, useValue: { get } }],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: ApiService, useValue: { get } },
+        provideSession(),
+      ],
     });
     store = TestBed.inject(EditionStore);
   });

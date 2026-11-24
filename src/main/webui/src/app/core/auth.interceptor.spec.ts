@@ -52,11 +52,11 @@ describe('authInterceptor', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 
-  it('renvoie aussi vers /login sur un 403 : connecté, mais sans droit d’administration', async () => {
+  it('ne renvoie pas vers /login sur un 403 : un organisateur refusé reste dans l’application', async () => {
     await expect(firstValueFrom(interceptWithError('/api/stands', 403))).rejects.toMatchObject({
       status: 403,
     });
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('laisse tranquilles les routes publiques par conception', async () => {

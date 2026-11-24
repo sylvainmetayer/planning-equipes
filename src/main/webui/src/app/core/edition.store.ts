@@ -8,6 +8,7 @@
 // tabs can work on two editions at the same time.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { SessionStore } from './session.store';
 import { EditionsApi } from './api/editions-api';
 import { Edition, EditionSituation } from './models';
 import { setStoredEditionIdAndOpen, setStoredEditionIdAndReload } from './edition-courante';
@@ -41,6 +42,7 @@ export class EditionStore {
   readonly active = computed(() => this.editions().find((edition) => edition.active) ?? null);
 
   private readonly editionsApi = inject(EditionsApi);
+  private readonly session = inject(SessionStore);
 
   async reload(): Promise<void> {
     const [editions, courant] = await Promise.all([
@@ -49,8 +51,12 @@ export class EditionStore {
     ]);
     this._editions.set(editions);
     this._courant.set(courant);
-    // A reminder, never a blocker: a failure leaves the banner off.
-    this._situations.set(await this.editionsApi.situations().catch(() => []));
+    // A reminder, never a blocker: a failure leaves the banner off. The route is
+    // the administrators' (it speaks of every edition): an organiser is not asked.
+    await this.session.ready();
+    this._situations.set(
+      this.session.isAdmin() ? await this.editionsApi.situations().catch(() => []) : [],
+    );
   }
 
   /** Switches edition; every screen is swapped at once by the page reload this triggers. */
