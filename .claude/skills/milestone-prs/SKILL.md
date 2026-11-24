@@ -58,7 +58,7 @@ Do not start writing code before the answers are in.
 - Before each push, run the repository's own checks:
   - the full backend suite (the `sandbox-tests` skill when there is no Docker);
   - for the frontend, from `src/main/webui`: `npm run lint`, `format-check`,
-    `i18n-check`, `i18n-check-modifies -- <base>`, `api-types-check`,
+    `i18n-check`, `api-types-check`,
     `css-scope-check`, and `language-policy-modifies -- <base>` (it refuses a
     French TypeScript identifier outside the glossary);
   - a regenerated `docs/schema/openapi.json` when the API changed, and
