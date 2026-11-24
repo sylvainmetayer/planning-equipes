@@ -3,7 +3,7 @@
   "titre": "Logiciel de planning bénévoles : questions | Planning Équipes",
   "description": "Prix, mineurs, bénévoles, données personnelles, licence, hébergement : les réponses aux questions que se posent les organisateurs d'événements.",
   "h1": "Les questions qu'on nous pose",
-  "reponse": "Les réponses courtes aux questions des organisateurs. Une question manque ? Écrivez-nous.",
+  "reponse": "Les réponses courtes aux questions des organisateurs. Une question manque ? [Posez-la-nous par écrit](/contact/).",
   "items": [
     {
       "id": "aucune-solution",
@@ -43,7 +43,7 @@
     {
       "id": "tarif",
       "q": "Combien ça coûte ?",
-      "a": "Le tarif dépend de la taille de votre événement : dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre. Le logiciel est libre, vous pouvez aussi l'héberger vous-même."
+      "a": "[Le tarif dépend de la taille](/#contact) de votre événement : dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre. Le logiciel est libre, vous pouvez aussi [l'héberger chez vous](/heberger/)."
     },
     {
       "id": "licence",
@@ -90,7 +90,7 @@
     "titre": "Volunteer scheduling software: FAQ | Planning Équipes",
     "description": "Price, under-18s, volunteers, personal data, licence, hosting: answers to what event organisers ask about volunteer scheduling software.",
     "h1": "Questions we get asked",
-    "reponse": "Short answers to the questions organisers ask. A question missing? Write to us.",
+    "reponse": "Short answers to the questions organisers ask. A question missing? [Ask us in writing](/en/contact/).",
     "items": [
       {
         "id": "aucune-solution",
@@ -130,7 +130,7 @@
       {
         "id": "tarif",
         "q": "How much does it cost?",
-        "a": "The price depends on the size of your event: tell us how many people and how many days, and we'll send you a figure. The software is free software, so you can also host it yourself."
+        "a": "[The price depends on the size](/en/#contact) of your event: tell us how many people and how many days, and we'll send you a figure. The software is free software, so you can also [host it on your own](/en/self-hosting/)."
       },
       {
         "id": "licence",

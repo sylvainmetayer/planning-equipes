@@ -7,11 +7,11 @@
   "sections": [
     {
       "h2": "Salariés, bénévoles ou les deux",
-      "texte": "L'outil ne fait pas de différence : chacun a des disponibilités, des compétences et des souhaits, et il est placé sur un stand et un créneau. Ce qui change pour des bénévoles est dans [les questions](/questions/#benevoles)."
+      "texte": "L'outil ne fait pas de différence : chacun a des disponibilités, des compétences et des souhaits, et il est placé sur un stand et un créneau. Ce qui change pour des bénévoles est dans [les questions](/questions/#benevoles). Pour un salon ou une foire, voir [un planning de salon ou de foire](/planning-salon-foire/)."
     },
     {
       "h2": "Importer le tableur",
-      "texte": "Les animateurs s'importent depuis un fichier CSV, avec un aperçu de ce qui serait créé ou refusé avant toute écriture. Compétences, souhaits et jours d'indisponibilité se saisissent ensuite fiche par fiche, ou en bloc dans une grille."
+      "texte": "Les animateurs s'importent depuis un fichier CSV, avec un aperçu de ce qui serait créé ou refusé avant toute écriture. Compétences, souhaits et jours d'indisponibilité se saisissent ensuite fiche par fiche, ou en bloc dans une grille. Hésitez-vous entre garder le tableur et un logiciel ? [Comparez tableur et logiciel de planning](/tableur-ou-logiciel-de-planning/). Un fichier qui résiste à l'import ? [Envoyez-nous votre tableur](/contact/)."
     },
     {
       "h2": "Collecter les disponibilités",
@@ -45,11 +45,11 @@
     "sections": [
       {
         "h2": "Paid staff, volunteers or both",
-        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles)."
+        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles). For a trade show or fair, see [a trade show staff rota](/en/trade-show-staff-rota/)."
       },
       {
         "h2": "Import the spreadsheet",
-        "texte": "Staff import from a CSV file, with a preview of what would be created or refused before anything is written. Skills, wishes and days off are then entered record by record, or in bulk in a grid."
+        "texte": "Staff import from a CSV file, with a preview of what would be created or refused before anything is written. Skills, wishes and days off are then entered record by record, or in bulk in a grid. Unsure whether to keep the spreadsheet? [Compare spreadsheet and scheduling software](/en/spreadsheet-or-scheduling-software/). A file that resists the import? [Send us your spreadsheet](/en/contact/)."
       },
       {
         "h2": "Collect availability",

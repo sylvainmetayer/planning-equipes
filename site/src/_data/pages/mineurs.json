@@ -3,7 +3,7 @@
   "titre": "Planning et mineurs : le Code du travail | Planning Équipes",
   "description": "Un animateur de 16 ans peut-il travailler après 22 h ? Durée, pause, nuit, repos, jours fériés : les règles des mineurs, article par article.",
   "h1": "Que dit le Code du travail sur les animateurs mineurs ?",
-  "reponse": "**Le logiciel applique à chaque mineur le droit de son âge réel, à la date de chaque créneau.** Ces questions-réponses citent l'article de chaque règle. Il applique le Code du travail seul : ni convention collective, ni dérogation d'office.",
+  "reponse": "**Le logiciel applique à chaque mineur le droit de son âge réel, à la date de chaque créneau.** Ces questions-réponses citent l'article de chaque règle. Il applique le Code du travail seul : ni convention collective, ni dérogation d'office. Une situation particulière ? [Décrivez-nous votre événement](/contact/).",
   "items": [
     {
       "id": "apres-22h",
@@ -48,7 +48,7 @@
     {
       "id": "benevoles",
       "q": "Ces règles valent-elles aussi pour des bénévoles mineurs ?",
-      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire."
+      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire. Pour un exemple, voir [le planning d'un événement sportif](/planning-evenement-sportif/)."
     }
   ],
   "cta": "Une règle à vérifier pour votre événement ?",
@@ -64,7 +64,7 @@
     "titre": "Rota and under-18s: the French Labour Code | Planning Équipes",
     "description": "Can a 16-year-old work after 10 pm? Hours, breaks, nights, rest, public holidays: the rules for under-18s, article by article.",
     "h1": "What does the French Labour Code say about under-18 staff?",
-    "reponse": "**The software applies to each under-18 the law of their real age, on the date of every shift.** These questions and answers cite the article behind each rule. It applies the Labour Code alone: no collective agreement, no derogation by default.",
+    "reponse": "**The software applies to each under-18 the law of their real age, on the date of every shift.** These questions and answers cite the article behind each rule. It applies the Labour Code alone: no collective agreement, no derogation by default. A particular case? [Describe your event to us](/en/contact/).",
     "items": [
       {
         "id": "apres-22h",
@@ -109,7 +109,7 @@
       {
         "id": "benevoles",
         "q": "Do these rules apply to volunteers under 18 too?",
-        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call."
+        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. For an example, see [a sports event volunteer rota](/en/sports-event-volunteer-rota/)."
       }
     ],
     "cta": "A rule to check for your event?",

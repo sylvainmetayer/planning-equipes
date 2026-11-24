@@ -11,7 +11,7 @@
     },
     {
       "h2": "Ce qu'il affiche en route",
-      "texte": "Dès qu'un plan faisable existe, l'écran Solveur le dit. La suite ne fait qu'améliorer la qualité, et un bouton arrête le calcul en gardant ce plan. Les trois niveaux du score se tracent en direct, pour voir quand il plafonne."
+      "texte": "Dès qu'un plan faisable existe, l'écran Solveur le dit. La suite ne fait qu'améliorer la qualité, et un bouton arrête le calcul en gardant ce plan. Les trois niveaux du score se tracent en direct, pour voir quand il plafonne. Pour le voir tourner sur votre équipe, [envoyez-nous vos données](/contact/)."
     },
     {
       "h2": "Combien de temps ça prend",
@@ -31,7 +31,7 @@
     },
     {
       "h2": "Ce qui tourne dessous",
-      "texte": "Depuis la version 3.0.0, un moteur de recherche écrit pour ce planning cherche le plan. Il n'est pas cru sur parole : chaque plan est noté à nouveau par [Timefold Solver](https://timefold.ai/), et un écart fait échouer le calcul. Le code des règles est ouvert et [documenté](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md)."
+      "texte": "Depuis la version 3.0.0, un moteur de recherche écrit pour ce planning cherche le plan. Il n'est pas cru sur parole : chaque plan est noté à nouveau par [Timefold Solver](https://timefold.ai/), et un écart fait échouer le calcul. Le code des règles est ouvert et [documenté](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md). Le logiciel est libre : vous pouvez [l'héberger vous-même](/heberger/)."
     }
   ],
   "cta": "Vous voulez le voir sur vos données ?",
@@ -55,7 +55,7 @@
       },
       {
         "h2": "What it shows on the way",
-        "texte": "As soon as a feasible plan exists, the Solver screen says so. The rest only improves quality, and a button stops the run and keeps that plan. The three levels of the score are drawn live, so you see when it levels off."
+        "texte": "As soon as a feasible plan exists, the Solver screen says so. The rest only improves quality, and a button stops the run and keeps that plan. The three levels of the score are drawn live, so you see when it levels off. To watch it run on your team, [send us your data](/en/contact/)."
       },
       {
         "h2": "How long it takes",
@@ -75,7 +75,7 @@
       },
       {
         "h2": "What runs underneath",
-        "texte": "Since version 3.0.0, a search engine written for this rota looks for the plan. It is not taken at its word: every plan is scored again by [Timefold Solver](https://timefold.ai/), and a difference fails the run. The rules' code is open and [documented](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md)."
+        "texte": "Since version 3.0.0, a search engine written for this rota looks for the plan. It is not taken at its word: every plan is scored again by [Timefold Solver](https://timefold.ai/), and a difference fails the run. The rules' code is open and [documented](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/contraintes.md). The software is free: you can [host it yourself](/en/self-hosting/)."
       }
     ],
     "cta": "Want to see it on your own data?",
