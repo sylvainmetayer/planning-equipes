@@ -4,12 +4,13 @@
 // montée (application, PostgreSQL, Mailpit : voir tourner.sh) et dépose du brut :
 //   <OUT>/<langue>/<nom>.png            les neuf écrans, en PNG
 //   <OUT>/<langue>/film-<nom>.webm      les trois parcours, tels que Playwright les filme
+//   <OUT>/exemples/planning-global.pdf, planning-animateur.pdf, planning-animateur-feuille.pdf   les PDF d'exemple, une fois (ONLY=pdf pour eux seuls)
 //   <OUT>/<langue>/film-<nom>.marks     « début fin durée-cible » par ligne : les passages que le montage ramène à cette durée
 // tourner.sh encode ensuite le tout (WebP, MP4, vignettes, affiches).
 //
 // Variables : BASE_URL (http://localhost:8080), MAILPIT_URL (http://localhost:8025),
 // ADMIN_PASSWORD, SCENARIO (chemin du YAML), OUT (dossier du brut), LANGS (« fr,en »),
-// ONLY (« ecrans », « calcul », « jourj », « espace » : un seul morceau, pour le réglage),
+// ONLY (« ecrans », « calcul », « jourj », « espace », « pdf » : un seul morceau, pour le réglage),
 // CHROMIUM (exécutable Chromium, si Playwright n'a pas le sien).
 import { chromium, request } from 'playwright';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -324,14 +325,47 @@ async function filmEspace(page, { etat }) {
   await pause(4000);
 }
 
+/* ---------------------------------- PDF ---------------------------------- */
+
+/** Une animateur mineure du scénario fictif, avec le plus de postes : sa feuille montre les règles des mineurs. */
+async function animatriceDesPdf(etat, plan) {
+  const postes = {};
+  for (const p of plan.postes) if (p.animateur) postes[p.animateur.id] = (postes[p.animateur.id] ?? 0) + 1;
+  const mineure = (a) => a.dateNaissance > '2009-08-10'; // moins de 18 ans au 10 août 2027
+  return etat.animateurs.filter((a) => postes[a.id] && mineure(a)).sort((a, b) => postes[b.id] - postes[a.id])[0];
+}
+
+/** Les PDF que produit l'application, pour la vitrine : le planning global et la feuille d'une personne (livret et feuille). */
+async function pdf(etat) {
+  const dossier = join(OUT, 'exemples');
+  mkdirSync(dossier, { recursive: true });
+  const telecharger = async (reponse, nom) => {
+    if (!reponse.ok()) throw new Error(`${nom} : ${reponse.status()} ${(await reponse.text()).slice(0, 300)}`);
+    writeFileSync(join(dossier, nom), await reponse.body());
+  };
+  await telecharger(await etat.api.get('/api/planning/export/pdf/global', { headers: etat.h }), 'planning-global.pdf');
+  // Le plan enregistré est le corps de la requête, comme le fait l'interface
+  const plan = await (await etat.api.get('/api/planning/persisted', { headers: etat.h })).json();
+  const animatrice = await animatriceDesPdf(etat, plan);
+  const individuel = (format) => `/api/planning/export/pdf/animateur/${animatrice.id}${format ? `?format=${format}` : ''}`;
+  await telecharger(await etat.api.post(individuel(), { headers: etat.h, data: plan }), 'planning-animateur.pdf');
+  await telecharger(await etat.api.post(individuel('feuille'), { headers: etat.h, data: plan }), 'planning-animateur-feuille.pdf');
+}
+
 /* ---------------------------------- main --------------------------------- */
 
 async function main() {
-  const browser = await chromium.launch({
-    ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
-  });
+  // Les PDF n'ont pas besoin de navigateur
+  const browser =
+    ONLY === 'pdf' ? null : await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   try {
+    if (!ONLY || ONLY === 'pdf') {
+      const etat = await preparer();
+      await pdf(etat);
+      await etat.api.dispose();
+    }
     for (const lang of LANGS) {
+      if (ONLY === 'pdf') break;
       console.log(`== ${lang}`);
       // Chaque morceau repart d'un état neuf : une absence, une présence confirmée ou un calcul
       // ne doivent pas se voir dans le film suivant
@@ -349,7 +383,7 @@ async function main() {
       }
     }
   } finally {
-    await browser.close();
+    await browser?.close();
   }
 }
 

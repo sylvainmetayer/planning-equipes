@@ -16,6 +16,7 @@ const fonts = '@fontsource-variable';
 export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy('src/images');
   eleventyConfig.addPassthroughCopy('src/videos');
+  eleventyConfig.addPassthroughCopy('src/exemples');
   eleventyConfig.addPassthroughCopy('src/og-fr.png');
   eleventyConfig.addPassthroughCopy('src/og-en.png');
   eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/_redirects': '_redirects', 'src/favicon.svg': 'favicon.svg' });

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tourne les captures et les vidéos de la vitrine, de bout en bout (site/README.md, « Les captures et les vidéos : le tournage »).
 #
-#   site/scripts/tournage/tourner.sh [dossier]      # par défaut site/src : images/ et videos/ y sont réécrits
+#   site/scripts/tournage/tourner.sh [dossier]      # par défaut site/src : images/, videos/ et exemples/ (les PDF) y sont réécrits
 #   APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:v2.1.0 site/scripts/tournage/tourner.sh
 #
 # Demande docker (et `docker compose`), ffmpeg et ImageMagick avec WebP. Playwright tourne dans son image
@@ -35,6 +35,10 @@ docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$racine:/repo:ro" -v "$brut:/out" \
   "mcr.microsoft.com/playwright:v$playwright-noble" \
   bash -c "mkdir -p /tmp/w && cd /tmp/w && npm init -y >/dev/null && npm install playwright@$playwright --no-audit --no-fund >/dev/null && cp /repo/site/scripts/tournage/tourner.mjs . && node tourner.mjs"
+
+echo "== PDF d'exemple"
+mkdir -p "$sortie/exemples"
+cp "$brut/exemples/planning-global.pdf" "$brut/exemples/planning-animateur.pdf" "$brut/exemples/planning-animateur-feuille.pdf" "$sortie/exemples/"
 
 echo "== Encodage"
 webp=(-quality 80 -define webp:method=6)
