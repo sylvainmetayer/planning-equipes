@@ -10,6 +10,12 @@ import static org.hamcrest.Matchers.nullValue;
 import dev.sylvain.planning.config.DevMode;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -19,6 +25,25 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 class EtatEditionResourceTest {
+
+    @Inject
+    DataSource dataSource;
+
+    /**
+     * A published snapshot survives {@code /api/planning/reset}, and the suite
+     * shares one database: a publication left by an earlier class would read as
+     * « already published » here. Which class ran before depends on how CI splits
+     * the suite, so the precondition is set here rather than inherited.
+     */
+    @BeforeEach
+    void forgetPublications() {
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DELETE FROM plan_snapshot");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to clear the plan snapshots", e);
+        }
+    }
 
     @Test
     void anEmptyEditionAnswersWithEveryLineToDo() {
