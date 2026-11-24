@@ -189,7 +189,7 @@
         </dependency>
         <!-- OpenID Connect login (docs/oidc.md, ADR 0077). Two tenants: the
              default one is a web-app tenant for the admin and animateur browser
-             sessions, the "mcp" one a service tenant validating bearer tokens on
+             sessions, the "mcptransport" one a service tenant validating bearer tokens on
              /mcp. Off by default (OIDC_ENABLED): any OpenID Connect provider, the
              embedded account above staying the local door. -->
         <dependency>

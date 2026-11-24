@@ -143,6 +143,10 @@ cinq minutes, faute de mot de passe à retaper.
 - Brancher un annuaire est une configuration (`docs/oidc.md`) : un client
   déclaré chez le fournisseur, cinq variables, puis nommer les administrateurs
   depuis le compte local et le fermer.
+- Le journal des connexions de l'instance (ADR 0076) ne trace que le compte
+  local : une connexion OIDC y est absente, l'authentification étant celle du
+  fournisseur et la dernière connexion de chaque compte étant déjà conservée
+  par l'application.
 - La suite Java tourne **avec** OIDC, contre un serveur en mémoire, en mode
   `hybrid` (un jeton porteur tient lieu du cookie de session). Le code flow
   lui-même est celui du fournisseur ; aucun n'est embarqué dans les tests.

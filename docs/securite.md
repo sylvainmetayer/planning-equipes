@@ -431,6 +431,12 @@ droite derrière un proxy déclaré). **Ni le mot de passe ni l'identifiant
 saisis** n'y entrent : un identifiant faux est souvent un mot de passe tapé
 dans le mauvais champ.
 
+Ce journal ne couvre **que le compte local** : une connexion par un fournisseur
+OIDC n'y écrit rien (réussite ou échec), le fournisseur gardant la trace de
+l'authentification et l'application celle de la dernière connexion de chaque
+compte (page *Comptes*). L'adresse de la personne et le fournisseur ne sont pas
+rapprochés dans l'instance.
+
 Une tentative refusée en `429` pendant le verrou n'écrit rien : elle n'a essayé
 aucun identifiant, et une ligne par refus livrerait la table à quiconque
 martèle le formulaire. L'écriture quitte la boucle d'événements pour un
