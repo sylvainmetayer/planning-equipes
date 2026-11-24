@@ -9,7 +9,7 @@
 
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { Component, provideZonelessChangeDetection, signal } from '@angular/core';
 import { BRANDING, BRANDING_NEUTRE } from '../core/branding';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
@@ -93,6 +93,9 @@ function stubMachineScheme(prefersDark: boolean) {
   vi.stubGlobal('matchMedia', () => media);
   return media;
 }
+
+@Component({ template: '' })
+class PageVide {}
 
 describe('AdminShell', () => {
   const handset = new Subject<{ matches: boolean }>();
@@ -318,6 +321,43 @@ describe('AdminShell', () => {
       fixture.destroy();
 
       expect(unregisterResult).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('the help button', () => {
+    /** Where the toolbar's « ? » leads once `url` is on screen. */
+    async function helpHref(url: string): Promise<string | null> {
+      const router = TestBed.inject(Router);
+      router.resetConfig([
+        { path: 'stands', component: PageVide, data: { aide: 'donnees' } },
+        {
+          path: 'parametres',
+          component: PageVide,
+          data: { aide: 'configuration-solveur', aideOnglets: { mcp: 'assistant-mcp' } },
+        },
+        { path: 'sans-cle', component: PageVide },
+      ]);
+      const shell = createFixture();
+      await router.navigateByUrl(url);
+      shell.detectChanges();
+      return (
+        (shell.nativeElement as HTMLElement)
+          .querySelector('mat-toolbar a[aria-label="Aide"]')
+          ?.getAttribute('href') ?? null
+      );
+    }
+
+    it('opens the guide at the section of the screen on display', async () => {
+      expect(await helpHref('/stands')).toBe('/aide#donnees');
+    });
+
+    it('prefers the section of the tab on display when the route names one', async () => {
+      expect(await helpHref('/parametres?onglet=mcp')).toBe('/aide#assistant-mcp');
+      expect(await helpHref('/parametres?onglet=edition')).toBe('/aide#configuration-solveur');
+    });
+
+    it('opens the whole guide on a screen that names no section', async () => {
+      expect(await helpHref('/sans-cle')).toBe('/aide');
     });
   });
 

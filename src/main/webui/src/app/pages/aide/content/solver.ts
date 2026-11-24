@@ -495,13 +495,13 @@ export function buildSolverSections(): HelpSection[] {
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.sansForcee.verrou:Garder quelqu'un sur un créneau : placez-le sur le siège depuis la page Planning (« Placer », case « La garder au prochain calcul » cochée), ou verrouillez son siège. Le verrou lie cette personne à ce créneau ; le prochain calcul le respecte et ne touche pas au reste de sa journée.`,
+            $localize`:@@aide.sansForcee.verrou:Garder quelqu'un sur un créneau : placez-le sur le siège depuis la page Planning (« Placer », case « La garder au prochain calcul » cochée), ou verrouillez son siège. Le verrou lie cette personne à ce créneau ; le prochain calcul le respecte, et le reste de sa journée reste libre pour le calcul.`,
             $localize`:@@aide.sansForcee.indisponibilite:Écarter quelqu'un d'un jour : ajoutez ce jour à ses indisponibilités, sur sa fiche (« Indisponible ce jour »). Elle ou il n'est plus proposé ce jour-là, et ses sièges du jour sont libérés dans le même geste.`,
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.sansForcee.quand:Réservez l'ajustement manuel aux exceptions qui doivent survivre à un calcul repartant de zéro : un verrou ne protège que le plan en place.`,
+          text: $localize`:@@aide.sansForcee.quand:Réservez l'ajustement manuel aux exceptions qui doivent valoir même sans plan enregistré (réinitialisation, import, nouvelle édition) : un verrou fige ce que porte le plan enregistré, rien de plus.`,
         },
       ],
       links: [lienVerrouillages(), lienAjustements()],
