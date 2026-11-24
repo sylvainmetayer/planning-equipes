@@ -7,7 +7,7 @@
   "sections": [
     {
       "h2": "Éditeur",
-      "texte": "Ce site est édité par Sylvain MÉTAYER, directeur de la publication. Contact : [planning@sylvain.dev](mailto:planning@sylvain.dev)."
+      "texte": "Ce site est édité par [Sylvain MÉTAYER](https://www.sylvain.dev/), directeur de la publication. Contact : [planning@sylvain.dev](mailto:planning@sylvain.dev)."
     },
     {
       "h2": "Hébergement",
@@ -39,7 +39,7 @@
     "sections": [
       {
         "h2": "Publisher",
-        "texte": "This site is published by Sylvain MÉTAYER, publication director. Contact: [planning@sylvain.dev](mailto:planning@sylvain.dev)."
+        "texte": "This site is published by [Sylvain MÉTAYER](https://www.sylvain.dev/en/), publication director. Contact: [planning@sylvain.dev](mailto:planning@sylvain.dev)."
       },
       {
         "h2": "Hosting",
