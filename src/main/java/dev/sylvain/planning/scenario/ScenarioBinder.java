@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -118,11 +119,19 @@ public final class ScenarioBinder {
      */
     private static void refuseNewerSchema(Object document) {
         Object version = ((Map<?, ?>) document).get("schemaVersion");
-        if (version instanceof Number n && n.intValue() > SCHEMA_VERSION) {
+        if (version == null) {
+            return;
+        }
+        boolean integer = version instanceof Integer || version instanceof Long || version instanceof BigInteger;
+        if (integer && new BigInteger(version.toString()).compareTo(BigInteger.valueOf(SCHEMA_VERSION)) > 0) {
             throw new ScenarioFormatException(
-                    "Ce scénario est au format " + n.intValue()
+                    "Ce scénario est au format " + version
                             + ", plus récent que celui que cette version de l'application lit (" + SCHEMA_VERSION
                             + ") : il a été produit par une version plus récente. Mettez l'application à jour pour l'importer.");
+        }
+        if (!integer || ((Number) version).longValue() != SCHEMA_VERSION) {
+            throw new ScenarioFormatException("« schemaVersion » doit valoir " + SCHEMA_VERSION
+                    + " (ou être absent), et non « " + version + " ».");
         }
     }
 

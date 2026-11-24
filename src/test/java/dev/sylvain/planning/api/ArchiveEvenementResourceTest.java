@@ -114,6 +114,13 @@ class ArchiveEvenementResourceTest {
     }
 
     @Test
+    void theFeuilleFlagAsksForTheSheetLayout() throws IOException {
+        Response response = given().header("X-Edition-Id", "E1").when().get(ARCHIVE + "?individuels=true&feuille=true");
+        response.then().statusCode(200).contentType("application/zip");
+        assertThat(text(unzip(response.asByteArray()).get("LISEZMOI.txt"))).contains("(format feuille)");
+    }
+
+    @Test
     void theArchiveHoldsExactlyTheChosenPartsAndTheManifest() throws IOException {
         Response response = given().header("X-Edition-Id", "E1")
                 .when()
