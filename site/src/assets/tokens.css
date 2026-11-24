@@ -19,8 +19,12 @@
   --radius-card: 14px; --radius-inner: 8px; --radius-pill: 10px; --rule-hair: 1px; --rule-bar: 4px;
   --shadow-card: 0 1px 2px oklch(25% 0.022 60 / 0.07);
   --tracking-display: -0.02em;
-  --form-height: 1480px; --form-height-narrow: 1560px;
+  --color-sheet: #fefaf3; --color-sheet-rule: oklch(84% 0.026 76); /* the contact form stays paper in dark mode: never overridden below */
+  --form-height: 1040px; --form-height-narrow: 1100px; /* tallest step of the form (the second page) plus a margin, used without script */
 }
+
+/* A forced light theme (the switch) */
+:root[data-theme="light"] { color-scheme: light; }
 
 /* Dark: the same rulebook read at night, derived, never inverted */
 @media (prefers-color-scheme: dark) {

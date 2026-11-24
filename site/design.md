@@ -31,6 +31,12 @@ Each player colour has a `-wash` companion for a light tint. Both faces are self
 - Cards have rounded corners, a hairline border, a 4px stripe in their player colour on top and the faintest shadow. No thick borders, no hard drop shadows.
 - Captures are the application's own, never retouched. Every capture opens full screen in the native `<dialog>` of `/assets/popin.js` (Escape, a click outside or the close button closes it; arrows move within a group; focus returns to the thumbnail). Without script the link opens the image. Films are not enlarged.
 
+## Contact sheet
+The contact form sits on a paper card (`--color-sheet`, `--color-sheet-rule`) that stays light in dark mode: the two tokens are defined once and never overridden. The Tally form is styled to match it.
+
+## Theme switch
+One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `<html>`, none for auto); hidden until `theme.js` runs.
+
 ## Controls
 - Primary: ink fill, paper text · 10px radius · 48px
 - Secondary: transparent, hairline ink border · same radius and height

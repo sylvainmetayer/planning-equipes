@@ -77,8 +77,8 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
   seule exception est le beacon Cloudflare Web Analytics, sans cookie ni
   identifiant persistant, que la CSP de `src/_headers` est seule à autoriser ;
   le pied de page le dit. La page `/contact/` encadre son formulaire Tally dans une `<iframe>` simple (`frame-src https://tally.so`, aucun script Tally), et `/mentions-legales/` le dit. L'application, elle, n'en a pas et n'en aura pas.
-  Le seul JavaScript de la page, `src/assets/popin.js`, ouvre les captures en
-  grand dans un `<dialog>` ; sans lui, chaque lien ouvre l'image : tout se lit
+  Le JavaScript de la page tient en trois petits fichiers de la même origine : `src/assets/popin.js` ouvre les captures en
+  grand dans un `<dialog>`, `theme.js` porte le bouton Auto / Clair / Sombre (choix gardé dans `localStorage`, posé en `data-theme` avant le premier affichage), `contact.js` ajuste la hauteur du formulaire Tally à celle qu'il annonce (protocole iframe-resizer, origine vérifiée) ; sans lui, chaque lien ouvre l'image : tout se lit
   sans.
 - **Aucune capture qui ne soit pas fictive.** Les captures et les vidéos
   viennent de données inventées (le scénario `vitrine-fete-du-jeu-de-pierrefeuille.yaml`),

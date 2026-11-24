@@ -59,6 +59,12 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 .top__nav a, .top__lang { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-sm); font-weight: 600; text-decoration: none; }
 .top__nav a:hover, .top__lang:hover, .top__nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; }
 .mark { font: 700 var(--text-xl)/1 var(--font-display); letter-spacing: var(--tracking-display); text-decoration: none; white-space: nowrap; }
+.theme { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: var(--rule-hair) solid transparent; border-radius: var(--radius-pill); background: transparent; color: var(--color-ink); cursor: pointer; }
+.theme[hidden] { display: none; }
+.theme:hover { background: var(--color-paper-2); }
+.theme:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.theme__i { display: none; }
+.theme[data-state="auto"] .theme__i--auto, .theme[data-state="clair"] .theme__i--clair, .theme[data-state="sombre"] .theme__i--sombre { display: block; }
 .top__acts { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-lg); }
 
 /* Cover: the head, the capture, and the rule card laid on its corner */
@@ -164,7 +170,8 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 
 /* Contact page: the Tally form in a plain iframe, its fallbacks under it */
 .form { display: grid; gap: var(--space-md); padding-block: 0 var(--section-gap-s); }
-.form__frame { width: 100%; height: var(--form-height-narrow); border: 0; }
+.form__sheet { padding: var(--space-lg); border: var(--rule-hair) solid var(--color-sheet-rule); border-radius: var(--radius-card); background: var(--color-sheet); box-shadow: var(--shadow-card); }
+.form__frame { display: block; width: 100%; height: var(--form-height-narrow); border: 0; }
 .form__alt { max-width: 60ch; color: var(--color-ink-2); }
 @media (min-width: 48rem) { .form__frame { height: var(--form-height); } }
 
@@ -237,11 +244,12 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 @media (max-width: 40rem) {
   .cards, .tiles, .turns { grid-template-columns: minmax(0, 1fr); }
   .rows tbody th, .rows--law td:nth-child(2) { white-space: normal; }
-  .top__acts { gap: var(--space-sm); }
+  .top__in { grid-template-columns: minmax(0, 1fr); grid-template-areas: "mark" "acts" "nav"; gap: var(--space-xs); }
+  .top__acts { gap: var(--space-sm); justify-content: flex-start; }
   .popin__nav { top: auto; bottom: var(--space-md); margin-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn, .popin__nav, a, .shot, .card__pic { transition: none; }
+  .btn, .theme, .popin__nav, a, .shot, .card__pic { transition: none; }
   .btn:active { transform: none; }
   .popin[open] .popin__fig { animation: none; }
 }

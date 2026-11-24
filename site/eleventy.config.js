@@ -19,7 +19,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy('src/og-fr.png');
   eleventyConfig.addPassthroughCopy('src/og-en.png');
   eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/_redirects': '_redirects', 'src/favicon.svg': 'favicon.svg' });
-  eleventyConfig.addPassthroughCopy({ 'src/assets/external.svg': 'assets/external.svg', 'src/assets/popin.js': 'assets/popin.js' });
+  eleventyConfig.addPassthroughCopy({ 'src/assets/external.svg': 'assets/external.svg', 'src/assets/popin.js': 'assets/popin.js', 'src/assets/theme.js': 'assets/theme.js', 'src/assets/contact.js': 'assets/contact.js' });
   eleventyConfig.addPassthroughCopy({
     [`node_modules/${fonts}/rethink-sans/files/rethink-sans-latin-wght-normal.woff2`]: 'assets/fonts/rethink-sans.woff2',
     [`node_modules/${fonts}/figtree/files/figtree-latin-wght-normal.woff2`]: 'assets/fonts/figtree.woff2',

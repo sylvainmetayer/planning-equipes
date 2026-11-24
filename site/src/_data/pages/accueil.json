@@ -4,7 +4,7 @@
   "ogTitre": "Planning Équipes : planifiez en minutes, pas en week-ends",
   "h1": "Planifiez en minutes, pas en week-ends.",
   "lede": "Animateurs, bénévoles et mineurs placés sur vos stands, Code du travail compris.",
-  "cta": "Demander un devis",
+  "cta": "Parlons-en",
   "cta2": "Voir les écrans",
   "heroAlt": "Planning par jour de l'application : chaque stand, chaque créneau et les personnes affectées.",
   "heroLegende": "Une journée de la Fête du jeu de Pierrefeuille, festival fictif.",
@@ -204,7 +204,7 @@
   },
   "ensemble": {
     "h2": "Pour commencer une partie",
-    "prix": "Dites-nous combien de personnes et combien de jours. Le tarif dépend de la taille de l'événement : on vous envoie un chiffre.",
+    "prix": "Dites-nous combien de personnes et combien de jours. Le tarif dépend de la taille de l'événement : on en parle, puis on vous envoie un chiffre.",
     "etapes": [
       {
         "titre": "On regarde vos données",
@@ -238,7 +238,7 @@
     "ogTitre": "Planning Équipes: schedule in minutes, not weekends",
     "h1": "Schedule in minutes, not weekends.",
     "lede": "Staff, volunteers and under-18s on your stands, French Labour Code included.",
-    "cta": "Ask for a quote",
+    "cta": "Let's talk",
     "cta2": "See the screens",
     "heroAlt": "The schedule by day in the application: every stand, every time slot and the people assigned.",
     "heroLegende": "One day of the Fête du jeu de Pierrefeuille, a fictional festival.",
@@ -438,7 +438,7 @@
     },
     "ensemble": {
       "h2": "To start a game",
-      "prix": "Tell us how many people and how many days. The price depends on the size of the event: we send you a figure.",
+      "prix": "Tell us how many people and how many days. The price depends on the size of the event: we talk it through, then send you a figure.",
       "etapes": [
         {
           "titre": "We look at your data",
