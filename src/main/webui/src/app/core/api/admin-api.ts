@@ -87,6 +87,9 @@ export class AdminApi {
     return this.api.getPreservingHttpError<StatutSession>('/api/auth/me');
   }
 
+  /** The route that hands the browser over to the identity provider; a navigation, not a call. */
+  readonly providerSignInUrl = '/api/auth/oidc/login';
+
   /** Drops the local cookie; the answer names the provider's logout route, if any. */
   logout(): Promise<Deconnexion> {
     return this.api.post<Deconnexion>('/api/auth/logout', null);
