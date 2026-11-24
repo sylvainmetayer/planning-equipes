@@ -187,8 +187,9 @@ CSV, comparaison entre éditions. Aucune règle du solveur ne le lit et le
 problème ne l'écarte pas : un animateur marqué manager est planifié comme les
 autres, et compte dans les plafonds de durée, légaux compris. Il ne dispense
 d'aucune règle et n'en déclenche aucune ; l'encadrement par des managers hors
-planning est un fait d'organisation, que `mineurNecessiteEncadrementMajeur`
-suppose sans le vérifier.
+planning est un fait d'organisation : c'est pourquoi
+`mineurNecessiteEncadrementMajeur` est éteinte par défaut ; allumée, elle exige
+un majeur planifié sur le même stand et le même créneau, manager ou non.
 
 Un créneau à cheval sur deux fenêtres d'effectifs différents produit **deux
 groupes de sièges**, chacun portant la [fenêtre effective](#fenêtre-effective)

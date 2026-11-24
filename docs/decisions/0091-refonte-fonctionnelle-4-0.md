@@ -39,10 +39,11 @@ référence qui l'implémentent, et ils renvoient ici.
    quand une seule, paramétrée, dit la même chose (plafonds par âge, jours
    d'affilée, lieu, repas).
 5. **Deux moteurs gardés, Timefold arbitre.** Le moteur direct reste le
-   défaut et Timefold le moteur de repli choisi par l'instance ; Timefold
-   continue de re-scorer chaque plan, et un écart fait échouer la résolution
-   sans repli. Aucune décision ne retire Timefold. Le calcul déporté garde son
-   worker et son contrat.
+   défaut et Timefold reste le moteur qu'une instance peut choisir à la place
+   (`SOLVER_ENGINE=timefold`) ; Timefold continue de re-scorer chaque plan, et
+   un écart fait échouer la résolution sans repli. Aucune décision ne retire
+   Timefold. Le calcul déporté garde son worker et son contrat ; le lanceur de
+   machine à la demande est retiré.
 6. **Une version du plan, de trois origines** (manuelle, avant calcul,
    publiée), comparables entre elles. Il n'existe pas de « plan alternatif »
    comme concept : travailler une variante, c'est dupliquer une édition.
@@ -54,9 +55,9 @@ référence qui l'implémentent, et ils renvoient ici.
    question, les variantes en onglets de l'écran. Les réglages d'expert restent
    repliés (voir 0090).
 9. **Les ruptures sont annoncées, jamais silencieuses.** Les noms changés
-   (variables, règles, outils MCP, format YAML) gardent un alias pendant toute
-   la 4.x et un avertissement ; le lecteur du format YAML accepte l'ancien
-   format. Un numéro de version de format explicite refuse un fichier plus
+   de variables et de règles gardent un alias et un avertissement pendant
+   toute la 4.x ; les outils MCP renommés sont listés ancien → nouveau dans
+   `docs/mcp.md`, sans alias ; le lecteur YAML convertit l'ancien format. Un numéro de version de format explicite refuse un fichier plus
    récent que le produit.
 
 ## Conséquences
