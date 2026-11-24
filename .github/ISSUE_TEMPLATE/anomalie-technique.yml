@@ -11,7 +11,7 @@ body:
         > Désignez les personnes par leur **identifiant** et anonymisez vos
         > captures. Les données nominatives passent par e-mail : planning@sylvain.dev.
         >
-        > Un résultat de planification *faux* (score, contrainte violée, effectif)
+        > Un résultat de planification *faux* (score, écart à une règle, effectif)
         > relève plutôt du gabarit **Erreur métier**.
         >
         > Une **faille de sécurité** ne se signale pas ici : voir `SECURITY.md`.

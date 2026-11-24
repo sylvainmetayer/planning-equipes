@@ -3,7 +3,7 @@
 # légale — un trou plus court compterait comme travaillé et allongerait la
 # séquence — et avec au moins 11 h entre la SOIREE d'un jour et le MATIN du
 # lendemain (reposQuotidienMinimal, art. L3131-1) : sinon un animateur
-# enchaînant deux créneaux du même jour ou consécutifs viole systématiquement
+# enchaînant deux créneaux du même jour ou consécutifs contrevient systématiquement à
 # l'une de ces contraintes dures, ce qui a fait exploser le temps de résolution
 # (voir PlanningServiceScenarioCompletTest).
 festival:

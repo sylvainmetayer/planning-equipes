@@ -1,6 +1,6 @@
 Édition : {edition}
 Score : {#if score}{score}{#else}non mesuré{/if}
-Faisabilité : {#if faisable}aucune contrainte dure violée{#else}au moins une contrainte dure reste violée — le planning n'est pas utilisable en l'état{/if}
+Faisabilité : {#if faisable}toutes les règles impératives sont tenues{#else}au moins une règle impérative n'est pas tenue — le planning n'est pas utilisable en l'état{/if}
 {#if lien}
 
 Détail des contraintes en défaut : {lien}

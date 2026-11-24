@@ -344,7 +344,7 @@ un assistant : mesuré sur une édition réelle (3 499 postes, 600 s), un solve
 à froid a fini **1 202 points de medium sous** le plan déjà en base, quand le
 réamorçage l'a conservé et amélioré de ~3 %. Le départ à froid est le cas qui
 détruit l'acquis, il se demande. Un siège dont le titulaire a disparu, ou qui
-s'est déclaré indisponible depuis, repart vide — semer une violation que le
+s'est déclaré indisponible depuis, repart vide — semer un écart que le
 solveur devrait d'abord défaire est un moins bon départ qu'un trou. Un plan
 de départ infaisable n'achète aucun raccourci : la terminaison sur
 faisabilité ne se déclenche pas, le budget est consommé en entier.
@@ -491,7 +491,7 @@ pixels. **Deux bornes, toutes deux côté serveur** :
 Un solve de 15 min et un de 4 h coûtent donc la même mémoire et le même volume
 sur le fil, et la courbe garde sa forme. Les annonces portant une solution
 **non encore initialisée** sont ignorées : leur score décrit une affectation
-partielle — un planning aux trois quarts vide ne viole presque rien — et les
+partielle — un planning aux trois quarts vide n'a presque aucun écart — et les
 tracer dessinerait une falaise au moment précis où le plan devient complet.
 
 Les événements `score` sont des **deltas**, seuls voyagent les points que cette
@@ -1638,7 +1638,7 @@ règles du banc ne portent pas.
 `ANIMATEUR_CRENEAU` sur la personne libérée et ce créneau, le mécanisme même
 d'un échange accepté pour tenir à l'écart celui qu'il libère
 (`animateurVerrouilleCreneauFige` : rien de la personne n'est épinglé sur ce
-créneau, donc tout nouveau siège qu'elle y recevrait est une violation). Sans
+créneau, donc tout nouveau siège qu'elle y recevrait fait un écart). Sans
 lui, « Corriger le reste » remplissait le trou avec la personne qu'on venait
 d'en retirer.
 

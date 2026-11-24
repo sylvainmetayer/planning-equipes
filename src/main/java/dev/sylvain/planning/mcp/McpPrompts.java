@@ -126,17 +126,17 @@ public class McpPrompts {
 
     @Prompt(
             name = "diagnostiquer_contraintes_dures",
-            description = "Diagnostiquer les contraintes dures encore violées après une résolution, et dire "
+            description = "Diagnostiquer les contraintes dures encore non tenues après une résolution, et dire "
                     + "quoi corriger dans les données de référence.")
     PromptMessage diagnoseHardContraintes(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
-                Le dernier planning résolu%s contient des violations de contraintes dures.
+                Le dernier planning résolu%s contient des écarts aux contraintes dures.
 
                 %s
 
                 1. Appelle etat_planning pour savoir si le planning affiché est encore à jour.
                 2. Appelle diagnostiquer_plan pour recalculer le score du plan persisté, puis \
-                expliquer_echec_contraintes_dures pour le détail des violations.
+                expliquer_echec_contraintes_dures pour le détail des écarts.
                 3. Pour chaque contrainte HARD en défaut, identifie les postes touchés avec \
                 lister_affectations puis expliquer_affectation, et donne la cause racine probable \
                 (compétences manquantes sur la typologie, indisponibilité, effectif insuffisant sur la \
@@ -203,7 +203,7 @@ public class McpPrompts {
                 relancer — sinon la résolution la défera.
                 3. lancer_solveur, puis statut_solveur jusqu'à la fin du job.
                 4. comparer_instantanes entre l'instantané capturé et « courant ».
-                5. Dis-moi ce qui a changé : score, postes pourvus, violations par contrainte. Si le \
+                5. Dis-moi ce qui a changé : score, postes pourvus, écarts par contrainte. Si le \
                 résultat est moins bon, propose restaurer_instantane — mais ne le fais pas sans mon \
                 accord. Si la pause sur le poste est déclarée (consulter_parametres_legaux), appelle \
                 analyser_pauses avec sansRelaisSeulement : chaque pause sans relais est un relais à \
@@ -359,8 +359,8 @@ public class McpPrompts {
                 est déjà à jour — il n'y a rien à faire.
                 2. Si une résolution tourne, ou si le plan à publier est vide, la publication sera \
                 refusée : dis-le-moi plutôt que de réessayer.
-                3. diagnostiquer_plan avant d'envoyer : publier un planning qui viole encore des \
-                contraintes dures, c'est faire lire à quelqu'un un horaire qu'on va lui reprendre.
+                3. diagnostiquer_plan avant d'envoyer : publier un planning qui a encore des écarts aux \
+                règles impératives, c'est faire lire à quelqu'un un horaire qu'on va lui reprendre.
                 4. lister_validations_journee : quelles journées n'ont été relues par personne ? Ce \
                 n'est pas bloquant, mais dis-le-moi. Pour les journées qui bougent le plus, \
                 changements_journee avec reference=publication montre, siège par siège, ce que la \
@@ -781,7 +781,7 @@ public class McpPrompts {
                 vides, les absences et les remplacements, et les minutes perdues. Une journée \
                 commencée avant toute publication est montrée mais exclue des totaux : dis-le si c'est \
                 le cas.
-                2. lister_kpi_historique : score, couverture des postes, heures et violations par \
+                2. lister_kpi_historique : score, couverture des postes, heures et écarts par \
                 contrainte, résolution par résolution et toutes éditions confondues — compare la \
                 dernière résolution de cette édition à celle de l'édition précédente.
                 3. consulter_historique_ponderation : quels réglages ont changé en cours de route, et \

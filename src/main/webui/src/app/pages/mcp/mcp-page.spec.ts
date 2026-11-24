@@ -21,8 +21,8 @@ const PROMPTS: PromptMcp[] = [
   },
   {
     nom: 'diagnostiquer_contraintes_dures',
-    description: 'Diagnostiquer les contraintes dures encore violées.',
-    texte: 'Le dernier planning résolu contient des violations de contraintes dures.',
+    description: 'Diagnostiquer les contraintes dures encore non tenues.',
+    texte: 'Le dernier planning résolu contient des écarts aux contraintes dures.',
   },
 ];
 
@@ -76,7 +76,7 @@ describe('McpPage', () => {
       'Poser une grille de créneaux récurrents.',
     );
     expect(blocs[1].querySelector('.mcp-prompt')?.textContent).toContain(
-      'violations de contraintes dures',
+      'écarts aux contraintes dures',
     );
   });
 

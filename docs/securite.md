@@ -55,7 +55,7 @@ l'extraction n'a pas retenu disparaît — une police d'icônes, par exemple.
 `inlineCritical` est donc **désactivé**, et `scripts/check-csp-index.js` échoue
 le build si l'`index.html` produit contient le moindre gestionnaire inline. Ni
 le build (le HTML est valide) ni les tests (ils ne chargent jamais
-`index.html`) ne peuvent voir le problème : une violation de CSP n'apparaît que
+`index.html`) ne peuvent voir le problème : un manquement à la CSP n'apparaît que
 dans un vrai navigateur. Elle est donc vérifiée sur l'artefact.
 
 Trois exceptions volontaires :
