@@ -227,12 +227,12 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     expect(await siegesPasses()).toEqual(passeAttendu);
 
     // 5. On the Monday's day view, handing a seat to someone else is refused
-    //    with the rule's sentence, and the plan does not move. The move handle
-    //    exists because the e2e stack turns GLISSER_DEPOSER_ACTIF on.
+    //    with the rule's sentence, and the plan does not move. The move goes
+    //    through the Siège panel: a click on the holder's name, then « Déplacer vers… ».
     const lundi = (await sieges()).filter((siege) => siege.creneau?.date === J1 && siege.animateur);
     expect(lundi.length, 'Monday seats somebody').toBeGreaterThan(0);
     const titulaireId = lundi[0].animateur!.id;
-    // The dialog offers every line of the day but the handle's own: the
+    // The dialog offers every line of the day but the seat's own: the
     // replacement must hold a seat on a line none of the holder's seats is on,
     // or a two-person stand would leave the search with nothing to find.
     const ligne = (siege: Siege) => `${siege.stand?.id}@${siege.creneau?.heureDebut}`;
@@ -248,11 +248,11 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     const remplacant = noms.get(autre!.animateur!.id)!;
 
     await page.goto(`/journee?vue=calendrier&date=${J1}`);
-    const poignee = page
-      .getByRole('button', { name: new RegExp(`^Déplacer ${titulaire}`) })
-      .first();
-    await poignee.focus();
-    await page.keyboard.press('Enter');
+    await page.locator(`button.affectation-link[data-siege-cle="${lundi[0].id}"]`).click();
+    await page
+      .getByRole('complementary', { name: /Siège/ })
+      .getByRole('button', { name: 'Déplacer vers…' })
+      .click();
     const dialogue = page.getByRole('dialog', { name: `Déplacer ${titulaire}` });
     await expect(dialogue.getByRole('combobox')).toBeFocused();
     await page.keyboard.type(remplacant);

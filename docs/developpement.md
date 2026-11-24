@@ -253,10 +253,9 @@ coûte peu à l'écriture, les rattraper coûte cher.
   demander si elle est utile : les pages légales s'ouvrent depuis l'espace dans
   le même onglet, « Retour » y ramène.
 - **Déplacer une affectation n'a pas de geste à la souris : tout passe par
-  le dialogue.** `shared/deplacement-dialog.ts` (« Déplacer … vers ») est
-  ouvert par la poignée de la vue calendrier, par Entrée sur la ligne du rail
-  et par « Déplacer vers… » du panneau du siège ; le glisser-déposer a été
-  retiré, et tout geste pointeur qu'on ajouterait ailleurs doit avoir un jumeau
+  le panneau Siège.** `shared/deplacement-dialog.ts` (« Déplacer … vers ») n'est
+  ouvert que par « Déplacer vers… » du panneau du siège ; le glisser-déposer a
+  été retiré, et tout geste pointeur qu'on ajouterait ailleurs doit avoir un jumeau
   clavier (WCAG 2.5.7). Une cellule qui ouvre un détail est un arrêt clavier (le
   tableau croisé des contraintes : tabindex itinérant, Entrée), jamais un
   `(click)` sur un `<td>` seul.

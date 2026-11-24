@@ -1,11 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  BRANDING_NEUTRE,
-  accentForBothSchemes,
-  appliquerBranding,
-  loadBranding,
-  slugMarque,
-} from './branding';
+import { BRANDING_NEUTRE, accentForBothSchemes, appliquerBranding, loadBranding } from './branding';
 import { DARK_SURFACE, LIGHT_SURFACE, hexToOklch, oklchContrast } from './testing/contrast';
 
 /** What `core/branding.ts` must produce for `#8b1e3f`: one clamped half per scheme. */
@@ -215,16 +209,6 @@ describe('branding', () => {
       vi.stubGlobal('CSS', undefined);
 
       expect(accentForBothSchemes('#8b1e3f')).toBe('#8b1e3f');
-    });
-  });
-
-  describe('slugMarque', () => {
-    it('déplie les accents et les espaces', () => {
-      expect(slugMarque('Planning Équipes')).toBe('planning-equipes');
-    });
-
-    it('retombe sur planning quand il ne reste rien', () => {
-      expect(slugMarque('!!!')).toBe('planning');
     });
   });
 });

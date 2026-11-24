@@ -64,7 +64,8 @@ public class ScenarioMcpTools {
 
     @Tool(
             name = "lister_scenarios",
-            description = "Liste les scénarios livrés avec l'application, importables par leur nom.",
+            description = "Liste les scénarios d'exemple livrés avec l'application, importables par leur nom"
+                    + " (les fichiers gamme-* et extreme-* sont livrés et importables par leur nom, mais non listés).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,

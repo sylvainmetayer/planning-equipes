@@ -824,9 +824,8 @@ describe('JourneePage', () => {
 
     const comparaison = racine().querySelector('app-comparaison-vue');
     expect(comparaison).not.toBeNull();
-    // No calendar, hence no drag handle nor drop target, while two days are on screen.
+    // No calendar while two days are on screen.
     expect(racine().querySelector('app-calendar-day-vue')).toBeNull();
-    expect(racine().querySelector('[cdkdrag], .affectation-poignee')).toBeNull();
     // A reading covers one whole day, never a pair.
     expect(racine().querySelector('app-relecture-barre')).toBeNull();
     // Tir is open on the first day only: a line on both sides, closed on the second.

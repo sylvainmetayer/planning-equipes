@@ -1,12 +1,8 @@
-// The keyboard — and single-pointer — twin of the drag-and-drop of the day
-// views (RGAA 7.3, WCAG 2.1.1 and 2.5.7).
-//
-// `@angular/cdk/drag-drop` listens to pointer events only: moving somebody
-// from one seat to another had no way in from a keyboard, nor for a person who
-// can click but cannot hold a button down while moving. This dialog asks the
-// same question the drop answers — « where to? » — and hands the answer back
-// to the view, which calls the very method its drop calls. Nothing about the
-// move itself lives here.
+// The move dialog of the Siège panel (« Déplacer vers… »): a searchable list of
+// the seats a person could go to or swap with, keyboard-reachable
+// (RGAA 7.3, WCAG 2.1.1 and 2.5.7). It only asks the question — « where
+// to? » — and hands the answer back to the panel, which calls the service.
+// Nothing about the move itself lives here.
 
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';

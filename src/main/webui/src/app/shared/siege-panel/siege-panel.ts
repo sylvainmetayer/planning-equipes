@@ -316,9 +316,8 @@ export class SeatPanel {
   }
 
   /**
-   * « Déplacer vers » : the move dialog of the day views, offered whether or
-   * not the instance switched the drag and drop on — that flag governs the
-   * pointer gesture only.
+   * « Déplacer vers » : the move dialog, the only way in to a manual move from
+   * the day views.
    */
   protected async move(): Promise<void> {
     const seat = this.seat();

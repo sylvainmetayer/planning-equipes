@@ -1560,9 +1560,8 @@ une règle dure. L'endpoint reste ouvert à l'API et à l'outil MCP
 
 ### Déplacer une affectation à la main
 
-Le déplacement se fait par le dialogue « Déplacer … vers » — « Déplacer vers… »
-du panneau du siège, Entrée sur une ligne du rail —, par l'API et par les
-outils MCP `simuler_deplacement` / `deplacer_affectation`. Il n'y a plus de
+Le déplacement se fait par « Déplacer vers… » du panneau du siège, par l'API et
+par les outils MCP `simuler_deplacement` / `deplacer_affectation`. Il n'y a plus de
 glisser-déposer à la souris.
 
 | Endpoint | Effet |

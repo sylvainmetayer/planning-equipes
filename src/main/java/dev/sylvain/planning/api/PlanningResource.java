@@ -79,7 +79,8 @@ public class PlanningResource {
      * Fichiers screen can offer them as examples. Adding a file to that
      * folder makes it appear here with no code change — which is why the folder
      * is flat and unique: a name carrying a path component is refused by
-     * {@code ScenarioYamlReader.scenarioPath}.
+     * {@code ScenarioYamlReader.scenarioPath}. The {@code gamme-*} and
+     * {@code extreme-*} files are shipped and loadable by name but not listed.
      */
     @GET
     @Path("/planning/scenarios")
