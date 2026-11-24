@@ -14,6 +14,13 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
+import {
+  MatButtonToggle,
+  MatButtonToggleChange,
+  MatButtonToggleGroup,
+} from '@angular/material/button-toggle';
+import { By } from '@angular/platform-browser';
+import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
@@ -304,6 +311,27 @@ describe('CreneauxPage', () => {
     expect(element.querySelector('app-empty-state')).toBeNull();
     expect(element.textContent).toContain('Aucune ligne ne correspond au filtre.');
     await TestBed.inject(Router).navigateByUrl('/');
+  });
+
+  it('leaves freely while the opening grid holds no unsaved cell', async () => {
+    expect(await createPage().canLeave()).toBe(true);
+  });
+
+  it('writes the tab chosen on the toggle to the address', async () => {
+    const replaceState = vi.spyOn(TestBed.inject(Location), 'replaceState');
+    seedStore(referenceData, 'creneaux', []);
+    const fixture = TestBed.createComponent(CreneauxPage);
+    fixture.detectChanges();
+    const toggle = fixture.debugElement
+      .queryAll(By.directive(MatButtonToggle))
+      .find((each) => each.componentInstance.value === 'horaires')!;
+
+    await fixture.componentInstance['changerOnglet'](
+      new MatButtonToggleChange(toggle.componentInstance, 'horaires'),
+    );
+
+    expect(replaceState).toHaveBeenCalledWith(expect.stringContaining('onglet=horaires'));
+    expect(fixture.componentInstance['ongletsPage'].onglet()).toBe('horaires');
   });
 
   it('opens no series under a timeslots freeze: a series writes timeslots', () => {

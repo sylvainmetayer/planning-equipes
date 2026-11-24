@@ -49,7 +49,9 @@ function redirectTarget(
   queryParams: Record<string, string>,
   fragment: string | null = null,
 ): string {
-  const route = allRoutes(routes).find((candidate) => candidate.path === path);
+  const route = allRoutes(routes).find(
+    (candidate) => candidate.path === path && candidate.redirectTo,
+  );
   const redirectTo = route?.redirectTo as RedirectFunction;
   return redirectTo(snapshotOf(queryParams, fragment)) as string;
 }
@@ -528,5 +530,42 @@ describe('app.routes', () => {
       expect(garde({ onglet: 'instance' })).toBe(true);
       expect(garde({})).toBe(true);
     });
+  });
+});
+
+interface Leavable {
+  canLeave(): Promise<boolean>;
+}
+
+describe('the screens that became tabs', () => {
+  it('keeps the covoiturage tab of Disponibilités, and opens its main tab otherwise', () => {
+    expect(redirectTarget('disponibilites', { onglet: 'covoiturage' })).toBe(
+      '/animateurs?onglet=covoiturage',
+    );
+    expect(redirectTarget('disponibilites', { onglet: 'autre' })).toBe(
+      '/animateurs?onglet=disponibilites',
+    );
+  });
+
+  it('keeps the connexions tab of the journal, and opens its main tab otherwise', () => {
+    expect(redirectTarget('historique', { onglet: 'connexions' })).toBe(
+      '/parametres?onglet=connexions',
+    );
+    expect(redirectTarget('historique', {})).toBe('/parametres?onglet=historique');
+  });
+
+  // A hosted tab's unsaved cells must not leave silently with the route.
+  it.each([
+    ['animateurs', true],
+    ['animateurs', false],
+    ['creneaux', true],
+    ['creneaux', false],
+  ])('asks the %s page whether it can be left (%s)', async (path, answer) => {
+    const guard = allRoutes(routes).find((route) => route.path === path)?.canDeactivate?.[0];
+    const page: Leavable = { canLeave: () => Promise.resolve(answer) };
+    const result = TestBed.runInInjectionContext(() =>
+      (guard as (page: Leavable) => Promise<boolean>)(page),
+    );
+    expect(await result).toBe(answer);
   });
 });

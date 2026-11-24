@@ -273,6 +273,18 @@ describe('ReglesPage', () => {
     expect(constraintsApi['setWeight']).toHaveBeenCalledExactlyOnceWith('equilibrerCharge', 25);
   });
 
+  it('relaunches by correction after consignes alone, by a full solve once anything else moved', async () => {
+    await rendre();
+
+    expect(page()['relance']()).toBeNull();
+    page()['onConsigneChanged']('consignes');
+    expect(page()['relance']()).toBe('correction');
+    page()['onConsigneChanged']('ajustements');
+    expect(page()['relance']()).toBe('calcul');
+    page()['onConsigneChanged']('consignes');
+    expect(page()['relance']()).toBe('calcul');
+  });
+
   it('opens the panel of the rule the address names, on that rule’s tab', async () => {
     await rendre({ regle: 'equilibrerCharge' });
 

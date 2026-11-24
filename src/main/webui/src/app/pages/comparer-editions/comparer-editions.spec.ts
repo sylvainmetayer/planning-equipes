@@ -76,6 +76,7 @@ describe('comparer-editions', () => {
   it('leads a stand and an animateur to their fiche, the other families to their screen', () => {
     expect(ficheUrl('STAND', 'S1')).toBe('/stands/S1');
     expect(ficheUrl('ANIMATEUR', 'A151')).toBe('/animateurs/A151');
+    expect(ficheUrl('TYPOLOGIE', 'T1')).toBe('/stands?onglet=typologies');
     expect(ficheUrl('EMPLACEMENT', 'L1')).toBe('/stands?onglet=lieux');
     expect(ficheUrl('STAND', null)).toBeNull();
   });
