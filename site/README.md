@@ -19,7 +19,7 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 | `src/_headers`, `wrangler.toml` | les en-têtes HTTP (CSP, HSTS…) et la configuration Cloudflare Pages (`pages_build_output_dir = "_site"`) |
 | `scripts/tournage/` | **le tournage des captures et des vidéos**, en une commande (voir plus bas) |
 | `scripts/og.html` | la source des images de partage `src/og-fr.png` et `src/og-en.png` |
-| `.pages.yml` | la configuration de Pages CMS |
+| `../.pages.yml` | la configuration de Pages CMS, à la racine du dépôt : c'est là, et là seulement, qu'il la cherche |
 | `test/` | les tests : `npm test` construit le site puis les joue |
 
 ## Travailler dessus
