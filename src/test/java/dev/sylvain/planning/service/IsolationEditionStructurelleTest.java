@@ -71,6 +71,8 @@ class IsolationEditionStructurelleTest {
      * failure rather than a silent hole.
      */
     private static final List<String> TABLES_METIER = List.of(
+            "espace_session",
+            "espace_acces",
             "stand",
             "animateur",
             "creneau",

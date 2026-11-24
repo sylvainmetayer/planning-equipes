@@ -133,7 +133,7 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
      * no {@code admin}.
      */
     private boolean formSessionClosed(SecurityIdentity identity) {
-        return !secours.enabled() && identity.hasRole("admin");
+        return !secours.enabled() && identity.hasRole(ROLE_ADMIN);
     }
 
     /** The same principal, credentials and attributes — with exactly {@code roles}. */

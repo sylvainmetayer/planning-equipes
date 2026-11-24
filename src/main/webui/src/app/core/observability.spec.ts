@@ -53,8 +53,8 @@ describe('loadAppConfig', () => {
       dragDropEnabled: false,
       version: '',
       mailMock: false,
-      authOidc: true,
-      authSecours: false,
+      authOidc: false,
+      authSecours: true,
     });
   });
 
@@ -68,8 +68,8 @@ describe('loadAppConfig', () => {
       dragDropEnabled: false,
       version: '',
       mailMock: false,
-      authOidc: true,
-      authSecours: false,
+      authOidc: false,
+      authSecours: true,
     });
   });
 });
