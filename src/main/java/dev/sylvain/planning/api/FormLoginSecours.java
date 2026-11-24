@@ -59,6 +59,9 @@ public class FormLoginSecours {
     @Inject
     CompteService comptes;
 
+    @Inject
+    AdminLoginLimiter limiter;
+
     public void register(@Observes Filters filtres) {
         filtres.register(this::apply, PRIORITE);
     }
@@ -96,6 +99,7 @@ public class FormLoginSecours {
             contexte.next();
             return;
         }
+        limiter.recordClosedDoorAttempt(contexte);
         contexte.response()
                 .setStatusCode(409)
                 .putHeader("Content-Type", "application/json")
