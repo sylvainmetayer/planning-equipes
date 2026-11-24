@@ -267,9 +267,7 @@ describe('ParametresPage — onglets', () => {
     const location = TestBed.inject(Location);
     location.replaceState('/parametres?onglet=connexions&type=ECHEC');
 
-    (fixture.componentInstance as unknown as { changerOnglet(o: string): void }).changerOnglet(
-      'instance',
-    );
+    fixture.componentInstance['changerOnglet']('instance');
     fixture.detectChanges();
 
     expect(location.path()).toBe('/parametres?onglet=instance');
