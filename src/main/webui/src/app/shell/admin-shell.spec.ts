@@ -178,7 +178,7 @@ describe('AdminShell', () => {
       onResultByType.set(type, handler);
       return unregisterResult;
     });
-    adminApi.logout.mockResolvedValue(undefined);
+    adminApi.logout.mockResolvedValue({ urlDeconnexion: null });
     api.get.mockResolvedValue({});
     draftLocal = memoryStorage({ 'planning-equipes.editionId': 'ed-1' });
     draftSession = memoryStorage();

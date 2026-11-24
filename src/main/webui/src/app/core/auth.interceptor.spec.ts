@@ -52,6 +52,13 @@ describe('authInterceptor', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 
+  it('renvoie aussi vers /login sur un 403 : connecté, mais sans droit d’administration', async () => {
+    await expect(firstValueFrom(interceptWithError('/api/stands', 403))).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+  });
+
   it('laisse tranquilles les routes publiques par conception', async () => {
     await expect(
       firstValueFrom(interceptWithError('/api/espace-animateur/jeton-1', 401)),

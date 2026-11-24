@@ -124,7 +124,7 @@ describe('UpdateCheckService', () => {
     await settle();
     expect(fetchMock).not.toHaveBeenCalled();
 
-    session.mockResolvedValue({ authentifie: true, nom: 'admin' });
+    session.mockResolvedValue({ authentifie: true, nom: 'admin', roles: ['admin'] });
     service.check('v1.0.0');
     await settle();
 

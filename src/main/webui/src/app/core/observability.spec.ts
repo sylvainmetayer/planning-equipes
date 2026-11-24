@@ -25,6 +25,8 @@ const CONFIG: AppConfig = {
   devMode: false,
   version: '',
   mailMock: false,
+  authOidc: false,
+  authSecours: true,
 };
 
 describe('loadAppConfig', () => {
@@ -49,6 +51,8 @@ describe('loadAppConfig', () => {
       devMode: false,
       version: '',
       mailMock: false,
+      authOidc: false,
+      authSecours: true,
     });
   });
 
@@ -61,6 +65,8 @@ describe('loadAppConfig', () => {
       devMode: false,
       version: '',
       mailMock: false,
+      authOidc: false,
+      authSecours: true,
     });
   });
 });

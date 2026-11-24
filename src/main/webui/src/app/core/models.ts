@@ -2533,6 +2533,10 @@ export interface AppConfig {
   version: string;
   /** The mailer is mocked (`MAIL_MOCK=true`): a mail recorded as sent never left the server. */
   mailMock: boolean;
+  /** An OIDC provider signs people in: the login page offers its button. */
+  authOidc: boolean;
+  /** The form login of the `admin` account is open: the login page offers its password form. */
+  authSecours: boolean;
 }
 
 /**
@@ -2792,6 +2796,13 @@ export interface RestaurationSnapshot {
 export interface StatutSession {
   authentifie: boolean;
   nom: string | null;
+  /** Sorted; `admin` opens the administration, nothing else does yet. */
+  roles: string[];
+}
+
+/** Where a logout ends: the provider's own logout route, `null` when there is none. */
+export interface Deconnexion {
+  urlDeconnexion: string | null;
 }
 
 /** Whether this deployment has an MCP API key at all, and the header it travels in. Never the key. */
@@ -3354,7 +3365,7 @@ export interface ActionHistorique {
 export interface AdminLoginView {
   id: number;
   survenuLe: string;
-  evenement: 'CONNEXION' | 'ECHEC' | 'VERROUILLAGE';
+  evenement: 'CONNEXION' | 'ECHEC' | 'VERROUILLAGE' | 'SECOURS_OUVERT' | 'CONNEXION_SECOURS';
   adresse: string;
 }
 
