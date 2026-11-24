@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
@@ -64,12 +65,16 @@ public class HistoriqueResource {
 
     private final LoginJournalService connexions;
 
+    private final CompteService comptes;
+
     @Inject
     public HistoriqueResource(
             JournalActionService journal,
             ReferenceDataService referenceData,
             StaffingVerificationService verifications,
-            LoginJournalService connexions) {
+            LoginJournalService connexions,
+            CompteService comptes) {
+        this.comptes = comptes;
         this.journal = journal;
         this.referenceData = referenceData;
         this.verifications = verifications;
@@ -109,6 +114,8 @@ public class HistoriqueResource {
                 nature(nature), optionalInstant(depuis, "depuis"), optionalInstant(jusqua, "jusqua"), avant, limite);
         Map<String, String> noms = referenceData.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
+        // An admin actor is an account id: named here, at read time, like an animateur.
+        comptes.list().forEach(c -> noms.putIfAbsent(c.id(), c.nom() != null ? c.nom() : c.email()));
         Map<Long, StaffingVerification> checks = verifications.findAll(entrees.stream()
                 .map(HistoriqueResource::verificationId)
                 .filter(Objects::nonNull)

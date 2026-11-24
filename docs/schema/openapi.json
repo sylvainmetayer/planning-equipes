@@ -1850,6 +1850,35 @@
           }
         }
       },
+      "Compte" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "derniereConnexionLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "desactiveLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "habilitations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Habilitation"
+            }
+          }
+        }
+      },
       "CompteEntiteView" : {
         "type" : "object",
         "required" : [ "entite", "nombre" ],
@@ -5137,6 +5166,32 @@
           }
         }
       },
+      "Habilitation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "role" : {
+            "$ref" : "#/components/schemas/RoleHabilitation"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "creePar" : {
+            "type" : "string"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "retireeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "HardMediumSoftScore" : {
         "type" : "object",
         "properties" : {
@@ -6809,6 +6864,17 @@
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
       },
+      "NouveauCompte" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
       "NouveauSignalement" : {
         "type" : "object",
         "properties" : {
@@ -6874,6 +6940,20 @@
           },
           "standCibleId" : {
             "type" : "string"
+          }
+        }
+      },
+      "NouvelleHabilitation" : {
+        "type" : "object",
+        "properties" : {
+          "role" : {
+            "$ref" : "#/components/schemas/RoleHabilitation"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -9044,6 +9124,10 @@
             "type" : "boolean"
           }
         }
+      },
+      "RoleHabilitation" : {
+        "type" : "string",
+        "enum" : [ "ADMIN", "ORGANISATEUR" ]
       },
       "RunningCheck" : {
         "required" : [ "editionId", "id", "effectif", "lanceeLe", "plafondSecondes" ],
@@ -11804,6 +11888,180 @@
         },
         "summary" : "Get",
         "tags" : [ "Branding Resource" ]
+      }
+    },
+    "/api/comptes" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Compte"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Compte Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouveauCompte"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/desactivation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Deactivate",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/habilitations" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouvelleHabilitation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Grant",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/habilitations/{habilitationId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "habilitationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Withdraw",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/reactivation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Reactivate",
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/config" : {

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.journal;
 
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.journal.EntreeJournal.Resultat;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -240,12 +241,19 @@ public class JournalActionService {
         return retention;
     }
 
-    /** The admin's principal name, {@code null} when the request carries no identity. */
+    /**
+     * Who the admin is, for the journal: the id of the account the session is
+     * bound to, {@link Compte#CONFIG_ID} for the configuration's own account,
+     * {@code null} when the request carries no identity. Never the principal's
+     * name, which is an address on some sign-in modes.
+     */
     public String nomAdmin() {
         try {
-            return identity == null || identity.isAnonymous() || identity.getPrincipal() == null
-                    ? null
-                    : identity.getPrincipal().getName();
+            if (identity == null || identity.isAnonymous() || identity.getPrincipal() == null) {
+                return null;
+            }
+            Compte compte = identity.getAttribute(Compte.IDENTITY_ATTRIBUTE);
+            return compte == null ? Compte.CONFIG_ID : compte.id();
         } catch (RuntimeException _) {
             // No active request (a scheduled job, a solver thread): there is
             // simply nobody to name.

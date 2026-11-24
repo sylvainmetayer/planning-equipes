@@ -187,6 +187,12 @@ class IsolationEditionStructurelleTest {
      *       machine serves every edition, as the queue is one for the whole
      *       instance, and a restart looks for both before any request names
      *       an edition; the job a remote solve belongs to carries its edition.</li>
+     *   <li>{@code compte} — a person, not a fiche: one account serves every
+     *       edition, so the table has no edition to be partitioned by.</li>
+     *   <li>{@code habilitation} — what that person may do, read for the whole
+     *       account at once, before any edition is bound to the request. The
+     *       edition is a <em>column</em> of the right ({@code NULL} = every
+     *       edition), the scope it grants, not a partition of the table.</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -202,7 +208,9 @@ class IsolationEditionStructurelleTest {
             "webhook_livraison",
             "journal_connexion",
             "machine_calcul",
-            "resolution_distante");
+            "resolution_distante",
+            "compte",
+            "habilitation");
 
     /**
      * The deliberately cross-edition statements, and why.

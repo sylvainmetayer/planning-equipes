@@ -1047,6 +1047,37 @@ n'engagent aucune obligation, seulement un arbitrage d'organisation, et
 `SolveRunner.prepareProblem` les écrase systématiquement — un appelant ne
 peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
 
+## Comptes et habilitations
+
+Plusieurs organisateurs administrent une même instance, et le journal doit dire
+lequel a fait quoi. Deux tables, **globales** (hors édition : une personne sert
+toutes les éditions) :
+
+| Table | Ce qu'elle dit |
+| --- | --- |
+| `compte` | La personne : une adresse (unique, sans égard à la casse) et un nom facultatif |
+| `habilitation` | Ce qu'elle a le droit de faire : un rôle, une édition (`NULL` = toutes) et une date d'expiration facultative |
+
+- **Rien ne se supprime.** Un compte se *désactive* (`desactive_le`), une
+  habilitation se *retire* (`retiree_le`) : le journal peut ainsi dire qui avait
+  quel droit à quelle date.
+- **Le rôle est du code** (`RoleHabilitation`), **le périmètre est de la
+  donnée**. Aucune matrice de permissions configurable. Deux rôles pour
+  l'instant : `ADMIN`, toujours pour toute l'instance (un `CHECK` le garantit),
+  et `ORGANISATEUR`, d'une édition ou de toutes. Un rôle futur (la lecture d'un
+  stand par un compte organisateur, par exemple) s'ajoute par une migration qui
+  élargit le `CHECK` de `role` et par les routes qu'il ouvre.
+- **Le compte `admin` de la configuration n'est pas une ligne** : c'est un
+  compte implicite, d'identifiant `admin`, que le journal nomme tant qu'aucun
+  compte n'est lié à la session. Tant que la connexion n'est pas branchée sur
+  ces comptes, aucune habilitation n'ouvre ni ne ferme rien : le comportement
+  de l'accès reste celui de l'administrateur unique.
+- **Le journal nomme l'acteur par l'identifiant du compte**, jamais par son
+  adresse ni son nom ; l'écran de l'historique joint le nom à la lecture, comme
+  pour un animateur. `habilitation.cree_par` suit la même règle.
+- Aucune colonne de secret : la connexion (fournisseur d'identité, mot de passe
+  local) ajoute les siennes par ses propres migrations.
+
 ## Invariants à ne pas casser
 
 - Un poste = une place, jamais un couple stand × créneau.

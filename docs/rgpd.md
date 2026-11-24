@@ -419,6 +419,17 @@ complètes. Quatre points sont connus et se consignent :
   (`JOURNAL_RETENTION`, appliquée chaque nuit) et cascade avec son édition ;
   elle survit à la fiche jusque-là, comme `notification_planifiee`, et ne
   nomme alors plus personne ;
+- **les comptes des organisateurs (`compte`, `habilitation`)** gardent une
+  **adresse e-mail**, un nom facultatif, les dates de création, de dernière
+  connexion et de désactivation, et les droits accordés (rôle, édition,
+  expiration, identifiant du compte qui les a accordés). Ce sont les données
+  des **personnes qui administrent l'instance**, pas celles des animateurs.
+  Rien ne s'y supprime par l'application : un compte se désactive, un droit se
+  retire, pour que le journal garde un sens ; l'effacement d'une personne qui
+  le demande est une opération d'exploitation sur la base. Tables de
+  l'instance, hors édition, **absentes de l'export SQL** (restaurer ailleurs
+  ouvrirait l'instance à des inconnus). L'historique des actions les désigne
+  par **identifiant de compte**, jamais par adresse ni par nom ;
 - **le journal des connexions administrateur (`journal_connexion`)** garde,
   pour chaque tentative sur le formulaire de connexion — réussie, échouée, ou
   le verrouillage qu'elle déclenche —, **l'horodatage et l'adresse IP du
