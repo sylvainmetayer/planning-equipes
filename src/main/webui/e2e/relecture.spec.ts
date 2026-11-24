@@ -136,7 +136,8 @@ test('un seul compteur dit ce qui reste à relire, et mène aux problèmes', asy
 
   const compteur = page.locator('.relecture-barre').getByRole('link', { name: /à relire/ });
   await compteur.click();
-  await expect(page).toHaveURL(/\/diagnostic\?onglet=problemes/);
+  // « Problèmes » is the Diagnostic's default tab, which the URL does not spell out.
+  await expect(page).toHaveURL(/\/diagnostic(\?onglet=problemes)?$/);
 
   await page.context().close();
 });
