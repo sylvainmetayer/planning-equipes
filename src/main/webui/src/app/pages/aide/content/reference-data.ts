@@ -6,6 +6,15 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
+import {
+  lienConsignes,
+  lienDisponibilites,
+  lienHoraires,
+  lienStaffing,
+  lienTypologies,
+  lienVerrouillages,
+  lienVersions,
+} from './liens';
 
 export function buildReferenceDataSections(): HelpSection[] {
   return [
@@ -57,16 +66,8 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
         },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-        {
-          route: '/solveur',
-          queryParams: { onglet: 'versions' },
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-        },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'consignes' },
-          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
-        },
+        lienVersions(),
+        lienConsignes(),
       ],
     },
     {
@@ -112,16 +113,8 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
       links: [
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'consignes' },
-          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
-        },
+        lienVerrouillages(),
+        lienConsignes(),
       ],
     },
     {
@@ -192,16 +185,8 @@ export function buildReferenceDataSections(): HelpSection[] {
           queryParams: { onglet: 'lieux' },
           label: $localize`:@@stands.onglet.lieuxCourt:Lieux`,
         },
-        {
-          route: '/stands',
-          queryParams: { onglet: 'typologies' },
-          label: $localize`:@@nav.link.typologies:Typologies`,
-        },
-        {
-          route: '/diagnostic',
-          queryParams: { onglet: 'besoin' },
-          label: $localize`:@@aide.link.staffing:Besoin en animateurs`,
-        },
+        lienTypologies(),
+        lienStaffing(),
       ],
     },
     {
@@ -315,11 +300,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
       ],
       links: [
-        {
-          route: '/creneaux',
-          queryParams: { onglet: 'horaires' },
-          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
-        },
+        lienHoraires(),
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
@@ -354,16 +335,8 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@nav.link.competences:Compétences`,
         },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        {
-          route: '/stands',
-          queryParams: { onglet: 'typologies' },
-          label: $localize`:@@nav.link.typologies:Typologies`,
-        },
-        {
-          route: '/animateurs',
-          queryParams: { onglet: 'disponibilites' },
-          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
-        },
+        lienTypologies(),
+        lienDisponibilites(),
       ],
     },
     {
@@ -466,11 +439,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        {
-          route: '/creneaux',
-          queryParams: { onglet: 'horaires' },
-          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
-        },
+        lienHoraires(),
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },

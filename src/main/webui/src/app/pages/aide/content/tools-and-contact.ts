@@ -6,6 +6,7 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
+import { lienHistorique, lienVersions } from './liens';
 
 export function buildToolsAndContactSections(supportEmail: string): HelpSection[] {
   return [
@@ -89,21 +90,13 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         },
       ],
       links: [
-        {
-          route: '/parametres',
-          queryParams: { onglet: 'historique' },
-          label: $localize`:@@nav.link.historique:Historique`,
-        },
+        lienHistorique(),
         {
           route: '/',
           fragment: 'a-traiter',
           label: $localize`:@@aide.lien.aTraiter:Accueil — À traiter aujourd'hui`,
         },
-        {
-          route: '/solveur',
-          queryParams: { onglet: 'versions' },
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-        },
+        lienVersions(),
       ],
     },
     {
@@ -202,16 +195,8 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           queryParams: { onglet: 'mcp' },
           label: $localize`:@@nav.link.mcp:MCP`,
         },
-        {
-          route: '/parametres',
-          queryParams: { onglet: 'historique' },
-          label: $localize`:@@nav.link.historique:Historique`,
-        },
-        {
-          route: '/solveur',
-          queryParams: { onglet: 'versions' },
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-        },
+        lienHistorique(),
+        lienVersions(),
       ],
     },
     {

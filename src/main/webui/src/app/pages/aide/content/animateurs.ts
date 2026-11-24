@@ -7,6 +7,7 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
+import { lienAjustements, lienDisponibilites, lienVerrouillages } from './liens';
 
 export function buildAnimateurSideSections(): HelpSection[] {
   return [
@@ -82,11 +83,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },
         { route: '/publication', label: $localize`:@@nav.link.diffuser:Diffuser` },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienVerrouillages(),
       ],
     },
     {
@@ -142,18 +139,10 @@ export function buildAnimateurSideSections(): HelpSection[] {
         },
       ],
       links: [
-        {
-          route: '/animateurs',
-          queryParams: { onglet: 'disponibilites' },
-          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
-        },
+        lienDisponibilites(),
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'ajustements' },
-          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
-        },
+        lienAjustements(),
       ],
     },
     {

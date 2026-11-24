@@ -7,6 +7,15 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
+import {
+  lienAjustements,
+  lienFragilite,
+  lienHoraires,
+  lienPauses,
+  lienStaffing,
+  lienVerrouillages,
+  lienVersions,
+} from './liens';
 
 export function buildSolverSections(): HelpSection[] {
   return [
@@ -77,11 +86,7 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienVerrouillages(),
       ],
     },
     {
@@ -148,11 +153,7 @@ export function buildSolverSections(): HelpSection[] {
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienVerrouillages(),
       ],
     },
     {
@@ -219,29 +220,13 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        {
-          route: '/creneaux',
-          queryParams: { onglet: 'horaires' },
-          label: $localize`:@@nav.link.ouvertures:Horaires des stands`,
-        },
+        lienHoraires(),
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
-        {
-          route: '/diagnostic',
-          queryParams: { onglet: 'besoin' },
-          label: $localize`:@@aide.link.staffing:Besoin en animateurs`,
-        },
+        lienStaffing(),
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
-        {
-          route: '/diagnostic',
-          queryParams: { onglet: 'fragilite' },
-          label: $localize`:@@aide.link.fragilite:Fragilité du planning`,
-        },
-        {
-          route: '/journee',
-          queryParams: { vue: 'pauses' },
-          label: $localize`:@@aide.link.pauses:Pauses et repas`,
-        },
+        lienFragilite(),
+        lienPauses(),
       ],
     },
     {
@@ -333,11 +318,7 @@ export function buildSolverSections(): HelpSection[] {
           route: '/journee',
           label: $localize`:@@aide.link.dayCalendar:Tableau de la journée`,
         },
-        {
-          route: '/solveur',
-          queryParams: { onglet: 'versions' },
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-        },
+        lienVersions(),
       ],
     },
     {
@@ -398,22 +379,10 @@ export function buildSolverSections(): HelpSection[] {
       ],
       links: [
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
-        {
-          route: '/diagnostic',
-          queryParams: { onglet: 'besoin' },
-          label: $localize`:@@aide.link.staffing:Besoin en animateurs`,
-        },
+        lienStaffing(),
         { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'ajustements' },
-          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
-        },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienAjustements(),
+        lienVerrouillages(),
       ],
     },
     {
@@ -512,17 +481,9 @@ export function buildSolverSections(): HelpSection[] {
         },
       ],
       links: [
-        {
-          route: '/regles',
-          queryParams: { onglet: 'ajustements' },
-          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
-        },
+        lienAjustements(),
         { route: '/diagnostic', label: $localize`:@@aide.link.problemes:Problèmes` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienVerrouillages(),
       ],
     },
   ];
