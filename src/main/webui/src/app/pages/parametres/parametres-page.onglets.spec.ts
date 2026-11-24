@@ -205,7 +205,7 @@ describe('ParametresPage — onglets', () => {
   }
 
   /** The instance's tabs are folded under « Réglages avancés » (ADR 0090): opened first. */
-  async function ouvrirAvance(): Promise<void> {
+  async function openAdvanced(): Promise<void> {
     const bouton = Array.from(racine().querySelectorAll('button')).find((each) =>
       each.textContent!.includes('Réglages avancés'),
     );
@@ -217,7 +217,7 @@ describe('ParametresPage — onglets', () => {
   }
 
   async function cliquerOnglet(nom: string): Promise<void> {
-    await ouvrirAvance();
+    await openAdvanced();
     const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
       each.textContent!.includes(nom),
     );
@@ -233,7 +233,7 @@ describe('ParametresPage — onglets', () => {
 
   it('names its tabs, the instance ones folded, and opens on the edition', async () => {
     expect(onglets()).toEqual(['Édition', 'Affichage mural']);
-    await ouvrirAvance();
+    await openAdvanced();
     expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Instance', 'Historique', 'MCP']);
     expect(textOf()).toContain("Nom de l'édition");
     expect(textOf()).toContain('Gel du référentiel');
