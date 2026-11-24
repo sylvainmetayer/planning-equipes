@@ -57,6 +57,11 @@ export function initialDay(
   return days.find((day) => day >= today) ?? days[0] ?? null;
 }
 
+/** The stand asked for, or `null` when the answer does not hold it: never another one in its place. */
+export function standInScope(view: ResponsableView, standId: string): StandResponsable | null {
+  return standId ? (view.stands.find((stand) => stand.standId === standId) ?? null) : null;
+}
+
 /** The shifts of one stand starting on `day`, in start order. */
 export function shiftsOn(stand: StandResponsable, day: string): VacationResponsable[] {
   return stand.vacations.filter((vacation) => dayOf(vacation.debut) === day);

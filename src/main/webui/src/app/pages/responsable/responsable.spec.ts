@@ -5,6 +5,7 @@ import {
   daysOf,
   initialDay,
   shiftsOn,
+  standInScope,
   staffingLabel,
   teamOn,
   windowLabel,
@@ -92,5 +93,16 @@ describe('labels', () => {
   it('tells whether any stand is shown by name', () => {
     expect(anyNamed(makeView())).toBe(false);
     expect(anyNamed(makeView({ stands: [{ ...BUVETTE, nominatif: true }] }))).toBe(true);
+  });
+});
+
+describe('standInScope', () => {
+  it('finds the stand asked for', () => {
+    expect(standInScope(makeView(), 's1')).toBe(BUVETTE);
+  });
+
+  it('never falls back to another stand', () => {
+    expect(standInScope(makeView(), 's2')).toBeNull();
+    expect(standInScope(makeView(), '')).toBeNull();
   });
 });

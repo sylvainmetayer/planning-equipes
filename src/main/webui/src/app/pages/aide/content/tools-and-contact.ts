@@ -209,7 +209,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           items: [
             {
               term: $localize`:@@aide.comptes.term.roles:Les deux rôles délégués`,
-              text: $localize`:@@aide.comptes.def.roles:RH, en lecture seule, pour une édition ou pour toutes. Responsable de stand, toujours dans une édition et pour au moins un de ses stands. Un droit peut porter une date de fin : passé ce jour, il n'ouvre plus rien. Ces rôles n'ouvrent encore aucun écran — tout leur est refusé par défaut, en attendant les travaux qui construiront leurs vues.`,
+              text: $localize`:@@aide.comptes.def.roles:RH, en lecture seule, pour une édition ou pour toutes. Responsable de stand, toujours dans une édition et pour au moins un de ses stands. Un droit peut porter une date de fin : passé ce jour, il n'ouvre plus rien. Le responsable de stand ouvre son espace responsable ; le rôle RH n'ouvre encore aucun écran — tout lui est refusé par défaut.`,
             },
             {
               term: $localize`:@@aide.comptes.term.desactivation:Désactiver plutôt que supprimer`,

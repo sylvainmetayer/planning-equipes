@@ -16,7 +16,7 @@ import { ResponsableApi } from '../../core/api/responsable-api';
 import { errorMessage } from '../../core/error-message';
 import { StandResponsable, ResponsableView } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
-import { shiftsOn, staffingLabel, windowLabel } from './responsable';
+import { shiftsOn, standInScope, staffingLabel, windowLabel } from './responsable';
 
 /**
  * One stand's day on an A4 sheet (`/responsable/affichette`, issue #295 §6):
@@ -119,9 +119,10 @@ export class ResponsableAffichettePage implements OnInit {
   protected readonly chargement = signal(true);
   protected readonly erreur = signal('');
   protected readonly view = signal<ResponsableView | null>(null);
-  protected readonly stand = computed<StandResponsable | null>(
-    () => this.view()?.stands[0] ?? null,
-  );
+  protected readonly stand = computed<StandResponsable | null>(() => {
+    const view = this.view();
+    return view ? standInScope(view, this.standId) : null;
+  });
   protected readonly vacations = computed(() => {
     const stand = this.stand();
     return stand ? shiftsOn(stand, this.jour) : [];
@@ -136,16 +137,28 @@ export class ResponsableAffichettePage implements OnInit {
 
   private async load(): Promise<void> {
     try {
-      this.view.set(await this.api.view(this.editionId, this.standId));
+      if (!this.standId) {
+        this.erreur.set(this.outOfScope());
+        return;
+      }
+      const view = await this.api.view(this.editionId, this.standId);
+      this.view.set(view);
+      if (!standInScope(view, this.standId)) {
+        this.erreur.set(this.outOfScope());
+      }
     } catch (error) {
       this.erreur.set(
         error instanceof HttpErrorResponse && error.status === 404
-          ? $localize`:@@responsable.affichette.introuvable:Ce stand ne fait pas partie de votre périmètre.`
+          ? this.outOfScope()
           : errorMessage(error),
       );
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  private outOfScope(): string {
+    return $localize`:@@responsable.affichette.introuvable:Ce stand ne fait pas partie de votre périmètre.`;
   }
 
   /** One blank line per empty seat: room to write a name in by hand. */
