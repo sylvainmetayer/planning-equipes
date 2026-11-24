@@ -448,6 +448,31 @@ dit quand revenir, pas un `429`. Coupés par défaut ; réglage et périmètre d
 [`exploitation.md`](exploitation.md#combien-de-calculs-linstance-accepte), choix
 dans [l'ADR 0075](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
 
+## Qui ouvre l'administration
+
+Quatre portes, de la plus forte à la plus faible :
+
+1. **Un fournisseur d'identité OIDC** (`docs/oidc.md`, ADR 0093) : chaque
+   organisateur se connecte sous son propre nom, avec le second facteur du
+   fournisseur. Un compte inconnu ou désactivé de l'application n'a aucun rôle,
+   et `/api/*` répond `403` (la page de connexion l'explique) ; seul un droit
+   `ADMIN` en vigueur donne le rôle `admin`. Les pages `/q/openapi` et
+   `/q/swagger-ui` suivent la même règle.
+2. **Le compte `admin` de la configuration**, un mot de passe partagé sans
+   second facteur et sans nom dans le journal des actions (l'acteur y est `admin`).
+   Sans fournisseur, c'est la porte ordinaire. Derrière un fournisseur, il est le
+   **secours**, fermé par défaut : `409` sur `/j_security_check` (y compris sous
+   un préfixe, que Quarkus accepte), session préexistante dépouillée de son rôle.
+   `ADMIN_LOCAL_SECOURS=true` le rouvre ; l'ouverture au démarrage et chaque
+   connexion par lui sont dans le journal des connexions admin, et l'application
+   journalise un avertissement tant qu'il est ouvert. `ADMIN_PASSWORD` reste
+   contrôlé même fermé (valeur d'exemple refusée au démarrage).
+3. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir `docs/api.md`) : **déprécié,
+   retiré en 4.0**. Il fonctionne encore, un avertissement le rappelle à chaque
+   démarrage ; il reste indépendant du secours (le secret partagé est son
+   identifiant).
+4. La clé d'API du `/mcp`, qui n'ouvre que le MCP.
+
 ## Abonnement ICS : le second jeton, et ce qu'il permet exactement
 
 `GET /api/abonnements/{token}/planning.ics` est la **seule** route de
@@ -933,6 +958,10 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
       `CONNEXION_PROXYS_FIABLES` avec elle (voir ci-dessus) ;
 - [ ] `CONNEXION_PROXYS_FIABLES` renseignée avant de créer un lien
       d'affichage mural, derrière un proxy (voir ci-dessus) ;
+- [ ] derrière un fournisseur OIDC : un compte administrateur nominatif créé et
+      essayé **avant** de laisser le secours fermé, `ADMIN_LOCAL_SECOURS` absent
+      ou `false` en exploitation courante, `OIDC_CLIENT_SECRET` d'au moins 32
+      caractères ;
 - [ ] `REMOTE_USER_ENABLED` laissé à `false` sauf déploiement derrière un
       proxy d'accès, auquel cas `REMOTE_USER_SECRET` est obligatoire (le
       démarrage échoue sans lui) ;

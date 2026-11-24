@@ -109,6 +109,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0090](0090-les-reglages-avances-replies-par-ecran.md) | Les réglages d'expert de chaque écran sont repliés derrière « Réglages avancés », fermé par défaut et ouvrable par l'adresse (`?avance=1`) : un onglet ou un filtre replié reste affiché quand l'adresse le nomme ou qu'il filtre, rien n'est injoignable | Accepté |
 | [0091](0091-refonte-fonctionnelle-4-0.md) | Le cadre de la refonte fonctionnelle 4.0 : un geste = un mécanisme, un seul modèle de plages datées, trois mécanismes de gel, le niveau de chaque règle d'organisation choisi par édition, les deux moteurs gardés avec Timefold pour arbitre, l'authentification OIDC avec un compte local de secours | Accepté |
 | [0092](0092-le-realise-se-calcule-a-la-demande.md) | Le réalisé vs planifié se calcule à la demande, sans job de nuit : la première lecture faite une fois l'événement fini écrit `kpi_realise` comme un cache, une seule fois ; remplace 0070 | Accepté · remplace 0070 |
+| [0093](0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md) | Connexion par un fournisseur OIDC facultatif : le fournisseur dit qui, l'application dit quoi (compte actif et droit `ADMIN`), rattachement par émetteur + sujet sur adresse vérifiée, compte `admin` de la configuration fermé par défaut derrière un fournisseur et journalisé, mode en-tête de proxy déprécié | Accepté · prolonge 0076 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
