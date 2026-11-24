@@ -29,7 +29,7 @@
     },
     {
       "h2": "Des règles propres à votre événement",
-      "texte": "Pas encore disponible : à terme, l'outil pourra prendre en compte des contraintes supplémentaires, pour adapter le planning aux règles de votre événement."
+      "texte": "Pas encore disponible : à terme, l'outil pourra prendre en compte des contraintes supplémentaires, pour adapter le planning aux règles de votre événement.\n\nVous avez déjà un besoin particulier ? Écrivez-nous pour en parler."
     }
   ],
   "cta": "Vous voulez vérifier vos propres règles ?",
@@ -70,7 +70,7 @@
       },
       {
         "h2": "Rules of your own event",
-        "texte": "Not available yet: in time, the tool will be able to take extra constraints into account, to fit the rota to the rules of your event."
+        "texte": "Not available yet: in time, the tool will be able to take extra constraints into account, to fit the rota to the rules of your event.\n\nAlready have a specific need? Write to us to talk it over."
       }
     ],
     "cta": "Want to check your own rules?",
