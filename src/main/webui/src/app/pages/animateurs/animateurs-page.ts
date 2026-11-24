@@ -518,10 +518,16 @@ export class AnimateursPage implements OnInit {
       }
     });
     void this.problemes.reloadFeasibility();
-    keepViewInQueryParams(() => ({
-      ...rosterViewParams(this.view()),
-      [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()),
-    }));
+    // Only the roster owns these keys: on a hosted tab they stay out of the
+    // address, and come back when the roster does.
+    keepViewInQueryParams(() =>
+      this.ongletsPage.onglet() === 'liste'
+        ? {
+            ...rosterViewParams(this.view()),
+            [IMPORTED_IDS_PARAM]: importedIdsParam(this.importedIds()),
+          }
+        : {},
+    );
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
     // with the fiche to open. Followed rather than read once — the link often
     // points at this very screen — then dropped, so a reload does not reopen it.
