@@ -32,6 +32,7 @@ import jakarta.ws.rs.sse.Sse;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Non-blocking counterpart of {@link PlanningResource}: submits a solve or an
@@ -161,7 +162,11 @@ public class SolverJobResource {
     @GET
     @Path("/jobs")
     public List<JobView> listJobs() {
-        return solverJobService.list().stream().map(JobView::withoutResult).toList();
+        var visible = editionContext.callerEditionFilter();
+        return solverJobService.list().stream()
+                .filter(job -> visible.test(job.getEditionId()))
+                .map(JobView::withoutResult)
+                .toList();
     }
 
     /**
@@ -173,8 +178,9 @@ public class SolverJobResource {
     @GET
     @Path("/jobs/file")
     public List<JobView> fileAttente() {
+        var visible = editionContext.callerEditionFilter();
         return solverJobService.fileAttente().stream()
-                .map(JobView::withoutResult)
+                .map(job -> JobView.sharedWith(job, visible))
                 .toList();
     }
 
@@ -186,9 +192,10 @@ public class SolverJobResource {
     @GET
     @Path("/jobs/active")
     public Response activeJob() {
+        var visible = editionContext.callerEditionFilter();
         return solverJobService
                 .findActive()
-                .map(job -> Response.ok(JobView.withoutResult(job)).build())
+                .map(job -> Response.ok(JobView.sharedWith(job, visible)).build())
                 .orElseGet(() -> Response.noContent().build());
     }
 
@@ -232,6 +239,9 @@ public class SolverJobResource {
         // the cursor below belongs to exactly one subscriber and two clients
         // can be at two different points of the same curve.
         ScoreCursor scoreCursor = new ScoreCursor();
+        // Frozen here, on the request thread: the events below are built on worker
+        // threads, where the caller's identity is gone.
+        var visible = editionContext.callerEditionFilter();
         // merging, not concatenating: both upstreams are subscribed to at once,
         // so no transition can slip through between the initial state and the
         // subscription to the broadcaster. The item(0) is what makes the first
@@ -247,7 +257,7 @@ public class SolverJobResource {
                 // backlog of stale ones: each event is a full snapshot.
                 .onOverflow()
                 .dropPreviousItems()
-                .map(version -> stateEvent());
+                .map(version -> stateEvent(visible));
         Multi<OutboundSseEvent> heartbeats = Multi.createFrom()
                 .ticks()
                 .every(configJobStream.heartbeat())
@@ -268,7 +278,7 @@ public class SolverJobResource {
                 // nullable mapping: Mutiny rejects a mapper returning null, and
                 // a downstream filter would already be too late.
                 .onItem()
-                .transformToIterable(tick -> scoreEvents(scoreCursor));
+                .transformToIterable(tick -> scoreEvents(scoreCursor, visible));
         return Multi.createBy().merging().streams(states, heartbeats, scores);
     }
 
@@ -304,9 +314,10 @@ public class SolverJobResource {
      * {@code GET /api/jobs/score}, does carry the header and refuses a curve
      * belonging to another edition server-side.</p>
      */
-    private List<OutboundSseEvent> scoreEvents(ScoreCursor cursor) {
+    private List<OutboundSseEvent> scoreEvents(ScoreCursor cursor, Predicate<String> visible) {
         SolverScoreTrace.Trace trace = scoreTrace.snapshot();
-        if (trace == null) {
+        // A curve of an edition the caller cannot see is no curve at all.
+        if (trace == null || !visible.test(trace.editionId())) {
             return absenceEvent(cursor);
         }
         if (trace.generation() != cursor.generation) {
@@ -391,13 +402,19 @@ public class SolverJobResource {
         return Response.ok(trace).build();
     }
 
-    private OutboundSseEvent stateEvent() {
+    private OutboundSseEvent stateEvent(Predicate<String> visible) {
         JobsState state = new JobsState(
-                solverJobService.findActive().map(JobView::withoutResult).orElse(null),
+                solverJobService
+                        .findActive()
+                        .map(job -> JobView.sharedWith(job, visible))
+                        .orElse(null),
                 solverJobService.fileAttente().stream()
-                        .map(JobView::withoutResult)
+                        .map(job -> JobView.sharedWith(job, visible))
                         .toList(),
-                staffingVerification.running().orElse(null));
+                staffingVerification
+                        .running()
+                        .filter(check -> visible.test(check.editionId()))
+                        .orElse(null));
         return sse.newEventBuilder()
                 .name(EVENT_STATE)
                 .mediaType(MediaType.APPLICATION_JSON_TYPE)
@@ -423,6 +440,7 @@ public class SolverJobResource {
     public Response getJob(@PathParam("id") String id) {
         return solverJobService
                 .find(id)
+                .filter(job -> editionContext.visibleToCaller(job.getEditionId()))
                 .map(job -> Response.ok(JobView.withResult(job)).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
@@ -430,7 +448,11 @@ public class SolverJobResource {
     @DELETE
     @Path("/jobs/{id}")
     public Response deleteJob(@PathParam("id") String id) {
-        return solverJobService.forget(id)
+        boolean mine = solverJobService
+                .find(id)
+                .filter(job -> editionContext.visibleToCaller(job.getEditionId()))
+                .isPresent();
+        return mine && solverJobService.forget(id)
                 ? Response.noContent().build()
                 : Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -444,8 +466,11 @@ public class SolverJobResource {
     @Path("/jobs/{id}/cancel")
     @Consumes(MediaType.WILDCARD)
     public Response cancelJob(@PathParam("id") String id) {
-        return solverJobService
-                .cancel(id)
+        boolean mine = solverJobService
+                .find(id)
+                .filter(job -> editionContext.visibleToCaller(job.getEditionId()))
+                .isPresent();
+        return (mine ? solverJobService.cancel(id) : java.util.Optional.<SolverJob>empty())
                 .map(job -> Response.ok(JobView.withoutResult(job)).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
@@ -543,6 +568,63 @@ public class SolverJobResource {
 
         public static JobView withoutResult(SolverJob job) {
             return build(job, null, null);
+        }
+
+        /**
+         * What the shared state (the active job, the queue) says to a caller who may
+         * not see the job's edition: that the solver is busy, and nothing of what
+         * it works on — no edition, no error.
+         */
+        static JobView sharedWith(SolverJob job, Predicate<String> visible) {
+            JobView full = withoutResult(job);
+            if (visible.test(job.getEditionId())) {
+                return full;
+            }
+            return new JobView(
+                    null,
+                    full.id(),
+                    full.type(),
+                    full.status(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    full.submittedAt(),
+                    full.startedAt(),
+                    full.finishedAt(),
+                    full.elapsedSeconds(),
+                    null,
+                    full.remote(),
+                    null,
+                    null,
+                    null);
+        }
+
+        JobView withMessage(String sentence) {
+            return new JobView(
+                    sentence,
+                    id,
+                    type,
+                    status,
+                    editionId,
+                    editionNom,
+                    secondsLimit,
+                    plateauSeconds,
+                    cappedFromSecondsLimit,
+                    cappedFromPlateauSeconds,
+                    reamorcage,
+                    submittedAt,
+                    startedAt,
+                    finishedAt,
+                    elapsedSeconds,
+                    feasibleAtSeconds,
+                    remote,
+                    remoteStage,
+                    error,
+                    result);
         }
 
         static JobView withResult(SolverJob job) {

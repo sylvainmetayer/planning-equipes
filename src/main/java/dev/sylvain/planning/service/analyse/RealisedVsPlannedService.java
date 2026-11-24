@@ -234,12 +234,19 @@ public class RealisedVsPlannedService {
      * timeslot: it has no dates to be « after » anything.
      */
     public PreviousEdition previousEdition() {
-        cacheOtherEditions();
+        // An organiser neither triggers the other editions' computation nor reads one
+        // outside its rights: the previous edition then simply is not there.
+        if (!editionContext.callerIsOrganiser()) {
+            cacheOtherEditions();
+        }
         JoursEvenement jours = JoursEvenement.of(referenceDataService.listCreneaux());
         if (jours.isEmpty()) {
             return PreviousEdition.NONE;
         }
-        return history.previous(jours.first());
+        PreviousEdition previous = history.previous(jours.first());
+        return previous.editionId() != null && !editionContext.visibleToCaller(previous.editionId())
+                ? PreviousEdition.NONE
+                : previous;
     }
 
     /**

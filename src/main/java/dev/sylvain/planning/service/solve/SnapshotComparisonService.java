@@ -178,7 +178,8 @@ public class SnapshotComparisonService {
             return null;
         }
         SnapshotDetail detail = snapshotService.loadAllEditions(id);
-        return detail == null ? null : cote(detail);
+        // A snapshot of an edition the caller cannot see does not exist.
+        return detail == null || !editionContext.visibleToCaller(detail.meta().editionId()) ? null : cote(detail);
     }
 
     private CoteComparaison cotePlanCourant() {

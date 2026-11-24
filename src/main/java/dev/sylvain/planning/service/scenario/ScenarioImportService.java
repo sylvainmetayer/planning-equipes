@@ -231,10 +231,15 @@ public class ScenarioImportService {
         if (cibleDto.isEmpty() || !editionContext.callerIsOrganiser()) {
             return;
         }
-        boolean current = editionService
-                .findForImport(cibleDto.get().id(), cibleDto.get().nom())
-                .filter(edition -> edition.getId().equals(editionContext.editionIdCourant()))
-                .isPresent();
+        // Never through findForImport: its ambiguity message would name editions
+        // the caller cannot see. Only the current edition's own id or name passes.
+        var courante = editionService.editionCourante();
+        String id = cibleDto.get().id() == null ? "" : cibleDto.get().id().trim();
+        String nom = cibleDto.get().nom() == null ? "" : cibleDto.get().nom().trim();
+        boolean current = id.isEmpty()
+                ? nom.equalsIgnoreCase(
+                        courante.getNom() == null ? "" : courante.getNom().trim())
+                : id.equals(courante.getId());
         if (!current) {
             throw new BusinessError.Invalid("L'import d'un organisateur se fait dans son édition courante : "
                     + "la section edition: du fichier en désigne une autre, ou une à créer.");

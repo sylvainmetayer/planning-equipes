@@ -1,6 +1,8 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.SolverJobService.SolverBusyException;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -28,13 +30,23 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 public class SolverOccupeMapper implements ExceptionMapper<SolverBusyException> {
 
+    @Inject
+    EditionContext editionContext;
+
     @Override
     public Response toResponse(SolverBusyException occupe) {
+        boolean visible = editionContext.visibleToCaller(occupe.getActiveJob().getEditionId());
         return Response.status(Response.Status.CONFLICT)
-                .entity(SolverJobResource.JobView.conflit(occupe.getActiveJob(), message(occupe)))
+                .entity(
+                        visible
+                                ? SolverJobResource.JobView.conflit(occupe.getActiveJob(), message(occupe))
+                                : SolverJobResource.JobView.sharedWith(occupe.getActiveJob(), id -> false)
+                                        .withMessage(MESSAGE_AILLEURS))
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }
+
+    private static final String MESSAGE_AILLEURS = "Une résolution est en cours : attendez qu'elle se termine.";
 
     /** French, like every user-facing message this API returns: the frontend shows it as-is. */
     private static String message(SolverBusyException occupe) {

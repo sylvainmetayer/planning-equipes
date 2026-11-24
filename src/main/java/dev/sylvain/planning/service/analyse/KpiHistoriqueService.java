@@ -131,11 +131,16 @@ public class KpiHistoriqueService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list KPI history", e);
         }
-        return entries;
+        return entries.stream()
+                .filter(entry -> editionContext.visibleToCaller(entry.editionId()))
+                .toList();
     }
 
-    /** @return true when a row was actually deleted. */
+    /** @return true when a row was actually deleted; false too for a row of an edition the caller cannot see. */
     public boolean delete(long id) {
+        if (list().stream().noneMatch(entry -> entry.id() == id)) {
+            return false;
+        }
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("DELETE FROM kpi_historique WHERE id = ?")) {
             ps.setLong(1, id);
