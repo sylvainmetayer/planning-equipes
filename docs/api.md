@@ -1560,15 +1560,10 @@ une règle dure. L'endpoint reste ouvert à l'API et à l'outil MCP
 
 ### Déplacer une affectation à la main
 
-Le glisser-déposer des vues journalières (#308), et le même geste par l'API
-et par les outils MCP `simuler_deplacement` / `deplacer_affectation`.
-
-Le **glisser** est coupé par défaut : `GLISSER_DEPOSER_ACTIF=true` le rend
-aux vues Journée et Rail (`dragDropEnabled` de `GET /api/config`, lu une fois
-au démarrage du frontend). Le drapeau ne règle que ce geste pointeur : le
-dialogue « Déplacer … vers » — « Déplacer vers… » du panneau du siège, Entrée
-sur une ligne du rail — est toujours offert, et les deux endpoints ci-dessous
-comme les outils MCP restent ouverts.
+Le déplacement se fait par le dialogue « Déplacer … vers » — « Déplacer vers… »
+du panneau du siège, Entrée sur une ligne du rail —, par l'API et par les
+outils MCP `simuler_deplacement` / `deplacer_affectation`. Il n'y a plus de
+glisser-déposer à la souris.
 
 | Endpoint | Effet |
 | --- | --- |

@@ -8,10 +8,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import { APP_CONFIG } from '../../core/app-config';
-import { PostesApi } from '../../core/api/postes-api';
 import { NotificationService } from '../../core/notification.service';
-import { SolverJobService } from '../../core/solver-job.service';
 import {
   Animateur,
   Creneau,
@@ -20,8 +17,6 @@ import {
   PosteAffectation,
   Stand,
 } from '../../core/models';
-import { MatDialog } from '@angular/material/dialog';
-import { DeplacementDialog } from '../../shared/deplacement-dialog';
 import { RailJourView } from './rail-jour-vue';
 
 function stand(id: string): Stand {
@@ -98,17 +93,13 @@ describe('RailJourView', () => {
     evenement: PlanningEvenement,
     entrees: { jour?: number; filtre?: string; stand?: string; animateur?: string } = {},
     pauses: RapportPauses | null = null,
-    dragDropEnabled = false,
   ): Promise<void> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
-        { provide: PostesApi, useValue: { move: vi.fn() } },
-        { provide: APP_CONFIG, useValue: { dragDropEnabled } },
       ],
     });
     fixture = TestBed.createComponent(RailJourView);
@@ -168,33 +159,6 @@ describe('RailJourView', () => {
     expect(liens).toHaveLength(3);
   });
 
-  // Same warning as the day calendar, on the other screen that carries the
-  // gesture: wherever the instance offers it, it is there every time the page
-  // is opened.
-  it('says on the page that dragging is still under test', async () => {
-    await rendre(planningDeuxJours(), {}, null, true);
-
-    expect(racine().querySelector('.essai-bandeau')?.textContent).toContain('en cours de test');
-    const bloc = racine().querySelector<HTMLElement>('.rail-bloc')!;
-    expect(bloc.querySelector('.rail-bloc-poignee')).not.toBeNull();
-    expect(bloc.classList).toContain('cdk-drag');
-    expect(bloc.classList).not.toContain('cdk-drag-disabled');
-    expect(bloc.getAttribute('title')).toContain('Glisser vers une autre personne');
-  });
-
-  // GLISSER_DEPOSER_ACTIF is off by default: no handle, no warning, no gesture.
-  it('offers no drag and drop when the instance has not switched it on', async () => {
-    await rendre(planningDeuxJours());
-
-    expect(racine().querySelector('.essai-bandeau')).toBeNull();
-    const bloc = racine().querySelector<HTMLElement>('.rail-bloc')!;
-    expect(bloc.querySelector('.rail-bloc-poignee')).toBeNull();
-    // Not a disabled drag: no drag at all, so nothing is registered for it.
-    expect(bloc.classList).not.toContain('cdk-drag');
-    expect(bloc.getAttribute('title')).not.toContain('Glisser');
-    expect(racine().querySelector('.rail-cell')!.classList).toContain('cdk-drop-list-disabled');
-  });
-
   it('announces every line as text, since the rail itself is decorative', async () => {
     await rendre(planningDeuxJours());
 
@@ -249,59 +213,6 @@ describe('RailJourView', () => {
 
     await basculerVue('Affectés');
     expect(noms()).toEqual(['Alice']);
-  });
-
-  // RGAA 7.3: the drag has no key of its own, so Enter on a line asks where
-  // to move one of its shifts — only the lines a drop would accept.
-  it('opens the move of a shift on Enter, offering the lines a drop would accept', async () => {
-    await rendre(planningDeuxJours(), {}, null, true);
-    const dialog = TestBed.inject(MatDialog);
-    const open = vi.spyOn(dialog, 'open');
-    const ligneAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
-      (each) => each.getAttribute('aria-label')!.includes('Alice'),
-    )!;
-
-    ligneAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-    expect(open).toHaveBeenCalledTimes(1);
-    const { data } = open.mock.calls[0][1] as {
-      data: { sources: { id: string }[]; targets: { label: string }[] };
-    };
-    expect(data.sources.map((source) => source.id)).toEqual(['p1']);
-    // Bob is free and can take it; Chloé declared the day off, as the drop refuses.
-    expect(data.targets.map((cible) => cible.label)).toEqual(['Bob']);
-    dialog.closeAll();
-  });
-
-  it('says so on Enter when the line holds no shift, rather than doing nothing', async () => {
-    await rendre(planningDeuxJours(), {}, null, true);
-    const ligneBob = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
-      (each) => each.getAttribute('aria-label')!.includes('Bob'),
-    )!;
-
-    ligneBob.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-    expect(TestBed.inject(NotificationService).notify).toHaveBeenCalledWith(
-      expect.objectContaining({ title: expect.stringContaining('Aucune vacation') }),
-    );
-  });
-
-  // #711: the flag governs the pointer gesture only — Enter still opens the
-  // move dialog when the instance has not switched drag and drop on.
-  it('opens the move on Enter even when the instance has not switched drag and drop on', async () => {
-    await rendre(planningDeuxJours());
-    const dialog = TestBed.inject(MatDialog);
-    const lineOfAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
-      (each) => each.getAttribute('aria-label')!.includes('Alice'),
-    )!;
-
-    lineOfAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-
-    expect(dialog.openDialogs.map((ref) => ref.componentInstance)).toEqual([
-      expect.any(DeplacementDialog),
-    ]);
-    expect(racine().querySelector('.rail-bloc-poignee')).toBeNull();
-    dialog.closeAll();
   });
 
   // #711: a shift is a button opening the page's Siège panel on its seat.

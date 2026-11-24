@@ -2533,8 +2533,6 @@ export interface AppConfig {
   cloudflareWebAnalyticsToken: string;
   /** Server running under `quarkus:dev`: the Dev UI exists at `/q/dev-ui`. */
   devMode: boolean;
-  /** The day views let a seat be dragged onto another line (`GLISSER_DEPOSER_ACTIF`). */
-  dragDropEnabled: boolean;
   /** Backend version, as the startup line prints it (docs/versioning.md). */
   version: string;
   /** The mailer is mocked (`MAIL_MOCK=true`): a mail recorded as sent never left the server. */

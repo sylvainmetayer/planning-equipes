@@ -1,14 +1,6 @@
 import {
-  CdkDrag,
-  CdkDragDrop,
-  CdkDragHandle,
-  CdkDropList,
-  CdkDropListGroup,
-} from '@angular/cdk/drag-drop';
-import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   inject,
   input,
@@ -17,20 +9,11 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { injectAppConfig } from '../../core/app-config';
-import { PostesApi } from '../../core/api/postes-api';
-import { errorMessage } from '../../core/error-message';
-import { NotificationService } from '../../core/notification.service';
-import { SolverJobService } from '../../core/solver-job.service';
-import { cibleDepot, moveTargets, resumeDeplacement } from '../../shared/deplacement';
-import { openMoveDialog } from '../../shared/deplacement-dialog';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { aUneAppreciationPour } from '../../shared/affectation-explanation-rules';
@@ -187,16 +170,11 @@ export function tableauJour(day: DayCard, garde: (ligne: StandLine) => boolean):
  * which owns the day, the shared filters and the plan: this view draws the
  * day it is handed through the pure `buildDays()` and `tableauJour()`, and
  * keeps only its own switches — problem lines only, and the seat filter of
- * the relecture chips. A drop or a repair that rewrote the plan asks the page
- * to re-read it rather than fetching by itself.
+ * the relecture chips. It never fetches by itself.
  */
 @Component({
   selector: 'app-calendar-day-vue',
   imports: [
-    CdkDrag,
-    CdkDragHandle,
-    CdkDropList,
-    CdkDropListGroup,
     FormsModule,
     NgTemplateOutlet,
     MatCheckboxModule,
@@ -232,29 +210,14 @@ export class CalendarDayView {
    * daily task this screen exists for.
    */
   readonly seulementProblemes = model(false);
-  /** The plan moved under this view (a drop, a repair): the page re-reads it. */
-  readonly rechargement = output<void>();
   /** The seat the page's Siège panel is open on, marked on screen; null when it is closed. */
   readonly openSeatId = input<string | null>(null);
   /** A seat was clicked: the page opens its panel on it. */
   readonly seatSelected = output<string>();
 
-  /** Bounds the repair-assistant callback to this view's life: it is lazy and rebuilt on every visit. */
-  private readonly destroyRef = inject(DestroyRef);
   protected readonly seatLabel = $localize`:@@calendarDay.siege.ouvrir:Ouvrir ce siège : pourquoi lui, le remplacer, le déplacer, le libérer`;
 
   protected readonly verrous = inject(VerrouillageStore);
-
-  private readonly dialog = inject(MatDialog);
-  private readonly postesApi = inject(PostesApi);
-  private readonly notifications = inject(NotificationService);
-  /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
-  protected readonly editingLocked = inject(SolverJobService).editingLocked;
-  /**
-   * Whether this instance offers the gesture at all (`GLISSER_DEPOSER_ACTIF`,
-   * off by default): read from the server's answer once, like `devMode`.
-   */
-  protected readonly dragDropEnabled = injectAppConfig().dragDropEnabled;
 
   private readonly toutesLesJournees = computed<DayCard[]>(() =>
     buildDays(this.planning()?.postes ?? []),
@@ -319,141 +282,6 @@ export class CalendarDayView {
   protected readonly fermeLabel = $localize`:@@calendarDay.ferme:fermé`;
   protected readonly ficheStandLabel = $localize`:@@calendarDay.ficheStand:Ouvrir la fiche du stand`;
   protected readonly freeSeatTooltip = $localize`:@@calendarDay.siegeLibre.ouvrir:Ouvrir ce siège : qui peut le tenir, poser un ajustement`;
-  protected readonly glisserTooltip = $localize`:@@calendarDay.glisser:Glisser vers un autre stand : sur un siège libre pour y déplacer la personne, sur une personne pour échanger leurs sièges. Refusé si une règle dure serait cassée.`;
-
-  /* ----------------------------- Glisser-déposer (#308) ----------------------------- */
-
-  /**
-   * Which lines light up while a name is being dragged: any other line of the
-   * day that has somewhere to put it — a free seat, or a person to swap with.
-   * Bound as an arrow so the CDK can call it without a receiver.
-   */
-  protected readonly peutRecevoir = (
-    drag: CdkDrag<PosteAffectation>,
-    drop: CdkDropList<StandLine>,
-  ): boolean =>
-    drag.dropContainer !== drop &&
-    (drop.data.postesLibres.length > 0 || drop.data.entries.length > 0);
-
-  /**
-   * A name dropped on another line: the seat under the pointer decides
-   * between a move (free seat) and a swap (held seat); a line with no seat
-   * under the pointer takes its first free one. The server simulates the
-   * result on the persisted plan and refuses it when a hard rule would break,
-   * naming the rule — which is what the snack bar then shows.
-   */
-  protected async onDrop(
-    event: CdkDragDrop<StandLine, StandLine, PosteAffectation>,
-  ): Promise<void> {
-    if (event.previousContainer === event.container) {
-      return;
-    }
-    const source = event.item.data;
-    const ligne = event.container.data;
-    const sousLePointeur = document.elementFromPoint(event.dropPoint.x, event.dropPoint.y);
-    const target = cibleDepot(
-      sousLePointeur,
-      ligne.postesLibres,
-      ligne.entries.map((entry) => entry.poste),
-    );
-    if (!target) {
-      this.notifications.notify({
-        title: $localize`:@@calendarDay.depotSansSiege:Aucun siège libre sur cette ligne : déposez sur une personne pour échanger.`,
-        variant: 'warning',
-      });
-      return;
-    }
-    await this.deplacer(source.id, target, source.animateur?.id ?? null);
-  }
-
-  protected moveLabel(nom: string): string {
-    return $localize`:@@calendarDay.deplacer:Déplacer ${nom}:nom: vers un autre siège…`;
-  }
-
-  /**
-   * The drop's twin, for the keyboard and for a single click: every other line
-   * of the day, as a searchable list — its free seats to
-   * move into, its people to swap with — and the answer goes through the very
-   * {@link deplacer} the drop calls.
-   */
-  protected openMove(
-    day: DayCard,
-    slotSource: SlotCard,
-    ligneSource: StandLine,
-    poste: PosteAffectation,
-    nom: string,
-  ): void {
-    // Not gated on `dragDropEnabled` any more: the flag governs the pointer
-    // gesture, and the dialog is the way every instance moves somebody.
-    if (
-      this.editingLocked() ||
-      this.estLigneVerrouillee(slotSource, ligneSource) ||
-      this.isDayLocked(day)
-    ) {
-      return;
-    }
-    // The whole day, not only the lines the filters leave on screen: the
-    // destination is typed into the dialog, it need not be visible first. But
-    // only the lines a drop would accept: a locked stand or timeslot refuses
-    // the drag, and must refuse its keyboard twin just the same.
-    const targets = moveTargets(
-      this.planning()?.postes ?? [],
-      poste,
-      (candidat) =>
-        this.verrous.estStandVerrouille(candidat.stand?.id) ||
-        this.verrous.estCreneauVerrouille(candidat.creneau?.id),
-    );
-    openMoveDialog(this.dialog, {
-      title: $localize`:@@calendarDay.deplacer.titre:Déplacer ${nom}:nom:`,
-      targets,
-      targetLabel: $localize`:@@calendarDay.deplacer.cible:Vers quel siège ?`,
-    })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((choix) => {
-        if (choix) {
-          void this.deplacer(poste.id, choix.target, poste.animateur?.id ?? null);
-        }
-      });
-  }
-
-  private async deplacer(
-    posteSourceId: string,
-    posteCibleId: string,
-    occupant: string | null,
-  ): Promise<void> {
-    try {
-      const simulation = await this.postesApi.move(
-        posteSourceId,
-        { posteId: posteCibleId },
-        occupant,
-      );
-      this.notifications.notify({
-        ...resumeDeplacement(simulation, (id) => this.nomDe(id)),
-        variant: 'success',
-      });
-      // The persisted plan moved under the cached one: the page drops the
-      // cache and re-reads — the same care the Siège panel takes after a gesture.
-      this.rechargement.emit();
-    } catch (error) {
-      this.notifications.notify({
-        title: $localize`:@@calendarDay.depotRefuse:Déplacement refusé`,
-        message: errorMessage(error),
-        variant: 'error',
-      });
-      // The refusal may be « this seat moved under you »: re-read, so the
-      // second attempt is made on what is actually there.
-      this.rechargement.emit();
-    }
-  }
-
-  private nomDe(animateurId: string): string {
-    const animateur = this.planning()?.animateurs?.find((candidat) => candidat.id === animateurId);
-    return animateur
-      ? `${animateur.prenom ?? ''} ${animateur.nom ?? ''}`.trim() || animateurId
-      : animateurId;
-  }
-
   /** True for a stand-line with some, but fewer than its generated seats, animateurs — fully unassigned (0) is already flagged separately. */
   protected isUnderstaffed(stand: StandLine): boolean {
     return isStandLineUnderstaffed(stand);

@@ -38,12 +38,6 @@
       </ul>
     }
 
-    @if (dragDropEnabled) {
-      <p class="essai-bandeau">
-        <mat-icon inline aria-hidden="true">science</mat-icon>
-        <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
-      </p>
-    }
   </mat-card-content>
 </mat-card>
 
@@ -73,7 +67,7 @@
               </th>
             </tr>
           </thead>
-          <tbody cdkDropListGroup>
+          <tbody>
             @for (ligne of lignesAffichees(); track ligne.animateurId; let index = $index) {
               <tr class="rail-ligne">
                 <th scope="row" class="rail-nom">
@@ -97,18 +91,12 @@
                   class="rail-cell"
                   [class.rail-cell-libre]="ligne.statut === 'libre'"
                   [class.rail-cell-indisponible]="ligne.statut === 'indisponible'"
-                  cdkDropList
-                  [cdkDropListData]="ligne"
-                  [cdkDropListSortingDisabled]="true"
-                  [cdkDropListEnterPredicate]="peutRecevoir"
-                  [cdkDropListDisabled]="!dragDropEnabled || editingLocked()"
-                  (cdkDropListDropped)="onDrop($event)"
                   [attr.data-ligne]="index"
                   [attr.data-siege-cle]="'animateur|' + ligne.animateurId"
                   [tabindex]="ligneCourante() === index ? 0 : -1"
                   (focus)="focusLigne(index)"
                   (keydown)="naviguer($event, index)"
-                  aria-keyshortcuts="Enter Space"
+                  aria-keyshortcuts="Space"
                   [attr.aria-label]="ligne.resume"
                 >
                   <span class="rail-track" aria-hidden="true" [style.background-size]="fondPiste(ligne)">
@@ -121,38 +109,15 @@
                       ></span>
                     }
                     @for (bloc of ligne.blocs; track bloc.posteId) {
-                      <!-- Switched off for the instance, a block carries no cdkDrag
-                           and no move button at all (one drag ref per shift of
-                           the day, for nothing); a solve disables it instead, and
-                           the CSS hides the handle then. -->
-                      @if (dragDropEnabled) {
-                        <span
-                          class="rail-bloc"
-                          [class]="bloc.colorClass"
-                          [class.rail-bloc-chevauchement]="bloc.chevauchement"
-                          [style.left.%]="bloc.offsetPercent"
-                          [style.width.%]="bloc.widthPercent"
-                          [title]="bloc.label + ' — ' + glisserTooltip"
-                          [attr.data-poste-id]="bloc.posteId"
-                          cdkDrag
-                          [cdkDragData]="bloc"
-                          [cdkDragDisabled]="editingLocked()"
-                        ><!-- A button for a single click (WCAG 2.5.7), out of the
-                             tab order: the keyboard way in is Enter on the line. -->
-                          <button type="button" class="rail-bloc-poignee" cdkDragHandle tabindex="-1"
-                                  (click)="openMove(ligne, bloc)">⠿</button
-                          ><ng-container [ngTemplateOutlet]="libelleBloc" [ngTemplateOutletContext]="{ $implicit: bloc }" /></span>
-                      } @else {
-                        <span
-                          class="rail-bloc"
-                          [class]="bloc.colorClass"
-                          [class.rail-bloc-chevauchement]="bloc.chevauchement"
-                          [style.left.%]="bloc.offsetPercent"
-                          [style.width.%]="bloc.widthPercent"
-                          [title]="bloc.label"
-                          [attr.data-poste-id]="bloc.posteId"
-                        ><ng-container [ngTemplateOutlet]="libelleBloc" [ngTemplateOutletContext]="{ $implicit: bloc }" /></span>
-                      }
+                      <span
+                        class="rail-bloc"
+                        [class]="bloc.colorClass"
+                        [class.rail-bloc-chevauchement]="bloc.chevauchement"
+                        [style.left.%]="bloc.offsetPercent"
+                        [style.width.%]="bloc.widthPercent"
+                        [title]="bloc.label"
+                        [attr.data-poste-id]="bloc.posteId"
+                      ><ng-container [ngTemplateOutlet]="libelleBloc" [ngTemplateOutletContext]="{ $implicit: bloc }" /></span>
                     }
                     @for (pause of ligne.pauses; track pause.heureDebut) {
                       <span

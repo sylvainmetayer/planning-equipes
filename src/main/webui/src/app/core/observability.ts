@@ -11,8 +11,8 @@ import { AppConfig } from './models';
 /**
  * Fetched once before `bootstrapApplication()`, same pattern as the i18n
  * catalog in `main.ts`: a failed fetch must not block startup, it just leaves
- * the session on {@link DEFAULT_APP_CONFIG} — observability disabled, and no
- * drag and drop in the day views, until the page is reloaded.
+ * the session on {@link DEFAULT_APP_CONFIG} — observability disabled — until
+ * the page is reloaded.
  */
 export async function loadAppConfig(): Promise<AppConfig> {
   try {
@@ -23,7 +23,7 @@ export async function loadAppConfig(): Promise<AppConfig> {
     return (await response.json()) as AppConfig;
   } catch (error) {
     console.error(
-      'Could not load /api/config: error tracking, analytics and drag and drop stay disabled until the page is reloaded.',
+      'Could not load /api/config: error tracking and analytics stay disabled until the page is reloaded.',
       error,
     );
     return DEFAULT_APP_CONFIG;

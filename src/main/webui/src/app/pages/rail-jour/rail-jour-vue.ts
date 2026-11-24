@@ -1,14 +1,6 @@
 import {
-  CdkDrag,
-  CdkDragDrop,
-  CdkDragHandle,
-  CdkDropList,
-  CdkDropListGroup,
-} from '@angular/cdk/drag-drop';
-import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   computed,
   inject,
@@ -19,20 +11,11 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { injectAppConfig } from '../../core/app-config';
-import { PostesApi } from '../../core/api/postes-api';
-import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
-import { SolverJobService } from '../../core/solver-job.service';
-import { resumeDeplacement } from '../../shared/deplacement';
-import { openMoveDialog } from '../../shared/deplacement-dialog';
-import { OptionSelection } from '../../shared/selection-recherche';
 import {
   PlanningEvenement,
   GroupedArrivalReport,
@@ -72,16 +55,11 @@ interface RailLegendItem {
  * One rendering of the Journée page (`pages/journee`), which owns the day, the
  * shared filters and the data: this view reads the plan and the breaks it is
  * handed, draws them through the pure `buildRailJours()`, and only keeps what
- * is its own — which lines it shows. A drop that rewrote the plan asks the
- * page to re-read it rather than fetching by itself.
+ * is its own — which lines it shows. It never fetches by itself.
  */
 @Component({
   selector: 'app-rail-jour-vue',
   imports: [
-    CdkDrag,
-    CdkDragHandle,
-    CdkDropList,
-    CdkDropListGroup,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
@@ -113,16 +91,12 @@ export class RailJourView {
   readonly animateur = input('');
   /** Which lines the rail keeps — the one piece of view state this rendering owns. */
   readonly view = model<RailVue>('tous');
-  /** The plan moved under this view (a drop): the page re-reads it. */
-  readonly rechargement = output<void>();
   /** The seat the page's Siège panel is open on, marked on screen; null when it is closed. */
   readonly openSeatId = input<string | null>(null);
   /** A shift was clicked: the page opens the Siège panel on its seat. */
   readonly seatSelected = output<string>();
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly dialog = inject(MatDialog);
-  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly jours = computed<RailJour[]>(() => {
     const planning = this.planning();
@@ -243,112 +217,12 @@ export class RailJourView {
   });
 
   protected readonly animateurColumnLabel = $localize`:@@railJour.column.animateur:Animateur`;
-  protected readonly glisserTooltip = $localize`:@@railJour.glisser:Glisser vers une autre personne : elle prend cette vacation, ou échange la sienne si elle travaille déjà à cette heure. Refusé si une règle dure serait cassée.`;
 
-  /* ----------------------------- Glisser-déposer (#308) ----------------------------- */
-
-  private readonly postesApi = inject(PostesApi);
   private readonly notifications = inject(NotificationService);
-  /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
-  protected readonly editingLocked = inject(SolverJobService).editingLocked;
-  /**
-   * Whether this instance offers the gesture at all (`GLISSER_DEPOSER_ACTIF`,
-   * off by default): read from the server's answer once, like `devMode`.
-   */
-  protected readonly dragDropEnabled = injectAppConfig().dragDropEnabled;
-
-  /** Any other person's line receives, whether they work at that hour (swap) or not (hand-over). */
-  protected readonly peutRecevoir = (
-    drag: CdkDrag<RailBloc>,
-    drop: CdkDropList<RailLigne>,
-  ): boolean => drag.dropContainer !== drop && drop.data.statut !== 'indisponible';
-
-  /**
-   * A vacation dropped on another person's line: that person takes the seat,
-   * or — when they already hold one on the same créneau — the two swap. The
-   * server decides which, simulates on the persisted plan and refuses a drop
-   * that would break a hard rule, naming it.
-   */
-  protected async onDrop(event: CdkDragDrop<RailLigne, RailLigne, RailBloc>): Promise<void> {
-    if (event.previousContainer === event.container) {
-      return;
-    }
-    await this.transferer(
-      event.item.data,
-      event.previousContainer.data,
-      event.container.data.animateurId,
-    );
-  }
-
-  /** The move itself, whichever way it was asked for: a drop or the dialog. */
-  private async transferer(bloc: RailBloc, porteur: RailLigne, receveurId: string): Promise<void> {
-    try {
-      // The line the block was dragged from is who this view believes holds
-      // the seat: the server refuses (409) if somebody else does now.
-      const simulation = await this.postesApi.move(
-        bloc.posteId,
-        { animateurId: receveurId },
-        porteur.animateurId,
-      );
-      this.notifications.notify({
-        ...resumeDeplacement(simulation, (id) => this.nomDe(id)),
-        variant: 'success',
-      });
-      this.rechargement.emit();
-    } catch (error) {
-      this.notifications.notify({
-        title: $localize`:@@railJour.depotRefuse:Déplacement refusé`,
-        message: errorMessage(error),
-        variant: 'error',
-      });
-      // The refusal may be « this seat moved under you »: re-read the day.
-      this.rechargement.emit();
-    }
-  }
-
-  /**
-   * The drop's twin, for the keyboard and for a single click: which of the
-   * person's shifts, and to whom — every other line the drop would accept —
-   * then the very {@link transferer} the drop calls.
-   */
-  protected openMove(porteur: RailLigne, bloc?: RailBloc): void {
-    // Not gated on `dragDropEnabled` any more: the flag governs the pointer
-    // gesture, and the dialog is the way every instance moves somebody.
-    if (this.editingLocked()) {
-      // The pointer sees the drag disabled; the keyboard is told why.
-      this.notifications.notify({
-        title: $localize`:@@railJour.deplacer.verrouille:Déplacement impossible pendant une résolution : le planning est en cours de réécriture.`,
-        variant: 'warning',
-      });
-      return;
-    }
-    const cibles: OptionSelection[] = this.lignes()
-      .filter((ligne) => ligne !== porteur && ligne.statut !== 'indisponible')
-      .map((ligne) => ({ id: ligne.animateurId, label: ligne.nom }));
-    const blocs = bloc ? [bloc] : porteur.blocs;
-    openMoveDialog(this.dialog, {
-      title: $localize`:@@railJour.deplacer.titre:Déplacer une vacation de ${porteur.nom}:nom:`,
-      sources: blocs.map((candidat) => ({ id: candidat.posteId, label: candidat.label })),
-      targets: cibles,
-      targetLabel: $localize`:@@railJour.deplacer.cible:Vers qui ? Elle prend la vacation, ou échange la sienne`,
-    })
-      .afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((choix) => {
-        const choisi = blocs.find((candidat) => candidat.posteId === choix?.source);
-        if (choix && choisi) {
-          void this.transferer(choisi, porteur, choix.target);
-        }
-      });
-  }
 
   /** A shift was clicked: its Siège panel, on the page. */
   protected openSeat(bloc: RailBloc): void {
     this.seatSelected.emit(bloc.posteId);
-  }
-
-  private nomDe(animateurId: string): string {
-    return this.lignes().find((ligne) => ligne.animateurId === animateurId)?.nom ?? animateurId;
   }
   protected readonly libreLabel = $localize`:@@railJour.statut.libre:Libre`;
   protected readonly indisponibleLabel = $localize`:@@railJour.statut.indisponible:Indisponible`;
@@ -380,26 +254,6 @@ export class RailJourView {
       } else {
         this.notifications.notify({
           title: $localize`:@@railJour.siege.aucuneVacation:Aucune vacation sur cette ligne : pas de siège à ouvrir.`,
-          variant: 'info',
-        });
-      }
-      return;
-    }
-    // Enter on a line is the keyboard twin of dragging one of its shifts
-    // (RGAA 7.3): the drag has no key of its own. Offered whether or not the
-    // instance switched the pointer gesture on.
-    if (event.key === 'Enter') {
-      const ligne = this.lignesAffichees()[index];
-      if (!ligne) {
-        return;
-      }
-      event.preventDefault();
-      if (ligne.blocs.length > 0) {
-        this.openMove(ligne);
-      } else {
-        // A key that does nothing silently reads as a broken one.
-        this.notifications.notify({
-          title: $localize`:@@railJour.deplacer.aucuneVacation:Aucune vacation à déplacer sur cette ligne.`,
           variant: 'info',
         });
       }

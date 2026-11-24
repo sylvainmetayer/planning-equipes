@@ -252,15 +252,12 @@ coûte peu à l'écriture, les rattraper coûte cher.
   de partir dans le `Referer`. Et avant d'annoncer une nouvelle fenêtre, se
   demander si elle est utile : les pages légales s'ouvrent depuis l'espace dans
   le même onglet, « Retour » y ramène.
-- **Tout geste de glisser-déposer a un jumeau atteignable au clavier, et c'est
-  le jumeau qui appelle le service.** `@angular/cdk/drag-drop` n'écoute que le
-  pointeur : déplacer une affectation passe aussi par `shared/deplacement-dialog.ts`
-  (« Déplacer … vers »), ouvert par la poignée — un bouton nommé, qu'un clic
-  simple suffit à activer (WCAG 2.5.7) — sur la vue calendrier, par Entrée
-  sur la ligne du rail, et par « Déplacer vers… » du panneau du siège. Le
-  choix fait dans le dialogue appelle la même méthode que le dépôt.
-  `GLISSER_DEPOSER_ACTIF` ne coupe que le geste pointeur : le dialogue reste
-  offert sur toute instance. Une cellule qui ouvre un détail est un arrêt clavier (le
+- **Déplacer une affectation n'a pas de geste à la souris : tout passe par
+  le dialogue.** `shared/deplacement-dialog.ts` (« Déplacer … vers ») est
+  ouvert par la poignée de la vue calendrier, par Entrée sur la ligne du rail
+  et par « Déplacer vers… » du panneau du siège ; le glisser-déposer a été
+  retiré, et tout geste pointeur qu'on ajouterait ailleurs doit avoir un jumeau
+  clavier (WCAG 2.5.7). Une cellule qui ouvre un détail est un arrêt clavier (le
   tableau croisé des contraintes : tabindex itinérant, Entrée), jamais un
   `(click)` sur un `<td>` seul.
 - **Les raccourcis à une touche se coupent** (WCAG 2.1.4) : une case dans le
@@ -724,13 +721,9 @@ n'ont pas ce souci, leur base est jetable).
 
 ```bash
 docker compose up -d postgres mailpit
-GLISSER_DEPOSER_ACTIF=true ./mvnw quarkus:dev   # mail sur :1025, mot de passe « admin »
+./mvnw quarkus:dev   # mail sur :1025, mot de passe « admin »
 cd src/main/webui && npm run e2e         # + --headed, --ui, --project=mobile, un chemin de spec
 ```
-
-`GLISSER_DEPOSER_ACTIF=true` est la seule variable à poser : le glisser-déposer
-des vues journalières est coupé par défaut, et `glisser-deposer.spec.ts`
-l'exerce. La pile de la CI (`e2e-suite.yml`) le pose de la même façon.
 
 Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 (défaut `http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL`

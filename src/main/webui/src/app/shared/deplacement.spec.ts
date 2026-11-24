@@ -1,39 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { cibleDepot, moveTargets, resumeDeplacement, scoreLabel } from './deplacement';
+import { moveTargets, resumeDeplacement, scoreLabel } from './deplacement';
 import type { Animateur, DeplacementSimulation, PosteAffectation, Stand } from '../core/models';
-
-function poste(id: string): PosteAffectation {
-  return { id, stand: null, creneau: null, animateur: null };
-}
-
-function element(posteId: string | null): Element {
-  const el = document.createElement('span');
-  if (posteId) {
-    el.dataset['posteId'] = posteId;
-  }
-  return el;
-}
-
-describe('cibleDepot', () => {
-  const libres = [poste('L1'), poste('L2')];
-  const tenus = [poste('T1')];
-
-  it('takes the seat under the pointer, held or free', () => {
-    expect(cibleDepot(element('T1'), libres, tenus)).toBe('T1');
-    expect(cibleDepot(element('L2'), libres, tenus)).toBe('L2');
-  });
-
-  it('falls back to the first free seat when the pointer names nothing of this line', () => {
-    expect(cibleDepot(element(null), libres, tenus)).toBe('L1');
-    expect(cibleDepot(null, libres, tenus)).toBe('L1');
-    // A seat of another line under the pointer is not this line's business.
-    expect(cibleDepot(element('AILLEURS'), libres, tenus)).toBe('L1');
-  });
-
-  it('answers null on a full line with nobody under the pointer, rather than guessing whom to swap', () => {
-    expect(cibleDepot(element(null), [], tenus)).toBeNull();
-  });
-});
 
 describe('resumeDeplacement', () => {
   const noms: Record<string, string> = { A: 'Alice', B: 'Bruno' };

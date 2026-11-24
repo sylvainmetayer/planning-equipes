@@ -279,7 +279,6 @@
             [(view)]="lignesRail"
             [openSeatId]="openSeatId()"
             (seatSelected)="openSeat({ posteId: $event })"
-            (rechargement)="recharger()"
           />
         }
         @case ('carte') {
@@ -335,7 +334,6 @@
             [(sieges)]="sieges"
             [openSeatId]="openSeatId()"
             (seatSelected)="openSeat({ posteId: $event })"
-            (rechargement)="recharger()"
           />
         }
       }
