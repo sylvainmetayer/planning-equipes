@@ -4,10 +4,12 @@
 # réelle — 153 animateurs, 65 stands — la résout trois fois pour de vrai et la
 # publie trois fois avec un PDF par personne : 13 minutes à elle seule, sur les
 # 20 que durait la suite E2E entière, rejouées à chaque poussée de chaque PR,
-# y compris une correction de libellé. Elle suit désormais la logique de
-# scenario-tests.yml : sur les seuls changements qui touchent ce qu'elle
-# traverse (le solveur, les consignes, la publication, ses propres fichiers),
-# et chaque nuit sur main pour que rien ne dorme longtemps.
+# y compris une correction de libellé. Sur une PR, elle ne tourne que sous un
+# label : `e2e-lourd`, posé par qui veut l'exercer avant la fusion, ou
+# `timefold`, `quarkus`, `playwright`, que Renovate pose sur les montées qui
+# changent ce qu'elle traverse. Sur main, à chaque fusion qui touche ce
+# qu'elle traverse (le solveur, les consignes, la publication, ses propres
+# fichiers), et chaque nuit pour que rien ne dorme longtemps.
 #
 # Le passé figé vu de l'écran (ADR 0044, passe-fige.spec.ts) l'a rejointe :
 # il fige la date du serveur, ce que la pile ordinaire refuse comme la
@@ -18,44 +20,9 @@ name: Tests E2E lourds
 
 on:
   pull_request:
-    # Liste dupliquée ci-dessous pour le push : GitHub Actions n'interprète pas
-    # les ancres YAML.
-    paths:
-      - 'src/main/java/dev/sylvain/planning/solver/**'
-      - 'src/main/java/dev/sylvain/planning/domain/**'
-      - 'src/main/java/dev/sylvain/planning/service/solve/**'
-      - 'src/main/java/dev/sylvain/planning/service/consigne/**'
-      - 'src/main/java/dev/sylvain/planning/service/publication/**'
-      - 'src/main/java/dev/sylvain/planning/service/export/**'
-      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
-      - 'src/main/resources/solver/**'
-      - 'src/main/resources/application.properties'
-      - 'src/main/resources/scenarios/festival-hivernal.yaml'
-      # La spec résout trois fois pour de vrai sous un budget fixe de
-      # 240 s : une montée de version Timefold ou Quarkus est précisément
-      # ce qui peut la faire déborder. Comme scenario-tests.yml — et avec
-      # la même garde de label côté job, pour ne pas payer une heure sur
-      # un bump de jackson.
-      - 'pom.xml'
-      - 'src/main/webui/src/app/pages/consignes/**'
-      - 'src/main/webui/src/app/pages/publication/**'
-      - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
-      - 'src/main/webui/e2e/passe-fige.spec.ts'
-      - 'src/main/java/dev/sylvain/planning/service/espace/JourJClock.java'
-      - 'src/main/java/dev/sylvain/planning/config/SimulatedClockPermission.java'
-      - 'src/main/java/dev/sylvain/planning/api/HorlogeResource.java'
-      - 'src/main/resources/scenarios/gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml'
-      - 'src/main/webui/src/app/pages/parametres/horloge-simulee-card.ts'
-      - 'src/main/webui/src/app/core/date-mock.service.ts'
-      - 'src/main/webui/src/app/core/api/horloge-api.ts'
-      - 'src/main/webui/src/app/pages/calendar-day/**'
-      - 'src/main/webui/src/app/shared/deplacement-dialog.ts'
-      - 'src/main/webui/src/app/pages/solver/**'
-      - 'src/main/webui/e2e/support.ts'
-      - 'src/main/webui/e2e/reference.ts'
-      - 'src/main/webui/playwright.config.ts'
-      - '.github/workflows/e2e-lourd.yml'
-      - '.github/workflows/e2e-suite.yml'
+    # `labeled` : poser le label sur une PR déjà ouverte lance le run, sans
+    # attendre la poussée suivante. Pas de `paths` : le label est le filtre.
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches:
       - main
@@ -96,7 +63,7 @@ on:
       - '.github/workflows/e2e-lourd.yml'
       - '.github/workflows/e2e-suite.yml'
   schedule:
-    # Chaque nuit à 3 h UTC, sur main : ce que le filtre ci-dessus laisse
+    # Chaque nuit à 3 h UTC, sur main : ce que le filtre de la poussée laisse
     # passer est rattrapé le lendemain matin, jamais plus tard.
     - cron: '0 3 * * *'
   workflow_dispatch:
@@ -104,33 +71,35 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  # `github.event_name` dans la clé : sur main, la poussée et le cron nocturne
-  # tombaient sinon dans le même groupe, et un merge annulait le run de
-  # rattrapage (ou l'inverse). Un run annulé n'est pas rouge : le filet
-  # sautait sans que personne ne le voie. Deux poussées successives sur la
-  # même référence continuent, elles, de s'annuler.
-  group: e2e-lourd-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   e2e-lourd:
-    # Même garde de fork que tests.yml, conservée pour la même raison. Et,
-    # parce que `pom.xml` est désormais dans la liste des chemins, une PR
-    # Renovate n'y passe que sous le label `timefold` ou `quarkus` — la règle
-    # de scenario-tests.yml, pour la même raison : un bump de sentry ne change
-    # rien à ce que cette spec traverse, et coûterait une heure pour le dire.
-    # S'y ajoute `playwright` : un nouveau navigateur change, lui, ce que ces
-    # specs traversent (l'horloge, les téléchargements de PDF), et c'est avant
-    # la fusion qu'il faut l'apprendre, pas au cron du lendemain.
+    # Même garde de fork que tests.yml, conservée pour la même raison. Sur une
+    # PR, un des quatre labels est requis — `e2e-lourd` pour tout le monde,
+    # `timefold`, `quarkus` et `playwright` pour les montées que Renovate
+    # étiquette : un nouveau solveur ou un nouveau navigateur change ce que ces
+    # specs traversent (budget de résolution, horloge, téléchargements de
+    # PDF), et c'est avant la fusion qu'il faut l'apprendre. Ajouter un autre
+    # label ne relance rien.
     if: >-
       (github.event_name != 'pull_request'
         || github.event.pull_request.head.repo.full_name == github.repository)
       && (github.event_name != 'pull_request'
-        || github.event.pull_request.user.login != 'renovate[bot]'
-        || contains(github.event.pull_request.labels.*.name, 'timefold')
-        || contains(github.event.pull_request.labels.*.name, 'quarkus')
-        || contains(github.event.pull_request.labels.*.name, 'playwright'))
+        || ((github.event.action != 'labeled'
+            || contains(fromJSON('["e2e-lourd","timefold","quarkus","playwright"]'), github.event.label.name))
+          && (contains(github.event.pull_request.labels.*.name, 'e2e-lourd')
+            || contains(github.event.pull_request.labels.*.name, 'timefold')
+            || contains(github.event.pull_request.labels.*.name, 'quarkus')
+            || contains(github.event.pull_request.labels.*.name, 'playwright'))))
+    # Au niveau du job et non du workflow : un run sauté (PR sans label, label
+    # sans rapport) n'annule pas celui qui tourne.
+    # `github.event_name` dans la clé : sur main, la poussée et le cron nocturne
+    # tombaient sinon dans le même groupe, et un merge annulait le run de
+    # rattrapage (ou l'inverse). Un run annulé n'est pas rouge : le filet
+    # sautait sans que personne ne le voie. Deux poussées successives sur la
+    # même référence continuent, elles, de s'annuler.
+    concurrency:
+      group: e2e-lourd-${{ github.event_name }}-${{ github.ref }}
+      cancel-in-progress: true
     uses: ./.github/workflows/e2e-suite.yml
     with:
       playwright-args: --grep @lourd
