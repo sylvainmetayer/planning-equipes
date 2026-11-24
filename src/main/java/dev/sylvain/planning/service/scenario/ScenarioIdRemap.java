@@ -112,6 +112,7 @@ final class ScenarioIdRemap {
         mapAnimateurs(scenario);
         mapContraintes(scenario);
         return new ScenarioDto(
+                scenario.schemaVersion(),
                 scenario.edition(),
                 scenario.festival(),
                 scenario.parametresSolveur(),

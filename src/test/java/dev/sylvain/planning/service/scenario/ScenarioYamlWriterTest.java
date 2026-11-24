@@ -333,7 +333,7 @@ class ScenarioYamlWriterTest {
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         assertThat(new ArrayList<>(parsed.keySet()))
-                .containsExactly("festival", "creneaux", "stands", "animateurs", "postes");
+                .containsExactly("schemaVersion", "festival", "creneaux", "stands", "animateurs", "postes");
         Map<String, Object> standYaml = ((List<Map<String, Object>>) parsed.get("stands")).get(0);
         assertThat(new ArrayList<>(standYaml.keySet()))
                 .containsExactly(

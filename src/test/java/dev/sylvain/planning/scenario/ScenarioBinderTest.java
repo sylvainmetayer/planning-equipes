@@ -289,4 +289,19 @@ class ScenarioBinderTest {
                         .dureePauseMinutes())
                 .isEqualTo(45);
     }
+
+    @Test
+    void schemaVersionIsAbsentOrOne() {
+        assertThat(ScenarioBinder.bind(MINIMAL).schemaVersion()).isNull();
+        assertThat(ScenarioBinder.bind("schemaVersion: 1\n" + MINIMAL).schemaVersion())
+                .isEqualTo(1);
+    }
+
+    @Test
+    void aNewerSchemaVersionIsRefusedWithAClearMessage() {
+        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 2\nclefDuFutur: 1\n" + MINIMAL))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("plus récent")
+                .hasMessageNotContaining("Champ inconnu");
+    }
 }

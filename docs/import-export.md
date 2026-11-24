@@ -291,6 +291,17 @@ Un créneau peut porter `couverturePause: true` : il couvre un service de
 repas, et le stand n'y ouvre que la moitié de son effectif, arrondie au
 supérieur. Le drapeau n'est écrit que lorsqu'il vaut vrai.
 
+## `schemaVersion` : la version du format
+
+Un fichier de scénario écrit par l'application commence par `schemaVersion: 1`.
+À la lecture, la clé est **facultative** : absente, elle vaut `1`, ce qui garde
+lisibles les scénarios livrés, les archives de fin d'événement et les copies
+faites avant un vidage. Un numéro **supérieur** à celui que la version lit est
+refusé d'une phrase claire (« produit par une version plus récente ») plutôt que
+d'un « champ inconnu » sur la première clé nouvelle. Une version plus ancienne
+de l'application (3.1 et avant) refuse, elle, tout fichier portant la clé, comme
+n'importe quelle clé inconnue : un fichier exporté en 3.2 ne se relit pas en 3.1.
+
 ## Horaires d'un stand
 
 Le sélecteur de jours est **à plat** : `jours` nomme lequel des champs voisins
