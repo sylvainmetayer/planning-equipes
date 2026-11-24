@@ -252,7 +252,9 @@ export class MuralPage implements OnInit, OnDestroy {
     const racine = this.host.nativeElement;
     const grille = racine.querySelector<HTMLElement>('.mural-grille');
     const tuiles = Array.from(racine.querySelectorAll<HTMLElement>('.mural-tuile'));
-    if (!grille || tuiles.length === 0) {
+    // Tiles with no height are not laid out (hidden tab, jsdom): nothing to measure,
+    // and the gap alone would claim a tile 16 px high and fit them all on one page.
+    if (!grille || tuiles.length === 0 || tuiles.every((tuile) => tuile.offsetHeight === 0)) {
       return;
     }
     const gap = Number.parseFloat(getComputedStyle(grille).rowGap) || 0;
