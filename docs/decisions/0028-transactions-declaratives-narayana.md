@@ -1,6 +1,6 @@
 # 0028 — Transactions déclaratives (`@Transactional`, Narayana) pour les unités de travail composées
 
-- **Statut** : proposé — mesuré, non tranché
+- **Statut** : étude close — mesurée, non retenue ; rouverte si le besoin revient
 - **Date** : septembre 2026
 - **Portée** : `service/JdbcEditionScope`, les unités de travail qui composent plusieurs écritures, les signatures de service qui portent une `Connection`
 - **Origine** : la demande de mesurer un passage à `@Transactional`, née de l'audit d'architecture de septembre 2026 (A5, question 7)
