@@ -14,6 +14,10 @@
       "texte": "Dès qu'un plan faisable existe, l'écran Solveur le dit. La suite ne fait qu'améliorer la qualité, et un bouton arrête le calcul en gardant ce plan. Les trois niveaux du score se tracent en direct, pour voir quand il plafonne."
     },
     {
+      "h2": "Combien de temps ça prend",
+      "texte": "Pour une équipe d'environ 150 personnes, un plan qui tient toutes les règles impératives arrive en général en moins d'une minute.\n\nLe calcul continue ensuite quelques minutes pour satisfaire le plus de monde : équité, souhaits, journées continues. Il s'arrête de lui-même quand il ne trouve plus mieux, et au plus tard au bout d'un quart d'heure. Vous pouvez l'arrêter avant : le meilleur plan trouvé est gardé."
+    },
+    {
       "h2": "Trois façons de le lancer",
       "texte": "- **Calculer le planning** repart du plan enregistré.\n- **Corriger après un changement** fige ce qui tient et ne recalcule que les places rouvertes.\n- **Recommencer de zéro** abandonne l'acquis, et le dit avant.\n\nAvant de lancer, la page dit ce que le calcul recevra : verrouillages, ajustements, consignes, règles désactivées."
     },
@@ -51,6 +55,10 @@
       {
         "h2": "What it shows on the way",
         "texte": "As soon as a feasible plan exists, the Solver screen says so. The rest only improves quality, and a button stops the run and keeps that plan. The three levels of the score are drawn live, so you see when it levels off."
+      },
+      {
+        "h2": "How long it takes",
+        "texte": "For a team of about 150 people, a plan that holds every mandatory rule usually arrives in under a minute.\n\nThe solver then keeps going for a few minutes to satisfy as many people as it can: fairness, wishes, continuous days. It stops by itself once it finds nothing better, and after a quarter of an hour at most. You can stop it sooner: the best plan found is kept."
       },
       {
         "h2": "Three ways to start it",
