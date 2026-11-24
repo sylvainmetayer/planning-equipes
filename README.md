@@ -13,6 +13,8 @@ automatiquement les animateurs aux stands, en respectant le cadre légal
 (notamment celui des mineurs), les compétences, les disponibilités et l'équité
 de charge.
 
+Présentation, captures et contact : **[planning.sylvain.dev](https://planning.sylvain.dev/)**.
+
 Ce README couvre deux choses : **démarrer l'application en local** et
 **l'inventaire de ce qu'elle sait faire**. Le mode d'emploi, lui, est dans
 l'application (page « Aide »), et la documentation technique (architecture,

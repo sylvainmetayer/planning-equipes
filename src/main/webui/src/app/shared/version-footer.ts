@@ -30,6 +30,15 @@ import { NewWindowLink } from './new-window-link';
       <a [href]="url" target="_blank" rel="noopener noreferrer">{{ version }}</a>
       <span aria-hidden="true">·</span>
       <a routerLink="/declaration-accessibilite" i18n="@@nav.link.accessibilite">Accessibilité</a>
+      <span aria-hidden="true">·</span>
+      <a
+        href="https://planning.sylvain.dev/"
+        i18n-href="@@footer.siteUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        i18n="@@footer.site"
+        >Le site du projet</a
+      >
     </footer>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

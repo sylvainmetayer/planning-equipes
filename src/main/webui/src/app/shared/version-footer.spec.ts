@@ -65,6 +65,16 @@ describe('VersionFooter', () => {
     expect(pied.classList.contains('app-version-footer')).toBe(true);
   });
 
+  it('links to the project website without leaking the page address', () => {
+    const fixture = rendre();
+
+    const lien = fixture.nativeElement.querySelector(
+      'a[href^="https://planning.sylvain.dev/"]',
+    ) as HTMLAnchorElement;
+    expect(lien.textContent).toContain('Le site du projet');
+    expect(lien.getAttribute('rel')).toContain('noreferrer');
+  });
+
   // Every screen carries the way to the accessibility statement (RGAA 13).
   it('links to the accessibility statement', () => {
     const fixture = rendre();
