@@ -39,8 +39,7 @@ describe('ExemplesCard', () => {
     scenarioImport.importer.mockReset();
     scenarioImport.recapitulatif.mockReset();
     planningApi.scenarioNames.mockResolvedValue([
-      'extreme-10-sans-animateur.yaml',
-      'gamme-01-1j-2stands-3animateurs.yaml',
+      'scenario-continu.yaml',
       'festival-realiste-canicule.yaml',
       'scenario-complet.yaml',
       'exemple-animateurs.csv',
@@ -116,12 +115,12 @@ describe('ExemplesCard', () => {
   it('imports the selected scenario by name, through the shared choreography', async () => {
     const { page } = await monter();
 
-    page['onSelectScenario']('gamme-01-1j-2stands-3animateurs.yaml');
+    page['onSelectScenario']('scenario-continu.yaml');
     await page['onLoadSample']();
 
     expect(scenarioImport.importer).toHaveBeenCalledExactlyOnceWith({
       kind: 'name',
-      name: 'gamme-01-1j-2stands-3animateurs.yaml',
+      name: 'scenario-continu.yaml',
     });
   });
 
