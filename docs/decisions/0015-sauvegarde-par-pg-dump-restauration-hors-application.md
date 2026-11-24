@@ -33,7 +33,7 @@ L'application lance **`pg_dump --format=custom`** chaque nuit à 4 h, dans un
 répertoire désigné par `BACKUP_DIR`, et ne conserve que les
 `BACKUP_RETENTION` copies les plus récentes (10 par défaut, bornes 1 et 30).
 
-Le binaire vient du dépôt PGDG dans l'image applicative, en version 18 : un
+Le binaire vient du dépôt PGDG dans l'image applicative, en version 19 : un
 `pg_dump` plus ancien que le serveur refuse de tourner, et cette version-là est
 donc à faire évoluer avec l'image `postgres:` de la pile de production.
 

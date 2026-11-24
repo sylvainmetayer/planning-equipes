@@ -689,7 +689,7 @@ duplication **éteints** —, l'état (`meteo_etat`) reste celui de la machine.
 
 `docker-compose.yml` : l'application (build multi-stage, JRE en image finale,
 utilisateur non privilégié `uid 1000`), PostgreSQL avec son volume et son
-healthcheck, pgAdmin. L'image finale embarque `postgresql-client-18` pour la
+healthcheck, pgAdmin. L'image finale embarque `postgresql-client-19` pour la
 sauvegarde de nuit : un `pg_dump` plus ancien que le serveur refuse de tourner,
 donc cette version suit celle de l'image `postgres:`. La configuration de production est dans
 [`exploitation.md`](exploitation.md) et le durcissement dans
