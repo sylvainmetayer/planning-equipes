@@ -97,6 +97,10 @@
     <div class="bento__foot">
       <p>{{ c.equipes.outils | typo(lang) }}</p>
       <p class="more"><a href="{{ urls[lang].equipe }}">{{ c.equipes.lien }}</a></p>
+      <p>{{ c.equipes.exemples.intro | typo(lang) }}</p>
+      <ul class="exemples">
+        {% for e in c.equipes.exemples.liens %}<li><a href="/exemples/{{ e.fichier }}">{{ e.texte | typo(lang) }}</a> ({{ e.pages }}, {{ ('/exemples/' + e.fichier) | weight(labels.unite) | typo(lang) }})</li>{% endfor %}
+      </ul>
     </div>
   </div>
 </section>

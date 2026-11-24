@@ -203,6 +203,15 @@ aucune dépendance du dépôt. Le script :
    téléphone), le passage d'attente du calcul accéléré, et une affiche tirée de
    chaque film.
 
+Le tournage dépose aussi trois PDF dans `src/exemples/` (`planning-global.pdf`,
+`planning-animateur.pdf`, `planning-animateur-feuille.pdf`), proposés dans la
+section animateurs de l'accueil : ce sont ceux que produit l'application sur le
+scénario fictif (`GET /api/planning/export/pdf/global`, puis le PDF d'une
+animateuse mineure fictive, livret et feuille à plier, d'après le plan
+enregistré). `tourner.sh` les régénère ; `ONLY=pdf` n'en fait que cela, sans
+navigateur. Le nombre de pages affiché sur l'accueil (`equipes.exemples` dans
+`accueil.json`) se relit alors, le poids, lui, se lit au build.
+
 Le scénario est versionné avec l'application : il est dans la liste des scénarios
 livrés, relu par les mêmes tests, et **ne change pas sans qu'on refasse les
 captures**. Une vidéo qui change met à jour sa durée, sa transcription et sa
