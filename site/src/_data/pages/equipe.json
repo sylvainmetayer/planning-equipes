@@ -1,7 +1,7 @@
 {
   "slug": "organiser-son-equipe",
-  "titre": "Organiser son équipe d'événement, salariés et bénévoles",
-  "description": "Importer l'équipe, salariée, bénévole ou mixte, collecter les disponibilités, puis donner à chacun son planning sur son téléphone.",
+  "titre": "Planning des bénévoles : organiser son équipe | Planning Équipes",
+  "description": "Importez vos animateurs, salariés ou bénévoles, collectez leurs disponibilités sur téléphone, puis envoyez à chacun son planning.",
   "h1": "Comment organiser son équipe ?",
   "reponse": "**En trois temps** : importer le tableur, collecter les disponibilités, publier. Chacun reçoit son planning sur son téléphone, salarié comme bénévole.",
   "sections": [
@@ -31,12 +31,15 @@
   "liens": [
     "legal",
     "calcul",
-    "faq"
+    "faq",
+    "festival",
+    "salon",
+    "sport"
   ],
   "en": {
     "slug": "organising-your-team",
-    "titre": "Organising your event team, paid staff and volunteers",
-    "description": "Import your team, paid, volunteer or mixed, collect availability, then give everyone their rota on their phone.",
+    "titre": "Volunteer rota: organise your event team | Planning Équipes",
+    "description": "Import your staff, paid or volunteer, collect their availability from phones, then send everyone their rota.",
     "h1": "How do you organise your team?",
     "reponse": "**In three steps**: import the spreadsheet, collect availability, publish. Everyone gets their rota on their phone, paid staff and volunteers alike.",
     "sections": [
@@ -66,7 +69,10 @@
     "liens": [
       "legal",
       "calcul",
-      "faq"
+      "faq",
+      "festival",
+      "salon",
+      "sport"
     ]
   }
 }

@@ -37,7 +37,8 @@
   "liens": [
     "equipe",
     "calcul",
-    "faq"
+    "faq",
+    "mineurs"
   ],
   "en": {
     "slug": "labour-code",
@@ -78,7 +79,8 @@
     "liens": [
       "equipe",
       "calcul",
-      "faq"
+      "faq",
+      "mineurs"
     ]
   }
 }

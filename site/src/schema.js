@@ -36,7 +36,7 @@ export default function schema(p, modified) {
       publisher: { '@id': site.author.id },
     },
     {
-      '@type': key === 'faq' ? 'FAQPage' : 'WebPage',
+      '@type': page.items ? 'FAQPage' : 'WebPage',
       '@id': `${url}#page`,
       url,
       name: typo(page.titre, lang),
@@ -46,7 +46,7 @@ export default function schema(p, modified) {
       about: { '@id': abs('/#app') },
       dateModified: modified,
       primaryImageOfPage: { '@type': 'ImageObject', url: abs(`/og-${lang}.png`) },
-      ...(key === 'faq' ? { mainEntity: faq(lang, page.items).mainEntity } : {}),
+      ...(page.items ? { mainEntity: faq(lang, page.items).mainEntity } : {}),
     },
   ];
   if (key !== 'accueil') {

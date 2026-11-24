@@ -1,0 +1,84 @@
+{
+  "slug": "planning-salon-foire",
+  "titre": "Planning de salon ou de foire : équipes | Planning Équipes",
+  "description": "Planning du personnel d'un salon ou d'une foire : postes, pauses et relais, lieux, plusieurs jours de suite, salle de contrôle.",
+  "h1": "Comment faire le planning d'un salon ou d'une foire ?",
+  "reponse": "**Un poste, c'est un stand à tenir : accueil, billetterie, vestiaire, buvette, animation.** Vous saisissez ses horaires et son effectif ; le logiciel place l'équipe sur plusieurs jours, avec les pauses et les repas que la loi impose.",
+  "sections": [
+    {
+      "h2": "Ouvert tous les jours, de longues amplitudes",
+      "texte": "Un salon ou une foire ouvre longtemps, plusieurs jours de suite. Chaque stand a ses horaires par jour, et **chaque fenêtre d'ouverture peut avoir son propre effectif** : moins de monde le matin, plus l'après-midi ou en nocturne. Les règles de durée, de repos et de jours d'affilée (huit par défaut, réglable) sont tenues pour toute l'équipe."
+    },
+    {
+      "h2": "Les pauses et les repas",
+      "texte": "Une pause due se place de deux façons seulement : **un trou dans la grille, ou un collègue du même stand qui tient la place** pendant toute la pause. Sinon, le plan est refusé. L'écran *Pauses et repas* montre où tombent les pauses, jour par jour et stand par stand, pour voir qui sort au plus tard à quelle heure."
+    },
+    {
+      "h2": "Plusieurs lieux, des trajets",
+      "texte": "Les stands se rattachent à des emplacements géolocalisés, vus sur une carte avec un curseur horaire. Deux postes d'une même personne sur deux emplacements éloignés doivent laisser le temps d'aller de l'un à l'autre à pied."
+    },
+    {
+      "h2": "Une équipe mixte",
+      "texte": "Salariés, bénévoles, étudiants, mineurs : le calcul ne distingue pas les statuts, il applique à chacun le droit de son âge réel et ses compétences. Chacun déclare ses jours d'indisponibilité depuis son téléphone. La page [organiser son équipe](/organiser-son-equipe/) détaille l'import du tableur."
+    },
+    {
+      "h2": "La salle de contrôle",
+      "texte": "L'écran *Aujourd'hui* gère les absents et propose des remplaçants. L'**affichage mural** tourne sur une télé : stands ouverts regroupés par emplacement, vacation en cours et suivante, places vides depuis ce matin, pause sans relais dans l'heure."
+    },
+    {
+      "h2": "Avant et après",
+      "texte": "L'organisateur obtient un PDF global du planning, chacun son PDF avec un QR code et son agenda. Après l'événement, l'écran *Réalisé vs planifié* compare ce qui a été publié et ce qui a été tenu."
+    }
+  ],
+  "cta": "Un salon ou une foire à planifier ?",
+  "bouton": "Écrire à planning@sylvain.dev",
+  "liens": [
+    "equipe",
+    "legal",
+    "calcul",
+    "festival",
+    "sport"
+  ],
+  "en": {
+    "slug": "trade-show-staff-rota",
+    "titre": "Trade fair and show staff rota | Planning Équipes",
+    "description": "Staff rota for a trade show or fair: posts, breaks and reliefs, venues, several days in a row, control room. How the software goes about it.",
+    "h1": "How do you schedule the staff of a trade show or fair?",
+    "reponse": "**A post is a stand to man: reception, ticketing, cloakroom, bar, a demo.** You enter its hours and headcount; the software places the team over several days, with the breaks and meals the law requires.",
+    "sections": [
+      {
+        "h2": "Open every day, long hours",
+        "texte": "A show or fair opens long hours, several days running. Each stand has its hours per day, and **each opening window can have its own headcount**: fewer people in the morning, more in the afternoon or in the evening. The rules on hours, rest and days in a row (eight by default, adjustable) hold for the whole team."
+      },
+      {
+        "h2": "Breaks and meals",
+        "texte": "A break that is due fits in two ways only: **a gap in the grid, or a colleague on the same stand holding the seat** for the whole break. Otherwise the plan is refused. The *Breaks and meals* screen shows where breaks fall, day by day and stand by stand, to see who comes off at the latest, and when."
+      },
+      {
+        "h2": "Several venues, travel time",
+        "texte": "Stands are attached to mapped locations, seen on a map with a time slider. Two shifts of the same person on two distant locations must leave time to walk from one to the other."
+      },
+      {
+        "h2": "A mixed team",
+        "texte": "Paid staff, volunteers, students, under-18s: the solver does not tell statuses apart, it applies to each person the law of their real age and their skills. Everyone declares their days off from their phone. The page [organising your team](/en/organising-your-team/) details the spreadsheet import."
+      },
+      {
+        "h2": "The control room",
+        "texte": "The *Today* screen handles absences and suggests replacements. The **wall display** runs on a TV: open stands grouped by location, current and next shift, seats empty since this morning, a break without relief within the hour."
+      },
+      {
+        "h2": "Before and after",
+        "texte": "The organiser gets a global PDF of the rota, everyone gets their own PDF with a QR code and their calendar. After the event, the *Realised vs planned* screen compares what was published with what was held."
+      }
+    ],
+    "cta": "A trade show or fair to schedule?",
+    "bouton": "Email planning@sylvain.dev",
+    "liens": [
+      "equipe",
+      "legal",
+      "calcul",
+      "festival",
+      "sport"
+    ]
+  }
+}

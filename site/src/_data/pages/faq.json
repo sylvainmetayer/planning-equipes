@@ -1,7 +1,7 @@
 {
   "slug": "questions",
-  "titre": "Questions fréquentes sur Planning Équipes",
-  "description": "Données personnelles, mineurs, bénévoles, tarif, hébergement, licence : les réponses aux questions que se posent les organisateurs d'événements.",
+  "titre": "Logiciel de planning bénévoles : questions | Planning Équipes",
+  "description": "Prix, mineurs, bénévoles, données personnelles, licence, hébergement : les réponses aux questions que se posent les organisateurs d'événements.",
   "h1": "Les questions qu'on nous pose",
   "reponse": "Les réponses courtes aux questions des organisateurs. Une question manque ? Écrivez-nous.",
   "items": [
@@ -81,12 +81,14 @@
   "liens": [
     "legal",
     "equipe",
-    "hebergement"
+    "hebergement",
+    "tableur",
+    "mineurs"
   ],
   "en": {
     "slug": "questions",
-    "titre": "Planning Équipes: frequently asked questions",
-    "description": "Personal data, under-18s, volunteers, price, hosting, licence: answers to the questions event organisers ask.",
+    "titre": "Volunteer scheduling software: FAQ | Planning Équipes",
+    "description": "Price, under-18s, volunteers, personal data, licence, hosting: answers to what event organisers ask about volunteer scheduling software.",
     "h1": "Questions we get asked",
     "reponse": "Short answers to the questions organisers ask. A question missing? Write to us.",
     "items": [
@@ -166,7 +168,9 @@
     "liens": [
       "legal",
       "equipe",
-      "hebergement"
+      "hebergement",
+      "tableur",
+      "mineurs"
     ]
   }
 }

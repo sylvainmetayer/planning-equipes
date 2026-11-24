@@ -114,6 +114,16 @@
   </div>
 </section>
 
+<section class="sec sec--tint" data-player="3" id="evenements" aria-labelledby="ev-t">
+  <div class="container related">
+    <h2 id="ev-t">{{ c.types.h2 | typo(lang) }}</h2>
+    <p class="lead">{{ c.types.intro | typo(lang) }}</p>
+    <ul>
+      {% for k in ['festival', 'salon', 'sport', 'tableur', 'mineurs'] %}<li><a href="{{ urls[lang][k] }}">{{ copy[lang][k].h1 | typo(lang) }}</a></li>{% endfor %}
+    </ul>
+  </div>
+</section>
+
 <section class="sec" data-player="2" id="questions" aria-labelledby="faq-t">
   <div class="container asks">
     <div class="asks__head">

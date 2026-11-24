@@ -1,6 +1,6 @@
 {% set c = copy[lang][key] %}
 {% set mail = urls[lang].contact %}
-{% set player = 4 if key == 'legal' else (3 if key == 'equipe' else (1 if key == 'hebergement' else 2)) %}
+{% set player = {'legal': 4, 'equipe': 3, 'hebergement': 1, 'festival': 1, 'salon': 3, 'sport': 4, 'mineurs': 4}[key] or 2 %}
 <article data-player="{{ player }}">
   <header class="ask">
     <div class="container">
@@ -49,7 +49,28 @@
   </section>
   {% endif %}
 
-  {% if key == 'faq' %}
+  {% if c.tableau %}
+  <section class="sec sec--tint" aria-labelledby="tab-t">
+    <div class="container">
+      <div class="head"><h2 id="tab-t">{{ c.tableau.h2 | typo(lang) }}</h2></div>
+      <div class="example">
+        <div class="scroll" role="group" aria-label="{{ c.tableau.h2 | typo(lang) }}" tabindex="0">
+          <table class="rows rows--cmp">
+            <caption class="visually-hidden">{{ c.tableau.h2 | typo(lang) }}</caption>
+            <thead><tr>{% for h in c.tableau.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for l in c.tableau.lignes %}
+              <tr><th scope="row">{{ l.q | typo(lang) }}</th><td>{{ l.tableur | typo(lang) }}</td><td>{{ l.logiciel | typo(lang) }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if c.items %}
   <section class="container asks__list asks__list--page" aria-label="{{ c.h1 | typo(lang) }}">
     {% for i in c.items %}
     <details id="{{ i.id }}"><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | typo(lang) }}</p></details>
