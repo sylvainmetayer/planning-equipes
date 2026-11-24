@@ -1184,7 +1184,8 @@ Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Quelques
 points qui ne s'y voient pas :
 
 - **une poussée coûte une cinquantaine de minutes de runner**, quel que soit
-  son contenu : Tests (≈ 13 + 3, plus ≈ 8 pour son job `e2e` et quelques-unes
+  son contenu : Tests (≈ 8 pour le job `test`, ≈ 10 pour chacune des deux
+  moitiés de `test-conteneur`, puis ≈ 10 pour son job `e2e` et quelques-unes
   pour l'analyse dynamique `dast`), scénarios (≈ 8 dès que la PR a touché le
   solveur), Sécurité (quelques minutes, ses jobs en parallèle). D'où trois
   filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` et le
@@ -1248,6 +1249,23 @@ points qui ne s'y voient pas :
   les deux) : deux workflows qui poussent sur la même branche se refusent l'un
   l'autre, et un groupe de concurrence partagé ne l'empêcherait pas — GitHub ne
   garde qu'une exécution en attente par groupe, tous workflows confondus ;
+- **la suite backend est jouée en trois jobs parallèles** : `test` joue
+  `verify -DskipITs=false -Pcoverage,unit` — les classes qui n'ont besoin que
+  d'une JVM, les tests d'intégration, le packaging —, et les deux moitiés de
+  `test-conteneur` les classes de `src/test/container-tests.txt`, une ligne
+  sur deux du fichier chacune (`-Dsurefire.includesFile`). Chaque classe est
+  dans un seul des trois, et `ContainerTestsInventoryTest` garde le fichier
+  égal aux annotations. Les trois rapports JaCoCo vont à Sonar, qui les
+  fusionne (`sonar.coverage.jacoco.xmlReportPaths`). L'E2E et le `dast`
+  attendent les trois, comme ils attendaient la suite entière ;
+- **`.mvn/maven.config` coupe la découverte des fichiers de préfixes** de
+  Maven 3.10 (`aether.remoteRepositoryFilter.prefixes.resolvePrefixFiles=false`).
+  Chaque session Maven — et celle que Quarkus ouvre dans `generate-code-tests`
+  — demandait `/.meta/prefixes.txt` à chaque dépôt que déclare un POM de
+  dépendance (ceux de repository.jboss.org, entre autres), avec trois
+  reprises : quand ce serveur répond 503, comme le 24 novembre 2026, le job
+  `test` perdait jusqu'à dix minutes à attendre. Sans ces fichiers, la
+  résolution redevient celle de Maven 3.9 : chaque dépôt est interrogé ;
 - **le bundle Angular n'est construit que deux fois par poussée** : par
   Quinoa dans le `./mvnw verify` du job `test`, et par `npm run build` dans le
   job `frontend`, qui en a besoin pour les budgets d'`angular.json`. Le job
