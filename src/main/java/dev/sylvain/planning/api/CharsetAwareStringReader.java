@@ -48,7 +48,7 @@ public class CharsetAwareStringReader implements MessageBodyReader<String> {
         String name = mediaType == null ? null : mediaType.getParameters().get(MediaType.CHARSET_PARAMETER);
         try {
             return name == null ? StandardCharsets.UTF_8 : Charset.forName(name);
-        } catch (IllegalArgumentException unknown) {
+        } catch (IllegalArgumentException _) {
             return StandardCharsets.UTF_8;
         }
     }
