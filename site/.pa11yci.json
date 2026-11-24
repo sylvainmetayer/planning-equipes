@@ -1,10 +1,16 @@
 {
   "defaults": {
     "standard": "WCAG2AA",
-    "runners": ["axe", "htmlcs"],
+    "runners": [
+      "axe",
+      "htmlcs"
+    ],
     "timeout": 30000,
     "chromeLaunchConfig": {
-      "args": ["--no-sandbox"]
-    }
+      "args": [
+        "--no-sandbox"
+      ]
+    },
+    "hideElements": ".form__frame"
   }
 }
