@@ -60,7 +60,7 @@
             <thead><tr>{% for h in c.tableau.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
             <tbody>
               {% for l in c.tableau.lignes %}
-              <tr><th scope="row">{{ l.q | typo(lang) }}</th><td>{{ l.tableur | typo(lang) }}</td><td>{{ l.logiciel | typo(lang) }}</td></tr>
+              <tr><th scope="row">{{ l.q | typo(lang) }}</th><td data-label="{{ c.tableau.colonnes[1] }}">{{ l.tableur | typo(lang) }}</td><td data-label="{{ c.tableau.colonnes[2] }}">{{ l.logiciel | typo(lang) }}</td></tr>
               {% endfor %}
             </tbody>
           </table>

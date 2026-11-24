@@ -54,13 +54,10 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 
 /* Masthead */
 .top { border-bottom: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); }
-/* Sticky from 40rem up; on a phone its three rows would take a third of the screen */
-@media (min-width: 40.01rem) {
-  .top { position: sticky; top: 0; z-index: var(--z-sticky-nav); }
-  /* An anchor lands below the header: one row wide, two rows under 85rem */
-  html { scroll-padding-top: calc(var(--nav-h) + var(--space-lg)); }
-}
-@media (min-width: 40.01rem) and (max-width: 85rem) { html { scroll-padding-top: calc(2 * var(--nav-h) + var(--space-lg)); } }
+.top { position: sticky; top: 0; z-index: var(--z-sticky-nav); }
+/* An anchor lands below the header: one row wide, two rows (under 110px) below 64rem */
+html { scroll-padding-top: calc(var(--nav-h) + var(--space-lg)); }
+@media (max-width: 64rem) { html { scroll-padding-top: calc(7rem + var(--space-lg)); } }
 .top__in { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-lg); min-height: calc(var(--nav-h) - var(--rule-hair)); }
 .top__nav ul { display: flex; flex-wrap: wrap; gap: 0 var(--space-lg); margin: 0; padding: 0; list-style: none; }
 .top__nav a, .top__lang { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-sm); font-weight: 600; text-decoration: none; }
@@ -238,8 +235,8 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 /* 404 */
 .lost { display: grid; gap: var(--space-lg); padding-block: var(--space-3xl); }
 
-@media (max-width: 85rem) {
-  .top__in { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "mark acts" "nav nav"; padding-block: var(--space-sm); }
+@media (max-width: 64rem) {
+  .top__in { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "mark acts" "nav nav"; row-gap: 0; min-height: 0; padding-block: var(--space-2xs); }
   .mark { grid-area: mark; } .top__acts { grid-area: acts; } .top__nav { grid-area: nav; }
 }
 @media (max-width: 60rem) {
@@ -256,8 +253,21 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 @media (max-width: 40rem) {
   .cards, .tiles, .turns { grid-template-columns: minmax(0, 1fr); }
   .rows tbody th, .rows--law td:nth-child(2) { white-space: normal; }
-  .top__in { grid-template-columns: minmax(0, 1fr); grid-template-areas: "mark" "acts" "nav"; gap: var(--space-xs); }
-  .top__acts { gap: var(--space-sm); justify-content: flex-start; }
+  /* Two rows: the wordmark with its actions, then the four links */
+  .top__acts { gap: var(--space-2xs); }
+  .top__nav ul { flex-wrap: nowrap; justify-content: space-between; gap: 0 var(--space-xs); }
+  /* No room for it beside the wordmark: the footer carries the language link */
+  .top__lang { display: none; }
+  .rows--law, .rows--cmp { display: block; }
+  .rows--law thead, .rows--cmp thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .rows--law tbody, .rows--law tr, .rows--law th, .rows--law td, .rows--cmp tbody, .rows--cmp tr, .rows--cmp th, .rows--cmp td { display: block; }
+  .rows--law tr, .rows--cmp tr { padding-block: var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); }
+  .rows--law tbody tr:first-child, .rows--cmp tbody tr:first-child { border-top: 0; padding-top: 0; }
+  .rows--law th, .rows--law td, .rows--cmp th, .rows--cmp td { padding: 0; border-top: 0; }
+  .rows--law td { margin-top: var(--space-2xs); }
+  .rows--cmp th { margin-bottom: var(--space-xs); }
+  .rows--cmp td { margin-top: var(--space-xs); }
+  .rows--cmp td::before { content: attr(data-label); display: block; font-size: var(--text-sm); font-weight: 600; color: var(--color-muted); }
   .popin__nav { top: auto; bottom: var(--space-md); margin-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
