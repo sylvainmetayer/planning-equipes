@@ -14,3 +14,5 @@ hébergeable
 hebergement
 heberger
 organising
+legales
+RGPD

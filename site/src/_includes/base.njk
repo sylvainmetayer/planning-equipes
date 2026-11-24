@@ -52,7 +52,7 @@
     <a class="mark" href="{{ urls[lang].accueil }}" aria-label="{{ common.logoLabel }}"{% if key == 'accueil' %} aria-current="page"{% endif %}>{{ site.name }}</a>
     <p class="top__acts">
       <a class="top__lang" href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a>
-      <a class="btn btn--sm" href="mailto:{{ site.email }}?subject={{ common.contactSujet | urlencode }}">{{ common.nav.contact }}</a>
+      <a class="btn btn--sm" href="{{ urls[lang].contact }}">{{ common.nav.contact }}</a>
     </p>
   </div>
 </header>
@@ -67,7 +67,7 @@
       <li><a href="{{ site.repo }}">{{ common.pied.codeSource }}</a></li>
       <li><a href="{{ site.repo }}/releases">{{ common.pied.nouveautes }}</a></li>
       <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
-      <li><a href="{{ site.legalUrl }}">{{ common.pied.mentions }}</a></li>
+      <li><a href="{{ urls[lang].mentions }}">{{ common.pied.mentions }}</a></li>
     </ul>
     <div class="foot__fine">
       <p>{{ site.name }}, {{ common.pied.licence }} {{ common.pied.fictif }}</p>

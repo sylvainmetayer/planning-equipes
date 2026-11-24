@@ -76,7 +76,7 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
   le site lui-même (`font-src 'self'`) ; pas de CDN, aucun script venu d'ailleurs. La
   seule exception est le beacon Cloudflare Web Analytics, sans cookie ni
   identifiant persistant, que la CSP de `src/_headers` est seule à autoriser ;
-  le pied de page le dit. L'application, elle, n'en a pas et n'en aura pas.
+  le pied de page le dit. La page `/contact/` encadre son formulaire Tally dans une `<iframe>` simple (`frame-src https://tally.so`, aucun script Tally), et `/mentions-legales/` le dit. L'application, elle, n'en a pas et n'en aura pas.
   Le seul JavaScript de la page, `src/assets/popin.js`, ouvre les captures en
   grand dans un `<dialog>` ; sans lui, chaque lien ouvre l'image : tout se lit
   sans.

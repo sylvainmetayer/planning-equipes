@@ -645,3 +645,71 @@ content:
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
           - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
+
+  - name: contact
+    label: Page contact (formulaire de devis)
+    type: file
+    path: src/_data/pages/contact.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Titre de la page, type: string, required: true }
+      - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+      - { name: formTitre, label: Titre du formulaire (lecteurs d'écran), type: string, required: true }
+      - { name: lien, label: Lien vers le formulaire sur tally.so, type: string, required: true }
+      - { name: ecrire, label: Texte devant l'adresse e-mail, type: string, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+        - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+        - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+        - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+        - { name: h1, label: Titre de la page, type: string, required: true }
+        - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+        - { name: formTitre, label: Titre du formulaire (lecteurs d'écran), type: string, required: true }
+        - { name: lien, label: Lien vers le formulaire sur tally.so, type: string, required: true }
+        - { name: ecrire, label: Texte devant l'adresse e-mail, type: string, required: true }
+        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+
+  - name: mentions
+    label: Page mentions légales
+    type: file
+    path: src/_data/pages/mentions.json
+    format: json
+    fields:
+      - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+      - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+      - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+      - { name: h1, label: Titre de la page, type: string, required: true }
+      - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+      - name: sections
+        label: Sections
+        type: object
+        list:
+          collapsible: { collapsed: true, summary: "{h2}" }
+        fields:
+          - { name: h2, label: Titre, type: string, required: true }
+          - { name: texte, label: Texte (Markdown), type: text, required: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+        - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
+        - { name: titre, label: Titre Google (70 caractères au plus), type: string, required: true, options: { maxlength: 70 } }
+        - { name: description, label: Description Google (160 caractères au plus), type: text, required: true, options: { maxlength: 160 } }
+        - { name: h1, label: Titre de la page, type: string, required: true }
+        - { name: reponse, label: Introduction (Markdown), type: text, required: true }
+        - name: sections
+          label: Sections
+          type: object
+          list:
+            collapsible: { collapsed: true, summary: "{h2}" }
+          fields:
+            - { name: h2, label: Titre, type: string, required: true }
+            - { name: texte, label: Texte (Markdown), type: text, required: true }
+        - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, contact, mentions), type: string, list: true }

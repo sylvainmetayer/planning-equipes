@@ -1,14 +1,21 @@
 {% set c = copy[lang][key] %}
-{% set mail = 'mailto:' + site.email + '?subject=' + (copy[lang].commun.contactSujet | urlencode) %}
+{% set mail = urls[lang].contact %}
 {% set player = 4 if key == 'legal' else (3 if key == 'equipe' else (1 if key == 'hebergement' else 2)) %}
 <article data-player="{{ player }}">
   <header class="ask">
     <div class="container">
       <h1>{{ c.h1 | typo(lang) }}</h1>
       <p class="lead">{{ c.reponse | mdi(lang) | safe }}</p>
-      <p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a></p>
+      {% if c.bouton %}<p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a></p>{% endif %}
     </div>
   </header>
+
+  {% if key == 'contact' %}
+  <section class="container form" aria-label="{{ c.h1 | typo(lang) }}">
+    <iframe class="form__frame" src="https://tally.so/embed/{{ site.tally[lang] }}?alignLeft=1&amp;hideTitle=1&amp;transparentBackground=1" title="{{ c.formTitre }}" loading="lazy"></iframe>
+    <p class="form__alt"><a href="https://tally.so/r/{{ site.tally[lang] }}">{{ c.lien }}</a> {{ c.ecrire }} <a href="mailto:{{ site.email }}?subject={{ copy[lang].commun.contactSujet | urlencode }}">{{ site.email }}</a></p>
+  </section>
+  {% endif %}
 
   {% if key == 'legal' %}
   <section class="sec sec--tint" aria-labelledby="art-t">
@@ -50,13 +57,16 @@
   </section>
   {% endif %}
 
+  {% if c.cta %}
   <section class="sec sec--close" aria-labelledby="cta-t">
     <div class="container close">
       <h2 id="cta-t">{{ c.cta | typo(lang) }}</h2>
       <p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a></p>
     </div>
   </section>
+  {% endif %}
 
+  {% if c.liens %}
   <aside class="container related" aria-labelledby="voir-t">
     <h2 id="voir-t">{{ copy[lang].commun.voirAussi }}</h2>
     <ul>
@@ -64,4 +74,5 @@
       <li><a href="{{ urls[lang].accueil }}">{{ copy[lang].commun.nav.accueil }}</a></li>
     </ul>
   </aside>
+  {% endif %}
 </article>

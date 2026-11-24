@@ -1,7 +1,7 @@
 {% from "film.njk" import film %}
 {% set c = copy[lang].accueil %}
 {% set labels = c.images.filmsLabels %}
-{% set mail = 'mailto:' + site.email + '?subject=' + (copy[lang].commun.contactSujet | urlencode) %}
+{% set mail = urls[lang].contact %}
 {% set ticket = c.loi.refus[0] %}
 
 <section class="hero" aria-labelledby="titre">

@@ -3,6 +3,7 @@
 import copyOf from './_data/copy.js';
 import site from './_data/site.json' with { type: 'json' };
 import articles from './_data/articles.js';
+import { urlOf } from './lib.js';
 
 const copy = copyOf();
 
@@ -40,6 +41,7 @@ export function toMarkdown(p) {
     if (page.sections) out.push(sections(page.sections));
     if (key === 'faq') out.push(page.items.map((i) => `## ${i.q}\n\n${i.a}`).join('\n\n'));
   }
-  out.push(`${page.cta ?? ''} ${site.email}`.trim());
+  if (key === 'contact') out.push(`${page.lien}${sep}https://tally.so/r/${site.tally[lang]}`, `${page.ecrire} ${site.email}`);
+  else if (page.cta) out.push(`${page.cta} ${site.url}${urlOf(copy, lang, 'contact')} ${site.email}`);
   return `${out.filter(Boolean).join('\n\n')}\n`;
 }
