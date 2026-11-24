@@ -304,8 +304,10 @@ describe('SolveRecap', () => {
         scoreHorsPlancher: '0hard/-1675medium/-564soft',
       });
 
-      expect(recap['horsPlancherLabel']()).toContain('Hors plancher : 0hard/-1675medium/-564soft');
-      expect(text()).toContain('Hors plancher');
+      expect(recap['horsPlancherLabel']()).toContain(
+        'Score hors plancher : 0hard/-1675medium/-564soft',
+      );
+      expect(text()).toContain('Score hors plancher');
     });
 
     it('stays silent when nothing is a floor, or when the score is unknown', () => {
@@ -315,7 +317,7 @@ describe('SolveRecap', () => {
         scoreHorsPlancher: '0hard/-6675medium/-564soft',
       });
       expect(recap['horsPlancherLabel']()).toBe('');
-      expect(text()).not.toContain('Hors plancher');
+      expect(text()).not.toContain('Score hors plancher');
 
       fixture.componentRef.setInput('scoreHorsPlancher', null);
       expect(recap['horsPlancherLabel']()).toBe('');
@@ -329,7 +331,7 @@ describe('SolveRecap', () => {
         scoreHorsPlancher: '0hard/-1675medium/-564soft',
       });
 
-      expect(text().split('Hors plancher').length - 1).toBe(1);
+      expect(text().split('Score hors plancher').length - 1).toBe(1);
     });
   });
 
