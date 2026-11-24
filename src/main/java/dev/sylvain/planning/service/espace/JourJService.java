@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.mural.AffichageMuralService;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralAlert;
 import dev.sylvain.planning.service.mural.AffichageMuralViewBuilder;
@@ -21,7 +22,6 @@ import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SeatSplit;
-import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -91,7 +91,7 @@ public class JourJService {
 
     private final PlanningService planningService;
 
-    private final SecurityIdentity identity;
+    private final JournalActionService journal;
 
     private final JourJClock clock;
 
@@ -111,7 +111,7 @@ public class JourJService {
             dev.sylvain.planning.service.consigne.ConsigneService consigneService,
             PlanningPersistenceService persistenceService,
             PlanningService planningService,
-            SecurityIdentity identity,
+            JournalActionService journal,
             JourJClock clock,
             SignalementAbsenceRepository signalements,
             AffichageMuralService muralService,
@@ -122,7 +122,7 @@ public class JourJService {
         this.consigneService = consigneService;
         this.persistenceService = persistenceService;
         this.planningService = planningService;
-        this.identity = identity;
+        this.journal = journal;
         this.clock = clock;
         this.signalements = signalements;
         this.muralService = muralService;
@@ -635,14 +635,15 @@ public class JourJService {
     }
 
     /**
-     * Who is recorded as the author of the exception. The admin session names
-     * one; an anonymous call (the test profile opens the API) falls back to a
+     * Who is recorded as the author of the exception. The request names one
+     * (an account id, never an address); an anonymous call (the test profile opens the API) falls back to a
      * constant rather than to null, so the trace never reads as "nobody".
      */
     private String author() {
-        return identity == null || identity.isAnonymous() || identity.getPrincipal() == null
-                ? AUTEUR_INCONNU
-                : identity.getPrincipal().getName();
+        // The account id, as the history writes it: the principal's name is an
+        // address under an OIDC session, and no address goes into a table.
+        String acteur = journal.nomAdmin();
+        return acteur == null ? AUTEUR_INCONNU : acteur;
     }
 
     /**
