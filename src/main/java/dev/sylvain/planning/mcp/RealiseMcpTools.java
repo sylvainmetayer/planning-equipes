@@ -30,17 +30,18 @@ public class RealiseMcpTools {
 
     @Tool(
             name = "realise_vs_planifie",
-            description = "Réalisé vs planifié : l'écart entre le plan publié et le plan tenu, par stand et par "
-                    + "journée écoulée — sa dernière vacation terminée, jamais les jours à venir. Chaque journée est "
-                    + "comparée à la publication en vigueur à son début (son premier créneau) : une republication en "
-                    + "cours d'événement ne déplace pas l'écart des journées déjà passées. Une journée commencée "
-                    + "avant toute publication (lateReference) est montrée mais exclue de tous les totaux. Par case : sièges publiés, tenus, absences (titulaire "
-                    + "publié marqué absent), remplacements, vides, retirés (consigne ou créneau supprimé — jamais "
-                    + "une absence), ajoutés, minutes publiées, réalisées et perdues ; totaux par stand, par jour, "
-                    + "par typologie (un stand à plusieurs typologies compte dans chacune) et pour l'événement. "
-                    + "Le réalisé est déclaré (le plan enregistré, tel que l'écran « Aujourd'hui » l'a laissé), "
-                    + "referenceAvailable faux veut dire « rien n'a jamais été publié », frozenPast faux que le "
-                    + "passé figé est désactivé et que le réalisé n'est plus garanti. Comptes seulement, aucun nom.",
+            description =
+                    "Réalisé vs planifié : l'écart entre le plan publié et le plan tenu, par stand et par "
+                            + "journée écoulée — sa dernière vacation terminée, jamais les jours à venir. Chaque journée est "
+                            + "comparée à la publication en vigueur à son début (son premier créneau) : une republication en "
+                            + "cours d'événement ne déplace pas l'écart des journées déjà passées. Une journée commencée "
+                            + "avant toute publication (lateReference) est montrée mais exclue de tous les totaux. Par case : sièges publiés, tenus, absences (titulaire "
+                            + "publié marqué absent), remplacements, vides, retirés (consigne ou créneau supprimé — jamais "
+                            + "une absence), ajoutés, minutes publiées, réalisées et perdues ; totaux par stand, par jour, "
+                            + "par typologie (un stand à plusieurs typologies compte dans chacune) et pour l'événement. "
+                            + "Le réalisé est déclaré (le plan enregistré, tel que l'écran « Aujourd'hui » l'a laissé), "
+                            + "referenceAvailable faux veut dire « rien n'a jamais été publié », frozenPast faux que le "
+                            + "passé figé est désactivé et que le réalisé n'est plus garanti. Comptes seulement, aucun nom. Une fois l'événement fini et quelque chose publié, le premier appel peut écrire la mesure en cache, une seule fois (idempotent).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,

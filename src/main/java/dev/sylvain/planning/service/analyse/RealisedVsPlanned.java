@@ -267,8 +267,8 @@ public record RealisedVsPlanned(
      * @param lastDay     the last day of its event
      * @param countedDays how many of its days had a publication in force when
      *                    they started
-     * @param frozenAt    when the nightly job wrote the measure — once, the
-     *                    first night after the event ended
+     * @param frozenAt    when the measure was cached — once, by the
+     *                    first reading after the event ended
      * @param event       the whole event
      * @param byTypologie per game category, under the ids and names of that
      *                    edition — the next one matches them by name, an id

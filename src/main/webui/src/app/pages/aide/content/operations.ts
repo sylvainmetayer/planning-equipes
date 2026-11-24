@@ -267,7 +267,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.realise.historique:La nuit qui suit le dernier créneau d'une édition, sa mesure est figée par typologie, une fois pour toutes : une correction faite après coup ne la modifie plus. Elle est conservée même si l'édition est supprimée. L'édition suivante, celle dont l'événement commence après, la retrouve sous le tableau de Versions du plan et, pour information seulement, dans une colonne de l'onglet Besoin du Diagnostic : aucun calcul ne la reprend. Une publication remplacée qui était en vigueur au début d'une journée écoulée ne peut plus être supprimée de Versions du plan : la supprimer réécrirait l'écart de cette journée.`,
+          text: $localize`:@@aide.realise.historique:Une fois le dernier créneau d'une édition passé, sa mesure est calculée puis figée par typologie, une fois pour toutes, à la première lecture de l'écran, à celle des Versions de l'édition suivante ou à la suppression de l'édition : une correction faite après coup ne la modifie plus. Elle est conservée même si l'édition est supprimée. L'édition suivante, celle dont l'événement commence après, la retrouve sous le tableau de Versions du plan et, pour information seulement, dans une colonne de l'onglet Besoin du Diagnostic : aucun calcul ne la reprend. Une publication remplacée qui était en vigueur au début d'une journée écoulée ne peut plus être supprimée de Versions du plan : la supprimer réécrirait l'écart de cette journée.`,
         },
       ],
       links: [

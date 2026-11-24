@@ -26,8 +26,8 @@ import java.util.List;
  * <p>Like {@code kpi_historique}, the table carries no foreign key and keeps
  * the names it shows: the measure outlives the edition it describes, since
  * the edition that reads it is the next one. Writing goes through the
- * edition's own scope — the nightly job enters each edition before freezing
- * it —, reading the previous measure deliberately does not: it is, by
+ * edition's own scope — the service enters each edition before caching
+ * its measure —, reading the previous measure deliberately does not: it is, by
  * definition, another edition's row, possibly of an edition deleted since.</p>
  */
 @ApplicationScoped
@@ -54,7 +54,7 @@ public class RealisedHistoryRepository {
      * days, then by the one frozen first, then by id: a variant published
      * late counts fewer days (a late reference is never counted), and the
      * real edition's rows, written once, are the older ones. Deterministic
-     * whatever the order the job met them in.</p>
+     * whatever the order they were cached in.</p>
      */
     private static final String SELECT_PREVIOUS_EVENT = """
  SELECT edition_id, edition_nom, premier_jour, dernier_jour, jours_comptes, fige_le
@@ -90,9 +90,9 @@ public class RealisedHistoryRepository {
     /**
      * Writes the current edition's measure from {@code report}, in one
      * transaction — once: a row already there is kept as it is ({@code ON
-     * CONFLICT DO NOTHING}), so a second run that raced past the job's
+     * CONFLICT DO NOTHING}), so a second run that raced past the
      * {@link #exists()} check writes nothing. Rewriting a measure is an
-     * operator's SQL {@code DELETE}, then the next night.
+     * operator's SQL {@code DELETE}, then the next reading.
      *
      * @return how many rows were written
      */
