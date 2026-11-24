@@ -1,0 +1,111 @@
+package dev.sylvain.planning.service.compte;
+
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
+/**
+ * Named accounts and what they may do: the person ({@code compte}) and the
+ * rights delegated to them ({@code habilitation}: a role, an edition or all of
+ * them, an expiry). Nothing deletes: an account is deactivated, a right is
+ * withdrawn, so the journal can still say who held what, and when.
+ *
+ * <p>Until sign-in is bound to these accounts, nothing here opens or closes a
+ * door: the administrator of the configuration is the only way in.</p>
+ */
+@ApplicationScoped
+public class CompteService {
+
+    @Inject
+    CompteRepository repository;
+
+    @Inject
+    EditionRepository editions;
+
+    public List<Compte> list() {
+        return repository.list();
+    }
+
+    /** Creates an account, to grant it a right before the person arrives. */
+    public Compte create(String email, String nom) {
+        String cle = normalize(email);
+        if (!repository.insertIfAbsent(UUID.randomUUID().toString(), cle, blankToNull(nom))) {
+            throw new BusinessError.Conflict("Un compte existe déjà pour cette adresse.");
+        }
+        return repository.findByEmail(cle).orElseThrow();
+    }
+
+    public Compte deactivate(String id) {
+        return setDeactivated(id, Instant.now());
+    }
+
+    public Compte reactivate(String id) {
+        return setDeactivated(id, null);
+    }
+
+    private Compte setDeactivated(String id, Instant le) {
+        if (!repository.setDeactivated(id, le)) {
+            throw new BusinessError.NotFound("Compte inconnu : " + id);
+        }
+        return required(id);
+    }
+
+    /**
+     * Grants a right. An administrator is one of the whole instance, and an
+     * expiry already past would be a right that never opened anything.
+     *
+     * @param creePar the id of the account granting it, see {@link Compte#CONFIG_ID}
+     */
+    public Compte grant(String compteId, RoleHabilitation role, String editionId, Instant expireLe, String creePar) {
+        required(compteId);
+        if (role == null) {
+            throw new BusinessError.Invalid("Rôle manquant.");
+        }
+        String edition = blankToNull(editionId);
+        if (role == RoleHabilitation.ADMIN && edition != null) {
+            throw new BusinessError.Invalid("Un administrateur l'est de toute l'instance, pas d'une édition.");
+        }
+        if (edition != null && !editions.exists(edition)) {
+            throw new BusinessError.Invalid("Édition inconnue : " + edition);
+        }
+        if (expireLe != null && !expireLe.isAfter(Instant.now())) {
+            throw new BusinessError.Invalid("La date d'expiration est déjà passée.");
+        }
+        repository.insertHabilitation(
+                compteId, new Habilitation(UUID.randomUUID().toString(), role, edition, expireLe, creePar, null, null));
+        return required(compteId);
+    }
+
+    public Compte withdraw(String compteId, String habilitationId) {
+        required(compteId);
+        if (!repository.withdrawHabilitation(compteId, habilitationId, Instant.now())) {
+            throw new BusinessError.NotFound("Aucune habilitation en vigueur " + habilitationId + " sur ce compte.");
+        }
+        return required(compteId);
+    }
+
+    private Compte required(String id) {
+        return repository.findById(id).orElseThrow(() -> new BusinessError.NotFound("Compte inconnu : " + id));
+    }
+
+    /** Addresses are compared trimmed and case-insensitively, and must look like one. */
+    static String normalize(String email) {
+        if (email == null || email.isBlank()) {
+            throw new BusinessError.Invalid("Adresse e-mail manquante.");
+        }
+        String cle = email.trim().toLowerCase(Locale.ROOT);
+        if (!cle.matches("[^@\\s]+@[^@\\s]+")) {
+            throw new BusinessError.Invalid("Adresse e-mail invalide.");
+        }
+        return cle;
+    }
+
+    private static String blankToNull(String valeur) {
+        return valeur == null || valeur.isBlank() ? null : valeur.trim();
+    }
+}

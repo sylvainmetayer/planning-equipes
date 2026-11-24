@@ -47,8 +47,12 @@ class IdColumnsInventoryStructuralTest {
                     "envoi_mail.animateur_id",
                     "who a mail was for; kept until JOURNAL_RETENTION or the edition goes, like the ledger"),
             Map.entry(
+                    "habilitation.edition_id",
+                    "the edition a right is scoped to, NULL for all; no key so that a dump import, which deletes "
+                            + "and recreates the editions, does not cascade the instance's rights away"),
+            Map.entry(
                     "journal_action.acteur_id",
-                    "an animateur id when the actor is one, « admin » or « mcp » otherwise"),
+                    "an animateur id, or the id of the admin account (« admin » for the configuration's), or « mcp »"),
             Map.entry(
                     "journal_action.entite_id",
                     "an id of the referential column entite names — any of them, hence no key; "

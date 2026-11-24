@@ -184,6 +184,11 @@ public final class CatalogueActions {
     private static final String CODE_ESPACE_DEMANDE = "CODE_ESPACE_DEMANDE";
     private static final String SESSION_ESPACE_OUVERTE = "SESSION_ESPACE_OUVERTE";
     private static final String DECONNEXION = "DECONNEXION";
+    private static final String COMPTE_CREE = "COMPTE_CREE";
+    private static final String COMPTE_DESACTIVE = "COMPTE_DESACTIVE";
+    private static final String COMPTE_REACTIVE = "COMPTE_REACTIVE";
+    private static final String HABILITATION_ACCORDEE = "HABILITATION_ACCORDEE";
+    private static final String HABILITATION_RETIREE = "HABILITATION_RETIREE";
     private static final String TELECHARGEMENT_ESPACE_PDF = "TELECHARGEMENT_ESPACE_PDF";
     private static final String TELECHARGEMENT_ESPACE_ICS = "TELECHARGEMENT_ESPACE_ICS";
 
@@ -446,6 +451,13 @@ public final class CatalogueActions {
         action(CODE_ESPACE_DEMANDE, "Code d'accès à l'espace demandé", Entite.ANIMATEUR);
         action(SESSION_ESPACE_OUVERTE, "Session d'espace ouverte", Entite.ANIMATEUR);
         action(DECONNEXION, "Déconnexion", Entite.PARAMETRES);
+        // Accounts and rights are instance-wide; they are filed under the
+        // edition the administrator was working in, like the logout above.
+        action(COMPTE_CREE, "Compte créé", Entite.PARAMETRES);
+        action(COMPTE_DESACTIVE, "Compte désactivé", Entite.PARAMETRES);
+        action(COMPTE_REACTIVE, "Compte réactivé", Entite.PARAMETRES);
+        action(HABILITATION_ACCORDEE, "Habilitation accordée", Entite.PARAMETRES);
+        action(HABILITATION_RETIREE, "Habilitation retirée", Entite.PARAMETRES);
         // One line per explicit download, never per page shown: « a-t-il bien
         // récupéré son planning ? » without turning the history into an
         // access log. The calendar subscription stays out — see SANS_TRACE.
@@ -632,6 +644,11 @@ public final class CatalogueActions {
         route("WebhookResource#test", WEBHOOK_TESTE);
         route("WebhookResource#resend", WEBHOOK_LIVRAISON_RENVOYEE);
         route("AuthResource#logout", DECONNEXION);
+        route("CompteResource#create", COMPTE_CREE);
+        route("CompteResource#deactivate", COMPTE_DESACTIVE);
+        route("CompteResource#reactivate", COMPTE_REACTIVE);
+        route("CompteResource#grant", HABILITATION_ACCORDEE);
+        route("CompteResource#withdraw", HABILITATION_RETIREE);
 
         route("DeclarationDisponibiliteResource#configure", COLLECTE_CONFIGUREE);
         route("DeclarationDisponibiliteResource#sendLinks", LIENS_COLLECTE_ENVOYES);

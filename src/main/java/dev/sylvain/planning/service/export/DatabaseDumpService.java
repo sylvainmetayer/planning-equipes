@@ -194,6 +194,10 @@ public class DatabaseDumpService {
      *       — the wall display links: token hashes, credentials of this
      *       instance like the espace sessions. A restore elsewhere would reopen
      *       screens nobody there handed out.</li>
+     *   <li>{@code compte}, {@code habilitation}
+     *       — who administers this instance and what they may do. Restoring
+     *       them would hand another instance's people access here, or strip
+     *       this one's.</li>
      *   <li>{@code solver_job} — the queue, replayed at startup. A restore
      *       would make the receiving instance run somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
