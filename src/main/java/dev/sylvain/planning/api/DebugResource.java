@@ -34,6 +34,7 @@ import java.util.List;
  * <p>The simulated clock it used to carry is {@link HorlogeResource}: a
  * setting of the instance, not a check of the plumbing.</p>
  */
+@InstanceOnly
 @Path("/debug")
 public class DebugResource {
 

@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
  * the browser is not a distribution channel for that. Restoring one is an
  * infrastructure operation on PostgreSQL, not an endpoint.</p>
  */
+@InstanceOnly
 @Path("/backups")
 @Produces(MediaType.APPLICATION_JSON)
 public class BackupResource {

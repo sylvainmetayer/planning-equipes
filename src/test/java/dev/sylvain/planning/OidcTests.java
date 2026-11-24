@@ -39,7 +39,7 @@ public final class OidcTests {
                     "quarkus.oidc.application-type", "hybrid",
                     "quarkus.oidc.credentials.secret", "secret",
                     "quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus",
-                    "quarkus.http.auth.permission.admin-api.policy", "role-admin"));
+                    "quarkus.http.auth.permission.admin-api.policy", "role-gestion"));
             m.putAll(extras);
             return m;
         }

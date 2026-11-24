@@ -47,6 +47,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * would turn a rate limiter into decoration.
  */
 @ApplicationScoped
+@InstanceOnly
 @Path("/mcp")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

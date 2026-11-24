@@ -7,9 +7,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 
 import dev.sylvain.planning.OidcTests;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.compte.RoleHabilitation;
+import dev.sylvain.planning.service.edition.EditionService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -18,8 +20,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * An OIDC provider signs people in (ADR 0093): the account of the application,
- * not the provider's token, decides who may administer. Unknown, deactivated,
- * or merely organiser: no way into {@code /api}.
+ * not the provider's token, decides who may administer. Unknown or deactivated: no way
+ * into {@code /api}; an organiser works in the editions its rights name, and
+ * never settles what belongs to the whole instance.
  */
 @QuarkusTest
 @TestProfile(OidcTests.Profil.class)
@@ -27,6 +30,9 @@ class OidcSignInTest {
 
     @Inject
     CompteService comptes;
+
+    @Inject
+    EditionService editions;
 
     private static String address() {
         return "oidc-" + UUID.randomUUID() + "@example.org";
@@ -80,14 +86,84 @@ class OidcSignInTest {
         assertThat(api(bearer)).isEqualTo(403);
     }
 
-    @Test
-    void unOrganisateurNePasseJamaisLaPolitiqueAdmin() {
+    private String organiser(String editionId) {
         String email = address();
         Compte compte = comptes.create(email, null);
-        comptes.grant(compte.id(), RoleHabilitation.ORGANISATEUR, null, null);
-        String bearer = token("s-" + UUID.randomUUID(), email, true);
-        assertThat(api(bearer)).isEqualTo(403);
-        given().header("Authorization", bearer)
+        comptes.grant(compte.id(), RoleHabilitation.ORGANISATEUR, editionId, null);
+        return token("s-" + UUID.randomUUID(), email, true);
+    }
+
+    private static io.restassured.response.ValidatableResponse call(String bearer, String edition, String path) {
+        return given().header("X-Edition-Id", edition)
+                .header("Authorization", bearer)
+                .get(path)
+                .then();
+    }
+
+    @Test
+    void unOrganisateurTravailleDansSonEditionEtSeulementDansSonEdition() {
+        String autre = editions.create(new Edition(null, "Autre", false, null)).getId();
+        try {
+            String bearer = organiser("E1");
+            call(bearer, "E1", "/api/animateurs").statusCode(200);
+            // Out of its rights, an edition is exactly as unknown as one that does not exist.
+            call(bearer, autre, "/api/animateurs").statusCode(400).body("code", equalTo("EDITION_INCONNUE"));
+            call(bearer, "inexistante", "/api/animateurs").statusCode(400).body("code", equalTo("EDITION_INCONNUE"));
+            call(bearer, "E1", "/api/editions")
+                    .statusCode(200)
+                    .body("id", hasItem("E1"))
+                    .body("id", org.hamcrest.Matchers.not(hasItem(autre)));
+        } finally {
+            editions.delete(autre);
+        }
+    }
+
+    @Test
+    void unDroitSurToutesLesEditionsLesCouvreToutes() {
+        String autre = editions.create(new Edition(null, "Autre", false, null)).getId();
+        try {
+            String bearer = organiser(null);
+            call(bearer, autre, "/api/animateurs").statusCode(200);
+            call(bearer, "E1", "/api/editions").statusCode(200).body("id", hasItem(autre));
+        } finally {
+            editions.delete(autre);
+        }
+    }
+
+    @Test
+    void unOrganisateurNeTouchePasAuxReglagesDInstance() {
+        String bearer = organiser(null);
+        call(bearer, "E1", "/api/comptes").statusCode(403);
+        call(bearer, "E1", "/api/webhooks").statusCode(403);
+        call(bearer, "E1", "/api/backups").statusCode(403);
+        call(bearer, "E1", "/api/historique/connexions").statusCode(403);
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", bearer)
+                .contentType("application/json")
+                .body("{\"nom\":\"Nouvelle\"}")
+                .post("/api/editions")
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    void unAdministrateurVoitToutesLesEditions() {
+        String email = address();
+        Compte compte = comptes.create(email, null);
+        comptes.grant(compte.id(), RoleHabilitation.ADMIN, null, null);
+        String autre = editions.create(new Edition(null, "Autre", false, null)).getId();
+        try {
+            String bearer = token("s-" + UUID.randomUUID(), email, true);
+            call(bearer, autre, "/api/animateurs").statusCode(200);
+            call(bearer, "E1", "/api/comptes").statusCode(200);
+        } finally {
+            editions.delete(autre);
+        }
+    }
+
+    @Test
+    void laSessionPorteLeRoleOrganisateur() {
+        given().header("Authorization", organiser("E1"))
                 .get("/api/auth/me")
                 .then()
                 .statusCode(200)

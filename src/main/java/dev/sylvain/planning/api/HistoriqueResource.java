@@ -218,6 +218,7 @@ public class HistoriqueResource {
      * @param avant  the id of the last line already shown — the same keyset
      *               cursor as the history of actions
      */
+    @InstanceOnly
     @GET
     @Path("/connexions")
     public List<AdminLoginView> connexions(@QueryParam("limite") Integer limite, @QueryParam("avant") Long avant) {

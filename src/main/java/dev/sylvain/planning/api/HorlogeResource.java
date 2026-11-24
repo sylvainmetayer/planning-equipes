@@ -62,6 +62,7 @@ public class HorlogeResource {
      * on any server without {@code SimulatedClockPermission}, and for a time
      * without a date.
      */
+    @InstanceOnly
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

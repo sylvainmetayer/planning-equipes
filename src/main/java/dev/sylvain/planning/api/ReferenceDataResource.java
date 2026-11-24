@@ -97,12 +97,14 @@ public class ReferenceDataResource {
                 .orElseGet(() -> new ImportTargetView(idFichier, dto.nom(), false, null));
     }
 
+    @InstanceOnly
     @GET
     @Path("/cible-scenario")
     public ImportTargetView scenarioTarget(@QueryParam("name") String name) {
         return toTargetView(planningService.loadScenarioSections(name).edition());
     }
 
+    @InstanceOnly
     @POST
     @Path("/cible-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
@@ -131,6 +133,7 @@ public class ReferenceDataResource {
      * edition's name, so the frontend can tell the operator where the data
      * landed — the browser may be sitting on another edition entirely.
      */
+    @InstanceOnly
     @POST
     @Path("/import-scenario")
     @Consumes(MediaType.WILDCARD)
@@ -147,6 +150,7 @@ public class ReferenceDataResource {
      * 400 with the parsing/validation error as-is when the file is invalid,
      * instead of importing nothing silently.
      */
+    @InstanceOnly
     @POST
     @Path("/import-scenario-fichier")
     @Consumes(MediaType.WILDCARD)
