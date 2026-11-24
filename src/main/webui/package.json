@@ -21,7 +21,6 @@
     "format": "prettier --write \"src/**/*.{ts,css,scss}\" \"scripts/**/*.js\" \"e2e/**/*.ts\" \"*.js\" \"*.ts\" \"*.json\"",
     "format-check": "prettier --check \"src/**/*.{ts,css,scss}\" \"scripts/**/*.js\" \"e2e/**/*.ts\" \"*.js\" \"*.ts\" \"*.json\"",
     "i18n-check": "npm run generate && node scripts/check-i18n.js",
-    "i18n-check-modifies": "npm run generate && node scripts/check-i18n.js --modifies",
     "api-types-check": "node scripts/check-api-types.js",
     "api-paths-check": "node scripts/check-api-paths.js",
     "api-contract-check": "node scripts/check-api-contract.js",
