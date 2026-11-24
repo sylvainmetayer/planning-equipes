@@ -54,6 +54,13 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 
 /* Masthead */
 .top { border-bottom: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); }
+/* Sticky from 40rem up; on a phone its three rows would take a third of the screen */
+@media (min-width: 40.01rem) {
+  .top { position: sticky; top: 0; z-index: var(--z-sticky-nav); }
+  /* An anchor lands below the header: one row wide, two rows under 85rem */
+  html { scroll-padding-top: calc(var(--nav-h) + var(--space-lg)); }
+}
+@media (min-width: 40.01rem) and (max-width: 85rem) { html { scroll-padding-top: calc(2 * var(--nav-h) + var(--space-lg)); } }
 .top__in { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-lg); min-height: calc(var(--nav-h) - var(--rule-hair)); }
 .top__nav ul { display: flex; flex-wrap: wrap; gap: 0 var(--space-lg); margin: 0; padding: 0; list-style: none; }
 .top__nav a, .top__lang { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-sm); font-weight: 600; text-decoration: none; }
