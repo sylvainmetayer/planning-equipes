@@ -131,6 +131,9 @@ describe('qui', () => {
     expect(qui(entree({ acteur: 'SYSTEME', acteurId: null }))).toBe('Application');
     expect(qui(entree({ acteur: 'ASSISTANT', acteurId: 'mcp' }))).toBe('Assistant (MCP)');
     expect(qui(entree({ acteur: 'ADMIN', acteurId: 'admin' }))).toBe('admin');
+    expect(qui(entree({ acteur: 'ADMIN', acteurId: 'u1', acteurNom: 'Camille Durand' }))).toBe(
+      'Camille Durand',
+    );
   });
 });
 

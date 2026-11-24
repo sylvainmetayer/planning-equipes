@@ -1,13 +1,15 @@
 // The pure side of the Paramètres page: which of its tabs a query param names.
 
 /** The tabs, and the values of the `onglet` query param. */
-export type OngletParametres = 'edition' | 'mural' | 'instance' | 'historique' | 'mcp';
+export type OngletParametres = 'edition' | 'mural' | 'comptes' | 'instance' | 'historique' | 'mcp';
 
 export const ONGLETS_PARAMETRES: readonly OngletParametres[] = [
   // The edition's own settings first: its name, its freeze, its guichets.
   'edition',
   // The links of the control room's television (ADR 0053): per edition.
   'mural',
+  // Who may sign in and with which rights: the administrators' alone.
+  'comptes',
   // Last, and apart: what the operator configured and what holds for the whole
   // database, every edition included — backup, simulated clock.
   'instance',

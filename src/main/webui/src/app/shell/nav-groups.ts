@@ -395,6 +395,12 @@ export function buildNavGroups(): NavGroup[] {
             ),
             tab(
               'onglet',
+              'comptes',
+              $localize`:@@parametres.onglet.comptes:Comptes`,
+              $localize`:@@nav.keywords.comptes:utilisateurs organisateurs administrateurs droits habilitations accès`,
+            ),
+            tab(
+              'onglet',
               'instance',
               $localize`:@@parametres.onglet.instance:Instance`,
               $localize`:@@nav.keywords.instance:sauvegarde sql raccourcis date simulée horloge globaux`,

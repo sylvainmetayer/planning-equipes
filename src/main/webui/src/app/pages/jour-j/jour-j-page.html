@@ -346,7 +346,7 @@
                   }
                   @if (entree.creeParUtilisateurId) {
                     <span class="jour-j-detail" i18n="@@jourJ.journal.auteur"
-                      >par {{ entree.creeParUtilisateurId }}</span
+                      >par {{ entree.creeParNom ?? entree.creeParUtilisateurId }}</span
                     >
                   }
                   @if (entree.annulable) {

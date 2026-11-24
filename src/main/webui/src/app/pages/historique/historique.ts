@@ -293,7 +293,9 @@ export function qui(entree: EntreeHistorique): string {
   if (entree.acteur === 'ANONYME') {
     return $localize`:@@historique.acteur.anonyme:Visiteur non identifié`;
   }
-  return entree.acteurId ?? $localize`:@@historique.acteur.admin:Administration`;
+  return (
+    entree.acteurNom ?? entree.acteurId ?? $localize`:@@historique.acteur.admin:Administration`
+  );
 }
 
 /** What it bore upon, named when the referential still knows it. */

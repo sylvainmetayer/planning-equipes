@@ -14,19 +14,29 @@
     <mat-icon>tv</mat-icon>
     <ng-container i18n="@@parametres.onglet.mural">Affichage mural</ng-container>
   </mat-button-toggle>
+  @if (session.isAdmin()) {
+  <mat-button-toggle value="comptes">
+    <mat-icon>group</mat-icon>
+    <ng-container i18n="@@parametres.onglet.comptes">Comptes</ng-container>
+  </mat-button-toggle>
+  }
   @if (avance.ouvert() || onglet() === 'instance' || onglet() === 'historique' || onglet() === 'mcp') {
+  @if (session.isAdmin()) {
   <mat-button-toggle value="instance">
     <mat-icon>dns</mat-icon>
     <ng-container i18n="@@parametres.onglet.instance">Instance</ng-container>
   </mat-button-toggle>
+  }
   <mat-button-toggle value="historique">
     <mat-icon>manage_search</mat-icon>
     <ng-container i18n="@@nav.link.historique">Historique</ng-container>
   </mat-button-toggle>
+  @if (session.isAdmin()) {
   <mat-button-toggle value="mcp">
     <mat-icon>smart_toy</mat-icon>
     <ng-container i18n="@@nav.link.mcp">MCP</ng-container>
   </mat-button-toggle>
+  }
   }
 </mat-button-toggle-group>
 <app-reglages-avances [etat]="avance" />
@@ -37,6 +47,11 @@
 </p>
 
 @switch (onglet()) {
+  @case ('comptes') {
+    @if (session.isAdmin()) {
+      <app-comptes-card />
+    }
+  }
   @case ('historique') {
     <app-historique-page />
   }

@@ -2796,10 +2796,55 @@ export interface RestaurationSnapshot {
 export interface StatutSession {
   authentifie: boolean;
   nom: string | null;
-  /** Sorted; `admin` opens the administration, nothing else does yet. */
+  /** Sorted; `admin` opens everything, `organisateur` the editions its rights name. */
   roles: string[];
   /** The id of the account of the application the session is bound to; `null` for the break-glass account. */
   compteId: string | null;
+}
+
+/** The roles an administrator grants in this application. */
+export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR';
+
+/** What one account may do, and where; withdrawn by `retireeLe`, never deleted. */
+export interface Habilitation {
+  id: string;
+  role: RoleHabilitation;
+  /** `null`: every edition. */
+  editionId: string | null;
+  expireLe: string | null;
+  creePar: string | null;
+  creeLe: string | null;
+  retireeLe: string | null;
+  /** The id of the account that withdrew it, never an address. */
+  retireePar: string | null;
+}
+
+/** `GET /api/comptes`: one person able to sign in, whatever the edition. Never deleted. */
+export interface Compte {
+  id: string;
+  email: string;
+  nom: string | null;
+  creeLe: string;
+  derniereConnexionLe: string | null;
+  /** Set while the account is deactivated: every role is then stripped. */
+  desactiveLe: string | null;
+  /** The id of the account that deactivated it, never an address. */
+  desactivePar: string | null;
+  habilitations: Habilitation[];
+}
+
+/** Body of `POST /api/comptes`. */
+export interface NouveauCompte {
+  email: string;
+  nom: string | null;
+}
+
+/** Body of `POST /api/comptes/{id}/habilitations`. */
+export interface NouvelleHabilitation {
+  role: RoleHabilitation;
+  editionId: string | null;
+  /** ISO instant, in the future; `null`: no expiry — refused for an `ADMIN`. */
+  expireLe: string | null;
 }
 
 /** Where a logout ends: the provider's own logout route, `null` when there is none. */
@@ -4319,6 +4364,8 @@ export interface EntreeAbsence {
   heureFin: string | null;
   raison: string | null;
   creeParUtilisateurId: string | null;
+  /** The author's name (else address) when it is an account of the application. */
+  creeParNom: string | null;
   creeLe: string | null;
   /** False when the exception names several animateurs: it is not this screen's to undo. */
   annulable: boolean;
@@ -4995,6 +5042,8 @@ export interface PrerequisJournee {
   validationId: string | null;
   valideeLe: string | null;
   validePar: string | null;
+  /** The name (else address) of that account, resolved by the server; `null` when it is no account. */
+  valideParNom: string | null;
   commentaire: string | null;
   prerequis: PrerequisValidation[];
   tousSatisfaits: boolean;

@@ -165,3 +165,35 @@
   margin: 0;
   padding: 0;
 }
+
+/* Comptes tab: one line per account, its rights in force, then its actions. */
+.comptes-liste {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.comptes-compte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.comptes-droits {
+  flex: 1 1 14rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.comptes-octroi,
+.comptes-ajout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  flex-basis: 100%;
+}

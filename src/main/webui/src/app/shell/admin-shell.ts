@@ -40,6 +40,7 @@ import {
   purgeAllDrafts,
 } from '../core/brouillon-formulaire';
 import { EditionStore } from '../core/edition.store';
+import { SessionStore } from '../core/session.store';
 import { SESSION_END_BUS, announceLogout, onLogoutElsewhere } from '../core/session-end';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../core/locale';
 import {
@@ -113,6 +114,7 @@ export class AdminShell {
   protected readonly resolution = inject(PlanningResolutionStore);
   private readonly gelInvitation = inject(GelInvitation);
   protected readonly editions = inject(EditionStore);
+  private readonly session = inject(SessionStore);
   protected readonly notifications = inject(NotificationService);
   protected readonly theme = inject(ThemeService);
   protected readonly news = inject(NewsSeenService);
@@ -206,6 +208,7 @@ export class AdminShell {
     // Same reasoning for the "Édition actuelle" strip: it sits in the shell, so
     // the list of editions is loaded here rather than by any single page.
     void this.editions.reload();
+    void this.session.load();
     // Both kinds of solve, not just the full one: an incremental replan rewrites
     // `planning_resolution` exactly the same way, so it clears the "reference
     // data changed since the last solve" banner just the same. Listening for
