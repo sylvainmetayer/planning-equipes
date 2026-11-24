@@ -210,6 +210,20 @@ content:
               - { name: titre, label: Titre, type: string, required: true }
               - { name: texte, label: Texte, type: string, required: true }
           - { name: lien, label: Lien vers la page bénévoles, type: string, required: true }
+          - name: exemples
+            label: PDF d'exemple (planning global, feuille d'un animateur)
+            type: object
+            fields:
+              - { name: intro, label: Phrase d'introduction, type: string, required: true }
+              - name: liens
+                label: Liens (le fichier est dans src/exemples, régénéré par le tournage)
+                type: object
+                list:
+                  collapsible: { collapsed: true, summary: "{texte}" }
+                fields:
+                  - { name: texte, label: Texte du lien, type: string, required: true }
+                  - { name: fichier, label: Nom du fichier PDF, type: string, required: true }
+                  - { name: pages, label: Nombre de pages (« 46 pages »), type: string, required: true }
           - { name: outils, label: Texte « messageries », type: text, required: true }
           - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
       - name: cas
@@ -352,6 +366,20 @@ content:
                   - { name: titre, label: Titre, type: string, required: true }
                   - { name: texte, label: Texte, type: string, required: true }
               - { name: lien, label: Lien vers la page bénévoles, type: string, required: true }
+              - name: exemples
+                label: PDF d'exemple (planning global, feuille d'un animateur)
+                type: object
+                fields:
+                  - { name: intro, label: Phrase d'introduction, type: string, required: true }
+                  - name: liens
+                    label: Liens (le fichier est dans src/exemples, régénéré par le tournage)
+                    type: object
+                    list:
+                      collapsible: { collapsed: true, summary: "{texte}" }
+                    fields:
+                      - { name: texte, label: Texte du lien, type: string, required: true }
+                      - { name: fichier, label: Nom du fichier PDF, type: string, required: true }
+                      - { name: pages, label: Nombre de pages (« 46 pages »), type: string, required: true }
               - { name: outils, label: Texte « messageries », type: text, required: true }
               - { name: film, label: Vidéo associée (identifiant), type: string, required: true }
           - name: cas

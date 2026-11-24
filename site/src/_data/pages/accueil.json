@@ -80,6 +80,14 @@
       }
     ],
     "lien": "Organiser son équipe",
+    "exemples": {
+      "intro": "Deux PDF produits par l'application sur le festival fictif, noms inventés compris :",
+      "liens": [
+        { "texte": "Voir un exemple : planning global (PDF)", "fichier": "planning-global.pdf", "pages": "46 pages" },
+        { "texte": "Voir un exemple : feuille d'un animateur (PDF)", "fichier": "planning-animateur.pdf", "pages": "5 pages" },
+        { "texte": "Voir un exemple : la même feuille, à plier (PDF)", "fichier": "planning-animateur-feuille.pdf", "pages": "2 pages" }
+      ]
+    },
     "outils": "Planning publié, échanges à valider : les annonces arrivent aussi dans Slack, Discord, Matrix ou Telegram, avec des chiffres et jamais de noms.",
     "film": "espace"
   },
@@ -314,6 +322,14 @@
         }
       ],
       "lien": "Organising your team",
+      "exemples": {
+        "intro": "Two PDFs produced by the application on the fictional festival, made-up names included. They are in French:",
+        "liens": [
+          { "texte": "See a sample: full rota (PDF, in French)", "fichier": "planning-global.pdf", "pages": "46 pages" },
+          { "texte": "See a sample: one team member's sheet (PDF, in French)", "fichier": "planning-animateur.pdf", "pages": "5 pages" },
+          { "texte": "See a sample: the same sheet, folded format (PDF, in French)", "fichier": "planning-animateur-feuille.pdf", "pages": "2 pages" }
+        ]
+      },
       "outils": "Rota published, swaps to approve: updates also reach Slack, Discord, Matrix or Telegram, with numbers and never names.",
       "film": "espace"
     },
