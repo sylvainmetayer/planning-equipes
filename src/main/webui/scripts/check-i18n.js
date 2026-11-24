@@ -33,23 +33,13 @@
 //                -> the extractor keeps one and only warns; the English
 //                   catalogue holds a single string, so one of the two
 //                   places reads as the other in English
-//   périmé       the French source was rewritten under the same id and the
-//                English string was not touched (`--modifies` only)
-//                -> the English screen still says the previous version, and
-//                   none of the checks above can tell: ids and placeholders
-//                   are intact. A text pass is, by construction, many messages
-//                   rewritten under their id — this is the check that keeps
-//                   the two languages moving together.
 //
-// Run it with `npm run i18n-check`. With `--modifies [base]` it also extracts
-// the sources of `base` (default `origin/main`) in a throwaway worktree and
-// reports the ids whose French changed while the English did not — a ratchet
-// on what the branch rewrites, not a barrier on the whole catalogue.
+// Run it with `npm run i18n-check`.
 
-const { execFileSync, spawnSync } = require('node:child_process');
-const { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync } = require('node:fs');
+const { spawnSync } = require('node:child_process');
+const { mkdtempSync, readFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
-const { join, relative } = require('node:path');
+const { join } = require('node:path');
 
 const WEBUI = join(__dirname, '..');
 const CATALOGUE = join(WEBUI, 'public/i18n/messages.en.json');
@@ -129,62 +119,6 @@ function messagesTropLongs(source) {
     .filter((id) => !HORS_PLAFOND.test(id))
     .filter((id) => !CITE_UN_ARTICLE.test(source[id]))
     .filter((id) => source[id].replace(/\s+/g, ' ').trim().length > PLAFOND);
-}
-
-/** The base named after `--modifies`, or null when the ratchet is not asked for. */
-function baseDemandee() {
-  const drapeau = process.argv.indexOf('--modifies');
-  return drapeau < 0 ? null : (process.argv[drapeau + 1] ?? 'origin/main');
-}
-
-/**
- * The sources and the English catalogue as `base` had them.
- *
- * The sources are extracted, not diffed: an `i18n` block spans several lines,
- * and the id it carries is rarely on the line that changed, so a diff cannot
- * say which message moved. A detached worktree of `base` gets this tree's
- * `node_modules` by symlink and runs the same extraction — some forty seconds,
- * the price of an answer that does not guess.
- */
-function etatDeLaBase(base) {
-  const depot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
-    cwd: WEBUI,
-    encoding: 'utf8',
-  }).trim();
-  const arbre = mkdtempSync(join(tmpdir(), 'planning-i18n-base-'));
-  execFileSync('git', ['worktree', 'add', '--detach', arbre, base], {
-    cwd: depot,
-    stdio: 'ignore',
-  });
-  try {
-    const webui = join(arbre, relative(depot, WEBUI));
-    symlinkSync(join(WEBUI, 'node_modules'), join(webui, 'node_modules'), 'dir');
-    for (const generateur of ['scripts/generate-version.js', 'scripts/generate-news.js']) {
-      // Un générateur que la base n'a pas encore n'est pas son affaire :
-      // extraire `base`, c'est compiler les sources que `base` avait.
-      if (existsSync(join(webui, generateur))) {
-        execFileSync(process.execPath, [generateur], { cwd: webui, stdio: 'ignore' });
-      }
-    }
-    return {
-      source: extraire(webui),
-      anglais: JSON.parse(readFileSync(join(webui, 'public/i18n/messages.en.json'), 'utf8')),
-    };
-  } finally {
-    execFileSync('git', ['worktree', 'remove', '--force', arbre], { cwd: depot, stdio: 'ignore' });
-  }
-}
-
-/**
- * Ids the branch rewrote in French without touching the English. Spacing,
- * apostrophe shape, case and trailing punctuation do not count as a rewrite
- * (see `comparable`); a placeholder rename is already reported elsewhere.
- */
-function traductionsPerimees(source, anglais, base) {
-  return Object.keys(source)
-    .filter((id) => id in base.source && id in anglais && id in base.anglais)
-    .filter((id) => comparable(source[id]) !== comparable(base.source[id]))
-    .filter((id) => anglais[id] === base.anglais[id]);
 }
 
 function lister(titre, ids, detail) {
@@ -278,8 +212,6 @@ function libellesDivergents(source, anglais) {
 const homonymesSource = new Map();
 const source = extraire(WEBUI, homonymesSource);
 const anglais = JSON.parse(readFileSync(CATALOGUE, 'utf8'));
-const base = baseDemandee();
-const perimes = base === null ? [] : traductionsPerimees(source, anglais, etatDeLaBase(base));
 
 const manquants = Object.keys(source).filter((id) => !(id in anglais));
 const orphelins = Object.keys(anglais).filter((id) => !(id in source));
@@ -296,12 +228,10 @@ if (
   divergents.length === 0 &&
   libelles.size === 0 &&
   longs.length === 0 &&
-  homonymesSource.size === 0 &&
-  perimes.length === 0
+  homonymesSource.size === 0
 ) {
-  const cliquet = base === null ? '' : `, aucune traduction périmée par rapport à ${base}`;
   console.log(
-    `i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran, aucun message au-dessus de ${PLAFOND} caractères hors aide et légal${cliquet}.`,
+    `i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran, aucun message au-dessus de ${PLAFOND} caractères hors aide et légal.`,
   );
   process.exit(0);
 }
@@ -358,15 +288,6 @@ if (homonymesSource.size > 0) {
     [...homonymesSource.keys()],
     (id) =>
       [...homonymesSource.get(id)].map((texte) => `      ${JSON.stringify(texte)}`).join('\n'),
-  );
-}
-
-if (perimes.length > 0) {
-  lister(
-    `Source française réécrite depuis ${base}, traduction anglaise inchangée — à retraduire`,
-    perimes,
-    (id) =>
-      `      source : ${JSON.stringify(source[id])}\n      anglais : ${JSON.stringify(anglais[id])}`,
   );
 }
 

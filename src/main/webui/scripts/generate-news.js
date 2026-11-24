@@ -92,10 +92,7 @@ import type { NewsCommit } from './news';
 export const NEWS_COMMITS: readonly NewsCommit[] = ${JSON.stringify(commits, null, 2)};
 `;
 
-// The folder is created rather than assumed: `check-i18n --modifies` runs this
-// script in a throwaway worktree of the base branch, where the screen may not
-// exist yet, and an ENOENT there would fail a check that has nothing to do with
-// this file.
+// The folder is created rather than assumed: a fresh checkout may not have it yet.
 mkdirSync(dirname(TARGET), { recursive: true });
 writeFileSync(TARGET, content);
 console.log(`generate-news: ${commits.length} commits`);
