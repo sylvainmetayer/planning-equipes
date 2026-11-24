@@ -26,7 +26,7 @@ export class ArchiveEvenementApi {
     // Every flag spelled out, always: that is what lets `check-api-contract`
     // confront them with the contract.
     return this.api.downloadGetNamedByServer(
-      `/api/exports/archive-evenement?pdfGlobal=${demande('pdfGlobal')}&equite=${demande('equite')}&heures=${demande('heures')}&referentiels=${demande('referentiels')}&scenario=${demande('scenario')}&publication=${demande('publication')}&individuels=${demande('individuels')}&format=${format}`,
+      `/api/exports/archive-evenement?pdfGlobal=${demande('pdfGlobal')}&equite=${demande('equite')}&heures=${demande('heures')}&referentiels=${demande('referentiels')}&scenario=${demande('scenario')}&publication=${demande('publication')}&individuels=${demande('individuels')}&feuille=${format === 'feuille'}`,
       'archive-evenement.zip',
       'application/zip',
     );

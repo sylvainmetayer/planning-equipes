@@ -62,8 +62,11 @@ public class PlanningExportResource {
     @POST
     @Path("/pdf/all")
     @Produces("application/zip")
-    public Response exportAllPdfZip(@QueryParam("format") String format, PlanningEvenement planningEvenement) {
-        FormatPlanning layout = FormatPlanning.fromParameter(format);
+    public Response exportAllPdfZip(
+            @QueryParam("format") String format,
+            @QueryParam("feuille") boolean feuille,
+            PlanningEvenement planningEvenement) {
+        FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
         byte[] content = planningExportService.exportAllPdfZip(planningEvenement, layout);
         String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning-pdf.zip";
         return Response.ok(content)
@@ -77,8 +80,9 @@ public class PlanningExportResource {
     public Response exportAnimateurPdf(
             @PathParam("animateurId") String animateurId,
             @QueryParam("format") String format,
+            @QueryParam("feuille") boolean feuille,
             PlanningEvenement planningEvenement) {
-        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
         byte[] content = planningExportService.exportAnimateurPdf(planningEvenement, animateurId, layout);
         String safeAnimateurId = (animateurId == null ? "unknown" : animateurId).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         // The layout is part of the name: downloading both would otherwise
@@ -94,8 +98,11 @@ public class PlanningExportResource {
     @POST
     @Path("/bundle/all")
     @Produces("application/zip")
-    public Response exportAllBundleZip(@QueryParam("format") String format, PlanningEvenement planningEvenement) {
-        FormatPlanning layout = FormatPlanning.fromParameter(format);
+    public Response exportAllBundleZip(
+            @QueryParam("format") String format,
+            @QueryParam("feuille") boolean feuille,
+            PlanningEvenement planningEvenement) {
+        FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
         byte[] content = planningExportService.exportAllBundleZip(planningEvenement, layout);
         String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning.zip";
         return Response.ok(content)

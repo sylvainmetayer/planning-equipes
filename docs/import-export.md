@@ -1251,14 +1251,17 @@ une édition longue remplit la première page, et une bande seule sur sa propre
 page coûterait une feuille pour dire une phrase. Sur la feuille recto-verso, le
 QR est dans le bandeau d'en-tête, à côté du lien.
 
-#### Deux mises en page : `format=livret` ou `format=feuille`
+#### Deux mises en page : le livret, ou la feuille à plier en option
 
-Le même contenu se demande sous deux formes, par le paramètre `format` :
+Il n'y a que deux PDF : le global et l'individuel. La feuille à plier est une
+**option** du PDF individuel, le paramètre `feuille=true` ; sans lui, c'est le
+livret. L'ancien paramètre `format=livret|feuille` reste accepté comme alias
+(liens déjà imprimés, mails, clients MCP) ; `feuille=true` l'emporte.
 
-| `format` | Document | Pour qui |
+| Option | Document | Pour qui |
 | --- | --- | --- |
-| `livret` (défaut) | A4 portrait, plusieurs pages, les trois parties ci-dessus | l'espace animateur, les mails de publication, l'export d'un animateur |
-| `feuille` | **une** feuille A4 paysage recto-verso : recto un calendrier semaine par ligne (lundi → dimanche) avec mini-frise et créneaux, verso les coéquipiers, les grandes équipes et les lieux | l'impression en masse par l'organisation — un tirage par personne au lieu de cinq |
+| (défaut) | A4 portrait, plusieurs pages, les trois parties ci-dessus | l'espace animateur, les mails de publication, l'export d'un animateur |
+| `feuille=true` | **une** feuille A4 paysage recto-verso : recto un calendrier semaine par ligne (lundi → dimanche) avec mini-frise et créneaux, verso les coéquipiers, les grandes équipes et les lieux | l'impression en masse par l'organisation — un tirage par personne au lieu de cinq |
 
 Les deux nomment leur **édition** sous le nom de l'animateur : le nom seul, les
 bornes étant déjà sur la ligne de période juste en dessous. Une personne revenue
@@ -1270,7 +1273,7 @@ l'espace animateur propose « Télécharger le livret PDF » et « Télécharger
 feuille recto-verso », l'écran *Diffusion du planning* les mêmes deux sorties
 pour toute l'édition.
 
-Le paramètre est accepté sur `GET /api/espace-animateur/{jeton}/planning.pdf`,
+Le paramètre `feuille` est accepté sur `GET /api/espace-animateur/{jeton}/planning.pdf`,
 `POST /api/planning/export/pdf/animateur/{id}`, `POST
 /api/planning/export/pdf/all` et `POST /api/planning/export/bundle/all`. Une
 valeur inconnue vaut `livret` : une faute de frappe sur un téléchargement ne
@@ -1339,7 +1342,7 @@ ne porterait que son manifeste.
 | `referentiels` | `referentiels/*.csv` | les six fichiers de `GET /api/reference-data/export-csv` | non |
 | `scenario` | `scenario.yaml` | celui de `GET /api/planning/export-scenario` | non |
 | `publication` | `publication.csv` | celui de `GET /api/planning/publication/export` | non |
-| `individuels` (+ `format=livret\|feuille`) | `plannings-individuels/` | le PDF et l'ICS de chaque animateur, ceux de `POST /api/planning/export/bundle/all` | oui |
+| `individuels` (+ `feuille=true`) | `plannings-individuels/` | le PDF et l'ICS de chaque animateur, ceux de `POST /api/planning/export/bundle/all` | oui |
 
 **Mêmes générateurs, jamais une copie.** Un fichier de l'archive est l'octet
 près celui que son écran aurait téléchargé au même instant — marque d'octets

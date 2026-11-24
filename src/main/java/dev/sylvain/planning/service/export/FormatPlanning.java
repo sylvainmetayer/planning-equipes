@@ -21,6 +21,15 @@ public enum FormatPlanning {
     public static final FormatPlanning DEFAUT = LIVRET;
 
     /**
+     * The layout asked for by the {@code feuille} flag, the legacy {@code format}
+     * value still being honoured as an alias: links already printed, mailed or
+     * stored by an MCP client carry {@code format=feuille}.
+     */
+    public static FormatPlanning fromParameters(String format, boolean feuille) {
+        return feuille ? FEUILLE : fromParameter(format);
+    }
+
+    /**
      * Reads the {@code format} query parameter, tolerating case and absence:
      * an unknown value is a caller's typo, and answering it with the usual
      * document beats answering it with a 400 nobody expected on a download.
