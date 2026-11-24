@@ -37,6 +37,7 @@ content:
         fields:
           - { name: label, label: Nom du menu (lecteurs d'écran), type: string, required: true }
           - { name: accueil, label: Accueil, type: string, required: true }
+          - { name: tableur, label: Fini le tableur, type: string, required: true }
           - { name: legal, label: Code du travail, type: string, required: true }
           - { name: equipe, label: Équipe, type: string, required: true }
           - { name: calcul, label: Le calcul, type: string, required: true }
@@ -96,6 +97,7 @@ content:
             fields:
               - { name: label, label: Nom du menu (lecteurs d'écran), type: string, required: true }
               - { name: accueil, label: Accueil, type: string, required: true }
+              - { name: tableur, label: Fini le tableur, type: string, required: true }
               - { name: legal, label: Code du travail, type: string, required: true }
               - { name: equipe, label: Équipe, type: string, required: true }
               - { name: calcul, label: Le calcul, type: string, required: true }
