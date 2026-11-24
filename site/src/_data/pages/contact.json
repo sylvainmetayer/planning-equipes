@@ -1,0 +1,30 @@
+{
+  "slug": "contact",
+  "titre": "Demander un devis pour Planning Équipes",
+  "description": "Décrivez votre événement et votre équipe : nous vous répondons avec un devis. Formulaire de contact de Planning Équipes.",
+  "h1": "Demander un devis",
+  "reponse": "**Dites-nous ce qu'il vous faut.** Sept questions sur votre événement et votre équipe, et nous vous répondons avec un devis.",
+  "formTitre": "Formulaire de demande de devis",
+  "lien": "Ouvrir le formulaire sur tally.so",
+  "ecrire": "ou écrivez-nous à",
+  "liens": [
+    "faq",
+    "hebergement",
+    "mentions"
+  ],
+  "en": {
+    "slug": "contact",
+    "titre": "Request a quote for Planning Équipes",
+    "description": "Describe your event and your team: we reply with a quote. Planning Équipes contact form.",
+    "h1": "Request a quote",
+    "reponse": "**Tell us what you need.** Seven questions about your event and your team, and we reply with a quote.",
+    "formTitre": "Quote request form",
+    "lien": "Open the form on tally.so",
+    "ecrire": "or write to us at",
+    "liens": [
+      "faq",
+      "hebergement",
+      "mentions"
+    ]
+  }
+}

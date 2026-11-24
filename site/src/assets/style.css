@@ -162,6 +162,12 @@ a[href^="http"]:not([href*="planning.sylvain.dev"])::after { content: ""; displa
 .turns dt { font-size: var(--text-sm); font-weight: 600; color: var(--p); }
 .turns dd { margin: 0; color: var(--color-ink-2); }
 
+/* Contact page: the Tally form in a plain iframe, its fallbacks under it */
+.form { display: grid; gap: var(--space-md); padding-block: 0 var(--section-gap-s); }
+.form__frame { width: 100%; height: var(--form-height-narrow); border: 0; }
+.form__alt { max-width: 60ch; color: var(--color-ink-2); }
+@media (min-width: 48rem) { .form__frame { height: var(--form-height); } }
+
 /* Answer pages: the question as the banner, chapters as rows */
 .ask { padding-block: var(--space-2xl); }
 .ask .container { display: grid; gap: var(--space-lg); }

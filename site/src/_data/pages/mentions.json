@@ -1,0 +1,66 @@
+{
+  "slug": "mentions-legales",
+  "titre": "Mentions légales et confidentialité de Planning Équipes",
+  "description": "Éditeur, hébergement, licence, données personnelles et droits des visiteurs du site Planning Équipes.",
+  "h1": "Mentions légales et confidentialité",
+  "reponse": "**Ce que dit le site de lui-même :** qui l'édite, qui l'héberge, et ce qu'il fait de vos données, c'est-à-dire presque rien.",
+  "sections": [
+    {
+      "h2": "Éditeur",
+      "texte": "Ce site est édité par Sylvain MÉTAYER, directeur de la publication. Contact : [planning@sylvain.dev](mailto:planning@sylvain.dev)."
+    },
+    {
+      "h2": "Hébergement",
+      "texte": "Le site est hébergé par Cloudflare Pages : Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis."
+    },
+    {
+      "h2": "Licence",
+      "texte": "Le code de l'application est publié sous licence AGPL-3.0 : voir le fichier [LICENSE du dépôt](https://github.com/sylvainmetayer/planning-equipes). Les marques de tiers restent la propriété de leurs titulaires."
+    },
+    {
+      "h2": "Données personnelles",
+      "texte": "Le site n'a ni compte ni cookie.\n\n**Mesure d'audience.** Cloudflare Web Analytics, sans cookie ni identifiant persistant : des chiffres agrégés (page, origine de la visite, pays, type de navigateur).\n\n**Journaux techniques.** Cloudflare traite l'adresse IP des visiteurs pour servir et protéger le site ([politique de confidentialité de Cloudflare](https://www.cloudflare.com/privacypolicy/)).\n\n**Formulaire de contact.** Il est hébergé par Tally (Tally BV, Belgique), qui stocke les données dans l'Union européenne ([politique de confidentialité de Tally](https://tally.so/help/privacy-policy)). Les réponses (e-mail, organisation, besoin, taille de l'équipe, durée, date, message) servent uniquement à répondre à votre demande : elles ne sont ni vendues ni utilisées pour du marketing, et supprimées au plus tard trois ans après le dernier échange. La page de contact ne charge le formulaire depuis tally.so que lorsqu'elle est affichée."
+    },
+    {
+      "h2": "Vos droits",
+      "texte": "Vous pouvez demander l'accès, la rectification ou l'effacement de vos données (RGPD) en écrivant à [planning@sylvain.dev](mailto:planning@sylvain.dev). Vous pouvez aussi introduire une réclamation auprès de la [CNIL](https://www.cnil.fr/)."
+    }
+  ],
+  "liens": [
+    "contact",
+    "faq"
+  ],
+  "en": {
+    "slug": "legal-notice",
+    "titre": "Legal notice and privacy of Planning Équipes",
+    "description": "Publisher, hosting, licence, personal data and visitors' rights on the Planning Équipes website.",
+    "h1": "Legal notice and privacy",
+    "reponse": "**What the site says about itself:** who publishes it, who hosts it, and what it does with your data, which is almost nothing.",
+    "sections": [
+      {
+        "h2": "Publisher",
+        "texte": "This site is published by Sylvain MÉTAYER, publication director. Contact: [planning@sylvain.dev](mailto:planning@sylvain.dev)."
+      },
+      {
+        "h2": "Hosting",
+        "texte": "The site is hosted by Cloudflare Pages: Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, United States."
+      },
+      {
+        "h2": "Licence",
+        "texte": "The application's code is published under the AGPL-3.0 licence: see the [LICENSE file of the repository](https://github.com/sylvainmetayer/planning-equipes). Third-party marks remain the property of their owners."
+      },
+      {
+        "h2": "Personal data",
+        "texte": "The site has no account and no cookie.\n\n**Audience measurement.** Cloudflare Web Analytics, with no cookie and no persistent identifier: aggregated figures (page, referrer, country, browser type).\n\n**Technical logs.** Cloudflare processes visitors' IP addresses to serve and protect the site ([Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/)).\n\n**Contact form.** It is hosted by Tally (Tally BV, Belgium), which stores the data in the European Union ([Tally's privacy policy](https://tally.so/help/privacy-policy)). The answers (e-mail, organisation, need, team size, duration, date, message) are used only to answer your request: they are never sold or used for marketing, and are deleted at the latest three years after the last exchange. The contact page loads the form from tally.so only when it is shown."
+      },
+      {
+        "h2": "Your rights",
+        "texte": "You may ask for access to, rectification or erasure of your data (GDPR) by writing to [planning@sylvain.dev](mailto:planning@sylvain.dev). You may also lodge a complaint with the [CNIL](https://www.cnil.fr/en/home) (the French data protection authority)."
+      }
+    ],
+    "liens": [
+      "contact",
+      "faq"
+    ]
+  }
+}
