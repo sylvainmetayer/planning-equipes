@@ -244,7 +244,7 @@ export class SolverPage implements OnInit {
   protected readonly machineConfiguree = computed(() => this.machine()?.configured === true);
   protected readonly remoteByDefault = computed(() => this.machine()?.remoteByDefault ?? false);
   /** A machine that is up, or whose last stop failed, may be billing: its card never folds away. */
-  protected readonly machineEnCours = computed(() => {
+  protected readonly machineUp = computed(() => {
     const m = this.machine();
     return (
       m?.state === 'PREPARING' ||
