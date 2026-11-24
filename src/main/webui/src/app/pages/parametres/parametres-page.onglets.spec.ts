@@ -217,8 +217,8 @@ describe('ParametresPage — onglets', () => {
     await rendre();
   });
 
-  it('names its three tabs and opens on the edition', () => {
-    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Instance']);
+  it('names its tabs and opens on the edition', () => {
+    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Instance', 'Historique', 'MCP']);
     expect(textOf()).toContain("Nom de l'édition");
     expect(textOf()).toContain('Gel du référentiel');
     expect(textOf()).toContain('Guichets');
