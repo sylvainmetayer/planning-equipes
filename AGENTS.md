@@ -211,8 +211,8 @@ Single Quarkus service, no separate solver microservice. Package root:
     solve that starts, on `SolveStarting`, and keeps every check in
     `verification_besoin`).
   - `service/analyse/` — what is read from a plan without solving it —
-    Réalisé vs planifié included (`RealisedVsPlannedService`, see the
-    third `@Scheduled` below).
+    Réalisé vs planifié included (`RealisedVsPlannedService`, computed on
+    demand and cached, see below).
   - `service/referentiel/` — `ReferenceDataService` (facade over one service
     per referential family — `StandService`, `AnimateurService`,
     `CreneauService`, … — over one repository per family, plus
@@ -539,21 +539,19 @@ Single Quarkus service, no separate solver microservice. Package root:
   `INSERT … ON CONFLICT DO NOTHING` and the message goes out only for the call
   that won the insert, so an hourly cron writes to nobody twice. Reading then
   acting would let two runs both read "not yet".
-- **`service/analyse/RealisedFreezeJob` is the third `@Scheduled`**
-  (ADR 0070, revised by 0074 — it is no longer the last): once a night it freezes the Réalisé vs planifié measure of every
-  edition whose last timeslot has ended and that published something, into
-  `kpi_realise`, where the next edition reads it. Same conventions as the
-  other two (cron and zone from `REALISE_CRON` / `REALISE_TIMEZONE`, `SKIP` on
-  overlap, failure logged, editions entered through `executeIn`, one
-  `try/catch` each), and it **walks every edition, active or not**: it sends
-  nothing, and the event it measures is usually over — its edition already
-  deactivated — when it runs. **It writes
-  once**: an edition that has its rows is skipped (`ON CONFLICT DO NOTHING`
-  behind the check), so `fige_le` is the first night after the event; an
-  edition whose report says the past is not frozen is skipped and logged;
-  re-freezing is an operator's SQL `DELETE` of the edition's rows, never a
-  route. `kpi_realise` carries no foreign key and keeps the names it shows,
-  like `kpi_historique`: the measure outlives the deletion of its edition.
+- **Réalisé vs planifié is computed on demand, never by a job** (ADR 0092,
+  which replaces the nightly `RealisedFreezeJob` of ADR 0070 — the
+  application has four `@Scheduled`, not five): `RealisedVsPlannedService.report`
+  answers from the plan, and the first report asked once the edition's last
+  timeslot has ended, with something published, writes the measure into
+  `kpi_realise` as a cache, where the next edition reads it. **It writes
+  once**: an edition that has its rows is left alone (`ON CONFLICT DO NOTHING`
+  behind the check), so `fige_le` is the first read after the event; a report
+  whose past is not frozen is not cached and is logged; a failed write is
+  logged, never propagated; re-freezing is an operator's SQL `DELETE` of the
+  edition's rows, never a route. `kpi_realise` carries no foreign key and
+  keeps the names it shows, like `kpi_historique`: the measure outlives the
+  deletion of its edition.
   The measure itself is `RealisedVsPlannedAnalyzer`, over
   `ChangementsJourneeService.compareSeats` — never a comparison of its own —
   each day elapsed (its last timeslot over) against the publication in force
@@ -562,7 +560,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   reference of an elapsed day refuses deletion (`PlanSnapshotService.delete`).
   The realised is read from a `RealisedSource` (the declared one today; a
   presence check-in would replace that bean, not the measure).
-- **`service/webhook/WebhookDeliverer` is the fourth `@Scheduled`** (ADR
+- **`service/webhook/WebhookDeliverer` is the third `@Scheduled`** (ADR
   0074): every minute (`WEBHOOKS_CRON`) it re-delivers the outgoing webhook
   deliveries whose retry is due (1 min, 5 min, 30 min, 2 h, 12 h), and resumes
   after a restart what was pending; the first attempt leaves at once on a
@@ -582,7 +580,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   address unless `WEBHOOKS_RESEAUX_AUTORISES`) and connects to the address it
   checked; secrets are AES-GCM-encrypted with `WEBHOOKS_SECRET_KEY`, without
   which the boot is refused once a webhook exists. No MCP tool configures them.
-- **`service/weather/WeatherAlertJob` is the fifth `@Scheduled`** (ADR 0074):
+- **`service/weather/WeatherAlertJob` is the fourth `@Scheduled`** (ADR 0074):
   once a morning (`METEO_CRON`, an instance hour in `NOTIFICATIONS_TIMEZONE`)
   it queries Open-Meteo for the active edition — the one
   `OutboundEditionPolicy` lets emit, none between two events — when its

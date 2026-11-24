@@ -593,21 +593,18 @@ dans l'espace animateur.
 
 ### Le réalisé figé de fin d'événement
 
-`service/analyse/RealisedFreezeJob` est le troisième `@Scheduled`
-([ADR 0070](decisions/0070-un-troisieme-job-planifie-fige-le-realise.md), révisée
-par [0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md) : ce
-n'est plus le dernier).
-Chaque nuit (`REALISE_CRON`, 3 h 30 par défaut, avant la sauvegarde), il entre
-dans chaque édition par `EditionContext.executeIn` et, si son dernier créneau
-est terminé, qu'elle a publié quelque chose et qu'elle n'a pas encore de
-mesure, écrit dans `kpi_realise` la mesure « Réalisé vs planifié » par
-typologie et pour l'événement : des comptes, aucune personne. Il **ne lit
-pas** l'interrupteur des notifications, qui protège des personnes contre un
-message ; ce job n'envoie rien. Il **n'écrit qu'une fois** (une édition qui a
-ses lignes est sautée, l'insertion porte `ON CONFLICT DO NOTHING`), saute une
-édition tant que le passé figé est désactivé, et la table, sans clé étrangère,
-garde le nom de l'édition et de chaque typologie : la mesure survit à la
-suppression de l'édition, comme `kpi_historique`.
+Plus aucune tâche de nuit ne le calcule
+([ADR 0092](decisions/0092-le-realise-se-calcule-a-la-demande.md), qui remplace
+[0070](decisions/0070-un-troisieme-job-planifie-fige-le-realise.md)).
+`RealisedVsPlannedService` répond à la demande et, à la première lecture faite
+une fois le dernier créneau de l'édition terminé et quelque chose publié,
+écrit dans `kpi_realise` la mesure « Réalisé vs planifié » par typologie et
+pour l'événement : des comptes, aucune personne. Cette écriture est un cache
+qui **n'écrit qu'une fois** (une édition qui a ses lignes est laissée telle
+quelle, l'insertion porte `ON CONFLICT DO NOTHING`), n'a pas lieu tant que le
+passé figé est désactivé, et ne fait jamais échouer la lecture. La table, sans
+clé étrangère, garde le nom de l'édition et de chaque typologie : la mesure
+survit à la suppression de l'édition, comme `kpi_historique`.
 
 La mesure elle-même vient de `RealisedVsPlannedService` (même paquet), qui
 compare chaque journée écoulée — son dernier créneau terminé — à la
@@ -619,7 +616,7 @@ du jour J) aujourd'hui, un pointage de présence demain, sans toucher au calcul.
 
 ### Les webhooks sortants
 
-`service/webhook/WebhookDeliverer` est le quatrième `@Scheduled`
+`service/webhook/WebhookDeliverer` est le troisième `@Scheduled`
 ([ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
 chaque minute (`WEBHOOKS_CRON`), il reprend les livraisons dont le réessai est
 échu — 1 min, 5 min, 30 min, 2 h, 12 h —, y compris après un redémarrage. Le
@@ -655,7 +652,7 @@ l'export SQL. Les secrets y sont chiffrés (`SecretCipher`, AES-GCM,
 
 ### L'alerte météo
 
-`service/weather/WeatherAlertJob` est le cinquième `@Scheduled`
+`service/weather/WeatherAlertJob` est le quatrième `@Scheduled`
 ([ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
 chaque matin (`METEO_CRON`, heure d'instance dans `NOTIFICATIONS_TIMEZONE`), il
 entre dans l'édition active — la seule que `OutboundEditionPolicy` laisse
