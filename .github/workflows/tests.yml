@@ -79,8 +79,8 @@ jobs:
       # sur le jar packagé) compris.
       packaged: ${{ steps.app.outputs.packaged }}
     # Runner GitHub : le résultat des tests se suit depuis la PR, sans dépendre
-    # de la disponibilité de la machine d'un seul développeur. Le prix est que
-    # ces minutes sont facturées — voir docs/developpement.md.
+    # de la disponibilité de la machine d'un seul développeur. Les runners
+    # standard sont gratuits sur un dépôt public — voir docs/developpement.md.
     #
     # La garde sur les PR de fork tenait au socket Docker du runner
     # auto-hébergé, sur lequel une PR externe aurait fait tourner du code
@@ -390,28 +390,39 @@ jobs:
   #
   # Ici plutôt que dans un workflow à part (`e2e.yml`, qui ne reste que pour
   # `workflow_dispatch`) : l'application est celle que le job `test` a
-  # packagée. Le prix est l'attente — la pile ne monte qu'une fois toute la
-  # suite backend passée, tests d'intégration compris, et un test backend
-  # rouge, unitaire ou d'intégration, laisse l'E2E de côté. Le nom du
-  # check, lui, ne bouge pas : « e2e / e2e ».
+  # packagée. Le prix est l'attente — la pile ne monte qu'une fois le job
+  # `test` passé, tests d'intégration compris, et un test rouge de ce job
+  # laisse l'E2E de côté. Les checks s'appellent « e2e (1) / e2e » et
+  # « e2e (2) / e2e », un par moitié.
   e2e:
-    needs: [e2e-scope, test, test-conteneur]
+    needs: [e2e-scope, test]
     # `!cancelled()` et non le succès de `test` : une étape après le packaging
     # (le contrat OpenAPI) peut échouer sans que l'application manque. La
     # garde de fork suit d'elle-même — les jobs dont celui-ci dépend la
     # portent, et un job sauté ne publie aucune sortie. Les deux moitiés de
-    # `test-conteneur` sont attendues et doivent être vertes : la suite backend
-    # entière, comme avant leur découpage.
+    # `test-conteneur` ne sont pas attendues : l'E2E part dès que le jar
+    # existe et que les tests sans conteneur et d'intégration sont verts, et
+    # tourne même si une classe conteneur casse — la PR reste rouge par
+    # celle-ci.
     if: >-
       !cancelled()
       && needs.e2e-scope.outputs.run == 'true'
       && needs.test.outputs.packaged == 'true'
-      && needs.test-conteneur.result == 'success'
+    # Deux moitiés de la suite, chacune sur sa pile (`--shard`, par fichier :
+    # `fullyParallel` est faux). Chaque spec repart de la base de référence
+    # dans son `beforeAll` (`repartirDeLaReference`, qui vide aussi Mailpit),
+    # et `globalSetup` capture cette référence sur chaque pile : aucune spec
+    # n'hérite de l'état d'une autre.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     uses: ./.github/workflows/e2e-suite.yml
     with:
       # Tout sauf les specs @lourd — la semaine canicule sur festival-hivernal
       # pesait 13 des 20 minutes de la suite ; elle tourne dans e2e-lourd.yml.
-      playwright-args: --grep-invert @lourd
+      playwright-args: --grep-invert @lourd --shard=${{ matrix.shard }}/2
+      artifact-suffix: -${{ matrix.shard }}
       # Le dernier passage complet sans @lourd tient en ~10 min, montage de la
       # pile compris ; un runner lent a de la marge, un blocage n'en a pas.
       timeout-minutes: 25
@@ -432,12 +443,11 @@ jobs:
   # Même place que `e2e` et pour la même raison : l'application est celle du
   # job `test`, et la pile ne monte qu'une fois celui-ci passé.
   dast:
-    needs: [e2e-scope, test, test-conteneur]
+    needs: [e2e-scope, test]
     if: >-
       !cancelled()
       && needs.e2e-scope.outputs.run == 'true'
       && needs.test.outputs.packaged == 'true'
-      && needs.test-conteneur.result == 'success'
     name: Analyse dynamique (ZAP baseline)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -539,8 +549,8 @@ jobs:
     # Même garde de fork que le job `test` ci-dessus.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    # Sans plafond, un job pendu consomme des minutes facturées jusqu'à la
-    # limite de six heures de GitHub.
+    # Sans plafond, un job pendu garde un runner jusqu'à la limite de six
+    # heures de GitHub.
     timeout-minutes: 30
 
     defaults:

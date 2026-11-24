@@ -1,10 +1,10 @@
 # La pile E2E — application packagée, PostgreSQL, Mailpit, Chromium — montée
 # pour une exécution et jetée. Appelée par trois workflows qui ne diffèrent que
 # par la sélection Playwright, le plafond et l'origine de l'application :
-# `tests.yml` (chaque poussée, tout sauf les specs @lourd, sur l'application
-# que son job `test` vient de packager), `e2e.yml` (la même sélection, à la
-# demande) et `e2e-lourd.yml` (les specs @lourd, sur les seuls changements qui
-# peuvent les casser, et chaque nuit). Une seule description de la pile, ou
+# `tests.yml` (chaque poussée, tout sauf les specs @lourd, en deux moitiés
+# `--shard`, sur l'application que son job `test` vient de packager), `e2e.yml`
+# (la même sélection, à la demande) et `e2e-lourd.yml` (les specs @lourd, sous
+# label sur une PR, sur main et chaque nuit). Une seule description de la pile, ou
 # elles dérivent.
 name: Pile E2E
 
@@ -30,6 +30,13 @@ on:
           Nom d'un artefact de CE run qui porte `target/quarkus-app`, déjà
           packagé par un job précédent (celui de `tests.yml`). Vide : la pile
           package l'application elle-même.
+        type: string
+        default: ''
+      artifact-suffix:
+        description: >-
+          Ajouté au nom des artefacts d'échec (traces, journal) : deux moitiés
+          de la suite dans un même run ne peuvent pas téléverser sous le même
+          nom.
         type: string
         default: ''
 
@@ -228,7 +235,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: playwright-traces
+          name: playwright-traces${{ inputs.artifact-suffix }}
           path: src/main/webui/test-results/**
           if-no-files-found: ignore
           retention-days: 7
@@ -239,7 +246,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: application-log
+          name: application-log${{ inputs.artifact-suffix }}
           path: app.log
           if-no-files-found: ignore
           retention-days: 7
