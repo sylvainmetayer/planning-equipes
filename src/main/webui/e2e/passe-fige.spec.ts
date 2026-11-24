@@ -263,7 +263,8 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     await expect(deplacer).toBeEnabled();
     await deplacer.click();
 
-    await expect(page.locator('mat-snack-bar-container')).toContainText(
+    // The panel says the refusal itself, under its gestures.
+    await expect(page.getByRole('complementary', { name: /Siège/ })).toContainText(
       'Ce créneau est déjà commencé',
     );
     expect(await siegesPasses()).toEqual(passeAttendu);
