@@ -1,7 +1,9 @@
 package dev.sylvain.planning.service.analyse;
 
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.RealisedSource.Realised;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.CellDetail;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.PreviousEdition;
@@ -9,7 +11,9 @@ import dev.sylvain.planning.service.analyse.RealisedVsPlannedAnalyzer.ChosenRefe
 import dev.sylvain.planning.service.analyse.RealisedVsPlannedAnalyzer.DayReference;
 import dev.sylvain.planning.service.analyse.RealisedVsPlannedAnalyzer.DaySpan;
 import dev.sylvain.planning.service.analyse.RealisedVsPlannedAnalyzer.Publication;
+import dev.sylvain.planning.service.edition.EditionRepository;
 import dev.sylvain.planning.service.espace.JourJClock;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PlanPublieService.SnapshotPlans;
 import dev.sylvain.planning.service.referentiel.JoursEvenement;
@@ -19,6 +23,7 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -31,13 +36,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.jboss.logging.Logger;
 
 /**
  * Réalisé vs planifié for the current edition: the elapsed days, each against
  * the publication in force when it started, and the realised read from its
  * {@link RealisedSource}.
  *
- * <p>Reads only. The measure itself is {@link RealisedVsPlannedAnalyzer}'s,
+ * <p>Computed on demand, and cached once the event is over (ADR 0092): the
+ * first report asked after the edition's last timeslot has ended, and only
+ * if something was published, writes the measure into {@code kpi_realise},
+ * where the next edition reads it. It writes once — an edition that has its
+ * rows is left alone, so a later edit does not rewrite it; re-freezing is an
+ * operator's SQL {@code DELETE}. The measure itself is {@link RealisedVsPlannedAnalyzer}'s,
  * over {@code ChangementsJourneeService.compareSeats}; this class finds the
  * plans it needs — each reference publication read once per computation, all
  * of them against one read of the referential ({@link SnapshotPlans}) — and
@@ -53,6 +64,8 @@ import java.util.Optional;
 @ApplicationScoped
 public class RealisedVsPlannedService {
 
+    private static final Logger LOG = Logger.getLogger(RealisedVsPlannedService.class);
+
     private final RealisedSource source;
 
     private final PlanSnapshotService snapshotService;
@@ -67,6 +80,12 @@ public class RealisedVsPlannedService {
 
     private final RealisedHistoryRepository history;
 
+    private final JournalActionService journal;
+
+    private final EditionRepository editionRepository;
+
+    private final EditionContext editionContext;
+
     @Inject
     public RealisedVsPlannedService(
             RealisedSource source,
@@ -75,7 +94,10 @@ public class RealisedVsPlannedService {
             ReferenceDataService referenceDataService,
             PlanningService planningService,
             JourJClock clock,
-            RealisedHistoryRepository history) {
+            RealisedHistoryRepository history,
+            JournalActionService journal,
+            EditionRepository editionRepository,
+            EditionContext editionContext) {
         this.source = source;
         this.snapshotService = snapshotService;
         this.planPublieService = planPublieService;
@@ -83,6 +105,9 @@ public class RealisedVsPlannedService {
         this.planningService = planningService;
         this.clock = clock;
         this.history = history;
+        this.journal = journal;
+        this.editionRepository = editionRepository;
+        this.editionContext = editionContext;
     }
 
     /** The report as of now. */
@@ -90,8 +115,14 @@ public class RealisedVsPlannedService {
         return report(clock.dateTime());
     }
 
-    /** The report as of {@code now} — what the nightly job and the tests ask for a given moment. */
+    /** The report as of {@code now}, cached into {@code kpi_realise} when the event is over. */
     public RealisedVsPlanned report(LocalDateTime now) {
+        RealisedVsPlanned report = compute(now);
+        cacheIfOver(report, now);
+        return report;
+    }
+
+    private RealisedVsPlanned compute(LocalDateTime now) {
         Realised realised = source.read();
         List<Publication> publications = publications();
         List<DayReference> days = dayReferences(now, realised.plan(), publications, planPublieService.snapshotPlans());
@@ -106,6 +137,37 @@ public class RealisedVsPlannedService {
                 planningService.pastHorizon() != null,
                 now.toLocalDate(),
                 labels);
+    }
+
+    /**
+     * Writes the measure once, as the first night after the event used to: not
+     * before the last timeslot has ended, not without a publication to measure,
+     * and not while the frozen past is off — a realised nobody guarantees must
+     * not be written once and kept. A failure is logged, never propagated: the
+     * report was computed and is still answered.
+     */
+    private void cacheIfOver(RealisedVsPlanned report, LocalDateTime now) {
+        try {
+            if (!report.referenceAvailable() || !isOver(now) || history.exists()) {
+                return;
+            }
+            if (!report.frozenPast()) {
+                LOG.warn("The realised measure is not cached: the frozen past is switched off (PASSE_FIGE=false)");
+                return;
+            }
+            JoursEvenement jours = JoursEvenement.of(referenceDataService.listCreneaux());
+            // ON CONFLICT DO NOTHING: when a concurrent read wins, it is the one that journals.
+            if (history.insert(editionName(), jours.first(), jours.last(), report, Instant.now()) > 0) {
+                journal.recordSystemAction("REALISE_FIGE", null);
+            }
+        } catch (RuntimeException e) {
+            LOG.error("The realised measure could not be cached; the report is answered all the same", e);
+        }
+    }
+
+    private String editionName() {
+        String id = editionContext.editionIdCourant();
+        return editionRepository.find(id).map(Edition::getNom).orElse(id);
     }
 
     /** The grid as a CSV, without any person. */

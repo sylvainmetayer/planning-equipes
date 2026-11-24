@@ -11,7 +11,7 @@ import java.util.Optional;
 import org.jboss.logging.Logger;
 
 /**
- * The application's fifth {@code @Scheduled} (ADR 0074): once a morning
+ * The application's fourth {@code @Scheduled} (ADR 0074): once a morning
  * ({@code METEO_CRON}, 6:00 in {@code NOTIFICATIONS_TIMEZONE}), the weather
  * alert of the edition that may emit outward.
  *

@@ -5,26 +5,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.GapCounts;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.RealisedCell;
-import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionRepository;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
-import dev.sylvain.planning.service.publication.PlanPublieService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
-import dev.sylvain.planning.testing.ActiveEdition;
-import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -37,7 +28,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,17 +39,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The nightly freeze of the Réalisé vs planifié measure, and the mode jour
+ * The on-demand cache of the Réalisé vs planifié measure, and the mode jour
  * J's split carried into that measure — both under the profile of a staging
- * server: the past frozen (the job refuses to freeze otherwise) and the clock
+ * server: the past frozen (the cache refuses to write otherwise) and the clock
  * allowed to be set (the split cuts a seat at « now »).
  *
  * <p>The events are a year ahead of the real clock, so the frozen past never
  * pins a seat this class writes unless it sets the clock on purpose.</p>
  */
 @QuarkusTest
-@TestProfile(RealisedFreezeJobTest.PastFrozenOnAStagingServer.class)
-class RealisedFreezeJobTest {
+@TestProfile(RealisedOnDemandTest.PastFrozenOnAStagingServer.class)
+class RealisedOnDemandTest {
 
     /** The freeze on, and the clock allowed to be set — as {@code FrozenPastAcceptanceTest} configures it. */
     public static class PastFrozenOnAStagingServer implements QuarkusTestProfile {
@@ -74,43 +64,16 @@ class RealisedFreezeJobTest {
     private static final Instant AVANT_EVENEMENT = Instant.parse("2027-08-01T10:00:00Z");
 
     @Inject
-    RealisedFreezeJob job;
-
-    @Inject
     RealisedVsPlannedService service;
 
     @Inject
-    RealisedSource source;
-
-    @Inject
-    PlanSnapshotService snapshotService;
-
-    @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    ReferenceDataService referenceData;
-
-    @Inject
-    PlanningService planningService;
-
-    @Inject
     JourJClock clock;
-
-    @Inject
-    RealisedHistoryRepository history;
 
     @Inject
     PlanningPersistenceService persistence;
 
     @Inject
     PlanPublicationService publication;
-
-    @Inject
-    EditionService editionService;
-
-    @Inject
-    EditionRepository editionRepository;
 
     @Inject
     EditionContext editionContext;
@@ -120,9 +83,6 @@ class RealisedFreezeJobTest {
 
     @Inject
     DataSource dataSource;
-
-    /** The editions a test created, deleted when it ends. */
-    private final List<String> creees = new ArrayList<>();
 
     /** When the test started: the rows the job wrote since are this test's, whichever edition they measure. */
     private Instant debut;
@@ -147,32 +107,29 @@ class RealisedFreezeJobTest {
             throw new IllegalStateException(e);
         }
         execute("DELETE FROM kpi_realise WHERE edition_id = ?", editionContext.editionIdCourant());
-        for (String edition : creees) {
-            editionService.delete(edition);
-        }
         persistence.clearDatabase();
     }
 
     /**
-     * Written the first night the event is over, and never again: the change
-     * made the morning after leaves the frozen figures — and the instant they
-     * were frozen — as they were.
+     * Written by the first report asked once the event is over, and never
+     * again: the change made the morning after leaves the frozen figures, and
+     * the instant they were frozen, as they were.
      */
     @Test
-    void theJobFreezesAFinishedEventOnceAndNeverRewritesIt() {
+    void theFirstReportAfterTheEventCachesTheMeasureOnceAndNeverRewritesIt() {
         persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of("STRATEGIE"), 970_340_000L, JOUR1));
         publishAt(AVANT_EVENEMENT);
         String edition = editionContext.editionIdCourant();
         int journalAvant = journal.page(new HistoryFilter(List.of("REALISE_FIGE"), false, null, null), null, 1000)
                 .size();
 
-        job.run(JOUR3.atTime(11, 0));
+        service.report(JOUR3.atTime(11, 0));
         assertThat(rows(edition)).as("the last timeslot runs until 12:00").isEmpty();
 
-        job.run(JOUR3.atTime(12, 0));
+        service.report(JOUR3.atTime(12, 0));
         List<String> premiere = rows(edition);
         persistence.reaffecterPoste("RVJ-P2", "RVJ-C");
-        job.run(JOUR3.plusDays(1).atTime(3, 30));
+        service.report(JOUR3.plusDays(1).atTime(3, 30));
 
         assertThat(premiere).hasSize(2).anyMatch(row -> row.startsWith("|")).anyMatch(row -> !row.startsWith("|"));
         assertThat(rows(edition)).isEqualTo(premiere);
@@ -181,47 +138,13 @@ class RealisedFreezeJobTest {
     }
 
     @Test
-    void anEditionNeverPublishedIsNotFrozen() {
+    void anEditionNeverPublishedIsNotCached() {
         persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of(), 970_340_000L, JOUR1));
         String edition = editionContext.editionIdCourant();
 
-        job.run(JOUR3.plusDays(1).atStartOfDay());
+        service.report(JOUR3.plusDays(1).atStartOfDay());
 
         assertThat(rows(edition)).isEmpty();
-    }
-
-    /**
-     * The edition the job meets first fails: the next one is frozen all the
-     * same, each edition being entered in its own {@code try/catch}.
-     */
-    @Test
-    void oneEditionsFailureDoesNotCostTheOthersTheirMeasure() {
-        persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of(), 970_340_000L, JOUR1));
-        publishAt(AVANT_EVENEMENT);
-        Edition autre = editionService.create(new Edition(null, "Édition réalisé job", false, null));
-        creees.add(autre.getId());
-        // Publishing reaches outside: only the active edition does it (ADR 0072).
-        // The job itself then walks every edition, active or not.
-        ActiveEdition.during(
-                autre.getId(),
-                () -> editionContext.executeIn(autre.getId(), () -> {
-                    persistence.persist(RealisedVsPlannedServiceTest.planOn("RVK-", Set.of(), 970_350_000L, JOUR1));
-                    publishAt(AVANT_EVENEMENT);
-                }));
-        List<String> nos = List.of(editionContext.editionIdCourant(), autre.getId());
-        String enEchec = editionRepository.listEditions().stream()
-                .map(Edition::getId)
-                .filter(nos::contains)
-                .findFirst()
-                .orElseThrow();
-        String suivante =
-                nos.stream().filter(id -> !id.equals(enEchec)).findFirst().orElseThrow();
-        QuarkusMock.installMockForType(new FailingIn(enEchec), RealisedVsPlannedService.class);
-
-        job.run(JOUR3.plusDays(1).atStartOfDay());
-
-        assertThat(rows(enEchec)).isEmpty();
-        assertThat(rows(suivante)).isNotEmpty();
     }
 
     /**
@@ -266,25 +189,6 @@ class RealisedFreezeJobTest {
     }
 
     /* ------------------------------- Helpers ------------------------------- */
-
-    /** The real service, refusing the one edition it is told to fail on. */
-    private final class FailingIn extends RealisedVsPlannedService {
-
-        private final String editionId;
-
-        FailingIn(String editionId) {
-            super(source, snapshotService, planPublieService, referenceData, planningService, clock, history);
-            this.editionId = editionId;
-        }
-
-        @Override
-        public RealisedVsPlanned report(LocalDateTime now) {
-            if (editionId.equals(editionContext.editionIdCourant())) {
-                throw new IllegalStateException("Simulated failure of edition " + editionId);
-            }
-            return super.report(now);
-        }
-    }
 
     /** Publishes the persisted plan, then dates the publication {@code instant}. */
     private void publishAt(Instant instant) {

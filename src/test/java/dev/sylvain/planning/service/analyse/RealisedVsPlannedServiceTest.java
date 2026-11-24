@@ -57,8 +57,8 @@ import org.junit.jupiter.api.Test;
  * deletion, served over HTTP, read the real clock, for which these days are
  * long elapsed.</p>
  *
- * <p>The past is not frozen under {@code %test}: the nightly job, which
- * refuses to freeze then, is exercised by {@code RealisedFreezeJobTest} under
+ * <p>The past is not frozen under {@code %test}: the on-demand cache, which
+ * refuses to write then, is exercised by {@code RealisedOnDemandTest} under
  * a profile that freezes it.</p>
  */
 @QuarkusTest
@@ -74,9 +74,6 @@ class RealisedVsPlannedServiceTest {
 
     @Inject
     RealisedVsPlannedService service;
-
-    @Inject
-    RealisedFreezeJob job;
 
     @Inject
     RealisedHistoryRepository history;
@@ -263,11 +260,9 @@ class RealisedVsPlannedServiceTest {
 
     /** {@code %test} does not freeze the past: a measure written once must not rest on that. */
     @Test
-    void theNightlyJobDoesNotFreezeWhileThePastIsNotFrozen() {
+    void theCacheDoesNotWriteWhileThePastIsNotFrozen() {
         publishAt(AVANT_EVENEMENT);
         String edition = editionContext.editionIdCourant();
-
-        job.run(APRES);
 
         assertThat(service.report(APRES).frozenPast()).isFalse();
         assertThat(rows(edition)).isEmpty();
@@ -357,7 +352,7 @@ class RealisedVsPlannedServiceTest {
     }
 
     /**
-     * A finished edition with its measure frozen as the job writes it — one
+     * A finished edition with its measure frozen as the cache writes it — one
      * event row of {@code sieges} published seats over {@code joursComptes}
      * days, ending {@code fin}.
      */
