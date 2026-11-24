@@ -4,7 +4,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import articles, { countWords } from '../src/_data/articles.js';
+import articles from '../src/_data/articles.js';
+import { countWords } from '../src/lib.js';
 import { join } from 'node:path';
 import { catalogPath, files, pages, root, strings } from './helpers.mjs';
 

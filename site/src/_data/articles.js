@@ -3,7 +3,7 @@
 // Not edited in Pages CMS: each number must match ConstraintCatalog, and
 // test/articles.test.mjs checks that against ConstraintCatalog.java. A rule that
 // changes its legal basis changes here. Every count the pages state comes from
-// this list (see countWords below and copy.js): never type one.
+// this list (countWords in src/lib.js, filled by copy.js): never type one.
 const articles = [
   {
     number: 'L3121-18',
@@ -77,17 +77,5 @@ const articles = [
     en: { subject: 'Under-18s: public holidays', rule: 'No shift on a legal public holiday.' },
   },
 ];
-
-// The counts the pages state, spelled out; copy.js fills {articles}, {Articles}
-// and {mineurs} in every string with them.
-const WORDS = {
-  fr: ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf', 'vingt'],
-  en: ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'],
-};
-export const countWords = (lang) => {
-  const word = (n) => WORDS[lang][n] ?? String(n);
-  const all = word(articles.length);
-  return { articles: all, Articles: all[0].toUpperCase() + all.slice(1), mineurs: word(articles.filter((a) => a.mineurs).length) };
-};
 
 export default articles;

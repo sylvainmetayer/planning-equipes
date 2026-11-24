@@ -3,9 +3,8 @@
 // version under its "en" key. See .pages.yml.
 import { readFileSync } from 'node:fs';
 
-import { PAGES } from '../lib.js';
+import { PAGES, countWords } from '../lib.js';
 import { typo } from '../text.js';
-import { countWords } from './articles.js';
 
 // Every string of a page, typographically set once, here: the templates and the
 // JSON-LD then agree on the exact characters.
