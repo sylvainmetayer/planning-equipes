@@ -332,8 +332,9 @@ Six familles :
   bout en bout, du plus petit problème à un mois de 150 stands, voir
   [plus bas](#la-gamme-de-scénarios) ;
 - **bout en bout** (Playwright) — **à chaque poussée et sur chaque pull
-  request**, sauf les specs marquées `@lourd`, jouées sur les seuls changements
-  qui peuvent les casser et chaque nuit. Ils coûtent plusieurs minutes là où
+  request**, sauf les specs marquées `@lourd`, jouées sur une PR sous le label
+  `e2e-lourd`, sur `main` quand une fusion touche ce qu'elles traversent, et
+  chaque nuit. Ils coûtent plusieurs minutes là où
   la suite unitaire répond en six secondes, et ce coût est assumé : c'est la
   seule couche qui voit ce qu'un navigateur fait vraiment. Voir
   [plus bas](#tests-de-bout-en-bout-playwright) pour les lancer en local.
@@ -760,13 +761,16 @@ dépassera.
 réelle, la résout trois fois pour de vrai et la publie trois fois avec un PDF
 par personne : treize minutes sur un runner GitHub, les quarante-deux autres
 specs — cent quatre-vingt-quinze tests — en prennent sept. Le job `e2e` de
-`tests.yml` la laisse de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`)
-sur les changements du solveur, des consignes, de la publication, du `pom.xml`
-et de ses propres fichiers — sa liste `paths`, à tenir à jour comme celle des
-scénarios — et chaque nuit sur `main`. Comme les tests de scénario, et pour la
-même raison, une PR Renovate ne l'exerce que sous le label `timefold`,
-`quarkus` ou `playwright` — ce dernier parce qu'un nouveau navigateur change
-ce que ces specs traversent.
+`tests.yml` la laisse de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`).
+**Sur une PR, seulement sous un label** : `e2e-lourd`, à poser soi-même sur
+une PR qui touche le solveur, les consignes, la publication ou l'horloge —
+le poser sur une PR ouverte lance le run aussitôt —, ou `timefold`,
+`quarkus`, `playwright`, que Renovate pose sur les montées qui changent ce
+que ces specs traversent. Sur `main`, à chaque fusion qui touche le solveur,
+les consignes, la publication, le `pom.xml` ou ses propres fichiers — sa
+liste `paths` de poussée, à tenir à jour comme celle des scénarios —, et
+chaque nuit : ce qu'une PR non étiquetée a cassé se voit au plus tard le
+lendemain matin.
 Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
 c'est dire qu'elle résout une fixture réelle, ou qu'il lui faut la pile de
 `e2e-lourd.yml` (l'horloge simulée, ci-dessous) ; ce n'est pas l'endroit où
@@ -1190,18 +1194,17 @@ Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Quelques
 points qui ne s'y voient pas :
 
 - **une poussée coûte une cinquantaine de minutes de runner**, quel que soit
-  son contenu : Tests (≈ 8 pour le job `test`, ≈ 10 pour chacune des deux
-  moitiés de `test-conteneur`, puis ≈ 10 pour son job `e2e` et quelques-unes
-  pour l'analyse dynamique `dast`), scénarios (≈ 8 dès que la PR a touché le
+  son contenu : Tests (≈ 6 pour le job `test`, ≈ 11 pour chacune des deux
+  moitiés de `test-conteneur`, ≈ 6 pour chacune des deux moitiés de son job
+  `e2e` et quelques-unes pour l'analyse dynamique `dast`), scénarios (≈ 8 dès que la PR a touché le
   solveur), Sécurité (quelques minutes, ses jobs en parallèle). D'où trois
   filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` et le
   Markdown (moins les fichiers qu'un test relit ou que le job compare à son
   build, réinclus nommément), et son job `e2e` y ajoute ces fichiers-là — un
-  petit job `e2e-scope` relit le diff comme GitHub lit `paths` ; les specs Playwright `@lourd` ont leur workflow, comme
-  les scénarios ; et une PR Renovate ne joue ni les scénarios ni la spec
-  `@lourd` — les deux seuls workflows qui ont `pom.xml` dans leurs chemins —
-  hors du label `timefold` ou `quarkus` (ou `playwright` pour la spec
-  `@lourd`). Sur une PR, GitHub évalue un filtre
+  petit job `e2e-scope` relit le diff comme GitHub lit `paths` ; les specs Playwright `@lourd` ont leur workflow, qui
+  ne part sur une PR que sous le label `e2e-lourd` (ou `timefold`, `quarkus`,
+  `playwright`) ; et une PR Renovate ne joue pas les scénarios hors du label
+  `timefold` ou `quarkus`. Sur une PR, GitHub évalue un filtre
   `paths` sur **l'ensemble des fichiers de la PR**, pas sur la dernière
   poussée : une PR mixte code + documentation rejoue tout à chaque poussée, et
   c'est voulu — un check « skipped » sur la dernière poussée masquerait le
@@ -1263,9 +1266,20 @@ points qui ne s'y voient pas :
   dans un seul des trois, et `ContainerTestsInventoryTest` garde le fichier
   égal aux annotations. Les trois rapports JaCoCo vont à Sonar, qui les
   fusionne (`sonar.coverage.jacoco.xmlReportPaths`). L'E2E et le `dast`
-  attendent les trois, comme ils attendaient la suite entière ;
+  n'attendent que `test`, qui porte le jar : ils tournent pendant les tests
+  conteneur, et une classe conteneur rouge garde la PR rouge sans les
+  empêcher de partir ;
+- **l'E2E est joué en deux moitiés**, chacune sur sa pile
+  (`--shard=1/2` et `--shard=2/2`, par fichier de spec puisque
+  `fullyParallel` est faux). Elles sont indépendantes par construction :
+  chaque spec appelle `repartirDeLaReference` dans son `beforeAll` (la base
+  revient au dump de référence, Mailpit est vidé), `globalSetup` capture la
+  référence sur la pile de sa moitié, et la seule spec sans ce retour
+  (`perimetre-authentification`) ne lit aucune donnée. Les checks
+  s'appellent « e2e (1) / e2e » et « e2e (2) / e2e » ;
 - **`.mvn/maven.config` coupe la découverte des fichiers de préfixes** de
-  Maven 3.10 (`aether.remoteRepositoryFilter.prefixes.resolvePrefixFiles=false`).
+  Maven 3.10 (`aether.remoteRepositoryFilter.prefixes.resolvePrefixFiles=false`),
+  lu aussi par la construction de l'image (le `Dockerfile` copie `.mvn/`).
   Chaque session Maven — et celle que Quarkus ouvre dans `generate-code-tests`
   — demandait `/.meta/prefixes.txt` à chaque dépôt que déclare un POM de
   dépendance (ceux de repository.jboss.org, entre autres), avec trois
@@ -1286,12 +1300,11 @@ points qui ne s'y voient pas :
   donc l'extension `quarkus-jacoco` (en `test`, elle n'entre pas dans le jar),
   qui instrumente ces classes elle-même ; l'agent laisse de côté le
   `QuarkusClassLoader`, et les deux écrivent dans `target/jacoco-quarkus.exec`. Le prix est l'attente — la pile ne monte qu'une fois
-  tout le `verify -DskipITs=false` du job `test` passé, tests d'intégration
-  compris, et un seul test backend rouge, unitaire ou d'intégration, laisse
-  l'E2E de côté.
+  le `verify -DskipITs=false -Pcoverage,unit` du job `test` passé, tests
+  d'intégration compris, et un test rouge de ce job laisse l'E2E de côté.
   Sans `app-artifact`, la pile package elle-même : c'est le cas
   d'`e2e-lourd.yml` et d'`e2e.yml`, qui ne sert plus que par
-  `workflow_dispatch`. Le check garde son nom, « e2e / e2e » ;
+  `workflow_dispatch` ;
 - **`docker-ghcr.yml` garde le dépôt Maven de l'image d'un build à l'autre.**
   Le `RUN --mount=type=cache,target=/root/.m2` du `Dockerfile` vit dans le
   builder BuildKit, jetable, et `cache-to: type=gha` n'exporte que les
@@ -1321,8 +1334,9 @@ points qui ne s'y voient pas :
   rien, et aucun cache lu par un build qui publie une version ;
 - **tous les workflows tournent sur des runners GitHub** (`ubuntu-latest`).
   Le résultat des tests se suit alors depuis la page d'une PR, sans dépendre
-  de la disponibilité de la machine d'un seul développeur ; le prix est que
-  ces minutes sont facturées. Pour `docker-ghcr.yml`, c'est en outre ce qui
+  de la disponibilité de la machine d'un seul développeur. Sur un dépôt
+  public, ces runners standard sont gratuits : la CI se parallélise en jobs
+  plutôt qu'en runners plus gros (payants). Pour `docker-ghcr.yml`, c'est en outre ce qui
   rend la provenance de l'image vérifiable une fois le dépôt public.
   La garde qui empêche une PR de fork de déclencher ces workflows est
   **conservée** : elle tenait au socket Docker du runner auto-hébergé, et la
@@ -1331,7 +1345,7 @@ points qui ne s'y voient pas :
   `tests.yml` désactivent Quinoa et ne passent jamais par son installation npm
   avec le Node qu'il télécharge, si bien qu'une montée de Node pouvait passer
   verte en PR puis casser l'image de `main`. Il ne part que sur le
-  `Dockerfile` et `.dockerignore`, `pom.xml`, `mise.toml`, les manifestes npm,
+  `Dockerfile` et `.dockerignore`, `pom.xml`, `.mvn/`, `mise.toml`, les manifestes npm,
   la configuration de build Angular et
   `application.properties` (qui porte la version de Node de Quinoa), et les
   trois workflows Renovate le relancent après leur propre commit — sans filtre
