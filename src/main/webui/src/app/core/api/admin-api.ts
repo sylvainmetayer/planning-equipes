@@ -10,6 +10,7 @@ import {
   EtatSauvegarde,
   MentionsLegales,
   ParametresNotifications,
+  Deconnexion,
   StatutSession,
 } from '../models';
 
@@ -86,7 +87,8 @@ export class AdminApi {
     return this.api.getPreservingHttpError<StatutSession>('/api/auth/me');
   }
 
-  logout(): Promise<unknown> {
-    return this.api.post('/api/auth/logout', null);
+  /** Drops the local cookie; the answer names the provider's logout route, if any. */
+  logout(): Promise<Deconnexion> {
+    return this.api.post<Deconnexion>('/api/auth/logout', null);
   }
 }

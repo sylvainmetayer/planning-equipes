@@ -471,10 +471,13 @@ export class AdminShell {
     // person must not be offered the previous one's unsaved entries.
     this.draftStorages.forEach((storage) => purgeAllDrafts(storage));
     announceLogout(this.sessionEnd);
+    // Under an OIDC provider the server names the route ending its session
+    // too: dropping our cookie alone would let the next click sign back in.
+    let destination = '/login';
     try {
-      await this.adminApi.logout();
+      destination = (await this.adminApi.logout()).urlDeconnexion ?? destination;
     } finally {
-      window.location.assign('/login');
+      window.location.assign(destination);
     }
   }
 }

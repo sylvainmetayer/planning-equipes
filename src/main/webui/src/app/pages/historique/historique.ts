@@ -104,6 +104,10 @@ export function loginLabel(connexion: AdminLoginView): string {
       return $localize`:@@historique.connexion.echec:Échec`;
     case 'VERROUILLAGE':
       return $localize`:@@historique.connexion.verrouillage:Adresse verrouillée`;
+    case 'SECOURS_OUVERT':
+      return $localize`:@@historique.connexion.secoursOuvert:Compte de secours ouvert au démarrage`;
+    case 'CONNEXION_SECOURS':
+      return $localize`:@@historique.connexion.secours:Connexion par le compte de secours`;
   }
 }
 

@@ -23,6 +23,10 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   devMode: false,
   version: '',
   mailMock: false,
+  // The server's defaults: no OIDC provider, the password form open — the one
+  // door every deployment has until its operator plugs a provider in.
+  authOidc: false,
+  authSecours: true,
 };
 
 /**
