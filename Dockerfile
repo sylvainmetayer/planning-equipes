@@ -1,11 +1,12 @@
 FROM maven:3.10-eclipse-temurin-25@sha256:4ed0327629de542aefd6ea9fd5da0c52e80143bf8405e5dc32ac2bde55d70d88 AS build
+# libatomic1 : le binaire Node 26 que Quinoa télécharge en dépend, l'image Maven ne l'embarque pas.
 # Les paquets apt ne sont pas épinglés à une version (hadolint DL3008) : les
 # dépôts Debian/Ubuntu et PGDG retirent les anciennes, un build épinglé
 # casserait au premier correctif de sécurité, et Renovate ne sait pas les
 # suivre. Ce qui est figé, c'est l'image de base ; le scan Trivy de l'image
 # publiée surveille le reste.
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git libatomic1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests dependency:go-offline

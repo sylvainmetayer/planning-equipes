@@ -2,13 +2,13 @@ package dev.sylvain.planning.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 
 /**
  * Guards {@code docs/schema/scenario-schema.json} against drifting from the
@@ -86,7 +86,7 @@ class ScenarioSchemaGeneratorTest {
 
     private static List<String> champs(JsonNode properties) {
         List<String> noms = new ArrayList<>();
-        noms.addAll(properties.propertyNames());
+        properties.fieldNames().forEachRemaining(noms::add);
         return noms;
     }
 }

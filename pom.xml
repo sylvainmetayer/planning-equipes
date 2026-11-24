@@ -42,7 +42,7 @@
              modules of the scenario DTOs use it too, so every Jackson module
              stays on one release. -->
         <jackson.version>2.23.0</jackson.version>
-        <jsonschema-generator.version>5.0.0</jsonschema-generator.version>
+        <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>2.1.0</mcp-server.version>
         <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
              generate-diagrams) and lets DiagramsStructuralTest decode the
