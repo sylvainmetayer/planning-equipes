@@ -15,7 +15,7 @@ export APP_IMAGE=${APP_IMAGE:-ghcr.io/sylvainmetayer/planning-equipes:main}
 # Un mot de passe jetable par tournage : la pile est démontée à la fin
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)}
 export ADMIN_PASSWORD
-playwright=1.64.1
+playwright=1.65.1
 brut=$(mktemp -d)
 compose=(docker compose -f "$racine/docker-compose.yml" -f "$racine/site/scripts/tournage/compose.yml" --profile app)
 
