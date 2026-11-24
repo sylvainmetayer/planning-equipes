@@ -121,12 +121,26 @@ public final class ScenarioYamlReader {
     }
 
     /**
-     * Lists every {@code .yaml}/{@code .yml} scenario available in the
-     * {@link #SCENARIOS_DIR} classpath folder, sorted alphabetically. Drop a new
-     * file in that folder and it shows up here (and in the UI dropdown) with no
-     * code change. Works both in dev (folder on disk) and from a packaged jar.
+     * The scenarios offered as examples (Fichiers, Importer, and the MCP tool):
+     * every bundled file but the test ladder and the extreme cases, which stay
+     * shipped and loadable by name — see {@link #bundledScenarios()} — yet are
+     * not meant to be picked from a list.
      */
     public static List<String> listScenarios() {
+        return bundledScenarios().stream()
+                .filter(n -> HIDDEN_PREFIXES.stream().noneMatch(n::startsWith))
+                .toList();
+    }
+
+    private static final List<String> HIDDEN_PREFIXES = List.of("gamme-", "extreme-");
+
+    /**
+     * Lists every {@code .yaml}/{@code .yml} scenario available in the
+     * {@link #SCENARIOS_DIR} classpath folder, sorted alphabetically. Drop a new
+     * file in that folder and it is loadable with no code change. Works both in
+     * dev (folder on disk) and from a packaged jar.
+     */
+    static List<String> bundledScenarios() {
         try {
             java.net.URL dirUrl = ScenarioYamlReader.class.getClassLoader().getResource(SCENARIOS_DIR);
             if (dirUrl == null) {
@@ -240,7 +254,7 @@ public final class ScenarioYamlReader {
         String name = scenarioName == null || scenarioName.isBlank() ? DEFAULT_SCENARIO : scenarioName;
         // Only a file the classpath folder actually lists: the name comes from
         // a request, and a closed list is the one check no path trick gets past.
-        String bundled = listScenarios().stream()
+        String bundled = bundledScenarios().stream()
                 .filter(name::equals)
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.Invalid("Scénario inconnu : " + name));

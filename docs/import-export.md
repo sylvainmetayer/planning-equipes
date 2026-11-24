@@ -113,7 +113,7 @@ paramètres compris, tout comme `/debug?onglet=donnees` et `?onglet=yaml`.
 | --- | --- | --- |
 | Importer un fichier scénario | **Fichiers**, Importer, carte Scénario (`/fichiers?cible=scenario`) | C'est un fichier qu'un organisateur apporte, comme les CSV d'à côté |
 | Vérifier un fichier sans l'importer | **Fichiers**, Importer, carte Vérifier un fichier (`/fichiers?cible=verifier`) | À côté de l'import qu'il prépare, et sans rien écrire |
-| Charger un exemple livré | **Fichiers**, Importer, carte Exemples (`/fichiers?cible=exemples`) | La démonstration d'un organisateur autant que le catalogue d'un testeur : chaque fichier y porte un nom lisible et une phrase (taille, jours, particularité), rangé « pour découvrir », « pour tester un cas » ou « extrêmes », et aucun nom de fichier n'est affiché |
+| Charger un exemple livré | **Fichiers**, Importer, carte Exemples (`/fichiers?cible=exemples`) | La démonstration d'un organisateur autant que le catalogue d'un testeur : chaque fichier y porte un nom lisible et une phrase (taille, jours, particularité), rangé « pour découvrir », « pour tester un cas » ou « extrêmes », et aucun nom de fichier n'est affiché ; les fichiers `gamme-*` et `extreme-*` restent livrés et se chargent par leur nom, mais la liste (écran et outil MCP `lister_scenarios`) ne les propose pas |
 | Exporter l'édition en scénario | **Fichiers**, Exporter (`/fichiers?onglet=exporter`) | Là où l'édition écrit ses fichiers |
 
 ## Ce que l'import d'un scénario remplace
