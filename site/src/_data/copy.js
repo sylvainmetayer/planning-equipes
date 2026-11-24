@@ -5,12 +5,16 @@ import { readFileSync } from 'node:fs';
 
 import { PAGES } from '../lib.js';
 import { typo } from '../text.js';
+import { countWords } from './articles.js';
 
 // Every string of a page, typographically set once, here: the templates and the
 // JSON-LD then agree on the exact characters.
+// {articles}, {Articles}, {mineurs}: the counts of articles.js, never typed in a text.
+const fill = (text, lang) => text.replace(/\{(articles|Articles|mineurs)\}/g, (_, k) => countWords(lang)[k]);
+
 const set = (value, lang) =>
   typeof value === 'string'
-    ? typo(value, lang)
+    ? typo(fill(value, lang), lang)
     : Array.isArray(value)
       ? value.map((v) => set(v, lang))
       : value && typeof value === 'object'

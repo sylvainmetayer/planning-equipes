@@ -1,10 +1,10 @@
 {
   "slug": "code-du-travail",
   "titre": "Planning et Code du travail, mineurs compris | Planning Équipes",
-  "description": "Dix articles du Code du travail appliqués au planning de votre événement, dont les règles pour les mineurs : durée, nuit, repos, jours fériés.",
+  "description": "{Articles} articles du Code du travail appliqués au planning de votre événement, dont les règles pour les mineurs : durée, nuit, repos, jours fériés.",
   "h1": "Le planning respecte-t-il le Code du travail ?",
-  "reponse": "**Oui.** Le calcul applique dix articles du Code du travail et ne peut pas les enfreindre : un poste qui en viole un est refusé, et le refus cite l'article.",
-  "articlesH": "Les dix articles appliqués",
+  "reponse": "**Oui.** Le calcul applique {articles} articles du Code du travail et ne peut pas les enfreindre : un poste qui en viole un est refusé, et le refus cite l'article.",
+  "articlesH": "Les {articles} articles appliqués",
   "colonnes": [
     "Article",
     "Sujet",
@@ -43,10 +43,10 @@
   "en": {
     "slug": "labour-code",
     "titre": "Rota software and the French Labour Code: under-18s, rest, breaks",
-    "description": "Ten articles of the French Labour Code applied to your event's rota, including the rules for under-18s: hours, nights, rest, public holidays.",
+    "description": "{Articles} articles of the French Labour Code applied to your event's rota, including the rules for under-18s: hours, nights, rest, public holidays.",
     "h1": "Does the rota comply with the French Labour Code?",
-    "reponse": "**Yes.** The solver applies ten articles of the French Labour Code and cannot break them: a shift that breaks one is refused, and the refusal cites the article.",
-    "articlesH": "The ten articles applied",
+    "reponse": "**Yes.** The solver applies {articles} articles of the French Labour Code and cannot break them: a shift that breaks one is refused, and the refusal cites the article.",
+    "articlesH": "The {articles} articles applied",
     "colonnes": [
       "Article",
       "Subject",

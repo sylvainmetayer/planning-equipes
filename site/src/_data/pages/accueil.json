@@ -10,7 +10,7 @@
   "heroLegende": "Une journée de la Fête du jeu de Pierrefeuille, festival fictif.",
   "loi": {
     "h2": "La règle d'or",
-    "reponse": "Le calcul applique dix articles du Code du travail, dont cinq pour les mineurs. Quand il refuse un poste, **il cite l'article**.",
+    "reponse": "Le calcul applique {articles} articles du Code du travail, dont {mineurs} pour les mineurs. Quand il refuse un poste, **il cite l'article**.",
     "refusTitre": "Un samedi, quatre postes refusés",
     "refusColonnes": [
       "Qui",
@@ -45,7 +45,7 @@
       }
     ],
     "exemple": "Exemple fictif.",
-    "lien": "Les dix articles et les règles des mineurs",
+    "lien": "Les {articles} articles et les règles des mineurs",
     "mention": "Le logiciel aide à décider. L'organisation qui publie le planning reste l'employeur."
   },
   "jourj": {
@@ -252,7 +252,7 @@
     "heroLegende": "One day of the Fête du jeu de Pierrefeuille, a fictional festival.",
     "loi": {
       "h2": "The golden rule",
-      "reponse": "The solver applies ten articles of the French Labour Code, five of them for under-18s. When it refuses a shift, **it cites the article**.",
+      "reponse": "The solver applies {articles} articles of the French Labour Code, {mineurs} of them for under-18s. When it refuses a shift, **it cites the article**.",
       "refusTitre": "One Saturday, four shifts refused",
       "refusColonnes": [
         "Who",
@@ -287,7 +287,7 @@
         }
       ],
       "exemple": "Fictional example.",
-      "lien": "The ten articles and the rules for under-18s",
+      "lien": "The {articles} articles and the rules for under-18s",
       "mention": "The software helps you decide. The organisation that publishes the rota remains the employer."
     },
     "jourj": {

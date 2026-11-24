@@ -470,7 +470,7 @@ content:
     type: file
     path: src/_data/pages/legal.json
     format: json
-    description: "Les dix articles et leurs règles ne s'éditent pas ici : src/_data/articles.js, testé contre ConstraintCatalog."
+    description: "Les articles et leurs règles ne s'éditent pas ici : src/_data/articles.js, testé contre ConstraintCatalog."
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
       - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
