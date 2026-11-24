@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.mural.AffichageMuralService;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralAlert;
@@ -105,6 +106,8 @@ public class JourJService {
 
     private final JdbcEditionScope scope;
 
+    private final CompteService comptes;
+
     @Inject
     public JourJService(
             ReferenceDataService referenceDataService,
@@ -117,7 +120,9 @@ public class JourJService {
             AffichageMuralService muralService,
             DemandeEchangeService demandeEchangeService,
             PlanPublicationService publicationService,
-            JdbcEditionScope scope) {
+            JdbcEditionScope scope,
+            CompteService comptes) {
+        this.comptes = comptes;
         this.referenceDataService = referenceDataService;
         this.consigneService = consigneService;
         this.persistenceService = persistenceService;
@@ -714,7 +719,7 @@ public class JourJService {
                 .toList();
     }
 
-    private static EntreeAbsence entree(ContrainteAdHoc contrainte, Map<Long, Creneau> creneaux, boolean annulable) {
+    private EntreeAbsence entree(ContrainteAdHoc contrainte, Map<Long, Creneau> creneaux, boolean annulable) {
         Creneau creneau = creneaux.get(contrainte.getCreneau().getId());
         return new EntreeAbsence(
                 contrainte.getId(),
@@ -723,6 +728,7 @@ public class JourJService {
                 creneau == null ? null : creneau.getHeureFin(),
                 contrainte.getRaison(),
                 contrainte.getCreeParUtilisateurId(),
+                comptes.nomAffiche(contrainte.getCreeParUtilisateurId()),
                 contrainte.getCreeLe(),
                 annulable);
     }
@@ -960,6 +966,8 @@ public class JourJService {
     /**
      * One timeslot of an absence, with the trace the exception carries.
      *
+     * @param creeParNom the name (else the address) of the account that wrote it,
+     *                   resolved at read time; {@code null} when the author is no account
      * @param annulable false when the exception names several animateurs: it was
      *                  not written by this screen and undoing it here would free
      *                  people nobody asked about
@@ -972,6 +980,7 @@ public class JourJService {
             LocalTime heureFin,
             String raison,
             String creeParUtilisateurId,
+            String creeParNom,
             Instant creeLe,
             boolean annulable) {}
 
