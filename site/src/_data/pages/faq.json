@@ -51,6 +51,11 @@
       "a": "Oui, sous licence AGPL-3.0. Le code source, y compris celui des règles du Code du travail, est publié sur GitHub."
     },
     {
+      "id": "regles-propres",
+      "q": "Et si mon événement a des règles particulières ?",
+      "a": "Aujourd'hui, l'outil applique les règles du Code du travail. Des contraintes propres à votre événement ne sont pas encore disponibles, mais elles sont prévues. Si vous avez un besoin précis, [écrivez-nous](/contact/) et on en parle."
+    },
+    {
       "id": "convention",
       "q": "Applique-t-il ma convention collective ?",
       "a": "Non. Il applique le Code du travail, et lui seul, avec des seuils réglables pour certaines règles. Ce qui relève d'une convention ou d'un accord d'entreprise est à vérifier de votre côté. L'organisation qui publie le planning reste l'employeur."
@@ -136,6 +141,11 @@
         "id": "licence",
         "q": "Is it free software?",
         "a": "Yes, under the AGPL-3.0 licence. The source code, including the Labour Code rules, is published on GitHub."
+      },
+      {
+        "id": "regles-propres",
+        "q": "What if my event has its own rules?",
+        "a": "Today the tool applies the rules of the French Labour Code. Constraints specific to your event are not available yet, but they are planned. If you have a particular need, [write to us](/en/contact/) and we will talk it through."
       },
       {
         "id": "convention",

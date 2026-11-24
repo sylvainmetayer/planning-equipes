@@ -81,7 +81,7 @@
     ],
     "lien": "Organiser son équipe",
     "exemples": {
-      "intro": "Deux PDF produits par l'application sur le festival fictif, noms inventés compris :",
+      "intro": "Des exemples de PDF produits par l'application sur le festival fictif, noms inventés compris :",
       "liens": [
         { "texte": "Voir un exemple : planning global (PDF)", "fichier": "planning-global.pdf", "pages": "46 pages" },
         { "texte": "Voir un exemple : feuille d'un animateur (PDF)", "fichier": "planning-animateur.pdf", "pages": "5 pages" },
@@ -323,7 +323,7 @@
       ],
       "lien": "Organising your team",
       "exemples": {
-        "intro": "Two PDFs produced by the application on the fictional festival, made-up names included. They are in French:",
+        "intro": "Sample PDFs produced by the application on the fictional festival, made-up names included. They are in French:",
         "liens": [
           { "texte": "See a sample: full rota (PDF, in French)", "fichier": "planning-global.pdf", "pages": "46 pages" },
           { "texte": "See a sample: one team member's sheet (PDF, in French)", "fichier": "planning-animateur.pdf", "pages": "5 pages" },
