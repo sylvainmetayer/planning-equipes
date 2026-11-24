@@ -208,7 +208,7 @@ export class AdminShell {
     // Same reasoning for the "Édition actuelle" strip: it sits in the shell, so
     // the list of editions is loaded here rather than by any single page.
     void this.editions.reload();
-    void this.session.load();
+    void this.session.ready();
     // Both kinds of solve, not just the full one: an incremental replan rewrites
     // `planning_resolution` exactly the same way, so it clears the "reference
     // data changed since the last solve" banner just the same. Listening for

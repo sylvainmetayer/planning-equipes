@@ -81,6 +81,7 @@ import { SolveRecap } from './solve-recap';
 import { SolverQueue } from './solver-queue';
 import { SolverVolumetry } from './solver-volumetry';
 import { errorPrefix } from '../../core/error-message';
+import { SessionStore } from '../../core/session.store';
 import { VoirPlanningButton } from '../../shared/voir-planning-button';
 
 /**
@@ -400,6 +401,7 @@ export class SolverPage implements OnInit {
   private readonly validations = inject(ValidationsStore);
   private readonly store = inject(ReferenceDataStore);
   private readonly machineApi = inject(MachineCalculApi);
+  private readonly session = inject(SessionStore);
 
   constructor() {
     // The machine's state moves with the jobs: re-read when one starts, ends
@@ -875,6 +877,11 @@ export class SolverPage implements OnInit {
 
   /** Best-effort: without an answer the screen stays as it is, as on an instance without a machine. */
   protected async loadMachine(): Promise<void> {
+    // The compute machine is the administrators' (`/api/machine-calcul`).
+    await this.session.ready();
+    if (!this.session.isAdmin()) {
+      return;
+    }
     try {
       this.machine.set(await this.machineApi.read());
     } catch {

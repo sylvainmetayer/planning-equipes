@@ -50,8 +50,3 @@ export function sortAccounts(comptes: readonly Compte[]): Compte[] {
     (a, b) => Number(!!a.desactiveLe) - Number(!!b.desactiveLe) || a.email.localeCompare(b.email),
   );
 }
-
-/** Whether this account is the one signed in: `/api/auth/me` names an OIDC session by its address. */
-export function isOwnAccount(compte: Compte, sessionName: string | null): boolean {
-  return !!sessionName && compte.email.trim().toLowerCase() === sessionName.trim().toLowerCase();
-}

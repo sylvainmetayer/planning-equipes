@@ -146,7 +146,12 @@ describe('ParametresPage — onglets', () => {
         },
         {
           provide: SessionStore,
-          useValue: { isAdmin: () => options.admin !== false, statut: () => null },
+          useValue: {
+            isAdmin: () => options.admin !== false,
+            known: () => true,
+            statut: () => null,
+            ready: () => Promise.resolve(),
+          },
         },
         { provide: ComptesApi, useValue: { list: vi.fn(() => Promise.resolve([])) } },
         {
@@ -285,8 +290,11 @@ describe('ParametresPage — onglets', () => {
     await rendre({ admin: false });
     await openAdvanced();
     expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Historique']);
-    await rendre({ admin: false, onglet: 'comptes' });
-    expect(textOf()).not.toContain('Ajouter un compte');
+    for (const demande of ['comptes', 'instance', 'mcp']) {
+      await rendre({ admin: false, onglet: demande });
+      expect(textOf()).not.toContain('Ajouter un compte');
+      expect(textOf()).toContain("Nom de l'édition");
+    }
   });
 
   /** The covoiturage has no switch of its own: it says it follows the collection. */

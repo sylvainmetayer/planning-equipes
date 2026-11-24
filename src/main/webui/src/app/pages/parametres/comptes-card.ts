@@ -1,9 +1,11 @@
 import { DatePipe } from '@angular/common';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
+  Injector,
   OnInit,
   signal,
 } from '@angular/core';
@@ -20,15 +22,7 @@ import { Compte, Habilitation, RoleHabilitation } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SessionStore } from '../../core/session.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import {
-  ROLES,
-  editionLabel,
-  isOwnAccount,
-  rightLabel,
-  rightState,
-  roleLabel,
-  sortAccounts,
-} from './comptes';
+import { ROLES, editionLabel, rightLabel, rightState, roleLabel, sortAccounts } from './comptes';
 
 /** The edition field's value for « every edition »: a select cannot hold `null`. */
 const ALL_EDITIONS = '*';
@@ -59,13 +53,18 @@ export class ComptesCard implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly session = inject(SessionStore);
   private readonly editionStore = inject(EditionStore);
+  private readonly injector = inject(Injector);
 
   protected readonly roles = ROLES;
   protected readonly editions = this.editionStore.editions;
   protected readonly allEditions = ALL_EDITIONS;
 
-  private readonly liste = signal<Compte[]>([]);
-  protected readonly comptes = computed(() => sortAccounts(this.liste()));
+  /** `null` while the first read is under way: not an empty list. */
+  private readonly liste = signal<Compte[] | null>(null);
+  protected readonly comptes = computed(() => {
+    const liste = this.liste();
+    return liste === null ? null : sortAccounts(liste);
+  });
   protected readonly busy = signal(false);
 
   protected readonly email = signal('');
@@ -98,8 +97,10 @@ export class ComptesCard implements OnInit {
     return compte.habilitations.filter((h) => rightState(h, now) === 'active');
   }
 
+  /** The account of the session, compared by id — never by address. */
   protected own(compte: Compte): boolean {
-    return isOwnAccount(compte, this.session.statut()?.nom ?? null);
+    const id = this.session.statut()?.compteId;
+    return !!id && id === compte.id;
   }
 
   protected async add(): Promise<void> {
@@ -115,13 +116,32 @@ export class ComptesCard implements OnInit {
   }
 
   protected async toggle(compte: Compte): Promise<void> {
-    await this.run(() =>
-      compte.desactiveLe ? this.api.reactivate(compte.id) : this.api.deactivate(compte.id),
-    );
+    if (compte.desactiveLe) {
+      await this.run(() => this.api.reactivate(compte.id));
+      return;
+    }
+    const nom = compte.nom || compte.email;
+    const ok = await this.confirm.ask({
+      title: $localize`:@@comptes.desactiver.titre:Désactiver ce compte ?`,
+      message: $localize`:@@comptes.desactiver.message:« ${nom}:nom: » ne pourra plus se connecter, quels que soient ses droits. Le compte et son historique sont conservés.`,
+      confirmLabel: $localize`:@@comptes.desactiver:Désactiver`,
+      danger: true,
+    });
+    if (ok) {
+      await this.run(() => this.api.deactivate(compte.id));
+    }
   }
 
   protected openGrant(compte: Compte): void {
-    this.grantFor.set(this.grantFor() === compte.id ? null : compte.id);
+    if (this.grantFor() === compte.id) {
+      this.grantFor.set(null);
+      return;
+    }
+    // Never « every edition » by default, and never the previous account's choice.
+    this.role.set('ORGANISATEUR');
+    this.edition.set(this.editionStore.courant()?.id ?? ALL_EDITIONS);
+    this.grantFor.set(compte.id);
+    this.focusAfterRender(`comptes-role-${compte.id}`);
   }
 
   protected async grantRight(compte: Compte): Promise<void> {
@@ -135,18 +155,35 @@ export class ComptesCard implements OnInit {
       });
       this.grantFor.set(null);
     });
+    this.focusAfterRender(`comptes-accorder-${compte.id}`);
   }
 
   protected async retirer(compte: Compte, habilitation: Habilitation): Promise<void> {
+    const droit = this.rightLabel(habilitation);
+    // Withdrawing one's own administrator right ends this session's access to
+    // this very screen: said plainly, and the session is read again after.
+    const own = this.own(compte) && habilitation.role === 'ADMIN';
     const ok = await this.confirm.ask({
-      title: $localize`:@@comptes.retirer.titre:Retirer ce droit ?`,
-      message: $localize`:@@comptes.retirer.message:« ${this.rightLabel(habilitation)}:droit: » n'ouvrira plus rien pour ce compte ; il reste dans l'historique.`,
+      title: own
+        ? $localize`:@@comptes.retirer.soi.titre:Retirer votre propre droit d'administrateur ?`
+        : $localize`:@@comptes.retirer.titre:Retirer ce droit ?`,
+      message: own
+        ? $localize`:@@comptes.retirer.soi.message:Vous ne pourrez plus administrer l'instance ni revenir sur cet écran sans qu'un autre administrateur vous rende ce droit.`
+        : $localize`:@@comptes.retirer.message:« ${droit}:droit: » n'ouvrira plus rien pour ce compte ; il reste dans l'historique.`,
       confirmLabel: $localize`:@@comptes.retirer.confirmer:Retirer`,
       danger: true,
     });
-    if (ok) {
-      await this.run(() => this.api.withdraw(compte.id, habilitation.id));
+    if (!ok) {
+      return;
     }
+    await this.run(() => this.api.withdraw(compte.id, habilitation.id));
+    if (own) {
+      await this.session.refresh();
+    }
+  }
+
+  private focusAfterRender(id: string): void {
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
   }
 
   /** One write, then the list read again — the server's refusal is shown, never swallowed. */
@@ -156,11 +193,7 @@ export class ComptesCard implements OnInit {
       await write();
       await this.load();
     } catch (error) {
-      this.notifications.notify({
-        title: $localize`:@@crud.error:Erreur`,
-        message: errorMessage(error),
-        variant: 'error',
-      });
+      this.notifyError(error);
     } finally {
       this.busy.set(false);
     }
@@ -170,11 +203,16 @@ export class ComptesCard implements OnInit {
     try {
       this.liste.set(await this.api.list());
     } catch (error) {
-      this.notifications.notify({
-        title: $localize`:@@crud.error:Erreur`,
-        message: errorMessage(error),
-        variant: 'error',
-      });
+      this.liste.set([]);
+      this.notifyError(error);
     }
+  }
+
+  private notifyError(error: unknown): void {
+    this.notifications.notify({
+      title: $localize`:@@crud.error:Erreur`,
+      message: errorMessage(error),
+      variant: 'error',
+    });
   }
 }

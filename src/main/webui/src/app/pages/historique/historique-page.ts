@@ -101,6 +101,7 @@ export class HistoriquePage {
 
   /** « Actions » of the edition, or « Connexions » of the instance (`?onglet=connexions`). */
   protected readonly onglet = signal<HistoriqueTab>('actions');
+  private readonly demande = signal<HistoriqueTab>('actions');
   protected readonly acteur = signal<FiltreActeur>('TOUS');
   protected readonly resultat = signal<FiltreResultat>('TOUS');
   protected readonly nature = signal<FiltreNature>('TOUTES');
@@ -158,8 +159,12 @@ export class HistoriquePage {
     // Followed rather than read once: the palette's link to the tab reuses
     // the component when the page is already open.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((query) => {
-      const demande = readHistoriqueTab(query.get('onglet'));
-      // The connections journal is the administrators' (the route answers 403 to an organiser).
+      this.demande.set(readHistoriqueTab(query.get('onglet')));
+    });
+    // The connections journal is the administrators' (the route answers 403 to
+    // an organiser): followed, so a session read after the address still counts.
+    effect(() => {
+      const demande = this.demande();
       this.onglet.set(demande === 'connexions' && !this.session.isAdmin() ? 'actions' : demande);
     });
     // The edition's actions are read the first time their tab shows: opened

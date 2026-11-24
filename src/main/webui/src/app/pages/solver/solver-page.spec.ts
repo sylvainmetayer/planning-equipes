@@ -7,6 +7,7 @@
 // `solver-volumetry`, `incremental-result` — and render here for real, on the
 // same mocks.
 
+import { provideSession } from '../../core/testing/session';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -298,6 +299,7 @@ describe('SolverPage', () => {
         provideZonelessChangeDetection(),
         // The page links to « Export & publication » since issue #320.
         provideRouter([]),
+        provideSession(),
         { provide: PlanningApi, useValue: planningApi },
         { provide: MachineCalculApi, useValue: machineApi },
         { provide: SolverJobService, useValue: jobs },
@@ -1327,7 +1329,7 @@ describe('SolverPage', () => {
       activeJob.set(tracked());
       TestBed.tick();
 
-      expect(machineApi.read.mock.calls.length).toBe(reads + 1);
+      await vi.waitFor(() => expect(machineApi.read.mock.calls.length).toBe(reads + 1));
     });
   });
 });

@@ -7,6 +7,7 @@
 // `scenario-preenregistre.spec.ts` (Débogage), `import-scenario-card.spec.ts`
 // (Imports) and `exports-page.spec.ts`.
 
+import { provideSession } from '../../core/testing/session';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -171,6 +172,7 @@ describe('ParametresPage rendering', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        provideSession(),
         { provide: ApiService, useValue: api },
         provideFake(AdminApi, adminApi),
         provideFake(WeatherApi, weatherApi),

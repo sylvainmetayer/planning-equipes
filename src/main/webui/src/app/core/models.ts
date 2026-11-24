@@ -2843,7 +2843,7 @@ export interface NouveauCompte {
 export interface NouvelleHabilitation {
   role: RoleHabilitation;
   editionId: string | null;
-  /** ISO instant, in the future; `null`: no expiry — refused for an `ADMIN`. */
+  /** ISO instant, in the future; `null`: no expiry — the only value an `ADMIN` right accepts. */
   expireLe: string | null;
 }
 

@@ -20,6 +20,9 @@ export const ONGLETS_PARAMETRES: readonly OngletParametres[] = [
   'mcp',
 ];
 
+/** The tabs only an administrator is offered: the server refuses their routes to anybody else. */
+export const ONGLETS_ADMIN: readonly OngletParametres[] = ['comptes', 'instance', 'mcp'];
+
 /**
  * Reads the `onglet` query param. `globaux` was the instance tab's former
  * name: a bookmark on it lands on `instance`. `legaux` and `emails` left the

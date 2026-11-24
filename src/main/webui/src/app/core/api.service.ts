@@ -227,7 +227,9 @@ export function toError(error: unknown): Error {
     const message =
       body && typeof body === 'object' && body.message
         ? body.message
-        : $localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`;
+        : error.status === 403
+          ? $localize`:@@api.forbidden:Action réservée aux administrateurs.`
+          : $localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`;
     const code =
       body && typeof body === 'object' && typeof body.code === 'string' ? body.code : null;
     // Produced here and nowhere else: every caller can now switch on `kind`

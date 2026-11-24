@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
@@ -41,7 +42,7 @@ import { ParametresNotificationsPanel } from './parametres-notifications';
 import { ParametresMeteoPanel } from './parametres-meteo';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { OngletParametres, readOngletParametres } from './parametres';
+import { ONGLETS_ADMIN, OngletParametres, readOngletParametres } from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
 import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
@@ -161,6 +162,18 @@ export class ParametresPage implements OnInit {
     });
     // The Historique tab writes `onglet` itself — `historique` or its own
     // `connexions` —: two writers on one key would race on arrival.
+    // The tabs of the instance, the accounts and the MCP key are the
+    // administrators': an organiser landing on one by its address, or one who
+    // just lost the right, is brought back to the edition's own.
+    effect(() => {
+      if (
+        this.session.known() &&
+        !this.session.isAdmin() &&
+        ONGLETS_ADMIN.includes(this.onglet())
+      ) {
+        this.onglet.set('edition');
+      }
+    });
     keepViewInQueryParams(() =>
       this.onglet() === 'historique'
         ? {}
@@ -178,7 +191,10 @@ export class ParametresPage implements OnInit {
   }
 
   ngOnInit(): void {
-    void this.chargerSauvegarde();
+    // The backup state is the administrators' (`/api/backups`).
+    void this.session
+      .ready()
+      .then(() => (this.session.isAdmin() ? this.chargerSauvegarde() : undefined));
   }
 
   protected changerOnglet(onglet: OngletParametres): void {

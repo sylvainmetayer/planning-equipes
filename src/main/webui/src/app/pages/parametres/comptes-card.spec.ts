@@ -48,8 +48,14 @@ describe('ComptesCard', () => {
         { provide: ComptesApi, useValue: api },
         { provide: NotificationService, useValue: { notify } },
         { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(true)) } },
-        { provide: SessionStore, useValue: { statut: () => ({ nom: 'moi@x.fr' }) } },
-        { provide: EditionStore, useValue: { editions: () => [] } },
+        {
+          provide: SessionStore,
+          useValue: {
+            statut: () => ({ compteId: 'moi' }),
+            refresh: vi.fn(() => Promise.resolve()),
+          },
+        },
+        { provide: EditionStore, useValue: { editions: () => [], courant: () => ({ id: 'E7' }) } },
       ],
     });
   });
@@ -62,7 +68,7 @@ describe('ComptesCard', () => {
     return fixture;
   }
 
-  it('lists the accounts and refuses the deactivation of its own account at the button (listed by address)', async () => {
+  it('lists the accounts and refuses the deactivation of its own account at the button (matched by id)', async () => {
     const fixture = await rendre();
     const boutons = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
@@ -99,13 +105,17 @@ describe('ComptesCard', () => {
     );
   });
 
-  it('grants an organiser right on every edition when none is chosen', async () => {
+  it('grants an organiser right on the current edition by default', async () => {
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as { grantRight(c: Compte): Promise<void> };
+    const card = fixture.componentInstance as unknown as {
+      openGrant(c: Compte): void;
+      grantRight(c: Compte): Promise<void>;
+    };
+    card.openGrant(compte('autre'));
     await card.grantRight(compte('autre'));
     expect(api.grant).toHaveBeenCalledWith('autre', {
       role: 'ORGANISATEUR',
-      editionId: null,
+      editionId: 'E7',
       expireLe: null,
     });
   });
