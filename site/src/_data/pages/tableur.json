@@ -25,7 +25,7 @@
       {
         "q": "Règles légales (durée, repos, pauses)",
         "tableur": "Vérifiées à la main, ou par des formules à écrire et à tenir à jour.",
-        "logiciel": "Dix articles du Code du travail appliqués : un poste interdit est refusé, avec l'article."
+        "logiciel": "{Articles} articles du Code du travail appliqués : un poste interdit est refusé, avec l'article."
       },
       {
         "q": "Mineurs",
@@ -99,7 +99,7 @@
         {
           "q": "Legal rules (hours, rest, breaks)",
           "tableur": "Checked by hand, or with formulas you write and keep up to date.",
-          "logiciel": "Ten articles of the French Labour Code applied: a forbidden shift is refused, with the article."
+          "logiciel": "{Articles} articles of the French Labour Code applied: a forbidden shift is refused, with the article."
         },
         {
           "q": "Under-18s",

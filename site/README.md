@@ -8,7 +8,7 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 | Chemin | Rôle |
 | --- | --- |
 | `src/_data/pages/*.json` | **les textes**, un fichier par page : le français à la racine, l'anglais sous la clé `en`. C'est ce que Pages CMS édite |
-| `src/_data/articles.js` | les dix articles du Code du travail cités, dans les deux langues. Pas dans le CMS : testés contre `ConstraintCatalog` |
+| `src/_data/articles.js` | les articles du Code du travail appliqués (leur nombre, repris dans les textes, en est déduit), dans les deux langues. Pas dans le CMS : testés contre `ConstraintCatalog` |
 | `src/_data/site.json` | nom, adresse, éditeur, jeton de la mesure d'audience. Pas dans le CMS |
 | `src/_data/{copy,allPages,urls,build}.js`, `src/lib.js` | les textes lus par les gabarits, la liste des pages et de leurs adresses, la date de dernière modification (lue dans git) |
 | `src/_includes/`, `src/pages.njk`, `src/404.njk` | les gabarits : l'accueil, les pages-réponses, le film, la mise en page commune |
