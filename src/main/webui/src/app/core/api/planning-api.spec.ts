@@ -111,7 +111,7 @@ describe('PlanningApi', () => {
     await planning.exportFeuilles(PLANNING);
 
     expect(api.downloadPost).toHaveBeenCalledWith(
-      '/api/planning/export/pdf/all?format=feuille',
+      '/api/planning/export/pdf/all?feuille=true',
       'planning-feuilles.zip',
       PLANNING,
       'application/zip',

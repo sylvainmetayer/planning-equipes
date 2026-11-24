@@ -14332,6 +14332,12 @@
     "/api/espace-animateur/{jeton}/planning.pdf" : {
       "get" : {
         "parameters" : [ {
+          "name" : "feuille",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "name" : "format",
           "in" : "query",
           "schema" : {
@@ -14481,6 +14487,12 @@
       "get" : {
         "parameters" : [ {
           "name" : "equite",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "feuille",
           "in" : "query",
           "schema" : {
             "type" : "boolean"
@@ -16372,6 +16384,12 @@
     "/api/planning/export/bundle/all" : {
       "post" : {
         "parameters" : [ {
+          "name" : "feuille",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "name" : "format",
           "in" : "query",
           "schema" : {
@@ -16468,6 +16486,12 @@
     "/api/planning/export/pdf/all" : {
       "post" : {
         "parameters" : [ {
+          "name" : "feuille",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "name" : "format",
           "in" : "query",
           "schema" : {
@@ -16507,6 +16531,12 @@
           "required" : true,
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "name" : "feuille",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
           }
         }, {
           "name" : "format",

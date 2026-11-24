@@ -339,7 +339,7 @@ public class EspaceAnimateurResource {
      * downloadable by the animateur themself. Stays available when the foire
      * is closed: closing only stops the échanges, never the consultation.
      *
-     * <p>{@code ?format=feuille} answers with the folded landscape sheet
+     * <p>{@code ?feuille=true} (or the legacy {@code ?format=feuille}) answers with the folded landscape sheet
      * instead of the booklet; anything else, including nothing, is the
      * booklet.</p>
      */
@@ -347,9 +347,9 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/planning.pdf")
     @EspaceSessionRequired
     @Produces("application/pdf")
-    public Response planningPdf(@QueryParam("format") String format) {
+    public Response planningPdf(@QueryParam("format") String format, @QueryParam("feuille") boolean feuille) {
         PlanningEvenement planning = planPublieService.planPublie();
-        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        FormatPlanning layout = FormatPlanning.fromParameters(format, feuille);
         byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant(), layout);
         return Response.ok(contenu)
                 .header(

@@ -11,7 +11,7 @@ export type FormatPlanning = 'livret' | 'feuille';
  */
 export function espacePlanningPdfUrl(jeton: string, format: FormatPlanning = 'livret'): string {
   const base = `/api/espace-animateur/${jeton}/planning.pdf`;
-  return format === 'livret' ? base : `${base}?format=${format}`;
+  return format === 'livret' ? base : `${base}?feuille=true`;
 }
 
 /** The same planning as a one-off calendar file. */

@@ -81,7 +81,7 @@ export class PlanningApi {
    */
   exportFeuilles(planning: PlanningEvenement): Promise<string> {
     return this.api.downloadPost(
-      '/api/planning/export/pdf/all?format=feuille',
+      '/api/planning/export/pdf/all?feuille=true',
       'planning-feuilles.zip',
       planning,
       'application/zip',

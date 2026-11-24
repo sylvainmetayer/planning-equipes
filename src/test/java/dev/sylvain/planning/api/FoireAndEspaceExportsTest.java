@@ -231,10 +231,12 @@ class FoireAndEspaceExportsTest {
         configure(false);
 
         byte[] livret = telecharge(token, "");
-        byte[] feuille = telecharge(token, "?format=feuille");
+        byte[] feuille = telecharge(token, "?feuille=true");
+        byte[] feuilleAlias = telecharge(token, "?format=feuille");
         byte[] inconnu = telecharge(token, "?format=papyrus");
 
         assertThat(pages(feuille)).isEqualTo(2);
+        assertThat(pages(feuilleAlias)).isEqualTo(2);
         assertThat(pages(livret)).isEqualTo(pages(inconnu));
         assertThat(pages(livret)).isNotEqualTo(pages(feuille));
     }

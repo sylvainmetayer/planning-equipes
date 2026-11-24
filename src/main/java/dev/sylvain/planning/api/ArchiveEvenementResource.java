@@ -55,7 +55,8 @@ public class ArchiveEvenementResource {
             @QueryParam("scenario") boolean scenario,
             @QueryParam("publication") boolean publication,
             @QueryParam("individuels") boolean individuels,
-            @QueryParam("format") String format) {
+            @QueryParam("format") String format,
+            @QueryParam("feuille") boolean feuille) {
         Set<ArchivePart> parts = EnumSet.noneOf(ArchivePart.class);
         add(parts, pdfGlobal, ArchivePart.PDF_GLOBAL);
         add(parts, equite, ArchivePart.EQUITE);
@@ -65,7 +66,7 @@ public class ArchiveEvenementResource {
         add(parts, publication, ArchivePart.PUBLICATION);
         add(parts, individuels, ArchivePart.INDIVIDUELS);
         PreparedArchive archive =
-                archiveService.prepare(new ArchiveRequest(parts, FormatPlanning.fromParameter(format)));
+                archiveService.prepare(new ArchiveRequest(parts, FormatPlanning.fromParameters(format, feuille)));
         StreamingOutput body = output -> archive.writer().writeTo(output);
         return Response.ok(body)
                 .type("application/zip")

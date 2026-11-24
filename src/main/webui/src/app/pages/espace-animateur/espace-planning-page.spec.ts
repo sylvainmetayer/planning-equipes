@@ -235,7 +235,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     // address alone answers, the folded sheet is asked for by name.
     expect(actions[1].getAttribute('href')).toBe('/api/espace-animateur/jeton-1/planning.pdf');
     expect(actions[2].getAttribute('href')).toBe(
-      '/api/espace-animateur/jeton-1/planning.pdf?format=feuille',
+      '/api/espace-animateur/jeton-1/planning.pdf?feuille=true',
     );
   });
 
