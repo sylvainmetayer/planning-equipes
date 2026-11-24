@@ -16,3 +16,45 @@ export function typo(text, lang) {
 
 export const markdown = (text, lang) => md.render(typo(text, lang));
 export const markdownInline = (text, lang) => md.renderInline(typo(text, lang));
+
+const attr = (text) => text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+const OPAQUE = /^<(\/?)(abbr|script|style|code|pre|svg|textarea|title)\b/i;
+const EXTERNAL = /^<a\b[^>]*\shref="https?:\/\/(?!planning\.sylvain\.dev[/"])/i;
+
+// Built pages, after rendering: in <main>, the first occurrence of each abbreviation
+// gets its meaning (<abbr title>); in <body>, every link leaving the site says so to
+// screen readers, as its icon (a CSS mask) says it to the eye.
+export function annotate(html, abbreviations, external) {
+  const body = html.indexOf('<body');
+  if (body < 0) return html;
+  const seen = new Set();
+  let opaque = 0;
+  let inMain = false;
+  let leaving = false;
+  const out = html.slice(body).split(/(<[^>]*>)/).map((part) => {
+    if (part.startsWith('<')) {
+      const tag = part.match(OPAQUE);
+      if (tag && !part.endsWith('/>')) opaque += tag[1] ? -1 : 1;
+      if (/^<main\b/i.test(part)) inMain = true;
+      if (/^<\/main>/i.test(part)) inMain = false;
+      if (EXTERNAL.test(part)) leaving = true;
+      if (leaving && /^<\/a>/i.test(part)) {
+        leaving = false;
+        return `<span class="visually-hidden"> ${external}</span>${part}`;
+      }
+      return part;
+    }
+    if (!inMain || opaque > 0) return part;
+    let text = part;
+    for (const { sigle, sens } of abbreviations) {
+      if (seen.has(sigle)) continue;
+      const re = new RegExp(`(?<![\\p{L}\\d])${sigle}(?![\\p{L}\\d])`, 'u');
+      if (re.test(text)) {
+        seen.add(sigle);
+        text = text.replace(re, `<abbr title="${attr(sens)}">${sigle}</abbr>`);
+      }
+    }
+    return text;
+  });
+  return html.slice(0, body) + out.join('');
+}

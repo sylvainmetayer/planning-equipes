@@ -4,6 +4,7 @@
 <article data-player="{{ player }}">
   <header class="ask">
     <div class="container">
+      <nav class="crumbs" aria-label="{{ copy[lang].commun.ariane }}"><ol><li><a href="{{ urls[lang].accueil }}">{{ copy[lang].commun.nav.accueil }}</a></li><li aria-current="page">{{ c.h1 | typo(lang) }}</li></ol></nav>
       <h1>{{ c.h1 | typo(lang) }}</h1>
       <p class="lead">{{ c.reponse | mdi(lang) | safe }}</p>
       {% if c.bouton %}<p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a></p>{% endif %}
@@ -13,7 +14,7 @@
   {% if key == 'contact' %}
   <section class="container form" aria-label="{{ c.h1 | typo(lang) }}">
     <div class="form__sheet"><iframe class="form__frame" src="https://tally.so/embed/{{ site.tally[lang] }}?alignLeft=1&amp;hideTitle=1&amp;transparentBackground=1&amp;dynamicHeight=1" title="{{ c.formTitre }}" loading="lazy"></iframe></div>
-    <p class="form__alt"><a href="https://tally.so/r/{{ site.tally[lang] }}">{{ c.lien }}</a> {{ c.ecrire }} <a href="mailto:{{ site.email }}?subject={{ copy[lang].commun.contactSujet | urlencode }}">{{ site.email }}</a></p>
+    <p class="form__alt"><a href="https://tally.so/r/{{ site.tally[lang] }}">{{ c.lien }}</a> {{ c.ecrire }} <a href="mailto:{{ site.email }}?subject={{ copy[lang].commun.contactSujet | urlencode }}">{{ site.email }}</a>. {{ c.delai }}</p>
   </section>
   {% endif %}
 
@@ -24,6 +25,7 @@
       <div class="example">
         <div class="scroll" role="group" aria-label="{{ c.articlesH }}" tabindex="0">
           <table class="rows rows--law">
+            <caption class="visually-hidden">{{ c.articlesH }}</caption>
             <thead><tr>{% for h in c.colonnes %}<th scope="col">{{ h }}</th>{% endfor %}</tr></thead>
             <tbody>
               {% for a in articles %}
@@ -32,9 +34,28 @@
             </tbody>
           </table>
         </div>
-        <p class="example__note"><a href="{{ site.legifrance }}">Légifrance</a></p>
+        <p class="example__note"><a href="{{ site.legifrance }}" hreflang="fr">Légifrance</a>{% if lang != 'fr' %} (in French){% endif %}</p>
       </div>
     </div>
+  </section>
+  {% endif %}
+
+  {% if key == 'plan' %}
+  {% set r = c.recherche %}
+  <section class="container search" aria-label="{{ r.label }}">
+    <form role="search" method="get" action="{{ urls[lang].plan }}" data-search data-t-un="{{ r.un }}" data-t-plusieurs="{{ r.plusieurs }}" data-t-aucun="{{ r.aucun }}" data-t-pagination="{{ r.pagination }}">
+      <label for="q">{{ r.label }}</label>
+      <span class="search__row"><input id="q" name="q" type="search" autocomplete="off" required> <button class="btn btn--primary" type="submit">{{ r.bouton }}</button></span>
+    </form>
+    <noscript><p>{{ r.sansJs }}</p></noscript>
+    <div class="search__out" role="status" data-search-status></div>
+    <ol class="search__results" data-search-results hidden></ol>
+  </section>
+  <section class="container sitemap" aria-labelledby="plan-t">
+    <h2 id="plan-t">{{ c.planH }}</h2>
+    <ul>
+      {% for pg in allPages %}{% if pg.lang == lang and pg.key != 'plan' %}<li><a href="{{ pg.url }}" data-page>{{ copy[lang].commun.nav.accueil if pg.key == 'accueil' else (copy[lang][pg.key].h1 | typo(lang)) }}</a></li>{% endif %}{% endfor %}
+    </ul>
   </section>
   {% endif %}
 

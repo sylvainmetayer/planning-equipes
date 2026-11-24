@@ -1,0 +1,42 @@
+{
+  "slug": "plan-du-site",
+  "titre": "Plan du site et recherche | Planning Équipes",
+  "description": "Toutes les pages du site Planning Équipes, et une recherche dans leurs textes.",
+  "h1": "Plan du site et recherche",
+  "reponse": "Toutes les pages du site, et une recherche dans leurs textes.",
+  "recherche": {
+    "label": "Rechercher dans le site",
+    "bouton": "Rechercher",
+    "un": "Une page contient « {q} ».",
+    "plusieurs": "{n} pages contiennent « {q} ».",
+    "aucun": "Aucune page ne contient « {q} ». Essayez un autre mot, ou parcourez le plan ci-dessous.",
+    "pagination": "Tous les résultats tiennent sur cette page.",
+    "sansJs": "La recherche a besoin de JavaScript ; le plan ci-dessous liste toutes les pages."
+  },
+  "planH": "Toutes les pages",
+  "liens": [
+    "faq",
+    "contact"
+  ],
+  "en": {
+    "slug": "site-map",
+    "titre": "Site map and search | Planning Équipes",
+    "description": "Every page of the Planning Équipes website, and a search through their text.",
+    "h1": "Site map and search",
+    "reponse": "Every page of the site, and a search through their text.",
+    "recherche": {
+      "label": "Search the site",
+      "bouton": "Search",
+      "un": "One page contains “{q}”.",
+      "plusieurs": "{n} pages contain “{q}”.",
+      "aucun": "No page contains “{q}”. Try another word, or browse the map below.",
+      "pagination": "All results fit on this page.",
+      "sansJs": "Search needs JavaScript; the map below lists every page."
+    },
+    "planH": "Every page",
+    "liens": [
+      "faq",
+      "contact"
+    ]
+  }
+}

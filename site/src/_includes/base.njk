@@ -70,6 +70,7 @@
       <li><a href="{{ site.repo }}/releases">{{ common.pied.nouveautes }}</a></li>
       <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
       <li><a href="{{ urls[lang].mentions }}">{{ common.pied.mentions }}</a></li>
+      <li><a href="{{ urls[lang].plan }}">{{ common.pied.plan }}</a></li>
       <li><a href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a></li>
     </ul>
     <div class="foot__fine">
@@ -81,11 +82,12 @@
 <dialog class="popin" aria-label="{{ common.popin.label }}" data-popin-dialog>
   <button class="popin__close btn" type="button" data-popin-close>{{ common.popin.fermer }}</button>
   <figure class="popin__fig"><figcaption></figcaption></figure>
-  <button class="popin__nav popin__nav--prev" type="button" data-popin-prev aria-label="{{ common.popin.precedente }}" hidden><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  <button class="popin__nav popin__nav--next" type="button" data-popin-next aria-label="{{ common.popin.suivante }}" hidden><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="popin__nav popin__nav--prev" type="button" data-popin-prev aria-label="{{ common.popin.precedente }}" title="{{ common.popin.precedente }}" hidden><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="popin__nav popin__nav--next" type="button" data-popin-next aria-label="{{ common.popin.suivante }}" title="{{ common.popin.suivante }}" hidden><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </dialog>
 <script type="module" src="/assets/popin.js"></script>
 {% if key == 'contact' %}<script defer src="/assets/contact.js"></script>{% endif %}
+{% if key == 'plan' %}<script type="module" src="/assets/search.js"></script>{% endif %}
 {% if build.analytics %}<!-- Cloudflare Web Analytics: no cookie. Token in site.json, from `tofu output -raw web_analytics_token` in homelab -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ site.beaconToken }}"}'></script>{% endif %}
 </body>

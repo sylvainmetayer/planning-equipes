@@ -2,8 +2,8 @@
 // their default, since Eleventy would otherwise paginate over their named exports.
 import articles from './_data/articles.js';
 
-export const PAGES = ['commun', 'accueil', 'legal', 'equipe', 'calcul', 'hebergement', 'faq', 'contact', 'mentions', 'festival', 'salon', 'sport', 'tableur', 'mineurs'];
-export const ANSWER_KEYS = ['legal', 'equipe', 'calcul', 'hebergement', 'faq', 'contact', 'mentions', 'festival', 'salon', 'sport', 'tableur', 'mineurs'];
+export const PAGES = ['commun', 'accueil', 'legal', 'equipe', 'calcul', 'hebergement', 'faq', 'contact', 'mentions', 'festival', 'salon', 'sport', 'tableur', 'mineurs', 'plan'];
+export const ANSWER_KEYS = ['legal', 'equipe', 'calcul', 'hebergement', 'faq', 'contact', 'mentions', 'festival', 'salon', 'sport', 'tableur', 'mineurs', 'plan'];
 // Pages kept out of the sitemap and llms.txt, and marked noindex
 export const NOINDEX_KEYS = ['mentions'];
 

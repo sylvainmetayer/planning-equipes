@@ -14,7 +14,8 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 | `src/_includes/`, `src/pages.njk`, `src/404.njk` | les gabarits : l'accueil, les pages-réponses, le film, la mise en page commune |
 | `src/schema.js`, `src/markdown.js` | les données structurées JSON-LD de chaque page, et son jumeau Markdown |
 | `src/llms.njk`, `src/robots.njk`, `src/sitemap.njk` | `llms.txt`, `robots.txt`, `sitemap.xml`, tous trois générés |
-| `src/assets/` | la feuille de style (`style.css`, `tokens.css`, `base.css`, minifiée et assemblée au build) et l'icône des liens sortants |
+| `src/assets/` | la feuille de style (`style.css`, `tokens.css`, `base.css`, minifiée et assemblée au build), les scripts (minifiés au build, dont `search.js`, la recherche du plan du site) et l'icône des liens sortants |
+| `src/text.js` | la typographie, et la passe sur chaque page construite : le sens de chaque abréviation à sa première apparition (liste dans `commun.json`), la mention « site externe » des liens sortants |
 | `src/images/{fr,en}/`, `src/videos/{fr,en}/` | les captures et les vidéos de l'application, une série par langue |
 | `src/_headers`, `wrangler.toml` | les en-têtes HTTP (CSP, HSTS…) et la configuration Cloudflare Pages (`pages_build_output_dir = "_site"`) |
 | `scripts/tournage/` | **le tournage des captures et des vidéos**, en une commande (voir plus bas) |
