@@ -2,12 +2,10 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   computed,
   inject,
   OnInit,
   signal,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -30,14 +28,9 @@ import { AdminApi } from '../../core/api/admin-api';
 import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
 import { ProblemesStore } from '../../core/problemes.store';
-import { BRANDING, slugMarque } from '../../core/branding';
 import { EtatSauvegarde } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
-import { SolverJobService } from '../../core/solver-job.service';
-import { ScenarioImportService } from '../../core/scenario-import.service';
-import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
-import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { AffichageMuralLinks } from './affichage-mural-links';
 import { ContactOrganisationCard } from './contact-organisation-card';
@@ -52,14 +45,6 @@ import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
 import { WebhooksCard } from './webhooks-card';
 import { TODAY_ANCHOR } from '../../core/date-mock.service';
-import { takeFile } from '../../core/take-file';
-
-/**
- * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
- * keyword whose spelling follows the interface language is a keyword an
- * administrator gets wrong after a language switch.
- */
-export const REPLACE_KEYWORD = 'REMPLACER';
 
 /**
  * The settings page, three tabs carried by `?onglet=` (issue #720), the same
@@ -77,8 +62,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
  * - « Affichage mural » — the links that open the control room's television
  *   without an admin session (ADR 0053): per edition, created and revoked here.
  * - « Instance » — what the operator configured and what holds for the whole
- *   database, every edition included: the nightly backup, the SQL dump
- *   import/export, the single-key shortcuts of this browser, and the simulated
+ *   database, every edition included: the nightly backup, the single-key shortcuts of this browser, and the simulated
  *   clock where the server allows one (a demonstration or staging server).
  *
  * The feasibility banner stays above the tabs: it speaks of the edition, not
@@ -121,29 +105,11 @@ export const REPLACE_KEYWORD = 'REMPLACER';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParametresPage implements OnInit {
-  /** Dump named after the deployment, so two instances' exports never collide in a downloads folder. */
-  private readonly nomFichierDump = `${slugMarque(inject(BRANDING).productName)}.sql`;
-
   protected readonly output = signal('');
-  protected readonly transferBusy = signal(false);
-
-  /** The server-side solver lock: also covers a solve/analysis from another browser. */
-  protected readonly solverBusy = computed(() => this.jobs.solverBusy());
-  /** SQL dump replay rewrites the WHOLE database, every edition included: locked by any running job. */
-  protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
-
-  private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
 
   private readonly adminApi = inject(AdminApi);
-  // Replaying a dump replaces the same data a scenario import does: the stores
-  // to reload afterwards are the import's own set, not a second list.
-  private readonly scenarioImport = inject(ScenarioImportService);
-  private readonly recopie = inject(ConfirmationRecopie);
-  private readonly instantane = inject(InstantaneAvantAction);
-
-  private readonly jobs = inject(SolverJobService);
   private readonly notifications = inject(NotificationService);
   private readonly editions = inject(EditionStore);
   private readonly editionsApi = inject(EditionsApi);
@@ -291,57 +257,5 @@ export class ParametresPage implements OnInit {
   protected tailleLisible(octets: number): string {
     const mega = octets / (1024 * 1024);
     return mega >= 1 ? `${mega.toFixed(1)} Mo` : `${Math.max(1, Math.round(octets / 1024))} Ko`;
-  }
-
-  /* --------------------------------- SQL dump -------------------------------- */
-
-  protected async onExportSql(): Promise<void> {
-    this.transferBusy.set(true);
-    this.output.set($localize`:@@dataTransfer.buildingSqlDump:Construction du dump SQL...`);
-    try {
-      this.output.set(await this.adminApi.exportDatabase(this.nomFichierDump));
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.transferBusy.set(false);
-    }
-  }
-
-  protected pickSqlFile(): void {
-    this.sqlInput().nativeElement.click();
-  }
-
-  protected async onSqlFileSelected(event: Event): Promise<void> {
-    const file = takeFile(event);
-    if (!file) {
-      return;
-    }
-    // Not the edition name here: replaying a dump rewrites the whole database,
-    // every edition included, so asking for the current edition's name would
-    // describe an operation narrower than the one about to run. A keyword says
-    // the truth of the scope instead.
-    const confirmed = await this.recopie.demander({
-      title: $localize`:@@dataTransfer.replaySqlTitle:Rejouer ce dump SQL ?`,
-      message: $localize`:@@dataTransfer.replaySqlPromptMessage:${file.name}:fileName: remplace la base entière : toutes les éditions sont écrasées. L'opération est irréversible.`,
-      valeurAttendue: REPLACE_KEYWORD,
-      confirmLabel: $localize`:@@dataTransfer.replaySqlAction:Remplacer la base`,
-    });
-    if (!confirmed) {
-      return;
-    }
-    await this.instantane.proposer($localize`:@@dataSetup.action.importSql:rejouer un dump SQL`);
-    this.transferBusy.set(true);
-    this.output.set(
-      $localize`:@@dataTransfer.importing:Import de ${file.name}:fileName: en cours...`,
-    );
-    try {
-      const summary = await this.adminApi.importDatabase(await file.text());
-      await this.scenarioImport.rechargerApresImport();
-      this.output.set(summary.message);
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.transferBusy.set(false);
-    }
   }
 }

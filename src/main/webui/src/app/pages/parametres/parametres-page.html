@@ -155,44 +155,6 @@
     </mat-card>
 
     <app-webhooks-card />
-
-    <mat-card appearance="outlined" class="page-card">
-      <mat-card-header>
-        <h2 mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</h2>
-        <mat-card-subtitle i18n="@@dataTransfer.sql.description">
-          Exporte ou rejoue toute la base en script SQL — toutes les éditions, et l'import écrase tout.
-        </mat-card-subtitle>
-      </mat-card-header>
-      @if (solverBusy()) {
-        <mat-card-content>
-          <p class="locked-hint" i18n="@@dataTransfer.locked">
-            Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.
-          </p>
-        </mat-card-content>
-      }
-      <mat-card-actions class="card-actions">
-        <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
-          <mat-icon>download</mat-icon>
-          <ng-container i18n="@@dataTransfer.exportSql">Exporter le dump SQL</ng-container>
-        </button>
-        <button
-          matButton="outlined"
-          class="danger-action"
-          [disabled]="transferLocked()"
-          (click)="pickSqlFile()"
-        >
-          <mat-icon>upload</mat-icon>
-          <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
-        </button>
-        <input
-          #sqlInput i18n-aria-label="@@dataTransfer.importSql" aria-label="Importer un dump SQL"
-          type="file"
-          accept=".sql,application/sql,text/plain"
-          hidden
-          (change)="onSqlFileSelected($event)"
-        />
-      </mat-card-actions>
-    </mat-card>
   }
   @default {
     <mat-card appearance="outlined" class="page-card">
@@ -242,6 +204,6 @@
   }
 }
 
-<!-- Outside the tabs: an error or a dump is answered by the tab that asked for
+<!-- Outside the tabs: an error is answered by the tab that asked for
      it, and staying put means the answer survives a tab change. -->
 <app-output-panel [text]="output()" />

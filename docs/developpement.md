@@ -700,7 +700,10 @@ d'une machine partagée tue en premier.
 ### Tests de bout en bout (Playwright)
 
 Ils réamorcent la base par `/api/database/import` : ne jamais les pointer
-ailleurs que sur une pile jetable.
+ailleurs que sur une pile jetable. Ces routes (dump SQL) ne répondent que si
+`planning.outillage-test.dump-sql` vaut `true` — c'est le cas sous `quarkus:dev`,
+dans les tests et sur la pile de `e2e-suite.yml` (`OUTILLAGE_TEST_DUMP_SQL`) ;
+un jar lancé à la main pour l'E2E doit poser cette variable.
 
 **Chaque spec repart d'un état de référence.** Avant la première, la suite
 photographie la base par `/api/database/export` — un script qui commence par un

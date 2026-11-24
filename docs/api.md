@@ -15,7 +15,7 @@ et **rien ne circule de l'une à l'autre** — voir
 [`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
 
 Le client la désigne par l'en-tête `X-Edition-Id`, sur **tous** les endpoints
-sauf le dump SQL (`/api/database/*`), qui ignore l'en-tête et emporte toutes les
+sauf le dump SQL (`/api/database/*`, outillage de test), qui ignore l'en-tête et emporte toutes les
 éditions. Ce n'est pas pour autant une sauvegarde de la base : **six tables en
 restent absentes**, et délibérément — l'horloge, les paramètres de sauvegarde,
 les accès et sessions d'espace, la file de jobs et le journal d'actions. Elles

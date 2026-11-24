@@ -9,7 +9,7 @@ export const ONGLETS_PARAMETRES: readonly OngletParametres[] = [
   // The links of the control room's television (ADR 0053): per edition.
   'mural',
   // Last, and apart: what the operator configured and what holds for the whole
-  // database, every edition included — backup, SQL dump, simulated clock.
+  // database, every edition included — backup, simulated clock.
   'instance',
   // The journal of the actions and of the admin logins (the former
   // `/historique`, whose own « Connexions » tab is `?onglet=connexions`).

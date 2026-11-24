@@ -1,4 +1,4 @@
-// The administrator's plumbing: backups, the SQL dump, the mail checks and the
+// The administrator's plumbing: backups, the mail checks and the
 // version history of the Débogage page, the legal notice, the scheduled notifications, the
 // organisation's contact, the session.
 
@@ -8,7 +8,6 @@ import {
   ApplicationVersion,
   ContactOrganisation,
   EtatSauvegarde,
-  ImportSummary,
   MentionsLegales,
   ParametresNotifications,
   StatutSession,
@@ -26,18 +25,6 @@ export class AdminApi {
 
   setBackupsActive(active: boolean): Promise<EtatSauvegarde> {
     return this.api.put<EtatSauvegarde>('/api/backups/active', { active });
-  }
-
-  /* -------------------------------- database ------------------------------ */
-
-  /** The whole database as SQL; `filename` names the file the browser saves. */
-  exportDatabase(filename: string): Promise<string> {
-    return this.api.downloadGet('/api/database/export', filename, 'application/sql');
-  }
-
-  /** Replays a dump over the whole database, every edition included. */
-  importDatabase(sql: string): Promise<ImportSummary> {
-    return this.api.postRaw<ImportSummary>('/api/database/import', sql, 'application/sql');
   }
 
   /* --------------------------------- mail --------------------------------- */

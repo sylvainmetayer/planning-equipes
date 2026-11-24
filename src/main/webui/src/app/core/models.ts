@@ -2500,10 +2500,6 @@ export interface PersistenceStatus {
   assignments: number;
 }
 
-export interface ImportSummary {
-  message: string;
-}
-
 /** Pre-import answer of `/api/reference-data/cible-scenario(-fichier)`: where the file would write. */
 export interface CibleImport {
   /** null = no `edition:` section — the import writes to the caller's current edition. */

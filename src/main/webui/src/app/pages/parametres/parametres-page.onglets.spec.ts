@@ -253,7 +253,6 @@ describe('ParametresPage — onglets', () => {
 
     await cliquerOnglet('Instance');
     expect(textOf()).toContain('Sauvegarde automatique');
-    expect(textOf()).toContain('Export SQL');
     expect(textOf()).toContain('Raccourcis clavier');
     expect(textOf()).toContain('Webhooks');
   });

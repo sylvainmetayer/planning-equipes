@@ -167,6 +167,8 @@ jobs:
           # jour-j.spec.ts vérifie ce refus. Seul l'appelant qui joue la spec
           # du passé figé l'autorise.
           HORLOGE_SIMULEE_AUTORISEE: ${{ inputs.horloge-simulee }}
+          # La suite amorce et restaure la base par /api/database/*, refusé sinon.
+          OUTILLAGE_TEST_DUMP_SQL: 'true'
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit
           MAIL_PORT: 1025
