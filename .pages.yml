@@ -15,12 +15,12 @@
 media:
   - name: images
     label: Captures et images
-    input: src/images
+    input: site/src/images
     output: /images
     extensions: [webp, png]
   - name: videos
     label: Vidéos
-    input: src/videos
+    input: site/src/videos
     output: /videos
     extensions: [mp4]
 
@@ -28,7 +28,7 @@ content:
   - name: commun
     label: Commun (menu, pied de page, page 404)
     type: file
-    path: src/_data/pages/commun.json
+    path: site/src/_data/pages/commun.json
     format: json
     fields:
       - name: nav
@@ -148,7 +148,7 @@ content:
   - name: accueil
     label: Accueil
     type: file
-    path: src/_data/pages/accueil.json
+    path: site/src/_data/pages/accueil.json
     format: json
     description: "Le texte de la page d'accueil. Les captures et vidéos se remplacent dans « Captures et images » et « Vidéos » (mêmes noms de fichier)."
     fields:
@@ -464,7 +464,7 @@ content:
   - name: legal
     label: Page Code du travail et mineurs
     type: file
-    path: src/_data/pages/legal.json
+    path: site/src/_data/pages/legal.json
     format: json
     description: "Les articles et leurs règles ne s'éditent pas ici : src/_data/articles.js, testé contre ConstraintCatalog."
     fields:
@@ -512,7 +512,7 @@ content:
   - name: equipe
     label: Page équipe
     type: file
-    path: src/_data/pages/equipe.json
+    path: site/src/_data/pages/equipe.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -559,7 +559,7 @@ content:
   - name: hebergement
     label: Page héberger soi-même
     type: file
-    path: src/_data/pages/hebergement.json
+    path: site/src/_data/pages/hebergement.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -606,7 +606,7 @@ content:
   - name: calcul
     label: Page « comment marche le calcul »
     type: file
-    path: src/_data/pages/calcul.json
+    path: site/src/_data/pages/calcul.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -653,7 +653,7 @@ content:
   - name: faq
     label: Questions fréquentes
     type: file
-    path: src/_data/pages/faq.json
+    path: site/src/_data/pages/faq.json
     format: json
     description: "Les questions cochées « accueil » apparaissent aussi sur la page d'accueil. Les réponses sont reprises mot pour mot dans les données structurées."
     fields:
@@ -701,7 +701,7 @@ content:
   - name: contact
     label: Page contact (formulaire)
     type: file
-    path: src/_data/pages/contact.json
+    path: site/src/_data/pages/contact.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -730,7 +730,7 @@ content:
   - name: mentions
     label: Page mentions légales
     type: file
-    path: src/_data/pages/mentions.json
+    path: site/src/_data/pages/mentions.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -769,7 +769,7 @@ content:
   - name: festival
     label: Page festival ou convention
     type: file
-    path: src/_data/pages/festival.json
+    path: site/src/_data/pages/festival.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -817,7 +817,7 @@ content:
   - name: salon
     label: Page salon ou foire
     type: file
-    path: src/_data/pages/salon.json
+    path: site/src/_data/pages/salon.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -865,7 +865,7 @@ content:
   - name: sport
     label: Page événement sportif
     type: file
-    path: src/_data/pages/sport.json
+    path: site/src/_data/pages/sport.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -913,7 +913,7 @@ content:
   - name: tableur
     label: Page tableur ou logiciel
     type: file
-    path: src/_data/pages/tableur.json
+    path: site/src/_data/pages/tableur.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -991,7 +991,7 @@ content:
   - name: mineurs
     label: Page mineurs (questions)
     type: file
-    path: src/_data/pages/mineurs.json
+    path: site/src/_data/pages/mineurs.json
     format: json
     description: "Les réponses sont reprises mot pour mot dans les données structurées (FAQPage). Les articles cités doivent exister dans ConstraintCatalog."
     fields:
