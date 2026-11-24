@@ -6,6 +6,7 @@
 // only resolves once `main.ts` has loaded the translation catalog.
 
 import { HelpSection } from '../help-section';
+import { lienDisponibilites } from './liens';
 
 export function buildGettingStartedSections(): HelpSection[] {
   return [
@@ -83,11 +84,7 @@ export function buildGettingStartedSections(): HelpSection[] {
           queryParams: { cible: 'animateurs' },
           label: $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`,
         },
-        {
-          route: '/animateurs',
-          queryParams: { onglet: 'disponibilites' },
-          label: $localize`:@@nav.link.disponibilites:Disponibilités`,
-        },
+        lienDisponibilites(),
         { route: '/', label: $localize`:@@nav.link.accueil:État de l'édition` },
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/echanges', label: $localize`:@@nav.link.echanges:Échanges` },

@@ -7,6 +7,14 @@
 
 import { buildRaccourcisNavigation } from '../../../core/keyboard-shortcuts';
 import { HelpSection } from '../help-section';
+import {
+  lienAjustements,
+  lienConsignes,
+  lienFragilite,
+  lienPauses,
+  lienVerrouillages,
+  lienVersions,
+} from './liens';
 
 export function buildOperationsSections(): HelpSection[] {
   return [
@@ -48,11 +56,7 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { vue: 'changements' },
           label: $localize`:@@aide.link.changementsJour:Changements de la journée`,
         },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienVerrouillages(),
       ],
     },
     {
@@ -99,11 +103,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
       ],
       links: [
-        {
-          route: '/regles',
-          queryParams: { onglet: 'consignes' },
-          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
-        },
+        lienConsignes(),
         { route: '/journee', label: $localize`:@@nav.link.journee:Planning` },
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
       ],
@@ -134,11 +134,7 @@ export function buildOperationsSections(): HelpSection[] {
           fragment: 'meteo',
           label: $localize`:@@aide.lien.parametresMeteo:Paramètres › Alerte météo`,
         },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'consignes' },
-          label: $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
-        },
+        lienConsignes(),
         {
           route: '/',
           fragment: 'a-traiter',
@@ -207,16 +203,8 @@ export function buildOperationsSections(): HelpSection[] {
       ],
       links: [
         { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'ajustements' },
-          label: $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
-        },
-        {
-          route: '/regles',
-          queryParams: { onglet: 'verrouillages' },
-          label: $localize`:@@consignesSolveur.onglet.verrouillages:Verrouillages`,
-        },
+        lienAjustements(),
+        lienVerrouillages(),
       ],
     },
     {
@@ -289,11 +277,7 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@nav.link.realise:Réalisé vs planifié`,
         },
         { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
-        {
-          route: '/solveur',
-          queryParams: { onglet: 'versions' },
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-        },
+        lienVersions(),
       ],
     },
     {
@@ -417,16 +401,8 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { vue: 'carte' },
           label: $localize`:@@aide.link.carteJour:Carte de la journée`,
         },
-        {
-          route: '/diagnostic',
-          queryParams: { onglet: 'fragilite' },
-          label: $localize`:@@aide.link.fragilite:Fragilité du planning`,
-        },
-        {
-          route: '/journee',
-          queryParams: { vue: 'pauses' },
-          label: $localize`:@@aide.link.pauses:Pauses et repas`,
-        },
+        lienFragilite(),
+        lienPauses(),
         { route: '/publication', label: $localize`:@@nav.link.diffuser:Diffuser` },
         {
           route: '/diagnostic',
@@ -434,11 +410,7 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.link.former:À former`,
         },
         { route: '/journee', label: $localize`:@@aide.link.siege:Panneau Siège (Planning)` },
-        {
-          route: '/solveur',
-          queryParams: { onglet: 'versions' },
-          label: $localize`:@@nav.link.versions:Versions du plan`,
-        },
+        lienVersions(),
       ],
     },
     {
