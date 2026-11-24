@@ -473,6 +473,15 @@ Quatre portes, de la plus forte à la plus faible :
    identifiant).
 4. La clé d'API du `/mcp`, qui n'ouvre que le MCP.
 
+**Exécutez l'application derrière https.** Le cookie de session OIDC et celui du
+formulaire n'ont de sens que chiffrés en transit. Le déploiement étant agnostique,
+rien n'est forcé : derrière un proxy qui termine le TLS, posez
+`OIDC_FORCE_HTTPS=true` (redirections en https) et, si le proxy ne transmet pas
+le schéma, `QUARKUS_OIDC_AUTHENTICATION_COOKIE_FORCE_SECURE=true`
+(`quarkus.oidc.authentication.cookie-force-secure`) pour que le cookie ne parte
+jamais en clair. Les tentatives de mot de passe sur le secours fermé sont
+journalisées comme des échecs (adresse seulement), sans compter dans le verrou.
+
 ## Abonnement ICS : le second jeton, et ce qu'il permet exactement
 
 `GET /api/abonnements/{token}/planning.ics` est la **seule** route de
