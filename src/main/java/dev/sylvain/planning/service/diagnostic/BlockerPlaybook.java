@@ -462,8 +462,7 @@ public final class BlockerPlaybook {
                 ROUTE_ANIMATEURS,
                 context.typologieIds().isEmpty()
                         ? Map.of(PARAM_ONGLET, "competences")
-                        : Map.of(
-                                PARAM_ONGLET, "competences", "typologies", String.join(",", context.typologieIds())));
+                        : Map.of(PARAM_ONGLET, "competences", "typologies", String.join(",", context.typologieIds())));
     }
 
     private static ActionType lowerStaffingAction(Context context) {
