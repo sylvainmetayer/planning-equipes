@@ -9,7 +9,7 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @if (sansDroits()) {
+      @if (noRights()) {
         <p class="login-echec" role="alert">
           <mat-icon inline>block</mat-icon>
           <span i18n="@@login.sansDroits">Vous êtes connecté, mais aucun droit d'administration n'est accordé à ce compte. Demandez-le à un administrateur.</span>
