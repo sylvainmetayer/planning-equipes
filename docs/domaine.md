@@ -1075,9 +1075,10 @@ toutes les éditions) :
   `/api/comptes` est réservé au rôle `admin`.
 - **Le compte `admin` de la configuration n'est pas une ligne** : c'est un
   compte implicite, d'identifiant `admin`, que le journal nomme tant qu'aucun
-  compte n'est lié à la session. Tant que la connexion n'est pas branchée sur
-  ces comptes, aucune habilitation n'ouvre ni ne ferme rien : le comportement
-  de l'accès reste celui de l'administrateur unique.
+  compte n'est lié à la session. Avec un fournisseur OIDC (`docs/oidc.md`), un
+  compte actif portant un droit `ADMIN` en vigueur reçoit le rôle `admin` ; sans
+  compte, ou désactivé, une session n'ouvre rien. La colonne `oidc_sujet` lie le
+  compte au couple émetteur + sujet du fournisseur.
 - **Le journal nomme l'acteur par l'identifiant du compte**, jamais par son
   adresse ni son nom ; l'écran de l'historique joint le nom à la lecture, comme
   pour un animateur. `habilitation.cree_par` suit la même règle.

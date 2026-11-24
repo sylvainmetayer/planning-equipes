@@ -89,7 +89,11 @@ l'origine est joignable sans passer par le proxy**, sinon n'importe quel client
 annonce le schéma et l'adresse de son choix — et
 `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST` si le proxy réécrit `Host`.
 
-### Mode « remote user » (facultatif, désactivé par défaut)
+### Mode « remote user » (facultatif, désactivé par défaut, déprécié)
+
+**Déprécié en 3.x, retiré en 4.0** : un avertissement le rappelle à chaque
+démarrage où il est actif. Le remplacent la connexion par un fournisseur OIDC et
+les comptes de l'application (`docs/oidc.md`).
 
 Pour un proxy d'accès qui authentifie lui-même ses visiteurs et transmet
 l'adresse retenue. Le form login reste disponible en parallèle : une origine
