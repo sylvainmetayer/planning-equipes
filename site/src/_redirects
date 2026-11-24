@@ -1,0 +1,6 @@
+# Redirects served by Cloudflare Pages (ignored elsewhere): addresses that
+# were published once keep leading somewhere.
+/benevoles/ /organiser-son-equipe/ 301
+/benevoles /organiser-son-equipe/ 301
+/en/volunteers/ /en/organising-your-team/ 301
+/en/volunteers /en/organising-your-team/ 301

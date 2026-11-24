@@ -1,13 +1,13 @@
 {
-  "slug": "benevoles",
-  "titre": "Planning de bénévoles pour un festival ou un événement",
-  "description": "Planifier des bénévoles comme les autres animateurs : import du tableur, disponibilités, règles du Code du travail, planning sur le téléphone de chacun.",
-  "h1": "Peut-on planifier des bénévoles ?",
-  "reponse": "**Oui.** Le tableur de bénévoles s'importe, et le calcul les place comme les autres animateurs, avec les mêmes règles. Chacun reçoit son planning sur son téléphone.",
+  "slug": "organiser-son-equipe",
+  "titre": "Organiser son équipe d'événement, salariés et bénévoles",
+  "description": "Importer l'équipe, salariée, bénévole ou mixte, collecter les disponibilités, puis donner à chacun son planning sur son téléphone.",
+  "h1": "Comment organiser son équipe ?",
+  "reponse": "**En trois temps** : importer le tableur, collecter les disponibilités, publier. Chacun reçoit son planning sur son téléphone, salarié comme bénévole.",
   "sections": [
     {
-      "h2": "Un bénévole, un animateur comme un autre",
-      "texte": "Chacun a des disponibilités, des compétences et des souhaits, et il est placé sur un stand et un créneau. Les règles du Code du travail et des mineurs s'appliquent donc à tous.\n\nSi votre organisation décide qu'une règle ne vaut pas pour ses bénévoles, elle la désactive, et l'outil le lui fait confirmer. Le statut des bénévoles reste votre affaire."
+      "h2": "Salariés, bénévoles ou les deux",
+      "texte": "L'outil ne fait pas de différence : chacun a des disponibilités, des compétences et des souhaits, et il est placé sur un stand et un créneau. Ce qui change pour des bénévoles est dans [les questions](/questions/#benevoles)."
     },
     {
       "h2": "Importer le tableur",
@@ -18,15 +18,15 @@
       "texte": "Chacun déclare depuis son téléphone les jours où il n'est pas disponible. Sans déclaration, une personne est disponible. L'organisation relit les déclarations avant qu'elles entrent dans le calcul."
     },
     {
-      "h2": "Ce que chaque bénévole reçoit",
+      "h2": "Ce que chacun reçoit",
       "texte": "- un lien et un code par e-mail, valable 10 minutes ;\n- son planning, le prochain poste en tête, et le bouton « J'ai lu et je serai là » ;\n- une feuille PDF avec un QR code, et un abonnement à son agenda ;\n- des échanges en libre-service, que l'organisation arbitre ;\n- ses coéquipiers sur chaque créneau."
     },
     {
-      "h2": "Des mineurs parmi les bénévoles",
+      "h2": "Des mineurs dans l'équipe",
       "texte": "Chacun se voit appliquer le droit de son âge réel à la date de chaque créneau (moins de 16 ans, 16 à 18 ans), sans rien saisir de plus. Le détail est sur la page [Code du travail et mineurs](/code-du-travail-mineurs/)."
     }
   ],
-  "cta": "Vous planifiez des bénévoles ?",
+  "cta": "Vous préparez votre équipe ?",
   "bouton": "Écrire à planning@sylvain.dev",
   "liens": [
     "legal",
@@ -34,15 +34,15 @@
     "faq"
   ],
   "en": {
-    "slug": "volunteers",
-    "titre": "Volunteer scheduling for a festival or an event",
-    "description": "Schedule volunteers like any other staff: spreadsheet import, availability, French Labour Code rules, the rota on everyone's phone.",
-    "h1": "Can you schedule volunteers?",
-    "reponse": "**Yes.** Your volunteer spreadsheet imports, and the solver places volunteers like your other staff, under the same rules. Everyone gets their rota on their phone.",
+    "slug": "organising-your-team",
+    "titre": "Organising your event team, paid staff and volunteers",
+    "description": "Import your team, paid, volunteer or mixed, collect availability, then give everyone their rota on their phone.",
+    "h1": "How do you organise your team?",
+    "reponse": "**In three steps**: import the spreadsheet, collect availability, publish. Everyone gets their rota on their phone, paid staff and volunteers alike.",
     "sections": [
       {
-        "h2": "A volunteer is staff like any other",
-        "texte": "Everyone has availability, skills and wishes, and is placed on a stand and a shift. The Labour Code and under-18 rules therefore apply to everyone.\n\nIf your organisation decides a rule does not apply to its volunteers, it disables it, and the tool asks it to confirm. Volunteer status remains your call."
+        "h2": "Paid staff, volunteers or both",
+        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles)."
       },
       {
         "h2": "Import the spreadsheet",
@@ -53,15 +53,15 @@
         "texte": "Everyone declares from their phone the days they are not available. Without a declaration, a person is available. The organisation reviews the declarations before they reach the solver."
       },
       {
-        "h2": "What each volunteer gets",
+        "h2": "What everyone gets",
         "texte": "- a link and a code by e-mail, valid for 10 minutes;\n- their rota, next shift first, and the “I have read it and I will be there” button;\n- a PDF sheet with a QR code, and a calendar subscription;\n- self-service swaps, which the organisation approves;\n- their teammates on every shift."
       },
       {
-        "h2": "Under-18s among the volunteers",
+        "h2": "Under-18s in the team",
         "texte": "Everyone gets the law of their real age on the date of each shift (under 16, 16 to 18), with nothing more to enter. The details are on the [Labour Code and under-18s](/en/labour-code-minors/) page."
       }
     ],
-    "cta": "Scheduling volunteers?",
+    "cta": "Getting your team ready?",
     "bouton": "Email planning@sylvain.dev",
     "liens": [
       "legal",

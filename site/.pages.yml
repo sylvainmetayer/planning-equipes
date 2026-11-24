@@ -38,7 +38,7 @@ content:
           - { name: label, label: Nom du menu (lecteurs d'écran), type: string, required: true }
           - { name: accueil, label: Accueil, type: string, required: true }
           - { name: legal, label: Code du travail, type: string, required: true }
-          - { name: benevoles, label: Bénévoles, type: string, required: true }
+          - { name: equipe, label: Équipe, type: string, required: true }
           - { name: calcul, label: Le calcul, type: string, required: true }
           - { name: hebergement, label: Héberger, type: string, required: true }
           - { name: faq, label: Questions, type: string, required: true }
@@ -90,7 +90,7 @@ content:
               - { name: label, label: Nom du menu (lecteurs d'écran), type: string, required: true }
               - { name: accueil, label: Accueil, type: string, required: true }
               - { name: legal, label: Code du travail, type: string, required: true }
-              - { name: benevoles, label: Bénévoles, type: string, required: true }
+              - { name: equipe, label: Équipe, type: string, required: true }
               - { name: calcul, label: Le calcul, type: string, required: true }
               - { name: hebergement, label: Héberger, type: string, required: true }
               - { name: faq, label: Questions, type: string, required: true }
@@ -433,7 +433,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -455,12 +455,12 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
 
-  - name: benevoles
-    label: Page bénévoles
+  - name: equipe
+    label: Page équipe
     type: file
-    path: src/_data/pages/benevoles.json
+    path: src/_data/pages/equipe.json
     format: json
     fields:
       - { name: slug, label: Adresse (sans les barres), type: string, required: true, pattern: { regex: "^[a-z0-9-]+$", message: "Minuscules, chiffres et tirets" } }
@@ -480,7 +480,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -502,7 +502,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
 
   - name: hebergement
     label: Page héberger soi-même
@@ -527,7 +527,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -549,7 +549,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
 
   - name: calcul
     label: Page « comment marche le calcul »
@@ -574,7 +574,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -596,7 +596,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
 
   - name: faq
     label: Questions fréquentes
@@ -622,7 +622,7 @@ content:
           - { name: a, label: Réponse, type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
-      - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+      - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }
       - name: en
         label: Version anglaise
         type: object
@@ -644,4 +644,4 @@ content:
               - { name: a, label: Réponse, type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
-          - { name: liens, label: Pages à lire aussi (legal, benevoles, calcul, hebergement, faq), type: string, list: true }
+          - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq), type: string, list: true }

@@ -1,4 +1,5 @@
 benevoles
+equipe
 jourj
 regles
 echanges
@@ -12,3 +13,4 @@ hébergeable
 Équipes
 hebergement
 heberger
+organising

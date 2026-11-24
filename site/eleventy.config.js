@@ -18,7 +18,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy('src/videos');
   eleventyConfig.addPassthroughCopy('src/og-fr.png');
   eleventyConfig.addPassthroughCopy('src/og-en.png');
-  eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/favicon.svg': 'favicon.svg' });
+  eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/_redirects': '_redirects', 'src/favicon.svg': 'favicon.svg' });
   eleventyConfig.addPassthroughCopy({ 'src/assets/external.svg': 'assets/external.svg', 'src/assets/popin.js': 'assets/popin.js' });
   eleventyConfig.addPassthroughCopy({
     [`node_modules/${fonts}/rethink-sans/files/rethink-sans-latin-wght-normal.woff2`]: 'assets/fonts/rethink-sans.woff2',
