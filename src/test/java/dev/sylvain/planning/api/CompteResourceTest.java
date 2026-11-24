@@ -7,9 +7,14 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import dev.sylvain.planning.service.compte.CompteRepository;
+import dev.sylvain.planning.service.compte.Habilitation;
+import dev.sylvain.planning.service.compte.RoleHabilitation;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -18,6 +23,9 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 @TestSecurity(user = "admin", roles = "admin")
 class CompteResourceTest {
+
+    @Inject
+    CompteRepository repository;
 
     @Test
     void anAccountIsCreatedDeactivatedAndReactivated() {
@@ -94,6 +102,29 @@ class CompteResourceTest {
         String id = create(unique("double"));
         post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\"}").statusCode(200);
         post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\"}").statusCode(409);
+    }
+
+    @Test
+    void anExpiredRightNotWithdrawnDoesNotBlockGrantingItAgain() {
+        String id = create(unique("expire"));
+        // The API refuses a past expiry, so the lapsed right is written as the clock would have left it.
+        repository.insertHabilitation(
+                id,
+                new Habilitation(
+                        UUID.randomUUID().toString(),
+                        RoleHabilitation.ORGANISATEUR,
+                        null,
+                        Instant.now().minusSeconds(60),
+                        "admin",
+                        null,
+                        null,
+                        null));
+
+        post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\"}")
+                .statusCode(200)
+                .body("habilitations.size()", equalTo(2))
+                .body("habilitations.findAll { it.retireeLe != null }.retireePar", equalTo(java.util.List.of("admin")))
+                .body("habilitations.findAll { it.retireeLe == null }.size()", equalTo(1));
     }
 
     @Test

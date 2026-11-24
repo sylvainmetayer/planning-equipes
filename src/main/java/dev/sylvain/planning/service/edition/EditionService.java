@@ -43,8 +43,7 @@ public class EditionService {
     private final StaffingVerificationService staffingChecks;
 
     /** Withdraws the rights scoped to a deleted edition. */
-    @Inject
-    CompteService comptes;
+    private final CompteService comptes;
 
     @Inject
     public EditionService(
@@ -54,7 +53,9 @@ public class EditionService {
             ParametresService parametres,
             SolverJobService solverJobs,
             StaffingVerificationService staffingChecks,
-            RealisedVsPlannedService realised) {
+            RealisedVsPlannedService realised,
+            CompteService comptes) {
+        this.comptes = comptes;
         this.realised = realised;
         this.solverJobs = solverJobs;
         this.staffingChecks = staffingChecks;
