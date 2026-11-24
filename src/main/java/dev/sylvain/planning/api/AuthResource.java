@@ -120,18 +120,18 @@ public class AuthResource {
      * declines to follow: the root.</p>
      */
     static URI target(URI base, String redirect) {
-        URI racine = base.resolve("/");
+        URI root = base.resolve("/");
         try {
-            URI cible = base.resolve(localPath(redirect));
+            URI target = base.resolve(localPath(redirect));
             // Belt and braces over localPath: whatever the parser made of the
             // suggestion, the browser only ever leaves for this scheme and
             // this host.
-            return Objects.equals(cible.getScheme(), base.getScheme())
-                            && Objects.equals(cible.getRawAuthority(), base.getRawAuthority())
-                    ? cible
-                    : racine;
-        } catch (IllegalArgumentException malforme) {
-            return racine;
+            return Objects.equals(target.getScheme(), base.getScheme())
+                            && Objects.equals(target.getRawAuthority(), base.getRawAuthority())
+                    ? target
+                    : root;
+        } catch (IllegalArgumentException malformed) {
+            return root;
         }
     }
 

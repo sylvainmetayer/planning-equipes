@@ -15,9 +15,9 @@ import jakarta.enterprise.context.ApplicationScoped;
  * the credential check already happened, this provider only assembles the identity).
  *
  * <p>Serves {@link McpApiKeyAuthenticationMechanism} and nothing else: any
- * other trusted request — the local form session read back from its cookie,
- * the remote-user mode's {@code admin} — is left to the embedded realm's
- * provider, which owns that account and its role.</p>
+ * other trusted request — the local form session read back from its cookie —
+ * is left to the embedded realm's provider, which owns that account and its
+ * role (the remote-user mode's admin has its own, {@code RemoteUserIdentityProvider}).</p>
  *
  * <p>The {@code mcp} role is load-bearing: the {@code /mcp} policy is
  * {@code roles-allowed=mcp}, not {@code authenticated}. The latter was also

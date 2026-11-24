@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.config.ConfigOidc;
+import dev.sylvain.planning.service.compte.Compte;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -55,6 +56,10 @@ public class OidcAuthentication {
         }
         Principal principal = identity.getPrincipal();
         if (!(principal instanceof JsonWebToken token)) {
+            return Optional.empty();
+        }
+        // A deactivated account is the organiser's kill switch: it opens no espace either.
+        if (identity.getAttribute(Compte.IDENTITY_ATTRIBUTE) instanceof Compte compte && !compte.actif()) {
             return Optional.empty();
         }
         if (config.requireEmailVerified() && !Boolean.TRUE.equals(token.getClaim(Claims.email_verified))) {

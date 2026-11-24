@@ -188,8 +188,6 @@ class IsolationEditionStructurelleTest {
      *       machine serves every edition, as the queue is one for the whole
      *       instance, and a restart looks for both before any request names
      *       an edition; the job a remote solve belongs to carries its edition.</li>
-     *   <li>{@code compte} — a person, not a fiche (ADR 0049): one Keycloak
-     *   <li>{@code compte} — a person, not a fiche (ADR 0070): one Keycloak
      *   <li>{@code compte} — a person, not a fiche (ADR 0077): one OIDC
      *       identity serves every edition, so the table has no edition to be
      *       partitioned by.</li>
@@ -232,8 +230,8 @@ class IsolationEditionStructurelleTest {
      *   <li>The wall display token, for the same reason again: a television
      *       opens it on a bare {@code GET}, and only its hash is looked up.</li>
      *   <li>Whether an e-mail address is still carried by a fiche of any
-     *       edition, asked by the Keycloak provisioning before it disables the
-     *       person's account: one account serves every edition.</li>
+     *       edition, asked at startup by the check of the remote-user admin
+     *       address: one address serves every edition.</li>
      *   <li>{@code PlanSnapshotService.listAllEditions} lists every edition's
      *       snapshots for the A/B comparator: since a variant <b>is</b> another
      *       edition, scoping this listing would hide exactly the pair the user

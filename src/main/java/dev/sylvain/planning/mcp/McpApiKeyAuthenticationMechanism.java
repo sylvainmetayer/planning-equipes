@@ -155,16 +155,6 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
     }
 
     /**
-     * Above the form mechanism (priority 1000, see
-     * {@code quarkus.http.auth.form.*}, issue #165), so the challenge served
-     * to an unauthenticated request is this plain 401 everywhere — an API/SPA
-     * client must never be answered with form auth's 302 to an HTML login
-     * page, whether it targets {@code /mcp} or {@code /api}. Authentication
-     * itself is unaffected: this mechanism ignores any request outside
-     * {@code /mcp} (see {@link #authenticate}), and the form mechanism keeps
-     * handling its cookie and {@code /j_security_check}.
-     */
-    /**
      * The transport and nothing that merely starts like it: the path the
      * permission check reads — normalized, dot segments resolved — compared
      * exactly or as a parent, the way {@code McpTenantResolver} and
@@ -178,6 +168,16 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         return path != null && (path.equals("/mcp") || path.startsWith("/mcp/"));
     }
 
+    /**
+     * Above the form mechanism (priority 1000, see
+     * {@code quarkus.http.auth.form.*}, issue #165), so the challenge served
+     * to an unauthenticated request is this plain 401 everywhere — an API/SPA
+     * client must never be answered with form auth's 302 to an HTML login
+     * page, whether it targets {@code /mcp} or {@code /api}. Authentication
+     * itself is unaffected: this mechanism ignores any request outside
+     * {@code /mcp} (see {@link #authenticate}), and the form mechanism keeps
+     * handling its cookie and {@code /j_security_check}.
+     */
     @Override
     public int getPriority() {
         return 2000;

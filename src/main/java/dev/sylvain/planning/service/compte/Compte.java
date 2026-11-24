@@ -20,6 +20,9 @@ public record Compte(
         Instant desactiveLe,
         List<Habilitation> habilitations) {
 
+    /** The identity attribute carrying the account of an OIDC session, set by {@code CompteIdentityAugmentor}. */
+    public static final String IDENTITY_ATTRIBUTE = "planning.compte";
+
     public boolean actif() {
         return desactiveLe == null;
     }

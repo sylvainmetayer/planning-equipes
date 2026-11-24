@@ -45,6 +45,12 @@ public class RemoteUserAuthentication {
     /** Principal name of the header-authenticated admin, distinct from the form login's {@code admin}. */
     public static final String PRINCIPAL_ADMIN = "admin";
 
+    /** What the mechanism vouches for; {@code RemoteUserIdentityProvider} turns it into {@link #PRINCIPAL_ADMIN}. */
+    public static final String REQUEST_PRINCIPAL = "remote-user-admin";
+
+    /** Identity attribute marking an identity built from the proxy's assertion, not from a form session. */
+    public static final String IDENTITY_ATTRIBUTE = "planning.remote-user";
+
     private final ConfigRemoteUser config;
 
     private final AnimateurRepository repository;

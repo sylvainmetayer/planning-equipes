@@ -5,6 +5,7 @@ import dev.sylvain.planning.config.ConfigSecours;
 import dev.sylvain.planning.mcp.McpTenantResolver;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
+import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.SecurityIdentityAugmentor;
@@ -37,7 +38,8 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  *   <li><b>A form session while the break-glass door is closed</b> loses its
  *       role: {@link FormLoginSecours} stops new logins, and a cookie issued
  *       while the door was open must not outlive the incident by eight
- *       hours.</li>
+ *       hours. The admin the opt-in remote-user mode asserts on the current
+ *       request is not a form session and keeps its role.</li>
  *   <li><b>A browser token without a verified address</b> loses every role:
  *       it cannot be tied to a {@code compte}, so it could not be switched
  *       off either — an account created in the console with
@@ -56,7 +58,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
 
     /** The attribute carrying the {@link Compte} of an OIDC identity. */
-    public static final String ATTRIBUT_COMPTE = "planning.compte";
+    public static final String ATTRIBUT_COMPTE = Compte.IDENTITY_ATTRIBUTE;
 
     /** Set by Quarkus OIDC on every identity it builds: the tenant that verified the token. */
     static final String ATTRIBUT_TENANT = "tenant-id";
@@ -80,27 +82,27 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
         if (identity.isAnonymous()) {
             return Uni.createFrom().item(identity);
         }
-        if (!(identity.getPrincipal() instanceof JsonWebToken jeton)) {
+        if (!(identity.getPrincipal() instanceof JsonWebToken token)) {
             return Uni.createFrom().item(formSessionClosed(identity) ? withRoles(identity, Set.of(), null) : identity);
         }
         if (McpTenantResolver.TENANT.equals(identity.getAttribute(ATTRIBUT_TENANT))) {
             return Uni.createFrom()
                     .item(withRoles(identity, identity.hasRole(ROLE_MCP) ? Set.of(ROLE_MCP) : Set.of(), null));
         }
-        String email = jeton.getClaim(Claims.email);
+        String email = token.getClaim(Claims.email);
         if (email == null
                 || email.isBlank()
-                || (oidc.requireEmailVerified() && !Boolean.TRUE.equals(jeton.getClaim(Claims.email_verified)))) {
+                || (oidc.requireEmailVerified() && !Boolean.TRUE.equals(token.getClaim(Claims.email_verified)))) {
             return Uni.createFrom().item(withRoles(identity, Set.of(), null));
         }
         return context.runBlocking(() -> {
-            Compte compte = comptes.signIn(email, jeton.getClaim(Claims.full_name), jeton.getSubject());
+            Compte compte = comptes.signIn(email, token.getClaim(Claims.full_name), token.getSubject());
             if (!compte.actif()) {
                 return withRoles(identity, Set.of(), compte);
             }
             Set<String> roles = new HashSet<>(identity.getRoles());
             roles.addAll(CompteService.globalRoles(compte, Instant.now()));
-            if (!secondFactorProven(oidc, jeton.getClaim("amr"))) {
+            if (!secondFactorProven(oidc, token.getClaim("amr"))) {
                 roles.remove(ROLE_ADMIN);
             }
             return withRoles(identity, roles, compte);
@@ -117,23 +119,28 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
         if (config.adminMfa() != ConfigOidc.AdminMfa.TOKEN) {
             return true;
         }
-        Set<String> methodes = new HashSet<>();
-        if (amr instanceof Collection<?> valeurs) {
-            valeurs.forEach(v -> methodes.add(String.valueOf(v).replace("\"", "")));
+        Set<String> methods = new HashSet<>();
+        if (amr instanceof Collection<?> values) {
+            values.forEach(v -> methods.add(String.valueOf(v).replace("\"", "")));
         } else if (amr != null) {
-            methodes.add(String.valueOf(amr).replace("\"", ""));
+            methods.add(String.valueOf(amr).replace("\"", ""));
         }
-        return config.adminMfaAmr().stream().anyMatch(methodes::contains);
+        return config.adminMfaAmr().stream().anyMatch(methods::contains);
     }
 
     /**
-     * The embedded account is the only identity built by form auth: a
-     * principal that is not a token and carries {@code admin} came through
-     * {@code /j_security_check} — the MCP key and the anonymous identity carry
+     * A form session while the door is closed: a principal that is not a token
+     * and carries {@code admin}, unless the identity comes from the opt-in
+     * remote-user mode ({@code RemoteUserIdentityProvider}, which also names its
+     * principal {@code admin}): it has no door to close, the proxy's secret
+     * being its own credential. The MCP key and the anonymous identity carry
      * no {@code admin}.
      */
     private boolean formSessionClosed(SecurityIdentity identity) {
-        return !secours.enabled() && identity.hasRole(ROLE_ADMIN);
+        if (secours.enabled() || !identity.hasRole(ROLE_ADMIN)) {
+            return false;
+        }
+        return !Boolean.TRUE.equals(identity.getAttribute(RemoteUserAuthentication.IDENTITY_ATTRIBUTE));
     }
 
     /** The same principal, credentials and attributes — with exactly {@code roles}. */

@@ -78,7 +78,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
         }
         // The owner's edition is bound to the request by now, so the session
         // lookup — like every call below — is already correctly scoped.
-        if (proxyAtteste(contexte, owner) || fournisseurAtteste(owner)) {
+        if (proxyAsserts(contexte, owner) || providerAsserts(owner)) {
             editionRequestScope.markIdentityProven();
             return;
         }
@@ -94,7 +94,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
     }
 
     /** True when the OIDC session asserts the address carried by this token's fiche. */
-    private boolean fournisseurAtteste(TokenOwner owner) {
+    private boolean providerAsserts(TokenOwner owner) {
         if (owner.email() == null || owner.email().isBlank()) {
             return false;
         }
@@ -109,7 +109,7 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
      * exactly the fiche the code screen already refuses to serve, since the
      * address is the second factor.
      */
-    private boolean proxyAtteste(ContainerRequestContext contexte, TokenOwner owner) {
+    private boolean proxyAsserts(ContainerRequestContext contexte, TokenOwner owner) {
         if (owner.email() == null || owner.email().isBlank()) {
             return false;
         }

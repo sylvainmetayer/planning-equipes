@@ -144,9 +144,9 @@ public class McpResource {
         if (blocageJusqua != null && Instant.now().isBefore(blocageJusqua)) {
             return Response.status(429).build();
         }
-        Optional<JsonWebToken> jeton = oidcSession();
-        if (jeton.isPresent()) {
-            if (!recentSignIn(jeton.get(), Instant.now())) {
+        Optional<JsonWebToken> token = oidcSession();
+        if (token.isPresent()) {
+            if (!recentSignIn(token.get(), Instant.now())) {
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity(new ValidationError("Déconnectez-vous puis reconnectez-vous : révéler la clé exige"
                                 + " une connexion de moins de " + FRAICHEUR_CONNEXION.toMinutes() + " minutes."))
@@ -183,8 +183,8 @@ public class McpResource {
 
     /** The OIDC token of the caller, empty for the local account or no session. */
     private Optional<JsonWebToken> oidcSession() {
-        return identity != null && !identity.isAnonymous() && identity.getPrincipal() instanceof JsonWebToken jeton
-                ? Optional.of(jeton)
+        return identity != null && !identity.isAnonymous() && identity.getPrincipal() instanceof JsonWebToken token
+                ? Optional.of(token)
                 : Optional.empty();
     }
 
@@ -193,14 +193,14 @@ public class McpResource {
      * {@link #FRAICHEUR_CONNEXION} ago. A token without {@code auth_time}
      * cannot say, and is refused.
      */
-    static boolean recentSignIn(JsonWebToken jeton, Instant maintenant) {
-        Object authTime = jeton.getClaim("auth_time");
+    static boolean recentSignIn(JsonWebToken token, Instant now) {
+        Object authTime = token.getClaim("auth_time");
         if (!(authTime instanceof Number secondes)) {
             return false;
         }
         return Instant.ofEpochSecond(secondes.longValue())
                 .plus(FRAICHEUR_CONNEXION)
-                .isAfter(maintenant);
+                .isAfter(now);
     }
 
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
