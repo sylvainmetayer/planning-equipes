@@ -488,7 +488,7 @@
   "changements.famille.restaurations": "database restores",
   "changements.famille.restauration": "database restore",
   "solver.previousPlan.comparison": "Before: {$INTERPOLATION} → after: {$INTERPOLATION_1}",
-  "solver.scoreHorsPlancher": "Net of floors: {$score} — the rest is a constant that missing data explains (see Constraints).",
+  "solver.scoreHorsPlancher": "Score net of floors: {$score} — the floor (wishes or referents not declared) is a constant that missing data explains; no rule is removed from the solve.",
   "solver.previousPlan.degraded": "This solve made the saved schedule worse.",
   "solver.previousPlan.restoreAction": "Go back to the previous plan",
   "solver.previousPlan.restore.title": "Go back to the previous plan?",

@@ -223,7 +223,7 @@ export class SolveRecap {
     if (!brut || !net || net === brut) {
       return '';
     }
-    return $localize`:@@solver.scoreHorsPlancher:Hors plancher : ${net}:score: — le reste est une constante que des données absentes expliquent (voir Contraintes).`;
+    return $localize`:@@solver.scoreHorsPlancher:Score hors plancher : ${net}:score: — le plancher (souhaits ou référents non déclarés) est une constante que des données absentes expliquent ; aucune règle n'est retirée du calcul.`;
   });
 
   /** The comparison is only worth showing when both scores are known. */
