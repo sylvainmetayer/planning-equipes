@@ -1,18 +1,25 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 
 import dev.sylvain.planning.OidcTests;
+import dev.sylvain.planning.service.journal.LoginJournalEntry.Evenement;
+import dev.sylvain.planning.service.journal.LoginJournalService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 /** Behind a provider the break-glass door is closed by default (ADR 0093). */
 @QuarkusTest
 @TestProfile(OidcTests.Profil.class)
 class FormLoginSecoursFermeTest {
+
+    @Inject
+    LoginJournalService journal;
 
     @Test
     void leFormulaireEstFermeParDefautEtUnPrefixeNeLeContournePas() {
@@ -33,5 +40,20 @@ class FormLoginSecoursFermeTest {
     @Test
     void sansSessionLApiRepond401() {
         given().get("/api/animateurs").then().statusCode(401);
+    }
+
+    @Test
+    void uneTentativeSurLaPorteFermeeEstJournalisee() throws InterruptedException {
+        int avant = journal.page(null, 500).size();
+        given().contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", "pas-journalise")
+                .post("/j_security_check")
+                .then()
+                .statusCode(409);
+        for (int i = 0; i < 50 && journal.page(null, 500).size() <= avant; i++) {
+            Thread.sleep(100);
+        }
+        assertThat(journal.page(null, 1).get(0).evenement()).isEqualTo(Evenement.ECHEC);
     }
 }
