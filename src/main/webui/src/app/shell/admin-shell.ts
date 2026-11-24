@@ -249,10 +249,10 @@ export class AdminShell {
     let section: string | undefined;
     while (snapshot) {
       const onglet = snapshot.queryParams['onglet'] as string | undefined;
-      const parOnglet = (snapshot.data['aideOnglets'] as Record<string, string> | undefined)?.[
+      const byTab = (snapshot.data['aideOnglets'] as Record<string, string> | undefined)?.[
         onglet ?? ''
       ];
-      section = parOnglet ?? (snapshot.data['aide'] as string | undefined) ?? section;
+      section = byTab ?? (snapshot.data['aide'] as string | undefined) ?? section;
       snapshot = snapshot.firstChild;
     }
     return section;
