@@ -141,7 +141,7 @@ function refuser(details: string): never {
     `${details}\n\n` +
       "La suite e2e efface la base qu'elle vise, à chaque spec : elle ne doit viser qu'une pile\n" +
       'jetable. Vérifiez E2E_BASE_URL, ou recréez la base si celle-ci est bien jetable :\n' +
-      '  podman rm -f e2e-postgres && podman run -d --rm --name e2e-postgres … postgres:18',
+      '  podman rm -f e2e-postgres && podman run -d --rm --name e2e-postgres … postgres:19',
   );
 }
 

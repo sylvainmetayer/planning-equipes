@@ -721,6 +721,12 @@ La première capture exige une base **vierge de données de test**, sinon elle
 figerait l'état d'une exécution précédente ; la suite le refuse en le disant.
 Supprimez le cache et recréez le conteneur PostgreSQL si le schéma a changé.
 
+Le PostgreSQL local est en **version 19**. Un volume de développement créé en 18
+(`postgres_data_pg18`) ne démarre plus : faites un `pg_dump` avant de tirer
+l'image, puis supprimez le volume (`docker compose down -v`), relancez et
+restaurez, ou repartez de zéro (les dev services de `quarkus:dev` et des tests
+n'ont pas ce souci, leur base est jetable).
+
 ```bash
 docker compose up -d postgres mailpit
 GLISSER_DEPOSER_ACTIF=true ./mvnw quarkus:dev   # mail sur :1025, mot de passe « admin »

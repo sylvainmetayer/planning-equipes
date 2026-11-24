@@ -28,7 +28,7 @@ WORKDIR /app
 # pg_dump pour la sauvegarde automatique de nuit (BACKUP_DIR). Le client vient
 # du dépôt PGDG et non de celui d'Ubuntu, qui n'offre que la version 16 : un
 # pg_dump plus ancien que le serveur refuse de tourner, et le serveur de la pile
-# de production est un PostgreSQL 18. Cette version-là est donc à faire évoluer
+# de production est un PostgreSQL 19. Cette version-là est donc à faire évoluer
 # en même temps que l'image `postgres:` de docker-compose.prod.yml. Pas de
 # version de paquet épinglée : voir l'étape de construction plus haut.
 # `apt-get upgrade` d'abord : un correctif de sécurité Ubuntu publié après
@@ -46,7 +46,7 @@ RUN apt-get update \
     && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/pgdg.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
          > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client-18 \
+    && apt-get install -y --no-install-recommends postgresql-client-19 \
     && apt-get purge -y curl gnupg \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \

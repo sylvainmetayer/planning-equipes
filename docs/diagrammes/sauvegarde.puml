@@ -13,7 +13,7 @@ participant BackupService as service
 participant BackupRepository as depot
 participant BackupStore as store
 participant PgDump as pgdump
-boundary "pg_dump\n(postgresql-client-18)" as binaire
+boundary "pg_dump\n(postgresql-client-19)" as binaire
 database "Volume /backups" as volume
 database PostgreSQL as db
 actor "Exploitant" as ops

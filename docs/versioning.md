@@ -141,7 +141,7 @@ Les deux sont indépendants et tournent de front ; aucun ne pose ni ne déplace
 de tag, le numéro reste une décision humaine.
 
 **Le smoke test démarre l'image publiée**, par son digest, contre un
-PostgreSQL 18 et un Mailpit, avec l'environnement minimal de production. Il
+PostgreSQL 19 et un Mailpit, avec l'environnement minimal de production. Il
 vérifie la disponibilité, la version exposée (celle du tag), l'uid 1000,
 qu'un `pg_dump` de la même majeure que le `postgres:` de
 `docker-compose.prod.yml` est présent, et que `/backup` est inscriptible ;

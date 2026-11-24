@@ -522,7 +522,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   *suspends* the run. A failure is recorded and shown rather than propagated.
   `PgDump` is a bean of its own solely so the suite can replace it: nothing in
   a test may shell out to that binary, whose presence and version belong to the
-  machine. The client is pinned to `postgresql-client-18` in the runtime image
+  machine. The client is pinned to `postgresql-client-19` in the runtime image
   and must move with the `postgres:` image of the production stack. See
   `docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`.
 - **`service/notification/NotificationsPlanifieesService` is the application's

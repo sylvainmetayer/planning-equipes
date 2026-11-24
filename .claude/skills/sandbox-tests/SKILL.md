@@ -25,7 +25,8 @@ cd src/main/webui && npm ci                          # needs Node ≥ 22.22.3 fo
 The `@QuarkusTest` classes need a database, and Quarkus dev services want a
 Docker daemon that a sandbox rarely has (and Docker Hub blobs are often
 unreachable even when `dockerd` starts). PostgreSQL from `apt` answers just as
-well — the suite only needs a server, not the pinned image:
+well — the suite only needs a server, not the pinned image (production runs
+PostgreSQL 19; the apt server of a sandbox is older, e.g. 16, and is enough):
 
 ```bash
 pg_ctlcluster 16 main start
