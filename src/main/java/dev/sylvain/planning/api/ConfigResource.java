@@ -1,6 +1,5 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.config.ConfigAdmin;
 import dev.sylvain.planning.config.ConfigObservabilite;
 import dev.sylvain.planning.config.DevMode;
 import jakarta.inject.Inject;
@@ -27,9 +26,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * build mode would be a poor proxy: it says how the bundle was built, not how
  * the server it talks to was launched.</p>
  *
- * <p>And whether the admin's day views offer <b>drag and drop</b> to move a
- * seat by hand — see {@link ConfigAdmin#dragDropEnabled()}.</p>
- *
  * <p>And which <b>version</b> of the backend answers — the value the startup
  * line prints, derived from the git tag the image was built from
  * (docs/versioning.md). It is what {@code scripts/verifier-deploiement.sh}
@@ -48,8 +44,6 @@ public class ConfigResource {
 
     private final DevMode devMode;
 
-    private final ConfigAdmin admin;
-
     private final String version;
 
     private final boolean mailMock;
@@ -58,12 +52,10 @@ public class ConfigResource {
     public ConfigResource(
             ConfigObservabilite observabilite,
             DevMode devMode,
-            ConfigAdmin admin,
             @ConfigProperty(name = "quarkus.application.version") String version,
             @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock) {
         this.observabilite = observabilite;
         this.devMode = devMode;
-        this.admin = admin;
         this.version = version;
         this.mailMock = mailMock;
     }
@@ -75,7 +67,6 @@ public class ConfigResource {
                 observabilite.sentry().environment(),
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 devMode.isActive(),
-                admin.dragDropEnabled(),
                 version,
                 mailMock);
     }
@@ -87,21 +78,18 @@ public class ConfigResource {
      * @param devMode            server launched with {@code quarkus:dev}: the
      *                           Dev UI exists at {@code /q/dev-ui}, so the
      *                           interface may link to it
-     * @param dragDropEnabled    the admin's day views let a seat be dragged
-     *                           onto another line
      * @param version            backend version: {@code X.Y.Z} on a release
      *                           image, the short SHA on a recette image,
      *                           {@code 999-SNAPSHOT} in a local build
      * @param mailMock           the mailer is mocked: a mail recorded as sent
      *                           never left the server
      */
-    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version", "mailMock"})
+    @Schema(requiredProperties = {"devMode", "version", "mailMock"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
             String cloudflareWebAnalyticsToken,
             boolean devMode,
-            boolean dragDropEnabled,
             String version,
             boolean mailMock) {}
 }

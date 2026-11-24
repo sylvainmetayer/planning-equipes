@@ -204,18 +204,9 @@
   color: var(--mat-sys-error);
 }
 
-/* ------------------------- Glisser-déposer (issue #308) ------------------------- */
+/* ------------------------------- Free seats ------------------------------- */
 
-/* A name can be picked up: the cursor says so before any tooltip does. */
-.affectation-link.cdk-drag {
-  cursor: grab;
-}
-
-.affectation-link.cdk-drag-disabled {
-  cursor: pointer;
-}
-
-/* A seat nobody holds, drawn as a dashed chip so it reads as a place to drop on
+/* A seat nobody holds, drawn as a dashed chip so it reads as a seat to fill
    — and a button: it opens the seat's panel. */
 .siege-libre {
   display: inline-block;
@@ -241,67 +232,9 @@
   border-radius: 4px;
 }
 
-/* The lines a dragged name may land on, lit while the drag lasts. */
-.day-stand.cdk-drop-list-receiving {
-  outline: 2px dashed var(--app-accent);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.day-stand.cdk-drop-list-dragging .siege-libre {
-  border-color: var(--app-accent);
-  color: var(--app-accent);
-}
-
-/* The name travelling with the pointer — appended to <body> by the CDK, hence global. */
-.cdk-drag-preview.affectation-link {
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  background: var(--mat-sys-surface-container-high);
-  color: var(--app-accent);
-  box-shadow: var(--mat-sys-level3);
-  text-decoration: none;
-}
-
-/*
- * The drag handle (issue #308, review): the only surface the CDK marks
- * undraggable-by-touch, so the name itself stays selectable and a swipe over
- * it still scrolls the day. Discreet until the row is hovered or focused.
- */
+/* The name wrapper: keeps the label on one baseline. */
 .affectation-glissable {
   display: inline-flex;
   align-items: baseline;
   gap: 0.15rem;
-}
-
-.affectation-poignee {
-  /* A button, for the keyboard twin of the drag: its chrome is reset so the
-     handle still reads as the grip it was. */
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font-family: inherit;
-  cursor: grab;
-  opacity: 0.35;
-  font-size: 0.85em;
-  line-height: 1;
-  touch-action: none;
-  user-select: none;
-}
-
-.affectation-poignee:hover,
-.day-stand:hover .affectation-poignee,
-.affectation-glissable:focus-within .affectation-poignee {
-  opacity: 0.9;
-}
-
-.affectation-poignee:focus-visible {
-  opacity: 1;
-  outline: 2px solid var(--app-accent);
-  outline-offset: 1px;
-}
-
-.cdk-drag-disabled .affectation-poignee {
-  display: none;
 }

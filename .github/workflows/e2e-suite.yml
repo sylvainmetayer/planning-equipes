@@ -167,10 +167,6 @@ jobs:
           # jour-j.spec.ts vérifie ce refus. Seul l'appelant qui joue la spec
           # du passé figé l'autorise.
           HORLOGE_SIMULEE_AUTORISEE: ${{ inputs.horloge-simulee }}
-          # Le glisser-déposer est coupé par défaut ; la pile E2E l'active pour
-          # que glisser-deposer.spec.ts continue d'exercer le geste, et que
-          # passe-fige.spec.ts voie ce même geste refusé sur une journée passée.
-          GLISSER_DEPOSER_ACTIF: 'true'
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit
           MAIL_PORT: 1025

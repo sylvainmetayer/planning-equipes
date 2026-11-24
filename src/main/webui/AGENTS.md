@@ -379,8 +379,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   in the opener's place, found by its `data-siege-cle`, when a gesture re-read
   the plan meanwhile —, Escape handled on the panel itself; on the rail, whose
   shift labels are out of the tab order, Space on a line opens it): the seat
-  explained, then Remplacer, Déplacer vers (the move dialog, whatever
-  `GLISSER_DEPOSER_ACTIF` says — the flag governs the pointer gesture only),
+  explained, then Remplacer, Déplacer vers (the move dialog),
   Libérer (ticked by default, it also locks the person off that timeslot, as
   an accepted échange does), Verrouiller, the bench read-only, the fiche;
   Libérer and Remplacer send the holder shown as `occupant`, a precondition

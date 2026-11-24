@@ -14,16 +14,13 @@ export const APP_CONFIG = new InjectionToken<AppConfig>('APP_CONFIG');
 
 /**
  * What the application runs with when `/api/config` could not be read: every
- * optional feature off. Observability stays silent, and the drag and drop of
- * the day views is not offered — a gesture that writes to the plan is the last
- * thing to switch on by guesswork.
+ * optional feature off: observability stays silent.
  */
 export const DEFAULT_APP_CONFIG: AppConfig = {
   sentryDsn: '',
   sentryEnvironment: 'local',
   cloudflareWebAnalyticsToken: '',
   devMode: false,
-  dragDropEnabled: false,
   version: '',
   mailMock: false,
 };

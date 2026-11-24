@@ -1891,7 +1891,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "dragDropEnabled", "version", "mailMock" ],
+        "required" : [ "devMode", "version", "mailMock" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1904,9 +1904,6 @@
             "type" : "string"
           },
           "devMode" : {
-            "type" : "boolean"
-          },
-          "dragDropEnabled" : {
             "type" : "boolean"
           },
           "version" : {

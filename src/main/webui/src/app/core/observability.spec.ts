@@ -23,7 +23,6 @@ const CONFIG: AppConfig = {
   sentryEnvironment: 'production',
   cloudflareWebAnalyticsToken: 'token-de-test',
   devMode: false,
-  dragDropEnabled: false,
   version: '',
   mailMock: false,
 };
@@ -48,7 +47,6 @@ describe('loadAppConfig', () => {
       sentryEnvironment: 'local',
       cloudflareWebAnalyticsToken: '',
       devMode: false,
-      dragDropEnabled: false,
       version: '',
       mailMock: false,
     });
@@ -61,7 +59,6 @@ describe('loadAppConfig', () => {
       sentryEnvironment: 'local',
       cloudflareWebAnalyticsToken: '',
       devMode: false,
-      dragDropEnabled: false,
       version: '',
       mailMock: false,
     });

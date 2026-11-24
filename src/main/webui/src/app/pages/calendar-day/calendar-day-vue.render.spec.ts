@@ -12,10 +12,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { APP_CONFIG } from '../../core/app-config';
-import { PostesApi } from '../../core/api/postes-api';
-import { NotificationService } from '../../core/notification.service';
-import { SolverJobService } from '../../core/solver-job.service';
 import { ApiService } from '../../core/api.service';
 import { provideRouter } from '@angular/router';
 import { VerrouillageStore } from '../../core/verrouillage.store';
@@ -75,7 +71,6 @@ interface Options {
   jour?: number;
   stand?: string;
   animateur?: string;
-  dragDropEnabled?: boolean;
   verrous?: Partial<{
     estJourVerrouille: (date: string | null) => boolean;
     estStandVerrouille: (id: string) => boolean;
@@ -96,10 +91,6 @@ function mount(options: Options = {}) {
       provideZonelessChangeDetection(),
       provideRouter([]),
       { provide: ApiService, useValue: { get } },
-      { provide: SolverJobService, useValue: { editingLocked: () => false } },
-      { provide: NotificationService, useValue: { notify: vi.fn() } },
-      { provide: PostesApi, useValue: { move: vi.fn() } },
-
       {
         provide: VerrouillageStore,
         useValue: {
@@ -110,7 +101,6 @@ function mount(options: Options = {}) {
         },
       },
       { provide: MatDialog, useValue: { open } },
-      { provide: APP_CONFIG, useValue: { dragDropEnabled: options.dragDropEnabled ?? false } },
     ],
   });
   const fixture = TestBed.createComponent(CalendarDayView);
@@ -273,43 +263,6 @@ describe('CalendarDayView rendering', () => {
     expect(lignes(fixture)[0].texte).not.toContain(',');
   });
 
-  // The drag-and-drop is announced as under test on the screen that carries
-  // it: wherever the instance offers it, the warning is there every time the
-  // page is opened, so it is asserted like any other part of the page.
-  it('says on the page that dragging is still under test', async () => {
-    const { fixture } = mount({
-      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
-      dragDropEnabled: true,
-    });
-    await fixture.whenStable();
-
-    const bandeau = root(fixture).querySelector('.essai-bandeau');
-    expect(bandeau?.textContent).toContain('en cours de test');
-    const nom = root(fixture).querySelector<HTMLElement>('.affectation-glissable')!;
-    expect(nom.querySelector('.affectation-poignee')).not.toBeNull();
-    expect(nom.classList).toContain('cdk-drag');
-    expect(nom.classList).not.toContain('cdk-drag-disabled');
-  });
-
-  // GLISSER_DEPOSER_ACTIF is off by default: no handle, no warning, no gesture —
-  // the name still opens « Pourquoi lui ? ».
-  it('offers no drag and drop when the instance has not switched it on', async () => {
-    const { fixture } = mount({
-      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
-    });
-    await fixture.whenStable();
-
-    expect(root(fixture).querySelector('.essai-bandeau')).toBeNull();
-    const nom = root(fixture).querySelector<HTMLElement>('.affectation-glissable')!;
-    expect(nom.querySelector('.affectation-poignee')).toBeNull();
-    // Not a disabled drag: no drag at all, so nothing is registered for it.
-    expect(nom.classList).not.toContain('cdk-drag');
-    expect(nom.querySelector('.affectation-link')).not.toBeNull();
-    expect(root(fixture).querySelector('.day-stand')!.classList).toContain(
-      'cdk-drop-list-disabled',
-    );
-  });
-
   it('marks an unfilled line as such rather than leaving it blank', async () => {
     const { fixture } = mount({ planning: planning([poste('p1', AMBIANCE, C1, null)]) });
     await fixture.whenStable();
@@ -321,7 +274,7 @@ describe('CalendarDayView rendering', () => {
     expect(root(fixture).querySelectorAll('.affectation-link')).toHaveLength(0);
   });
 
-  // Issue #308: every free seat is a drop target of its own, named by its poste id.
+  // Every free seat is a chip of its own, named by its poste id.
   it('draws each free seat as a chip carrying its poste id, next to the names', async () => {
     const { fixture } = mount({
       planning: planning([
@@ -339,8 +292,7 @@ describe('CalendarDayView rendering', () => {
     // Each free seat is also the question « who could take it? », asked of
     // the Siège panel on that very seat: a button, not a link leaving the day.
     expect(libres.map((chip) => chip.tagName)).toEqual(['BUTTON', 'BUTTON']);
-    // The seat id sits on the draggable wrapper, which contains the name: a
-    // drop resolves it with closest(), from wherever the pointer landed.
+    // The seat id sits on the wrapper of the name.
     expect(
       root(fixture).querySelector<HTMLElement>('.affectation-glissable')!.dataset['posteId'],
     ).toBe('p1');
@@ -575,87 +527,5 @@ describe('CalendarDayView rendering', () => {
     expect(
       legende.slice(1).map((each) => each.querySelector('mat-icon')!.textContent!.trim()),
     ).toEqual(['warning', 'restaurant', 'psychology', 'lock']);
-  });
-
-  // RGAA 7.3 / WCAG 2.5.7: the drag has a twin a keyboard and a single click
-  // reach — the handle is a named button opening the move as a dialog, and the
-  // answer goes through the same call as a drop.
-  describe('the keyboard twin of the drag', () => {
-    const DEUX = stand('Dixit');
-    const alice = animateur('a1', 'Alice');
-    const bob = animateur('b1', 'Bob');
-    const plan = planning([
-      poste('P1', AMBIANCE, C1, alice),
-      poste('P2', DEUX, C1, bob),
-      poste('P3', DEUX, C1, null),
-    ]);
-
-    it('names the handle and opens the move with every other seat of the day', async () => {
-      const { fixture, open } = mount({ planning: plan, dragDropEnabled: true });
-      await fixture.whenStable();
-
-      const poignee = root(fixture).querySelector<HTMLButtonElement>(
-        'button.affectation-poignee[aria-label*="Alice"]',
-      )!;
-      expect(poignee).not.toBeNull();
-      poignee.click();
-
-      expect(open).toHaveBeenCalledTimes(1);
-      const data = (open.mock.calls[0] as unknown[])[1] as {
-        data: { targets: { id: string; label: string }[] };
-      };
-      const cibles = data.data.targets;
-      expect(cibles.map((target) => target.id).sort((a, b) => a.localeCompare(b))).toEqual([
-        'P2',
-        'P3',
-      ]);
-      expect(cibles.find((cible) => cible.id === 'P3')!.label).toContain('siège libre');
-      expect(cibles.find((cible) => cible.id === 'P2')!.label).toContain('Bob');
-    });
-
-    it('leaves out the lines a lock closes, as the drop does', async () => {
-      const { fixture, open } = mount({
-        planning: plan,
-        dragDropEnabled: true,
-        verrous: { estStandVerrouille: (id) => id === 'Dixit' },
-      });
-      await fixture.whenStable();
-
-      root(fixture)
-        .querySelector<HTMLButtonElement>('button.affectation-poignee[aria-label*="Alice"]')!
-        .click();
-
-      const data = (open.mock.calls[0] as unknown[])[1] as { data: { targets: unknown[] } };
-      expect(data.data.targets).toEqual([]);
-    });
-
-    it('moves through the same call as a drop', async () => {
-      const { fixture, open } = mount({ planning: plan, dragDropEnabled: true });
-      open.mockReturnValueOnce({ afterClosed: () => of<unknown>({ source: null, target: 'P3' }) });
-      const move = TestBed.inject(PostesApi).move as ReturnType<typeof vi.fn>;
-      move.mockResolvedValue({
-        animateurSourceId: 'a1',
-        animateurCibleId: null,
-        posteCibleId: 'P3',
-        scoreAvant: { hardScore: 0, mediumScore: 0, softScore: 0 },
-        scoreApres: { hardScore: 0, mediumScore: 0, softScore: 0 },
-      });
-      await fixture.whenStable();
-
-      root(fixture)
-        .querySelector<HTMLButtonElement>('button.affectation-poignee[aria-label*="Alice"]')!
-        .click();
-
-      await vi.waitFor(() => expect(move).toHaveBeenCalledWith('P1', { posteId: 'P3' }, 'a1'));
-    });
-
-    // The flag governs the pointer gesture only: no handle without it, and
-    // the move is reached from the Siège panel instead (« Déplacer vers »).
-    it('offers no drag handle when the instance has not switched drag and drop on', async () => {
-      const { fixture } = mount({ planning: plan });
-      await fixture.whenStable();
-
-      expect(root(fixture).querySelector('button.affectation-poignee')).toBeNull();
-    });
   });
 });
