@@ -144,7 +144,7 @@ class ImportScenarioPreservationTest {
     private static void importScenario() {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
         given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(SCENARIO.getBytes(java.nio.charset.StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
