@@ -103,11 +103,7 @@ class InstanceRoutesStructuralTest {
             "EditionResource#situations",
             "EditionResource#delete",
             "HistoriqueResource#connexions",
-            "HorlogeResource#setDateJourJ",
-            "ReferenceDataResource#scenarioTarget",
-            "ReferenceDataResource#fileScenarioTarget",
-            "ReferenceDataResource#importScenario",
-            "ReferenceDataResource#importScenarioFile");
+            "HorlogeResource#setDateJourJ");
 
     private static Set<Class<?>> resources() throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new java.util.HashSet<>();

@@ -147,6 +147,29 @@ class OidcSignInTest {
     }
 
     @Test
+    void unOrganisateurImporteDansSonEditionCouranteSeulement() {
+        String bearer = organiser(null);
+        for (String yaml : new String[] {"edition:\n  nom: Ailleurs\n", "edition:\n  id: E1\n  nom: Ailleurs\n"}) {
+            // E1 by id is its own edition: only the unknown name below must be refused,
+            // and both forms are previews, which write nothing.
+            given().header("X-Edition-Id", "E1")
+                    .header("Authorization", bearer)
+                    .contentType("application/x-yaml; charset=UTF-8")
+                    .body(yaml.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                    .post("/api/reference-data/cible-scenario-fichier")
+                    .then()
+                    .statusCode(yaml.contains("id: E1") ? 200 : 400);
+        }
+        given().header("X-Edition-Id", "E1")
+                .header("Authorization", bearer)
+                .contentType("application/x-yaml; charset=UTF-8")
+                .body("edition:\n  nom: Ailleurs\n".getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
     void unAdministrateurVoitToutesLesEditions() {
         String email = address();
         Compte compte = comptes.create(email, null);

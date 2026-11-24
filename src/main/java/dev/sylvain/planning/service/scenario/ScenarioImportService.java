@@ -221,6 +221,27 @@ public class ScenarioImportService {
     }
 
     /**
+     * An organiser imports into the edition it works in: a file whose
+     * {@code edition:} section designates another one, or one to create, is
+     * refused (400) rather than written outside the rights. An administrator
+     * is not narrowed. Also asked of the import's preview, which would
+     * otherwise name editions the caller cannot see.
+     */
+    public void refuseForeignTarget(Optional<EditionCibleDto> cibleDto) {
+        if (cibleDto.isEmpty() || !editionContext.callerIsOrganiser()) {
+            return;
+        }
+        boolean current = editionService
+                .findForImport(cibleDto.get().id(), cibleDto.get().nom())
+                .filter(edition -> edition.getId().equals(editionContext.editionIdCourant()))
+                .isPresent();
+        if (!current) {
+            throw new BusinessError.Invalid("L'import d'un organisateur se fait dans son édition courante : "
+                    + "la section edition: du fichier en désigne une autre, ou une à créer.");
+        }
+    }
+
+    /**
      * Runs {@code importAction} against the edition the scenario's optional
      * {@code edition:} section designates — created empty when missing, reused
      * otherwise — or plainly against the caller's current edition when the file
@@ -229,6 +250,7 @@ public class ScenarioImportService {
      * sitting on a different edition than the one that was written.
      */
     private ScenarioImportOutcome importIntoTarget(Optional<EditionCibleDto> cibleDto, Runnable importAction) {
+        refuseForeignTarget(cibleDto);
         try {
             if (cibleDto.isEmpty()) {
                 importAction.run();
