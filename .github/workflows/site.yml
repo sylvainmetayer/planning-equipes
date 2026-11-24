@@ -9,11 +9,13 @@ on:
       - main
     paths:
       - 'site/**'
+      - '.pages.yml'
       - '.github/workflows/site.yml'
       - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'
   pull_request:
     paths:
       - 'site/**'
+      - '.pages.yml'
       - '.github/workflows/site.yml'
       - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'
   schedule:

@@ -3,7 +3,7 @@
   "titre": "Planning et Code du travail, mineurs compris | Planning Équipes",
   "description": "{Articles} articles du Code du travail appliqués au planning de votre événement, dont les règles pour les mineurs : durée, nuit, repos, jours fériés.",
   "h1": "Le planning respecte-t-il le Code du travail ?",
-  "reponse": "**Oui.** Le calcul applique {articles} articles du Code du travail et ne peut pas les enfreindre : un poste qui s'en écarte est refusé, et le refus cite l'article.",
+  "reponse": "**Oui.** Le calcul applique {articles} articles du Code du travail et ne peut pas les enfreindre : un poste hors des clous est refusé, et le refus cite l'article.",
   "articlesH": "Les {articles} articles appliqués",
   "colonnes": [
     "Article",

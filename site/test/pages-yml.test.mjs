@@ -7,7 +7,8 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { pages, root } from './helpers.mjs';
 
-const config = parse(readFileSync(join(root, '.pages.yml'), 'utf8'));
+// Pages CMS reads its configuration at the root of the repository only
+const config = parse(readFileSync(join(root, '..', '.pages.yml'), 'utf8'));
 
 // Paths declared by a list of fields; a field with `list` is an array, so it also declares its "[]"
 const declared = (fields, path = '') =>
@@ -21,7 +22,7 @@ test('every key of every page file is declared in .pages.yml', () => {
   for (const [name, file] of Object.entries(pages)) {
     const entry = config.content.find((c) => c.name === name);
     assert.ok(entry, `${name} : pas de bloc dans .pages.yml`);
-    assert.equal(entry.path, `src/_data/pages/${name}.json`);
+    assert.equal(entry.path, `site/src/_data/pages/${name}.json`);
     const known = new Set(declared(entry.fields));
     const keys = (value, path = '') =>
       Array.isArray(value)
