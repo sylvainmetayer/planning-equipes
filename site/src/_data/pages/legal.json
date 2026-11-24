@@ -1,5 +1,5 @@
 {
-  "slug": "code-du-travail-mineurs",
+  "slug": "code-du-travail",
   "titre": "Planning et Code du travail, mineurs compris | Planning Équipes",
   "description": "Dix articles du Code du travail appliqués au planning de votre événement, dont les règles pour les mineurs : durée, nuit, repos, jours fériés.",
   "h1": "Le planning respecte-t-il le Code du travail ?",
@@ -40,7 +40,7 @@
     "faq"
   ],
   "en": {
-    "slug": "labour-code-minors",
+    "slug": "labour-code",
     "titre": "Rota software and the French Labour Code: under-18s, rest, breaks",
     "description": "Ten articles of the French Labour Code applied to your event's rota, including the rules for under-18s: hours, nights, rest, public holidays.",
     "h1": "Does the rota comply with the French Labour Code?",

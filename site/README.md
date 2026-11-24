@@ -62,7 +62,7 @@ lychee (hors ligne à chaque poussée, tous les liens le lundi).
   qu'un organisateur se demande : le planning est-il légal ? que se passe-t-il
   le jour J ? que reçoivent les animateurs ? comment calcule-t-il ? à quoi
   ressemblent les écrans ? combien ça coûte ? Chaque réponse longue a sa page
-  (`/code-du-travail-mineurs/`, `/organiser-son-equipe/`, `/comment-marche-le-calcul/`,
+  (`/code-du-travail/`, `/organiser-son-equipe/`, `/comment-marche-le-calcul/`,
   `/heberger/`, `/questions/`), en français et en anglais ; `/heberger/` parle
   à l'équipe technique qui l'installerait elle-même.
 - **Une phrase qui répond, puis le détail.** Chaque page commence par sa
