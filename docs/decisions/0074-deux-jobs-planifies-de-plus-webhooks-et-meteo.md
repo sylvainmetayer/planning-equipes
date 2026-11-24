@@ -4,6 +4,7 @@
 - **Date** : octobre 2026
 - **Portée** : planification (`@Scheduled`), appels sortants, webhooks, alerte météo
 - **Révise** : [0070](0070-un-troisieme-job-planifie-fige-le-realise.md), qui présentait le réalisé figé comme le troisième **et dernier** `@Scheduled`
+- **Révisé en partie par** : [0092](0092-le-realise-se-calcule-a-la-demande.md), qui supprime le job du réalisé : il reste quatre `@Scheduled`, la reprise des webhooks en est le troisième et l'alerte météo le quatrième
 - **S'appuie sur** : [0072](0072-une-seule-edition-active.md), l'édition active, seule à parler dehors
 
 ## Contexte

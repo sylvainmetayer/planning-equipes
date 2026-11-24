@@ -25,16 +25,25 @@ un **cache** : même règle « écrit une fois » (`ON CONFLICT DO NOTHING`), m�
 table, mêmes lignes — celles déjà figées par l'ancien job sont lues telles
 quelles, aucune migration. La comparaison reste celle de
 `ChangementsJourneeService.compareSeats`. Un échec d'écriture est journalisé et
-n'empêche pas la réponse.
+n'empêche pas la réponse. Une horloge simulée n'écrit rien.
+
+Pour que l'édition suivante trouve la mesure sans que personne ait rouvert
+l'écran de la précédente, deux lectures déclenchent le même calcul : celle de
+`previousEdition()`, qui fait d'abord calculer chaque autre édition terminée,
+publiée et sans mesure (chacune entrée par `executeIn`, un échec n'arrêtant
+pas les autres), et la suppression d'une édition, qui calcule la sienne juste
+avant de disparaître (au mieux : un échec est journalisé et n'empêche pas la
+suppression).
 
 ## Conséquences
 
 - L'application compte quatre `@Scheduled` : sauvegarde, envois de nuit,
   reprise des webhooks, alerte météo.
-- La mesure n'existe qu'après une première lecture une fois l'événement fini :
-  une édition que personne n'ouvre ensuite n'a pas de mesure à offrir à la
-  suivante. Cette latence est celle d'un calcul, déjà payé à chaque ouverture
-  de l'écran.
+- La mesure est écrite à la première lecture qui suit la fin de l'événement :
+  celle de l'écran, celle des Versions de l'édition suivante ou la suppression
+  de l'édition. Une édition finie, publiée, jamais lue et jamais supprimée
+  attend l'une de ces lectures ; son coût est celui d'un calcul, déjà payé à
+  chaque ouverture de l'écran.
 - Les variables `REALISE_CRON` et `REALISE_TIMEZONE` disparaissent ; les
   laisser dans un environnement est sans effet.
 - Refiger reste une suppression SQL des lignes de l'édition, jamais une route.

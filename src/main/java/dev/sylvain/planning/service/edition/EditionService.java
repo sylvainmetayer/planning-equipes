@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.analyse.RealisedVsPlannedService;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
@@ -13,6 +14,7 @@ import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.jboss.logging.Logger;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
@@ -21,7 +23,11 @@ import java.util.Optional;
 @ApplicationScoped
 public class EditionService {
 
+    private static final Logger LOG = Logger.getLogger(EditionService.class);
+
     private final EditionRepository repository;
+
+    private final RealisedVsPlannedService realised;
 
     private final EditionContext editionContext;
 
@@ -42,7 +48,9 @@ public class EditionService {
             IdGenerator ids,
             ParametresService parametres,
             SolverJobService solverJobs,
-            StaffingVerificationService staffingChecks) {
+            StaffingVerificationService staffingChecks,
+            RealisedVsPlannedService realised) {
+        this.realised = realised;
         this.solverJobs = solverJobs;
         this.staffingChecks = staffingChecks;
         this.parametres = parametres;
@@ -156,6 +164,14 @@ public class EditionService {
             throw new BusinessError.Invalid("Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
         }
         refuseIfComputing(id);
+        // Best effort: a finished, published edition leaves its measure behind (ADR 0092).
+        try {
+            editionContext.executeIn(id, () -> {
+                realised.report();
+            });
+        } catch (RuntimeException e) {
+            LOG.errorf(e, "The realised measure of edition %s could not be cached before its deletion", id);
+        }
         repository.delete(id);
         editionContext.invaliderCache();
     }

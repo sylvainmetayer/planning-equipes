@@ -5,17 +5,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.GapCounts;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.RealisedCell;
+import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionRepository;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.testing.ActiveEdition;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -76,6 +79,9 @@ class RealisedOnDemandTest {
     PlanPublicationService publication;
 
     @Inject
+    EditionService editionService;
+
+    @Inject
     EditionContext editionContext;
 
     @Inject
@@ -83,6 +89,9 @@ class RealisedOnDemandTest {
 
     @Inject
     DataSource dataSource;
+
+    /** The editions a test created, deleted when it ends. */
+    private final List<String> creees = new ArrayList<>();
 
     /** When the test started: the rows the job wrote since are this test's, whichever edition they measure. */
     private Instant debut;
@@ -107,6 +116,9 @@ class RealisedOnDemandTest {
             throw new IllegalStateException(e);
         }
         execute("DELETE FROM kpi_realise WHERE edition_id = ?", editionContext.editionIdCourant());
+        for (String edition : creees) {
+            editionService.delete(edition);
+        }
         persistence.clearDatabase();
     }
 
@@ -135,6 +147,58 @@ class RealisedOnDemandTest {
         assertThat(rows(edition)).isEqualTo(premiere);
         assertThat(journal.page(new HistoryFilter(List.of("REALISE_FIGE"), false, null, null), null, 1000))
                 .hasSize(journalAvant + 1);
+    }
+
+    private static final LocalDate JOUR_PASSE = LocalDate.of(2020, 8, 9);
+    private static final Instant AVANT_PASSE = Instant.parse("2020-08-01T10:00:00Z");
+
+    /** A finished, published edition other than the current one: created inactive, its plan published. */
+    private String otherFinishedEdition(String prefix, long creneauBase) {
+        Edition autre = editionService.create(new Edition(null, "Édition réalisé autre", false, null));
+        creees.add(autre.getId());
+        // Publishing reaches outside: only the active edition does it (ADR 0072).
+        ActiveEdition.during(
+                autre.getId(),
+                () -> editionContext.executeIn(autre.getId(), () -> {
+                    persistence.persist(RealisedVsPlannedServiceTest.planOn(prefix, Set.of(), creneauBase, JOUR_PASSE));
+                    publishAt(AVANT_PASSE);
+                }));
+        return autre.getId();
+    }
+
+    /** Nobody opens the previous edition any more: reading what it left caches its measure first. */
+    @Test
+    void readingThePreviousEditionCachesTheOtherFinishedEditions() {
+        String autre = otherFinishedEdition("RVK-", 970_350_000L);
+        persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of(), 970_340_000L, JOUR1));
+        assertThat(rows(autre)).isEmpty();
+
+        RealisedVsPlanned.PreviousEdition previous = service.previousEdition();
+
+        assertThat(rows(autre)).isNotEmpty();
+        assertThat(previous.available()).isTrue();
+    }
+
+    @Test
+    void deletingAFinishedEditionLeavesItsMeasureBehind() {
+        String autre = otherFinishedEdition("RVK-", 970_350_000L);
+        assertThat(rows(autre)).isEmpty();
+
+        editionService.delete(autre);
+        creees.remove(autre);
+
+        assertThat(rows(autre)).isNotEmpty();
+    }
+
+    @Test
+    void aSimulatedClockCachesNothing() {
+        persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of("STRATEGIE"), 970_340_000L, JOUR1));
+        publishAt(AVANT_EVENEMENT);
+        clock.setMocked(JOUR3, LocalTime.of(13, 0));
+
+        service.report(JOUR3.atTime(13, 0));
+
+        assertThat(rows(editionContext.editionIdCourant())).isEmpty();
     }
 
     @Test

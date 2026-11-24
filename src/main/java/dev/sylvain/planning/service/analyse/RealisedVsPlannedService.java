@@ -140,19 +140,23 @@ public class RealisedVsPlannedService {
     }
 
     /**
-     * Writes the measure once, as the first night after the event used to: not
+     * Writes the measure once, once the event is over: not
      * before the last timeslot has ended, not without a publication to measure,
      * and not while the frozen past is off — a realised nobody guarantees must
      * not be written once and kept. A failure is logged, never propagated: the
      * report was computed and is still answered.
      */
     private void cacheIfOver(RealisedVsPlanned report, LocalDateTime now) {
+        // A simulated clock (demos, training) must never freeze a measure nobody lived.
+        if (clock.mockedDate() != null) {
+            return;
+        }
         try {
             if (!report.referenceAvailable() || !isOver(now) || history.exists()) {
                 return;
             }
             if (!report.frozenPast()) {
-                LOG.warn("The realised measure is not cached: the frozen past is switched off (PASSE_FIGE=false)");
+                LOG.debug("The realised measure is not cached: the frozen past is switched off (PASSE_FIGE=false)");
                 return;
             }
             JoursEvenement jours = JoursEvenement.of(referenceDataService.listCreneaux());
@@ -230,11 +234,39 @@ public class RealisedVsPlannedService {
      * timeslot: it has no dates to be « after » anything.
      */
     public PreviousEdition previousEdition() {
+        cacheOtherEditions();
         JoursEvenement jours = JoursEvenement.of(referenceDataService.listCreneaux());
         if (jours.isEmpty()) {
             return PreviousEdition.NONE;
         }
         return history.previous(jours.first());
+    }
+
+    /**
+     * Gives every <em>other</em> finished, published edition without a measure
+     * the report that caches it: the previous edition is the one nobody opens
+     * any more, so it would otherwise leave nothing to read. Each edition is
+     * entered on its own and fails alone; the cheap tests come first, so an
+     * edition never published, or not over, costs no computation per call.
+     */
+    private void cacheOtherEditions() {
+        String current = editionContext.editionIdCourant();
+        LocalDateTime now = clock.dateTime();
+        for (Edition other : editionRepository.listEditions()) {
+            if (other.getId().equals(current)) {
+                continue;
+            }
+            try {
+                editionContext.executeIn(other.getId(), () -> {
+                    if (!history.exists() && !publications().isEmpty() && isOver(now)) {
+                        report(now);
+                    }
+                });
+            } catch (RuntimeException e) {
+                // Named by id, never by display name, as the nightly sends do.
+                LOG.errorf(e, "The realised measure of edition %s could not be cached", other.getId());
+            }
+        }
     }
 
     private List<Publication> publications() {
