@@ -73,7 +73,7 @@
   {% if c.items %}
   <section class="container asks__list asks__list--page" aria-label="{{ c.h1 | typo(lang) }}">
     {% for i in c.items %}
-    <details id="{{ i.id }}"><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | typo(lang) }}</p></details>
+    <details id="{{ i.id }}"><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | mdi(lang) | safe }}</p></details>
     {% endfor %}
   </section>
   {% endif %}

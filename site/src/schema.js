@@ -16,7 +16,7 @@ const faq = (lang, items) => ({
   mainEntity: items.map((i) => ({
     '@type': 'Question',
     name: typo(i.q, lang),
-    acceptedAnswer: { '@type': 'Answer', text: typo(i.a, lang) },
+    acceptedAnswer: { '@type': 'Answer', text: typo(i.a, lang).replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') },
   })),
 });
 
