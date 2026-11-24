@@ -5,6 +5,12 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
+import {
+  MatButtonToggle,
+  MatButtonToggleChange,
+  MatButtonToggleGroup,
+} from '@angular/material/button-toggle';
+import { By } from '@angular/platform-browser';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { provideLocationMocks } from '@angular/common/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
@@ -205,6 +211,27 @@ describe('AnimateursPage query-param sync', () => {
     expect(page['filtre']()).toBe('durand');
     expect(page['sort']()).toEqual({ active: 'majorite', direction: 'asc' });
     expect(page['animateursFiltres']().map((each) => each.id)).toEqual(['bob']);
+  });
+
+  it('leaves freely while no Compétences tab holds unsaved cells', async () => {
+    const { page } = setUp({});
+
+    expect(await page.canLeave()).toBe(true);
+  });
+
+  it('writes the tab chosen on the toggle to the address', async () => {
+    const { fixture, page, replaceState } = setUp({});
+    fixture.detectChanges();
+    const toggle = fixture.debugElement
+      .queryAll(By.directive(MatButtonToggle))
+      .find((each) => each.componentInstance.value === 'disponibilites')!;
+
+    await page['changerOnglet'](
+      new MatButtonToggleChange(toggle.componentInstance, 'disponibilites'),
+    );
+
+    expect(replaceState).toHaveBeenCalledWith('/animateurs?onglet=disponibilites');
+    expect(page['ongletsPage'].onglet()).toBe('disponibilites');
   });
 
   it('shows the whole referential, unsorted, when the URL carries nothing', () => {
