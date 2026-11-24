@@ -172,8 +172,8 @@ L'alternative a depuis été mesurée, prototype à l'appui, dans
 [`docs/decisions/0028`](decisions/0028-transactions-declaratives-narayana.md) :
 Narayana est déjà sur le classpath, six lignes font du scope un participant
 JTA, et l'unité composée se passe alors de `Connection` — au prix de trois
-garde-fous structurels. La décision reste à prendre ; tant qu'elle ne l'est
-pas, la règle ci-dessus s'applique.
+garde-fous structurels. L'étude est close sans adoption (ADR 0028, voir 0091) :
+la règle ci-dessus s'applique.
 
 ## Deux politiques d'échec sur les mails, séparées structurellement
 

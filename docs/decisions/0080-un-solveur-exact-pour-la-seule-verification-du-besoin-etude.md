@@ -1,6 +1,6 @@
 # 0080 — Un solveur exact (CP-SAT) pour la seule vérification du besoin : étude
 
-- **Statut** : **étude close** · faisabilité établie ; le banc n'est pas écrit dans l'application
+- **Statut** : **étude close** (voir 0091) · faisabilité établie ; le banc n'est pas écrit dans l'application
 - **Date** : octobre 2026
 - **Portée** : vérification du besoin en animateurs (`StaffingVerificationService`), et rien d'autre du solveur
 - **Voisine de** : [0071](0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md), [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md)

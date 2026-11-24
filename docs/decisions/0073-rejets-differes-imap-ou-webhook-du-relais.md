@@ -1,6 +1,6 @@
 # 0073 — Les rejets différés : boîte de retour en IMAP ou webhook du relais
 
-- **Statut** : étude close — faisabilité établie, rien n'est implémenté
+- **Statut** : étude close (voir 0091) — faisabilité établie, rien n'est implémenté
 - **Date** : octobre 2026
 - **Portée** : envoi des courriels (`service/mail/`), table `envoi_mail`, sécurité HTTP
 
