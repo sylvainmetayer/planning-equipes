@@ -206,6 +206,17 @@ class ScenarioYamlReaderTest {
                 .allSatisfy(name -> assertThat(name).matches(".+\\.(yaml|yml)"));
     }
 
+    /** The ladder and the extreme cases ship and load by name, but are not offered as examples. */
+    @Test
+    void ladderAndExtremeScenariosAreLoadableButNotListed() {
+        assertThat(ScenarioYamlReader.listScenarios())
+                .noneMatch(n -> n.startsWith("gamme-") || n.startsWith("extreme-"))
+                .contains("vitrine-fete-du-jeu-de-pierrefeuille.yaml", "festival-hivernal.yaml");
+        assertThat(ScenarioYamlReader.bundledScenarios())
+                .anyMatch(n -> n.startsWith("gamme-"))
+                .anyMatch(n -> n.startsWith("extreme-"));
+    }
+
     /**
      * Every listed scenario resolves to itself: the file-name whitelist the
      * reader applies must accept whatever the folder holds, or a file dropped
