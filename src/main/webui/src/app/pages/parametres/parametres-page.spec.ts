@@ -27,8 +27,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { ScenarioImportService } from '../../core/scenario-import.service';
-import { REPLACE_KEYWORD, ParametresPage } from './parametres-page';
-import type { DemandeRecopie } from '../../shared/confirmation-recopie';
+import { ParametresPage } from './parametres-page';
 import type { EtatSauvegarde, WeatherSettingsView } from '../../core/models';
 import { Fake, fakeOf, provideFake } from '../../core/testing/fake';
 import { WeatherApi } from '../../core/api/weather-api';
@@ -58,13 +57,6 @@ const METEO: WeatherSettingsView = {
 
 function text(element: HTMLElement): string {
   return element.textContent!.replace(/\s+/g, ' ').trim();
-}
-
-/** A `File` jsdom can read: its own implementation has no `text()`. */
-function file(nom: string, contenu: string): File {
-  const created = new File([contenu], nom);
-  Object.defineProperty(created, 'text', { value: () => Promise.resolve(contenu) });
-  return created;
 }
 
 describe('ParametresPage rendering', () => {
@@ -144,8 +136,6 @@ describe('ParametresPage rendering', () => {
           ...(options.sauvegarde ?? SAUVEGARDE),
           active,
         }),
-      exportDatabase: () => Promise.resolve('Téléchargement démarré.'),
-      importDatabase: () => Promise.resolve({ message: 'Base remplacée.' }),
       notificationSettings: () =>
         Promise.resolve({
           actives: false,
@@ -287,14 +277,6 @@ describe('ParametresPage rendering', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function bouton(libelle: string): HTMLButtonElement {
-    const trouve = Array.from(racine().querySelectorAll('button')).find((each) =>
-      each.textContent!.includes(libelle),
-    );
-    expect(trouve, `bouton « ${libelle} » absent`).toBeDefined();
-    return trouve as HTMLButtonElement;
-  }
-
   /** One card of the page, found by its heading — several now carry a switch. */
   function carte(titre: string): HTMLElement {
     const trouve = Array.from(racine().querySelectorAll('mat-card')).find((each) =>
@@ -320,14 +302,6 @@ describe('ParametresPage rendering', () => {
 
     expect(weatherApi.test).toHaveBeenCalledOnce();
     expect(racine().textContent).toContain('seuil franchi : chaleur');
-  });
-
-  it('locks the SQL dump replay while a solve runs', async () => {
-    await rendre({ onglet: 'Instance' });
-    editingLocked.set(true);
-    await fixture.whenStable();
-
-    expect(bouton('Importer un dump SQL').disabled).toBe(true);
   });
 
   it('points to « Règles du planning » for what decides the plan', async () => {
@@ -417,62 +391,6 @@ describe('ParametresPage rendering', () => {
       'input[name="telephone"]',
     ) as HTMLInputElement;
     expect(telephone.value).toBe('01 23 45 67 89');
-  });
-
-  /** Picks the dump file the SQL card's hidden input reacts to. */
-  function choisirDump(): void {
-    const input = racine().querySelector('input[type="file"][accept^=".sql"]') as HTMLInputElement;
-    Object.defineProperty(input, 'files', {
-      configurable: true,
-      value: [file('sauvegarde.sql', '-- dump')],
-    });
-    input.dispatchEvent(new Event('change'));
-  }
-
-  it('never replays a SQL dump without a typed confirmation and a snapshot offer', async () => {
-    await rendre({ onglet: 'Instance' });
-    recopie.demander.mockResolvedValue(false);
-
-    choisirDump();
-    await fixture.whenStable();
-
-    // Refused — a wrong entry and a cancellation both land here: it replaces
-    // the whole database, every edition included.
-    expect(adminApi.importDatabase).not.toHaveBeenCalled();
-    expect(instantane.proposer).not.toHaveBeenCalled();
-
-    recopie.demander.mockResolvedValue(true);
-    choisirDump();
-    await fixture.whenStable();
-
-    expect(instantane.proposer).toHaveBeenCalledOnce();
-    expect(adminApi.importDatabase).toHaveBeenCalledExactlyOnceWith('-- dump');
-    expect(racine().textContent!).toContain('Base remplacée.');
-  });
-
-  // A dump is not scoped to an edition, so it must not ask for an edition
-  // name: that would describe an operation narrower than the one it runs.
-  it('asks for a keyword and says every edition is overwritten', async () => {
-    await rendre({ onglet: 'Instance' });
-
-    choisirDump();
-    await fixture.whenStable();
-
-    const demande = recopie.demander.mock.calls[0][0] as DemandeRecopie;
-    expect(demande.valeurAttendue).toBe(REPLACE_KEYWORD);
-    expect(demande.message).toContain('toutes les éditions sont écrasées');
-    expect(demande.message).toContain('sauvegarde.sql');
-  });
-
-  it('exports the database as a file named after the deployment', async () => {
-    await rendre({ onglet: 'Instance' });
-
-    bouton('Exporter le dump SQL').click();
-    await fixture.whenStable();
-
-    expect(adminApi.exportDatabase).toHaveBeenCalledOnce();
-    const [filename] = adminApi.exportDatabase.mock.calls[0];
-    expect(filename.endsWith('.sql')).toBe(true);
   });
 
   // The automatic backup. What an administrator comes to this card for is one

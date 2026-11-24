@@ -296,7 +296,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     carry the espace's link as a QR code (`QrCodeEspace` over `zxing-core`,
     the one thing OpenPDF cannot draw); `ArchiveEvenementService`, the
     end-of-event ZIP, which writes each part through the generator of its own
-    export and never a copy of it; `DatabaseDumpService`); `service/espace/`
+    export and never a copy of it; `DatabaseDumpService`, test tooling only: its
+    two routes answer 404 unless `planning.outillage-test.dump-sql` is true,
+    which `%test`, `%dev` and the E2E stack set); `service/espace/`
     (`DemandeEchangeService` / `EspaceAnimateurService`, the foire au planning
     of issue #165; `ApplicationLinks`, every public URL printed in a mail or a
     PDF); and the ones that predate the split — `service/diagnostic/`,

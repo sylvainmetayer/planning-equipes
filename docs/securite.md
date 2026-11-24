@@ -94,7 +94,7 @@ ses styles dans la page.
 
 | Variable | Défaut | Ce qu'elle borne |
 | --- | --- | --- |
-| `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête. C'est l'**import de dump SQL** (`POST /api/database/import`, un script rejoué en entier) qui la dimensionne : un déploiement qui n'utilise pas l'import gagne à la descendre franchement |
+| `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête. Elle dimensionnait l'import de dump SQL, désormais réservé aux tests : un déploiement gagne à la descendre franchement, l'import d'un scénario YAML étant le plus gros corps attendu |
 | `MAX_CONNECTIONS` | `500` | Connexions simultanées acceptées |
 | `HTTP_IDLE_TIMEOUT` | `PT16M` | Délai au bout duquel une connexion restée muette est fermée — et libère sa place dans `MAX_CONNECTIONS` |
 

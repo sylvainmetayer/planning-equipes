@@ -9,9 +9,9 @@ exprimer.
 Sauf mention contraire, tout est lu et écrit dans l'édition désignée par
 `X-Edition-Id`.
 
-Trois voies d'entrée coexistent, et elles ne font pas le même travail : le
+Plusieurs voies d'entrée coexistent, et elles ne font pas le même travail : le
 **scénario YAML** décrit un événement entier et remplace le référentiel de
-l'édition, le **dump SQL** rejoue une base complète, et l'**import CSV des
+l'édition, et l'**import CSV des
 animateurs** ne touche qu'un seul référentiel, ligne par ligne, sans rien
 effacer par défaut. C'est le dernier qu'on utilise quand un organisateur
 arrive avec son tableur de bénévoles.
@@ -44,9 +44,19 @@ et courriels de personnes qui ne se sont pas réinscrites est un problème de
 minimisation et de durée de conservation (voir [`rgpd.md`](rgpd.md)), pas un
 confort.
 
-## Dump SQL
+## Dump SQL (outillage de test)
 
-C'est la seule opération **globale à l'instance** : une sauvegarde de la base,
+**Plus proposé à l'opérateur** : l'écran Paramètres n'a plus de carte *Export
+SQL*. Sauvegarder la base, c'est le `pg_dump` de nuit
+([`exploitation.md`](exploitation.md), décision 0015) ; échanger un jeu de
+données, c'est le scénario YAML. Les routes `GET /api/database/export` et
+`POST /api/database/import` subsistent pour les suites de tests, qui amorcent et
+restaurent la base par elles : elles répondent `404` sauf si
+`planning.outillage-test.dump-sql` vaut `true` (variable `OUTILLAGE_TEST_DUMP_SQL`,
+posée par le profil de test, `quarkus:dev` et la pile E2E), et ne figurent pas
+dans la configuration d'exploitation.
+
+L'opération est **globale à l'instance** : toute la base,
 toutes éditions comprises. L'import rejoue le script en une transaction et
 n'accepte que `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier.
 
@@ -225,7 +235,7 @@ Réimporter soi-même le fichier d'une sauvegarde (Fichiers › Importer) reste
 possible mais n'est pas la procédure : cet import écarte les stands et
 créneaux sans siège et ne remet pas le planning.
 
-Rejouer un export SQL complet (carte *Import SQL*) efface toutes les
+Rejouer un export SQL complet (outillage de test) efface toutes les
 sauvegardes avant vidage, de toutes les éditions : voir
 [`exploitation.md`](exploitation.md) § Restaurer.
 
