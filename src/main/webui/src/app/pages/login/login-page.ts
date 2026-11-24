@@ -89,7 +89,7 @@ export class LoginPage implements OnInit {
 
   /** Leaves the application for the authorization server; nothing to await. */
   protected signInWithProvider(): void {
-    window.location.assign('/api/auth/oidc/login');
+    window.location.assign(this.adminApi.providerSignInUrl);
   }
 
   /** Ends the session that opens nothing here — at the provider too. */
