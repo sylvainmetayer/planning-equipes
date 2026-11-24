@@ -105,7 +105,7 @@
   },
   "images": {
     "h2": "Contenu de la boîte",
-    "intro": "Neuf écrans, données fictives, horloge arrêtée en plein festival : d'où l'heure en rouge.",
+    "intro": "9 écrans, données fictives.",
     "films": [
       {
         "id": "calcul",
@@ -339,7 +339,7 @@
     },
     "images": {
       "h2": "What's in the box",
-      "intro": "Nine screens, fictional data, the clock stopped mid-festival: hence the time in red.",
+      "intro": "9 screens, fictional data.",
       "films": [
         {
           "id": "calcul",
