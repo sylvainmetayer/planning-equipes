@@ -176,7 +176,7 @@
           },
           "evenement" : {
             "type" : "string",
-            "enum" : [ "CONNEXION", "ECHEC", "VERROUILLAGE" ]
+            "enum" : [ "CONNEXION", "ECHEC", "VERROUILLAGE", "SECOURS_OUVERT", "CONNEXION_SECOURS" ]
           },
           "adresse" : {
             "type" : "string"
@@ -1871,9 +1871,6 @@
           "desactiveLe" : {
             "$ref" : "#/components/schemas/Instant"
           },
-          "desactivePar" : {
-            "type" : "string"
-          },
           "habilitations" : {
             "type" : "array",
             "items" : {
@@ -1923,7 +1920,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "version", "mailMock" ],
+        "required" : [ "devMode", "version", "mailMock", "authOidc", "authSecours" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1942,6 +1939,12 @@
             "type" : "string"
           },
           "mailMock" : {
+            "type" : "boolean"
+          },
+          "authOidc" : {
+            "type" : "boolean"
+          },
+          "authSecours" : {
             "type" : "boolean"
           }
         }
@@ -3003,6 +3006,14 @@
           },
           "decideLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "Deconnexion" : {
+        "type" : "object",
+        "properties" : {
+          "urlDeconnexion" : {
+            "type" : "string"
           }
         }
       },
@@ -5192,9 +5203,6 @@
           },
           "retireeLe" : {
             "$ref" : "#/components/schemas/Instant"
-          },
-          "retireePar" : {
-            "type" : "string"
           }
         }
       },
@@ -9991,7 +9999,7 @@
         }
       },
       "StatutSession" : {
-        "required" : [ "authentifie" ],
+        "required" : [ "authentifie", "roles" ],
         "type" : "object",
         "properties" : {
           "authentifie" : {
@@ -9999,6 +10007,12 @@
           },
           "nom" : {
             "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -11107,6 +11121,12 @@
           }
         }
       }
+    },
+    "securitySchemes" : {
+      "SecurityScheme" : {
+        "type" : "openIdConnect",
+        "description" : "Authentication"
+      }
     }
   },
   "paths" : {
@@ -11732,7 +11752,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/Deconnexion"
+                }
               }
             }
           }
@@ -11757,6 +11779,31 @@
         },
         "summary" : "Me",
         "tags" : [ "Auth Resource" ]
+      }
+    },
+    "/api/auth/oidc/login" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Oidc Login",
+        "tags" : [ "Auth Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
       }
     },
     "/api/backups" : {
@@ -11911,19 +11958,10 @@
                 }
               }
             }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "List",
-        "tags" : [ "Compte Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
+        "tags" : [ "Compte Resource" ]
       },
       "post" : {
         "requestBody" : {
@@ -11947,21 +11985,12 @@
               }
             }
           },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          },
           "400" : {
             "description" : "Bad Request"
           }
         },
         "summary" : "Create",
-        "tags" : [ "Compte Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/comptes/{id}/desactivation" : {
@@ -11984,19 +12013,10 @@
                 }
               }
             }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Deactivate",
-        "tags" : [ "Compte Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/comptes/{id}/habilitations" : {
@@ -12030,21 +12050,12 @@
               }
             }
           },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          },
           "400" : {
             "description" : "Bad Request"
           }
         },
         "summary" : "Grant",
-        "tags" : [ "Compte Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/comptes/{id}/habilitations/{habilitationId}" : {
@@ -12074,19 +12085,10 @@
                 }
               }
             }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Withdraw",
-        "tags" : [ "Compte Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/comptes/{id}/reactivation" : {
@@ -12109,19 +12111,10 @@
                 }
               }
             }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
           }
         },
         "summary" : "Reactivate",
-        "tags" : [ "Compte Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/config" : {

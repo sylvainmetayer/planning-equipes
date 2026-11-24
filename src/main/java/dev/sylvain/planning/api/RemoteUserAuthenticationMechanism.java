@@ -57,7 +57,7 @@ public class RemoteUserAuthenticationMechanism implements HttpAuthenticationMech
                 .trustedEmail(nom -> context.request().getHeader(nom))
                 .filter(remoteUser::isAdmin)
                 .map(email -> identityProviderManager.authenticate(
-                        new TrustedAuthenticationRequest(RemoteUserAuthentication.PRINCIPAL_ADMIN)))
+                        new TrustedAuthenticationRequest(RemoteUserAuthentication.REQUEST_PRINCIPAL)))
                 .orElseGet(() -> Uni.createFrom().nullItem());
     }
 

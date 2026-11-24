@@ -51,7 +51,14 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
             TrustedAuthenticationRequest request, AuthenticationRequestContext context) {
         QuarkusSecurityIdentity.Builder identite =
                 QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal(request.getPrincipal()));
-        if (RemoteUserAuthentication.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
+        if (RemoteUserAuthentication.REQUEST_PRINCIPAL.equals(request.getPrincipal())) {
+            // The proxy's admin, marked: CompteIdentityAugmentor must tell it
+            // from a form session of the same name, which it strips of its
+            // role once the break-glass door is closed.
+            identite.setPrincipal(new QuarkusPrincipal(RemoteUserAuthentication.PRINCIPAL_ADMIN))
+                    .addRole(ROLE_ADMIN)
+                    .addAttribute(RemoteUserAuthentication.IDENTITY_ATTRIBUTE, Boolean.TRUE);
+        } else if (RemoteUserAuthentication.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
             identite.addRole(ROLE_ADMIN);
         } else if (McpApiKeyAuthenticationMechanism.PRINCIPAL.equals(request.getPrincipal())) {
             identite.addRole(ROLE_MCP);

@@ -32,8 +32,8 @@ class AuthentificationAdminTest {
             // default (ADMIN_PASSWORD unset), so no credential-looking literal
             // lives in this file.
             return Map.of(
-                    "quarkus.http.auth.permission.admin-api.policy", "authenticated",
-                    "quarkus.http.auth.permission.api-docs.policy", "authenticated");
+                    "quarkus.http.auth.permission.admin-api.policy", "role-admin",
+                    "quarkus.http.auth.permission.api-docs.policy", "role-admin");
         }
     }
 
@@ -346,6 +346,6 @@ class AuthentificationAdminTest {
                 .when()
                 .post("/api/auth/logout")
                 .then()
-                .statusCode(204);
+                .statusCode(200);
     }
 }

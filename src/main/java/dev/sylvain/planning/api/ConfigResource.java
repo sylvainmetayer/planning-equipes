@@ -1,6 +1,8 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigObservabilite;
+import dev.sylvain.planning.config.ConfigOidc;
+import dev.sylvain.planning.config.ConfigSecours;
 import dev.sylvain.planning.config.DevMode;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -48,16 +50,24 @@ public class ConfigResource {
 
     private final boolean mailMock;
 
+    private final ConfigOidc oidc;
+
+    private final ConfigSecours secours;
+
     @Inject
     public ConfigResource(
             ConfigObservabilite observabilite,
             DevMode devMode,
             @ConfigProperty(name = "quarkus.application.version") String version,
-            @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock) {
+            @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock,
+            ConfigOidc oidc,
+            ConfigSecours secours) {
         this.observabilite = observabilite;
         this.devMode = devMode;
         this.version = version;
         this.mailMock = mailMock;
+        this.oidc = oidc;
+        this.secours = secours;
     }
 
     @GET
@@ -68,7 +78,9 @@ public class ConfigResource {
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 devMode.isActive(),
                 version,
-                mailMock);
+                mailMock,
+                oidc.enabled(),
+                secours.open(oidc.enabled()));
     }
 
     /**
@@ -83,13 +95,18 @@ public class ConfigResource {
      *                           {@code 999-SNAPSHOT} in a local build
      * @param mailMock           the mailer is mocked: a mail recorded as sent
      *                           never left the server
+     * @param authOidc           a provider signs people in: the login page offers its button
+     * @param authSecours        the form login of the {@code admin} account is open: the
+     *                           login page offers its password form
      */
-    @Schema(requiredProperties = {"devMode", "version", "mailMock"})
+    @Schema(requiredProperties = {"devMode", "version", "mailMock", "authOidc", "authSecours"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
             String cloudflareWebAnalyticsToken,
             boolean devMode,
             String version,
-            boolean mailMock) {}
+            boolean mailMock,
+            boolean authOidc,
+            boolean authSecours) {}
 }

@@ -45,6 +45,12 @@ public class RemoteUserAuthentication {
     /** Principal name of the header-authenticated admin, distinct from the form login's {@code admin}. */
     public static final String PRINCIPAL_ADMIN = "admin";
 
+    /** What the mechanism vouches for; the identity provider turns it into {@link #PRINCIPAL_ADMIN}, marked. */
+    public static final String REQUEST_PRINCIPAL = "remote-user-admin";
+
+    /** Identity attribute marking an identity built from the proxy's assertion, not from a form session. */
+    public static final String IDENTITY_ATTRIBUTE = "planning.remote-user";
+
     private final ConfigRemoteUser config;
 
     private final AnimateurRepository repository;
@@ -106,6 +112,9 @@ public class RemoteUserAuthentication {
         if (!config.enabled()) {
             return;
         }
+        Log.warn("Le mode en-tête de proxy (planning.auth.remote-user) est déprécié et sera retiré en 4.0 : "
+                + "préférez la connexion par un fournisseur OIDC et les comptes de l'application "
+                + "(docs/oidc.md, docs/securite.md).");
         if (config.secret().isEmpty() || config.secret().get().isBlank()) {
             throw new IllegalStateException("planning.auth.remote-user.enabled=true exige "
                     + "planning.auth.remote-user.secret : sans secret partagé, l'en-tête "
