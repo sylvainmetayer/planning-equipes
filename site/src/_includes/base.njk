@@ -74,7 +74,7 @@
     </ul>
     <div class="foot__fine">
       <p>{{ site.name }}, {{ common.pied.licence }} {{ common.pied.fictif }}</p>
-      <p>{{ common.pied.editeur }}</p>
+      <p>{{ common.pied.editeur | mdi(lang) | safe }}</p>
     </div>
   </div>
 </footer>

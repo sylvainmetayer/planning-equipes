@@ -3,6 +3,9 @@ package dev.sylvain.planning;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -196,17 +199,27 @@ class ClientVocabularyStructuralTest {
         return false;
     }
 
+    /**
+     * A NUL byte, or bytes that are not UTF-8. A PDF made by the application
+     * (the showcase's examples) carries no NUL in its first kilobytes, so the
+     * NUL test alone let it through to a strict UTF-8 read that threw.
+     */
     private static boolean isBinary(Path file) throws IOException {
-        byte[] head = new byte[8000];
-        int read;
-        try (var in = Files.newInputStream(file)) {
-            read = in.readNBytes(head, 0, head.length);
-        }
-        for (int i = 0; i < read; i++) {
-            if (head[i] == 0) {
+        byte[] content = Files.readAllBytes(file);
+        for (int i = 0; i < Math.min(content.length, 8000); i++) {
+            if (content[i] == 0) {
                 return true;
             }
         }
-        return false;
+        try {
+            StandardCharsets.UTF_8
+                    .newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(content));
+            return false;
+        } catch (CharacterCodingException e) {
+            return true;
+        }
     }
 }
