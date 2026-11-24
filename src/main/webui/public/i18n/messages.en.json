@@ -5309,5 +5309,10 @@
   "shell.aide": "Help",
   "reglagesAvances.bouton": "Advanced settings",
   "journee.relecture.rien": "Nothing to review",
-  "journee.relecture.aRelireN": "{$count} point(s) to review"
+  "journee.relecture.aRelireN": "{$count} point(s) to review",
+  "aide.sansForcee.title": "Placing or ruling out someone without a forced assignment",
+  "aide.sansForcee.summary": "Two gestures simpler than a manual adjustment, each undone in a click.",
+  "aide.sansForcee.verrou": "Keep someone on a timeslot: place them on the seat from the Planning page (“Place”, with “Keep them at the next solve” ticked), or lock their seat. The lock ties that person to that timeslot; the next solve respects it and leaves the rest of their day alone.",
+  "aide.sansForcee.indisponibilite": "Rule someone out of a day: add that day to their unavailable days, on their fiche (“Unavailable that day”). They are no longer offered that day, and their seats of the day are freed in the same gesture.",
+  "aide.sansForcee.quand": "Keep the manual adjustment for exceptions that must survive a solve starting from scratch: a lock only protects the plan in place."
 }

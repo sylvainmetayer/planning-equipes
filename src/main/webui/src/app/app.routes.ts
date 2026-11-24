@@ -381,17 +381,20 @@ export function margeToDiagnostic(queryParams: Params): string {
   return `/diagnostic?${params.toString()}`;
 }
 
+// `data.aide` names the section of the guide (`pages/aide/content/`) the toolbar's « ? » opens on that screen.
 const adminRoutes: Routes = [
   {
     // The home: where the edition stands in its cycle, before any screen
     // that acts on it (issue #485). The solver keeps its page under /solveur.
     path: '',
     title: () => $localize`:@@route.accueil:État de l'édition`,
+    data: { aide: 'prise-en-main' },
     loadComponent: () => import('./pages/accueil/accueil-page').then((m) => m.AccueilPage),
   },
   {
     path: 'solveur',
     title: () => $localize`:@@route.solver:Solveur`,
+    data: { aide: 'calculer' },
     loadComponent: () => import('./pages/solver/solver-page').then((m) => m.SolverPage),
   },
   {
@@ -408,6 +411,7 @@ const adminRoutes: Routes = [
     // The event day's hub (ADR 0066): what « Mode jour J » became.
     path: 'aujourdhui',
     title: () => $localize`:@@route.aujourdhui:Aujourd'hui`,
+    data: { aide: 'jour-j' },
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
   },
   // The former address, kept for the bookmarks and the links already sent;
@@ -419,6 +423,7 @@ const adminRoutes: Routes = [
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
+    data: { aide: 'lire-les-resultats' },
     canActivate: [benchTabToJournee, trainingTabToNeed],
     loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
@@ -432,6 +437,7 @@ const adminRoutes: Routes = [
   {
     path: 'echanges',
     title: () => $localize`:@@route.echanges:Échanges`,
+    data: { aide: 'foire-au-planning' },
     loadComponent: () => import('./pages/echanges/echanges-page').then((m) => m.EchangesPage),
   },
   // What the animateurs declared became a tab of Animateurs, its covoiturage tab kept.
@@ -449,6 +455,7 @@ const adminRoutes: Routes = [
   {
     path: 'parametres',
     title: () => $localize`:@@route.parametres:Paramètres`,
+    data: { aide: 'configuration-solveur' },
     canActivate: [parametresOngletsDeplaces],
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
@@ -487,6 +494,7 @@ const adminRoutes: Routes = [
   {
     path: 'editions',
     title: () => $localize`:@@route.editions:Éditions`,
+    data: { aide: 'editions' },
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
   {
@@ -515,6 +523,7 @@ const adminRoutes: Routes = [
   {
     path: 'stands',
     title: () => $localize`:@@route.stands:Stands`,
+    data: { aide: 'donnees' },
     loadComponent: () => import('./pages/stands/stands-page').then((m) => m.StandsPage),
     canActivate: [standEditToFiche],
     // A « Voir la fiche » link names `?edit=` while the table is on screen: a
@@ -524,6 +533,7 @@ const adminRoutes: Routes = [
   {
     path: 'stands/:id',
     title: () => $localize`:@@route.standFiche:Fiche stand`,
+    data: { aide: 'horaires-des-stands' },
     loadComponent: () =>
       import('./pages/stand-fiche/stand-fiche-page').then((m) => m.StandFichePage),
     // Unsaved cells of its grid would vanish with the page: it asks first.
@@ -534,6 +544,7 @@ const adminRoutes: Routes = [
   {
     path: 'animateurs',
     title: () => $localize`:@@route.animateurs:Animateurs`,
+    data: { aide: 'donnees' },
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage),
     // Unsaved cells of the Compétences tab would silently survive, invisible, until the next reload.
     canDeactivate: [(page: AnimateursPage) => page.canLeave()],
@@ -541,6 +552,7 @@ const adminRoutes: Routes = [
   {
     path: 'animateurs/:id',
     title: () => $localize`:@@route.animateurFiche:Fiche animateur`,
+    data: { aide: 'sans-affectation-forcee' },
     loadComponent: () =>
       import('./pages/animateur-fiche/animateur-fiche-page').then((m) => m.AnimateurFichePage),
   },
@@ -551,6 +563,7 @@ const adminRoutes: Routes = [
     // (`?onglet=horaires`, the former `/ouvertures`).
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
+    data: { aide: 'creneaux-et-journees-types' },
     // `?vue=journee` and `?vue=calendrier` of the openings were folded into
     // the grid: their addresses land where the same question is now answered.
     canActivate: [retiredOpeningsViews],
@@ -563,6 +576,7 @@ const adminRoutes: Routes = [
     // gesture and what closes an edition, on one page of three tabs.
     path: 'fichiers',
     title: () => $localize`:@@route.fichiers:Fichiers`,
+    data: { aide: 'import-csv-animateurs' },
     loadComponent: () => import('./pages/fichiers/fichiers-page').then((m) => m.FichiersPage),
   },
   // The two screens Fichiers gathers, kept for the bookmarks: the Imports
@@ -572,6 +586,7 @@ const adminRoutes: Routes = [
     // The planning leaves through here, the data through /fichiers (issue #320).
     path: 'publication',
     title: () => $localize`:@@route.publication:Publication`,
+    data: { aide: 'relecture' },
     loadComponent: () =>
       import('./pages/publication/publication-page').then((m) => m.PublicationPage),
   },
@@ -597,6 +612,7 @@ const adminRoutes: Routes = [
     // the plan starts from; the address stayed, for the links already out.
     path: 'journee',
     title: () => $localize`:@@route.journee:Planning`,
+    data: { aide: 'consulter' },
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },
   // The month calendar is the Planning page's day selector now: its day, its
@@ -640,6 +656,7 @@ const adminRoutes: Routes = [
     // importance, and the solve budget.
     path: 'regles',
     title: () => $localize`:@@route.regles:Règles du planning`,
+    data: { aide: 'ajustements-manuels' },
     loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),
     // A row edited and not saved would silently survive, invisible, until the next reload.
     canDeactivate: [(page: ReglesPage) => page.canLeave()],
