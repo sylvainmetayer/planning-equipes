@@ -1,12 +1,14 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import java.util.Locale;
 import java.util.UUID;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 /** Accounts and rights through the API: created, deactivated, granted and withdrawn — never deleted. */
 @QuarkusTest
+@TestSecurity(user = "admin", roles = "admin")
 class CompteResourceTest {
 
     @Test
@@ -84,6 +87,86 @@ class CompteResourceTest {
                 .statusCode(400);
         post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\",\"editionId\":\"" + edition + "\"}")
                 .statusCode(200);
+    }
+
+    @Test
+    void theSameRightInForceCannotBeGrantedTwice() {
+        String id = create(unique("double"));
+        post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\"}").statusCode(200);
+        post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\"}").statusCode(409);
+    }
+
+    @Test
+    void anAdministratorRightNeverExpires() {
+        String id = create(unique("admin-expire"));
+        post(id, "/habilitations", "{\"role\":\"ADMIN\",\"expireLe\":\"2099-01-01T00:00:00Z\"}")
+                .statusCode(400);
+    }
+
+    @Test
+    void theLastActiveAdministratorCanNeitherBeDeactivatedNorWithdrawn() {
+        String id = create(unique("dernier-admin"));
+        String droit = post(id, "/habilitations", "{\"role\":\"ADMIN\"}")
+                .statusCode(200)
+                .extract()
+                .path("habilitations[0].id");
+        // Accounts are never deleted: make this one the only active administrator.
+        java.util.List<String> autres = given().header("X-Edition-Id", "E1")
+                .get("/api/comptes")
+                .then()
+                .extract()
+                .path("findAll { it.desactiveLe == null && it.id != '" + id + "' }.id");
+        autres.forEach(autre -> post(autre, "/desactivation", null).statusCode(200));
+
+        post(id, "/desactivation", null).statusCode(409).body("message", containsString("administrateur"));
+        given().header("X-Edition-Id", "E1")
+                .delete("/api/comptes/" + id + "/habilitations/" + droit)
+                .then()
+                .statusCode(409);
+        // A second administrator frees the first.
+        String relais = create(unique("relais"));
+        post(relais, "/habilitations", "{\"role\":\"ADMIN\"}").statusCode(200);
+        post(id, "/desactivation", null).statusCode(200);
+    }
+
+    @Test
+    void anAddressOrANameTooLongIsRefusedWith400() {
+        String longue = "a".repeat(320) + "@example.org";
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"email\":\"" + longue + "\"}")
+                .post("/api/comptes")
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"email\":\"" + unique("nom-long") + "\",\"nom\":\"" + "n".repeat(256) + "\"}")
+                .post("/api/comptes")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void deletingAnEditionWithdrawsItsRights() {
+        String edition = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"nom\":\"Édition à supprimer\"}")
+                .post("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
+        String id = create(unique("edition-supprimee"));
+        post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\",\"editionId\":\"" + edition + "\"}")
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .delete("/api/editions/" + edition)
+                .then()
+                .statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .get("/api/comptes")
+                .then()
+                .body("find { it.id == '" + id + "' }.habilitations[0].retireePar", equalTo("systeme"));
     }
 
     @Test

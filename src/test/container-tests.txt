@@ -33,6 +33,7 @@ dev/sylvain/planning/api/ColleagueLookupRateLimitTest.java
 dev/sylvain/planning/api/CollecteInvitationAtomicityTest.java
 dev/sylvain/planning/api/ComparateurSnapshotsResourceTest.java
 dev/sylvain/planning/api/CompetencesGrilleResourceTest.java
+dev/sylvain/planning/api/CompteResourceSecurityTest.java
 dev/sylvain/planning/api/CompteResourceTest.java
 dev/sylvain/planning/api/ConfigResourceTest.java
 dev/sylvain/planning/api/ConfirmationPlanningTest.java

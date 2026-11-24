@@ -9,6 +9,7 @@ import java.time.Instant;
  * @param editionId {@code null} for every edition
  * @param expireLe  {@code null} for no expiry; past it, the right opens nothing
  * @param creePar   the id of the account that granted it, never an address
+ * @param retireePar the id of the account that withdrew it, never an address
  */
 public record Habilitation(
         String id,
@@ -17,10 +18,5 @@ public record Habilitation(
         Instant expireLe,
         String creePar,
         Instant creeLe,
-        Instant retireeLe) {
-
-    /** Neither withdrawn nor expired at {@code instant}. */
-    public boolean inForce(Instant instant) {
-        return retireeLe == null && (expireLe == null || expireLe.isAfter(instant));
-    }
-}
+        Instant retireeLe,
+        String retireePar) {}

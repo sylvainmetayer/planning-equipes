@@ -23,7 +23,11 @@ CREATE TABLE compte (
     nom VARCHAR(255),
     cree_le TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     derniere_connexion_le TIMESTAMP WITH TIME ZONE,
-    desactive_le TIMESTAMP WITH TIME ZONE
+    desactive_le TIMESTAMP WITH TIME ZONE,
+    -- L'id du compte qui l'a désactivé (« admin » pour la configuration,
+    -- « systeme » pour l'application) : le journal d'édition peut disparaître
+    -- avec son édition, pas cette trace.
+    desactive_par VARCHAR(64)
 );
 
 -- Une personne, une adresse : la casse ne distingue personne.
@@ -44,8 +48,15 @@ CREATE TABLE habilitation (
     cree_par VARCHAR(64) NOT NULL,
     cree_le TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     retiree_le TIMESTAMP WITH TIME ZONE,
+    -- Qui l'a retirée, comme compte.desactive_par.
+    retiree_par VARCHAR(64),
     -- Un administrateur l'est de toute l'instance.
     CONSTRAINT habilitation_admin_globale CHECK (role <> 'ADMIN' OR edition_id IS NULL)
 );
 
 CREATE INDEX idx_habilitation_compte ON habilitation (compte_id);
+
+-- Un même droit ne s'accorde pas deux fois tant qu'il est en vigueur (non
+-- retiré) : l'octroi double-cliqué ne laisse pas deux lignes à retirer.
+CREATE UNIQUE INDEX habilitation_en_vigueur_unique
+    ON habilitation (compte_id, role, COALESCE(edition_id, '')) WHERE retiree_le IS NULL;

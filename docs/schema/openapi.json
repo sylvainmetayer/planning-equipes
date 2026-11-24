@@ -1871,6 +1871,9 @@
           "desactiveLe" : {
             "$ref" : "#/components/schemas/Instant"
           },
+          "desactivePar" : {
+            "type" : "string"
+          },
           "habilitations" : {
             "type" : "array",
             "items" : {
@@ -5189,6 +5192,9 @@
           },
           "retireeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "retireePar" : {
+            "type" : "string"
           }
         }
       },
@@ -11905,10 +11911,19 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
           }
         },
         "summary" : "List",
-        "tags" : [ "Compte Resource" ]
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
       },
       "post" : {
         "requestBody" : {
@@ -11932,12 +11947,21 @@
               }
             }
           },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
           "400" : {
             "description" : "Bad Request"
           }
         },
         "summary" : "Create",
-        "tags" : [ "Compte Resource" ]
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
       }
     },
     "/api/comptes/{id}/desactivation" : {
@@ -11960,10 +11984,19 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
           }
         },
         "summary" : "Deactivate",
-        "tags" : [ "Compte Resource" ]
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
       }
     },
     "/api/comptes/{id}/habilitations" : {
@@ -11997,12 +12030,21 @@
               }
             }
           },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
           "400" : {
             "description" : "Bad Request"
           }
         },
         "summary" : "Grant",
-        "tags" : [ "Compte Resource" ]
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
       }
     },
     "/api/comptes/{id}/habilitations/{habilitationId}" : {
@@ -12032,10 +12074,19 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
           }
         },
         "summary" : "Withdraw",
-        "tags" : [ "Compte Resource" ]
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
       }
     },
     "/api/comptes/{id}/reactivation" : {
@@ -12058,10 +12109,19 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
           }
         },
         "summary" : "Reactivate",
-        "tags" : [ "Compte Resource" ]
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
       }
     },
     "/api/config" : {

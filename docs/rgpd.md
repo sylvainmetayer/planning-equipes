@@ -421,15 +421,24 @@ complètes. Quatre points sont connus et se consignent :
   nomme alors plus personne ;
 - **les comptes des organisateurs (`compte`, `habilitation`)** gardent une
   **adresse e-mail**, un nom facultatif, les dates de création, de dernière
-  connexion et de désactivation, et les droits accordés (rôle, édition,
-  expiration, identifiant du compte qui les a accordés). Ce sont les données
-  des **personnes qui administrent l'instance**, pas celles des animateurs.
-  Rien ne s'y supprime par l'application : un compte se désactive, un droit se
-  retire, pour que le journal garde un sens ; l'effacement d'une personne qui
-  le demande est une opération d'exploitation sur la base. Tables de
-  l'instance, hors édition, **absentes de l'export SQL** (restaurer ailleurs
-  ouvrirait l'instance à des inconnus). L'historique des actions les désigne
-  par **identifiant de compte**, jamais par adresse ni par nom ;
+  connexion et de désactivation, les droits accordés (rôle, édition,
+  expiration) et, pour chaque désactivation ou retrait, l'**identifiant du
+  compte** qui l'a fait. Ce sont les données des **personnes qui administrent
+  l'instance**, pas celles des animateurs. L'application ne supprime rien : un
+  compte se désactive, un droit se retire, pour que le journal garde un sens.
+  **Effacement** : à la demande d'une personne, ou à l'expiration de la durée
+  ci-dessous, l'exploitant **pseudonymise** la ligne plutôt que de la
+  supprimer — l'adresse devient un identifiant opaque (`efface-<id>@invalide`),
+  le nom est vidé — ce qui garde la ligne, ses droits datés et les références
+  du journal, et ne désigne plus personne ; c'est une opération SQL, jamais un
+  `DELETE`. **Conservation** : un compte actif est gardé tant qu'il sert ; un
+  compte désactivé l'est **deux ans** après sa désactivation (le temps de
+  répondre à « qui avait accès ? » pour une saison), puis pseudonymisé. Tables
+  de l'instance, hors édition, **absentes de l'export SQL** (une restauration
+  ne transporte pas les comptes : restaurer ailleurs ouvrirait l'instance à des
+  inconnus, et ne rendrait pas non plus les droits de celle qui reçoit).
+  L'historique des actions les désigne par **identifiant de compte**, jamais
+  par adresse ni par nom ;
 - **le journal des connexions administrateur (`journal_connexion`)** garde,
   pour chaque tentative sur le formulaire de connexion — réussie, échouée, ou
   le verrouillage qu'elle déclenche —, **l'horodatage et l'adresse IP du

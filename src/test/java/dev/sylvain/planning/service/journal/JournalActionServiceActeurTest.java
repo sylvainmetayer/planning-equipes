@@ -19,7 +19,7 @@ class JournalActionServiceActeurTest {
 
     @Test
     void anIdentityBoundToAnAccountIsNamedByTheAccountId() {
-        Compte compte = new Compte("c-1", "marie@example.org", "Marie", null, null, null, List.of());
+        Compte compte = new Compte("c-1", "marie@example.org", "Marie", null, null, null, null, List.of());
         SecurityIdentity identity = QuarkusSecurityIdentity.builder()
                 .setPrincipal(new QuarkusPrincipal("marie@example.org"))
                 .addAttribute(Compte.IDENTITY_ATTRIBUTE, compte)
@@ -35,6 +35,16 @@ class JournalActionServiceActeurTest {
                 .build();
 
         assertThat(journal(identity).nomAdmin()).isEqualTo(Compte.CONFIG_ID);
+    }
+
+    @Test
+    void theMcpKeyKeepsItsOwnNameInsteadOfBecomingTheConfigurationAccount() {
+        SecurityIdentity identity = QuarkusSecurityIdentity.builder()
+                .setPrincipal(new QuarkusPrincipal("mcp"))
+                .addRole("mcp")
+                .build();
+
+        assertThat(journal(identity).nomAdmin()).isEqualTo("mcp");
     }
 
     @Test

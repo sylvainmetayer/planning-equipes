@@ -3,7 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.compte.RoleHabilitation;
-import dev.sylvain.planning.service.journal.JournalActionService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -15,7 +15,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Named accounts and the rights delegated to them. Administrators only, like
@@ -26,15 +25,13 @@ import java.util.Optional;
  * held what, and when. Nothing here sets a password or a second factor.</p>
  */
 @Path("/comptes")
+@RolesAllowed("admin")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CompteResource {
 
     @Inject
     CompteService comptes;
-
-    @Inject
-    JournalActionService journal;
 
     @GET
     public List<Compte> list() {
@@ -64,8 +61,8 @@ public class CompteResource {
     @Path("/{id}/habilitations")
     public Compte grant(@PathParam("id") String id, NouvelleHabilitation habilitation) {
         return habilitation == null
-                ? comptes.grant(id, null, null, null, auteur())
-                : comptes.grant(id, habilitation.role(), habilitation.editionId(), habilitation.expireLe(), auteur());
+                ? comptes.grant(id, null, null, null)
+                : comptes.grant(id, habilitation.role(), habilitation.editionId(), habilitation.expireLe());
     }
 
     /** Withdraws a right: it stays in the list, dated, and opens nothing any more. */
@@ -73,11 +70,6 @@ public class CompteResource {
     @Path("/{id}/habilitations/{habilitationId}")
     public Compte withdraw(@PathParam("id") String id, @PathParam("habilitationId") String habilitationId) {
         return comptes.withdraw(id, habilitationId);
-    }
-
-    /** Who grants: an account id, never an address; the configuration's account when nobody is bound. */
-    private String auteur() {
-        return Optional.ofNullable(journal.nomAdmin()).orElse(Compte.CONFIG_ID);
     }
 
     public record NouveauCompte(String email, String nom) {}

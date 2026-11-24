@@ -245,6 +245,8 @@ public class DatabaseDumpService {
             "espace_session",
             "lien_affichage_mural",
             "lien_affichage_mural_emplacement",
+            "compte",
+            "habilitation",
             "solver_job",
             "journal_action",
             "verification_besoin",

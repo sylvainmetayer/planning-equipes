@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.analyse.RealisedVsPlannedService;
+import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
@@ -40,6 +41,10 @@ public class EditionService {
     private final SolverJobService solverJobs;
 
     private final StaffingVerificationService staffingChecks;
+
+    /** Withdraws the rights scoped to a deleted edition. */
+    @Inject
+    CompteService comptes;
 
     @Inject
     public EditionService(
@@ -173,6 +178,8 @@ public class EditionService {
             LOG.errorf(e, "The realised measure of edition %s could not be cached before its deletion", id);
         }
         repository.delete(id);
+        // The rights scoped to it name an edition that is gone: withdrawn, dated, kept.
+        comptes.withdrawForEdition(id);
         editionContext.invaliderCache();
     }
 
