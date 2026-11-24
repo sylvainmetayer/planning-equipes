@@ -84,7 +84,7 @@ jobs:
         if: steps.scope.outputs.webui == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '26'
 
       # `--package-lock-only` : le verrou seul, sans node_modules ni script
       # d'installation. Les paquets que la PR monte sont installés à la
