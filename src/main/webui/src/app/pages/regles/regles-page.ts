@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -160,6 +161,7 @@ export class ReglesPage implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
+  private readonly location = inject(Location);
   private readonly problemes = inject(ProblemesStore);
   protected readonly jobs = inject(SolverJobService);
 
@@ -379,6 +381,12 @@ export class ReglesPage implements OnInit {
   }
 
   protected changerOnglet(onglet: OngletRegles): void {
+    // A hosted tab's own keys (`?personne=`, `?date=`, `?nouvelle=`, `?ids=`) mean
+    // nothing to the next one: the address is reset before it reads it, so it opens on its defaults.
+    if (onglet !== this.onglet() && (!isRuleTab(onglet) || !isRuleTab(this.onglet()))) {
+      const [chemin] = this.location.path().split('?');
+      this.location.replaceState(chemin || '/');
+    }
     this.ongletChoisi.set(onglet);
     const rule = this.selectedRule();
     if (rule && onglet !== ongletOfRule(rule)) {
