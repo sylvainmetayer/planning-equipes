@@ -172,6 +172,24 @@ génération rendrait obligatoires plus de sièges que le stand n'est déclaré
 capable d'en tenir, et les deux nombres se contrediraient sur chaque écran qui
 les montre. Le validateur et le formulaire le refusent tous les deux.
 
+**Ce que lit `effectifMax`, et ce qu'il ne fait pas.** Il est gardé, et il ne
+sert qu'à borner la saisie : le validateur du stand (`effectifMin` ≤
+`effectifMax`, un effectif de fenêtre ≤ `effectifMax`), l'ouverture posée par
+une consigne, et la dérivation depuis la grille de saisie. Le solveur ne le lit
+pas : le nombre de sièges d'un créneau est l'effectif de sa fenêtre, ou à
+défaut `effectifMin`, et aucune règle ne plafonne le nombre d'animateurs sur un
+stand. Relever `effectifMax` n'ajoute donc aucun poste et n'autorise pas de
+renfort ; c'est l'effectif de fenêtre qu'il faut changer.
+
+**Ce que lit `manager`, et ce qu'il ne fait pas.** L'indicateur est gardé comme
+une étiquette de la fiche : filtre de la liste, colonne des imports et exports
+CSV, comparaison entre éditions. Aucune règle du solveur ne le lit et le
+problème ne l'écarte pas : un animateur marqué manager est planifié comme les
+autres, et compte dans les plafonds de durée, légaux compris. Il ne dispense
+d'aucune règle et n'en déclenche aucune ; l'encadrement par des managers hors
+planning est un fait d'organisation, que `mineurNecessiteEncadrementMajeur`
+suppose sans le vérifier.
+
 Un créneau à cheval sur deux fenêtres d'effectifs différents produit **deux
 groupes de sièges**, chacun portant la [fenêtre effective](#fenêtre-effective)
 de son segment. Là où deux fenêtres se recouvrent, le recouvrement prend le

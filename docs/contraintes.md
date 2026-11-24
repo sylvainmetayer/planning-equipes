@@ -52,6 +52,18 @@ MCP existant, pour un gain de lecture seulement. **Le décalage est délibéré*
 ne pas « corriger » un libellé vers `violation` ni un identifiant vers `écart`.
 Les documents datés (audit RH, ADR, revues) gardent les mots de leur époque.
 
+## `effectifMax` et `manager` : deux champs que le solveur ne lit pas
+
+Deux champs de la fiche ressemblent à des leviers de règle et n'en sont pas.
+`effectifMax` d'un stand borne la saisie (voir `docs/domaine.md`) mais ne fixe
+ni le nombre de sièges, qui vient de l'effectif de la fenêtre ou à défaut de
+`effectifMin`, ni un plafond que le solveur vérifierait. `manager` d'un
+animateur est une étiquette : aucune contrainte ne la lit, un manager planifié
+subit les mêmes plafonds, `dureeHebdomadaireMax` comprise, et
+`mineurNecessiteEncadrementMajeur` compte tout majeur présent, manager ou non.
+Les deux sont gardés tels quels ; si une règle doit un jour en dépendre, elle
+s'ajoute au catalogue avec son test, elle ne se déduit pas du champ.
+
 ## Fenêtre effective : ce qui la lit, et ce qui ne la lit pas délibérément
 
 Un stand fermé pour **une partie** d'un créneau — ou normalement fermé et
