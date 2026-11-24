@@ -28,9 +28,28 @@ l'[ADR 0093](decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.m
 | `OIDC_SCOPES`, `OIDC_FORCE_HTTPS`, `OIDC_POST_LOGOUT_PATH`, `OIDC_SESSION_AGE_EXTENSION`, `OIDC_CONNECTION_DELAY` | Réglages fins | voir `application.properties` |
 | `ADMIN_LOCAL_SECOURS` | Ouvre (`true`) ou ferme (`false`) le compte de secours. Absent : fermé derrière un fournisseur, ouvert sans | — |
 
-L'URL de redirection à déclarer chez le fournisseur est
-`<PUBLIC_URL>/q/oidc/callback` ; celle de retour après déconnexion,
-`<PUBLIC_URL>/login`. Le client est confidentiel, avec PKCE.
+L'URI de redirection à déclarer chez le fournisseur est
+`<PUBLIC_URL>/api/auth/oidc/login` (la route de connexion fait aussi office de
+retour du code d'autorisation) ; celle de retour après déconnexion,
+`<PUBLIC_URL>/login`. Déclarez-les **exactes, sans joker** : le `redirect_uri`
+envoyé suit l'en-tête `Host` de la requête, un joker laisserait un hôte
+inattendu recevoir le code. Le client est confidentiel, avec PKCE.
+
+## Changer l'URL du fournisseur
+
+Le compte est lié au couple **émetteur + sujet** : si l'URL de l'émetteur
+change (migration du fournisseur, nouveau domaine), plus aucun sujet ne
+correspond et personne ne peut se connecter, administrateurs compris. Procédure :
+rouvrez le secours (`ADMIN_LOCAL_SECOURS=true`, voir `exploitation.md`), puis
+déliez les comptes en base pour qu'ils se relient à leur prochaine connexion
+(adresse vérifiée) :
+
+```sql
+UPDATE compte SET oidc_sujet = NULL;
+```
+
+Changez ensuite `OIDC_AUTH_SERVER_URL`, redémarrez, reconnectez-vous par le
+fournisseur, puis refermez le secours.
 
 ## Rattacher une personne
 

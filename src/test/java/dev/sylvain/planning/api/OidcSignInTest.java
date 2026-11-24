@@ -112,4 +112,34 @@ class OidcSignInTest {
                 .body("authOidc", equalTo(true))
                 .body("authSecours", equalTo(false));
     }
+
+    /** What the provider must allow: the code comes back on the login route, exactly. */
+    @Test
+    void leRedirectUriDuCodeEstLaRouteDeConnexion() {
+        String location = given().redirects()
+                .follow(false)
+                .header("Accept", "text/html")
+                .get("/api/auth/oidc/login")
+                .then()
+                .statusCode(302)
+                .extract()
+                .header("Location");
+        assertThat(java.net.URLDecoder.decode(location, java.nio.charset.StandardCharsets.UTF_8))
+                .contains("redirect_uri=http://localhost:")
+                .contains("/api/auth/oidc/login");
+    }
+
+    @Test
+    void uneSessionDeCompteDesactiveNeLaisseAucuneTraceDeConnexion() {
+        String email = address();
+        Compte compte = comptes.create(email, null);
+        Compte autre = comptes.create(address(), null);
+        comptes.grant(autre.id(), RoleHabilitation.ADMIN, null, null);
+        comptes.grant(compte.id(), RoleHabilitation.ADMIN, null, null);
+        comptes.deactivate(compte.id());
+        assertThat(api(token("s-" + UUID.randomUUID(), email, true))).isEqualTo(403);
+        // Not claimed: still free to be bound by its owner once reactivated.
+        comptes.reactivate(compte.id());
+        assertThat(api(token("s-" + UUID.randomUUID(), email, true))).isEqualTo(200);
+    }
 }

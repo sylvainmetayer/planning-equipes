@@ -154,10 +154,13 @@ public class CompteService {
         }
         Optional<Compte> parSujet = repository.findBySubject(sujet);
         if (parSujet.isEmpty() && emailTrusted && email != null && !email.isBlank()) {
-            parSujet =
-                    repository.findByEmail(email.trim()).filter(compte -> repository.bindSubject(compte.id(), sujet));
+            // A deactivated account is never claimed: a refused sign-in leaves no trace on it.
+            parSujet = repository
+                    .findByEmail(email.trim())
+                    .filter(CompteService::isActive)
+                    .filter(compte -> repository.bindSubject(compte.id(), sujet));
         }
-        parSujet.ifPresent(compte -> repository.touchSignIn(compte.id()));
+        parSujet.filter(CompteService::isActive).ifPresent(compte -> repository.touchSignIn(compte.id()));
         return parSujet;
     }
 
