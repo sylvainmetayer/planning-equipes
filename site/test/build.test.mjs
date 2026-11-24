@@ -42,6 +42,13 @@ test('hreflang is reciprocal and the sitemap lists every page', () => {
   const sitemap = read(join(dist, 'sitemap.xml'));
   for (const page of pages.filter((p) => !p.endsWith('404.html'))) {
     const html = read(page);
+    // A noindex page is listed neither in the sitemap nor in llms.txt
+    if (html.includes('<meta name="robots" content="noindex">')) {
+      const self = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+      assert.ok(!sitemap.includes(`<loc>${self}</loc>`), `${self} noindex mais dans le sitemap`);
+      assert.ok(!read(join(dist, 'llms.txt')).includes(self), `${self} noindex mais dans llms.txt`);
+      continue;
+    }
     const self = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
     const alt = html.match(/hreflang="(?:fr|en)" href="([^"]+)"/g).map((m) => m.match(/href="([^"]+)"/)[1]).find((u) => u !== self);
     assert.ok(alt, `${page} : alternate`);

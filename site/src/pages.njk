@@ -12,6 +12,7 @@ eleventyComputed:
   altLang: "{{ p.altLang }}"
   altUrl: "{{ p.altUrl }}"
   canonical: "{{ p.url }}"
+  noindex: "{{ 'true' if p.noindex }}"
   title: "{{ p.title }}"
   description: "{{ p.description }}"
   ogTitle: "{{ copy[p.lang][p.key].ogTitre }}"

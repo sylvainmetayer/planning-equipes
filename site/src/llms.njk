@@ -5,15 +5,15 @@ eleventyExcludeFromCollections: true
 {#- https://llmstxt.org : the site for LLMs, each page with its Markdown twin -#}
 # {{ site.name }}
 
-> {{ copy.fr.accueil.description }} Logiciel libre (AGPL-3.0), français et anglais. Tarif sur devis.
+> {{ copy.fr.accueil.description }} Logiciel libre (AGPL-3.0), français et anglais. Tarif après échange ([contact]({{ site.url }}{{ urls.fr.contact }})).
 
 ## Français
-{% for p in allPages %}{% if p.lang == 'fr' %}
+{% for p in allPages %}{% if p.lang == 'fr' and not p.noindex %}
 - [{{ copy.fr[p.key].h1 }}]({{ site.url }}{{ p.url }}index.md) : {{ p.description }}
 {%- endif %}{% endfor %}
 
 ## English
-{% for p in allPages %}{% if p.lang == 'en' %}
+{% for p in allPages %}{% if p.lang == 'en' and not p.noindex %}
 - [{{ copy.en[p.key].h1 }}]({{ site.url }}{{ p.url }}index.md): {{ p.description }}
 {%- endif %}{% endfor %}
 
