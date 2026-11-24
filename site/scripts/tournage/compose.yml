@@ -7,5 +7,7 @@ services:
     environment:
       HORLOGE_SIMULEE_AUTORISEE: "true"
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?tourner.sh le fournit}
+      # Le QR code et le lien des PDF d'exemple : une adresse réservée, pas localhost
+      PUBLIC_URL: https://planning.example.org
   pgadmin:
     profiles: ["jamais"]
