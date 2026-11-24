@@ -66,8 +66,8 @@ test('les anciennes adresses des versions mènent à la nouvelle page', async ({
   const page = await pageAdmin(browser, admin);
   for (const ancienne of ['/instantanes', '/comparateur', '/kpi?rang=2&dosage=x']) {
     await page.goto(ancienne);
-    await expect(page, ancienne).toHaveURL(/\/versions$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Versions du plan' })).toBeVisible();
+    await expect(page, ancienne).toHaveURL(/\/solveur\?onglet=versions$/);
+    await expect(page.getByRole('heading', { level: 2, name: 'Versions du plan' })).toBeVisible();
   }
   await page.context().close();
 });

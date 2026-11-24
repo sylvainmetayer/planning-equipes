@@ -21,9 +21,9 @@ test.afterAll(async () => {
 test('poser un verrouillage de journée, mesurer son impact, le retirer', async ({ browser }) => {
   test.slow();
   const page = await pageAdmin(browser, admin);
-  // The old address lands on its tab of « Consignes au solveur » (issue #719).
+  // The old address lands on its tab of « Règles du planning ».
   await page.goto('/verrouillages');
-  await expect(page).toHaveURL(/\/consignes-solveur\?onglet=verrouillages/);
+  await expect(page).toHaveURL(/\/regles\?onglet=verrouillages/);
   // The work-in-progress banner is gone: the lock is honoured by every solve.
   await expect(page.locator('#contenu')).not.toContainText('en cours de développement');
 
