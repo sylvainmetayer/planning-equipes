@@ -145,12 +145,12 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'journee-changements-toolbar',
   },
   { path: '/animateurs?onglet=disponibilites', sheet: 'espace-dispo-intro' },
-  // Three screens became the tabs of « Consignes au solveur » (issue #719):
-  // the default tab, and the other two by their `?onglet=`.
+  // The three tabs of the former « Consignes au solveur » lead « Règles du
+  // planning »: the default tab, and the other two by their `?onglet=`.
   {
     path: '/regles',
-    marker: 'Ce que le prochain calcul doit respecter',
-    sheet: 'consignes-solveur-onglets',
+    marker: 'Ajustements',
+    sheet: 'regles-onglets',
   },
   {
     path: '/regles?onglet=verrouillages',
@@ -311,9 +311,8 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
   const navigation = page.getByRole('navigation', { name: 'Navigation principale' });
   for (const groupe of [
     'Accueil',
-    'Planning',
     'Préparer',
-    'Construire',
+    'Planifier',
     'Diffuser',
     "Aujourd'hui",
     'Administrer',
@@ -321,9 +320,10 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
     // The folding chevron is a ligature, read as part of the button's name.
     await expect(navigation.getByRole('button', { name: new RegExp(`^${groupe}`) })).toBeVisible();
   }
-  // Once hidden by the simple mode, now listed down their group.
-  await expect(navigation.getByRole('link', { name: 'Compétences' })).toBeVisible();
-  await expect(navigation.getByRole('link', { name: 'Historique' })).toBeVisible();
+  // A variant of another screen's question is one of its tabs, not an entry.
+  await expect(navigation.getByRole('link', { name: 'Calendrier' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Paramètres' })).toBeVisible();
+  await expect(navigation.getByRole('link', { name: 'Compétences' })).toHaveCount(0);
   await expect(navigation.getByRole('button', { name: /Menu simple|Menu avancé/ })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toHaveCount(0);
   await expect(navigation.getByRole('link', { name: 'Accessibilité' })).toBeVisible();
