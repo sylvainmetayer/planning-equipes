@@ -54,6 +54,9 @@ public final class ScenarioBinder {
      */
     private static final ObjectMapper MAPPER = mapper();
 
+    /** The scenario format this build reads and writes; a file may omit it, meaning 1. */
+    public static final int SCHEMA_VERSION = 1;
+
     private ScenarioBinder() {}
 
     /** @throws ScenarioFormatException on anything the DTO shape does not accept */
@@ -63,6 +66,7 @@ public final class ScenarioBinder {
             throw new ScenarioFormatException(
                     "Le fichier de scénario n'est pas un document YAML valide (mapping attendu).");
         }
+        refuseNewerSchema(document);
         refuseRetiredSections(document);
         try {
             return MAPPER.convertValue(ScenarioYaml.normaliseDates(document), ScenarioDto.class);
@@ -105,6 +109,20 @@ public final class ScenarioBinder {
                     + " d'amplitudes à découper à l'import. Remplacez les amplitudes de « creneaux » par les"
                     + " vacations attendues — un relais repas se marque « couverturePause: true » — ou passez"
                     + " par « journeesTypes ».");
+        }
+    }
+
+    /**
+     * Checked before binding: a file from a newer release would otherwise be
+     * reported as "champ inconnu" on whichever new key comes first.
+     */
+    private static void refuseNewerSchema(Object document) {
+        Object version = ((Map<?, ?>) document).get("schemaVersion");
+        if (version instanceof Number n && n.intValue() > SCHEMA_VERSION) {
+            throw new ScenarioFormatException(
+                    "Ce scénario est au format " + n.intValue()
+                            + ", plus récent que celui que cette version de l'application lit (" + SCHEMA_VERSION
+                            + ") : il a été produit par une version plus récente. Mettez l'application à jour pour l'importer.");
         }
     }
 

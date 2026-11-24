@@ -800,6 +800,10 @@
         "$ref" : "#/$defs/PrereglageConsigneDto"
       }
     },
+    "schemaVersion" : {
+      "type" : "integer",
+      "format" : "int32"
+    },
     "stands" : {
       "type" : "array",
       "items" : {

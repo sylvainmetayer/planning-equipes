@@ -16,6 +16,7 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ConsigneDto;
 import dev.sylvain.planning.scenario.dto.ContrainteAdHocDto;
@@ -85,6 +86,7 @@ final class ScenarioDtoAssembler {
                 .orElse(LocalDate.EPOCH);
 
         return new ScenarioDto(
+                ScenarioBinder.SCHEMA_VERSION,
                 null,
                 new FestivalDto(dateDebut),
                 parametresSolveur(export.parametresSolveur()),
