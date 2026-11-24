@@ -19,6 +19,7 @@ on:
       - '.dockerignore'
       - 'mise.toml'
       - 'pom.xml'
+      - '.mvn/**'
       - 'src/main/webui/package.json'
       - 'src/main/webui/package-lock.json'
       - 'src/main/webui/angular.json'

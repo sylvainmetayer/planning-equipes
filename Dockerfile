@@ -9,6 +9,10 @@ FROM maven:3.10-eclipse-temurin-25@sha256:4ed0327629de542aefd6ea9fd5da0c52e80143
 RUN apt-get update && apt-get install -y --no-install-recommends git libatomic1 && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 COPY pom.xml .
+# .mvn/maven.config : la même résolution que la CI et le poste de développement
+# (découverte des préfixes de dépôts coupée — un dépôt tiers en panne ne
+# fait plus attendre chaque session Maven), et .mvn/jvm.config.
+COPY .mvn ./.mvn
 RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 COPY .git ./.git
