@@ -11,7 +11,9 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Named accounts and what they may do: the person ({@code compte}) and the
@@ -169,14 +171,38 @@ public class CompteService {
         return compte.desactiveLe() == null;
     }
 
-    /** The roles an account carries on a request: the unscoped rights in force, and only those. */
-    public static Set<String> globalRoles(Compte compte, Instant now) {
-        return compte.habilitations().stream()
-                .filter(h -> h.editionId() == null
-                        && h.retireeLe() == null
-                        && (h.expireLe() == null || h.expireLe().isAfter(now)))
+    /**
+     * The roles an account carries on a request, from the rights in force:
+     * {@code admin} (an administrator right) and {@code organisateur} (an
+     * organiser right on any edition — which editions is {@link #editionScope}'s
+     * question, asked where an edition is designated).
+     */
+    public static Set<String> roles(Compte compte, Instant now) {
+        return inForce(compte, now)
                 .map(h -> h.role().name().toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * The editions an <b>organiser</b> account may work in: every one when a
+     * right in force names none, else exactly the ones named. An account with
+     * no organiser right opens none. The administrators are not asked.
+     */
+    public static Predicate<String> editionScope(Compte compte, Instant now) {
+        List<Habilitation> droits = inForce(compte, now)
+                .filter(h -> h.role() == RoleHabilitation.ORGANISATEUR)
+                .toList();
+        if (droits.stream().anyMatch(h -> h.editionId() == null)) {
+            return id -> true;
+        }
+        Set<String> ids = droits.stream().map(Habilitation::editionId).collect(Collectors.toSet());
+        return ids::contains;
+    }
+
+    private static Stream<Habilitation> inForce(Compte compte, Instant now) {
+        return compte.habilitations().stream()
+                .filter(h -> h.retireeLe() == null
+                        && (h.expireLe() == null || h.expireLe().isAfter(now)));
     }
 
     private Compte required(String id) {

@@ -88,7 +88,7 @@ public class FormLoginSecours {
             Instant now = Instant.now();
             return comptes.list().stream()
                     .anyMatch(c -> CompteService.isActive(c)
-                            && CompteService.globalRoles(c, now).contains("admin"));
+                            && CompteService.roles(c, now).contains("admin"));
         } catch (RuntimeException e) {
             return true; // not provable at startup: say nothing rather than raise a false alarm
         }

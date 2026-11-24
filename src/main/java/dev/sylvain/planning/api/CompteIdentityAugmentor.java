@@ -69,8 +69,7 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
             Compte compte = comptes.identify(token.getIssuer() + "|" + token.getSubject(), email, trusted)
                     .filter(CompteService::isActive)
                     .orElse(null);
-            return withRoles(
-                    identity, compte == null ? Set.of() : CompteService.globalRoles(compte, Instant.now()), compte);
+            return withRoles(identity, compte == null ? Set.of() : CompteService.roles(compte, Instant.now()), compte);
         });
     }
 

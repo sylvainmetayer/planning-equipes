@@ -32,7 +32,7 @@ class AuthentificationAdminTest {
             // default (ADMIN_PASSWORD unset), so no credential-looking literal
             // lives in this file.
             return Map.of(
-                    "quarkus.http.auth.permission.admin-api.policy", "role-admin",
+                    "quarkus.http.auth.permission.admin-api.policy", "role-gestion",
                     "quarkus.http.auth.permission.api-docs.policy", "role-admin");
         }
     }

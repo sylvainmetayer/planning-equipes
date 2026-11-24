@@ -74,6 +74,15 @@ Connexions).
 
 ## Ce qui n'est pas là
 
-Le rôle `organisateur` est porté par la session mais n'ouvre aucune route : `/api`
-exige `admin`. L'OAuth du `/mcp` (qui garde sa clé d'API), la gestion des comptes
-par un écran et les comptes locaux avec mot de passe viennent séparément.
+Le rôle `organisateur` ouvre `/api` dans les seules éditions que ses droits en
+vigueur nomment (un droit « toutes éditions » les couvre toutes) : une édition
+hors de ses droits est refusée comme une édition inexistante
+(`EDITION_INCONNUE`, 400) et absente de la liste des éditions. Il n'ouvre pas
+les routes d'instance, réservées à `admin` (403) : comptes, webhooks, clé MCP,
+sauvegardes, export et import de toute la base, écran Débogage, machine de
+calcul, journal des connexions, horloge simulée, création, renommage,
+duplication, activation et suppression d'une édition, comparaison de deux
+éditions, et l'import de scénario, dont le fichier peut désigner une autre
+édition. L'inventaire est `InstanceRoutesStructuralTest` ; une nouvelle ressource
+non classée fait échouer le build. L'OAuth du `/mcp` (qui garde sa clé d'API) et
+les comptes locaux avec mot de passe viennent séparément.

@@ -30,6 +30,7 @@ import org.jboss.resteasy.reactive.ResponseStatus;
  * that generated it and nowhere else, and the address of a chat preset is
  * returned masked.</p>
  */
+@InstanceOnly
 @Path("/webhooks")
 @Produces(MediaType.APPLICATION_JSON)
 public class WebhookResource {

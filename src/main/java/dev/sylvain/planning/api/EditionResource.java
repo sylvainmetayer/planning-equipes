@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionActivationService;
 import dev.sylvain.planning.service.edition.EditionDelta;
 import dev.sylvain.planning.service.edition.EditionDeltaService;
@@ -49,6 +50,8 @@ public class EditionResource {
 
     private final EditionDeltaService deltaService;
 
+    private final EditionContext editionContext;
+
     @Inject
     public EditionResource(
             EditionService editionService,
@@ -56,7 +59,9 @@ public class EditionResource {
             CoherenceReferentielService coherenceService,
             GelReferentielService gelService,
             EditionActivationService activationService,
-            EditionDeltaService deltaService) {
+            EditionDeltaService deltaService,
+            EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.activationService = activationService;
         this.editionService = editionService;
         this.etatEditionService = etatEditionService;
@@ -67,7 +72,9 @@ public class EditionResource {
 
     @GET
     public List<Edition> list() {
-        return editionService.listEditions();
+        return editionService.listEditions().stream()
+                .filter(edition -> editionContext.visibleToCaller(edition.getId()))
+                .toList();
     }
 
     /**
@@ -146,11 +153,13 @@ public class EditionResource {
         return gelService.etat(famille);
     }
 
+    @InstanceOnly
     @POST
     public Response create(Edition edition) {
         return Response.ok(editionService.create(edition)).build();
     }
 
+    @InstanceOnly
     @PUT
     @Path("/{id}")
     public Response rename(@PathParam("id") String id, Edition edition) {
@@ -173,6 +182,7 @@ public class EditionResource {
      * duplicating a file of persons who have not signed up again (issue #90,
      * {@code docs/rgpd.md}).</p>
      */
+    @InstanceOnly
     @POST
     @Path("/{id}/dupliquer")
     public Response duplicate(
@@ -189,6 +199,7 @@ public class EditionResource {
      * by coincidence. Read-only; animateurs are named, for this
      * administrator's screen only.
      */
+    @InstanceOnly
     @GET
     @Path("/{id}/delta/{cible}")
     public EditionDelta delta(@PathParam("id") String id, @PathParam("cible") String cible) {
@@ -196,6 +207,7 @@ public class EditionResource {
     }
 
     /** The same delta as a CSV: no animateur is named, an animateur line carries its ids only. */
+    @InstanceOnly
     @GET
     @Path("/{id}/delta/{cible}/export.csv")
     @Produces("text/csv")
@@ -208,6 +220,7 @@ public class EditionResource {
      * links that stop working, swap requests left open, solves queued — read
      * before the switch is confirmed (ADR 0072).
      */
+    @InstanceOnly
     @GET
     @Path("/{id}/activation")
     public EditionActivationService.ActivationPreview activationPreview(@PathParam("id") String id) {
@@ -220,6 +233,7 @@ public class EditionResource {
      * other one inactive, atomically. {@code 409} while a solve runs in the
      * outgoing or the incoming edition.
      */
+    @InstanceOnly
     @PUT
     @Path("/{id}/active")
     public Edition activate(@PathParam("id") String id) {
@@ -227,6 +241,7 @@ public class EditionResource {
     }
 
     /** Leaves no edition active: between two events, nothing reaches outside. */
+    @InstanceOnly
     @DELETE
     @Path("/{id}/active")
     public Response deactivate(@PathParam("id") String id) {
@@ -239,6 +254,7 @@ public class EditionResource {
      * is over, or an inactive one starts within a few days. The admin shell
      * shows a banner when the list is not empty.
      */
+    @InstanceOnly
     @GET
     @Path("/situations")
     public List<EditionActivationService.Situation> situations() {
@@ -252,6 +268,7 @@ public class EditionResource {
      * serves — and 409 while a solve or a staffing check still works on it,
      * running or queued.
      */
+    @InstanceOnly
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") String id) {
