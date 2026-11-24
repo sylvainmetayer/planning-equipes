@@ -156,6 +156,11 @@ public class EditionContext {
                 || CompteService.editionScope(compte, Instant.now()).test(editionId);
     }
 
+    /** Whether the caller is an organiser narrowed to its editions (an administrator is not). */
+    public boolean callerIsOrganiser() {
+        return organiserOfRequest() != null;
+    }
+
     private static Compte organiserOfRequest() {
         var container = Arc.container();
         if (container == null || !container.requestContext().isActive()) {

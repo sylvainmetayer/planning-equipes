@@ -82,7 +82,8 @@ les routes d'instance, réservées à `admin` (403) : comptes, webhooks, clé MC
 sauvegardes, export et import de toute la base, écran Débogage, machine de
 calcul, journal des connexions, horloge simulée, création, renommage,
 duplication, activation et suppression d'une édition, comparaison de deux
-éditions, et l'import de scénario, dont le fichier peut désigner une autre
-édition. L'inventaire est `InstanceRoutesStructuralTest` ; une nouvelle ressource
+éditions. L'import de scénario reste ouvert à l'organisateur, dans son édition
+courante seulement : une section `edition:` qui en désigne une autre, ou une à
+créer, est refusée (400). L'inventaire est `InstanceRoutesStructuralTest` ; une nouvelle ressource
 non classée fait échouer le build. L'OAuth du `/mcp` (qui garde sa clé d'API) et
 les comptes locaux avec mot de passe viennent séparément.
