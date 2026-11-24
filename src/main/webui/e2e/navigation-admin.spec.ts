@@ -360,15 +360,15 @@ test('un seul menu par moment du cycle, Débogage hors menu mais servi', async (
   // A view of the page already on screen: the router reuses the page, which
   // must follow its address rather than keep the view it was built with.
   await page.goto('/regles');
-  await expect(page.locator('#contenu')).toContainText('Ce que le prochain calcul doit respecter');
+  await expect(page.locator('#contenu')).toContainText('Ajustements manuels actifs');
   await expect(page.locator('#contenu app-verrouillages-page')).toHaveCount(0);
   await page.keyboard.press('Control+k');
   await page.getByRole('dialog').getByRole('combobox').fill('figer');
   await page
     .getByRole('dialog')
-    .getByRole('option', { name: /Consignes au solveur › Verrouillages/ })
+    .getByRole('option', { name: /Règles du planning › Verrouillages/ })
     .click();
-  await expect(page).toHaveURL(/\/consignes-solveur\?onglet=verrouillages/);
+  await expect(page).toHaveURL(/\/regles\?onglet=verrouillages/);
   await expect(page.locator('#contenu app-verrouillages-page')).toHaveCount(1);
   await page.context().close();
 });
