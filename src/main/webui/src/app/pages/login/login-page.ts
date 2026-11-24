@@ -77,14 +77,14 @@ export class LoginPage implements OnInit {
   /** Why the last password attempt failed: wrong credentials, or the door closed (409). */
   protected readonly echec = signal<'identifiants' | 'fermee' | null>(null);
   /** Signed in at the provider, but this application gave the account no `admin` right. */
-  protected readonly sansDroits = signal(false);
+  protected readonly noRights = signal(false);
 
   ngOnInit(): void {
     void this.adminApi
       .session()
-      .then((statut) => this.sansDroits.set(signedInWithoutAdminRole(statut)))
+      .then((statut) => this.noRights.set(signedInWithoutAdminRole(statut)))
       // Anonymous, or the probe is unreachable: the ordinary card is right.
-      .catch(() => this.sansDroits.set(false));
+      .catch(() => this.noRights.set(false));
   }
 
   /** Leaves the application for the authorization server; nothing to await. */
