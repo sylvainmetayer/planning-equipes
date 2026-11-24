@@ -267,8 +267,9 @@ test('le pied de page admin indique la version en cours', async ({ browser }) =>
   const pied = page.locator('.app-version-footer');
   await expect(pied).toContainText('Version');
   // The link points at the exact revision the build was cut from: the release
-  // page when it sits on a tag, the commit otherwise.
-  await expect(pied.locator('a[target="_blank"]')).toHaveAttribute(
+  // page when it sits on a tag, the commit otherwise. It comes first, before the
+  // link to the project's website.
+  await expect(pied.locator('a[target="_blank"]').first()).toHaveAttribute(
     'href',
     /\/(commit|releases\/tag)\/\S/,
   );
