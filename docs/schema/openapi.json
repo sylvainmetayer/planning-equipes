@@ -10019,6 +10019,9 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "compteId" : {
+            "type" : "string"
           }
         }
       },

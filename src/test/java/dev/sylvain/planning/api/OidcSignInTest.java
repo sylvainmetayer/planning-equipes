@@ -191,7 +191,8 @@ class OidcSignInTest {
                 .then()
                 .statusCode(200)
                 .body("authentifie", equalTo(true))
-                .body("roles", hasItem("organisateur"));
+                .body("roles", hasItem("organisateur"))
+                .body("compteId", org.hamcrest.Matchers.notNullValue());
     }
 
     @Test

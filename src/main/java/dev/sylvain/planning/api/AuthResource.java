@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.compte.Compte;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
@@ -59,7 +60,14 @@ public class AuthResource {
         return new StatutSession(
                 authentifie,
                 authentifie ? identity.getPrincipal().getName() : null,
-                authentifie ? List.copyOf(new TreeSet<>(identity.getRoles())) : List.of());
+                authentifie ? List.copyOf(new TreeSet<>(identity.getRoles())) : List.of(),
+                compteId());
+    }
+
+    /** The id of the account the session is bound to; {@code null} for the configuration's own and for nobody. */
+    private String compteId() {
+        Compte compte = identity.getAttribute(Compte.IDENTITY_ATTRIBUTE);
+        return compte == null ? null : compte.id();
     }
 
     /**
@@ -110,9 +118,12 @@ public class AuthResource {
      * @param nom         the principal's name — the address of an OIDC session, or
      *                    {@code admin} for the break-glass account
      * @param roles       sorted, so the payload does not churn between calls
+     * @param compteId    the id of the account of the application the session is bound to,
+     *                    {@code null} for the break-glass account: what the interface compares
+     *                    with, never the address
      */
     @Schema(requiredProperties = {"authentifie", "roles"})
-    public record StatutSession(boolean authentifie, String nom, List<String> roles) {}
+    public record StatutSession(boolean authentifie, String nom, List<String> roles, String compteId) {}
 
     /** @param urlDeconnexion route ending the provider's session, {@code null} when there is none */
     public record Deconnexion(String urlDeconnexion) {}
