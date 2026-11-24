@@ -34,8 +34,14 @@ public class PlanSnapshotResource {
 
     private final SnapshotComparisonService comparaisonService;
 
+    private final dev.sylvain.planning.service.EditionContext editionContext;
+
     @Inject
-    public PlanSnapshotResource(PlanSnapshotService snapshotService, SnapshotComparisonService comparaisonService) {
+    public PlanSnapshotResource(
+            PlanSnapshotService snapshotService,
+            SnapshotComparisonService comparaisonService,
+            dev.sylvain.planning.service.EditionContext editionContext) {
+        this.editionContext = editionContext;
         this.snapshotService = snapshotService;
         this.comparaisonService = comparaisonService;
     }
@@ -55,7 +61,9 @@ public class PlanSnapshotResource {
     @GET
     @Path("/comparables")
     public List<SnapshotMeta> comparables() {
-        return snapshotService.listAllEditions();
+        return snapshotService.listAllEditions().stream()
+                .filter(meta -> editionContext.visibleToCaller(meta.editionId()))
+                .toList();
     }
 
     /**

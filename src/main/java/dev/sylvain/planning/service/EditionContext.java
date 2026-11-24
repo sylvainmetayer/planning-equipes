@@ -156,6 +156,17 @@ public class EditionContext {
                 || CompteService.editionScope(compte, Instant.now()).test(editionId);
     }
 
+    /**
+     * What {@link #visibleToCaller} says, frozen for the caller of <b>this</b>
+     * request: for code that answers on another thread (a server-sent stream),
+     * where the request's identity is no longer reachable and a late read would
+     * silently see everything.
+     */
+    public java.util.function.Predicate<String> callerEditionFilter() {
+        Compte compte = organiserOfRequest();
+        return compte == null ? id -> true : CompteService.editionScope(compte, Instant.now());
+    }
+
     /** Whether the caller is an organiser narrowed to its editions (an administrator is not). */
     public boolean callerIsOrganiser() {
         return organiserOfRequest() != null;
