@@ -12,12 +12,8 @@
   ],
   "sections": [
     {
-      "h2": "Comment il reconnaît un mineur",
-      "texte": "L'âge se déduit de la date de naissance, **à la date de chaque créneau**, jamais d'une case cochée. Quelqu'un qui a 16 ans au milieu de l'événement change de régime ce jour-là.\n\nLa date de naissance ne sert qu'à cela : ni la télé de la salle de contrôle, ni la messagerie de l'équipe, ni l'assistant IA ne la voient."
-    },
-    {
-      "h2": "Les seuils selon l'âge",
-      "texte": "- **Avant 16 ans** : 7 heures par jour, aucun poste entre 20 h et 6 h, 14 heures de repos entre deux journées.\n- **De 16 à 18 ans** : 8 heures par jour et 35 par semaine, aucun poste entre 22 h et 6 h, 12 heures de repos.\n- **Tous les mineurs** : une pause de 30 minutes après 4 h 30, deux jours de repos consécutifs par semaine, aucun jour férié.\n- **Un majeur** : 10 heures par jour, 48 par semaine (réglable), 11 heures de repos, une pause après 6 heures."
+      "h2": "Le droit applicable selon l'âge réel",
+      "texte": "Chacun se voit appliquer le droit de son âge réel, calculé **à la date de chaque créneau** : moins de 16 ans, 16 à 18 ans ou majeur. Quelqu'un qui fête ses 16 ans pendant l'événement change de régime ce jour-là.\n\n- **Avant 16 ans** : 7 heures par jour, aucun poste entre 20 h et 6 h, 14 heures de repos entre deux journées.\n- **De 16 à 18 ans** : 8 heures par jour et 35 par semaine, aucun poste entre 22 h et 6 h, 12 heures de repos.\n- **Tous les mineurs** : une pause de 30 minutes après 4 h 30, deux jours de repos consécutifs par semaine, aucun jour férié.\n- **Un majeur** : 10 heures par jour, 48 par semaine (réglable), 11 heures de repos, une pause après 6 heures.\n\nLa date de naissance ne sert qu'à ce calcul : ni la télé de la salle de contrôle, ni la messagerie de l'équipe, ni l'assistant IA ne la voient."
     },
     {
       "h2": "Une pause, c'est un trou ou un relais",
@@ -53,12 +49,8 @@
     ],
     "sections": [
       {
-        "h2": "How it recognises an under-18",
-        "texte": "Age comes from the date of birth, **on the date of each shift**, never from a ticked box. Someone who turns 16 mid-event changes regime that day.\n\nThe date of birth is used for that alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it."
-      },
-      {
-        "h2": "Thresholds by age",
-        "texte": "- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours."
+        "h2": "The law that applies at each person's real age",
+        "texte": "Everyone gets the law of their real age, worked out **on the date of each shift**: under 16, 16 to 18, or adult. Someone who turns 16 mid-event changes regime that day.\n\n- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours.\n\nThe date of birth is used for that calculation alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it."
       },
       {
         "h2": "A break is a gap or a relief",
