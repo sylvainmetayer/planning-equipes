@@ -1274,6 +1274,39 @@ describe('SolverPage', () => {
       );
     });
 
+    it('keeps the machine panel visible, folded, while it may cost money', async () => {
+      for (const etat of [
+        { state: 'PREPARING' as const },
+        { state: 'READY' as const },
+        { state: 'SOLVING' as const },
+        { state: 'ABSENT' as const, lastStopError: 'arrêt refusé' },
+      ]) {
+        machineApi.read.mockResolvedValue(machine({ configured: true, onDemand: true, ...etat }));
+        createPage();
+        await fixture.whenStable();
+        expect(racine().querySelector('app-machine-calcul-card')).not.toBeNull();
+      }
+      machineApi.read.mockResolvedValue(
+        machine({ configured: true, onDemand: true, state: 'ABSENT' }),
+      );
+      createPage();
+      await fixture.whenStable();
+      expect(racine().querySelector('app-machine-calcul-card')).toBeNull();
+    });
+
+    it('shows the place toggle, folded, once it differs from the default', async () => {
+      machineApi.read.mockResolvedValue(
+        machine({ configured: true, remoteByDefault: true, state: 'PERMANENT' }),
+      );
+      const page = createPage();
+      await fixture.whenStable();
+      expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).toBeNull();
+
+      page['distant'].set(false);
+      await fixture.whenStable();
+      expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).not.toBeNull();
+    });
+
     it('says the machine is being prepared while the job waits for it', async () => {
       const page = createPage();
       activeJob.set(tracked({ remote: true, remoteStage: 'PREPARING' }));
