@@ -140,14 +140,3 @@ export function appliquerBranding(branding: Branding): void {
     );
   }
 }
-
-/** Filename slug of the deployment: `Planning Équipes` → `planning-equipes`. */
-export function slugMarque(productName: string): string {
-  const slug = productName
-    .normalize('NFD')
-    .replace(/\p{M}+/gu, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, ''); // runs already collapsed to one dash
-  return slug || 'planning';
-}
