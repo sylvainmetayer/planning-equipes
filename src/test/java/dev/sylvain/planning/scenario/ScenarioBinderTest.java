@@ -304,4 +304,21 @@ class ScenarioBinderTest {
                 .hasMessageContaining("plus récent")
                 .hasMessageNotContaining("Champ inconnu");
     }
+
+    @Test
+    void aHugeSchemaVersionIsNewerNotAJacksonError() {
+        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 4294967297\n" + MINIMAL))
+                .isInstanceOf(ScenarioFormatException.class)
+                .hasMessageContaining("plus récent");
+    }
+
+    @Test
+    void anythingButTheIntegerOneIsRefused() {
+        for (String value : new String[] {"\"2\"", "'99'", "1.9", "1.0", "0", "-5", "abc", "true"}) {
+            assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: " + value + "\n" + MINIMAL))
+                    .as(value)
+                    .isInstanceOf(ScenarioFormatException.class)
+                    .hasMessageContaining("« schemaVersion » doit valoir 1");
+        }
+    }
 }

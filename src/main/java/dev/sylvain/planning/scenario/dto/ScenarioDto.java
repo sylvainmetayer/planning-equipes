@@ -1,6 +1,8 @@
 package dev.sylvain.planning.scenario.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
@@ -20,7 +22,7 @@ import java.util.List;
  */
 public record ScenarioDto(
         // Absent means 1; a number above ScenarioBinder.SCHEMA_VERSION is refused on reading.
-        Integer schemaVersion,
+        @Min(1) @Max(1) Integer schemaVersion,
         @Valid EditionCibleDto edition,
         @NotNull @Valid FestivalDto festival,
         @Valid ParametresSolveurDto parametresSolveur,
