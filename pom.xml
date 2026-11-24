@@ -433,6 +433,7 @@
                     <environmentVariables>
                         <ADMIN_PASSWORD>${it.admin.password}</ADMIN_PASSWORD>
                         <LEGAL_DEMO_INSTANCE>true</LEGAL_DEMO_INSTANCE>
+                        <OUTILLAGE_TEST_DUMP_SQL>true</OUTILLAGE_TEST_DUMP_SQL>
                     </environmentVariables>
                 </configuration>
             </plugin>
