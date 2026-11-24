@@ -165,9 +165,23 @@ public class CompteRepository {
         }
     }
 
-    /** Inserts a right; {@code false} when the same one is already in force. */
+    /**
+     * Inserts a right; {@code false} when the same one is already in force.
+     * The same right left expired but not withdrawn does not count: it is
+     * withdrawn first, in the same transaction, by whoever grants anew.
+     */
     public boolean insertHabilitation(String compteId, Habilitation habilitation) {
         return scope.writeAndReturn("Failed to grant a right", connection -> {
+            try (PreparedStatement ps = connection.prepareStatement("""
+                    UPDATE habilitation SET retiree_le = now(), retiree_par = ?
+                    WHERE compte_id = ? AND role = ? AND COALESCE(edition_id, '') = COALESCE(?, '')
+                    AND retiree_le IS NULL AND expire_le IS NOT NULL AND expire_le <= now()""")) {
+                ps.setString(1, habilitation.creePar());
+                ps.setString(2, compteId);
+                ps.setString(3, habilitation.role().name());
+                ps.setString(4, habilitation.editionId());
+                ps.executeUpdate();
+            }
             try (PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO habilitation (id, compte_id, role, edition_id, expire_le, cree_par)
                     VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING""")) {
