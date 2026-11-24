@@ -31,7 +31,7 @@ class ImportScenarioContraintesAdHocTest {
 
     private static final String HEADER = "X-Edition-Id";
     private static final String NOM_EDITION = "Import contraintes ad hoc";
-    private static final String NOM_EDITION_CIBLE = "Edition cible ad hoc";
+    private static final String NOM_EDITION_CIBLE = "Édition cible ad hoc";
 
     /** The landing edition of the running test, created by name: its id is generated (ADR 0050). */
     private String edition;
@@ -102,7 +102,7 @@ class ImportScenarioContraintesAdHocTest {
     /** No {@code contraintesAdHoc:} section, and a target edition of its own. */
     private static final String VERS_AUTRE_EDITION = """
             edition:
-              nom: Edition cible ad hoc
+              nom: Édition cible ad hoc
 
             """ + ENTETE;
 

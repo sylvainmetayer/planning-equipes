@@ -90,7 +90,7 @@ class ImportScenarioTargetEditionTest {
     private static String importScenario(String scenario) {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
         return given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(scenario.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -111,7 +111,7 @@ class ImportScenarioTargetEditionTest {
                 .path("id");
 
         String editionId = given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -153,7 +153,7 @@ class ImportScenarioTargetEditionTest {
 
         // Designated by the same name, the edition is found again rather than created twice.
         given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -175,7 +175,7 @@ class ImportScenarioTargetEditionTest {
                 "edition:\\n  nom: [^\\n]*\\n",
                 "edition:\n  id: " + editionId + "\n  nom: " + NOM_EDITION_CIBLE + "\n");
         given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(parId.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
@@ -194,7 +194,7 @@ class ImportScenarioTargetEditionTest {
     @Test
     void thePreviewAnnouncesTheTargetWithoutCreatingIt() {
         given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/cible-scenario-fichier")
@@ -214,7 +214,7 @@ class ImportScenarioTargetEditionTest {
 
         // Once it exists, the name alone finds it again, as the import would.
         given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/cible-scenario-fichier")
@@ -229,7 +229,7 @@ class ImportScenarioTargetEditionTest {
     void sansSectionEditionLaReponseResteMuetteSurLEdition() {
         String withoutEdition = SCENARIO.replaceFirst("(?s)edition:.*?\\n\\n", "");
         given().header("X-Edition-Id", "E1")
-                .contentType("application/x-yaml")
+                .contentType("application/x-yaml; charset=UTF-8")
                 .body(withoutEdition.getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
