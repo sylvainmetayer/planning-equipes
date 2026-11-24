@@ -1,6 +1,6 @@
 {% set c = copy[lang][key] %}
 {% set mail = 'mailto:' + site.email + '?subject=' + (copy[lang].commun.contactSujet | urlencode) %}
-{% set player = 4 if key == 'legal' else (3 if key == 'benevoles' else (1 if key == 'hebergement' else 2)) %}
+{% set player = 4 if key == 'legal' else (3 if key == 'equipe' else (1 if key == 'hebergement' else 2)) %}
 <article data-player="{{ player }}">
   <header class="ask">
     <div class="container">

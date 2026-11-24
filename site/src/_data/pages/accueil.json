@@ -79,7 +79,7 @@
         "texte": "Un animateur propose un échange, l'organisation tranche."
       }
     ],
-    "lien": "Planifier des bénévoles",
+    "lien": "Organiser son équipe",
     "outils": "Planning publié, échanges à valider : les annonces arrivent aussi dans Slack, Discord, Matrix ou Telegram, avec des chiffres et jamais de noms.",
     "film": "espace"
   },
@@ -313,7 +313,7 @@
           "texte": "A team member proposes a swap, the organisation decides."
         }
       ],
-      "lien": "Scheduling volunteers",
+      "lien": "Organising your team",
       "outils": "Rota published, swaps to approve: updates also reach Slack, Discord, Matrix or Telegram, with numbers and never names.",
       "film": "espace"
     },

@@ -44,7 +44,7 @@
   <div class="container top__in">
     <nav class="top__nav" aria-label="{{ common.nav.label }}">
       <ul>
-        {% for k in ['legal', 'benevoles', 'calcul', 'hebergement', 'faq'] %}
+        {% for k in ['legal', 'equipe', 'calcul', 'hebergement', 'faq'] %}
         <li><a href="{{ urls[lang][k] }}"{% if k == key %} aria-current="page"{% endif %}>{{ common.nav[k] }}</a></li>
         {% endfor %}
       </ul>

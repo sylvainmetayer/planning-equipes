@@ -32,8 +32,8 @@
     {
       "id": "benevoles",
       "accueil": true,
-      "q": "Peut-on planifier des bénévoles ?",
-      "a": "Oui. Le tableur de bénévoles s'importe tel quel, et le calcul les planifie comme les autres animateurs, avec les mêmes règles."
+      "q": "Le Code du travail s'applique-t-il aux bénévoles ?",
+      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut donc désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire."
     },
     {
       "id": "taille",
@@ -80,7 +80,7 @@
   "bouton": "Écrire à planning@sylvain.dev",
   "liens": [
     "legal",
-    "benevoles",
+    "equipe",
     "hebergement"
   ],
   "en": {
@@ -117,8 +117,8 @@
       {
         "id": "benevoles",
         "accueil": true,
-        "q": "Can we schedule volunteers?",
-        "a": "Yes. Your volunteer spreadsheet imports as it is, and the solver schedules volunteers like your other staff, under the same rules."
+        "q": "Does the Labour Code apply to volunteers?",
+        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call."
       },
       {
         "id": "taille",
@@ -165,7 +165,7 @@
     "bouton": "Email planning@sylvain.dev",
     "liens": [
       "legal",
-      "benevoles",
+      "equipe",
       "hebergement"
     ]
   }
