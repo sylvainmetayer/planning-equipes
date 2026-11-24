@@ -151,7 +151,7 @@
               }
             </mat-select>
           </mat-form-field>
-          @if (avance.ouvert()) {
+          @if (avance.ouvert() || couchesMasquees()) {
           <fieldset class="couches-choix">
             <legend i18n="@@ouvertures.couches.choix">Afficher dans les cases</legend>
             @for (couche of allLayers; track couche) {

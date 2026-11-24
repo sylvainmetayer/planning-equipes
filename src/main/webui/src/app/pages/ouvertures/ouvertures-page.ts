@@ -315,6 +315,10 @@ export class OuverturesPage implements OnInit {
     readCouchesParam(this.route.snapshot.queryParamMap.get('couches')),
   );
   protected readonly allLayers = COUCHES;
+  /** A layer hidden stays reachable, folded or not: the cells would say less than they know. */
+  protected readonly couchesMasquees = computed(
+    () => this.couchesAffichees().length < COUCHES.length,
+  );
   protected readonly visibleLayers = computed<ReadonlySet<Couche>>(
     () => new Set(this.couchesAffichees()),
   );

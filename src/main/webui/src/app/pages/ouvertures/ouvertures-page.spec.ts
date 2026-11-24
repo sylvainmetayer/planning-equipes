@@ -527,6 +527,19 @@ describe('OuverturesPage — saisie', () => {
     expect(address).toMatch(/couches=creneaux(,|%2C)resultat/);
   });
 
+  it('keeps the layer choice visible, folded, while a layer is hidden', async () => {
+    const { fixture } = mount({ couches: 'stand,resultat' });
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelectorAll('.couches-choix mat-checkbox')).toHaveLength(4);
+
+    const all = mount({});
+    await all.fixture.whenStable();
+    expect(root(all.fixture).querySelector('.couches-choix')).toBeNull();
+  });
+
   it('renders one field per stand and créneau, filled from the report, partial cells marked', async () => {
     const { fixture } = mount({ vue: 'saisie' });
     await fixture.whenStable();

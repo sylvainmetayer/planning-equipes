@@ -59,7 +59,7 @@
         </p>
       </li>
     </ul>
-    @if (machineConfiguree() && avance.ouvert()) {
+    @if (machineConfiguree() && (avance.ouvert() || distant() !== remoteByDefault())) {
       <mat-button-toggle-group class="solver-lieu" [value]="distant()" (change)="distant.set($event.value)"
                                aria-label="Où calculer le planning" i18n-aria-label="@@solver.lieu.label">
         <mat-button-toggle [value]="false" i18n="@@solver.lieu.surPlace">Sur place</mat-button-toggle>
@@ -116,7 +116,7 @@
   <app-solver-queue (failed)="output.set($event)" />
 </mat-card>
 
-@if (machine()?.configured && machine()?.onDemand && avance.ouvert()) {
+@if (machine()?.configured && machine()?.onDemand && (avance.ouvert() || machineEnCours())) {
   <app-machine-calcul-card [machine]="machine()!" (changed)="machine.set($event)"
                            (failed)="output.set($event); loadMachine()" />
 }

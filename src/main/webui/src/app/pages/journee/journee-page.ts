@@ -462,14 +462,14 @@ export class JourneePage implements OnInit {
     }
     return new Set(retenus === null || retenus.has(stand) ? [stand] : []);
   });
+  /** The emplacement and game category filters, folded by default (`?avance=1`). */
+  protected readonly avance = reglagesAvances();
+
   /**
    * The filters of the bar the rendering on screen reads, and only those are
    * shown: a filter drawn and then ignored narrows nothing while saying it
    * does. A hidden filter keeps its value, for the rendering that reads it.
    */
-  /** The emplacement and game category filters, folded by default (`?avance=1`). */
-  protected readonly avance = reglagesAvances();
-
   protected readonly shownFilters = computed<ShownFilters>(() =>
     filtersShown(this.axe(), this.standView(), this.view(), this.comparaisonActive()),
   );

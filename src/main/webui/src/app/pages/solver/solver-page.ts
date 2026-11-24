@@ -242,7 +242,17 @@ export class SolverPage implements OnInit {
   /** The compute machine of ADR 0086; null until read, and nothing of it shows unless `configured`. */
   protected readonly machine = signal<MachineCalcul | null>(null);
   protected readonly machineConfiguree = computed(() => this.machine()?.configured === true);
-  private readonly remoteByDefault = computed(() => this.machine()?.remoteByDefault ?? false);
+  protected readonly remoteByDefault = computed(() => this.machine()?.remoteByDefault ?? false);
+  /** A machine that is up, or whose last stop failed, may be billing: its card never folds away. */
+  protected readonly machineEnCours = computed(() => {
+    const m = this.machine();
+    return (
+      m?.state === 'PREPARING' ||
+      m?.state === 'READY' ||
+      m?.state === 'SOLVING' ||
+      !!m?.lastStopError
+    );
+  });
   /** « Sur la machine de calcul » for the next full solve; follows the instance default until chosen. */
   protected readonly distant = linkedSignal(() => this.remoteByDefault());
 

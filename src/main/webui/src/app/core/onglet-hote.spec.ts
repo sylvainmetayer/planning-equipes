@@ -49,6 +49,17 @@ describe('ongletHote', () => {
     expect(hote.onglet()).toBe('b');
   });
 
+  it('keeps the page-level ?avance=1 fold open when the tab changes', async () => {
+    path = '/page?onglet=a&avance=1&q=x';
+    const hote = host();
+
+    await hote.changer('b');
+    expect(replaceState).toHaveBeenLastCalledWith('/page?onglet=b&avance=1');
+
+    await hote.changer('a');
+    expect(replaceState).toHaveBeenLastCalledWith('/page?avance=1');
+  });
+
   it('writes the tab alone, and the bare path for the default tab', async () => {
     path = '/page?onglet=a&q=x';
     const hote = host();
