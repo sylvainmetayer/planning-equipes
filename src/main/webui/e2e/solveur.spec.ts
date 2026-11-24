@@ -302,7 +302,7 @@ test('la courbe de score se replie, s’en souvient, et continue d’enregistrer
   expect(premier.status).toBe('COMPLETED');
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/solveur');
+  await page.goto('/solveur?avance=1'); // the curve is folded under « Réglages avancés »
   await expect(page.getByRole('heading', { name: 'Progression du score' })).toBeVisible();
   // Trois cadres, un par niveau : c'est le rendu déplié.
   await expect(page.getByRole('img', { name: /Contraintes dures/ })).toBeVisible();
