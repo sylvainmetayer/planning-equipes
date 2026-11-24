@@ -191,6 +191,16 @@ public class AdminLoginLimiter {
         contexte.next();
     }
 
+    /**
+     * A password attempt on the closed break-glass door: an {@code ECHEC} line
+     * through the same throttle, address only, never what was typed. It counts
+     * toward no lockout — the door answers 409 to everyone, and a lock on top of
+     * it would be one more thing to explain.
+     */
+    void recordClosedDoorAttempt(RoutingContext contexte) {
+        record(true, List.of(new LoginJournalEntry(0, Instant.now(), Evenement.ECHEC, address(contexte))));
+    }
+
     void onFailure(@Observes AuthenticationFailureEvent evenement) {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
         // The other mechanisms (MCP key, remote-user header, session already
