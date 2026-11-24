@@ -1,0 +1,106 @@
+<mat-card appearance="outlined" class="page-card" id="comptes">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@comptes.title">Comptes</h2>
+    <mat-card-subtitle i18n="@@comptes.subtitle">
+      Qui peut se connecter, et ce que chacun peut faire. Un organisateur travaille dans les éditions de ses droits ;
+      les réglages de l'instance restent aux administrateurs.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (comptes().length === 0) {
+      <p class="empty-hint" i18n="@@comptes.aucun">Aucun compte : le compte de secours de la configuration est seul à administrer.</p>
+    } @else {
+      <ul class="comptes-liste">
+        @for (compte of comptes(); track compte.id) {
+          <li class="comptes-compte">
+            <div>
+              <strong>{{ compte.nom || compte.email }}</strong>
+              @if (compte.nom) {
+                <span class="calendar-meta">{{ compte.email }}</span>
+              }
+              @if (compte.desactiveLe) {
+                <span class="calendar-meta" i18n="@@comptes.desactive">(désactivé)</span>
+              }
+              @if (own(compte)) {
+                <span class="calendar-meta" i18n="@@comptes.vous">(vous)</span>
+              }
+              <div class="calendar-meta">
+                @if (compte.derniereConnexionLe) {
+                  <ng-container i18n="@@comptes.derniereConnexion">Dernière connexion le {{ compte.derniereConnexionLe | date: 'short' }}</ng-container>
+                } @else {
+                  <ng-container i18n="@@comptes.jamaisConnecte">Jamais connecté</ng-container>
+                }
+              </div>
+            </div>
+            <ul class="comptes-droits">
+              @for (droit of enVigueur(compte); track droit.id) {
+                <li>
+                  {{ rightLabel(droit) }}
+                  <button matIconButton type="button" [disabled]="busy()" (click)="retirer(compte, droit)"
+                          aria-label="Retirer ce droit" i18n-aria-label="@@comptes.retirer.label">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </li>
+              } @empty {
+                <li class="calendar-meta" i18n="@@comptes.sansDroit">Aucun droit en vigueur</li>
+              }
+            </ul>
+            <div class="comptes-actions">
+              <button matButton type="button" [disabled]="busy()" (click)="ouvrirOctroi(compte)">
+                <mat-icon>add</mat-icon>
+                <ng-container i18n="@@comptes.accorder">Accorder un droit</ng-container>
+              </button>
+              <button matButton type="button" [disabled]="busy() || own(compte)" (click)="toggle(compte)">
+                @if (compte.desactiveLe) {
+                  <ng-container i18n="@@comptes.reactiver">Réactiver</ng-container>
+                } @else {
+                  <ng-container i18n="@@comptes.desactiver">Désactiver</ng-container>
+                }
+              </button>
+            </div>
+            @if (octroiPour() === compte.id) {
+              <form class="comptes-octroi" (submit)="$event.preventDefault(); octroyer(compte)">
+                <mat-form-field>
+                  <mat-label i18n="@@comptes.role">Rôle</mat-label>
+                  <mat-select [value]="role()" (selectionChange)="role.set($event.value)">
+                    @for (r of roles; track r) {
+                      <mat-option [value]="r">{{ roleLabel(r) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                @if (role() === 'ORGANISATEUR') {
+                  <mat-form-field>
+                    <mat-label i18n="@@comptes.edition">Édition</mat-label>
+                    <mat-select [value]="edition()" (selectionChange)="edition.set($event.value)">
+                      <mat-option [value]="toutes" i18n="@@comptes.edition.toutes">Toutes les éditions</mat-option>
+                      @for (e of editions(); track e.id) {
+                        <mat-option [value]="e.id">{{ e.nom }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
+                <button matButton="filled" type="submit" [disabled]="busy()" i18n="@@comptes.octroyer">Accorder</button>
+              </form>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <!-- The invitation of a local account (address, name, link by mail) lands here. -->
+    <form class="comptes-ajout" (submit)="$event.preventDefault(); add()">
+      <mat-form-field>
+        <mat-label i18n="@@comptes.email">Adresse e-mail</mat-label>
+        <input matInput type="email" name="email" autocomplete="off" [value]="email()" (input)="email.set($any($event.target).value)" />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label i18n="@@comptes.nom">Nom (facultatif)</mat-label>
+        <input matInput name="nom" autocomplete="off" [value]="nom()" (input)="nom.set($any($event.target).value)" />
+      </mat-form-field>
+      <button matButton="filled" type="submit" [disabled]="busy() || !email().trim()">
+        <mat-icon>person_add</mat-icon>
+        <ng-container i18n="@@comptes.ajouter">Ajouter un compte</ng-container>
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>

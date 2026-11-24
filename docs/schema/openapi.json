@@ -4014,6 +4014,9 @@
           "creeParUtilisateurId" : {
             "type" : "string"
           },
+          "creeParNom" : {
+            "type" : "string"
+          },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
           },
@@ -7804,6 +7807,9 @@
             "$ref" : "#/components/schemas/Instant"
           },
           "validePar" : {
+            "type" : "string"
+          },
+          "valideParNom" : {
             "type" : "string"
           },
           "commentaire" : {

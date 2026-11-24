@@ -95,8 +95,9 @@ export class ValidationPanel {
       return '';
     }
     const quand = new Date(lu.valideeLe).toLocaleString(intlLocale());
-    return lu.validePar
-      ? $localize`:@@journee.validation.acceptee.par:Relue et acceptée le ${quand}:date: par ${lu.validePar}:auteur:.`
+    const auteur = lu.valideParNom ?? lu.validePar;
+    return auteur
+      ? $localize`:@@journee.validation.acceptee.par:Relue et acceptée le ${quand}:date: par ${auteur}:auteur:.`
       : $localize`:@@journee.validation.acceptee:Relue et acceptée le ${quand}:date:.`;
   });
 

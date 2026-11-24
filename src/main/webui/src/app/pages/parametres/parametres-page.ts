@@ -33,6 +33,8 @@ import { NotificationService } from '../../core/notification.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
 import { AffichageMuralLinks } from './affichage-mural-links';
+import { ComptesCard } from './comptes-card';
+import { SessionStore } from '../../core/session.store';
 import { ContactOrganisationCard } from './contact-organisation-card';
 import { GuichetsCard } from './guichets-card';
 import { ParametresNotificationsPanel } from './parametres-notifications';
@@ -72,6 +74,7 @@ import { TODAY_ANCHOR } from '../../core/date-mock.service';
 @Component({
   selector: 'app-parametres-page',
   imports: [
+    ComptesCard,
     ReglagesAvancesToggle,
     AffichageMuralLinks,
     HistoriquePage,
@@ -120,6 +123,8 @@ export class ParametresPage implements OnInit {
    * when the address names one.
    */
   protected readonly avance = reglagesAvances();
+
+  protected readonly session = inject(SessionStore);
 
   protected readonly onglet = signal<OngletParametres>('edition');
 

@@ -72,6 +72,17 @@ fermeture perd son rôle. La procédure d'ouverture est dans
 compte sont écrites dans le journal des connexions (écran Historique, onglet
 Connexions).
 
+## L'écran des comptes
+
+Paramètres › **Comptes**, visible des seuls administrateurs : la liste des
+comptes, l'ajout (adresse, nom), la désactivation et la réactivation, l'octroi
+et le retrait d'un droit par rôle et par édition. Le refus du dernier
+administrateur et de sa propre désactivation s'affiche tel que le serveur le
+dit. Un organisateur ne voit ni cet onglet ni ceux de l'instance ; le serveur
+les lui refuse de toute façon (403). L'historique, la validation d'une journée
+et le mode jour J nomment l'auteur par son nom (à défaut son adresse), résolu à
+la lecture.
+
 ## Ce qui n'est pas là
 
 Le rôle `organisateur` ouvre `/api` dans les seules éditions que ses droits en

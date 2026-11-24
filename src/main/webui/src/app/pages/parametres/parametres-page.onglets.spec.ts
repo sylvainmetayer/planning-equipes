@@ -26,6 +26,8 @@ import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
+import { ComptesApi } from '../../core/api/comptes-api';
+import { SessionStore } from '../../core/session.store';
 import { ParametresPage } from './parametres-page';
 import type { FeasibilityReport } from '../../core/models';
 
@@ -44,7 +46,9 @@ describe('ParametresPage — onglets', () => {
   let fixture: ComponentFixture<ParametresPage>;
   let params: BehaviorSubject<ParamMap>;
 
-  async function rendre(options: { onglet?: string; focus?: string } = {}): Promise<void> {
+  async function rendre(
+    options: { onglet?: string; focus?: string; admin?: boolean } = {},
+  ): Promise<void> {
     params = new BehaviorSubject<ParamMap>(
       convertToParamMap({
         ...(options.onglet ? { onglet: options.onglet } : {}),
@@ -136,7 +140,15 @@ describe('ParametresPage — onglets', () => {
             reportError: vi.fn(),
           },
         },
-        { provide: EditionStore, useValue: { courant: () => null, reload: vi.fn() } },
+        {
+          provide: EditionStore,
+          useValue: { courant: () => null, reload: vi.fn(), editions: () => [] },
+        },
+        {
+          provide: SessionStore,
+          useValue: { isAdmin: () => options.admin !== false, statut: () => null },
+        },
+        { provide: ComptesApi, useValue: { list: vi.fn(() => Promise.resolve([])) } },
         {
           provide: ProblemesStore,
           useValue: {
@@ -232,9 +244,16 @@ describe('ParametresPage — onglets', () => {
   });
 
   it('names its tabs, the instance ones folded, and opens on the edition', async () => {
-    expect(onglets()).toEqual(['Édition', 'Affichage mural']);
+    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Comptes']);
     await openAdvanced();
-    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Instance', 'Historique', 'MCP']);
+    expect(onglets()).toEqual([
+      'Édition',
+      'Affichage mural',
+      'Comptes',
+      'Instance',
+      'Historique',
+      'MCP',
+    ]);
     expect(textOf()).toContain("Nom de l'édition");
     expect(textOf()).toContain('Gel du référentiel');
     expect(textOf()).toContain('Guichets');
@@ -255,6 +274,19 @@ describe('ParametresPage — onglets', () => {
     expect(textOf()).toContain('Sauvegarde automatique');
     expect(textOf()).toContain('Raccourcis clavier');
     expect(textOf()).toContain('Webhooks');
+  });
+
+  it('shows the Comptes tab to an administrator and its card under it', async () => {
+    await cliquerOnglet('Comptes');
+    expect(textOf()).toContain('Ajouter un compte');
+  });
+
+  it('offers an organiser neither the accounts nor the instance tabs', async () => {
+    await rendre({ admin: false });
+    await openAdvanced();
+    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Historique']);
+    await rendre({ admin: false, onglet: 'comptes' });
+    expect(textOf()).not.toContain('Ajouter un compte');
   });
 
   /** The covoiturage has no switch of its own: it says it follows the collection. */
