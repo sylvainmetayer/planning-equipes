@@ -15,7 +15,7 @@
       "id": "donnees",
       "accueil": true,
       "q": "Que deviennent les données de nos animateurs ?",
-      "a": "Elles restent chez vous, et on ne demande que ce dont le planning a besoin. La date de naissance sert uniquement à savoir qui est mineur le jour du créneau. L'assistant IA ne la voit jamais, et les messageries ne reçoivent que des chiffres, pas de noms."
+      "a": "Elles restent chez vous, et on ne demande que ce dont le planning a besoin. La date de naissance sert uniquement à appliquer le droit de l'âge réel le jour du créneau. L'assistant IA ne la voit jamais, et les messageries ne reçoivent que des chiffres, pas de noms."
     },
     {
       "id": "informaticien",
@@ -27,7 +27,7 @@
       "id": "mineurs",
       "accueil": true,
       "q": "Comment sont gérés les animateurs mineurs ?",
-      "a": "L'âge se déduit de la date de naissance, à la date de chaque créneau. Durée, pauses, travail de nuit, repos et jours fériés suivent alors les articles propres aux mineurs, et un poste interdit est refusé."
+      "a": "Chacun se voit appliquer le droit de son âge réel à la date de chaque créneau : moins de 16 ans, 16 à 18 ans ou majeur. Durée, pauses, travail de nuit, repos et jours fériés suivent les articles de cet âge, et un poste interdit est refusé."
     },
     {
       "id": "benevoles",
@@ -100,7 +100,7 @@
         "id": "donnees",
         "accueil": true,
         "q": "What happens to our staff's data?",
-        "a": "It stays with you, and we only ask for what scheduling needs. The date of birth is only used to know who is under 18 on the day of a shift. The AI assistant never sees it, and team chats only get numbers, never names."
+        "a": "It stays with you, and we only ask for what scheduling needs. The date of birth is only used to apply the law of each person's real age on the day of a shift. The AI assistant never sees it, and team chats only get numbers, never names."
       },
       {
         "id": "informaticien",
@@ -112,7 +112,7 @@
         "id": "mineurs",
         "accueil": true,
         "q": "How are under-18 staff handled?",
-        "a": "Age is worked out from the date of birth, on the date of each shift. Working hours, breaks, night work, rest and public holidays then follow the articles specific to under-18s, and a shift they may not work is refused."
+        "a": "Everyone gets the law of their real age on the date of each shift: under 16, 16 to 18, or adult. Working hours, breaks, night work, rest and public holidays follow the articles for that age, and a shift they may not work is refused."
       },
       {
         "id": "benevoles",
