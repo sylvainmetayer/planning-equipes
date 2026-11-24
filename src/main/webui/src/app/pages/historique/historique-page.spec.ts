@@ -12,6 +12,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi, HistoryQuery } from '../../core/api/analyses-api';
 import { ActionHistorique, EntreeHistorique } from '../../core/models';
+import { SessionStore } from '../../core/session.store';
 import { fakeOf, provideFake } from '../../core/testing/fake';
 import { PAGE_HISTORIQUE } from './historique';
 import { HistoriquePage } from './historique-page';
@@ -73,11 +74,12 @@ describe('HistoriquePage', () => {
   });
   const location = { path: vi.fn(() => '/historique'), replaceState: vi.fn() };
 
-  function setUp(queryParams: Record<string, string> = {}): void {
+  function setUp(queryParams: Record<string, string> = {}, admin = true): void {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         provideFake(AnalysesApi, analysesApi),
+        { provide: SessionStore, useValue: { isAdmin: () => admin } },
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: Location, useValue: location },
         {
@@ -102,6 +104,15 @@ describe('HistoriquePage', () => {
     location.replaceState.mockReset();
     analysesApi.actionHistory.mockResolvedValue([line()]);
     analysesApi.actionInventory.mockResolvedValue(INVENTORY);
+  });
+
+  it('keeps the connections tab from an organiser, even when the address names it', async () => {
+    setUp({ onglet: 'connexions' }, false);
+    const page = createPage();
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
+
+    expect(page['onglet']()).toBe('actions');
+    expect(analysesApi.loginJournal).not.toHaveBeenCalled();
   });
 
   it('reads every kind of action by default', async () => {

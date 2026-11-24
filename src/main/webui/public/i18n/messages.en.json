@@ -5277,5 +5277,6 @@
   "comptes.ajouter": "Add an account",
   "comptes.role.admin": "Administrator",
   "comptes.role.organisateur": "Organiser",
-  "comptes.droit": "{$role} — {$edition}"
+  "comptes.droit": "{$role} — {$edition}",
+  "nav.keywords.comptes": "users organisers administrators rights permissions access"
 }
