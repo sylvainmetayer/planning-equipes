@@ -5,11 +5,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import {
-  MatButtonToggle,
-  MatButtonToggleChange,
-  MatButtonToggleGroup,
-} from '@angular/material/button-toggle';
+import { MatButtonToggle, MatButtonToggleChange } from '@angular/material/button-toggle';
 import { By } from '@angular/platform-browser';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { provideLocationMocks } from '@angular/common/testing';

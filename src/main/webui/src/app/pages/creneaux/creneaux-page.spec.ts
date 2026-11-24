@@ -14,11 +14,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  MatButtonToggle,
-  MatButtonToggleChange,
-  MatButtonToggleGroup,
-} from '@angular/material/button-toggle';
+import { MatButtonToggle, MatButtonToggleChange } from '@angular/material/button-toggle';
 import { By } from '@angular/platform-browser';
 import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
