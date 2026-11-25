@@ -84,7 +84,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/nouveautes` (the foot of the menu), `/editions/comparer` (opened from the
   Éditions page) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
-  three knows. The standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
+  three knows. The standalone routes `/login`, `/responsable` (« Mon stand » — what a
+  responsable de stand reads outside the administration: the published shifts
+  and empty seats of the stands their right covers on the active edition, the
+  names only when the server says so, each stand's sheet to print; a
+  `responsableGuard` on the shell sends a session holding that right alone
+  here, the shell's every call being refused to it; the setting is the card
+  « Responsables de stand » of Paramètres › Édition, the right itself the
+  Comptes tab's, edition and stands of the edition this browser works in),
+  `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
   television, opened by a dedicated token and no session, ADR 0053: the stands
   of the day with the shift under way and the next one, over the pure

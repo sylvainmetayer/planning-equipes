@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { editionChosenGuard } from './core/edition.guard';
+import { responsableGuard } from './core/responsable.guard';
 import { CanActivateFn, Params, RedirectFunction, Router, Routes } from '@angular/router';
 import { TODAY_ANCHOR } from './core/date-mock.service';
 import type { AnimateursPage } from './pages/animateurs/animateurs-page';
@@ -768,6 +769,15 @@ export const routes: Routes = [
     ],
   },
   {
+    // « Mon stand »: the published shifts of the stands a responsable de stand's
+    // right covers, on the active edition. Outside the admin shell — whose every
+    // call a responsable would be refused — behind an account with that right.
+    path: 'responsable',
+    title: () => $localize`:@@route.responsable:Mon stand`,
+    loadComponent: () =>
+      import('./pages/responsable/responsable-page').then((m) => m.ResponsablePage),
+  },
+  {
     // The control room's television (ADR 0053): outside both shells, no
     // session — the token in the URL opens this one read and nothing else.
     path: 'mural/:jeton',
@@ -788,7 +798,7 @@ export const routes: Routes = [
     // The server never picks an edition for a request that names none (ADR
     // 0072): a browser that never chose one does so here, before any screen
     // of the shell fires a request.
-    canActivate: [editionChosenGuard],
+    canActivate: [responsableGuard, editionChosenGuard],
     loadComponent: () => import('./shell/admin-shell').then((m) => m.AdminShell),
     children: adminRoutes,
   },
