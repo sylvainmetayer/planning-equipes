@@ -24,7 +24,7 @@ on:
       - '.github/workflows/site.yml'
       - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'
   schedule:
-    - cron: '0 7 * * 1' # liens externes, le lundi
+    - cron: '0 7 * * 1' # Lighthouse et liens externes, le lundi
   workflow_dispatch:
 
 permissions:
@@ -60,8 +60,11 @@ jobs:
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
       # Sans le beacon d'audience (build de prévisualisation) : Lighthouse mesure la page,
-      # pas un script tiers, et un réseau capricieux ne doit pas faire échouer la PR
+      # pas un script tiers, et un réseau capricieux ne doit pas faire échouer la PR.
+      # Une fois par semaine (et à la demande) : sur une centaine de pages, mobile et
+      # bureau, il coûte une demi-heure à chaque PR pour surveiller une pente lente.
       - name: Lighthouse (mobile et bureau, 95 au moins partout)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: npm run build -- --quiet && npm run check:lighthouse
         env:
           ELEVENTY_ENV: preview
@@ -72,3 +75,28 @@ jobs:
           # Hors ligne sauf le lundi : un lien externe cassé ne bloque pas une PR
           args: --config site/lychee.toml ${{ github.event_name != 'schedule' && '--offline' || '' }} --root-dir ${{ github.workspace }}/site/_site 'site/_site/**/*.html'
           fail: true
+
+  # Le contrôle du lundi n'a personne devant l'écran : son échec devient une issue,
+  # une seule tant qu'elle reste ouverte (les semaines suivantes la commentent).
+  signaler:
+    needs: site
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Ouvrir ou commenter l'issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        working-directory: .
+        run: |
+          titre="Vérification hebdomadaire du site en échec"
+          corps="Le contrôle du lundi (Lighthouse, liens externes) a échoué : $RUN_URL"
+          num=$(gh issue list --state open --search "\"$titre\" in:title" --json number --jq '.[0].number')
+          if [ -n "$num" ]; then
+            gh issue comment "$num" --body "$corps"
+          else
+            gh issue create --title "$titre" --body "$corps"
+          fi
