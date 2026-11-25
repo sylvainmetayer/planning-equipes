@@ -225,43 +225,48 @@ public class RapportConformiteService {
         diagnostic.analyze(plan).contributions().forEach(c -> contributions.put(c.constraintName(), c));
         List<Regle> regles = new ArrayList<>();
         for (ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            if (!definition.legale()) {
-                continue;
-            }
-            ConstraintContribution contribution = contributions.get(definition.name());
-            regles.add(new Regle(
-                    definition.name(),
-                    definition.libelleCourt(),
-                    definition.categorie().contains("mineurs"),
-                    contribution == null ? 0 : contribution.matchCount()));
-            if (contribution == null) {
-                continue;
-            }
-            Map<String, Integer> deja = new LinkedHashMap<>();
-            for (var match : contribution.matches()) {
-                var reference = ViolationFormatter.references(match.facts());
-                if (reference.animateurId() != null
-                        && deja.merge(reference.animateurId(), 1, Integer::sum) <= MAX_ECARTS_PAR_REGLE_ET_PERSONNE) {
-                    parPersonne
-                            .computeIfAbsent(reference.animateurId(), id -> new ArrayList<>())
-                            .add(new Breach(definition.name(), definition.libelleCourt(), reference.texte()));
+            if (definition.legale()) {
+                ConstraintContribution contribution = contributions.get(definition.name());
+                regles.add(new Regle(
+                        definition.name(),
+                        definition.libelleCourt(),
+                        definition.categorie().contains("mineurs"),
+                        contribution == null ? 0 : contribution.matchCount()));
+                if (contribution != null) {
+                    fileBreaches(definition, contribution, parPersonne);
                 }
             }
-            // The lines are capped, the count is not: a capped list says how many it left out, so no
-            // reader takes five lines for five breaches.
-            deja.forEach((animateurId, total) -> {
-                if (total > MAX_ECARTS_PAR_REGLE_ET_PERSONNE) {
-                    parPersonne
-                            .get(animateurId)
-                            .add(new Breach(
-                                    definition.name(),
-                                    definition.libelleCourt(),
-                                    "… et " + (total - MAX_ECARTS_PAR_REGLE_ET_PERSONNE)
-                                            + " autre(s) écart(s) de cette règle"));
-                }
-            });
         }
         return regles;
+    }
+
+    private static void fileBreaches(
+            ConstraintDefinition definition,
+            ConstraintContribution contribution,
+            Map<String, List<Breach>> parPersonne) {
+        Map<String, Integer> deja = new LinkedHashMap<>();
+        for (var match : contribution.matches()) {
+            var reference = ViolationFormatter.references(match.facts());
+            if (reference.animateurId() != null
+                    && deja.merge(reference.animateurId(), 1, Integer::sum) <= MAX_ECARTS_PAR_REGLE_ET_PERSONNE) {
+                parPersonne
+                        .computeIfAbsent(reference.animateurId(), id -> new ArrayList<>())
+                        .add(new Breach(definition.name(), definition.libelleCourt(), reference.texte()));
+            }
+        }
+        // The lines are capped, the count is not: a capped list says how many it left out, so no
+        // reader takes five lines for five breaches.
+        deja.forEach((animateurId, total) -> {
+            if (total > MAX_ECARTS_PAR_REGLE_ET_PERSONNE) {
+                parPersonne
+                        .get(animateurId)
+                        .add(new Breach(
+                                definition.name(),
+                                definition.libelleCourt(),
+                                "… et " + (total - MAX_ECARTS_PAR_REGLE_ET_PERSONNE)
+                                        + " autre(s) écart(s) de cette règle"));
+            }
+        });
     }
 
     private static Synthese synthese(List<Personne> personnes, List<Regle> regles) {

@@ -173,7 +173,7 @@ public final class SolveWorker {
                 }
                 if (event.isNewBestSolutionInitialized()
                         && event.getNewBestScore() instanceof HardMediumSoftScore score) {
-                    record(new Point(
+                    recordPoint(new Point(
                             offsetMs + event.getTimeMillisSpent(),
                             score.hardScore(),
                             score.mediumScore(),
@@ -186,7 +186,7 @@ public final class SolveWorker {
             }
         }
 
-        private synchronized void record(Point point) {
+        private synchronized void recordPoint(Point point) {
             if (points.isEmpty()
                     || point.timeMs() - points.get(points.size() - 1).timeMs() >= POINT_INTERVAL_MS) {
                 points.add(point);

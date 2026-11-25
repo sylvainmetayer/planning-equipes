@@ -13,12 +13,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Whether lifting a consigne hands its day back seats that the days kept
@@ -67,8 +67,34 @@ final class LiftStaffingRisk {
         if (minutesAfter <= minutesNow) {
             return Optional.empty();
         }
+        Map<String, Map<LocalDate, Boolean>> frozen = frozenDays(date, persisted, locks, horizon);
+        List<Set<LocalDate>> reopenable = new ArrayList<>();
+        int blocked = 0;
+        for (Animateur animateur : animateurs) {
+            Map<LocalDate, Boolean> days = frozen.getOrDefault(animateur.getId(), Map.of());
+            if (animateur.isIndisponibleOn(date)
+                    || days.size() < PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE) {
+                continue;
+            }
+            blocked++;
+            Set<LocalDate> theirs = days.entrySet().stream()
+                    .filter(Map.Entry::getValue)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+            if (!theirs.isEmpty()) {
+                reopenable.add(theirs);
+            }
+        }
+        if (blocked == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(new Risk(blocked, reopenable.size(), cover(reopenable, date)));
+    }
+
+    /** Per animateur, each frozen day of the week of {@code date} — and whether a JOUR lock alone holds it there. */
+    private static Map<String, Map<LocalDate, Boolean>> frozenDays(
+            LocalDate date, List<PosteAffectation> persisted, List<VerrouillagePlanning> locks, PastHorizon horizon) {
         String week = Creneau.semaineIso(date);
-        // per animateur, each frozen day of the week — and whether a JOUR lock alone holds it there
         Map<String, Map<LocalDate, Boolean>> frozen = new HashMap<>();
         for (PosteAffectation poste : persisted) {
             LocalDate day =
@@ -91,29 +117,7 @@ final class LiftStaffingRisk {
                         .merge(day, dayLockOnly, Boolean::logicalAnd);
             }
         }
-        List<Set<LocalDate>> reopenable = new ArrayList<>();
-        int blocked = 0;
-        for (Animateur animateur : animateurs) {
-            Map<LocalDate, Boolean> days = frozen.getOrDefault(animateur.getId(), Map.of());
-            if (animateur.isIndisponibleOn(date)
-                    || days.size() < PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE) {
-                continue;
-            }
-            blocked++;
-            Set<LocalDate> theirs = new HashSet<>();
-            days.forEach((day, dayLockOnly) -> {
-                if (dayLockOnly) {
-                    theirs.add(day);
-                }
-            });
-            if (!theirs.isEmpty()) {
-                reopenable.add(theirs);
-            }
-        }
-        if (blocked == 0) {
-            return Optional.empty();
-        }
-        return Optional.of(new Risk(blocked, reopenable.size(), cover(reopenable, date)));
+        return frozen;
     }
 
     /** Greedy: the day reopening the most people first, the nearest to {@code date} on a tie, then the earliest. */

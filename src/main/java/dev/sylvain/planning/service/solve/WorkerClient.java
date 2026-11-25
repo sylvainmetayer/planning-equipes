@@ -65,6 +65,8 @@ final class WorkerClient {
         }
     }
 
+    private static final String SOLVES = "solves/";
+
     private static final Duration CALL_TIMEOUT = Duration.ofSeconds(30);
 
     /** The problem goes up a home line: megabytes raw, a hundred-odd kilobytes zipped, but the line may be slow. */
@@ -106,15 +108,15 @@ final class WorkerClient {
     }
 
     SolveWorker.Status status(String id, int cursor) {
-        return read(call(get("solves/" + id + "?cursor=" + cursor), CALL_TIMEOUT), SolveWorker.Status.class);
+        return read(call(get(SOLVES + id + "?cursor=" + cursor), CALL_TIMEOUT), SolveWorker.Status.class);
     }
 
     void stop(String id) {
-        call(request("solves/" + id + "/stop").POST(HttpRequest.BodyPublishers.noBody()), CALL_TIMEOUT);
+        call(request(SOLVES + id + "/stop").POST(HttpRequest.BodyPublishers.noBody()), CALL_TIMEOUT);
     }
 
     SolveWorker.Answer answer(String id) {
-        return read(call(get("solves/" + id + "/result"), CALL_TIMEOUT), SolveWorker.Answer.class);
+        return read(call(get(SOLVES + id + "/result"), CALL_TIMEOUT), SolveWorker.Answer.class);
     }
 
     /** The last lines the worker logged. */

@@ -392,7 +392,7 @@ public class WipeBackupService {
                         ps.executeUpdate();
                     }
                 });
-            } catch (RuntimeException e) {
+            } catch (RuntimeException _) {
                 restoration
                         .avertissements()
                         .add("La restauration a abouti, mais son issue n'a pas pu être notée "
@@ -422,41 +422,8 @@ public class WipeBackupService {
         Map<String, String> animateurs = matchAnimateurs(scenario.animateurs(), animateursActuels);
         List<Creneau> grille = referenceDataService.listCreneaux();
 
-        List<AffectationSnapshot> restaurees = new ArrayList<>();
         List<String> nonRestaurees = new ArrayList<>();
-        for (AffectationSnapshot seat : plan.affectations()) {
-            String vacation = seat.date() + " " + seat.heureDebut() + "-" + seat.heureFin();
-            Optional<String> stand = Optional.ofNullable(stands.get(seat.standId()));
-            Optional<Long> creneau = creneau(
-                    grille,
-                    LocalDate.parse(seat.date()),
-                    LocalTime.parse(seat.heureDebut()),
-                    LocalTime.parse(seat.heureFin()));
-            if (stand.isEmpty() || creneau.isEmpty()) {
-                nonRestaurees.add(seat.posteId() + " (stand " + seat.standId() + ", " + vacation + ") : "
-                        + (stand.isEmpty() ? "stand" : "créneau") + " introuvable, siège non restauré");
-                continue;
-            }
-            String animateur = null;
-            if (seat.animateurId() != null) {
-                animateur = animateurs.get(seat.animateurId());
-                if (animateur == null) {
-                    nonRestaurees.add(seat.posteId() + " (stand " + seat.standId() + ", " + vacation + ") : animateur "
-                            + seat.animateurId() + " introuvable, siège restauré vide");
-                }
-            }
-            restaurees.add(new AffectationSnapshot(
-                    seat.posteId(),
-                    stand.get(),
-                    String.valueOf(creneau.get()),
-                    seat.date(),
-                    seat.heureDebut(),
-                    seat.heureFin(),
-                    animateur,
-                    seat.heureDebutEffective(),
-                    seat.heureFinEffective(),
-                    seat.suiteDe()));
-        }
+        List<AffectationSnapshot> restaurees = matchSeats(plan, stands, animateurs, grille, nonRestaurees);
         if (!plan.affectations().isEmpty() && restaurees.isEmpty()) {
             throw new BusinessError.Conflict("Aucun des " + plan.affectations().size()
                     + " sièges de la sauvegarde ne correspond au référentiel restauré.");
@@ -480,57 +447,7 @@ public class WipeBackupService {
         int assises = (int)
                 restaurees.stream().filter(seat -> seat.animateurId() != null).count();
 
-        int verrous = 0;
-        int dejaPresents = 0;
-        // The lock write does nothing on a target already frozen: such a lock
-        // is counted apart, never as restored.
-        Set<VerrouillageTarget> poses = referenceDataService.listVerrouillages().stream()
-                .map(VerrouillagePlanning::target)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toCollection(HashSet::new));
-        List<String> verrousNonRestaures = new ArrayList<>();
-        List<String> avertissements = new ArrayList<>();
-        for (LockBackup lock : plan.verrouillages()) {
-            VerrouillagePlanning verrou = new VerrouillagePlanning(null, lock.type());
-            verrou.setJour(lock.jour());
-            verrou.setRaison(lock.raison());
-            Optional<String> introuvable = Optional.empty();
-            if (lock.animateurId() != null) {
-                verrou.setAnimateurId(animateurs.get(lock.animateurId()));
-                introuvable =
-                        verrou.getAnimateurId() == null ? Optional.of("animateur " + lock.animateurId()) : introuvable;
-            }
-            if (lock.standId() != null) {
-                verrou.setStandId(stands.get(lock.standId()));
-                introuvable = verrou.getStandId() == null ? Optional.of("stand " + lock.standId()) : introuvable;
-            }
-            if (lock.creneauDate() != null) {
-                verrou.setCreneauId(
-                        creneau(grille, lock.creneauDate(), lock.creneauHeureDebut(), lock.creneauHeureFin())
-                                .orElse(null));
-                introuvable = verrou.getCreneauId() == null
-                        ? Optional.of("créneau " + lock.creneauDate() + " " + lock.creneauHeureDebut() + "-"
-                                + lock.creneauHeureFin())
-                        : introuvable;
-            }
-            if (introuvable.isPresent()) {
-                verrousNonRestaures.add("Verrou " + lock.type() + " : " + introuvable.get() + " introuvable");
-                continue;
-            }
-            if (verrou.target().filter(poses::contains).isPresent()) {
-                dejaPresents++;
-                continue;
-            }
-            try {
-                avertissements.addAll(referenceDataService.writeVerrouillage(verrou).avertissements().stream()
-                        .map(Avertissement::message)
-                        .toList());
-                verrous++;
-                verrou.target().ifPresent(poses::add);
-            } catch (BusinessError refus) {
-                verrousNonRestaures.add("Verrou " + lock.type() + " : " + refus.getMessage());
-            }
-        }
+        LockPass locks = restoreLocks(plan, stands, animateurs, grille);
         // Read once the locks are in: an animateur lock weighs in the score.
         try {
             analysisStore.refreshFromPersistedPlan();
@@ -542,12 +459,123 @@ public class WipeBackupService {
                 avant,
                 assises,
                 nonRestaurees,
-                verrous,
-                dejaPresents,
-                verrousNonRestaures,
+                locks.restored,
+                locks.alreadyThere,
+                locks.notRestored,
                 referentielNonRestaure,
-                avertissements,
+                locks.warnings,
                 analysis == null ? null : analysis.diagnostic().score());
+    }
+
+    private List<AffectationSnapshot> matchSeats(
+            PlanBackup plan,
+            Map<String, String> stands,
+            Map<String, String> animateurs,
+            List<Creneau> grille,
+            List<String> nonRestaurees) {
+        List<AffectationSnapshot> restaurees = new ArrayList<>();
+        for (AffectationSnapshot seat : plan.affectations()) {
+            String vacation = seat.date() + " " + seat.heureDebut() + "-" + seat.heureFin();
+            Optional<String> stand = Optional.ofNullable(stands.get(seat.standId()));
+            Optional<Long> creneau = creneau(
+                    grille,
+                    LocalDate.parse(seat.date()),
+                    LocalTime.parse(seat.heureDebut()),
+                    LocalTime.parse(seat.heureFin()));
+            if (stand.isEmpty() || creneau.isEmpty()) {
+                nonRestaurees.add(seat.posteId() + " (stand " + seat.standId() + ", " + vacation + ") : "
+                        + (stand.isEmpty() ? "stand" : "créneau") + " introuvable, siège non restauré");
+            } else {
+                String animateur = null;
+                if (seat.animateurId() != null) {
+                    animateur = animateurs.get(seat.animateurId());
+                    if (animateur == null) {
+                        nonRestaurees.add(seat.posteId() + " (stand " + seat.standId() + ", " + vacation
+                                + ") : animateur " + seat.animateurId() + " introuvable, siège restauré vide");
+                    }
+                }
+                restaurees.add(new AffectationSnapshot(
+                        seat.posteId(),
+                        stand.get(),
+                        String.valueOf(creneau.get()),
+                        seat.date(),
+                        seat.heureDebut(),
+                        seat.heureFin(),
+                        animateur,
+                        seat.heureDebutEffective(),
+                        seat.heureFinEffective(),
+                        seat.suiteDe()));
+            }
+        }
+        return restaurees;
+    }
+
+    /** What the lock pass of a restore did, counted. */
+    private static final class LockPass {
+        int restored;
+        int alreadyThere;
+        final List<String> notRestored = new ArrayList<>();
+        final List<String> warnings = new ArrayList<>();
+    }
+
+    private LockPass restoreLocks(
+            PlanBackup plan, Map<String, String> stands, Map<String, String> animateurs, List<Creneau> grille) {
+        LockPass pass = new LockPass();
+        // The lock write does nothing on a target already frozen: such a lock
+        // is counted apart, never as restored.
+        Set<VerrouillageTarget> poses = referenceDataService.listVerrouillages().stream()
+                .map(VerrouillagePlanning::target)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toCollection(HashSet::new));
+        for (LockBackup lock : plan.verrouillages()) {
+            restoreLock(lock, stands, animateurs, grille, poses, pass);
+        }
+        return pass;
+    }
+
+    private void restoreLock(
+            LockBackup lock,
+            Map<String, String> stands,
+            Map<String, String> animateurs,
+            List<Creneau> grille,
+            Set<VerrouillageTarget> poses,
+            LockPass pass) {
+        VerrouillagePlanning verrou = new VerrouillagePlanning(null, lock.type());
+        verrou.setJour(lock.jour());
+        verrou.setRaison(lock.raison());
+        Optional<String> introuvable = Optional.empty();
+        if (lock.animateurId() != null) {
+            verrou.setAnimateurId(animateurs.get(lock.animateurId()));
+            introuvable =
+                    verrou.getAnimateurId() == null ? Optional.of("animateur " + lock.animateurId()) : introuvable;
+        }
+        if (lock.standId() != null) {
+            verrou.setStandId(stands.get(lock.standId()));
+            introuvable = verrou.getStandId() == null ? Optional.of("stand " + lock.standId()) : introuvable;
+        }
+        if (lock.creneauDate() != null) {
+            verrou.setCreneauId(creneau(grille, lock.creneauDate(), lock.creneauHeureDebut(), lock.creneauHeureFin())
+                    .orElse(null));
+            introuvable = verrou.getCreneauId() == null
+                    ? Optional.of("créneau " + lock.creneauDate() + " " + lock.creneauHeureDebut() + "-"
+                            + lock.creneauHeureFin())
+                    : introuvable;
+        }
+        if (introuvable.isPresent()) {
+            pass.notRestored.add("Verrou " + lock.type() + " : " + introuvable.get() + " introuvable");
+        } else if (verrou.target().filter(poses::contains).isPresent()) {
+            pass.alreadyThere++;
+        } else {
+            try {
+                pass.warnings.addAll(referenceDataService.writeVerrouillage(verrou).avertissements().stream()
+                        .map(Avertissement::message)
+                        .toList());
+                pass.restored++;
+                verrou.target().ifPresent(poses::add);
+            } catch (BusinessError refus) {
+                pass.notRestored.add("Verrou " + lock.type() + " : " + refus.getMessage());
+            }
+        }
     }
 
     /** Each stand of the backup → the stand of the edition it is now: by code, else by name. */
@@ -613,22 +641,9 @@ public class WipeBackupService {
         Map<String, String> cibles = new HashMap<>();
         for (T row : backup == null ? List.<T>of() : backup) {
             for (Key<T, R> key : keys) {
-                String value = key.normalise().apply(key.backup().apply(row));
-                if (value == null) {
-                    continue;
-                }
-                long inBackup = backup.stream()
-                        .filter(other ->
-                                value.equals(key.normalise().apply(key.backup().apply(other))))
-                        .count();
-                List<R> inEdition = edition.stream()
-                        .filter(candidate ->
-                                value.equals(key.normalise().apply(key.edition().apply(candidate))))
-                        .filter(candidate ->
-                                key.compatible() == null || key.compatible().test(row, candidate))
-                        .toList();
-                if (inBackup == 1 && inEdition.size() == 1) {
-                    cibles.put(backupId.apply(row), editionId.apply(inEdition.getFirst()));
+                Optional<R> target = designated(backup, edition, row, key);
+                if (target.isPresent()) {
+                    cibles.put(backupId.apply(row), editionId.apply(target.get()));
                     break;
                 }
             }
@@ -637,6 +652,24 @@ public class WipeBackupService {
                 cibles.values().stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
         cibles.values().removeIf(cible -> claims.get(cible) > 1);
         return cibles;
+    }
+
+    /** The one row of the edition this key designates for {@code row}, or nothing when it is absent or ambiguous. */
+    private static <T, R> Optional<R> designated(List<T> backup, List<R> edition, T row, Key<T, R> key) {
+        String value = key.normalise().apply(key.backup().apply(row));
+        if (value == null) {
+            return Optional.empty();
+        }
+        long inBackup = backup.stream()
+                .filter(other -> value.equals(key.normalise().apply(key.backup().apply(other))))
+                .count();
+        List<R> inEdition = edition.stream()
+                .filter(candidate ->
+                        value.equals(key.normalise().apply(key.edition().apply(candidate))))
+                .filter(candidate ->
+                        key.compatible() == null || key.compatible().test(row, candidate))
+                .toList();
+        return inBackup == 1 && inEdition.size() == 1 ? Optional.of(inEdition.getFirst()) : Optional.empty();
     }
 
     /**

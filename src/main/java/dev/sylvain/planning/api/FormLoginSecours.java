@@ -84,7 +84,7 @@ public class FormLoginSecours {
             Log.warn("Le compte de secours est OUVERT (ADMIN_LOCAL_SECOURS=true) alors qu'un fournisseur OIDC "
                     + "est branché : un mot de passe unique ouvre l'administration. Le refermer dès que "
                     + "l'incident est passé.");
-            journal.record(List.of(new LoginJournalEntry(0, Instant.now(), Evenement.SECOURS_OUVERT, "demarrage")));
+            journal.append(List.of(new LoginJournalEntry(0, Instant.now(), Evenement.SECOURS_OUVERT, "demarrage")));
         }
     }
 
@@ -94,7 +94,7 @@ public class FormLoginSecours {
             return comptes.list().stream()
                     .anyMatch(c -> CompteService.isActive(c)
                             && CompteService.roles(c, now).contains("admin"));
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return true; // not provable at startup: say nothing rather than raise a false alarm
         }
     }

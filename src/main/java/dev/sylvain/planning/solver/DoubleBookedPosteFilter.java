@@ -74,30 +74,33 @@ public final class DoubleBookedPosteFilter implements SelectionFilter<PlanningEv
         }
         Set<PosteAffectation> found = Collections.newSetFromMap(new IdentityHashMap<>());
         for (List<PosteAffectation> held : byAnimateur.values()) {
-            if (held.size() < 2) {
-                continue;
-            }
-            held.sort(Comparator.comparing(DoubleBookedPosteFilter::start));
-            // Sorted by start, a seat can only overlap the ones after it until
-            // one starts at or past its end.
-            for (int i = 0; i < held.size(); i++) {
-                PosteAffectation first = held.get(i);
-                LocalDateTime firstStart = start(first);
-                LocalDateTime firstEnd = firstStart.plusMinutes(first.getDureeEffectiveMinutes());
-                for (int j = i + 1; j < held.size(); j++) {
-                    PosteAffectation second = held.get(j);
-                    LocalDateTime secondStart = start(second);
-                    if (!secondStart.isBefore(firstEnd)) {
-                        break;
-                    }
-                    if (firstStart.isBefore(secondStart.plusMinutes(second.getDureeEffectiveMinutes()))) {
-                        found.add(first);
-                        found.add(second);
-                    }
-                }
+            if (held.size() >= 2) {
+                collectOverlaps(held, found);
             }
         }
         return found;
+    }
+
+    private static void collectOverlaps(List<PosteAffectation> held, Set<PosteAffectation> found) {
+        held.sort(Comparator.comparing(DoubleBookedPosteFilter::start));
+        // Sorted by start, a seat can only overlap the ones after it until
+        // one starts at or past its end.
+        for (int i = 0; i < held.size(); i++) {
+            PosteAffectation first = held.get(i);
+            LocalDateTime firstStart = start(first);
+            LocalDateTime firstEnd = firstStart.plusMinutes(first.getDureeEffectiveMinutes());
+            for (int j = i + 1; j < held.size(); j++) {
+                PosteAffectation second = held.get(j);
+                LocalDateTime secondStart = start(second);
+                if (!secondStart.isBefore(firstEnd)) {
+                    break;
+                }
+                if (firstStart.isBefore(secondStart.plusMinutes(second.getDureeEffectiveMinutes()))) {
+                    found.add(first);
+                    found.add(second);
+                }
+            }
+        }
     }
 
     /** The seat's own hours, as the constraint reads them: a narrowed seat is not its whole timeslot. */
