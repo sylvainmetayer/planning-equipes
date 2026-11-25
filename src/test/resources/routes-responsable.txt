@@ -1,0 +1,4 @@
+# Every route a responsable de stand can call (ResponsableResource, read-only).
+# A new line is a decision: it opens a door to somebody who is not an organiser.
+ResponsableResource#affichette
+ResponsableResource#stands

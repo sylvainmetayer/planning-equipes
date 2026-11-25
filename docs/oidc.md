@@ -94,8 +94,9 @@ calcul, journal des connexions, horloge simulée, création, renommage,
 duplication, activation et suppression d'une édition, comparaison de deux
 éditions. L'import de scénario reste ouvert à l'organisateur, dans son édition
 courante seulement : une section `edition:` qui en désigne une autre, ou une à
-créer, est refusée (400). L'inventaire est `InstanceRoutesStructuralTest` ; une nouvelle ressource
-non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
+créer, est refusée (400). L'inventaire est `InstanceRoutesStructuralTest` (ressources) et
+`RoutesOuvertesStructuralTest` (route par route, voir `securite.md`) ; une
+nouvelle ressource ou route non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
 (ADR [0095](decisions/0095-le-responsable-de-stand-lit-son-stand.md)). Le `/mcp`
 garde sa clé d'API, sans OAuth. Les comptes locaux avec mot de passe, ouverts
 même derrière un fournisseur, sont décrits dans

@@ -448,6 +448,25 @@ dit quand revenir, pas un `429`. Coupés par défaut ; réglage et périmètre d
 [`exploitation.md`](exploitation.md#combien-de-calculs-linstance-accepte), choix
 dans [l'ADR 0075](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
 
+## Ce que chaque rôle peut appeler, route par route
+
+`InstanceRoutesStructuralTest` classe des ressources entières : à l'organisateur
+(par édition), au public, aux administrateurs (`@InstanceOnly`) ou au
+responsable de stand. Dans une ressource ouverte à l'organisateur, une
+**nouvelle méthode lui est ouverte aussi** tant que personne ne la marque
+`@InstanceOnly` : c'est l'angle mort que ferme `RoutesOuvertesStructuralTest`.
+Il tient deux inventaires versionnés, `Classe#méthode` par ligne :
+
+| Fichier (`src/test/resources/`) | Ce qu'il liste |
+| --- | --- |
+| `routes-organisateur.txt` | Chaque route d'une ressource « par édition » qui n'est pas `@InstanceOnly` |
+| `routes-responsable.txt` | Les routes de `ResponsableResource` (lecture seule) |
+
+Une route absente des deux échoue le test, **qui imprime la ligne à ajouter** ;
+une ligne qui ne désigne plus aucune route échoue aussi. Ajouter la ligne dit
+« ouverte à l'organisateur, exprès » ; sinon, annoter la méthode `@InstanceOnly`
+(et l'ajouter à `INSTANCE_ROUTES` du premier test).
+
 ## Qui ouvre l'administration
 
 Cinq portes, de la plus forte à la plus faible :
