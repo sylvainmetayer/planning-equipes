@@ -318,22 +318,10 @@ resource "keycloak_realm_optional_client_scopes" "planning" {
 }
 ```
 
-Enfin, l'enregistrement dynamique anonyme, pour les assistants hébergés (Claude sur le web, Le Chat) : une liste d'hôtes de confiance et un nombre maximal de clients.
+Enfin, l'enregistrement dynamique anonyme, pour les assistants hébergés (Claude sur le web, Le Chat). Seule la politique « Max Clients Limit » se déclare en code ; la liste des hôtes de confiance se pose à part, juste après.
 
 ```hcl
-# Enregistrement dynamique anonyme (clients MCP hébergés).
-resource "keycloak_realm_client_registration_policy" "trusted_hosts" {
-  realm_id    = keycloak_realm.planning.id
-  name        = "Trusted Hosts"
-  provider_id = "trusted-hosts"
-  sub_type    = "anonymous"
-  config = {
-    "trusted-hosts"                                = "claude.ai##claude.com##chat.mistral.ai"
-    "host-sending-registration-request-must-match" = "false"  # pas d'IP stable côté assistants
-    "client-uris-must-match"                       = "true"   # toutes les redirect_uris sur ces hôtes
-  }
-}
-
+# Enregistrement dynamique anonyme (clients MCP hébergés). Pas de Trusted Hosts ici.
 resource "keycloak_realm_client_registration_policy" "max_clients" {
   realm_id    = keycloak_realm.planning.id
   name        = "Max Clients Limit"
@@ -343,14 +331,30 @@ resource "keycloak_realm_client_registration_policy" "max_clients" {
 }
 ```
 
-**Importez les deux politiques avant de les déclarer.** Keycloak crée deux politiques avec le realm : « Trusted Hosts », dont la liste vide refuse tout, et « Max Clients Limit », réglée à 200. Si vous déclarez les deux ressources ci-dessus sans les importer, vous ajoutez une seconde politique, et la liste vide de la première continue de tout refuser. La procédure :
+**Importez la politique avant de la déclarer.** Keycloak crée « Max Clients Limit » avec le realm, réglée à 200. Si vous déclarez la ressource sans l'importer, vous ajoutez une seconde politique à côté de la première. La procédure :
 
-1. Faites un premier `apply` sans ces deux ressources, ou avec une variable qui les éteint.
-2. Lisez leurs identifiants dans la console : realm `planning` › Clients › Client registration › Anonymous access policies. L'identifiant est dans l'URL.
-3. Importez-les :
-   - `tofu import 'keycloak_realm_client_registration_policy.trusted_hosts' 'planning/<id-trusted-hosts>'`
-   - `tofu import 'keycloak_realm_client_registration_policy.max_clients' 'planning/<id-max-clients>'`
-4. Vérifiez que le plan ne montre que des mises à jour en place, jamais de création, puis faites l'`apply`.
+1. Faites un premier `apply` sans cette ressource, ou avec une variable qui l'éteint.
+2. Lisez son identifiant dans la console : realm `planning` › Clients › Client registration › Anonymous access policies. L'identifiant est dans l'URL.
+3. Importez-la : `tofu import 'keycloak_realm_client_registration_policy.max_clients' 'planning/<id-max-clients>'`
+4. Vérifiez que le plan ne montre qu'une mise à jour en place, jamais de création, puis faites l'`apply`.
+
+> **Écueil : ne déclarez pas « Trusted Hosts » dans le code.** Le fournisseur Terraform/OpenTofu écrit la liste des hôtes de confiance comme **une seule chaîne** (`claude.ai##claude.com##chat.mistral.ai`), et Keycloak la lit comme un hôte unique, qui ne correspond à rien : il refuse alors tout enregistrement. Constaté sur un déploiement réel. La politique « Trusted Hosts » créée avec le realm reste donc hors du code, avec sa liste vide qui refuse tout, jusqu'à ce que vous lui donniez **trois valeurs distinctes** par la ligne de commande ou l'API d'administration.
+
+### Poser les hôtes de confiance
+
+La politique est un composant du realm. Avec `kcadm.sh` (l'outil en ligne de commande de Keycloak, dans l'image officielle), cherchez-la, puis donnez-lui une liste de trois valeurs :
+
+```bash
+kcadm.sh config credentials --server https://planning.exemple.org/auth \
+  --realm master --user admin
+kcadm.sh get components -r planning -q providerId=trusted-hosts --fields id,name,subType
+kcadm.sh update components/<id-trusted-hosts> -r planning \
+  -s 'config."trusted-hosts"=["claude.ai","claude.com","chat.mistral.ai"]' \
+  -s 'config."host-sending-registration-request-must-match"=["false"]' \
+  -s 'config."client-uris-must-match"=["true"]'
+```
+
+Cette commande n'a pas été rejouée telle quelle : sa forme exacte (guillemets des clés, valeurs en tableau) suit la syntaxe de `kcadm.sh` et le format des composants décrits dans la documentation de Keycloak sur l'enregistrement dynamique des clients et ses politiques d'accès anonyme. Relisez le résultat avec `kcadm.sh get components/<id-trusted-hosts> -r planning` : `trusted-hosts` doit porter **trois éléments**, pas un seul. Si vous préférez, la même modification se fait dans la console (Clients › Client registration › Anonymous access policies › Trusted Hosts), un hôte par ligne, ou par l'API d'administration (`PUT /admin/realms/planning/components/<id>`), depuis le réseau d'administration.
 
 Les politiques par défaut « Consent Required », « Allowed Client Scopes » et « Allowed Protocol Mapper Types » restent en place : elles imposent un écran de consentement, limitent aux scopes par défaut et bornent les types de mappeur acceptés.
 
@@ -415,22 +419,27 @@ planning.exemple.org {
 
 ### Les contrôles après déploiement
 
-Vérifiez ces quatre points avant d'annoncer la connexion :
+Vérifiez ces points avant d'annoncer la connexion. Les derniers ont été constatés sur le déploiement réel, une fois les hôtes de confiance posés :
 
 - la découverte publique (`/auth/realms/planning/.well-known/openid-configuration`) répond 200, avec l'émetteur exact ;
 - la console et le realm `master` répondent 401 hors du réseau d'administration ;
 - Keycloak refuse en 400 une `redirect_uri` étrangère ;
-- l'enregistrement anonyme répond 403 tant que la liste des hôtes de confiance est vide.
+- l'enregistrement anonyme répond 403 tant que la liste des hôtes de confiance est vide ;
+- un enregistrement dont les redirections sont sur les trois domaines répond 201 ;
+- le client ainsi créé porte `planning-mcp-audience` dans ses scopes par défaut, donc ses jetons ont `aud=planning-mcp`, et le consentement est exigé ;
+- 403 pour une URI hors liste, pour une bonne URI accompagnée d'une URI hors liste, et pour `claude.ai.evil.example` ;
+- 403 pour une demande d'`offline_access` (politique « Allowed Client Scopes ») ;
+- 20 clients anonymes au plus.
 
 ### La mémoire mesurée
 
 Mesures sur un hôte de 3,8 Gio et 2 vCPU, partagé avec l'application :
 
-- Keycloak 26.8.2, limité à 768 Mio avec un tas à 50 % : environ 490 Mio en régime établi, jusqu'à 563 Mio au démarrage (reconstruction de `start` comprise) ;
+- Keycloak 26.8.2, limité à 768 Mio avec un tas à 50 % : environ 450 Mio en régime établi, jusqu'à 563 Mio au démarrage (reconstruction de `start` comprise) ;
 - sa base PostgreSQL : environ 45 Mio au repos, 80 Mio après la création du realm ;
 - mémoire disponible sur l'hôte au repos : environ 2,0 Gio avant Keycloak, 1,4 Gio après. Pendant un calcul, l'application monte d'environ 0,9 Gio.
 
-La limite de 768 Mio ne vaut que 1,4 fois le pic, sous la règle des deux fois : c'est un compromis assumé, compensé par `oom_score_adj: 500`. En cas de manque de mémoire, Keycloak part avant le calcul.
+La limite de 768 Mio ne vaut que 1,4 fois le pic de démarrage, sous la règle des deux fois : c'est un compromis assumé, compensé par `oom_score_adj: 500`. En cas de manque de mémoire, Keycloak part avant le calcul.
 
 > **Variante : un hôte dédié.** Si vous préférez Keycloak sur `auth.exemple.org` plutôt que sous `/auth`, presque tout se simplifie, et cinq choses changent :
 >
