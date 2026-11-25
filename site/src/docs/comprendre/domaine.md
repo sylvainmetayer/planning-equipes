@@ -1,16 +1,28 @@
 # Modèle de domaine
 
-Pattern Timefold de *shift rostering*, à respecter tel quel pour rester
-compatible avec `HardMediumSoftScore`. Les noms de classes et de champs restent
-en **vocabulaire métier français** ; commentaires et identifiants non métier en
-anglais (glossaire dans [`AGENTS.md`](repo:AGENTS.md)).
+Le planning est un problème de *shift rostering* au sens de Timefold : des animateurs à placer sur des postes, sous contraintes, avec un score à trois niveaux (`HardMediumSoftScore`). Cette page décrit le modèle qui porte ce problème, les règles de calcul qui s'y rattachent et les arbitrages qui l'ont façonné. Elle s'adresse à la personne qui modifie le modèle ou une règle, ou qui audite ce que l'application sait (et ne sait pas) d'un événement.
+
+Pour la suivre, il suffit d'avoir une idée de ce qu'est une édition, un stand et un créneau ([le fil d'une édition](../regles/fil-d-une-edition.md) les présente côté organisateur). Les règles elles-mêmes, une par une, sont dans [les contraintes](contraintes.md).
+
+Les noms de classes et de champs restent en **vocabulaire métier français** (`Animateur`, `Creneau`, `PosteAffectation`) ; les commentaires et les identifiants non métier sont en anglais. Le glossaire qui fixe cette frontière est dans [`AGENTS.md`](repo:AGENTS.md).
 
 ![Le modèle Timefold : solution, entité, variable](repo:docs/diagrammes/domaine.svg)
 
 <sub>Source : [`diagrammes/domaine.puml`](repo:docs/diagrammes/domaine.puml).</sub>
 
-Les classes et leurs champs se lisent dans `domain/`. Ce document porte les
-règles de calcul et les arbitrages.
+Les classes et leurs champs se lisent dans [`domain/`](repo:src/main/java/dev/sylvain/planning/domain). Ce qui suit porte ce que le code ne dit pas : les règles de calcul et les arbitrages.
+
+## Sommaire de la page
+
+| Pour comprendre… | Lisez |
+| --- | --- |
+| Ce que l'application ne stocke jamais | [Deux choses jamais stockées](#deux-choses-jamais-stockées) |
+| Comment une place à pourvoir est représentée | [Un poste = une place](#un-poste--une-place) |
+| Comment les horaires d'un stand deviennent des fenêtres d'ouverture | [Trois états par jour pour un stand](#trois-états-par-jour-pour-un-stand) |
+| Ce qui est figé, verrouillé, publié | [Le passé est figé](#le-passé-est-figé), [Verrouillage partiel](#verrouillage-partiel-du-planning), [Planning publié](#planning-publié) |
+| Les durées légales et les pauses | [Paramètres légaux](#paramètres-légaux) |
+| Les comptes et leurs droits | [Comptes et habilitations](#comptes-et-habilitations) |
+| Ce qu'on ne doit pas casser | [Invariants à ne pas casser](#invariants-à-ne-pas-casser) |
 
 ## Deux choses jamais stockées
 
@@ -507,7 +519,7 @@ sont deux contraintes dures qui l'interdisent, à partir des verrous transmis
 comme faits du problème.
 
 **Un verrou de créneau nomme sa vacation, pas son identifiant** (jour, heure de
-début, heure de fin — issue #577). `creneau.id` est une identité `BIGINT` :
+début, heure de fin). `creneau.id` est une identité `BIGINT` :
 supprimer les créneaux d'une journée puis les recréer à l'identique — une
 régénération de la grille, une journée type réappliquée — leur en donne de
 nouveaux. La colonne était déclarée `ON DELETE CASCADE`, si bien que toute
@@ -588,7 +600,7 @@ figure pas : le planning de personne n'a changé.
 ### Réamorçage d'une résolution complète
 
 Par défaut, une résolution complète **repart du plan persisté** quand il en
-existe un (#174) : chaque place reçoit l'animateur que le plan lui donnait, par
+existe un : chaque place reçoit l'animateur que le plan lui donnait, par
 le même rapprochement positionnel stand × créneau que les verrous et la
 replanification, et **reste mobile**. Rien n'est épinglé hormis les verrous
 explicites. C'est l'exact contraire de la replanification incrémentale sur un
@@ -671,7 +683,7 @@ descendent jusqu'à la page (`editionNom`, `editionDebut`, `editionFin` de
 jusqu'au nom du calendrier d'abonnement (`X-WR-CALNAME`). Rien n'est stocké
 pour cela : le nom vient de l'`Edition`, les bornes se dérivent des créneaux
 comme partout ailleurs, et une édition sans créneau porte son nom sans dates.
-La raison est un cas précis (#608) : un animateur revenu d'une année sur
+La raison est un cas précis : un animateur revenu d'une année sur
 l'autre a **deux** liens d'espace valides dans sa boîte mail, et deux pages
 rigoureusement identiques ; se tromper de lien donnait un planning parfaitement
 cohérent, simplement pas celui de cette année.
@@ -905,7 +917,7 @@ paramètres : ce sont des minima/maxima d'ordre public qu'un administrateur n'a
 aucune raison légitime d'assouplir. Ils sont déclarés dans `LegalConstraints`,
 chacun avec son article.
 
-La **durée de la pause**, elle, est un paramètre depuis l'issue #592 :
+La **durée de la pause**, elle, est un paramètre :
 `dureePauseMinutes`, un plancher et non un plafond, donc un réglage qui ne peut
 qu'aller dans le sens protecteur — voir « La pause légale » ci-dessous.
 
@@ -1038,8 +1050,8 @@ jamais.
 Une heure laissée **vide** dans la configuration se lit comme absente, pas comme
 minuit : c'est ainsi qu'un déploiement neutralise `eviterFermeturePuisOuverture`
 sans toucher au catalogue. Un repos souhaité nul, ou inférieur au plancher légal,
-rend la règle inerte de la même façon — voir `docs/contraintes.md`, section
-*Fermer tard puis ouvrir tôt*.
+rend la règle inerte de la même façon — voir la section *Fermer tard puis ouvrir tôt* des
+[contraintes](contraintes.md#fermer-tard-puis-ouvrir-tôt).
 
 Différence assumée avec `ParametresLegaux` : ces seuils ne sont **pas stockés
 par édition** en base, ils viennent de la configuration de l'application. Ils
@@ -1075,10 +1087,10 @@ toutes les éditions) :
   `/api/comptes` est réservé au rôle `admin`.
 - **Un organisateur travaille dans ses éditions.** Le rôle `organisateur` donne
   accès à tout ce qu'une édition porte, dans les éditions que ses droits en
-  vigueur nomment, et à rien de ce qui est de l'instance (voir `oidc.md`).
+  vigueur nomment, et à rien de ce qui est de l'instance (voir [la connexion OIDC](../installer/oidc.md)).
 - **Le compte `admin` de la configuration n'est pas une ligne** : c'est un
   compte implicite, d'identifiant `admin`, que le journal nomme tant qu'aucun
-  compte n'est lié à la session. Avec un fournisseur OIDC (`docs/oidc.md`), un
+  compte n'est lié à la session. Avec un fournisseur OIDC ([la connexion OIDC](../installer/oidc.md)), un
   compte actif portant un droit `ADMIN` en vigueur reçoit le rôle `admin` ; sans
   compte, ou désactivé, une session n'ouvre rien. La colonne `oidc_sujet` lie le
   compte au couple émetteur + sujet du fournisseur.
@@ -1091,7 +1103,7 @@ toutes les éditions) :
 ## Invariants à ne pas casser
 
 - Un poste = une place, jamais un couple stand × créneau.
-- Un stand est toujours rattaché à **au moins une typologie** (#343) : sans
+- Un stand est toujours rattaché à **au moins une typologie** : sans
   elle, seuls les polyvalents pourraient le tenir, le goulot le plus serré du
   modèle, né d'une saisie que rien ne signalait. Refusé à l'écriture (CRUD,
   masse, MCP, import) ; une ligne ancienne sans typologie reste lisible et

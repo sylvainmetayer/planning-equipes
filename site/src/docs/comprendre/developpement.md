@@ -1,4 +1,20 @@
-# Développement
+# Construire, tester et livrer
+
+Cette page s'adresse à qui modifie le code : lancer l'application en local, faire
+passer les tests, comprendre ce que l'intégration continue exige, mettre à jour une
+dépendance, régler le solveur. Si vous découvrez le projet, lisez d'abord
+[l'architecture](architecture.md), puis revenez ici pour travailler.
+
+| Vous voulez… | Allez à |
+| --- | --- |
+| Lancer l'application et ses tests | [Démarrer](#démarrer), [Tests](#tests), [La boucle sans conteneur](#la-boucle-sans-conteneur) |
+| Écrire ou traduire un texte d'écran | [i18n](#i18n--traduction-à-lexécution), [Textes des écrans](#textes-des-écrans--la-règle) |
+| Comprendre pourquoi un test structurel échoue | [Les tests structurels](#les-tests-structurels) |
+| Mesurer ou régler le solveur | [Le banc du solveur](#le-banc-du-solveur), [Réglage du solveur](#réglage-du-solveur) |
+| Savoir ce que la CI vérifie avant un merge | [Intégration continue](#intégration-continue) |
+| Mettre à jour une dépendance | [Renovate](#renovate), [Licences des dépendances](#licences-des-dépendances) |
+| Modifier un diagramme ou une page de cette documentation | [Diagrammes](#diagrammes), [Où vivent les sources de la documentation](#où-vivent-les-sources-de-la-documentation) |
+| Connaître les règles d'écriture du code | [Conventions](#conventions), [Formatage](#formatage) |
 
 ## Démarrer
 
@@ -30,7 +46,7 @@ hasard (`quarkus.management.test-port=0`) pour que deux suites lancées côte à
 côte ne se le disputent pas ; un test l'atteint par
 `@TestHTTPResource(value = "metrics", management = true)` — chemin relatif à
 `/q`, la racine de management — ou lit directement le `MeterRegistry`. Voir
-[`observabilite.md`](../installer/observabilite.md) § Métriques.
+[l'observabilité](../installer/observabilite.md) § Métriques.
 
 **Variables d'environnement locales.** `mise.toml` porte celles que tout le
 monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
@@ -38,8 +54,8 @@ monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
 exclut — c'est le seul endroit où écrire une valeur qu'on ne veut pas voir dans
 un dépôt public. Exemple, pour voir la page `/mentions-legales` remplie plutôt
 que vide (les sept `LEGAL_*` sont décrites dans le
-[`variables-environnement.md`](../installer/variables-environnement.md#mentions-légales) et dans
-[`exploitation.md`](../installer/exploitation.md#3-mentions-légales--à-renseigner-pas-à-laisser-vides)) :
+[les variables d'environnement](../installer/variables-environnement.md#mentions-légales) et dans
+[les mentions légales](../installer/mentions-legales.md)) :
 
 ```toml
 [env]
@@ -75,8 +91,8 @@ les tests appellent l'API sans session — `AuthentificationAdminTest` la restau
 via `@TestProfile` pour couvrir le flux réel.
 
 Les variables d'environnement sont documentées dans le
-[`variables-environnement.md`](../installer/variables-environnement.md) et
-[`exploitation.md`](../installer/exploitation.md).
+[les variables d'environnement](../installer/variables-environnement.md) et
+[l'exploitation](../installer/exploitation.md).
 
 ### Avertissements JDK 25
 
@@ -95,7 +111,7 @@ Deux fichiers du frontend ne sont pas dans le dépôt : ils sont écrits par
 
 | Fichier | Script | Contenu |
 | --- | --- | --- |
-| `src/app/version.ts` | `scripts/generate-version.js` | `APP_VERSION` : le tag exact s'il y en a un, sinon le SHA court ([`versioning.md`](../installer/versioning.md)) |
+| `src/app/version.ts` | `scripts/generate-version.js` | `APP_VERSION` : le tag exact s'il y en a un, sinon le SHA court ([les versions et releases](../installer/versioning.md)) |
 | `src/app/pages/nouveautes/news-data.ts` | `scripts/generate-news.js` | L'historique git — un sujet de commit, sa date, son tag de version — que l'écran **Nouveautés** affiche |
 
 Les deux sont dans `.gitignore`, et `news-data.ts` dans `.prettierignore` : il
@@ -278,7 +294,7 @@ coûte peu à l'écriture, les rattraper coûte cher.
   d'un `<span class="visually-hidden">`, un `aria-label` sur un élément sans
   rôle n'étant pas lu de façon fiable.
 - **Les sept contrôles qui tiennent ces conventions** sont recensés dans
-  [`accessibilite.md`](../installer/accessibilite.md#ce-qui-empêche-les-écarts-de-revenir) :
+  [l'accessibilité](../installer/accessibilite.md#ce-qui-empêche-les-écarts-de-revenir) :
   les douze règles a11y d'`angular-eslint` en `error` (les trois désactivations
   sont commentées à leur ligne), cinq scripts du job `frontend`, et
   `e2e/accessibilite.spec.ts`, qui passe axe-core sur les écrans représentatifs
@@ -409,9 +425,9 @@ Chacun porte une liste d'exceptions justifiées **une par une**, et un test qui
 vérifie que le scan trouve bien quelque chose — sans quoi il passerait au vert
 le jour où son expression rationnelle cesserait de reconnaître le code.
 
-`LanguagePolicyStructuralTest` applique le glossaire d'`AGENTS.md` : verbe
+`LanguagePolicyStructuralTest` applique le glossaire de langue du code (voir [Conventions](#conventions)) : verbe
 anglais, nom commun anglais, ordre des mots anglais, vocabulaire métier en
-français. Une règle écrite dans `AGENTS.md` mais non vérifiée ne tient pas : une
+français. Une règle de convention non vérifiée ne tient pas : une
 seule branche suffit à y ajouter vingt blocs de javadoc française.
 
 Il ne regarde pas les composants de record ni les accesseurs (ce sont des clés
@@ -893,7 +909,7 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
 | `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |
 | `planning.solver.max-queued-jobs` | `0` = aucune limite (`SOLVER_MAX_QUEUED_JOBS`) | Tâches en file derrière celle qui tourne |
-| `planning.constraint-weights.<contrainte>` | défaut du catalogue : `1` pour une règle dure, `5` pour les autres | Voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
+| `planning.constraint-weights.<contrainte>` | défaut du catalogue : `1` pour une règle dure, `5` pour les autres | Voir [les contraintes](contraintes.md#pondérer-une-contrainte) |
 | `planning.jobs.reprise-au-demarrage` | `true` (`false` en `%test`) | Rejoue la file persistée. En test, une tâche laissée en file déclencherait un vrai solve au démarrage suivant |
 | `planning.diagnostic.mode` | `score-director` | Implémentation du diagnostic par contrainte. `solution-manager` est l'oracle du test de contrat, pas un mode dégradé de secours — voir [`0013`](repo:docs/decisions/0013-diagnostic-par-le-score-director.md) |
 
@@ -1263,7 +1279,7 @@ points qui ne s'y voient pas :
   moitiés de `test-conteneur`, ≈ 6 pour chacune des deux moitiés de son job
   `e2e` et quelques-unes pour l'analyse dynamique `dast`), scénarios (≈ 8 dès que la PR a touché le
   solveur), Sécurité (quelques minutes, ses jobs en parallèle). D'où trois
-  filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` et le
+  filtres : `tests.yml` ignore une poussée qui ne touche que `docs/` ou `site/src/docs/` et le
   Markdown (moins les fichiers qu'un test relit ou que le job compare à son
   build, réinclus nommément), et son job `e2e` y ajoute ces fichiers-là — un
   petit job `e2e-scope` relit le diff comme GitHub lit `paths` ; les specs Playwright `@lourd` ont leur workflow, qui
@@ -1388,7 +1404,7 @@ points qui ne s'y voient pas :
 - **l'image est scannée par Trivy avant d'être signée** : une CVE corrigeable
   HIGH ou CRITICAL dans ses paquets système l'arrête sous son seul tag
   `sha-…`. Une version (`v*`) est construite sans cache, couches et `.m2`
-  compris — voir [`securite.md`](../installer/securite.md) § Analyses automatiques, qui
+  compris — voir [la page sécurité](../installer/securite.md) § Analyses automatiques, qui
   liste aussi tout ce que `securite.yml`, `scorecard.yml`, CodeQL et le
   job `dast` de `tests.yml` vérifient ;
 - **les analyses publient dans l'onglet *Security*** (SARIF) en plus d'échouer
@@ -1428,10 +1444,10 @@ points qui ne s'y voient pas :
   la signe, puis publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
   tag `vX.Y.Z`** ; `:main` est aussi reconstruite sans cache chaque dimanche
   et sur un lancement manuel, pour les correctifs Ubuntu
-  ([`securite.md`](../installer/securite.md) § Analyses automatiques) ; `:latest` n'est jamais posé par `metadata-action`
+  ([la page sécurité](../installer/securite.md) § Analyses automatiques) ; `:latest` n'est jamais posé par `metadata-action`
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
-  release — est dans [`versioning.md`](../installer/versioning.md).
+  release — est dans [les versions et releases](../installer/versioning.md).
 - **`release.yml` écrit le corps d'une release publiée** (git-cliff sur les
   messages de commit du tag) et ne touche à rien d'autre : ni tag, ni branche,
   ni fichier du dépôt — il n'y a pas de `CHANGELOG.md` à tenir. Il part sur
@@ -1440,7 +1456,7 @@ points qui ne s'y voient pas :
   — la montée que les sujets demandaient, la branche où vit le tag — tournent
   **après** l'écriture : la release est déjà publiée quand le workflow
   démarre, rien ne peut plus l'empêcher, et un job rouge est le seul canal qui
-  prévienne. Le détail est dans [`versioning.md`](../installer/versioning.md) § 3.
+  prévienne. Le détail est dans [les versions et releases](../installer/versioning.md) § 3.
 - **un numéro de migration Flyway ou d'ADR ne se prend qu'une fois.** Deux PR
   ouvertes en même temps prennent volontiers le même « suivant », et
   `FlywayMigrationsFrozenTest` ne le voit qu'une fois les deux sur `main`.
@@ -1611,9 +1627,10 @@ proposer et la version installée dépend du jour du `pull`.
 
 ## La vitrine (`site/`)
 
-La page de présentation est un site Eleventy à part, dans `site/`, avec ses
+La page de présentation, qui porte aussi cette documentation, est un site Eleventy à part, dans `site/`, avec ses
 dépendances (`site/package.json`, aucune n'entre dans l'application), son
-workflow (`.github/workflows/site.yml`, filtré sur `site/**` et sur
+workflow (`.github/workflows/site.yml`, filtré sur `site/**`, sur `docs/**`
+(le site publie les diagrammes et l'inventaire des licences) et sur
 `ConstraintCatalog.java`, dont les articles du Code du travail sont relus par
 `site/test/articles.test.mjs`) et sa publication par Cloudflare Pages. Les
 textes s'éditent dans Pages CMS. Pour la voir en local : `mise run site` (depuis la racine) installe ses dépendances
@@ -1627,7 +1644,7 @@ le décor de ses captures : il ne change pas sans qu'on les refasse.
 L'image est distribuée sous AGPL-3.0-only, mais elle redistribue aussi ses
 dépendances, qui restent sous les leurs — et les licences MIT, BSD ou Apache
 demandent que leur notice voyage avec le binaire.
-[`licences-tierces.md`](repo:docs/licences-tierces.md) est cet inventaire. Il est
+Cet [inventaire des licences](../installer/licences-tierces.md) est celui du projet. Il est
 **généré**, jamais écrit à la main :
 
 ```bash
@@ -1663,8 +1680,9 @@ publiée.
 Les diagrammes de séquence, d'états et de classes vivent dans
 [`diagrammes/`](repo:docs/diagrammes/), en PlantUML : un `.puml` écrit à la main, et à
 côté le `.svg` qu'il produit, commité lui aussi pour que GitHub l'affiche sans
-rien installer. Chacun est montré par le document qui possède son sujet, juste
-sous le paragraphe qu'il illustre, avec un lien vers sa source :
+rien installer. Chacun est montré par la page qui possède son sujet, juste
+sous le paragraphe qu'il illustre, avec un lien vers sa source (le site publie
+les SVG sous `/docs/diagrammes/`) :
 
 ```markdown
 ![Séquence d'un solve lancé depuis le référentiel](repo:docs/diagrammes/solve.svg)
@@ -1691,11 +1709,11 @@ exister :
 | Règle | Ce qui la fait échouer |
 | --- | --- |
 | Le SVG est le rendu de son `.puml` | Un `.puml` modifié sans régénération. PlantUML embarque sa source dans le SVG : le test la décode et la compare, sans rien redessiner, donc sans dépendre des polices de la machine |
-| Chaque diagramme est montré par un document de `docs/` — une image Markdown, hors bloc de code —, chaque image montrée existe | Un diagramme orphelin, un lien vers un SVG absent |
-| Chaque document qui montre un diagramme figure dans les chemins du workflow Tests | Un document ajouté sans sa ligne : une poussée qui n'y toucherait que lui ne jouerait pas le contrôle ci-dessus |
+| Chaque diagramme est montré par une page de `site/src/docs/` — une image Markdown, hors bloc de code —, chaque image montrée existe | Un diagramme orphelin, un lien vers un SVG absent |
+| Chaque page qui montre un diagramme figure dans les chemins du workflow Tests | Une page ajoutée sans sa ligne : une poussée qui n'y toucherait que lui ne jouerait pas le contrôle ci-dessus |
 | Un `participant`, ou une boîte `class`, `abstract class`, `interface` ou `enum`, nommé comme un type Java en est un | Une classe renommée. Les rôles qui ne sont pas du code s'écrivent `actor`, `boundary`, `control` ou `database`, ou portent un espace ou un point dans leur nom : ils ne sont pas vérifiés |
 | Un message `méthode(…)` envoyé à un tel participant, quel que soit le sens ou le style de la flèche, est déclaré par son type ou par un de ses supertypes du projet | Une méthode renommée. Un libellé qui n'est pas un appel ne commence pas par `identifiant(` ; une flèche à deux pointes n'est pas vérifiée |
-| Une route `VERBE /api/…` citée existe | Comme pour `api.md` |
+| Une route `VERBE /api/…` citée existe | Comme pour [les invariants de l'API](api.md) |
 | Un diagramme d'états qui porte `' enum: Nom` dessine exactement les constantes de cette enum | Une constante ajoutée et oubliée, un état qui n'existe plus |
 | Un champ `nom : Type` dessiné dans une boîte est un champ déclaré par la classe (ou une composante de son record) ; une constante dessinée dans une boîte `enum` en est une | Un champ renommé du modèle, une constante retirée |
 
@@ -1740,11 +1758,30 @@ Le formatage n'est pas un sujet de revue : un outil décide, on obéit.
 
 ## Conventions
 
-Elles vivent dans [`AGENTS.md`](repo:AGENTS.md), section *Working conventions* :
-langue du code, `ApplicationLinks` pour tout lien public, `BusinessError` plutôt
-qu'un `try/catch` dans une ressource, `ObjectMapper` injecté, messages de commit
-courts, et les règles frontend. Le découpage des modules est dans
-[`architecture.md`](architecture.md).
+Elles vivent dans [`AGENTS.md`](repo:AGENTS.md), à la racine du dépôt : le
+fichier que lisent les assistants de code et, avant eux, les contributeurs.
+Section *Working conventions* : langue du code, `ApplicationLinks` pour tout lien
+public, `BusinessError` plutôt qu'un `try/catch` dans une ressource,
+`ObjectMapper` injecté, messages de commit courts, et les règles frontend. Le
+découpage des modules est dans [l'architecture](architecture.md).
 
 Les mémoires d'agents (`.claude/agents/`, `.github/chatmodes/`) sont dérivées
 d'`AGENTS.md` : on modifie la source, pas les copies.
+
+## Où vivent les sources de la documentation
+
+Les pages que vous lisez sont des fichiers Markdown du dépôt, rangés par partie
+dans `site/src/docs/` : `regles/` (utiliser l'application), `installer/`
+(l'héberger), `comprendre/` (cette partie). Le site Eleventy de `site/` les lit
+au build et les publie sous `/docs/` ; l'ordre des pages d'une partie est le
+front matter `docs:` de son `index.md`. Un lien vers une page du site s'écrit en
+relatif (`../installer/oidc.md`), un lien vers un fichier du dépôt avec le
+préfixe `repo:` suivi du chemin depuis la racine (`repo:AGENTS.md`), qui devient
+un lien GitHub ; un lien vers une page qui n'existe pas fait échouer le build.
+
+Le dossier `docs/` à la racine ne garde que ce qui sert aux contributeurs et aux
+outils : `decisions/` (les décisions d'architecture, jamais publiées sur le site),
+`schema/` (le contrat OpenAPI et le schéma de scénario, générés), `diagrammes/`
+(sources PlantUML et SVG), `licences-tierces.md` (généré, publié sous les pages
+d'installation) et `memoire-du-projet.md`. Pour construire et tester le site :
+voir [La vitrine](#la-vitrine-site).

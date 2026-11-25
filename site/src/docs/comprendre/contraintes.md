@@ -1,17 +1,14 @@
 # Référentiel de contraintes
 
-Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur**
-(bloquant), **medium** (fortement pénalisé, signalé à l'organisateur) et
-**soft** (préférence, qui départage deux plannings valides).
+Un planning est valide quand aucune règle dure n'est violée, bon quand les règles de qualité sont peu pénalisées. Cette page explique **pourquoi** chaque règle existe, ce qu'elle coûte et quels arbitrages elle a imposés. Elle s'adresse à la personne qui règle, ajoute ou conteste une règle (développeur, responsable RH, auditeur) ; pour l'usage côté organisateur, voir [comprendre un planning](../regles/comprendre-un-planning.md).
 
-> **Ne jamais reclasser une contrainte dure en medium ou soft sans validation
-> explicite**, en particulier tout ce qui touche au cadre légal des mineurs.
+Les règles se rangent sur trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur** (bloquant), **medium** (fortement pénalisé, signalé à l'organisateur) et **soft** (préférence, qui départage deux plannings valides).
 
-**La liste des 47 contraintes, leur niveau, leur catégorie, leur description
-métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — et
-sont servies par `GET /api/constraints`, affichées sur la page « Règles du
-planning » (`/regles`). Ce document ne les recopie pas (hormis le tableau final, rendu par un test) : il porte les
-mécanismes et les arbitrages.
+> **Ne jamais reclasser une contrainte dure en medium ou soft sans validation explicite**, en particulier tout ce qui touche au cadre légal des mineurs.
+
+**La liste des 47 contraintes, leur niveau, leur catégorie, leur description métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** : le catalogue est servi par `GET /api/constraints` et affiché sur la page « Règles du planning » (`/regles`). Cette page ne les recopie pas, à une exception près : le tableau de la section [Les contraintes, telles que le catalogue les déclare](#les-contraintes-telles-que-le-catalogue-les-déclare), tenu à jour par un test. Elle porte les mécanismes et les arbitrages.
+
+Pour ajouter une règle, passez directement à [Ajouter une contrainte](#ajouter-une-contrainte) ; pour comprendre une règle précise, cherchez son nom dans le tableau du catalogue puis la section qui en traite.
 
 L'écran les range en tableau, une ligne par règle : l'onglet **Légal** porte
 les règles dures — la loi, la sécurité des mineurs, le repas, l'affectation —,
@@ -41,7 +38,7 @@ obtenir le lien : rien d'autre n'est à déclarer.
 ## « Écart » à l'écran, `violation` dans le code
 
 Un cas où une contrainte n'est pas satisfaite se nomme un **écart** partout où
-l'organisateur le lit : les libellés, l'aide en ligne et cette documentation. Le
+l'organisateur le lit : les libellés, l'aide en ligne et la documentation. Le
 mot vaut pour les trois niveaux, ce qu'« infraction » ou « manquement » ne
 feraient pas sans accuser une préférence de confort d'un délit.
 
@@ -55,7 +52,7 @@ Les documents datés (audit RH, ADR, revues) gardent les mots de leur époque.
 ## `effectifMax` et `manager` : deux champs que le solveur ne lit pas
 
 Deux champs de la fiche ressemblent à des leviers de règle et n'en sont pas.
-`effectifMax` d'un stand borne la saisie (voir `docs/domaine.md`) mais ne fixe
+`effectifMax` d'un stand borne la saisie (voir [le modèle de domaine](domaine.md)) mais ne fixe
 ni le nombre de sièges, qui vient de l'effectif de la fenêtre ou à défaut de
 `effectifMin`, ni un plafond que le solveur vérifierait. `manager` d'un
 animateur est une étiquette : aucune contrainte ne la lit, un manager planifié
@@ -126,8 +123,7 @@ et la contrainte ne coûte rien.
 Une typologie peut porter un plafond : `maxCreneauxParAnimateur`, saisi sur sa
 fiche, nullable — vide signifie « pas de plafond », et une édition qui n'y
 touche pas ne change pas de comportement. La contrainte dure
-`plafondCreneauxParTypologie` le fait respecter (issue #594,
-[0042](repo:docs/decisions/0042-quota-par-typologie-sur-la-typologie.md)).
+`plafondCreneauxParTypologie` le fait respecter ([ADR 0042](repo:docs/decisions/0042-quota-par-typologie-sur-la-typologie.md)).
 
 Deux choix à connaître avant de s'en servir :
 
@@ -145,7 +141,7 @@ règle est dure, un plafond saisi trop bas rend l'édition infaisable plutôt qu
 de le dépasser : le diagnostic nomme alors qui, quelle typologie, combien de
 créneaux tenus pour quel plafond.
 
-La page Typologies porte la lecture correspondante (issue #590) : par
+La page Typologies porte la lecture correspondante : par
 typologie, les animateurs réellement affectés, les postes, les heures, et
 l'écart avec ceux que le référentiel apprécie. Un plafond qu'on ne voit nulle
 part est un plafond que personne ne peut régler.
@@ -157,7 +153,7 @@ n'empêchait donc deux semaines pleines dos à dos, ce qui est exactement la
 forme vers laquelle un solveur converge sur un événement à cheval sur deux
 semaines avec un besoin tendu.
 
-`dureeHebdomadaireMaxDeuxSemaines` (contrainte dure, issue #593) l'interdit
+`dureeHebdomadaireMaxDeuxSemaines` (contrainte dure) l'interdit
 pour les majeurs. Le seuil est celui de
 `ParametresLegaux.dureeHebdomadaireMaxMinutes` — jamais une seconde constante à
 48 h qui pourrait diverger — et la pénalité compte les **paires** de semaines
@@ -333,7 +329,7 @@ forme dure ne coûte rien) et la décision sont dans
 La pause qui coupe une période de travail continu se règle sur la page Règles
 du planning, onglet Légal, sur la ligne de chaque règle qui la lit : **une
 seule durée pour l'édition**,
-`dureePauseMinutes` (issue #592, fusionnée par l'[ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)).
+`dureePauseMinutes` (fusionnée par l'[ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)).
 Elle est lue par `travailContinuMaxMajeur`, `travailContinuMaxMineur`,
 `PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et
 l'analyse des pauses — donc par l'écran Pauses et par la carte
@@ -344,7 +340,7 @@ garantir qu'aucun ne soit plus strict qu'un autre.
 C'est un **plancher**, à l'inverse des deux durées hebdomadaires qui sont des
 plafonds : 20 minutes (art. L3121-16), refusées en dessous par le service,
 libres au-dessus. Le défaut est de **30 minutes**, le cadre arrêté par
-l'organisation (issue #31) : donner plus que ce que le Code doit est un choix
+l'organisation : donner plus que ce que le Code doit est un choix
 d'organisation — une relève de 30 minutes s'organise plus simplement qu'une de
 20 — et la seule direction qu'une application ne doit pas laisser prendre est
 l'autre.
@@ -363,7 +359,7 @@ Les constantes `PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES` et
 planchers et la référence de l'article.
 
 Elle se règle aussi depuis un assistant : `modifier_parametres_legaux`
-(MCP) porte `dureePauseMinutes`, avec le même plancher — voir `docs/mcp.md`.
+(MCP) porte `dureePauseMinutes`, avec le même plancher — voir [le serveur MCP](mcp.md).
 
 ### Ce qui déduit la pause, et ce qui compte l'amplitude
 
@@ -394,7 +390,7 @@ contrainte ne le lit : borner l'amplitude attend l'avis d'un juriste.
 journée et par animateur** — une séquence ne traverse pas minuit —, donc tout
 lecteur hebdomadaire groupe par jour avant de sommer, jamais l'inverse.
 
-Les trois règles hebdomadaires sommaient l'amplitude jusqu'à l'issue #31, alors
+Les trois règles hebdomadaires sommaient l'amplitude jusqu'à ce qu'on les corrige, alors
 que le plafond quotidien déduisait déjà. L'écart allait dans le sens
 protecteur, mais il refusait des plans licites — cinq jours de 10 h d'amplitude
 font 48 h 20 de travail effectif, qui étaient comptées 50 h — et surtout il
@@ -539,7 +535,7 @@ Les règles de « Qualité d'organisation » lisent leurs seuils dans
 | Tolérance de trajet | 5 min | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
 | Tolérance d'une arrivée groupée | 30 min | `arriveeGroupee`, et la lecture des arrivées groupées |
 
-Ils sont **persistés par édition** depuis l'issue #591 et se règlent sur la
+Ils sont **persistés par édition** et se règlent sur la
 page Règles du planning, onglet Qualité, chacun sur la ligne de la règle qui le
 lit ; le bloc `planning.contraintes.*` de la configuration donne les valeurs
 d'une édition qui ne les a jamais réglés. Un scénario les emporte dans sa section
@@ -564,7 +560,7 @@ ouvrir un autre écran, y chercher le bon onglet, et parier que le champ trouvé
 
 Chaque règle porte donc, **sur sa propre ligne**, les **réglages qu'elle lit** :
 le libellé du champ mot pour mot, et le champ lui-même, à la valeur de cette
-édition (issue #720). Un réglage lu par plusieurs règles — la pause, la
+édition. Un réglage lu par plusieurs règles — la pause, la
 fenêtre repas — apparaît sur chacune de leurs lignes et se modifie à
 n'importe laquelle : c'est une seule valeur, enregistrée une fois. Le serveur
 envoie la clé du réglage (`cle`) avec son libellé, l'écran n'a donc pas à
@@ -848,7 +844,7 @@ sous-ensemble des postes épuisants ou premium.
 ### Le plancher : une règle qui pénalise tout faute de donnée
 
 Mesuré sur l'édition 2026 réelle, avant la grille d'appréciations
-(`docs/memoire-du-projet.md`, §2.g) : **68 % du score medium était une
+([mémoire du projet](repo:docs/memoire-du-projet.md), §2.g) : **68 % du score medium était une
 constante**, deux règles matchant l'intégralité de ce qu'elles évaluent parce
 que la donnée qu'elles mesurent n'existait pas au référentiel — aucun souhait
 déclaré, aucun animateur au niveau référent. Les règles étaient correctes ; un
@@ -1245,8 +1241,7 @@ tous.
 
 `coupureRepasObligatoire` (dure) et `coupureRepasPlacementPrefere` (souple) portent la
 coupure repas. Avant elles, **aucune contrainte ne la modélisait** : une journée
-de dix heures d'affilée sortait à zéro dur, sans que rien ne le signale
-(issue #438).
+de dix heures d'affilée sortait à zéro dur, sans que rien ne le signale.
 
 ### Ce n'est pas le Code du travail
 
@@ -1312,7 +1307,7 @@ pendant que les autres mangent. Le classeur source y répond par un **effectif
 réduit** : `couverturePause` sur un créneau divise par deux les sièges qu'un
 stand y ouvre, l'arrondi au supérieur. Le drapeau se pose à la main sur le
 créneau, ou sur la vacation d'une journée type qui le projette ; le format de
-scénario sait le lire (issue #438). Sans lui, une rotation réclame deux
+scénario sait le lire. Sans lui, une rotation réclame deux
 équipages complets.
 
 Une grille en blocs jointifs ne demande aucun réglage : rien n'impose d'écart
@@ -1431,7 +1426,7 @@ la distance au bout de la fenêtre vers lequel elle penche. **Le midi, c'est le
 plus tard** : les stands viennent d'ouvrir, on ne mange pas à midi pile — donc
 13-14 plutôt que 12-13. **Le soir, c'est le plus tôt** : on mange tôt pour
 rouvrir ensuite. La règle préférait le plus tôt dans les deux fenêtres, ce qui
-était juste pour le soir et inversé pour le midi (issue #596) ; son ancien nom,
+était juste pour le soir et inversé pour le midi ; son ancien nom,
 `coupureRepasAuPlusTot`, ne la décrivait plus, et la migration V86 reporte les
 désactivations et les poids déjà enregistrés sous ce nom.
 
@@ -1481,7 +1476,7 @@ lui transmet les fenêtres que si la règle est active : une règle que le solve
 n'a pas à honorer ne doit pas relever le nombre d'animateurs à recruter.
 
 Cette borne compte deux choses, et la seconde est ce qu'une grille écrite à la
-main lui oppose le plus souvent (issue #482). Un **siège qui couvre toute la
+main lui oppose le plus souvent. Un **siège qui couvre toute la
 fenêtre** ne laisse à son titulaire aucun trou pour manger : il ne peut donc
 pas travailler des deux côtés. Un siège du soir 20 h-minuit contre une fenêtre
 20 h-21 h interdit ainsi l'après-midi à ses titulaires, et une journée de 138
@@ -1510,7 +1505,7 @@ travail, et c'est pour cela qu'elle n'est ni dure ni rangée sous « Légal ».
 ### Ce qu'elle compte, et ce qu'elle refuse de compter
 
 Trois seuils, portés par `ParametresQualite` (configuration de l'application,
-pas la base — voir `docs/domaine.md`) :
+pas la base — voir [le modèle de domaine](domaine.md)) :
 
 | Seuil | Défaut | Réglage |
 | --- | --- | --- |
@@ -1562,7 +1557,7 @@ avant sont **au plus 11 h** l'une de l'autre — soit jamais au-delà du planche
 légal d'un majeur, que la règle refuse par construction de facturer. Le seul
 couple qu'elle aurait attrapé sur un planning licite est le point exact
 22 h → 9 h : une règle inerte, livrée pour rien. À 10 h, la bande utile est
-`[11 h, 12 h[` : exactement le motif de l'issue #78, et rien d'autre.
+`[11 h, 12 h[` : exactement le motif que la règle vise, et rien d'autre.
 
 ### Ce qu'elle coûte, mesuré
 

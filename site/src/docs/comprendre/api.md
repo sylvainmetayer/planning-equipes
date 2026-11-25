@@ -1,12 +1,25 @@
-# API REST
+# Les invariants et les pièges de l'API REST
 
-Tout est sous `/api`, en JSON. **La liste des endpoints, leurs schémas et leurs
-codes de retour sont dans la spécification générée** : `/q/openapi`, ou
-`/q/swagger-ui` pour l'explorer. Ce document ne la recopie pas : il porte ce
-qu'elle ne peut pas exprimer — les invariants transverses, les arbitrages
-métier, et les pièges qui coûtent une demi-journée.
+Cette page s'adresse à qui écrit un client de l'API (le frontend, un script, un
+outil d'intégration) ou audite ce que le serveur promet. Tout est sous `/api`,
+en JSON. **La liste des endpoints, leurs schémas et leurs codes de retour sont
+dans la spécification générée** : [`openapi.json`](repo:docs/schema/openapi.json)
+dans le dépôt, `/q/openapi` sur une instance qui tourne, et `/q/swagger-ui` pour
+l'explorer. Elle fait foi pour la forme ; ce qu'elle ne peut pas exprimer
+tient ici : les invariants transverses, les arbitrages métier, et les pièges qui
+coûtent une demi-journée.
 
-Le serveur MCP (`/mcp`) a sa propre porte et sa propre clé : [`mcp.md`](mcp.md).
+Les sections suivent le fil d'un client. Lisez d'abord les trois premières,
+elles valent pour tout appel : le cloisonnement par édition, l'authentification
+et la manière dont une résolution se lance et se suit. Le reste est organisé par
+capacité (consignes, publication, webhooks, contraintes, jour J, espace
+animateur, référentiels…) : allez-y à la demande. La dernière section,
+[Deux pièges](#deux-pièges), est courte et vaut une lecture avant toute
+automatisation autour de l'import et de la remise à zéro.
+
+Le serveur MCP (`/mcp`) a sa propre porte et sa propre clé : [Serveur MCP](mcp.md).
+Pour le contexte d'ensemble (modules, base de données), commencez par
+[l'architecture](architecture.md) ; pour les mots du modèle, par [le domaine](domaine.md).
 
 ## L'édition, désignée à chaque requête
 
@@ -59,7 +72,7 @@ non authentifié répond **401, jamais une redirection HTML**.
 <sub>Source : [`diagrammes/authentification.puml`](repo:docs/diagrammes/authentification.puml).</sub>
 
 Le form login `/j_security_check` répond `429` après cinq échecs depuis la même
-adresse, **y compris avec le bon mot de passe** ([`securite.md`](../installer/securite.md)).
+adresse, **y compris avec le bon mot de passe** ([la page sécurité](../installer/securite.md)).
 
 `POST /api/mcp/cle` échange le mot de passe admin contre la clé MCP : la
 session ne suffit pas, parce que cette clé donne un accès complet en écriture et
@@ -70,7 +83,7 @@ quelqu'un présent au clavier.
 description, texte — pour que la page MCP les propose aux clients qui ne savent
 pas les récupérer eux-mêmes. Rien de secret ici : c'est la session admin qui
 protège la route, comme le reste de l'API. Elle existe pour que la page **ne
-recopie pas** ces textes ; voir [`mcp.md`](mcp.md).
+recopie pas** ces textes ; voir [le serveur MCP](mcp.md).
 
 ### Derrière un reverse proxy qui termine le TLS
 
@@ -93,7 +106,7 @@ annonce le schéma et l'adresse de son choix — et
 
 **Déprécié en 3.x, retiré en 4.0** : un avertissement le rappelle à chaque
 démarrage où il est actif. Le remplacent la connexion par un fournisseur OIDC et
-les comptes de l'application (`docs/oidc.md`).
+les comptes de l'application ([connexion par un fournisseur OIDC](../installer/oidc.md)).
 
 Pour un proxy d'accès qui authentifie lui-même ses visiteurs et transmet
 l'adresse retenue. Le form login reste disponible en parallèle : une origine
@@ -151,7 +164,7 @@ par le serveur. Toute autre session voit le même job actif via
 portant le job en cours. **C'est le seul `409` de lancement dont le corps est
 un job** : le quota horaire et la file plafonnée de l'exploitant
 (`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, voir
-[`exploitation.md`](../installer/exploitation.md#combien-de-calculs-linstance-accepte)), comme
+[le réglage du calcul](../installer/calcul-du-planning.md#borner-le-nombre-de-calculs-dune-instance-partagée)), comme
 le référentiel figé, répondent `409` avec un `{ message }` à afficher tel quel.
 Un client distingue les deux par la forme du corps (un `id` et un `status`),
 pas par le statut.
@@ -357,7 +370,7 @@ Chaque résultat porte aussi `impactPublication: { personnes, publieLe }` —
 combien de personnes verraient leur emploi du temps changer par rapport au
 dernier plan publié, compté comme la publication le compte — ou `null` tant
 que rien n'a été publié. C'est le compte à lire avant de publier ; la règle
-`stabiliteDuPlanPublie` (voir [`contraintes.md`](contraintes.md#stabilité-du-plan-publié))
+`stabiliteDuPlanPublie` (voir [les contraintes](contraintes.md#stabilité-du-plan-publié))
 est ce qui le tient bas.
 
 Le choix est **persisté avec le job** (`solver_job.reamorcage`, V68) : une
@@ -543,7 +556,7 @@ vides.
 Budget par défaut court (60 s), pas celui d'une résolution complète. Le job
 échoue explicitement s'il n'y a aucun plan à reprendre : la replanification part
 d'un résultat, pas de rien. Mécanique dans
-[`domaine.md`](domaine.md#replanification-incrémentale).
+[le domaine](domaine.md#replanification-incrémentale).
 
 Les places des créneaux déjà commencés sont réglées **avant** le périmètre :
 épinglées telles que travaillées, jamais rouvertes — `jours` nommant une
@@ -675,7 +688,7 @@ d'une bande qu'un arrêté a fermée, pas d'un réglage du solveur.
 
 Une consigne ferme une bande horaire pour **tous** les stands d'une date, et
 rouvre ceux qu'on nomme sur des fenêtres de compensation ; le modèle est dans
-[`domaine.md`](domaine.md#consigne-dédition--la-quatrième-couche), le
+[le domaine](domaine.md#consigne-dédition--la-quatrième-couche), le
 raisonnement dans
 [ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md).
 Ce qui suit est ce que le schéma ne dit pas.
@@ -764,7 +777,7 @@ sièges ; ceux de la bande n'existent plus. L'aperçu le dit
 
 **`POST /api/planning/reset` efface aussi les consignes et les préréglages**
 de l'édition, comme tout ce qu'un solve reçoit. L'export et l'import de base
-les emportent ([`import-export.md`](import-export.md#dump-sql-outillage-de-test)).
+les emportent ([importer et exporter](import-export.md#dump-sql-outillage-de-test)).
 
 **Les préréglages sont copiés à la duplication d'édition, les consignes
 non.** Un préréglage (« Plan canicule ») décrit la forme de l'événement ; une
@@ -1191,7 +1204,7 @@ l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. Une édition
 neuve, dupliquée ou importée naît inactive.
 
 Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
-`NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](../installer/exploitation.md)).
+`NOTIFICATIONS_TIMEZONE` (voir [l'exploitation](../installer/exploitation.md)).
 
 `GET /api/alertes` — ce que ces jobs ont laissé sur le bureau, plus récent
 d'abord. `limite` s'applique **par type** (50 par défaut, 500 au maximum), et
@@ -1247,7 +1260,7 @@ seule.
 extérieur. La configuration est **d'instance**, pas d'édition : le payload dit
 de quelle édition il parle, et seule l'édition active
 ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)) émet. Les formats et la garde anti-SSRF :
-[`securite.md`](../installer/securite.md) § Appels sortants ; le pourquoi :
+[la page sécurité](../installer/securite.md) § Appels sortants ; le pourquoi :
 [ADR 0074](repo:docs/decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
 
 | Code d'événement | Quand | `donnees` |
@@ -1447,7 +1460,7 @@ score** (`-5000` pour cinq mille points que rien ne rattrapera). Sur un
 règle de `violationsParContrainte` : `null` quand la mesure n'existait pas,
 jamais zéro. Un plancher ne change **rien** à `actif` ni à `poids` : il est
 signalé, pas décidé — voir
-[`contraintes.md`](contraintes.md#le-plancher--une-règle-qui-pénalise-tout-faute-de-donnée).
+[les contraintes](contraintes.md#le-plancher--une-règle-qui-pénalise-tout-faute-de-donnée).
 
 ### Où se concentrent les écarts
 
@@ -1521,7 +1534,7 @@ peut pas être satisfaite en même temps qu'une exception déjà enregistrée, a
 un message qui les nomme toutes les deux. Le même contrôle s'applique à l'import
 de scénario, qui écrit tout le jeu d'un coup. Ce qui est refusé, ce qui passe
 délibérément, et pourquoi un plafond numérique a été écarté :
-[`contraintes.md`](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie).
+[les contraintes](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie).
 
 Réenregistrer une contrainte **sous son propre id** n'est jamais refusé : la
 version envoyée remplace la précédente au lieu de coexister avec elle. C'est
@@ -2013,7 +2026,7 @@ affiche la date figée, sans lien.
 L'écran de la salle de contrôle (`/mural/:jeton`) lit `GET /api/mural/{jeton}`
 toutes les minutes, sans session : le jeton est la clé, et il n'ouvre que cette
 lecture ([décision 0053](repo:docs/decisions/0053-affichage-mural-par-jeton-dedie.md),
-[`securite.md`](../installer/securite.md)). Les liens se gèrent sous `/api/affichage-mural`,
+[la page sécurité](../installer/securite.md)). Les liens se gèrent sous `/api/affichage-mural`,
 derrière la session admin.
 
 - **Le jeton n'est rendu qu'une fois**, dans la réponse `201` de la création :
@@ -2124,7 +2137,7 @@ compte les personnes qui l'ont réellement travaillé, pas son plancher. Sous la
 forme dure, quand la grille passe, la même cause peut venir du plan en place.
 La forme moyenne, allumée par défaut, ne déclenche aucune lecture du plan avant
 l'événement.
-L'arithmétique et ses limites sont dans `docs/contraintes.md`.
+L'arithmétique et ses limites sont dans [les contraintes](contraintes.md).
 
 **Ce que l'IHM en fait avant de lancer.** Les trois causes ci-dessus et la
 contradiction entre exceptions déclenchent une confirmation sur les trois
@@ -2472,7 +2485,7 @@ Plutôt que d'élargir ce que le jeton d'espace permet — il deviendrait, sur u
 route au moins, une preuve d'accès complète et durable au planning nominatif
 sans second facteur —, l'abonnement a sa propre clé, révocable séparément. Voir
 [décision 0019](repo:docs/decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md)
-et [`securite.md`](../installer/securite.md).
+et [la page sécurité](../installer/securite.md).
 
 Le préfixe `/api/abonnements/` n'existe que pour cette route, et c'est
 délibéré : c'est le motif d'URL qu'un proxy d'accès (Pangolin et consorts)
@@ -2802,7 +2815,7 @@ vraiment le beacon et le SDK, et non le fait d'avoir posé la variable
 d'environnement. La nuance a compté : le profil `%prod` fournissait un token
 Cloudflare de repli, et `mesureAudience` y était donc vrai sans que
 `CLOUDFLARE_WEB_ANALYTICS_TOKEN` soit posé, parce que la mesure tournait bel et
-bien. Ce repli a été retiré (voir `docs/observabilite.md`).
+bien. Ce repli a été retiré (voir [Observabilité](../installer/observabilite.md#analytics-produit--retirée)).
 La politique de confidentialité y accroche les paragraphes qui nomment Cloudflare
 et Bugsink — sans eux, un déploiement qui laisse les deux vides annonçait deux
 traitements qui n'ont pas lieu, dont un transfert hors UE. Ces drapeaux passent
@@ -3206,7 +3219,7 @@ dans la réponse plutôt que refuser). Même périmètre que le refus : une
 résolution d'une **autre** édition ou seulement **en file** ne déclenche
 rien, et une écriture refusée garde son `409` — l'avertissement ne s'ajoute
 qu'à ce qui a été écrit. Côté REST, rien ne change : l'IHM ne laisse pas
-envoyer ces écritures pendant un calcul. Voir [`mcp.md`](mcp.md).
+envoyer ces écritures pendant un calcul. Voir [le serveur MCP](mcp.md).
 
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas
@@ -3216,7 +3229,7 @@ question : la contrainte ad hoc dit, *avant* le calcul, où placer ou ne pas
 placer quelqu'un et vaut pour toute résolution ; le verrouillage fige, *après
 coup*, ce que la dernière résolution a produit sur une partie du plan, et ne
 vaut que pour le plan enregistré (voir
-[`domaine.md`](domaine.md#verrouillage-partiel-du-planning)).
+[le domaine](domaine.md#verrouillage-partiel-du-planning)).
 
 ### Ce qu'une suppression emporte
 
@@ -3307,10 +3320,10 @@ Une date de naissance ou un jour d'indisponibilité dont l'année tient sur deux
 chiffres — ce qu'un tableur laisse derrière lui — est lu plutôt que refusé, et
 la ligne porte alors un `warnings[]` disant la date telle qu'elle a été
 comprise. C'est à l'aperçu de la faire lire ; le pivot et le plafond de
-lecture sont dans [`import-export.md`](import-export.md#lannée-sur-deux-chiffres-est-lue-et-dite).
+lecture sont dans [importer et exporter](import-export.md#lannée-sur-deux-chiffres-est-lue-et-dite).
 
 Le fichier n'est **jamais écrit sur disque**. Règles métier détaillées dans
-[`import-export.md`](import-export.md#import-csv-des-animateurs).
+[importer et exporter](import-export.md#import-csv-des-animateurs).
 
 ### Horaires d'un stand
 
@@ -3318,7 +3331,7 @@ Deux niveaux, rendus tels quels sans expansion — c'est la vue que l'IHM édite
 les **règles récurrentes**, et les **exceptions datées** qui priment sur elles
 pour le seul jour qu'elles nomment. `heureFin` nullable vaut « jusqu'à la
 fermeture ». Arbitrage complet dans
-[`domaine.md`](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).
+[le domaine](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).
 
 Une écriture répond `400` si une règle est incohérente, ou si deux règles de
 même portée sur des jours qui se croisent se contredisent — il n'y aurait pas de
@@ -3535,7 +3548,7 @@ Les sections optionnelles du fichier (`parametresLegaux`,
 `parametresSolveur`, `typologies`, `contraintes`, `edition`) sont appliquées si
 présentes, laissées telles quelles sinon. `edition:` route l'import vers
 l'édition désignée, créée vide au besoin. Formats :
-[`import-export.md`](import-export.md).
+[importer et exporter](import-export.md).
 
 Le **validateur** (`valider-scenario-fichier`) contrôle la structure sans rien
 importer et répond **toujours 200**, y compris pour un fichier vide ou mal
@@ -3572,7 +3585,7 @@ Trois choses volontairement absentes, et qui le resteront :
   navigateur n'est pas un canal de diffusion pour ça ;
 - **pas de restauration.** C'est une opération sur la base PostgreSQL, faite
   par l'exploitant (`pg_restore`) — voir
-  [`exploitation.md`](../installer/exploitation.md) ;
+  [l'exploitation](../installer/exploitation.md) ;
 - **pas d'écriture de l'emplacement ni de la rétention.** Un chemin de disque et
   le nombre de copies qu'un volume porte se décident avec ce volume
   (`BACKUP_DIR`, `BACKUP_RETENTION`), pas depuis un écran.

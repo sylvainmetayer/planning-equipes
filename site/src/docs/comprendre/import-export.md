@@ -1,9 +1,15 @@
-# Import / export de données
+# Importer et exporter : scénario, CSV, PDF, ICS
+
+Cette page s'adresse à qui prépare un fichier d'entrée (un scénario, un CSV
+d'animateurs ou de référentiels), écrit un outil autour des exports, ou veut
+savoir exactement ce qu'un import remplace et ce qu'un export garantit. Pour le
+geste côté organisateur, voir [importer et exporter](../regles/importer-exporter.md) ;
+pour le modèle que ces fichiers décrivent, [le domaine](domaine.md).
 
 La structure d'un fichier de scénario est décrite par
-[`schema/scenario-schema.json`](repo:docs/schema/scenario-schema.json), **généré** depuis
-les DTO de `dev.sylvain.planning.scenario.dto` — il ne peut donc pas diverger de
-ce que le code accepte. Ce document porte les règles que le schéma ne peut pas
+[`scenario-schema.json`](repo:docs/schema/scenario-schema.json), **généré** depuis
+les DTO de `dev.sylvain.planning.scenario.dto` : il ne peut donc pas diverger de
+ce que le code accepte. Cette page porte les règles que le schéma ne peut pas
 exprimer.
 
 Sauf mention contraire, tout est lu et écrit dans l'édition désignée par
@@ -41,14 +47,14 @@ l'issue #172 : une édition « plan canicule » créée en cours de festival doi
 garder son équipe et son « Envoyer à all ». Décocher la case est le cas
 inverse — préparer 2027 depuis 2026 — et là, recopier noms, dates de naissance
 et courriels de personnes qui ne se sont pas réinscrites est un problème de
-minimisation et de durée de conservation (voir [`rgpd.md`](../installer/rgpd.md)), pas un
+minimisation et de durée de conservation (voir [la page RGPD](../installer/rgpd.md)), pas un
 confort.
 
 ## Dump SQL (outillage de test)
 
 **Plus proposé à l'opérateur** : l'écran Paramètres n'a plus de carte *Export
 SQL*. Sauvegarder la base, c'est le `pg_dump` de nuit
-([`exploitation.md`](../installer/exploitation.md), décision 0015) ; échanger un jeu de
+([l'exploitation](../installer/exploitation.md), décision 0015) ; échanger un jeu de
 données, c'est le scénario YAML. Les routes `GET /api/database/export` et
 `POST /api/database/import` subsistent pour les suites de tests, qui amorcent et
 restaurent la base par elles : elles répondent `404` sauf si
@@ -237,7 +243,7 @@ créneaux sans siège et ne remet pas le planning.
 
 Rejouer un export SQL complet (outillage de test) efface toutes les
 sauvegardes avant vidage, de toutes les éditions : voir
-[`exploitation.md`](../installer/exploitation.md) § Restaurer.
+[l'exploitation](../installer/exploitation.md) § Restaurer.
 
 Une section `edition: { id?, nom? }` route l'import vers une autre édition :
 celle de cet identifiant si elle existe, sinon la seule édition de ce nom,
@@ -328,7 +334,7 @@ peut pas chevaucher minuit.
 majoritaire. Le renseigner sur une fenêtre est ce qui permet à un stand dont la
 charge varie dans la journée — 4 personnes le matin, 5 le soir — de rester un
 seul stand plutôt que d'être éclaté en plusieurs. Voir
-[`domaine.md`](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
+[le domaine](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
 
 Le champ existe des deux côtés du modèle horaire : sur une **fenêtre d'une
 règle récurrente** et sur une **ouverture datée**. Un fichier qui n'en nomme
@@ -336,7 +342,7 @@ aucun se relit exactement comme avant que le champ existe.
 
 Une portée plus précise prime sur une portée plus large ; une exception datée
 prime sur toutes les règles, pour le seul jour qu'elle nomme. Arbitrage complet
-dans [`domaine.md`](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).
+dans [le domaine](domaine.md#horaires-récurrents--trois-couches-un-seul-mode-par-jour).
 
 ## `postes` : absente ≠ vide
 
@@ -345,7 +351,7 @@ un poste par place sur chaque créneau × segment réellement ouvert, exactement
 comme « Lancer le solveur » depuis le référentiel. Le nombre de places vient de
 la fenêtre d'ouverture quand elle porte un `effectif`, et retombe sinon sur
 `effectifMin` (jamais `effectifMax`) : voir
-[`domaine.md`](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
+[le domaine](domaine.md#leffectif-se-porte-sur-la-fenêtre-pas-sur-le-stand).
 
 **Présente**, elle est reprise telle quelle, y compris vide. C'est ce qui permet
 un staffing s'écartant de la règle.
@@ -396,7 +402,7 @@ Ce qui préserve réellement les exceptions d'un aller-retour, c'est l'export, q
 Une exception qui ne peut pas tenir en même temps qu'une autre du même fichier
 fait **refuser l'import entier**, avant toute écriture, avec un message qui les
 nomme — le même contrôle qu'à la saisie
-([`contraintes.md`](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie)).
+([les contraintes](contraintes.md#contraintes-ad-hoc--les-contradictions-refusées-à-la-saisie)).
 
 ## Typologies
 
@@ -682,7 +688,7 @@ Un import **partiel** : il ne touche que les animateurs, une ligne à la fois, e
 il ne supprime rien tant qu'on ne le lui demande pas. Carte Animateurs de
 **Fichiers**, onglet Importer, `/fichiers?cible=animateurs`, et bouton
 « Importer » de la page Animateurs ; endpoints dans
-[`api.md`](api.md#import-csv-des-animateurs).
+[les invariants de l'API](api.md#import-csv-des-animateurs).
 
 ### Un fichier d'exemple est livré avec l'application
 
@@ -975,9 +981,9 @@ annule tout et remonte, donc le rapport affiché n'annonce jamais 148 lignes
 
 Le fichier est traité **en mémoire de bout en bout** et n'est jamais écrit sur
 disque : il porte des noms, des dates de naissance et parfois des mineurs (voir
-[`rgpd.md`](../installer/rgpd.md)). Deux plafonds explicites le bornent, 1 000 000 de
+[la page RGPD](../installer/rgpd.md)). Deux plafonds explicites le bornent, 1 000 000 de
 caractères et 5 000 lignes de données, en plus du plafond de corps HTTP de
-[`securite.md`](../installer/securite.md).
+[la page sécurité](../installer/securite.md).
 
 ## Import de la grille des stands
 
@@ -1011,7 +1017,7 @@ la bande est alors perdue — le fichier revient avec des en-têtes qui ne nomme
 plus aucun créneau. Les deux formes sont lues à l'import ; seule celle en `h`
 survit à un aller-retour par un tableur. Un test verrouille l'absence de `:`
 dans la ligne des bandes.
-Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
+Endpoints dans [les invariants de l'API](api.md#import-de-la-grille-des-stands).
 
 ## Grille des compétences
 
@@ -1071,7 +1077,7 @@ vacations** — la grille telle que l'organisateur l'écrit : rotation de midi
 stands. Jouée par `PlanningServiceScenarioFestivalHivernalTest`, qui est aussi
 la mesure sur laquelle la règle unique de pause a été retirée du mode :
 zéro écart dur en 210 s, voir « La pause légale, trou ou relais » dans
-[`contraintes.md`](contraintes.md). Elle n'épingle aucun poids de contrainte, à
+[les contraintes](contraintes.md). Elle n'épingle aucun poids de contrainte, à
 dessein : voir « Le dosage et la faisabilité » au même endroit.
 
 Son anonymisation va plus loin que celle des deux autres, à dessein :
@@ -1330,7 +1336,7 @@ sommaire, et non deux tableaux : quatre questions du terrain, quatre parties.
 
 Les sièges que personne ne tient sont écrits en couleur d'accent (« Aucun
 animateur affecté », « 3 non pourvus ») : un stand non pourvu est exactement ce
-que l'organisateur ouvre ce document pour trouver.
+que l'organisateur ouvre ce PDF pour trouver.
 
 La marque blanche s'applique aux deux documents : logo, bandeau et palette
 viennent de `BRANDING_PDF_*` (`PdfTheme`), l'échelle de couleur du planning
@@ -1341,7 +1347,7 @@ plan — est le même partout.
 Le même document ICS se sert de deux façons, et la différence est de mode, pas
 de format : en **téléchargement** (une photo à l'instant du clic) ou en
 **abonnement**, sur une adresse permanente que l'agenda rappelle tout seul —
-`GET /api/abonnements/{token}/planning.ics`, voir [`api.md`](api.md). Les
+`GET /api/abonnements/{token}/planning.ics`, voir [les invariants de l'API](api.md). Les
 `UID` des événements sont stables d'un appel à l'autre, ce qui est la condition
 pour qu'un client d'agenda mette à jour ses rendez-vous au lieu d'en créer des
 doublons à chaque synchronisation.

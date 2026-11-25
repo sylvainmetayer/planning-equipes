@@ -1,13 +1,27 @@
-# Serveur MCP
+# Le serveur MCP : brancher un assistant IA
 
-`POST /mcp` (streamable HTTP) et `GET /mcp/sse` (rétrocompatibilité), fournis
-par `quarkus-mcp-server-http`. **La liste des outils est celle que le serveur
-annonce lui-même** — le code du paquet `mcp` en est la source. Ce document porte
-les règles qui ne s'y lisent pas.
+Cette page s'adresse à la personne qui branche un assistant IA (Claude, un
+client MCP maison) sur une instance, et à celle qui audite ce que cet assistant
+peut y faire. L'organisateur qui veut seulement savoir ce qu'on peut demander à
+l'assistant trouvera l'essentiel dans [les outils de l'organisateur](../regles/outils-de-l-organisateur.md) ;
+ici, on décrit le contrat technique.
 
-Périmètre retenu : tous les endpoints de l'organisation peuvent être exposés,
-**la seule restriction est la confidentialité des données animateur**. Ce qui
-reste dehors est énuméré en fin de document, avec sa raison.
+Le serveur répond sur `POST /mcp` (streamable HTTP) et `GET /mcp/sse`
+(rétrocompatibilité), fournis par `quarkus-mcp-server-http`. **La liste des
+outils est celle que le serveur annonce lui-même** : le code du paquet `mcp` en
+est la source, et l'onglet MCP des Paramètres de l'application en donne le mode d'emploi. Les
+sections ci-dessous portent les règles qui ne s'y lisent pas.
+
+Le périmètre est volontairement large : tous les endpoints de l'organisation
+peuvent être exposés, **la seule restriction est la confidentialité des données
+animateur**. Ce qui reste dehors est énuméré en fin de page, avec sa raison.
+
+Pour lire dans l'ordre : l'authentification et la limitation de débit disent qui
+peut entrer ; la confidentialité et les divergences avec le REST disent ce qui
+sort et ce qui change de forme ; les sections suivantes détaillent les règles
+communes à tous les outils (édition, refus métier, écriture pendant un calcul,
+courriels), puis les outils par capacité. Les routes équivalentes côté REST sont
+décrites dans [les invariants de l'API](api.md).
 
 ## Authentification : clé API partagée, ou OAuth
 
@@ -16,7 +30,7 @@ La **clé** se présente dans un en-tête configurable (`X-MCP-Api-Key` par déf
 ou en `Authorization: Bearer` ; elle reste pour les clients qui ne savent pas
 faire OAuth et derrière un proxy d'accès qui consomme `Authorization`.
 **OAuth** s'ajoute quand le fournisseur d'identité est configuré
-(`OIDC_ENABLED`, voir [`oidc.md`](../installer/oidc.md)) : voir la section suivante.
+(`OIDC_ENABLED`, voir [la connexion OIDC](../installer/oidc.md)) : voir la section suivante.
 
 ![Un appel d'outil MCP, de la clé au service](repo:docs/diagrammes/mcp.svg)
 
@@ -37,10 +51,10 @@ atteignait `/mcp` sans clé. Il reçoit désormais `403`.
 > moyen de dire « ce chemin exige le rôle `mcp` » : il devrait refaire le
 > contrôle, puis répondre son propre défi. Le moteur
 > `quarkus.http.auth.permission.*` le dit une fois, pour tout chemin, quelle
-> que soit l'extension qui l'a monté. Ce document affirmait auparavant qu'un
-> filtre *ne voit pas* ces routes ; c'est faux, et l'arbre le contredisait
-> déjà — les en-têtes de `SecurityHeadersFilter` sont sur toutes les réponses
-> `/mcp`. Le plafond de débit ci-dessous est précisément un filtre.
+> que soit l'extension qui l'a monté. Un filtre voit pourtant bien ces routes :
+> les en-têtes de `SecurityHeadersFilter` sont sur toutes les réponses `/mcp`, et
+> le plafond de débit ci-dessous est précisément un filtre. Seul le contrôle de
+> rôle ne lui revient pas.
 
 ### OAuth (fournisseur d'identité configuré)
 
@@ -127,7 +141,7 @@ connexion : les proxys sont un fait du déploiement, pas d'un endpoint, et deux
 listes à garder en phase en font une de trop. Vide compte comme absente — c'est
 ce que transmettent les fichiers compose quand la variable n'est pas renseignée. Ce qu'elle change, et pourquoi
 l'en-tête se lit **par la droite**, est détaillé dans
-[`securite.md`](../installer/securite.md#débit-du-serveur-mcp).
+[les limites de débit](../installer/securite-limites-de-debit.md#débit-du-serveur-mcp).
 
 > **Derrière un proxy, renseignez `CONNEXION_PROXYS_FIABLES` en même temps que
 > la clé.** Sans elle, tous les appels arrivant par le proxy tombent sur un
@@ -551,7 +565,7 @@ déjà envoyés.
 Chaque outil et chaque prompt porte son nom publié en toutes lettres —
 `@Tool(name = "lister_stands", …)` sur une méthode Java `listStands` — et le
 nom de la méthode suit la règle du reste du code (anglais, camelCase, voir
-`AGENTS.md`). Le nom publié, lui, reste en français : c'est celui que
+les [conventions de code](developpement.md#conventions)). Le nom publié, lui, reste en français : c'est celui que
 l'assistant choisit, celui que le journal des actions enregistre
 (`CatalogueActions`) et celui que citent les prompts. Renommer la méthode ne
 doit jamais renommer l'outil pour les clients déjà branchés.
@@ -814,7 +828,7 @@ Un outil renommé ne peut donc pas laisser un prompt derrière lui.
 | `planning://vocabulaire` | stand, créneau, poste, vacation, journée type, typologie, édition — et l'ordre dans lequel on prépare un événement |
 
 Le vocabulaire est le seul texte écrit à la main ici : il résume
-`docs/domaine.md` pour un lecteur qui ne verra jamais le modèle Java.
+[le modèle du domaine](domaine.md) pour un lecteur qui ne verra jamais le modèle Java.
 
 ## Les fenêtres d'un stand portent leur effectif, les pauses sortent sans nom
 

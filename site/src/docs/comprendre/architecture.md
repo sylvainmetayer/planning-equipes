@@ -1,8 +1,10 @@
 # Architecture
 
-Un seul service Quarkus (Java 25) qui **embarque le solveur Timefold dans la
-même JVM** et sert le frontend Angular statique, plus PostgreSQL. Pas de
-micro-service, pas de serveur Node en production.
+Planning Équipes tient dans un seul service : un Quarkus (Java 25) qui **embarque le solveur Timefold dans la même JVM**, sert l'interface Angular déjà compilée et parle à une base PostgreSQL. Il n'y a ni micro-service, ni serveur Node en production. Cette page s'adresse à la personne qui doit modifier, relire ou auditer le code : elle explique les choix qui ne se devinent pas en lisant les classes, et pourquoi ils tiennent.
+
+Vous n'avez pas besoin de connaître Timefold pour la lire, mais le modèle (postes, créneaux, animateurs) y est supposé connu : si ce n'est pas le cas, lisez d'abord [le modèle de domaine](domaine.md).
+
+## La pile en un coup d'œil
 
 | Couche | Choix |
 | --- | --- |
@@ -10,12 +12,25 @@ micro-service, pas de serveur Node en production.
 | Optimisation | Timefold Solver Community, `HardMediumSoftScore` |
 | Persistance | PostgreSQL + Flyway |
 | Frontend | Angular 22 standalone, signals, zoneless, servi par Quinoa |
-| Exports | OpenPDF, encodage QR par zxing-core, génération ICS maison — toujours côté serveur |
-| MCP | `quarkus-mcp-server-http` ([`mcp.md`](mcp.md)) |
+| Exports | OpenPDF, encodage QR par zxing-core, génération ICS maison, toujours côté serveur |
+| MCP | `quarkus-mcp-server-http` ([le serveur MCP](mcp.md)) |
 | Toolchain | `mise.toml` : Temurin 25, Maven 3.10, Node 26 |
 
-L'arborescence et le rôle de chaque classe se lisent dans le code. Ce document
-porte les invariants qui ne s'y voient pas.
+L'arborescence et le rôle de chaque classe se lisent dans le code ([`src/main/java/dev/sylvain/planning`](repo:src/main/java/dev/sylvain/planning), une sous-arborescence par capacité : `domain/`, `solver/`, `service/`, `api/`, `mcp/`). Ce qui suit porte ce qu'on n'y voit pas : les invariants et les raisons des choix.
+
+## Où chercher quoi
+
+| Vous cherchez… | Section |
+| --- | --- |
+| Pourquoi aucune requête ne peut lire l'édition d'un autre | [Le cloisonnement par édition](#le-cloisonnement-par-édition-est-mécanique-pas-disciplinaire) |
+| Ce que fait un calcul de planning de bout en bout | [Un solve fait toujours la même chose](#un-solve-fait-toujours-la-même-chose) |
+| Comment une règle est analysée, pourquoi une API interne de Timefold est utilisée | [Le diagnostic](#le-diagnostic-ne-passe-plus-par-lapi-réservée-de-timefold) |
+| Écrire en base : la transaction et la connexion | [Une transaction est un `scope.write`](#une-transaction-est-un-scopewrite-et-une-unité-de-travail-passe-sa-connexion) |
+| Les mails : ce qui échoue bruyamment, ce qui échoue en silence | [Deux politiques d'échec](#deux-politiques-déchec-sur-les-mails-séparées-structurellement) |
+| Le journal des actions | [L'historique des actions](#lhistorique-des-actions-na-pas-une-couture-il-en-a-trois) |
+| Les conventions de l'interface Angular | [Frontend](#frontend) |
+| Les tâches de nuit, les webhooks, la météo | [Les tâches planifiées](#les-tâches-planifiées-et-le-seul-endroit-qui-écrit-sur-le-disque) |
+| L'image Docker et la pile de production | [Conteneurisation](#conteneurisation) |
 
 ## Le cloisonnement par édition est mécanique, pas disciplinaire
 
@@ -164,7 +179,7 @@ l'emplacement qu'il nomme, un import — les écrit toutes sous un seul
 prennent une. Une méthode qui prend une `Connection` rejoint la transaction
 de l'appelant ; une qui n'en prend pas commite seule. **C'est dans la
 signature**, et c'est la raison pour laquelle `@Transactional` n'a pas été
-retenu (audit #392, A5) : un intercepteur donne au même appel l'un ou l'autre
+retenu : un intercepteur donne au même appel l'un ou l'autre
 sens selon une annotation posée plusieurs cadres plus haut, ne voit pas les
 appels internes, et le `commit()` manuel du scope lèverait sous JTA.
 
@@ -249,7 +264,7 @@ est celle des PDF, toujours un `#rrggbb` lisible en style inline.
 
 ## L'historique des actions n'a pas une couture, il en a trois
 
-« Tracer **chaque** action » (issue #406) se heurte à une réalité de cette
+« Tracer **chaque** action » se heurte à une réalité de cette
 application : il n'existe aucun point de passage unique. Une requête REST
 traverse la chaîne JAX-RS ; un appel d'outil MCP ne la voit jamais, parce que
 `quarkus-mcp-server-http` répond avant elle ; une tâche de nuit n'a ni requête
@@ -363,7 +378,7 @@ Deux couleurs échappent à `mat.theme()` et portent donc leurs propres paires
   **plafonnée** en clair, **plancherée** en sombre (avec un plafond de chroma).
   Les deux bornes, et non la seule sombre : un exploitant choisit sa couleur en
   regardant une surface, et l'autre est alors celle que personne n'a vérifiée —
-  un accent pastel tombait sous 4,5:1 en clair (issue #40). Un navigateur qui
+  un accent pastel tombait sous 4,5:1 en clair. Un navigateur qui
   ne sait pas parser la paire garde la couleur brute.
 
 Trois surfaces restent volontairement en dehors :
@@ -375,7 +390,7 @@ Trois surfaces restent volontairement en dehors :
   connecté, le sélecteur de langue — et la paire
   `--app-toolbar-foreground` / `--app-toolbar-background` se mesure comme toute
   couleur écrite par ce dépôt (4,54:1 aujourd'hui, contre 3,24:1 avant
-  l'issue #40) ;
+  la correction) ;
 - les **cartes** (saisie d'un emplacement, carte de la journée) affichent des
   tuiles OpenStreetMap, c'est-à-dire du contenu et non du chrome ; les
   assombrir demanderait un autre fournisseur de tuiles, pas une variable. Ce
@@ -525,7 +540,7 @@ puisse dire qui détenait quoi, et quand. Une connexion OIDC ou par mot de passe
 local s'y rattache et un compte inconnu n'ouvre rien ; l'administrateur de la
 configuration reste hors de cette table, derrière sa propre porte, fermée par
 défaut derrière un fournisseur
-([`oidc.md`](../installer/oidc.md), [`securite.md`](../installer/securite.md#qui-ouvre-ladministration),
+([`oidc.md`](../installer/oidc.md), [les accès à l'administration](../installer/securite-acces-administration.md#les-cinq-portes-de-ladministration),
 ADR [0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)
 et [0094](repo:docs/decisions/0094-comptes-locaux-par-mot-de-passe.md)).
 
@@ -538,7 +553,7 @@ l'édition, exception par stand). Le rôle n'ouvre que `/api/responsable/*`, et
 les droits de stand n'ont pas de clé étrangère vers `stand`, pour qu'un import
 de dump qui recrée les stands n'efface pas les droits
 ([ADR 0095](repo:docs/decisions/0095-le-responsable-de-stand-lit-son-stand.md),
-périmètre de sécurité dans [`securite.md`](../installer/securite.md#le-responsable-de-stand--un-droit-de-lecture-pas-une-porte-de-plus)).
+périmètre de sécurité dans [les rôles et droits](../installer/securite-roles-et-droits.md#le-responsable-de-stand--un-droit-de-lecture-pas-une-porte-de-plus)).
 
 ## Base de données
 
