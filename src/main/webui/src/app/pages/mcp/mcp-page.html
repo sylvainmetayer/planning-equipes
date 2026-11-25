@@ -40,7 +40,7 @@
       }
       <div class="card-actions">
         @if (etat.origine === 'CONFIG' && !cle()) {
-          <button matButton="tonal" type="button" [disabled]="enCours()" (click)="reveler()">
+          <button matButton="tonal" type="button" [disabled]="enCours()" (click)="reveal()">
             <mat-icon>key</mat-icon>
             <ng-container i18n="@@mcp.cle.reveler">Révéler la clé d'API</ng-container>
           </button>

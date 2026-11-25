@@ -181,21 +181,21 @@ export class McpPage implements OnInit, OnDestroy {
   }
 
   /** The configured key, to someone who signed in a few minutes ago. */
-  protected async reveler(): Promise<void> {
-    await this.obtenirCle(() => this.mcpApi.regenerateKey());
+  protected async reveal(): Promise<void> {
+    await this.fetchKey(() => this.mcpApi.regenerateKey());
   }
 
   /** A new key, with the chosen overlap for the old one. */
   protected async renouveler(event: Event): Promise<void> {
     event.preventDefault();
-    await this.obtenirCle(async () => {
+    await this.fetchKey(async () => {
       const reponse = await this.mcpApi.rotateKey(this.recouvrement());
       await this.chargerStatut();
       return reponse;
     });
   }
 
-  private async obtenirCle(appel: () => Promise<CleMcp>): Promise<void> {
+  private async fetchKey(appel: () => Promise<CleMcp>): Promise<void> {
     if (this.enCours()) {
       return;
     }
