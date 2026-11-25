@@ -60,6 +60,7 @@ function createPage(): HistoriquePage {
 /** What the page asks for a first page under no filter. */
 const FIRST_PAGE: HistoryQuery = {
   nature: null,
+  auteur: null,
   depuis: null,
   jusqua: null,
   avant: null,
@@ -70,6 +71,11 @@ describe('HistoriquePage', () => {
   const analysesApi = fakeOf<AnalysesApi>({
     actionHistory: () => Promise.resolve([line()]),
     actionInventory: () => Promise.resolve(INVENTORY),
+    historyAuthors: () =>
+      Promise.resolve({
+        fiableDepuis: '2026-11-20T09:00:00Z',
+        auteurs: [{ valeur: 'cmp-1', nom: 'Alice Martin' }],
+      }),
     loginJournal: () => Promise.resolve([]),
   });
   const location = { path: vi.fn(() => '/historique'), replaceState: vi.fn() };
@@ -101,6 +107,11 @@ describe('HistoriquePage', () => {
   beforeEach(() => {
     analysesApi.actionHistory.mockReset();
     analysesApi.actionInventory.mockReset();
+    analysesApi.historyAuthors.mockReset();
+    analysesApi.historyAuthors.mockResolvedValue({
+      fiableDepuis: '2026-11-20T09:00:00Z',
+      auteurs: [{ valeur: 'cmp-1', nom: 'Alice Martin' }],
+    });
     location.replaceState.mockReset();
     analysesApi.actionHistory.mockResolvedValue([line()]);
     analysesApi.actionInventory.mockResolvedValue(INVENTORY);
@@ -122,6 +133,27 @@ describe('HistoriquePage', () => {
 
     expect(analysesApi.actionHistory).toHaveBeenCalledExactlyOnceWith(FIRST_PAGE);
     expect(page['suivant']()).toBeNull();
+  });
+
+  it('asks the server for one author, keeps it in the address, and says since when authors are reliable', async () => {
+    setUp({ auteur: 'cmp-1' });
+    const page = createPage();
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
+
+    expect(analysesApi.actionHistory).toHaveBeenCalledExactlyOnceWith({
+      ...FIRST_PAGE,
+      auteur: 'cmp-1',
+    });
+    expect(page['auteurs']()).toEqual([{ valeur: 'cmp-1', nom: 'Alice Martin' }]);
+    expect(page['fiableDepuisTexte']()).not.toBe('');
+
+    page['changeAuteur']('systeme');
+    await vi.waitFor(() => expect(page['chargement']()).toBe(false));
+    expect(analysesApi.actionHistory).toHaveBeenLastCalledWith({
+      ...FIRST_PAGE,
+      auteur: 'systeme',
+    });
+    expect(lastAddress()).toContain('auteur=systeme');
   });
 
   it('asks the server for the exports when the address says so, in either case', async () => {

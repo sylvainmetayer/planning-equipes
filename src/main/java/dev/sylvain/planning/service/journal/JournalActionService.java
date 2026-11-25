@@ -175,7 +175,7 @@ public class JournalActionService {
 
     /** The edition's most recent actions, newest first. */
     public List<EntreeJournal> list(Integer limite) {
-        return page(HistoryNature.ALL, null, null, null, limite);
+        return page(HistoryNature.ALL, null, null, null, null, limite);
     }
 
     /** Which family of actions a read of the history keeps. */
@@ -204,17 +204,24 @@ public class JournalActionService {
      * selected by the database over the whole retention — no implicit cap on
      * a period: a reader goes further by passing the last id shown.
      */
-    public List<EntreeJournal> page(HistoryNature nature, Instant since, Instant until, Long before, Integer limite) {
+    public List<EntreeJournal> page(
+            HistoryNature nature, String author, Instant since, Instant until, Long before, Integer limite) {
         if (since != null && until != null && until.isBefore(since)) {
             throw new BusinessError.Invalid("La fin de la période (" + until + ") précède son début (" + since + ").");
         }
         HistoryFilter filter =
                 switch (nature) {
-                    case ALL -> new HistoryFilter(null, false, since, until);
-                    case EXPORTS -> new HistoryFilter(CatalogueActions.exportCodes(), false, since, until);
-                    case DATA_CHANGES -> new HistoryFilter(CatalogueActions.codesChangingData(), true, since, until);
+                    case ALL -> new HistoryFilter(null, false, since, until, author);
+                    case EXPORTS -> new HistoryFilter(CatalogueActions.exportCodes(), false, since, until, author);
+                    case DATA_CHANGES ->
+                        new HistoryFilter(CatalogueActions.codesChangingData(), true, since, until, author);
                 };
         return repository.page(filter, before, limite == null ? LIMITE_DEFAUT : limite);
+    }
+
+    /** The authors that wrote at least one line of the edition, as the {@code author} filter spells them. */
+    public List<String> authors() {
+        return repository.authors();
     }
 
     /**

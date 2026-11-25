@@ -9,9 +9,12 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,6 +28,12 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 class HistoriqueResourceTest {
+
+    @Inject
+    EditionContext editions;
+
+    @Inject
+    JournalActionService journal;
 
     @Test
     void aWriteLeavesALineNamingWhatItTouched() {
@@ -661,5 +670,47 @@ class HistoriqueResourceTest {
                 .body("find { it.code == 'EXPORT_REFERENTIELS' }.export", equalTo(true))
                 .body("find { it.code == 'TELECHARGEMENT_ESPACE_PDF' }.export", equalTo(true))
                 .body("find { it.code == 'EXPORT_EQUITE' }.entite", equalTo("PLANNING"));
+    }
+
+    @Test
+    void theAuthorFilterSelectsInTheDatabaseAndRefusesWhatItDoesNotKnow() {
+        editions.executeIn("E1", () -> journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null));
+
+        given().header("X-Edition-Id", "E1")
+                .queryParam("auteur", "systeme")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("acteur", everyItem(equalTo("SYSTEME")));
+        given().header("X-Edition-Id", "E1")
+                .queryParam("auteur", "personne-de-ce-nom")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(400);
+        // A known identity with no line in this edition is an empty answer, not a refusal.
+        given().header("X-Edition-Id", "E1")
+                .queryParam("auteur", "mcp")
+                .queryParam("nature", "exports")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("acteur", everyItem(equalTo("ASSISTANT")));
+    }
+
+    @Test
+    void theAuthorsAreListedWithTheMomentTheyBecomeReliable() {
+        editions.executeIn("E1", () -> journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null));
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/historique/auteurs")
+                .then()
+                .statusCode(200)
+                .body("auteurs.valeur", hasItem("systeme"))
+                .body("fiableDepuis", not(org.hamcrest.Matchers.nullValue()));
     }
 }
