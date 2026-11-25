@@ -11,6 +11,8 @@ import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -82,10 +84,15 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         if (presented == null || !requiredHeadersPresent(context)) {
             return Uni.createFrom().nullItem();
         }
-        // The keys live in the database (ADR 0097): read on a worker, never on the event loop.
+        // The keys live in the database (ADR 0097): read on a worker, never on the event loop —
+        // and the answer handed back to the request's context. Left on the worker, a refusal
+        // reached the MCP extension's failure handler off the event loop, which then read a
+        // body already consumed and answered 500 instead of the 401 an OAuth client refreshes on.
+        Context origin = Vertx.currentContext();
         return Uni.createFrom()
                 .item(() -> keys.accepts(presented))
                 .runSubscriptionOn(Infrastructure.getDefaultWorkerPool())
+                .emitOn(origin == null ? Runnable::run : task -> origin.runOnContext(ignored -> task.run()))
                 .chain(accepted -> accepted
                         ? identityProviderManager.authenticate(new TrustedAuthenticationRequest(PRINCIPAL))
                         : Uni.createFrom().nullItem());
