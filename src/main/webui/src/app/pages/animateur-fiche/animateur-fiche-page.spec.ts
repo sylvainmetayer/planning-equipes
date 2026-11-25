@@ -17,6 +17,7 @@ import { ConstraintsApi } from '../../core/api/constraints-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { PostesApi } from '../../core/api/postes-api';
 import { ApiError } from '../../core/api.service';
+import { CODE_EDITION_INACTIVE } from '../../core/edition-inactive';
 import { ConsignesStore } from '../../core/consignes.store';
 import { Animateur, AnimateurProfile } from '../../core/models';
 import { EditionStore } from '../../core/edition.store';
@@ -394,6 +395,21 @@ describe('AnimateurFichePage', () => {
     expect(root().querySelector('#fiche-edition-inactive')!.textContent).toContain(
       "Cette édition n'est pas active",
     );
+  });
+
+  it('leaves an inactive-edition refusal to the interceptor: no second message', async () => {
+    api.profile.mockResolvedValue(
+      profile({ animateur: { ...profile().animateur, email: 'camille@exemple.org' } }),
+    );
+    planningApi.sendToAnimateur.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'inactive', CODE_EDITION_INACTIVE),
+    );
+    await render();
+
+    button('Envoyer son planning').click();
+    await vi.waitFor(() => expect(planningApi.sendToAnimateur).toHaveBeenCalled());
+    await fixture.whenStable();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('walks the list as the reader filtered and sorted it, its view kept in the links', async () => {
