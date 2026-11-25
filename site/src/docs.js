@@ -43,7 +43,8 @@ const sourcePath = (name) => EXTERNAL[name] ?? `site/src/docs/${name}.md`;
 
 function target(href, published, fromName) {
   if (href.startsWith('#')) return { href: `#${decode(href.slice(1))}` };
-  if (/^(https?:|mailto:|tel:|\/\/)/i.test(href)) return { href };
+  // Absolute links (a site address, an image under /images, a diagram) are left as they are
+  if (/^(https?:|mailto:|tel:|\/)/i.test(href)) return { href };
   const [path, rawHash] = href.split('#');
   // The anchors are written as the headings are, accents included: what GitHub's slugs and our ids are
   const hash = rawHash === undefined ? undefined : decode(rawHash);
@@ -81,6 +82,18 @@ function renderer(published, state) {
     const lang = t.info.trim().split(/\s+/)[0];
     const cls = lang ? ` class="language-${escapeHtml(lang)}"` : '';
     return `<pre class="scroll" role="group" aria-label="Code" tabindex="0"><code${cls}>${escapeHtml(t.content)}</code></pre>\n`;
+  };
+  // A capture is a figure that opens in the site's dialog (/assets/popin.js); without script the link opens the image
+  md.renderer.rules.image = (tokens, i) => {
+    const t = tokens[i];
+    const src = t.attrGet('src');
+    const alt = escapeHtml(plain(t));
+    const caption = t.attrGet('title');
+    const size = imageSize(src);
+    const dims = size ? ` width="${size[0]}" height="${size[1]}"` : '';
+    const img = `<img src="${escapeHtml(src)}" alt="${alt}"${dims} loading="lazy" decoding="async">`;
+    if (!src.startsWith('/images/')) return img;
+    return `<a class="shot" href="${escapeHtml(src)}" data-popin="docs" data-caption="${escapeHtml(caption ?? t.content)}">${img}</a>`;
   };
   md.renderer.rules.code_block = (tokens, i) => `<pre class="scroll" role="group" aria-label="Code" tabindex="0"><code>${escapeHtml(tokens[i].content)}</code></pre>\n`;
   md.core.ruler.push('docs', (s) => {
@@ -138,6 +151,21 @@ function renderer(published, state) {
   const base = md.renderer.render.bind(md.renderer);
   md.renderer.render = (tokens, ...rest) => base(tokens.filter((t) => !t.hidden), ...rest);
   return md;
+}
+
+// Width and height of a WebP capture, read from its header, so that the page does not jump as it loads
+function imageSize(src) {
+  if (!src.startsWith('/images/')) return null;
+  try {
+    const b = readFileSync(`${ROOT}site/src${src}`);
+    const kind = b.toString('ascii', 12, 16);
+    if (kind === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+    if (kind === 'VP8L') return [1 + (b.readUInt16LE(21) & 0x3fff), 1 + ((b.readUInt32LE(21) >> 14) & 0x3fff)];
+    if (kind === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+  } catch {
+    warn(`image introuvable : ${src}`);
+  }
+  return null;
 }
 
 const cut = (text, max) => {
