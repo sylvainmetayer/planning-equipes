@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.domain.VerrouillageTarget;
+import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
@@ -370,8 +371,10 @@ public class WipeBackupService {
         try {
             List<String> referentielNonRestaure = scenarioImportService.importForRestore(yaml);
             etape = "réapplication du planning";
-            ScenarioDto scenario = ScenarioYamlReader.parseScenarioText(yaml);
-            restoration = reapply(id, plan, scenario, avant, referentielNonRestaure);
+            ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(yaml);
+            restoration = reapply(id, plan, bound.scenario(), avant, referentielNonRestaure);
+            // A backup taken by an older release is converted on reading: what that dropped is said here too.
+            restoration.avertissements().addAll(bound.warnings());
         } catch (RuntimeException e) {
             String message = "Restauration de la sauvegarde " + id + " interrompue à l'étape « " + etape + " » : "
                     + e.getMessage() + " " + recourse(avant);

@@ -338,8 +338,9 @@ class ScenarioBinderTest {
     }
 
     @Test
-    void anythingButTheIntegerOneIsRefused() {
-        for (String value : new String[] {"\"2\"", "'99'", "1.9", "1.0", "0", "-5", "abc", "true"}) {
+    void anythingButAnIntegerUpToTheCurrentVersionIsRefused() {
+        for (String value :
+                new String[] {"\"2\"", "'99'", "1.9", "1.0", "0", "-5", "-18446744073709551615", "abc", "true"}) {
             assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: " + value + "\n" + MINIMAL))
                     .as(value)
                     .isInstanceOf(ScenarioFormatException.class)

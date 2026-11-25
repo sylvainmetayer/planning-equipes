@@ -1,4 +1,4 @@
-# 0100 — Le YAML passe en version 2 : le lecteur garde la v1 par une chaîne de conversions
+# 0101 — Le YAML passe en version 2 : le lecteur garde la v1 par une chaîne de conversions
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
@@ -38,5 +38,9 @@ Le premier maillon (1 → 2) est vide : il pose la mécanique et le numéro.
 
 - Un scénario v2 ne se relit pas en 3.x : le guide de passage demande de garder
   un export v1 avant de monter.
-- Le rapport d'import gagne la liste `avertissements` (REST ; l'outil MCP
-  d'import ne la reprend pas encore).
+- Le rapport d'import gagne la liste `avertissements`, sur la route REST comme
+  dans l'outil MCP d'import ; la restauration d'une sauvegarde avant vidage les
+  ajoute aux siens. Un avertissement nomme un champ ou un identifiant, jamais
+  une personne.
+- La borne `@Max` de `ScenarioDto.schemaVersion` est la constante
+  `ScenarioBinder.SCHEMA_VERSION` : un maillon de plus n'a qu'elle à relever.
