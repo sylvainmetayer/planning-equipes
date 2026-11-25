@@ -1,20 +1,16 @@
 {
-  "slug": "docs",
   "titre": "Documentation technique | Planning Équipes",
   "description": "La documentation technique de Planning Équipes : architecture, modèle, API, exploitation, sécurité.",
   "h1": "Documentation",
   "accueil": "Présentation de la documentation",
   "surCettePage": "Sur cette page",
   "rubriques": "Toutes les rubriques",
-  "reponse": "La documentation technique de Planning Équipes.",
   "en": {
-    "slug": "docs",
     "titre": "Technical documentation (French) | Planning Équipes",
     "description": "The technical documentation of Planning Équipes: architecture, model, API, operations, security. French only.",
     "h1": "Documentation (French only)",
     "accueil": "About the documentation",
     "surCettePage": "On this page",
-    "rubriques": "All topics",
-    "reponse": "The technical documentation of Planning Équipes, which exists in French only."
+    "rubriques": "All topics"
   }
 }
