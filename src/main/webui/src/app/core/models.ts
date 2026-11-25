@@ -2798,6 +2798,8 @@ export interface StatutSession {
   nom: string | null;
   /** Sorted; `admin` opens the administration, nothing else does yet. */
   roles: string[];
+  /** The id of the account of the application the session is bound to; `null` for the break-glass account. */
+  compteId: string | null;
 }
 
 /** Where a logout ends: the provider's own logout route, `null` when there is none. */
