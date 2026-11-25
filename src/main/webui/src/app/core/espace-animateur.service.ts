@@ -277,7 +277,7 @@ export class EspaceAnimateurService {
   }
 
   /** Replaces my contacts; the answer says what is stored and warns a minor without a representative. */
-  async enregistrerContacts(contacts: ContactsAnimateur): Promise<ContactsEnregistres> {
+  async saveContacts(contacts: ContactsAnimateur): Promise<ContactsEnregistres> {
     const jeton = this.requireJeton();
     return await this.api.put<ContactsEnregistres>(
       `/api/espace-animateur/${jeton}/contacts`,

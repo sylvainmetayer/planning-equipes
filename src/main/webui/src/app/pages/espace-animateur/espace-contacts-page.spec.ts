@@ -9,10 +9,10 @@ import { EspaceContactsPage } from './espace-contacts-page';
 describe('EspaceContactsPage', () => {
   function setup(
     contacts: () => Promise<ContactsAnimateur>,
-    enregistrerContacts: () => Promise<ContactsEnregistres> = () =>
+    saveContacts: () => Promise<ContactsEnregistres> = () =>
       Promise.resolve({ contacts: { urgenceNom: 'Camille' }, avertissements: [] }),
   ) {
-    const service = fakeOf<EspaceAnimateurService>({ contacts, enregistrerContacts });
+    const service = fakeOf<EspaceAnimateurService>({ contacts, saveContacts });
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideFake(EspaceAnimateurService, service)],
     });
@@ -48,7 +48,7 @@ describe('EspaceContactsPage', () => {
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(service.enregistrerContacts).toHaveBeenCalled();
+    expect(service.saveContacts).toHaveBeenCalled();
     expect(text(fixture)).toContain('Représentant manquant');
     expect(text(fixture)).toContain('Vos contacts sont enregistrés');
   });

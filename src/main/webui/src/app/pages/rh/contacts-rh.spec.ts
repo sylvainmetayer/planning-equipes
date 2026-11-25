@@ -45,7 +45,7 @@ describe('ContactsRh', () => {
 
   const text = (fixture: { nativeElement: HTMLElement }) => fixture.nativeElement.textContent ?? '';
 
-  function enregistrerButton(fixture: { nativeElement: HTMLElement }): HTMLButtonElement {
+  function saveButton(fixture: { nativeElement: HTMLElement }): HTMLButtonElement {
     const boutons = Array.from(
       fixture.nativeElement.querySelectorAll<HTMLButtonElement>('tbody button'),
     );
@@ -78,7 +78,7 @@ describe('ContactsRh', () => {
     champ.value = 'Dominique';
     champ.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    enregistrerButton(fixture).click();
+    saveButton(fixture).click();
     await fixture.whenStable();
 
     expect(api.saveContacts).toHaveBeenCalledWith(
@@ -96,7 +96,7 @@ describe('ContactsRh', () => {
     const fixture = await render();
     fixture.nativeElement.querySelectorAll('tbody button')[0].click();
     fixture.detectChanges();
-    enregistrerButton(fixture).click();
+    saveButton(fixture).click();
     await fixture.whenStable();
     expect(notifications.notify.mock.calls[0][0].variant).toBe('error');
     fixture.detectChanges();

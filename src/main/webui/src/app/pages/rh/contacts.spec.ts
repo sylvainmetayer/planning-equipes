@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { Avertissement } from '../../core/models';
-import { brouillonDe, contactsDe, hasRepresentative, journalText, telHref } from './contacts';
+import { draftOf, contactsOf, hasRepresentative, journalText, telHref } from './contacts';
 
 describe('contacts', () => {
   it('turns missing contacts into empty inputs and back', () => {
-    expect(brouillonDe(null)).toEqual({
+    expect(draftOf(null)).toEqual({
       urgenceNom: '',
       urgenceTelephone: '',
       representantNom: '',
       representantTelephone: '',
     });
-    const brouillon = brouillonDe({ urgenceNom: 'Camille', representantTelephone: null });
+    const brouillon = draftOf({ urgenceNom: 'Camille', representantTelephone: null });
     expect(brouillon.urgenceNom).toBe('Camille');
     expect(brouillon.representantTelephone).toBe('');
-    expect(contactsDe(brouillon)).toEqual(brouillon);
+    expect(contactsOf(brouillon)).toEqual(brouillon);
   });
 
   it('knows a legal representative by a name or a number', () => {
