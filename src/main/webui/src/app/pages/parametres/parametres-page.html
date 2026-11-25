@@ -217,7 +217,9 @@
 
     <app-contact-organisation-card />
 
-    <app-reglage-responsables-card />
+    @if (session.isAdmin()) {
+      <app-reglage-responsables-card />
+    }
   }
 }
 

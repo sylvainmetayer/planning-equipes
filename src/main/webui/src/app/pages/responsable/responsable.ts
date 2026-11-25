@@ -35,10 +35,10 @@ export function daysOf(stand: Pick<StandResponsable, 'vacations'>): {
   jour: string;
   vacations: VacationResponsable[];
 }[] {
-  const parJour = new Map<string, VacationResponsable[]>();
+  const byDay = new Map<string, VacationResponsable[]>();
   for (const vacation of stand.vacations) {
     const jour = vacation.debut.slice(0, 10);
-    parJour.set(jour, [...(parJour.get(jour) ?? []), vacation]);
+    byDay.set(jour, [...(byDay.get(jour) ?? []), vacation]);
   }
-  return [...parJour].map(([jour, vacations]) => ({ jour, vacations }));
+  return [...byDay].map(([jour, vacations]) => ({ jour, vacations }));
 }

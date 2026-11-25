@@ -49,9 +49,10 @@ export class ResponsablePage {
   private readonly notifications = inject(NotificationService);
 
   private readonly stands = resource({ loader: () => this.api.stands() });
-  protected readonly vue = retainedValue(this.stands);
+  protected readonly view = retainedValue(this.stands);
   protected readonly erreur = errorText(this.stands);
 
+  protected readonly monStand = $localize`:@@responsable.title:Mon stand`;
   protected readonly windowLabel = windowLabel;
   protected readonly staffingLabel = staffingLabel;
   protected readonly daysOf = daysOf;

@@ -10,20 +10,22 @@
 
 <main class="responsable-page">
   <app-status-message [text]="erreur()" tone="error" />
-  @if (vue(); as v) {
-    @if (v.stands.length === 0) {
-      <p class="empty-hint" role="status" i18n="@@responsable.aucun">
-        Aucun stand à afficher pour l'instant : vos droits ne s'appliquent qu'à l'édition en cours.
-      </p>
-    } @else {
-      <header class="responsable-entete">
-        <h1>{{ v.editionNom }}</h1>
+  @if (view(); as v) {
+    <header class="responsable-entete">
+      <h1>{{ v.editionNom || monStand }}</h1>
+      @if (v.stands.length > 0) {
         @if (v.publieLe) {
           <p class="calendar-meta" i18n="@@responsable.publie">Planning publié le {{ v.publieLe | date: 'short' }}</p>
         } @else {
           <p class="calendar-meta" i18n="@@responsable.nonPublie">Le planning n'est pas encore publié : aucun horaire à montrer.</p>
         }
-      </header>
+      }
+    </header>
+    @if (v.stands.length === 0) {
+      <p class="empty-hint" role="status" i18n="@@responsable.aucun">
+        Aucun stand à afficher pour l'instant : vos droits ne s'appliquent qu'à l'édition en cours.
+      </p>
+    } @else {
       @for (stand of v.stands; track stand.standId) {
         <mat-card appearance="outlined" class="responsable-stand">
           <mat-card-header>
@@ -39,7 +41,7 @@
             @for (jour of daysOf(stand); track jour.jour) {
               <h3 class="responsable-jour">{{ jour.jour | date: 'fullDate' }}</h3>
               <ul class="responsable-vacations">
-                @for (vacation of jour.vacations; track vacation.debut) {
+                @for (vacation of jour.vacations; track vacation.debut + vacation.fin) {
                   <li>
                     <strong>{{ windowLabel(vacation) }}</strong>
                     <span [class.responsable-vide]="vacation.vides > 0">{{ staffingLabel(vacation) }}</span>
