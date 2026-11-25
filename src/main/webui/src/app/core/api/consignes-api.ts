@@ -15,8 +15,14 @@ import {
   PrereglageConsigne,
 } from '../models';
 
-/** What a preset write carries: the preset without its id and its stamp. */
-export type PrereglageConsigneSaisi = Omit<PrereglageConsigne, 'id' | 'creeLe' | 'modifieLe'>;
+/**
+ * What a preset write carries: the preset without its id, with the `modifieLe`
+ * the form loaded as the precondition of an edit (issue #362) — `null` or
+ * absent checks nothing.
+ */
+export type PrereglageConsigneSaisi = Omit<PrereglageConsigne, 'id' | 'creeLe' | 'modifieLe'> & {
+  modifieLe?: string | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class ConsignesApi {

@@ -5,7 +5,11 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ConsignesApi } from '../../core/api/consignes-api';
+import { ConsignesApi, PrereglageConsigneSaisi } from '../../core/api/consignes-api';
+import { ConsignesStore } from '../../core/consignes.store';
+import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { askStaleChoice, isStaleWrite, notifyStaleReloaded } from '../../shared/stale-write';
 import { normaliseHour } from '../../core/horaire-stand';
 import { formatHeure } from '../../core/time-of-day';
 import { PrereglageConsigne } from '../../core/models';
@@ -53,6 +57,9 @@ export class PrereglageDialog {
   private readonly data = inject<PrereglageDialogData>(MAT_DIALOG_DATA);
   private readonly api = inject(ConsignesApi);
   private readonly crud = inject(ReferenceCrudService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly store = inject(ConsignesStore);
+  private readonly notifications = inject(NotificationService);
 
   protected readonly editingId = this.data.prereglage?.id ?? null;
   protected readonly nom = signal(this.data.prereglage?.nom ?? '');
@@ -104,15 +111,41 @@ export class PrereglageDialog {
     };
     this.enregistrement.set(true);
     try {
-      const written =
-        this.editingId !== null
-          ? await this.api.updatePrereglage(this.editingId, prereglage)
-          : await this.api.createPrereglage(prereglage);
-      this.dialogRef.close(written);
+      await this.write({ ...prereglage, modifieLe: this.data.prereglage?.modifieLe ?? null });
     } catch (error) {
-      this.crud.reportError(error);
+      await this.answerError(prereglage, error);
     } finally {
       this.enregistrement.set(false);
+    }
+  }
+
+  private async write(prereglage: PrereglageConsigneSaisi): Promise<void> {
+    const written =
+      this.editingId !== null
+        ? await this.api.updatePrereglage(this.editingId, prereglage)
+        : await this.api.createPrereglage(prereglage);
+    this.dialogRef.close(written);
+  }
+
+  /** A preset written since the form opened is answered with a choice (issue #362), any other refusal with its message. */
+  private async answerError(prereglage: PrereglageConsigneSaisi, error: unknown): Promise<void> {
+    if (!isStaleWrite(error)) {
+      this.crud.reportError(error);
+      return;
+    }
+    const choix = await askStaleChoice(this.confirm, error);
+    if (choix === 'overwrite') {
+      try {
+        await this.write({ ...prereglage, modifieLe: null });
+      } catch (again) {
+        this.crud.reportError(again);
+      }
+    } else if (choix === 'reload') {
+      await this.store.reload();
+      notifyStaleReloaded(this.notifications);
+      this.dialogRef.close(null);
+    } else {
+      this.crud.reportError(error);
     }
   }
 }

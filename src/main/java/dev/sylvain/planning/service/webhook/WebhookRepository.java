@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.webhook;
 
+import dev.sylvain.planning.service.WriteStamp;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Array;
@@ -105,15 +106,25 @@ public class WebhookRepository {
         }
     }
 
-    public void update(Webhook webhook) {
+    /**
+     * Writes the webhook if its stored stamp is still {@code expected} (issue #362; {@code null}
+     * checks nothing). Returns the new stamp, or {@code null} when the precondition refused —
+     * or when the row is gone: the caller tells the two apart.
+     */
+    public Instant update(Webhook webhook, Instant expected) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
                         UPDATE webhook SET nom = ?, format = ?, url = ?, secret_chiffre = ?, chat_id = ?,
                         evenements = ?, actif = ?, modifie_le = now()
-                        WHERE id = ?""")) {
+                        WHERE id = ? AND CAST(? AS boolean)
+                        AND (CAST(? AS timestamptz) IS NULL
+                             OR date_trunc('milliseconds', webhook.modifie_le)
+                                = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                        RETURNING modifie_le""")) {
             bindFields(connection, ps, webhook, 1);
             ps.setString(8, webhook.id());
-            ps.executeUpdate();
+            WriteStamp.bindPrecondition(ps, 9, true, expected);
+            return WriteStamp.writtenOrRefused(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to update a webhook", e);
         }

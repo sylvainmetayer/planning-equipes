@@ -11,16 +11,7 @@ import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
 import { errorMessage, isFrozenReferential } from './error-message';
 import { GelReferentielStore } from './gel-referentiel.store';
-import { intlLocale } from './locale';
-
-/** « (dernière écriture le 06/09/2026 à 17:34) », in the reader's own time zone. */
-function quand(modifieLe: string | null): string {
-  if (!modifieLe) {
-    return '';
-  }
-  const moment = new Date(modifieLe).toLocaleString(intlLocale());
-  return ' ' + $localize`:@@crud.concurrent.moment:(dernière écriture le ${moment}:moment:)`;
-}
+import { quand } from '../shared/stale-write';
 
 /** Failures detailed in the snack bar before it degrades to a plain count. */
 const MAX_ECHECS_DETAILLES = 3;

@@ -14,11 +14,14 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * MCP tools mirroring {@code ConsigneResource} (issue #4): an arrêté falls at
@@ -40,6 +43,8 @@ public class ConsigneMcpTools {
 
     /** Argument names, as a refusal quotes them back to the caller. */
     private static final String ARG_FERMETURE_DEBUT = "fermetureDebut";
+
+    private static final String ARG_MODIFIE_LE = "modifieLe";
 
     private final ConsigneService consignes;
 
@@ -207,16 +212,22 @@ public class ConsigneMcpTools {
                             required = false)
                     String justificationRepas,
             @ToolArg(description = "Nom du préréglage d'origine, s'il y en a un", required = false) String prereglage,
+            @ToolArg(
+                            description =
+                                    "modifieLe lu avant la modification, par date « AAAA-MM-JJ=horodatage », séparés par des virgules (précondition : refusé si la consigne de cette date a changé depuis ; omis, pas de contrôle)",
+                            required = false)
+                    String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.poser(demande(
-                dates,
-                fermetureDebut,
-                fermetureFin,
-                motif,
-                fenetres,
-                ouvertures,
-                prereglage,
-                repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas)));
+                        dates,
+                        fermetureDebut,
+                        fermetureFin,
+                        motif,
+                        fenetres,
+                        ouvertures,
+                        prereglage,
+                        repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas))
+                .withStamps(stamps(modifieLe)));
     }
 
     @Tool(
@@ -307,6 +318,11 @@ public class ConsigneMcpTools {
                             required = false)
                     String justificationRepas,
             @ToolArg(description = "Id du préréglage à remplacer ; omis = création", required = false) String id,
+            @ToolArg(
+                            description =
+                                    "modifieLe lu avant la modification (précondition : refusé si le préréglage a changé depuis ; omis, pas de contrôle)",
+                            required = false)
+                    String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         return consignes.savePrereglage(new PrereglageConsigne(
                 id,
@@ -316,7 +332,7 @@ public class ConsigneMcpTools {
                 motif,
                 dayWindows(fenetres),
                 null,
-                null,
+                McpArgs.instant(modifieLe, ARG_MODIFIE_LE),
                 repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas)));
     }
 
@@ -356,7 +372,28 @@ public class ConsigneMcpTools {
                 prereglage,
                 dayWindows(fenetres),
                 ouvertures(ouvertures),
-                repas);
+                repas,
+                null);
+    }
+
+    /**
+     * « AAAA-MM-JJ=instant », separated by commas: the {@code modifieLe} read on
+     * each consigne the call replaces (issue #362). Blank checks nothing.
+     */
+    static Map<LocalDate, Instant> stamps(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        Map<LocalDate, Instant> stamps = new LinkedHashMap<>();
+        for (String pair : value.split(",")) {
+            String[] parts = pair.split("=", 2);
+            if (parts.length != 2) {
+                throw new BusinessError.Invalid(
+                        ARG_MODIFIE_LE + " : « " + pair.strip() + " » attendu sous la forme AAAA-MM-JJ=horodatage");
+            }
+            stamps.put(McpArgs.date(parts[0], ARG_MODIFIE_LE), McpArgs.instant(parts[1], ARG_MODIFIE_LE));
+        }
+        return stamps;
     }
 
     /** The meal override of a day, {@code null} when none of the three is given. */
@@ -466,7 +503,8 @@ public class ConsigneMcpTools {
                 consigne.fenetres(),
                 consigne.ouvertures(),
                 consigne.creneauxAjoutes(),
-                consigne.repas());
+                consigne.repas(),
+                consigne.modifieLe());
     }
 
     /**
@@ -483,7 +521,8 @@ public class ConsigneMcpTools {
             List<Fenetre> fenetres,
             List<Ouverture> ouvertures,
             List<Long> creneauxAjoutes,
-            ConsigneEdition.RepasConsigne repas) {}
+            ConsigneEdition.RepasConsigne repas,
+            Instant modifieLe) {}
 
     /** The consignes, the presets, and the day the server counts from. */
     public record ConsignesView(

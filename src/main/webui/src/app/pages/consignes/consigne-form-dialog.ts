@@ -19,12 +19,17 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConsignesApi } from '../../core/api/consignes-api';
+import { ConsignesStore } from '../../core/consignes.store';
+import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { askStaleChoice, isStaleWrite, notifyStaleReloaded } from '../../shared/stale-write';
 import { bandeLabel, fenetreLabel, libelleDate } from '../../core/consigne-wording';
 import { normaliseHour } from '../../core/horaire-stand';
 import { formatHeure } from '../../core/time-of-day';
 import {
   ApercuConsigneJour,
   ConsigneEdition,
+  DemandeConsigne,
   Emplacement,
   FenetreConsigne,
   PrereglageConsigne,
@@ -131,6 +136,9 @@ export class ConsigneFormDialog {
   protected readonly data = inject<ConsigneFormData>(MAT_DIALOG_DATA);
   private readonly api = inject(ConsignesApi);
   private readonly crud = inject(ReferenceCrudService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly store = inject(ConsignesStore);
+  private readonly notifications = inject(NotificationService);
 
   protected readonly mode = this.data.mode;
 
@@ -475,13 +483,53 @@ export class ConsigneFormDialog {
     }
     this.enregistrement.set(true);
     try {
-      const apercu = await this.api.poser(buildDemande(this.form()));
-      this.formDraft.complete();
-      this.dialogRef.close(apercu);
+      await this.poser(this.demandeAvecEmpreinte());
     } catch (error) {
-      this.crud.reportError(error);
+      await this.answerError(error);
     } finally {
       this.enregistrement.set(false);
+    }
+  }
+
+  private async poser(demande: DemandeConsigne): Promise<void> {
+    const apercu = await this.api.poser(demande);
+    this.formDraft.complete();
+    this.dialogRef.close(apercu);
+  }
+
+  /**
+   * The request, with the stamp of the consigne this form opened on as the
+   * precondition of its date (issue #362). A date the form added has none: it
+   * checks nothing, like a first laying down.
+   */
+  private demandeAvecEmpreinte(): DemandeConsigne {
+    const demande = buildDemande(this.form());
+    const { consigne } = this.data;
+    if (consigne?.modifieLe && demande.dates.includes(consigne.date)) {
+      return { ...demande, modifieLe: { [consigne.date]: consigne.modifieLe } };
+    }
+    return demande;
+  }
+
+  /** A consigne written since the form opened is answered with a choice, any other refusal with its message. */
+  private async answerError(error: unknown): Promise<void> {
+    if (!isStaleWrite(error)) {
+      this.crud.reportError(error);
+      return;
+    }
+    const choix = await askStaleChoice(this.confirm, error);
+    if (choix === 'overwrite') {
+      try {
+        await this.poser({ ...buildDemande(this.form()), modifieLe: null });
+      } catch (again) {
+        this.crud.reportError(again);
+      }
+    } else if (choix === 'reload') {
+      await this.store.reload();
+      notifyStaleReloaded(this.notifications);
+      this.dialogRef.close(null);
+    } else {
+      this.crud.reportError(error);
     }
   }
 
