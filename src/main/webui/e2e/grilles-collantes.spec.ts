@@ -62,7 +62,7 @@ interface Collant {
 }
 
 /** Ce qu'on a mesuré de lui : sa distance à l'arête de la boîte, en valeur absolue. */
-interface Ecart {
+interface Breach {
   nom: string;
   enHaut: number | null;
   aGauche: number | null;
@@ -71,7 +71,7 @@ interface Ecart {
 interface Mesures {
   /** La boîte a-t-elle vraiment de quoi défiler ? Sans cela le reste ne prouve rien. */
   defile: boolean;
-  ecarts: Ecart[];
+  ecarts: Breach[];
   /** Distance entre le haut de la seconde ligne d'en-tête et le bas de la première. */
   sousLaPremiereLigne: number | null;
 }
@@ -115,7 +115,7 @@ function mesurer(
 }
 
 /** Chaque élément annoncé collant l'est resté, sur l'arête où on l'attendait. */
-function verifierLesCollants(ecarts: Ecart[]): void {
+function verifierLesCollants(ecarts: Breach[]): void {
   for (const ecart of ecarts) {
     if (ecart.enHaut !== null) {
       expect(ecart.enHaut, `${ecart.nom} reste en haut de la boîte`).toBeLessThanOrEqual(TOLERANCE);

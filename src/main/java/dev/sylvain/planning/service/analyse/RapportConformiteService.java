@@ -5,7 +5,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PlanningHoursService.HeuresAnimateur;
-import dev.sylvain.planning.service.analyse.RapportConformite.Ecart;
+import dev.sylvain.planning.service.analyse.RapportConformite.Breach;
 import dev.sylvain.planning.service.analyse.RapportConformite.Personne;
 import dev.sylvain.planning.service.analyse.RapportConformite.Plafonds;
 import dev.sylvain.planning.service.analyse.RapportConformite.Regle;
@@ -87,7 +87,7 @@ public class RapportConformiteService {
             String editionId, String editionNom, Instant publieLe, PlanningEvenement plan, Instant genereLe) {
         ParametresLegaux parametres = plan.parametresLegaux();
         PlanningHoursService.HeuresRapport heures = hoursService.compute(plan);
-        Map<String, List<Ecart>> ecartsParPersonne = new LinkedHashMap<>();
+        Map<String, List<Breach>> ecartsParPersonne = new LinkedHashMap<>();
         List<Regle> regles = rules(plan, ecartsParPersonne);
         double majeur = parametres.getDureeHebdomadaireMaxMinutes() / 60.0;
         double mineur = parametres.getDureeHebdomadaireMaxMineurMinutes() / 60.0;
@@ -137,7 +137,7 @@ public class RapportConformiteService {
             List<PosteAffectation> postes,
             double plafondMajeur,
             double plafondMineur,
-            List<Ecart> ecarts,
+            List<Breach> ecarts,
             List<String> semaines) {
         Set<String> semainesMineures = new HashSet<>();
         boolean mineur = false;
@@ -205,7 +205,7 @@ public class RapportConformiteService {
     }
 
     /** The legal rules, counted, and the breaches filed under the animateur they name when it is unambiguous. */
-    private List<Regle> rules(PlanningEvenement plan, Map<String, List<Ecart>> parPersonne) {
+    private List<Regle> rules(PlanningEvenement plan, Map<String, List<Breach>> parPersonne) {
         Map<String, ConstraintContribution> contributions = new LinkedHashMap<>();
         diagnostic.analyze(plan).contributions().forEach(c -> contributions.put(c.constraintName(), c));
         List<Regle> regles = new ArrayList<>();
@@ -229,7 +229,7 @@ public class RapportConformiteService {
                         && deja.merge(reference.animateurId(), 1, Integer::sum) <= MAX_ECARTS_PAR_REGLE_ET_PERSONNE) {
                     parPersonne
                             .computeIfAbsent(reference.animateurId(), id -> new ArrayList<>())
-                            .add(new Ecart(definition.name(), definition.libelleCourt(), reference.texte()));
+                            .add(new Breach(definition.name(), definition.libelleCourt(), reference.texte()));
                 }
             }
         }
