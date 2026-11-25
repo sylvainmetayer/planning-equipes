@@ -80,14 +80,10 @@ describe('ComptesCard', () => {
 
   it('adds an account by its address and name, then reads the list again', async () => {
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as {
-      email: { set(v: string): void };
-      nom: { set(v: string): void };
-      add(): Promise<void>;
-    };
-    card.email.set(' ana@x.fr ');
-    card.nom.set('Ana');
-    await card.add();
+    const card = fixture.componentInstance;
+    card['email'].set(' ana@x.fr ');
+    card['nom'].set('Ana');
+    await card['add']();
     expect(api.create).toHaveBeenCalledWith({ email: 'ana@x.fr', nom: 'Ana' });
     expect(api.list).toHaveBeenCalledTimes(2);
   });
@@ -95,8 +91,8 @@ describe('ComptesCard', () => {
   it('shows the refusal of the server instead of swallowing it', async () => {
     api.deactivate.mockRejectedValue(new Error('Il doit rester au moins un administrateur actif'));
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as { toggle(c: Compte): Promise<void> };
-    await card.toggle(compte('autre'));
+    const card = fixture.componentInstance;
+    await card['toggle'](compte('autre'));
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({
         variant: 'error',
@@ -107,12 +103,9 @@ describe('ComptesCard', () => {
 
   it('grants an organiser right on the current edition by default', async () => {
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as {
-      openGrant(c: Compte): void;
-      grantRight(c: Compte): Promise<void>;
-    };
-    card.openGrant(compte('autre'));
-    await card.grantRight(compte('autre'));
+    const card = fixture.componentInstance;
+    card['openGrant'](compte('autre'));
+    await card['grantRight'](compte('autre'));
     expect(api.grant).toHaveBeenCalledWith('autre', {
       role: 'ORGANISATEUR',
       editionId: 'E7',
