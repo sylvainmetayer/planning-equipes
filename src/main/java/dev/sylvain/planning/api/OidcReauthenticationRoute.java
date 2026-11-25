@@ -42,6 +42,14 @@ public class OidcReauthenticationRoute {
             context.next();
             return;
         }
+        if ("cross-site".equals(context.request().getHeader("Sec-Fetch-Site"))) {
+            // A link on another site must not sign the person out: back to the root, session kept.
+            context.response()
+                    .setStatusCode(303)
+                    .putHeader(HttpHeaders.LOCATION, "/")
+                    .end();
+            return;
+        }
         String back = AuthResource.safeReturn(context.request().getParam("retour"));
         String cookies = context.request().getHeader(HttpHeaders.COOKIE);
         if (cookies != null) {

@@ -17,6 +17,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -170,11 +172,22 @@ public class AuthResource {
                 .build();
     }
 
-    /** A path of this application, never another site: anything else goes back to the root. */
+    /**
+     * A path of this application, never another site: anything else goes back to
+     * the root. Parsed rather than pattern-matched, so a control character (a tab a
+     * browser would drop from {@code /\t/evil}) or a backslash is refused too,
+     * instead of reaching {@code resolve} and its 500.
+     */
     public static String safeReturn(String retour) {
-        return retour != null && retour.startsWith("/") && !retour.startsWith("//") && !retour.contains("\\")
-                ? retour
-                : "/";
+        if (retour == null || !retour.startsWith("/") || retour.startsWith("//")) {
+            return "/";
+        }
+        try {
+            URI uri = new URI(retour);
+            return uri.getScheme() == null && uri.getRawAuthority() == null ? retour : "/";
+        } catch (URISyntaxException e) {
+            return "/";
+        }
     }
 
     /**
