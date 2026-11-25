@@ -9,3 +9,16 @@ export const CODE_EDITION_INACTIVE = 'EDITION_INACTIVE';
 export function editionInactivePhrase(): string {
   return $localize`:@@edition.inactive.phrase:Cette édition n'est pas active : seule l'édition active publie et écrit aux animateurs. Activez-la sur la page Éditions.`;
 }
+
+/**
+ * Whether a caught value is that refusal. `editionInterceptor` has already told
+ * the user, so the screen that sent the call says nothing more: one refusal,
+ * one message.
+ */
+export function isEditionInactive(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { code?: unknown }).code === CODE_EDITION_INACTIVE
+  );
+}

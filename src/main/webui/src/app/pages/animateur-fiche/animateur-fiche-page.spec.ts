@@ -19,7 +19,9 @@ import { PostesApi } from '../../core/api/postes-api';
 import { ApiError } from '../../core/api.service';
 import { ConsignesStore } from '../../core/consignes.store';
 import { Animateur, AnimateurProfile } from '../../core/models';
+import { EditionStore } from '../../core/edition.store';
 import { fakeOf, provideFake } from '../../core/testing/fake';
+import { seedStore } from '../../core/testing/seed-store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -364,6 +366,33 @@ describe('AnimateurFichePage', () => {
     button('Verrouiller tout son planning').click();
     await vi.waitFor(() =>
       expect(verrous.create).toHaveBeenCalledWith({ type: 'ANIMATEUR', animateurId: 'a1' }),
+    );
+  });
+
+  it('greys out the two mails on an inactive edition and says why next to them', async () => {
+    api.profile.mockResolvedValue(
+      profile({
+        animateur: { ...profile().animateur, email: 'camille@exemple.org' },
+        dernierePublicationLe: '2026-07-01T10:00:00Z',
+      }),
+    );
+    await render();
+    expect(button('Envoyer son planning').disabled).toBe(false);
+
+    seedStore(TestBed.inject(EditionStore), 'courant', {
+      id: 'E1',
+      nom: 'Année 2025',
+      active: false,
+      creeLe: null,
+    });
+    fixture.detectChanges();
+
+    for (const label of ['Envoyer son planning', 'Relancer']) {
+      expect(button(label).disabled).toBe(true);
+      expect(button(label).getAttribute('aria-describedby')).toBe('fiche-edition-inactive');
+    }
+    expect(root().querySelector('#fiche-edition-inactive')!.textContent).toContain(
+      "Cette édition n'est pas active",
     );
   });
 

@@ -2,11 +2,12 @@
   <mat-card-content class="diffuser-publier-ligne">
     <button matButton="filled"
             [disabled]="busy() || editingLocked() || editionInactive() || !publishable()"
+            aria-describedby="publier-edition-inactive"
             (click)="publish()">
       <mat-icon>forward_to_inbox</mat-icon>
       <span>{{ publishLabel() }}</span>
     </button>
-    <app-edition-inactive-note />
+    <app-edition-inactive-note id="publier-edition-inactive" />
     @if (publishSentence(); as phrase) {
       <p class="diffuser-publier-phrase">{{ phrase }}</p>
     }

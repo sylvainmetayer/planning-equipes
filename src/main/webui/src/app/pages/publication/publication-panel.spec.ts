@@ -120,7 +120,10 @@ describe('PublicationPanel', () => {
     const root = fixture.nativeElement as HTMLElement;
     const button = root.querySelector('button')!;
     expect(button.disabled).toBe(true);
-    expect(root.textContent).toContain("Cette édition n'est pas active");
+    expect(button.getAttribute('aria-describedby')).toBe('publier-edition-inactive');
+    expect(root.querySelector('#publier-edition-inactive')!.textContent).toContain(
+      "Cette édition n'est pas active",
+    );
     expect(root.querySelector('a[href="/editions"]')).not.toBeNull();
   });
 

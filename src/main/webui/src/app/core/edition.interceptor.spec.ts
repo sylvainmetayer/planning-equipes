@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { editionInterceptor } from './edition.interceptor';
 import { clearStoredEditionId, getStoredEditionId } from './edition-courante';
+import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
 
 /** Runs the interceptor and hands back the request that reached the next handler. */
@@ -70,8 +71,12 @@ describe('editionInterceptor', () => {
 
   it('tells the user about an outward action refused by an inactive edition', async () => {
     const notify = vi.fn();
+    const reload = vi.fn().mockResolvedValue(undefined);
     TestBed.configureTestingModule({
-      providers: [{ provide: NotificationService, useValue: { notify } }],
+      providers: [
+        { provide: NotificationService, useValue: { notify } },
+        { provide: EditionStore, useValue: { reload } },
+      ],
     });
     const refusal = new HttpErrorResponse({
       status: 409,
@@ -91,6 +96,8 @@ describe('editionInterceptor', () => {
       variant: 'error',
       lien: { route: '/editions' },
     });
+    // The tab missed the deactivation: the editions are read again, the buttons grey out.
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
   it('stays silent on any other 409', async () => {

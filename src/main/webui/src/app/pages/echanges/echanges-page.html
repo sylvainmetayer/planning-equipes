@@ -203,10 +203,11 @@
             <output class="echanges-suite-faite status-paragraph">{{ fait }}</output>
           }
           @if (offersFollowUps(demande)) {
-            <app-edition-inactive-note />
+            <app-edition-inactive-note [attr.id]="'echange-inactive-' + demande.id" />
             <div class="echanges-actions">
               <button matButton="filled" (click)="prevenir(demande)"
-                      [disabled]="editingLocked() || editionInactive() || followUpBusy() === demande.id">
+                      [disabled]="editingLocked() || editionInactive() || followUpBusy() === demande.id"
+                      [attr.aria-describedby]="'echange-inactive-' + demande.id">
                 <mat-icon>forward_to_inbox</mat-icon>
                 <span i18n="@@echanges.prevenir">Prévenir les 2 personnes</span>
               </button>

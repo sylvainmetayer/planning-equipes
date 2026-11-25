@@ -60,6 +60,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { AujourdhuiTv } from './aujourdhui-tv';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /** A hole of the day, labelled once: the template never calls a function per row. */
 interface Trou extends PosteAPourvoir {
@@ -540,6 +541,10 @@ export class JourJPage implements OnInit {
       });
       await this.recharger();
     } catch (error) {
+      // An inactive edition is told by the interceptor, once.
+      if (isEditionInactive(error)) {
+        return;
+      }
       this.notifications.notify({
         title: $localize`:@@aujourdhui.prevenir.echec:Envoi impossible`,
         message: messageDe(error),
