@@ -50,6 +50,13 @@ test('hreflang is reciprocal and the sitemap lists every page', () => {
       continue;
     }
     const self = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+    // The documentation exists in French only: no alternate, but the sitemap lists it
+    if (self.startsWith(`${ORIGIN}/docs/`)) {
+      assert.ok(!html.includes('hreflang="en" href'), `${self} : alternate anglaise`);
+      assert.ok(sitemap.includes(`<loc>${self}</loc>`), `${self} absent du sitemap`);
+      assert.ok(existsSync(join(dirname(page), 'index.md')), `${page} : jumeau Markdown`);
+      continue;
+    }
     const alt = html.match(/hreflang="(?:fr|en)" href="([^"]+)"/g).map((m) => m.match(/href="([^"]+)"/)[1]).find((u) => u !== self);
     assert.ok(alt, `${page} : alternate`);
     const other = read(join(dist, alt.replace(ORIGIN, ''), 'index.html'));
@@ -70,4 +77,19 @@ test('the content security policy allows the fonts and nothing remote but the be
   const headers = read(join(root, 'src/_headers'));
   assert.match(headers, /font-src 'self'/);
   assert.doesNotMatch(headers, /fonts\.(googleapis|gstatic)/);
+});
+
+test('the docs are published in place, without the decisions and the project memory', () => {
+  const docs = join(dist, 'docs');
+  assert.ok(existsSync(join(docs, 'index.html')) && existsSync(join(docs, 'architecture/index.html')));
+  assert.ok(!existsSync(join(docs, 'decisions')) && !existsSync(join(docs, 'memoire-du-projet')));
+  assert.ok(existsSync(join(docs, 'diagrammes/solve.svg')) && !existsSync(join(docs, 'diagrammes/solve.puml')));
+  for (const page of pages.filter((p) => p.includes(`${join(dist, 'docs')}/`))) {
+    const html = read(page);
+    assert.match(html, /<html lang="fr">/, `${page} : lang`);
+    // Anything that is not published points to GitHub, never to a dead /docs path
+    assert.ok(!/href="(?:\.\.\/|\/docs\/(?:decisions|memoire))/.test(html), `${page} : lien relatif non réécrit`);
+    assert.ok(!/href="[^"#:]*\.md[#"]/.test(html), `${page} : lien .md non réécrit`);
+  }
+  assert.ok(read(join(dist, 'llms.txt')).includes('/docs/architecture/index.md'), 'llms.txt sans la documentation');
 });

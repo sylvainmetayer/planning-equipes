@@ -13,4 +13,9 @@ eleventyExcludeFromCollections: true
     <xhtml:link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ p.url if p.lang == 'fr' else p.altUrl }}"/>
   </url>
 {%- endif %}{% endfor %}
+{%- for d in docs %}
+  <url>
+    <loc>{{ site.url }}{{ d.url }}</loc>
+  </url>
+{%- endfor %}
 </urlset>

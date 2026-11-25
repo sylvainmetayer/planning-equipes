@@ -14,6 +14,7 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 | `src/_includes/`, `src/pages.njk`, `src/404.njk` | les gabarits : l'accueil, les pages-réponses, le film, la mise en page commune |
 | `src/schema.js`, `src/markdown.js` | les données structurées JSON-LD de chaque page, et son jumeau Markdown |
 | `src/llms.njk`, `src/robots.njk`, `src/sitemap.njk` | `llms.txt`, `robots.txt`, `sitemap.xml`, tous trois générés |
+| `src/docs.js`, `src/docs.njk`, `src/_data/docs.js` | **la documentation technique** : les `.md` de `../docs/` lus en place au build et publiés sous `/docs/<nom>/` (français seul, sans copie). Exclus : `decisions/` et `memoire-du-projet.md` ; un lien vers eux, vers `AGENTS.md`, le code ou tout fichier non publié devient un lien GitHub, les `.svg` de `docs/diagrammes/` sont servis tels quels. Un lien `.md#ancre` ou une ancre introuvable est un avertissement (`[docs]`) du build, jamais une erreur |
 | `src/assets/` | la feuille de style (`style.css`, `tokens.css`, `base.css`, minifiée et assemblée au build), les scripts (minifiés au build, dont `search.js`, la recherche du plan du site) et l'icône des liens sortants |
 | `src/text.js` | la typographie, et la passe sur chaque page construite : le sens de chaque abréviation à sa première apparition (liste dans `commun.json`), la mention « site externe » des liens sortants |
 | `src/images/{fr,en}/`, `src/videos/{fr,en}/` | les captures et les vidéos de l'application, une série par langue |
@@ -42,7 +43,7 @@ CHROME_PATH=/usr/bin/chromium-browser npm run check:lighthouse           # Light
 npm run validate         # html-validate sur _site/
 ```
 
-La CI (`.github/workflows/site.yml`, filtrée sur `site/**` et sur
+La CI (`.github/workflows/site.yml`, filtrée sur `site/**`, `docs/**` et
 `ConstraintCatalog.java`) rejoue tout cela, plus la vérification des liens avec
 lychee (hors ligne à chaque poussée, tous les liens le lundi).
 

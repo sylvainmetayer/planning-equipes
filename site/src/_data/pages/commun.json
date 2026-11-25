@@ -98,6 +98,7 @@
     "liens": "Informations sur le site",
     "mentions": "Mentions légales et confidentialité",
     "plan": "Plan du site et recherche",
+    "docs": "Documentation technique",
     "nouveautes": "Nouveautés",
     "probleme": "Signaler un problème",
     "ecrire": "Nous écrire"
@@ -220,6 +221,7 @@
       "liens": "About this site",
       "mentions": "Legal notice and privacy",
       "plan": "Site map and search",
+      "docs": "Technical documentation (French only)",
       "nouveautes": "Release notes",
       "probleme": "Report a problem",
       "ecrire": "Write to us"

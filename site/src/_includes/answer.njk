@@ -57,6 +57,12 @@
       {% for pg in allPages %}{% if pg.lang == lang and pg.key != 'plan' %}<li><a href="{{ pg.url }}" data-page>{{ copy[lang].commun.nav.accueil if pg.key == 'accueil' else (copy[lang][pg.key].h1 | typo(lang)) }}</a></li>{% endif %}{% endfor %}
     </ul>
   </section>
+  <section class="container sitemap" aria-labelledby="plan-docs-t">
+    <h2 id="plan-docs-t">{{ copy[lang].docs.h1 }}</h2>
+    <ul lang="fr">
+      {% for d in docs %}<li><a href="{{ d.url }}" data-page>{{ (copy.fr.docs.accueil if d.name == 'README' else d.h1) | typo('fr') }}</a></li>{% endfor %}
+    </ul>
+  </section>
   {% endif %}
 
   {% if c.sections %}

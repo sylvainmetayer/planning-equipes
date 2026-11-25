@@ -11,9 +11,9 @@
 {% if noindex %}<meta name="robots" content="noindex">{% endif %}
 {% if canonical %}
 <link rel="canonical" href="{{ site.url }}{{ canonical }}">
-<link rel="alternate" hreflang="{{ lang }}" href="{{ site.url }}{{ canonical }}">
+{% if not p.doc %}<link rel="alternate" hreflang="{{ lang }}" href="{{ site.url }}{{ canonical }}">
 <link rel="alternate" hreflang="{{ altLang }}" href="{{ site.url }}{{ altUrl }}">
-<link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ canonical if lang == 'fr' else altUrl }}">
+<link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ canonical if lang == 'fr' else altUrl }}">{% endif %}
 <link rel="alternate" type="text/markdown" href="{{ site.url }}{{ canonical }}index.md">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ site.name }}">
@@ -21,7 +21,7 @@
 <meta property="og:description" content="{{ description }}">
 <meta property="og:url" content="{{ site.url }}{{ canonical }}">
 <meta property="og:locale" content="{{ 'fr_FR' if lang == 'fr' else 'en_GB' }}">
-<meta property="og:locale:alternate" content="{{ 'en_GB' if lang == 'fr' else 'fr_FR' }}">
+{% if not p.doc %}<meta property="og:locale:alternate" content="{{ 'en_GB' if lang == 'fr' else 'fr_FR' }}">{% endif %}
 <meta property="og:image" content="{{ site.url }}/og-{{ lang }}.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
@@ -71,6 +71,7 @@
       <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
       <li><a href="{{ urls[lang].mentions }}">{{ common.pied.mentions }}</a></li>
       <li><a href="{{ urls[lang].plan }}">{{ common.pied.plan }}</a></li>
+      <li><a href="/docs/"{% if lang != 'fr' %} hreflang="fr" lang="fr"{% endif %}>{{ common.pied.docs }}</a></li>
       <li><a href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a></li>
     </ul>
     <div class="foot__fine">

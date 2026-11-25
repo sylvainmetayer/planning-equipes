@@ -18,6 +18,8 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy('src/images');
   eleventyConfig.addPassthroughCopy('src/videos');
   eleventyConfig.addPassthroughCopy('src/exemples');
+  // The diagrams the docs show, served as they are (the .puml sources stay on GitHub)
+  eleventyConfig.addPassthroughCopy({ '../docs/diagrammes/*.svg': 'docs/diagrammes' });
   eleventyConfig.addPassthroughCopy('src/og-fr.png');
   eleventyConfig.addPassthroughCopy('src/og-en.png');
   eleventyConfig.addPassthroughCopy({ 'src/_headers': '_headers', 'src/_redirects': '_redirects', 'src/favicon.svg': 'favicon.svg' });
@@ -29,6 +31,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addWatchTarget('src/assets/*.css');
   eleventyConfig.addWatchTarget('src/assets/*.js');
   eleventyConfig.addWatchTarget('src/_data/pages/');
+  eleventyConfig.addWatchTarget('../docs/');
 
   // One minified stylesheet: the tokens and the base rules are bundled in.
   eleventyConfig.on('eleventy.after', async ({ dir }) => {

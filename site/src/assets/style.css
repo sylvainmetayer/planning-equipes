@@ -305,3 +305,29 @@ abbr[title] { text-decoration: none; cursor: help; }
   /* a link on paper: its address, written after it */
   main a[href^="http"]::after { content: " (" attr(href) ")"; mask: none; -webkit-mask: none; background: none; width: auto; height: auto; font-size: 0.85em; }
 }
+
+/* Technical documentation (/docs): a side column of two navs beside the Markdown, which scrolls wide tables and code on its own */
+.doc__grid { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); gap: var(--space-xl) var(--gap-columns); align-items: start; padding-block: 0 var(--section-gap-s); }
+.doc__side { display: grid; gap: var(--space-lg); }
+.doc__label { margin: 0 0 var(--space-xs); font-weight: 600; }
+.doc__nav ul { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.doc__nav .doc__l3 { padding-left: var(--space-md); }
+.doc__nav a[aria-current="page"] { font-weight: 600; }
+.doc__main { min-width: 0; max-width: 80ch; line-height: 1.6; overflow-wrap: break-word; }
+.doc__main > * + * { margin-top: var(--space-md); }
+.doc__main h2 { margin-top: var(--space-2xl); padding-top: var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule); font-size: var(--text-2xl); max-width: none; }
+.doc__main h3 { margin-top: var(--space-xl); }
+.doc__main h4, .doc__main h5 { margin-top: var(--space-lg); font-size: var(--text-md); }
+.doc__main ul, .doc__main ol { padding-left: var(--space-lg); }
+.doc__main li + li { margin-top: var(--space-2xs); }
+.doc__main code { font-size: 0.9em; overflow-wrap: anywhere; }
+.doc__main pre { margin: 0; padding: var(--space-md); background: var(--color-paper-2); border-radius: var(--radius-inner); font-size: var(--text-sm); line-height: 1.5; }
+.doc__main pre code { overflow-wrap: normal; }
+.doc__main .scroll { max-width: 100%; }
+.doc__main .scroll:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.doc__main table { border-collapse: collapse; font-size: var(--text-sm); line-height: 1.45; }
+.doc__main th, .doc__main td { padding: var(--space-xs) var(--space-md) var(--space-xs) 0; border-top: var(--rule-hair) solid var(--color-rule); text-align: left; vertical-align: top; min-width: 8ch; }
+.doc__main thead th { border-top: 0; color: var(--color-muted); font-weight: 600; }
+.doc__main blockquote { margin-inline: 0; padding-left: var(--space-md); border-left: var(--rule-bar) solid var(--p); color: var(--color-ink-2); }
+.doc__main img { max-width: 100%; height: auto; background: #fff; border-radius: var(--radius-inner); }
+@media (max-width: 60rem) { .doc__grid { grid-template-columns: minmax(0, 1fr); } }
