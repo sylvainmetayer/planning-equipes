@@ -469,7 +469,11 @@ class CoherenceReferentielServiceTest {
                 TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
                 TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE,
                 // As the STANDS_SANS_EMPLACEMENT count, tested in CoherenceEmplacementsTest.
-                TypeAvertissement.STAND_SANS_EMPLACEMENT);
+                TypeAvertissement.STAND_SANS_EMPLACEMENT,
+                // Deliberately off the checklist, which every organiser reads: whether a minor's
+                // representative is recorded is the contacts' business, read by the RH right and the
+                // administrators only — the compliance report lists it (mineursSansRepresentant).
+                TypeAvertissement.MINEUR_SANS_REPRESENTANT);
 
         assertThat(couverts).containsExactlyInAnyOrder(TypeAvertissement.values());
     }
