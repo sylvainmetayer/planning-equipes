@@ -166,6 +166,9 @@ class GelReferentielStructuralTest {
     /** Writes no freeze covers, each with its reason. */
     private static final Map<String, String> OPEN = Map.ofEntries(
             Map.entry(
+                    "ScenarioImportService#refuseForeignTarget(Optional)",
+                    "writes nothing: refuses an organiser's import aimed at another edition, before any write"),
+            Map.entry(
                     "ReferenceDataService#checkImportable(PlanningEvenement)",
                     "reads a planning a file carries and writes nothing — the refusals of importFromPlanning, asked"
                             + " ahead by the restore of a backup"),
