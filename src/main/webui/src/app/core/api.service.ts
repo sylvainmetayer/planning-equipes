@@ -237,8 +237,8 @@ export function toError(error: unknown): Error {
     const code = typeof fields?.code === 'string' ? fields.code : null;
     // Produced here and nowhere else: every caller can now switch on `kind`
     // instead of re-deriving the meaning from the message text.
-    const modifieLe = typeof fields?.modifieLe === 'string' ? fields.modifieLe : null;
-    return new ApiError(error.status, kindForStatus(error.status), message, code, modifieLe);
+    const stamp = typeof fields?.modifieLe === 'string' ? fields.modifieLe : null;
+    return new ApiError(error.status, kindForStatus(error.status), message, code, stamp);
   }
   return error instanceof Error ? error : new Error(String(error));
 }
