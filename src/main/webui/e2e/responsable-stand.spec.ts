@@ -1,8 +1,8 @@
 // The responsable de stand, end to end: a local account holding the right on
 // one stand reads « Mon stand » — the shifts and the empty seats, no name
 // while the edition's setting says « horaires seuls », first and last names
-// once an administrator turns them on in Paramètres › Édition — and prints the
-// stand's sheet, which follows the same setting. Another stand never shows.
+// once an administrator turns them on in Paramètres › Édition — and downloads
+// the stand's sheet. Another stand never shows.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
@@ -41,9 +41,11 @@ test.beforeAll(async ({ playwright }, testInfo) => {
 
 test.afterAll(async () => {
   await admin.post(`/api/comptes/${compte.id}/desactivation`);
-  await admin.put('/api/reglage-responsables', {
+  // Back to « horaires seuls », whatever the test reached.
+  const reglage = await admin.put('/api/reglage-responsables', {
     data: { parDefaut: { nomsVisibles: false, ouvertureLe: null }, parStand: {} },
   });
+  expect(reglage.ok(), await reglage.text()).toBe(true);
   await admin.dispose();
 });
 
@@ -72,7 +74,7 @@ test('horaires seuls : aucun nom, un seul stand, puis les noms une fois activés
   // The administration is closed to this account, and so is the other stand's sheet.
   expect((await page.request.get('/api/animateurs')).status()).toBe(403);
   const autre = await page.request.get(`/api/responsable/stands/${SEED.standCible}/affichette.pdf`);
-  expect(autre.ok()).toBe(false);
+  expect(autre.status()).toBe(404);
 
   // The administrator turns the names on, in Paramètres › Édition.
   const pageDeAdmin = await pageAdmin(browser, admin);

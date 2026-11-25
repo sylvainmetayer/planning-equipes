@@ -118,7 +118,7 @@ test('le RH exporte le rapport en PDF et en CSV', async ({ page }) => {
   expect(readFileSync(await csv.path(), 'utf8')).toContain('Mina');
 });
 
-test("le RH renseigne le représentant légal d'un mineur, et il ne sort dans aucun export", async ({
+test("le RH renseigne le représentant légal d'un mineur, absent du CSV exporté", async ({
   page,
 }) => {
   await connecterCompteLocal(page, comptes[0]);
@@ -138,16 +138,16 @@ test("le RH renseigne le représentant légal d'un mineur, et il ne sort dans au
   await expect(page.getByRole('heading', { name: 'Rapport de conformité' })).toBeVisible();
   await expect(page.getByText('Représentant légal non renseigné', { exact: false })).toHaveCount(0);
 
-  // The files that leave the application never carry the contact itself.
-  for (const format of ['pdf', 'csv']) {
-    const reponse = await page.request.get(
-      `/api/rh/editions/${EDITION_REFERENCE}/conformite.${format}`,
-    );
-    expect(reponse.ok()).toBe(true);
-    const octets = (await reponse.body()).toString('latin1');
-    expect(octets, format).not.toContain(representant.nom);
-    expect(octets, format).not.toContain(representant.tel);
-  }
+  // The CSV that leaves the application never carries the contact itself. Not
+  // the PDF: its content streams are compressed, so a search of its bytes
+  // would pass whatever it held — the report type it is drawn from has no
+  // contact field, and that is the proof.
+  const reponse = await page.request.get(`/api/rh/editions/${EDITION_REFERENCE}/conformite.csv`);
+  expect(reponse.ok()).toBe(true);
+  const csv = await reponse.text();
+  expect(csv).toContain('Mina');
+  expect(csv).not.toContain(representant.nom);
+  expect(csv).not.toContain(representant.tel);
 });
 
 test("l'animateur dépose ses contacts dans « Mes contacts », le RH les lit", async ({ page }) => {
@@ -173,7 +173,10 @@ test("aucun contact n'apparaît chez un collègue, ni dans les fiches ni dans la
 }) => {
   const animateurs = (await (await admin.get('/api/animateurs')).json()) as { id: string }[];
   const bruno = animateurs.find((a) => a.id === SEED.cible);
-  await admin.put(`/api/animateurs/${SEED.cible}`, { data: { ...bruno, email: EMAIL_BRUNO } });
+  const avecEmail = await admin.put(`/api/animateurs/${SEED.cible}`, {
+    data: { ...bruno, email: EMAIL_BRUNO },
+  });
+  expect(avecEmail.ok(), await avecEmail.text()).toBe(true);
   const jeton = await jetonDe(admin, SEED.cible);
   await ouvrirSessionEspace(page.request, jeton, EMAIL_BRUNO);
 
@@ -184,14 +187,17 @@ test("aucun contact n'apparaît chez un collègue, ni dans les fiches ni dans la
     }
   };
 
-  for (const chemin of ['', '/contacts', '/echanges']) {
-    await page.goto(`/animateur/${jeton}${chemin}`);
-    await page.waitForLoadState('networkidle');
-    sansContact(await page.locator('body').innerText(), `espace ${chemin || 'planning'}`);
-  }
+  // Each screen is read once what it loads is on screen, not before.
+  await page.goto(`/animateur/${jeton}`);
+  await expect(page.getByText('Stand E2E deux').first()).toBeVisible();
+  sansContact(await page.locator('body').innerText(), 'espace planning');
+  await page.goto(`/animateur/${jeton}/echanges`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Mes échanges' })).toBeVisible();
+  sansContact(await page.locator('body').innerText(), 'espace échanges');
   // His own contact form is empty: Alice's are hers alone.
   await page.goto(`/animateur/${jeton}/contacts`);
   await expect(page.getByLabel('Personne à prévenir : nom')).toHaveValue('');
+  sansContact(await page.locator('body').innerText(), 'espace contacts');
 
   sansContact(
     await (await page.request.get(`/api/espace-animateur/${jeton}`)).text(),
@@ -218,7 +224,9 @@ test('un organisateur ne voit ni le rapport ni les contacts', async ({ page }) =
 
   // The tab is not offered, and asking for it by address lands on the default one.
   await page.goto('/diagnostic?onglet=conformite');
-  await expect(page.locator('mat-button-toggle[value="conformite"]')).toHaveCount(0);
+  const onglets = page.getByRole('radiogroup', { name: 'Onglet du diagnostic' });
+  await expect(onglets.getByRole('radio', { name: /^Problèmes/ })).toBeChecked();
+  await expect(onglets.getByRole('radio', { name: 'Conformité' })).toHaveCount(0);
   await expect(page.getByText('Rapport de conformité')).toHaveCount(0);
   const texte = await page.locator('body').innerText();
   expect(texte).not.toContain(representant.nom);
