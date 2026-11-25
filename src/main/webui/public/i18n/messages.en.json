@@ -1462,7 +1462,7 @@
   "login.motDePasse": "Password",
   "login.echec": "Invalid credentials.",
   "login.connexion": "Log in",
-  "login.sansDroits": "You are signed in, but no administration right is granted to this account. Ask an administrator.",
+  "login.sansDroits": "You are signed in, but no right on this instance is granted to this account. Ask an administrator.",
   "login.deconnexion": "Log out",
   "login.oidc.intro": " Sign in with your organisation account. ",
   "login.oidc.connexion": "Sign in with my account",

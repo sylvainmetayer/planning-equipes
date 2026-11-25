@@ -12,7 +12,7 @@
       @if (noRights()) {
         <p class="login-echec" role="alert">
           <mat-icon inline>block</mat-icon>
-          <span i18n="@@login.sansDroits">Vous êtes connecté, mais aucun droit d'administration n'est accordé à ce compte. Demandez-le à un administrateur.</span>
+          <span i18n="@@login.sansDroits">Vous êtes connecté, mais aucun droit sur cette instance n'est accordé à ce compte. Demandez-le à un administrateur.</span>
         </p>
         <button matButton="filled" type="button" (click)="deconnecter()">
           <mat-icon>logout</mat-icon>
