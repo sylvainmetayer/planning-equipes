@@ -3478,7 +3478,7 @@ export interface EntreeHistorique {
 
 /** `GET /api/historique/auteurs`: who wrote lines in the edition, and since when the author is reliable. */
 export interface AuteursHistorique {
-  /** When the journal started naming the person's own account; `null` if unknown. Older lines say `admin`. */
+  /** When the journal started naming the person's own account; `null` if unknown or no line of the edition is older. */
   fiableDepuis: string | null;
   auteurs: AuteurHistorique[];
 }

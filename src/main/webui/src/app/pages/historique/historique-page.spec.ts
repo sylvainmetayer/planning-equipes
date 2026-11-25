@@ -156,6 +156,14 @@ describe('HistoriquePage', () => {
     expect(lastAddress()).toContain('auteur=systeme');
   });
 
+  it('keeps an author this edition never saw selectable, rather than an empty field', async () => {
+    setUp({ auteur: 'cmp-ailleurs' });
+    const page = createPage();
+    await vi.waitFor(() => expect(page['auteurs']()).toHaveLength(2));
+
+    expect(page['auteurs']()).toContainEqual({ valeur: 'cmp-ailleurs', nom: null });
+  });
+
   it('asks the server for the exports when the address says so, in either case', async () => {
     setUp({ nature: 'EXPORTS' });
     const page = createPage();

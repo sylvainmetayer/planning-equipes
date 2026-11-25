@@ -244,6 +244,20 @@ public class JournalActionRepository {
         });
     }
 
+    /** Whether the current edition still keeps a line written before {@code instant}. */
+    public boolean hasLinesBefore(Instant instant) {
+        return scope.read("Failed to read the history", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection,
+                    "SELECT EXISTS (SELECT 1 FROM journal_action WHERE edition_id = ? AND survenu_le < ?)")) {
+                ps.setTimestamp(2, Timestamp.from(instant));
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() && rs.getBoolean(1);
+                }
+            }
+        });
+    }
+
     /** The most recent of those same lines, newest first. */
     public List<EntreeJournal> listSince(Instant depuis, Collection<String> codes, int limite) {
         if (codes.isEmpty()) {

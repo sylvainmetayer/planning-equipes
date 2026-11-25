@@ -2,12 +2,10 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
-import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
-import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.journal.JournalActionService.HistoryNature;
 import dev.sylvain.planning.service.journal.LoginJournalService;
@@ -24,11 +22,9 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -109,10 +105,11 @@ public class HistoriqueResource {
      *               question nobody asked.
      * @param auteur one author: an account id, {@code mcp}, {@code systeme} for
      *               the nightly jobs, or an animateur id — selected in the
-     *               database like {@code nature}; one that is neither a known
-     *               account nor an author of this edition is refused, not
-     *               ignored. The lines written before the accounts existed
-     *               all say {@code admin}, the configuration's account.
+     *               database like {@code nature}; one that wrote nothing in
+     *               this edition gets an empty page, never a refusal that
+     *               would tell which accounts exist. The lines written before
+     *               the accounts existed all say {@code admin}, the
+     *               configuration's account.
      * @param depuis exclusive lower bound, ISO-8601 — the very instant
      *               {@code /changements} counts from
      * @param jusqua inclusive upper bound, ISO-8601
@@ -141,22 +138,13 @@ public class HistoriqueResource {
         return entrees.stream().map(entree -> view(entree, noms::get, checks)).toList();
     }
 
-    private String auteur(String auteur) {
-        if (auteur == null || auteur.isBlank()) {
-            return null;
-        }
-        if (!valeursAuteur().contains(auteur)) {
-            throw new BusinessError.Invalid("Auteur inconnu : « " + auteur + " ».");
-        }
-        return auteur;
-    }
-
-    /** What {@code auteur} accepts: the authors of the edition, the accounts, and the three fixed identities. */
-    private Set<String> valeursAuteur() {
-        Set<String> valeurs = new LinkedHashSet<>(journal.authors());
-        comptes.list().forEach(c -> valeurs.add(c.id()));
-        valeurs.addAll(List.of(Compte.CONFIG_ID, "mcp", HistoryFilter.SYSTEM_AUTHOR));
-        return valeurs;
+    /**
+     * Never checked against a list: an author unknown to this edition answers
+     * like a known one with no line — an empty page. Refusing it would tell an
+     * organiser which account ids exist in editions they cannot read.
+     */
+    private static String auteur(String auteur) {
+        return auteur == null || auteur.isBlank() ? null : auteur;
     }
 
     /**
@@ -168,7 +156,7 @@ public class HistoriqueResource {
     public AuteursView auteurs() {
         Map<String, String> noms = noms();
         return new AuteursView(
-                reliableSince.instant().orElse(null),
+                reliableSince.forCurrentEdition().orElse(null),
                 journal.authors().stream()
                         .map(valeur -> new AuteurView(valeur, noms.get(valeur)))
                         .toList());
@@ -177,7 +165,8 @@ public class HistoriqueResource {
     /**
      * @param fiableDepuis when the journal started naming the person's own
      *                     account — the application of the accounts migration;
-     *                     {@code null} when it is not applied. Older lines say
+     *                     {@code null} when it is not applied, or when no line
+     *                     of the edition predates it. Older lines say
      *                     {@code admin} whoever acted, and are not rewritten.
      * @param auteurs      who wrote at least one line of the edition
      */
