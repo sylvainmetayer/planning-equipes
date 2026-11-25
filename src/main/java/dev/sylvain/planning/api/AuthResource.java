@@ -67,7 +67,8 @@ public class AuthResource {
     @GET
     @Path("/me")
     public StatutSession me() {
-        boolean authentifie = !identity.isAnonymous();
+        boolean authentifie =
+                !identity.isAnonymous() && !Boolean.TRUE.equals(identity.getAttribute(Compte.STALE_ATTRIBUTE));
         return new StatutSession(
                 authentifie,
                 authentifie
@@ -101,7 +102,7 @@ public class AuthResource {
     public Response passwordStep(Credentials credentials, @Context RoutingContext routage) {
         // The lock is asked here too, not only by the filter: a path the filter
         // does not recognise must not buy unlimited bcrypt.
-        long wait = limiteur.lockoutFor(routage);
+        long wait = limiteur.lockoutFor(routage, credentials == null ? null : credentials.email());
         if (wait > 0) {
             return Response.status(429)
                     .header("Retry-After", wait)
@@ -123,11 +124,12 @@ public class AuthResource {
                     .build();
         }
         if (challenge.isEmpty()) {
-            limiteur.recordFailure(routage);
+            limiteur.recordFailure(routage, credentials == null ? null : credentials.email());
             return Response.status(401)
                     .entity(Map.of("message", "Adresse ou mot de passe incorrect."))
                     .build();
         }
+        limiteur.clearPair(routage, credentials.email());
         return Response.ok(challenge.get()).build();
     }
 

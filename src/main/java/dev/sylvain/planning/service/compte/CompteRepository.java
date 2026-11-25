@@ -179,8 +179,8 @@ public class CompteRepository {
             if (desactiveLe != null && isActiveAdmin(connection, id) && !otherAdmin(connection, id, "")) {
                 return Outcome.LAST_ADMIN;
             }
-            try (PreparedStatement ps =
-                    connection.prepareStatement("UPDATE compte SET desactive_le = ?, desactive_par = ? WHERE id = ?")) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE compte SET desactive_le = ?, desactive_par = ?, sessions_depuis = now() WHERE id = ?")) {
                 ps.setTimestamp(1, desactiveLe == null ? null : Timestamp.from(desactiveLe));
                 ps.setString(2, desactiveLe == null ? null : par);
                 ps.setString(3, id);

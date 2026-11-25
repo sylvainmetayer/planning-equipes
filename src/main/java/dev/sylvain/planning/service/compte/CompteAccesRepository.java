@@ -104,7 +104,7 @@ public class CompteAccesRepository {
                 }
             }
             try (PreparedStatement ps = connection.prepareStatement("""
-                    UPDATE compte SET mot_de_passe_hash = ?, mot_de_passe_le = now()
+                    UPDATE compte SET mot_de_passe_hash = ?, mot_de_passe_le = now(), sessions_depuis = now()
                     WHERE id = ? AND desactive_le IS NULL""")) {
                 ps.setString(1, passwordHash);
                 ps.setString(2, compteId);
@@ -118,14 +118,15 @@ public class CompteAccesRepository {
     }
 
     /**
-     * The generation of the account's sessions: when its password was last set
-     * (milliseconds, {@code 0} before any). A session carries the value it was
+     * The generation of the account's sessions: since when they are worth
+     * anything (milliseconds) — moved by a new password and by every
+     * deactivation or reactivation. A session carries the value it was
      * opened under; a new password makes every older one worthless.
      */
     public long sessionEpoch(String compteId) {
         return scope.read("Failed to read a session epoch", connection -> {
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT COALESCE((date_part('epoch', mot_de_passe_le) * 1000)::bigint, 0) FROM compte WHERE id = ?")) {
+                    "SELECT (date_part('epoch', sessions_depuis) * 1000)::bigint FROM compte WHERE id = ?")) {
                 ps.setString(1, compteId);
                 try (ResultSet rs = ps.executeQuery()) {
                     return rs.next() ? rs.getLong(1) : 0L;

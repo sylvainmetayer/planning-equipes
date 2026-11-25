@@ -36,4 +36,20 @@ class LocalSignInLockoutTest {
                 .statusCode(429)
                 .header("Retry-After", org.hamcrest.Matchers.notNullValue());
     }
+
+    @Test
+    void desFautesDePersonnesDifferentesNeBloquentPasUneAdressePartagee() {
+        // The wifi of a festival: many people, one address, a typo each.
+        for (int i = 0; i < 10; i++) {
+            given().contentType("application/json")
+                    .body(Map.of(
+                            "email",
+                            "personne-" + i + "@example.org",
+                            "password",
+                            dev.sylvain.planning.TestPasswords.WRONG))
+                    .post("/api/auth/connexion")
+                    .then()
+                    .statusCode(401);
+        }
+    }
 }

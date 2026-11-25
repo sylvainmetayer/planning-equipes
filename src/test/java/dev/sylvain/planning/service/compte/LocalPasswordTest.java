@@ -26,13 +26,15 @@ class LocalPasswordTest {
     void leHachageSeVerifieEtNeContientPasLeMotDePasse() {
         String hash = LocalPassword.hash(dev.sylvain.planning.TestPasswords.LONG);
         assertThat(hash).startsWith("$2").doesNotContain("assez long");
-        assertThat(LocalPassword.matches(dev.sylvain.planning.TestPasswords.LONG, hash)).isTrue();
+        assertThat(LocalPassword.matches(dev.sylvain.planning.TestPasswords.LONG, hash))
+                .isTrue();
         assertThat(LocalPassword.matches("un mot de passe assez lonG", hash)).isFalse();
     }
 
     @Test
     void sansHachageRienNePasseMaisLeCoutEstPaye() {
-        assertThat(LocalPassword.matches(dev.sylvain.planning.TestPasswords.LONG, null)).isFalse();
+        assertThat(LocalPassword.matches(dev.sylvain.planning.TestPasswords.LONG, null))
+                .isFalse();
         assertThat(LocalPassword.matches(null, null)).isFalse();
     }
 }
