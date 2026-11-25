@@ -1,0 +1,41 @@
+{
+  "realm": "planning",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "users": [
+    {
+      "username": "organisatrice",
+      "email": "organisatrice@example.org",
+      "emailVerified": true,
+      "firstName": "Organisatrice",
+      "lastName": "Connue",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${E2E_OIDC_USER_PASSWORD}" }]
+    },
+    {
+      "username": "inconnue",
+      "email": "inconnue@example.org",
+      "emailVerified": true,
+      "firstName": "Personne",
+      "lastName": "Inconnue",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "${E2E_OIDC_USER_PASSWORD}" }]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "planning-app",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${E2E_OIDC_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["${E2E_APP_URL}/api/auth/oidc/login"],
+      "attributes": {
+        "post.logout.redirect.uris": "${E2E_APP_URL}/login",
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}

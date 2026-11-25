@@ -1,0 +1,196 @@
+# L'essai OIDC contre un vrai Keycloak : connexion par le formulaire du
+# fournisseur, /api/auth/me, refus d'un compte que l'application ne connaît
+# pas, déconnexion. Les tests Java jouent le même contrat contre un
+# fournisseur en mémoire ; celui-ci prouve qu'il tient face à un fournisseur
+# qui redirige, signe et clôt vraiment des sessions.
+#
+# Déclenché comme les specs @lourd (e2e-lourd.yml), pour ne rien coûter à
+# chaque PR : sous le label `e2e-lourd` sur une PR, sur main quand une fusion
+# touche ce qu'il traverse, et chaque nuit.
+name: Essai OIDC (Keycloak)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/main/java/dev/sylvain/planning/config/**'
+      - 'src/main/java/dev/sylvain/planning/service/compte/**'
+      - 'src/main/java/dev/sylvain/planning/api/AuthResource.java'
+      - 'src/main/resources/application.properties'
+      - 'pom.xml'
+      - 'src/main/webui/e2e/oidc-keycloak.oidc.ts'
+      - 'src/main/webui/e2e/keycloak/**'
+      - 'src/main/webui/playwright.oidc.config.ts'
+      - '.github/workflows/oidc-keycloak.yml'
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oidc:
+    # Même garde que e2e-lourd.yml : pas de fork, et sur une PR le seul label
+    # `e2e-lourd` (en poser un autre ne relance rien).
+    if: >-
+      (github.event_name != 'pull_request'
+        || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'pull_request'
+        || ((github.event.action != 'labeled' || github.event.label.name == 'e2e-lourd')
+          && contains(github.event.pull_request.labels.*.name, 'e2e-lourd')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: oidc-keycloak-${{ github.event_name }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    env:
+      APP_URL: http://localhost:8080
+      KEYCLOAK_URL: http://localhost:8180
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: src/main/webui/package-lock.json
+
+      # Valeurs de ce run seul, masquées dans le journal : ni le secret du
+      # client ni les mots de passe ne vivent dans le dépôt.
+      - name: Generate the run's secrets
+        run: |
+          for nom in E2E_OIDC_CLIENT_SECRET E2E_OIDC_USER_PASSWORD E2E_ADMIN_PASSWORD E2E_DB_PASSWORD KC_BOOTSTRAP_ADMIN_PASSWORD; do
+            valeur=$(openssl rand -hex 24)
+            echo "::add-mask::$valeur"
+            echo "$nom=$valeur" >> "$GITHUB_ENV"
+          done
+
+      # PostgreSQL à la main plutôt qu'en service du job : son mot de passe est
+      # celui de ce run, et un service ne peut pas le recevoir.
+      - name: Start PostgreSQL
+        run: |
+          docker run -d --name postgres -p 5432:5432 \
+            -e POSTGRES_DB=festival -e POSTGRES_USER=festival \
+            -e POSTGRES_PASSWORD="$E2E_DB_PASSWORD" postgres:19
+          for _ in $(seq 1 30); do
+            docker exec postgres pg_isready -U festival && exit 0
+            sleep 2
+          done
+          exit 1
+
+      # Keycloak en dev, le realm importé au démarrage ; les `${…}` du fichier
+      # sont remplacés par l'environnement du conteneur. Ce n'est pas un
+      # service du job : un service ne reçoit ni fichier ni argument.
+      - name: Start Keycloak
+        run: |
+          docker run -d --name keycloak -p 8180:8080 \
+            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+            -e KC_BOOTSTRAP_ADMIN_PASSWORD \
+            -e E2E_OIDC_CLIENT_SECRET \
+            -e E2E_OIDC_USER_PASSWORD \
+            -e E2E_APP_URL="$APP_URL" \
+            -v "$PWD/src/main/webui/e2e/keycloak/realm-planning.json:/opt/keycloak/data/import/realm-planning.json:ro" \
+            quay.io/keycloak/keycloak:26.4.7 start-dev --import-realm
+
+      - name: Build the application
+        run: ./mvnw -B --no-transfer-progress package -DskipTests
+
+      - name: Install frontend dependencies
+        working-directory: src/main/webui
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        working-directory: src/main/webui
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for Keycloak
+        run: |
+          for _ in $(seq 1 90); do
+            if curl -fsS "$KEYCLOAK_URL/realms/planning/.well-known/openid-configuration" > /dev/null; then
+              echo "Keycloak prêt."
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs keycloak | tail -n 50
+          exit 1
+
+      # Le compte de secours reste ouvert (ADMIN_LOCAL_SECOURS) : c'est lui qui
+      # crée le premier compte, une connexion OIDC n'en crée jamais.
+      - name: Start the application
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/festival
+          DB_USER: festival
+          DB_PASSWORD: ${{ env.E2E_DB_PASSWORD }}
+          HTTP_PORT: 8080
+          ADMIN_PASSWORD: ${{ env.E2E_ADMIN_PASSWORD }}
+          LEGAL_DEMO_INSTANCE: 'true'
+          MAIL_MOCK: 'true'
+          PUBLIC_URL: ${{ env.APP_URL }}
+          OIDC_ENABLED: 'true'
+          OIDC_AUTH_SERVER_URL: ${{ env.KEYCLOAK_URL }}/realms/planning
+          OIDC_CLIENT_ID: planning-app
+          OIDC_CLIENT_SECRET: ${{ env.E2E_OIDC_CLIENT_SECRET }}
+          ADMIN_LOCAL_SECOURS: 'true'
+        run: |
+          java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
+          echo $! > app.pid
+          for _ in $(seq 1 60); do
+            if curl -fsS "$APP_URL/q/health/ready" > /dev/null; then
+              echo "Application prête."
+              exit 0
+            fi
+            sleep 2
+          done
+          cat app.log
+          exit 1
+
+      - name: Run the OIDC trial
+        working-directory: src/main/webui
+        env:
+          E2E_BASE_URL: ${{ env.APP_URL }}
+          E2E_KEYCLOAK_URL: ${{ env.KEYCLOAK_URL }}
+        run: npm run e2e-oidc
+
+      - name: Print the failure context
+        if: failure()
+        run: |
+          if [ -f app.log ]; then
+            echo "::group::app.log — ERROR/WARN"
+            grep -nE "ERROR|WARN|Exception" app.log | tail -n 200 || true
+            echo "::endgroup::"
+          fi
+          docker logs keycloak 2>&1 | tail -n 80 || true
+
+      - name: Upload the Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: oidc-traces
+          path: src/main/webui/test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop the application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" 2>/dev/null || true
+          fi

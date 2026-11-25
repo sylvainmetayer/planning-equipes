@@ -173,7 +173,10 @@ jobs:
           MAIL_HOST: mailpit
           MAIL_PORT: 1025
           MAIL_FROM: planning-equipes@localhost
-          PUBLIC_URL: http://localhost:8080
+          # Pas localhost : un lien d'invitation écrit sur la machine elle-même est
+          # refusé hors dev et test (CompteAccesService). Les specs ne font que le
+          # lire dans Mailpit, jamais l'ouvrir.
+          PUBLIC_URL: http://e2e.example.org:8080
         run: |
           java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
           echo $! > app.pid
