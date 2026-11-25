@@ -1955,7 +1955,7 @@ export interface JobView {
   result: unknown;
 }
 
-/** `PREPARING` while the compute machine comes up — the time budget does not run yet. */
+/** `PREPARING` until the worker has taken the problem — the time budget does not run yet. */
 export type RemoteStage = 'PREPARING' | 'SOLVING';
 
 /** `GET /api/machine-calcul`: whether a full solve may run on the permanent worker instead of here (ADR 0086). */

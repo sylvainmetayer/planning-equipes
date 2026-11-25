@@ -10,7 +10,7 @@ import jakarta.ws.rs.core.MediaType;
 /**
  * Whether a solve may run on the permanent worker instead of here (ADR 0086),
  * and where it runs by default: what the Solveur screen needs to offer the choice.
- * Nothing here starts or stops anything — the machine on demand is gone (ADR 0101).
+ * Nothing here starts or stops anything — the machine on demand is gone (ADR 0103).
  */
 @InstanceOnly
 @Path("/machine-calcul")

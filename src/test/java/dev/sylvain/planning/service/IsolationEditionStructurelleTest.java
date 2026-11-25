@@ -190,7 +190,7 @@ class IsolationEditionStructurelleTest {
      *   <li>{@code resolution_distante} — the solve a job left on the
      *       worker (ADR 0086), which a restart looks for before any request
      *       names an edition; the job a remote solve belongs to carries its
-     *       edition. ({@code machine_calcul} is no longer queried: ADR 0101.)</li>
+     *       edition. ({@code machine_calcul} is no longer queried: ADR 0103.)</li>
      *   <li>{@code compte} — a person, not a fiche: one account serves every
      *       edition, so the table has no edition to be partitioned by.</li>
      *   <li>{@code habilitation} — what that person may do, read for the whole

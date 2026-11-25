@@ -26,10 +26,10 @@ import javax.net.ssl.X509ExtendedTrustManager;
  * The calls the application makes to one worker (ADR 0086) — every connection
  * between the two starts here, never on the worker's side.
  *
- * <p>The worker's certificate is <b>pinned</b>: a machine rented for an hour
- * has an address and no name, so no authority vouches for it, and the
- * fingerprint the launcher handed over is the one thing that says this is the
- * machine just created. With a fingerprint, that certificate and no other is
+ * <p>The worker's certificate is <b>pinned</b>: a rented machine often has an
+ * address and no name, so no authority vouches for it, and the fingerprint
+ * the operator configured is the one thing that says this is their worker.
+ * With a fingerprint, that certificate and no other is
  * accepted, whatever name it carries; without one, the JDK's ordinary trust
  * applies, which is what a permanent worker behind a real certificate needs.</p>
  */

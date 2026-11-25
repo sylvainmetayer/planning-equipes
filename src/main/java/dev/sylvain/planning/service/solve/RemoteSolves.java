@@ -18,9 +18,8 @@ import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Solves run on the permanent worker instead of here (ADR 0086, in what ADR 0100
- * leaves of it): an address and a secret, nothing to start. The machine
- * on demand a launcher used to create behind an HTTP hook is gone.
+ * Solves run on the permanent worker instead of here (ADR 0086, in what ADR 0103
+ * leaves of it): an address and a secret, nothing to start.
  *
  * <p>A remote solve that fails <b>fails the job</b>, with its reason; nothing
  * falls back on solving here, which would silently double the wait the

@@ -217,7 +217,7 @@ describe('SolverPage', () => {
     exportBundle: vi.fn(),
   };
   const planningState = { set: vi.fn(), require: vi.fn() };
-  const machineApi = { read: vi.fn(), prepare: vi.fn(), stop: vi.fn() };
+  const machineApi = { read: vi.fn() };
   const solverSettings = {
     refresh: vi.fn(),
     secondsLimit: () => 600,
@@ -1277,15 +1277,15 @@ describe('SolverPage', () => {
       expect(page['etapeDistante']()).toBe('Calcul en cours sur la machine de calcul.');
     });
 
-    it('re-reads the machine when a job starts', async () => {
+    it('reads the worker settings once, not on every job', async () => {
       createPage();
       await fixture.whenStable();
-      const reads = machineApi.read.mock.calls.length;
 
       activeJob.set(tracked());
       TestBed.tick();
+      await fixture.whenStable();
 
-      await vi.waitFor(() => expect(machineApi.read.mock.calls).toHaveLength(reads + 1));
+      expect(machineApi.read).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -110,5 +110,6 @@ autre machine »). Sans configuration, rien ne sort.
 | Le plan qui revient | Rescoré par l'application sur son propre problème ; un score différent de celui annoncé, un siège inconnu ou épinglé déplacé, et le plan est refusé |
 | Adresse du worker | Celle de l'exploitant, en variable d'instance : la garde anti-SSRF des webhooks ne s'y applique pas, comme pour `METEO_URL` |
 
-Une limite à connaître : le worker ne limite pas le débit des appels refusés. Sa protection est un
-  secret de 256 bits et un pare-feu qui n'ouvre son port qu'à l'application.
+Une limite à connaître : le worker ne limite pas le débit des appels refusés.
+Sa protection est un secret de 256 bits et un pare-feu qui n'ouvre son port
+qu'à l'application.

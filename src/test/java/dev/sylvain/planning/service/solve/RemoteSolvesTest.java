@@ -4,7 +4,12 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.EmptyReferenceData;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import dev.sylvain.planning.service.solve.SolverJobService.JobType;
@@ -23,6 +28,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import javax.sql.DataSource;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,6 +90,12 @@ class RemoteSolvesTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    ObjectMapper json;
+
+    @ConfigProperty(name = "planning.solver.worker.url")
+    String workerUrl;
+
     @BeforeEach
     @AfterEach
     void idleSolverEmptyTables() {
@@ -124,6 +137,33 @@ class RemoteSolvesTest {
     }
 
     @Test
+    void aWorkerThatRefusesFailsTheJobAndNothingFallsBackHere() {
+        importedPlan();
+        // The worker takes one problem at a time: kept busy by another
+        // client, it refuses the application's.
+        WorkerClient other = new WorkerClient(new WorkerClient.Endpoint(workerUrl, SECRET, null), json);
+        String busy = other.submit(
+                new SolveExchange(json).outbound(aPreparedProblem()).payload(),
+                new SolverConfiguration.SearchSettings(60, 0, 0, SolverEngine.TIMEFOLD),
+                VERSION);
+        try {
+            JsonPath failed = pollUntilFinished(launch("seconds=1&distant=true"));
+
+            assertThat(failed.getString("status"))
+                    .as("a remote failure fails the job, never a solve here")
+                    .isEqualTo("FAILED");
+            assertThat(failed.getBoolean("remote")).isTrue();
+            assertThat(failed.getString("error")).contains("Machine de calcul indisponible");
+            assertThat(remoteSolves.hasPending(failed.getString("id"))).isFalse();
+        } finally {
+            other.stop(busy);
+            await().atMost(POLL_TIMEOUT)
+                    .pollInterval(POLL_INTERVAL)
+                    .until(() -> other.status(busy, 0).state() != SolveWorker.State.RUNNING);
+        }
+    }
+
+    @Test
     void aJobLeftOnTheWorkerByARestartIsFollowedAgainAndItsPlanLands() {
         importedPlan();
         String first = launch("seconds=3&distant=true");
@@ -160,6 +200,24 @@ class RemoteSolvesTest {
         assertThat(resumed.getString("status")).isEqualTo("COMPLETED");
         assertThat(resumed.getBoolean("remote")).isTrue();
         assertThat(remoteSolves.hasPending(left)).isFalse();
+    }
+
+    /** A problem prepared without the application, as {@code RemoteSolverTest} builds one. */
+    private static PlanningEvenement aPreparedProblem() {
+        EmptyReferenceData referenceData = new EmptyReferenceData();
+        SolverConfiguration configuration = new SolverConfiguration(
+                30L,
+                0L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceData,
+                ConfigProvider.getConfig());
+        PlanningEvenement problem = ScenarioYamlReader.fromDto(
+                        ScenarioYamlReader.readScenario(ScenarioYamlReader.scenarioPath(
+                                "gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc.yaml")),
+                        referenceData::getParametresLegaux)
+                .planning();
+        new SolveRunner(configuration, referenceData, null).prepareProblem(problem);
+        return problem;
     }
 
     private JsonPath view() {

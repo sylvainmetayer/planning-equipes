@@ -392,16 +392,8 @@ export class SolverPage implements OnInit {
   private readonly session = inject(SessionStore);
 
   constructor() {
-    // The worker choice is re-read when a job starts, ends
-    // or changes stage — the first run of this effect is the initial read.
-    const jobStage = computed(() => {
-      const job = this.jobs.activeJob();
-      return `${job?.id ?? ''}|${job?.remoteStage ?? ''}`;
-    });
-    effect(() => {
-      jobStage();
-      untracked(() => void this.loadMachine());
-    });
+    // Instance settings: read once, nothing on this screen changes them.
+    void this.loadMachine();
     void this.problemes.reload();
     void this.crud.reload();
     void this.validations.reload();

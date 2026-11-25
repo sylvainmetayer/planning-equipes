@@ -1,4 +1,4 @@
-# 0101 — Retrait du lanceur de machine à la demande
+# 0103 — Retrait du lanceur de machine à la demande
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
@@ -25,7 +25,7 @@ contrat, la reprise d'un calcul après un redémarrage et la règle qu'**un éch
 distant fait échouer la tâche, sans repli sur place** sont conservés tels quels.
 
 Les cinq variables sont lues au démarrage pour avertir qu'elles n'ont plus
-d'effet, sans refuser de démarrer (comme pour [0100](0100-retrait-du-mode-en-tete-de-proxy.md)).
+d'effet, sans refuser de démarrer (comme pour [0102](0102-retrait-du-mode-en-tete-de-proxy.md)).
 L'écran Solveur garde le choix « Sur place » ou « Sur la machine de calcul »,
 puisqu'un worker permanent reste possible.
 
@@ -43,5 +43,10 @@ hébergeur, et la déclare comme worker permanent.
 
 - Une instance qui s'appuyait sur le lanceur doit déclarer son worker à la
   main (guide de passage à la 4.0). Sinon ses calculs tournent sur place.
-- La table `machine_calcul`, qui ne reçoit plus aucune ligne, est laissée en
-  place : un schéma ne se défait pas dans la même version qu'un retrait de code.
+- La table `machine_calcul` n'est plus ni lue ni écrite. Elle est laissée en
+  place, hors de l'export SQL comme avant, et **une migration ultérieure la
+  supprimera** : un schéma ne se défait pas dans la même version qu'un retrait
+  de code, que l'on peut encore revenir.
+- `GET /api/machine-calcul` reste, réduit à `configured` et `remoteByDefault` :
+  l'écran Solveur en a besoin pour proposer « Sur place » ou « Sur la machine
+  de calcul ». `POST /api/machine-calcul/preparer` et `/arreter` disparaissent.

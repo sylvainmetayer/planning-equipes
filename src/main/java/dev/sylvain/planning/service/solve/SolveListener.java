@@ -46,7 +46,7 @@ interface SolveListener extends Consumer<Solver<PlanningEvenement>> {
 
     /** The two moments of a remote solve a screen tells apart; the budget only runs in the second. */
     enum RemoteStage {
-        /** Waiting for the machine: being created, booting, or just answering its first call. */
+        /** The problem is on its way to the worker, which has not taken it yet. */
         PREPARING,
         /** The worker has the problem. */
         SOLVING
