@@ -21,6 +21,7 @@ on:
   push:
     branches:
       - main
+      - 'release/**'
   pull_request:
   schedule:
     # Lundi 5 h UTC, hors des heures d'usage.

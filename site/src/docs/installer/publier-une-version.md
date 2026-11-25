@@ -94,4 +94,6 @@ Les règles qui rendent ça sûr :
 - `release/1.2` ne fusionne jamais dans `main` : elle vit et meurt sur sa ligne ;
 - `:latest` ne bouge pas : le `v1.2.1` n'est pas le tag le plus récent du dépôt, l'étape du workflow le laisse en place.
 
+Le nom de la branche est `release/X.Y`, exactement : `release.yml` n'accepte pas `release/3.x`. La ligne 3.x vit donc sur `release/3.5`, créée depuis le tag `v3.5.0`, et ses correctifs sortent en `v3.5.1`, `v3.5.2`… La durée de vie d'une ligne après une majeure est dans [les numéros de version](versioning.md#combien-de-temps-une-ligne-est-corrigée).
+
 Combien de lignes maintient-on ? Une seule : la dernière `MAJOR.MINOR` publiée en dehors de la ligne courante, et seulement tant qu'un exploitant réel y est. Au-delà, la réponse est « montez de version » : un développeur seul ne maintient pas trois lignes.
