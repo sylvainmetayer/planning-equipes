@@ -9,6 +9,12 @@
 ALTER TABLE compte ADD COLUMN mot_de_passe_hash VARCHAR(255);
 ALTER TABLE compte ADD COLUMN mot_de_passe_le TIMESTAMP WITH TIME ZONE;
 
+-- L'époque des sessions : une session locale porte la valeur qu'elle avait à son
+-- ouverture, et ne vaut plus rien dès qu'elle avance. Elle avance quand le mot de
+-- passe change et quand le compte est désactivé (ou réactivé) : réactiver un compte
+-- ne ressuscite pas les cookies d'avant.
+ALTER TABLE compte ADD COLUMN sessions_depuis TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now();
+
 -- Le lien d'invitation ou de réinitialisation. Un seul en vigueur par compte :
 -- en émettre un autre remplace le précédent. Il se consomme en le supprimant.
 CREATE TABLE compte_jeton (

@@ -113,8 +113,8 @@ public class CompteAccesService {
 
         private final long secondsBeforeNextTry;
 
-        TooManyRequests(long secondsBeforeNextTry) {
-            super("Trop de codes demandés : réessayez dans " + Math.max(1, (secondsBeforeNextTry + 59) / 60)
+        TooManyRequests(String what, long secondsBeforeNextTry) {
+            super("Trop de " + what + " : réessayez dans " + Math.max(1, (secondsBeforeNextTry + 59) / 60)
                     + " minute(s).");
             this.secondsBeforeNextTry = secondsBeforeNextTry;
         }
@@ -242,7 +242,7 @@ public class CompteAccesService {
         String key = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
         long wait = accountFailures.lockoutSeconds(key, adminLogin.maxEchecs(), adminLogin.dureeBlocage());
         if (wait > 0) {
-            throw new TooManyRequests(wait);
+            throw new TooManyRequests("tentatives de connexion sur ce compte", wait);
         }
         Optional<CompteAccesRepository.Credentials> compte = key.isEmpty() ? Optional.empty() : acces.credentials(key);
         boolean bon = LocalPassword.matches(
@@ -266,7 +266,7 @@ public class CompteAccesService {
         }
         RateLimitVerdict verdict = limiteur.request("connexion/" + c.id());
         if (!verdict.autorise()) {
-            throw new TooManyRequests(verdict.secondsBeforeNextTry());
+            throw new TooManyRequests("codes demandés", verdict.secondsBeforeNextTry());
         }
         String code = String.format("%06d", random.nextInt(1_000_000));
         acces.replaceChallenge(

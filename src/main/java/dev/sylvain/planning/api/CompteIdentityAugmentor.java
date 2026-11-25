@@ -72,8 +72,18 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
             return context.runBlocking(() -> {
                 Compte compte =
                         acces.activeSession(identity.getPrincipal().getName()).orElse(null);
-                return withRoles(
-                        identity, compte == null ? Set.of() : CompteService.roles(compte, Instant.now()), compte);
+                if (compte == null) {
+                    // A stale session (password changed, account deactivated or
+                    // reactivated since): it keeps its principal — the form mechanism
+                    // cannot renew a cookie without one — but no role, and is marked
+                    // stale so that /api/auth/me says « not signed in » and the login
+                    // page offers to sign in again instead of « no rights ».
+                    return QuarkusSecurityIdentity.builder()
+                            .setPrincipal(identity.getPrincipal())
+                            .addAttribute(Compte.STALE_ATTRIBUTE, Boolean.TRUE)
+                            .build();
+                }
+                return withRoles(identity, CompteService.roles(compte, Instant.now()), compte);
             });
         }
         if (!(identity.getPrincipal() instanceof JsonWebToken token)) {

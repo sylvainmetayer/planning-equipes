@@ -41,4 +41,7 @@ public record Compte(
      * nothing but that address.
      */
     public static final String LOCAL_ATTRIBUTE = "planning.compte.local";
+
+    /** Marks a local session that no longer counts (password changed, account deactivated since). */
+    public static final String STALE_ATTRIBUTE = "planning.compte.stale";
 }

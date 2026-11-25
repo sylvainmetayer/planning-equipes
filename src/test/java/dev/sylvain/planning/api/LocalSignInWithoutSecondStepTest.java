@@ -10,6 +10,8 @@ import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteAccesService;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.compte.RoleHabilitation;
+import dev.sylvain.planning.service.journal.LoginJournalEntry.Evenement;
+import dev.sylvain.planning.service.journal.LoginJournalService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -90,5 +92,54 @@ class LocalSignInWithoutSecondStepTest {
                 .post("/j_security_check")
                 .then()
                 .statusCode(409);
+    }
+
+    @Inject
+    LoginJournalService journal;
+
+    @Test
+    void laPorteFermeeNOuvreRienEtLaConnexionLocaleEstJournaliseeCommeTelle() throws InterruptedException {
+        // The configuration's password, posted on the local path: nothing opens.
+        Response admin = given().contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", "admin")
+                .formParam("j_password", "admin")
+                .redirects()
+                .follow(false)
+                .post("/api/auth/connexion/j_security_check");
+        assertThat(admin.getCookie("planning-session")).isNull();
+
+        // A whole local sign-in still works behind the closed door.
+        Compte compte = comptes.create("porte-" + UUID.randomUUID() + "@example.org", null);
+        comptes.grant(compte.id(), RoleHabilitation.ADMIN, null, null);
+        acces.sendLink(compte.id(), true);
+        Matcher m = Pattern.compile("/mot-de-passe#(\\S+)")
+                .matcher(mailbox.getMailsSentTo(compte.email()).get(0).getText());
+        assertThat(m.find()).isTrue();
+        acces.choose(m.group(1), dev.sylvain.planning.TestPasswords.LONG);
+        String challenge = given().contentType("application/json")
+                .body(Map.of("email", compte.email(), "password", dev.sylvain.planning.TestPasswords.LONG))
+                .post("/api/auth/connexion")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("challenge");
+        Response ok = given().contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", compte.email())
+                .formParam("j_password", challenge)
+                .redirects()
+                .follow(false)
+                .post("/api/auth/connexion/j_security_check");
+        assertThat(ok.getCookie("planning-session")).isNotBlank();
+
+        // The journal writes off the event loop.
+        for (int i = 0;
+                i < 50 && journal.page(null, 50).stream().noneMatch(e -> e.evenement() == Evenement.CONNEXION);
+                i++) {
+            Thread.sleep(100);
+        }
+        assertThat(journal.page(null, 50))
+                .extracting(e -> e.evenement())
+                .contains(Evenement.CONNEXION)
+                .doesNotContain(Evenement.CONNEXION_SECOURS);
     }
 }

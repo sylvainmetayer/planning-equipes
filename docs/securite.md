@@ -472,9 +472,19 @@ Cinq portes, de la plus forte à la plus faible :
    compte coupe sa session à la requête suivante, et **choisir un nouveau mot
    de passe ferme toutes les sessions ouvertes avec l'ancien** (le cookie porte
    l'adresse et la date du dernier mot de passe) ; le titulaire en est prévenu
-   par mail. Le verrou compte par adresse IP **et** par compte (une pulvérisation
-   depuis plusieurs IP contre un compte est arrêtée, et une connexion réussie ne
-   remet pas à zéro les échecs d'une adresse). Réponses `429` et `409` après un
+   par mail. Le verrou du compte local compte par **paire (adresse IP, compte)** au
+   seuil du formulaire (`CONNEXION_MAX_ECHECS`), par **adresse seule à dix fois
+   ce seuil**, et par **compte** toutes adresses confondues : derrière une
+   adresse partagée (le wifi d'un festival), les fautes de frappe de plusieurs
+   personnes ne bloquent pas tout le monde, mais un mot de passe essayé sur
+   beaucoup de comptes, ou beaucoup de mots de passe sur un compte, rencontrent
+   un mur. Une connexion réussie ne remet à zéro que les échecs de sa propre
+   paire. Choix assumé : un attaquant peut verrouiller un compte précis en le
+   ratant cinq fois (déni de service ciblé, levé au bout de
+   `CONNEXION_DUREE_BLOCAGE`), faute de quoi on ne l'arrêterait pas depuis
+   plusieurs adresses. Une session dont le mot de passe a changé, ou dont le
+   compte a été désactivé puis réactivé, est anonyme (`401`) : l'époque des
+   sessions (`sessions_depuis`) avance à chacun de ces événements. Réponses `429` et `409` après un
    bon mot de passe (verrou, code non envoyé) le confirment : risque faible,
    accepté. Hors développement, un lien n'est jamais écrit vers `localhost`
    (`PUBLIC_URL` à renseigner, avertissement au démarrage).

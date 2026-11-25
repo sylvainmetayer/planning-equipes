@@ -158,6 +158,12 @@ public class AdminLoginLimiter {
      */
     private static final int ADRESSES_MAX = 1_000;
 
+    /** Local sign-in: the address alone locks at this multiple of the ceiling; see {@link #recordFailure}. */
+    private static final int LOCAL_ADDRESS_FACTOR = 10;
+
+    private final FailureLockout pairFailures = new FailureLockout(ADRESSES_MAX);
+    private final FailureLockout localAddressFailures = new FailureLockout(ADRESSES_MAX);
+
     /** Consecutive failures per address, shared in shape with the MCP key lock. */
     private final FailureLockout failures = new FailureLockout(ADRESSES_MAX);
 
@@ -194,7 +200,10 @@ public class AdminLoginLimiter {
             return;
         }
         String address = address(contexte);
-        long attente = lockoutSeconds(address);
+        // The password step asks its own lock in the resource, which knows the account.
+        long attente = isPasswordStepPath(contexte.normalizedPath())
+                ? 0
+                : isLocalLoginPath(contexte.normalizedPath()) ? localAddressLockout(address) : lockoutSeconds(address);
         if (attente > 0) {
             contexte.response()
                     .setStatusCode(429)
@@ -252,14 +261,37 @@ public class AdminLoginLimiter {
      * the password step of a local sign-in, which refuses before any form post.
      */
     void recordFailure(RoutingContext routage) {
+        recordFailure(routage, null);
+    }
+
+    /**
+     * Failures of the <b>local</b> sign-in are counted by pair (address,
+     * account) at the ceiling of the form, and by address alone at ten times
+     * that: behind a shared address (the wifi of a festival) a few people's
+     * typos must not shut everyone out for a quarter of an hour, while a spray
+     * of one password at many accounts, or many passwords at one, still meets a
+     * wall. {@code account} is {@code null} on the form post, whose username
+     * the event does not carry.
+     */
+    void recordFailure(RoutingContext routage, String account) {
         String address = address(routage);
+        boolean local = isLocalLoginPath(routage.normalizedPath()) || isPasswordStepPath(routage.normalizedPath());
         Instant now = Instant.now();
-        int run = failures.recordFailure(address, config.dureeBlocage());
+        int run;
+        int ceiling = config.maxEchecs();
+        if (local) {
+            int addressRun = localAddressFailures.recordFailure(address, config.dureeBlocage());
+            int pairRun =
+                    account == null ? 0 : pairFailures.recordFailure(pairKey(address, account), config.dureeBlocage());
+            run = pairRun == ceiling ? ceiling : addressRun == ceiling * LOCAL_ADDRESS_FACTOR ? ceiling : 0;
+        } else {
+            run = failures.recordFailure(address, config.dureeBlocage());
+        }
         List<LoginJournalEntry> lines = new ArrayList<>();
         lines.add(new LoginJournalEntry(0, now, Evenement.ECHEC, address));
         // Equal, not at least: the lock engages once, on the failure that
         // reaches the ceiling — a parallel straggler past it adds no lockout.
-        if (run == config.maxEchecs()) {
+        if (run == ceiling) {
             lines.add(new LoginJournalEntry(0, now, Evenement.VERROUILLAGE, address));
         }
         record(true, lines);
@@ -310,9 +342,26 @@ public class AdminLoginLimiter {
         return false;
     }
 
-    /** Seconds this request's address is still locked out for, {@code 0} when it may try. */
-    long lockoutFor(RoutingContext contexte) {
-        return lockoutSeconds(address(contexte));
+    /** Seconds the pair (this address, {@code account}) or the address itself is locked out for, {@code 0} when it may try. */
+    long lockoutFor(RoutingContext contexte, String account) {
+        String address = address(contexte);
+        return Math.max(
+                localAddressLockout(address),
+                pairFailures.lockoutSeconds(pairKey(address, account), config.maxEchecs(), config.dureeBlocage()));
+    }
+
+    /** The account signed in: its own failures from this address are forgiven, nobody else's. */
+    void clearPair(RoutingContext contexte, String account) {
+        pairFailures.clear(pairKey(address(contexte), account));
+    }
+
+    private long localAddressLockout(String address) {
+        return localAddressFailures.lockoutSeconds(
+                address, config.maxEchecs() * LOCAL_ADDRESS_FACTOR, config.dureeBlocage());
+    }
+
+    private static String pairKey(String address, String account) {
+        return address + "|" + (account == null ? "" : account.trim().toLowerCase(java.util.Locale.ROOT));
     }
 
     /** Seconds of lockout left, {@code 0} when the address may try its luck. */

@@ -418,6 +418,15 @@ class LocalSignInTest {
                 .then()
                 .statusCode(403);
         passwordStep(compte.email(), PASSWORD).then().statusCode(401);
+
+        // Reactivating the account does not bring its old cookie back to life.
+        comptes.reactivate(compte.id());
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .get("/api/animateurs")
+                .then()
+                .statusCode(403);
+        given().cookie("planning-session", cookie).get("/api/auth/me").then().body("authentifie", equalTo(false));
     }
 
     @Test
