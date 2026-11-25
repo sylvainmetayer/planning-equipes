@@ -52,26 +52,31 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class ResponsableService {
 
-    @Inject
-    EditionRepository editions;
+    private final EditionRepository editions;
+    private final EditionContext editionContext;
+    private final PlanPublieService planPublieService;
+    private final ReferenceDataService referenceDataService;
+    private final ReglageResponsableRepository reglages;
+    private final ExportProvenance provenance;
+    private final StandAffichettePdf affichette;
 
     @Inject
-    EditionContext editionContext;
-
-    @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    ReglageResponsableRepository reglages;
-
-    @Inject
-    ExportProvenance provenance;
-
-    @Inject
-    StandAffichettePdf affichette;
+    public ResponsableService(
+            EditionRepository editions,
+            EditionContext editionContext,
+            PlanPublieService planPublieService,
+            ReferenceDataService referenceDataService,
+            ReglageResponsableRepository reglages,
+            ExportProvenance provenance,
+            StandAffichettePdf affichette) {
+        this.editions = editions;
+        this.editionContext = editionContext;
+        this.planPublieService = planPublieService;
+        this.referenceDataService = referenceDataService;
+        this.reglages = reglages;
+        this.provenance = provenance;
+        this.affichette = affichette;
+    }
 
     /** The stands of the caller's rights on the active edition, with their published shifts. */
     public ResponsableView view(Compte compte) {

@@ -14,11 +14,14 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class ReglageResponsableService {
 
-    @Inject
-    ReglageResponsableRepository repository;
+    private final ReglageResponsableRepository repository;
+    private final ReferenceDataService referentiel;
 
     @Inject
-    ReferenceDataService referentiel;
+    public ReglageResponsableService(ReglageResponsableRepository repository, ReferenceDataService referentiel) {
+        this.repository = repository;
+        this.referentiel = referentiel;
+    }
 
     public ReglagesResponsables get() {
         return repository.get();

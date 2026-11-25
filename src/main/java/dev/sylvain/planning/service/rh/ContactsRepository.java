@@ -20,8 +20,12 @@ import java.util.Optional;
 @ApplicationScoped
 public class ContactsRepository {
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public ContactsRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /** Every row of the edition, by animateur id. */
     public Map<String, ContactsAnimateur> all() {

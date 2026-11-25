@@ -23,8 +23,12 @@ import java.util.Optional;
 @ApplicationScoped
 public class CompteAccesRepository {
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public CompteAccesRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /** What a password check needs of an account, active or not. */
     public record Credentials(String id, String email, String nom, String passwordHash, boolean active) {}
