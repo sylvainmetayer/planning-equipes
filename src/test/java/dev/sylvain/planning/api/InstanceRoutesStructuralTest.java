@@ -84,6 +84,9 @@ class InstanceRoutesStructuralTest {
     /** Opened by a right of its own, and by nothing else: the responsable de stand's reads. */
     private static final Set<String> RESPONSABLE = Set.of("ResponsableResource");
 
+    /** Opened by the RH right (or an administrator), edition named in the path: the compliance report. */
+    private static final Set<String> RH = Set.of("RhResource");
+
     /** Reserved to the administrators as a whole resource. */
     private static final Set<String> INSTANCE = Set.of(
             "CompteResource",
@@ -128,7 +131,7 @@ class InstanceRoutesStructuralTest {
 
     @Test
     void everyResourceIsClassified() throws Exception {
-        Set<String> classified = Stream.of(PAR_EDITION, PUBLIQUES, INSTANCE, RESPONSABLE)
+        Set<String> classified = Stream.of(PAR_EDITION, PUBLIQUES, INSTANCE, RESPONSABLE, RH)
                 .flatMap(Set::stream)
                 .collect(Collectors.toSet());
         Set<String> unclassified = resources().stream()
