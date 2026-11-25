@@ -61,27 +61,9 @@ Une restauration par `scripts/restaurer.sh` d'un dump `pg_dump` pris avant la mi
 
 Une instance déjà en service qui n'a jamais renseigné les mentions légales ne redémarre pas ([les renseigner](mentions-legales.md#monter-de-version-avec-une-instance-déjà-en-service)). À la mise à jour vers `V118`, l'édition active est choisie automatiquement ([les envois automatiques](envois-automatiques.md#2-activer-lédition-qui-doit-écrire)).
 
-## Passer de PostgreSQL 18 à PostgreSQL 19
+## La version de PostgreSQL
 
-L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'image applicative sont en **version 19**. Les deux montent ensemble : un `pg_dump` plus ancien que le serveur refuse de tourner (« server version mismatch »), et la sauvegarde de nuit échouerait alors sans que l'application s'arrête. Le serveur 19 ne relit pas le répertoire de données d'un serveur 18 : il en crée un neuf, vide, à côté, et il faut y restaurer un dump.
-
-À faire **avant** de tirer cette image, depuis le répertoire de la pile :
-
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres \
-  pg_dump -U festival -d festival --format=custom > avant-pg19.dump   # sur l'ancienne image
-docker compose -f docker-compose.prod.yml --env-file .env.prod down
-# ne changez pas le `name:` du volume (`postgres_data_pg18`, un nom historique) :
-# un autre nom serait un volume vide. Le volume est monté sur `/var/lib/postgresql`
-# avec un sous-dossier par majeure : le serveur 19 initialise `19/docker` et laisse
-# `18/docker` intact, ce qui sert de retour arrière tant que vous ne le supprimez pas
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d postgres
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres \
-  pg_restore -U festival -d festival --no-owner --exit-on-error < avant-pg19.dump
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-```
-
-`pg_upgrade` reste possible pour qui le maîtrise (le volume est monté sur `/var/lib/postgresql`, un sous-dossier par majeure). Les dumps `--format=custom` déjà présents dans le volume des sauvegardes se restaurent sur le serveur 19.
+L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'image applicative sont en **version 19**, et montent toujours ensemble : un `pg_dump` plus ancien que le serveur refuse de tourner (« server version mismatch »), et la sauvegarde de nuit échouerait alors sans que l'application s'arrête. Ne changez pas l'une sans l'autre.
 
 ## Débloquer une migration interrompue
 

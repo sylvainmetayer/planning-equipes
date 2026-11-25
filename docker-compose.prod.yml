@@ -134,8 +134,3 @@ services:
 
 volumes:
   postgres_data:
-    # Le « pg18 » est historique : le volume porte un sous-dossier par version
-    # majeure de PostgreSQL (18/docker, 19/docker…), son nom n'en dit rien. Ne
-    # le renommez pas sur une instance en service : un autre nom est un volume
-    # vide, donc une base vide.
-    name: postgres_data_pg18
