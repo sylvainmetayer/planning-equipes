@@ -2,18 +2,15 @@ package dev.sylvain.planning.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HEAD;
-import jakarta.ws.rs.PATCH;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.HttpMethod;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,13 +27,29 @@ class RoutesOuvertesStructuralTest {
     private static final Path ORGANISATEUR = Path.of("src/test/resources/routes-organisateur.txt");
     private static final Path RESPONSABLE = Path.of("src/test/resources/routes-responsable.txt");
 
-    private static boolean isRoute(Method m) {
-        return m.isAnnotationPresent(GET.class)
-                || m.isAnnotationPresent(POST.class)
-                || m.isAnnotationPresent(PUT.class)
-                || m.isAnnotationPresent(DELETE.class)
-                || m.isAnnotationPresent(PATCH.class)
-                || m.isAnnotationPresent(HEAD.class);
+    /** The HTTP verb of a resource method (any annotation meta-annotated {@link HttpMethod}), or null. */
+    private static String verb(Method m) {
+        for (Annotation a : m.getAnnotations()) {
+            HttpMethod http = a.annotationType().getAnnotation(HttpMethod.class);
+            if (http != null) {
+                return http.value();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * One line per route: {@code Class#method VERB /path}. The verb and path
+     * keep two overloads apart — keyed on the name alone, a new route reusing
+     * an open method's name would pass unseen.
+     */
+    private static String line(Class<?> type, Method m, String verb) {
+        jakarta.ws.rs.Path sub = m.getAnnotation(jakarta.ws.rs.Path.class);
+        String path = ("/" + type.getAnnotation(jakarta.ws.rs.Path.class).value() + "/"
+                        + (sub == null ? "" : sub.value()))
+                .replaceAll("/+", "/")
+                .replaceAll("(.)/$", "$1");
+        return type.getSimpleName() + "#" + m.getName() + " " + verb + " " + path;
     }
 
     private static Set<String> routesOf(Set<String> classes, boolean withoutInstanceOnly) throws Exception {
@@ -45,9 +58,24 @@ class RoutesOuvertesStructuralTest {
             if (!classes.contains(type.getSimpleName())) {
                 continue;
             }
+            // What getDeclaredMethods cannot see would be open unlisted: refuse it.
+            assertThat(type.getSuperclass())
+                    .as(type.getSimpleName() + ": a route inherited from a superclass escapes the inventory")
+                    .isEqualTo(Object.class);
+            for (Class<?> contract : type.getInterfaces()) {
+                assertThat(Stream.of(contract.getMethods()).filter(m -> verb(m) != null))
+                        .as(type.getSimpleName() + ": a route declared on " + contract.getSimpleName()
+                                + " escapes the inventory")
+                        .isEmpty();
+            }
             for (Method m : type.getDeclaredMethods()) {
-                if (isRoute(m) && !(withoutInstanceOnly && m.isAnnotationPresent(InstanceOnly.class))) {
-                    routes.add(type.getSimpleName() + "#" + m.getName());
+                String verb = verb(m);
+                assertThat(verb == null && m.isAnnotationPresent(jakarta.ws.rs.Path.class))
+                        .as(type.getSimpleName() + "#" + m.getName()
+                                + " is a sub-resource locator: its routes escape the inventory")
+                        .isFalse();
+                if (verb != null && !(withoutInstanceOnly && m.isAnnotationPresent(InstanceOnly.class))) {
+                    routes.add(line(type, m, verb));
                 }
             }
         }

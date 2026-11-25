@@ -455,7 +455,10 @@ dans [l'ADR 0075](decisions/0075-quota-de-calcul-de-l-instance-dans-l-applicatio
 responsable de stand. Dans une ressource ouverte à l'organisateur, une
 **nouvelle méthode lui est ouverte aussi** tant que personne ne la marque
 `@InstanceOnly` : c'est l'angle mort que ferme `RoutesOuvertesStructuralTest`.
-Il tient deux inventaires versionnés, `Classe#méthode` par ligne :
+Il tient deux inventaires versionnés, une route par ligne
+(`Classe#méthode VERBE /chemin`, le verbe et le chemin départageant deux
+surcharges) ; une sous-ressource ou une route héritée, que l'inventaire ne
+verrait pas, fait échouer le test :
 
 | Fichier (`src/test/resources/`) | Ce qu'il liste |
 | --- | --- |
