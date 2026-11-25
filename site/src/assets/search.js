@@ -1,6 +1,7 @@
 // Search of the site map page: the form submits ?q= to this same page, so a search
 // has an address and can be refined from its results. The text searched is each
-// page's Markdown twin (<url>index.md), fetched from the links of the map itself.
+// page's Markdown twin (<url>index.md), fetched from the links of the map itself;
+// for the docs, too heavy for that, one light index of their titles (/docs/search.json).
 const form = globalThis.document?.querySelector("[data-search]");
 
 const normalize = (text) =>
@@ -19,12 +20,35 @@ export function match(text, words) {
   return plain.length > 200 ? `${plain.slice(0, 200)}…` : plain;
 }
 
+let docsIndex;
+const loadDocs = () =>
+  (docsIndex ??= fetch("/docs/search.json")
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({})));
+
+// A docs page as lines the match reads: its title, its description, its headings
+export function docMatch(entry, words) {
+  if (!entry) return { excerpt: null };
+  const text = [
+    `# ${entry.t}`,
+    entry.d,
+    ...entry.h.map(([, h]) => `## ${h}`),
+  ].join("\n");
+  const found = match(text, words);
+  // The excerpt is a heading: the result leads to it
+  const id = entry.h.find(([, h]) => h.replace(/[*_`]/g, "") === found)?.[0];
+  return { excerpt: found, hash: id ? `#${id}` : "" };
+}
+
 async function excerpt(a, words) {
+  const href = a.getAttribute("href");
   try {
-    const r = await fetch(`${a.getAttribute("href")}index.md`);
-    return { a, excerpt: match(r.ok ? await r.text() : "", words) };
+    if (href.startsWith("/docs/"))
+      return { a, href, ...docMatch((await loadDocs())[href], words) };
+    const r = await fetch(`${href}index.md`);
+    return { a, href, excerpt: match(r.ok ? await r.text() : "", words) };
   } catch {
-    return { a, excerpt: null };
+    return { a, href, excerpt: null };
   }
 }
 
@@ -38,10 +62,11 @@ function render(found, q, t) {
     : message;
   const list = document.querySelector("[data-search-results]");
   list.replaceChildren(
-    ...found.map(({ a, excerpt }) => {
+    ...found.map(({ a, href, hash = "", excerpt }) => {
       const li = document.createElement("li");
+      li.lang = a.closest("[lang]").lang; // the docs are French, even on the English map
       const link = document.createElement("a");
-      link.href = a.getAttribute("href");
+      link.href = href + hash;
       link.textContent = a.textContent;
       const p = document.createElement("p");
       p.textContent = excerpt;
