@@ -46,19 +46,19 @@
     "sections": [
       {
         "h2": "Paid staff, volunteers or both",
-        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles). For a trade show or fair, see [a trade show staff rota](/en/trade-show-staff-rota/). How many people to recruit can be worked out before any entry: see [sizing the team](/docs/regles/dimensionner-l-equipe/) (in French). For a festival, see [the festival rota](/en/festival-staff-rota/); for a race or a tournament, [the sports event](/en/sports-event-volunteer-rota/)."
+        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles). For a trade show or fair, see [a trade show staff rota](/en/trade-show-staff-rota/). How many people to recruit can be worked out before any entry: see [sizing the team](/en/docs/rules/size-the-team/). For a festival, see [the festival rota](/en/festival-staff-rota/); for a race or a tournament, [the sports event](/en/sports-event-volunteer-rota/)."
       },
       {
         "h2": "Import the spreadsheet",
-        "texte": "Staff import from a CSV file, with a preview of what would be created or refused before anything is written. Skills, wishes and days off are then entered record by record, or in bulk in a grid. Unsure whether to keep the spreadsheet? [Compare spreadsheet and scheduling software](/en/spreadsheet-or-scheduling-software/). A file that resists the import? [Send us your spreadsheet](/en/contact/). The records are filled in as described in [entering animateurs and their skills](/docs/regles/animateurs-et-competences/) (in French)."
+        "texte": "Staff import from a CSV file, with a preview of what would be created or refused before anything is written. Skills, wishes and days off are then entered record by record, or in bulk in a grid. Unsure whether to keep the spreadsheet? [Compare spreadsheet and scheduling software](/en/spreadsheet-or-scheduling-software/). A file that resists the import? [Send us your spreadsheet](/en/contact/). The records are filled in as described in [entering staff members and their skills](/en/docs/rules/staff-and-skills/)."
       },
       {
         "h2": "Collect availability",
-        "texte": "Everyone declares from their phone the days they are not available. Without a declaration, a person is available. The organisation reviews the declarations before they reach the solver. The guide to [collecting animateurs' availabilities](/docs/regles/collecter-disponibilites/) details the period (in French)."
+        "texte": "Everyone declares from their phone the days they are not available. Without a declaration, a person is available. The organisation reviews the declarations before they reach the solver. The guide to [collecting staff members' availabilities](/en/docs/rules/collect-availability/) details the period."
       },
       {
         "h2": "What everyone gets",
-        "texte": "- a link and a code by e-mail, valid for 10 minutes;\n- their rota, next shift first, and the “I have read it and I will be there” button;\n- a PDF sheet with a QR code, and a calendar subscription;\n- self-service swaps, which the organisation approves;\n- their teammates on every shift. What each person sees is described in [the animateurs' space](/docs/regles/espace-animateur/) (in French)."
+        "texte": "- a link and a code by e-mail, valid for 10 minutes;\n- their rota, next shift first, and the “I have read it and I will be there” button;\n- a PDF sheet with a QR code, and a calendar subscription;\n- self-service swaps, which the organisation approves;\n- their teammates on every shift. What each person sees is described in [the staff espace](/en/docs/rules/staff-espace/)."
       },
       {
         "h2": "Under-18s in the team",

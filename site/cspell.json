@@ -11,7 +11,9 @@
     "src/docs/index.md",
     "src/docs/regles/*.md",
     "src/docs/installer/*.md",
-    "src/docs/comprendre/*.md"
+    "src/docs/comprendre/*.md",
+    "src/docs-en/index.md",
+    "src/docs-en/*/*.md"
   ],
   "ignoreRegExpList": [
     "/\"[A-Za-z0-9_-]+\"\\s*:/g",
@@ -24,6 +26,12 @@
     "/```[\\s\\S]*?```/g",
     "/`[^`\\n]*`/g",
     "/\\(\\/images\\/[^)]*\\)/g"
+  ],
+  "overrides": [
+    {
+      "filename": "src/docs-en/**",
+      "language": "en-GB"
+    }
   ],
   "dictionaryDefinitions": [
     {

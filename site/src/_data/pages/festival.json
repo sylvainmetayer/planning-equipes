@@ -56,11 +56,11 @@
       },
       {
         "h2": "Stands, shifts, seats",
-        "texte": "Each stand has its opening hours (recurring rules, dated exceptions), a minimum and maximum headcount, and the game categories it needs. Shifts are laid down as **typical days**: a typical day groups the shifts of one kind of day, and goes onto the calendar in one step, after a preview with figures.\n\nThe solver creates one seat to fill per post, then places each person according to their skills, never breaking a mandatory rule. To lay out the stands and the calendar, follow [preparing your first edition](/docs/regles/preparer-edition/) (in French)."
+        "texte": "Each stand has its opening hours (recurring rules, dated exceptions), a minimum and maximum headcount, and the game categories it needs. Shifts are laid down as **typical days**: a typical day groups the shifts of one kind of day, and goes onto the calendar in one step, after a preview with figures.\n\nThe solver creates one seat to fill per post, then places each person according to their skills, never breaking a mandatory rule. To lay out the stands and the calendar, follow [preparing your first edition](/en/docs/rules/prepare-your-first-edition/)."
       },
       {
         "h2": "Availability, from phones",
-        "texte": "The organisation opens a collection period: everyone declares, from their phone, the days they cannot come. **With no declaration, a person is available.** The organisation reviews the declarations before they enter the calculation. The guide to [collecting availabilities](/docs/regles/collecter-disponibilites/) shows how to open the period (in French). On the team side, [collecting availabilities](/en/organising-your-team/) goes with importing the spreadsheet."
+        "texte": "The organisation opens a collection period: everyone declares, from their phone, the days they cannot come. **With no declaration, a person is available.** The organisation reviews the declarations before they enter the calculation. The guide to [collecting availabilities](/en/docs/rules/collect-availability/) shows how to open the period. On the team side, [collecting availabilities](/en/organising-your-team/) goes with importing the spreadsheet."
       },
       {
         "h2": "Under-18s and late evenings",
@@ -68,11 +68,11 @@
       },
       {
         "h2": "When the programme changes",
-        "texte": "An authority shuts a time band for every stand? The **consigne** lays it on the dates concerned, proposes the stands that lose hours and the compensation windows, with a preview with figures before applying. After a late change, an incremental run freezes what holds and recalculates only the reopened seats. The steps are in [applying an authority's order](/docs/regles/appliquer-une-consigne/) (in French). Outdoor races live through the same thing, see [the sports event](/en/sports-event-volunteer-rota/)."
+        "texte": "An authority shuts a time band for every stand? The **consigne** lays it on the dates concerned, proposes the stands that lose hours and the compensation windows, with a preview with figures before applying. After a late change, an incremental run freezes what holds and recalculates only the reopened seats. The steps are in [applying an authority's order](/en/docs/rules/apply-a-consigne/). Outdoor races live through the same thing, see [the sports event](/en/sports-event-volunteer-rota/)."
       },
       {
         "h2": "On the day",
-        "texte": "The *Today* screen fits in a pocket: you mark someone absent, the application suggests replacements who already respect the rules, and notifies only the people concerned. For the control room, the **wall display** shows the open stands, the free seats and the day's consigne on a TV, refreshed every minute. Staff propose swaps from their own space; the organisation arbitrates. For the day itself, see [following the day of the event](/docs/regles/suivre-le-jour-j/) (in French). At a trade show, the same TV becomes [the control room](/en/trade-show-staff-rota/)."
+        "texte": "The *Today* screen fits in a pocket: you mark someone absent, the application suggests replacements who already respect the rules, and notifies only the people concerned. For the control room, the **wall display** shows the open stands, the free seats and the day's consigne on a TV, refreshed every minute. Staff propose swaps from their own space; the organisation arbitrates. For the day itself, see [following the day of the event](/en/docs/rules/follow-the-event-day/). At a trade show, the same TV becomes [the control room](/en/trade-show-staff-rota/)."
       },
       {
         "h2": "What everyone receives",

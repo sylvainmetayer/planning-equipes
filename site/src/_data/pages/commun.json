@@ -130,7 +130,7 @@
       "equipe": "Team",
       "calcul": "The solver",
       "faq": "Questions",
-      "docs": "Docs (French)",
+      "docs": "Docs",
       "contact": "Let's talk",
       "langue": "Français",
       "langueLabel": "Lire cette page en français"
@@ -223,7 +223,7 @@
       "liens": "About this site",
       "mentions": "Legal notice and privacy",
       "plan": "Site map",
-      "docs": "Documentation (French only)",
+      "docs": "Documentation",
       "nouveautes": "Release notes",
       "probleme": "Report a problem",
       "ecrire": "Write to us"
@@ -255,8 +255,8 @@
       "un": "One result for “{q}”.",
       "plusieurs": "{n} results for “{q}”.",
       "aucun": "No result for “{q}”.",
-      "guide": "Guide (French)",
-      "section": "Section (French)",
+      "guide": "Guide",
+      "section": "Section",
       "page": "Page",
       "bouton": "Search",
       "erreur": "Loading error: search is unavailable, try again."
