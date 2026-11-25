@@ -1,6 +1,6 @@
 ---
 titre: Comprendre comment c'est fait
-pour: Le modèle, les règles, l'API, l'assistant IA et la façon de construire le projet, pour qui développe ou audite.
+pour: "Pour qui développe ou audite : le modèle, les règles, l'API, la construction."
 docs: [architecture, domaine, contraintes, import-export, api, mcp, developpement]
 ---
 # Comprendre comment c'est fait

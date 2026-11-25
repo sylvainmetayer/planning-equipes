@@ -1,6 +1,6 @@
 ---
 titre: Les règles du jeu
-pour: Vous organisez l'équipe d'un événement. Ces guides vous mènent de la préparation au jour J, tâche par tâche.
+pour: Organisez votre équipe, de la préparation au jour J, tâche par tâche.
 docs:
   - fil-d-une-edition
   - preparer-edition

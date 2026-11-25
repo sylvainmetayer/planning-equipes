@@ -8,8 +8,6 @@ Tout se passe dans *Fichiers* (groupe *Préparer*), un écran à trois onglets :
 
 L'onglet *Importer* propose une carte par référentiel, dans l'ordre où les données se tiennent :
 
-![L'écran d'import de fichiers](/images/fr/docs/fichiers.webp "L'écran Fichiers, onglet Importer")
-
 1. typologies ;
 2. emplacements ;
 3. stands ;
@@ -18,6 +16,8 @@ L'onglet *Importer* propose une carte par référentiel, dans l'ordre où les do
 6. animateurs ;
 7. la grille des stands ;
 8. enfin le fichier scénario, **le seul qui remplace l'édition** au lieu de la compléter.
+
+![L'écran d'import de fichiers](/images/fr/docs/fichiers.webp "L'écran Fichiers, onglet Importer")
 
 Les règles communes :
 

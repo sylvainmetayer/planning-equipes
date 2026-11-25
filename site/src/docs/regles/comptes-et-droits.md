@@ -6,11 +6,11 @@ Vous donnez accès à l'application à d'autres personnes (un responsable de sta
 
 La connexion se fait au choix par :
 
-![Paramètres, onglet Comptes : la liste des comptes et de leurs droits](/images/fr/docs/comptes.webp "Les comptes de l'administration et leurs droits")
-
 - un **mot de passe** d'administrateur ;
 - des **comptes nominatifs** invités par e-mail (lien à usage unique, code reçu par e-mail en seconde étape) ;
 - la connexion déléguée au portail d'accès de l'hébergeur.
+
+![Paramètres, onglet Comptes : la liste des comptes et de leurs droits](/images/fr/docs/comptes.webp "Les comptes de l'administration et leurs droits")
 
 Les espaces animateurs restent joignables par leur lien : voir [L'espace des animateurs](espace-animateur.md). La mise en place de la connexion déléguée et des comptes de secours incombe à l'hébergeur : voir [Installer chez vous](../installer/index.md).
 

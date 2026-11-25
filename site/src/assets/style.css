@@ -6,6 +6,7 @@
 /* Hallmark · dropped #images · the screens section is now #ecrans, the hero's second button points there */
 /* Hallmark · reworded every home and answer-page heading · the owner asked for a full rewrite of the copy for organisers first, facts kept, then rulebook chapter names */
 /* Hallmark · answered F15 · three gaps for three kinds of pair: card grids, a film beside text, a head beside its list · each pairing keeps one gap wherever it repeats */
+/* Hallmark · redesign: full on /docs · the documentation is one home, three part homes and guides on the same tokens · three parts take three player colours as markers · dismissed 58 on the guides: they are long text read for a task, never a screen of the site */
 /* Hallmark · dismissed 77 · the answer pages run three or four sections · each answers one question as a document, banner, chapters, the quote band */
 @import url("./tokens.css");
 @import url("./base.css");
@@ -331,7 +332,8 @@ abbr[title] { text-decoration: none; cursor: help; }
 .doc__main--intro > p:first-child { font-size: var(--text-lg); color: var(--color-ink-2); }
 .doc__main > * + * { margin-top: var(--space-md); }
 .doc__grid .doc__main > p:first-child { font-size: var(--text-lg); color: var(--color-ink-2); }
-.doc__main h2 { margin-top: var(--space-2xl); padding-top: var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule); background: linear-gradient(var(--p), var(--p)) top left / 2.5rem var(--rule-bar) no-repeat border-box; font-size: var(--text-2xl); max-width: none; }
+.doc__main h2 { margin-top: var(--space-2xl); padding-top: var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule); position: relative; font-size: var(--text-2xl); max-width: none; }
+.doc__main h2::before { content: ""; position: absolute; top: -1px; left: 0; width: 2.5rem; height: var(--rule-bar); background: var(--p); border-radius: 2px; }
 .doc__main h2, .doc__main h3 { min-width: 0; overflow-wrap: break-word; }
 .doc__main h3 { margin-top: var(--space-xl); }
 .doc__main h4, .doc__main h5 { margin-top: var(--space-lg); font-size: var(--text-md); }
@@ -360,6 +362,6 @@ abbr[title] { text-decoration: none; cursor: help; }
 .doc__pager span { font-weight: 400; font-size: var(--text-sm); color: var(--color-ink-2); }
 .doc__pager .doc__next { grid-column: 2; text-align: right; }
 .doc__edit { font-size: var(--text-sm); }
-.doc__close { margin-top: var(--section-gap-s); }
+.doc__close { margin-top: 0; }
 @media (max-width: 60rem) { .doc__grid { grid-template-columns: minmax(0, 1fr); } .doc__side { gap: 0; position: static; max-height: none; overflow: visible; } .doc__parts { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 40rem) { .doc__pager { grid-template-columns: minmax(0, 1fr); } .doc__pager .doc__next { grid-column: 1; text-align: left; } }

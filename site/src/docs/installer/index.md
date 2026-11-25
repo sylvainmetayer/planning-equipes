@@ -1,6 +1,6 @@
 ---
 titre: Installer chez vous
-pour: "Vous hébergez Planning Équipes pour un organisateur : installez, sécurisez, sauvegardez et mettez à jour votre instance."
+pour: Installez, sécurisez, sauvegardez et mettez à jour votre instance.
 docs:
   - installation
   - mentions-legales

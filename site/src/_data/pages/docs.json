@@ -13,7 +13,7 @@
   "suivant": "Ensuite :",
   "corriger": "Une erreur, un oubli ? Corrigez cette page sur GitHub.",
   "fermeture": "Une question qu'aucun guide ne règle ?",
-  "autreLien": "Faire héberger l'application",
+  "autreLien": "Voir l'hébergement",
   "en": {
     "titre": "Documentation (French) | Planning Équipes",
     "description": "Guides to use Planning Équipes, install it on your server and understand how it is built. French only.",
@@ -29,6 +29,6 @@
     "suivant": "Next:",
     "corriger": "A mistake, an omission? Fix this page on GitHub.",
     "fermeture": "A question no guide answers?",
-    "autreLien": "Have us host the application"
+    "autreLien": "See hosting"
   }
 }
