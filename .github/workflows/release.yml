@@ -186,7 +186,10 @@ jobs:
             fi
 
             IFS=. read -r pa pb pc <<< "${precedent#v}"
-            IFS=. read -r na nb nc <<< "${TAG#v}"
+            # Le numéro d'une rc se lit sans son suffixe : `0-rc.2` n'est pas
+            # un entier, et `[ -gt ]` répondrait faux, donc « pas supérieur ».
+            base="${TAG%%-*}"
+            IFS=. read -r na nb nc <<< "${base#v}"
             if   [ "$na" -gt "$pa" ]; then pose=3
             elif [ "$na" -eq "$pa" ] && [ "$nb" -gt "$pb" ]; then pose=2
             elif [ "$na" -eq "$pa" ] && [ "$nb" -eq "$pb" ] && [ "$nc" -gt "$pc" ]; then pose=1
@@ -199,6 +202,23 @@ jobs:
               faute=1
             elif [ "$pose" -lt "$demande" ]; then
               echo "::error::${noms[$pose]} posée entre $precedent et $TAG, mais les sujets demandaient ${noms[$demande]} (site/src/docs/installer/versioning.md § 2)"
+              faute=1
+            fi
+          fi
+
+          # Une rc précède sa version finale et suit les rc de même numéro :
+          # une v4.0.0-rc.1 posée après la v4.0.0, ou après une v4.0.0-rc.2,
+          # serait une image « plus récente » qui ne l'est pas.
+          if [[ "$TAG" == *-rc.* ]]; then
+            finale="${TAG%-rc.*}"
+            if git rev-parse -q --verify "refs/tags/$finale" >/dev/null; then
+              echo "::error::$finale est déjà publiée : $TAG ne peut plus la précéder"
+              faute=1
+            fi
+            plus_haute="$(git tag --list "$finale-rc.*" | grep -vxF "$TAG" | sed 's/.*-rc\.//' \
+                          | grep -xE '[0-9]+' | sort -n | tail -n 1)"
+            if [ -n "$plus_haute" ] && [ "${TAG##*-rc.}" -le "$plus_haute" ]; then
+              echo "::error::$TAG ne suit pas $finale-rc.$plus_haute : le numéro de rc doit croître"
               faute=1
             fi
           fi
