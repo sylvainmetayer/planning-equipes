@@ -6,6 +6,7 @@ describe('readOnglet', () => {
     expect(readOnglet('besoin')).toBe('besoin');
     expect(readOnglet('tension')).toBe('tension');
     expect(readOnglet('fragilite')).toBe('fragilite');
+    expect(readOnglet('conformite')).toBe('conformite');
     // The bench left for the Siège panel, « À former » for the foot of Besoin:
     // the routes redirect both, and an old address never lands on a blank tab.
     expect(readOnglet('banc')).toBe('problemes');

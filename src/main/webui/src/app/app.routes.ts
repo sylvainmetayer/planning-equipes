@@ -786,6 +786,14 @@ export const routes: Routes = [
       import('./pages/responsable/responsable-page').then((m) => m.ResponsablePage),
   },
   {
+    // « Conformité »: the compliance report of an edition, for an account whose
+    // only right is an RH one — outside the admin shell, whose every call it
+    // would be refused. Administrators read the same report in the Diagnostic.
+    path: 'rh',
+    title: () => $localize`:@@route.rh:Conformité RH`,
+    loadComponent: () => import('./pages/rh/rh-page').then((m) => m.RhPage),
+  },
+  {
     // The control room's television (ADR 0053): outside both shells, no
     // session — the token in the URL opens this one read and nothing else.
     path: 'mural/:jeton',

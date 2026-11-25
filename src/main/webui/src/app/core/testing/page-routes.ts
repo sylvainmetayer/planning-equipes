@@ -21,6 +21,8 @@ export function pageRoutes(): string[] {
         route.path !== 'mot-de-passe' &&
         // « Mon stand » is the responsable's one screen, outside the administration's menu and palette.
         route.path !== 'responsable' &&
+        // The RH screen is the same kind of single door.
+        route.path !== 'rh' &&
         !route.path.includes(':') &&
         !route.path.includes('*'),
     )

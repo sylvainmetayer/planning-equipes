@@ -173,8 +173,8 @@ describe('app.routes', () => {
     // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another;
     // the nine screens that became tabs of another page gave theirs up;
     // `/mot-de-passe`, the page of a mailed link, and `/responsable` (« Mon stand »)
-    // brought one each.
-    expect(titrees).toHaveLength(34);
+    // brought one each, and `/rh` (« Conformité RH ») one more.
+    expect(titrees).toHaveLength(35);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });

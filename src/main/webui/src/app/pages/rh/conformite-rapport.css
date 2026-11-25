@@ -1,0 +1,36 @@
+.conformite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.conformite-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.conformite-table th,
+.conformite-table td {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.conformite-defilement {
+  overflow-x: auto;
+}
+
+.conformite-alerte {
+  color: var(--mat-sys-error);
+  font-weight: 500;
+}
+
+.conformite-mineurs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

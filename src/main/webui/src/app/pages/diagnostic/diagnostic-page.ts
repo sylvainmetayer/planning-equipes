@@ -12,8 +12,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { ProblemesStore } from '../../core/problemes.store';
+import { EditionStore } from '../../core/edition.store';
+import { ROLE_ADMIN, ROLE_RH } from '../../core/session';
+import { SessionStore } from '../../core/session.store';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { FragilitePage } from '../fragilite/fragilite-page';
+import { ConformiteRapport } from '../rh/conformite-rapport';
 import { TensionTab } from '../marge/tension-tab';
 import { ProblemesPage } from '../problemes/problemes-page';
 import { StaffingPage } from '../staffing/staffing-page';
@@ -43,6 +47,7 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
     StaffingPage,
     TensionTab,
     FragilitePage,
+    ConformiteRapport,
   ],
   templateUrl: './diagnostic-page.html',
   styleUrl: './diagnostic-page.css',
@@ -53,6 +58,14 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
 export class DiagnosticPage {
   private readonly route = inject(ActivatedRoute);
   private readonly problemes = inject(ProblemesStore);
+  private readonly session = inject(SessionStore);
+  protected readonly editionStore = inject(EditionStore);
+
+  /** The Conformité tab: for an administrator and for an account holding an RH right. */
+  protected readonly conformiteVisible = computed(() => {
+    const roles = this.session.statut()?.roles ?? [];
+    return roles.includes(ROLE_ADMIN) || roles.includes(ROLE_RH);
+  });
 
   protected readonly onglet = signal<OngletDiagnostic>('problemes');
 

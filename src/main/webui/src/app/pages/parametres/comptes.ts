@@ -5,7 +5,12 @@
 import { Compte, Edition, Habilitation, RoleHabilitation, Stand } from '../../core/models';
 
 /** The roles, in the order the grant form offers them. */
-export const ROLES: readonly RoleHabilitation[] = ['ORGANISATEUR', 'RESPONSABLE_STAND', 'ADMIN'];
+export const ROLES: readonly RoleHabilitation[] = [
+  'ORGANISATEUR',
+  'RESPONSABLE_STAND',
+  'RH',
+  'ADMIN',
+];
 
 /** Where a right stands at a given instant. */
 export type RightState = 'active' | 'expired' | 'withdrawn';
@@ -27,6 +32,8 @@ export function roleLabel(role: RoleHabilitation): string {
       return $localize`:@@comptes.role.admin:Administrateur`;
     case 'RESPONSABLE_STAND':
       return $localize`:@@comptes.role.responsable:Responsable de stand (lecture de son stand)`;
+    case 'RH':
+      return $localize`:@@comptes.role.rh:RH (rapport de conformité)`;
     case 'ORGANISATEUR':
       return $localize`:@@comptes.role.organisateur:Organisateur`;
   }

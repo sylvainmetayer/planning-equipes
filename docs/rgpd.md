@@ -644,6 +644,19 @@ ultérieur**, la région choisie, et le fait que la machine ne garde rien sur
 disque et est détruite après usage. Un worker installé sur le site même ne
 change rien au registre.
 
+### Le rapport de conformité nomme les personnes planifiées, mineurs compris
+
+Le rapport de conformité de l'inspection du travail (onglet *Conformité* du
+Diagnostic) liste, par nom, les heures, les plafonds applicables, les écarts aux
+règles légales et le statut de mineur de chaque personne planifiée. Il ne porte
+ni date de naissance, ni adresse, ni coordonnées. Il n'est lisible que des
+administrateurs et des comptes titulaires d'un droit `RH` sur l'édition ;
+**chaque consultation et chaque export est écrit dans le journal des actions**
+(`CONFORMITE_CONSULTEE`, `EXPORT_CONFORMITE_PDF`, `EXPORT_CONFORMITE_CSV`), qui
+suit la purge de conservation du journal. Le PDF et le CSV téléchargés sortent
+de l'application : leur conservation est celle de l'organisation qui les
+produit, et ils ne sont jamais exposés par MCP.
+
 ## 8. Rythme de tenue
 
 | Quand | Quoi |

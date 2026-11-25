@@ -1,0 +1,29 @@
+<mat-toolbar class="rh-toolbar">
+  <app-brand-logo />
+  <span class="rh-title" aria-hidden="true">{{ titre }}</span>
+  <span class="rh-spacer"></span>
+  <button matButton type="button" (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    <ng-container i18n="@@rh.logout">Se déconnecter</ng-container>
+  </button>
+</mat-toolbar>
+
+<main class="rh-page">
+  <h1 class="rh-entete" i18n="@@rh.title">Conformité RH</h1>
+  <app-status-message [text]="erreur()" tone="error" />
+  @if (liste().length === 0) {
+    <p class="empty-hint" role="status" i18n="@@rh.aucune">Aucune édition à afficher : vos droits ne nomment aucune édition.</p>
+  } @else {
+    <mat-form-field>
+      <mat-label i18n="@@rh.edition">Édition</mat-label>
+      <mat-select [value]="edition()" (selectionChange)="choisir($event.value)">
+        @for (e of liste(); track e.id) {
+          <mat-option [value]="e.id">{{ e.nom }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (edition(); as id) {
+      <app-conformite-rapport [editionId]="id" />
+    }
+  }
+</main>
