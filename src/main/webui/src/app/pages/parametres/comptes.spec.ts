@@ -53,6 +53,7 @@ describe('rightState', () => {
 describe('labels', () => {
   it('names the roles and the editions, an unknown edition by its id', () => {
     expect(roleLabel('ADMIN')).toBe('Administrateur');
+    expect(roleLabel('LECTEUR')).toBe('Lecteur (lecture seule)');
     expect(editionLabel(null, [])).toBe('Toutes les éditions');
     expect(editionLabel('E1', [{ id: 'E1', nom: 'Année 2026', active: true, creeLe: null }])).toBe(
       'Année 2026',

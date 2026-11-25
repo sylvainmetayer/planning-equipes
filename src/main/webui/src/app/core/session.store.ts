@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminApi } from './api/admin-api';
 import { StatutSession } from './models';
-import { ROLE_ADMIN, signedInWithoutAccess } from './session';
+import { ROLE_ADMIN, lectureSeule, signedInWithoutAccess } from './session';
 
 /**
  * Who the signed-in person is and with which roles, read once by the shell.
@@ -26,6 +26,9 @@ export class SessionStore {
   readonly known = this._known.asReadonly();
 
   readonly isAdmin = computed(() => this._statut()?.roles.includes(ROLE_ADMIN) ?? false);
+
+  /** A lecteur only: the interface hides what changes something (the server refuses it anyway). */
+  readonly lectureSeule = computed(() => lectureSeule(this._statut()));
 
   private reading: Promise<void> | null = null;
 

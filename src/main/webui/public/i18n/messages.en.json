@@ -5350,6 +5350,8 @@
   "route.rh": "HR compliance",
   "diagnostic.onglet.conformite": "Compliance",
   "comptes.role.rh": "HR (compliance report)",
+  "comptes.role.lecteur": "Reader (read-only)",
+  "shell.lectureSeule": "Read-only account: the actions that change something are hidden, and the server refuses them.",
   "conformite.title": "Compliance report",
   "conformite.publie": "Plan published on {$INTERPOLATION} · effective work; Sundays, public holidays and nights as opening span",
   "conformite.pdf": "Export as PDF",
