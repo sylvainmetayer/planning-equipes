@@ -133,7 +133,7 @@ export interface TrackedJob {
   feasibleAtSeconds?: number | null;
   /** Whether the search runs on the compute machine (ADR 0086). */
   remote?: boolean;
-  /** `PREPARING` while that machine comes up: no budget runs, so no end is estimated. */
+  /** `PREPARING` until the worker has taken the problem: no budget runs, so no end is estimated. */
   remoteStage?: RemoteStage | null;
   /**
    * When the time budget started, if seen later than {@link startedAtMs}: the

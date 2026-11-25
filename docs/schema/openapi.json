@@ -1946,24 +1946,8 @@
           "configured" : {
             "type" : "boolean"
           },
-          "onDemand" : {
-            "type" : "boolean"
-          },
           "remoteByDefault" : {
             "type" : "boolean"
-          },
-          "state" : {
-            "$ref" : "#/components/schemas/MachineState"
-          },
-          "stopsAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          },
-          "billedHoursThisMonth" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "lastStopError" : {
-            "type" : "string"
           }
         }
       },
@@ -6710,10 +6694,6 @@
           "description" : "As defined by 'partial-time' in RFC3339",
           "url" : "https://www.rfc-editor.org/rfc/rfc3339.html#section-5.6"
         }
-      },
-      "MachineState" : {
-        "type" : "string",
-        "enum" : [ "PERMANENT", "ABSENT", "PREPARING", "READY", "SOLVING" ]
       },
       "MailConfigView" : {
         "type" : "object",
@@ -16711,42 +16691,6 @@
           }
         },
         "summary" : "Get",
-        "tags" : [ "Compute Machine Resource" ]
-      }
-    },
-    "/api/machine-calcul/arreter" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ComputeMachine"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Stop",
-        "tags" : [ "Compute Machine Resource" ]
-      }
-    },
-    "/api/machine-calcul/preparer" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ComputeMachine"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Prepare",
         "tags" : [ "Compute Machine Resource" ]
       }
     },

@@ -49,6 +49,21 @@ class AuthentificationAdminTest {
                 .statusCode(401);
     }
 
+    /** No header asserts an identity since 4.0 (ADR 0102): what an access proxy sets opens nothing. */
+    @Test
+    void anIdentityHeaderFromAProxyOpensNothing() {
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Email", "admin")
+                .header("Remote-User", "admin")
+                .header("X-Forwarded-User", "admin")
+                .header("X-Forwarded-Email", "admin")
+                .header("Remote-Auth-Secret", "anything")
+                .when()
+                .get("/api/constraints")
+                .then()
+                .statusCode(401);
+    }
+
     /**
      * An external probe, a compose healthcheck or an orchestrator calls these
      * without a session; behind the admin wall they would report every

@@ -558,8 +558,8 @@ public class SolverJobResource {
             /** Whether the search runs on the instance's worker rather than here (ADR 0086). */
             boolean remote,
             /**
-             * Where a remote solve under way stands — {@code PREPARING} while
-             * its machine comes up, {@code SOLVING} once the worker has the
+             * Where a remote solve under way stands — {@code PREPARING} until
+             * the worker has taken the problem, {@code SOLVING} once the worker has the
              * problem; null for a solve run here, and once the job is over.
              */
             String remoteStage,

@@ -21,9 +21,9 @@ Pour un aperçu de ce qu'on attend d'un hébergeur, avant les détails, voir [h�
       essayé **avant** de laisser le secours fermé, `ADMIN_LOCAL_SECOURS` absent
       ou `false` en exploitation courante, `OIDC_CLIENT_SECRET` d'au moins 32
       caractères ;
-- [ ] `REMOTE_USER_ENABLED` laissé à `false` sauf déploiement derrière un
-      proxy d'accès, auquel cas `REMOTE_USER_SECRET` est obligatoire (le
-      démarrage échoue sans lui) ;
+- [ ] aucune variable `REMOTE_USER_*` dans votre environnement : le mode
+      en-tête de proxy est retiré en 4.0, le démarrage les signale et les
+      ignore ;
 - [ ] variables `LEGAL_*` renseignées : `/mentions-legales` est public, et une
       page de mentions légales vide vaut absence de mentions légales. Cinq
       d'entre elles (éditeur, hébergeur, contact, base légale, conservation)

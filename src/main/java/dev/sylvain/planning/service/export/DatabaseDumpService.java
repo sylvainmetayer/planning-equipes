@@ -244,10 +244,11 @@ public class DatabaseDumpService {
      *       already carries, every animateur's identity included, once per
      *       wipe and with no purge: the file an admin downloads must not hold
      *       it again.</li>
-     *   <li>{@code machine_calcul}, {@code resolution_distante} — the rented
-     *       machine of this instance and the solve it runs (ADR 0086): the
-     *       state of a machine, not the dataset. Restored elsewhere, another
-     *       instance would believe it owns a machine it never started.</li>
+     *   <li>{@code resolution_distante} — the solve this instance left on
+     *       its worker (ADR 0086): the state of a machine, not the dataset.
+     *       Restored elsewhere, another instance would follow a solve it
+     *       never sent. {@code machine_calcul}, no longer written since ADR
+     *       0103, stays listed until a migration drops it.</li>
      *   <li>{@code animateur_contact} — the emergency contact and legal
      *       representative of an animateur (ADR 0096): a third party's name and
      *       number, read by the RH right and the administrators only. A file

@@ -2,7 +2,7 @@
 
 Plusieurs personnes administrent une même instance, et l'historique doit dire laquelle a fait quoi. Vous saurez comment un compte, ses droits et son rôle se déduisent, ce que chacun des quatre rôles ouvre, et par quels tests le dépôt interdit qu'une nouvelle route s'ouvre à un rôle sans que quelqu'un l'ait décidé.
 
-Le côté exploitant (brancher un annuaire, créer des comptes locaux) est dans [Brancher votre annuaire](../installer/oidc.md) et [Choisir et protéger la connexion](../installer/securite-acces-administration.md#les-cinq-portes-de-ladministration). Le côté organisateur est dans [Gérer les comptes et les droits](../regles/comptes-et-droits.md). Les en-têtes, les codes de statut et les routes d'authentification sont décrits dans [les conventions de l'API](api-conventions.md).
+Le côté exploitant (brancher un annuaire, créer des comptes locaux) est dans [Brancher votre annuaire](../installer/oidc.md) et [Choisir et protéger la connexion](../installer/securite-acces-administration.md#les-quatre-portes-de-ladministration). Le côté organisateur est dans [Gérer les comptes et les droits](../regles/comptes-et-droits.md). Les en-têtes, les codes de statut et les routes d'authentification sont décrits dans [les conventions de l'API](api-conventions.md).
 
 ## Le compte et le droit
 
@@ -38,7 +38,6 @@ Trois conséquences à connaître :
 
 - Rattachement. Un compte sans sujet est réclamé par la première session dont l'adresse correspond et que le fournisseur déclare vérifiée (`email_verified`). Ensuite il appartient à ce sujet : la même adresse reprise par une autre personne chez le fournisseur n'ouvre rien, et un changement d'adresse n'enferme pas son titulaire. `OIDC_REQUIRE_EMAIL_VERIFIED=false` est l'exception des annuaires dont les adresses sont celles de l'organisation. ([ADR 0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md))
 - Le compte `admin` de la configuration n'est pas une ligne. C'est un compte implicite que l'historique nomme tant qu'aucun compte n'est lié à la session. Derrière un fournisseur, son formulaire est fermé par défaut (`409` sur `/j_security_check`), et `ADMIN_LOCAL_SECOURS=true` le rouvre. Les comptes locaux, eux, restent ouverts : ce qui est dangereux, c'est un mot de passe partagé et anonyme, pas un mot de passe qui appartient à une personne. Saisir `admin` sur le chemin des comptes locaux ouvre une session sans aucun rôle. ([ADR 0094](repo:docs/decisions/0094-comptes-locaux-par-mot-de-passe.md))
-- Le mode en-tête d'un proxy d'accès (`REMOTE_USER_*`) existe encore, éteint par défaut et déprécié. Un en-tête est une affirmation, pas une preuve : il refuse de démarrer sans secret partagé, et l'identité qu'il construit n'est pas une session de formulaire, donc la fermeture de la porte de secours ne l'atteint pas.
 
 Le prix de cette relecture à chaque requête (deux lectures brèves) est une désactivation qui prend effet tout de suite, sans cache.
 

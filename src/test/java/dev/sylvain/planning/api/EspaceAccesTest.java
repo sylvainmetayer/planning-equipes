@@ -122,6 +122,19 @@ class EspaceAccesTest {
                 .statusCode(200);
     }
 
+    /** The owner's own address in a proxy's header is no session (ADR 0102): only the code opens it. */
+    @Test
+    void theOwnersAddressInAProxyHeaderOpensNothing() {
+        given().header("X-Edition-Id", "E1")
+                .header("Remote-Email", EMAIL_ALICE)
+                .header("X-Forwarded-Email", EMAIL_ALICE)
+                .header("X-Forwarded-User", EMAIL_ALICE)
+                .when()
+                .get("/api/espace-animateur/" + tokenOf("ACCES-A"))
+                .then()
+                .statusCode(401);
+    }
+
     /** The session is bound to ONE animateur: it does not open a colleague's espace. */
     @Test
     void laSessionDUnAnimateurNOuvrePasLEspaceDUnAutre() {

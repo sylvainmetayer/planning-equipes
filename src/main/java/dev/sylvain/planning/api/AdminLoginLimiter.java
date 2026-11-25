@@ -271,7 +271,7 @@ public class AdminLoginLimiter {
 
     void onFailure(@Observes AuthenticationFailureEvent evenement) {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
-        // The other mechanisms (MCP key, remote-user header, session already
+        // The other mechanisms (MCP key, session already
         // open) raise the same event and have nothing to do with this lock.
         if (!(contexte instanceof RoutingContext routage)
                 || !isLoginPath(routage.normalizedPath())
