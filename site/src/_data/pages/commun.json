@@ -14,6 +14,82 @@
   "logoLabel": "Planning Équipes, accueil",
   "contactSujet": "Planning Équipes",
   "voirAussi": "À lire aussi",
+  "ariane": "Fil d'Ariane",
+  "externe": "(site externe)",
+  "abreviations": [
+    {
+      "sigle": "IA",
+      "sens": "intelligence artificielle"
+    },
+    {
+      "sigle": "PDF",
+      "sens": "Portable Document Format, format de document"
+    },
+    {
+      "sigle": "MP4",
+      "sens": "MPEG-4, format de vidéo"
+    },
+    {
+      "sigle": "QR",
+      "sens": "Quick Response, code-barres en carré"
+    },
+    {
+      "sigle": "TV",
+      "sens": "télévision"
+    },
+    {
+      "sigle": "PC",
+      "sens": "ordinateur personnel"
+    },
+    {
+      "sigle": "ISO",
+      "sens": "Organisation internationale de normalisation"
+    },
+    {
+      "sigle": "CSV",
+      "sens": "valeurs séparées par des virgules, format de tableur"
+    },
+    {
+      "sigle": "ICS",
+      "sens": "iCalendar, format de calendrier"
+    },
+    {
+      "sigle": "AGPL",
+      "sens": "GNU Affero General Public License, licence de logiciel libre"
+    },
+    {
+      "sigle": "MCP",
+      "sens": "Model Context Protocol, protocole qui relie un assistant d'IA à un logiciel"
+    },
+    {
+      "sigle": "SMTP",
+      "sens": "Simple Mail Transfer Protocol, protocole d'envoi des e-mails"
+    },
+    {
+      "sigle": "TLS",
+      "sens": "Transport Layer Security, chiffrement des connexions"
+    },
+    {
+      "sigle": "IP",
+      "sens": "Internet Protocol"
+    },
+    {
+      "sigle": "RGPD",
+      "sens": "règlement général sur la protection des données"
+    },
+    {
+      "sigle": "CNIL",
+      "sens": "Commission nationale de l'informatique et des libertés"
+    },
+    {
+      "sigle": "Go",
+      "sens": "gigaoctet"
+    },
+    {
+      "sigle": "Mo",
+      "sens": "mégaoctet"
+    }
+  ],
   "pied": {
     "licence": "logiciel libre sous licence AGPL-3.0.",
     "codeSource": "Code source",
@@ -21,6 +97,7 @@
     "editeur": "Édité par [Sylvain Métayer](https://www.sylvain.dev/). Textes, illustrations et code sous la même licence. Hébergé par Cloudflare Pages. Mesure d'audience Cloudflare Web Analytics, sans cookie.",
     "liens": "Informations sur le site",
     "mentions": "Mentions légales et confidentialité",
+    "plan": "Plan du site et recherche",
     "nouveautes": "Nouveautés",
     "probleme": "Signaler un problème",
     "ecrire": "Nous écrire"
@@ -59,6 +136,82 @@
     "logoLabel": "Planning Équipes, home",
     "contactSujet": "Planning Équipes",
     "voirAussi": "Keep reading",
+    "ariane": "Breadcrumb",
+    "externe": "(external site)",
+    "abreviations": [
+      {
+        "sigle": "AI",
+        "sens": "artificial intelligence"
+      },
+      {
+        "sigle": "PDF",
+        "sens": "Portable Document Format"
+      },
+      {
+        "sigle": "MP4",
+        "sens": "MPEG-4 video format"
+      },
+      {
+        "sigle": "QR",
+        "sens": "Quick Response, a square barcode"
+      },
+      {
+        "sigle": "TV",
+        "sens": "television"
+      },
+      {
+        "sigle": "PC",
+        "sens": "personal computer"
+      },
+      {
+        "sigle": "ISO",
+        "sens": "International Organization for Standardization"
+      },
+      {
+        "sigle": "CSV",
+        "sens": "comma-separated values, a spreadsheet format"
+      },
+      {
+        "sigle": "ICS",
+        "sens": "iCalendar, a calendar format"
+      },
+      {
+        "sigle": "AGPL",
+        "sens": "GNU Affero General Public License, a free software licence"
+      },
+      {
+        "sigle": "MCP",
+        "sens": "Model Context Protocol, which connects an AI assistant to software"
+      },
+      {
+        "sigle": "SMTP",
+        "sens": "Simple Mail Transfer Protocol, for sending e-mail"
+      },
+      {
+        "sigle": "TLS",
+        "sens": "Transport Layer Security, encrypted connections"
+      },
+      {
+        "sigle": "IP",
+        "sens": "Internet Protocol"
+      },
+      {
+        "sigle": "GB",
+        "sens": "gigabyte"
+      },
+      {
+        "sigle": "MB",
+        "sens": "megabyte"
+      },
+      {
+        "sigle": "GDPR",
+        "sens": "General Data Protection Regulation"
+      },
+      {
+        "sigle": "CNIL",
+        "sens": "Commission nationale de l'informatique et des libertés, the French data protection authority"
+      }
+    ],
     "pied": {
       "licence": "free software under the AGPL-3.0 licence.",
       "codeSource": "Source code",
@@ -66,6 +219,7 @@
       "editeur": "Published by [Sylvain Métayer](https://www.sylvain.dev/en/). Text, illustrations and code under the same licence. Hosted by Cloudflare Pages. Audience measured with Cloudflare Web Analytics, no cookie.",
       "liens": "About this site",
       "mentions": "Legal notice and privacy",
+      "plan": "Site map and search",
       "nouveautes": "Release notes",
       "probleme": "Report a problem",
       "ecrire": "Write to us"

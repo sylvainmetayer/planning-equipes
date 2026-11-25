@@ -7,6 +7,7 @@
   "formTitre": "Formulaire de contact",
   "lien": "Ouvrir le formulaire sur tally.so",
   "ecrire": "ou écrivez-nous à",
+  "delai": "Nous répondons sous une semaine.",
   "liens": [
     "faq",
     "hebergement",
@@ -21,6 +22,7 @@
     "formTitre": "Contact form",
     "lien": "Open the form on tally.so",
     "ecrire": "or write to us at",
+    "delai": "We reply within a week.",
     "liens": [
       "faq",
       "hebergement",

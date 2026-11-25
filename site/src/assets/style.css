@@ -235,6 +235,25 @@ html { scroll-padding-top: calc(var(--nav-h) + var(--space-lg)); }
 /* 404 */
 .lost { display: grid; gap: var(--space-lg); padding-block: var(--space-3xl); }
 
+/* Opquast 141: a visited link keeps its underline, in a quieter colour */
+a:visited { text-decoration-color: var(--color-muted); }
+/* Opquast 5 and 139: an abbreviation shows its meaning on hover, without the underline links keep for themselves */
+abbr[title] { text-decoration: none; cursor: help; }
+.crumbs ol { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-xs); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); color: var(--color-ink-2); }
+.crumbs li + li::before { content: "›"; margin-right: var(--space-xs); color: var(--color-muted); }
+.search { display: grid; gap: var(--space-md); padding-block: 0 var(--space-2xl); }
+.search form { display: grid; gap: var(--space-xs); max-width: 40rem; }
+.search label { font-weight: 600; }
+.search__row { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.search input { flex: 1 1 16rem; min-height: 48px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-ink-2); border-radius: var(--radius-pill); background: var(--color-card); color: var(--color-ink); font: inherit; }
+.search__out:empty { display: none; }
+.search__results { display: grid; gap: var(--space-md); margin: 0; padding: 0; list-style: none; }
+.search__results li { padding-top: var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); }
+.search__results a { font-size: var(--text-lg); font-weight: 600; }
+.search__results p { margin-top: var(--space-2xs); max-width: 60ch; color: var(--color-ink-2); }
+.sitemap { padding-block: 0 var(--section-gap-s); }
+.sitemap h2 { margin-bottom: var(--space-lg); font-size: var(--text-2xl); }
+.sitemap ul { display: grid; gap: var(--space-xs); padding-left: 1.2em; }
 @media (max-width: 64rem) {
   .top__in { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "mark acts" "nav nav"; row-gap: 0; min-height: 0; padding-block: var(--space-2xs); }
   .mark { grid-area: mark; } .top__acts { grid-area: acts; } .top__nav { grid-area: nav; }
@@ -274,4 +293,15 @@ html { scroll-padding-top: calc(var(--nav-h) + var(--space-lg)); }
   .btn, .theme, .popin__nav, a, .shot, .card__pic { transition: none; }
   .btn:active { transform: none; }
   .popin[open] .popin__fig { animation: none; }
+}
+/* Opquast 195 and 196: the page prints as its content, without the navigation blocks */
+@media print {
+  :root { --color-paper: #fff; --color-ink: #000; --color-ink-2: #222; --color-muted: #444; }
+  .skip, .top, .foot__links, .related, .popin, .acts, .film video, .search form, .crumbs { display: none !important; }
+  body { background: #fff; color: #000; }
+  .sec, .ask, .chapter { break-inside: avoid-page; padding-block: 1rem; }
+  /* a closed answer still prints */
+  details::details-content { content-visibility: visible; display: block; }
+  /* a link on paper: its address, written after it */
+  main a[href^="http"]::after { content: " (" attr(href) ")"; mask: none; -webkit-mask: none; background: none; width: auto; height: auto; font-size: 0.85em; }
 }

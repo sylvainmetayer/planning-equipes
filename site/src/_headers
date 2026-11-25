@@ -5,9 +5,10 @@
 # comes from elsewhere, and it reports to cloudflareinsights.com. connect-src also
 # allows the site itself: Lighthouse fetches robots.txt from the page and a CSP
 # without it fails the audit. The contact page frames its Tally form, the one
-# frame-src (a plain iframe, no Tally script).
+# frame-src (a plain iframe, no Tally script). form-action 'self': the search
+# form of the site map submits ?q= to its own page.
 /*
-  Content-Security-Policy: default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; media-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-src https://tally.so; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; media-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; base-uri 'none'; form-action 'self'; frame-src https://tally.so; frame-ancestors 'none'
   Strict-Transport-Security: max-age=63072000; includeSubDomains
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff

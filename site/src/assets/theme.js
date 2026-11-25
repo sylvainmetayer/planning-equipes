@@ -28,7 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!button) return;
   const sync = () => {
     button.dataset.state = state;
-    button.setAttribute('aria-label', button.dataset[`t${state[0].toUpperCase()}${state.slice(1)}`]);
+    const label = button.dataset[`t${state[0].toUpperCase()}${state.slice(1)}`];
+    button.setAttribute('aria-label', label);
+    button.title = label; // a visible legend for an icon-only button
   };
   sync();
   button.hidden = false;
