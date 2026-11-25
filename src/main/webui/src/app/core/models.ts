@@ -2923,6 +2923,14 @@ export interface Deconnexion {
 export interface StatutMcp {
   configuree: boolean;
   header: string;
+  /** `NONE`, `CONFIG` (the environment variable) or `GENERATED` (from the MCP page). */
+  origine: 'NONE' | 'CONFIG' | 'GENERATED';
+  /** When the generated key was made. */
+  genereeLe?: string | null;
+  /** When the key being retired stops working, while its overlap lasts. */
+  ancienneExpireLe?: string | null;
+  /** Whether a sign-in provider lets an MCP client connect by OAuth. */
+  oauth: boolean;
 }
 
 /** The MCP API key, returned only in exchange for the admin password. Never stored. */
@@ -2932,6 +2940,12 @@ export interface CleMcp {
   pangolinAccessTokenId: string | null;
   /** Pangolin access-proxy token, only when PLANNING_MCP_PANGOLIN_ACCESS_TOKEN is set server-side. */
   pangolinAccessToken: string | null;
+}
+
+/** A key generated from the MCP page: shown once, only its fingerprint is kept. */
+export interface CleGeneree extends CleMcp {
+  /** When the previous key stops working, `null` when no key was in force. */
+  ancienneExpireLe: string | null;
 }
 
 /**

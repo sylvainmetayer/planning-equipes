@@ -231,6 +231,9 @@ public class DatabaseDumpService {
      *       (encrypted with a key the receiving instance does not hold) and the
      *       state of a machine, not the dataset: a restore elsewhere would make
      *       that instance post into somebody else's channels.</li>
+     *   <li>{@code mcp_cle} — the fingerprints of the MCP keys generated on
+     *       this instance (ADR 0097): a credential of this machine, which a
+     *       restore elsewhere would hand to whoever held the old dump.</li>
      *   <li>{@code journal_connexion} — the admin logins of this instance
      *       (ADR 0076), out for both reasons at once: like
      *       {@code journal_action}, an audit trail an import would erase,
@@ -273,6 +276,7 @@ public class DatabaseDumpService {
             "meteo_etat",
             "webhook",
             "webhook_livraison",
+            "mcp_cle",
             "journal_connexion",
             "sauvegarde_avant_vidage",
             "machine_calcul",

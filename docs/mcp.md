@@ -9,11 +9,14 @@ Périmètre retenu : tous les endpoints de l'organisation peuvent être exposés
 **la seule restriction est la confidentialité des données animateur**. Ce qui
 reste dehors est énuméré en fin de document, avec sa raison.
 
-## Authentification : clé API partagée
+## Authentification : clé API partagée, ou OAuth
 
-L'application n'a pas de modèle utilisateur, donc pas d'OAuth2 — il supposerait
-un consentement qui n'existe pas ici. La clé se présente dans un en-tête
-configurable (`X-MCP-Api-Key` par défaut) ou en `Authorization: Bearer`.
+Deux portes, au choix du client ([ADR 0097](decisions/0097-mcp-par-oauth-et-rotation-de-la-cle.md)).
+La **clé** se présente dans un en-tête configurable (`X-MCP-Api-Key` par défaut)
+ou en `Authorization: Bearer` ; elle reste pour les clients qui ne savent pas
+faire OAuth et derrière un proxy d'accès qui consomme `Authorization`.
+**OAuth** s'ajoute quand le fournisseur d'identité est configuré
+(`OIDC_ENABLED`, voir [`oidc.md`](oidc.md)) : voir la section suivante.
 
 ![Un appel d'outil MCP, de la clé au service](diagrammes/mcp.svg)
 
@@ -38,6 +41,42 @@ atteignait `/mcp` sans clé. Il reçoit désormais `403`.
 > filtre *ne voit pas* ces routes ; c'est faux, et l'arbre le contredisait
 > déjà — les en-têtes de `SecurityHeadersFilter` sont sur toutes les réponses
 > `/mcp`. Le plafond de débit ci-dessous est précisément un filtre.
+
+### OAuth (fournisseur d'identité configuré)
+
+`/mcp` est alors une ressource protégée au sens de la spécification
+d'autorisation MCP : le 401 porte `WWW-Authenticate: Bearer resource_metadata=…`
+et `/.well-known/oauth-protected-resource` nomme le fournisseur, de quoi un
+client découvre tout seul où ouvrir la connexion.
+
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `OIDC_MCP_AUDIENCE` | Audience que le jeton doit porter. À déclarer chez le fournisseur (mappeur d'audience Keycloak, identifiant de ressource ADFS) | `planning-mcp` |
+
+- Le jeton ne vaut que pour **un compte actif** de l'application avec un droit
+  en vigueur ; ses rôles propres ne comptent pas. Compte inconnu ou désactivé :
+  `403`.
+- Un **administrateur** a les mêmes outils que la clé. Un **organisateur** ne
+  désigne que les éditions de ses droits (une autre est refusée comme
+  inconnue, `lister_editions` ne la montre pas) et n'a pas les outils d'instance :
+  création, renommage, duplication, activation, suppression et comparaison
+  d'éditions, sauvegardes.
+- Le journal des actions garde l'assistant comme auteur, comme avec la clé.
+
+### Renouveler la clé sans toucher au serveur
+
+Écran MCP › **Générer une nouvelle clé** (mot de passe administrateur
+re-saisi). La clé n'est montrée **qu'une fois**, seule son empreinte est
+conservée. On choisit combien de temps l'ancienne reste valable (aucun, 15
+minutes, 1 heure, 24 heures ; 7 jours au plus par l'API) : « aucun » la
+révoque tout de suite. L'écran affiche la date de fin tant qu'elle court, et le
+journal garde l'action (`CLE_MCP_ROTEE`), jamais la clé.
+
+**Bascule depuis la variable.** `PLANNING_MCP_API_KEY` marche tant qu'aucune clé
+n'a été générée. À la première génération elle devient « l'ancienne » (donc
+valable pendant le recouvrement), puis ne rouvre plus rien, même si la variable
+est conservée ou changée : on peut la retirer du déploiement. La clé générée
+n'est plus révélable (`409`) : en cas de perte, on en génère une autre.
 
 ## Limitation de débit
 

@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigOidc;
 import dev.sylvain.planning.config.ConfigSecours;
+import dev.sylvain.planning.mcp.McpApiKeyIdentityProvider;
+import dev.sylvain.planning.mcp.McpTenantResolver;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteAccesService;
 import dev.sylvain.planning.service.compte.CompteService;
@@ -14,6 +16,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -98,7 +101,13 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
             Compte compte = comptes.identify(token.getIssuer() + "|" + token.getSubject(), email, trusted)
                     .filter(CompteService::isActive)
                     .orElse(null);
-            return withRoles(identity, compte == null ? Set.of() : CompteService.roles(compte, Instant.now()), compte);
+            Set<String> roles = compte == null ? Set.of() : new HashSet<>(CompteService.roles(compte, Instant.now()));
+            // The MCP transport is opened by its own role (ADR 0097), only to a token the
+            // bearer-only tenant validated, for an account holding a right.
+            if (!roles.isEmpty() && McpTenantResolver.TENANT.equals(identity.getAttribute("tenant-id"))) {
+                roles.add(McpApiKeyIdentityProvider.ROLE_MCP);
+            }
+            return withRoles(identity, roles, compte);
         });
     }
 

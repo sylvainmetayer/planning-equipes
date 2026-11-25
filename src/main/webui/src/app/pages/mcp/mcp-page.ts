@@ -8,6 +8,7 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -46,6 +47,7 @@ import { copyToClipboard } from '../../core/clipboard';
 @Component({
   selector: 'app-mcp-page',
   imports: [
+    DatePipe,
     NewWindowLink,
     FormsModule,
     MatButtonModule,
@@ -85,6 +87,12 @@ export class McpPage implements OnInit, OnDestroy {
   protected readonly prompts = signal<PromptMcp[]>([]);
 
   protected readonly formulaireOuvert = signal(false);
+
+  /** What the open form does: show the configured key, or generate a new one. */
+  protected readonly mode = signal<'reveler' | 'renouveler'>('reveler');
+
+  /** How long the old key keeps working after a renewal, in minutes (0: it stops at once). */
+  protected readonly recouvrement = signal(15);
   protected readonly motDePasse = signal('');
   protected readonly enCours = signal(false);
   protected readonly erreur = signal('');
@@ -157,7 +165,8 @@ export class McpPage implements OnInit, OnDestroy {
     return JSON.stringify(config, null, 2);
   });
 
-  protected ouvrirFormulaire(): void {
+  protected ouvrirFormulaire(mode: 'reveler' | 'renouveler' = 'reveler'): void {
+    this.mode.set(mode);
     this.formulaireOuvert.set(true);
     this.erreur.set('');
     this.motDePasse.set('');
@@ -177,7 +186,13 @@ export class McpPage implements OnInit, OnDestroy {
     this.enCours.set(true);
     this.erreur.set('');
     try {
-      const reponse = await this.mcpApi.regenerateKey(this.motDePasse());
+      const renouvellement = this.mode() === 'renouveler';
+      const reponse = renouvellement
+        ? await this.mcpApi.rotateKey(this.motDePasse(), this.recouvrement())
+        : await this.mcpApi.regenerateKey(this.motDePasse());
+      if (renouvellement) {
+        await this.chargerStatut();
+      }
       this.cle.set(reponse.cle);
       this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
       this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');

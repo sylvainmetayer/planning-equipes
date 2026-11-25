@@ -176,7 +176,7 @@ public class McpRateLimiter {
                 return;
             }
         }
-        if (McpApiKeyAuthenticationMechanism.presentedKey(context, config.apiKeyHeader()) != null) {
+        if (McpApiKeyAuthenticationMechanism.presentedKeyAttempt(context, config.apiKeyHeader()) != null) {
             long wait = wrongKeys.reserve(address, maxFailures, config.lockout().duration());
             if (wait > 0) {
                 refuse(context, wait, "Trop de clés refusées : réessayez dans " + minutes(wait) + " minute(s).");

@@ -98,7 +98,8 @@ créer, est refusée (400). L'inventaire est `InstanceRoutesStructuralTest` (res
 `RoutesOuvertesStructuralTest` (route par route, voir `securite.md`) ; une
 nouvelle ressource ou route non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
 (ADR [0095](decisions/0095-le-responsable-de-stand-lit-son-stand.md)). Le `/mcp`
-garde sa clé d'API, sans OAuth. Les comptes locaux avec mot de passe, ouverts
+accepte aussi un jeton OAuth du fournisseur, sous les mêmes droits (voir
+[`mcp.md`](mcp.md)) ; sa clé d'API reste. Les comptes locaux avec mot de passe, ouverts
 même derrière un fournisseur, sont décrits dans
 [`exploitation.md`](exploitation.md#les-comptes-locaux-mot-de-passe) et
 [`securite.md`](securite.md#qui-ouvre-ladministration).
