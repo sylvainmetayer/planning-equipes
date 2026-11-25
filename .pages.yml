@@ -833,7 +833,7 @@ content:
           - { name: recherche, label: "Libellé de la recherche", type: string, required: true }
           - { name: chercher, label: "Bouton de recherche", type: string, required: true }
           - { name: toutVoir, label: "Lien vers tous les guides d'une partie ({n} = leur nombre)", type: string, required: true }
-              - { name: autresParties, label: "Introduction des autres parties (menu latéral)", type: string, required: true }
+          - { name: autresParties, label: "Introduction des autres parties (menu latéral)", type: string, required: true }
           - { name: pagerLabel, label: "Libellé de la navigation précédent / suivant", type: string, required: true }
           - { name: precedent, label: "Devant le guide précédent", type: string, required: true }
           - { name: suivant, label: "Devant le guide suivant", type: string, required: true }
