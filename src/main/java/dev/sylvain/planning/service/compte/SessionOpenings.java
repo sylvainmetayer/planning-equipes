@@ -19,10 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * no creation time, so "how long ago did this person sign in" cannot be read
  * from it. The login filter notes the value of the cookie it just set, here, at
  * that instant; the recent sign-in control looks the request's cookie up. Only
- * the SHA-256 of the cookie is kept, in memory, for a quarter of an hour: a
- * cookie renewed later has another value and is simply not found, which is
- * "not recent" — and it is older than the window anyway, since Quarkus renews
- * at half the session's life. A restart forgets everything, which asks
+ * the SHA-256 of the cookie is kept, in memory, for a quarter of an hour.
+ * Quarkus reissues the cookie once it is a minute old: the login filter notes
+ * the new value with the same instant ({@link #renew}), so a session keeps its
+ * opening instant. A restart forgets everything, which asks
  * everybody to sign in again before a sensitive gesture, and nothing more.</p>
  */
 @ApplicationScoped
@@ -43,12 +43,26 @@ public class SessionOpenings {
             Instant limit = Instant.now().minus(RETENTION);
             openedAt.values().removeIf(opened -> opened.isBefore(limit));
         }
-        if (openedAt.size() < MAX_ENTRIES) {
-            openedAt.put(fingerprint(cookieValue), at);
+        // Still full (logins in a burst, from accounts anyone can hold): the oldest goes, so
+        // that a burst cannot keep the next administrator's login from being noted.
+        while (openedAt.size() >= MAX_ENTRIES) {
+            openedAt.entrySet().stream()
+                    .min(Map.Entry.comparingByValue())
+                    .ifPresent(oldest -> openedAt.remove(oldest.getKey(), oldest.getValue()));
         }
+        openedAt.put(fingerprint(cookieValue), at);
     }
 
-    /** The instant that session opened, empty when unknown (renewed, forgotten, never seen). */
+    /**
+     * The session whose cookie was {@code previous} now travels as {@code renewed}:
+     * it keeps its opening. The previous value stays until it ages out — two
+     * requests sent in parallel with it can each be answered a renewed cookie.
+     */
+    public void renew(String previous, String renewed) {
+        openedAt(previous).ifPresent(at -> record(renewed, at));
+    }
+
+    /** The instant that session opened, empty when unknown (forgotten, never seen). */
     public Optional<Instant> openedAt(String cookieValue) {
         return cookieValue == null || cookieValue.isEmpty()
                 ? Optional.empty()

@@ -11,6 +11,7 @@ import dev.sylvain.planning.service.journal.LoginJournalService;
 import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
@@ -208,6 +209,7 @@ public class AdminLoginLimiter {
 
     private void apply(RoutingContext contexte) {
         if (!isLoginPath(contexte.normalizedPath())) {
+            carryOpeningOver(contexte);
             contexte.next();
             return;
         }
@@ -355,6 +357,25 @@ public class AdminLoginLimiter {
      */
     private boolean successfulLogin(RoutingContext contexte) {
         return contexte.user() != null || sessionCookieSet(contexte);
+    }
+
+    /**
+     * The form cookie is reissued once it is a minute old
+     * ({@code quarkus.http.auth.form.new-cookie-interval}): the reissued value
+     * keeps the instant the session opened, or every session would stop being
+     * recent a minute after its login (ADR 0097).
+     */
+    private void carryOpeningOver(RoutingContext contexte) {
+        Cookie cookie = contexte.request().getCookie(nomCookieSession);
+        if (cookie == null || openings.openedAt(cookie.getValue()).isEmpty()) {
+            return;
+        }
+        contexte.addEndHandler(issue -> {
+            String renewed = sessionCookieValue(contexte);
+            if (renewed != null && !renewed.equals(cookie.getValue())) {
+                openings.renew(cookie.getValue(), renewed);
+            }
+        });
     }
 
     /** Whether the response opens a session: a session cookie with a value. */

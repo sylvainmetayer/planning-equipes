@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 import dev.sylvain.planning.service.compte.SessionOpenings;
@@ -10,6 +11,7 @@ import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,9 @@ class McpKeyFormSignInTest {
         public Map<String, String> getConfigOverrides() {
             return Map.of(
                     "quarkus.http.auth.permission.admin-api.policy", "role-gestion",
-                    "quarkus.http.auth.permission.api-docs.policy", "role-admin");
+                    "quarkus.http.auth.permission.api-docs.policy", "role-admin",
+                    // Reissued after a second instead of a minute: the renewal is what is under test.
+                    "quarkus.http.auth.form.new-cookie-interval", "PT1S");
         }
     }
 
@@ -59,6 +63,23 @@ class McpKeyFormSignInTest {
                 .then()
                 .statusCode(200)
                 .body("cle", equalTo("test-mcp-key"));
+    }
+
+    @Test
+    void aReissuedCookieKeepsTheInstantItsSessionOpened() throws Exception {
+        String session = login().cookie("planning-session");
+        Instant opened = openings.openedAt(session).orElseThrow();
+        Thread.sleep(1_500);
+
+        String renewed = given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", session)
+                .get("/api/auth/me")
+                .cookie("planning-session");
+
+        assertThat(renewed).isNotBlank().isNotEqualTo(session);
+        await().atMost(Duration.ofSeconds(5))
+                .until(() -> openings.openedAt(renewed).isPresent());
+        assertThat(openings.openedAt(renewed)).contains(opened);
     }
 
     @Test
