@@ -433,10 +433,15 @@ complètes. Quatre points sont connus et se consignent :
   édition passée ou à venir), le plan **publié**. L'affichette imprimable suit
   exactement le même réglage ; une fois imprimée elle sort du périmètre de
   l'application, comme tout papier. Les réglages (`reglage_noms_responsable`,
-  `reglage_noms_stand`) ne portent aucune donnée personnelle ; le périmètre
-  d'un droit (`habilitation_stand`) suit `habilitation` — hors édition, hors
-  export SQL. Un nom n'est jamais rendu à un responsable pour un stand
-  hors de son droit, y compris celui d'une personne qui y travaille aussi
+  `reglage_noms_stand`) ne portent aucune donnée personnelle ; ils reviennent
+  au défaut sûr (horaires seuls) au vidage de l'édition et dans une édition
+  dupliquée. Le périmètre d'un droit (`habilitation_stand`) suit `habilitation` —
+  hors édition, hors export SQL ; le vidage ou la suppression de l'édition
+  retire les droits de ses responsables, et un stand supprimé ne laisse qu'un
+  droit qui n'ouvre plus rien. Le plan lu est la **publication entière** en vigueur : une publication
+  différée (ou partielle) ne se découpe pas par stand, le responsable voit donc
+  ce que l'équipe a reçu, pas un état intermédiaire du plan de travail. Un nom
+  n'est jamais rendu à un responsable pour un stand hors de son droit, y compris celui d'une personne qui y travaille aussi
   par ailleurs. À mentionner au registre : une catégorie de destinataires de plus,
   internes à l'organisation, désignés par l'organisateur.
 - **les comptes des organisateurs (`compte`, `habilitation`)** gardent une

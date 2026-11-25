@@ -37,6 +37,10 @@ describe('ComptesCard', () => {
     resetPassword: vi.fn(),
   };
   const notify = vi.fn();
+  const referenceData = {
+    stands: vi.fn(() => [{ id: 'S1', nom: 'Buvette' }]),
+    reload: vi.fn(() => Promise.resolve()),
+  };
 
   beforeEach(() => {
     Object.values(api).forEach((f) => f.mockReset());
@@ -47,6 +51,8 @@ describe('ComptesCard', () => {
     api.invite.mockResolvedValue(undefined);
     api.resetPassword.mockResolvedValue(undefined);
     notify.mockReset();
+    referenceData.reload.mockClear();
+    referenceData.stands.mockReturnValue([{ id: 'S1', nom: 'Buvette' }]);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -61,7 +67,7 @@ describe('ComptesCard', () => {
             refresh: vi.fn(() => Promise.resolve()),
           },
         },
-        { provide: ReferenceDataStore, useValue: { stands: () => [{ id: 'S1', nom: 'Buvette' }] } },
+        { provide: ReferenceDataStore, useValue: referenceData },
         { provide: EditionStore, useValue: { editions: () => [], courant: () => ({ id: 'E7' }) } },
       ],
     });
@@ -148,6 +154,12 @@ describe('ComptesCard', () => {
       editionId: 'E7',
       expireLe: null,
     });
+  });
+
+  it('loads the stands itself when the page was opened cold', async () => {
+    referenceData.stands.mockReturnValue([]);
+    await rendre();
+    expect(referenceData.reload).toHaveBeenCalledWith(['stands']);
   });
 
   it('grants a responsable de stand right on the current edition, with the chosen stands', async () => {

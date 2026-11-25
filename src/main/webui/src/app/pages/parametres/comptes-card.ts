@@ -86,6 +86,10 @@ export class ComptesCard implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    // A cold start of the page holds no stand yet: the selector of a responsable's right needs them.
+    if (this.stands().length === 0) {
+      void this.referenceData.reload(['stands']);
+    }
   }
 
   protected roleLabel(role: RoleHabilitation): string {
@@ -93,7 +97,7 @@ export class ComptesCard implements OnInit {
   }
 
   protected rightLabel(habilitation: Habilitation): string {
-    return rightLabel(habilitation, this.editions());
+    return rightLabel(habilitation, this.editions(), this.stands());
   }
 
   protected readonly currentEdition = computed(() => this.editionStore.courant()?.nom ?? '');
