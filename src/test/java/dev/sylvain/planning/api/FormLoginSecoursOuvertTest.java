@@ -41,9 +41,9 @@ class FormLoginSecoursOuvertTest {
                 .statusCode(302);
         given().get("/api/config").then().body("authSecours", equalTo(true));
         // The journal write leaves the event loop for a worker.
-        await().atMost(Duration.ofSeconds(5)).until(() -> journal.page(null, 50).size() >= 2);
-        assertThat(journal.page(null, 50))
-                .extracting(e -> e.evenement())
-                .contains(Evenement.SECOURS_OUVERT, Evenement.CONNEXION_SECOURS);
+        await().atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> assertThat(journal.page(null, 50))
+                        .extracting(e -> e.evenement())
+                        .contains(Evenement.SECOURS_OUVERT, Evenement.CONNEXION_SECOURS));
     }
 }
