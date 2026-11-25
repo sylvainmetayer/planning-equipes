@@ -105,6 +105,37 @@ class RoutesLecteurStructuralTest {
         }
     }
 
+    /**
+     * The only non-{@code GET} routes open to a lecteur, named here and not only in the inventory: opening a
+     * sixth one is a change of ADR 0099, not a line added to a text file.
+     */
+    @Test
+    void theOpenRendersAreTheFiveOfTheAdr() throws Exception {
+        Set<String> renders = new TreeSet<>();
+        for (Route r : candidates()) {
+            if (!r.verb().equals("GET") && LecteurFilter.opens(r.verb(), r.method())) {
+                renders.add(r.type().getSimpleName() + "#" + r.method().getName());
+            }
+        }
+        assertThat(renders)
+                .containsExactlyInAnyOrder(
+                        "PlanningExportResource#exportAllPdfZip",
+                        "PlanningExportResource#exportAnimateurPdf",
+                        "PlanningExportResource#exportAllBundleZip",
+                        "PlanningExportResource#exportAllIcsZip",
+                        "PlanningExportResource#exportAnimateurIcs");
+    }
+
+    /** The filter steps aside only for the resources behind another door; never for an organiser's one. */
+    @Test
+    void noOrganiserResourceEscapesTheFilter() {
+        for (Class<?> door : LecteurFilter.OTHER_DOORS) {
+            assertThat(InstanceRoutesStructuralTest.PAR_EDITION)
+                    .as(door.getSimpleName() + " is an organiser's resource: the lecteur filter must judge it")
+                    .doesNotContain(door.getSimpleName());
+        }
+    }
+
     @Test
     void aRawDataExportIsRefused() throws Exception {
         for (Route r : candidates()) {

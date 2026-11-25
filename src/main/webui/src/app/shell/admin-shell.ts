@@ -136,7 +136,6 @@ export class AdminShell {
   private readonly draftStorages = [inject(LOCAL_DRAFT_STORAGE), inject(SESSION_DRAFT_STORAGE)];
   private readonly sessionEnd = inject(SESSION_END_BUS);
 
-  /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   /** A lecteur: the actions that change something are hidden (global rule of `styles/pages.css`). */
   protected readonly lectureSeule = this.session.lectureSeule;
 
@@ -145,6 +144,7 @@ export class AdminShell {
     () => this.session.statut()?.roles.includes(ROLE_RESPONSABLE) ?? false,
   );
 
+  /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   protected readonly hasUnreadAlert = computed(() =>
     this.notifications
       .notifications()

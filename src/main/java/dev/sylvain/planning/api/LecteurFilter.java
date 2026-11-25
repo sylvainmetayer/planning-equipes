@@ -38,6 +38,20 @@ public class LecteurFilter implements ContainerRequestFilter {
 
     private static final Set<String> READS = Set.of(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.OPTIONS);
 
+    /**
+     * The resources behind another door than the organiser's ({@code role-gestion}): the session's own
+     * routes (logout, password), the token-opened ones, and the RH and responsable prefixes, whose rights
+     * a lecteur right neither gives nor takes away. Refusing a lecteur there would lock it out of its own
+     * logout, of an espace it is the animateur of, and of the contacts its RH right writes.
+     */
+    static final Set<Class<?>> OTHER_DOORS = Set.of(
+            AuthResource.class,
+            EspaceAnimateurResource.class,
+            AbonnementIcsResource.class,
+            MuralResource.class,
+            RhResource.class,
+            ResponsableResource.class);
+
     static final String MESSAGE = "Ce compte lit cette édition sans pouvoir la modifier ni lancer de calcul.";
 
     @Context
@@ -52,7 +66,10 @@ public class LecteurFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        if (identity.isAnonymous() || identity.hasRole("admin") || resource.getResourceMethod() == null) {
+        if (identity.isAnonymous()
+                || identity.hasRole("admin")
+                || resource.getResourceMethod() == null
+                || OTHER_DOORS.contains(resource.getResourceClass())) {
             return;
         }
         Compte compte = identity.getAttribute(Compte.IDENTITY_ATTRIBUTE);

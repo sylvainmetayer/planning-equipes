@@ -187,6 +187,30 @@ class LecteurCanariTest {
         }
     }
 
+    /** The other doors keep their own rules: a lecteur logs out, and its RH right still writes the contacts. */
+    @Test
+    void theLecteurRefusalStaysOnTheOrganisersDoor() {
+        String email = "lecteur-rh-" + UUID.randomUUID() + "@example.org";
+        Compte compte = comptes.create(email, null);
+        comptes.grant(compte.id(), RoleHabilitation.LECTEUR, "E1", null);
+        comptes.grant(compte.id(), RoleHabilitation.RH, "E1", null);
+        String bearer = bearerOf(compte, email);
+
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .header("Authorization", bearer)
+                        .contentType("application/json")
+                        .body("{}")
+                        .put("/api/rh/editions/E1/contacts/inconnu")
+                        .statusCode())
+                .as("contacts written by the RH right")
+                .isNotEqualTo(403);
+        assertThat(given().header("Authorization", bearer)
+                        .post("/api/auth/logout")
+                        .statusCode())
+                .as("logout")
+                .isLessThan(300);
+    }
+
     /** A lecteur right names an edition: « all of them » is refused when granted. */
     @Test
     void aLecteurRightNamesAnEdition() {

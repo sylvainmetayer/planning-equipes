@@ -23,7 +23,12 @@ dans l'interface n'aurait rien garanti, puisque l'API reste appelable.
 2. **Le serveur fait foi** (`LecteurFilter`). Pour un compte qui porte un droit
    de lecteur, toute requête hors `GET`/`HEAD`/`OPTIONS` répond `403`,
    **y compris un `POST` qui ne fait que calculer** : un lecteur ne lance ni
-   solve ni calcul. Le front masque les actions principales, par confort.
+   solve ni calcul. Le refus tient à la porte de l'organisateur : les routes
+   derrière une autre porte — la session elle-même (déconnexion, mot de
+   passe), l'espace animateur, l'abonnement ICS, l'affichage mural, les
+   préfixes RH et responsable — gardent leurs propres règles, sans quoi un
+   lecteur ne pourrait ni se déconnecter ni écrire ce que son droit RH lui
+   permet. Le front masque les actions principales, par confort.
 3. **Le cumul se décide par édition.** Voir une édition, c'est un droit
    d'organisateur *ou* de lecteur ; y écrire, c'est un droit d'organisateur
    seul (`CompteService.writeScope`). Un compte lecteur de A et organisateur de
