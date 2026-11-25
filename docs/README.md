@@ -8,17 +8,17 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | --- | --- |
 | [`architecture.md`](architecture.md) | Stack, arborescence, découpage backend / frontend, base de données, conteneurisation |
 | [`domaine.md`](domaine.md) | Modèle Timefold (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, `PlanningEvenement`) et mapping vers les contraintes |
-| [`contraintes.md`](contraintes.md) | Catalogue des contraintes implémentées (dur / medium / soft) et règles d'ajout |
-| [`api.md`](api.md) | Endpoints REST exposés par le service Quarkus |
+| [`contraintes.md`](contraintes.md) | Pourquoi chaque règle existe et ce qu'elle coûte (la liste elle-même est `ConstraintCatalog`, servie par `GET /api/constraints`) |
+| [`api.md`](api.md) | API REST : ce que le contrat OpenAPI ne peut pas dire (invariants transverses, arbitrages métier, pièges) ; la liste des endpoints est le contrat publié, généré dans [`schema/`](schema/) |
 | [`mcp.md`](mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
-| [`import-export.md`](import-export.md) | Formats d'import / export : dump SQL, PDF, ICS, schéma de validation des scénarios |
-| [`memoire-du-projet.md`](memoire-du-projet.md) | **Ce que l'historique portait** : les mesures qui ont tranché un réglage du solveur, les pistes abandonnées, et l'incident précis derrière chaque garde-fou. Complément des décisions, à lire quand on se demande « pourquoi est-ce écrit comme ça ? »
+| [`import-export.md`](import-export.md) | Imports / exports : scénario YAML (et son schéma), import CSV des animateurs et des référentiels, exports CSV, PDF et ICS ; le dump SQL n'est plus qu'un outillage de test |
+| [`memoire-du-projet.md`](memoire-du-projet.md) | **Ce que l'historique portait** : les mesures qui ont tranché un réglage du solveur, les pistes abandonnées, et l'incident précis derrière chaque garde-fou. Complément des décisions, à lire quand on se demande « pourquoi est-ce écrit comme ça ? » |
 | [`decisions/`](decisions/README.md) | **Décisions d'architecture** : ce qui a été choisi, contre quelles alternatives, et ce que ça engage. Commence par le cloisonnement par édition (modèle, en-tête `X-Edition-Id`, duplication, plan de migration) |
 | [`diagrammes/`](diagrammes/) | **Diagrammes PlantUML** (séquences, états, modèle) : sources et SVG générés, chacun montré par le document qui possède son sujet. Régénération et contrôles dans [`developpement.md`](developpement.md#diagrammes) |
 | [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
 | [`exploitation.md`](exploitation.md) | **Exploiter une instance chez un client** : prérequis, variables d'environnement, délivrabilité des e-mails, sauvegarde et restauration, conservation des données, surveillance |
 | [`versioning.md`](versioning.md) | **Versions et releases** : ce que promettent MAJOR/MINOR/PATCH, comment une release se fabrique (un formulaire GitHub, des notes générées, une image Docker), et la procédure de patch d'une version antérieure |
-| [`oidc.md`](oidc.md) | **Connexion par un fournisseur d'identité OIDC** : variables, rattachement d'un compte à une personne, compte de secours |
+| [`oidc.md`](oidc.md) | **Connexion par un fournisseur d'identité OIDC** : variables, rattachement d'un compte à une personne, compte de secours ; les comptes locaux (mot de passe) sont dans [`exploitation.md`](exploitation.md#les-comptes-locaux-mot-de-passe) |
 | [`securite.md`](securite.md) | Durcissement pour une exposition sur Internet : en-têtes de sécurité navigateur, plafonds de taille des requêtes, limitation de débit, déploiement de production |
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
 | [`licences-tierces.md`](licences-tierces.md) | **Inventaire généré des licences tierces** : ce que l'image redistribue (dépendances Java, paquets npm) et sous quelle licence. Régénéré par `./mvnw license:add-third-party` puis `npm run licences` |
