@@ -31,8 +31,11 @@ public class ReliableAuthorSince {
 
     private final JournalActionRepository repository;
 
-    /** Flyway's history only moves at boot; read once, on first use. */
-    private volatile Optional<Instant> installed;
+    private static final long UNREAD = Long.MIN_VALUE;
+    private static final long NOT_APPLIED = Long.MAX_VALUE;
+
+    /** Flyway's history only moves at boot; read once, on first use (epoch millis, the precision Flyway keeps). */
+    private volatile long installedMillis = UNREAD;
 
     @Inject
     public ReliableAuthorSince(Flyway flyway, JournalActionRepository repository) {
@@ -51,16 +54,18 @@ public class ReliableAuthorSince {
     }
 
     Optional<Instant> installed() {
-        Optional<Instant> known = installed;
-        if (known == null) {
+        long known = installedMillis;
+        if (known == UNREAD) {
+            // Two first calls may both read: the answer is the same.
             known = Arrays.stream(flyway.info().applied())
                     .filter(m -> m.getVersion() != null
                             && m.getVersion().isAtLeast(ACCOUNTS_MIGRATION.getVersion())
                             && m.getInstalledOn() != null)
-                    .map(m -> m.getInstalledOn().toInstant())
-                    .findFirst();
-            installed = known;
+                    .mapToLong(m -> m.getInstalledOn().getTime())
+                    .findFirst()
+                    .orElse(NOT_APPLIED);
+            installedMillis = known;
         }
-        return known;
+        return known == NOT_APPLIED ? Optional.empty() : Optional.of(Instant.ofEpochMilli(known));
     }
 }
