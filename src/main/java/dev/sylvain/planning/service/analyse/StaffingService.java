@@ -80,7 +80,10 @@ public class StaffingService {
                 !referenceDataService.getContraintesDesactivees().contains("plafondCreneauxParTypologie"),
                 referenceDataService.getContraintesDesactivees().contains("reposQuotidienMinimal")
                         ? 0
-                        : parametres.getReposQuotidienMinimalMinutes());
+                        : parametres.getReposQuotidienMinimalMinutes(),
+                referenceDataService.getContraintesDesactivees().contains("travailContinuMaxMajeur")
+                        ? 0
+                        : parametres.getDureeVacationMaxMinutes());
     }
 
     /**

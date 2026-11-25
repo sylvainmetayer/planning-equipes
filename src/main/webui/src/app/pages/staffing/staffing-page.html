@@ -99,6 +99,17 @@
                i18n="@@staffing.lien.reposQuotidien">Repos quotidien</a>
           </p>
         }
+        @if (estBorneRetenue('TRAVAIL_CONTINU')) {
+          <p class="staffing-binding">
+            <mat-icon inline aria-hidden="true">timer</mat-icon>
+            <strong i18n="@@staffing.continuousBound.label">Travail continu : {{ resume.minimumTotal }}</strong>
+            <ng-container i18n="@@staffing.continuousBound.description"> — un enchaînement de plus de six heures exige une
+            pause relayée par un collègue du même stand : là où personne ne peut relayer, les sièges qui s'enchaînent ne
+            se tiennent pas par la même personne et exigent autant de personnes distinctes.</ng-container>
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'travailContinuMaxMajeur' }"
+               i18n="@@staffing.lien.travailContinu">Travail continu</a>
+          </p>
+        }
         @if (estBorneRetenue('PLAFOND_TYPOLOGIE')) {
           <p class="staffing-binding">
             <mat-icon inline aria-hidden="true">block</mat-icon>

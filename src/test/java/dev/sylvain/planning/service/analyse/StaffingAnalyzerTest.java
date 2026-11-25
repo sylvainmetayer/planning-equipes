@@ -90,6 +90,59 @@ class StaffingAnalyzerTest {
     }
 
     @Test
+    void aStretchPastTheCapNeedsARelayThatSomeSeatsCannotHave() {
+        // Two stands open 14:00-18:00 and 18:00-21:00, one seat each. Whoever holds the first and the
+        // second works 7 h without a break, and nobody of the stand can relay the sixth hour (20:00):
+        // never the same person, so four people although two are there at once.
+        Creneau apresMidi = new Creneau(1L, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(18, 0));
+        Creneau soir = new Creneau(2L, 2, JOUR, LocalTime.of(18, 0), LocalTime.of(21, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 1), apresMidi, 1));
+        postes.addAll(postes(stand("B", 1), apresMidi, 1));
+        postes.addAll(postes(stand("A", 1), soir, 1));
+        postes.addAll(postes(stand("B", 1), soir, 1));
+
+        StaffingSummary sans = analyzer.analyze(
+                postes,
+                List.of(),
+                TYPOLOGIES,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, true),
+                List.of());
+        StaffingSummary avec = analyzer.analyze(
+                postes,
+                List.of(),
+                TYPOLOGIES,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, true, 0, 6 * 60),
+                List.of());
+
+        assertThat(sans.minimumTotal()).isEqualTo(2);
+        assertThat(avec.minimumTotal()).isEqualTo(4);
+        assertThat(avec.borneRetenue()).isEqualTo(BorneRetenue.TRAVAIL_CONTINU);
+    }
+
+    @Test
+    void aColleagueOfTheSameStandRelaysTheBreakSoTheStretchIsAllowed() {
+        // Stand A has a second seat 19:00-21:00: it covers the break at 20:00, so the stretch 14:00-21:00 can be held.
+        Creneau apresMidi = new Creneau(1L, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(18, 0));
+        Creneau soir = new Creneau(2L, 2, JOUR, LocalTime.of(18, 0), LocalTime.of(21, 0));
+        Creneau fin = new Creneau(3L, 3, JOUR, LocalTime.of(19, 0), LocalTime.of(21, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 1), apresMidi, 1));
+        postes.addAll(postes(stand("A", 1), soir, 1));
+        postes.addAll(postes(stand("A", 1), fin, 1));
+
+        StaffingSummary avec = analyzer.analyze(
+                postes,
+                List.of(),
+                TYPOLOGIES,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, true, 0, 6 * 60),
+                List.of());
+
+        assertThat(avec.minimumTotal()).isEqualTo(2);
+        assertThat(avec.borneRetenue()).isNotEqualTo(BorneRetenue.TRAVAIL_CONTINU);
+    }
+
+    @Test
     void peakCountsSimultaneousSeatsOnly() {
         // Two stands of 2 seats open at the same time: 4 people at once. A
         // third stand opens only once they have closed, and needs nobody more.

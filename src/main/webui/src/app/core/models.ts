@@ -2091,6 +2091,7 @@ export type BorneStaffing =
   | 'COUPURE_REPAS'
   | 'ENCHAINEMENT_JOURS'
   | 'REPOS_QUOTIDIEN'
+  | 'TRAVAIL_CONTINU'
   | 'PLAFOND_TYPOLOGIE';
 
 /**
