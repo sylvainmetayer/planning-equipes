@@ -1,248 +1,251 @@
-# Every route an organiser account can call: the methods of the resources classified
-# per edition in InstanceRoutesStructuralTest, minus the @InstanceOnly ones.
+# Every route an organiser account can call, one "Class#method VERB /path" per line
+# (paths below /api): the methods of the resources classified per edition in
+# InstanceRoutesStructuralTest, minus the @InstanceOnly ones.
 # A new line is a decision: open to an organiser on purpose.
-AffectationExplanationResource#applyDeplacement
-AffectationExplanationResource#applyPlacement
-AffectationExplanationResource#applyReparation
-AffectationExplanationResource#explainPersisted
-AffectationExplanationResource#simulateDeplacement
-AffectationExplanationResource#simulateSwap
-AffichageMuralResource#create
-AffichageMuralResource#list
-AffichageMuralResource#preview
-AffichageMuralResource#qrCode
-AffichageMuralResource#revoke
-AlerteResource#alertes
-AnimateurResource#analyseCsvAnimateurs
-AnimateurResource#cancelDayOff
-AnimateurResource#confirmations
-AnimateurResource#countAnimateurUsages
-AnimateurResource#createAnimateur
-AnimateurResource#deleteAnimateur
-AnimateurResource#exempleCsvAnimateurs
-AnimateurResource#importCsvAnimateurs
-AnimateurResource#listAnimateurs
-AnimateurResource#markDayOff
-AnimateurResource#profile
-AnimateurResource#recordListExport
-AnimateurResource#regenerateAnimateurToken
-AnimateurResource#relancer
-AnimateurResource#saveCompetencesGrid
-AnimateurResource#syntheseConfirmations
-AnimateurResource#updateAnimateur
-ArchiveEvenementResource#availability
-ArchiveEvenementResource#export
-ChangementsJourneeResource#changements
-ConsigneResource#apercu
-ConsigneResource#apercuLevee
-ConsigneResource#createPrereglage
-ConsigneResource#deletePrereglage
-ConsigneResource#etat
-ConsigneResource#lever
-ConsigneResource#poser
-ConsigneResource#prereglages
-ConsigneResource#preselection
-ConsigneResource#updatePrereglage
-ConstraintResource#diagnose
-ConstraintResource#history
-ConstraintResource#list
-ConstraintResource#setActif
-ConstraintResource#setPoids
-ContrainteAdHocResource#createContrainteAdHoc
-ContrainteAdHocResource#deleteContrainteAdHoc
-ContrainteAdHocResource#listContraintesAdHoc
-CreneauAvailabilityResource#creneauAvailability
-CreneauAvailabilityResource#premierCreneau
-CreneauResource#analyseCsv
-CreneauResource#applyDerivation
-CreneauResource#countCreneauUsages
-CreneauResource#createCreneau
-CreneauResource#createRecurrence
-CreneauResource#deleteCreneau
-CreneauResource#diagnoseGrid
-CreneauResource#exempleCsv
-CreneauResource#importCsv
-CreneauResource#listCreneaux
-CreneauResource#previewDerivation
-CreneauResource#previewRecurrence
-CreneauResource#updateCreneau
-CreneauResource#validateGrid
-DeclarationDisponibiliteResource#apply
-DeclarationDisponibiliteResource#cancelCarpool
-DeclarationDisponibiliteResource#carpools
-DeclarationDisponibiliteResource#configuration
-DeclarationDisponibiliteResource#configure
-DeclarationDisponibiliteResource#list
-DeclarationDisponibiliteResource#refuse
-DeclarationDisponibiliteResource#sendLinks
-DeclarationDisponibiliteResource#setCarpoolAside
-DeclarationDisponibiliteResource#validateCarpool
-DemandeEchangeResource#accept
-DemandeEchangeResource#configuration
-DemandeEchangeResource#configure
-DemandeEchangeResource#impact
-DemandeEchangeResource#list
-DemandeEchangeResource#refuse
-DemandeEchangeResource#statistics
-EditionResource#coherence
-EditionResource#courant
-EditionResource#etat
-EditionResource#freeze
-EditionResource#gel
-EditionResource#lift
-EditionResource#list
-EmplacementResource#analyseCsv
-EmplacementResource#createEmplacement
-EmplacementResource#deleteEmplacement
-EmplacementResource#exempleCsv
-EmplacementResource#importCsv
-EmplacementResource#listEmplacements
-EmplacementResource#updateEmplacement
-EnvoiPlanningResource#sendToOneAnimateur
-EquiteResource#exportCsv
-EquiteResource#rapport
-FeasibilityResource#analyze
-FormationResource#exportCsv
-FormationResource#plan
-FragiliteResource#analyze
-HistoriqueResource#actions
-HistoriqueResource#changements
-HistoriqueResource#list
-HorlogeResource#dateJourJ
-JourJResource#absenceReportsConfiguration
-JourJResource#cancelAbsence
-JourJResource#configureAbsenceReports
-JourJResource#etat
-JourJResource#fileAbsenceReport
-JourJResource#recordAbsence
-JourJResource#suggestions
-JourJResource#treatAbsenceReport
-JourneeTypeResource#analyseCsv
-JourneeTypeResource#apply
-JourneeTypeResource#create
-JourneeTypeResource#delete
-JourneeTypeResource#etat
-JourneeTypeResource#exempleCsv
-JourneeTypeResource#importCsv
-JourneeTypeResource#previewApplication
-JourneeTypeResource#previewReconnaissance
-JourneeTypeResource#reconnaitre
-JourneeTypeResource#setCalendrier
-JourneeTypeResource#update
-JoursFeriesResource#list
-KpiResource#delete
-KpiResource#list
-MargeResource#analyze
-MargeResource#tension
-OuvertureStandsResource#analyze
-OuvertureStandsResource#layers
-OuvertureStandsResource#saisir
-ParametresResource#getContactOrganisation
-ParametresResource#getParametresLegaux
-ParametresResource#getParametresNotifications
-ParametresResource#getParametresQualite
-ParametresResource#getParametresSolveur
-ParametresResource#updateContactOrganisation
-ParametresResource#updateParametresLegaux
-ParametresResource#updateParametresNotifications
-ParametresResource#updateParametresQualite
-ParametresResource#updateParametresSolveur
-PauseResource#analyze
-PauseResource#exportIntendance
-PauseResource#intendance
-PlanSnapshotResource#capture
-PlanSnapshotResource#comparables
-PlanSnapshotResource#compare
-PlanSnapshotResource#delete
-PlanSnapshotResource#get
-PlanSnapshotResource#list
-PlanSnapshotResource#restore
-PlanningExportResource#exportAllBundleZip
-PlanningExportResource#exportAllIcsZip
-PlanningExportResource#exportAllPdfZip
-PlanningExportResource#exportAnimateurIcs
-PlanningExportResource#exportAnimateurPdf
-PlanningExportResource#exportGlobalPdf
-PlanningHoursResource#exportCsv
-PlanningHoursResource#report
-PlanningResource#deleteWipeBackup
-PlanningResource#downloadWipeBackup
-PlanningResource#exportScenario
-PlanningResource#groupedArrivals
-PlanningResource#persistedCount
-PlanningResource#persistedPlanning
-PlanningResource#persistedResolution
-PlanningResource#reset
-PlanningResource#restoreWipeBackup
-PlanningResource#sample
-PlanningResource#scenarios
-PlanningResource#solve
-PlanningResource#volumes
-PlanningResource#walks
-PlanningResource#wipeBackups
-PublicationResource#apercu
-PublicationResource#destinataires
-PublicationResource#etat
-PublicationResource#exportCsv
-PublicationResource#publier
-RealiseResource#detail
-RealiseResource#exportCsv
-RealiseResource#previousEdition
-RealiseResource#report
-ReferenceDataResource#exportCsv
-ReferenceDataResource#fileScenarioTarget
-ReferenceDataResource#impactImport
-ReferenceDataResource#importScenario
-ReferenceDataResource#importScenarioFile
-ReferenceDataResource#scenarioTarget
-ReferenceDataResource#validateScenarioFile
-ReferenceDataResource#volumesExportCsv
-ReglageResponsablesResource#get
-SolveInputsResource#current
-SolverJobResource#activeJob
-SolverJobResource#cancelJob
-SolverJobResource#deleteJob
-SolverJobResource#fileAttente
-SolverJobResource#getJob
-SolverJobResource#listJobs
-SolverJobResource#scoreCurve
-SolverJobResource#solveAsync
-SolverJobResource#solveFromReferenceData
-SolverJobResource#solveIncremental
-SolverJobResource#streamJobs
-StaffingResource#analyze
-StaffingResource#verification
-StaffingResource#verify
-StandResource#analyseCsv
-StandResource#analyseGrille
-StandResource#compactHoraires
-StandResource#countStandUsages
-StandResource#createStand
-StandResource#deleteStand
-StandResource#exempleCsv
-StandResource#exempleGrille
-StandResource#importCsv
-StandResource#importGrille
-StandResource#listStands
-StandResource#suggestEmplacements
-StandResource#updateStand
-TypologieAnalyseResource#rapport
-TypologieResource#analyseCsv
-TypologieResource#createTypologie
-TypologieResource#deleteTypologie
-TypologieResource#exempleCsv
-TypologieResource#importCsv
-TypologieResource#listTypologies
-TypologieResource#updateTypologie
-ValidationJourneeResource#accept
-ValidationJourneeResource#keptByColdStart
-ValidationJourneeResource#list
-ValidationJourneeResource#prerequis
-ValidationJourneeResource#progression
-ValidationJourneeResource#withdraw
-VerrouillageResource#create
-VerrouillageResource#delete
-VerrouillageResource#list
-WeatherResource#get
-WeatherResource#test
-WeatherResource#update
+AffectationExplanationResource#applyDeplacement POST /postes/{posteId}/deplacement
+AffectationExplanationResource#applyPlacement POST /postes/{posteId}/placement
+AffectationExplanationResource#applyReparation POST /postes/{posteId}/affectation
+AffectationExplanationResource#explainPersisted GET /postes/{posteId}/explication
+AffectationExplanationResource#simulateDeplacement POST /postes/{posteId}/deplacement/simulation
+AffectationExplanationResource#simulateSwap POST /postes/{posteId}/simulation-swap
+AffichageMuralResource#create POST /affichage-mural
+AffichageMuralResource#list GET /affichage-mural
+AffichageMuralResource#preview GET /affichage-mural/apercu
+AffichageMuralResource#qrCode POST /affichage-mural/qr-code
+AffichageMuralResource#revoke DELETE /affichage-mural/{id}
+AlerteResource#alertes GET /alertes
+AnimateurResource#analyseCsvAnimateurs POST /animateurs/import-csv/analyse
+AnimateurResource#cancelDayOff DELETE /animateurs/{id}/jours-indisponibles/{date}
+AnimateurResource#confirmations GET /animateurs/confirmations
+AnimateurResource#countAnimateurUsages GET /animateurs/usages
+AnimateurResource#createAnimateur POST /animateurs
+AnimateurResource#deleteAnimateur DELETE /animateurs/{id}
+AnimateurResource#exempleCsvAnimateurs GET /animateurs/import-csv/exemple
+AnimateurResource#importCsvAnimateurs POST /animateurs/import-csv
+AnimateurResource#listAnimateurs GET /animateurs
+AnimateurResource#markDayOff PUT /animateurs/{id}/jours-indisponibles/{date}
+AnimateurResource#profile GET /animateurs/{id}/fiche
+AnimateurResource#recordListExport POST /animateurs/export-liste
+AnimateurResource#regenerateAnimateurToken POST /animateurs/{id}/token
+AnimateurResource#relancer POST /animateurs/relances
+AnimateurResource#saveCompetencesGrid PUT /animateurs/competences/grille
+AnimateurResource#syntheseConfirmations GET /animateurs/confirmations/synthese
+AnimateurResource#updateAnimateur PUT /animateurs/{id}
+ArchiveEvenementResource#availability GET /exports/archive-evenement/disponibilite
+ArchiveEvenementResource#export GET /exports/archive-evenement
+ChangementsJourneeResource#changements GET /journees/{jour}/changements
+ConsigneResource#apercuLevee POST /consignes/levee/apercu
+ConsigneResource#apercu POST /consignes/apercu
+ConsigneResource#createPrereglage POST /consignes/prereglages
+ConsigneResource#deletePrereglage DELETE /consignes/prereglages/{id}
+ConsigneResource#etat GET /consignes
+ConsigneResource#lever POST /consignes/levee
+ConsigneResource#poser POST /consignes
+ConsigneResource#prereglages GET /consignes/prereglages
+ConsigneResource#preselection POST /consignes/preselection
+ConsigneResource#updatePrereglage PUT /consignes/prereglages/{id}
+ConstraintResource#diagnose POST /constraints/diagnostic
+ConstraintResource#history GET /constraints/historique
+ConstraintResource#history GET /constraints/{name}/historique
+ConstraintResource#list GET /constraints
+ConstraintResource#setActif PUT /constraints/{name}
+ConstraintResource#setPoids PUT /constraints/{name}/poids
+ContrainteAdHocResource#createContrainteAdHoc POST /contraintes-ad-hoc
+ContrainteAdHocResource#deleteContrainteAdHoc DELETE /contraintes-ad-hoc/{id}
+ContrainteAdHocResource#listContraintesAdHoc GET /contraintes-ad-hoc
+CreneauAvailabilityResource#creneauAvailability GET /banc-de-touche/{creneauId}
+CreneauAvailabilityResource#premierCreneau GET /banc-de-touche
+CreneauResource#analyseCsv POST /creneaux/import-csv/analyse
+CreneauResource#applyDerivation POST /creneaux/derivation
+CreneauResource#countCreneauUsages GET /creneaux/usages
+CreneauResource#createCreneau POST /creneaux
+CreneauResource#createRecurrence POST /creneaux/recurrence
+CreneauResource#deleteCreneau DELETE /creneaux/{id}
+CreneauResource#diagnoseGrid GET /creneaux/diagnostic
+CreneauResource#exempleCsv GET /creneaux/import-csv/exemple
+CreneauResource#importCsv POST /creneaux/import-csv
+CreneauResource#listCreneaux GET /creneaux
+CreneauResource#previewDerivation POST /creneaux/derivation/apercu
+CreneauResource#previewRecurrence POST /creneaux/recurrence/apercu
+CreneauResource#updateCreneau PUT /creneaux/{id}
+CreneauResource#validateGrid GET /creneaux/controle
+DeclarationDisponibiliteResource#apply POST /disponibilites/{id}/application
+DeclarationDisponibiliteResource#cancelCarpool POST /disponibilites/coequipiers/{id}/annulation
+DeclarationDisponibiliteResource#carpools GET /disponibilites/coequipiers
+DeclarationDisponibiliteResource#configuration GET /disponibilites/configuration
+DeclarationDisponibiliteResource#configure PUT /disponibilites/configuration
+DeclarationDisponibiliteResource#list GET /disponibilites
+DeclarationDisponibiliteResource#refuse POST /disponibilites/{id}/refus
+DeclarationDisponibiliteResource#sendLinks POST /disponibilites/invitations
+DeclarationDisponibiliteResource#setCarpoolAside POST /disponibilites/coequipiers/{id}/ecart
+DeclarationDisponibiliteResource#validateCarpool POST /disponibilites/coequipiers/{id}/validation
+DemandeEchangeResource#accept POST /echanges/{id}/acceptation
+DemandeEchangeResource#configuration GET /echanges/configuration
+DemandeEchangeResource#configure PUT /echanges/configuration
+DemandeEchangeResource#impact GET /echanges/{id}/impact
+DemandeEchangeResource#list GET /echanges
+DemandeEchangeResource#refuse POST /echanges/{id}/refus
+DemandeEchangeResource#statistics GET /echanges/statistiques
+EditionResource#coherence GET /editions/courant/coherence
+EditionResource#courant GET /editions/courant
+EditionResource#etat GET /editions/courant/etat
+EditionResource#freeze PUT /editions/courant/gel/{famille}
+EditionResource#gel GET /editions/courant/gel
+EditionResource#gel GET /editions/courant/gel/{famille}
+EditionResource#lift DELETE /editions/courant/gel/{famille}
+EditionResource#list GET /editions
+EmplacementResource#analyseCsv POST /emplacements/import-csv/analyse
+EmplacementResource#createEmplacement POST /emplacements
+EmplacementResource#deleteEmplacement DELETE /emplacements/{id}
+EmplacementResource#exempleCsv GET /emplacements/import-csv/exemple
+EmplacementResource#importCsv POST /emplacements/import-csv
+EmplacementResource#listEmplacements GET /emplacements
+EmplacementResource#updateEmplacement PUT /emplacements/{id}
+EnvoiPlanningResource#sendToOneAnimateur POST /planning/envoi/animateur/{animateurId}
+EquiteResource#exportCsv GET /planning/equite/export
+EquiteResource#rapport GET /planning/equite
+FeasibilityResource#analyze GET /feasibility
+FormationResource#exportCsv GET /formation/export
+FormationResource#plan GET /formation
+FragiliteResource#analyze GET /fragilite
+HistoriqueResource#actions GET /historique/actions
+HistoriqueResource#changements GET /historique/changements
+HistoriqueResource#list GET /historique
+HorlogeResource#dateJourJ GET /horloge
+JourJResource#absenceReportsConfiguration GET /jour-j/signalements/configuration
+JourJResource#cancelAbsence DELETE /jour-j/absences/{animateurId}
+JourJResource#configureAbsenceReports PUT /jour-j/signalements/configuration
+JourJResource#etat GET /jour-j
+JourJResource#fileAbsenceReport POST /jour-j/signalements/{signalementId}/classement
+JourJResource#recordAbsence POST /jour-j/absences
+JourJResource#suggestions POST /jour-j/postes/{posteId}/suggestions
+JourJResource#treatAbsenceReport POST /jour-j/signalements/{signalementId}/traitement
+JourneeTypeResource#analyseCsv POST /journees-types/import-csv/analyse
+JourneeTypeResource#apply POST /journees-types/application
+JourneeTypeResource#create POST /journees-types
+JourneeTypeResource#delete DELETE /journees-types/{id}
+JourneeTypeResource#etat GET /journees-types
+JourneeTypeResource#exempleCsv GET /journees-types/import-csv/exemple
+JourneeTypeResource#importCsv POST /journees-types/import-csv
+JourneeTypeResource#previewApplication POST /journees-types/application/apercu
+JourneeTypeResource#previewReconnaissance POST /journees-types/reconnaissance/apercu
+JourneeTypeResource#reconnaitre POST /journees-types/reconnaissance
+JourneeTypeResource#setCalendrier PUT /journees-types/calendrier
+JourneeTypeResource#update PUT /journees-types/{id}
+JoursFeriesResource#list GET /jours-feries
+KpiResource#delete DELETE /kpi/historique/{id}
+KpiResource#list GET /kpi/historique
+MargeResource#analyze GET /marge
+MargeResource#tension GET /marge/tension
+OuvertureStandsResource#analyze GET /ouvertures-stands
+OuvertureStandsResource#layers GET /ouvertures-stands/couches
+OuvertureStandsResource#saisir PUT /ouvertures-stands/grille
+ParametresResource#getContactOrganisation GET /parametres-contact
+ParametresResource#getParametresLegaux GET /parametres-legaux
+ParametresResource#getParametresNotifications GET /parametres-notifications
+ParametresResource#getParametresQualite GET /parametres-qualite
+ParametresResource#getParametresSolveur GET /parametres-solveur
+ParametresResource#updateContactOrganisation PUT /parametres-contact
+ParametresResource#updateParametresLegaux PUT /parametres-legaux
+ParametresResource#updateParametresNotifications PUT /parametres-notifications
+ParametresResource#updateParametresQualite PUT /parametres-qualite
+ParametresResource#updateParametresSolveur PUT /parametres-solveur
+PauseResource#analyze GET /pauses
+PauseResource#exportIntendance GET /pauses/intendance/export
+PauseResource#intendance GET /pauses/intendance
+PlanningExportResource#exportAllBundleZip POST /planning/export/bundle/all
+PlanningExportResource#exportAllIcsZip POST /planning/export/ics/all
+PlanningExportResource#exportAllPdfZip POST /planning/export/pdf/all
+PlanningExportResource#exportAnimateurIcs POST /planning/export/ics/animateur/{animateurId}
+PlanningExportResource#exportAnimateurPdf POST /planning/export/pdf/animateur/{animateurId}
+PlanningExportResource#exportGlobalPdf GET /planning/export/pdf/global
+PlanningHoursResource#exportCsv GET /planning/hours/export
+PlanningHoursResource#report GET /planning/hours
+PlanningResource#deleteWipeBackup DELETE /planning/sauvegardes-avant-vidage/{id}
+PlanningResource#downloadWipeBackup GET /planning/sauvegardes-avant-vidage/{id}
+PlanningResource#exportScenario GET /planning/export-scenario
+PlanningResource#groupedArrivals GET /planning/arrivees-groupees
+PlanningResource#persistedCount GET /planning/persisted/count
+PlanningResource#persistedPlanning GET /planning/persisted
+PlanningResource#persistedResolution GET /planning/persisted/resolution
+PlanningResource#reset POST /planning/reset
+PlanningResource#restoreWipeBackup POST /planning/sauvegardes-avant-vidage/{id}/restauration
+PlanningResource#sample GET /planning/sample
+PlanningResource#scenarios GET /planning/scenarios
+PlanningResource#solve POST /solve
+PlanningResource#volumes GET /planning/volumetrie
+PlanningResource#walks GET /planning/enchainements
+PlanningResource#wipeBackups GET /planning/sauvegardes-avant-vidage
+PlanSnapshotResource#capture POST /planning/snapshots
+PlanSnapshotResource#comparables GET /planning/snapshots/comparables
+PlanSnapshotResource#compare GET /planning/snapshots/compare
+PlanSnapshotResource#delete DELETE /planning/snapshots/{id}
+PlanSnapshotResource#get GET /planning/snapshots/{id}
+PlanSnapshotResource#list GET /planning/snapshots
+PlanSnapshotResource#restore POST /planning/snapshots/{id}/restore
+PublicationResource#apercu GET /planning/publication
+PublicationResource#destinataires GET /planning/publication/destinataires
+PublicationResource#etat GET /planning/publication/etat
+PublicationResource#exportCsv GET /planning/publication/export
+PublicationResource#publier POST /planning/publication
+RealiseResource#detail GET /planning/realise/detail
+RealiseResource#exportCsv GET /planning/realise/export
+RealiseResource#previousEdition GET /planning/realise/precedente
+RealiseResource#report GET /planning/realise
+ReferenceDataResource#exportCsv GET /reference-data/export-csv
+ReferenceDataResource#fileScenarioTarget POST /reference-data/cible-scenario-fichier
+ReferenceDataResource#impactImport GET /reference-data/impact-import
+ReferenceDataResource#importScenarioFile POST /reference-data/import-scenario-fichier
+ReferenceDataResource#importScenario POST /reference-data/import-scenario
+ReferenceDataResource#scenarioTarget GET /reference-data/cible-scenario
+ReferenceDataResource#validateScenarioFile POST /reference-data/valider-scenario-fichier
+ReferenceDataResource#volumesExportCsv GET /reference-data/export-csv/volumes
+ReglageResponsablesResource#get GET /reglage-responsables
+SolveInputsResource#current GET /solve/entrees
+SolverJobResource#activeJob GET /jobs/active
+SolverJobResource#cancelJob POST /jobs/{id}/cancel
+SolverJobResource#deleteJob DELETE /jobs/{id}
+SolverJobResource#fileAttente GET /jobs/file
+SolverJobResource#getJob GET /jobs/{id}
+SolverJobResource#listJobs GET /jobs
+SolverJobResource#scoreCurve GET /jobs/score
+SolverJobResource#solveAsync POST /solve/async
+SolverJobResource#solveFromReferenceData POST /solve/async/reference-data
+SolverJobResource#solveIncremental POST /solve/incremental/async
+SolverJobResource#streamJobs GET /jobs/stream
+StaffingResource#analyze GET /staffing
+StaffingResource#verification GET /staffing/verification
+StaffingResource#verify POST /staffing/verification
+StandResource#analyseCsv POST /stands/import-csv/analyse
+StandResource#analyseGrille POST /stands/import-grille/analyse
+StandResource#compactHoraires POST /stands/compactage-horaires
+StandResource#countStandUsages GET /stands/usages
+StandResource#createStand POST /stands
+StandResource#deleteStand DELETE /stands/{id}
+StandResource#exempleCsv GET /stands/import-csv/exemple
+StandResource#exempleGrille GET /stands/import-grille/exemple
+StandResource#importCsv POST /stands/import-csv
+StandResource#importGrille POST /stands/import-grille
+StandResource#listStands GET /stands
+StandResource#suggestEmplacements GET /stands/suggestions-emplacement
+StandResource#updateStand PUT /stands/{id}
+TypologieAnalyseResource#rapport GET /planning/typologies
+TypologieResource#analyseCsv POST /typologies/import-csv/analyse
+TypologieResource#createTypologie POST /typologies
+TypologieResource#deleteTypologie DELETE /typologies/{id}
+TypologieResource#exempleCsv GET /typologies/import-csv/exemple
+TypologieResource#importCsv POST /typologies/import-csv
+TypologieResource#listTypologies GET /typologies
+TypologieResource#updateTypologie PUT /typologies/{id}
+ValidationJourneeResource#accept POST /validations
+ValidationJourneeResource#keptByColdStart GET /validations/a-froid
+ValidationJourneeResource#list GET /validations
+ValidationJourneeResource#prerequis GET /validations/prerequis
+ValidationJourneeResource#progression GET /validations/progression
+ValidationJourneeResource#withdraw DELETE /validations/{id}
+VerrouillageResource#create POST /verrouillages
+VerrouillageResource#delete DELETE /verrouillages/{id}
+VerrouillageResource#list GET /verrouillages
+WeatherResource#get GET /parametres/meteo
+WeatherResource#test POST /parametres/meteo/test
+WeatherResource#update PUT /parametres/meteo
