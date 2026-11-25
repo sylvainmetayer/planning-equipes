@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.analyse;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.EffectiveWork;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -23,11 +25,10 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -107,6 +108,7 @@ public class RapportConformiteService {
                 personnes.add(person(
                         ligne,
                         postes,
+                        parametres,
                         majeur,
                         mineur,
                         ecartsParPersonne.getOrDefault(ligne.animateurId(), List.of()),
@@ -135,17 +137,29 @@ public class RapportConformiteService {
     private static Personne person(
             HeuresAnimateur ligne,
             List<PosteAffectation> postes,
+            ParametresLegaux parametres,
             double plafondMajeur,
             double plafondMineur,
             List<Breach> ecarts,
             List<String> semaines) {
-        Set<String> semainesMineures = new HashSet<>();
-        boolean mineur = false;
+        // The two weekly rules split a week on the day the person comes of age: the minor days against
+        // the minors' ceiling, the adult days against the adults' — never the whole week against one.
+        Map<LocalDate, List<PosteAffectation>> parJour = new TreeMap<>();
         for (PosteAffectation poste : postes) {
             LocalDate date = poste.getCreneau().getDate();
-            if (date != null && poste.getAnimateur().isMineurOn(date)) {
+            if (date != null) {
+                parJour.computeIfAbsent(date, d -> new ArrayList<>()).add(poste);
+            }
+        }
+        Map<String, Double> heuresMineures = new HashMap<>();
+        boolean mineur = false;
+        for (Map.Entry<LocalDate, List<PosteAffectation>> jour : parJour.entrySet()) {
+            if (jour.getValue().get(0).getAnimateur().isMineurOn(jour.getKey())) {
                 mineur = true;
-                semainesMineures.add(poste.getCreneau().semaineIso());
+                heuresMineures.merge(
+                        Creneau.semaineIso(jour.getKey()),
+                        EffectiveWork.minutes(jour.getValue(), parametres) / 60.0,
+                        Double::sum);
             }
         }
         List<String> enDepassement = new ArrayList<>();
@@ -153,8 +167,8 @@ public class RapportConformiteService {
         for (String semaine : semaines) {
             double h = ligne.heuresParSemaine().getOrDefault(semaine, 0.0);
             parSemaine.put(semaine, h);
-            double plafond = semainesMineures.contains(semaine) ? plafondMineur : plafondMajeur;
-            if (h > plafond + EPSILON) {
+            double hMineur = heuresMineures.getOrDefault(semaine, 0.0);
+            if (hMineur > plafondMineur + EPSILON || h - hMineur > plafondMajeur + EPSILON) {
                 enDepassement.add(semaine);
             }
         }
@@ -232,6 +246,19 @@ public class RapportConformiteService {
                             .add(new Breach(definition.name(), definition.libelleCourt(), reference.texte()));
                 }
             }
+            // The lines are capped, the count is not: a capped list says how many it left out, so no
+            // reader takes five lines for five breaches.
+            deja.forEach((animateurId, total) -> {
+                if (total > MAX_ECARTS_PAR_REGLE_ET_PERSONNE) {
+                    parPersonne
+                            .get(animateurId)
+                            .add(new Breach(
+                                    definition.name(),
+                                    definition.libelleCourt(),
+                                    "… et " + (total - MAX_ECARTS_PAR_REGLE_ET_PERSONNE)
+                                            + " autre(s) écart(s) de cette règle"));
+                }
+            });
         }
         return regles;
     }

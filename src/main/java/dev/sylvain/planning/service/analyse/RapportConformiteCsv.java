@@ -32,7 +32,7 @@ public final class RapportConformiteCsv {
             csv.append(';').append(semaine);
         }
         csv.append(";total (h);plafond hebdomadaire (h);semaines au-dessus du plafond;dimanche (h);jours feries (h);"
-                + "nuit apres 22h (h);repos quotidien minimal observe (h);ecarts;detail des ecarts\n");
+                + "nuit apres 22h (h);repos quotidien minimal observe (h);detail des ecarts\n");
         for (Personne p : rapport.personnes()) {
             csv.append(CsvFormulaGuard.cell(p.nom())).append(';').append(p.mineur() ? "oui" : "non");
             for (String semaine : rapport.semaines()) {
@@ -52,8 +52,6 @@ public final class RapportConformiteCsv {
                     .append(hours(p.heuresNuit()))
                     .append(';')
                     .append(p.reposQuotidienMinHeures() == null ? "" : hours(p.reposQuotidienMinHeures()))
-                    .append(';')
-                    .append(p.ecartsDetail().size())
                     .append(';')
                     .append(CsvFormulaGuard.cell(p.ecartsDetail().stream()
                             .map(e -> e.libelle() + " : " + e.texte())

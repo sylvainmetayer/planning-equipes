@@ -41,7 +41,7 @@ export class ConformiteRapport {
     params: () => this.editionId(),
     loader: ({ params }) => this.api.rapport(params),
   });
-  protected readonly vue = retainedValue(this.rapport);
+  protected readonly report = retainedValue(this.rapport);
   protected readonly erreur = errorText(this.rapport);
 
   protected readonly hoursLabel = hoursLabel;
