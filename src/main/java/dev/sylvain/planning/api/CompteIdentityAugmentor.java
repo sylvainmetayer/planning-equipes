@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.config.ConfigOidc;
 import dev.sylvain.planning.config.ConfigSecours;
 import dev.sylvain.planning.service.compte.Compte;
+import dev.sylvain.planning.service.compte.CompteAccesService;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.AuthenticationRequestContext;
@@ -34,6 +35,9 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  *       while the door was open must not outlive the incident. The admin the
  *       opt-in remote-user mode asserts is not a form session and keeps its
  *       role.</li>
+ *   <li><b>A local session</b> (a password; the cookie names the account's
+ *       address): the account is read again, so a deactivated one keeps no
+ *       role from one request to the next.</li>
  *   <li>Anonymous and the MCP API key pass through untouched.</li>
  * </ul>
  *
@@ -49,6 +53,9 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
     CompteService comptes;
 
     @Inject
+    CompteAccesService acces;
+
+    @Inject
     ConfigSecours secours;
 
     @Inject
@@ -58,6 +65,16 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
         if (identity.isAnonymous()) {
             return Uni.createFrom().item(identity);
+        }
+        if (Boolean.TRUE.equals(identity.getAttribute(Compte.LOCAL_ATTRIBUTE))) {
+            // A local session: the cookie names the address, the account decides —
+            // read again on every request, so a deactivation cuts the session.
+            return context.runBlocking(() -> {
+                Compte compte =
+                        acces.activeByEmail(identity.getPrincipal().getName()).orElse(null);
+                return withRoles(
+                        identity, compte == null ? Set.of() : CompteService.roles(compte, Instant.now()), compte);
+            });
         }
         if (!(identity.getPrincipal() instanceof JsonWebToken token)) {
             return Uni.createFrom().item(formSessionClosed(identity) ? withRoles(identity, Set.of(), null) : identity);

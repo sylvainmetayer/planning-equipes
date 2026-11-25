@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.compte.Compte;
+import dev.sylvain.planning.service.compte.CompteAccesService;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.compte.RoleHabilitation;
 import jakarta.annotation.security.RolesAllowed;
@@ -22,7 +23,7 @@ import java.util.List;
  *
  * <p>An account is <b>deactivated</b>, never deleted, and a right is
  * <b>withdrawn</b>, never deleted — the history must still be able to say who
- * held what, and when. Nothing here sets a password or a second factor.</p>
+ * held what, and when. A password is only ever chosen by its owner, through a mailed single-use link.</p>
  */
 @Path("/comptes")
 @RolesAllowed("admin")
@@ -33,14 +34,43 @@ public class CompteResource {
     @Inject
     CompteService comptes;
 
+    @Inject
+    CompteAccesService acces;
+
     @GET
     public List<Compte> list() {
         return comptes.list();
     }
 
+    /**
+     * Creates the account; {@code inviter} also mails it the link to choose its
+     * password. The invitation failing leaves the account created: the answer
+     * is the refusal, and the account is invited again from its row.
+     */
     @POST
     public Compte create(NouveauCompte nouveau) {
-        return comptes.create(nouveau == null ? null : nouveau.email(), nouveau == null ? null : nouveau.nom());
+        Compte compte =
+                comptes.create(nouveau == null ? null : nouveau.email(), nouveau == null ? null : nouveau.nom());
+        if (nouveau != null && Boolean.TRUE.equals(nouveau.invite())) {
+            acces.sendLink(compte.id(), true);
+        }
+        return compte;
+    }
+
+    /** Mails the link to choose a first password (72 h, single use); the administrator never sees it. */
+    @POST
+    @Path("/{id}/invitation")
+    @Consumes(MediaType.WILDCARD)
+    public void invite(@PathParam("id") String id) {
+        acces.sendLink(id, true);
+    }
+
+    /** Mails the link to choose a new password (1 h, single use); the old one stays until it is used. */
+    @POST
+    @Path("/{id}/reinitialisation")
+    @Consumes(MediaType.WILDCARD)
+    public void reset(@PathParam("id") String id) {
+        acces.sendLink(id, false);
     }
 
     @POST
@@ -72,7 +102,7 @@ public class CompteResource {
         return comptes.withdraw(id, habilitationId);
     }
 
-    public record NouveauCompte(String email, String nom) {}
+    public record NouveauCompte(String email, String nom, Boolean invite) {}
 
     /**
      * @param editionId {@code null} for every edition

@@ -30,7 +30,8 @@ import java.util.Optional;
 public class CompteRepository {
 
     private static final String SELECT_COMPTE =
-            "SELECT id, email, nom, cree_le, derniere_connexion_le, desactive_le, desactive_par FROM compte";
+            "SELECT id, email, nom, cree_le, derniere_connexion_le, desactive_le, desactive_par,"
+                    + " mot_de_passe_hash IS NOT NULL AS mot_de_passe_defini FROM compte";
 
     @Inject
     JdbcEditionScope scope;
@@ -108,7 +109,8 @@ public class CompteRepository {
                             trouve.derniereConnexionLe(),
                             trouve.desactiveLe(),
                             trouve.desactivePar(),
-                            habilitations(connection, trouve.id()).getOrDefault(trouve.id(), List.of())));
+                            habilitations(connection, trouve.id()).getOrDefault(trouve.id(), List.of()),
+                            trouve.passwordSet()));
                 }
             }
         });
@@ -316,7 +318,8 @@ public class CompteRepository {
                 instant(rs, "derniere_connexion_le"),
                 instant(rs, "desactive_le"),
                 rs.getString("desactive_par"),
-                List.copyOf(habilitations.getOrDefault(id, List.of())));
+                List.copyOf(habilitations.getOrDefault(id, List.of())),
+                rs.getBoolean("mot_de_passe_defini"));
     }
 
     private static Instant instant(ResultSet rs, String colonne) throws SQLException {

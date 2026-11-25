@@ -61,6 +61,8 @@ public class MailService {
     public static final String AVAILABILITY_INVITATION = "mail/invitation-declaration";
 
     private static final String TEST_MAIL = "mail/test";
+    private static final String ACCOUNT_LINK = "mail/compte-lien";
+    private static final String ACCOUNT_CODE = "mail/compte-code";
 
     private final Mailer mailer;
 
@@ -250,6 +252,36 @@ public class MailService {
     public void sendRelanceConfirmation(String animateurId, String emailAnimateur, String prenom, String lienEspace) {
         MailContent content = RelanceConfirmationMail.render(templates, productName, prenom, lienEspace);
         metrics.send(mailer, RelanceConfirmationMail.TEMPLATE, templates.toMail(emailAnimateur, content), animateurId);
+    }
+
+    /**
+     * Sends a local account the link to choose its password: an invitation
+     * (the admin added it) or a reset. The failure propagates when an admin
+     * asked for it; the caller of the public « forgot my password » swallows it.
+     *
+     * @param link     built by {@code ApplicationLinks}, the single-use token in it
+     * @param validity how long it holds, in words (« 72 heures »)
+     */
+    public void sendAccountLink(String to, String nom, String link, String validity, boolean invitation) {
+        MailContent content = templates.render(
+                ACCOUNT_LINK,
+                productName.subject(invitation ? "choisissez votre mot de passe" : "nouveau mot de passe"),
+                MailTemplates.values(
+                        "nom", blankToNull(nom),
+                        "lien", link,
+                        "duree", validity,
+                        "invitation", invitation,
+                        "produit", productName.value()));
+        metrics.send(mailer, ACCOUNT_LINK, templates.toMail(to, content));
+    }
+
+    /** Sends the six-digit code that ends a local sign-in: the mailbox is the second factor. */
+    public void sendAccountCode(String to, String nom, String code) {
+        MailContent content = templates.render(
+                ACCOUNT_CODE,
+                productName.subject("votre code de connexion"),
+                MailTemplates.values("nom", blankToNull(nom), "code", code));
+        metrics.send(mailer, ACCOUNT_CODE, templates.toMail(to, content));
     }
 
     /**

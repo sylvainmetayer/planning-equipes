@@ -95,7 +95,7 @@ public class FormLoginSecours {
     }
 
     private void apply(RoutingContext contexte) {
-        if (secours.open(oidc.enabled()) || !AdminLoginLimiter.isLoginPath(contexte.normalizedPath())) {
+        if (secours.open(oidc.enabled()) || !AdminLoginLimiter.isAdminFormPath(contexte.normalizedPath())) {
             contexte.next();
             return;
         }

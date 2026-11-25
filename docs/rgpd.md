@@ -423,8 +423,15 @@ complètes. Quatre points sont connus et se consignent :
   **adresse e-mail**, un nom facultatif, les dates de création, de dernière
   connexion et de désactivation, les droits accordés (rôle, édition,
   expiration) et, pour chaque désactivation ou retrait, l'**identifiant du
-  compte** qui l'a fait. Ce sont les données des **personnes qui administrent
-  l'instance**, pas celles des animateurs. L'application ne supprime rien : un
+  compte** qui l'a fait. Un compte **local** garde en plus un **hachage bcrypt**
+  de son mot de passe (jamais le mot de passe) et sa date de choix ; les liens
+  d'invitation ou de réinitialisation (`compte_jeton`, 72 h ou 1 h, un seul par
+  compte, supprimés à l'usage) et les défis de connexion (`compte_defi`, dix
+  minutes, avec le hachage du code reçu par mail) ne sont stockés que hachés, et
+  les lignes périmées sont retirées à l'écriture suivante ; aucune de ces tables
+  n'est dans l'export SQL. Le mail du lien et celui du code passent par le
+  relais SMTP de l'instance (sous-traitant déjà déclaré). Ce sont les données des
+  **personnes qui administrent l'instance**, pas celles des animateurs. L'application ne supprime rien : un
   compte se désactive, un droit se retire, pour que le journal garde un sens.
   **Effacement** : à la demande d'une personne, ou à l'expiration de la durée
   ci-dessous, l'exploitant **pseudonymise** la ligne plutôt que de la

@@ -1,0 +1,5 @@
+Bonjour{#if nom} {nom}{/if},
+
+Voici votre code de connexion à l'administration : {code}
+
+Il est valable 10 minutes et ne sert qu'une fois. Si vous n'êtes pas en train de vous connecter, quelqu'un connaît votre mot de passe : changez-le sans attendre.

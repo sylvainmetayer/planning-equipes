@@ -123,6 +123,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée de ce blocage, comptée depuis le dernier échec |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (groupe Administrer ; même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
+| `AUTH_LOCAL_SECONDE_ETAPE` | `true` | Les comptes locaux (mot de passe) reçoivent un code à six chiffres par mail après leur mot de passe ; `false` coupe cette seconde étape |
 | `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS, indispensable pour que la redirection de connexion reste en `https` — voir [`api.md`](docs/api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |
 | `REMOTE_USER_ENABLED` | `false` | Authentification par en-tête derrière un proxy d'accès, en plus du form login — voir [`api.md`](docs/api.md#mode-remote-user-facultatif-désactivé-par-défaut) |
@@ -378,7 +379,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Palette de commandes | Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran — ou directement à l'un de ses onglets ou de ses vues — et retrouve un animateur, un stand ou un créneau ; « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis |
 | Navigation au clavier des tableaux | Dans les tableaux de données de référence, « / » saisit le filtre de la page puis Flèche bas entre dans le tableau ; les flèches haut et bas déplacent ensuite la ligne courante, Entrée l'ouvre et Espace la coche pour une action groupée. Un clic sur une ligne la focalise de la même façon, et la tabulation entre aussi dans le tableau et en ressort sans jamais y rester coincée |
 | Thème clair ou sombre | Un bouton de la barre d'outils fait tourner l'affichage entre « automatique », « clair » et « sombre ». « Automatique » suit le réglage du système d'exploitation et le suit en direct ; un choix explicite est retenu par le navigateur et survit au rechargement comme au changement d'humeur de la machine |
-| Accès | Connexion administrateur par mot de passe, ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |
+| Accès | Connexion administrateur par mot de passe, ou comptes nominatifs invités par mail (lien à usage unique, code reçu par mail en seconde étape), ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |
 
 Formats d'échange détaillés dans
 [`docs/import-export.md`](docs/import-export.md), contraintes dans

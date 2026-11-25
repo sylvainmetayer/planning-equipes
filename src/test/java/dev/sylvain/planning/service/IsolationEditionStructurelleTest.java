@@ -193,6 +193,10 @@ class IsolationEditionStructurelleTest {
      *       account at once, before any edition is bound to the request. The
      *       edition is a <em>column</em> of the right ({@code NULL} = every
      *       edition), the scope it grants, not a partition of the table.</li>
+     *   <li>{@code compte_jeton}, {@code compte_defi} — the single-use password
+     *       links and the sign-in challenges of an account: they belong to the
+     *       person, who has no edition, and are redeemed before any request
+     *       names one (the visitor is anonymous).</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -210,7 +214,9 @@ class IsolationEditionStructurelleTest {
             "machine_calcul",
             "resolution_distante",
             "compte",
-            "habilitation");
+            "habilitation",
+            "compte_jeton",
+            "compte_defi");
 
     /**
      * The deliberately cross-edition statements, and why.

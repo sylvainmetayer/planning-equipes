@@ -19,6 +19,7 @@ function compte(id: string, extra: Partial<Compte> = {}): Compte {
     desactiveLe: null,
     desactivePar: null,
     habilitations: [],
+    passwordSet: false,
     ...extra,
   };
 }

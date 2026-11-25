@@ -188,3 +188,6 @@ dev/sylvain/planning/api/OidcSignInTest.java
 dev/sylvain/planning/api/OrganisateurCanariTest.java
 dev/sylvain/planning/api/FormLoginSecoursFermeTest.java
 dev/sylvain/planning/api/FormLoginSecoursOuvertTest.java
+dev/sylvain/planning/api/LocalSignInTest.java
+dev/sylvain/planning/api/LocalSignInWithoutSecondStepTest.java
+dev/sylvain/planning/api/LocalSignInLockoutTest.java

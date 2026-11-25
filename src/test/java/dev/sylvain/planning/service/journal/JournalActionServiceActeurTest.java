@@ -19,7 +19,7 @@ class JournalActionServiceActeurTest {
 
     @Test
     void anIdentityBoundToAnAccountIsNamedByTheAccountId() {
-        Compte compte = new Compte("c-1", "marie@example.org", "Marie", null, null, null, null, List.of());
+        Compte compte = new Compte("c-1", "marie@example.org", "Marie", null, null, null, null, List.of(), false);
         SecurityIdentity identity = QuarkusSecurityIdentity.builder()
                 .setPrincipal(new QuarkusPrincipal("marie@example.org"))
                 .addAttribute(Compte.IDENTITY_ATTRIBUTE, compte)

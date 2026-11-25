@@ -450,7 +450,7 @@ dans [l'ADR 0075](decisions/0075-quota-de-calcul-de-l-instance-dans-l-applicatio
 
 ## Qui ouvre l'administration
 
-Quatre portes, de la plus forte à la plus faible :
+Cinq portes, de la plus forte à la plus faible :
 
 1. **Un fournisseur d'identité OIDC** (`docs/oidc.md`, ADR 0093) : chaque
    organisateur se connecte sous son propre nom, avec le second facteur du
@@ -458,7 +458,19 @@ Quatre portes, de la plus forte à la plus faible :
    et `/api/*` répond `403` (la page de connexion l'explique) ; seul un droit
    `ADMIN` en vigueur donne le rôle `admin`. Les pages `/q/openapi` et
    `/q/swagger-ui` suivent la même règle.
-2. **Le compte `admin` de la configuration**, un mot de passe partagé sans
+2. **Un compte local** (ADR 0094) : adresse et mot de passe choisi par son
+   propriétaire seul, par un lien à usage unique reçu par mail (72 h à
+   l'invitation, une heure à la réinitialisation ou à « mot de passe oublié »),
+   puis un **code à six chiffres reçu par mail**, activé par défaut
+   (`AUTH_LOCAL_SECONDE_ETAPE=false` le coupe). Le mot de passe est un hachage
+   bcrypt de douze caractères au moins ; lien, défi et code ne sont stockés que
+   hachés, en tables globales (`compte_jeton`, `compte_defi`), hors de l'export
+   SQL. Le formulaire est verrouillé par adresse comme celui de `admin`
+   (`CONNEXION_MAX_ECHECS`), les demandes de code et de lien sont limitées par
+   compte, et une réponse ne dit jamais si une adresse a un compte. Ouvert **même
+   derrière un fournisseur OIDC** : seul le secours est fermé. Désactiver un
+   compte coupe sa session à la requête suivante.
+3. **Le compte `admin` de la configuration**, un mot de passe partagé sans
    second facteur et sans nom dans le journal des actions (l'acteur y est `admin`).
    Sans fournisseur, c'est la porte ordinaire. Derrière un fournisseur, il est le
    **secours**, fermé par défaut : `409` sur `/j_security_check` (y compris sous
@@ -467,11 +479,11 @@ Quatre portes, de la plus forte à la plus faible :
    connexion par lui sont dans le journal des connexions admin, et l'application
    journalise un avertissement tant qu'il est ouvert. `ADMIN_PASSWORD` reste
    contrôlé même fermé (valeur d'exemple refusée au démarrage).
-3. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir `docs/api.md`) : **déprécié,
+4. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir `docs/api.md`) : **déprécié,
    retiré en 4.0**. Il fonctionne encore, un avertissement le rappelle à chaque
    démarrage ; il reste indépendant du secours (le secret partagé est son
    identifiant).
-4. La clé d'API du `/mcp`, qui n'ouvre que le MCP.
+5. La clé d'API du `/mcp`, qui n'ouvre que le MCP.
 
 **Exécutez l'application derrière https.** Le cookie de session OIDC et celui du
 formulaire n'ont de sens que chiffrés en transit. Le déploiement étant agnostique,

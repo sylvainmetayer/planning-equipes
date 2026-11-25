@@ -1,0 +1,12 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">Bonjour{#if nom} {nom}{/if},</p>
+{#if invitation}
+<p style="margin:0 0 12px;">L'organisation vous a ouvert un compte sur {produit}. Choisissez votre mot de passe en suivant ce lien :</p>
+{#else}
+<p style="margin:0 0 12px;">Vous (ou un administrateur) avez demandé à changer le mot de passe de votre compte {produit}. Choisissez-en un nouveau en suivant ce lien :</p>
+{/if}
+<p style="margin:0 0 12px;"><a href="{lien}" style="color:{accent};">{lien}</a></p>
+<p style="margin:0;color:{muted};">Ce lien ne sert qu'une fois et reste valable {duree}. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message : votre mot de passe actuel n'est pas modifié.</p>
+{/body}
+{/include}

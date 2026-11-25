@@ -88,7 +88,31 @@ public class AdminLoginLimiter {
      * matches the same way, or a prefix walks around it.
      */
     static boolean isLoginPath(String path) {
-        return path != null && path.endsWith(CHEMIN_CONNEXION);
+        return path != null && (path.endsWith(CHEMIN_CONNEXION) || isPasswordStepPath(path));
+    }
+
+    /**
+     * The form post of a <b>local account</b> (a password, then its mailed
+     * code, exchanged for a challenge): the same mechanism, hence the same lock
+     * and the same journal, on a path of its own so that the closed
+     * break-glass door ({@link FormLoginSecours}) does not shut it.
+     */
+    static final String CHEMIN_CONNEXION_LOCALE = "/api/auth/connexion" + CHEMIN_CONNEXION;
+
+    /** The password step of a local sign-in: not a form login, but an attempt the lock counts. */
+    static final String CHEMIN_MOT_DE_PASSE = "/api/auth/connexion";
+
+    static boolean isPasswordStepPath(String path) {
+        return path != null && path.equals(CHEMIN_MOT_DE_PASSE);
+    }
+
+    static boolean isLocalLoginPath(String path) {
+        return path != null && path.endsWith(CHEMIN_CONNEXION_LOCALE);
+    }
+
+    /** The form login of the break-glass {@code admin} account. */
+    static boolean isAdminFormPath(String path) {
+        return path != null && path.endsWith(CHEMIN_CONNEXION) && !isLocalLoginPath(path);
     }
 
     /** After the security headers, before anything handles the request. */
@@ -179,15 +203,19 @@ public class AdminLoginLimiter {
                             + Math.max(1, (attente + 59) / 60) + " minute(s).\"}");
             return;
         }
-        contexte.addEndHandler(issue -> {
-            if (issue.succeeded() && successfulLogin(contexte)) {
-                failures.clear(address);
-                // Behind an OIDC provider a form login is the break-glass door:
-                // the journal says so, it is the line an operator looks for.
-                Evenement evenement = oidc.enabled() ? Evenement.CONNEXION_SECOURS : Evenement.CONNEXION;
-                record(false, List.of(new LoginJournalEntry(0, Instant.now(), evenement, address)));
-            }
-        });
+        if (!isPasswordStepPath(contexte.normalizedPath())) {
+            boolean locale = isLocalLoginPath(contexte.normalizedPath());
+            contexte.addEndHandler(issue -> {
+                if (issue.succeeded() && successfulLogin(contexte)) {
+                    failures.clear(address);
+                    // Behind an OIDC provider the admin form is the break-glass
+                    // door: the journal says so, it is the line an operator
+                    // looks for. A local account is an ordinary sign-in.
+                    Evenement evenement = oidc.enabled() && !locale ? Evenement.CONNEXION_SECOURS : Evenement.CONNEXION;
+                    record(false, List.of(new LoginJournalEntry(0, Instant.now(), evenement, address)));
+                }
+            });
+        }
         contexte.next();
     }
 
@@ -205,9 +233,20 @@ public class AdminLoginLimiter {
         Object contexte = evenement.getEventProperties().get(RoutingContext.class.getName());
         // The other mechanisms (MCP key, remote-user header, session already
         // open) raise the same event and have nothing to do with this lock.
-        if (!(contexte instanceof RoutingContext routage) || !isLoginPath(routage.normalizedPath())) {
+        if (!(contexte instanceof RoutingContext routage)
+                || !isLoginPath(routage.normalizedPath())
+                || isPasswordStepPath(routage.normalizedPath())) {
             return;
         }
+        recordFailure(routage);
+    }
+
+    /**
+     * A refused attempt: counted against the address, journalled, and the
+     * lockout written when it is the one reaching the ceiling. Also called by
+     * the password step of a local sign-in, which refuses before any form post.
+     */
+    void recordFailure(RoutingContext routage) {
         String address = address(routage);
         Instant now = Instant.now();
         int run = failures.recordFailure(address, config.dureeBlocage());

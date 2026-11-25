@@ -12,6 +12,7 @@ import java.util.List;
  * the one an action is attributed to while nobody else is signed in.</p>
  *
  * @param desactivePar the id of the account that deactivated it, never an address
+ * @param passwordSet whether a local password is set: <b>only whether</b>, the hash never leaves the repository
  */
 public record Compte(
         String id,
@@ -21,7 +22,8 @@ public record Compte(
         Instant derniereConnexionLe,
         Instant desactiveLe,
         String desactivePar,
-        List<Habilitation> habilitations) {
+        List<Habilitation> habilitations,
+        boolean passwordSet) {
 
     /** The id the journal gives the implicit account of the configuration. */
     public static final String CONFIG_ID = "admin";
@@ -31,4 +33,12 @@ public record Compte(
 
     /** The identity attribute carrying the account of a session, once a sign-in binds one. */
     public static final String IDENTITY_ATTRIBUTE = "planning.compte";
+
+    /**
+     * Marks an identity opened by a local sign-in (a password), whose principal
+     * is the account's address: {@code CompteIdentityAugmentor} then binds the
+     * account and its roles on every request, the session cookie carrying
+     * nothing but that address.
+     */
+    public static final String LOCAL_ATTRIBUTE = "planning.compte.local";
 }

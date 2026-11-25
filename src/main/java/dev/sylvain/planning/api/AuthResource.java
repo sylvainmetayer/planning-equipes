@@ -1,9 +1,12 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.compte.Compte;
+import dev.sylvain.planning.service.compte.CompteAccesService;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -14,6 +17,8 @@ import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -43,6 +48,12 @@ public class AuthResource {
     private final SecurityIdentity identity;
 
     @Inject
+    CompteAccesService acces;
+
+    @Inject
+    AdminLoginLimiter limiteur;
+
+    @Inject
     public AuthResource(SecurityIdentity identity) {
         this.identity = identity;
     }
@@ -68,6 +79,63 @@ public class AuthResource {
     private String compteId() {
         Compte compte = identity.getAttribute(Compte.IDENTITY_ATTRIBUTE);
         return compte == null ? null : compte.id();
+    }
+
+    /**
+     * The password step of a local sign-in (ADR 0094). It opens no session: it
+     * answers with the one-time challenge the form post then exchanges — and
+     * first mails the code, unless the operator turned the second step off. A
+     * failure is one answer whatever its cause (unknown address, wrong password,
+     * deactivated account, no password yet), counted by the same lock as the
+     * form.
+     */
+    @POST
+    @Path("/connexion")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @APIResponse(
+            responseCode = "200",
+            // Declared by hand: the refusals carry a Response of their own.
+            content = @Content(schema = @Schema(implementation = CompteAccesService.Challenge.class)))
+    public Response passwordStep(Credentials credentials, @Context RoutingContext routage) {
+        Optional<CompteAccesService.Challenge> challenge;
+        try {
+            challenge = acces.open(
+                    credentials == null ? null : credentials.email(),
+                    credentials == null ? null : credentials.password());
+        } catch (CompteAccesService.TooManyRequests e) {
+            return Response.status(429)
+                    .header("Retry-After", e.secondsBeforeNextTry())
+                    .entity(Map.of("message", e.getMessage()))
+                    .build();
+        }
+        if (challenge.isEmpty()) {
+            limiteur.recordFailure(routage);
+            return Response.status(401)
+                    .entity(Map.of("message", "Adresse ou mot de passe incorrect."))
+                    .build();
+        }
+        return Response.ok(challenge.get()).build();
+    }
+
+    /**
+     * « Mot de passe oublié ». The same {@code 204} whether the address has an
+     * account or not.
+     */
+    @POST
+    @Path("/mot-de-passe/oubli")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response forgotPassword(ForgotRequest request) {
+        acces.forgot(request == null ? null : request.email());
+        return Response.noContent().build();
+    }
+
+    /** Chooses the password with a single-use link (invitation or reset). */
+    @POST
+    @Path("/mot-de-passe")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response choosePassword(PasswordChoice choice) {
+        acces.choose(choice == null ? null : choice.token(), choice == null ? null : choice.password());
+        return Response.noContent().build();
     }
 
     /**
@@ -112,6 +180,12 @@ public class AuthResource {
         String destination = sessionOidc ? "/api/auth/oidc/logout" : null;
         return Response.ok(new Deconnexion(destination)).cookie(expiration).build();
     }
+
+    public record Credentials(String email, String password) {}
+
+    public record ForgotRequest(String email) {}
+
+    public record PasswordChoice(String token, String password) {}
 
     /**
      * @param authentifie whether a session is open at all
