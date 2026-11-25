@@ -267,7 +267,7 @@ final class FlatProblem {
         if (weight.hardScore() != 0) {
             return 0;
         }
-        return weight.mediumScore() != 0 ? 1 : 2;
+        return weight.mediumScore() == 0 ? 2 : 1;
     }
 
     /** What one unit of a rule weighs on the number medium and soft share; nothing for a hard rule. */

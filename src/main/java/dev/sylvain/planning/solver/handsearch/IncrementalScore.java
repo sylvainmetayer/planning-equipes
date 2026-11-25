@@ -537,7 +537,7 @@ final class IncrementalScore {
         }
         int initial = flat.initial[s];
         if (initial >= 0) {
-            away += (to != initial ? 1 : 0) - (from != initial ? 1 : 0);
+            away += (to == initial ? 0 : 1) - (from == initial ? 0 : 1);
         }
         touch(from);
         touch(to);
@@ -788,7 +788,7 @@ final class IncrementalScore {
      * twenty. Only what is read once the days are over has its own
      * methods.</p>
      */
-    @SuppressWarnings({"java:S3776", "java:S138", "java:S6541"})
+    @SuppressWarnings({"java:S3776", "java:S138", "java:S6541", "java:S135"})
     private long eval(int a) {
         int[] list = seatsOf[a];
         int n = countOf[a];
@@ -801,7 +801,8 @@ final class IncrementalScore {
             return cost;
         }
         int owed = 0;
-        int firstWeek = flat.sWeek[list[0]], lastWeek = flat.sWeek[list[n - 1]];
+        int firstWeek = flat.sWeek[list[0]];
+        int lastWeek = flat.sWeek[list[n - 1]];
         for (int w = firstWeek; w <= lastWeek + 1; w++) {
             wMaj[w] = wMin[w] = wDays[w] = wMinorMask[w] = 0;
             wAheadMaj[w] = wAheadMin[w] = wAhead[w] = wSeatAhead[w] = false;
@@ -809,7 +810,8 @@ final class IncrementalScore {
         occ = 0;
         long likedMask = 0;
         boolean likedAhead = false;
-        int run = 0, longest = 0;
+        int run = 0;
+        int longest = 0;
         boolean runRepro = false;
         int k = -1; // index of the day being read
         int i = 0;
@@ -831,9 +833,13 @@ final class IncrementalScore {
                 live |= !flat.sPast[list[to]];
                 to++;
             }
-            int dur = 0, breaks = 0;
-            int seqStart = flat.sStart[list[i]], seqEnd = seqStart, seqFrom = i;
-            int dayStart = seqStart, dayEnd = seqStart;
+            int dur = 0;
+            int breaks = 0;
+            int seqStart = flat.sStart[list[i]];
+            int seqEnd = seqStart;
+            int seqFrom = i;
+            int dayStart = seqStart;
+            int dayEnd = seqStart;
             int base = d * 1440;
             for (; i <= to; i++) {
                 boolean endOfDay = i == to;
@@ -844,7 +850,9 @@ final class IncrementalScore {
                     owed += aged ? pauses : 0;
                     for (int q = 1; aged && q <= pauses; q++) {
                         int limit = seqStart + q * cap + (q - 1) * pause;
-                        int tenu = -1, after = -1, before = -1;
+                        int tenu = -1;
+                        int after = -1;
+                        int before = -1;
                         for (int j = seqFrom; j < i; j++) {
                             int s = list[j];
                             if (flat.sStart[s] <= limit && flat.sEnd[s] > limit) {
@@ -957,7 +965,12 @@ final class IncrementalScore {
             boolean follows = k > 0 && flat.sDayNo[list[dFrom[k - 1]]] + 1 == flat.sDayNo[list[from]];
             if (follows) {
                 int veille = flat.sDay[list[dFrom[k - 1]]];
-                int rest = flat.under16At[a][veille] ? 14 * 60 : flat.minorAt[a][veille] ? 12 * 60 : 11 * 60;
+                int rest = 11 * 60;
+                if (flat.under16At[a][veille]) {
+                    rest = 14 * 60;
+                } else if (flat.minorAt[a][veille]) {
+                    rest = 12 * 60;
+                }
                 for (int x = dFrom[k - 1]; x < dTo[k - 1]; x++) {
                     for (int y = from; y < to; y++) {
                         int gap = flat.sStart[list[y]] - flat.sEnd[list[x]];
@@ -991,8 +1004,11 @@ final class IncrementalScore {
                 if (!flat.mwOn[m][d]) {
                     continue;
                 }
-                int open = flat.mwOpen[m], close = flat.mwClose[m], need = flat.mwDur[m];
-                boolean beforeIt = false, afterIt = false;
+                int open = flat.mwOpen[m];
+                int close = flat.mwClose[m];
+                int need = flat.mwDur[m];
+                boolean beforeIt = false;
+                boolean afterIt = false;
                 for (int x = from; x < to; x++) {
                     beforeIt |= flat.sStart[list[x]] - base < open;
                     afterIt |= flat.sEnd[list[x]] - base > close;
@@ -1000,9 +1016,13 @@ final class IncrementalScore {
                 if (!beforeIt || !afterIt) {
                     continue;
                 }
-                int cursor = open, biggest = 0, firstGap = -1, lastGap = -1;
+                int cursor = open;
+                int biggest = 0;
+                int firstGap = -1;
+                int lastGap = -1;
                 for (int x = from; x <= to; x++) {
-                    int lo, hi;
+                    int lo;
+                    int hi;
                     if (x == to) {
                         lo = close;
                         hi = close;
@@ -1037,9 +1057,11 @@ final class IncrementalScore {
 
             // places of the day, and what follows what
             if (to - from > 1 || flat.maxEmpl < 1) {
-                int distinct = 0, located = 0;
+                int distinct = 0;
+                int located = 0;
                 for (int x = from; x < to; x++) {
-                    int sx = list[x], ex = flat.sEmpl[sx];
+                    int sx = list[x];
+                    int ex = flat.sEmpl[sx];
                     if (ex >= 0) {
                         located += flat.sPast[sx] ? 0 : 1;
                         boolean seen = false;
@@ -1161,7 +1183,7 @@ final class IncrementalScore {
         int free = 0;
         int longestFree = 0;
         for (int b = 0; b < 7; b++) {
-            free = (wMinorMask[w] & (1 << b)) != 0 ? 0 : free + 1;
+            free = (wMinorMask[w] & (1 << b)) == 0 ? free + 1 : 0;
             longestFree = Math.max(longestFree, free);
         }
         return longestFree < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE

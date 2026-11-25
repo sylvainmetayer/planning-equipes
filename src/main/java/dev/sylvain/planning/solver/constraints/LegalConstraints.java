@@ -67,11 +67,11 @@ import java.util.function.ToIntFunction;
 public final class LegalConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
-        return define(constraintFactory, new SeatStreams(constraintFactory));
+        return define(new SeatStreams(constraintFactory));
     }
 
     /** The same rules over the seat streams shared with the other families (see {@link SeatStreams}). */
-    public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
+    public Constraint[] define(SeatStreams seats) {
         return new Constraint[] {
             standReserveAuxMajeurs(seats),
             mineurNecessiteEncadrementMajeur(seats),
