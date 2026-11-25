@@ -20,7 +20,7 @@
 #      /api/mentions-legales, qui reflète LEGAL_DEMO_INSTANCE tel que
 #      l'application l'a lu, quelle que soit la façon dont il a été posé.
 #
-# Dépendances : bash, curl, jq. Voir docs/exploitation.md § 2.
+# Dépendances : bash, curl, jq. Voir site/src/docs/installer/exploitation.md § 2.
 set -euo pipefail
 
 usage() {

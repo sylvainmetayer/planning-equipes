@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The MCP endpoint's own credentials and guards (see {@code docs/mcp.md}).
+ * The MCP endpoint's own credentials and guards (see {@code site/src/docs/comprendre/mcp.md}).
  * Declared once here, where it used to be declared twice — in
  * {@code McpResource} and in {@code McpApiKeyAuthenticationMechanism}, two
  * packages apart, each carrying its own copy of the header default.

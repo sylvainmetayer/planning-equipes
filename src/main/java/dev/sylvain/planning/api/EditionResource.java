@@ -180,7 +180,7 @@ public class EditionResource {
      * neither the roster nor their availability, competences, wishes or the ad
      * hoc constraints naming them. Preparing 2027 from 2026 has no business
      * duplicating a file of persons who have not signed up again (issue #90,
-     * {@code docs/rgpd.md}).</p>
+     * {@code site/src/docs/installer/rgpd.md}).</p>
      */
     @InstanceOnly
     @POST

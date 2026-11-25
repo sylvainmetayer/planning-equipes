@@ -387,7 +387,7 @@ public class ReferentielCsvImportService {
         }
         // The file carries code, libelle and ninja — no cap and no
         // description column — so both are kept rather than erased: « une
-        // colonne retirée du fichier n'efface rien » (docs/import-export.md).
+        // colonne retirée du fichier n'efface rien » (site/src/docs/comprendre/import-export.md).
         TypologieItem existante = cle.id() == null ? null : existantes.parId().get(cle.id());
         TypologieItem ecrite = new TypologieItem(
                 cle.id(),

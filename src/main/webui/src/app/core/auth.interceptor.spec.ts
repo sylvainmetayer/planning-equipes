@@ -35,7 +35,7 @@ describe('authInterceptor', () => {
   });
 
   // Recovering an entry after the session expired is what the drafts are
-  // for: the 401 keeps them, only the explicit logout purges (docs/rgpd.md §7).
+  // for: the 401 keeps them, only the explicit logout purges (site/src/docs/installer/rgpd.md §7).
   it('keeps the session drafts on the 401 that sends to /login', async () => {
     writeDraft(sessionDrafts, draftKey('animateur', 'a1'), {}, null);
 

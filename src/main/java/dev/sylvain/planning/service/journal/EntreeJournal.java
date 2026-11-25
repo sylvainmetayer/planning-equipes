@@ -11,7 +11,7 @@ import java.util.List;
  * carries the <em>names</em> of the fields an edit changed, never their
  * values: « nom, email » says what moved without saying what it became. The
  * screen joins the identity from the referential when it reads, so a deleted
- * fiche leaves a line that names nobody — see {@code docs/rgpd.md}.</p>
+ * fiche leaves a line that names nobody — see {@code site/src/docs/installer/rgpd.md}.</p>
  *
  * @param id        server-side sequence, unique within the edition
  * @param survenuLe when it happened

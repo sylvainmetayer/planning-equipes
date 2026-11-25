@@ -2,7 +2,7 @@
 ' La collecte des disponibilités : le coordinateur ouvre une fenêtre, chacun
 ' déclare depuis son espace, le coordinateur applique ou refuse. Appliquer
 ' écrit la fiche ; le solveur n'est pas relancé.
-' Voir docs/api.md, « Déclaration de disponibilités ».
+' Voir site/src/docs/comprendre/api.md, « Déclaration de disponibilités ».
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

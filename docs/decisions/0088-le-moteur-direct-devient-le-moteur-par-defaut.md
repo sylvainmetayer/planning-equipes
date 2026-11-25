@@ -29,11 +29,11 @@ redémarrage lui rendent la recherche d'origine, sans migration ni donnée à
 convertir. Le réglage reste un réglage d'**instance** : un worker suit celui
 de l'application qui lui envoie le problème.
 
-C'est une **rupture majeure (3.0.0)**, au sens de `docs/versioning.md` : un
+C'est une **rupture majeure (3.0.0)**, au sens de `site/src/docs/installer/versioning.md` : un
 défaut qui change le comportement de toutes les instances à la mise à jour. Les
 plans rendus ne sont plus ceux d'avant à budget égal (autre recherche, autres
 égalités départagées), et un plan est maintenant refusé, avec un message sur la
-tâche, quand le moteur ne sait pas le scorer (liste dans `docs/exploitation.md`).
+tâche, quand le moteur ne sait pas le scorer (liste dans `site/src/docs/installer/exploitation.md`).
 
 ### 2. Ce qui reste sur Timefold
 
@@ -135,6 +135,6 @@ secondes sont celles d'une machine de calcul à 16 cœurs, pas une constante :
 - **Un repli automatique sur Timefold en cas d'écart.** Écarté par 0087 : il
   cacherait exactement le défaut que l'arbitre est là pour montrer.
 - **Changer le défaut dans une version mineure avec « ⚠️ Attention ».**
-  `docs/versioning.md` réserve ce marqueur aux ruptures d'exploitation non
+  `site/src/docs/installer/versioning.md` réserve ce marqueur aux ruptures d'exploitation non
   majeures (un réglage rééchelonné, une valeur à convertir) ; un défaut qui
   change le comportement de toutes les instances est MAJOR.

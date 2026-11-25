@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>dev.sylvain</groupId>
     <artifactId>planning-equipes</artifactId>
-    <!-- CI-friendly version (docs/versioning.md) : the Docker build derives it
+    <!-- CI-friendly version (site/src/docs/installer/versioning.md) : the Docker build derives it
          from the git tag being built (-Drevision=1.2.0) so
          quarkus.application.version — the Quarkus startup line — reports the
          released version. Everywhere else the default below applies, and
@@ -81,7 +81,7 @@
              faster startup: the solver then runs two to four times slower than
              the packaged application, and a solve timed in dev mode measures
              dev mode. -DforceC2=false gives the startup back for a session
-             that solves nothing. See docs/developpement.md. -->
+             that solves nothing. See site/src/docs/comprendre/developpement.md. -->
         <forceC2>true</forceC2>
     </properties>
 
@@ -120,7 +120,7 @@
         </dependency>
         <!-- Operating metrics in the Prometheus format (solver, HTTP, SMTP,
              backup), served on the management interface only — a port the
-             production stack never publishes. See docs/observabilite.md. -->
+             production stack never publishes. See site/src/docs/installer/observabilite.md. -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
@@ -174,7 +174,7 @@
         </dependency>
         <!-- Every mail body is a Qute template under resources/templates/mail:
              one .txt and one .html per mail, the HTML ones sharing a layout
-             carrying the deployment's branding. See docs/architecture.md. -->
+             carrying the deployment's branding. See site/src/docs/comprendre/architecture.md. -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-qute</artifactId>
@@ -187,7 +187,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-elytron-security-properties-file</artifactId>
         </dependency>
-        <!-- OpenID Connect login (docs/oidc.md, ADR 0093). A web-app tenant for the
+        <!-- OpenID Connect login (site/src/docs/installer/oidc.md, ADR 0093). A web-app tenant for the
              browser sessions of the organisers. Off by default (OIDC_ENABLED):
              any OpenID Connect provider, the embedded admin account staying the
              local door. -->
@@ -222,7 +222,7 @@
              scenario-file DTOs, validated with Bean Validation and used to
              derive the JSON
              Schema published at docs/schema/scenario-schema.json (see
-             docs/import-export.md and the generate-schema Maven profile).
+             site/src/docs/comprendre/import-export.md and the generate-schema Maven profile).
              Plain Jakarta Bean Validation + reference impl, not the
              quarkus-hibernate-validator extension, since this tool runs
              standalone via exec:java and doesn't need CDI/Quarkus
@@ -526,7 +526,7 @@
         </profile>
         <!-- Opt-in: runs only the @Tag("scenario-extreme") tests, the limits of
              the extreme-… files of src/main/resources/scenarios
-             (docs/developpement.md). Heavy:
+             (site/src/docs/comprendre/developpement.md). Heavy:
              run them one class at a time, in the foreground, with a heap to
              match — ./mvnw test -Pscenario-extreme -DargLine=-Xmx3g. -->
         <profile>
@@ -562,7 +562,7 @@
         </profile>
         <!-- Opt-in: regenerates docs/schema/scenario-schema.json from the
              dev.sylvain.planning.scenario.dto classes (see
-             ScenarioSchemaGenerator and docs/import-export.md). Not run by
+             ScenarioSchemaGenerator and site/src/docs/comprendre/import-export.md). Not run by
              the default build or CI — use
              ./mvnw process-classes -Pgenerate-schema after changing a
              scenario DTO, and commit the regenerated file. -->
@@ -594,7 +594,7 @@
             </build>
         </profile>
         <!-- Opt-in: renders every docs/diagrammes/*.puml into the .svg next
-             to it (docs/developpement.md, « Diagrammes »). Not run by the
+             to it (site/src/docs/comprendre/developpement.md, « Diagrammes »). Not run by the
              default build — use ./mvnw validate -Pgenerate-diagrams after
              editing a diagram, and commit both files: the SVG embeds its
              source, and DiagramsStructuralTest fails when the two differ.
@@ -696,7 +696,7 @@
              (.github/workflows/mutation.yml), and below mutationThreshold the
              build fails. Locally, about four minutes:
              ./mvnw -Pmutation test-compile pitest:mutationCoverage, then open
-             target/pit-reports/index.html. See docs/developpement.md. -->
+             target/pit-reports/index.html. See site/src/docs/comprendre/developpement.md. -->
         <profile>
             <id>mutation</id>
             <build>

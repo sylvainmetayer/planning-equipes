@@ -4,7 +4,7 @@
 ' choisit qui la tient. Pas de variable fantôme. Les typologies ne sont pas
 ' des classes : des identifiants, portés par les animateurs et les stands.
 ' Seuls les champs qui comptent pour le solveur sont dessinés.
-' Voir docs/domaine.md.
+' Voir site/src/docs/comprendre/domaine.md.
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam classAttributeIconSize 0

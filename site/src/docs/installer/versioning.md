@@ -126,9 +126,9 @@ une PR par sujet, pas de `develop`. Une release, c'est **un formulaire** —
 *Releases* → *Draft a new release* sur GitHub : choisir le numéro `vX.Y.Z`
 (§ 2 dit lequel), viser `main`, publier. Le corps peut rester vide.
 
-![Fabrication d'une release et patch d'une version antérieure](diagrammes/release.svg)
+![Fabrication d'une release et patch d'une version antérieure](repo:docs/diagrammes/release.svg)
 
-<sub>Source : [`diagrammes/release.puml`](diagrammes/release.puml).</sub>
+<sub>Source : [`diagrammes/release.puml`](repo:docs/diagrammes/release.puml).</sub>
 
 Tout le reste dérive de ce geste, sans commande ni clone :
 
@@ -182,7 +182,7 @@ n'avance que vers l'avant, ou pas du tout.
 ### Les notes sont générées, pas écrites — et il n'y a pas de `CHANGELOG.md`
 
 `cliff.toml` à la racine transforme les messages conventionnels (`feat:`,
-`fix:`, … — la convention est dans [`AGENTS.md`](../AGENTS.md)) en sections
+`fix:`, … — la convention est dans [`AGENTS.md`](repo:AGENTS.md)) en sections
 datées. C'est le **corps des releases** qu'il alimente, et rien d'autre : aucun
 `CHANGELOG.md` n'est tenu dans le dépôt.
 

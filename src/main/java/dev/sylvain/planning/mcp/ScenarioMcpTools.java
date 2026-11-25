@@ -34,7 +34,7 @@ import java.util.List;
  * carries every animateur's prénom, nom and date de naissance (it has to —
  * it is meant to be re-importable), which is precisely what issue #107
  * forbids from leaving over MCP. Same reasoning for the database dump of
- * {@code DatabaseResource}, see docs/mcp.md.
+ * {@code DatabaseResource}, see site/src/docs/comprendre/mcp.md.
  */
 @EditionCiblee
 @RefusMetier

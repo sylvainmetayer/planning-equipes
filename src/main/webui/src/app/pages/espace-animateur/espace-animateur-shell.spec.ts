@@ -124,7 +124,7 @@ describe('EspaceAnimateurShell — quelle édition', () => {
   });
 
   /**
-   * The bounds are derived from the créneaux (docs/domaine.md): an édition
+   * The bounds are derived from the créneaux (site/src/docs/comprendre/domaine.md): an édition
    * holding none has no bounds, and its name is then the whole label.
    */
   it("garde le nom quand l'édition n'a pas encore de créneau", async () => {

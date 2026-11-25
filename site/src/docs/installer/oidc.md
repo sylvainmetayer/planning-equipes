@@ -2,7 +2,7 @@
 
 Facultatif : sans configuration, l'application se comporte comme avant (le compte
 `admin` de la configuration ouvre l'administration). Le raisonnement est dans
-l'[ADR 0093](decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md).
+l'[ADR 0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md).
 
 ## Ce que fait le fournisseur, ce que fait l'application
 
@@ -97,9 +97,9 @@ courante seulement : une section `edition:` qui en désigne une autre, ou une à
 créer, est refusée (400). L'inventaire est `InstanceRoutesStructuralTest` (ressources) et
 `RoutesOuvertesStructuralTest` (route par route, voir `securite.md`) ; une
 nouvelle ressource ou route non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
-(ADR [0095](decisions/0095-le-responsable-de-stand-lit-son-stand.md)). Le `/mcp`
+(ADR [0095](repo:docs/decisions/0095-le-responsable-de-stand-lit-son-stand.md)). Le `/mcp`
 accepte aussi un jeton OAuth du fournisseur, sous les mêmes droits (voir
-[`mcp.md`](mcp.md)) ; sa clé d'API reste. Les comptes locaux avec mot de passe, ouverts
+[`mcp.md`](../comprendre/mcp.md)) ; sa clé d'API reste. Les comptes locaux avec mot de passe, ouverts
 même derrière un fournisseur, sont décrits dans
 [`exploitation.md`](exploitation.md#les-comptes-locaux-mot-de-passe) et
 [`securite.md`](securite.md#qui-ouvre-ladministration).

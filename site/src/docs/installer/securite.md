@@ -6,7 +6,7 @@ document rassemble ce que le service applique **de lui-même** quand on
 l'ouvre sur Internet, et ce qui reste à la charge du déploiement.
 
 L'authentification (session admin, jeton + code de l'espace animateur, clé
-MCP) est décrite dans [`api.md`](api.md) et [`mcp.md`](mcp.md) ; on ne la
+MCP) est décrite dans [`api.md`](../comprendre/api.md) et [`mcp.md`](../comprendre/mcp.md) ; on ne la
 répète pas ici.
 
 ## En-têtes de sécurité navigateur
@@ -305,7 +305,7 @@ de `CONNEXION_PROXYS_FIABLES` — les proxys sont un fait du déploiement, pas d
 endpoint —, et une valeur **vide** compte comme absente : un fichier compose qui
 transmet la variable non renseignée la pose à la chaîne vide, que le repli
 `${A:${B:}}` de la configuration ne tient pas pour manquante. Sans ce repli en
-Java, tout appel à `/mcp` arrivant par le proxy tombait sur un seul compteur. Voir [`mcp.md`](mcp.md#limitation-de-débit) pour le réglage du
+Java, tout appel à `/mcp` arrivant par le proxy tombait sur un seul compteur. Voir [`mcp.md`](../comprendre/mcp.md#limitation-de-débit) pour le réglage du
 plafond selon l'usage.
 
 > **Derrière un proxy, cette liste n'est pas facultative ici.** Le verrou de
@@ -397,7 +397,7 @@ tout le reste — exports, résolution, API entière.
 Chaque issue du form login est consignée dans le **journal des connexions** de
 l'instance (table `journal_connexion`, onglet « Connexions » de la page
 *Historique*, quelle que soit l'édition choisie —
-[ADR 0076](decisions/0076-journal-des-connexions-admin-par-instance.md)) :
+[ADR 0076](repo:docs/decisions/0076-journal-des-connexions-admin-par-instance.md)) :
 la connexion réussie, **chaque échec**, et **le verrouillage**, une fois, sur
 l'échec qui atteint `CONNEXION_MAX_ECHECS`. Chaque ligne porte son horodatage et
 l'adresse que le verrou compte, lue de la même façon (`X-Forwarded-For` par la
@@ -446,7 +446,7 @@ la durée de chacun. Contrairement aux limiteurs ci-dessus, ils comptent pour
 visiteur qui change d'adresse ne repart pas à zéro. Le refus est un `409` qui
 dit quand revenir, pas un `429`. Coupés par défaut ; réglage et périmètre dans
 [`exploitation.md`](exploitation.md#combien-de-calculs-linstance-accepte), choix
-dans [l'ADR 0075](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
+dans [l'ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
 
 ## Ce que chaque rôle peut appeler, route par route
 
@@ -641,9 +641,9 @@ abonné ne porte aucun cookie et ne sait pas répondre à un défi
 d'authentification : sans elle, l'abonnement serait un `401` à la première
 resynchronisation.
 
-![Lecture d'un abonnement ICS et révocation](diagrammes/abonnement-ics.svg)
+![Lecture d'un abonnement ICS et révocation](repo:docs/diagrammes/abonnement-ics.svg)
 
-<sub>Source : [`diagrammes/abonnement-ics.puml`](diagrammes/abonnement-ics.puml).</sub>
+<sub>Source : [`diagrammes/abonnement-ics.puml`](repo:docs/diagrammes/abonnement-ics.puml).</sub>
 
 ### Pourquoi un jeton de plus plutôt que le jeton d'espace
 
@@ -655,7 +655,7 @@ facteur — et un lien imprimé sur un PDF circule.
 Le jeton d'abonnement est donc une clé séparée (`animateur.abonnement_token`),
 avec la même génération que l'autre (`gen_random_uuid()`, 122 bits d'aléa,
 unicité globale) et un cycle de vie indépendant. Voir
-[décision 0019](decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md).
+[décision 0019](repo:docs/decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md).
 
 ### Ce qu'il permet, exactement
 
@@ -751,7 +751,7 @@ appliqué à un écran : une TV reste allumée des jours dans une pièce où pas
 des bénévoles, et une session admin laissée dessus — prolongée par le
 rafraîchissement de l'écran lui-même — y donnerait l'écriture sur tout le
 planning. Voir la
-[décision 0053](decisions/0053-affichage-mural-par-jeton-dedie.md).
+[décision 0053](repo:docs/decisions/0053-affichage-mural-par-jeton-dedie.md).
 
 ### Ce qu'il permet, exactement
 
@@ -854,7 +854,7 @@ premiers visent une adresse **tapée par un administrateur** : c'est le cas
 d'école du SSRF — se servir du serveur pour joindre ce que lui seul peut joindre (le port de PostgreSQL, le service de
 métadonnées d'un cloud en `169.254.169.254`, une interface d'administration
 liée à la boucle locale). La décision et ses raisons :
-[ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
+[ADR 0074](repo:docs/decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
 
 ### Ce que la garde refuse
 
@@ -918,7 +918,7 @@ quand la variable revient à `true` (dans la limite de leurs 30 jours).
 
 Aucun outil MCP ne configure un webhook : une adresse de salon est un secret,
 et ouvrir une sortie réseau depuis une conversation est une voie
-d'exfiltration — voir [`mcp.md`](mcp.md).
+d'exfiltration — voir [`mcp.md`](../comprendre/mcp.md).
 
 ### L'alerte météo
 
@@ -940,7 +940,7 @@ réponse illisible ou un service muet n'est jamais propagé : il est noté
 ## Calcul déporté : ce qui sort, et vers qui
 
 Une instance peut confier ses résolutions à un *worker* sur une autre machine
-([ADR 0086](decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md),
+([ADR 0086](repo:docs/decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md),
 mise en place dans [`exploitation.md`](exploitation.md) § Résoudre sur une
 autre machine). Sans configuration, rien ne sort.
 

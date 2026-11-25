@@ -2,7 +2,7 @@
 ' La sauvegarde automatique et la restauration, qui se fait hors de
 ' l'application. L'API ne fait que lire l'état et suspendre ou reprendre :
 ' ni téléchargement, ni restauration, ni sauvegarde à la demande.
-' Voir docs/exploitation.md §5 et docs/decisions/0015.
+' Voir site/src/docs/installer/exploitation.md §5 et docs/decisions/0015.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

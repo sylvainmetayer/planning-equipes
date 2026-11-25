@@ -46,7 +46,7 @@ import java.util.List;
  * seats all carry a stand, a dated timeslot and its hours — every plan the
  * application builds — the rules count exactly what they counted, and a solve
  * follows the same trajectory move for move (measured, see
- * {@code docs/developpement.md}). Two readings moved on purpose:</p>
+ * {@code site/src/docs/comprendre/developpement.md}). Two readings moved on purpose:</p>
  * <ul>
  *   <li>{@code favoriserMixiteDesNiveaux} reads the line through
  *       {@link #stillHeld()}, as {@code standComplexeAvecReferent} and

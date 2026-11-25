@@ -22,9 +22,9 @@ porte les invariants qui ne s'y voient pas.
 Toutes les tables métier portent `edition_id` (migrations V32–V36), avec une clé
 primaire composite `(edition_id, id)`.
 
-![Une écriture du référentiel, de l'en-tête X-Edition-Id au commit](diagrammes/edition-requete.svg)
+![Une écriture du référentiel, de l'en-tête X-Edition-Id au commit](repo:docs/diagrammes/edition-requete.svg)
 
-<sub>Source : [`diagrammes/edition-requete.puml`](diagrammes/edition-requete.puml).</sub>
+<sub>Source : [`diagrammes/edition-requete.puml`](repo:docs/diagrammes/edition-requete.puml).</sub>
 
 `JdbcEditionScope` lie l'édition courante au premier paramètre de chaque
 requête et porte la transaction. Ce n'est pas le seul endroit qui emprunte une
@@ -39,7 +39,7 @@ test au lieu d'être ignorée.
 
 Une nouvelle table du référentiel suit la même convention et passe par ce
 helper. Voir
-[`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
+[`decisions/0001-cloisonnement-par-edition.md`](repo:docs/decisions/0001-cloisonnement-par-edition.md).
 
 Un dépôt par famille (`StandRepository`, `AnimateurRepository`, …) plutôt qu'un
 dépôt unique : le prédicat reste auditable d'un `grep` sur le paquet. Une seule
@@ -53,7 +53,7 @@ inter-éditions : chaque côté est lu **dans** son édition, par
 fait en mémoire. Elle ne rapproche jamais deux lignes par leur identifiant :
 deux éditions numérotent leurs fiches à partir du même compteur, si bien que
 `A151` peut désigner deux personnes
-([ADR 0050](decisions/0050-identifiants-generes-par-edition.md)). Pour la même
+([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)). Pour la même
 raison, aucune date n'est comparée telle quelle : la grille, et les fenêtres
 datées ou règles à dates d'un stand, s'alignent sur le rang du jour
 d'ouverture. Les réglages des contraintes sont comparés par leur valeur
@@ -70,9 +70,9 @@ passent toutes. Deux coutures seulement : comment le problème est construit, et
 qui doit tenir le solveur pour pouvoir l'arrêter. Voir
 [`api.md`](api.md#résolution) pour ce que ça a corrigé.
 
-![Séquence d'un solve lancé depuis le référentiel](diagrammes/solve.svg)
+![Séquence d'un solve lancé depuis le référentiel](repo:docs/diagrammes/solve.svg)
 
-<sub>Source : [`diagrammes/solve.puml`](diagrammes/solve.puml).</sub>
+<sub>Source : [`diagrammes/solve.puml`](repo:docs/diagrammes/solve.puml).</sub>
 
 Cette seconde couture — « qui tient le solveur » — en porte deux usages, pas
 un : l'arrêter, et **le suivre**. `SolverScoreTrace` s'abonne au même
@@ -89,7 +89,7 @@ les deux besoins se désynchronisent. Échantillonnage et cloisonnement dans
 
 - `timefold` — la recherche locale de Timefold sur les contraintes en
   flux, en deux temps quand un plan est publié (l'ancien défaut, `SOLVER_ENGINE=timefold`) ;
-- `hand` (défaut depuis la 3.0.0, [0088](decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)) — `HandSearchSolver`, qui fait chercher `solver/handsearch` (un score
+- `hand` (défaut depuis la 3.0.0, [0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)) — `HandSearchSolver`, qui fait chercher `solver/handsearch` (un score
   tenu à jour mouvement par mouvement, les 47 règles écrites une seconde
   fois) puis **fait re-scorer le plan par Timefold**. Deux scores différents
   font échouer la tâche ; il n'y a pas de repli.
@@ -101,7 +101,7 @@ l'instance avec le reste des réglages de recherche. Le paquet
 conteneur d'injection, ni d'une configuration. La vérification du besoin et
 les résolutions « jusqu'à la faisabilité » restent sur Timefold. Le pourquoi,
 ce que ça coûte et le filet de tests :
-[`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md).
+[`0087`](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md).
 
 ## Le diagnostic ne passe plus par l'API réservée de Timefold
 
@@ -138,7 +138,7 @@ n'est pas un secours mais l'**oracle** du test de contrat — c'est ce qui rend
 tenable de s'appuyer sur `ai.timefold.solver.core.impl`, hors semver : une
 montée de version qui change le comportement fait échouer la comparaison et
 nomme l'écart, au lieu de déformer cinq écrans en silence. Voir
-[`decisions/0013-diagnostic-par-le-score-director.md`](decisions/0013-diagnostic-par-le-score-director.md).
+[`decisions/0013-diagnostic-par-le-score-director.md`](repo:docs/decisions/0013-diagnostic-par-le-score-director.md).
 
 Trois filtres de mouvement (`EligibleAnimateurMoveFilter`,
 `HoleNeighbourPosteFilter`, `UnassignedPosteFilter`) et les deux fabriques de
@@ -169,7 +169,7 @@ sens selon une annotation posée plusieurs cadres plus haut, ne voit pas les
 appels internes, et le `commit()` manuel du scope lèverait sous JTA.
 
 L'alternative a depuis été mesurée, prototype à l'appui, dans
-[`docs/decisions/0028`](decisions/0028-transactions-declaratives-narayana.md) :
+[`docs/decisions/0028`](repo:docs/decisions/0028-transactions-declaratives-narayana.md) :
 Narayana est déjà sur le classpath, six lignes font du scope un participant
 JTA, et l'unité composée se passe alors de `Connection` — au prix de trois
 garde-fous structurels. L'étude est close sans adoption (ADR 0028, voir 0091) :
@@ -525,9 +525,9 @@ puisse dire qui détenait quoi, et quand. Une connexion OIDC ou par mot de passe
 local s'y rattache et un compte inconnu n'ouvre rien ; l'administrateur de la
 configuration reste hors de cette table, derrière sa propre porte, fermée par
 défaut derrière un fournisseur
-([`oidc.md`](oidc.md), [`securite.md`](securite.md#qui-ouvre-ladministration),
-ADR [0093](decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)
-et [0094](decisions/0094-comptes-locaux-par-mot-de-passe.md)).
+([`oidc.md`](../installer/oidc.md), [`securite.md`](../installer/securite.md#qui-ouvre-ladministration),
+ADR [0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)
+et [0094](repo:docs/decisions/0094-comptes-locaux-par-mot-de-passe.md)).
 
 `service/responsable/` sert le responsable de stand, lecture seule : l'édition
 **active** seulement, le plan **publié** seulement, les stands que son droit
@@ -537,8 +537,8 @@ s'affichent que si `ReglagesResponsables` le dit à cet instant (défaut de
 l'édition, exception par stand). Le rôle n'ouvre que `/api/responsable/*`, et
 les droits de stand n'ont pas de clé étrangère vers `stand`, pour qu'un import
 de dump qui recrée les stands n'efface pas les droits
-([ADR 0095](decisions/0095-le-responsable-de-stand-lit-son-stand.md),
-périmètre de sécurité dans [`securite.md`](securite.md#le-responsable-de-stand--un-droit-de-lecture-pas-une-porte-de-plus)).
+([ADR 0095](repo:docs/decisions/0095-le-responsable-de-stand-lit-son-stand.md),
+périmètre de sécurité dans [`securite.md`](../installer/securite.md#le-responsable-de-stand--un-droit-de-lecture-pas-une-porte-de-plus)).
 
 ## Base de données
 
@@ -548,7 +548,7 @@ fichier versionné** ; ne jamais modifier une migration déjà appliquée.
 `FLYWAY_REPAIR_AT_START` active la réparation de la table d'historique au
 démarrage. Elle vaut `false` et n'a de sens qu'en exploitation, le temps de
 débloquer une migration interrompue — voir
-[`exploitation.md`](exploitation.md).
+[`exploitation.md`](../installer/exploitation.md).
 
 Une base **en avance** sur le binaire (une migration appliquée que l'image ne
 livre pas) n'est pas laissée à Flyway : `ignore-migration-patterns=*:future`
@@ -562,7 +562,7 @@ l'observateur. La même décision est donc prise juste avant toute réparation,
 par un rappel Flyway (`SchemaCompatibilityRepairGuard`). Un second observateur
 de la garde, joué après tous les autres contrôles de démarrage (un démarrage
 qu'ils refusent n'a pas ouvert la base), note dans `version_applicative` chaque
-changement de version de l'application, que la page *Débogage* affiche — voir [`versioning.md`](versioning.md) § 2.
+changement de version de l'application, que la page *Débogage* affiche — voir [`versioning.md`](../installer/versioning.md) § 2.
 
 ## Les tâches planifiées, et le seul endroit qui écrit sur le disque
 
@@ -572,7 +572,7 @@ copies les plus récentes. C'est le **seul fichier écrit hors de la base**, et
 elle reste la seule tâche à toucher le disque.
 
 Trois choix structurent le paquet, détaillés dans
-[`decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md) :
+[`decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md`](repo:docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md) :
 la **restauration reste hors de l'application**, les dumps ne sont **pas
 téléchargeables**, et l'emplacement comme la rétention sont des **variables
 d'environnement** — l'écran n'écrit qu'un booléen, celui qui suspend la tâche.
@@ -619,8 +619,8 @@ dans l'espace animateur.
 ### Le réalisé figé de fin d'événement
 
 Plus aucune tâche de nuit ne le calcule
-([ADR 0092](decisions/0092-le-realise-se-calcule-a-la-demande.md), qui remplace
-[0070](decisions/0070-un-troisieme-job-planifie-fige-le-realise.md)).
+([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md), qui remplace
+[0070](repo:docs/decisions/0070-un-troisieme-job-planifie-fige-le-realise.md)).
 `RealisedVsPlannedService` répond à la demande et, à la première lecture faite
 une fois le dernier créneau de l'édition terminé et quelque chose publié,
 écrit dans `kpi_realise` la mesure « Réalisé vs planifié » par typologie et
@@ -642,7 +642,7 @@ du jour J) aujourd'hui, un pointage de présence demain, sans toucher au calcul.
 ### Les webhooks sortants
 
 `service/webhook/WebhookDeliverer` est le troisième `@Scheduled`
-([ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
+([ADR 0074](repo:docs/decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
 chaque minute (`WEBHOOKS_CRON`), il reprend les livraisons dont le réessai est
 échu — 1 min, 5 min, 30 min, 2 h, 12 h —, y compris après un redémarrage. Le
 premier essai part aussitôt, sur un petit groupe de fils à lui et jamais sur
@@ -661,7 +661,7 @@ Le chemin d'un événement :
 - un événement sur une édition ne sort que si
   `service/notification/OutboundEditionPolicy` le permet — le seul endroit qui
   le décide : seule l'édition active émet
-  ([ADR 0072](decisions/0072-une-seule-edition-active.md)) ; l'échec de la sauvegarde nocturne, événement d'instance, part
+  ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)) ; l'échec de la sauvegarde nocturne, événement d'instance, part
   toujours. La question se repose à chaque essai : un réessai ou un
   « Renvoyer » sur une édition qui n'est plus active est abandonné ;
 - `WebhookDeliverer` rend le corps au format du webhook (`WebhookFormats`, une
@@ -673,12 +673,12 @@ Configuration d'instance : `webhook` et `webhook_livraison` n'ont pas
 d'`edition_id`, ne passent pas par `JdbcEditionScope` et restent hors de
 l'export SQL. Les secrets y sont chiffrés (`SecretCipher`, AES-GCM,
 `WEBHOOKS_SECRET_KEY`). La garde et ses raisons :
-[`securite.md`](securite.md) § Appels sortants.
+[`securite.md`](../installer/securite.md) § Appels sortants.
 
 ### L'alerte météo
 
 `service/weather/WeatherAlertJob` est le quatrième `@Scheduled`
-([ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
+([ADR 0074](repo:docs/decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md)) :
 chaque matin (`METEO_CRON`, heure d'instance dans `NOTIFICATIONS_TIMEZONE`), il
 entre dans l'édition active — la seule que `OutboundEditionPolicy` laisse
 émettre, aucune entre deux événements —, si son alerte est activée, et laisse `WeatherAlertService` faire le reste :
@@ -714,5 +714,5 @@ utilisateur non privilégié `uid 1000`), PostgreSQL avec son volume et son
 healthcheck, pgAdmin. L'image finale embarque `postgresql-client-19` pour la
 sauvegarde de nuit : un `pg_dump` plus ancien que le serveur refuse de tourner,
 donc cette version suit celle de l'image `postgres:`. La configuration de production est dans
-[`exploitation.md`](exploitation.md) et le durcissement dans
-[`securite.md`](securite.md).
+[`exploitation.md`](../installer/exploitation.md) et le durcissement dans
+[`securite.md`](../installer/securite.md).

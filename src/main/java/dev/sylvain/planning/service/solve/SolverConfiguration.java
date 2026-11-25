@@ -333,7 +333,7 @@ final class SolverConfiguration {
      * stops. Per seat, because the medium of a plan grows with its seats
      * (7 to 9 points a seat on the grids measured) and a flat threshold fair
      * to 4 000 seats is twice as demanding on 2 000. Measured on the recorded
-     * curves: ADR 0081, and {@code docs/developpement.md}.
+     * curves: ADR 0081, and {@code site/src/docs/comprendre/developpement.md}.
      */
     static final String PLATEAU_GAIN_PROPERTY = "planning.solver.plateau-gain-medium-per-seat";
 

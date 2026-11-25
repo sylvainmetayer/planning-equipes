@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * set, so local/dev/test runs never send anything anywhere by default. The
  * DSN is expected to point at a Bugsink instance (hosted or self-hosted, Sentry-SDK
  * compatible error tracker) rather than Sentry SaaS, but any Sentry-protocol
- * endpoint works — see docs/observabilite.md.
+ * endpoint works — see site/src/docs/installer/observabilite.md.
  *
  * <p>Whatever it reports has the espace animateur's access token stripped from
  * it first. That token is a unique, stable identifier of one named person,

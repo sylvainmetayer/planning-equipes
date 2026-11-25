@@ -71,4 +71,4 @@ Quelques mots reviennent dans ces pages et sur les écrans ; les voici en clair.
   mineur placé hors cadre.
 
 Les règles elles-mêmes, ce qu'elles coûtent et pourquoi elles existent sont
-dans la partie *Tech* : [Contraintes](../contraintes.md).
+dans la partie *Tech* : [Contraintes](../comprendre/contraintes.md).

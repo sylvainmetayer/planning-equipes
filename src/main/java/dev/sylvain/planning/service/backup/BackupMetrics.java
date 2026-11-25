@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * The nightly backup's operating metrics: how long each attempt took and how
  * it ended, when the last successful one ran and how large it was (see
- * {@code docs/observabilite.md} § Métriques).
+ * {@code site/src/docs/installer/observabilite.md} § Métriques).
  *
  * <p>The two gauges only exist once there is something true to say. With no
  * {@code BACKUP_DIR} nothing is ever recorded, and a deployment that never

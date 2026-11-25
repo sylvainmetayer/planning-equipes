@@ -10,7 +10,8 @@
 //
 // Variables : BASE_URL (http://localhost:8080), MAILPIT_URL (http://localhost:8025),
 // ADMIN_PASSWORD, SCENARIO (chemin du YAML), OUT (dossier du brut), LANGS (« fr,en »),
-// ONLY (« ecrans », « calcul », « jourj », « espace », « pdf » : un seul morceau, pour le réglage),
+// ONLY (« ecrans », « calcul », « jourj », « espace », « pdf », « docs » : un seul morceau, pour le réglage ;
+// « docs » tourne les écrans de la documentation, en français seul : <OUT>/fr/docs-<nom>.png),
 // CHROMIUM (exécutable Chromium, si Playwright n'a pas le sien).
 import { chromium, request } from 'playwright';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -165,6 +166,88 @@ async function ecrans(browser, etat, lang) {
   await pause(4000);
   await ecran.screenshot({ path: join(dossier, 'mural.png') });
   await tv.close();
+}
+
+/* ------------------------- écrans de la documentation ------------------------- */
+
+/** Les écrans que les guides de /docs montrent et que la vitrine n'a pas : [nom, chemin, comportement]. */
+const ECRANS_DOCS = [
+  ['comptes', '/parametres?onglet=comptes'],
+  ['historique-auteur', '/parametres?onglet=historique', async (page) => {
+    await page.getByRole('button', { name: 'Administration', exact: true }).click();
+    await pause(1500);
+  }],
+  ['conformite', '/diagnostic?onglet=conformite'],
+  ['debug', '/debug'],
+  ['disponibilites', '/animateurs?onglet=disponibilites'],
+  ['echanges', '/echanges'],
+  ['consignes', '/regles?onglet=consignes'],
+  ['solveur', '/solveur'],
+  ['webhooks', '/parametres?onglet=instance'],
+  ['fichiers', '/fichiers'],
+  ['aujourdhui', '/aujourdhui'],
+  ['editions', '/editions'],
+];
+
+/** Un compte local avec un droit : créé et invité par l'API, mot de passe choisi par le lien lu dans Mailpit, session ouverte. */
+async function compteAvecDroit(etat, email, nom, habilitation) {
+  const ok = async (reponse, quoi) => {
+    if (!reponse.ok()) throw new Error(`${quoi} : ${reponse.status()} ${(await reponse.text()).slice(0, 300)}`);
+    return reponse;
+  };
+  const avant = await nombreDeMails(etat, email);
+  const compte = await (await ok(await etat.api.post('/api/comptes', { headers: etat.h, data: { email, nom, invite: true } }), 'Compte')).json();
+  await ok(await etat.api.post(`/api/comptes/${compte.id}/habilitations`, { headers: etat.h, data: habilitation }), 'Habilitation');
+  const q = encodeURIComponent(`to:"${email}"`);
+  let jeton;
+  for (let essai = 0; essai < 60 && !jeton; essai++) {
+    const recherche = await (await etat.api.get(`${MAILPIT}/api/v1/search?query=${q}`)).json();
+    for (const m of (recherche.messages ?? []).slice(0, Math.max(0, recherche.messages_count - avant))) {
+      const texte = (await (await etat.api.get(`${MAILPIT}/api/v1/message/${m.ID}`)).json()).Text;
+      jeton = /mot-de-passe#([\w-]+)/.exec(texte)?.[1];
+      if (jeton) break;
+    }
+    if (!jeton) await pause(500);
+  }
+  if (!jeton) throw new Error(`Aucun lien de mot de passe pour ${email}`);
+  const motDePasse = `Demo-${Math.random().toString(36).slice(2)}-Aa1`;
+  const anonyme = await request.newContext({ baseURL: BASE });
+  await ok(await anonyme.post('/api/auth/mot-de-passe', { data: { token: jeton, password: motDePasse } }), 'Mot de passe');
+  const defi = await (await ok(await anonyme.post('/api/auth/connexion', { data: { email, password: motDePasse } }), 'Connexion')).json();
+  const session = await anonyme.post('/api/auth/connexion/j_security_check', { form: { j_username: email, j_password: defi.challenge }, maxRedirects: 0 });
+  if (session.status() !== 302) throw new Error(`Session de ${email} refusée (${session.status()})`);
+  return anonyme;
+}
+
+async function ecransDocs(browser, etat, lang) {
+  const dossier = join(OUT, lang);
+  mkdirSync(dossier, { recursive: true });
+  // Les comptes d'abord : l'écran Comptes les liste. Le responsable tient les deux premiers stands du scénario
+  const stands = await (await etat.api.get('/api/stands', { headers: etat.h })).json();
+  const responsable = await compteAvecDroit(etat, 'responsable@example.org', 'Camille Responsable', {
+    role: 'RESPONSABLE_STAND', editionId: etat.edition, standIds: stands.slice(0, 2).map((s) => s.id),
+  });
+  const rh = await compteAvecDroit(etat, 'rh@example.org', 'Dominique RH', { role: 'RH', editionId: etat.edition });
+
+  const ctx = await contexte(browser, etat, lang, BUREAU);
+  const page = await ctx.newPage();
+  for (const [nom, chemin, avant] of ECRANS_DOCS) {
+    await ouvrir(page, chemin);
+    if (avant) await avant(page);
+    await page.screenshot({ path: join(dossier, `docs-${nom}.png`) });
+  }
+  await ctx.close();
+
+  // Ces deux écrans sont hors du menu : ils s'ouvrent avec la session de leur propre compte
+  for (const [nom, chemin, api] of [['responsable', '/responsable', responsable], ['rh', '/rh', rh]]) {
+    const c = await contexte(browser, { ...etat, api }, lang, BUREAU);
+    const p = await c.newPage();
+    await p.goto(`${BASE}${chemin}`);
+    await pause(4000);
+    await p.screenshot({ path: join(dossier, `docs-${nom}.png`) });
+    await c.close();
+    await api.dispose();
+  }
 }
 
 /* --------------------------------- films --------------------------------- */
@@ -367,8 +450,13 @@ async function main() {
       await pdf(etat);
       await etat.api.dispose();
     }
+    if (ONLY === 'docs') {
+      const etat = await preparer();
+      await ecransDocs(browser, etat, 'fr');
+      await etat.api.dispose();
+    }
     for (const lang of LANGS) {
-      if (ONLY === 'pdf') break;
+      if (ONLY === 'pdf' || ONLY === 'docs') break;
       console.log(`== ${lang}`);
       // Chaque morceau repart d'un état neuf : une absence, une présence confirmée ou un calcul
       // ne doivent pas se voir dans le film suivant

@@ -83,7 +83,7 @@ public class IntendanceRepasAnalyzer {
      *                  of {@code FenetreIntendance.tranches}
      * @param mineurs   how many of them are minors — counted, never named, and
      *                  no birth date leaves the server (see
-     *                  {@code docs/rgpd.md} §7)
+     *                  {@code site/src/docs/installer/rgpd.md} §7)
      * @param total     distinct people on a break at this emplacement over the
      *                  whole window: never the sum of {@code personnes}, which
      *                  counts somebody once per hour their break spans

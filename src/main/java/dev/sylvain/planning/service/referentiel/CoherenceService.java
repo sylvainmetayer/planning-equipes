@@ -29,7 +29,7 @@ import java.util.Set;
  * their majority, that is their birth date shifted by eighteen years, the
  * field the MCP views withhold (issue #107). The messages themselves name an
  * animateur by their id only, and have no business in the browser's
- * notification log either ({@code docs/rgpd.md} §7). A new warning is written
+ * notification log either ({@code site/src/docs/installer/rgpd.md} §7). A new warning is written
  * with that in mind: the code is the contract, the sentence is for the
  * screen.</p>
  */

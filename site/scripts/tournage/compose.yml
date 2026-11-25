@@ -9,5 +9,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?tourner.sh le fournit}
       # Le QR code et le lien des PDF d'exemple : une adresse réservée, pas localhost
       PUBLIC_URL: https://planning.example.org
+      # Les écrans de la documentation ouvrent des sessions de comptes locaux : pas de code reçu par e-mail à saisir
+      AUTH_LOCAL_SECONDE_ETAPE: "false"
   pgadmin:
     profiles: ["jamais"]

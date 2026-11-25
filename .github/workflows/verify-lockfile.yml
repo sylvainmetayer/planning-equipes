@@ -1,7 +1,7 @@
 # Échoue si .github/workflows/actions.lock ne correspond plus aux workflows
 # ou si un commit verrouillé n'existe plus en amont.
 # Régénérer à la main : gh actions-lock --no-narrow (sans --no-narrow, l'outil
-# réécrit les SHA en tags). Voir docs/developpement.md, § Verrou des actions.
+# réécrit les SHA en tags). Voir site/src/docs/comprendre/developpement.md, § Verrou des actions.
 name: verify-lockfile
 
 on:

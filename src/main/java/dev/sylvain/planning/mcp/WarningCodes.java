@@ -11,7 +11,7 @@ import java.util.List;
  * shows the message. The message of {@code MINEUR_PENDANT_EVENEMENT} says on
  * which day the animateur comes of age — which is the date of birth, moved by
  * eighteen years, and the one field the MCP views deliberately withhold
- * ({@code docs/mcp.md}). Rather than decide per type which sentence is safe,
+ * ({@code site/src/docs/comprendre/mcp.md}). Rather than decide per type which sentence is safe,
  * every warning crosses to MCP as its {@code TypeAvertissement} name — whose
  * javadoc says what each one means — and {@code consulter_*} gives the detail
  * the assistant is allowed to read.</p>

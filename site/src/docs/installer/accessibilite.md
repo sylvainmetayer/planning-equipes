@@ -3,7 +3,7 @@
 Ce que l'application tient en matière d'accessibilité, ce qui le garantit, et ce
 qui reste ouvert. Les **conventions** d'écriture (un `<h1>` par écran, les icônes
 porteuses d'information, les messages de statut…) sont dans
-[`developpement.md` § Accessibilité](developpement.md#accessibilité) : ce fichier
+[`developpement.md` § Accessibilité](../comprendre/developpement.md#accessibilité) : ce fichier
 dit *où on en est*, celui-là dit *comment écrire*.
 
 ## Le référentiel et le périmètre

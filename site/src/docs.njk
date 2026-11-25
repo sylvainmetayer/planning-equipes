@@ -20,8 +20,8 @@ eleventyComputed:
 <article class="doc" data-player="2">
   <header class="ask">
     <div class="container">
-      <nav class="crumbs" aria-label="{{ copy.fr.commun.ariane }}"><ol><li><a href="{{ urls.fr.accueil }}">{{ copy.fr.commun.nav.accueil }}</a></li>{% if p.name == 'README' %}<li aria-current="page">{{ c.h1 }}</li>{% else %}<li><a href="/docs/">{{ c.h1 }}</a></li><li aria-current="page">{{ p.h1 | typo('fr') }}</li>{% endif %}</ol></nav>
-      <h1>{{ (c.h1 if p.name == 'README' else p.h1) | typo('fr') }}</h1>
+      <nav class="crumbs" aria-label="{{ copy.fr.commun.ariane }}"><ol><li><a href="{{ urls.fr.accueil }}">{{ copy.fr.commun.nav.accueil }}</a></li>{% if p.name == 'index' %}<li aria-current="page">{{ c.h1 }}</li>{% else %}<li><a href="/docs/">{{ c.h1 }}</a></li><li aria-current="page">{{ p.h1 | typo('fr') }}</li>{% endif %}</ol></nav>
+      <h1>{{ (c.h1 if p.name == 'index' else p.h1) | typo('fr') }}</h1>
     </div>
   </header>
   <div class="container doc__grid">
@@ -32,7 +32,7 @@ eleventyComputed:
       </details></nav>
       {% endif %}
       <nav class="doc__nav" aria-labelledby="doc-all"><details data-open-wide><summary class="doc__label" id="doc-all">{{ c.rubriques }}</summary>
-        <ul><li><a href="/docs/"{% if p.name == 'README' %} aria-current="page"{% endif %}>{{ c.accueil | typo('fr') }}</a></li>
+        <ul><li><a href="/docs/"{% if p.name == 'index' %} aria-current="page"{% endif %}>{{ c.accueil | typo('fr') }}</a></li>
         {% for part in docsParts %}<li><span class="doc__part">{{ part.titre }}</span>
           <ul>{% for n in part.docs %}{% set d = docs | byName(n) %}<li><a href="{{ d.url }}"{% if d.url == p.url %} aria-current="page"{% endif %}>{{ d.h1 | typo('fr') }}</a></li>{% endfor %}</ul></li>{% endfor %}</ul>
       </details></nav>

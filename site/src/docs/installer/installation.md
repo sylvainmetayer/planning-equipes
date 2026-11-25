@@ -76,4 +76,4 @@ détail ; l'inventaire de tous les réglages est dans
 | Numéros de version, releases, déployer et patcher | [`versioning.md`](versioning.md) |
 | Ce que l'hébergeur doit écrire et tenir (sous-traitance, registre, atteintes) | [`rgpd.md`](rgpd.md) |
 | Déclaration d'accessibilité | [`accessibilite.md`](accessibilite.md) |
-| Licences des composants redistribués | [`licences-tierces.md`](licences-tierces.md) |
+| Licences des composants redistribués | [`licences-tierces.md`](repo:docs/licences-tierces.md) |

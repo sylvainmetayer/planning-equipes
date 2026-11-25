@@ -2,7 +2,7 @@
 ' Les deux façons d'entrer comme coordinateur : le formulaire intégré, gardé
 ' par un verrou par adresse, et l'en-tête d'un proxy d'accès (facultatif,
 ' désactivé par défaut). La clé MCP et l'espace animateur ont leurs propres
-' diagrammes. Voir docs/api.md, « Authentification ».
+' diagrammes. Voir site/src/docs/comprendre/api.md, « Authentification ».
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

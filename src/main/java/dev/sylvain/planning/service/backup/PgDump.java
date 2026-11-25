@@ -25,7 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * <p>The custom format is what the restore procedure expects: it is compressed,
  * it carries the schema, and {@code pg_restore --clean --if-exists} replays it
  * without the application being up. Restoring is out of the application's
- * scope on purpose — see {@code docs/exploitation.md}.</p>
+ * scope on purpose — see {@code site/src/docs/installer/exploitation.md}.</p>
  */
 @ApplicationScoped
 public class PgDump {

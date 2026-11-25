@@ -19,7 +19,7 @@ import java.util.Locale;
  * <p>Nothing is stored for it: an {@code Edition} carries neither dates nor an
  * « ongoing » flag, so the span is derived from the créneaux, exactly as
  * {@link dev.sylvain.planning.service.referentiel.JoursEvenement} defines it
- * (see {@code docs/domaine.md}, « Les bornes de l'édition se dérivent »). An
+ * (see {@code site/src/docs/comprendre/domaine.md}, « Les bornes de l'édition se dérivent »). An
  * edition with no créneau therefore has a name and no dates, which is said
  * rather than invented.</p>
  *

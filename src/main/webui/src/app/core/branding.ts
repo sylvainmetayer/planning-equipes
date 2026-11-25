@@ -129,7 +129,7 @@ export function accentForBothSchemes(accent: string): string {
  * Angular Material's tonal palette is compiled into the bundle by
  * `mat.theme()`. Recolouring the Material components themselves needs a
  * rebuild of `src/material-theme.scss`, not a variable — see
- * `docs/architecture.md`.</p>
+ * `site/src/docs/comprendre/architecture.md`.</p>
  */
 export function appliquerBranding(branding: Branding): void {
   document.title = branding.productName;

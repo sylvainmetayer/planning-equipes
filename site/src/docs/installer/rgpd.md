@@ -234,7 +234,7 @@ complètes. Quatre points sont connus et se consignent :
   à date fixe (`exploitation.md` §6). C'est l'écart le plus exposant, parce
   qu'il porte sur un engagement public. Le choix est délibéré et son échéance
   est connue — voir
-  [décision 0016](decisions/0016-purge-manuelle-avant-automatisation.md) : la
+  [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md) : la
   tâche planifiée, son journal et le test de cascade viennent quand plusieurs
   instances tournent en parallèle. Ce qui se consigne au registre n'est donc pas
   « purge automatique : non », mais « purge manuelle, à date fixe, tracée au
@@ -584,7 +584,7 @@ complètes. Quatre points sont connus et se consignent :
   qui se déconnecte ;
 - **l'édition est recopiée avant chaque vidage, et ces copies ne sont pas
   purgées** (`sauvegarde_avant_vidage`,
-  [décision 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
+  [décision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
   une réinitialisation, un import de scénario ou la restauration d'une
   sauvegarde range d'abord l'export de scénario de l'édition — nom, prénom,
   date de naissance, adresse et téléphone de chaque animateur compris — et son

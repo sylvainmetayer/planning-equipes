@@ -80,7 +80,7 @@ class AlerteEchangeJobTest {
                 .satisfies(alerte -> {
                     assertThat(alerte.libelle()).contains("10 jours");
                     // Counted, never named: the Échanges screen is where the
-                    // people are (docs/rgpd.md).
+                    // people are (site/src/docs/installer/rgpd.md).
                     assertThat(alerte.animateurId()).isNull();
                 });
     }

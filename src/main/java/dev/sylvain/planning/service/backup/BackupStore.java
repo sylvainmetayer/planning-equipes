@@ -32,7 +32,7 @@ import java.util.stream.Stream;
  */
 public record BackupStore(Path directory) {
 
-    /** Same shape as the manual command documented in {@code docs/exploitation.md}, to the second. */
+    /** Same shape as the manual command documented in {@code site/src/docs/installer/exploitation.md}, to the second. */
     static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     static final String PREFIX = "planning-";

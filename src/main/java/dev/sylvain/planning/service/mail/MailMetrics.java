@@ -12,7 +12,7 @@ import jakarta.inject.Inject;
  * The one place a mail leaves the application, and so the one place it is
  * counted: {@code planning_mail_sent_total} and
  * {@code planning_mail_failures_total}, labelled by the template that wrote
- * it (see {@code docs/observabilite.md} § Métriques) — and, for a mail to an
+ * it (see {@code site/src/docs/installer/observabilite.md} § Métriques) — and, for a mail to an
  * animateur, the one place its outcome is <b>recorded</b> against the person
  * ({@link MailDeliveryRepository}): sent, or failed with its
  * {@link MailFailureCategory}.

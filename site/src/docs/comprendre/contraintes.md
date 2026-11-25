@@ -127,7 +127,7 @@ Une typologie peut porter un plafond : `maxCreneauxParAnimateur`, saisi sur sa
 fiche, nullable — vide signifie « pas de plafond », et une édition qui n'y
 touche pas ne change pas de comportement. La contrainte dure
 `plafondCreneauxParTypologie` le fait respecter (issue #594,
-[0042](decisions/0042-quota-par-typologie-sur-la-typologie.md)).
+[0042](repo:docs/decisions/0042-quota-par-typologie-sur-la-typologie.md)).
 
 Deux choix à connaître avant de s'en servir :
 
@@ -209,7 +209,7 @@ deux peuvent être actives en même temps, ce qui dit « jamais plus de N, et de
 préférence moins ». La forme dure s'allume par l'écran Règles du planning, par
 `activer_contrainte` ou par `contraintes.activees` d'un scénario — aucune
 migration, même mécanisme que
-[0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md).
+[0041](repo:docs/decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md).
 
 Le seuil lui-même se règle par édition, sur la ligne de la règle dans Règles
 du planning — champ « Jours travaillés d'affilée » (`joursConsecutifsMax`,
@@ -289,7 +289,7 @@ une autre question : « combien en faut-il au moins ? ». Quand la forme dure es
 allumée, il cherche le plus petit effectif dont les calendriers de repos
 tiennent ensemble les six jours par semaine et le seuil d'affilée, par un flot
 maximal sur les jours de repos — voir
-[0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
+[0071](repo:docs/decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
 La forme moyenne seule ne relève jamais ce chiffre : une règle que le solveur
 peut enfreindre ne doit pas faire recruter.
 
@@ -306,14 +306,14 @@ tout le temps de la phase, devient rare. Sur `festival-hivernal` à six jours,
 les dix-huit sièges vides qui restaient après vingt minutes deviennent six :
 mieux, pas faisable, et aucun plan ne prouve que cette grille le soit. Sur une édition dont
 le besoin tient, le solveur atteint zéro écart dur. Le détail et les mesures
-sont dans [0049](decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md).
+sont dans [0049](repo:docs/decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md).
 Depuis, la construction place aussi les sièges **par date** plutôt que par
 rareté : dans l'ordre par rareté, le montage que tout le monde sait tenir
 passait en dernier, quand les séries qui le suivent étaient déjà longues, et
 restait vide. Une grille tenable atteint le zéro dur plus tôt ; une grille qui
 ne tient pas, comme `festival-hivernal` à six jours, garde quelques sièges
 vides de plus que les six mesurés ci-dessus
-([0068](decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)).
+([0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)).
 
 Le niveau par défaut sort d'un banc de comparaison, pas d'une intuition. Sur
 `festival-hivernal` — la grille de l'organisateur, 153 animateurs, 600 s — la
@@ -323,17 +323,17 @@ Au dosage livré, la même grille pourvoit tout mais place **48 personnes
 au-delà de six jours, jusqu'à onze d'affilée** — ce n'est pas un défaut du
 solveur, c'est ce que l'événement demande à effectif constant, et l'écran
 Équité le montre colonne « plus longue série » avant la publication. Monter le
-poids à 100 (500 sur l'échelle actuelle, [0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)) en retire un tiers, sans rien coûter aux autres règles de qualité,
+poids à 100 (500 sur l'échelle actuelle, [0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md)) en retire un tiers, sans rien coûter aux autres règles de qualité,
 et ne règle pas le fond. Le protocole complet, la fixture à l'aise (`festival-realiste-canicule`, où la
 forme dure ne coûte rien) et la décision sont dans
-[0045](decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md).
+[0045](repo:docs/decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md).
 
 ## La durée des pauses
 
 La pause qui coupe une période de travail continu se règle sur la page Règles
 du planning, onglet Légal, sur la ligne de chaque règle qui la lit : **une
 seule durée pour l'édition**,
-`dureePauseMinutes` (issue #592, fusionnée par l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md)).
+`dureePauseMinutes` (issue #592, fusionnée par l'[ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)).
 Elle est lue par `travailContinuMaxMajeur`, `travailContinuMaxMineur`,
 `PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et
 l'analyse des pauses — donc par l'écran Pauses et par la carte
@@ -422,7 +422,7 @@ contredire le quotidien.
   La soirée, elle, n'est pas une prime : il n'y en a qu'une dans
   l'application, l'heure réglable des paramètres légaux, que le rapport des
   heures et celui de l'équité lisent de la même façon
-  ([`decisions/0055`](decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)).
+  ([`decisions/0055`](repo:docs/decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)).
   Une prime se paie sur la présence, et une pause ne se range pas d'un côté de minuit ni
   dans l'une de deux fenêtres sans inventer quand elle a été prise. Les trois
   colonnes ne s'additionnent donc pas au total, et ne l'ont jamais fait ;
@@ -548,7 +548,7 @@ d'une édition qui ne les a jamais réglés. Un scénario les emporte dans sa se
 Aucun n'a de plancher d'ordre public : ce sont des conforts que l'organisateur
 arbitre. Laisser les deux heures de service vides est d'ailleurs une réponse
 légitime — c'est ainsi qu'`eviterFermeturePuisOuverture` se tait
-([0031](decisions/0031-signaler-le-plancher-sans-le-decider.md)).
+([0031](repo:docs/decisions/0031-signaler-le-plancher-sans-le-decider.md)).
 
 La portée du plafond de typologies est l'**édition**, jamais la journée : le
 `groupBy` de la contrainte ne porte que l'animateur, sans clé de date, et un
@@ -681,7 +681,7 @@ Celles que le catalogue livre **éteintes** sont listées dans
 `ConstraintCatalog.DESACTIVEES_PAR_DEFAUT` : pour elles, c'est l'allumage qui
 écrit une ligne. Une seule y figure aujourd'hui,
 `mineurNecessiteEncadrementMajeur`
-([0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md)).
+([0041](repo:docs/decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md)).
 
 Demander l'état que le catalogue donne déjà **efface la ligne** au lieu de
 l'épingler : la table ne porte que les décisions que quelqu'un a prises, comme
@@ -710,7 +710,7 @@ Trois règles lisent **qui tient un stand à une heure** — un référent prés
 (`repartitionMineursParCreneau`), un débutant à côté du référent
 (`favoriserMixiteDesNiveaux`). Toutes trois lisent la même ligne, les places
 **encore tenues** sur le reste du créneau : la place d'origine d'une place
-scindée dans la journée ([0066](decisions/0066-le-passe-est-fige-a-la-minute.md))
+scindée dans la journée ([0066](repo:docs/decisions/0066-le-passe-est-fige-a-la-minute.md))
 s'est arrêtée là où sa suite commence, et celui qui est parti à 9 h 20 n'est ni
 référent ni majeur ni débutant pour l'après-midi. Les deux premières le
 lisaient déjà ainsi ; la troisième comptait encore le partant, et s'y est
@@ -796,7 +796,7 @@ et soft sont multipliés par cinq. Le dosage mémorisé par une résolution pass
 et son score, eux, ne sont pas touchés : ils disent sous quels poids ce plan a
 été calculé, et la comparaison de Versions du plan dit à juste titre qu'un plan d'avant et un plan
 d'après ne se comparent pas à poids égaux. Voir
-[0057](decisions/0057-importance-d-une-regle-en-trois-positions.md).
+[0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md).
 
 ### Garder la trace d'un dosage
 
@@ -857,7 +857,7 @@ bougeront jamais.
 
 Le chiffre est daté, et c'est voulu. Mesuré plus tard sur `festival-realiste`
 — la fixture qui portait alors des référents et des appréciations, retirée
-depuis avec les familles de relais ([0029](decisions/0029-retrait-des-familles-de-relais.md))
+depuis avec les familles de relais ([0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md))
 —, il ne restait qu'une règle signalée : `souhaitsIncompatibles`, 3 503 sièges
 sur 3 503, soit 39 % du medium. Le défaut n'a pas disparu du monde pour autant :
 il se reproduit sur toute édition dont une donnée n'est pas saisie, ce qu'est
@@ -914,7 +914,7 @@ mesure). Le plancher est signé comme le score dont il vient.
 **Rien n'est désactivé.** Une règle au plancher reste active : c'est
 l'organisateur qui saisit la donnée, baisse le poids, ou éteint la règle en
 connaissance de cause — voir
-[`decisions/0031`](decisions/0031-signaler-le-plancher-sans-le-decider.md).
+[`decisions/0031`](repo:docs/decisions/0031-signaler-le-plancher-sans-le-decider.md).
 
 Ce que ces règles mesurent se lit sur la page Planning, par personne (le
 rapport `GET /api/planning/equite`),
@@ -967,7 +967,7 @@ milliers de points sur une édition réelle, donc à poids égal la stabilité p
 peu (74 personnes bougent encore pour trois absences sur la fixture, 10 au
 quintuple). Le banc décrit ci-dessous a été mesuré sur l'ancienne échelle,
 autres règles à 1 et stabilité à 5 ; l'échelle ayant été multipliée par cinq
-([0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)), le même
+([0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md)), le même
 rapport donne `planning.constraint-weights.stabiliteDuPlanPublie=25`. Elle se
 dose par édition sur l'écran Règles du planning comme les autres règles de
 qualité, et se désactive par l'interrupteur.
@@ -997,7 +997,7 @@ permettent. Le récapitulatif de
 la page Solveur le dit, avec le nombre de places rendues. Sur une édition dont
 le plan publié reste faisable, l'étape 1 s'arrête en quelques secondes. Le
 détail et les mesures sont dans
-[0067](decisions/0067-la-faisabilite-avant-la-stabilite-apres-publication.md).
+[0067](repo:docs/decisions/0067-la-faisabilite-avant-la-stabilite-apres-publication.md).
 
 **Le mur des six jours, et la chaîne qui le franchit.** Un autre trou résiste
 au *ruin and recreate* parce que sa chaîne ne passe pas par l'heure du trou
@@ -1037,7 +1037,7 @@ le compte de personnes que l'écran montre.
 
 **Banc de comparaison** (fixture `festival-realiste`, 153 animateurs, 65
 stands, 600 s par résolution, réamorçage depuis le plan publié) — voir la
-décision [0025](decisions/0025-stabilite-du-plan-publie.md) pour les
+décision [0025](repo:docs/decisions/0025-stabilite-du-plan-publie.md) pour les
 chiffres.
 
 ## Contraintes ad hoc : les contradictions refusées à la saisie
@@ -1135,7 +1135,7 @@ raison et le nombre d'écarts qu'elle porte. Les lignes d'écart
 nomment elles aussi l'exception par son id.
 
 **Le budget d'exceptions a été explicitement écarté** : voir
-[0010](decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md).
+[0010](repo:docs/decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md).
 
 ### Les trois affectations forcées qu'on ne peut pas tenir
 
@@ -1145,7 +1145,7 @@ Trois lectures, trois classes pures, la même doctrine — avertir à l'écritur
 reporter comme cause bloquante tant que ça tient, ne jamais refuser. La raison
 est toujours la même : la donnée qui casse l'exception arrive presque toujours
 **après** elle, et un refus ne tiendrait que jusque-là
-([0046](decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)).
+([0046](repo:docs/decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)).
 
 | Lecture | Ce qui rend l'exception intenable | Avertissement et cause |
 | --- | --- | --- |
@@ -1186,9 +1186,9 @@ septième porte le même forfait sans être un motif du filtre, parce qu'elle
 dépend de qui d'autre tient le stand : `mineurNecessiteEncadrementMajeur`. Un
 mineur seul coûtait sinon exactement un siège vide, et sur une équipe de mineurs
 seul l'ordre de la recherche départageait
-([0035](decisions/0035-mineur-seul-au-forfait.md)). Cette septième règle est
+([0035](repo:docs/decisions/0035-mineur-seul-au-forfait.md)). Cette septième règle est
 **éteinte par défaut** depuis
-[0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md) : le forfait
+[0041](repo:docs/decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md) : le forfait
 n'est dû que si l'organisation l'a allumée.
 
 Le filtre les écarte de la recherche, mais la reconstruction du *ruin and
@@ -1205,7 +1205,7 @@ sur la page Problèmes et se traitent ; un siège illégal, lui, ne doit pas sor
 d'un solve quand une alternative existe. Le forfait est dans la pondération des
 correspondances, si bien qu'un poids d'édition le multiplie au lieu de le
 remplacer. Décision et options écartées :
-[0034](decisions/0034-exclusions-eligibilite-plus-lourdes-que-tout.md).
+[0034](repo:docs/decisions/0034-exclusions-eligibilite-plus-lourdes-que-tout.md).
 
 ## La frontière de semaine
 
@@ -1319,7 +1319,7 @@ Une grille en blocs jointifs ne demande aucun réglage : rien n'impose d'écart
 entre deux vacations, donc 11 h-12 h puis 12 h-13 h s'enchaînent. Il y avait un
 réglage pour cela — la « pause minimale entre vacations », que quatorze des
 quinze scénarios livrés mettaient à zéro —, il est retiré
-([ADR 0048](decisions/0048-une-seule-regle-de-pause.md)).
+([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)).
 
 Un point reste à mesurer :
 
@@ -1355,7 +1355,7 @@ alors le relais. Résultat : deux lectures du même planning, une case qui
 éteignait la règle des mineurs — alors que les 4 h 30 de l'art. L3162-3 sont
 d'ordre public —, et un écart minimal entre vacations qui coûtait 10 dur pour
 un trou de 20 minutes que la règle légale acceptait comme pause. La fusion est
-l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md).
+l'[ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md).
 
 **Ce qui l'a rendue nécessaire.** Sur l'édition 2026, un plan à zéro écart dur
 portait **18 pauses dues sans personne pour relayer** : une relève de midi ou
@@ -1399,7 +1399,7 @@ grille ou d'ouvrir une place de plus — pas de baisser un poids, qui n'existe
 pas ici.
 
 **Une pause due dans une séquence déjà écoulée n'est reprochée à personne.**
-Le passé est figé ([0044](decisions/0044-le-passe-est-fige.md)) : ses sièges
+Le passé est figé ([0044](repo:docs/decisions/0044-le-passe-est-fige.md)) : ses sièges
 sont épinglés, donc un écart dur posé là ne serait réparable par aucun
 mouvement, et un calcul relancé en cours d'événement n'atteindrait plus jamais
 zéro. La règle regroupe par animateur **et par jour**, et le garde-fou de
@@ -1613,7 +1613,7 @@ configuration.
 
 Pendant l'événement, une résolution reçoit les places des créneaux déjà
 commencés **reprises du plan enregistré et épinglées** — « le passé est
-figé », [ADR 0044](decisions/0044-le-passe-est-fige.md), mécanique dans
+figé », [ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md), mécanique dans
 [`domaine.md`](domaine.md#le-passé-est-figé). Ces places
 portent un drapeau `passe` que chaque contrainte lit selon une seule règle :
 

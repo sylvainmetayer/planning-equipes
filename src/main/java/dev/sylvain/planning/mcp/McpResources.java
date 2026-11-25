@@ -18,10 +18,10 @@ import java.util.stream.Collectors;
  *
  * <p>The constraint catalogue is <b>generated from
  * {@link ConstraintCatalog}</b>, not shipped as a copy of
- * {@code docs/contraintes.md}: it is the very list the solver runs, so it
+ * {@code site/src/docs/comprendre/contraintes.md}: it is the very list the solver runs, so it
  * cannot describe rules the solver does not apply, nor miss one added last
  * week. The vocabulary is the one place a text is written by hand — it
- * summarises {@code docs/domaine.md} for a reader who will never see the Java
+ * summarises {@code site/src/docs/comprendre/domaine.md} for a reader who will never see the Java
  * model.</p>
  */
 @ApplicationScoped

@@ -26,7 +26,7 @@ id while its English string stayed put is not caught: it is a human review
 matter. Never call `$localize` at module scope
 (only from a method, a `computed()`, or a constructor): it must run after
 `main.ts` has loaded translations, not at import time. See
-`docs/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.
+`site/src/docs/comprendre/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.
 
 A route `title` is a **function** returning a `$localize` string, never a
 literal: evaluated after bootstrap, it is seen by `ng extract-i18n` and counted
@@ -41,9 +41,9 @@ onto `Stand`s over the days of an event, under hard/medium/soft constraints.
 Read before working on constraints or the domain model:
 
 - `docs/fonctionnel/` (start with `parcours.md`) — functional scope and business capabilities, in business language
-- `docs/domaine.md` — Timefold model and its invariants
-- `docs/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
-- `docs/architecture.md` — backend/frontend module layout
+- `site/src/docs/comprendre/domaine.md` — Timefold model and its invariants
+- `site/src/docs/comprendre/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
+- `site/src/docs/comprendre/architecture.md` — backend/frontend module layout
 
 ## Build, test, run
 
@@ -52,7 +52,7 @@ Read before working on constraints or the domain model:
   need nothing but a JVM, in about a minute and a half, with neither Docker nor
   PostgreSQL. The classes it leaves out are the ones that boot the application,
   listed in `src/test/container-tests.txt`; see *La boucle sans conteneur* in
-  `docs/developpement.md`. It is the loop while writing, never the proof: CI
+  `site/src/docs/comprendre/developpement.md`. It is the loop while writing, never the proof: CI
   plays the whole suite, and so should you before pushing.
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
@@ -60,7 +60,7 @@ Read before working on constraints or the domain model:
   `./mvnw -Pmutation test-compile pitest:mutationCoverage`. Below
   `mutationThreshold` the build fails; a surviving mutant is killed by a test
   case, never by lowering the threshold. See *Les tests de mutation* in
-  `docs/developpement.md`.
+  `site/src/docs/comprendre/developpement.md`.
 
 ### Costly test jobs
 
@@ -103,7 +103,7 @@ are the `heavy-tests` skill. Four rules hold without it:
   starts and proxies the dev server — but a direct navigation (curl, F5, deep
   link) to any route but `/` on `:8080` 404s in dev mode (upstream Quinoa bug,
   doesn't affect production); test deep links against `:4200` directly
-  instead — see `docs/developpement.md`.
+  instead — see `site/src/docs/comprendre/developpement.md`.
 - `docs/licences-tierces.md` (the third-party licence inventory the AGPL image
   owes whoever deploys it) is **generated, never hand-edited**: the
   `dependency-update` skill regenerates it, and the `test` job of the Tests
@@ -473,7 +473,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   `AffichageMuralRateLimiter` on `/api/mural/`; the three address-keyed
   classes share `ClientAddress`, which reads `X-Forwarded-For` from the right
   and is the half that makes any of them count anything), the production compose
-  stack and what is left to the reverse proxy — lives in `docs/securite.md`;
+  stack and what is left to the reverse proxy — lives in `site/src/docs/installer/securite.md`;
   a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so
   functional tests skip the session; `AuthentificationAdminTest` restores and
@@ -525,7 +525,7 @@ Single Quarkus service, no separate solver microservice. Package root:
      (`McpWarnsWhileSolvingStructuralTest`). Never turn a refused write into
      a warned one: the refusal protects against the landing resurrecting data.
 
-  See `docs/mcp.md`.
+  See `site/src/docs/comprendre/mcp.md`.
 - **`service/backup/` is the only place the application writes to disk**: a
   nightly `pg_dump` of the whole cluster into
   `BACKUP_DIR`, keeping the `BACKUP_RETENTION` most recent copies. Three rules
@@ -718,7 +718,7 @@ i18n rule at the top of this file:
 - **A write-time warning names an animateur by their id, never by their
   identity.** No nom, no prénom, no date de naissance in an `Avertissement`
   message: the browser copies every notification into a `localStorage` log that
-  outlives the logout (`docs/rgpd.md` §7). The sentence saying somebody is a
+  outlives the logout (`site/src/docs/installer/rgpd.md` §7). The sentence saying somebody is a
   minor goes one step further — shown, never logged
   (`models.ts`/`AVERTISSEMENTS_HORS_JOURNAL`).
 - **A warning is only raised on what the write changed.** An edit compares
@@ -798,7 +798,7 @@ The doc layout is intentional — respect it when adding or updating docs.
    Markdown files, and writing prose instead of touching them is the mistake
    this rule exists to prevent:
    - **new endpoint → the OpenAPI the application publishes**, which is the
-     contract (audit #392, question 12). `docs/api.md` does not list endpoints
+     contract (audit #392, question 12). `site/src/docs/comprendre/api.md` does not list endpoints
      and must not start: it carries what a schema cannot express — the
      cross-cutting invariants, the business trade-offs, and the traps that cost
      half a day. Add to it only when there is such a thing to say. The
@@ -808,19 +808,19 @@ The doc layout is intentional — respect it when adding or updating docs.
      it;
    - **new constraint → `ConstraintCatalog`**, which `GET /api/constraints`
      serves and which is therefore the documentation the application itself
-     hands out. `docs/contraintes.md` no longer enumerates the constraints and
+     hands out. `site/src/docs/comprendre/contraintes.md` no longer enumerates the constraints and
      must not go back to it: it answers *why* a rule exists and what it costs,
      which the catalogue's one-line description cannot carry;
    - new business capability → the functional page that owns it
      (`docs/fonctionnel/`); new command/CI/tooling →
-     `docs/developpement.md`; anything touching the version contract, the
-     release flow or the Docker image tags → `docs/versioning.md`.
+     `site/src/docs/comprendre/developpement.md`; anything touching the version contract, the
+     release flow or the Docker image tags → `site/src/docs/installer/versioning.md`.
    - a flow, a lifecycle or the model drawn in `docs/diagrammes/` → its
      `.puml` (PlantUML), then `./mvnw validate -Pgenerate-diagrams` and commit
      the regenerated `.svg` with it. `DiagramsStructuralTest` fails on a
      stale SVG, a participant or method that no longer exists, a cited route
      that does not, and a state diagram that drifted from its enum — the
-     conventions it relies on are in `docs/developpement.md` (« Diagrammes »).
+     conventions it relies on are in `site/src/docs/comprendre/developpement.md` (« Diagrammes »).
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
    decision record answers *why*, where the rest of `docs/` answers *what*.
@@ -842,7 +842,7 @@ The doc layout is intentional — respect it when adding or updating docs.
 ## Dependency updates
 
 Renovate manages them (`renovate.json`, one file — keep the config there, and
-document behaviour changes in `docs/developpement.md`). What a Quarkus or
+document behaviour changes in `site/src/docs/comprendre/developpement.md`). What a Quarkus or
 Timefold bump must be validated with, how a Renovate PR regenerates the licence
 inventory and re-dispatches its own checks, and which labels trigger the
 scenario workflow are the `dependency-update` skill.
@@ -860,7 +860,7 @@ scenario workflow are the `dependency-update` skill.
   without bumping the major: `contraintes-legales` for a new or hardened legal
   constraint, `attention` for any other change an operator must act on at
   upgrade time (a rescaled setting, a value to convert by hand). See
-  `docs/versioning.md`. A body only when it carries what the diff
+  `site/src/docs/installer/versioning.md`. A body only when it carries what the diff
   cannot — the why, an option rejected on the way, a consequence at
   deployment — and then three to five lines, not thirty. No body at all is a
   perfectly good outcome. Never restate the diff, never narrate the work that

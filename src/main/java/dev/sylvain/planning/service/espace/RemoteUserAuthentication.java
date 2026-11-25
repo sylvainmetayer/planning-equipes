@@ -114,7 +114,7 @@ public class RemoteUserAuthentication {
         }
         Log.warn("Le mode en-tête de proxy (planning.auth.remote-user) est déprécié et sera retiré en 4.0 : "
                 + "préférez la connexion par un fournisseur OIDC et les comptes de l'application "
-                + "(docs/oidc.md, docs/securite.md).");
+                + "(site/src/docs/installer/oidc.md, site/src/docs/installer/securite.md).");
         if (config.secret().isEmpty() || config.secret().get().isBlank()) {
             throw new IllegalStateException("planning.auth.remote-user.enabled=true exige "
                     + "planning.auth.remote-user.secret : sans secret partagé, l'en-tête "

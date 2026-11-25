@@ -11,16 +11,16 @@ reste dehors est énuméré en fin de document, avec sa raison.
 
 ## Authentification : clé API partagée, ou OAuth
 
-Deux portes, au choix du client ([ADR 0097](decisions/0097-mcp-par-oauth-et-rotation-de-la-cle.md)).
+Deux portes, au choix du client ([ADR 0097](repo:docs/decisions/0097-mcp-par-oauth-et-rotation-de-la-cle.md)).
 La **clé** se présente dans un en-tête configurable (`X-MCP-Api-Key` par défaut)
 ou en `Authorization: Bearer` ; elle reste pour les clients qui ne savent pas
 faire OAuth et derrière un proxy d'accès qui consomme `Authorization`.
 **OAuth** s'ajoute quand le fournisseur d'identité est configuré
-(`OIDC_ENABLED`, voir [`oidc.md`](oidc.md)) : voir la section suivante.
+(`OIDC_ENABLED`, voir [`oidc.md`](../installer/oidc.md)) : voir la section suivante.
 
-![Un appel d'outil MCP, de la clé au service](diagrammes/mcp.svg)
+![Un appel d'outil MCP, de la clé au service](repo:docs/diagrammes/mcp.svg)
 
-<sub>Source : [`diagrammes/mcp.puml`](diagrammes/mcp.puml).</sub>
+<sub>Source : [`diagrammes/mcp.puml`](repo:docs/diagrammes/mcp.puml).</sub>
 
 **Sécurisé par défaut** : tant que `PLANNING_MCP_API_KEY` n'est pas positionnée,
 `/mcp` répond 401 systématiquement. Le serveur MCP peut vider la base, modifier
@@ -127,7 +127,7 @@ connexion : les proxys sont un fait du déploiement, pas d'un endpoint, et deux
 listes à garder en phase en font une de trop. Vide compte comme absente — c'est
 ce que transmettent les fichiers compose quand la variable n'est pas renseignée. Ce qu'elle change, et pourquoi
 l'en-tête se lit **par la droite**, est détaillé dans
-[`securite.md`](securite.md#débit-du-serveur-mcp).
+[`securite.md`](../installer/securite.md#débit-du-serveur-mcp).
 
 > **Derrière un proxy, renseignez `CONNEXION_PROXYS_FIABLES` en même temps que
 > la clé.** Sans elle, tous les appels arrivant par le proxy tombent sur un
@@ -248,7 +248,7 @@ et les attributs de planification non identifiants.
 
 **L'id ne dit rien de la personne**, et c'est structurel : il est attribué par
 l'application (`A1`, `A2`… dans chaque édition,
-[ADR 0050](decisions/0050-identifiants-generes-par-edition.md)), jamais choisi
+[ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)), jamais choisi
 par un appelant ni dérivé du nom. Un id tapé à la main (`marie.dupont`) ou
 tiré du nom par un import (`marie-dupont`) aurait fait ressortir la personne
 dans chaque réponse. Les outils de création (`creer_animateur`, `creer_stand`,
@@ -316,17 +316,17 @@ qui vient d'afficher la donnée.
 | --- | --- | --- |
 | `modifier_animateur` | fusionne au lieu de remplacer | voir le corollaire ci-dessus |
 | écritures `@WarnsWhileSolving` | portent `RESOLUTION_EN_COURS` dans `avertissements` quand une résolution tient l'édition ([ci-dessous](#écrire-pendant-quune-résolution-tourne)) | l'écran verrouille ces saisies le temps du calcul ; un assistant n'a pas d'écran, la réponse est le seul endroit où le lui dire |
-| `affecter_poste` | refuse un animateur que le siège ne peut pas accueillir : le geste est scoré sur le plan enregistré, et rejeté s'il dégrade le score dur ou introduit un écart dur sur le siège lui-même ([ADR 0046](decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)) | l'écran de réparation ne propose jamais qu'un candidat déjà scoré ; un assistant nomme qui il veut, et cette porte acceptait n'importe qui |
+| `affecter_poste` | refuse un animateur que le siège ne peut pas accueillir : le geste est scoré sur le plan enregistré, et rejeté s'il dégrade le score dur ou introduit un écart dur sur le siège lui-même ([ADR 0046](repo:docs/decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)) | l'écran de réparation ne propose jamais qu'un candidat déjà scoré ; un assistant nomme qui il veut, et cette porte acceptait n'importe qui |
 | `verrouiller` | rend `{ verrouillage, avertissements }` là où il rendait le verrou nu | le code `VERROUILLAGE_SUR_VIOLATION_DURE` dit que les places figées cassent déjà une règle dure : le verrou est écrit — il fige, il n'exempte pas — mais un assistant qui enchaîne sur `lancer_solveur` doit savoir d'où viendra le score dur négatif |
 | `deverrouiller` | échoue sur un id inconnu, là où `DELETE /api/verrouillages/{id}` répond 204 | un écran vient de lister les verrouillages et sait que la ligne existait ; un assistant travaille sur des ids qu'il a pu inventer, et « supprimé » sur un verrouillage inexistant lui ferait croire le planning libre de bouger |
 | `retirer_validation_journee` | échoue sur un id inconnu, là où `DELETE /api/validations/{id}` répond 404 de la même façon | même raison que `deverrouiller` : « retirée » sur une relecture qui n'existait pas laisserait croire la journée revenue à relire |
 | `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |
 | `simuler_deplacement`, `deplacer_affectation` | un seul outil pour les trois gestes de « Déplacer vers… » (déplacer, échanger, attribuer), la cible étant un poste ou une personne | l'écran sait où l'on déplace ; l'assistant nomme ce qu'il vise, et le serveur choisit entre déplacer, échanger et attribuer — puis refuse ce qui casserait une règle dure, comme pour l'écran |
 | `lancer_solveur` | repart du plan enregistré par défaut (`reamorcage=AUTO`), comme l'écran | un assistant qui relance « pour voir » détruirait sinon en silence la qualité déjà atteinte (#174) ; le départ à froid se demande, `reamorcage=AUCUN` |
-| `lancer_solveur` | argument `distant`, et `calculDistant` dans la réponse de `statut_solveur` | quand l'instance a une machine de calcul ([ADR 0086](decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md)), `distant=true` y envoie la recherche, `false` la garde sur place, absent suit le réglage de l'instance ; `calculDistant` vaut `PREPARING` tant que la machine démarre (le budget ne court pas encore), puis `SOLVING`. Un calcul distant qui échoue finit `FAILED` avec son motif : relancer avec `distant=false`. Aucun outil ne prépare ni n'arrête la machine |
-| `lancer_solveur`, `resoudre_incremental` | pendant l'événement, les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées, départ à froid et périmètre compris ; un job dont toutes les places sont passées finit `FAILED` avec « Rien à planifier… » en `error`, et `statut_solveur` porte `avertissement` (« N sièges passés sont restés vides ») quand le passé tient des trous ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | un assistant ne peut pas plus réécrire hier que l'écran ; ce qui a été travaillé compte dans les règles et n'est reproché par aucune, si bien que le zéro dur se lit sur ce qui reste à jouer — et un plan vide à zéro dur serait lu comme un succès |
+| `lancer_solveur` | argument `distant`, et `calculDistant` dans la réponse de `statut_solveur` | quand l'instance a une machine de calcul ([ADR 0086](repo:docs/decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md)), `distant=true` y envoie la recherche, `false` la garde sur place, absent suit le réglage de l'instance ; `calculDistant` vaut `PREPARING` tant que la machine démarre (le budget ne court pas encore), puis `SOLVING`. Un calcul distant qui échoue finit `FAILED` avec son motif : relancer avec `distant=false`. Aucun outil ne prépare ni n'arrête la machine |
+| `lancer_solveur`, `resoudre_incremental` | pendant l'événement, les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées, départ à froid et périmètre compris ; un job dont toutes les places sont passées finit `FAILED` avec « Rien à planifier… » en `error`, et `statut_solveur` porte `avertissement` (« N sièges passés sont restés vides ») quand le passé tient des trous ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)) | un assistant ne peut pas plus réécrire hier que l'écran ; ce qui a été travaillé compte dans les règles et n'est reproché par aucune, si bien que le zéro dur se lit sur ce qui reste à jouer — et un plan vide à zéro dur serait lu comme un succès |
 | `statut_solveur` | sans `jobId` et sans job actif, répond un statut `IDLE` avec « Aucun solveur ne tourne. » en `avertissement`, là où `GET /api/jobs/active` répond vide ; un `jobId` inconnu est refusé | un outil qui ne renvoie rien ne s'encode pas : l'assistant recevait « Internal error » à la question qu'il pose entre deux résolutions |
-| `deplacer_affectation`, `simuler_deplacement`, `accepter_demande_echange`, `analyser_impact_echange`, `suggerer_reparations`, `affecter_poste` | refusent un poste dont le créneau est déjà commencé, avec la phrase de l'écran : « Ce créneau est déjà commencé : le passé ne se modifie plus » ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | le passé est un fait pour l'assistant comme pour l'écran ; l'outil de simulation refuse déjà, pour qu'un assistant ne bâtisse pas un plan sur un geste que l'écriture refusera |
+| `deplacer_affectation`, `simuler_deplacement`, `accepter_demande_echange`, `analyser_impact_echange`, `suggerer_reparations`, `affecter_poste` | refusent un poste dont le créneau est déjà commencé, avec la phrase de l'écran : « Ce créneau est déjà commencé : le passé ne se modifie plus » ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)) | le passé est un fait pour l'assistant comme pour l'écran ; l'outil de simulation refuse déjà, pour qu'un assistant ne bâtisse pas un plan sur un geste que l'écriture refusera |
 | `modifier_stand`, `modifier_animateur`, `modifier_creneau`, `modifier_emplacement`, `modifier_typologie` | prennent un `modifieLe` **facultatif**, là où l'écran renvoie toujours celui qu'il a chargé | la fusion relit la fiche juste avant d'écrire, donc sans argument le contrôle de modification concurrente (#362) ne dit rien ; un assistant qui a lu la fiche plus tôt (`consulter_*`) et veut être refusé si elle a bougé depuis passe la valeur lue |
 | `lister_affectations`, `consulter_instantane` | plafonnent la liste (200 par défaut) et annoncent le total | un planning réel porte plusieurs milliers de postes ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
 | `heures_travaillees` | lit le plan enregistré sans `source`, là où `GET /api/planning/hours` lit la publication en vigueur quand il y en a une ([ci-dessous](#les-heures-se-lisent-sur-le-plan-quon-nomme)) | l'écran sert d'abord la paie, qui se règle sur ce qui a été annoncé ; un assistant lit en général le plan qu'il vient de retoucher, et nomme l'autre quand il le veut |
@@ -531,7 +531,7 @@ ils verrouillent ces saisies le temps du calcul.
 
 `figer_referentiel` et `lever_gel` posent et lèvent le gel d'une famille du
 référentiel — `STANDS`, `CRENEAUX`, `TYPOLOGIES_EMPLACEMENTS`, `COMPETENCES`
-([décision 0052](decisions/0052-gel-du-referentiel-distinct-du-verrou.md)) —
+([décision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)) —
 et `etat_edition` dit lesquelles le sont, dans son bloc `gel`. Les deux outils
 sont journalisés comme leurs routes REST, et classés « sans rapport » avec une
 résolution en cours : un gel refuse les écritures à venir, il ne change aucune
@@ -735,7 +735,7 @@ et il **refuse un poste verrouillé** — le verrou est ce qu'on lui demande de
 respecter, il ne doit pas pouvoir passer dessus en silence. Il refuse de même
 un poste dont le créneau est **déjà commencé**, et `suggerer_reparations` n'y
 propose personne : le passé ne se modifie plus
-([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)).
 
 ## Le serveur ne sert pas que des outils
 
@@ -759,7 +759,7 @@ omis, il demande d'abord à l'assistant d'appeler `lister_editions` et de
 retenir l'édition active — ou de poser la question s'il n'y en a aucune. Dans
 les deux cas, il lui demande de passer l'édition **à chaque appel d'outil** :
 un outil appelé sans son argument `edition` est refusé
-([ADR 0072](decisions/0072-une-seule-edition-active.md)), et il n'y a plus
+([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)), et il n'y a plus
 d'édition par défaut sur laquelle retomber. Deux prompts lisent l'argument
 autrement : pour `demarrer_une_nouvelle_edition`, c'est l'édition **source** de
 la duplication, et la nouvelle édition prend le relais dès qu'elle existe ;
@@ -982,7 +982,7 @@ la partie besoin parle.
 `generer_creneaux_depuis_stands` prenaient un argument `mode` — `AMPLITUDES` ou
 `VACATIONS` — parce que le verdict en dépendait. Le découpage des amplitudes
 est retiré (ADR
-[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)), l'argument
+[0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)), l'argument
 avec lui : un créneau est une vacation, et deux qui se chevauchent le même jour
 sont deux relèves décalées, jamais une anomalie.
 
@@ -1026,14 +1026,14 @@ calendrier ; `previsualiser_reconnaissance_journees_types` le montre sans rien
 écrire. `lister_journees_types`
 rend aussi les dates **en écart**, celles dont les créneaux ne suivent plus
 leur journée type. Voir
-[ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md).
+[ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md).
 
 ## Une consigne ferme une bande pour tous, et se pose en quatre appels
 
 Un arrêté tombe à 20 h et ferme 12 h-18 h demain et après-demain pour tous
 les stands ; la question est de savoir si le plan peut être retourné avant la
 nuit. Huit outils miroitent l'écran Consignes
-([ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)) :
+([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)) :
 `lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`,
 `appliquer_consigne`, `simuler_levee_consigne`, `lever_consigne`,
 `definir_prereglage_consigne` et `supprimer_prereglage_consigne`. Aucun ne
@@ -1125,7 +1125,7 @@ quotidien.
 | Ce qui n'a pas d'outil | Pourquoi |
 | --- | --- |
 | Export de scénario YAML | Contient prénom, nom et date de naissance — il doit être réimportable |
-| Sauvegardes avant vidage (`/api/planning/sauvegardes-avant-vidage`) | Chacune est un export de scénario, pour la même raison. `reinitialiser_donnees` et les imports en écrivent une, mais seul un administrateur la lit, la restaure ou la supprime, par l'API ; aucune n'est purgée automatiquement ([ADR 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
+| Sauvegardes avant vidage (`/api/planning/sauvegardes-avant-vidage`) | Chacune est un export de scénario, pour la même raison. `reinitialiser_donnees` et les imports en écrivent une, mais seul un administrateur la lit, la restaure ou la supprime, par l'API ; aucune n'est purgée automatiquement ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) |
 | Dump SQL (export et import) | Toutes les données personnelles, et un fichier volumineux destiné à une sauvegarde, pas à une conversation |
 | Exports PDF / ICS / CSV | Binaires ou nominatifs, destinés au téléchargement depuis l'interface |
 | `/api/config` | Clés publiques destinées au navigateur : aucun intérêt pour un assistant |

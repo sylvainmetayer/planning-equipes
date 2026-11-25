@@ -41,7 +41,7 @@ Trois causes, mesurées sur cette édition :
   personnes, un siège de nocturne tenu seul, dépensent chacun un jour de
   repos de plus. Le plan du solveur employait nettement plus de
   jours-personnes que le plan qui tient, surtout les jours de montage.
-- **La chaîne de [la relocalisation à travers la semaine](../contraintes.md)
+- **La chaîne de [la relocalisation à travers la semaine](../../site/src/docs/comprendre/contraintes.md)
   ne libérait qu'un jour de la même semaine ISO.** C'est ce qu'il faut pour
   `maxJoursTravaillesParSemaine`, pas pour une série glissante : un lundi pris
   par quelqu'un qui a travaillé du mercredi au dimanche fait sept jours

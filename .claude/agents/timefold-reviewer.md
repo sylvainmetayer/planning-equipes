@@ -15,9 +15,9 @@ Read `AGENTS.md` at the repo root before anything else — it is the single sour
 of repository memory and contains non-negotiable domain invariants. Then, as
 needed for the task at hand:
 
-- `docs/domaine.md` — Timefold model and its invariants
-- `docs/contraintes.md` — implemented constraints
-- `docs/architecture.md` — module layout
+- `site/src/docs/comprendre/domaine.md` — Timefold model and its invariants
+- `site/src/docs/comprendre/contraintes.md` — implemented constraints
+- `site/src/docs/comprendre/architecture.md` — module layout
 - `src/main/resources/solverConfig.xml` (or wherever `solver/solverConfig.xml`
   resolves) and `application.properties` for solver tuning
 
@@ -100,8 +100,8 @@ for `switch`, streams, `Optional` used as a return type not a field).
    `./mvnw test` (or the targeted `-Dtest=...`) and report the real result,
    including failures. `PlanningHardConstraintsTest` must stay green.
 6. **Documentation is part of done.** New/changed constraint →
-   `docs/contraintes.md` **and** `ConstraintCatalog`. New endpoint →
-   `docs/api.md`. Tooling → `docs/developpement.md`.
+   `site/src/docs/comprendre/contraintes.md` **and** `ConstraintCatalog`. New endpoint →
+   `site/src/docs/comprendre/api.md`. Tooling → `site/src/docs/comprendre/developpement.md`.
 
 ## Output
 

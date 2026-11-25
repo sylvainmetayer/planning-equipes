@@ -313,7 +313,7 @@ public class CreneauGridService {
      * already exists, this only says it before the solve.
      *
      * <p>A count of minors and never a name: the sentence is read on screens
-     * whose client keeps a log ({@code docs/rgpd.md} §7).</p>
+     * whose client keeps a log ({@code site/src/docs/installer/rgpd.md} §7).</p>
      */
     static List<GridAnomaly> holidayVacations(List<Creneau> creneaux, List<Animateur> animateurs) {
         Map<LocalDate, Integer> parDate = new TreeMap<>();
@@ -356,7 +356,7 @@ public class CreneauGridService {
      *
      * <p>One line per vacation, with a count and never a name: these
      * sentences are read on screens whose client keeps a log (see
-     * {@code docs/rgpd.md} §7).</p>
+     * {@code site/src/docs/installer/rgpd.md} §7).</p>
      */
     private static List<GridAnomaly> verrouillagesWithoutVacation(
             List<Creneau> creneaux, List<VerrouillagePlanning> verrouillages) {

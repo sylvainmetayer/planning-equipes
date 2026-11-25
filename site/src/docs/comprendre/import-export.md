@@ -1,7 +1,7 @@
 # Import / export de données
 
 La structure d'un fichier de scénario est décrite par
-[`schema/scenario-schema.json`](schema/scenario-schema.json), **généré** depuis
+[`schema/scenario-schema.json`](repo:docs/schema/scenario-schema.json), **généré** depuis
 les DTO de `dev.sylvain.planning.scenario.dto` — il ne peut donc pas diverger de
 ce que le code accepte. Ce document porte les règles que le schéma ne peut pas
 exprimer.
@@ -41,14 +41,14 @@ l'issue #172 : une édition « plan canicule » créée en cours de festival doi
 garder son équipe et son « Envoyer à all ». Décocher la case est le cas
 inverse — préparer 2027 depuis 2026 — et là, recopier noms, dates de naissance
 et courriels de personnes qui ne se sont pas réinscrites est un problème de
-minimisation et de durée de conservation (voir [`rgpd.md`](rgpd.md)), pas un
+minimisation et de durée de conservation (voir [`rgpd.md`](../installer/rgpd.md)), pas un
 confort.
 
 ## Dump SQL (outillage de test)
 
 **Plus proposé à l'opérateur** : l'écran Paramètres n'a plus de carte *Export
 SQL*. Sauvegarder la base, c'est le `pg_dump` de nuit
-([`exploitation.md`](exploitation.md), décision 0015) ; échanger un jeu de
+([`exploitation.md`](../installer/exploitation.md), décision 0015) ; échanger un jeu de
 données, c'est le scénario YAML. Les routes `GET /api/database/export` et
 `POST /api/database/import` subsistent pour les suites de tests, qui amorcent et
 restaurent la base par elles : elles répondent `404` sauf si
@@ -140,9 +140,9 @@ paramètres compris, tout comme `/debug?onglet=donnees` et `?onglet=yaml`.
   la section correspondante (`consignes`, `prereglagesConsigne`), et laissés
   tels quels sinon.
 
-![Import d'un scénario YAML](diagrammes/import-scenario.svg)
+![Import d'un scénario YAML](repo:docs/diagrammes/import-scenario.svg)
 
-<sub>Source : [`diagrammes/import-scenario.puml`](diagrammes/import-scenario.puml).</sub>
+<sub>Source : [`diagrammes/import-scenario.puml`](repo:docs/diagrammes/import-scenario.puml).</sub>
 
 ### Revenir sur un import ou une réinitialisation
 
@@ -150,7 +150,7 @@ Avant d'écrire quoi que ce soit, l'import d'un scénario — comme « Vider cet
 édition », `reinitialiser_donnees` et la restauration elle-même — range
 l'export de scénario de l'édition visée et son planning (sièges et verrous)
 dans `sauvegarde_avant_vidage`
-([ADR 0084](decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)).
+([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)).
 **Rien ne les purge** : elles restent jusqu'à la suppression de l'édition, ou
 jusqu'à ce qu'un administrateur en supprime une
 (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`). Si
@@ -237,7 +237,7 @@ créneaux sans siège et ne remet pas le planning.
 
 Rejouer un export SQL complet (outillage de test) efface toutes les
 sauvegardes avant vidage, de toutes les éditions : voir
-[`exploitation.md`](exploitation.md) § Restaurer.
+[`exploitation.md`](../installer/exploitation.md) § Restaurer.
 
 Une section `edition: { id?, nom? }` route l'import vers une autre édition :
 celle de cet identifiant si elle existe, sinon la seule édition de ce nom,
@@ -249,7 +249,7 @@ l'opérateur peut consulter une édition différente de celle qui vient d'être
 ### Les identifiants d'un fichier sont des références locales
 
 Tous les identifiants sont attribués par l'application
-([ADR 0050](decisions/0050-identifiants-generes-par-edition.md)) : `A1`, `A2`…
+([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)) : `A1`, `A2`…
 pour les animateurs, `S…` pour les stands, `T…` pour les typologies, `L…` pour
 les emplacements, `C…` pour les contraintes ad hoc, numérotés **dans chaque
 édition**. Dans un fichier scénario, l'identifiant d'une ligne ne sert qu'à ce
@@ -374,7 +374,7 @@ règle dure et 5 pour une règle moyenne ou souple : le dosage voyage avec le
 scénario.
 
 **Les poids d'un fichier se lisent sur l'échelle actuelle** (faible 1,
-normale 5, forte 25 — [0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)).
+normale 5, forte 25 — [0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md)).
 Un fichier écrit avant ce changement portait ses poids sur l'échelle où le
 défaut valait 1 : réimporté tel quel, il ferait peser ses règles citées cinq
 fois moins que les autres. Multipliez par cinq les poids des règles moyennes et
@@ -417,7 +417,7 @@ compris.
 
 Les sections `parametresDecoupage` et `decoupageAuto` **n'existent plus** : le
 découpage automatique a été retiré (ADR
-[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)), et un fichier
+[0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)), et un fichier
 qui les porte encore est refusé par son nom, avec un message qui dit quoi
 écrire à la place. Les accepter en les ignorant serait pire : une grille
 d'amplitudes s'importerait comme des vacations de quatorze heures sans un mot.
@@ -425,7 +425,7 @@ Le seul réglage qui survit, `dureeVacationMaxMinutes`, a rejoint
 `parametresLegaux`.
 
 Quatre **clés de `parametresLegaux`** sont refusées de la même façon depuis
-l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md) : `pauseSurPoste`,
+l'[ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md) : `pauseSurPoste`,
 `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes` et
 `dureePauseMineurMinutes`. Il n'y a plus de mode — une pause due est un trou
 dans la grille ou un relais d'un collègue du même stand, sinon un écart dur —
@@ -441,13 +441,13 @@ remplace journées types et calendrier ; elle n'écrit aucun créneau, un
 fichier cohérent avec lui-même listant sous `creneaux` ce que ses journées
 types disent. Absente, l'import **reconnaît** les journées types que les
 créneaux impliquent, pour qu'une édition importée se lise comme une édition
-tapée ([ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md)).
+tapée ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 L'export écrit la section dès qu'une journée type existe.
 
 ## Consignes et préréglages
 
 Deux sections optionnelles portent ce qu'un arrêté a imposé à l'édition
-([ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)) :
+([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)) :
 `prereglagesConsigne`, la liste des préréglages nommés (bande, motif,
 fenêtres de compensation par défaut, fenêtres repas éventuelles), et
 `consignes`, **une entrée par date** — bande interdite, motif, nom du
@@ -565,7 +565,7 @@ n'est conservé que si l'édition porte déjà le créneau correspondant.
 Trois règles valent pour les cinq :
 
 - **Une colonne absente, ou une case vide, n'efface rien.** C'est la doctrine
-  de l'ancien import de la grille des compétences ([0030](decisions/0030-grille-competences-import-additif.md))
+  de l'ancien import de la grille des compétences ([0030](repo:docs/decisions/0030-grille-competences-import-additif.md))
   appliquée à une fiche : un fichier de trois colonnes qui renomme des stands ne
   touche ni leurs horaires, ni leur emplacement, ni leurs indicateurs.
 - **Une ligne se reconnaît à son `code`, sinon à son nom**, et une ligne
@@ -576,7 +576,7 @@ Trois règles valent pour les cinq :
   garde le code ; deux homonymes refusent la ligne en demandant un code ; un
   nom inconnu crée une ligne. **Aucune colonne `id` n'est lue**, et l'export
   n'en écrit plus : les identifiants sont numérotés dans chaque édition
-  ([ADR 0050](decisions/0050-identifiants-generes-par-edition.md), D7), si bien
+  ([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md), D7), si bien
   que `S4` désigne un autre stand dans l'édition voisine. Un fichier qui porte
   une colonne `id` sans colonne `code` — un export antérieur, où cette colonne
   tenait ce qui est devenu le code — est refusé en disant de renommer
@@ -613,7 +613,7 @@ derniers n'en ont pas, et c'est ce qui décide de leur clé :
 
 **L'import des journées types ne déplace aucun créneau.** Un modèle est un
 générateur, jamais la vérité ([ADR
-0032](decisions/0032-journees-types-nommees-vacations-fixes.md)) :
+0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)) :
 matérialiser le calendrier reste le geste explicite « Appliquer » de l'écran
 Journées types, qui montre d'abord ce qu'il changerait. C'est aussi pourquoi
 cet import ne marque pas l'édition comme modifiée depuis la dernière
@@ -812,7 +812,7 @@ Deux clés, dans cet ordre : l'adresse e-mail, puis « prénom + nom » comparé
 sans casse ni accents. Aucune colonne d'identifiant n'est lue, et le fichier
 d'exemple comme l'export n'en portent pas : l'identifiant d'une fiche est
 attribué par l'application et numéroté dans chaque édition
-([ADR 0050](decisions/0050-identifiants-generes-par-edition.md), D7), jamais lu
+([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md), D7), jamais lu
 dans un fichier ni dérivé du nom. Une ligne qui ne reconnaît aucune fiche en
 crée une, sous le prochain identifiant de l'édition.
 
@@ -964,9 +964,9 @@ pas le rapport**. Il le relit et rejoue toutes les vérifications avant
 d'écrire : un rechargement de page, un rejeu de requête ou un corps fabriqué à
 la main ne peut pas faire passer une ligne devant un contrôle.
 
-![Import CSV des animateurs : prévisualiser puis écrire](diagrammes/import-csv.svg)
+![Import CSV des animateurs : prévisualiser puis écrire](repo:docs/diagrammes/import-csv.svg)
 
-<sub>Source : [`diagrammes/import-csv.puml`](diagrammes/import-csv.puml).</sub>
+<sub>Source : [`diagrammes/import-csv.puml`](repo:docs/diagrammes/import-csv.puml).</sub>
 
 L'écriture est **atomique** : les lignes acceptées et les suppressions
 éventuelles partent dans une seule transaction. Un échec en cours de route
@@ -975,9 +975,9 @@ annule tout et remonte, donc le rapport affiché n'annonce jamais 148 lignes
 
 Le fichier est traité **en mémoire de bout en bout** et n'est jamais écrit sur
 disque : il porte des noms, des dates de naissance et parfois des mineurs (voir
-[`rgpd.md`](rgpd.md)). Deux plafonds explicites le bornent, 1 000 000 de
+[`rgpd.md`](../installer/rgpd.md)). Deux plafonds explicites le bornent, 1 000 000 de
 caractères et 5 000 lignes de données, en plus du plafond de corps HTTP de
-[`securite.md`](securite.md).
+[`securite.md`](../installer/securite.md).
 
 ## Import de la grille des stands
 
@@ -986,7 +986,7 @@ pour la matrice que l'organisateur tient déjà dans son classeur : stands en li
 créneaux en colonnes, un effectif par case. Il transpose les règles de l'import
 des animateurs — deux appels, rejoué, en mémoire, sans suppression — et diffère
 sur trois points, écrits dans la
-[décision 0022](decisions/0022-import-de-la-grille-des-stands.md) : l'identité
+[décision 0022](repo:docs/decisions/0022-import-de-la-grille-des-stands.md) : l'identité
 d'une ligne est le code du stand, sinon son nom exact — jamais son
 identifiant, et le modèle téléchargé écrit le code, ou le nom d'un stand qui
 n'en a pas, une colonne sans
@@ -1017,13 +1017,13 @@ Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
 
 La matrice animateurs × typologies des appréciations **ne s'échange plus par
 fichier** : ni export ni import CSV, elle se saisit exclusivement à l'écran
-`/animateurs?onglet=competences` ([décision 0050](decisions/0050-identifiants-generes-par-edition.md), D6).
-Son import additif ([décision 0030](decisions/0030-grille-competences-import-additif.md))
+`/animateurs?onglet=competences` ([décision 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md), D6).
+Son import additif ([décision 0030](repo:docs/decisions/0030-grille-competences-import-additif.md))
 est retiré.
 
 La grille elle-même s'enregistre par `PUT /api/animateurs/competences/grille`,
 une ligne par fiche modifiée, chacune avec sa propre précondition de
-modification concurrente ([décision 0023](decisions/0023-modification-concurrente-par-horodatage.md)) :
+modification concurrente ([décision 0023](repo:docs/decisions/0023-modification-concurrente-par-horodatage.md)) :
 la réponse est un compte rendu par ligne — écrite, périmée, refusée — et une
 fiche refusée n'annule pas les autres. Deux choses refusent l'appel entier,
 faute de pouvoir tenir la ligne : un niveau qui n'est pas l'un des trois noms
@@ -1152,7 +1152,7 @@ personne : une ligne par animateur, une colonne par semaine ISO (`2026-W33`),
 plus un total, puis dimanche, jours fériés, dimanches fériés et `nuit paie
 (apres 22h)`. Cette dernière colonne est la **seule** trace de la borne fixe de 22 h dans l'application : la soirée est
 l'heure réglable des paramètres légaux, et la paie garde sa nuit à part
-([décision 0055](decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). Les heures
+([décision 0055](repo:docs/decisions/0055-une-seule-soiree-la-nuit-de-la-paie-a-part.md)). Les heures
 s'écrivent avec une **virgule** (`4,00`), et le séparateur de champs reste `;` —
 la paire qu'attend un tableur français. Avec un point, la cellule y était lue
 comme du texte : la colonne s'alignait à gauche et `=SOMME()` répondait zéro,

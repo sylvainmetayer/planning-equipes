@@ -3,11 +3,11 @@
 Pattern Timefold de *shift rostering*, à respecter tel quel pour rester
 compatible avec `HardMediumSoftScore`. Les noms de classes et de champs restent
 en **vocabulaire métier français** ; commentaires et identifiants non métier en
-anglais (glossaire dans [`AGENTS.md`](../AGENTS.md)).
+anglais (glossaire dans [`AGENTS.md`](repo:AGENTS.md)).
 
-![Le modèle Timefold : solution, entité, variable](diagrammes/domaine.svg)
+![Le modèle Timefold : solution, entité, variable](repo:docs/diagrammes/domaine.svg)
 
-<sub>Source : [`diagrammes/domaine.puml`](diagrammes/domaine.puml).</sub>
+<sub>Source : [`diagrammes/domaine.puml`](repo:docs/diagrammes/domaine.puml).</sub>
 
 Les classes et leurs champs se lisent dans `domain/`. Ce document porte les
 règles de calcul et les arbitrages.
@@ -31,7 +31,7 @@ créneaux qu'un animateur y tient au maximum sur l'édition entière. Nullable �
 vide signifie « pas de plafond » — et lu par la contrainte dure
 `plafondCreneauxParTypologie`. Un poste compte pour chaque typologie que son
 stand propose, pas pour celles que son animateur maîtrise :
-[0042](decisions/0042-quota-par-typologie-sur-la-typologie.md) dit pourquoi le
+[0042](repo:docs/decisions/0042-quota-par-typologie-sur-la-typologie.md) dit pourquoi le
 quota est porté par la typologie plutôt que par un cinquième type de contrainte
 ad hoc.
 
@@ -78,7 +78,7 @@ Trois conséquences, et aucune n'est un défaut à corriger plus tard :
 Une édition qui tape ses vacations décrit chaque sorte de journée une fois —
 « Jour normal », « Nocturne », « Montage » — par son nom et ses vacations,
 puis pose ces journées types sur un **calendrier** de dates
-([ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md)). C'est
+([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)). C'est
 le premier objet qui porte des dates indépendamment des créneaux : les dates
 de l'édition se saisissent là, avant le premier créneau.
 
@@ -296,7 +296,7 @@ Un arrêté préfectoral — canicule, orage — ferme une bande horaire pour
 et levées. Ce n'est ni une règle du stand ni une exception datée : la décision
 vient d'en dehors, s'applique à tous sans qu'aucun l'ait déclarée, et doit se
 lever sans rien réécrire. C'est une **consigne d'édition**
-([ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)),
+([ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)),
 lue par `ConsigneResolver` **au-dessus des trois couches** et par le seul
 point d'entrée `StandService.resolve` — un appelant qui déroulerait les règles
 lui-même doterait en silence une bande fermée, et
@@ -394,7 +394,7 @@ légaux ne sont pas surchargeables.
 ### Le passé est figé
 
 La consigne n'est pas seule à tenir le passé intact : depuis
-[ADR 0044](decisions/0044-le-passe-est-fige.md), **toute résolution** —
+[ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md), **toute résolution** —
 complète, incrémentale, depuis l'écran ou par MCP — reprend du plan enregistré
 les places des créneaux déjà commencés et les épingle, quel que soit leur
 état : le titulaire est gardé même s'il a depuis déclaré la journée
@@ -421,7 +421,7 @@ même horizon, avec la même phrase : « Ce créneau est déjà commencé : le p
 ne se modifie plus » (`400` en REST, refus métier en MCP).
 
 **Le passé est figé à la minute, pas au créneau**
-([ADR 0066](decisions/0066-le-passe-est-fige-a-la-minute.md), qui assouplit
+([ADR 0066](repo:docs/decisions/0066-le-passe-est-fige-a-la-minute.md), qui assouplit
 0044). Une réparation, un « Placer » ou un « Marquer absent » sur le siège d'un
 créneau **en cours** ne sont pas refusés : l'écriture **scinde le siège à
 « maintenant »** (la minute courante de l'horloge du jour J) en deux sièges
@@ -527,7 +527,7 @@ l'édition.
 
 Le verrou fige des **sièges** d'un plan calculé ; le gel fige les **fiches**
 dont ce plan est calculé, une fois leur préparation terminée
-([décision 0052](decisions/0052-gel-du-referentiel-distinct-du-verrou.md)).
+([décision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)).
 Il se pose et se lève par famille, dans une édition, par l'organisateur :
 
 | Famille | Ce qui ne s'écrit plus |
@@ -564,7 +564,7 @@ référentiel.
 
 | Situation d'une place | Ce qui est fait |
 | --- | --- |
-| Créneau déjà commencé ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | **Épinglée telle que travaillée**, avant toute autre règle : titulaire gardé même invalidé depuis, vide restée vide, jamais rouverte par le périmètre. Comptée à part (`postesPasses`) |
+| Créneau déjà commencé ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)) | **Épinglée telle que travaillée**, avant toute autre règle : titulaire gardé même invalidé depuis, vide restée vide, jamais rouverte par le périmètre. Comptée à part (`postesPasses`) |
 | Désignée par le périmètre demandé | Libérée quoi qu'il arrive : l'utilisateur dit « refais ça » |
 | Titulaire encore valable | **Épinglée** |
 | Titulaire invalidé par un changement tardif — supprimé, indisponible, ou couvert par une indisponibilité forcée | Libérée. L'épingler figerait un écart dur que plus personne ne pourrait corriger. Le test de validité **réutilise le prédicat du solveur**, pour que les deux ne puissent pas diverger |
@@ -717,7 +717,7 @@ le *découpage* tranchait en vacations plus courtes avant de résoudre. Un
 évènement connaît ses horaires d'ouverture et les projette en vacations par ses
 [journées types](#les-journées-types-génèrent-les-créneaux-elles-ne-les-remplacent-pas) ; le découpage, ses paramètres et le mode qui
 disait laquelle des deux lectures s'appliquait ont donc été retirés (ADR
-[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)).
+[0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)).
 
 Ce qui suit décrit les règles qui survivent au mécanisme, parce qu'elles portent
 sur la grille que l'organisateur a, quelle que soit la façon dont elle a été
@@ -747,9 +747,9 @@ contrainte dure, et le contrôle la remonte en erreur.
 
 La grille a longtemps pu porter plusieurs **familles** de vacations aux coupures
 décalées, chaque stand relayant avec sa famille (ADR
-[0026](decisions/0026-famille-de-relais-attribut-du-stand.md)). Le mécanisme
+[0026](repo:docs/decisions/0026-famille-de-relais-attribut-du-stand.md)). Le mécanisme
 n'a jamais servi en production et compliquait tout ce qui touche à la grille :
-il est retiré (ADR [0029](decisions/0029-retrait-des-familles-de-relais.md)).
+il est retiré (ADR [0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md)).
 Une grille porte une seule variante de chaque vacation, tout stand se pose
 sur tout créneau ouvert, et un scénario qui porte encore `famille:` ou
 `nombreFamillesDecalage:` est refusé comme toute clé inconnue.
@@ -772,7 +772,7 @@ Le levier qui désamorce le pic est l'étalement des relèves : une grille se r�
 pour qu'elles ne tombent pas toutes sur la même minute. Les grilles décalées par
 familles, qui les étalaient en générant plusieurs variantes de chaque vacation,
 ont été retirées (ADR
-[0029](decisions/0029-retrait-des-familles-de-relais.md)).
+[0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md)).
 
 > **L'analyse de faisabilité ne voit pas ce pic** : c'est une estimation
 > optimiste, agrégée par jour. Elle ne lit pas les compétences ; elle compte en
@@ -942,7 +942,7 @@ Le Code exige que la pause soit **réelle**, pas qu'elle soit planifiée : un
 organisateur qui relève chaque animateur trente minutes à l'intérieur d'une
 vacation 13 h-20 h est en règle avec l'art. [L3121-16]. L'application connaît
 donc deux manières de prendre une pause, et pas de troisième
-([ADR 0048](decisions/0048-une-seule-regle-de-pause.md)) :
+([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) :
 
 - **un trou** d'au moins `dureePauseMinutes` entre deux vacations. Il rompt la
   séquence (`PauseSurPoste.sequences`), donc plus rien n'est dû de part et
@@ -1128,7 +1128,7 @@ toutes les éditions) :
   stocke pas de dates, et une édition sans créneau n'a pas de bornes.
 - Une place d'un créneau déjà commencé est reprise du plan enregistré et
   épinglée par toute résolution ; elle compte dans les règles, aucune ne la
-  reproche ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+  reproche ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)).
 - Les noms de domaine restent en français métier.
 
 <!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par

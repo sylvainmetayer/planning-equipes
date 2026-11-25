@@ -73,7 +73,7 @@ si au moins une des places qu'elle implique n'est pas passée.
 
 **(D) Un verrouillage `JOUR` posé automatiquement sur les journées passées.**
 Écarté : un verrou est ce que l'utilisateur pose délibérément, jamais un
-artefact technique ([`domaine.md`](../domaine.md#replanification-incrémentale)),
+artefact technique ([`domaine.md`](../../site/src/docs/comprendre/domaine.md#replanification-incrémentale)),
 il n'épingle jamais une place vide, et il ne dit rien du reproche.
 
 ## Décision
@@ -266,7 +266,7 @@ exploitation, `PASSE_FIGE=false` se réserve à une recette qui rejoue une
   globaux mesurent l'édition entière et ne peuvent plus bouger que l'avenir :
   un écart déjà creusé ne se rattrape pas, et le score medium garde un
   plancher qu'aucune relance ne ramène à zéro. Il se lit d'un solve à
-  l'autre, pas au zéro ([`contraintes.md`](../contraintes.md#compté-non-reproché--le-passé)).
+  l'autre, pas au zéro ([`contraintes.md`](../../site/src/docs/comprendre/contraintes.md#compté-non-reproché--le-passé)).
 - **Pas de couverture de bout en bout, assumé.** La CI de bout en bout coupe
   le commutateur : ses amorces sont datées derrière l'horloge réelle et
   l'application empaquetée refuse l'horloge simulée. Les redater dans
@@ -274,7 +274,7 @@ exploitation, `PASSE_FIGE=false` se réserve à une recette qui rejoue une
   est couverte par `FrozenPastAcceptanceTest` sur l'horloge figée.
   *Mise à jour* : les amorces sont désormais datées depuis l'horloge réelle,
   les naissances des mineurs avec elles (`shiftDate`, voir
-  [`developpement.md`](../developpement.md#tests-de-bout-en-bout-playwright)) ;
+  [`developpement.md`](../../site/src/docs/comprendre/developpement.md#tests-de-bout-en-bout-playwright)) ;
   la CI de bout en bout laisse le commutateur allumé, et `passe-fige.spec.ts`
   rejoue le scénario de `FrozenPastAcceptanceTest` depuis l'écran, sur la pile
   `@lourd` qui accepte l'horloge simulée.

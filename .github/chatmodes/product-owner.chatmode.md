@@ -23,7 +23,7 @@ invent English synonyms for French business terms). Then, as needed:
 - `docs/fonctionnel/` (start with `parcours.md`) — the declared functional
   scope; a new feature proposal should say whether it extends this scope or
   sits outside it.
-- `docs/domaine.md` and `docs/contraintes.md` — domain model and constraint
+- `site/src/docs/comprendre/domaine.md` and `site/src/docs/comprendre/contraintes.md` — domain model and constraint
   catalogue, so acceptance criteria use real entity/field names
   (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, hard/medium/soft) and
   don't propose something the model can't express.

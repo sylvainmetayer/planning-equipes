@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 /**
  * What the documentation enumerates, checked against what the code declares.
  *
- * <p>Issue #392 measured the drift: {@code docs/api.md} cited three endpoints
+ * <p>Issue #392 measured the drift: {@code site/src/docs/comprendre/api.md} cited three endpoints
  * that do not exist, {@code AGENTS.md} listed 31 of the 48 routes and
- * {@code docs/contraintes.md} named 13 of the 40 constraints — and the
+ * {@code site/src/docs/comprendre/contraintes.md} named 13 of the 40 constraints — and the
  * repository had already proved its own theorem, <em>only the tested rule
  * survives</em>. Each test here holds one enumeration, in the direction that
  * costs nothing to keep: a cited path must exist (the reverse — every path
@@ -36,9 +36,9 @@ import org.junit.jupiter.api.Test;
  */
 class DocumentationStructuralTest {
 
-    private static final Path API_MD = Path.of("docs/api.md");
+    private static final Path API_MD = Path.of("site/src/docs/comprendre/api.md");
     private static final Path AGENTS_MD = Path.of("src/main/webui/AGENTS.md");
-    private static final Path CONTRAINTES_MD = Path.of("docs/contraintes.md");
+    private static final Path CONTRAINTES_MD = Path.of("site/src/docs/comprendre/contraintes.md");
     private static final Path RESOURCES = Path.of("src/main/java/dev/sylvain/planning/api");
     private static final Path ROUTES_TS = Path.of("src/main/webui/src/app/app.routes.ts");
 
@@ -48,7 +48,7 @@ class DocumentationStructuralTest {
     /* -------------------------------- api.md ------------------------------- */
 
     /**
-     * A cited endpoint exists. {@code docs/api.md} is the narrated reading of
+     * A cited endpoint exists. {@code site/src/docs/comprendre/api.md} is the narrated reading of
      * the API (rule 5 of AGENTS.md: the contract is the OpenAPI), so it need
      * not cite everything — but what it cites must be real, otherwise a reader
      * follows it to a 404.
@@ -63,7 +63,7 @@ class DocumentationStructuralTest {
             }
         }
         assertThat(inexistantes)
-                .as("endpoints cited in docs/api.md that no resource declares — a typo, a renamed route, "
+                .as("endpoints cited in site/src/docs/comprendre/api.md that no resource declares — a typo, a renamed route, "
                         + "or shorthand like `PUT /api/stands` for `PUT /api/stands/{id}`")
                 .isEmpty();
     }
@@ -411,7 +411,7 @@ class DocumentationStructuralTest {
     private static final String FIN = "<!-- catalogue:fin -->";
 
     /**
-     * The table of constraints in {@code docs/contraintes.md} is the catalogue,
+     * The table of constraints in {@code site/src/docs/comprendre/contraintes.md} is the catalogue,
      * rendered — kept between two markers so the prose around it stays
      * hand-written. When it is stale the failure prints the block to paste.
      */
@@ -420,13 +420,13 @@ class DocumentationStructuralTest {
         String doc = Files.readString(CONTRAINTES_MD, StandardCharsets.UTF_8);
         int debut = doc.indexOf(DEBUT);
         int fin = doc.indexOf(FIN);
-        assertThat(debut).as("marker %s in docs/contraintes.md", DEBUT).isNotNegative();
-        assertThat(fin).as("marker %s in docs/contraintes.md", FIN).isGreaterThan(debut);
+        assertThat(debut).as("marker %s in site/src/docs/comprendre/contraintes.md", DEBUT).isNotNegative();
+        assertThat(fin).as("marker %s in site/src/docs/comprendre/contraintes.md", FIN).isGreaterThan(debut);
 
         String attendu = tableau();
         String actuel = doc.substring(debut + DEBUT.length(), fin).strip();
         assertThat(actuel)
-                .as("the constraints table of docs/contraintes.md is not the catalogue any more. "
+                .as("the constraints table of site/src/docs/comprendre/contraintes.md is not the catalogue any more. "
                         + "Replace what stands between the markers with:\n\n" + attendu + "\n")
                 .isEqualTo(attendu);
     }
@@ -442,7 +442,7 @@ class DocumentationStructuralTest {
 
     /* ----------------------- variables-environnement.md ----------------------- */
 
-    private static final Path VARIABLES_MD = Path.of("docs/variables-environnement.md");
+    private static final Path VARIABLES_MD = Path.of("site/src/docs/installer/variables-environnement.md");
     private static final Path PROPERTIES = Path.of("src/main/resources/application.properties");
     private static final Path DOCS = Path.of("docs");
 
@@ -451,7 +451,7 @@ class DocumentationStructuralTest {
 
     /**
      * Every variable {@code application.properties} reads is in the inventory
-     * of {@code docs/variables-environnement.md}: the page claims to be complete,
+     * of {@code site/src/docs/installer/variables-environnement.md}: the page claims to be complete,
      * and a variable added to the configuration without a line there is the
      * drift that made the README's own table incomplete.
      */
@@ -471,7 +471,7 @@ class DocumentationStructuralTest {
             }
         }
         assertThat(missing)
-                .as("variables read by application.properties and absent from docs/variables-environnement.md")
+                .as("variables read by application.properties and absent from site/src/docs/installer/variables-environnement.md")
                 .isEmpty();
     }
 

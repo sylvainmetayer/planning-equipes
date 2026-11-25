@@ -152,9 +152,9 @@ public final class SchemaCompatibility {
                 + " ; la base porte " + migrations + ", sa dernière migration appliquée étant V"
                 + verdict.latestApplied() + ", appliquée par " + by + ". "
                 + "Démarrer ferait travailler ce code sur un schéma qu'il ne connaît pas, et le schéma ne se "
-                + "migre pas à l'envers. Deux issues (docs/versioning.md § 2) : " + redeploy
+                + "migre pas à l'envers. Deux issues (site/src/docs/installer/versioning.md § 2) : " + redeploy
                 + ", ou restaurer une sauvegarde antérieure à la montée de version avec scripts/restaurer.sh "
-                + "(docs/exploitation.md § 5). ALLOW_SCHEMA_AHEAD=true force le démarrage malgré tout, "
+                + "(site/src/docs/installer/exploitation.md § 5). ALLOW_SCHEMA_AHEAD=true force le démarrage malgré tout, "
                 + "à repasser à false ensuite.";
     }
 }

@@ -268,7 +268,7 @@ qu'il y a dedans, et sous quoi ?
 Ce qu'il ne couvre **pas** : les paquets du système de base de l'image (JRE
 Temurin, client PostgreSQL, Ubuntu). Ceux-là sont inventoriés par le SBOM
 CycloneDX que \`docker-ghcr.yml\` produit et attache à chaque image publiée —
-voir [\`developpement.md\`](developpement.md).
+voir [\`developpement.md\`](../site/src/docs/comprendre/developpement.md).
 
 ## Résumé
 

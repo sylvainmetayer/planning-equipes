@@ -388,7 +388,7 @@ class AvertissementsEcritureTest {
 
     /**
      * A warning shown by the browser is written to a log that survives the
-     * session (docs/rgpd.md §7): the sentence names the animateur by their id
+     * session (site/src/docs/installer/rgpd.md §7): the sentence names the animateur by their id
      * and never by their identity nor their date de naissance.
      */
     @Test

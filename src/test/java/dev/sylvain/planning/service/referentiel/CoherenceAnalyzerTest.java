@@ -317,7 +317,7 @@ class CoherenceAnalyzerTest {
     /**
      * The browser keeps a log of every message it shows, in {@code localStorage},
      * across logouts. A sentence naming a minor's identity and birth date would
-     * therefore outlive the screen it was shown on — see {@code docs/rgpd.md}
+     * therefore outlive the screen it was shown on — see {@code site/src/docs/installer/rgpd.md}
      * §7. The id is what stays: enough to act on in a bulk edit, and already
      * what the rest of the application shows.
      */

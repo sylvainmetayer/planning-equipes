@@ -34,31 +34,31 @@ aucune partie fait échouer la construction du site.
 
 | Document | Contenu |
 | --- | --- |
-| [`installation.md`](installation.md) | **Point d'entrée de l'hébergeur** : ce qui est livré (image, compose de production), ce que fait la pile, la mise en route pas à pas |
-| [`variables-environnement.md`](variables-environnement.md) | **Inventaire complet des variables d'environnement** : nom, défaut et rôle de chacune, relevés dans la configuration de l'application |
-| [`exploitation.md`](exploitation.md) | **Exploiter une instance chez un client** : prérequis, variables d'environnement, délivrabilité des e-mails, sauvegarde et restauration, conservation des données, surveillance |
-| [`securite.md`](securite.md) | Durcissement pour une exposition sur Internet : en-têtes de sécurité navigateur, plafonds de taille des requêtes, limitation de débit, déploiement de production |
-| [`oidc.md`](oidc.md) | **Connexion par un fournisseur d'identité OIDC** : variables, rattachement d'un compte à une personne, compte de secours ; les comptes locaux (mot de passe) sont dans [`exploitation.md`](exploitation.md#les-comptes-locaux-mot-de-passe) |
-| [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
-| [`versioning.md`](versioning.md) | **Versions et releases** : ce que promettent MAJOR/MINOR/PATCH, comment une release se fabrique (un formulaire GitHub, des notes générées, une image Docker), et la procédure de patch d'une version antérieure |
-| [`rgpd.md`](rgpd.md) | **Ce qu'un hébergeur d'instance doit écrire et tenir** : convention de sous-traitance (art. 28), registre des traitements (art. 30), journal des purges, limites connues |
-| [`accessibilite.md`](accessibilite.md) | **Accessibilité (RGAA 4.1)** : ce que l'audit a mesuré, les contrôles qui empêchent les écarts de revenir, ce qui reste ouvert, et la déclaration d'accessibilité qu'un exploitant renseigne |
+| [`installation.md`](../site/src/docs/installer/installation.md) | **Point d'entrée de l'hébergeur** : ce qui est livré (image, compose de production), ce que fait la pile, la mise en route pas à pas |
+| [`variables-environnement.md`](../site/src/docs/installer/variables-environnement.md) | **Inventaire complet des variables d'environnement** : nom, défaut et rôle de chacune, relevés dans la configuration de l'application |
+| [`exploitation.md`](../site/src/docs/installer/exploitation.md) | **Exploiter une instance chez un client** : prérequis, variables d'environnement, délivrabilité des e-mails, sauvegarde et restauration, conservation des données, surveillance |
+| [`securite.md`](../site/src/docs/installer/securite.md) | Durcissement pour une exposition sur Internet : en-têtes de sécurité navigateur, plafonds de taille des requêtes, limitation de débit, déploiement de production |
+| [`oidc.md`](../site/src/docs/installer/oidc.md) | **Connexion par un fournisseur d'identité OIDC** : variables, rattachement d'un compte à une personne, compte de secours ; les comptes locaux (mot de passe) sont dans [`exploitation.md`](../site/src/docs/installer/exploitation.md#les-comptes-locaux-mot-de-passe) |
+| [`observabilite.md`](../site/src/docs/installer/observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
+| [`versioning.md`](../site/src/docs/installer/versioning.md) | **Versions et releases** : ce que promettent MAJOR/MINOR/PATCH, comment une release se fabrique (un formulaire GitHub, des notes générées, une image Docker), et la procédure de patch d'une version antérieure |
+| [`rgpd.md`](../site/src/docs/installer/rgpd.md) | **Ce qu'un hébergeur d'instance doit écrire et tenir** : convention de sous-traitance (art. 28), registre des traitements (art. 30), journal des purges, limites connues |
+| [`accessibilite.md`](../site/src/docs/installer/accessibilite.md) | **Accessibilité (RGAA 4.1)** : ce que l'audit a mesuré, les contrôles qui empêchent les écarts de revenir, ce qui reste ouvert, et la déclaration d'accessibilité qu'un exploitant renseigne |
 | [`licences-tierces.md`](licences-tierces.md) | **Inventaire généré des licences tierces** : ce que l'image redistribue (dépendances Java, paquets npm) et sous quelle licence. Régénéré par `./mvnw license:add-third-party` puis `npm run licences` |
 
 ## Tech
 
 | Document | Contenu |
 | --- | --- |
-| [`architecture.md`](architecture.md) | Stack, arborescence, découpage backend / frontend, base de données, conteneurisation |
-| [`domaine.md`](domaine.md) | Modèle Timefold (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, `PlanningEvenement`) et mapping vers les contraintes |
-| [`contraintes.md`](contraintes.md) | Pourquoi chaque règle existe et ce qu'elle coûte (la liste elle-même est `ConstraintCatalog`, servie par `GET /api/constraints`) |
-| [`api.md`](api.md) | API REST : ce que le contrat OpenAPI ne peut pas dire (invariants transverses, arbitrages métier, pièges) ; la liste des endpoints est le contrat publié, généré dans [`schema/`](schema/) |
-| [`mcp.md`](mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
-| [`import-export.md`](import-export.md) | Imports / exports : scénario YAML (et son schéma), import CSV des animateurs et des référentiels, exports CSV, PDF et ICS ; le dump SQL n'est plus qu'un outillage de test |
-| [`developpement.md`](developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
+| [`architecture.md`](../site/src/docs/comprendre/architecture.md) | Stack, arborescence, découpage backend / frontend, base de données, conteneurisation |
+| [`domaine.md`](../site/src/docs/comprendre/domaine.md) | Modèle Timefold (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, `PlanningEvenement`) et mapping vers les contraintes |
+| [`contraintes.md`](../site/src/docs/comprendre/contraintes.md) | Pourquoi chaque règle existe et ce qu'elle coûte (la liste elle-même est `ConstraintCatalog`, servie par `GET /api/constraints`) |
+| [`api.md`](../site/src/docs/comprendre/api.md) | API REST : ce que le contrat OpenAPI ne peut pas dire (invariants transverses, arbitrages métier, pièges) ; la liste des endpoints est le contrat publié, généré dans [`schema/`](schema/) |
+| [`mcp.md`](../site/src/docs/comprendre/mcp.md) | Serveur MCP (outils exposés à un assistant IA, authentification, confidentialité) |
+| [`import-export.md`](../site/src/docs/comprendre/import-export.md) | Imports / exports : scénario YAML (et son schéma), import CSV des animateurs et des référentiels, exports CSV, PDF et ICS ; le dump SQL n'est plus qu'un outillage de test |
+| [`developpement.md`](../site/src/docs/comprendre/developpement.md) | Build, tests, CI, Podman, réglage du solveur, mises à jour Renovate |
 | [`memoire-du-projet.md`](memoire-du-projet.md) | **Ce que l'historique portait** : les mesures qui ont tranché un réglage du solveur, les pistes abandonnées, et l'incident précis derrière chaque garde-fou. Complément des décisions, à lire quand on se demande « pourquoi est-ce écrit comme ça ? » |
 | [`decisions/`](decisions/README.md) | **Décisions d'architecture** : ce qui a été choisi, contre quelles alternatives, et ce que ça engage. Commence par le cloisonnement par édition (modèle, en-tête `X-Edition-Id`, duplication, plan de migration) |
-| [`diagrammes/`](diagrammes/) | **Diagrammes PlantUML** (séquences, états, modèle) : sources et SVG générés, chacun montré par le document qui possède son sujet. Régénération et contrôles dans [`developpement.md`](developpement.md#diagrammes) |
+| [`diagrammes/`](diagrammes/) | **Diagrammes PlantUML** (séquences, états, modèle) : sources et SVG générés, chacun montré par le document qui possède son sujet. Régénération et contrôles dans [`developpement.md`](../site/src/docs/comprendre/developpement.md#diagrammes) |
 
 La mémoire destinée aux agents IA (Copilot, Claude Code, …) est centralisée dans
 un fichier à la racine, [`../AGENTS.md`](../AGENTS.md), complété d'un seul

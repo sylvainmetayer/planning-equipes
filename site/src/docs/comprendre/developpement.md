@@ -30,7 +30,7 @@ hasard (`quarkus.management.test-port=0`) pour que deux suites lancées côte à
 côte ne se le disputent pas ; un test l'atteint par
 `@TestHTTPResource(value = "metrics", management = true)` — chemin relatif à
 `/q`, la racine de management — ou lit directement le `MeterRegistry`. Voir
-[`observabilite.md`](observabilite.md) § Métriques.
+[`observabilite.md`](../installer/observabilite.md) § Métriques.
 
 **Variables d'environnement locales.** `mise.toml` porte celles que tout le
 monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
@@ -38,8 +38,8 @@ monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
 exclut — c'est le seul endroit où écrire une valeur qu'on ne veut pas voir dans
 un dépôt public. Exemple, pour voir la page `/mentions-legales` remplie plutôt
 que vide (les sept `LEGAL_*` sont décrites dans le
-[`variables-environnement.md`](variables-environnement.md#mentions-légales) et dans
-[`exploitation.md`](exploitation.md#3-mentions-légales--à-renseigner-pas-à-laisser-vides)) :
+[`variables-environnement.md`](../installer/variables-environnement.md#mentions-légales) et dans
+[`exploitation.md`](../installer/exploitation.md#3-mentions-légales--à-renseigner-pas-à-laisser-vides)) :
 
 ```toml
 [env]
@@ -75,8 +75,8 @@ les tests appellent l'API sans session — `AuthentificationAdminTest` la restau
 via `@TestProfile` pour couvrir le flux réel.
 
 Les variables d'environnement sont documentées dans le
-[`variables-environnement.md`](variables-environnement.md) et
-[`exploitation.md`](exploitation.md).
+[`variables-environnement.md`](../installer/variables-environnement.md) et
+[`exploitation.md`](../installer/exploitation.md).
 
 ### Avertissements JDK 25
 
@@ -95,7 +95,7 @@ Deux fichiers du frontend ne sont pas dans le dépôt : ils sont écrits par
 
 | Fichier | Script | Contenu |
 | --- | --- | --- |
-| `src/app/version.ts` | `scripts/generate-version.js` | `APP_VERSION` : le tag exact s'il y en a un, sinon le SHA court ([`versioning.md`](versioning.md)) |
+| `src/app/version.ts` | `scripts/generate-version.js` | `APP_VERSION` : le tag exact s'il y en a un, sinon le SHA court ([`versioning.md`](../installer/versioning.md)) |
 | `src/app/pages/nouveautes/news-data.ts` | `scripts/generate-news.js` | L'historique git — un sujet de commit, sa date, son tag de version — que l'écran **Nouveautés** affiche |
 
 Les deux sont dans `.gitignore`, et `news-data.ts` dans `.prettierignore` : il
@@ -278,7 +278,7 @@ coûte peu à l'écriture, les rattraper coûte cher.
   d'un `<span class="visually-hidden">`, un `aria-label` sur un élément sans
   rôle n'étant pas lu de façon fiable.
 - **Les sept contrôles qui tiennent ces conventions** sont recensés dans
-  [`accessibilite.md`](accessibilite.md#ce-qui-empêche-les-écarts-de-revenir) :
+  [`accessibilite.md`](../installer/accessibilite.md#ce-qui-empêche-les-écarts-de-revenir) :
   les douze règles a11y d'`angular-eslint` en `error` (les trois désactivations
   sont commentées à leur ligne), cinq scripts du job `frontend`, et
   `e2e/accessibilite.spec.ts`, qui passe axe-core sur les écrans représentatifs
@@ -438,7 +438,7 @@ classée échoue en imprimant la ligne à ajouter ; la décision (ouverte, ou
 
 `solver/handsearch` écrit les 47 règles une seconde fois, pour chercher sans
 traverser les contraintes en flux
-([`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)).
+([`0087`](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)).
 Deux tests de la suite par défaut, sans conteneur, empêchent les deux
 exemplaires de diverger :
 
@@ -777,7 +777,7 @@ Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 (défaut `http://localhost:8025`), `E2E_CHROMIUM`.
 
 **Les amorces sont datées depuis l'horloge réelle.** La pile e2e laisse « le
-passé est figé » ([ADR 0044](decisions/0044-le-passe-est-fige.md)) allumé,
+passé est figé » ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)) allumé,
 comme la production, et l'application empaquetée ne fige aucune date : un
 créneau derrière l'horloge serait repris du plan enregistré par chaque
 résolution et refuserait tout geste. Une spec écrit donc ses dates comme si
@@ -887,15 +887,15 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | --- | --- | --- |
 | `planning.solver.seconds-limit` | `900` (`3` en `%test`) | Budget de résolution |
 | `planning.solver.unimproved-seconds-limit` | `180` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** : la fenêtre, que chaque édition règle |
-| `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` en `%test`) | Ce que la fenêtre doit gagner en medium, par siège du problème, pour que le calcul continue ; `0` est le plateau strict (pas un point), qui ne se déclenchait jamais — voir [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) |
-| `planning.solver.engine` | `hand` (`SOLVER_ENGINE`) | Le moteur qui cherche : `hand`, le moteur direct de [`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md) (défaut depuis [`0088`](decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)), ou `timefold` — voir *Le moteur direct* plus bas |
+| `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` en `%test`) | Ce que la fenêtre doit gagner en medium, par siège du problème, pour que le calcul continue ; `0` est le plateau strict (pas un point), qui ne se déclenchait jamais — voir [`0081`](repo:docs/decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) |
+| `planning.solver.engine` | `hand` (`SOLVER_ENGINE`) | Le moteur qui cherche : `hand`, le moteur direct de [`0087`](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md) (défaut depuis [`0088`](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)), ou `timefold` — voir *Le moteur direct* plus bas |
 | `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; démarrage refusé s'il est sous `seconds-limit` |
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
-| `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |
+| `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |
 | `planning.solver.max-queued-jobs` | `0` = aucune limite (`SOLVER_MAX_QUEUED_JOBS`) | Tâches en file derrière celle qui tourne |
 | `planning.constraint-weights.<contrainte>` | défaut du catalogue : `1` pour une règle dure, `5` pour les autres | Voir [`contraintes.md`](contraintes.md#pondérer-une-contrainte) |
 | `planning.jobs.reprise-au-demarrage` | `true` (`false` en `%test`) | Rejoue la file persistée. En test, une tâche laissée en file déclencherait un vrai solve au démarrage suivant |
-| `planning.diagnostic.mode` | `score-director` | Implémentation du diagnostic par contrainte. `solution-manager` est l'oracle du test de contrat, pas un mode dégradé de secours — voir [`0013`](decisions/0013-diagnostic-par-le-score-director.md) |
+| `planning.diagnostic.mode` | `score-director` | Implémentation du diagnostic par contrainte. `solution-manager` est l'oracle du test de contrat, pas un mode dégradé de secours — voir [`0013`](repo:docs/decisions/0013-diagnostic-par-le-score-director.md) |
 
 **L'arrêt anticipé est un `AND`** entre `bestScoreFeasible` et la limite de
 plateau : une résolution s'arrête quand le budget est épuisé, **ou** quand le
@@ -907,12 +907,12 @@ budget. Sans le gain — le plateau strict d'avant —, il ne s'arrêtait jamais
 sur une édition réelle : la seconde phase trouve toujours un point de medium
 de temps en temps. Les rendements décroissants de Timefold, mesurés, ne lisent
 que le soft et ne se déclenchent pas non plus ; le détail et les courbes sont
-dans [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md).
+dans [`0081`](repo:docs/decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md).
 Une heuristique de construction **vide** sépare les deux recherches locales :
 elle ne fait aucun pas, mais Timefold remet la fenêtre de plateau à zéro à sa
 fin, si bien que la fenêtre part de la faisabilité. Sans elle, la fenêtre
 remontait dans la phase de faisabilité, et un hôte lent finissait la
-résolution dès 0hard, sans optimisation — voir [`0082`](decisions/0082-la-fenetre-de-plateau-part-de-la-faisabilite.md).
+résolution dès 0hard, sans optimisation — voir [`0082`](repo:docs/decisions/0082-la-fenetre-de-plateau-part-de-la-faisabilite.md).
 
 ### La construction échantillonnée des très gros problèmes
 
@@ -936,7 +936,7 @@ Sous le seuil, la construction exacte se rembourse : trois minutes de plus pour
 un premier plan meilleur, que la recherche locale ne rattrape pas en 300 s.
 Au-dessus, elle ne tient plus dans un budget de production. Le seuil est
 l'endroit où la construction exacte dépasserait dix minutes ; toute édition
-réelle est loin dessous. Voir [0036](decisions/0036-construction-echantillonnee-des-tres-gros-problemes.md).
+réelle est loin dessous. Voir [0036](repo:docs/decisions/0036-construction-echantillonnee-des-tres-gros-problemes.md).
 
 Une première piste, `pickEarlyType` `FIRST_FEASIBLE_SCORE_OR_NON_DETERIORATING_HARD`,
 est inutilisable ici : un siège peut rester vide, « le laisser vide » ne dégrade
@@ -1073,7 +1073,7 @@ le score ne le refuserait pas d'emblée :
 Deux journées faites des mêmes postes (stand, créneau, horaires) s'échangent
 quand même, bien que le score ne voie rien changer : les refuser a été mesuré
 et coûte du medium (-30 852 contre -30 293 sur `festival-hivernal`) — voir
-[ADR 0078](decisions/0078-echange-de-journees-plutot-que-mouvements-pillar.md).
+[ADR 0078](repo:docs/decisions/0078-echange-de-journees-plutot-que-mouvements-pillar.md).
 C'est ce qui distingue ce mouvement des *pillar moves* de Timefold, mesurés et
 écartés juste avant : le `pillarSwapMoveSelector` tirait deux blocs au hasard et
 le filtre en rejetait 99,97 %, divisant la vitesse par neuf ; le
@@ -1165,7 +1165,7 @@ d'un mineur. Elles ne peuvent, par construction, écarter aucune solution
 faisable, et évitent au solveur de payer un calcul de score pour découvrir un
 écart certain. Le filtre n'est pas un mur — la reconstruction du *ruin and
 recreate* ne le lit pas —, c'est pourquoi ces mêmes règles pèsent un forfait de
-10 000 points durs par écart ([0034](decisions/0034-exclusions-eligibilite-plus-lourdes-que-tout.md)).
+10 000 points durs par écart ([0034](repo:docs/decisions/0034-exclusions-eligibilite-plus-lourdes-que-tout.md)).
 
 Règle à suivre pour toute nouvelle contrainte : exprimer d'abord ce qui peut
 l'être en `Joiners.equal` / `lessThan` / `overlapping`, restreindre le flux
@@ -1388,7 +1388,7 @@ points qui ne s'y voient pas :
 - **l'image est scannée par Trivy avant d'être signée** : une CVE corrigeable
   HIGH ou CRITICAL dans ses paquets système l'arrête sous son seul tag
   `sha-…`. Une version (`v*`) est construite sans cache, couches et `.m2`
-  compris — voir [`securite.md`](securite.md) § Analyses automatiques, qui
+  compris — voir [`securite.md`](../installer/securite.md) § Analyses automatiques, qui
   liste aussi tout ce que `securite.yml`, `scorecard.yml`, CodeQL et le
   job `dast` de `tests.yml` vérifient ;
 - **les analyses publient dans l'onglet *Security*** (SARIF) en plus d'échouer
@@ -1428,10 +1428,10 @@ points qui ne s'y voient pas :
   la signe, puis publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
   tag `vX.Y.Z`** ; `:main` est aussi reconstruite sans cache chaque dimanche
   et sur un lancement manuel, pour les correctifs Ubuntu
-  ([`securite.md`](securite.md) § Analyses automatiques) ; `:latest` n'est jamais posé par `metadata-action`
+  ([`securite.md`](../installer/securite.md) § Analyses automatiques) ; `:latest` n'est jamais posé par `metadata-action`
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
-  release — est dans [`versioning.md`](versioning.md).
+  release — est dans [`versioning.md`](../installer/versioning.md).
 - **`release.yml` écrit le corps d'une release publiée** (git-cliff sur les
   messages de commit du tag) et ne touche à rien d'autre : ni tag, ni branche,
   ni fichier du dépôt — il n'y a pas de `CHANGELOG.md` à tenir. Il part sur
@@ -1440,7 +1440,7 @@ points qui ne s'y voient pas :
   — la montée que les sujets demandaient, la branche où vit le tag — tournent
   **après** l'écriture : la release est déjà publiée quand le workflow
   démarre, rien ne peut plus l'empêcher, et un job rouge est le seul canal qui
-  prévienne. Le détail est dans [`versioning.md`](versioning.md) § 3.
+  prévienne. Le détail est dans [`versioning.md`](../installer/versioning.md) § 3.
 - **un numéro de migration Flyway ou d'ADR ne se prend qu'une fois.** Deux PR
   ouvertes en même temps prennent volontiers le même « suivant », et
   `FlywayMigrationsFrozenTest` ne le voit qu'une fois les deux sur `main`.
@@ -1627,7 +1627,7 @@ le décor de ses captures : il ne change pas sans qu'on les refasse.
 L'image est distribuée sous AGPL-3.0-only, mais elle redistribue aussi ses
 dépendances, qui restent sous les leurs — et les licences MIT, BSD ou Apache
 demandent que leur notice voyage avec le binaire.
-[`licences-tierces.md`](licences-tierces.md) est cet inventaire. Il est
+[`licences-tierces.md`](repo:docs/licences-tierces.md) est cet inventaire. Il est
 **généré**, jamais écrit à la main :
 
 ```bash
@@ -1661,15 +1661,15 @@ publiée.
 ## Diagrammes
 
 Les diagrammes de séquence, d'états et de classes vivent dans
-[`diagrammes/`](diagrammes/), en PlantUML : un `.puml` écrit à la main, et à
+[`diagrammes/`](repo:docs/diagrammes/), en PlantUML : un `.puml` écrit à la main, et à
 côté le `.svg` qu'il produit, commité lui aussi pour que GitHub l'affiche sans
 rien installer. Chacun est montré par le document qui possède son sujet, juste
 sous le paragraphe qu'il illustre, avec un lien vers sa source :
 
 ```markdown
-![Séquence d'un solve lancé depuis le référentiel](diagrammes/solve.svg)
+![Séquence d'un solve lancé depuis le référentiel](repo:docs/diagrammes/solve.svg)
 
-<sub>Source : [`diagrammes/solve.puml`](diagrammes/solve.puml).</sub>
+<sub>Source : [`diagrammes/solve.puml`](repo:docs/diagrammes/solve.puml).</sub>
 ```
 
 Après avoir modifié ou ajouté un `.puml`, régénérer les SVG et commiter les
@@ -1740,7 +1740,7 @@ Le formatage n'est pas un sujet de revue : un outil décide, on obéit.
 
 ## Conventions
 
-Elles vivent dans [`AGENTS.md`](../AGENTS.md), section *Working conventions* :
+Elles vivent dans [`AGENTS.md`](repo:AGENTS.md), section *Working conventions* :
 langue du code, `ApplicationLinks` pour tout lien public, `BusinessError` plutôt
 qu'un `try/catch` dans une ressource, `ObjectMapper` injecté, messages de commit
 courts, et les règles frontend. Le découpage des modules est dans

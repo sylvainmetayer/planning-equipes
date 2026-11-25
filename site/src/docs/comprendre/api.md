@@ -12,7 +12,7 @@ Le serveur MCP (`/mcp`) a sa propre porte et sa propre clé : [`mcp.md`](mcp.md)
 
 Tout le référentiel est cloisonné par édition (« Année 2025 », « Année 2026 »),
 et **rien ne circule de l'une à l'autre** — voir
-[`decisions/0001-cloisonnement-par-edition.md`](decisions/0001-cloisonnement-par-edition.md).
+[`decisions/0001-cloisonnement-par-edition.md`](repo:docs/decisions/0001-cloisonnement-par-edition.md).
 
 Le client la désigne par l'en-tête `X-Edition-Id`, sur **tous** les endpoints
 sauf le dump SQL (`/api/database/*`, outillage de test), qui ignore l'en-tête et emporte toutes les
@@ -25,7 +25,7 @@ dehors pour la raison inverse des autres : l'inclure ferait qu'un import
 **efface** le journal local, puisqu'un dump supprime ce qu'il emporte.
 
 La sauvegarde qui couvre tout, journal et sessions compris, est le `pg_dump` de
-nuit ([ADR 0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)).
+nuit ([ADR 0015](repo:docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)).
 
 Deux propriétés qui expliquent la plupart des surprises :
 
@@ -54,12 +54,12 @@ session, `/api/config` et `/api/branding` — lus par le frontend avant son
 démarrage, page de connexion comprise — et `/api/mentions-legales`. Un appel
 non authentifié répond **401, jamais une redirection HTML**.
 
-![Connexion du coordinateur : formulaire ou proxy d'accès](diagrammes/authentification.svg)
+![Connexion du coordinateur : formulaire ou proxy d'accès](repo:docs/diagrammes/authentification.svg)
 
-<sub>Source : [`diagrammes/authentification.puml`](diagrammes/authentification.puml).</sub>
+<sub>Source : [`diagrammes/authentification.puml`](repo:docs/diagrammes/authentification.puml).</sub>
 
 Le form login `/j_security_check` répond `429` après cinq échecs depuis la même
-adresse, **y compris avec le bon mot de passe** ([`securite.md`](securite.md)).
+adresse, **y compris avec le bon mot de passe** ([`securite.md`](../installer/securite.md)).
 
 `POST /api/mcp/cle` échange le mot de passe admin contre la clé MCP : la
 session ne suffit pas, parce que cette clé donne un accès complet en écriture et
@@ -129,7 +129,7 @@ Un chemin qui s'arrêterait avant la fin laisserait l'écran Règles du planning
 l'analyse du solve précédent, sans lever d'erreur : le seul symptôme serait un
 écran qui ment. `SolveSynchronePipelineTest` verrouille les deux bouts.
 
-**Le passé est figé** ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+**Le passé est figé** ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)).
 Pendant l'événement, chaque construction de problème depuis le référentiel
 reprend du plan enregistré les places des créneaux déjà commencés — date
 passée, ou aujourd'hui avec un début effectif atteint — et les épingle,
@@ -151,7 +151,7 @@ par le serveur. Toute autre session voit le même job actif via
 portant le job en cours. **C'est le seul `409` de lancement dont le corps est
 un job** : le quota horaire et la file plafonnée de l'exploitant
 (`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, voir
-[`exploitation.md`](exploitation.md#combien-de-calculs-linstance-accepte)), comme
+[`exploitation.md`](../installer/exploitation.md#combien-de-calculs-linstance-accepte)), comme
 le référentiel figé, répondent `409` avec un `{ message }` à afficher tel quel.
 Un client distingue les deux par la forme du corps (un `id` et un `status`),
 pas par le statut.
@@ -285,7 +285,7 @@ Ce qu'il faut savoir avant de s'en servir :
 
 Le solve s'arrête dès qu'un plan est réalisable, et au plus tard au bout de
 cette durée. La décision et les options écartées sont dans
-[0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
+[0071](repo:docs/decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
 
 ### Ce que la prochaine résolution recevra
 
@@ -309,9 +309,9 @@ l'organisateur.
 
 ### File d'attente
 
-![Cycle de vie d'un job de résolution](diagrammes/job-etats.svg)
+![Cycle de vie d'un job de résolution](repo:docs/diagrammes/job-etats.svg)
 
-<sub>Source : [`diagrammes/job-etats.puml`](diagrammes/job-etats.puml).</sub>
+<sub>Source : [`diagrammes/job-etats.puml`](repo:docs/diagrammes/job-etats.puml).</sub>
 
 `enFile=true` met la tâche en file au lieu de la refuser. Trois propriétés :
 
@@ -370,7 +370,7 @@ pas nommer)
 — à côté de `previousPlan`, qui dit si le plan remplacé était meilleur.
 `postesPasses` compte les places des créneaux déjà commencés, épinglées
 telles que travaillées quel que soit le mode, départ à froid compris
-([ADR 0044](decisions/0044-le-passe-est-fige.md)) ; 0 tant que l'événement
+([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)) ; 0 tant que l'événement
 n'a pas commencé. `postesPassesVides` compte, parmi elles, celles qui ne
 tiennent personne — un premier calcul lancé pendant l'événement les a toutes
 vides — : un avertissement sur le compte rendu, jamais un point dur. Les
@@ -549,7 +549,7 @@ Les places des créneaux déjà commencés sont réglées **avant** le périmèt
 épinglées telles que travaillées, jamais rouvertes — `jours` nommant une
 journée passée ne rouvre rien — et comptées à part dans
 `statistiques.postesPasses`, celles restées vides dans
-`statistiques.postesPassesVides` ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+`statistiques.postesPassesVides` ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)).
 Une replanification dont toutes les places sont passées est refusée comme la
 résolution complète.
 
@@ -602,7 +602,7 @@ elle est périmé. La date est **persistée**, pas tenue en mémoire comme le
 bandeau `dataStale` du shell : après un redémarrage une carte vide se lirait
 « jamais modifié », donc « à jour », et c'est précisément devant un bouton
 *Restaurer* qu'un « à jour » faux coûte le plus cher (ADR
-[0038](decisions/0038-fraicheur-du-referentiel-persistee.md)). La reprise de
+[0038](repo:docs/decisions/0038-fraicheur-du-referentiel-persistee.md)). La reprise de
 l'existant se fait à la migration, depuis le `max(modifie_le)` des six
 référentiels et le `cree_le` des verrouillages ; une bascule de contrainte ou un
 poids ne portant aucune date, une édition qui en a un prend l'instant de la
@@ -677,12 +677,12 @@ Une consigne ferme une bande horaire pour **tous** les stands d'une date, et
 rouvre ceux qu'on nomme sur des fenêtres de compensation ; le modèle est dans
 [`domaine.md`](domaine.md#consigne-dédition--la-quatrième-couche), le
 raisonnement dans
-[ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md).
+[ADR 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md).
 Ce qui suit est ce que le schéma ne dit pas.
 
-![Préremplir, simuler, poser et lever une consigne](diagrammes/consigne.svg)
+![Préremplir, simuler, poser et lever une consigne](repo:docs/diagrammes/consigne.svg)
 
-<sub>Source : [`diagrammes/consigne.puml`](diagrammes/consigne.puml).</sub>
+<sub>Source : [`diagrammes/consigne.puml`](repo:docs/diagrammes/consigne.puml).</sub>
 
 **Jours à venir seulement.** Poser, modifier et lever refusent (`400`) une
 date qui n'est pas strictement après *aujourd'hui* — et *aujourd'hui* est
@@ -822,9 +822,9 @@ pendant la fermeture » ramène le besoin à une personne par siège.
 `GET /api/planning/publication` — qui serait prévenu, et ce qu'il lirait.
 N'envoie rien. `POST` publie.
 
-![Aperçu puis publication du planning](diagrammes/publication.svg)
+![Aperçu puis publication du planning](repo:docs/diagrammes/publication.svg)
 
-<sub>Source : [`diagrammes/publication.puml`](diagrammes/publication.puml).</sub>
+<sub>Source : [`diagrammes/publication.puml`](repo:docs/diagrammes/publication.puml).</sub>
 
 Publier, c'est **marquer le plan de travail comme le plan communiqué** et
 n'écrire qu'aux personnes dont l'emploi du temps a changé depuis la dernière
@@ -1072,7 +1072,7 @@ précédaient.
 ## Gel du référentiel
 
 Le gel se pose par famille et par édition
-([décision 0052](decisions/0052-gel-du-referentiel-distinct-du-verrou.md)) ;
+([décision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)) ;
 les routes qui le lisent, le posent et le lèvent sont celles de l'OpenAPI.
 Poser deux fois est un seul gel : la date reste la première. Lever un gel
 absent n'est pas une erreur.
@@ -1191,7 +1191,7 @@ l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. Une édition
 neuve, dupliquée ou importée naît inactive.
 
 Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
-`NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](exploitation.md)).
+`NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](../installer/exploitation.md)).
 
 `GET /api/alertes` — ce que ces jobs ont laissé sur le bureau, plus récent
 d'abord. `limite` s'applique **par type** (50 par défaut, 500 au maximum), et
@@ -1246,9 +1246,9 @@ seule.
 `/api/webhooks` (admin) configure ce que l'application annonce à un outil
 extérieur. La configuration est **d'instance**, pas d'édition : le payload dit
 de quelle édition il parle, et seule l'édition active
-([ADR 0072](decisions/0072-une-seule-edition-active.md)) émet. Les formats et la garde anti-SSRF :
-[`securite.md`](securite.md) § Appels sortants ; le pourquoi :
-[ADR 0074](decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
+([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)) émet. Les formats et la garde anti-SSRF :
+[`securite.md`](../installer/securite.md) § Appels sortants ; le pourquoi :
+[ADR 0074](repo:docs/decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
 
 | Code d'événement | Quand | `donnees` |
 | --- | --- | --- |
@@ -1364,7 +1364,7 @@ que trois positions — faible 1, normale 5 (le défaut d'une règle moyenne ou
 souple), forte 25 — et le poids exact dans le panneau d'une règle ; l'API
 accepte tout entier de la plage, et `500` garde stockable ce qu'une édition
 avait réglé avant que l'échelle soit multipliée par cinq
-([0057](decisions/0057-importance-d-une-regle-en-trois-positions.md)). Une règle pesée zéro serait éteinte
+([0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md)). Une règle pesée zéro serait éteinte
 *en fait* tout en s'affichant active — et, pour une règle légale, sans passer
 par la confirmation. Éteindre passe par l'interrupteur. `poids: null` supprime
 la surcharge et rend la règle à la valeur du déploiement.
@@ -1497,7 +1497,7 @@ calcul de score, aucun solveur tenu : le bouton « Actualiser » de l'écran
 Contraintes reste donc disponible pendant qu'une résolution tourne.
 
 Il remplace un lancement d'analyse en tâche de fond, retiré (voir
-[`memoire-du-projet.md`](memoire-du-projet.md#4-ce-qui-a-été-retiré-et-pourquoi)).
+[`memoire-du-projet.md`](repo:docs/memoire-du-projet.md#4-ce-qui-a-été-retiré-et-pourquoi)).
 
 Sans rien de persisté, la réponse est la vue vide (`analysedAt` nul) : c'est
 l'état que l'écran affiche déjà avant la première résolution.
@@ -1593,7 +1593,7 @@ siège verrouillé refuse (`400`), une résolution en cours aussi (`409`), les
 deux lignes s'écrivent dans une seule transaction, et l'analyse de contraintes
 stockée est re-dérivée du plan après coup, comme après une restauration.
 
-**Le passé ne se modifie plus** ([ADR 0044](decisions/0044-le-passe-est-fige.md)) :
+**Le passé ne se modifie plus** ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)) :
 un siège dont le créneau est déjà commencé — à l'une ou l'autre extrémité du
 geste — refuse (`400`, « Ce créneau est déjà commencé : le passé ne se
 modifie plus »), simulation comprise, tant que `PASSE_FIGE` est allumé.
@@ -1610,7 +1610,7 @@ l'assistant de réparation ci-dessous et « Déplacer vers… ».
 « Placer », depuis « Qui peut tenir ce siège ? » du panneau du siège. Mêmes
 contrôles que l'écriture directe de l'assistant de réparation — et de l'outil
 MCP `affecter_poste`, dont c'est le service : résolution en cours (`409`),
-créneau déjà commencé ([ADR 0044](decisions/0044-le-passe-est-fige.md)),
+créneau déjà commencé ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)),
 siège verrouillé, et **règle dure lue deux fois**, sur le planning entier et
 sur le siège : remplir un siège vide rend son point `posteDoitEtrePourvu`, et
 le verdict global seul laisserait passer un mineur posé sur une nuit (`400`,
@@ -1676,10 +1676,10 @@ sans relancer de solveur ni réécrire le reste du plan : le résultat est
 exactement le plan simulé. Un poste couvert par un verrouillage est refusé
 (400) — déverrouillez-le d'abord. Un poste dont le créneau est **terminé**
 l'est aussi, à la suggestion comme à l'application (400, « Ce créneau est
-déjà commencé : le passé ne se modifie plus », [ADR 0044](decisions/0044-le-passe-est-fige.md)).
+déjà commencé : le passé ne se modifie plus », [ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)).
 
 **Un poste dont le créneau est en cours est scindé, pas refusé**
-([ADR 0066](decisions/0066-le-passe-est-fige-a-la-minute.md)). L'écriture coupe
+([ADR 0066](repo:docs/decisions/0066-le-passe-est-fige-a-la-minute.md)). L'écriture coupe
 le siège à la minute courante de l'horloge du jour J : l'origine garde son
 titulaire jusqu'à cette minute, et c'est la **suite** — un siège nouveau,
 d'identifiant `<id>~HHmm`, qui porte `suiteDe` — qui reçoit l'écriture. Le
@@ -1956,7 +1956,7 @@ et l'endpoint refuse quoi que croie l'appelant.
 Le garde-fou porte aussi sur **la lecture**, pas seulement sur l'écriture : la
 valeur vit dans une ligne ordinaire, qui arrive par des chemins que l'application
 ne contrôle pas — une restauration `pg_dump` ([ADR
-0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)),
+0015](repo:docs/decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)),
 un volume recopié, une session `psql`. Une date figée sur un poste de
 développement puis arrivée sur une instance déployée y resterait, et le chemin
 de retour est fermé puisque l'effacement y est refusé aussi. Là où l'horloge simulée
@@ -1972,7 +1972,7 @@ Le dump de l'application n'est **pas** l'un de ces chemins, et ne l'a jamais
 **Ce que le mock remplace, exactement : la date, pour l'écran jour J** —
 quel jour est regardé, quels créneaux de ce jour sont encore devant, et
 lesquels une absence couvre —, **pour la frontière des consignes**, **pour le
-passé que le solveur fige** ([ADR 0044](decisions/0044-le-passe-est-fige.md) :
+passé que le solveur fige** ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md) :
 les places des créneaux commencés à cette date et cette heure sont reprises du
 plan enregistré et épinglées, ce qui est exactement ce qui permet de répéter
 une résolution « pendant l'événement » hors saison — et, sous `quarkus:dev`,
@@ -2012,8 +2012,8 @@ affiche la date figée, sans lien.
 
 L'écran de la salle de contrôle (`/mural/:jeton`) lit `GET /api/mural/{jeton}`
 toutes les minutes, sans session : le jeton est la clé, et il n'ouvre que cette
-lecture ([décision 0053](decisions/0053-affichage-mural-par-jeton-dedie.md),
-[`securite.md`](securite.md)). Les liens se gèrent sous `/api/affichage-mural`,
+lecture ([décision 0053](repo:docs/decisions/0053-affichage-mural-par-jeton-dedie.md),
+[`securite.md`](../installer/securite.md)). Les liens se gèrent sous `/api/affichage-mural`,
 derrière la session admin.
 
 - **Le jeton n'est rendu qu'une fois**, dans la réponse `201` de la création :
@@ -2103,7 +2103,7 @@ titre d'une règle dure du couple place × animateur) et
 tout le périmètre sans qu'aucun y tienne déjà de place). Toutes `CRITIQUE`,
 toutes portant l'exception dans `contrainteIds`, toutes averties aussi à
 l'écriture — voir *Avertissements de saisie* et
-[0046](decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md). La
+[0046](repo:docs/decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md). La
 troisième ne se lit que pour un appelant qui apporte les verrous, ce que font
 `GET /api/feasibility`, l'état d'édition, le diagnostic post-résolution et
 `analyser_faisabilite` ; les places du plan enregistré ne sont relues que s'il
@@ -2265,7 +2265,7 @@ donc différemment, délibérément :
   savoir si le siège peut être tenu demain, et le solveur y enverrait un ninja.
 
 Le raisonnement complet, et les deux options écartées, sont dans
-[`decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md`](decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md).
+[`decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md`](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md).
 
 `ninjaConfigure: false` signale qu'aucune typologie n'est marquée ninja dans
 l'édition — les deux comptages coïncident alors, et un `renforts` à zéro partout
@@ -2396,9 +2396,9 @@ PDF individuel — résout à lui seul l'animateur **et** son édition :
 et un jeton d'une édition qui n'est pas l'édition active répond **exactement**
 la même chose, pour ne rien dire de sa validité (ADR 0072).
 
-![Entrée dans l'espace animateur et accusé de réception](diagrammes/espace-animateur.svg)
+![Entrée dans l'espace animateur et accusé de réception](repo:docs/diagrammes/espace-animateur.svg)
 
-<sub>Source : [`diagrammes/espace-animateur.puml`](diagrammes/espace-animateur.puml).</sub>
+<sub>Source : [`diagrammes/espace-animateur.puml`](repo:docs/diagrammes/espace-animateur.puml).</sub>
 
 **Le lien ne suffit pas.** L'espace sert le planning en téléchargement, donc
 toutes les routes sauf `/code` et `/session` exigent aussi la session du cookie
@@ -2471,8 +2471,8 @@ d'authentification : exiger la session ici rendrait l'abonnement impossible.
 Plutôt que d'élargir ce que le jeton d'espace permet — il deviendrait, sur une
 route au moins, une preuve d'accès complète et durable au planning nominatif
 sans second facteur —, l'abonnement a sa propre clé, révocable séparément. Voir
-[décision 0019](decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md)
-et [`securite.md`](securite.md).
+[décision 0019](repo:docs/decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md)
+et [`securite.md`](../installer/securite.md).
 
 Le préfixe `/api/abonnements/` n'existe que pour cette route, et c'est
 délibéré : c'est le motif d'URL qu'un proxy d'accès (Pangolin et consorts)
@@ -2516,13 +2516,13 @@ Une fin antérieure au début est refusée (`400`) **avant** l'écriture : une
 configuration refusée laisse la précédente en place, jamais la moitié d'une
 nouvelle.
 
-![Une demande d'échange, de la soumission à la décision](diagrammes/echange.svg)
+![Une demande d'échange, de la soumission à la décision](repo:docs/diagrammes/echange.svg)
 
-<sub>Source : [`diagrammes/echange.puml`](diagrammes/echange.puml).</sub>
+<sub>Source : [`diagrammes/echange.puml`](repo:docs/diagrammes/echange.puml).</sub>
 
-![Cycle de vie d'une demande d'échange](diagrammes/echange-etats.svg)
+![Cycle de vie d'une demande d'échange](repo:docs/diagrammes/echange-etats.svg)
 
-<sub>Source : [`diagrammes/echange-etats.puml`](diagrammes/echange-etats.puml).</sub>
+<sub>Source : [`diagrammes/echange-etats.puml`](repo:docs/diagrammes/echange-etats.puml).</sub>
 
 Une demande naît `EN_ATTENTE_CIBLE` et n'entre dans la file décidable
 (`PROPOSEE`) qu'une fois **acceptée par le collègue ciblé**. Un refus du
@@ -2544,7 +2544,7 @@ la publication suivante qui l'annonce avec le planning qui le porte. **Le
 solveur n'est pas relancé.** Un créneau déjà commencé — donné ou reçu — refuse
 l'échange, à la proposition comme à l'acceptation (`400`, « Ce créneau est
 déjà commencé : le passé ne se modifie plus »,
-[ADR 0044](decisions/0044-le-passe-est-fige.md)).
+[ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)).
 
 Un lot sollicite **chaque collègue visé**, une notification par collègue et non
 une par lot : le compte annoncé est celui de ses seules demandes, personne
@@ -2596,9 +2596,9 @@ L'animateur déclare lui-même, depuis son espace, ses **jours d'indisponibilit�
 et ses **souhaits** de typologies. Rien n'est écrit dans le référentiel à la
 soumission : la déclaration attend une décision explicite de l'admin.
 
-![Collecte des disponibilités](diagrammes/declaration-disponibilites.svg)
+![Collecte des disponibilités](repo:docs/diagrammes/declaration-disponibilites.svg)
 
-<sub>Source : [`diagrammes/declaration-disponibilites.puml`](diagrammes/declaration-disponibilites.puml).</sub>
+<sub>Source : [`diagrammes/declaration-disponibilites.puml`](repo:docs/diagrammes/declaration-disponibilites.puml).</sub>
 
 C'est la **première route en écriture** ouverte depuis l'espace animateur, qui
 est public. Trois bornes, et aucune n'est cosmétique :
@@ -2824,7 +2824,7 @@ Même schéma CRUD partout, tout cloisonné par édition — deux éditions port
 mêmes identifiants métier sans se marcher dessus.
 
 **Un identifiant n'est jamais choisi par l'appelant**
-([ADR 0050](decisions/0050-identifiants-generes-par-edition.md)). Le `POST`
+([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)). Le `POST`
 de création l'attribue — `A1`, `A2`… pour un animateur, `S…` pour un stand,
 `T…` pour une typologie, `L…` pour un emplacement, `C…` pour un ajustement,
 numérotés dans chaque édition ; `E1`, `E2`… pour une édition — et le rend
@@ -2892,7 +2892,7 @@ découpage tranchait avant de résoudre — que les données seules ne prouvaien
 pas, et dont le verdict dépendait : un chevauchement le même jour était une
 faute entre amplitudes et la forme normale de deux relèves décalées. Le
 découpage est retiré (ADR
-[0037](decisions/0037-une-grille-est-toujours-des-vacations.md)), le paramètre
+[0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)), le paramètre
 `mode` avec lui, et un chevauchement n'est plus jamais une anomalie.
 
 `GET /api/creneaux/controle` rend le verdict : les anomalies de la
@@ -3023,7 +3023,7 @@ seconde est simplement prévenue. Avec un seul compte partagé, le serveur ne
 sait rien de plus (#294). La persistance d'un solve, qui réécrit le
 référentiel tel qu'il était au départ du calcul, ne touche pas `modifieLe` :
 sinon toute fiche ouverte entrerait en conflit après chaque résolution. Voir la
-[décision 0023](decisions/0023-modification-concurrente-par-horodatage.md).
+[décision 0023](repo:docs/decisions/0023-modification-concurrente-par-horodatage.md).
 
 ### Avertissements de saisie
 
@@ -3070,7 +3070,7 @@ quand tout va bien.
 | `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` | L'affectation forcée écrite ne tombe que sur des jours où tous les animateurs qu'elle nomme se sont déclarés indisponibles : elle ne pourra pas être tenue. Écrite quand même — le jour d'indisponibilité peut être retiré — et reprise comme cause bloquante par l'analyse de faisabilité tant qu'elle tient. Le message nomme l'ajustement et les dates, jamais l'animateur. |
 | `AFFECTATION_FORCEE_MOTIF_LEGAL` | Aucune place du périmètre de l'affectation forcée n'accepte l'un des animateurs qu'elle nomme, au titre d'une règle dure lisible sur le couple place × animateur : mineur la nuit, un jour férié, sur un stand réservé aux majeurs, au-delà de son plafond quotidien. Le message nomme les règles du catalogue, l'ajustement et les dates, jamais l'animateur. |
 | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` | L'emploi du temps de chacun des animateurs que l'affectation forcée nomme est verrouillé sur tout son périmètre, sans qu'aucun d'eux y tienne déjà de place : le solveur ne peut ni bouger le verrou ni ignorer l'exception. Seuls les verrous `ANIMATEUR` et `ANIMATEUR_CRENEAU` comptent — les autres épinglent les places tenues et laissent les places vides remplissables. |
-| `VERROUILLAGE_SUR_VIOLATION_DURE` | Le verrouillage écrit fige des situations qui cassent déjà une règle dure dans la dernière analyse. Écrit quand même : un verrou fige, il n'exempte pas ([0003](decisions/0003-verrouillage-par-pin-natif.md)), et les places restent jugées. Le message nomme les règles et le nombre de situations, jamais l'animateur. Rien n'est dit sur une édition qu'aucune résolution n'a encore analysée : il n'y a rien à lire, et rien n'est deviné. |
+| `VERROUILLAGE_SUR_VIOLATION_DURE` | Le verrouillage écrit fige des situations qui cassent déjà une règle dure dans la dernière analyse. Écrit quand même : un verrou fige, il n'exempte pas ([0003](repo:docs/decisions/0003-verrouillage-par-pin-natif.md)), et les places restent jugées. Le message nomme les règles et le nombre de situations, jamais l'animateur. Rien n'est dit sur une édition qu'aucune résolution n'a encore analysée : il n'y a rien à lire, et rien n'est deviné. |
 | `STAND_SANS_EMPLACEMENT` | Le stand est enregistré sans emplacement alors que ses voisins — même racine de nom (« Buvette 3 » et « Buvette B » ont pour racine « Buvette »), à défaut mêmes typologies proposées — en ont un en commun : au moins deux voisins placés, et un emplacement tenu par plus de la moitié d'entre eux. Le message dit pourquoi (« 4 stand(s) « Buvette … » sur 4 sont à Place du marché »). Émis **seulement quand l'écriture change l'emplacement, le nom ou les typologies**, et jamais sur une édition sans emplacement. Une suggestion, jamais une écriture : `GET /api/stands/suggestions-emplacement` donne la même lecture pour toute l'édition. |
 
 Les trois avertissements de stand sur l'horaire ne sont émis **que si l'écriture touche à
@@ -3201,7 +3201,7 @@ résultat ne les reflétera pas. Les écrans verrouillent ces saisies le temps d
 calcul (`editingLocked`) ; un assistant MCP n'a pas d'écran, et c'est donc la
 réponse de l'outil qui le dit : elle porte le code **`RESOLUTION_EN_COURS`**
 dans `avertissements`, à côté des avertissements de cohérence de l'écriture
-([ADR 0020](decisions/0020-avertir-dans-la-reponse-d-ecriture.md) : avertir
+([ADR 0020](repo:docs/decisions/0020-avertir-dans-la-reponse-d-ecriture.md) : avertir
 dans la réponse plutôt que refuser). Même périmètre que le refus : une
 résolution d'une **autre** édition ou seulement **en file** ne déclenche
 rien, et une écriture refusée garde son `409` — l'avertissement ne s'ajoute
@@ -3468,7 +3468,7 @@ la base contient, jamais un lot à moitié écrit.
 ### Import de la grille des stands
 
 Le second import **partiel** du produit, calqué sur celui des animateurs
-([décision 0022](decisions/0022-import-de-la-grille-des-stands.md)) : la matrice
+([décision 0022](repo:docs/decisions/0022-import-de-la-grille-des-stands.md)) : la matrice
 de l'organisateur — une ligne par stand, une colonne par jour et par créneau, un
 entier par case — analysée, prévisualisée, rejouée, jamais écrite sur disque.
 
@@ -3572,7 +3572,7 @@ Trois choses volontairement absentes, et qui le resteront :
   navigateur n'est pas un canal de diffusion pour ça ;
 - **pas de restauration.** C'est une opération sur la base PostgreSQL, faite
   par l'exploitant (`pg_restore`) — voir
-  [`exploitation.md`](exploitation.md) ;
+  [`exploitation.md`](../installer/exploitation.md) ;
 - **pas d'écriture de l'emplacement ni de la rétention.** Un chemin de disque et
   le nombre de copies qu'un volume porte se décident avec ce volume
   (`BACKUP_DIR`, `BACKUP_RETENTION`), pas depuis un écran.

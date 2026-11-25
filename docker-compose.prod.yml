@@ -5,7 +5,7 @@
 #
 # Ici, un seul port est publié, et encore : sur la boucle locale, parce que
 # c'est le reverse proxy qui termine le TLS et qui doit être le seul chemin
-# vers l'application (voir docs/securite.md § Déploiement).
+# vers l'application (voir site/src/docs/installer/securite.md § Déploiement).
 #
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 #
@@ -19,7 +19,7 @@
 # le pilote par défaut (json-file) grossit sans limite, et un disque plein par
 # les journaux fait aussi échouer la sauvegarde de nuit. Plafond par défaut :
 # 5 fichiers de 20 Mo, ≈ 100 Mo par service. Pilote `local` : compressé, lu
-# par `docker compose logs` comme json-file. Voir docs/exploitation.md § 7.
+# par `docker compose logs` comme json-file. Voir site/src/docs/installer/exploitation.md § 7.
 x-logging: &logging
   driver: local
   options:
@@ -30,15 +30,15 @@ services:
   app:
     # Une version NOMMÉE (APP_VERSION=1.2.0), jamais `main` ni `latest` : un
     # déploiement doit être nommable dans un rapport d'incident. Sans défaut,
-    # comme les mots de passe. Voir docs/versioning.md § Déployer.
-    image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir docs/versioning.md}
+    # comme les mots de passe. Voir site/src/docs/installer/versioning.md § Déployer.
+    image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir site/src/docs/installer/versioning.md}
     restart: unless-stopped
     logging: *logging
     # L'image donne à la JVM les trois quarts de cette limite pour son tas
     # (JDK_JAVA_OPTIONS, voir le Dockerfile) : 1,5 Go ici, ce que le solveur
     # demande pour ne pas passer son temps à collecter. Sous 1 Go, il ne
     # resterait pas assez hors du tas et le conteneur serait tué en plein
-    # calcul. Voir docs/exploitation.md § La mémoire de l'application.
+    # calcul. Voir site/src/docs/installer/exploitation.md § La mémoire de l'application.
     mem_limit: 2g
     # Sur la boucle locale seulement : le reverse proxy est le seul chemin
     # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —
@@ -48,7 +48,7 @@ services:
     # /q/metrics) n'est volontairement PAS publié : il n'a pas
     # d'authentification, sa seule protection est de n'être joignable que du
     # réseau interne de la pile. Un Prometheus ajouté à cette pile le lit sur
-    # http://app:9000/q/metrics. Voir docs/observabilite.md § Métriques.
+    # http://app:9000/q/metrics. Voir site/src/docs/installer/observabilite.md § Métriques.
     ports:
       - "127.0.0.1:8080:8080"
     # Tout le fichier d'environnement est transmis tel quel, comme sur le
@@ -84,7 +84,7 @@ services:
       MAIL_START_TLS: ${MAIL_START_TLS:-REQUIRED}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # Sauvegarde de nuit : le répertoire monté ci-dessous. Vider BACKUP_DIR
-      # désactive la fonctionnalité. Voir docs/exploitation.md § Sauvegarde.
+      # désactive la fonctionnalité. Voir site/src/docs/installer/exploitation.md § Sauvegarde.
       BACKUP_DIR: ${BACKUP_DIR-/backup}
       TZ: ${TZ:-Europe/Paris}
     volumes:

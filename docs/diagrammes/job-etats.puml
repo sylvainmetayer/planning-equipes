@@ -2,7 +2,7 @@
 ' enum: JobStatus
 ' Le cycle de vie d'un job de résolution. Un seul job actif (PENDING ou
 ' RUNNING) à la fois ; les autres attendent en file, et la file survit au
-' redémarrage. Voir docs/api.md, « File d'attente ».
+' redémarrage. Voir site/src/docs/comprendre/api.md, « File d'attente ».
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 hide empty description

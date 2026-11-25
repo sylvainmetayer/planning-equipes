@@ -31,7 +31,11 @@ export default function config(eleventyConfig) {
   eleventyConfig.addWatchTarget('src/assets/*.css');
   eleventyConfig.addWatchTarget('src/assets/*.js');
   eleventyConfig.addWatchTarget('src/_data/pages/');
-  eleventyConfig.addWatchTarget('../docs/');
+  // The pages of /docs are read by src/docs.js, not rendered as templates of their own
+  eleventyConfig.ignores.add('src/docs/**');
+  eleventyConfig.addWatchTarget('src/docs/');
+  eleventyConfig.addWatchTarget('../docs/licences-tierces.md');
+  eleventyConfig.addWatchTarget('../docs/diagrammes/');
 
   // One minified stylesheet: the tokens and the base rules are bundled in.
   eleventyConfig.on('eleventy.after', async ({ dir }) => {

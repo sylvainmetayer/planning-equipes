@@ -371,7 +371,7 @@ export class VerrouillagesPage implements OnInit {
           title: $localize`:@@verrouillages.createdWithWarnings:Verrouillage enregistré — ${avertissements.length}:count: point(s) à vérifier.`,
           message: phrases(avertissements),
           // The journal outlives the logout: it only ever carries what is safe
-          // to keep there (`docs/rgpd.md` §7). Nothing this warning says names
+          // to keep there (`site/src/docs/installer/rgpd.md` §7). Nothing this warning says names
           // anybody today — the filter is what keeps that true tomorrow.
           messageJournal: phrases(avertissements.filter(estJournalisable)),
           variant: 'warning',
@@ -476,7 +476,7 @@ export class VerrouillagesPage implements OnInit {
   /**
    * What a refused lock is called in the report: its type and a target that
    * names nobody — an animateur by id, never by name, since the report is
-   * copied into a log that outlives the logout (`docs/rgpd.md` §7).
+   * copied into a log that outlives the logout (`site/src/docs/installer/rgpd.md` §7).
    */
   private failureName(row: VerrouillageRow | undefined, id: string): string {
     if (!row) {

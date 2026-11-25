@@ -2,7 +2,7 @@
 ' Un appel d'outil MCP, de la clé jusqu'au service. Le limiteur compte avant
 ' l'authentification ; un refus métier revient comme un refus lisible par
 ' l'assistant, pas comme « Internal error » ; l'édition se désigne par
-' argument, pas par en-tête. Voir docs/mcp.md.
+' argument, pas par en-tête. Voir site/src/docs/comprendre/mcp.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

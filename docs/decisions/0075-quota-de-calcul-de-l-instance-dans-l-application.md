@@ -46,7 +46,7 @@ cœurs occupés en continu, au détriment de la voisine.
   adresse, pas des calculs : elle ne sait pas qu'un `POST` lance quinze minutes
   de calcul et qu'un autre lit une liste, ne voit pas MCP derrière sa clé, et
   un visiteur qui change d'adresse repart à zéro. Elle reste utile contre le
-  reste (voir [`securite.md`](../securite.md)), pas contre ce coût-là.
+  reste (voir [`securite.md`](../../site/src/docs/installer/securite.md)), pas contre ce coût-là.
 - **Un `429`.** Il dit « vous, ralentissez » : c'est la réponse des limiteurs
   par adresse ou par clé de l'application. Ici l'appelant n'a rien fait de
   trop à titre personnel, c'est l'**état de l'instance** qui refuse — la
@@ -68,7 +68,7 @@ cœurs occupés en continu, au détriment de la voisine.
 
 - L'exploitant d'une démonstration règle les deux variables ; celui d'une
   instance d'organisateur n'a rien à faire. Voir
-  [`exploitation.md`](../exploitation.md#combien-de-calculs-linstance-accepte).
+  [`exploitation.md`](../../site/src/docs/installer/exploitation.md#combien-de-calculs-linstance-accepte).
 - Le « solveur occupé » reste le seul `409` dont le corps est un job : un
   futur refus au lancement doit garder la forme `{ message }`, ou l'écran le
   prendrait pour un job.

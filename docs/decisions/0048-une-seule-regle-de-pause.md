@@ -129,7 +129,7 @@ pause plus courte que celle accordée rétrécit ce qu'une personne couvre et
 gonfle donc le plancher — sur le défaut de 30 minutes, une constante à 20
 réclamait 120 personnes là où 119 suffisent.
 
-Trois exceptions, toutes nommées dans `docs/contraintes.md` : les **compteurs
+Trois exceptions, toutes nommées dans `site/src/docs/comprendre/contraintes.md` : les **compteurs
 de prime** (dimanche, férié, après 22 h) restent à l'amplitude, parce qu'une
 prime se paie sur la présence et qu'une pause ne se range pas d'un côté de
 minuit sans inventer quand elle a été prise ; un **siège vide** compte son

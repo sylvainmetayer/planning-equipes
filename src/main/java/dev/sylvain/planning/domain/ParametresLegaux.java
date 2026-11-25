@@ -29,7 +29,7 @@ public class ParametresLegaux {
      * 5.2 is about rest days, the 48 h high week is at art. 5.7.2.3
      * (modulation) — and the organisation this deployment serves has confirmed
      * it does not fall under that convention. The Code alone founds the value.
-     * See {@code docs/contraintes.md}, « La convention collective de
+     * See {@code site/src/docs/comprendre/contraintes.md}, « La convention collective de
      * l'Animation ».</p>
      */
     public static final int DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT = 48 * 60;

@@ -72,12 +72,12 @@ public class OidcConfiguration {
             throw new IllegalStateException("planning.auth.oidc.enabled (" + oidc + ") et "
                     + "quarkus.oidc.tenant-enabled (" + tenant + ") se contredisent. Les deux dérivent de "
                     + "OIDC_ENABLED : n'en redéfinir qu'une laisse l'application à moitié branchée sur le "
-                    + "fournisseur. Voir docs/oidc.md.");
+                    + "fournisseur. Voir site/src/docs/installer/oidc.md.");
         }
         if (production && !oidc && !secoursOuvert) {
             throw new IllegalStateException("OIDC_ENABLED=false et ADMIN_LOCAL_SECOURS=false : aucune porte "
                     + "n'ouvre l'administration. Branchez un fournisseur OIDC, ou laissez le compte local ouvert. "
-                    + "Voir docs/oidc.md.");
+                    + "Voir site/src/docs/installer/oidc.md.");
         }
         if (oidc && production && (secret == null || secret.length() < SECRET_MIN)) {
             throw new IllegalStateException("OIDC_CLIENT_SECRET doit faire au moins " + SECRET_MIN

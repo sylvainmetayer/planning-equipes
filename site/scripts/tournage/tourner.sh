@@ -2,6 +2,7 @@
 # Tourne les captures et les vidéos de la vitrine, de bout en bout (site/README.md, « Les captures et les vidéos : le tournage »).
 #
 #   site/scripts/tournage/tourner.sh [dossier]      # par défaut site/src : images/, videos/ et exemples/ (les PDF) y sont réécrits
+#   ONLY=docs site/scripts/tournage/tourner.sh      # seulement les écrans de la documentation : images/fr/docs/<nom>.webp
 #   APP_IMAGE=ghcr.io/sylvainmetayer/planning-equipes:v2.1.0 site/scripts/tournage/tourner.sh
 #
 # Demande docker (et `docker compose`), ffmpeg et ImageMagick avec WebP. Playwright tourne dans son image
@@ -33,10 +34,20 @@ echo "== Pile : $APP_IMAGE"
 echo "== Parcours (Playwright $playwright)"
 docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -e BASE_URL=http://localhost:8080 -e MAILPIT_URL=http://localhost:8025 -e ADMIN_PASSWORD \
-  -e SCENARIO=/repo/src/main/resources/scenarios/vitrine-fete-du-jeu-de-pierrefeuille.yaml -e OUT=/out \
+  -e ONLY -e LANGS -e SCENARIO=/repo/src/main/resources/scenarios/vitrine-fete-du-jeu-de-pierrefeuille.yaml -e OUT=/out \
   -v "$racine:/repo:ro" -v "$brut:/out" \
   "mcr.microsoft.com/playwright:v$playwright-noble" \
   bash -c "mkdir -p /tmp/w && cd /tmp/w && npm init -y >/dev/null && npm install playwright@$playwright --no-audit --no-fund >/dev/null && cp /repo/site/scripts/tournage/tourner.mjs . && node tourner.mjs"
+
+if [[ "${ONLY:-}" == docs ]]; then
+  echo "== Encodage des écrans de la documentation"
+  mkdir -p "$sortie/images/fr/docs"
+  for png in "$brut"/fr/docs-*.png; do
+    nom=$(basename "$png" .png); nom=${nom#docs-}
+    magick "$png" -quality 80 -define webp:method=6 "$sortie/images/fr/docs/$nom.webp"
+  done
+  exit 0
+fi
 
 echo "== PDF d'exemple"
 mkdir -p "$sortie/exemples"

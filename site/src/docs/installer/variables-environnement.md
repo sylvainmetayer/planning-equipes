@@ -6,7 +6,7 @@ des règles) se règle dans *Paramètres*, et les variables ci-dessous ne donnen
 que le défaut ou le plafond de l'instance. Cette page est l'inventaire complet de
 ce que lit l'application : chaque nom et chaque défaut y sont relevés dans
 `application.properties`, dans les fichiers compose et dans le script d'entrée de
-l'image. Le fichier [`.env.prod.example`](../.env.prod.example) en donne la
+l'image. Le fichier [`.env.prod.example`](repo:.env.prod.example) en donne la
 version à copier, commentée, pour le compose de production.
 
 Trois conventions :
@@ -26,7 +26,7 @@ Le détail de chaque famille est dans le document qui la porte : le calcul et le
 worker dans [`exploitation.md`](exploitation.md), les limites et les en-têtes dans
 [`securite.md`](securite.md), la connexion par un fournisseur d'identité dans
 [`oidc.md`](oidc.md), le suivi d'erreurs dans [`observabilite.md`](observabilite.md),
-le serveur MCP dans [`mcp.md`](mcp.md).
+le serveur MCP dans [`mcp.md`](../comprendre/mcp.md).
 
 ## Obligatoires en production
 

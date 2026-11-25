@@ -22,6 +22,6 @@ package dev.sylvain.planning.service.referentiel;
  *                <b>id alone</b>, never by nom/prénom nor by date de
  *                naissance: these sentences are read on screens whose client
  *                keeps a log, and an identity has no business ending up there
- *                (see {@code docs/rgpd.md} §7)
+ *                (see {@code site/src/docs/installer/rgpd.md} §7)
  */
 public record Avertissement(TypeAvertissement type, String message) {}

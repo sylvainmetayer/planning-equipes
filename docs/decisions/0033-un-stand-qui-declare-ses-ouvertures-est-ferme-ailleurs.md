@@ -12,7 +12,7 @@ Un stand énonce ses horaires en règles récurrentes portant un mode
 croissante. La résolution, jour calendaire par jour calendaire, prenait la
 fenêtre datée si elle existait, sinon les règles les plus spécifiques couvrant
 ce jour, **sinon rien : ouvert toute la journée** (voir
-[`domaine.md`](../domaine.md)).
+[`domaine.md`](../../site/src/docs/comprendre/domaine.md)).
 
 Cette troisième couche rendait « ouvert ces douze dates, et rien d'autre »
 inexprimable en une règle. Il en fallait une seconde, dont le seul rôle était

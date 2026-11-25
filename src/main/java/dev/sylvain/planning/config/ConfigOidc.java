@@ -4,7 +4,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
 /**
- * Sign-in through an OpenID Connect provider (see {@code docs/oidc.md}, ADR
+ * Sign-in through an OpenID Connect provider (see {@code site/src/docs/installer/oidc.md}, ADR
  * 0093): any provider, a client's ADFS or a Keycloak or Zitadel in between.
  *
  * <p>Off by default: the embedded account ({@link ConfigSecours}) is then the
