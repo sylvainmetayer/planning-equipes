@@ -102,6 +102,7 @@ describe('ConformiteRapport', () => {
     expect(text(fixture)).toContain(
       'Durée hebdomadaire maximale : 44 h au lieu de 48 h par défaut',
     );
+    expect(text(fixture)).toContain('Plafonds en vigueur au');
     expect(text(fixture)).toContain('Ada Test');
     expect(text(fixture)).toContain('2026-W34');
     expect(text(fixture)).toContain('Travail de nuit : poste à 21:00');

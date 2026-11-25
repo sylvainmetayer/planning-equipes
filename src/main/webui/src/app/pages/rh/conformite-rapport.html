@@ -17,7 +17,8 @@
         </button>
       </div>
 
-      <h3 i18n="@@conformite.plafonds">Plafonds appliqués</h3>
+      <h3 i18n="@@conformite.plafonds.auJour">Plafonds en vigueur au {{ v.genereLe | date: 'shortDate' }}</h3>
+      <p i18n="@@conformite.plafonds.actuels">Les paramètres légaux de l'édition tels qu'ils sont aujourd'hui, qui peuvent différer de ceux du jour de la publication.</p>
       <p>
         <ng-container i18n="@@conformite.plafonds.valeurs">Semaine : {{ hoursLabel(v.plafonds.hebdomadaireMajeurHeures) }} (majeur), {{ hoursLabel(v.plafonds.hebdomadaireMineurHeures) }} (mineur) · vacation : {{ hoursLabel(v.plafonds.vacationHeures) }} · repos quotidien : {{ hoursLabel(v.plafonds.reposQuotidienHeures) }}</ng-container>
       </p>

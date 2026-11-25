@@ -43,6 +43,13 @@ public record RapportConformite(
         List<Regle> regles,
         List<Personne> personnes) {
 
+    /** A ceiling as a reader writes it: « 44 h », « 10,5 h » — never « 44.0 h ». */
+    public static String hoursLabel(double heures) {
+        java.text.DecimalFormat format = new java.text.DecimalFormat(
+                "0.##", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.FRANCE));
+        return format.format(heures) + " h";
+    }
+
     /**
      * The ceilings the report was checked against, in hours, as the edition sets them.
      *

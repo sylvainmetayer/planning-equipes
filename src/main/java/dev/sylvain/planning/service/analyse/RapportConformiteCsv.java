@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public final class RapportConformiteCsv {
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
+    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
 
     private RapportConformiteCsv() {}
@@ -26,6 +27,8 @@ public final class RapportConformiteCsv {
                 .append(DATE.format(rapport.publieLe().atZone(PARIS)))
                 .append(", édité le ")
                 .append(DATE.format(rapport.genereLe().atZone(PARIS)))
+                .append(", plafonds en vigueur au ")
+                .append(DAY.format(rapport.genereLe().atZone(PARIS)))
                 .append('\n');
         csv.append("animateur;mineur");
         for (String semaine : rapport.semaines()) {
