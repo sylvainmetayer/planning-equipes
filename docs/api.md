@@ -1568,10 +1568,12 @@ Le déplacement se fait par « Déplacer vers… » du panneau du siège, par l'
 par les outils MCP `simuler_deplacement` / `deplacer_affectation`. Il n'y a plus de
 glisser-déposer à la souris.
 
-| Endpoint | Effet |
-| --- | --- |
-| `POST /api/postes/{id}/deplacement/simulation?cible=P` ou `?animateur=A` | Chiffre le geste sur le plan enregistré. Sans corps : le verdict se lit sur les règles de l'édition — celles que l'organisateur a désactivées comprises —, qui ne sont pas à l'appelant de fournir. Ne persiste rien. |
-| `POST /api/postes/{id}/deplacement?cible=P` ou `?animateur=A` | Applique le geste au plan enregistré. Écrit. `&occupant=X` dit qui l'appelant croit sur le siège de départ : si quelqu'un d'autre l'occupe, `409` et rien n'est écrit. |
+Deux routes, une pour chiffrer, une pour écrire, avec `?cible=P` (un siège)
+ou `?animateur=A` (une personne). La simulation **ne persiste rien** et, sans
+corps, lit le verdict sur les règles de l'édition — celles que l'organisateur a
+désactivées comprises —, qui ne sont pas à l'appelant de fournir. L'application
+écrit sur le plan enregistré ; `&occupant=X` dit qui l'appelant croit sur le
+siège de départ : si quelqu'un d'autre l'occupe, `409` et rien n'est écrit.
 
 Une règle, trois gestes. Après le geste, le siège `{id}` tient
 `animateurCibleId` (personne quand il est nul) et `posteCibleId`, s'il y en a
@@ -1605,9 +1607,9 @@ l'assistant de réparation ci-dessous et « Déplacer vers… ».
 
 ### Placer quelqu'un sur un siège vide
 
-| Endpoint | Effet |
-| --- | --- |
-| `POST /api/postes/{id}/placement?animateur=A` | Assied `A` sur le siège vide `{id}` du plan enregistré, et répond comme un déplacement (`animateurSourceId` nul, scores avant et après). Écrit. |
+`POST /api/postes/{id}/placement?animateur=A` assied `A` sur le siège vide
+`{id}` du plan enregistré, écrit, et répond comme un déplacement
+(`animateurSourceId` nul, scores avant et après).
 
 « Placer », depuis « Qui peut tenir ce siège ? » du panneau du siège. Mêmes
 contrôles que l'écriture directe de l'assistant de réparation — et de l'outil
@@ -1642,10 +1644,10 @@ d'en retirer.
 
 ### Assistant de réparation
 
-| Endpoint | Effet |
-| --- | --- |
-| `POST /api/jour-j/postes/{id}/suggestions?plafond=N` | Cherche les remplaçants viables sur le plan enregistré. Ne persiste rien. |
-| `POST /api/postes/{id}/affectation?animateurId=X&occupant=Y` | Applique un remplacement au plan enregistré — `animateurId` absent, vide le siège. Écrit. |
+L'assistant cherche les remplaçants viables sur le plan enregistré
+(`POST /api/jour-j/postes/{id}/suggestions?plafond=N`, ne persiste rien), puis
+l'un d'eux s'applique par `POST /api/postes/{id}/affectation?animateurId=X&occupant=Y`
+— `animateurId` absent, le siège est vidé ; écrit.
 
 Là où `simulation-swap` note le candidat qu'on lui donne, l'assistant
 **énumère** les candidats lui-même : il ne garde que ceux que le filtre
@@ -1722,12 +1724,20 @@ L'écran du jour même (`/aujourdhui` ; `/jour-j` y redirige) : quelqu'un ne s'e
 sièges doivent changer de mains **maintenant**. Rien de neuf sous le capot — ce
 sont les briques ci-dessus, appelées dans l'ordre du geste.
 
-| Endpoint | Effet |
-| --- | --- |
-| `GET /api/jour-j?date=&maintenant=` | L'écran complet : créneaux restants, animateurs de service, places vides — chacune `nouveau` (le plan publié avait quelqu'un dessus) ou connue, `resteDuCreneau` pour la suite d'un siège scindé —, absences du jour, signalements, rang du jour, stands ouverts, alertes de l'affichage mural (le même calcul, sur la journée en cours seulement), `aPrevenir` (les destinataires de la prochaine publication, différés compris — ceux que compte Diffuser —, cibles de « Prévenir les N personnes ») et échanges à arbitrer ; l'effectif nommé porte le téléphone de la fiche. Ne lit que. |
-| `POST /api/jour-j/absences?date=&maintenant=` | `{ "animateurId": "A1", "raison": "…" }` — une `INDISPONIBILITE_FORCEE` par créneau restant, et les sièges tenus sur ces créneaux vidés. Écrit. |
-| `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=` | Annule l'absence : un créneau si `creneauId` est donné, toute la journée sinon. |
-| `POST /api/jour-j/postes/{posteId}/suggestions?plafond=N` | L'assistant de réparation ci-dessus, sur le **plan enregistré**. |
+L'écran complet est `GET /api/jour-j?date=&maintenant=` : créneaux restants,
+animateurs de service, places vides — chacune `nouveau` (le plan publié avait
+quelqu'un dessus) ou connue, `resteDuCreneau` pour la suite d'un siège scindé —,
+absences du jour, signalements, rang du jour, stands ouverts, alertes de
+l'affichage mural (le même calcul, sur la journée en cours seulement),
+`aPrevenir` (les destinataires de la prochaine publication, différés compris —
+ceux que compte Diffuser —, cibles de « Prévenir les N personnes ») et échanges
+à arbitrer ; l'effectif nommé porte le téléphone de la fiche.
+
+Une absence se déclare par `POST /api/jour-j/absences` (`{ "animateurId": "A1",
+"raison": "…" }`) : une `INDISPONIBILITE_FORCEE` par créneau restant, et les
+sièges tenus sur ces créneaux vidés. `DELETE /api/jour-j/absences/{animateurId}`
+l'annule — un créneau si `creneauId` est donné, toute la journée sinon.
+L'assistant de réparation ci-dessus répond ici sur le **plan enregistré**.
 
 « Remplacer » du panneau du siège passe aussi par ce point : le plan
 enregistré y est préparé comme l'écriture qui suit le lira (contraintes
@@ -1817,10 +1827,9 @@ affiche le compte de la [publication](#publication) et renvoie vers le bouton,
 il ne le duplique pas.
 ### Banc de touche
 
-| Endpoint | Effet |
-| --- | --- |
-| `GET /api/banc-de-touche/{creneauId}?standId=X&posteId=P` | Qui n'est pas de service sur ce créneau, et pourquoi il ne pourrait pas l'être. Lecture seule. |
-| `GET /api/banc-de-touche?standId=X` | Idem, sur le premier créneau que le plan pourvoit. |
+`GET /api/banc-de-touche/{creneauId}?standId=X&posteId=P` dit qui n'est pas de
+service sur ce créneau, et pourquoi il ne pourrait pas l'être ; sans
+`creneauId`, c'est le premier créneau que le plan pourvoit. Lecture seule.
 
 Répond sur le **dernier plan enregistré**, sans relancer de solveur. C'est
 « Qui peut tenir ce siège ? » du panneau du siège, qui passe toujours `posteId`
@@ -1932,10 +1941,10 @@ qui la règle est la carte « Date et heure simulées » de *Paramètres*, ongle
 *Instance*, affichée seulement là où l'instance l'autorise ; le sablier de la
 barre du haut y mène tant qu'une date est posée.
 
-| Endpoint | Effet |
-| --- | --- |
-| `GET /api/horloge` | `{ "dateDuJour": "2026-07-08"\|null, "heureDuJour": "14:30"\|null, "modifiable": true\|false }`. |
-| `PUT /api/horloge` | `{ "dateDuJour": "2026-07-08", "heureDuJour": "14:30" }` fige la date, et l'heure si elle est donnée ; une date vide ou `null` rend la main à l'horloge de la machine, heure comprise. Une heure sans date répond `400`. |
+`GET /api/horloge` rend `{ "dateDuJour", "heureDuJour", "modifiable" }` ;
+`PUT /api/horloge` fige la date, et l'heure si elle est donnée. Une date vide ou
+`null` rend la main à l'horloge de la machine, heure comprise ; une heure sans
+date répond `400`.
 
 **Refusé (400) sur toute instance qui n'a été lancée ni avec `quarkus:dev`, ni
 avec `HORLOGE_SIMULEE_AUTORISEE=true`.** La variable existe pour un serveur de
@@ -2612,10 +2621,11 @@ la grille existe est précisément le cas d'usage.
 
 ### Espace animateur
 
-| Route | Effet |
-| --- | --- |
-| `GET /api/espace-animateur/{jeton}/disponibilites` | État de la fenêtre, jours de l'événement, typologies, ce que le référentiel dit de moi aujourd'hui, ma proposition en attente et mon historique. **Lisible fenêtre fermée** : on doit pouvoir relire ce qu'on a déclaré |
-| `POST /api/espace-animateur/{jeton}/disponibilites` | Déclare ; **remplace** la proposition en attente, s'il y en avait une. Répond la même vue que le `GET` |
+`GET` et `POST /api/espace-animateur/{jeton}/disponibilites` : le `GET` rend
+l'état de la fenêtre, les jours de l'événement, les typologies, ce que le
+référentiel dit de la personne, sa proposition en attente et son historique —
+**lisible fenêtre fermée**, on doit pouvoir relire ce qu'on a déclaré. Le `POST`
+déclare et **remplace** la proposition en attente, s'il y en avait une.
 
 Le formulaire s'ouvre sur la proposition en attente s'il y en a une, sinon sur
 ce que le référentiel contient : une page blanche voudrait dire « je suis
@@ -2629,14 +2639,17 @@ commence dans deux semaines n'y revient pas.
 
 ### Écran admin
 
-| Route | Effet |
-| --- | --- |
-| `GET /api/disponibilites` | Toutes les déclarations de l'édition, les plus récentes d'abord |
-| `GET /api/disponibilites/configuration` | La fenêtre de collecte (fermée tant que rien n'a été décidé) |
-| `PUT /api/disponibilites/configuration` | Ouvre ou ferme ; `prevenirAnimateurs` déclenche **en plus** l'envoi des invitations |
-| `POST /api/disponibilites/invitations` | Renvoie les liens d'espace collecte ouverte (`409` sinon, ou édition inactive), sans toucher à la fenêtre ; `destinataires` : `NOT_YET_INVITED` (défaut) ou `NOT_YET_DECLARED`. Même compte rendu que l'ouverture |
-| `POST /api/disponibilites/{id}/application` | Applique la proposition **entière** sur la fiche, via `AnimateurService` — donc `dataStale` se déclenche |
-| `POST /api/disponibilites/{id}/refus` | Ne touche à rien ; le commentaire est lu par l'animateur dans son espace |
+Côté administration, `GET /api/disponibilites` liste les déclarations de
+l'édition (les plus récentes d'abord) et `/api/disponibilites/configuration`
+lit (`GET`) ou écrit (`PUT`) la fenêtre de collecte, fermée tant que rien n'a
+été décidé ; `prevenirAnimateurs` déclenche **en plus** l'envoi des invitations.
+`POST /api/disponibilites/invitations` renvoie les liens d'espace collecte
+ouverte (`409` sinon, ou édition inactive), sans toucher à la fenêtre ;
+`destinataires` vaut `NOT_YET_INVITED` (défaut) ou `NOT_YET_DECLARED`, avec le
+même compte rendu que l'ouverture. `POST /api/disponibilites/{id}/application`
+applique la proposition **entière** sur la fiche, via `AnimateurService` — donc
+`dataStale` se déclenche ; `…/{id}/refus` ne touche à rien, et le commentaire
+est lu par l'animateur dans son espace.
 
 **Tout ou rien** : l'admin accepte ou refuse la proposition entière, jamais
 ligne à ligne. Le désaccord se règle hors application — l'animateur renvoie une
@@ -3236,11 +3249,13 @@ Quatre propriétés, et aucune n'est un oubli :
 
 Deux endpoints, même corps, et un seul écrit :
 
-| Méthode | Chemin | Effet |
-| --- | --- | --- |
-| `POST` | `/api/animateurs/import-csv/analyse` | Lit le fichier et rend le rapport ligne par ligne. **N'ouvre aucune transaction** |
-| `POST` | `/api/animateurs/import-csv` | Relit le même fichier, rejoue toutes les vérifications, puis écrit les lignes acceptées en **une** transaction |
-| `GET` | `/api/animateurs/import-csv/exemple` | Rend le CSV d'exemple versionné (`text/csv`, en pièce jointe). Lecture pure, hors édition — le fichier est une ressource du classpath, pas une donnée |
+Deux `POST` au même corps, et un seul écrit : `/api/animateurs/import-csv/analyse`
+lit le fichier et rend le rapport ligne par ligne, **sans ouvrir de
+transaction** ; `/api/animateurs/import-csv` relit le même fichier, rejoue
+toutes les vérifications, puis écrit les lignes acceptées en **une**
+transaction. `GET /api/animateurs/import-csv/exemple` rend le CSV d'exemple
+versionné (`text/csv`, en pièce jointe) : lecture pure, hors édition, le
+fichier est une ressource du classpath et non une donnée.
 
 Le corps est identique aux deux : `{ fileName, content, mapping,
 replaceAnimateurs, replaceJoursIndisponibles }`. `content` est le texte du
@@ -3448,11 +3463,14 @@ Le second import **partiel** du produit, calqué sur celui des animateurs
 de l'organisateur — une ligne par stand, une colonne par jour et par créneau, un
 entier par case — analysée, prévisualisée, rejouée, jamais écrite sur disque.
 
-| Méthode | Route | Rôle |
-| --- | --- | --- |
-| `POST` | `/api/stands/import-grille/analyse` | Lit le fichier et rend le rapport : chaque colonne et le créneau où elle se pose, une ligne par stand. **N'ouvre aucune transaction** |
-| `POST` | `/api/stands/import-grille` | Relit le même fichier, rejoue toutes les vérifications, puis réécrit les stands acceptés en **une** transaction |
-| `GET` | `/api/stands/import-grille/exemple` | Rend la grille actuelle de l'édition en CSV (`text/csv`, en pièce jointe) : ses créneaux en colonnes, ses stands en lignes — réimportable telle quelle |
+Deux `POST` au même corps `{ fileName, content }`, et un seul écrit :
+`/api/stands/import-grille/analyse` lit le fichier et rend le rapport (chaque
+colonne et le créneau où elle se pose, une ligne par stand), **sans ouvrir de
+transaction** ; `/api/stands/import-grille` relit le même fichier, rejoue
+toutes les vérifications, puis réécrit les stands acceptés en **une**
+transaction. `GET /api/stands/import-grille/exemple` rend la grille actuelle de
+l'édition en CSV (`text/csv`, en pièce jointe) : ses créneaux en colonnes, ses
+stands en lignes, réimportable telle quelle.
 
 Corps des deux `POST` : `{ fileName, content }`. Deux lignes d'en-tête (les
 dates, les cellules fusionnées d'un tableur laissant les suivantes vides, puis
@@ -3532,10 +3550,11 @@ sans adresse et les échecs. L'envoi collectif, lui, est passé sous
 Deux endpoints, en lecture pour l'essentiel : la sauvegarde de nuit est réglée
 par l'hébergeur, pas par l'API.
 
-| Endpoint | Ce qu'il fait |
-| --- | --- |
-| `GET /api/backups` | L'état complet : emplacement et rétention (variables d'environnement), interrupteur, prochaine exécution, compte rendu de la dernière tentative, et la liste des dumps présents (nom, taille, date). |
-| `PUT /api/backups/active` | `{ "active": false }` **suspend** la sauvegarde de nuit ; `true` la reprend. C'est la seule valeur que cet écran écrit. |
+`GET /api/backups` rend l'état complet : emplacement et rétention (variables
+d'environnement), interrupteur, prochaine exécution, compte rendu de la
+dernière tentative et liste des dumps présents (nom, taille, date).
+`PUT /api/backups/active` avec `{ "active": false }` **suspend** la sauvegarde
+de nuit, `true` la reprend : c'est la seule valeur que cet écran écrit.
 
 Trois choses volontairement absentes, et qui le resteront :
 
