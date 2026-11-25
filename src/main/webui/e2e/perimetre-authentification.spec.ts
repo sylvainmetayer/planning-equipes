@@ -2,6 +2,7 @@
 // the session, the two deliberate public exceptions, and the login round trip.
 
 import { expect, test } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 import { MOT_DE_PASSE_ADMIN } from './support';
 
 test.describe('mur d’authentification', () => {
@@ -33,8 +34,8 @@ test.describe('mur d’authentification', () => {
 
   test('un mauvais mot de passe est refusé sans ouvrir de session', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Utilisateur').fill('admin');
-    await page.getByLabel('Mot de passe').fill('mauvais-mot-de-passe');
+    await page.getByLabel('Adresse e-mail').fill('admin');
+    await page.getByLabel('Mot de passe').fill(randomUUID());
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page.getByText('Identifiants incorrects.')).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
@@ -44,7 +45,7 @@ test.describe('mur d’authentification', () => {
 
   test('connexion, navigation admin, puis déconnexion', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Utilisateur').fill('admin');
+    await page.getByLabel('Adresse e-mail').fill('admin');
     await page.getByLabel('Mot de passe').fill(MOT_DE_PASSE_ADMIN);
     await page.getByRole('button', { name: 'Se connecter' }).click();
 
