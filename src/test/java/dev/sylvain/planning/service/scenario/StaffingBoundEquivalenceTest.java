@@ -64,12 +64,14 @@ class StaffingBoundEquivalenceTest {
 
     /**
      * The rungs where the solve needs more than {@link #MAX_GAP} people above the
-     * bound, by rung number, with the gap last measured (ADR 0098): 17 has the meal
-     * break and the typology limit switched off and the search finds no plan under
-     * its whole team, 18 and 20 break the overlap and the continuous-work rules
-     * that the bound's day-by-day count does not see.
+     * bound, or any at all, by rung number, with the gap last measured (ADR 0098):
+     * 10 and 11 owe it to the daily rest after a late evening, 18 and 20 to
+     * something the bound does not see yet (the plan at the bound breaks the
+     * overlap rule, and 18 the continuous-work one) — the bound is still a floor
+     * there, never a need. Rung 17 left the list when seats too long to share a
+     * day were counted one by one.
      */
-    static final Map<Integer, Integer> ALLOWED_GAPS = Map.of(17, 43, 18, 24, 20, 12);
+    static final Map<Integer, Integer> ALLOWED_GAPS = Map.of(10, 1, 11, 2, 18, 24, 20, 12);
 
     /** Seconds a solve of one team is given; a failure within it proves nothing, a success proves the team holds. */
     private static final long SOLVE_SECONDS = Long.getLong("equivalence.seconds", 300L);
