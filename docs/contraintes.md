@@ -10,7 +10,7 @@ Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur**
 **La liste des 47 contraintes, leur niveau, leur catégorie, leur description
 métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — et
 sont servies par `GET /api/constraints`, affichées sur la page « Règles du
-planning » (`/regles`). Ce document ne les recopie pas : il porte les
+planning » (`/regles`). Ce document ne les recopie pas (hormis le tableau final, rendu par un test) : il porte les
 mécanismes et les arbitrages.
 
 L'écran les range en tableau, une ligne par règle : l'onglet **Légal** porte
