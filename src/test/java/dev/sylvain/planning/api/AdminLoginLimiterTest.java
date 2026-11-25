@@ -63,6 +63,19 @@ class AdminLoginLimiterTest {
     private static final String MOT_DE_PASSE_DEV = "admin";
 
     @Test
+    void thePasswordStepIgnoresTrailingSlashesOnly() {
+        assertThat(AdminLoginLimiter.isPasswordStepPath("/api/auth/connexion")).isTrue();
+        assertThat(AdminLoginLimiter.isPasswordStepPath("/api/auth/connexion///"))
+                .isTrue();
+        assertThat(AdminLoginLimiter.isPasswordStepPath(null)).isFalse();
+        assertThat(AdminLoginLimiter.isPasswordStepPath("")).isFalse();
+        assertThat(AdminLoginLimiter.isPasswordStepPath("/")).isFalse();
+        assertThat(AdminLoginLimiter.isPasswordStepPath("//api/auth/connexion")).isFalse();
+        assertThat(AdminLoginLimiter.isPasswordStepPath("/api/auth/connexion/x"))
+                .isFalse();
+    }
+
+    @Test
     void auDelaDeDeuxEchecsLAdresseEstVerrouillee() {
         String address = "203.0.113.10";
         login(address, "mauvais").then().statusCode(anyOf(is(401), is(302)));
