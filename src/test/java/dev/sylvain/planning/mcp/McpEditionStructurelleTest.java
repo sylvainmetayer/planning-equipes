@@ -6,6 +6,7 @@ import io.quarkiverse.mcp.server.ToolArg;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +41,41 @@ class McpEditionStructurelleTest {
             "supprimer_kpi_historique",
             "etat_sauvegardes",
             "modifier_sauvegardes");
+
+    /**
+     * The tools that designate no edition yet stay open to an organiser reaching
+     * {@code /mcp} by OAuth (ADR 0097), each with what keeps it inside the
+     * organiser's editions. Every other tool without an edition argument is
+     * {@link InstanceOnlyTool}: a new one cannot reach every edition by omission.
+     */
+    private static final Map<String, String> SANS_EDITION_OUVERTS_A_L_ORGANISATEUR = Map.of(
+            "lister_scenarios", "les fichiers livrés avec l'application, aucune donnée d'édition",
+            "valider_scenario_yaml", "valide le texte reçu, ne lit rien",
+            "arreter_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles",
+            "statut_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles",
+            "lister_jobs", "SolveurMcpTools ne voit que les jobs des éditions visibles",
+            "supprimer_job", "SolveurMcpTools ne voit que les jobs des éditions visibles",
+            "lister_kpi_historique", "KpiHistoriqueService filtre par visibleToCaller",
+            "supprimer_kpi_historique", "KpiHistoriqueService filtre par visibleToCaller",
+            "lister_editions", "filtrée par visibleToCaller",
+            "edition_courante", "refusée quand l'édition active n'est pas visible");
+
+    @Test
+    void aToolNamingNoEditionIsInstanceOnlyOrArgued() throws Exception {
+        for (Method outil : OutilsMcp.all()) {
+            if (argumentEdition(outil) != null
+                    || SANS_EDITION_OUVERTS_A_L_ORGANISATEUR.containsKey(FeatureNames.of(outil))) {
+                continue;
+            }
+            assertThat(outil.isAnnotationPresent(InstanceOnlyTool.class)
+                            || outil.getDeclaringClass().isAnnotationPresent(InstanceOnlyTool.class))
+                    .as(
+                            "l'outil %s ne désigne pas d'édition : @InstanceOnlyTool, ou une raison dans"
+                                    + " SANS_EDITION_OUVERTS_A_L_ORGANISATEUR (ADR 0097)",
+                            FeatureNames.of(outil))
+                    .isTrue();
+        }
+    }
 
     /** The edition tools themselves designate their target explicitly, argument by argument. */
     private static final String OUTILS_DEDITION = EditionMcpTools.class.getName();

@@ -46,7 +46,7 @@ class SolveurMcpToolsTest {
     @Test
     void reportsOnlyTheHardConstraintsActuallyViolated() {
         ConstraintAnalysisStore analysisStore = new ConstraintAnalysisStore(null, null, null);
-        SolveurMcpTools tools = new SolveurMcpTools(null, null, analysisStore, emptyReferential());
+        SolveurMcpTools tools = new SolveurMcpTools(null, null, analysisStore, emptyReferential(), null);
 
         ConstraintDiagnostic hardViole = new ConstraintDiagnostic(
                 "posteDoitEtrePourvu",
@@ -82,7 +82,8 @@ class SolveurMcpToolsTest {
 
     @Test
     void returnsAnEmptyListWithoutAPriorAnalysis() {
-        SolveurMcpTools tools = new SolveurMcpTools(null, null, new ConstraintAnalysisStore(null, null, null), null);
+        SolveurMcpTools tools =
+                new SolveurMcpTools(null, null, new ConstraintAnalysisStore(null, null, null), null, null);
 
         assertThat(tools.explainHardContraintesFailure("E1")).isEmpty();
     }

@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import dev.sylvain.planning.service.analyse.ScoreReading;
@@ -28,6 +29,7 @@ import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -66,16 +68,28 @@ public class SolveurMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
+    private final EditionContext editionContext;
+
     @Inject
     SolveurMcpTools(
             SolverJobService solverJobService,
             PlanningPersistenceService persistenceService,
             ConstraintAnalysisStore analysisStore,
-            ReferenceDataService referenceDataService) {
+            ReferenceDataService referenceDataService,
+            EditionContext editionContext) {
         this.solverJobService = solverJobService;
         this.persistenceService = persistenceService;
         this.analysisStore = analysisStore;
         this.referenceDataService = referenceDataService;
+        this.editionContext = editionContext;
+    }
+
+    /**
+     * The job registry is global: an organiser reaching /mcp by OAuth (ADR 0097)
+     * sees, stops and forgets the jobs of its editions only, as on the REST side.
+     */
+    private Optional<SolverJob> visible(Optional<SolverJob> job) {
+        return job.filter(candidate -> editionContext.visibleToCaller(candidate.getEditionId()));
     }
 
     @Tool(
@@ -227,10 +241,12 @@ public class SolveurMcpTools {
     JobMcpView stopSolver(@ToolArg(description = "Id du job à arrêter", required = false) String jobId) {
         String id = jobId != null
                 ? jobId
-                : solverJobService
-                        .findActive()
+                : visible(solverJobService.findActive())
                         .map(SolverJob::getId)
                         .orElseThrow(() -> new NoSuchElementException("Aucun solveur actif"));
+        if (visible(solverJobService.find(id)).isEmpty()) {
+            throw new BusinessError.NotFound("Job introuvable : " + id);
+        }
         return solverJobService
                 .cancel(id)
                 .map(SolveurMcpTools::toView)
@@ -249,15 +265,18 @@ public class SolveurMcpTools {
                             openWorldHint = false))
     JobMcpView solverStatus(@ToolArg(description = "Id du job à interroger", required = false) String jobId) {
         if (jobId != null) {
-            return solverJobService
-                    .find(jobId)
+            return visible(solverJobService.find(jobId))
                     .map(SolveurMcpTools::toView)
                     .orElseThrow(() -> new BusinessError.NotFound("Job introuvable : " + jobId));
         }
         // Never null: the MCP transport cannot encode it, and answered
         // « Internal error » to the one question an assistant asks between
         // two solves.
-        return solverJobService.findActive().map(SolveurMcpTools::toView).orElse(IDLE);
+        return solverJobService
+                .findActive()
+                .map(job ->
+                        visible(Optional.of(job)).map(SolveurMcpTools::toView).orElse(OTHER_EDITION))
+                .orElse(IDLE);
     }
 
     /** The answer of {@code statut_solveur} when nothing runs: no job, and a status no job ever carries. */
@@ -278,6 +297,24 @@ public class SolveurMcpTools {
             null,
             null);
 
+    /** The answer of {@code statut_solveur} when the job running is of an edition the caller cannot see. */
+    static final JobMcpView OTHER_EDITION = new JobMcpView(
+            null,
+            null,
+            "OCCUPE",
+            null,
+            null,
+            null,
+            null,
+            null,
+            0L,
+            null,
+            null,
+            null,
+            "Le solveur calcule pour une autre édition.",
+            null,
+            null);
+
     @Tool(
             name = "lister_jobs",
             description = "Liste tous les jobs de résolution/analyse (en cours et terminés).",
@@ -288,7 +325,10 @@ public class SolveurMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<JobMcpView> listJobs() {
-        return solverJobService.list().stream().map(SolveurMcpTools::toView).toList();
+        return solverJobService.list().stream()
+                .filter(job -> editionContext.visibleToCaller(job.getEditionId()))
+                .map(SolveurMcpTools::toView)
+                .toList();
     }
 
     @Tool(
@@ -326,6 +366,9 @@ public class SolveurMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     SuppressionResult deleteJob(@ToolArg(description = "Id du job") String jobId) {
+        if (visible(solverJobService.find(jobId)).isEmpty()) {
+            throw new BusinessError.NotFound("Job introuvable : " + jobId);
+        }
         if (!solverJobService.forget(jobId)) {
             throw new NoSuchElementException("Job introuvable ou encore en cours : " + jobId);
         }

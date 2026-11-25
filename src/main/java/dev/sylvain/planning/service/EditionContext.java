@@ -137,10 +137,13 @@ public class EditionContext {
                     BusinessError.EditionRefused.Reason.REQUISE,
                     "Aucune édition désignée : la requête doit porter l'en-tête " + HEADER + ".");
         }
+        // An organiser reaching /mcp by OAuth (ADR 0097) is never handed an active edition
+        // outside its rights by a tool that names none.
         return activeEditionId()
+                .filter(this::visibleToCaller)
                 .orElseThrow(() -> new BusinessError.EditionRefused(
                         BusinessError.EditionRefused.Reason.REQUISE,
-                        "Aucune édition désignée, et aucune édition n'est active."));
+                        "Aucune édition désignée, et aucune édition active visible."));
     }
 
     /**

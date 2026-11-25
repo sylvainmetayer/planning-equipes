@@ -493,7 +493,10 @@ Single Quarkus service, no separate solver microservice. Package root:
      `@EditionArg`, on a class annotated `@EditionCiblee` (issue #181) — an MCP
      call carries no `X-Edition-Id`, so the argument is the edition, and a
      call without it is refused (`EDITION_REQUISE`, ADR 0072) rather than run
-     in an edition nobody named (`McpEditionStructurelleTest`). Beware CDI
+     in an edition nobody named (`McpEditionStructurelleTest`). A tool that
+     names no edition is `@InstanceOnlyTool` — refused to an organiser who
+     reaches `/mcp` by OAuth (ADR 0097) — or argued in that same test, with
+     what keeps it inside the organiser's editions. Beware CDI
      self-invocation: a tool calling another tool on `this` bypasses the
      interceptor.
   3. every tool declares the four MCP hints, and only the tools that **send

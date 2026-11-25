@@ -26,7 +26,8 @@ fournisseur d'identité et des comptes (0093).
 2. **Le jeton prouve qui, l'application dit quoi.** Le jeton doit être émis pour
    l'audience du MCP (`OIDC_MCP_AUDIENCE`, `planning-mcp` par défaut), sans
    quoi le jeton d'un autre client du même fournisseur ouvrirait les outils.
-   Il n'ouvre `/mcp` qu'à un compte **actif** portant un droit en vigueur :
+   Il n'ouvre `/mcp` qu'à un compte **actif** portant un droit
+   d'administrateur ou d'organisateur en vigueur (pas un responsable de stand) :
    `CompteIdentityAugmentor` lui donne les rôles de ses droits, plus `mcp`.
    Aucun rôle du jeton n'y compte.
 3. **Un organisateur n'atteint que ses éditions.** Une édition hors de ses
@@ -34,6 +35,7 @@ fournisseur d'identité et des comptes (0093).
    pas), la liste des éditions est filtrée, et les outils d'instance (créer,
    renommer, dupliquer, activer, supprimer une édition, comparer, sauvegardes)
    lui sont refusés par `@InstanceOnlyTool`, le pendant de `@InstanceOnly`.
+   Les jobs du solveur, registre commun, sont filtrés comme côté REST.
 4. **La clé se renouvelle depuis l'écran MCP.** Une clé générée n'est montrée
    qu'une fois et stockée hachée (SHA-256, table `mcp_cle`, hors édition et hors
    export). Le recouvrement de l'ancienne clé (0 minute à 7 jours) est choisi à
@@ -43,8 +45,9 @@ fournisseur d'identité et des comptes (0093).
    Générer ou révéler une clé exige une **connexion récente** (10 minutes) :
    le `auth_time` du jeton d'identité pour une session OIDC, l'instant noté par
    la connexion elle-même pour un compte local ou le secours (en mémoire, par
-   empreinte du cookie de session) — le cookie de Quarkus est renouvelé et ne
-   dit pas quand la session s'est ouverte. Trop ancienne, le serveur refuse (`409 RECONNEXION_REQUISE_<mode>`)
+   empreinte du cookie de session, reportée sur chaque cookie réémis) — le
+   cookie de Quarkus est réémis chaque minute et ne dit pas quand la session
+   s'est ouverte. Trop ancienne, le serveur refuse (`409 RECONNEXION_REQUISE_<mode>`)
    et l'écran propose de se reconnecter. Le mot de passe de la configuration,
    que seul le compte de secours possède, n'est plus demandé. Une ligne au
    journal (`CLE_MCP_ROTEE`), jamais la clé.

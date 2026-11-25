@@ -2,25 +2,41 @@ package dev.sylvain.planning.mcp;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.OidcTests;
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.compte.RoleHabilitation;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.solve.SolverJobService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -42,6 +58,15 @@ class OidcMcpTest {
 
     @Inject
     EditionService editions;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    SolverJobService solverJobs;
+
+    @Inject
+    DataSource dataSource;
 
     private String bearer(RoleHabilitation role, String editionId) {
         String email = "mcp-" + UUID.randomUUID() + "@example.org";
@@ -116,14 +141,18 @@ class OidcMcpTest {
     @Test
     void aTokenIssuedForAnotherAudienceIsRefused() {
         // With a body, as a client sends one: the MCP extension's failure handler reads it, and
-        // a bodyless request that fails authentication answers 500 upstream.
-        given().header("Authorization", OidcTests.token("autre-application", "s", "a@example.org", true))
-                .contentType("application/json")
-                .body("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}")
-                .when()
-                .post("/mcp")
-                .then()
-                .statusCode(401);
+        // a bodyless request that fails authentication answers 500 upstream. Repeated: answered
+        // off the event loop, the refusal raced the body and came back 500 one time in a few.
+        String token = OidcTests.token("autre-application", "s", "a@example.org", true);
+        for (int i = 0; i < 20; i++) {
+            given().header("Authorization", token)
+                    .contentType("application/json")
+                    .body("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}")
+                    .when()
+                    .post("/mcp")
+                    .then()
+                    .statusCode(401);
+        }
     }
 
     @Test
@@ -194,6 +223,74 @@ class OidcMcpTest {
             assertThat(isError(permis)).as(permis.toString()).isFalse();
         } finally {
             editions.delete(hors);
+        }
+    }
+
+    /** A responsable de stand opens /api/responsable/* and nothing else: not the MCP transport. */
+    @Test
+    void aResponsableDeStandTokenOpensNothing() throws Exception {
+        String edition = editions.create(new Edition(null, "RESP-MCP-" + UUID.randomUUID(), false, null))
+                .getId();
+        try {
+            try (Connection connection = dataSource.getConnection();
+                    PreparedStatement ps = connection.prepareStatement(
+                            "INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max) VALUES (?, 'S1', 'S', 1, 1)")) {
+                ps.setString(1, edition);
+                ps.executeUpdate();
+            }
+            String email = "resp-" + UUID.randomUUID() + "@example.org";
+            Compte compte = comptes.create(email, null);
+            comptes.grant(compte.id(), RoleHabilitation.RESPONSABLE_STAND, edition, null, List.of("S1"));
+
+            given().header("Authorization", OidcTests.token(AUDIENCE, "s-" + UUID.randomUUID(), email, true))
+                    .when()
+                    .post("/mcp")
+                    .then()
+                    .statusCode(403);
+        } finally {
+            editions.delete(edition);
+        }
+    }
+
+    /** The job registry is global: an organiser sees, stops and forgets the jobs of its editions only. */
+    @Test
+    void anOrganiserDoesNotReachTheJobsOfAnotherEdition() throws Exception {
+        String autre = editions.create(new Edition(null, "JOBS-" + UUID.randomUUID(), false, null))
+                .getId();
+        try {
+            await().atMost(Duration.ofSeconds(60))
+                    .until(() -> solverJobs.findActive().isEmpty());
+            LocalDate jour = LocalDate.of(2030, 9, 3);
+            PosteAffectation poste = new PosteAffectation(
+                    "JOB-P1",
+                    new Stand("JOB-S1", "Stand", Set.of(), 1, 1, false),
+                    new Creneau(9801L, 1, jour, LocalTime.of(9, 0), LocalTime.of(12, 0)));
+            PlanningEvenement probleme = new PlanningEvenement(
+                    jour, List.of(new Animateur("JOB-A1", "P", "N", LocalDate.of(1990, 1, 1), false)), List.of(poste));
+            String jobId = editionContext
+                    .executeIn(autre, () -> solverJobs.submitSolve(probleme, 1L))
+                    .getId();
+            await().atMost(Duration.ofSeconds(60))
+                    .until(() -> solverJobs
+                            .find(jobId)
+                            .map(SolverJobService.SolverJob::isFinished)
+                            .orElse(true));
+
+            String organisateur = bearer(RoleHabilitation.ORGANISATEUR, "E1");
+            assertThat(call(organisateur, "lister_jobs", "{}").toString()).doesNotContain(jobId);
+            assertThat(isError(call(organisateur, "statut_solveur", "{\"jobId\":\"" + jobId + "\"}")))
+                    .isTrue();
+            assertThat(isError(call(organisateur, "arreter_solveur", "{\"jobId\":\"" + jobId + "\"}")))
+                    .isTrue();
+            assertThat(isError(call(organisateur, "supprimer_job", "{\"jobId\":\"" + jobId + "\"}")))
+                    .isTrue();
+
+            String admin = bearer(RoleHabilitation.ADMIN, null);
+            assertThat(call(admin, "lister_jobs", "{}").toString()).contains(jobId);
+            assertThat(isError(call(admin, "supprimer_job", "{\"jobId\":\"" + jobId + "\"}")))
+                    .isFalse();
+        } finally {
+            editions.delete(autre);
         }
     }
 }
