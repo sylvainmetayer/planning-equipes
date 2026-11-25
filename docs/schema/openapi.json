@@ -3493,6 +3493,18 @@
           }
         }
       },
+      "DemandeRotation" : {
+        "type" : "object",
+        "properties" : {
+          "motDePasse" : {
+            "type" : "string"
+          },
+          "recouvrementMinutes" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "DemandeValidationJournee" : {
         "required" : [ "jour" ],
         "type" : "object",
@@ -10399,7 +10411,7 @@
         "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "EXCLU" ]
       },
       "StatutMcp" : {
-        "required" : [ "configuree" ],
+        "required" : [ "configuree", "origine", "oauth" ],
         "type" : "object",
         "properties" : {
           "configuree" : {
@@ -10407,6 +10419,18 @@
           },
           "header" : {
             "type" : "string"
+          },
+          "origine" : {
+            "type" : "string"
+          },
+          "genereeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "ancienneExpireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "oauth" : {
+            "type" : "boolean"
           }
         }
       },
@@ -16801,6 +16825,35 @@
           }
         },
         "summary" : "Reveal",
+        "tags" : [ "Mcp Resource" ]
+      }
+    },
+    "/api/mcp/cle/rotation" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DemandeRotation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Rotate",
         "tags" : [ "Mcp Resource" ]
       }
     },

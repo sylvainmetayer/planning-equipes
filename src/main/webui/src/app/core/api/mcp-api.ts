@@ -3,7 +3,7 @@
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { CleGeneree, CleMcp, PromptMcp, StatutMcp } from '../models';
+import { GeneratedMcpKey, CleMcp, PromptMcp, StatutMcp } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class McpApi {
@@ -36,7 +36,10 @@ export class McpApi {
    * A new key, shown once: the old one keeps working for `recouvrementMinutes`
    * (0: it stops at once).
    */
-  rotateKey(motDePasse: string, recouvrementMinutes: number): Promise<CleGeneree> {
-    return this.api.post<CleGeneree>('/api/mcp/cle/rotation', { motDePasse, recouvrementMinutes });
+  rotateKey(motDePasse: string, recouvrementMinutes: number): Promise<GeneratedMcpKey> {
+    return this.api.post<GeneratedMcpKey>('/api/mcp/cle/rotation', {
+      motDePasse,
+      recouvrementMinutes,
+    });
   }
 }

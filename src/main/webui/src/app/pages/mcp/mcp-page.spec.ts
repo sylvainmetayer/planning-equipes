@@ -10,7 +10,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { McpApi } from '../../core/api/mcp-api';
 import { NotificationService } from '../../core/notification.service';
-import { PromptMcp } from '../../core/models';
+import { PromptMcp, StatutMcp } from '../../core/models';
 import { McpPage } from './mcp-page';
 
 const PROMPTS: PromptMcp[] = [
@@ -30,12 +30,34 @@ describe('McpPage', () => {
   let fixture: ComponentFixture<McpPage>;
   let write: ReturnType<typeof vi.fn>;
 
-  async function rendre(prompts: PromptMcp[] | Error): Promise<void> {
+  let rotateKey: ReturnType<typeof vi.fn>;
+
+  async function rendre(
+    prompts: PromptMcp[] | Error,
+    statut: Partial<StatutMcp> = {},
+  ): Promise<void> {
+    rotateKey = vi.fn(() =>
+      Promise.resolve({
+        cle: 'cle-generee',
+        ancienneExpireLe: null,
+        pangolinAccessTokenId: null,
+        pangolinAccessToken: null,
+      }),
+    );
     const mcpApi = {
+      rotateKey,
       prompts: vi.fn(() =>
         prompts instanceof Error ? Promise.reject(prompts) : Promise.resolve(prompts),
       ),
-      status: vi.fn(() => Promise.resolve({ configuree: true, header: 'X-MCP-Api-Key' })),
+      status: vi.fn(() =>
+        Promise.resolve({
+          configuree: true,
+          header: 'X-MCP-Api-Key',
+          origine: 'CONFIG',
+          oauth: false,
+          ...statut,
+        }),
+      ),
       configResponse: vi.fn(() => Promise.resolve(new Response(null, { status: 200 }))),
       regenerateKey: vi.fn(),
     };
@@ -103,5 +125,45 @@ describe('McpPage', () => {
     await fixture.whenStable();
 
     expect(write).toHaveBeenCalledWith(PROMPTS[1].texte);
+  });
+
+  function bouton(texte: string): HTMLButtonElement {
+    return Array.from(racine().querySelectorAll<HTMLButtonElement>('button')).find((b) =>
+      b.textContent?.includes(texte),
+    )!;
+  }
+
+  it('does not offer to reveal a generated key, only to renew it', async () => {
+    await rendre(PROMPTS, { origine: 'GENERATED' });
+
+    expect(racine().textContent).not.toContain("Révéler la clé d'API");
+    expect(racine().textContent).toContain('Générer une nouvelle clé');
+  });
+
+  it('generates a key with the chosen overlap and shows it', async () => {
+    await rendre(PROMPTS);
+
+    bouton('Générer une nouvelle clé').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const mdp = racine().querySelector<HTMLInputElement>('input[type=password]')!;
+    mdp.value = 'pw';
+    mdp.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    bouton('Générer et afficher la clé').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(rotateKey).toHaveBeenCalledWith('pw', 15);
+    expect(racine().querySelector('.mcp-cle-revelee')?.textContent).toContain('cle-generee');
+  });
+
+  it('tells about OAuth only when a provider is configured', async () => {
+    await rendre(PROMPTS, { oauth: true });
+    expect(racine().textContent).toContain("n'a pas besoin de clé");
+
+    await rendre(PROMPTS, { oauth: false });
+    expect(racine().textContent).not.toContain("n'a pas besoin de clé");
   });
 });

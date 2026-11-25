@@ -101,6 +101,7 @@
     "Interruption": "Détail d'un job, réemballé par la resource.",
     "RestaurationSnapshot": "Vue d'écran, pas une réponse serveur.",
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",
+    "GeneratedMcpKey": "Réponse de la rotation de la clé : la clé en clair, une fois ; la route répond par une Response sans schéma.",
     "EchangeSimulation": "Simulation d'échange, réemballée par la resource.",
     "ImpactValidations": "Charge utile d'un job de résolution, jamais exposée comme schéma REST — comme ImpactPublication juste au-dessus."
   }

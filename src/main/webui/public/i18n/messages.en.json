@@ -1677,7 +1677,7 @@
   "nav.link.mcp": "MCP",
   "mcp.connexion.title": "Connecting to the MCP server",
   "mcp.connexion.subtitle": " An AI assistant (Claude, an IDE, an agent) reads and drives the schedule in natural language through the MCP protocol. ",
-  "mcp.connexion.endpoint": " Entry point: {$START_TAG_CODE}{$INTERPOLATION}/mcp{$CLOSE_TAG_CODE}. API key in the {$START_TAG_CODE}{$INTERPOLATION_1}{$CLOSE_TAG_CODE} header (server variable PLANNING_MCP_API_KEY, or the key generated below). ",
+  "mcp.connexion.endpoint": " Entry point: {$START_TAG_CODE}{$INTERPOLATION}/mcp{$CLOSE_TAG_CODE}. API key in the {$START_TAG_CODE}{$INTERPOLATION_1}{$CLOSE_TAG_CODE} header (server variable PLANNING_MCP_API_KEY). ",
   "mcp.connexion.config": "Configuration to declare in your MCP client:",
   "mcp.copierConfig": "Copy the configuration",
   "mcp.pangolin.title": "Pangolin access proxy detected",
@@ -5412,12 +5412,12 @@
   "mcp.cle.generee": " The key in force was generated from this screen: only its fingerprint is kept, and it was shown once. If lost, generate a new one. ",
   "mcp.cle.recouvrement": "The old key still works until the date below: update your clients before then.",
   "mcp.cle.renouveler": "Generate a new key",
-  "mcp.cle.renouveler.pourquoi": " The new key is shown only once. The old one stays valid for the overlap you choose, while you update your clients; “none” cuts it off immediately. Confirm the administrator password. ",
+  "mcp.cle.renouveler.pourquoi": " The new key is shown only once. The old one stays valid for the chosen time so you can update your clients; “none” cuts it off at once. Confirm the password. ",
   "mcp.cle.recouvrement.label": "The old key stays valid",
   "mcp.cle.recouvrement.aucun": "None: cut off at once",
   "mcp.cle.recouvrement.15": "15 minutes",
   "mcp.cle.recouvrement.60": "1 hour",
   "mcp.cle.recouvrement.1440": "24 hours",
   "mcp.cle.renouveler.confirmer": "Generate and show the key",
-  "mcp.oauth": " An MCP client that can connect through OAuth needs no key: it discovers the identity provider from {$START_TAG_CODE}{$INTERPOLATION}/mcp{$CLOSE_TAG_CODE} and signs the person in. The account must be active, with an administrator or organiser right; an organiser reaches its editions only. "
+  "mcp.oauth": " An MCP client that can do OAuth needs no key: it discovers the identity provider from {$START_TAG_CODE}{$INTERPOLATION}/mcp{$CLOSE_TAG_CODE}. An active account is required. "
 }
