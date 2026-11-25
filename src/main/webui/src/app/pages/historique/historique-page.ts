@@ -123,7 +123,7 @@ export class HistoriquePage {
   });
   /** When the author became reliable; older lines say `admin` whoever acted. */
   protected readonly fiableDepuis = signal<string | null>(null);
-  protected readonly fiableDepuisTexte = computed(() => {
+  protected readonly reliableSinceText = computed(() => {
     const instant = this.fiableDepuis();
     return instant === null
       ? ''

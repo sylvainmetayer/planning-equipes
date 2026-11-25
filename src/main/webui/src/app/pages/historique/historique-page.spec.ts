@@ -145,7 +145,7 @@ describe('HistoriquePage', () => {
       auteur: 'cmp-1',
     });
     expect(page['auteurs']()).toEqual([{ valeur: 'cmp-1', nom: 'Alice Martin' }]);
-    expect(page['fiableDepuisTexte']()).not.toBe('');
+    expect(page['reliableSinceText']()).not.toBe('');
 
     page['changeAuteur']('systeme');
     await vi.waitFor(() => expect(page['chargement']()).toBe(false));
