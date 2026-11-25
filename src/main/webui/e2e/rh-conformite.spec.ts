@@ -81,7 +81,7 @@ test("le RH lit le rapport de son édition, et d'aucune autre", async ({ page })
   await expect(page).toHaveURL(/\/rh$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Conformité RH' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Rapport de conformité' })).toBeVisible();
-  await expect(page.getByRole('rowheader', { name: /Mina/ })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: 'Mina E2E', exact: true })).toBeVisible();
   await expect(page.getByText('Représentant légal non renseigné', { exact: false })).toBeVisible();
 
   const editions = (await (await page.request.get('/api/rh/editions')).json()) as { id: string }[];
