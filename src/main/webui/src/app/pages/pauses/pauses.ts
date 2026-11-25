@@ -99,7 +99,7 @@ export function joursDuRapport(rapport: RapportPauses | null): JourPauses[] {
     .map(([date, jour]) => ({ date, jour, title: `J${jour} — ${date}` }));
 }
 
-function lignesDe(journee: JourneeAnimateurPauses): LignePause[] {
+function rowsOf(journee: JourneeAnimateurPauses): LignePause[] {
   const lignes: LignePause[] = [];
   for (const sequence of journee.sequences) {
     for (const pause of sequence.pausesDues) {
@@ -155,7 +155,7 @@ export function groupesDuJour(
     (recherche.trim() === '' || correspond(ligne, recherche));
   const lignes = rapport.journees
     .filter((journee) => journee.date === date)
-    .flatMap((journee) => lignesDe(journee))
+    .flatMap((journee) => rowsOf(journee))
     .filter(retenue);
   for (const ligne of lignes) {
     let groupe = parStand.get(ligne.standId);
@@ -291,7 +291,7 @@ export function syntheseDuJour(rapport: RapportPauses | null, date: string | nul
     if (journee.date !== date) {
       continue;
     }
-    for (const ligne of lignesDe(journee)) {
+    for (const ligne of rowsOf(journee)) {
       animateurs.add(ligne.animateurId);
       synthese.pauses++;
       if (!ligne.relaisDisponible) {

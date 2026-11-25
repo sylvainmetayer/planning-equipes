@@ -28,6 +28,11 @@
   <a matIconButton routerLink="/aide" [fragment]="aideSection()" i18n-aria-label="@@shell.aide" aria-label="Aide">
     <mat-icon>help_outline</mat-icon>
   </a>
+  @if (hasStandRight()) {
+    <a matIconButton routerLink="/responsable" i18n-aria-label="@@shell.monStand" aria-label="Mon stand">
+      <mat-icon>storefront</mat-icon>
+    </a>
+  }
   <button matIconButton class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()"
           [attr.data-theme-preference]="theme.preference()">
     <mat-icon>{{ themeIcon() }}</mat-icon>

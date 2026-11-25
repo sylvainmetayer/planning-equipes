@@ -5324,8 +5324,7 @@
   "parametres.responsables.subtitle": "The shifts and open seats of their stand, always; first and last names only if you decide so.",
   "parametres.responsables.noms": "Show first and last names by default",
   "parametres.responsables.ouverture": "From (optional)",
-  "parametres.responsables.ouvertureAide": "Before this date: shifts only.",
-  "parametres.responsables.stand": "This stand",
+  "parametres.responsables.ouvertureAide": "Before then: shifts only. Time of this browser ({$INTERPOLATION}).",
   "parametres.responsables.herite": "Like the edition",
   "parametres.responsables.horaires": "Shifts only",
   "parametres.responsables.avecNoms": "With names",
@@ -5341,5 +5340,7 @@
   "responsable.chargement": "Loading…",
   "responsable.effectif.une": "1 seat",
   "responsable.effectif.n": "{$places} seats",
-  "responsable.effectif.vides": "{$base} — {$vides} to fill"
+  "responsable.effectif.vides": "{$base} — {$vides} to fill",
+  "shell.monStand": "My stand",
+  "parametres.responsables.ouvertureStand": "{$nom} — from"
 }
