@@ -118,3 +118,6 @@ zizmor
 Échap
 Équipes
 désérialisation
+activees
+Eloigne
+eviter
