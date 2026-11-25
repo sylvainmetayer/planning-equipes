@@ -18,7 +18,7 @@ import { errorPrefix } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { StatusMessage } from '../../shared/status-message';
-import { DefautEdition, LigneStand, defautDe, lignesDe, reglagesDe } from './reglage-responsables';
+import { DefautEdition, LigneStand, defaultOf, rowsOf, toSettings } from './reglage-responsables';
 
 /**
  * « Responsables de stand » of Paramètres › Édition: what a responsable reads on
@@ -70,15 +70,14 @@ import { DefautEdition, LigneStand, defautDe, lignesDe, reglagesDe } from './reg
                 (ngModelChange)="patchDefaut({ ouverture: $event })"
               />
               <mat-hint i18n="@@parametres.responsables.ouvertureAide"
-                >Avant cette date : horaires seuls.</mat-hint
+                >Avant : horaires seuls. Heure de ce navigateur ({{ fuseau }}).</mat-hint
               >
             </mat-form-field>
           }
           @for (ligne of lignes(); track ligne.standId) {
             <div class="responsables-ligne">
-              <span>{{ standNom(ligne.standId) }}</span>
               <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                <mat-label i18n="@@parametres.responsables.stand">Ce stand</mat-label>
+                <mat-label>{{ standNom(ligne.standId) }}</mat-label>
                 <mat-select
                   [value]="ligne.mode"
                   [disabled]="busy()"
@@ -101,6 +100,7 @@ import { DefautEdition, LigneStand, defautDe, lignesDe, reglagesDe } from './reg
                   <input
                     matInput
                     type="datetime-local"
+                    [attr.aria-label]="ouvertureLabel(ligne.standId)"
                     [name]="'ouverture-' + ligne.standId"
                     [disabled]="busy()"
                     [ngModel]="ligne.ouverture"
@@ -129,6 +129,7 @@ export class ReglageResponsablesCard implements OnInit {
 
   protected readonly defaut = signal<DefautEdition>({ noms: false, ouverture: '' });
   protected readonly lignes = signal<LigneStand[]>([]);
+  protected readonly fuseau = Intl.DateTimeFormat().resolvedOptions().timeZone;
   protected readonly busy = signal(false);
   protected readonly error = signal('');
 
@@ -142,6 +143,11 @@ export class ReglageResponsablesCard implements OnInit {
 
   protected standNom(standId: string): string {
     return this.noms().get(standId) ?? standId;
+  }
+
+  protected ouvertureLabel(standId: string): string {
+    const nom = this.standNom(standId);
+    return $localize`:@@parametres.responsables.ouvertureStand:${nom}:nom: — à partir du`;
   }
 
   protected patchDefaut(champs: Partial<DefautEdition>): void {
@@ -159,10 +165,14 @@ export class ReglageResponsablesCard implements OnInit {
 
   private async load(): Promise<void> {
     try {
+      // A cold start of the page holds no stand yet: without them the card would show no row.
+      if (this.referenceData.stands().length === 0) {
+        await this.referenceData.reload(['stands']);
+      }
       const reglages = await this.api.reglages();
-      this.defaut.set(defautDe(reglages));
+      this.defaut.set(defaultOf(reglages));
       this.lignes.set(
-        lignesDe(
+        rowsOf(
           reglages,
           this.referenceData.stands().map((stand) => stand.id),
         ),
@@ -176,10 +186,10 @@ export class ReglageResponsablesCard implements OnInit {
     this.busy.set(true);
     this.error.set('');
     try {
-      const reglages = await this.api.saveReglages(reglagesDe(this.defaut(), this.lignes()));
-      this.defaut.set(defautDe(reglages));
+      const reglages = await this.api.saveReglages(toSettings(this.defaut(), this.lignes()));
+      this.defaut.set(defaultOf(reglages));
       this.lignes.update((lignes) =>
-        lignesDe(
+        rowsOf(
           reglages,
           lignes.map((ligne) => ligne.standId),
         ),

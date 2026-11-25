@@ -38,7 +38,7 @@ export function fromLocalInput(valeur: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-export function defautDe(reglages: ReglagesResponsables): DefautEdition {
+export function defaultOf(reglages: ReglagesResponsables): DefautEdition {
   return {
     noms: reglages.parDefaut.nomsVisibles,
     ouverture: toLocalInput(reglages.parDefaut.ouvertureLe),
@@ -46,10 +46,7 @@ export function defautDe(reglages: ReglagesResponsables): DefautEdition {
 }
 
 /** One row per stand, in the order given: an exception when the server holds one, else « as the edition ». */
-export function lignesDe(
-  reglages: ReglagesResponsables,
-  standIds: readonly string[],
-): LigneStand[] {
+export function rowsOf(reglages: ReglagesResponsables, standIds: readonly string[]): LigneStand[] {
   return standIds.map((standId) => {
     const exception = reglages.parStand[standId];
     return {
@@ -60,25 +57,27 @@ export function lignesDe(
   });
 }
 
-/** What the server stores: the default, and only the stands that differ from it. */
-export function reglagesDe(
+/** What is sent: the default, and each stand shown — its exception, or `null` to lift it. */
+export function toSettings(
   defaut: DefautEdition,
   lignes: readonly LigneStand[],
 ): ReglagesResponsables {
-  const parStand: Record<string, ReglageNoms> = {};
+  // `null` lifts a stand's exception; a stand with no row here is left untouched by the server.
+  const exceptions: Record<string, ReglageNoms | null> = {};
   for (const ligne of lignes) {
-    if (ligne.mode !== 'herite') {
-      parStand[ligne.standId] = {
-        nomsVisibles: ligne.mode === 'noms',
-        ouvertureLe: ligne.mode === 'noms' ? fromLocalInput(ligne.ouverture) : null,
-      };
-    }
+    exceptions[ligne.standId] =
+      ligne.mode === 'herite'
+        ? null
+        : {
+            nomsVisibles: ligne.mode === 'noms',
+            ouvertureLe: ligne.mode === 'noms' ? fromLocalInput(ligne.ouverture) : null,
+          };
   }
   return {
     parDefaut: {
       nomsVisibles: defaut.noms,
       ouvertureLe: defaut.noms ? fromLocalInput(defaut.ouverture) : null,
     },
-    parStand,
+    parStand: exceptions,
   };
 }

@@ -40,6 +40,7 @@ import {
   purgeAllDrafts,
 } from '../core/brouillon-formulaire';
 import { EditionStore } from '../core/edition.store';
+import { ROLE_RESPONSABLE } from '../core/session';
 import { SessionStore } from '../core/session.store';
 import { SESSION_END_BUS, announceLogout, onLogoutElsewhere } from '../core/session-end';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../core/locale';
@@ -135,6 +136,11 @@ export class AdminShell {
   private readonly sessionEnd = inject(SESSION_END_BUS);
 
   /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
+  /** Whether this account also holds a responsable de stand's right: « Mon stand » is one click away. */
+  protected readonly hasStandRight = computed(
+    () => this.session.statut()?.roles.includes(ROLE_RESPONSABLE) ?? false,
+  );
+
   protected readonly hasUnreadAlert = computed(() =>
     this.notifications
       .notifications()
