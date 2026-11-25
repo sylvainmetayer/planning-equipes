@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 5 : les mineurs, et la majorité acquise en cours d'événement.
 # Quatre mineurs sur huit : deux de 16-17 ans, une de 15 ans, et une animatrice
 # qui fête ses 18 ans le samedi — mineure le vendredi, majeure le samedi.

@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau infaisable 4 : une soirée que seuls des mineurs pourraient tenir.
 # Un seul majeur et trois mineurs pour une soirée de deux places (20 h 30-23 h) :
 # la nuit légale commence à 22 h pour les 16-17 ans et à 20 h avant 16 ans.

@@ -204,11 +204,15 @@ public final class ScenarioYamlReader {
      * "Scénario invalide", like a file whose sections do not fit together.
      */
     private static ScenarioDto bind(String yamlContent) {
+        return bindWithWarnings(yamlContent).scenario();
+    }
+
+    private static ScenarioBinder.Bound bindWithWarnings(String yamlContent) {
         if (yamlContent == null || yamlContent.isBlank()) {
             throw new BusinessError.Invalid("Le fichier est vide.");
         }
         try {
-            return ScenarioBinder.bind(yamlContent);
+            return ScenarioBinder.bindWithWarnings(yamlContent);
         } catch (ScenarioFormatException e) {
             String message = messageOr(e);
             throw new BusinessError.Invalid(
@@ -247,6 +251,11 @@ public final class ScenarioYamlReader {
      */
     public static ScenarioDto parseScenarioText(String yamlContent) {
         return bind(yamlContent);
+    }
+
+    /** As {@link #parseScenarioText}, with what the conversion of an older format dropped. */
+    public static ScenarioBinder.Bound parseScenarioTextWithWarnings(String yamlContent) {
+        return bindWithWarnings(yamlContent);
     }
 
     /** A bundled scenario, read but not built — see {@link #parseScenarioText}. */

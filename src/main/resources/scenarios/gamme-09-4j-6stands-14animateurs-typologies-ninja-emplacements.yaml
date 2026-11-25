@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 9 : le référentiel des typologies, les polyvalents et les distances.
 # Six typologies déclarées avec libellé, plus la typologie ninja POLYVALENT :
 # trois animateurs la portent et peuvent tenir n'importe quel stand. Le cirque et

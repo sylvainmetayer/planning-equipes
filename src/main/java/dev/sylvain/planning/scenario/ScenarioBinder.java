@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,22 +56,38 @@ public final class ScenarioBinder {
      */
     private static final ObjectMapper MAPPER = mapper();
 
-    /** The scenario format this build reads and writes; a file may omit it, meaning 1. */
-    public static final int SCHEMA_VERSION = 1;
+    /**
+     * The scenario format this build writes; it reads every version up to it,
+     * converting older ones through {@link ScenarioMigrations}. A file may omit
+     * the key, meaning 1.
+     */
+    public static final int SCHEMA_VERSION = 2;
 
     private ScenarioBinder() {}
 
+    /** A bound scenario and what the conversion of an older format dropped, one sentence each. */
+    public record Bound(ScenarioDto scenario, List<String> warnings) {}
+
     /** @throws ScenarioFormatException on anything the DTO shape does not accept */
     public static ScenarioDto bind(String yamlContent) {
+        return bindWithWarnings(yamlContent).scenario();
+    }
+
+    /** As {@link #bind}, keeping the warnings of the conversion for the import report. */
+    @SuppressWarnings("unchecked")
+    public static Bound bindWithWarnings(String yamlContent) {
         Object document = parse(yamlContent);
         if (!(document instanceof Map)) {
             throw new ScenarioFormatException(
                     "Le fichier de scénario n'est pas un document YAML valide (mapping attendu).");
         }
-        refuseNewerSchema(document);
-        refuseRetiredSections(document);
+        int version = readVersion(document);
+        ScenarioMigrations.Migrated migrated = ScenarioMigrations.migrate((Map<String, Object>) document, version);
+        refuseRetiredSections(migrated.document());
         try {
-            return MAPPER.convertValue(ScenarioYaml.normaliseDates(document), ScenarioDto.class);
+            return new Bound(
+                    MAPPER.convertValue(ScenarioYaml.normaliseDates(migrated.document()), ScenarioDto.class),
+                    migrated.warnings());
         } catch (IllegalArgumentException e) {
             throw new ScenarioFormatException(explain(e), e);
         }
@@ -114,13 +131,14 @@ public final class ScenarioBinder {
     }
 
     /**
-     * Checked before binding: a file from a newer release would otherwise be
-     * reported as "champ inconnu" on whichever new key comes first.
+     * The version a document declares (1 when absent), checked before binding:
+     * a file from a newer release would otherwise be reported as "champ
+     * inconnu" on whichever new key comes first.
      */
-    private static void refuseNewerSchema(Object document) {
+    private static int readVersion(Object document) {
         Object version = ((Map<?, ?>) document).get("schemaVersion");
         if (version == null) {
-            return;
+            return 1;
         }
         boolean integer = version instanceof Integer || version instanceof Long || version instanceof BigInteger;
         if (integer && new BigInteger(version.toString()).compareTo(BigInteger.valueOf(SCHEMA_VERSION)) > 0) {
@@ -129,10 +147,11 @@ public final class ScenarioBinder {
                             + ", plus récent que celui que cette version de l'application lit (" + SCHEMA_VERSION
                             + ") : il a été produit par une version plus récente. Mettez l'application à jour pour l'importer.");
         }
-        if (!integer || ((Number) version).longValue() != SCHEMA_VERSION) {
-            throw new ScenarioFormatException("« schemaVersion » doit valoir " + SCHEMA_VERSION
+        if (!integer || ((Number) version).longValue() < 1) {
+            throw new ScenarioFormatException("« schemaVersion » doit être un entier entre 1 et " + SCHEMA_VERSION
                     + " (ou être absent), et non « " + version + " ».");
         }
+        return ((Number) version).intValue();
     }
 
     /** What each retired key of {@code parametresLegaux:} is replaced by. */

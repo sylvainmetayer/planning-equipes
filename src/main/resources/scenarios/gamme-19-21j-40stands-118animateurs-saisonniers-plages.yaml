@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 19 : trois semaines, une équipe saisonnière, des stands qui arrivent en
 # cours de route.
 # Du lundi 5 au dimanche 25 juillet 2027, 14 juillet compris. Trois animateurs

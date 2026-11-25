@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Cas dégénéré 15 : une édition sans aucun créneau.
 # Deux stands et trois animateurs, mais aucune grille : pas de bornes, pas de
 # siège. Lire le fichier, analyser et résoudre ne doivent rien casser.

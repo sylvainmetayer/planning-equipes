@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Cas dégénéré 11 : un seul siège, mille animateurs.
 # Le plus petit problème possible avec le plus grand effectif : un siège est
 # pourvu, neuf cent quatre-vingt-dix-neuf personnes ne travaillent pas, et

@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 23 : un mois de souhaits et d'exceptions saisies à la main.
 # Août 2027, cent stands d'une place dont soixante n'ouvrent que le week-end.
 # Neuf animateurs sur dix déclarent des souhaits, pesés à 2. Cinquante-quatre

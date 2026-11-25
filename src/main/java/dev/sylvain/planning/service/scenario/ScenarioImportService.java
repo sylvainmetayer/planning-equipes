@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.scenario;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.BusinessError;
@@ -103,7 +104,10 @@ public class ScenarioImportService {
      * document rather than importing part of it.
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
-        return importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), null);
+        ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(yamlContent);
+        ScenarioImportOutcome outcome = importScenario(bound.scenario(), null);
+        return new ScenarioImportOutcome(
+                outcome.editionId(), outcome.editionNom(), outcome.editionCreee(), bound.warnings());
     }
 
     /**
@@ -256,7 +260,7 @@ public class ScenarioImportService {
         try {
             if (cibleDto.isEmpty()) {
                 importAction.run();
-                return new ScenarioImportOutcome(null, null, null);
+                return new ScenarioImportOutcome(null, null, null, List.of());
             }
             EditionService.ImportTarget target = editionService.resolveForImport(
                     cibleDto.get().id(), cibleDto.get().nom());
@@ -265,7 +269,7 @@ public class ScenarioImportService {
                 return null;
             });
             return new ScenarioImportOutcome(
-                    target.edition().getId(), target.edition().getNom(), target.creee());
+                    target.edition().getId(), target.edition().getNom(), target.creee(), List.of());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -416,6 +420,9 @@ public class ScenarioImportService {
      * @param editionNom   the name of that edition, {@code null} for the same reason
      * @param editionCreee the edition did not exist and this import created it; {@code null} when the
      *                     scenario named no edition
+     * @param avertissements what the conversion of an older file format could not carry over, one
+     *                     sentence each; empty when nothing was dropped
      */
-    public record ScenarioImportOutcome(String editionId, String editionNom, Boolean editionCreee) {}
+    public record ScenarioImportOutcome(
+            String editionId, String editionNom, Boolean editionCreee, List<String> avertissements) {}
 }

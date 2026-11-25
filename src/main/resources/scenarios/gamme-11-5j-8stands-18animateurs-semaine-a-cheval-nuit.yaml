@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 11 : une édition à cheval sur deux semaines civiles, et des soirées
 # qui passent minuit.
 # Du vendredi au mardi. Samedi et dimanche, une soirée jeux de 21 h à 1 h du

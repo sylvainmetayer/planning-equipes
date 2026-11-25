@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 14 : dix jours, relève à effectif plein pendant le repas, coupure 45 min.
 # En semaine deux vacations qui se recouvrent d'un quart d'heure à la relève
 # (13 h-17 h, 16 h 45-19 h). Le week-end la journée ouvre plus tôt et se lit en

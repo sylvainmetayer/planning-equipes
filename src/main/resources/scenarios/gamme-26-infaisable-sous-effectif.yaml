@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau infaisable 1 : plus de places que de personnes.
 # Huit places sur la même vacation, cinq animateurs. L'analyse de faisabilité le
 # voit avant tout calcul, et le solveur laisse exactement trois sièges vides.

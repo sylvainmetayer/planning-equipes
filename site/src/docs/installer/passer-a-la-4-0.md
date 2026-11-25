@@ -24,7 +24,9 @@ Chaque paragraphe dit *avant*, *après* et *ce que vous faites*. Aucun n'est éc
 
 ### Format du scénario YAML
 
-À venir : ce que le lecteur convertit seul, et ce qu'il ignore en le disant dans le rapport d'import.
+- **Avant** : l'application écrit `schemaVersion: 1`.
+- **Après** : elle écrit `schemaVersion: 2`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Cette version-ci ne change aucune clé : le premier maillon est vide.
+- **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
 
 ### Noms des règles du planning
 
