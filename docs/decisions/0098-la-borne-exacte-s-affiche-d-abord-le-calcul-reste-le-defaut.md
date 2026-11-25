@@ -1,9 +1,9 @@
-# 0098 — Le besoin se vérifie par la borne exacte ; le calcul par équipe fictive est une option
+# 0098 — La borne exacte s'affiche d'abord, le calcul par équipe fictive reste le défaut
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté (le défaut reste le calcul ; la borne s'affiche d'abord)
 - **Date** : novembre 2026
 - **Portée** : écran Besoin en animateurs, `POST /api/staffing/verification`, table `verification_besoin`
-- **Remplace en partie** : [0071](0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md) — son point 5 (la vérification par un solve) cesse d'être la réponse par défaut ; ses points 1 à 4 et 6 restent
+- **Remplace en partie** : [0071](0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md) — son point 5 (la vérification par un solve) gagne une alternative, la borne seule, que le défaut adoptera à l'équivalence ; ses points 1 à 4 et 6 restent
 - **Voisine de** : [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) (étude close, inchangée), [0087](0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), [0090](0090-les-reglages-avances-replies-par-ecran.md)
 
 ## Contexte
@@ -27,34 +27,31 @@ besoin de `B + 1`, `B + 2`… jusqu'au premier réalisable.
 
 ## Décision
 
-1. **Par défaut, la vérification répond par la borne.** `POST
-   /api/staffing/verification` compare l'effectif demandé au minimum exact
-   (`minimumTotal`) et aux majeurs que la journée la plus exigeante demande
-   (`majeursMin`) : l'équipe tient quand elle atteint les deux. La réponse est
-   `TERMINEE` d'emblée (`methode: BORNE`), sans solve, sans file, sans quota,
-   sans attente d'une résolution en cours. Elle est conservée et journalisée
-   comme tout essai (`verification_besoin.methode`, `.minimum`) : l'historique
-   garde la trace « 140 ne suffit pas, 160 suffit » qui était la raison d'être
-   de 0071 point 6. Aucun algorithme n'est réécrit : c'est le minimum déjà
-   calculé pour l'écran.
-2. **Le calcul par équipe fictive devient une option avancée** (`calcul: true`,
-   case « Vérifier par un calcul » dans les réglages avancés de l'écran, repliés
-   par défaut, ADR 0090). Il garde tout de 0071 point 5 : l'équipe, le départ du
-   plan en place, la durée, l'unicité, l'abandon devant une résolution, le quota.
-   Il s'exécute sur **le moteur de l'instance** : le moteur direct (ADR 0087, le
-   défaut) s'arrête une seconde après son premier plan réalisable, et Timefold
-   rejoue le plan et refuse tout écart de score, comme partout ; sous
-   `SOLVER_ENGINE=timefold`, c'est l'ancienne recherche. Les résolutions
-   « jusqu'à la faisabilité » des tests restent sur Timefold.
-3. **Retour en arrière par une propriété** : `planning.staffing.verification-default=calcul`
-   remet le calcul comme réponse d'une requête qui ne choisit pas. Une requête
-   qui envoie `calcul` explicitement n'est jamais affectée.
-4. **Ce que la borne ne dit pas reste dit.** Un `realisable: true` de borne
-   signifie « l'effectif atteint le minimum prouvé », jamais « un plan existe » :
-   l'écran l'écrit et renvoie au calcul pour ce que les bornes ignorent. Un
-   effectif de mineurs au-delà de ce qu'une journée peut encadrer n'est jugé
-   que par le calcul (le plafond `mineursMax` de 0071 point 3 n'entre pas dans
-   la réponse, qui est celle d'un effectif et non d'un effectif de référence).
+1. **La borne répond à la demande qui la choisit, et s'affiche d'abord.** `POST
+   /api/staffing/verification` avec `calcul: false` compare l'effectif au
+   minimum exact (`minimumTotal`) et aux majeurs que la journée la plus
+   exigeante demande (`majeursMin`) : `TERMINEE` d'emblée (`methode: BORNE`),
+   sans solve, sans file, sans quota. L'écran montre ce minimum, « au moins N »,
+   avant tout calcul, et la réponse de la borne se lit comme une condition
+   nécessaire, jamais comme « un plan existe ». Elle est conservée et
+   journalisée comme tout essai (`verification_besoin.methode`, `.minimum`).
+   Aucun algorithme n'est réécrit : c'est le minimum déjà calculé pour l'écran.
+2. **Le défaut reste le calcul tant que la borne n'égale pas le solve sur toute
+   la gamme.** Une requête qui ne choisit pas obtient la résolution de
+   l'équipe fictive de 0071 point 5, sur **le moteur de l'instance** : le moteur
+   direct (ADR 0087, le défaut) s'arrête une seconde après son premier plan
+   réalisable, et Timefold rejoue le plan et refuse tout écart de score, comme
+   partout ; sous `SOLVER_ENGINE=timefold`, c'est l'ancienne recherche. L'écran
+   coche « Confirmer par un calcul » (réglages avancés, ADR 0090) ; décochée,
+   seule la borne répond.
+3. **Le basculement du défaut est une propriété** :
+   `planning.staffing.verification-default=borne` en fait la réponse d'une
+   requête qui ne choisit pas. Il se décide quand `StaffingBoundEquivalenceTest`
+   donne un écart nul sur les vingt-cinq rangs, ou un écart prouvé dû à la
+   recherche seule. Une requête qui envoie `calcul` n'est jamais affectée.
+4. **Ce que la borne ne dit pas reste dit.** Un effectif de mineurs au-delà de ce
+   qu'une journée peut encadrer n'est jugé que par le calcul (le plafond
+   `mineursMax` de 0071 point 3 n'entre pas dans la réponse).
 5. **0080 reste une étude close** : aucun solveur exact n'entre dans l'application.
 
 ## Mesure d'équivalence
@@ -101,13 +98,14 @@ l'élargit casse le test, pas l'écran.
 
 ## Conséquences
 
-- La vérification par défaut ne prend plus les cœurs, ne consomme plus de quota
-  et ne subit plus le `409` des deux verrous (une vérification à la fois, une
-  résolution en cours) : ceux-ci ne concernent que le calcul.
-- Un calcul coûte comme avant, et son résultat peut diverger de la borne d'un
-  petit nombre de personnes sur une grille que la borne lit trop clémente ; le
-  test d'équivalence fixe cet écart (`MAX_GAP`) et casse si une règle le creuse.
+- Tant que le défaut est le calcul, rien ne change pour l'organisateur, sinon
+  qu'il lit « au moins N » tout de suite, et peut ne demander que la borne.
+- La borne seule ne prend ni les cœurs, ni le quota, ni les verrous (une
+  vérification à la fois, une résolution en cours) : ceux-ci ne concernent que le
+  calcul.
+- Le test d'équivalence fixe l'écart de chaque rang (`ALLOWED_GAPS`) : une règle
+  qui l'élargit casse le test.
 - Les lignes `verification_besoin` écrites avant ce changement sont toutes des
   calculs (`methode` vaut `CALCUL` par défaut, `minimum` est absent).
 - Le contrat de l'API change : `calcul` en entrée, `methode` et `minimum` en
-  sortie. Un client qui n'envoie rien reçoit désormais la réponse de la borne.
+  sortie.

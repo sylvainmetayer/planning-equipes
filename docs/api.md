@@ -243,17 +243,18 @@ l'écran se trompe facilement de sens :
   `maxJoursConsecutifsTravaillesDur` est allumée, et vaut `null` sinon. Une
   règle moyenne peut être enfreinte : elle ne doit pas faire recruter.
 
-`POST /api/staffing/verification` répond **par défaut par la borne exacte** : il
-compare l'effectif demandé (`majeurs` + `mineurs`, sans `majeurs` le minimum
-moins les mineurs) au minimum exact et aux majeurs que la journée la plus
-exigeante demande, et rend `202` avec une vérification déjà `TERMINEE`
-(`methode: BORNE`, `minimum` : le chiffre comparé). Aucun solve, aucun quota,
-aucune attente. Avec `calcul: true` (réglages avancés de l'écran), il lance au
-contraire un solve des sièges de l'édition par une **équipe fictive** et répond
-`202` sans attendre (`methode: CALCUL`) ; `calcul: false` force la borne, et une
-requête qui ne dit rien reçoit le défaut de l'instance,
-`planning.staffing.verification-default` (`borne`, ou `calcul` pour revenir à
-l'ancien comportement). Ce qui suit ne vaut que pour le calcul. L'équipe compte
+`POST /api/staffing/verification` lance par défaut un solve des sièges de
+l'édition par une **équipe fictive** et répond `202` sans attendre
+(`methode: CALCUL`). Avec `calcul: false`, il répond au contraire **par la borne
+exacte** : il compare l'effectif demandé (`majeurs` + `mineurs`, sans `majeurs`
+le minimum moins les mineurs) au minimum exact et aux majeurs que la journée la
+plus exigeante demande, et rend `202` avec une vérification déjà `TERMINEE`
+(`methode: BORNE`, `minimum` : le chiffre comparé) ; aucun solve, aucun quota,
+aucune attente, et une réponse qui dit « au moins N », jamais « un plan
+existe ». Une requête qui ne dit rien reçoit le défaut de l'instance,
+`planning.staffing.verification-default` (`calcul` tant que la borne n'égale pas
+le solve sur la gamme, ADR 0098 ; `borne` pour l'autre). Ce qui suit ne vaut que
+pour le calcul. L'équipe compte
 `majeurs` majeurs et `mineurs` mineurs, ces derniers âgés de seize ans au
 premier jour ;
 le solve dure au plus `dureeSecondes`, entre 10 s et le plafond d'exploitant
@@ -300,7 +301,7 @@ existe : elle dit que l'effectif atteint le minimum prouvé. La décision et les
 options écartées sont dans
 [0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md),
 et le passage de la borne en réponse par défaut dans
-[0098](decisions/0098-le-besoin-se-verifie-par-la-borne-exacte-le-calcul-est-une-option.md).
+[0098](decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md).
 
 ### Ce que la prochaine résolution recevra
 

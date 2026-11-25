@@ -687,7 +687,7 @@ qu'une contrainte qui cesserait de pénaliser ne passe pas au vert avec lui.
 | `ScenarioLadderInfeasibleTest` | 26 à 30 | suite par défaut |
 | `ScenarioLadderImportTest` | 2, 7, 8, 10 | suite par défaut (`@QuarkusTest`) |
 | `ScenarioLadderLargeTest` | 16 à 25 | `scenario-lent`, `./mvnw test -Pscenario-tests` |
-| `StaffingBoundEquivalenceTest` | 1 à 25 | `scenario-lent` : la borne exacte du besoin contre le solve d'une équipe fictive, rang par rang ([`0098`](decisions/0098-le-besoin-se-verifie-par-la-borne-exacte-le-calcul-est-une-option.md)) ; `-Dequivalence.rungs=1,2` pour en choisir |
+| `StaffingBoundEquivalenceTest` | 1 à 25 | `scenario-lent` : la borne exacte du besoin contre le solve d'une équipe fictive, rang par rang ([`0098`](decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) ; `-Dequivalence.rungs=1,2` pour en choisir |
 
 Les barreaux sont dimensionnés avec de la marge — au plus trois quarts de
 l'effectif sollicité le jour le plus chargé : tous atteignent zéro écart dur
@@ -890,7 +890,7 @@ E2E_VIDEO=retain-on-failure npm run e2e   # ou 'on' ; .webm dans test-results/<t
 | `planning.solver.unimproved-seconds-limit` | `180` (`2` en `%test`), `0` = désactivé | Arrêt sur plateau, **conditionné à la faisabilité** : la fenêtre, que chaque édition règle |
 | `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` en `%test`) | Ce que la fenêtre doit gagner en medium, par siège du problème, pour que le calcul continue ; `0` est le plateau strict (pas un point), qui ne se déclenchait jamais — voir [`0081`](decisions/0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) |
 | `planning.solver.engine` | `hand` (`SOLVER_ENGINE`) | Le moteur qui cherche : `hand`, le moteur direct de [`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md) (défaut depuis [`0088`](decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)), ou `timefold` — voir *Le moteur direct* plus bas |
-| `planning.staffing.verification-default` | `borne` | Ce que répond la vérification du besoin quand la requête ne choisit pas : `borne` (le minimum exact, sans solve) ou `calcul` (la résolution d'une équipe fictive, comme avant [`0098`](decisions/0098-le-besoin-se-verifie-par-la-borne-exacte-le-calcul-est-une-option.md)) |
+| `planning.staffing.verification-default` | `calcul` | Ce que répond la vérification du besoin quand la requête ne choisit pas : `calcul` (la résolution d'une équipe fictive) ou `borne` (le minimum exact, sans solve ; à adopter quand l'équivalence est totale, [`0098`](decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) |
 | `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; démarrage refusé s'il est sous `seconds-limit` |
 | `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
 | `planning.solver.max-solves-per-hour` | `0` = aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par `SolverQuota` — voir [`0075`](decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md) |

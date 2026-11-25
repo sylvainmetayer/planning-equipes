@@ -44,6 +44,23 @@ class StaffingAnalyzerTest {
     }
 
     @Test
+    void seatsTooLongToShareADayEachNeedTheirOwnPerson() {
+        // Two 6-hour seats back to back: one at a time, but 12 hours between
+        // them exceed what anybody works in a day, so two people are needed.
+        Creneau matin = creneau(1, LocalTime.of(6, 0), LocalTime.of(12, 0));
+        Creneau soir = creneau(2, LocalTime.of(12, 0), LocalTime.of(18, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 1), matin, 1));
+        postes.addAll(postes(stand("A", 1), soir, 1));
+
+        StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 0);
+
+        assertThat(summary.picSimultane()).isEqualTo(1);
+        assertThat(summary.parJour().get(0).minimumJour()).isEqualTo(2);
+        assertThat(summary.minimumTotal()).isEqualTo(2);
+    }
+
+    @Test
     void peakCountsSimultaneousSeatsOnly() {
         // Two stands of 2 seats open at the same time: 4 people at once. A
         // third stand opens only once they have closed, and needs nobody more.

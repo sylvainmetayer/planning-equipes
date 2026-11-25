@@ -1121,6 +1121,14 @@ public class StaffingAnalyzer {
             // the daily legal ceiling, so 600 person-hours need 60 people
             // whatever the shape of the day.
             int parLesHeures = (int) Math.ceil(heures * 60 / maxDailyAmplitude(dureePauseMinutes));
+            // Two seats longer than half that ceiling together exceed it, so
+            // nobody holds two of them in a day: each needs its own person.
+            // Packing, not volume — a day of 8-hour seats needs a person per
+            // seat, where the hours alone would allow far fewer.
+            int plafondJour = maxDailyAmplitude(dureePauseMinutes);
+            int grosSieges = (int) entree.getValue().stream()
+                    .filter(siege -> 2 * (siege.fin() - siege.debut()) > plafondJour)
+                    .count();
             int picRepas = 0;
             for (FenetreRepas fenetre : fenetres) {
                 if (fenetre.appliesTo(entree.getKey())) {
@@ -1135,7 +1143,7 @@ public class StaffingAnalyzer {
                             pic(entree.getValue(), 0),
                             picAvecPause,
                             picRepas,
-                            Math.max(Math.max(picAvecPause, parLesHeures), picRepas)));
+                            Math.max(Math.max(Math.max(picAvecPause, parLesHeures), grosSieges), picRepas)));
         }
         return besoins;
     }
