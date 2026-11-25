@@ -28,7 +28,7 @@ class RoutesOuvertesStructuralTest {
     private static final Path RESPONSABLE = Path.of("src/test/resources/routes-responsable.txt");
 
     /** The HTTP verb of a resource method (any annotation meta-annotated {@link HttpMethod}), or null. */
-    private static String verb(Method m) {
+    static String verb(Method m) {
         for (Annotation a : m.getAnnotations()) {
             HttpMethod http = a.annotationType().getAnnotation(HttpMethod.class);
             if (http != null) {
@@ -43,7 +43,7 @@ class RoutesOuvertesStructuralTest {
      * keep two overloads apart — keyed on the name alone, a new route reusing
      * an open method's name would pass unseen.
      */
-    private static String line(Class<?> type, Method m, String verb) {
+    static String line(Class<?> type, Method m, String verb) {
         jakarta.ws.rs.Path sub = m.getAnnotation(jakarta.ws.rs.Path.class);
         String path = ("/" + type.getAnnotation(jakarta.ws.rs.Path.class).value() + "/"
                         + (sub == null ? "" : sub.value()))
@@ -82,7 +82,7 @@ class RoutesOuvertesStructuralTest {
         return routes;
     }
 
-    private static Set<String> committed(Path file) throws IOException {
+    static Set<String> committed(Path file) throws IOException {
         return new TreeSet<>(Files.readAllLines(file).stream()
                 .map(String::strip)
                 .filter(l -> !l.isEmpty() && !l.startsWith("#"))

@@ -210,6 +210,7 @@ public class EditionResource {
     @InstanceOnly
     @GET
     @Path("/{id}/delta/{cible}/export.csv")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportDeltaCsv(@PathParam("id") String id, @PathParam("cible") String cible) {
         return CsvDownload.attachment(deltaService.csv(id, cible), "delta-" + id + "-" + cible + ".csv");

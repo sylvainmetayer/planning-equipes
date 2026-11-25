@@ -54,6 +54,8 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
 
     static final String ROLE_ORGANISATEUR = "organisateur";
 
+    static final String ROLE_LECTEUR = "lecteur";
+
     private final CompteService comptes;
     private final CompteAccesService acces;
     private final ConfigSecours secours;
@@ -105,9 +107,10 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
                     .orElse(null);
             Set<String> roles = compte == null ? Set.of() : new HashSet<>(CompteService.roles(compte, Instant.now()));
             // The MCP transport is opened by its own role (ADR 0097), only to a token the
-            // bearer-only tenant validated, for an administrator or an organiser: a
-            // responsable de stand opens /api/responsable/* and nothing else.
-            if ((roles.contains(ROLE_ADMIN) || roles.contains(ROLE_ORGANISATEUR))
+            // bearer-only tenant validated, for an administrator, an organiser or a lecteur (who
+            // meets only the tools that read, ADR 0099): a responsable de stand opens
+            // /api/responsable/* and nothing else.
+            if ((roles.contains(ROLE_ADMIN) || roles.contains(ROLE_ORGANISATEUR) || roles.contains(ROLE_LECTEUR))
                     && McpTenantResolver.TENANT.equals(identity.getAttribute("tenant-id"))) {
                 roles.add(McpApiKeyIdentityProvider.ROLE_MCP);
             }

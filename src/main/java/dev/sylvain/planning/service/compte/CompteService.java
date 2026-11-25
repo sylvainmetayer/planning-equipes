@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -125,6 +126,10 @@ public class CompteService {
         }
         if (role == RoleHabilitation.RH && edition == null) {
             throw new BusinessError.Invalid("Le droit RH porte une édition : on l'est d'un événement, jamais de tous.");
+        }
+        if (role == RoleHabilitation.LECTEUR && edition == null) {
+            throw new BusinessError.Invalid(
+                    "Le droit de lecteur porte une édition : on lit un événement, jamais tous.");
         }
         if (edition != null && !editions.exists(edition)) {
             throw new BusinessError.Invalid("Édition inconnue : " + edition);
@@ -249,19 +254,37 @@ public class CompteService {
     }
 
     /**
-     * The editions an <b>organiser</b> account may work in: every one when a
-     * right in force names none, else exactly the ones named. An account with
-     * no organiser right opens none. The administrators are not asked.
+     * The editions an account may <b>see</b>: those an organiser or a lecteur right in force names, every one
+     * when such a right names none. An account with neither opens none. The administrators are not asked.
      */
     public static Predicate<String> editionScope(Compte compte, Instant now) {
-        List<Habilitation> droits = inForce(compte, now)
-                .filter(h -> h.role() == RoleHabilitation.ORGANISATEUR)
-                .toList();
+        return scopeOf(compte, now, RoleHabilitation.ORGANISATEUR, RoleHabilitation.LECTEUR);
+    }
+
+    /**
+     * The editions an account may <b>change or compute in</b>: the organiser rights only. A lecteur right
+     * widens {@link #editionScope} and never this one (ADR 0099). Tested with {@code null} (no edition
+     * designated), it answers true only for a right on every edition.
+     */
+    public static Predicate<String> writeScope(Compte compte, Instant now) {
+        return scopeOf(compte, now, RoleHabilitation.ORGANISATEUR);
+    }
+
+    private static Predicate<String> scopeOf(Compte compte, Instant now, RoleHabilitation... roles) {
+        Set<RoleHabilitation> wanted = Set.of(roles);
+        List<Habilitation> droits =
+                inForce(compte, now).filter(h -> wanted.contains(h.role())).toList();
         if (droits.stream().anyMatch(h -> h.editionId() == null)) {
             return id -> true;
         }
-        Set<String> ids = droits.stream().map(Habilitation::editionId).collect(Collectors.toSet());
+        // A HashSet, not Set.of: contains(null) answers false instead of throwing.
+        Set<String> ids = droits.stream().map(Habilitation::editionId).collect(Collectors.toCollection(HashSet::new));
         return ids::contains;
+    }
+
+    /** Whether the account holds a lecteur right in force: the only ones the write net has anything to say about. */
+    public static boolean isLecteur(Compte compte, Instant now) {
+        return inForce(compte, now).anyMatch(h -> h.role() == RoleHabilitation.LECTEUR);
     }
 
     /** The editions an RH right in force names; an account with none reads no report and no contact. */

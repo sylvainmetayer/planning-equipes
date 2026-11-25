@@ -170,6 +170,18 @@ public class EditionContext {
         return compte == null ? id -> true : CompteService.editionScope(compte, Instant.now());
     }
 
+    /**
+     * Whether the caller may change or compute in {@code editionId} ({@code null}: no edition designated). Only
+     * an account holding a lecteur right is ever refused: the administrators, the MCP key and every other
+     * account keep what {@link #visibleToCaller} gives them (ADR 0099).
+     */
+    public boolean callerCanWrite(String editionId) {
+        Compte compte = organiserOfRequest();
+        return compte == null
+                || !CompteService.isLecteur(compte, Instant.now())
+                || CompteService.writeScope(compte, Instant.now()).test(editionId);
+    }
+
     /** Whether the caller is an organiser narrowed to its editions (an administrator is not). */
     public boolean callerIsOrganiser() {
         return organiserOfRequest() != null;
