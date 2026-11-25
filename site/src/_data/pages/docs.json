@@ -29,6 +29,8 @@
     "suivant": "Next:",
     "corriger": "A mistake, an omission? Fix this page on GitHub.",
     "fermeture": "A question no guide answers?",
-    "autreLien": "See hosting"
-  }
+    "autreLien": "See hosting",
+    "sansJs": "Search needs JavaScript; the list of guides below has them all."
+  },
+  "sansJs": "La recherche a besoin de JavaScript ; la liste des guides ci-dessous les donne tous."
 }

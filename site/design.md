@@ -37,6 +37,9 @@ The contact form sits on a paper card (`--color-sheet`, `--color-sheet-rule`) th
 ## Masthead navigation
 Five text links left of the wordmark (the four answer pages, then « Doc », which leads to `/docs/`): 44px targets, underlined on hover and on the current page (`aria-current`, `page` on the docs home, `true` on one of its pages). Under 40rem they take their own row under the wordmark and wrap rather than overflow. On an English page « Doc » carries `hreflang="fr"`: the docs are French only.
 
+## Quick search
+Ctrl+K (⌘K on a Mac) and `/` open it from any page, as does the « Rechercher » button of the masthead, left of the language link: a 44px bordered link with a magnifier, its label and, on a wide screen once `palette.js` runs, the shortcut as a `<kbd>`; under 40rem only the magnifier stays. Without script it is a link to the search of the docs home. The palette is a native `<dialog>` with a card panel (top bar in the accent colour): a `role="combobox"` input over a `role="listbox"` (`aria-activedescendant`, arrows move, Enter opens, Escape closes, focus returns where it was) and a polite status line giving the result count. It searches one index (`/search.json`, fetched at the first opening): the guides, then their sections, then the pages of the page's language; each result says what it is (guide, section, page). The docs home's own form is answered by the same search.
+
 ## Theme switch
 One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `<html>`, none for auto); hidden until `theme.js` runs.
 
@@ -52,7 +55,7 @@ One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `
 
 ## Documentation
 The `/docs` pages are written in `src/docs/` and set in the same system, no new face or colour. Three parts, each carrying one player colour as a marker (rules of the game green, install blue, understanding ochre), never as a fill: the colour marks the part's cards, the bar above each chapter, the list numbers, the stripe of a capture, a code block and a note.
-- **Docs home**: the answer pages' header (breadcrumb, head), then the search of the site (it submits to the site map, which searches the docs index), a short intro and three cards, one per part, each listing its first five guides and a link to all of them. No side column.
+- **Docs home**: the answer pages' header (breadcrumb, head), then the search of the site (it submits `?q=` to this same page, answered below the form by the palette's search), a short intro and three cards, one per part, each listing its first five guides and a link to all of them. No side column.
 - **Part home**: the head, a line saying whom the part is for, the part's own intro, then the guides as cards (title, first sentence), in reading order. No side column.
 - **Guide**: breadcrumb with the part, the head, then on a wide screen two columns: a sticky side column of two navs ("Sur cette page", then the part's guides with the other parts' links under them), and the text. The first paragraph is the lead, larger; each h2 carries a short player-colour bar on its hairline; the previous and next guide close the text as two cards, and a link proposes a fix on GitHub. Each nav is a native `<details>`, open in the HTML so that nothing is hidden without script, and folded by `theme.js` under the 60rem breakpoint so that on a phone the text comes first; the side column scrolls on its own when it is taller than the screen.
 - **Closing band** on every docs page: the quote band of the answer pages (a question no guide answers, the contact button, the hosting page).

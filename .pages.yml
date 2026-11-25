@@ -88,6 +88,22 @@ content:
           - { name: fermer, label: Bouton fermer, type: string, required: true }
           - { name: precedente, label: Bouton précédente, type: string, required: true }
           - { name: suivante, label: Bouton suivante, type: string, required: true }
+      - name: palette
+        label: Recherche rapide (Ctrl+K)
+        type: object
+        fields:
+          - { name: label, label: "Nom de la fenêtre (lecteurs d'écran)", type: string, required: true }
+          - { name: champ, label: "Nom du champ", type: string, required: true }
+          - { name: placeholder, label: "Texte d'aide du champ", type: string, required: true }
+          - { name: fermer, label: "Bouton fermer", type: string, required: true }
+          - { name: aide, label: "Message avant toute saisie", type: string, required: true }
+          - { name: un, label: "Un résultat ({q} : les mots cherchés)", type: string, required: true }
+          - { name: plusieurs, label: "Plusieurs résultats ({n} : leur nombre, {q} : les mots cherchés)", type: string, required: true }
+          - { name: aucun, label: "Aucun résultat ({q} : les mots cherchés)", type: string, required: true }
+          - { name: guide, label: "Étiquette d'un guide", type: string, required: true }
+          - { name: section, label: "Étiquette d'une section de guide", type: string, required: true }
+          - { name: page, label: "Étiquette d'une page", type: string, required: true }
+          - { name: bouton, label: "Bouton de la barre du haut", type: string, required: true }
       - name: introuvable
         label: Page 404
         type: object
@@ -159,6 +175,22 @@ content:
               - { name: fermer, label: Bouton fermer, type: string, required: true }
               - { name: precedente, label: Bouton précédente, type: string, required: true }
               - { name: suivante, label: Bouton suivante, type: string, required: true }
+          - name: palette
+            label: Recherche rapide (Ctrl+K)
+            type: object
+            fields:
+              - { name: label, label: "Nom de la fenêtre (lecteurs d'écran)", type: string, required: true }
+              - { name: champ, label: "Nom du champ", type: string, required: true }
+              - { name: placeholder, label: "Texte d'aide du champ", type: string, required: true }
+              - { name: fermer, label: "Bouton fermer", type: string, required: true }
+              - { name: aide, label: "Message avant toute saisie", type: string, required: true }
+              - { name: un, label: "Un résultat ({q} : les mots cherchés)", type: string, required: true }
+              - { name: plusieurs, label: "Plusieurs résultats ({n} : leur nombre, {q} : les mots cherchés)", type: string, required: true }
+              - { name: aucun, label: "Aucun résultat ({q} : les mots cherchés)", type: string, required: true }
+              - { name: guide, label: "Étiquette d'un guide", type: string, required: true }
+              - { name: section, label: "Étiquette d'une section de guide", type: string, required: true }
+              - { name: page, label: "Étiquette d'une page", type: string, required: true }
+              - { name: bouton, label: "Bouton de la barre du haut", type: string, required: true }
           - name: introuvable
             label: Page 404
             type: object
@@ -754,7 +786,7 @@ content:
         - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions), type: string, list: true }
 
   - name: plan
-    label: Plan du site et recherche
+    label: Plan du site
     type: file
     path: site/src/_data/pages/plan.json
     format: json
@@ -764,17 +796,6 @@ content:
       - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Titre de la page, type: string, required: true }
       - { name: reponse, label: Introduction (Markdown), type: text, required: true }
-      - name: recherche
-        label: Recherche
-        type: object
-        fields:
-          - { name: label, label: "Nom du champ", type: string, required: true }
-          - { name: bouton, label: "Bouton", type: string, required: true }
-          - { name: un, label: "Un résultat ({q} : les mots cherchés)", type: string, required: true }
-          - { name: plusieurs, label: "Plusieurs résultats ({n} : leur nombre, {q} : les mots cherchés)", type: string, required: true }
-          - { name: aucun, label: "Aucun résultat ({q} : les mots cherchés)", type: string, required: true }
-          - { name: pagination, label: "Mention de pagination", type: string, required: true }
-          - { name: sansJs, label: "Message sans JavaScript", type: string, required: true }
       - { name: planH, label: Titre de la liste des pages, type: string, required: true }
       - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, plan), type: string, list: true }
       - name: en
@@ -786,17 +807,6 @@ content:
         - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
         - { name: h1, label: Titre de la page, type: string, required: true }
         - { name: reponse, label: Introduction (Markdown), type: text, required: true }
-        - name: recherche
-          label: Recherche
-          type: object
-          fields:
-            - { name: label, label: "Nom du champ", type: string, required: true }
-            - { name: bouton, label: "Bouton", type: string, required: true }
-            - { name: un, label: "Un résultat ({q} : les mots cherchés)", type: string, required: true }
-            - { name: plusieurs, label: "Plusieurs résultats ({n} : leur nombre, {q} : les mots cherchés)", type: string, required: true }
-            - { name: aucun, label: "Aucun résultat ({q} : les mots cherchés)", type: string, required: true }
-            - { name: pagination, label: "Mention de pagination", type: string, required: true }
-            - { name: sansJs, label: "Message sans JavaScript", type: string, required: true }
         - { name: planH, label: Titre de la liste des pages, type: string, required: true }
         - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, plan), type: string, list: true }
 
@@ -813,6 +823,7 @@ content:
       - { name: surCettePage, label: "Titre du sommaire de la page", type: string, required: true }
       - { name: recherche, label: "Libellé de la recherche", type: string, required: true }
       - { name: chercher, label: "Bouton de recherche", type: string, required: true }
+      - { name: sansJs, label: "Message sans JavaScript", type: string, required: true }
       - { name: toutVoir, label: "Lien vers tous les guides d'une partie ({n} = leur nombre)", type: string, required: true }
       - { name: autresParties, label: "Introduction des autres parties (menu latéral)", type: string, required: true }
       - { name: pagerLabel, label: "Libellé de la navigation précédent / suivant", type: string, required: true }
@@ -832,6 +843,7 @@ content:
           - { name: surCettePage, label: "Titre du sommaire de la page", type: string, required: true }
           - { name: recherche, label: "Libellé de la recherche", type: string, required: true }
           - { name: chercher, label: "Bouton de recherche", type: string, required: true }
+          - { name: sansJs, label: "Message sans JavaScript", type: string, required: true }
           - { name: toutVoir, label: "Lien vers tous les guides d'une partie ({n} = leur nombre)", type: string, required: true }
           - { name: autresParties, label: "Introduction des autres parties (menu latéral)", type: string, required: true }
           - { name: pagerLabel, label: "Libellé de la navigation précédent / suivant", type: string, required: true }

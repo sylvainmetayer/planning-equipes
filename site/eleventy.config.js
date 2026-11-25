@@ -48,7 +48,7 @@ export default function config(eleventyConfig) {
     });
     // The scripts, minified one by one (no bundling: each page loads only its own)
     await build({
-      entryPoints: ['popin', 'theme', 'contact', 'search'].map((n) => `src/assets/${n}.js`),
+      entryPoints: ['popin', 'theme', 'contact', 'palette'].map((n) => `src/assets/${n}.js`),
       outdir: `${dir.output}/assets`,
       minify: true,
     });

@@ -115,15 +115,29 @@ test('every page has its own title', () => {
   }
 });
 
-test('the search reads a light index of the docs, and finds a page by a word of its headings', async () => {
-  const { docMatch } = await import('../src/assets/search.js');
-  const file = join(dist, 'docs/search.json');
-  assert.ok(readFileSync(file).length < 100_000, 'index de recherche des docs trop lourd');
+test('one light index serves the site search: the guides with their sections, then the pages of both languages', () => {
+  assert.ok(!existsSync(join(dist, 'docs/search.json')));
+  const file = join(dist, 'search.json');
+  assert.ok(readFileSync(file).length < 120_000, 'index de recherche trop lourd');
   const index = JSON.parse(read(file));
-  const api = index['/docs/comprendre/api-conventions/'];
-  const [id, heading] = api.h.at(-1);
-  const word = heading.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 3).at(-1);
-  const found = docMatch(api, [word]);
-  assert.ok(found.excerpt, `#${id} introuvable par « ${word} »`);
-  if (found.hash) assert.ok(read(join(dist, 'docs/comprendre/api-conventions/index.html')).includes(`id="${decodeURIComponent(found.hash.slice(1))}"`), found.hash);
+  const api = index.find((e) => e.u === '/docs/comprendre/api-conventions/');
+  assert.equal(api.k, 'doc');
+  for (const [id] of api.h) assert.ok(read(join(dist, 'docs/comprendre/api-conventions/index.html')).includes(`id="${decodeURIComponent(id)}"`), `#${id}`);
+  for (const l of ['fr', 'en']) assert.ok(index.some((e) => e.k === 'page' && e.l === l && e.u === (l === 'fr' ? '/' : '/en/')), `accueil ${l}`);
+  for (const e of index) assert.ok(resolves(e.u), e.u);
+});
+
+test('the header search is a link to the docs search without script, and the site map has no search of its own', () => {
+  for (const page of pages.filter((p) => !p.endsWith('404.html'))) {
+    const html = read(page);
+    assert.match(html, /<a class="top__search" href="\/docs\/#doc-q"[^>]*data-pal-open/, page);
+    assert.match(html, /<dialog class="pal"[^>]*data-pal/, page);
+    assert.ok(html.includes('/assets/palette.js'), page);
+    assert.ok(!html.includes('/assets/search.js'), page);
+  }
+  assert.ok(existsSync(join(dist, 'assets/palette.js')));
+  const plan = read(join(dist, 'plan-du-site/index.html'));
+  assert.ok(!plan.includes('data-search'));
+  assert.match(plan, /<h1>Plan du site<\/h1>/);
+  assert.ok(read(join(dist, 'docs/index.html')).includes('data-search-results'));
 });
