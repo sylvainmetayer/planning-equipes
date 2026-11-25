@@ -41,7 +41,7 @@ inattendu recevoir le code. Le client est confidentiel, avec PKCE.
 Le compte est lié au couple **émetteur + sujet** : si l'URL de l'émetteur
 change (migration du fournisseur, nouveau domaine), plus aucun sujet ne
 correspond et personne ne peut se connecter, administrateurs compris. Procédure :
-rouvrez le secours (`ADMIN_LOCAL_SECOURS=true`, voir `exploitation.md`), puis
+rouvrez le secours (`ADMIN_LOCAL_SECOURS=true`, voir [`securite.md`](securite.md#le-compte-de-secours--ne-jamais-senfermer-dehors)), puis
 déliez les comptes en base pour qu'ils se relient à leur prochaine connexion
 (adresse vérifiée) :
 
@@ -66,12 +66,10 @@ fournisseur, puis refermez le secours.
 ## Le compte de secours
 
 Le compte `admin` de la configuration et son mot de passe (`ADMIN_PASSWORD`) sont
-la porte de dépannage, **fermée par défaut** derrière un fournisseur. Fermée, la
-connexion par mot de passe répond `409` et une session ouverte avant la
-fermeture perd son rôle. La procédure d'ouverture est dans
-[`exploitation.md`](exploitation.md), § « Le compte de secours » ; chaque ouverture et chaque connexion par ce
-compte sont écrites dans le journal des connexions (écran Historique, onglet
-Connexions).
+la porte de dépannage, **fermée par défaut** derrière un fournisseur
+(`ADMIN_LOCAL_SECOURS` l'ouvre). La menace, la procédure de préparation et
+celle du jour où le fournisseur ne répond plus sont dans
+[`securite.md`](securite.md#le-compte-de-secours--ne-jamais-senfermer-dehors).
 
 ## L'écran des comptes
 

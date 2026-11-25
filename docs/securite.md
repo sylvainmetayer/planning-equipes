@@ -491,12 +491,8 @@ Cinq portes, de la plus forte à la plus faible :
 3. **Le compte `admin` de la configuration**, un mot de passe partagé sans
    second facteur et sans nom dans le journal des actions (l'acteur y est `admin`).
    Sans fournisseur, c'est la porte ordinaire. Derrière un fournisseur, il est le
-   **secours**, fermé par défaut : `409` sur `/j_security_check` (y compris sous
-   un préfixe, que Quarkus accepte), session préexistante dépouillée de son rôle.
-   `ADMIN_LOCAL_SECOURS=true` le rouvre ; l'ouverture au démarrage et chaque
-   connexion par lui sont dans le journal des connexions admin, et l'application
-   journalise un avertissement tant qu'il est ouvert. `ADMIN_PASSWORD` reste
-   contrôlé même fermé (valeur d'exemple refusée au démarrage).
+   **secours**, fermé par défaut : voir
+   [Le compte de secours](#le-compte-de-secours--ne-jamais-senfermer-dehors).
 4. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir `docs/api.md`) : **déprécié,
    retiré en 4.0**. Il fonctionne encore, un avertissement le rappelle à chaque
    démarrage ; il reste indépendant du secours (le secret partagé est son
@@ -511,6 +507,45 @@ le schéma, `QUARKUS_OIDC_AUTHENTICATION_COOKIE_FORCE_SECURE=true`
 (`quarkus.oidc.authentication.cookie-force-secure`) pour que le cookie ne parte
 jamais en clair. Les tentatives de mot de passe sur le secours fermé sont
 journalisées comme des échecs (adresse seulement), sans compter dans le verrou.
+
+### Le compte de secours : ne jamais s'enfermer dehors
+
+**La menace.** Le compte `admin` est un mot de passe partagé, sans second
+facteur ni nom dans le journal. Derrière un fournisseur, le laisser ouvert
+annulerait ce que le fournisseur apporte ; le fermer expose à l'inverse au
+verrouillage de tous les administrateurs le jour où le fournisseur tombe, ou où
+son URL change (le compte est lié au couple émetteur + sujet,
+[`oidc.md`](oidc.md#changer-lurl-du-fournisseur)).
+
+**Ce que « fermé » veut dire.** `409` sur `/j_security_check` (y compris sous
+un préfixe, que Quarkus accepte) et session préexistante dépouillée de son rôle.
+`ADMIN_LOCAL_SECOURS=true` le rouvre ; l'ouverture au démarrage
+(`Compte de secours ouvert au démarrage`) et chaque connexion par lui
+(`Connexion par le compte de secours`) sont dans le journal des connexions
+admin (Historique, onglet Connexions), et l'application journalise un
+avertissement tant qu'il est ouvert. `ADMIN_PASSWORD` reste contrôlé même
+fermé (valeur d'exemple refusée au démarrage).
+
+**Avant de brancher le fournisseur** (ou avec le secours ouvert) :
+
+1. Connectez-vous en `admin`, créez votre compte (votre adresse) dans le
+   référentiel des comptes et accordez-lui le droit `ADMIN`. Au démarrage
+   suivant, l'application journalise un avertissement si le secours est fermé
+   et qu'aucun administrateur actif n'existe.
+2. Connectez-vous **par le fournisseur** avec ce compte : c'est cette première
+   connexion qui le lie à votre identité chez lui. Constatez que
+   l'administration s'ouvre.
+3. Laissez `ADMIN_LOCAL_SECOURS` absent (ou `false`).
+
+**Le jour où le fournisseur ne répond plus, ou où l'accès administrateur est
+perdu** : positionnez `ADMIN_LOCAL_SECOURS=true`, redémarrez, connectez-vous en
+`admin` avec `ADMIN_PASSWORD`, corrigez (réactivez le compte, rendez-lui son
+droit), puis **retirez la variable et redémarrez**, et relisez le journal des
+connexions après l'incident. Si c'est l'URL du fournisseur qui a changé, déliez
+aussi les comptes ([`oidc.md`](oidc.md#changer-lurl-du-fournisseur)). Sans
+accès à l'environnement de déploiement, la seule issue est la base
+(`desactive_le` ou une ligne `habilitation`) : tenez `ADMIN_PASSWORD` et ce
+paragraphe à portée de l'opérateur.
 
 ## Le responsable de stand : un droit de lecture, pas une porte de plus
 
