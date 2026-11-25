@@ -41,6 +41,7 @@ content:
           - { name: equipe, label: Équipe, type: string, required: true }
           - { name: calcul, label: Le calcul, type: string, required: true }
           - { name: faq, label: Questions, type: string, required: true }
+          - { name: docs, label: Documentation (« Doc »), type: string, required: true }
           - { name: contact, label: Bouton de contact, type: string, required: true }
           - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
           - { name: langueLabel, label: Lien vers l'autre langue (lecteurs d'écran), type: string, required: true }
@@ -110,6 +111,7 @@ content:
               - { name: equipe, label: Équipe, type: string, required: true }
               - { name: calcul, label: Le calcul, type: string, required: true }
               - { name: faq, label: Questions, type: string, required: true }
+              - { name: docs, label: Documentation (« Doc »), type: string, required: true }
               - { name: contact, label: Bouton de contact, type: string, required: true }
               - { name: langue, label: Lien vers l'autre langue, type: string, required: true }
               - { name: langueLabel, label: Lien vers l'autre langue (lecteurs d'écran), type: string, required: true }
@@ -799,7 +801,7 @@ content:
         - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, plan), type: string, list: true }
 
   - name: docs
-    label: Documentation technique (les pages elles-mêmes sont les .md de docs/, hors du CMS)
+    label: Documentation (les pages elles-mêmes sont les .md de docs/, hors du CMS)
     type: file
     path: site/src/_data/pages/docs.json
     format: json

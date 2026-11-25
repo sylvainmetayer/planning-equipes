@@ -6,6 +6,7 @@
     "equipe": "Équipe",
     "calcul": "Le calcul",
     "faq": "Questions",
+    "docs": "Doc",
     "contact": "Parlons-en",
     "langue": "English",
     "langueLabel": "Read this page in English"
@@ -98,7 +99,7 @@
     "liens": "Informations sur le site",
     "mentions": "Mentions légales et confidentialité",
     "plan": "Plan du site et recherche",
-    "docs": "Documentation technique",
+    "docs": "Documentation",
     "nouveautes": "Nouveautés",
     "probleme": "Signaler un problème",
     "ecrire": "Nous écrire"
@@ -129,6 +130,7 @@
       "equipe": "Team",
       "calcul": "The solver",
       "faq": "Questions",
+      "docs": "Docs (French)",
       "contact": "Let's talk",
       "langue": "Français",
       "langueLabel": "Lire cette page en français"
@@ -221,7 +223,7 @@
       "liens": "About this site",
       "mentions": "Legal notice and privacy",
       "plan": "Site map and search",
-      "docs": "Technical documentation (French only)",
+      "docs": "Documentation (French only)",
       "nouveautes": "Release notes",
       "probleme": "Report a problem",
       "ecrire": "Write to us"
