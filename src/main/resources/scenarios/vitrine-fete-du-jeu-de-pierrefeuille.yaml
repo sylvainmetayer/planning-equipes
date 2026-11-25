@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Décor des captures et des vidéos de la page vitrine (dossier site/) : la
 # « Fête du jeu de Pierrefeuille », commune inventée. C'est le barreau 16 de
 # l'échelle (deux semaines, un tiers de mineurs, un jour férié, des nocturnes),

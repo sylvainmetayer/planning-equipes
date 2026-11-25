@@ -70,6 +70,7 @@ export class ScenarioImportService {
     }
     const result = await this.lancerImport(source);
     await this.rechargerApresImport();
+    this.signalerAvertissements(result);
     await this.proposerBascule(result);
     return { status: 'imported', result };
   }
@@ -112,6 +113,19 @@ export class ScenarioImportService {
       this.signalerFichierInvalide(error);
       throw error;
     }
+  }
+
+  /** What the conversion of an older file format dropped: said, never silent. */
+  private signalerAvertissements(result: ImportScenarioResult | null): void {
+    const avertissements = result?.avertissements ?? [];
+    if (avertissements.length === 0) {
+      return;
+    }
+    this.notifications.notify({
+      title: $localize`:@@dataSetup.importScenarioWarnings:Import terminé, avec des éléments ignorés`,
+      message: avertissements.join('\n'),
+      variant: 'warning',
+    });
   }
 
   private signalerFichierInvalide(error: unknown): void {

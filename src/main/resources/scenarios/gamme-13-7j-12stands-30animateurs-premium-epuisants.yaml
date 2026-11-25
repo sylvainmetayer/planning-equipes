@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 13 : stands premium et stands épuisants, un dosage qui les arbitre.
 # Quatre stands premium (continuité d'équipe, pas de débutant), trois stands
 # épuisants (pas d'enchaînement de deux), cinq stands ordinaires. Seize

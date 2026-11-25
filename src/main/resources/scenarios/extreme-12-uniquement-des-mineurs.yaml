@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Cas dégénéré 12 : une équipe faite uniquement de mineurs de 17 ans.
 # Trois stands de deux places, douze mineurs, aucun majeur : un mineur n'est
 # jamais seul sur un stand sans un majeur à ses côtés, et il n'y en a aucun.

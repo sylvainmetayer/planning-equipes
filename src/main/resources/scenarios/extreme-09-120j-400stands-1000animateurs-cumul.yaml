@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Scénario extrême 9 : tous les axes à la fois.
 # Cent vingt jours, quatre cents stands, mille animateurs, trois journées types,
 # trente emplacements, des stands permanents, de saison (PLAGE) et du week-end,

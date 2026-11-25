@@ -32,6 +32,25 @@ class ScenarioBinderTest {
     }
 
     /**
+     * The conversion chain loses nothing on the shipped corpus: each file read
+     * as the v1 document it used to be (no {@code schemaVersion}) binds to the
+     * very same scenario as its v2 form, with no warning.
+     */
+    @Test
+    void everyBundledScenarioReadsTheSameAsV1AndAsV2() throws IOException {
+        for (Path scenario : ScenariosLivres.all()) {
+            String v2 = "\n" + Files.readString(scenario);
+            assertThat(v2).as(scenario.getFileName() + " : écrit en v2").contains("\nschemaVersion: 2\n");
+            String v1 = v2.replace("\nschemaVersion: 2\n", "\n");
+
+            ScenarioBinder.Bound lu = ScenarioBinder.bindWithWarnings(v1);
+
+            assertThat(lu.scenario()).as(scenario.getFileName().toString()).isEqualTo(ScenarioBinder.bind(v2));
+            assertThat(lu.warnings()).as(scenario.getFileName().toString()).isEmpty();
+        }
+    }
+
+    /**
      * Stands and animateurs are asserted on the hand-written fixtures only: the
      * extreme cases shipped alongside them are degenerate on purpose — one has
      * no animateur at all, another no créneau — and that is what they test.
@@ -291,15 +310,21 @@ class ScenarioBinderTest {
     }
 
     @Test
-    void schemaVersionIsAbsentOrOne() {
-        assertThat(ScenarioBinder.bind(MINIMAL).schemaVersion()).isNull();
+    void aV1DocumentIsConvertedToTheCurrentVersion() {
+        // Absent means 1; whatever the file declares, the bound scenario is the current one.
+        assertThat(ScenarioBinder.bind(MINIMAL).schemaVersion()).isEqualTo(ScenarioBinder.SCHEMA_VERSION);
         assertThat(ScenarioBinder.bind("schemaVersion: 1\n" + MINIMAL).schemaVersion())
-                .isEqualTo(1);
+                .isEqualTo(2);
+        assertThat(ScenarioBinder.bind("schemaVersion: 2\n" + MINIMAL).schemaVersion())
+                .isEqualTo(2);
+        assertThat(ScenarioBinder.bindWithWarnings("schemaVersion: 1\n" + MINIMAL)
+                        .warnings())
+                .isEmpty();
     }
 
     @Test
     void aNewerSchemaVersionIsRefusedWithAClearMessage() {
-        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 2\nclefDuFutur: 1\n" + MINIMAL))
+        assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: 3\nclefDuFutur: 1\n" + MINIMAL))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("plus récent")
                 .hasMessageNotContaining("Champ inconnu");
@@ -313,12 +338,13 @@ class ScenarioBinderTest {
     }
 
     @Test
-    void anythingButTheIntegerOneIsRefused() {
-        for (String value : new String[] {"\"2\"", "'99'", "1.9", "1.0", "0", "-5", "abc", "true"}) {
+    void anythingButAnIntegerUpToTheCurrentVersionIsRefused() {
+        for (String value :
+                new String[] {"\"2\"", "'99'", "1.9", "1.0", "0", "-5", "-18446744073709551615", "abc", "true"}) {
             assertThatThrownBy(() -> ScenarioBinder.bind("schemaVersion: " + value + "\n" + MINIMAL))
                     .as(value)
                     .isInstanceOf(ScenarioFormatException.class)
-                    .hasMessageContaining("« schemaVersion » doit valoir 1");
+                    .hasMessageContaining("« schemaVersion » doit être un entier entre 1 et 2");
         }
     }
 }

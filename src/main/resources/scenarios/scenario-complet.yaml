@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Chaque jour porte 3 créneaux (MATIN/APREM/SOIREE) espacés d'au moins la pause
 # légale — un trou plus court compterait comme travaillé et allongerait la
 # séquence — et avec au moins 11 h entre la SOIREE d'un jour et le MATIN du

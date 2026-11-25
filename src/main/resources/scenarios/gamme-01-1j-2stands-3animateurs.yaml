@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 1 de la gamme : le plus petit problème qui ait un sens.
 # Un jour, deux vacations (matin, après-midi), deux stands d'une place, trois
 # animateurs. Aucune section optionnelle : tout ce que le fichier ne dit pas

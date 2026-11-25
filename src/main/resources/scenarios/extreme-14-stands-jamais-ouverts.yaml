@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Cas dégénéré 14 : des stands qui n'ouvrent jamais.
 # Trois stands dont le seul horaire est un jour hors de l'édition : ils sont
 # fermés sur tous les créneaux, le problème n'a aucun siège, et le solve doit le

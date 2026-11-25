@@ -1804,6 +1804,7 @@
   "debug.testException.back": "Backend exception",
   "dataSetup.importScenarioFile": "Import a file",
   "dataSetup.importScenarioFileInvalid": "Invalid scenario file",
+  "dataSetup.importScenarioWarnings": "Import finished, with some items ignored",
   "dataSetup.importingScenarioFile": "Importing {$fileName}...",
   "dataSetup.scenarioFileImported": "Scenario {$fileName} imported: the reference data is populated.",
   "solver.volumetry.postes": "Seats to fill",
