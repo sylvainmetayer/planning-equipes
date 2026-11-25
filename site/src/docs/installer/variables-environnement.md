@@ -27,9 +27,9 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 L'application, elle, refuse aussi de démarrer en production, quel que soit le
 compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 
-- une des cinq mentions légales exigées est vide (`LEGAL_EDITEUR`,
-  `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_BASE_LEGALE`,
-  `LEGAL_CONSERVATION`), sauf `LEGAL_DEMO_INSTANCE=true` ;
+- une des cinq clés exigées de `LEGAL_MENTIONS` est vide (`editeur`,
+  `hebergeur`, `contact`, `base-legale`, `conservation`), sauf
+  `LEGAL_DEMO_INSTANCE=true` ;
 - `ADMIN_PASSWORD` ou `DB_PASSWORD` vaut la valeur d'exemple ou est vide ;
 - aucune porte n'ouvre l'administration (`OIDC_ENABLED=false` et
   `ADMIN_LOCAL_SECOURS=false`), ou `OIDC_CLIENT_SECRET` fait moins de 32
@@ -191,41 +191,31 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 
 ## Marque et documents
 
+Les images et les couleurs se règlent par deux variables **groupées**, de la forme `clé=valeur;clé=valeur` (un point-virgule littéral dans une valeur s'écrit `\;`). Une clé inconnue est signalée au démarrage et ignorée.
+
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `BRANDING_PRODUCT_NAME` | `Planning Équipes` | Nom du produit : onglet, titres, sujets des mails, PDF |
 | `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel l'instance est déployée, imprimé au pied des PDF et des mails |
-| `BRANDING_LOGO_URL` | *(vide)* | Logo affiché dans l'application (URL, ou fichier servi à la racine) |
-| `BRANDING_ACCENT_COLOR` | *(vide)* | Couleur d'accent de l'interface, toute couleur CSS |
-| `BRANDING_MASCOT_URL` | *(vide)* | Mascotte en grand, montrée par le code Konami |
-| `BRANDING_MASCOT_ICON_URL` | *(vide)* | La même mascotte en petit |
 | `BRANDING_SUPPORT_EMAIL` | `planning@sylvain.dev` | Adresse de support nommée par la page Aide ; vide : le paragraphe disparaît |
-| `BRANDING_PDF_LOGO` | *(vide)* | Logo de l'en-tête des PDF et des mails HTML (embarqué, jamais chargé à distance) |
-| `BRANDING_PDF_STRIP` | *(vide)* | Bandeau décoratif de la première page du planning individuel |
-| `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF |
-| `BRANDING_PDF_MUTED` | `#6b7280` | Texte secondaire des PDF |
-| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF et des mails HTML |
-| `BRANDING_PDF_HIGHLIGHT` | `#e4eaf1` | Fond des tuiles de statistiques et des en-têtes de tableau |
-| `BRANDING_PDF_PILL` | `#f1f4f8` | Fond des pastilles d'horaire et filets de tableau |
+| `BRANDING_IMAGES` | *(vide)* | Les images, par clés : `logo` (logo affiché dans l'application : URL, ou fichier servi à la racine), `mascot` (mascotte en grand, montrée par le code Konami), `mascot-icon` (la même en petit), `pdf-logo` (logo de l'en-tête des PDF et des mails HTML, embarqué, jamais chargé à distance), `pdf-strip` (bandeau décoratif de la première page du planning individuel) |
+| `BRANDING_COLORS` | *(vide)* | Les couleurs, par clés : `accent` (accent de l'interface, toute couleur CSS), `pdf-headline` (encre principale des PDF, `#1f2933`), `pdf-muted` (texte secondaire, `#6b7280`), `pdf-accent` (accent des PDF et des mails HTML, `#3a6ea5`), `pdf-highlight` (fond des tuiles de statistiques et des en-têtes de tableau, `#e4eaf1`), `pdf-pill` (fond des pastilles d'horaire et filets de tableau, `#f1f4f8`) |
+
+Exemple : `BRANDING_IMAGES=logo=logo.png;pdf-logo=classpath:/branding/logo.png` et `BRANDING_COLORS=accent=#8b1e3f;pdf-accent=#8b1e3f`.
+
+Les onze anciennes variables (`BRANDING_LOGO_URL`, `BRANDING_ACCENT_COLOR`, `BRANDING_MASCOT_URL`, `BRANDING_MASCOT_ICON_URL`, `BRANDING_PDF_LOGO`, `BRANDING_PDF_STRIP`, `BRANDING_PDF_HEADLINE`, `BRANDING_PDF_MUTED`, `BRANDING_PDF_ACCENT`, `BRANDING_PDF_HIGHLIGHT`, `BRANDING_PDF_PILL`) sont **encore lues** pendant toute la 4.x, avec un avertissement au démarrage, et retirées en 5.0 ; quand les deux sont posées, la clé groupée l'emporte. Voir [Passer de la 3.x à la 4.0](passer-a-la-4-0.md).
 
 ## Mentions légales
 
-Les cinq marquées **exigée** refusent le démarrage en production quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true`. Elles s'affichent sur la page publique `/mentions-legales`.
+Cinq clés de `LEGAL_MENTIONS`, marquées **exigée**, refusent le démarrage en production quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true`. Elles s'affichent sur la page publique `/mentions-legales`. Les deux variables groupées ont la forme `clé=valeur;clé=valeur` (un point-virgule littéral dans une valeur s'écrit `\;`).
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `LEGAL_DEMO_INSTANCE` | `false` | `true` : instance qui n'est pas en service, dispensée des mentions exigées |
-| `LEGAL_EDITEUR` | *(vide)* | **Exigée.** Éditeur (nom, forme juridique, adresse, immatriculation) |
-| `LEGAL_DIRECTEUR_PUBLICATION` | *(vide)* | Directeur de la publication |
-| `LEGAL_HEBERGEUR` | *(vide)* | **Exigée.** Hébergeur (nom et adresse) |
-| `LEGAL_CONTACT` | *(vide)* | **Exigée.** Adresse de contact, y compris pour exercer ses droits |
-| `LEGAL_RESPONSABLE_TRAITEMENT` | *(vide)* | Responsable de traitement, quand il diffère de l'éditeur ; vide : l'éditeur |
-| `LEGAL_BASE_LEGALE` | *(vide)* | **Exigée.** Base légale du traitement des données personnelles |
-| `LEGAL_CONSERVATION` | *(vide)* | **Exigée.** Durée de conservation des données personnelles |
-| `LEGAL_ACCESSIBILITE_ETAT` | *(vide)* | Déclaration d'accessibilité : conformité `totale`, `partielle` ou `non` |
-| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | *(vide)* | Date de l'audit d'accessibilité |
-| `LEGAL_ACCESSIBILITE_CONTENUS` | *(vide)* | Contenus non accessibles |
-| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | *(vide)* | Voie de signalement ; vide : l'adresse de contact des mentions |
+| `LEGAL_MENTIONS` | *(vide)* | Les mentions, par clés : `editeur` (**exigée** : nom, forme juridique, adresse, immatriculation), `hebergeur` (**exigée** : nom et adresse), `contact` (**exigée** : adresse de contact, y compris pour exercer ses droits), `base-legale` (**exigée** : base légale du traitement des données personnelles), `conservation` (**exigée** : durée de conservation des données personnelles), `responsable-traitement` (quand il diffère de l'éditeur ; vide : l'éditeur), `directeur-publication` |
+| `LEGAL_ACCESSIBILITE` | *(vide)* | La déclaration d'accessibilité, par clés : `etat` (`totale`, `partielle` ou `non`), `date-audit`, `contenus` (contenus non accessibles), `signalement` (voie de signalement ; vide : l'adresse de contact des mentions) |
+
+Les onze anciennes variables (`LEGAL_EDITEUR`, `LEGAL_DIRECTEUR_PUBLICATION`, `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_BASE_LEGALE`, `LEGAL_CONSERVATION`, `LEGAL_ACCESSIBILITE_ETAT`, `LEGAL_ACCESSIBILITE_DATE_AUDIT`, `LEGAL_ACCESSIBILITE_CONTENUS`, `LEGAL_ACCESSIBILITE_SIGNALEMENT`) sont **encore lues** pendant toute la 4.x, avec un avertissement au démarrage, et retirées en 5.0.
 
 ## Marque blanche
 
@@ -243,13 +233,13 @@ Deux limites à connaître :
 
 - la **palette d'Angular Material** (boutons, barres, champs) est compilée par
   `mat.theme()` dans `src/main/webui/src/material-theme.scss` :
-  `BRANDING_ACCENT_COLOR` ne pilote que `--app-accent`, lu par les feuilles de
+  la clé `accent` de `BRANDING_COLORS` ne pilote que `--app-accent`, lu par les feuilles de
   style propres à l'application. Recolorer les composants Material eux-mêmes
   demande une recompilation du frontend ;
 - les **images** ne sont pas téléversables depuis l'application. Un logo se
-  fournit soit par une URL (`BRANDING_LOGO_URL` ; la CSP par défaut accepte
+  fournit soit par une URL (clé `logo` de `BRANDING_IMAGES` ; la CSP par défaut accepte
   `https:` et `data:`), soit par un fichier monté à côté du conteneur
-  (`BRANDING_PDF_LOGO`), soit par une image embarquée dans le jar
+  (clé `pdf-logo`), soit par une image embarquée dans le jar
   (`classpath:/branding/…`). **Aucun visuel n'est livré avec le dépôt** : les
   images d'un déploiement appartiennent à son client, elles se montent à côté
   du conteneur ou se servent par URL.

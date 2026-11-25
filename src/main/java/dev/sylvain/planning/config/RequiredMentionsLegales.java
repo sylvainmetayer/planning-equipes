@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * <p>The asymmetry this class removes: {@link DefaultSecrets} already refuses
  * the boot on a password left at its example value, while the seven
- * {@code LEGAL_*} variables — listed as a pre-opening checkbox in
+ * legal-notice settings (the keys of {@code LEGAL_MENTIONS}) — listed as a pre-opening checkbox in
  * {@code site/src/docs/installer/securite.md} — were silently optional. A checklist nobody ticks
  * protects nothing, and this is the one item on it a boot check can hold.</p>
  *
@@ -87,18 +87,18 @@ public class RequiredMentionsLegales {
             return;
         }
         Map<String, String> required = new LinkedHashMap<>();
-        required.put("LEGAL_EDITEUR", editeur);
-        required.put("LEGAL_HEBERGEUR", hebergeur);
-        required.put("LEGAL_CONTACT", contact);
-        required.put("LEGAL_BASE_LEGALE", baseLegale);
-        required.put("LEGAL_CONSERVATION", conservation);
+        required.put("editeur", editeur);
+        required.put("hebergeur", hebergeur);
+        required.put("contact", contact);
+        required.put("base-legale", baseLegale);
+        required.put("conservation", conservation);
 
         List<String> missing = new ArrayList<>();
-        required.forEach((variable, written) -> {
+        required.forEach((key, written) -> {
             // Blank counts as missing: the page renders the very same "not
             // provided" case for a space as for an unset variable.
             if (written == null || written.isBlank()) {
-                missing.add(variable);
+                missing.add(key);
             }
         });
         if (missing.isEmpty()) {
@@ -107,7 +107,7 @@ public class RequiredMentionsLegales {
         // Every one of them at once: an operator who fixes one variable per
         // boot pays five restarts to learn what a single message can say.
         throw new IllegalStateException("La page /mentions-legales est publique et serait vide : "
-                + String.join(", ", missing) + " ne sont pas renseignées. "
+                + "LEGAL_MENTIONS ne renseigne pas " + String.join(", ", missing) + ". "
                 + "La LCEN exige un éditeur et un hébergeur identifiés, le RGPD une base légale, "
                 + "une durée de conservation et une adresse pour exercer ses droits. "
                 + "Renseignez-les, ou posez LEGAL_DEMO_INSTANCE=true s'il ne s'agit pas d'une instance en service.");

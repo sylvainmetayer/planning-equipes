@@ -117,8 +117,8 @@ ne contient **aucun jeton** : ni celui de l'espace, que les plannings
 individuels de l'archive n'impriment pas (ni lien ni QR code), ni celui de
 l'abonnement au calendrier, ce qu'un test vérifie ; et son manifeste
 `LISEZMOI.txt` rappelle ce qu'elle contient, le responsable de traitement et
-la durée de conservation déclarés (`LEGAL_RESPONSABLE_TRAITEMENT`,
-`LEGAL_CONSERVATION`). C'est le geste naturel avant la purge annuelle d'une
+la durée de conservation déclarés (clés `responsable-traitement` et
+`conservation` de `LEGAL_MENTIONS`). C'est le geste naturel avant la purge annuelle d'une
 édition terminée ; le registre le mentionne comme une **sortie de données**,
 journalisée comme les autres.
 

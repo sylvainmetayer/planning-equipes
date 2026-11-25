@@ -13,7 +13,7 @@
    comme tous les `--mat-sys-*`, cet accent par défaut est déjà une paire
    `light-dark()`.
 
-   Quand un déploiement renseigne BRANDING_ACCENT_COLOR, `core/branding.ts`
+   Quand un déploiement renseigne BRANDING_COLORS (accent), `core/branding.ts`
    écrase cette variable par une paire `light-dark()` calculée : la couleur
    configurée telle quelle en clair, une jumelle éclaircie en OKLCH en sombre.
    Sans ça, une encre de marque choisie sur fond blanc — donc foncée — servait

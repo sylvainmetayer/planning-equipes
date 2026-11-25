@@ -50,7 +50,7 @@ Les clés de `JournalNotificationsRepository` encodent la suite :
 Chaque mail est une paire de gabarits Qute sous `src/main/resources/templates/mail/` : `<nom>.txt` et `<nom>.html`, ce dernier bâti sur `layout.html` (logo, palette, nom du déploiement). Le Java nomme le gabarit, décide du sujet et passe ses valeurs ; ajouter un mail, c'est ajouter les deux fichiers. `MailTemplates` rend les deux parties et assemble le `Mail` :
 
 - la partie texte est toujours envoyée, le HTML est une alternative ;
-- le logo voyage en pièce jointe `cid:` en ligne, jamais en image distante, que les clients bloquent et que les filtres antispam pénalisent. Il vient de `BRANDING_PDF_LOGO` (des octets que l'application détient), pas de `BRANDING_LOGO_URL` (une URL que seul un navigateur sait résoudre) ;
+- le logo voyage en pièce jointe `cid:` en ligne, jamais en image distante, que les clients bloquent et que les filtres antispam pénalisent. Il vient de la clé `pdf-logo` de `BRANDING_IMAGES` (des octets que l'application détient), pas de la clé `logo` (une URL que seul un navigateur sait résoudre) ;
 - le `switch` exhaustif de `NotificationWriter` garantit qu'une notification nouvelle a son gabarit.
 
 Sous Quarkus, c'est l'`Engine` validé au démarrage ; dans les tests unitaires, `MailTemplates.standalone()` construit le même moteur depuis le classpath, avec les mêmes réglages. Les assertions de libellé tournent ainsi sans conteneur.

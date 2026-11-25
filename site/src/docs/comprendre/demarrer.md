@@ -27,17 +27,18 @@ Le JDK 25 restreint l'accès natif (JEP 472) et signale `sun.misc.Unsafe` (JEP 4
 
 ## Variables d'environnement locales
 
-`mise.toml` porte les variables que tout le monde partage (`MAIL_ADMIN`). Celles qui dépendent de la machine vont dans `mise.local.toml`, à la racine : mise le charge par-dessus et `.gitignore` l'exclut, c'est donc le seul endroit où écrire une valeur qui ne doit pas atteindre un dépôt public. Exemple pour voir la page `/mentions-legales` remplie (les sept variables `LEGAL_*` sont décrites dans [les variables d'environnement](../installer/variables-environnement.md) et dans [les mentions légales](../installer/mentions-legales.md)) :
+`mise.toml` porte les variables que tout le monde partage (`MAIL_ADMIN`). Celles qui dépendent de la machine vont dans `mise.local.toml`, à la racine : mise le charge par-dessus et `.gitignore` l'exclut, c'est donc le seul endroit où écrire une valeur qui ne doit pas atteindre un dépôt public. Exemple pour voir la page `/mentions-legales` remplie (les mentions se posent par `LEGAL_MENTIONS`, décrite dans [les variables d'environnement](../installer/variables-environnement.md) et dans [les mentions légales](../installer/mentions-legales.md)) :
 
 ```toml
 [env]
-LEGAL_EDITEUR = "Association Les Bénévoles du Jeu, 12 rue des Pions, 79000 Niort, RNA W791234567"
-LEGAL_DIRECTEUR_PUBLICATION = "Camille Exemple, présidente"
-LEGAL_HEBERGEUR = "Hébergeur Fictif SAS, 1 avenue des Serveurs, 75000 Paris"
-LEGAL_CONTACT = "planning@exemple.invalid"
-LEGAL_RESPONSABLE_TRAITEMENT = "Association Les Bénévoles du Jeu, représentée par sa présidente"
-LEGAL_BASE_LEGALE = "Exécution du contrat de bénévolat et intérêt légitime de l'organisateur (art. 6.1.b et 6.1.f RGPD)"
-LEGAL_CONSERVATION = "Jusqu'au 31 décembre de l'année suivant l'édition, puis suppression"
+LEGAL_MENTIONS = """\
+editeur=Association Les Bénévoles du Jeu, 12 rue des Pions, 79000 Niort, RNA W791234567;\
+directeur-publication=Camille Exemple, présidente;\
+hebergeur=Hébergeur Fictif SAS, 1 avenue des Serveurs, 75000 Paris;\
+contact=planning@exemple.invalid;\
+responsable-traitement=Association Les Bénévoles du Jeu, représentée par sa présidente;\
+base-legale=Exécution du contrat de bénévolat et intérêt légitime de l'organisateur (art. 6.1.b et 6.1.f RGPD);\
+conservation=Jusqu'au 31 décembre de l'année suivant l'édition, puis suppression"""
 ```
 
 Un `quarkus:dev` déjà lancé ne relit pas l'environnement : relancez-le. Le reste des variables est dans [l'exploitation](../installer/exploitation.md).
@@ -122,7 +123,7 @@ Ces conventions valent pour tous les écrans : ceux de l'administration et les q
 - Une infobulle n'est pas un nom. `MatIcon` impose `role="img"`, un rôle qui ne prend pas son nom de son contenu : une icône à seule infobulle est annoncée comme un graphique anonyme. Le `matTooltip` est la description, l'`aria-label` le nom, et les deux se posent ensemble. `npm run icon-labels-check` refuse une icône portant `aria-label`, `aria-labelledby` ou `matTooltip` sans `aria-hidden="false"` statique, et une icône ainsi exposée sans `aria-label` ni `aria-labelledby`.
 - La couleur n'est jamais seule : doublez-la d'un texte, d'une icône ou d'une initiale. Une infobulle n'existe pas au tactile, ni au clavier sur un élément qui ne prend pas le focus (`<span>`, `<td>`) : son texte s'y double d'un `<span class="visually-hidden">`, parce qu'un `aria-label` sur un élément sans rôle n'est pas lu de façon fiable.
 - Toute couleur écrite par le dépôt est mesurée avant d'être commise, hors jetons `--mat-sys-*` que `mat.theme()` fournit conformes. Le seuil est 4,5:1 pour du texte et 3:1 pour un composant ou un anneau de focus, mesuré sur les deux surfaces, claire et sombre, puisque le thème compile les deux. Le mesureur est `core/testing/contrast.ts` : un chiffre qu'un test peut rejouer vaut mieux qu'un chiffre relevé une fois. Une opacité sur du texte est une mesure à refaire, pas un détail de style (une `opacity: 0.5` sur une encre déjà atténuée a déjà fait tomber une cellule de grille à 2,2:1).
-- L'accent de marque est borné dans les deux schémas. `BRANDING_ACCENT_COLOR` est choisi par un exploitant qui regarde souvent la surface claire. `core/branding.ts` plafonne donc sa clarté OKLCH en clair et la plancher en sombre, et `branding.spec.ts` le mesure sur des accents pastel volontairement mauvais. Relever une des bornes sans refaire la mesure rend l'anneau de focus des grilles invisible sous 3:1.
+- L'accent de marque est borné dans les deux schémas. La clé `accent` de `BRANDING_COLORS` est choisie par un exploitant qui regarde souvent la surface claire. `core/branding.ts` plafonne donc sa clarté OKLCH en clair et la plancher en sombre, et `branding.spec.ts` le mesure sur des accents pastel volontairement mauvais. Relever une des bornes sans refaire la mesure rend l'anneau de focus des grilles invisible sous 3:1.
 
 ### Tableaux, liens, gestes
 

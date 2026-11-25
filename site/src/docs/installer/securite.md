@@ -24,7 +24,7 @@ Pour un aperçu de ce qu'on attend d'un hébergeur, avant les détails, voir [h�
 - [ ] aucune variable `REMOTE_USER_*` dans votre environnement : le mode
       en-tête de proxy est retiré en 4.0, le démarrage les signale et les
       ignore ;
-- [ ] variables `LEGAL_*` renseignées : `/mentions-legales` est public, et une
+- [ ] variable `LEGAL_MENTIONS` renseignée : `/mentions-legales` est public, et une
       page de mentions légales vide vaut absence de mentions légales. Cinq
       d'entre elles (éditeur, hébergeur, contact, base légale, conservation)
       **font échouer le démarrage**, donc cette case se coche toute seule ;

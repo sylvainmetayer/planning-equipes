@@ -72,10 +72,8 @@ services:
       # palette neutre. Voir site/src/docs/installer/variables-environnement.md § Marque blanche.
       BRANDING_PRODUCT_NAME: ${BRANDING_PRODUCT_NAME:-Planning Équipes}
       BRANDING_ORGANISATION: ${BRANDING_ORGANISATION:-}
-      BRANDING_LOGO_URL: ${BRANDING_LOGO_URL:-}
-      BRANDING_ACCENT_COLOR: ${BRANDING_ACCENT_COLOR:-}
-      BRANDING_PDF_LOGO: ${BRANDING_PDF_LOGO:-}
-      BRANDING_PDF_STRIP: ${BRANDING_PDF_STRIP:-}
+      BRANDING_IMAGES: ${BRANDING_IMAGES:-}
+      BRANDING_COLORS: ${BRANDING_COLORS:-}
       # Mentions légales (page publique /mentions-legales). Cinq d'entre elles
       # sont EXIGÉES AU DÉMARRAGE en production, et ce profil lance bien
       # l'image en production : sans la ligne ci-dessous, `docker compose
@@ -85,13 +83,8 @@ services:
       # contraire. Vides, la page affiche ce qui manque plutôt que d'inventer
       # un éditeur.
       LEGAL_DEMO_INSTANCE: ${LEGAL_DEMO_INSTANCE:-true}
-      LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}
-      LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
-      LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}
-      LEGAL_CONTACT: ${LEGAL_CONTACT:-}
-      LEGAL_RESPONSABLE_TRAITEMENT: ${LEGAL_RESPONSABLE_TRAITEMENT:-}
-      LEGAL_BASE_LEGALE: ${LEGAL_BASE_LEGALE:-}
-      LEGAL_CONSERVATION: ${LEGAL_CONSERVATION:-}
+      LEGAL_MENTIONS: ${LEGAL_MENTIONS:-}
+      LEGAL_ACCESSIBILITE: ${LEGAL_ACCESSIBILITE:-}
     # Same probe as docker-compose.prod.yml: the image carries no curl, so bash
     # writes the request on /dev/tcp. Ready = database reachable and migrations
     # up to date.

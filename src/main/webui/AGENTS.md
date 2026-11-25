@@ -44,7 +44,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `--mat-sys-*` equivalent), `--app-positive` in `styles/branding.css` (the
   "better" green of an écart or an affinity: Material 3 has no success role,
   so a page needing it reads that variable instead of writing its own pair),
-  and `--app-accent` once `BRANDING_ACCENT_COLOR`
+  and `--app-accent` once `BRANDING_COLORS (accent)`
   fills it — `core/branding.ts` writes it as a pair, the configured colour on
   light and an OKLCH-lightened twin on dark, because it is a *text* colour on
   `--mat-sys-surface` in a dozen partials. Deliberately outside the switch: the
