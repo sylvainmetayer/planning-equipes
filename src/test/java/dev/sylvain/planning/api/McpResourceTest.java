@@ -1,12 +1,16 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import dev.sylvain.planning.service.compte.SessionOpenings;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -71,12 +75,22 @@ class McpResourceTest {
                 .body("[0].nom", equalTo("demarrer_une_nouvelle_edition"));
     }
 
+    @Inject
+    SessionOpenings openings;
+
+    /** A session cookie whose login the application saw {@code ago} ago. */
+    private String sessionOpened(Duration ago) {
+        String session = "s-" + UUID.randomUUID();
+        openings.record(session, Instant.now().minus(ago));
+        return session;
+    }
+
     @Test
     @Order(2)
-    void leBonMotDePasseRevelaLaCle() {
+    void aRecentSignInRevealsTheKey() {
         given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", sessionOpened(Duration.ofSeconds(30)))
                 .contentType(ContentType.JSON)
-                .body("{\"motDePasse\":\"admin\"}")
                 .when()
                 .post("/api/mcp/cle")
                 .then()
@@ -88,56 +102,36 @@ class McpResourceTest {
 
     @Test
     @Order(3)
-    void unMauvaisMotDePasseNeRevelaRien() {
+    void anOldSignInRevealsNothingAndSaysHowToSignInAgain() {
         given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", sessionOpened(Duration.ofMinutes(11)))
                 .contentType(ContentType.JSON)
-                .body("{\"motDePasse\":\"pas-le-bon\"}")
                 .when()
                 .post("/api/mcp/cle")
                 .then()
-                .statusCode(401);
+                .statusCode(409)
+                .body("code", org.hamcrest.Matchers.startsWith("RECONNEXION_REQUISE_"))
+                .body("mode", equalTo("BREAK_GLASS"))
+                .body("$", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasKey("cle")));
     }
 
     @Test
     @Order(4)
-    void unMotDePasseAbsentEstTraiteCommeUnMauvaisMotDePasse() {
+    void noCookieAndAForgedCookieAreRefused() {
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{}")
                 .when()
                 .post("/api/mcp/cle")
                 .then()
-                .statusCode(401);
-    }
-
-    @Test
-    @Order(99)
-    void lesEssaisRepetesFinissentParBloquerLEndpoint() {
-        // The counter is global to the process: the two failures of the
-        // previous tests already count. So this loops until the lockout rather
-        // than betting on an exact number of tries, requiring everything before
-        // the 429 to be a 401.
-        int statut = 401;
-        for (int essai = 0; essai < McpResource.MAX_ESSAIS + 1 && statut == 401; essai++) {
-            statut = given().header("X-Edition-Id", "E1")
-                    .contentType(ContentType.JSON)
-                    .body("{\"motDePasse\":\"toujours-faux\"}")
-                    .when()
-                    .post("/api/mcp/cle")
-                    .then()
-                    .extract()
-                    .statusCode();
-        }
-        assertThat(statut).isEqualTo(429);
-
-        // The right password does not lift the lockout: otherwise guessing it
-        // once would be enough to cancel the whole limit.
+                .statusCode(409)
+                .body("code", org.hamcrest.Matchers.startsWith("RECONNEXION_REQUISE_"));
+        // A session the application never saw log in (renewed, forgotten, invented) is not recent.
         given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", "s-" + UUID.randomUUID())
                 .contentType(ContentType.JSON)
-                .body("{\"motDePasse\":\"admin\"}")
                 .when()
                 .post("/api/mcp/cle")
                 .then()
-                .statusCode(429);
+                .statusCode(409);
     }
 }

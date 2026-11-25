@@ -4,49 +4,43 @@ import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.config.ConfigOidc;
 import dev.sylvain.planning.mcp.McpPrompts;
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
+import dev.sylvain.planning.service.compte.RecentAuthentication;
 import dev.sylvain.planning.service.mcp.McpKeyService;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the MCP page of the interface needs and the MCP transport itself
- * cannot tell it: whether this deployment has an API cle at all, and — behind
- * a re-typed admin password — what that cle is.
+ * cannot tell it: whether this deployment has an API key at all, and — behind
+ * a recent sign-in — what that key is, or a new one.
  *
  * <p>Served under {@code /api/mcp} (see {@code quarkus.rest.path}), which is a
  * different path from the {@code /mcp} transport and therefore falls under the
  * ordinary {@code admin-api} policy: an admin session is required before any
  * of this is reachable.</p>
  *
- * <h2>Why re-ask for the password</h2>
- * <p>The session alone already proves "an admin". Revealing a long-lived
- * shared secret that grants full write access to the referentials and the
- * solver deserves more than that: it is the one action where an unattended
- * open tab is materially worse than the rest of the interface, since the cle
- * outlives the session it was copied from. Re-typing the password binds the
- * reveal to a person present at the keyboard, which is exactly the threat
- * model — not an anonymous attacker, who never gets this far.</p>
- */
-/*
- * Explicitly @ApplicationScoped, unlike the neighbouring resources: the
- * lock-out counter below is instance state, and it would silently do nothing
- * on a per-request instance. Making the scope depend on a framework default
- * would turn a rate limiter into decoration.
+ * <h2>Why a recent sign-in</h2>
+ * <p>The session alone already proves "an admin". Revealing or generating a
+ * long-lived shared secret that grants full write access deserves more than
+ * that: an unattended open tab is materially worse here than anywhere else,
+ * since the key outlives the session it was copied from. A sign-in within the
+ * last minutes binds the gesture to a person present at the keyboard — for an
+ * administrator signed in through the provider or a local account too, who
+ * have no configuration password to retype (ADR 0097). The refusal is a
+ * {@code 409} with the code {@code RECONNEXION_REQUISE_<mode>}, which the page
+ * answers by offering the way to sign in again.</p>
  */
 @ApplicationScoped
 @InstanceOnly
@@ -54,17 +48,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class McpResource {
-
-    /**
-     * Attempts allowed before the endpoint stops answering, and for how long.
-     * Modest on purpose: the caller is already an authenticated admin, so this
-     * guards against someone poking at a borrowed session rather than against
-     * a brute-force run — which the admin login itself would have to stop
-     * first.
-     */
-    static final int MAX_ESSAIS = 5;
-
-    static final Duration DUREE_BLOCAGE = Duration.ofMinutes(5);
 
     private final ConfigMcp mcp;
 
@@ -74,12 +57,9 @@ public class McpResource {
 
     private final ConfigOidc oidc;
 
-    /**
-     * The admin password, read from the very property the embedded security
-     * realm authenticates against — so this can never drift out of step with
-     * the real credential, which a second copy of {@code ADMIN_PASSWORD} would.
-     */
-    private final Optional<String> motDePasseAdmin;
+    private final RecentAuthentication recent;
+
+    private final SecurityIdentity identity;
 
     @Inject
     public McpResource(
@@ -87,16 +67,15 @@ public class McpResource {
             McpPrompts prompts,
             McpKeyService keys,
             ConfigOidc oidc,
-            @ConfigProperty(name = "quarkus.security.users.embedded.users.admin") Optional<String> motDePasseAdmin) {
+            RecentAuthentication recent,
+            SecurityIdentity identity) {
         this.mcp = mcp;
         this.prompts = prompts;
         this.keys = keys;
         this.oidc = oidc;
-        this.motDePasseAdmin = motDePasseAdmin;
+        this.recent = recent;
+        this.identity = identity;
     }
-
-    private int essaisRates;
-    private Instant blocageJusqua;
 
     /**
      * Whether a cle is configured, and under which header it travels. Never
@@ -132,11 +111,11 @@ public class McpResource {
         return prompts.catalogue();
     }
 
-    /** Exchanges the admin password for the API cle. {@code 401} on a wrong password, {@code 429} once locked out. */
+    /** The configured key, to a caller who signed in recently: {@code 409 RECONNEXION_REQUISE_<mode>} otherwise. */
     @POST
     @Path("/cle")
-    public synchronized Response reveal(DemandeRevelation demande) {
-        Response refus = checkPassword(demande == null ? null : demande.motDePasse());
+    public Response reveal(@CookieParam("planning-session") String session) {
+        Response refus = reauthenticationRefusal(session);
         if (refus != null) {
             return refus;
         }
@@ -145,7 +124,7 @@ public class McpResource {
             return Response.status(Response.Status.CONFLICT).build();
         }
         if (mcp.apiKey().isEmpty() || mcp.apiKey().get().isBlank()) {
-            // Right password, nothing to reveal: 404 rather than an empty string.
+            // Recent enough, nothing to reveal: 404 rather than an empty string.
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return Response.ok(new McpKey(
@@ -156,18 +135,19 @@ public class McpResource {
     }
 
     /**
-     * Generates a new key, shown once (ADR 0097): the previous one - the
-     * configured one the first time - keeps working for {@code recouvrementMinutes}
-     * (zero: it stops at once). Same password gate, and same lock-out, as the reveal.
+     * Generates a new key, shown once (ADR 0097): the previous one — the
+     * configured one the first time — keeps working for {@code recouvrementMinutes}
+     * (zero: it stops at once). Same recent sign-in as the reveal.
      */
     @POST
     @Path("/cle/rotation")
-    public synchronized Response rotate(DemandeRotation demande) {
-        Response refus = checkPassword(demande == null ? null : demande.motDePasse());
+    public synchronized Response rotate(DemandeRotation demande, @CookieParam("planning-session") String session) {
+        Response refus = reauthenticationRefusal(session);
         if (refus != null) {
             return refus;
         }
-        long recouvrement = demande.recouvrementMinutes() == null ? 0 : demande.recouvrementMinutes();
+        long recouvrement =
+                demande == null || demande.recouvrementMinutes() == null ? 0 : demande.recouvrementMinutes();
         McpKeyService.Rotation rotation = keys.rotate(recouvrement);
         return Response.ok(new GeneratedMcpKey(
                         rotation.key(),
@@ -177,29 +157,16 @@ public class McpResource {
                 .build();
     }
 
-    /** {@code null} when the password is the admin's; else the refusal to answer, the lock-out counted. */
-    private Response checkPassword(String motDePasse) {
-        if (blocageJusqua != null && Instant.now().isBefore(blocageJusqua)) {
-            return Response.status(429).build();
-        }
-        String attendu = motDePasseAdmin.orElse("");
-        String presente = motDePasse == null ? "" : motDePasse;
-        if (attendu.isBlank() || !constantTimeEquals(attendu, presente)) {
-            if (++essaisRates >= MAX_ESSAIS) {
-                blocageJusqua = Instant.now().plus(DUREE_BLOCAGE);
-                essaisRates = 0;
-            }
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-        essaisRates = 0;
-        blocageJusqua = null;
-        return null;
-    }
-
-    /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
-    private static boolean constantTimeEquals(String attendu, String presente) {
-        return MessageDigest.isEqual(
-                attendu.getBytes(StandardCharsets.UTF_8), presente.getBytes(StandardCharsets.UTF_8));
+    /** {@code null} when the caller signed in recently; else the {@code 409} that says how to sign in again. */
+    private Response reauthenticationRefusal(String session) {
+        return recent.reauthenticationRequired(identity, session)
+                .map(mode -> Response.status(Response.Status.CONFLICT)
+                        .entity(new ReauthenticationRequired(
+                                "RECONNEXION_REQUISE_" + mode.name(),
+                                mode.name(),
+                                "Reconnectez-vous pour cette action : la dernière connexion est trop ancienne."))
+                        .build())
+                .orElse(null);
     }
 
     /**
@@ -218,13 +185,14 @@ public class McpResource {
             boolean oauth) {}
 
     /** @param recouvrementMinutes how long the old key keeps working; absent or zero: it stops at once */
-    public record DemandeRotation(String motDePasse, Long recouvrementMinutes) {}
+    public record DemandeRotation(Long recouvrementMinutes) {}
+
+    /** The refusal of a sign-in that is too old; {@code mode} says which way back the page offers. */
+    public record ReauthenticationRequired(String code, String mode, String message) {}
 
     /** The new key, in clear, once; {@code ancienneExpireLe} is {@code null} when no key was in force. */
     public record GeneratedMcpKey(
             String cle, Instant ancienneExpireLe, String pangolinAccessTokenId, String pangolinAccessToken) {}
-
-    public record DemandeRevelation(String motDePasse) {}
 
     /**
      * @param pangolinAccessTokenId {@code null} unless {@code planning.mcp.pangolin.access-token-id} is set

@@ -3485,20 +3485,9 @@
           }
         }
       },
-      "DemandeRevelation" : {
-        "type" : "object",
-        "properties" : {
-          "motDePasse" : {
-            "type" : "string"
-          }
-        }
-      },
       "DemandeRotation" : {
         "type" : "object",
         "properties" : {
-          "motDePasse" : {
-            "type" : "string"
-          },
           "recouvrementMinutes" : {
             "type" : "integer",
             "format" : "int64"
@@ -12378,6 +12367,13 @@
     },
     "/api/auth/oidc/login" : {
       "get" : {
+        "parameters" : [ {
+          "name" : "retour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16801,16 +16797,13 @@
     },
     "/api/mcp/cle" : {
       "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/DemandeRevelation"
-              }
-            }
-          },
-          "required" : true
-        },
+        "parameters" : [ {
+          "name" : "planning-session",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16819,9 +16812,6 @@
                 "schema" : { }
               }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Reveal",
@@ -16830,6 +16820,13 @@
     },
     "/api/mcp/cle/rotation" : {
       "post" : {
+        "parameters" : [ {
+          "name" : "planning-session",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
