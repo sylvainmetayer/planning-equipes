@@ -40,7 +40,7 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
     static final String ROLE_ADMIN = "admin";
 
     /** Matches {@code quarkus.http.auth.policy.cle-mcp.roles-allowed}. */
-    static final String ROLE_MCP = "mcp";
+    public static final String ROLE_MCP = "mcp";
 
     @Override
     public Class<TrustedAuthenticationRequest> getRequestType() {

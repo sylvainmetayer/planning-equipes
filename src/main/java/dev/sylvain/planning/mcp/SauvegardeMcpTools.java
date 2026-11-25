@@ -40,6 +40,7 @@ public class SauvegardeMcpTools {
         this.backupService = backupService;
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "etat_sauvegardes",
             description = "État de la sauvegarde nocturne, toutes éditions confondues : si elle est configurée, "
@@ -56,6 +57,7 @@ public class SauvegardeMcpTools {
         return backupService.state();
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "modifier_sauvegardes",
             description = "Suspend ou relance la sauvegarde nocturne. C'est le seul réglage modifiable : la "

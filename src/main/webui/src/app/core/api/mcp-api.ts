@@ -3,7 +3,7 @@
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { CleMcp, PromptMcp, StatutMcp } from '../models';
+import { CleGeneree, CleMcp, PromptMcp, StatutMcp } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class McpApi {
@@ -27,8 +27,16 @@ export class McpApi {
     return this.api.get<PromptMcp[]>('/api/mcp/prompts');
   }
 
-  /** A fresh key, against the administrator's password: the old one stops working at once. */
+  /** The key of the configuration, against the administrator's password. */
   regenerateKey(motDePasse: string): Promise<CleMcp> {
     return this.api.post<CleMcp>('/api/mcp/cle', { motDePasse });
+  }
+
+  /**
+   * A new key, shown once: the old one keeps working for `recouvrementMinutes`
+   * (0: it stops at once).
+   */
+  rotateKey(motDePasse: string, recouvrementMinutes: number): Promise<CleGeneree> {
+    return this.api.post<CleGeneree>('/api/mcp/cle/rotation', { motDePasse, recouvrementMinutes });
   }
 }

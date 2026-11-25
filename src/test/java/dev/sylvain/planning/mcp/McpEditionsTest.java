@@ -65,11 +65,13 @@ class McpEditionsTest {
     }
 
     private static McpEditions editions(Edition... connues) {
-        return new McpEditions(new EditionService(null, null, null, null, null, null, null, null) {
-            @Override
-            public List<Edition> listEditions() {
-                return List.of(connues);
-            }
-        });
+        return new McpEditions(
+                new EditionService(null, null, null, null, null, null, null, null) {
+                    @Override
+                    public List<Edition> listEditions() {
+                        return List.of(connues);
+                    }
+                },
+                new dev.sylvain.planning.service.EditionContext(null, null));
     }
 }

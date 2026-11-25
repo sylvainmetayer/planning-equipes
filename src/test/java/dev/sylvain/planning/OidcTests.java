@@ -39,6 +39,8 @@ public final class OidcTests {
                     "quarkus.oidc.application-type", "hybrid",
                     "quarkus.oidc.credentials.secret", "secret",
                     "quarkus.oidc.auth-server-url", "${keycloak.url}/realms/quarkus",
+                    "quarkus.oidc.mcptransport.tenant-enabled", "true",
+                    "quarkus.oidc.mcptransport.auth-server-url", "${keycloak.url}/realms/quarkus",
                     "quarkus.http.auth.permission.admin-api.policy", "role-gestion"));
             m.putAll(extras);
             return m;
@@ -52,6 +54,11 @@ public final class OidcTests {
 
     /** A verified-address token of one person, with the roles a provider might (wrongly) map. */
     public static String token(String sujet, String email, boolean emailVerifie, String... roles) {
+        return token("planning-app", sujet, email, emailVerifie, roles);
+    }
+
+    /** The same, issued for {@code audience}: the MCP transport only accepts {@code planning-mcp}. */
+    public static String token(String audience, String sujet, String email, boolean emailVerifie, String... roles) {
         return "Bearer "
                 + Jwt.claims()
                         .issuer("https://server.example.com")
@@ -60,7 +67,7 @@ public final class OidcTests {
                         .claim("email", email)
                         .claim("email_verified", emailVerifie)
                         .claim("realm_access", Map.of("roles", List.of(roles)))
-                        .audience("planning-app")
+                        .audience(audience)
                         .expiresIn(300)
                         .sign();
     }
