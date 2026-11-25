@@ -4,6 +4,7 @@ import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -45,11 +46,17 @@ public class DefaultSecrets {
      * is simply absent from the configuration, which a {@code String} injection
      * point would turn into a startup failure for the whole test suite.
      */
-    @ConfigProperty(name = "quarkus.security.users.embedded.users.admin")
-    Optional<String> adminPassword;
+    private final Optional<String> adminPassword;
 
-    @ConfigProperty(name = "quarkus.datasource.password")
-    Optional<String> databasePassword;
+    private final Optional<String> databasePassword;
+
+    @Inject
+    public DefaultSecrets(
+            @ConfigProperty(name = "quarkus.security.users.embedded.users.admin") Optional<String> adminPassword,
+            @ConfigProperty(name = "quarkus.datasource.password") Optional<String> databasePassword) {
+        this.adminPassword = adminPassword;
+        this.databasePassword = databasePassword;
+    }
 
     void checkAtStartup(@Observes StartupEvent startup) {
         // Only a real deployment: dev and test are precisely the two modes the
