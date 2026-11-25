@@ -126,7 +126,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `AUTH_LOCAL_SECONDE_ETAPE` | `true` | Les comptes locaux (mot de passe) reçoivent un code à six chiffres par mail après leur mot de passe ; `false` coupe cette seconde étape |
 | `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS, indispensable pour que la redirection de connexion reste en `https` — voir [`api.md`](docs/api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |
-| `REMOTE_USER_ENABLED` | `false` | Authentification par en-tête derrière un proxy d'accès, en plus du form login — voir [`api.md`](docs/api.md#mode-remote-user-facultatif-désactivé-par-défaut) |
+| `REMOTE_USER_ENABLED` | `false` | Authentification par en-tête derrière un proxy d'accès, en plus du form login — voir [`api.md`](docs/api.md#mode--remote-user--facultatif-désactivé-par-défaut-déprécié) |
 | `REMOTE_USER_SECRET` | — | Secret partagé avec le proxy. **Obligatoire** si `REMOTE_USER_ENABLED=true` : sans lui le démarrage échoue |
 | `REMOTE_USER_ADMIN_EMAIL` | — | Adresse qui obtient le rôle admin ; les autres adresses reconnues sont des animateurs |
 | `SESSION_ENCRYPTION_KEY` | *(vide = clé générée au démarrage)* | Clé (≥ 16 caractères) de chiffrement du cookie de session admin ; la définir pour que les sessions survivent aux redémarrages |

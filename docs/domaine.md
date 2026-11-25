@@ -414,7 +414,7 @@ règle dans [`contraintes.md`](contraintes.md#compté-non-reproché--le-passé).
 Le périmètre d'une replanification ne rouvre jamais une place passée.
 
 **Le passé ne se modifie plus à la main non plus.** Les gestes qui
-réécrivent une place sans solveur — le glisser-déposer des vues journalières
+réécrivent une place sans solveur — le « Déplacer vers… » du panneau du siège
 (`deplacer_affectation`), l'acceptation d'un échange, une réparation
 appliquée ou suggérée — refusent une place dont le créneau est commencé, au
 même horizon, avec la même phrase : « Ce créneau est déjà commencé : le passé
@@ -715,7 +715,7 @@ affecte quelqu'un. Il n'y a pas d'autre sorte de créneau.
 Il y en a eu une : l'**amplitude**, la journée d'ouverture de bout en bout, que
 le *découpage* tranchait en vacations plus courtes avant de résoudre. Un
 évènement connaît ses horaires d'ouverture et les projette en vacations par ses
-[journées types](#journées-types) ; le découpage, ses paramètres et le mode qui
+[journées types](#les-journées-types-génèrent-les-créneaux-elles-ne-les-remplacent-pas) ; le découpage, ses paramètres et le mode qui
 disait laquelle des deux lectures s'appliquait ont donc été retirés (ADR
 [0037](decisions/0037-une-grille-est-toujours-des-vacations.md)).
 
