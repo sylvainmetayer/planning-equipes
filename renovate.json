@@ -6,6 +6,7 @@
     ":maintainLockFilesDisabled",
     "helpers:pinGitHubActionDigests"
   ],
+  "baseBranchPatterns": ["main", "/^release\\/\\d+\\.\\d+$/"],
   "timezone": "Europe/Paris",
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],
@@ -88,6 +89,11 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "A maintenance branch (release/X.Y) only receives security fixes: every other update is off there, the vulnerabilityAlerts below stay on",
+      "matchBaseBranches": ["/^release\\/\\d+\\.\\d+$/"],
+      "enabled": false
+    },
     {
       "description": "The Node version of the vitrine moves in one PR: wrangler.toml, mise.toml and .node-version must stay equal",
       "matchFileNames": ["site/wrangler.toml", "site/mise.toml", "site/.node-version"],
@@ -236,6 +242,7 @@
     }
   ],
   "vulnerabilityAlerts": {
+    "enabled": true,
     "labels": ["security"],
     "schedule": ["at any time"],
     "minimumReleaseAge": null

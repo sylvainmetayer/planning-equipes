@@ -34,6 +34,18 @@ Les autres ruptures d'exploitation non majeures (un réglage dont l'échelle cha
 
 Lisez donc l'entrée « ⚠️ Attention » des notes avant chaque montée : c'est elle qui vous dit si quelque chose vous attend. Des exemples réels de gestes à faire sont dans [les montées qui demandent un geste](mettre-a-jour.md#4-les-montées-qui-demandent-un-geste).
 
+## Combien de temps une ligne est corrigée
+
+Une seule ligne de maintenance existe à la fois : la dernière `MAJOR.MINOR` publiée avant la courante ([comment elle se tient](publier-une-version.md#3-patcher-une-version-antérieure)). Pour la 3.x, c'est la branche `release/3.5`, qui ne reçoit plus que des correctifs.
+
+**Après la sortie de la 4.0.0, la 3.x reçoit des correctifs de sécurité pendant six mois**, puis plus rien : la branche est abandonnée et la réponse devient « montez de version ». Ces six mois courent à partir de la date de la release 4.0.0. Seules les failles de sécurité sont corrigées, pas les anomalies fonctionnelles ni les dépendances sans faille connue.
+
+## Ce que la release attend pour une majeure
+
+Une montée MAJOR se prépare dans les messages de commit. Entre deux tags, `release.yml` lit les sujets : un `!` après le type (`feat(scenario)!: …`) demande une montée MAJOR, un `feat` demande au moins une MINOR. Le contrôle échoue si le numéro posé est **inférieur** à ce que les sujets demandent, par exemple une `4.0.1` sur des commits à `!`, ou une `3.5.1` qui contiendrait un `feat`.
+
+Il ne refuse pas l'inverse : une `4.0.0` posée sans aucun `!` entre les deux tags passerait. C'est pourtant ce `!` qui range le changement sous « ⚠️ Attention » dans les notes et dans l'écran *Nouveautés*, et qui permet à `git cliff --bumped-version` de proposer 4.0.0. Toute PR de rupture de la 4.0 porte donc un `!` dans son sujet, et son paragraphe dans [le guide de passage](passer-a-la-4-0.md).
+
 ## Lire la version d'une instance
 
 La version affichée dans le pied de page, sur la page *Débogage*, dans `GET /api/config` (champ `version`) et dans la ligne de démarrage est celle du tag git `vX.Y.Z` : `X.Y.Z` sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en build local, valeur qui ne ressemble volontairement à aucune version publiée. D'où vient ce tag : [Publier une version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).

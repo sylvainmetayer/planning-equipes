@@ -27,6 +27,7 @@ docs:
   - mettre-a-jour
   - versioning
   - publier-une-version
+  - passer-a-la-4-0
   - conservation-des-donnees
   - rgpd
   - rgpd-sous-traitance
@@ -70,6 +71,7 @@ Vous hébergez Planning Équipes pour un organisateur, ou pour vous-même : une 
 
 - [Mettre à jour vers une nouvelle version](mettre-a-jour.md), et [ce que promet un numéro de version](versioning.md).
 - [Publier une version et patcher la précédente](publier-une-version.md), pour qui fabrique l'image.
+- [Passer de la 3.x à la 4.0](passer-a-la-4-0.md) : ce que la 4.0 demandera, en préparation.
 
 ## Je dois tenir mes obligations
 
