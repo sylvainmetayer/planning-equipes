@@ -8,6 +8,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
+import { ApiError } from '../../core/api.service';
+import { CODE_EDITION_INACTIVE } from '../../core/edition-inactive';
 import { EchangesApi } from '../../core/api/echanges-api';
 import { EditionStore } from '../../core/edition.store';
 import { JourJService } from '../../core/jour-j.service';
@@ -88,5 +90,14 @@ describe('GuichetsCard on an inactive edition', () => {
     await fixture.componentInstance['saveCollecte']();
 
     expect(disponibilitesApi.saveConfiguration.mock.calls[0][0].prevenirAnimateurs).toBe(false);
+  });
+
+  it('leaves an inactive-edition refusal to the interceptor: no second message', async () => {
+    disponibilitesApi.saveConfiguration.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'inactive', CODE_EDITION_INACTIVE),
+    );
+    await fixture.componentInstance['saveCollecte']();
+
+    expect(fixture.componentInstance['error']()).toBe('');
   });
 });
