@@ -94,19 +94,33 @@ public class ContactsService {
         return repository.find(animateurId).orElse(ContactsAnimateur.VIDE);
     }
 
-    /** Replaces the contacts of one animateur with what is sent, trimmed and checked. */
+    /** Replaces the contacts of one animateur on behalf of the organisation, trimmed and checked. */
     public Saved save(String animateurId, ContactsAnimateur sent) {
+        return save(
+                animateurId,
+                sent,
+                "L'animateur " + animateurId + " est mineur : son représentant légal n'est pas renseigné "
+                        + "(facultatif, mais le rapport de conformité le signale).");
+    }
+
+    /** The same write from the animateur's own espace: the warning speaks to them, not about an id. */
+    public Saved saveOwn(String animateurId, ContactsAnimateur sent) {
+        return save(
+                animateurId,
+                sent,
+                "Vous êtes mineur : indiquez si possible un représentant légal, la personne que l'organisation "
+                        + "pourra joindre pour vous.");
+    }
+
+    private Saved save(String animateurId, ContactsAnimateur sent, String warningMinor) {
         Animateur animateur = required(animateurId);
         ContactsAnimateur contacts = normalize(sent);
-        repository.replace(animateurId, contacts);
+        ContactsAnimateur stored = contacts.stamped(repository.replace(animateurId, contacts));
         List<Avertissement> warnings = new ArrayList<>();
-        if (animateur.isMineurOn(referenceDay()) && !contacts.hasRepresentative()) {
-            warnings.add(new Avertissement(
-                    TypeAvertissement.MINEUR_SANS_REPRESENTANT,
-                    "L'animateur " + animateurId + " est mineur : son représentant légal n'est pas renseigné "
-                            + "(facultatif, mais le rapport de conformité le signale)."));
+        if (animateur.isMineurOn(referenceDay()) && !stored.hasRepresentative()) {
+            warnings.add(new Avertissement(TypeAvertissement.MINEUR_SANS_REPRESENTANT, warningMinor));
         }
-        return new Saved(contacts, warnings);
+        return new Saved(stored, warnings);
     }
 
     /** Blank to nothing, trimmed, bounded; a number must look like one. */
@@ -118,7 +132,8 @@ public class ContactsService {
                 name(sent.urgenceNom()),
                 phone(sent.urgenceTelephone()),
                 name(sent.representantNom()),
-                phone(sent.representantTelephone()));
+                phone(sent.representantTelephone()),
+                sent.modifieLe());
     }
 
     private static String name(String value) {

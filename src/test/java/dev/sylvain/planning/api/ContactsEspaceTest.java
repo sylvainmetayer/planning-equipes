@@ -144,7 +144,12 @@ class ContactsEspaceTest {
                 .put("/api/espace-animateur/" + tokenBruno + "/contacts")
                 .then()
                 .statusCode(200)
-                .body("avertissements[0].type", equalTo("MINEUR_SANS_REPRESENTANT"));
+                .body("avertissements[0].type", equalTo("MINEUR_SANS_REPRESENTANT"))
+                // Spoken to the person, never about an id.
+                .body("avertissements[0].message", org.hamcrest.Matchers.startsWith("Vous êtes mineur"))
+                .body(
+                        "avertissements[0].message",
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("CT-")));
     }
 
     @Test

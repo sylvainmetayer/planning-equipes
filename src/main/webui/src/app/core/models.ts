@@ -5915,6 +5915,11 @@ export interface ContactsAnimateur {
   urgenceTelephone?: string | null;
   representantNom?: string | null;
   representantTelephone?: string | null;
+  /**
+   * When the stored row was last written, `null` when there is none: sent back with a write, the server refuses
+   * it (409, `MODIFICATION_CONCURRENTE`) if somebody else — the animateur or the organisation — saved since.
+   */
+  modifieLe?: string | null;
 }
 
 /** `GET /api/rh/editions/{id}/contacts`: one animateur holding contacts, or a minor. */
