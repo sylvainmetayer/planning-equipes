@@ -764,7 +764,7 @@ sièges ; ceux de la bande n'existent plus. L'aperçu le dit
 
 **`POST /api/planning/reset` efface aussi les consignes et les préréglages**
 de l'édition, comme tout ce qu'un solve reçoit. L'export et l'import de base
-les emportent ([`import-export.md`](import-export.md#dump-sql)).
+les emportent ([`import-export.md`](import-export.md#dump-sql-outillage-de-test)).
 
 **Les préréglages sont copiés à la duplication d'édition, les consignes
 non.** Un préréglage (« Plan canicule ») décrit la forme de l'événement ; une
