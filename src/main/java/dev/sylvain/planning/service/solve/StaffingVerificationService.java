@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
+import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -42,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
@@ -100,6 +102,23 @@ public class StaffingVerificationService {
     /** How the made-up minors are aged: sixteen on the first day, under the 16–18 regime. */
     private static final int AGE_MINEURS = 16;
 
+    /**
+     * How a check answers. {@code BORNE} compares the team to the exact
+     * minimum the screen shows (ADR 0097) and solves nothing; {@code CALCUL}
+     * solves the edition's seats with the made-up team, as ADR 0071 first did.
+     */
+    public enum VerificationMethod {
+        BORNE,
+        CALCUL
+    }
+
+    /**
+     * {@code borne} (the default) or {@code calcul}: how a check answers when
+     * the request does not say. {@code calcul} puts the made-up team back as
+     * the default, the way back ADR 0097 keeps open.
+     */
+    static final String DEFAULT_METHOD_PROPERTY = "planning.staffing.verification-default";
+
     /** Where a check stands. */
     public enum VerificationState {
         EN_COURS,
@@ -125,6 +144,9 @@ public class StaffingVerificationService {
      * @param dureeSecondes    how long the solve took
      * @param plafondSecondes  the time it was given at most
      * @param erreur           why the check could not run, on {@code ECHEC}
+     * @param methode          how it answered: by the exact bound or by a solve
+     * @param minimum          the exact minimum the team was compared to, {@code null}
+     *                         for a check written before the bound answered
      */
     @Schema(
             requiredProperties = {
@@ -136,7 +158,8 @@ public class StaffingVerificationService {
                 "lanceeLe",
                 "plafondSecondes",
                 "reglesEnDefaut",
-                "sieges"
+                "sieges",
+                "methode"
             })
     public record StaffingVerification(
             long id,
@@ -153,7 +176,9 @@ public class StaffingVerificationService {
             Integer siegesNonPourvus,
             Long scoreDur,
             List<String> reglesEnDefaut,
-            String erreur) {
+            String erreur,
+            VerificationMethod methode,
+            Integer minimum) {
 
         public StaffingVerification {
             reglesEnDefaut = reglesEnDefaut == null ? List.of() : List.copyOf(reglesEnDefaut);
@@ -175,7 +200,32 @@ public class StaffingVerificationService {
                     null,
                     null,
                     List.of(),
+                    null,
+                    VerificationMethod.CALCUL,
                     null);
+        }
+
+        /** A check answered at once by the exact bound: never running, no solve behind it. */
+        static StaffingVerification byBound(int majeurs, int mineurs, int sieges, int minimum, boolean feasible) {
+            Instant now = Instant.now();
+            return new StaffingVerification(
+                    0,
+                    VerificationState.TERMINEE,
+                    majeurs + mineurs,
+                    majeurs,
+                    mineurs,
+                    sieges,
+                    now,
+                    now,
+                    0L,
+                    0L,
+                    feasible,
+                    null,
+                    null,
+                    List.of(),
+                    null,
+                    VerificationMethod.BORNE,
+                    minimum);
         }
 
         StaffingVerification withId(long newId) {
@@ -194,7 +244,9 @@ public class StaffingVerificationService {
                     siegesNonPourvus,
                     scoreDur,
                     reglesEnDefaut,
-                    erreur);
+                    erreur,
+                    methode,
+                    minimum);
         }
 
         StaffingVerification finished(boolean feasible, int empty, long hard, List<String> rules) {
@@ -214,7 +266,9 @@ public class StaffingVerificationService {
                     empty,
                     hard,
                     rules,
-                    null);
+                    null,
+                    methode,
+                    minimum);
         }
 
         StaffingVerification failed(String message, Instant end) {
@@ -233,7 +287,9 @@ public class StaffingVerificationService {
                     null,
                     null,
                     List.of(),
-                    message);
+                    message,
+                    methode,
+                    minimum);
         }
     }
 
@@ -247,6 +303,8 @@ public class StaffingVerificationService {
     private final PlanningPersistenceService persistence;
     private final JobStreamBroadcaster jobStream;
     private final SolverQuota quota;
+    /** What a request that does not choose gets: see {@link #DEFAULT_METHOD_PROPERTY}. */
+    private final VerificationMethod defaultMethod;
 
     private final AtomicBoolean enCours = new AtomicBoolean();
     /** The check running on this instance, {@code null} when none: what the solver state stream shows. */
@@ -273,7 +331,10 @@ public class StaffingVerificationService {
             JournalActionService journal,
             PlanningPersistenceService persistence,
             JobStreamBroadcaster jobStream,
-            SolverQuota quota) {
+            SolverQuota quota,
+            @ConfigProperty(name = DEFAULT_METHOD_PROPERTY, defaultValue = "borne") String defaultMethod) {
+        this.defaultMethod =
+                "calcul".equalsIgnoreCase(defaultMethod.trim()) ? VerificationMethod.CALCUL : VerificationMethod.BORNE;
         this.quota = quota;
         this.planningService = planningService;
         this.referenceDataService = referenceDataService;
@@ -316,14 +377,18 @@ public class StaffingVerificationService {
      *                      the staffing screen shows, less the minors
      * @param mineurs       the minors of the team, {@code null} for none
      * @param dureeSecondes the time the solve is given at most, {@code null}
-     *                      for the time a solve of the edition gets
+     *                      for the time a solve of the edition gets; read by
+     *                      a solve only
+     * @param calcul        {@code true} for a solve of the made-up team,
+     *                      {@code false} for the exact bound, {@code null}
+     *                      for the instance's default (the bound)
      * @throws BusinessError.Conflict when a check is already running, in any
      *                                edition, a solve holds the solver, or
      *                                the instance's hourly quota is spent
      * @throws BusinessError.Invalid  when the edition has no seat to fill, or
      *                                a figure is out of range
      */
-    public StaffingVerification start(Integer majeurs, Integer mineurs, Long dureeSecondes) {
+    public StaffingVerification start(Integer majeurs, Integer mineurs, Long dureeSecondes, Boolean calcul) {
         String edition = editionContext.editionIdCourant();
         Seats seats = planningService.buildSeatsFromReferenceData();
         if (seats.postes().isEmpty()) {
@@ -335,13 +400,17 @@ public class StaffingVerificationService {
             throw new BusinessError.Invalid("Le nombre de majeurs et de mineurs ne peut pas être négatif.");
         }
         // The seats just built, not a second build: the floor is read on them.
-        int nombreMajeurs = majeurs != null
-                ? majeurs
-                : Math.max(staffingService.analyze(seats).minimumTotal() - nombreMineurs, 0);
+        StaffingSummary summary = staffingService.analyze(seats);
+        int nombreMajeurs = majeurs != null ? majeurs : Math.max(summary.minimumTotal() - nombreMineurs, 0);
         int taille = nombreMajeurs + nombreMineurs;
         if (taille < 1 || taille > EFFECTIF_MAX) {
             throw new BusinessError.Invalid(
                     "L'effectif à vérifier doit être compris entre 1 et " + EFFECTIF_MAX + " : " + taille + ".");
+        }
+        VerificationMethod methode =
+                calcul == null ? defaultMethod : calcul ? VerificationMethod.CALCUL : VerificationMethod.BORNE;
+        if (methode == VerificationMethod.BORNE) {
+            return byBound(summary, seats.postes().size(), nombreMajeurs, nombreMineurs);
         }
         long plafond = budgetSeconds(dureeSecondes);
         if (!enCours.compareAndSet(false, true)) {
@@ -400,6 +469,18 @@ public class StaffingVerificationService {
             enCours.set(false);
             throw e;
         }
+    }
+
+    /**
+     * Answers from the exact minimum the screen shows — no solve, no quota, no
+     * wait: the team holds when it is at least that large and carries the
+     * adults the busiest day demands. Only the solve also checks what the
+     * bound leaves out, the minors beyond what a day can supervise included.
+     */
+    private StaffingVerification byBound(StaffingSummary summary, int sieges, int majeurs, int mineurs) {
+        boolean feasible = majeurs + mineurs >= summary.minimumTotal() && majeurs >= summary.majeursMin();
+        return repository.insert(
+                StaffingVerification.byBound(majeurs, mineurs, sieges, summary.minimumTotal(), feasible));
     }
 
     /**
@@ -476,7 +557,7 @@ public class StaffingVerificationService {
         try {
             PlanningEvenement solved = yielded.get()
                     ? null
-                    : planningService.solvePreparedUntilFeasible(problem, started.plafondSecondes(), solver -> {
+                    : planningService.solveCheck(problem, started.plafondSecondes(), solver -> {
                         // Published before the flag is read, as yieldToSolve
                         // sets the flag before reading this: one of the two
                         // always sees the other.

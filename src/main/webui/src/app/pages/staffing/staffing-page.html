@@ -109,12 +109,12 @@
         </p>
       }
 
-      <!-- The floor proves « at least »; a solve of a made-up team of that size says « and that suffices ». -->
+      <!-- The exact bound answers by default (ADR 0097); a solve of a made-up team is the advanced option. -->
       <section class="staffing-verification" aria-labelledby="staffing-verification-titre">
-        <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier par un solve</h2>
+        <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier un effectif</h2>
         <p class="empty-hint" i18n="@@staffing.verification.description">
-          Une équipe fictive, disponible tous les jours et compétente partout, tient-elle tous les sièges ? Ses mineurs
-          ont seize ans. Le planning n'est pas touché ; chaque essai va dans l'historique.
+          Une équipe de cette taille atteint-elle le minimum exact ? La réponse est immédiate, sans calcul. Le planning
+          n'est pas touché ; chaque essai va dans l'historique.
         </p>
         <div class="staffing-verification-actions">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -127,12 +127,6 @@
             <input matInput type="number" min="0" name="minorsToCheck" placeholder="0"
                    [ngModel]="minorsToCheck()" (ngModelChange)="setMinors($event)" [disabled]="verificationRunning()" />
           </mat-form-field>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
-            <input matInput type="number" min="10" name="secondsToCheck"
-                   i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="comme une résolution"
-                   [ngModel]="secondsToCheck()" (ngModelChange)="setSeconds($event)" [disabled]="verificationRunning()" />
-          </mat-form-field>
           <button mat-flat-button type="button" [disabled]="verificationRunning()" (click)="lancerVerification()">
             <mat-icon aria-hidden="true">play_arrow</mat-icon>
             <ng-container i18n="@@staffing.verification.lancer">Vérifier</ng-container>
@@ -142,6 +136,25 @@
             <ng-container i18n="@@staffing.verification.historique">Vérifications précédentes</ng-container>
           </a>
         </div>
+        <app-reglages-avances [etat]="avance">
+          <ng-template>
+            <mat-checkbox [ngModel]="byCalculation()" (ngModelChange)="byCalculation.set($event)" name="byCalculation"
+                          [disabled]="verificationRunning()">
+              <ng-container i18n="@@staffing.verification.calcul">Vérifier par un calcul</ng-container>
+            </mat-checkbox>
+            <p class="empty-hint" i18n="@@staffing.verification.calculAide">
+              Une équipe fictive, libre tous les jours et compétente partout, est résolue sur les sièges : cela vérifie
+              aussi repos, pauses et repas. Ses mineurs ont seize ans. Le calcul cède à toute résolution.
+            </p>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
+              <input matInput type="number" min="10" name="secondsToCheck"
+                     i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="comme une résolution"
+                     [ngModel]="secondsToCheck()" (ngModelChange)="setSeconds($event)"
+                     [disabled]="verificationRunning() || !byCalculation()" />
+            </mat-form-field>
+          </ng-template>
+        </app-reglages-avances>
         <app-status-message [text]="verificationErreur()" tone="error" />
         @if (verification(); as verif) {
           @if (verif.etat === 'EN_COURS') {

@@ -2175,6 +2175,9 @@ export interface CompetenceStaffing {
 /** Where a check of the staffing floor stands. */
 export type VerificationState = 'EN_COURS' | 'TERMINEE' | 'ECHEC';
 
+/** How a check answered: from the exact bound at once, or by a solve of a made-up team. */
+export type VerificationMethod = 'BORNE' | 'CALCUL';
+
 /**
  * `POST|GET /api/staffing/verification`: a solve of the edition's seats by a
  * made-up team — `majeurs` adults and `mineurs` minors aged sixteen, available
@@ -2202,6 +2205,9 @@ export interface StaffingVerification {
   /** Hard rules the best plan still breaks, by catalogue name, the most broken first. */
   reglesEnDefaut: string[];
   erreur?: string | null;
+  methode: VerificationMethod;
+  /** The exact minimum the team was compared to; `null` for a check made before the bound answered. */
+  minimum?: number | null;
 }
 
 /**
@@ -2214,6 +2220,8 @@ export interface DemandeVerification {
   mineurs: number | null;
   /** From 10 s to the operator's ceiling on a solve; `null` for the time a solve of the edition gets. */
   dureeSecondes: number | null;
+  /** `true` solves a made-up team (the advanced option); `false` answers from the exact bound. */
+  calcul: boolean;
 }
 
 /**

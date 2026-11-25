@@ -243,9 +243,19 @@ l'écran se trompe facilement de sens :
   `maxJoursConsecutifsTravaillesDur` est allumée, et vaut `null` sinon. Une
   règle moyenne peut être enfreinte : elle ne doit pas faire recruter.
 
-`POST /api/staffing/verification` lance un solve des sièges de l'édition par
-une **équipe fictive** et répond `202` sans attendre. L'équipe compte `majeurs`
-majeurs et `mineurs` mineurs, ces derniers âgés de seize ans au premier jour ;
+`POST /api/staffing/verification` répond **par défaut par la borne exacte** : il
+compare l'effectif demandé (`majeurs` + `mineurs`, sans `majeurs` le minimum
+moins les mineurs) au minimum exact et aux majeurs que la journée la plus
+exigeante demande, et rend `202` avec une vérification déjà `TERMINEE`
+(`methode: BORNE`, `minimum` : le chiffre comparé). Aucun solve, aucun quota,
+aucune attente. Avec `calcul: true` (réglages avancés de l'écran), il lance au
+contraire un solve des sièges de l'édition par une **équipe fictive** et répond
+`202` sans attendre (`methode: CALCUL`) ; `calcul: false` force la borne, et une
+requête qui ne dit rien reçoit le défaut de l'instance,
+`planning.staffing.verification-default` (`borne`, ou `calcul` pour revenir à
+l'ancien comportement). Ce qui suit ne vaut que pour le calcul. L'équipe compte
+`majeurs` majeurs et `mineurs` mineurs, ces derniers âgés de seize ans au
+premier jour ;
 le solve dure au plus `dureeSecondes`, entre 10 s et le plafond d'exploitant
 d'une résolution. Sans `majeurs`, l'équipe compte le minimum moins les
 mineurs ; sans `mineurs`, aucun ; sans `dureeSecondes`, la durée d'une
@@ -284,8 +294,13 @@ Ce qu'il faut savoir avant de s'en servir :
   petite part des sièges que ses membres tiennent, les autres restant vides.
 
 Le solve s'arrête dès qu'un plan est réalisable, et au plus tard au bout de
-cette durée. La décision et les options écartées sont dans
-[0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md).
+cette durée ; il tourne sur le moteur de l'instance (le moteur direct par
+défaut, dont Timefold rejoue le plan). Une borne atteinte ne dit pas qu'un plan
+existe : elle dit que l'effectif atteint le minimum prouvé. La décision et les
+options écartées sont dans
+[0071](decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md),
+et le passage de la borne en réponse par défaut dans
+[0098](decisions/0098-le-besoin-se-verifie-par-la-borne-exacte-le-calcul-est-une-option.md).
 
 ### Ce que la prochaine résolution recevra
 

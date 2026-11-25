@@ -163,6 +163,24 @@ class StaffingVerificationSolveTest {
                 .satisfies(toggle -> assertThat(toggle.isActif()).isTrue());
     }
 
+    /** The check of the advanced option runs under the instance's engine (the direct one by default) and stops on a feasible plan. */
+    @Test
+    void theCheckByACalculationStopsAtTheFirstFeasiblePlanUnderTheInstanceEngine() {
+        PlanningEvenement tient = check(week(), 4, 60);
+        assertThat(tient.getScore().hardScore()).isZero();
+        assertThat(tient.getPostes()).allMatch(poste -> poste.getAnimateur() != null);
+
+        PlanningEvenement enDessous2 = check(week(), 3, 5);
+        assertThat(enDessous2.getScore().hardScore()).isNegative();
+    }
+
+    private PlanningEvenement check(Seats seats, int effectif, long seconds) {
+        PlanningEvenement problem = StaffingVerificationService.problem(
+                seats, StaffingVerificationService.team(effectif, 0, TYPOLOGIES, LUNDI));
+        planningService.prepareHypothetical(problem);
+        return planningService.solveCheck(problem, seconds, solver -> {});
+    }
+
     private PlanningEvenement solve(Seats seats, int effectif, long seconds) {
         PlanningEvenement problem = StaffingVerificationService.problem(
                 seats, StaffingVerificationService.team(effectif, 0, TYPOLOGIES, LUNDI));

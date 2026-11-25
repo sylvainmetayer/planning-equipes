@@ -180,7 +180,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     the same interface, refereed by Timefold; `SolveRunner.solvePrepared` is
     the one place that reads `SolverEngine`, which travels to a worker in
     `SearchSettings`; under it a published plan is not solved in two stages,
-    and the staffing check and the solves until feasibility stay on Timefold),
+    and the solves until feasibility stay on Timefold; the staffing check
+    answers by the exact bound by default, and its advanced option, the solve
+    of a made-up team, runs on this engine — `SolveRunner.solveCheck`, ADR 0098),
     `WorkerClient` (every call to a worker, its certificate
     pinned), and the worker itself, `SolveWorker` behind `SolveWorkerServer`:
     **a plain Java program with no CDI container**, started from the same

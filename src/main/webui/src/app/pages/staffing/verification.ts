@@ -22,6 +22,12 @@ export function teamLabel(verification: Team): string {
  */
 export function historyLabel(verification: StaffingVerification): string {
   const team = teamLabel(verification);
+  if (verification.methode === 'BORNE') {
+    const minimum = verification.minimum ?? 0;
+    return verification.realisable
+      ? $localize`:@@historique.verification.borneOk:${team}:equipe:, borne exacte : suffit (minimum ${minimum}:minimum:)`
+      : $localize`:@@historique.verification.borneKo:${team}:equipe:, borne exacte : ne suffit pas (minimum ${minimum}:minimum:)`;
+  }
   const limit = verification.plafondSecondes;
   const trial = $localize`:@@historique.verification.essai:${team}:equipe:, ${limit}:plafond: s au plus`;
   if (verification.etat === 'EN_COURS') {

@@ -104,7 +104,7 @@ class StaffingResourceTest {
         // No animateur at all: the team is made up, of the floor's size.
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{}")
+                .body("{\"calcul\":true}")
                 .when()
                 .post("/api/staffing/verification")
                 .then()
@@ -139,13 +139,57 @@ class StaffingResourceTest {
         seedScenario();
     }
 
+    /** The default answer is the exact bound: finished on the spot, no solve behind it, and kept in the trail. */
+    @Test
+    void byDefaultACheckAnswersFromTheExactBoundWithoutSolving() {
+        seedSeats();
+
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body("{}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(202)
+                .body("etat", equalTo("TERMINEE"))
+                .body("methode", equalTo("BORNE"))
+                .body("minimum", equalTo(2))
+                .body("effectif", equalTo(2))
+                .body("realisable", equalTo(true));
+
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body("{\"majeurs\":1}")
+                .when()
+                .post("/api/staffing/verification")
+                .then()
+                .statusCode(202)
+                .body("methode", equalTo("BORNE"))
+                .body("realisable", equalTo(false));
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/staffing/verification")
+                .then()
+                .statusCode(200)
+                .body("methode", equalTo("BORNE"))
+                .body("realisable", equalTo(false));
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/jobs/active")
+                .then()
+                .statusCode(204);
+
+        seedScenario();
+    }
+
     @Test
     void aCheckTakesAdultsMinorsAndATimeOfItsOwn() {
         seedSeats();
 
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"majeurs\":1,\"mineurs\":1,\"dureeSecondes\":10}")
+                .body("{\"majeurs\":1,\"mineurs\":1,\"dureeSecondes\":10,\"calcul\":true}")
                 .when()
                 .post("/api/staffing/verification")
                 .then()
@@ -176,7 +220,7 @@ class StaffingResourceTest {
         // check would run its whole minute if nothing stopped it.
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"majeurs\":1,\"dureeSecondes\":60}")
+                .body("{\"majeurs\":1,\"dureeSecondes\":60,\"calcul\":true}")
                 .when()
                 .post("/api/staffing/verification")
                 .then()
@@ -230,8 +274,8 @@ class StaffingResourceTest {
             "{\"majeurs\":0}",
             "{\"majeurs\":0,\"mineurs\":0}",
             "{\"majeurs\":-1,\"mineurs\":3}",
-            "{\"majeurs\":2,\"dureeSecondes\":5}",
-            "{\"majeurs\":2,\"dureeSecondes\":7200}"
+            "{\"majeurs\":2,\"dureeSecondes\":5,\"calcul\":true}",
+            "{\"majeurs\":2,\"dureeSecondes\":7200,\"calcul\":true}"
         }) {
             given().header("X-Edition-Id", "E1")
                     .contentType("application/json")

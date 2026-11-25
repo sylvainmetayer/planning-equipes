@@ -98,8 +98,8 @@ Les deux sont des `Solver` : la file, l'arrêt, la courbe de score et le worker
 du calcul déporté ne savent pas lequel tourne, et le worker reçoit le choix de
 l'instance avec le reste des réglages de recherche. Le paquet
 `solver/handsearch` ne dépend ni de `ai.timefold.solver.core.impl`, ni d'un
-conteneur d'injection, ni d'une configuration. La vérification du besoin et
-les résolutions « jusqu'à la faisabilité » restent sur Timefold. Le pourquoi,
+conteneur d'injection, ni d'une configuration. La vérification du besoin par un calcul suit le moteur de l'instance
+(ADR 0098) ; les résolutions « jusqu'à la faisabilité » restent sur Timefold. Le pourquoi,
 ce que ça coûte et le filet de tests :
 [`0087`](decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md).
 

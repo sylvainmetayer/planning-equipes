@@ -321,6 +321,28 @@ final class SolveRunner {
     static final String SEAT_RULE = "posteDoitEtrePourvu";
 
     /**
+     * The search a staffing check by a solve runs, on a problem prepared by
+     * {@link #prepareHypothetical}: the instance's engine, stopped at the first
+     * feasible plan. The direct engine stops a second after it reaches one (a
+     * plateau of one second), and its plan is scored again by Timefold before
+     * it is believed, as everywhere (ADR 0087); under the Timefold engine this
+     * is {@link #solvePreparedUntilFeasible}.
+     */
+    PlanningEvenement solveCheck(
+            PlanningEvenement problem, long seconds, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        if (configuration.engine() != SolverEngine.HAND) {
+            return solvePreparedUntilFeasible(problem, seconds, onSolverReady);
+        }
+        FrozenPast.pin(problem.getPostes());
+        Solver<PlanningEvenement> direct = new HandSearchSolver(
+                new SolverConfiguration.SearchSettings(seconds, 1, 0, SolverEngine.HAND),
+                Long.MAX_VALUE,
+                configuration.solutionManager());
+        onSolverReady.accept(direct);
+        return direct.solve(problem);
+    }
+
+    /**
      * {@link #solveUntilFeasible} on a problem already prepared — by
      * {@link #prepareHypothetical} — so the solve itself reads nothing from
      * the edition and can run on a thread that has none.

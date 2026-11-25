@@ -10169,7 +10169,7 @@
       },
       "StaffingVerification" : {
         "type" : "object",
-        "required" : [ "id", "effectif", "majeurs", "mineurs", "etat", "lanceeLe", "plafondSecondes", "reglesEnDefaut", "sieges" ],
+        "required" : [ "id", "effectif", "majeurs", "mineurs", "etat", "lanceeLe", "plafondSecondes", "reglesEnDefaut", "sieges", "methode" ],
         "properties" : {
           "id" : {
             "type" : "integer",
@@ -10227,6 +10227,13 @@
           },
           "erreur" : {
             "type" : "string"
+          },
+          "methode" : {
+            "$ref" : "#/components/schemas/VerificationMethod"
+          },
+          "minimum" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -11003,6 +11010,10 @@
           }
         }
       },
+      "VerificationMethod" : {
+        "type" : "string",
+        "enum" : [ "BORNE", "CALCUL" ]
+      },
       "VerificationRequest" : {
         "type" : "object",
         "properties" : {
@@ -11017,6 +11028,9 @@
           "dureeSecondes" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "calcul" : {
+            "type" : "boolean"
           }
         }
       },
