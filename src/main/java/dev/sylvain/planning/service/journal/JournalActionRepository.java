@@ -54,6 +54,8 @@ public class JournalActionRepository {
             AND (NOT ?::boolean OR resultat = 'SUCCES')
             AND survenu_le > COALESCE(?::timestamptz, '-infinity')
             AND survenu_le <= COALESCE(?::timestamptz, 'infinity')
+            AND (?::varchar IS NULL
+                 OR ?::varchar = CASE WHEN acteur = 'SYSTEME' THEN 'systeme' ELSE acteur_id END)
             AND (survenu_le, id) < (COALESCE(?::timestamptz, 'infinity'), COALESCE(?::bigint, 9223372036854775807))
             ORDER BY survenu_le DESC, id DESC
             LIMIT ?""";
@@ -149,13 +151,15 @@ public class JournalActionRepository {
                 ps.setBoolean(4, filter.successOnly());
                 setInstant(ps, 5, filter.since());
                 setInstant(ps, 6, filter.until());
-                ps.setTimestamp(7, cursor);
+                ps.setString(7, filter.author());
+                ps.setString(8, filter.author());
+                ps.setTimestamp(9, cursor);
                 if (cursor == null) {
-                    ps.setNull(8, Types.BIGINT);
+                    ps.setNull(10, Types.BIGINT);
                 } else {
-                    ps.setLong(8, before);
+                    ps.setLong(10, before);
                 }
-                ps.setInt(9, plafond);
+                ps.setInt(11, plafond);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<EntreeJournal> entrees = new ArrayList<>();
                     while (rs.next()) {
@@ -212,6 +216,29 @@ public class JournalActionRepository {
                         comptes.put(rs.getString("action"), rs.getInt("nombre"));
                     }
                     return comptes;
+                }
+            }
+        });
+    }
+
+    /**
+     * Who wrote lines in the current edition, in the vocabulary of the
+     * {@code author} filter: an actor id, or {@code systeme}. Lines naming
+     * nobody (an unidentified request) have no value to select by.
+     */
+    public List<String> authors() {
+        return scope.read("Failed to list the authors of the history", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT DISTINCT CASE WHEN acteur = 'SYSTEME' THEN 'systeme' ELSE acteur_id END AS valeur
+                    FROM journal_action
+                    WHERE edition_id = ? AND (acteur = 'SYSTEME' OR acteur_id IS NOT NULL)
+                    ORDER BY valeur""")) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<String> valeurs = new ArrayList<>();
+                    while (rs.next()) {
+                        valeurs.add(rs.getString("valeur"));
+                    }
+                    return valeurs;
                 }
             }
         });

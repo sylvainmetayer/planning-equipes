@@ -298,6 +298,19 @@ jamais prouvé qu'une ligne s'écrive ; et qu'aucune action décrite ne soit
 inatteignable, un inventaire mort promettant à l'écran un filtre qui ne
 rendra rien.
 
+**L'auteur d'une ligne** est l'identifiant du compte (jamais son adresse), et
+`GET /api/historique?auteur=` le sélectionne en base, sur toute la rétention :
+un identifiant de compte ou d'animateur, `mcp`, ou `systeme` pour les tâches de
+nuit ; une valeur qui n'est ni un auteur de l'édition ni un compte connu est
+refusée (400), jamais ignorée. Avant les comptes nominatifs (migration V130)
+tous les administrateurs partageaient le compte de configuration, et leurs
+lignes disent `admin` quel que soit celui qui agissait : elles ne sont pas
+réécrites. L'écran affiche donc « Auteur fiable depuis le … », date
+**lue dans `flyway_schema_history`** (installation de V130,
+`ReliableAuthorSince`) — exacte pour l'instance, et antérieure à toute ligne
+d'une installation neuve —, plutôt que « la première ligne portant un compte »,
+qui n'existerait pas tant que personne n'a ouvert de compte nominatif.
+
 Les champs réellement modifiés viennent d'ailleurs : seul le service sait ce
 qui a changé. `ReferenceDataService` lit déjà la fiche telle qu'elle était
 avant l'écriture — pour les avertissements de saisie — et dépose la

@@ -40,6 +40,8 @@
     "JourneeAnimateurPauses": "JourneeAnimateurView",
     "EntreeHistorique": "EntreeHistoriqueView",
     "ActionHistorique": "ActionView",
+    "AuteurHistorique": "AuteurView",
+    "AuteursHistorique": "AuteursView",
     "NouvelleDemandeEchange": "NouvelleDemande",
     "ImpactImport": "ImportImpact",
     "CompteRenduEnvoi": "InvitationReport",

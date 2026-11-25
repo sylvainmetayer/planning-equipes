@@ -2,14 +2,17 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.EntreeJournal;
+import dev.sylvain.planning.service.journal.HistoryFilter;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.journal.JournalActionService.HistoryNature;
 import dev.sylvain.planning.service.journal.LoginJournalService;
 import dev.sylvain.planning.service.journal.ReferenceDataChanges;
+import dev.sylvain.planning.service.journal.ReliableAuthorSince;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService.StaffingVerification;
@@ -21,9 +24,11 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -67,14 +72,18 @@ public class HistoriqueResource {
 
     private final CompteService comptes;
 
+    private final ReliableAuthorSince reliableSince;
+
     @Inject
     public HistoriqueResource(
             JournalActionService journal,
             ReferenceDataService referenceData,
             StaffingVerificationService verifications,
             LoginJournalService connexions,
-            CompteService comptes) {
+            CompteService comptes,
+            ReliableAuthorSince reliableSince) {
         this.comptes = comptes;
+        this.reliableSince = reliableSince;
         this.journal = journal;
         this.referenceData = referenceData;
         this.verifications = verifications;
@@ -98,6 +107,12 @@ public class HistoriqueResource {
      *               every action. Anything else is refused rather than read
      *               as « all »: a filter silently dropped would answer a
      *               question nobody asked.
+     * @param auteur one author: an account id, {@code mcp}, {@code systeme} for
+     *               the nightly jobs, or an animateur id — selected in the
+     *               database like {@code nature}; one that is neither a known
+     *               account nor an author of this edition is refused, not
+     *               ignored. The lines written before the accounts existed
+     *               all say {@code admin}, the configuration's account.
      * @param depuis exclusive lower bound, ISO-8601 — the very instant
      *               {@code /changements} counts from
      * @param jusqua inclusive upper bound, ISO-8601
@@ -107,11 +122,17 @@ public class HistoriqueResource {
     public List<EntreeHistoriqueView> list(
             @QueryParam("limite") Integer limite,
             @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS, NATURE_DONNEES}) String nature,
+            @QueryParam("auteur") String auteur,
             @QueryParam("depuis") String depuis,
             @QueryParam("jusqua") String jusqua,
             @QueryParam("avant") Long avant) {
         List<EntreeJournal> entrees = journal.page(
-                nature(nature), optionalInstant(depuis, "depuis"), optionalInstant(jusqua, "jusqua"), avant, limite);
+                nature(nature),
+                auteur(auteur),
+                optionalInstant(depuis, "depuis"),
+                optionalInstant(jusqua, "jusqua"),
+                avant,
+                limite);
         Map<String, String> noms = noms();
         Map<Long, StaffingVerification> checks = verifications.findAll(entrees.stream()
                 .map(HistoriqueResource::verificationId)
@@ -119,6 +140,57 @@ public class HistoriqueResource {
                 .collect(Collectors.toSet()));
         return entrees.stream().map(entree -> view(entree, noms::get, checks)).toList();
     }
+
+    private String auteur(String auteur) {
+        if (auteur == null || auteur.isBlank()) {
+            return null;
+        }
+        if (!valeursAuteur().contains(auteur)) {
+            throw new BusinessError.Invalid("Auteur inconnu : « " + auteur + " ».");
+        }
+        return auteur;
+    }
+
+    /** What {@code auteur} accepts: the authors of the edition, the accounts, and the three fixed identities. */
+    private Set<String> valeursAuteur() {
+        Set<String> valeurs = new LinkedHashSet<>(journal.authors());
+        comptes.list().forEach(c -> valeurs.add(c.id()));
+        valeurs.addAll(List.of(Compte.CONFIG_ID, "mcp", HistoryFilter.SYSTEM_AUTHOR));
+        return valeurs;
+    }
+
+    /**
+     * Who wrote the lines of the edition, for the screen's selector, and since
+     * when a line's author can be believed.
+     */
+    @GET
+    @Path("/auteurs")
+    public AuteursView auteurs() {
+        Map<String, String> noms = noms();
+        return new AuteursView(
+                reliableSince.instant().orElse(null),
+                journal.authors().stream()
+                        .map(valeur -> new AuteurView(valeur, noms.get(valeur)))
+                        .toList());
+    }
+
+    /**
+     * @param fiableDepuis when the journal started naming the person's own
+     *                     account — the application of the accounts migration;
+     *                     {@code null} when it is not applied. Older lines say
+     *                     {@code admin} whoever acted, and are not rewritten.
+     * @param auteurs      who wrote at least one line of the edition
+     */
+    @Schema(requiredProperties = {"auteurs"})
+    public record AuteursView(Instant fiableDepuis, List<AuteurView> auteurs) {}
+
+    /**
+     * @param valeur the value {@code auteur} takes to select this author
+     * @param nom    the account's or animateur's name, {@code null} for the
+     *               fixed identities and for a fiche deleted since
+     */
+    @Schema(requiredProperties = {"valeur"})
+    public record AuteurView(String valeur, String nom) {}
 
     private static HistoryNature nature(String nature) {
         if (nature == null || nature.isBlank()) {
