@@ -483,7 +483,7 @@ export class ConsigneFormDialog {
     }
     this.enregistrement.set(true);
     try {
-      await this.poser(this.demandeAvecEmpreinte());
+      await this.poser(this.stampedDemande());
     } catch (error) {
       await this.answerError(error);
     } finally {
@@ -502,7 +502,7 @@ export class ConsigneFormDialog {
    * precondition of its date (issue #362). A date the form added has none: it
    * checks nothing, like a first laying down.
    */
-  private demandeAvecEmpreinte(): DemandeConsigne {
+  private stampedDemande(): DemandeConsigne {
     const demande = buildDemande(this.form());
     const { consigne } = this.data;
     if (consigne?.modifieLe && demande.dates.includes(consigne.date)) {

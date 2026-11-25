@@ -69,6 +69,6 @@
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
-    <button matButton="filled" type="submit" [disabled]="!complete()" i18n="@@common.save">Enregistrer</button>
+    <button matButton="filled" type="submit" [disabled]="!complete() || saving()" i18n="@@common.save">Enregistrer</button>
   </mat-dialog-actions>
 </form>
