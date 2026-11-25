@@ -6,6 +6,8 @@ Tous les workflows tournent sur des runners GitHub (`ubuntu-latest`). Sur un dé
 
 ## Les workflows
 
+Les PR vers une branche de maintenance `release/X.Y` rejouent la CI comme celles vers `main` (aucun workflow ne filtre les branches cibles). Après fusion, seul `securite.yml` joue aussi sur la poussée vers `release/**` : ajouter cette branche aux poussées de `tests.yml` ou `scenario-tests.yml` fait échouer zizmor (`cache-poisoning`).
+
 | Workflow | Rôle |
 | --- | --- |
 | `tests.yml` | Suite backend, E2E, analyse dynamique (`dast`), contrôles du frontend, Sonar |
