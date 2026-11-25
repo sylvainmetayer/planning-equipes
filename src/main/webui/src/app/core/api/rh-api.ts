@@ -3,7 +3,13 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { EditionAccessible, RapportConformite } from '../models';
+import {
+  ContactAnimateurView,
+  ContactsAnimateur,
+  ContactsEnregistres,
+  EditionAccessible,
+  RapportConformite,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class RhApi {
@@ -35,6 +41,25 @@ export class RhApi {
       `/api/rh/editions/${encodeURIComponent(editionId)}/conformite.csv`,
       'rapport-conformite.csv',
       'text/csv',
+    );
+  }
+
+  /** The animateurs holding contacts and every minor, with those contacts. */
+  contacts(editionId: string): Promise<ContactAnimateurView[]> {
+    return this.api.get<ContactAnimateurView[]>(
+      `/api/rh/editions/${encodeURIComponent(editionId)}/contacts`,
+    );
+  }
+
+  /** Replaces the contacts of one animateur; the answer carries the warnings of the write. */
+  saveContacts(
+    editionId: string,
+    animateurId: string,
+    contacts: ContactsAnimateur,
+  ): Promise<ContactsEnregistres> {
+    return this.api.put<ContactsEnregistres>(
+      `/api/rh/editions/${encodeURIComponent(editionId)}/contacts/${encodeURIComponent(animateurId)}`,
+      contacts,
     );
   }
 }

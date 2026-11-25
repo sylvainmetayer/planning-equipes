@@ -12,6 +12,7 @@ describe('RhPage', () => {
     const api = fakeOf<RhApi>({
       editions: () => Promise.resolve(editions),
       rapport: () => Promise.reject(new Error('rien')),
+      contacts: () => Promise.resolve([]),
     });
     const adminApi = fakeOf<AdminApi>({
       logout: vi.fn(() => Promise.resolve({ urlDeconnexion: null })),

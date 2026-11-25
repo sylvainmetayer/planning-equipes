@@ -620,6 +620,13 @@ organisateur sans droit RH ne lit rien de ceci.
 - **Le rapport lit le plan publié**, jamais un brouillon (`409` sans publication)
   et ne contient ni date de naissance ni adresse : un nom, le statut mineur.
 - **Pas d'outil MCP** : le rapport est nominatif, il ne sort jamais vers un assistant.
+- **Les contacts d'urgence et représentants légaux** (`/api/rh/editions/{id}/contacts`)
+  suivent les mêmes règles : droit RH ou administrateur, une édition par droit, `404`
+  indistinct, lecture et écriture journalisées par le service. L'animateur lit et écrit
+  les siens par son espace (`/api/espace-animateur/{jeton}/contacts`, session par code
+  requise), jamais ceux d'un autre. Les données vivent dans `animateur_contact`, pas dans
+  `Animateur` : `ContactsEspaceTest` cherche le numéro saisi dans l'espace d'un collègue,
+  les fiches, le scénario exporté et ne le trouve nulle part.
 - `RhResourceTest` couvre : l'organisateur sans droit RH (`403`), le RH d'une
   autre édition (`404`), l'administrateur (toutes les éditions), l'absence de
   l'en-tête d'édition et la trace dans le journal.

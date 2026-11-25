@@ -88,6 +88,14 @@
       </div>
 
       <h3 i18n="@@conformite.mineurs">Mineurs</h3>
+      @if (v.mineursSansRepresentant.length > 0) {
+        <p class="conformite-alerte">
+          <ng-container i18n="@@conformite.sansRepresentant">Représentant légal non renseigné :</ng-container>
+          @for (m of v.mineursSansRepresentant; track m.animateurId; let dernier = $last) {
+            {{ m.nom }}{{ dernier ? '.' : ',' }}
+          }
+        </p>
+      }
       @if (minorsOf(v.personnes).length === 0) {
         <p i18n="@@conformite.mineurs.aucun">Aucun mineur n'est planifié dans cette édition.</p>
       } @else {
@@ -113,4 +121,6 @@
       }
     </mat-card-content>
   </mat-card>
+
+  <app-contacts-rh [editionId]="editionId()" />
 }

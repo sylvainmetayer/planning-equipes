@@ -33,6 +33,7 @@ const RAPPORT: RapportConformite = {
   regles: [
     { nom: 'dureeHebdomadaireMax', libelle: 'Plafond hebdomadaire', mineurs: false, ecarts: 1 },
   ],
+  mineursSansRepresentant: [{ animateurId: 'B1', nom: 'Bob Test' }],
   personnes: [
     {
       animateurId: 'A1',
@@ -71,6 +72,7 @@ describe('ConformiteRapport', () => {
       rapport,
       pdf: () => Promise.resolve('ok'),
       csv: () => Promise.resolve('ok'),
+      contacts: () => Promise.resolve([]),
     });
     const notifications = fakeOf<NotificationService>({ notify: vi.fn() });
     TestBed.configureTestingModule({
@@ -107,6 +109,11 @@ describe('ConformiteRapport', () => {
     expect(text(fixture)).toContain('2026-W34');
     expect(text(fixture)).toContain('Travail de nuit : poste à 21:00');
     expect(fixture.nativeElement.querySelectorAll('.conformite-mineurs li').length).toBe(1);
+  });
+
+  it('lists the minors whose legal representative is missing', async () => {
+    setup(() => Promise.resolve(RAPPORT));
+    expect(text(await render())).toContain('Représentant légal non renseigné');
   });
 
   it('says so when nobody is a minor', async () => {

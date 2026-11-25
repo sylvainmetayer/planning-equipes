@@ -152,13 +152,13 @@ describe('EspaceAnimateurShell — quelle édition', () => {
   }
 
   /** Out of the collection, two dead tabs were read all event long: they are gone. */
-  it('offers three tabs outside the collection, and the two collection pages only while it is open', async () => {
-    expect(liensNav()).toEqual(['Mon planning', 'Mes échanges', 'Aide']);
+  it('offers four tabs outside the collection, and the two collection pages only while it is open', async () => {
+    expect(liensNav()).toEqual(['Mon planning', 'Mes échanges', 'Mes contacts', 'Aide']);
     expect(textOf()).not.toContain('La collecte des disponibilités est ouverte');
 
     await rendre(view({ collecteOuverte: true, collecteFermeLe: '2026-01-20' }));
 
-    expect(liensNav()).toHaveLength(5);
+    expect(liensNav()).toHaveLength(6);
     expect(textOf()).toContain("La collecte des disponibilités est ouverte jusqu'au 20 janvier");
   });
 

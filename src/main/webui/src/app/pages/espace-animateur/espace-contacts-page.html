@@ -1,0 +1,37 @@
+<h1 class="espace-page-titre" i18n="@@espace.contacts.titrePage">Mes contacts</h1>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else {
+  <mat-card class="espace-dispo-intro" appearance="outlined">
+    <mat-card-content>
+      <p i18n="@@espace.contacts.intro">
+        Qui prévenir en cas de malaise ? Pour un mineur, son représentant légal aussi. Tout est facultatif. Seuls les administrateurs et la personne RH peuvent le lire.
+      </p>
+    </mat-card-content>
+  </mat-card>
+  <form class="espace-contacts-form" (submit)="$event.preventDefault(); save()">
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@espace.contacts.urgenceNom">Personne à prévenir : nom</mat-label>
+      <input matInput maxlength="100" [ngModel]="brouillon().urgenceNom" (ngModelChange)="set('urgenceNom', $event)" name="urgenceNom" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@espace.contacts.urgenceTel">Personne à prévenir : téléphone</mat-label>
+      <input matInput type="tel" maxlength="30" [ngModel]="brouillon().urgenceTelephone" (ngModelChange)="set('urgenceTelephone', $event)" name="urgenceTelephone" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@espace.contacts.representantNom">Représentant légal : nom</mat-label>
+      <input matInput maxlength="100" [ngModel]="brouillon().representantNom" (ngModelChange)="set('representantNom', $event)" name="representantNom" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label i18n="@@espace.contacts.representantTel">Représentant légal : téléphone</mat-label>
+      <input matInput type="tel" maxlength="30" [ngModel]="brouillon().representantTelephone" (ngModelChange)="set('representantTelephone', $event)" name="representantTelephone" />
+    </mat-form-field>
+    <button matButton="filled" type="submit" [disabled]="sending()" i18n="@@espace.contacts.enregistrer">Enregistrer</button>
+  </form>
+  <app-status-message [text]="error()" tone="error" />
+  <app-status-message [text]="warning()" tone="warning" />
+  @if (saved() && !error()) {
+    <p role="status" i18n="@@espace.contacts.enregistre">Vos contacts sont enregistrés.</p>
+  }
+}
