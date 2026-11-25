@@ -1,4 +1,4 @@
-# 0094 — Le responsable de stand lit son stand : un droit de compte, des horaires sans nom par défaut
+# 0095 — Le responsable de stand lit son stand : un droit de compte, des horaires sans nom par défaut
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
