@@ -15,9 +15,9 @@
   "fermeture": "Une question qu'aucun guide ne règle ?",
   "autreLien": "Voir l'hébergement",
   "en": {
-    "titre": "Documentation (French) | Planning Équipes",
-    "description": "Guides to use Planning Équipes, install it on your server and understand how it is built. French only.",
-    "h1": "Documentation (French only)",
+    "titre": "Documentation (English) | Planning Équipes",
+    "description": "Get started with Planning Équipes, install it on your own server and understand how it is built: guides, task by task.",
+    "h1": "Documentation",
     "accueil": "Documentation home",
     "surCettePage": "On this page",
     "recherche": "Search the site",

@@ -47,19 +47,19 @@
     "sections": [
       {
         "h2": "What you need",
-        "texte": "- a domain name and a TLS certificate: the links printed on the PDFs must stay reachable;\n- an SMTP relay, since access codes and rotas go out by e-mail;\n- a reverse proxy in front of the application;\n- 2.5 GB of memory: 2 GB for the application, 512 MB for PostgreSQL.\n\nThe full guide is in [the operations documentation](/docs/installer/exploitation/) (in French)."
+        "texte": "- a domain name and a TLS certificate: the links printed on the PDFs must stay reachable;\n- an SMTP relay, since access codes and rotas go out by e-mail;\n- a reverse proxy in front of the application;\n- 2.5 GB of memory: 2 GB for the application, 512 MB for PostgreSQL.\n\nThe full guide is in [the operations documentation](/en/docs/install/run-the-instance/)."
       },
       {
         "h2": "Backups",
-        "texte": "The application backs up the whole database every night at 04:00, with `pg_dump`, and keeps the most recent copies. Restoring stays an administrator's job, outside the application: no button replaces everything in one click. The procedure is in [backing up and restoring](/docs/installer/sauvegarde-et-restauration/) (in French)."
+        "texte": "The application backs up the whole database every night at 04:00, with `pg_dump`, and keeps the most recent copies. Restoring stays an administrator's job, outside the application: no button replaces everything in one click. The procedure is in [backing up and restoring](/en/docs/install/backup-and-restore/)."
       },
       {
         "h2": "Security",
-        "texte": "Security headers, rate limits, an admin login lockout after failures, separate tokens for the calendar and the TV. An optional mode hands the login to your access proxy, with a shared secret. The details are in [the hardening guide](/docs/installer/securite/) (in French)."
+        "texte": "Security headers, rate limits, an admin login lockout after failures, separate tokens for the calendar and the TV. An optional mode hands the login to your access proxy, with a shared secret. The details are in [the hardening guide](/en/docs/install/security/)."
       },
       {
         "h2": "Solve on another machine",
-        "texte": "The solver uses one core only. A small server can hand full runs to a faster machine, always on or rented for the duration. Every connection leaves from the application, which can keep every port closed. The setup is described in [solving on another machine](/docs/installer/calcul-sur-une-autre-machine/) (in French)."
+        "texte": "The solver uses one core only. A small server can hand full runs to a faster machine, always on or rented for the duration. Every connection leaves from the application, which can keep every port closed. The setup is described in [solving on another machine](/en/docs/install/solve-on-another-machine/)."
       },
       {
         "h2": "An AI assistant on top",
@@ -67,12 +67,12 @@
       },
       {
         "h2": "Versions",
-        "texte": "Each version carries a `vX.Y.Z` number that follows [SemVer](https://semver.org/), and its notes say what needs action at upgrade. You deploy a precise version, never `latest`. To move from one version to the next, follow [updating to a new version](/docs/installer/mettre-a-jour/) (in French)."
+        "texte": "Each version carries a `vX.Y.Z` number that follows [SemVer](https://semver.org/), and its notes say what needs action at upgrade. You deploy a precise version, never `latest`. To move from one version to the next, follow [updating to a new version](/en/docs/install/upgrade/)."
       }
     ],
     "cta": "Would you rather we hosted it for you?",
     "bouton": "Let's talk",
-    "guide": "Install it yourself (guide in French)",
+    "guide": "Install it yourself",
     "liens": [
       "calcul",
       "legal",

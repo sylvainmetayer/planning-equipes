@@ -12,8 +12,11 @@ Custom reviewer agents are maintained for both ecosystems:
 When one version changes, update the other one in the same commit to keep them
 strictly synchronized.
 
-This file is written in English; user-facing documentation (`README.md`, `site/src/docs/`)
-is written in French, and domain identifiers stay in French business vocabulary.
+This file is written in English; user-facing documentation is written in French and
+in English, page for page (`README.fr.md` and `README.md`; `site/src/docs/` and its
+English twin `site/src/docs-en/`), and domain identifiers stay in French business
+vocabulary. In the English documentation an *animateur* is a **staff member**
+(the English interface says so too); the code keeps `Animateur`.
 The Angular frontend UI (`src/main/webui`) is bilingual French/English via
 `@angular/localize`, translated at runtime (`loadTranslations()`, no per-locale
 build): French is the source language written directly in templates/components
@@ -774,8 +777,8 @@ The doc layout is intentional — respect it when adding or updating docs.
    `src/main/webui/AGENTS.md` for the frontend and nothing else. Never split
    repository memory across `CLAUDE.md`, `.github/copilot-instructions.md`,
    or similar files.
-2. **`README.md` is an introduction and a local quickstart, nothing more**: a
-   short presentation of the application, then *Démarrage rapide* — « Essayer »
+2. **`README.md` (English) and `README.fr.md` (French) are an introduction and a local quickstart, nothing more**: a
+   short presentation of the application, then the quick start (*Démarrage rapide*) — « Essayer »
    (the published image through `docker-compose.yml`) and « Développer »
    (`./mvnw quarkus:dev`) — and a pointer to the documentation. A short intro
    and a closing documentation index table are allowed; the functional
@@ -812,8 +815,17 @@ The doc layout is intentional — respect it when adding or updating docs.
    in the hosting part) and `memoire-du-projet.md`. Adding a topic means adding a
    page to the right part and its slug to that part's `index.md` — not a new
    root-level file and not a new README section.
-4. Docs are written in **French**; keep the existing tone and Markdown style
-   (tables for enumerable facts, fenced code blocks for commands).
+4. Docs are written in **French and in English**, page for page. The French
+   page is the source: `site/src/docs-en/<part>/<page>.md` is its twin, named
+   by the `twin: <fr part>/<fr page>` of its front matter, with the same
+   headings, lists, tables, code blocks and **link targets byte for byte** (only
+   the link text is translated; the build turns the targets and anchors into
+   the English pages' and fails on a page without twin or on a different shape,
+   `site/scripts/docs-twins.mjs`). The English parts are `rules/`, `install/`
+   and `build/`, published under `/en/docs/`; their `index.md` lists the English
+   page names in `docs:`. Changing a French page means changing its twin in the
+   same commit. Keep the existing tone and Markdown style (tables for
+   enumerable facts, fenced code blocks for commands).
 5. When behaviour changes, update the doc that owns it. Two owners are **not**
    Markdown files, and writing prose instead of touching them is the mistake
    this rule exists to prevent:

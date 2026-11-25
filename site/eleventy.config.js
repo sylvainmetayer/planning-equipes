@@ -33,7 +33,9 @@ export default function config(eleventyConfig) {
   eleventyConfig.addWatchTarget('src/_data/pages/');
   // The pages of /docs are read by src/docs.js, not rendered as templates of their own
   eleventyConfig.ignores.add('src/docs/**');
+  eleventyConfig.ignores.add('src/docs-en/**');
   eleventyConfig.addWatchTarget('src/docs/');
+  eleventyConfig.addWatchTarget('src/docs-en/');
   eleventyConfig.addWatchTarget('../docs/licences-tierces.md');
   eleventyConfig.addWatchTarget('../docs/diagrammes/');
 

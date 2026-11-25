@@ -33,7 +33,7 @@ const articles = [
   {
     number: 'L3132-1',
     fr: { subject: 'Jours travaillés', rule: "Six jours travaillés par semaine au plus, pour tout animateur." },
-    en: { subject: 'Working days', rule: 'At most six working days a week, for every animateur.' },
+    en: { subject: 'Working days', rule: 'At most six working days a week, for every staff member.' },
   },
   {
     number: 'L3132-2',

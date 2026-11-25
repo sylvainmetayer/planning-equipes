@@ -17,11 +17,16 @@ eleventyExcludeFromCollections: true
 - [{{ copy.en[p.key].h1 }}]({{ site.url }}{{ p.url }}index.md): {{ p.description }}
 {%- endif %}{% endfor %}
 
-## Documentation (français seulement)
-{% for d in docs %}
+## Documentation (français)
+{% for d in docs %}{% if d.lang == 'fr' %}
 - [{{ d.h1 }}]({{ site.url }}{{ d.url }}index.md) : {{ d.description }}
-{%- endfor %}
+{%- endif %}{% endfor %}
+
+## Documentation (English)
+{% for d in docs %}{% if d.lang == 'en' %}
+- [{{ d.h1 }}]({{ site.url }}{{ d.url }}index.md): {{ d.description }}
+{%- endif %}{% endfor %}
 
 ## Source
 - [Code source et documentation]({{ site.repo }}): {{ site.name }} on GitHub
-- [Why each rule exists]({{ site.url }}/docs/comprendre/pourquoi-ces-regles/): the reasoning behind every legal rule
+- [Why each rule exists]({{ site.url }}/en/docs/build/why-these-rules/): the reasoning behind every legal rule

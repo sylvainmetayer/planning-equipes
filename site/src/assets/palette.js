@@ -1,11 +1,11 @@
 // Quick search of the whole site, opened by Ctrl+K (⌘K), "/" or the header button.
 // One index (/search.json), fetched on the first opening: the docs guides and their
-// sections first, then the pages of the showcase in the language of the page.
+// sections first, then the pages of the showcase, all in the language of the page.
 // The docs home also reads ?q= of its own form, with the same search.
 const normalize = (text) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 const MAX = 12;
 
-// Every word must appear; guides, then their sections, then pages of `lang`
+// Every word must appear; guides, then their sections, then pages, all of `lang`
 export function search(index, query, lang) {
   const words = normalize(query).split(/\s+/).filter(Boolean);
   if (!words.length) return [];
@@ -17,10 +17,11 @@ export function search(index, query, lang) {
   const sections = [];
   const pages = [];
   for (const e of index) {
+    if (e.l !== lang) continue;
     if (e.k === 'doc') {
-      if (has(`${e.t} ${e.d}`)) guides.push({ kind: 'guide', href: e.u, title: e.t, text: e.d, lang: 'fr' });
-      for (const [id, h] of e.h) if (has(h)) sections.push({ kind: 'section', href: `${e.u}#${id}`, title: h, text: e.t, lang: 'fr' });
-    } else if (e.l === lang && has(`${e.t} ${e.d}`)) pages.push({ kind: 'page', href: e.u, title: e.t, text: e.d, lang });
+      if (has(`${e.t} ${e.d}`)) guides.push({ kind: 'guide', href: e.u, title: e.t, text: e.d, lang });
+      for (const [id, h] of e.h) if (has(h)) sections.push({ kind: 'section', href: `${e.u}#${id}`, title: h, text: e.t, lang });
+    } else if (has(`${e.t} ${e.d}`)) pages.push({ kind: 'page', href: e.u, title: e.t, text: e.d, lang });
   }
   return [...guides, ...sections, ...pages].slice(0, MAX);
 }
