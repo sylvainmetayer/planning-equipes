@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.compte;
 import dev.sylvain.planning.service.BusinessError;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 
 /**
  * The password of a local account: its policy, and its bcrypt hash.
@@ -28,7 +29,13 @@ public final class LocalPassword {
     private LocalPassword() {}
 
     /** Refuses a password that is too short or longer than bcrypt reads. */
+    /** NFC, so « é » typed as one character or as two is one password, on every device. */
+    private static String nfc(String password) {
+        return password == null ? null : Normalizer.normalize(password, Normalizer.Form.NFC);
+    }
+
     public static void check(String motDePasse) {
+        motDePasse = nfc(motDePasse);
         if (motDePasse == null || motDePasse.codePointCount(0, motDePasse.length()) < LONGUEUR_MIN) {
             throw new BusinessError.Invalid("Le mot de passe doit faire au moins " + LONGUEUR_MIN + " caractères.");
         }
@@ -39,11 +46,12 @@ public final class LocalPassword {
     }
 
     public static String hash(String motDePasse) {
-        return BcryptUtil.bcryptHash(motDePasse, COUT);
+        return BcryptUtil.bcryptHash(nfc(motDePasse), COUT);
     }
 
     /** {@code hash} is {@code null} for an account that has none, or that does not exist: the cost is paid anyway. */
     public static boolean matches(String motDePasse, String hash) {
+        motDePasse = nfc(motDePasse);
         if (motDePasse == null || motDePasse.getBytes(StandardCharsets.UTF_8).length > OCTETS_MAX) {
             return false;
         }

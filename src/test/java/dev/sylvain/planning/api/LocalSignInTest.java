@@ -192,8 +192,14 @@ class LocalSignInTest {
                 .statusCode(400);
     }
 
+    private void waitForMails(int total) throws InterruptedException {
+        for (int i = 0; i < 100 && mailbox.getTotalMessagesSent() < total; i++) {
+            Thread.sleep(50);
+        }
+    }
+
     @Test
-    void lOubliRepondLaMemeChoseQueLAdresseExisteOuNon() {
+    void lOubliRepondLaMemeChoseQueLAdresseExisteOuNon() throws InterruptedException {
         Compte compte = withPassword(false);
         given().contentType("application/json")
                 .body(Map.of("email", compte.email()))
@@ -205,9 +211,98 @@ class LocalSignInTest {
                 .post("/api/auth/mot-de-passe/oubli")
                 .then()
                 .statusCode(204);
+        // The work is done off the request: the answer never waits for the SMTP exchange.
+        waitForMails(1);
         assertThat(mailbox.getMailsSentTo(compte.email())).hasSize(1);
         assertThat(linkToken(compte)).isNotBlank();
         assertThat(mailbox.getTotalMessagesSent()).isEqualTo(1);
+    }
+
+    @Test
+    void lOubliNAnnulePasUneInvitationEncoreValable() throws InterruptedException {
+        Compte compte = account(false);
+        acces.sendLink(compte.id(), true);
+        String invitation = linkToken(compte);
+        given().contentType("application/json")
+                .body(Map.of("email", compte.email()))
+                .post("/api/auth/mot-de-passe/oubli")
+                .then()
+                .statusCode(204);
+        Thread.sleep(500);
+        assertThat(mailbox.getMailsSentTo(compte.email())).hasSize(1);
+        given().contentType("application/json")
+                .body(Map.of("token", invitation, "password", PASSWORD))
+                .post("/api/auth/mot-de-passe")
+                .then()
+                .statusCode(204);
+    }
+
+    @Test
+    void unNouveauMotDePasseFermeLesSessionsOuvertesEtPrevientLeTitulaire() {
+        Compte compte = withPassword(true);
+        String challenge =
+                passwordStep(compte.email(), PASSWORD).then().extract().path("challenge");
+        Matcher m = CODE.matcher(mailText(compte));
+        assertThat(m.find()).isTrue();
+        String cookie = formPost(compte.email(), challenge + ":" + m.group(1)).getCookie("planning-session");
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200);
+
+        mailbox.clear();
+        acces.sendLink(compte.id(), false);
+        acces.choose(linkToken(compte), PASSWORD + " nouveau");
+
+        given().header("X-Edition-Id", "E1")
+                .cookie("planning-session", cookie)
+                .get("/api/animateurs")
+                .then()
+                .statusCode(403);
+        assertThat(mailbox.getMailsSentTo(compte.email()).get(1).getText()).contains("vient d'être changé");
+    }
+
+    @Test
+    void lesAccentsSontNormalises() {
+        Compte compte = account(false);
+        acces.sendLink(compte.id(), true);
+        acces.choose(linkToken(compte), "e\u0301le\u0300ve tre\u0300s long");
+        passwordStep(compte.email(), "\u00e9l\u00e8ve tr\u00e8s long").then().statusCode(200);
+    }
+
+    @Test
+    void desactiverUnCompteEffaceSesLiensEnAttente() {
+        Compte compte = account(false);
+        acces.sendLink(compte.id(), true);
+        String token = linkToken(compte);
+        comptes.deactivate(compte.id());
+        comptes.reactivate(compte.id());
+        given().contentType("application/json")
+                .body(Map.of("token", token, "password", PASSWORD))
+                .post("/api/auth/mot-de-passe")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void lePasDeConnexionLocaleNAcceptePasLeMotDePasseAdminNiLeDefiSurLeFormulaireAdmin() {
+        assertThat(sessionOpened(formPost("admin", "admin"))).isFalse();
+        Compte compte = withPassword(true);
+        String challenge =
+                passwordStep(compte.email(), PASSWORD).then().extract().path("challenge");
+        Matcher m = CODE.matcher(mailText(compte));
+        assertThat(m.find()).isTrue();
+        Response admin = given().contentType("application/x-www-form-urlencoded")
+                .formParam("j_username", compte.email())
+                .formParam("j_password", challenge + ":" + m.group(1))
+                .redirects()
+                .follow(false)
+                .post("/j_security_check");
+        assertThat(sessionOpened(admin)).isFalse();
+        // And the challenge was not spent by the wrong door.
+        assertThat(sessionOpened(formPost(compte.email(), challenge + ":" + m.group(1))))
+                .isTrue();
     }
 
     @Test

@@ -25,13 +25,13 @@ class LocalSignInLockoutTest {
         for (int i = 0; i < 3; i++) {
             given().contentType("application/json")
                     .body(Map.of("email", "personne@example.org", "password", dev.sylvain.planning.TestPasswords.WRONG))
-                    .post("/api/auth/connexion")
+                    .post(i == 1 ? "/api/auth/connexion/" : "/api/auth/connexion")
                     .then()
                     .statusCode(401);
         }
         given().contentType("application/json")
                 .body(Map.of("email", "personne@example.org", "password", dev.sylvain.planning.TestPasswords.WRONG))
-                .post("/api/auth/connexion")
+                .post("/api/auth/connexion/")
                 .then()
                 .statusCode(429)
                 .header("Retry-After", org.hamcrest.Matchers.notNullValue());

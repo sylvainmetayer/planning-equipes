@@ -1,14 +1,20 @@
 package dev.sylvain.planning.service.compte;
 
+import dev.sylvain.planning.config.ConfigAdminLogin;
 import dev.sylvain.planning.config.ConfigComptesLocaux;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.FailureLockout;
 import dev.sylvain.planning.service.RateLimitVerdict;
 import dev.sylvain.planning.service.Sha256;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.espace.CodeRequestLimiter;
 import dev.sylvain.planning.service.publication.MailService;
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.StartupEvent;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -16,6 +22,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -72,6 +79,29 @@ public class CompteAccesService {
     @Inject
     CodeRequestLimiter limiteur;
 
+    @Inject
+    ConfigAdminLogin adminLogin;
+
+    /**
+     * Failures of the password step <b>per account address</b> (existing or not:
+     * the key must not tell), beside the per-address lock of the form: a spray
+     * from many addresses at one account is stopped here, and a success on
+     * another account does not wipe it.
+     */
+    private final FailureLockout accountFailures = new FailureLockout(1_000);
+
+    /** « Forgot my password » requests handed to the pool and not over yet. */
+    private final AtomicInteger pendingForgot = new AtomicInteger();
+
+    private static final int MAX_PENDING_FORGOT = 32;
+
+    void warnIfLinksPointToLocalhost(@Observes StartupEvent startup) {
+        if (LaunchMode.current() == LaunchMode.NORMAL && liens.pointsToLocalhost()) {
+            Log.warn("PUBLIC_URL points at localhost: the password links and the sign-in pages mailed to "
+                    + "accounts open nothing for their readers, and none is sent. Set PUBLIC_URL.");
+        }
+    }
+
     /** What the password step answers: whether a code is now waited for, and where it went. */
     @Schema(
             name = "SignInChallenge",
@@ -105,27 +135,67 @@ public class CompteAccesService {
         if (!CompteService.isActive(compte)) {
             throw new BusinessError.Conflict("Ce compte est désactivé : réactivez-le d'abord.");
         }
-        if (!liens.disponible()) {
+        if (!liens.disponible() || localhostRefused()) {
             throw new BusinessError.Invalid("L'adresse publique de l'application n'est pas configurée "
                     + "(PUBLIC_URL) : le lien ne peut pas être écrit.");
         }
-        emit(compte.id(), compte.email(), compte.nom(), invitation);
+        try {
+            emit(compte.id(), compte.email(), compte.nom(), invitation);
+        } catch (RuntimeException e) {
+            Log.warnf(
+                    "A password link could not be sent to account %s: %s",
+                    compte.id(), e.getClass().getSimpleName());
+            throw new BusinessError.Conflict("Le mail n'a pas pu être envoyé : vérifiez la messagerie de "
+                    + "l'instance, puis renvoyez le lien depuis la ligne du compte.");
+        }
+    }
+
+    /** A link to localhost is refused outside dev and test: nobody who reads the mail can open it. */
+    private boolean localhostRefused() {
+        return LaunchMode.current() == LaunchMode.NORMAL && liens.pointsToLocalhost();
     }
 
     /**
-     * « Mot de passe oublié » from the sign-in page. Always returns quietly: a
-     * refusal, an unknown address, a deactivated account, a mail that failed
-     * all look the same from outside — a failure is logged by account id, never
-     * by address.
+     * « Mot de passe oublié » from the sign-in page: returns at once and does
+     * the rest — the lookup, the link, the SMTP exchange — on the worker pool,
+     * so that the time it takes never tells whether an address has an account.
+     * A full queue drops the request silently, like any other refusal.
      */
-    public void forgot(String email) {
+    public void forgotAsync(String email) {
+        if (pendingForgot.incrementAndGet() > MAX_PENDING_FORGOT) {
+            pendingForgot.decrementAndGet();
+            return;
+        }
+        try {
+            Infrastructure.getDefaultWorkerPool().execute(() -> {
+                try {
+                    forgot(email);
+                } catch (RuntimeException e) {
+                    Log.warnf(
+                            "A password reset request failed: %s", e.getClass().getSimpleName());
+                } finally {
+                    pendingForgot.decrementAndGet();
+                }
+            });
+        } catch (RuntimeException e) {
+            pendingForgot.decrementAndGet();
+        }
+    }
+
+    /**
+     * The work of {@link #forgotAsync}. Quiet on a refusal, an unknown address,
+     * a deactivated account, a link still in force (asking again never cancels
+     * an invitation or a reset the person has not used yet) and a mail that
+     * failed: a failure is logged by account id, never by address.
+     */
+    void forgot(String email) {
         String cle = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
         Optional<CompteAccesRepository.Credentials> compte = cle.isEmpty() ? Optional.empty() : acces.credentials(cle);
-        if (compte.isEmpty() || !compte.get().active() || !liens.disponible()) {
+        if (compte.isEmpty() || !compte.get().active() || !liens.disponible() || localhostRefused()) {
             return;
         }
         CompteAccesRepository.Credentials c = compte.get();
-        if (!limiteur.request("oubli/" + c.id()).autorise()) {
+        if (acces.hasLiveLink(c.id()) || !limiteur.request("oubli/" + c.id()).autorise()) {
             return;
         }
         try {
@@ -137,18 +207,28 @@ public class CompteAccesService {
         }
     }
 
-    /** Uses a link to set the password. The password is checked <b>before</b> the link is spent. */
+    /**
+     * Uses a link to set the password. The password is checked <b>before</b>
+     * the link is spent, and spending and setting are one transaction. Setting
+     * a password closes every session opened with the previous one (the epoch
+     * moves) and tells the owner by mail.
+     */
     public void choose(String token, String password) {
         LocalPassword.check(password);
         if (token == null || token.isBlank()) {
             throw new BusinessError.Invalid(INVALID_LINK);
         }
-        String compteId =
-                acces.consumeLink(Sha256.hex(token.trim())).orElseThrow(() -> new BusinessError.Invalid(INVALID_LINK));
-        if (comptes.findById(compteId).filter(CompteService::isActive).isEmpty()) {
-            throw new BusinessError.Invalid(INVALID_LINK);
-        }
-        acces.definePassword(compteId, LocalPassword.hash(password));
+        String compteId = acces.useLink(Sha256.hex(token.trim()), LocalPassword.hash(password))
+                .orElseThrow(() -> new BusinessError.Invalid(INVALID_LINK));
+        comptes.findById(compteId).ifPresent(c -> {
+            try {
+                mail.sendPasswordChanged(c.email(), c.nom());
+            } catch (RuntimeException e) {
+                Log.warnf(
+                        "The password change notice could not be sent to account %s: %s",
+                        c.id(), e.getClass().getSimpleName());
+            }
+        });
     }
 
     /**
@@ -159,14 +239,20 @@ public class CompteAccesService {
      * @throws TooManyRequests when codes pile up unused for this account
      */
     public Optional<Challenge> open(String email, String password) {
-        Optional<CompteAccesRepository.Credentials> compte =
-                email == null || email.isBlank() ? Optional.empty() : acces.credentials(email.trim());
+        String key = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        long wait = accountFailures.lockoutSeconds(key, adminLogin.maxEchecs(), adminLogin.dureeBlocage());
+        if (wait > 0) {
+            throw new TooManyRequests(wait);
+        }
+        Optional<CompteAccesRepository.Credentials> compte = key.isEmpty() ? Optional.empty() : acces.credentials(key);
         boolean bon = LocalPassword.matches(
                 password,
                 compte.map(CompteAccesRepository.Credentials::passwordHash).orElse(null));
         if (!bon || !compte.get().active()) {
+            accountFailures.recordFailure(key, adminLogin.dureeBlocage());
             return Optional.empty();
         }
+        accountFailures.clear(key);
         CompteAccesRepository.Credentials c = compte.get();
         String challenge = token();
         if (!config.secondeEtape()) {
@@ -229,9 +315,31 @@ public class CompteAccesService {
         return compte;
     }
 
-    /** The account a session cookie names, if it is still active. */
-    public Optional<Compte> activeByEmail(String email) {
-        return comptes.findByEmail(email).filter(CompteService::isActive);
+    /**
+     * What a local session's cookie carries as its principal: the address and
+     * the epoch of the account's sessions ({@code address#epoch}). A new
+     * password moves the epoch, and every cookie opened before it stops
+     * naming anyone.
+     */
+    public String sessionPrincipal(Compte compte) {
+        return compte.email() + "#" + acces.sessionEpoch(compte.id());
+    }
+
+    /** The account a session cookie names, if it is still active and the password has not changed since. */
+    public Optional<Compte> activeSession(String principal) {
+        int hash = principal.lastIndexOf('#');
+        if (hash < 0) {
+            return Optional.empty();
+        }
+        Optional<Compte> compte =
+                comptes.findByEmail(principal.substring(0, hash)).filter(CompteService::isActive);
+        return compte.filter(c -> sessionPrincipal(c).equals(principal));
+    }
+
+    /** The address inside a local session's principal, for display. */
+    public static String addressOf(String principal) {
+        int hash = principal.lastIndexOf('#');
+        return hash < 0 ? principal : principal.substring(0, hash);
     }
 
     private void emit(String compteId, String email, String nom, boolean invitation) {

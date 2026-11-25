@@ -191,3 +191,4 @@ dev/sylvain/planning/api/FormLoginSecoursOuvertTest.java
 dev/sylvain/planning/api/LocalSignInTest.java
 dev/sylvain/planning/api/LocalSignInWithoutSecondStepTest.java
 dev/sylvain/planning/api/LocalSignInLockoutTest.java
+dev/sylvain/planning/api/LocalSignInSprayTest.java

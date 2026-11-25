@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.espace;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriBuilder;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -100,6 +101,19 @@ public class ApplicationLinks {
     @Inject
     public ApplicationLinks(@ConfigProperty(name = "planning.public-url") Optional<String> baseUrl) {
         this.base = baseUrl.map(String::trim).filter(url -> !url.isBlank());
+    }
+
+    /**
+     * Whether the base URL points at this very machine ({@code localhost},
+     * a loopback address): a link written with it opens nothing for whoever
+     * reads the mail, and says the operator never set {@code PUBLIC_URL}.
+     */
+    public boolean pointsToLocalhost() {
+        return base.map(url -> {
+                    String host = URI.create(url).getHost();
+                    return host == null || host.equals("localhost") || host.equals("127.0.0.1") || host.equals("[::1]");
+                })
+                .orElse(false);
     }
 
     /** Whether links can be printed at all — false when no base URL is configured. */

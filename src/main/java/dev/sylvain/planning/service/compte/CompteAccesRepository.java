@@ -49,26 +49,18 @@ public class CompteAccesRepository {
         });
     }
 
-    /** Sets the password and withdraws what was pending for the account: a sign-in started with the old one. */
-    public void definePassword(String compteId, String hash) {
-        scope.write("Failed to set a password", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "UPDATE compte SET mot_de_passe_hash = ?, mot_de_passe_le = now() WHERE id = ?")) {
-                ps.setString(1, hash);
-                ps.setString(2, compteId);
-                ps.executeUpdate();
-            }
-            deleteChallenges(connection, compteId);
-        });
-    }
-
-    /** One link in force per account: a new one replaces the previous. */
+    /**
+     * One link in force per account: a new one replaces the previous, in one
+     * statement — two concurrent emissions cannot both insert and fail on the
+     * unique index.
+     */
     public void replaceLink(String compteId, String tokenHash, String objet, Instant expireLe) {
         scope.write("Failed to store a password link", connection -> {
             purgeLinks(connection);
-            deleteLinks(connection, compteId);
-            try (PreparedStatement ps = connection.prepareStatement(
-                    "INSERT INTO compte_jeton (jeton_hash, compte_id, objet, expire_le) VALUES (?, ?, ?, ?)")) {
+            try (PreparedStatement ps = connection.prepareStatement("""
+                    INSERT INTO compte_jeton (jeton_hash, compte_id, objet, expire_le) VALUES (?, ?, ?, ?)
+                    ON CONFLICT (compte_id) DO UPDATE SET jeton_hash = EXCLUDED.jeton_hash,
+                    objet = EXCLUDED.objet, expire_le = EXCLUDED.expire_le, cree_le = now()""")) {
                 ps.setString(1, tokenHash);
                 ps.setString(2, compteId);
                 ps.setString(3, objet);
@@ -78,14 +70,65 @@ public class CompteAccesRepository {
         });
     }
 
-    /** The link used up: deleted, so a second use finds nothing — and an expired one is not found. */
-    public Optional<String> consumeLink(String tokenHash) {
-        return scope.writeAndReturn("Failed to consume a password link", connection -> {
+    /** Whether a link still in force exists: asking for another must not cancel it. */
+    public boolean hasLiveLink(String compteId) {
+        return scope.read("Failed to read a password link", connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT 1 FROM compte_jeton WHERE compte_id = ? AND expire_le > now()")) {
+                ps.setString(1, compteId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        });
+    }
+
+    /**
+     * Spends a link and sets the password, in <b>one transaction</b>: a failure
+     * between the two cannot burn the link without changing the password.
+     *
+     * @return the account id; empty on an unknown, expired or used link, or an
+     *         account deactivated since (the link is then spent for nothing)
+     */
+    public Optional<String> useLink(String tokenHash, String passwordHash) {
+        return scope.writeAndReturn("Failed to use a password link", connection -> {
+            String compteId;
             try (PreparedStatement ps = connection.prepareStatement(
                     "DELETE FROM compte_jeton WHERE jeton_hash = ? AND expire_le > now() RETURNING compte_id")) {
                 ps.setString(1, tokenHash);
                 try (ResultSet rs = ps.executeQuery()) {
-                    return rs.next() ? Optional.of(rs.getString(1)) : Optional.empty();
+                    if (!rs.next()) {
+                        return Optional.empty();
+                    }
+                    compteId = rs.getString(1);
+                }
+            }
+            try (PreparedStatement ps = connection.prepareStatement("""
+                    UPDATE compte SET mot_de_passe_hash = ?, mot_de_passe_le = now()
+                    WHERE id = ? AND desactive_le IS NULL""")) {
+                ps.setString(1, passwordHash);
+                ps.setString(2, compteId);
+                if (ps.executeUpdate() != 1) {
+                    return Optional.empty();
+                }
+            }
+            deleteChallenges(connection, compteId);
+            return Optional.of(compteId);
+        });
+    }
+
+    /**
+     * The generation of the account's sessions: when its password was last set
+     * (milliseconds, {@code 0} before any). A session carries the value it was
+     * opened under; a new password makes every older one worthless.
+     */
+    public long sessionEpoch(String compteId) {
+        return scope.read("Failed to read a session epoch", connection -> {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT COALESCE((date_part('epoch', mot_de_passe_le) * 1000)::bigint, 0) FROM compte WHERE id = ?")) {
+                ps.setString(1, compteId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? rs.getLong(1) : 0L;
                 }
             }
         });
@@ -96,10 +139,12 @@ public class CompteAccesRepository {
             String compteId, String challengeHash, String codeHash, int attempts, Instant expireLe) {
         scope.write("Failed to store a sign-in challenge", connection -> {
             purgeChallenges(connection);
-            deleteChallenges(connection, compteId);
             try (PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO compte_defi (defi_hash, compte_id, code_hash, tentatives_restantes, expire_le)
-                    VALUES (?, ?, ?, ?, ?)""")) {
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT (compte_id) DO UPDATE SET defi_hash = EXCLUDED.defi_hash,
+                    code_hash = EXCLUDED.code_hash, tentatives_restantes = EXCLUDED.tentatives_restantes,
+                    expire_le = EXCLUDED.expire_le""")) {
                 ps.setString(1, challengeHash);
                 ps.setString(2, compteId);
                 ps.setString(3, codeHash);
@@ -160,13 +205,6 @@ public class CompteAccesRepository {
             }
             return bon ? Optional.of(compteId) : Optional.empty();
         });
-    }
-
-    private static void deleteLinks(Connection connection, String compteId) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM compte_jeton WHERE compte_id = ?")) {
-            ps.setString(1, compteId);
-            ps.executeUpdate();
-        }
     }
 
     private static void deleteChallenges(Connection connection, String compteId) throws SQLException {

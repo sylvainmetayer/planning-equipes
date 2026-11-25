@@ -436,7 +436,8 @@ complètes. Quatre points sont connus et se consignent :
   **Effacement** : à la demande d'une personne, ou à l'expiration de la durée
   ci-dessous, l'exploitant **pseudonymise** la ligne plutôt que de la
   supprimer — l'adresse devient un identifiant opaque (`efface-<id>@invalide`),
-  le nom est vidé — ce qui garde la ligne, ses droits datés et les références
+  le nom est vidé, `mot_de_passe_hash` et `mot_de_passe_le` passent à `NULL` et
+  les lignes de `compte_jeton` et `compte_defi` du compte sont supprimées — ce qui garde la ligne, ses droits datés et les références
   du journal, et ne désigne plus personne ; c'est une opération SQL, jamais un
   `DELETE`. **Conservation** : un compte actif est gardé tant qu'il sert ; un
   compte désactivé l'est **deux ans** après sa désactivation (le temps de

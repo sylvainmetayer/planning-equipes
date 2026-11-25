@@ -184,8 +184,25 @@ public class CompteRepository {
                 ps.setTimestamp(1, desactiveLe == null ? null : Timestamp.from(desactiveLe));
                 ps.setString(2, desactiveLe == null ? null : par);
                 ps.setString(3, id);
-                return ps.executeUpdate() == 1 ? Outcome.DONE : Outcome.NOT_FOUND;
+                if (ps.executeUpdate() != 1) {
+                    return Outcome.NOT_FOUND;
+                }
             }
+            if (desactiveLe != null) {
+                // A deactivated account keeps no pending credential: a link mailed
+                // before must not work the day it is reactivated.
+                try (PreparedStatement ps =
+                        connection.prepareStatement("DELETE FROM compte_jeton WHERE compte_id = ?")) {
+                    ps.setString(1, id);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps =
+                        connection.prepareStatement("DELETE FROM compte_defi WHERE compte_id = ?")) {
+                    ps.setString(1, id);
+                    ps.executeUpdate();
+                }
+            }
+            return Outcome.DONE;
         });
     }
 

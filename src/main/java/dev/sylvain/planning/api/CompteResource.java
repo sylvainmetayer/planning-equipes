@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteAccesService;
 import dev.sylvain.planning.service.compte.CompteService;
@@ -52,7 +53,12 @@ public class CompteResource {
         Compte compte =
                 comptes.create(nouveau == null ? null : nouveau.email(), nouveau == null ? null : nouveau.nom());
         if (nouveau != null && Boolean.TRUE.equals(nouveau.invite())) {
-            acces.sendLink(compte.id(), true);
+            try {
+                acces.sendLink(compte.id(), true);
+            } catch (BusinessError e) {
+                throw new BusinessError.Conflict("Le compte est créé, mais l'invitation n'a pas pu partir ("
+                        + e.getMessage() + ") : renvoyez-la depuis sa ligne.");
+            }
         }
         return compte;
     }

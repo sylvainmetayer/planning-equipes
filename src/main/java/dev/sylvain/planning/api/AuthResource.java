@@ -70,7 +70,9 @@ public class AuthResource {
         boolean authentifie = !identity.isAnonymous();
         return new StatutSession(
                 authentifie,
-                authentifie ? identity.getPrincipal().getName() : null,
+                authentifie
+                        ? CompteAccesService.addressOf(identity.getPrincipal().getName())
+                        : null,
                 authentifie ? List.copyOf(new TreeSet<>(identity.getRoles())) : List.of(),
                 compteId());
     }
@@ -97,6 +99,18 @@ public class AuthResource {
             // Declared by hand: the refusals carry a Response of their own.
             content = @Content(schema = @Schema(implementation = CompteAccesService.Challenge.class)))
     public Response passwordStep(Credentials credentials, @Context RoutingContext routage) {
+        // The lock is asked here too, not only by the filter: a path the filter
+        // does not recognise must not buy unlimited bcrypt.
+        long wait = limiteur.lockoutFor(routage);
+        if (wait > 0) {
+            return Response.status(429)
+                    .header("Retry-After", wait)
+                    .entity(Map.of(
+                            "message",
+                            "Trop de tentatives de connexion : réessayez dans " + Math.max(1, (wait + 59) / 60)
+                                    + " minute(s)."))
+                    .build();
+        }
         Optional<CompteAccesService.Challenge> challenge;
         try {
             challenge = acces.open(
@@ -125,7 +139,7 @@ public class AuthResource {
     @Path("/mot-de-passe/oubli")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response forgotPassword(ForgotRequest request) {
-        acces.forgot(request == null ? null : request.email());
+        acces.forgotAsync(request == null ? null : request.email());
         return Response.noContent().build();
     }
 
