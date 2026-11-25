@@ -141,15 +141,10 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. À réserver à une recette qui rejoue une édition ancienne |
 | `JOBS_STREAM_HEARTBEAT` | `PT20S` | Battement du flux de suivi des calculs, qui garde les proxys ouverts |
 | `JOBS_STREAM_SCORE` | `PT1S` | Fréquence d'envoi de la courbe de score d'un calcul en cours |
-| `SOLVER_WORKER_URL` | *(vide)* | Adresse d'un worker permanent qui reçoit les calculs complets. En `https`, sauf sur la boucle locale ; exige `SOLVER_WORKER_SECRET` ; exclut `SOLVER_WORKER_HOOK_URL`. Sinon, démarrage refusé |
+| `SOLVER_WORKER_URL` | *(vide)* | Adresse d'un worker permanent qui reçoit les calculs complets. En `https`, sauf sur la boucle locale ; exige `SOLVER_WORKER_SECRET`. Sinon, démarrage refusé |
 | `SOLVER_WORKER_SECRET` | *(vide)* | Secret partagé avec le worker, la même valeur des deux côtés : obligatoire avec `SOLVER_WORKER_URL`, et pour démarrer l'image en mode worker |
 | `SOLVER_WORKER_TLS_FINGERPRINT` | *(vide)* | Empreinte du certificat du worker, épinglée |
-| `SOLVER_WORKER_HOOK_URL` | *(vide)* | Adresse du lanceur qui crée une machine à la demande (incompatible avec l'URL d'un worker permanent). En `https`, sauf sur la boucle locale ou un réseau privé ; exige `SOLVER_WORKER_HOOK_SECRET` |
-| `SOLVER_WORKER_HOOK_SECRET` | *(vide)* | Secret du lanceur |
-| `SOLVER_WORKER_INSTANCE` | `planning` | Nom que l'instance donne au lanceur, quand il en sert plusieurs |
 | `SOLVER_WORKER_DEFAULT` | `local` | `remote` : un calcul part sur la machine de calcul quand son lancement ne dit rien ; `local` sinon |
-| `SOLVER_WORKER_START_TIMEOUT` | `PT5M` | Temps accordé à une machine pour démarrer |
-| `SOLVER_WORKER_IDLE_TIMEOUT` | `PT45M` | Inactivité au bout de laquelle une machine à la demande est arrêtée |
 | `SOLVER_WORKER_MODE` | `false` | `true` : l'image démarre le worker de calcul au lieu de l'application. Lue par `docker/entrypoint.sh` |
 | `SOLVER_WORKER_PORT` | `8443` | Mode worker : port d'écoute |
 | `SOLVER_WORKER_TLS_KEYSTORE` | (aucun) | Mode worker : fichier PKCS#12 du certificat TLS. Sans lui, le worker écoute en HTTP sur la seule boucle locale ; avec lui, en HTTPS sur toutes les interfaces |

@@ -116,11 +116,6 @@
   <app-solver-queue (failed)="output.set($event)" />
 </mat-card>
 
-@if (machine()?.configured && machine()?.onDemand && (avance.ouvert() || machineUp())) {
-  <app-machine-calcul-card [machine]="machine()!" (changed)="machine.set($event)"
-                           (failed)="output.set($event); loadMachine()" />
-}
-
 <!-- The live curve sits by the progress while a solve runs; once it is over
      it steps below the result, foldable, rather than ahead of it. -->
 @if (solverBusy()) {

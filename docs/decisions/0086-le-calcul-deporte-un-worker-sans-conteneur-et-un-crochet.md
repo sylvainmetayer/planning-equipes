@@ -1,6 +1,6 @@
 # 0086 — Le calcul déporté : un worker sans conteneur applicatif, et un crochet pour sa machine
 
-- **Statut** : accepté
+- **Statut** : accepté, **remplacé en partie** par [0101](0101-retrait-du-lanceur-de-machine-a-la-demande.md) : la machine démarrée par un crochet est retirée, le worker permanent et son contrat restent
 - **Date** : novembre 2026
 - **Portée** : résolution (`service/solve`), image, déploiement
 - **Met en œuvre** : [0085](0085-un-calcul-deporte-par-contrat-etude.md), dont elle garde le contrat et révise trois points

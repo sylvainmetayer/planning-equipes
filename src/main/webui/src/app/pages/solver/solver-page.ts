@@ -72,7 +72,6 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { IncrementalResult } from './incremental-result';
-import { MachineCalculCard } from './machine-calcul-card';
 import { ReplanificationData, ReplanificationDialog } from './replanification-dialog';
 import { RouterLink } from '@angular/router';
 import { ScoreCurveCard } from './score-curve-card';
@@ -155,7 +154,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     ValidationBanner,
     RouterLink,
     MatButtonToggleModule,
-    MachineCalculCard,
   ],
   templateUrl: './solver-page.html',
   styleUrls: ['./solver.css', './replanification.css', './score-curve.css'],
@@ -238,20 +236,10 @@ export class SolverPage implements OnInit {
 
   /* ----------------------------- Compute machine -- ---------------------------- */
 
-  /** The compute machine of ADR 0086; null until read, and nothing of it shows unless `configured`. */
+  /** The worker of ADR 0086; null until read, and nothing of it shows unless `configured`. */
   protected readonly machine = signal<MachineCalcul | null>(null);
   protected readonly machineConfiguree = computed(() => this.machine()?.configured === true);
   protected readonly remoteByDefault = computed(() => this.machine()?.remoteByDefault ?? false);
-  /** A machine that is up, or whose last stop failed, may be billing: its card never folds away. */
-  protected readonly machineUp = computed(() => {
-    const m = this.machine();
-    return (
-      m?.state === 'PREPARING' ||
-      m?.state === 'READY' ||
-      m?.state === 'SOLVING' ||
-      !!m?.lastStopError
-    );
-  });
   /** « Sur la machine de calcul » for the next full solve; follows the instance default until chosen. */
   protected readonly distant = linkedSignal(() => this.remoteByDefault());
 
@@ -404,7 +392,7 @@ export class SolverPage implements OnInit {
   private readonly session = inject(SessionStore);
 
   constructor() {
-    // The machine's state moves with the jobs: re-read when one starts, ends
+    // The worker choice is re-read when a job starts, ends
     // or changes stage — the first run of this effect is the initial read.
     const jobStage = computed(() => {
       const job = this.jobs.activeJob();
@@ -414,14 +402,6 @@ export class SolverPage implements OnInit {
       jobStage();
       untracked(() => void this.loadMachine());
     });
-    // And slowly while a machine is up: it stops by itself after an idle delay.
-    const poll = setInterval(() => {
-      const machine = this.machine();
-      if (machine?.onDemand && machine.state !== 'ABSENT') {
-        void this.loadMachine();
-      }
-    }, 15_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(poll));
     void this.problemes.reload();
     void this.crud.reload();
     void this.validations.reload();
