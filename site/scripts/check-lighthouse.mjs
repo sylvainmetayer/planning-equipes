@@ -8,7 +8,7 @@
 // sends the _headers) it audits that origin. The pages are the ones of the
 // sitemap. The browser is CHROME_PATH, or the one chrome-launcher finds.
 import { readFileSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import lighthouse from 'lighthouse';
 import desktop from 'lighthouse/core/config/desktop-config.js';
 import * as chromeLauncher from 'chrome-launcher';
@@ -18,13 +18,12 @@ const target = process.argv[2] ?? '_site';
 const MIN = 95;
 const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo'];
 
-// The argument is a build folder inside the project or the origin of a running server
+// The argument is the name of a build folder of the project (one path segment) or the origin of a running server
 const isUrl = /^https?:\/\//.test(target);
-const folder = resolve(isUrl ? '_site' : target);
-if (!isUrl && !folder.startsWith(process.cwd() + sep)) throw new Error(`${folder} : le dossier du build doit être dans le projet`);
-if (isUrl) new URL(target); // refuses anything that is not a URL
+if (!isUrl && !/^[\w-][\w.-]*$/.test(target)) throw new Error(`${target} : le dossier du build doit être un dossier du projet`);
+const folder = resolve(process.cwd(), isUrl ? '_site' : target);
 
-let base = target;
+let base = isUrl ? new URL(target).origin : ''; // refuses anything that is not a URL
 let server;
 if (!isUrl) {
   server = serveDist(folder);

@@ -15,8 +15,8 @@ export function toMarkdown(p) {
   const out = [`# ${page.h1}`];
   const sep = lang === 'fr' ? ' : ' : ': ';
   if (key === 'accueil') {
-    out.push(page.lede, `## ${page.loi.h2}`, page.loi.reponse, page.loi.refus.map((r) => `- ${r.qui}, ${r.poste}${sep}${r.raison} (${r.article})`).join('\n'));
     out.push(
+      page.lede, `## ${page.loi.h2}`, page.loi.reponse, page.loi.refus.map((r) => `- ${r.qui}, ${r.poste}${sep}${r.raison} (${r.article})`).join('\n'),
       articles.map((a) => `- ${a.number} (${a[lang].subject})${sep}${a[lang].rule}`).join('\n'),
       `## ${page.jourj.h2}`,
       page.jourj.intro,

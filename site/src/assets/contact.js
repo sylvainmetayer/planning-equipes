@@ -11,7 +11,9 @@ if (frame) {
     // "[iFrameSizer]tally:<height>:<width>:<type>"; the title and mouse messages are 0:0, the height is sometimes fractional
     const [head, height, width] = event.data.split(':');
     const px = Math.ceil(Number.parseFloat(height));
-    if (head !== '[iFrameSizer]tally' || !(px > 0) || !(Number.parseFloat(width) > 0)) return;
+    const w = Number.parseFloat(width);
+    // NaN (a missing or non-numeric size) is refused like zero
+    if (head !== '[iFrameSizer]tally' || Number.isNaN(px) || px <= 0 || Number.isNaN(w) || w <= 0) return;
     answered = true;
     const before = frame.offsetHeight;
     frame.style.height = `${Math.min(Math.max(px, 400), 4000)}px`;

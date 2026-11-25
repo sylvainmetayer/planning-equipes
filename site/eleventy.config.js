@@ -14,7 +14,7 @@ if (!process.env.ELEVENTY_ENV && process.env.CF_PAGES) {
 
 const fonts = '@fontsource-variable';
 
-export default function (eleventyConfig) {
+export default function config(eleventyConfig) {
   eleventyConfig.addPassthroughCopy('src/images');
   eleventyConfig.addPassthroughCopy('src/videos');
   eleventyConfig.addPassthroughCopy('src/exemples');
@@ -61,10 +61,13 @@ export default function (eleventyConfig) {
   eleventyConfig.addFilter('mdi', markdownInline);
   eleventyConfig.addFilter('json', (value) => JSON.stringify(value));
   // JSON-LD of a page: "<" is escaped so no text can close the script block
-  eleventyConfig.addFilter('jsonld', (page, modified) => JSON.stringify(schema(page, modified), null, 1).replaceAll('<', '\\u003c'));
+  eleventyConfig.addFilter('jsonld', (page, modified) => JSON.stringify(schema(page, modified), null, 1).replaceAll('<', String.raw`\u003c`));
   eleventyConfig.addFilter('markdownTwin', toMarkdown);
   // Weight of a published file, in the unit of the language ("547 ko", "547 kB")
-  eleventyConfig.addFilter('weight', (path, unit) => `${Math.round(statSync(`src${path}`).size / 1000)} ${unit}`);
+  eleventyConfig.addFilter('weight', (path, unit) => {
+    const ko = Math.round(statSync(`src${path}`).size / 1000);
+    return `${ko} ${unit}`;
+  });
   // The part of a sentence after its first separator ("Planning par jour : qui…" gives "qui…")
   eleventyConfig.addFilter('after', (text, sep) => text.slice(text.indexOf(sep) + 1).trim());
   eleventyConfig.addFilter('cap', (text) => text.charAt(0).toUpperCase() + text.slice(1));

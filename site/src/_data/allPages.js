@@ -25,7 +25,7 @@ const lastmod = (key) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
 };
 
-export default function () {
+export default function allPages() {
   const copy = copyOf();
   const pages = [];
   for (const lang of ['fr', 'en']) {

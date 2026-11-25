@@ -1,6 +1,6 @@
 // What the site search reads of the docs: one light index (title, description,
 // h2/h3 and their anchors) instead of each page's whole Markdown twin
-export default class {
+export default class DocsSearch {
   data() {
     return { permalink: '/docs/search.json', eleventyExcludeFromCollections: true };
   }
