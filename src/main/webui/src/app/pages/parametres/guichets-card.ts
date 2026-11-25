@@ -21,6 +21,7 @@ import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /**
  * « Guichets » — what the animateurs can do from their espace, and when: the
@@ -181,7 +182,8 @@ export class GuichetsCard implements OnInit {
         });
       }
     } catch (error) {
-      this.error.set(errorPrefix(error));
+      // An inactive edition is told by the interceptor, once.
+      this.error.set(isEditionInactive(error) ? '' : errorPrefix(error));
       void this.load();
     } finally {
       this.collectionSaving.set(false);

@@ -10,12 +10,14 @@ import { Location } from '@angular/common';
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { DeclarationAdminView, StatutDeclaration, TeammateRequestView } from '../../core/models';
+import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
+import { seedStore } from '../../core/testing/seed-store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DisponibilitesPage } from './disponibilites-page';
@@ -69,6 +71,8 @@ async function setUp(queryParams: Record<string, string>, confirmed = true) {
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
+      // The inactive-edition note links to the Éditions page.
+      provideRouter([]),
       { provide: ConfirmService, useValue: { ask: vi.fn(() => Promise.resolve(confirmed)) } },
       {
         provide: DisponibilitesApi,
@@ -161,6 +165,25 @@ describe('DisponibilitesPage « en attente »', () => {
     await fixture.whenStable();
 
     expect(sendLinks).not.toHaveBeenCalled();
+  });
+
+  it('greys out « Envoyer les liens » on an inactive edition and says why next to it', async () => {
+    const { fixture } = await setUp({});
+    seedStore(TestBed.inject(EditionStore), 'courant', {
+      id: 'E1',
+      nom: 'Année 2025',
+      active: false,
+      creeLe: null,
+    });
+    await fixture.whenStable();
+
+    const bouton = button(fixture, 'Envoyer les liens');
+    expect(bouton.disabled).toBe(true);
+    expect(bouton.getAttribute('aria-describedby')).toBe('liens-edition-inactive');
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('#liens-edition-inactive')!.textContent).toContain(
+      "Cette édition n'est pas active",
+    );
   });
 });
 

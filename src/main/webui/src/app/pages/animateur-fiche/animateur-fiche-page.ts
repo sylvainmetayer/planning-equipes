@@ -114,6 +114,7 @@ import { copyEspaceLink } from '../../core/clipboard';
 import { espaceUrl } from '../../core/app-links';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /** The levels the inline editor offers, « aucune » included. */
 const NIVEAUX: readonly (NiveauCompetence | null)[] = [null, 'DEBUTANT', 'AUTONOME', 'REFERENT'];
@@ -711,6 +712,10 @@ export class AnimateurFichePage implements OnInit {
     try {
       await action();
     } catch (error) {
+      // An inactive edition is told by the interceptor, once.
+      if (isEditionInactive(error)) {
+        return;
+      }
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),
