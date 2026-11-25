@@ -104,6 +104,7 @@ describe('resultOf', () => {
       realisable: false,
       siegesNonPourvus: 12,
       reglesEnDefaut: [],
+      methode: 'CALCUL',
     },
   });
 

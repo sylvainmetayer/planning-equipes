@@ -18,6 +18,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -39,7 +40,9 @@ import {
 import { errorMessage } from '../../core/error-message';
 import { libelleJour as jourCourt } from '../../core/horaire-stand';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { reglagesAvances } from '../../core/reglages-avances';
 import { consumeQueryParam } from '../../core/view-query-params';
+import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { StatusMessage } from '../../shared/status-message';
 import { FormationPage } from '../formation/formation-page';
 import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
@@ -99,10 +102,12 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
   selector: 'app-staffing-page',
   imports: [
     StatusMessage,
+    ReglagesAvancesToggle,
     RouterLink,
     FormsModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
@@ -199,6 +204,9 @@ export class StaffingPage implements OnInit {
   protected readonly minorsToCheck = signal<number | null>(null);
   /** The time the solve is given at most, in seconds; `null` for the server's default. */
   protected readonly secondsToCheck = signal<number | null>(null);
+  /** The default (ADR 0098): the exact bound shows at once, a solve of a made-up team confirms; unticked, the bound alone answers. */
+  protected readonly byCalculation = signal(true);
+  protected readonly avance = reglagesAvances();
   protected readonly verificationErreur = signal('');
   protected readonly verificationRunning = computed(() => this.verification()?.etat === 'EN_COURS');
   private pollTimer: ReturnType<typeof setTimeout> | undefined;
@@ -463,6 +471,7 @@ export class StaffingPage implements OnInit {
           majeurs: this.adultsToCheck(),
           mineurs: this.minorsToCheck(),
           dureeSecondes: this.secondsToCheck(),
+          calcul: this.byCalculation(),
         }),
       );
       this.schedulePoll();
@@ -496,6 +505,12 @@ export class StaffingPage implements OnInit {
       return verification.erreur ?? '';
     }
     const team = teamLabel(verification);
+    if (verification.methode === 'BORNE') {
+      const minimum = verification.minimum ?? 0;
+      return verification.realisable
+        ? $localize`:@@staffing.verification.borneOk:Avec ${team}:equipe:, le minimum exact (au moins ${minimum}:minimum: personnes) est atteint. C'est une condition nécessaire : seul un calcul confirme qu'un plan existe.`
+        : $localize`:@@staffing.verification.borneKo:Avec ${team}:equipe:, le minimum exact est de ${minimum}:minimum: personnes : l'effectif ne suffit pas.`;
+    }
     const duree = verification.dureeSecondes ?? 0;
     if (verification.realisable) {
       return $localize`:@@staffing.verification.ok:Avec ${team}:equipe:, tous les sièges sont pourvus sans enfreindre aucune règle dure (calcul de ${duree}:duree: s).`;

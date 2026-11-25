@@ -13,6 +13,7 @@ function check(overrides: Partial<StaffingVerification> = {}): StaffingVerificat
     lanceeLe: '2026-10-01T10:00:00Z',
     plafondSecondes: 600,
     reglesEnDefaut: [],
+    methode: 'CALCUL',
     ...overrides,
   };
 }
@@ -32,6 +33,14 @@ describe('a staffing check, in words', () => {
     expect(
       historyLabel(check({ effectif: 140, majeurs: 140, realisable: false, siegesNonPourvus: 12 })),
     ).toBe('140 personnes, 600 s au plus : aucun plan complet, 12 sièges vides');
+    expect(historyLabel(check({ methode: 'BORNE', minimum: 150, realisable: true }))).toBe(
+      '160 personnes, borne exacte : suffit (minimum 150)',
+    );
+    expect(
+      historyLabel(
+        check({ methode: 'BORNE', effectif: 140, majeurs: 140, minimum: 150, realisable: false }),
+      ),
+    ).toBe('140 personnes, borne exacte : ne suffit pas (minimum 150)');
     expect(historyLabel(check({ etat: 'EN_COURS' }))).toBe(
       '160 personnes, 600 s au plus : en cours',
     );

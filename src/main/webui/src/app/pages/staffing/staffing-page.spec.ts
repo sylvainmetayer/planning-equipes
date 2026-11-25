@@ -166,6 +166,7 @@ function verification(overrides: Partial<StaffingVerification> = {}): StaffingVe
     lanceeLe: '2026-10-01T10:00:00Z',
     plafondSecondes: 600,
     reglesEnDefaut: [],
+    methode: 'CALCUL',
     ...overrides,
   };
 }
@@ -856,6 +857,7 @@ describe('StaffingPage', () => {
           majeurs: 20,
           mineurs: 5,
           dureeSecondes: 120,
+          calcul: true,
         });
         expect(page['verification']()?.etat).toBe('EN_COURS');
         expect(page['verificationLabel']()).toBe('');
@@ -927,6 +929,30 @@ describe('StaffingPage', () => {
       expect(page['verification']()).toBeNull();
     });
 
+    it('confirms by a solve by default, and reads the bound alone once the option is unticked', async () => {
+      analysesApi.verifyStaffing.mockResolvedValue(
+        verification({ etat: 'TERMINEE', methode: 'BORNE', minimum: 30, realisable: false }),
+      );
+      const page = createPage();
+
+      page['setAdults']('20');
+      await page['lancerVerification']();
+      expect(analysesApi.verifyStaffing).toHaveBeenLastCalledWith({
+        majeurs: 20,
+        mineurs: null,
+        dureeSecondes: null,
+        calcul: true,
+      });
+      expect(page['verificationLabel']()).toContain('30');
+      expect(page['verificationLabel']()).toContain('ne suffit pas');
+
+      page['byCalculation'].set(true);
+      await page['lancerVerification']();
+      expect(analysesApi.verifyStaffing).toHaveBeenLastCalledWith(
+        expect.objectContaining({ calcul: true }),
+      );
+    });
+
     it('checks the floor when nothing is typed in, and never calls a failure a proof', async () => {
       analysesApi.verifyStaffing.mockResolvedValue(
         verification({
@@ -946,6 +972,7 @@ describe('StaffingPage', () => {
         majeurs: null,
         mineurs: null,
         dureeSecondes: null,
+        calcul: true,
       });
       expect(page['verificationLabel']()).toContain('3');
       expect(page['verificationLabel']()).toContain('pas une preuve');

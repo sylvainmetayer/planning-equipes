@@ -33,6 +33,7 @@ Le problème est construit comme en production, sans base : `ScenarioLadder` ré
 | `ScenarioLadderInfeasibleTest` | 26 à 30 | suite par défaut |
 | `ScenarioLadderImportTest` | 2, 7, 8, 10 | suite par défaut (`@QuarkusTest`), rejoue ces barreaux par l'import réel et vérifie que les deux chemins produisent les mêmes sièges |
 | `ScenarioLadderLargeTest` | 16 à 25 | `scenario-lent`, `-Pscenario-tests` |
+| `StaffingBoundEquivalenceTest` | 1 à 25 | `scenario-lent` : la borne exacte du besoin contre le besoin réel de l'équipe fictive, rang par rang. Le besoin vient de la recherche, ou, aux rangs 10, 11, 18 et 20, d'une preuve exacte (`scripts/besoin-exact/modele.py`, CP-SAT, hors image : [ADR 0098](repo:docs/decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) ; `-Dequivalence.rungs=1,2` pour en choisir |
 
 Les barreaux sont dimensionnés avec de la marge, au plus trois quarts de l'effectif sollicité le jour le plus chargé : tous atteignent zéro écart dur dès l'heuristique de construction, de sorte que ce qu'ils relisent ne dépend pas de la vitesse de la machine. Ils gardent la couverture fonctionnelle ; la convergence d'un problème tendu reste l'affaire des scénarios `festival-*`. Quand une évolution fait bouger un barreau, c'est une décision : corrigez le fichier ou l'assertion, en disant pourquoi, jamais les deux en silence.
 

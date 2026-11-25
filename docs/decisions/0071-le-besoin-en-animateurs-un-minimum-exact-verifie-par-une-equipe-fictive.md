@@ -1,6 +1,6 @@
 # 0071 — Le besoin en animateurs : un minimum exact par flot, vérifié par une équipe fictive
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté — **remplacé en partie par [0098](0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)** : la vérification par un solve (point 5) gagne la borne seule comme alternative, que le défaut adoptera à l'équivalence ; le reste tient
 - **Date** : octobre 2026
 - **Portée** : écran Besoin en animateurs, `GET /api/staffing`, `analyser_effectifs`
 - **Voisine de** : [0048](0048-une-seule-regle-de-pause.md), [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)

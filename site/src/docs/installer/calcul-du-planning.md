@@ -26,7 +26,7 @@ Les plafonds ci-dessus bornent **un** calcul. Une instance qui partage sa machin
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés sur les 60 dernières minutes glissantes |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière celle qui tourne (« Planifier »), celle-ci non comprise |
 
-Le quota compte chaque calcul **accepté au lancement**, quel que soit le chemin : résolution complète ou incrémentale, depuis l'écran *Solveur*, l'API (y compris `POST /api/solve`, synchrone) ou un assistant MCP, et la vérification du besoin (*Diagnostic › Besoin en animateurs*), qui est un vrai calcul. Un lancement refusé pour une autre raison ne compte pas ; une tâche planifiée puis retirée de la file, si. Au-delà, le lancement est refusé (`409`) par une phrase que l'écran affiche telle quelle et que l'outil MCP rend en erreur :
+Le quota compte chaque calcul **accepté au lancement**, quel que soit le chemin : résolution complète ou incrémentale, depuis l'écran *Solveur*, l'API (y compris `POST /api/solve`, synchrone) ou un assistant MCP, et la vérification du besoin par un calcul (*Diagnostic › Besoin en animateurs*, le défaut), qui est un vrai calcul ; la borne seule n'en consomme pas. Un lancement refusé pour une autre raison ne compte pas ; une tâche planifiée puis retirée de la file, si. Au-delà, le lancement est refusé (`409`) par une phrase que l'écran affiche telle quelle et que l'outil MCP rend en erreur :
 
 > Cette instance limite le calcul à 12 résolutions par heure. Prochaine résolution possible à 14:32.
 
@@ -59,7 +59,7 @@ Trois conséquences pour vous :
 | --- | --- | --- |
 | `SOLVER_ENGINE` | `hand` | `hand` : les résolutions cherchent leur plan avec le moteur direct ; `timefold` : avec la recherche de Timefold, comme avant la 3.0.0 ([décision 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)) |
 
-C'est un réglage d'**instance**. Une machine de calcul suit celui de l'application qui lui envoie le problème, pas sa propre variable. La vérification du besoin reste sur la recherche de Timefold.
+C'est un réglage d'**instance**. Une machine de calcul suit celui de l'application qui lui envoie le problème, pas sa propre variable. La vérification du besoin par un calcul suit le moteur de l'instance ; les résolutions « jusqu'à la faisabilité » restent sur Timefold.
 
 Le moteur direct ([décision 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)) atteint un plan sans écart dur trois à quatre fois plus tôt sur le scénario `festival-hivernal`, et passe en une minute sous le score que la recherche de Timefold atteint en cinq (mesure et commande dans la décision). Il n'est pas cru sur parole : chaque plan qu'il rend est re-scoré par les contraintes de l'application avant d'être enregistré.
 

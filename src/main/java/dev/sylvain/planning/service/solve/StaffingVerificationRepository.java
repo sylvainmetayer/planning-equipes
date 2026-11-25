@@ -32,7 +32,7 @@ public class StaffingVerificationRepository {
 
     private static final String COLUMNS = """
             id, etat, majeurs, mineurs, sieges, lancee_le, terminee_le, duree_secondes,
-            plafond_secondes, realisable, sieges_non_pourvus, score_dur, regles_en_defaut, erreur""";
+            plafond_secondes, realisable, sieges_non_pourvus, score_dur, regles_en_defaut, erreur, methode, minimum""";
 
     private static final String SELECT_LATEST = "SELECT " + COLUMNS + """
              FROM verification_besoin
@@ -56,8 +56,8 @@ public class StaffingVerificationRepository {
         long id = scope.writeAndReturn("Failed to record a staffing check", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO verification_besoin (edition_id, lancee_le, etat, majeurs, mineurs,
-                    sieges, plafond_secondes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    sieges, plafond_secondes, methode, minimum, terminee_le, duree_secondes, realisable)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     RETURNING id""")) {
                 ps.setTimestamp(2, Timestamp.from(started.lanceeLe()));
                 ps.setString(3, started.etat().name());
@@ -65,6 +65,20 @@ public class StaffingVerificationRepository {
                 ps.setInt(5, started.mineurs());
                 ps.setInt(6, started.sieges());
                 ps.setLong(7, started.plafondSecondes());
+                ps.setString(8, started.methode().name());
+                if (started.minimum() == null) {
+                    ps.setNull(9, Types.INTEGER);
+                } else {
+                    ps.setInt(9, started.minimum());
+                }
+                // Only a check answered by the bound is born finished.
+                ps.setTimestamp(10, started.termineeLe() == null ? null : Timestamp.from(started.termineeLe()));
+                setLong(ps, 11, started.dureeSecondes());
+                if (started.realisable() == null) {
+                    ps.setNull(12, Types.BOOLEAN);
+                } else {
+                    ps.setBoolean(12, started.realisable());
+                }
                 try (ResultSet rs = ps.executeQuery()) {
                     rs.next();
                     return rs.getLong(1);
@@ -181,6 +195,8 @@ public class StaffingVerificationRepository {
         String regles = rs.getString("regles_en_defaut");
         int majeurs = rs.getInt("majeurs");
         int mineurs = rs.getInt("mineurs");
+        int minimum = rs.getInt("minimum");
+        Integer minimumOuNull = rs.wasNull() ? null : minimum;
         return new StaffingVerification(
                 rs.getLong("id"),
                 VerificationState.valueOf(rs.getString("etat")),
@@ -196,6 +212,8 @@ public class StaffingVerificationRepository {
                 nonPourvusOuNull,
                 longOrNull(rs, "score_dur"),
                 regles == null || regles.isBlank() ? List.of() : Arrays.asList(regles.split(",")),
-                rs.getString("erreur"));
+                rs.getString("erreur"),
+                StaffingVerificationService.VerificationMethod.valueOf(rs.getString("methode")),
+                minimumOuNull);
     }
 }

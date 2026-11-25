@@ -89,6 +89,26 @@
           <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'maxJoursConsecutifsTravaillesDur' }"
              i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
         </p>
+        @if (estBorneRetenue('REPOS_QUOTIDIEN')) {
+          <p class="staffing-binding">
+            <mat-icon inline aria-hidden="true">bedtime</mat-icon>
+            <strong i18n="@@staffing.restBound.label">Repos quotidien : {{ resume.minimumTotal }}</strong>
+            <ng-container i18n="@@staffing.restBound.description"> — qui ferme tard ne peut pas ouvrir le lendemain : les
+            sièges du soir et ceux du matin suivant, que personne ne tient ensemble, exigent autant de personnes distinctes.</ng-container>
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'reposQuotidienMinimal' }"
+               i18n="@@staffing.lien.reposQuotidien">Repos quotidien</a>
+          </p>
+        }
+        @if (estBorneRetenue('TRAVAIL_CONTINU')) {
+          <p class="staffing-binding">
+            <mat-icon inline aria-hidden="true">timer</mat-icon>
+            <strong i18n="@@staffing.continuousBound.label">Travail continu : {{ resume.minimumTotal }}</strong>
+            <ng-container i18n="@@staffing.continuousBound.description"> — plus de six heures d'affilée exigent une pause
+            relayée par un collègue du même stand : sans relais possible, deux sièges qui s'enchaînent ne vont pas à la même personne.</ng-container>
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'travailContinuMaxMajeur' }"
+               i18n="@@staffing.lien.travailContinu">Travail continu</a>
+          </p>
+        }
         @if (estBorneRetenue('PLAFOND_TYPOLOGIE')) {
           <p class="staffing-binding">
             <mat-icon inline aria-hidden="true">block</mat-icon>
@@ -109,12 +129,12 @@
         </p>
       }
 
-      <!-- The floor proves « at least »; a solve of a made-up team of that size says « and that suffices ». -->
+      <!-- The exact bound answers by default (ADR 0097); a solve of a made-up team is the advanced option. -->
       <section class="staffing-verification" aria-labelledby="staffing-verification-titre">
-        <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier par un solve</h2>
+        <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier un effectif</h2>
         <p class="empty-hint" i18n="@@staffing.verification.description">
-          Une équipe fictive, disponible tous les jours et compétente partout, tient-elle tous les sièges ? Ses mineurs
-          ont seize ans. Le planning n'est pas touché ; chaque essai va dans l'historique.
+          Une équipe fictive de cette taille tient-elle les sièges ? Le minimum exact (au moins N) se lit plus haut ;
+          le calcul le confirme. Le planning n'est pas touché ; chaque essai va dans l'historique.
         </p>
         <div class="staffing-verification-actions">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -127,12 +147,6 @@
             <input matInput type="number" min="0" name="minorsToCheck" placeholder="0"
                    [ngModel]="minorsToCheck()" (ngModelChange)="setMinors($event)" [disabled]="verificationRunning()" />
           </mat-form-field>
-          <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
-            <input matInput type="number" min="10" name="secondsToCheck"
-                   i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="comme une résolution"
-                   [ngModel]="secondsToCheck()" (ngModelChange)="setSeconds($event)" [disabled]="verificationRunning()" />
-          </mat-form-field>
           <button mat-flat-button type="button" [disabled]="verificationRunning()" (click)="lancerVerification()">
             <mat-icon aria-hidden="true">play_arrow</mat-icon>
             <ng-container i18n="@@staffing.verification.lancer">Vérifier</ng-container>
@@ -142,6 +156,25 @@
             <ng-container i18n="@@staffing.verification.historique">Vérifications précédentes</ng-container>
           </a>
         </div>
+        <app-reglages-avances [etat]="avance">
+          <ng-template>
+            <mat-checkbox [ngModel]="byCalculation()" (ngModelChange)="byCalculation.set($event)" name="byCalculation"
+                          [disabled]="verificationRunning()">
+              <ng-container i18n="@@staffing.verification.calcul">Confirmer par un calcul</ng-container>
+            </mat-checkbox>
+            <p class="empty-hint" i18n="@@staffing.verification.calculAide">
+              Décochée, seule la borne exacte répond, sans calcul : « au moins N ». Cochée, une équipe fictive libre tous
+              les jours est résolue ; ses mineurs ont seize ans, et le calcul cède à toute résolution.
+            </p>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
+              <input matInput type="number" min="10" name="secondsToCheck"
+                     i18n-placeholder="@@staffing.verification.dureeDefaut" placeholder="comme une résolution"
+                     [ngModel]="secondsToCheck()" (ngModelChange)="setSeconds($event)"
+                     [disabled]="verificationRunning() || !byCalculation()" />
+            </mat-form-field>
+          </ng-template>
+        </app-reglages-avances>
         <app-status-message [text]="verificationErreur()" tone="error" />
         @if (verification(); as verif) {
           @if (verif.etat === 'EN_COURS') {

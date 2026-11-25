@@ -53,9 +53,13 @@ public class StaffingResource {
      *                      screen shows, less the minors
      * @param mineurs       the minors, aged sixteen on the first day; absent for none
      * @param dureeSecondes the time the solve is given at most, from 10 s to an
-     *                      hour; absent for the server's default
+     *                      hour; absent for the server's default; read by a
+     *                      solve only
+     * @param calcul        {@code true} to solve the made-up team (the advanced
+     *                      option), {@code false} for the exact bound; absent for
+     *                      the instance's default, the solve until ADR 0098's switch
      */
-    public record VerificationRequest(Integer majeurs, Integer mineurs, Long dureeSecondes) {}
+    public record VerificationRequest(Integer majeurs, Integer mineurs, Long dureeSecondes, Boolean calcul) {}
 
     /**
      * Never an error on an empty edition: this only feeds a read-only screen,
@@ -68,17 +72,20 @@ public class StaffingResource {
     }
 
     /**
-     * Starts a solve of the edition's seats by a made-up team, to tell whether
-     * the floor suffices — {@code 202}, the solve running in the background.
-     * {@code 409} while another check runs, in any edition.
+     * Tells whether a team of this size holds the edition's seats. By default
+     * (and with {@code calcul}) it solves the seats with a made-up team in the
+     * background ({@code 202}, {@code EN_COURS}), and {@code 409} while another
+     * solve-check runs, in any edition; with {@code calcul: false} it answers at
+     * once from the exact bound ({@code 202}, already {@code TERMINEE}).
      */
     @POST
     @Path("/verification")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response verify(VerificationRequest request) {
         StaffingVerification started = request == null
-                ? verificationService.start(null, null, null)
-                : verificationService.start(request.majeurs(), request.mineurs(), request.dureeSecondes());
+                ? verificationService.start(null, null, null, null)
+                : verificationService.start(
+                        request.majeurs(), request.mineurs(), request.dureeSecondes(), request.calcul());
         return Response.accepted(started).build();
     }
 

@@ -19,6 +19,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -273,7 +274,11 @@ public class StaffingAnalyzer {
          * that many distinct people — a floor on the whole team as well as on
          * the category's row.
          */
-        PLAFOND_TYPOLOGIE
+        PLAFOND_TYPOLOGIE,
+        /** The daily rest: seats of two neighbouring days that no one person can hold together ({@link #reposQuotidienPlancher}). */
+        REPOS_QUOTIDIEN,
+        /** The continuous-work cap: a stretch past it needs a relay that some seats cannot have ({@link #continuousWorkFloor}). */
+        TRAVAIL_CONTINU
     }
 
     /**
@@ -591,10 +596,51 @@ public class StaffingAnalyzer {
             int dureeHebdomadaireMaxMineurMinutes,
             List<FenetreRepas> fenetresRepas,
             Integer joursConsecutifsMax,
-            boolean plafondTypologieActif) {
+            boolean plafondTypologieActif,
+            int reposQuotidienMinutes,
+            int travailContinuMaxMinutes) {
 
         public StaffingRules {
             fenetresRepas = fenetresRepas == null ? List.of() : List.copyOf(fenetresRepas);
+        }
+
+        /** Without the continuous-work cap: what the entry points that never read it hand in. */
+        public StaffingRules(
+                int dureeHebdomadaireMaxMinutes,
+                int dureePauseMinutes,
+                int dureeHebdomadaireMaxMineurMinutes,
+                List<FenetreRepas> fenetresRepas,
+                Integer joursConsecutifsMax,
+                boolean plafondTypologieActif,
+                int reposQuotidienMinutes) {
+            this(
+                    dureeHebdomadaireMaxMinutes,
+                    dureePauseMinutes,
+                    dureeHebdomadaireMaxMineurMinutes,
+                    fenetresRepas,
+                    joursConsecutifsMax,
+                    plafondTypologieActif,
+                    reposQuotidienMinutes,
+                    0);
+        }
+
+        /** Without the daily rest: what the entry points that never read it hand in. */
+        public StaffingRules(
+                int dureeHebdomadaireMaxMinutes,
+                int dureePauseMinutes,
+                int dureeHebdomadaireMaxMineurMinutes,
+                List<FenetreRepas> fenetresRepas,
+                Integer joursConsecutifsMax,
+                boolean plafondTypologieActif) {
+            this(
+                    dureeHebdomadaireMaxMinutes,
+                    dureePauseMinutes,
+                    dureeHebdomadaireMaxMineurMinutes,
+                    fenetresRepas,
+                    joursConsecutifsMax,
+                    plafondTypologieActif,
+                    0,
+                    0);
         }
 
         /**
@@ -725,7 +771,13 @@ public class StaffingAnalyzer {
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, dureePauseMinutes, fenetres);
         Map<String, Integer> plancherPlafonds = capFloors(sieges, typologies, rules);
-        Bornes bornes = withCapFloor(bornes(besoins, rules), plancherPlafonds);
+        Bornes bornes = withFloor(
+                withFloor(
+                        withCapFloor(bornes(besoins, rules), plancherPlafonds),
+                        reposQuotidienPlancher(sieges, rules.reposQuotidienMinutes()),
+                        BorneRetenue.REPOS_QUOTIDIEN),
+                continuousWorkFloor(sieges, rules.travailContinuMaxMinutes(), dureePauseMinutes),
+                BorneRetenue.TRAVAIL_CONTINU);
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         // The team every « how many may » figure is read against: the floor,
         // or the animateurs already entered when there are more of them.
@@ -989,6 +1041,151 @@ public class StaffingAnalyzer {
         return planchers;
     }
 
+    /** {@code bornes}, raised to {@code plancher} when it exceeds them, naming the bound that did it. */
+    private static Bornes withFloor(Bornes bornes, int plancher, BorneRetenue retenue) {
+        if (plancher <= bornes.minimumTotal()) {
+            return bornes;
+        }
+        return new Bornes(
+                bornes.heures(),
+                bornes.semaines(),
+                bornes.picSimultane(),
+                bornes.picAvecPause(),
+                bornes.picRepas(),
+                bornes.chargeTotal(),
+                bornes.rotationTotal(),
+                bornes.enchainementTotal(),
+                plancher,
+                retenue,
+                bornes.parSemaine(),
+                bornes.semaineCritique());
+    }
+
+    /**
+     * The daily rest as a floor on the number of distinct animateurs.
+     *
+     * <h3>Proof</h3>
+     *
+     * <p>{@code reposQuotidienMinimal} forbids one animateur to hold a seat
+     * ending at {@code e} on a day and a seat starting at {@code s} on the next
+     * whenever {@code 1440 - e + s < repos}, that is {@code e - s > 1440 -
+     * repos}. Take a day {@code j}, an instant {@code T}, the seats {@code E} of
+     * day {@code j} ending at {@code T} or after, and the seats {@code M} of day
+     * {@code j + 1} starting strictly before {@code T - (1440 - repos)}. Every
+     * seat of {@code E} conflicts with every seat of {@code M}. The seats of
+     * {@code E} that overlap at one instant need as many people, so do those of
+     * {@code M}, and no person holds seats of both: the sum of the two peaks is
+     * a clique of the conflict graph, hence a floor — the largest over all days
+     * and all {@code T} (the ends of the day's seats).</p>
+     *
+     * @param repos the daily rest in minutes, {@code 0} when the rule is off
+     */
+    static int reposQuotidienPlancher(List<Siege> sieges, int repos) {
+        if (repos <= 0) {
+            return 0;
+        }
+        Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
+        for (Siege siege : sieges) {
+            byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
+        }
+        int plancher = 0;
+        for (Map.Entry<LocalDate, List<Siege>> jour : byDate.entrySet()) {
+            List<Siege> lendemain = byDate.get(jour.getKey().plusDays(1));
+            if (lendemain == null) {
+                continue;
+            }
+            for (int instant :
+                    jour.getValue().stream().mapToInt(Siege::fin).distinct().toArray()) {
+                List<Siege> soir = jour.getValue().stream()
+                        .filter(siege -> siege.fin() >= instant)
+                        .toList();
+                List<Siege> matin = lendemain.stream()
+                        .filter(siege -> siege.debut() < instant - (1440 - repos))
+                        .toList();
+                if (!matin.isEmpty()) {
+                    plancher = Math.max(plancher, pic(soir, 0) + pic(matin, 0));
+                }
+            }
+        }
+        return plancher;
+    }
+
+    /**
+     * The continuous-work cap as a floor on the number of distinct animateurs.
+     *
+     * <h3>Proof</h3>
+     *
+     * <p>{@code travailContinuMaxMajeur} owes, to a stretch of back-to-back seats
+     * (holes shorter than the break do not split it) that outlasts the cap
+     * {@code C}, a break at {@code C} after the stretch's start, which a seat of
+     * the same stand must cover for its whole length. Call {@code x} a
+     * <em>head</em> when it is at most {@code C} long and no seat of the day ends
+     * within one break before it: nobody can hold a seat that touches it from
+     * before, so whoever holds {@code x} starts a stretch at {@code x.debut},
+     * and the break falls at {@code t = x.debut + C}. Let {@code y} be a seat of
+     * the day that starts within one break after {@code x} ends and covers
+     * {@code t}, whose stand has no other seat covering {@code [t, t + break]}:
+     * the break would fall on {@code y} with nobody to relay it, so no person
+     * holds both. Take the heads {@code X} of one interval and the seats
+     * {@code Y} so related to them: every pair conflicts, the seats of
+     * {@code X} are alike, those of {@code Y} all cover {@code t}, so
+     * {@code |X| + |Y|} people are needed — the largest over the day's intervals
+     * is a floor.</p>
+     *
+     * @param cap the continuous-work cap in minutes, {@code 0} when the rule is off
+     */
+    static int continuousWorkFloor(List<Siege> sieges, int cap, int pause) {
+        if (cap <= 0) {
+            return 0;
+        }
+        Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
+        for (Siege siege : sieges) {
+            byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
+        }
+        int plancher = 0;
+        for (List<Siege> jour : byDate.values()) {
+            for (Map.Entry<List<Integer>, Integer> tete :
+                    chainHeads(jour, cap, pause).entrySet()) {
+                int fin = tete.getKey().get(1);
+                long suite = unrelayedSuccessors(jour, fin, tete.getKey().get(0) + cap, pause);
+                if (suite > 0) {
+                    plancher = Math.max(plancher, tete.getValue() + (int) suite);
+                }
+            }
+        }
+        return plancher;
+    }
+
+    /** The heads of a day, counted by their {@code [debut, fin]}: seats no other seat touches from before. */
+    private static Map<List<Integer>, Integer> chainHeads(List<Siege> jour, int cap, int pause) {
+        Map<List<Integer>, Integer> tetes = new HashMap<>();
+        for (Siege x : jour) {
+            boolean tete = x.fin() - x.debut() <= cap
+                    && jour.stream().noneMatch(a -> a.fin() > x.debut() - pause && a.fin() <= x.debut());
+            if (tete) {
+                tetes.merge(List.of(x.debut(), x.fin()), 1, Integer::sum);
+            }
+        }
+        return tetes;
+    }
+
+    /** The seats that follow a head ending at {@code fin} and cover the break at {@code coupure} with no relay. */
+    private static long unrelayedSuccessors(List<Siege> jour, int fin, int coupure, int pause) {
+        return jour.stream()
+                .filter(y -> y.debut() >= fin
+                        && y.debut() < fin + pause
+                        && y.debut() <= coupure
+                        && coupure < y.fin()
+                        && y.stand() != null
+                        && jour.stream()
+                                .noneMatch(o -> o != y
+                                        && o.stand() != null
+                                        && o.stand().getId().equals(y.stand().getId())
+                                        && o.debut() <= coupure
+                                        && o.fin() >= coupure + pause))
+                .count();
+    }
+
     /** {@code bornes}, raised to the largest cap floor when one exceeds it. */
     private static Bornes withCapFloor(Bornes bornes, Map<String, Integer> plancherPlafonds) {
         int plancher = plancherPlafonds.values().stream()
@@ -1120,6 +1317,14 @@ public class StaffingAnalyzer {
             // the daily legal ceiling, so 600 person-hours need 60 people
             // whatever the shape of the day.
             int parLesHeures = (int) Math.ceil(heures * 60 / maxDailyAmplitude(dureePauseMinutes));
+            // Two seats longer than half that ceiling together exceed it, so
+            // nobody holds two of them in a day: each needs its own person.
+            // Packing, not volume — a day of 8-hour seats needs a person per
+            // seat, where the hours alone would allow far fewer.
+            int plafondJour = maxDailyAmplitude(dureePauseMinutes);
+            int grosSieges = (int) entree.getValue().stream()
+                    .filter(siege -> 2 * (siege.fin() - siege.debut()) > plafondJour)
+                    .count();
             int picRepas = 0;
             for (FenetreRepas fenetre : fenetres) {
                 if (fenetre.appliesTo(entree.getKey())) {
@@ -1134,7 +1339,7 @@ public class StaffingAnalyzer {
                             pic(entree.getValue(), 0),
                             picAvecPause,
                             picRepas,
-                            Math.max(Math.max(picAvecPause, parLesHeures), picRepas)));
+                            Math.max(Math.max(Math.max(picAvecPause, parLesHeures), grosSieges), picRepas)));
         }
         return besoins;
     }

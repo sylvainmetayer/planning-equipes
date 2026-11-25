@@ -21,7 +21,7 @@ Chaque chiffre mène à l'écran qui le change : une borne mène aux horaires de
 ## Vérifier le minimum par un vrai calcul
 
 1. Dans l'onglet *Besoin en animateurs*, lancez la vérification.
-2. Choisissez le nombre de majeurs et de mineurs de l'équipe fictive, et la durée du calcul.
+2. Choisissez le nombre de majeurs et de mineurs de l'équipe fictive. Dans les *Réglages avancés*, « Confirmer par un calcul » est coché : décochée, seule la borne exacte répond, tout de suite, par « au moins N » ; la durée du calcul se règle au même endroit.
 3. Lisez le résultat. Le planning de l'édition n'est pas touché.
 
 Chaque essai est consigné dans l'historique avec son équipe, sa durée et son résultat, pour comparer les tailles essayées. Un filtre de l'historique les isole. Le calcul se fait en dehors de la file : il cède la place à toute résolution qui démarre.

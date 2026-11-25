@@ -125,7 +125,7 @@ class SolverQuotaGuardTest {
                 .then());
         assertQuotaSpent(given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{}")
+                .body("{\"calcul\":true}")
                 .when()
                 .post("/api/staffing/verification")
                 .then());

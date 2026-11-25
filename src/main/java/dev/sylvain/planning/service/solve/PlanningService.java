@@ -496,6 +496,12 @@ public class PlanningService {
         return solveRunner.solvePreparedUntilFeasible(problem, secondsLimitSecurite, solver -> {});
     }
 
+    /** @see SolveRunner#solveCheck */
+    public PlanningEvenement solveCheck(
+            PlanningEvenement problem, long seconds, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveRunner.solveCheck(problem, seconds, onSolverReady);
+    }
+
     /** @see SolveRunner#solvePreparedUntilFeasible */
     public PlanningEvenement solvePreparedUntilFeasible(
             PlanningEvenement problem, long secondsLimitSecurite, Consumer<Solver<PlanningEvenement>> onSolverReady) {
