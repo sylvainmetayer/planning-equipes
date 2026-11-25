@@ -203,9 +203,10 @@
             <output class="echanges-suite-faite status-paragraph">{{ fait }}</output>
           }
           @if (offersFollowUps(demande)) {
+            <app-edition-inactive-note />
             <div class="echanges-actions">
               <button matButton="filled" (click)="prevenir(demande)"
-                      [disabled]="editingLocked() || followUpBusy() === demande.id">
+                      [disabled]="editingLocked() || editionInactive() || followUpBusy() === demande.id">
                 <mat-icon>forward_to_inbox</mat-icon>
                 <span i18n="@@echanges.prevenir">Prévenir les 2 personnes</span>
               </button>

@@ -5438,5 +5438,9 @@
   "mcp.cle.renouveler.confirmer": "Generate and show the key",
   "mcp.oauth": " An MCP client that can do OAuth needs no key: it discovers the identity provider from {$START_TAG_CODE}{$INTERPOLATION}/mcp{$CLOSE_TAG_CODE}. An active account is required. ",
   "mcp.cle.reconnexion": "Your last sign-in is more than ten minutes old: sign in again to show or generate a key.",
-  "mcp.cle.reconnecter": "Sign in again"
+  "mcp.cle.reconnecter": "Sign in again",
+  "edition.inactive.phrase": "This edition is not active: only the active edition publishes and writes to staff members. Activate it on the Editions page.",
+  "edition.inactive.lien": "Open the Editions page",
+  "edition.inactive.titre": "Action refused",
+  "edition.inactive.ouvrir": "Editions"
 }

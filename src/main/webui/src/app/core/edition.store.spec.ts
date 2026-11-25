@@ -62,6 +62,22 @@ describe('EditionStore', () => {
     expect(store.active()?.id).toBe('B');
   });
 
+  it('is inactive only once the edition worked in is known and not the active one', async () => {
+    expect(store.inactive()).toBe(false);
+    respond(
+      [edition('A', 'Année 2025'), edition('B', 'Année 2026', true)],
+      edition('A', 'Année 2025'),
+    );
+    await store.reload();
+    expect(store.inactive()).toBe(true);
+    respond(
+      [edition('A', 'Année 2025', true), edition('B', 'Année 2026')],
+      edition('A', 'Année 2025', true),
+    );
+    await store.reload();
+    expect(store.inactive()).toBe(false);
+  });
+
   it('loads what the editions state asks of the organiser, and survives its failure', async () => {
     const situation: EditionSituation = {
       type: 'INACTIVE_IMMINENTE',

@@ -58,6 +58,8 @@ import {
 } from './jour-j-wording';
 import { StatusMessage } from '../../shared/status-message';
 import { AujourdhuiTv } from './aujourdhui-tv';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 /** A hole of the day, labelled once: the template never calls a function per row. */
 interface Trou extends PosteAPourvoir {
@@ -84,6 +86,7 @@ interface Trou extends PosteAPourvoir {
 @Component({
   selector: 'app-jour-j-page',
   imports: [
+    EditionInactiveNote,
     AujourdhuiTv,
     MatButtonToggleModule,
     RealisePage,
@@ -105,6 +108,8 @@ interface Trou extends PosteAPourvoir {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JourJPage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   /**
    * Two tabs (`?onglet=`): the day under way, and `?onglet=realise` the
    * elapsed days read against what had been published — the former `/realise`.

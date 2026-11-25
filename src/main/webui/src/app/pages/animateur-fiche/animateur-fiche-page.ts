@@ -112,6 +112,8 @@ import { EquiteRadar } from './equite-radar';
 import { OPTIONAL_AXES, readOptionalAxes } from './radar';
 import { copyEspaceLink } from '../../core/clipboard';
 import { espaceUrl } from '../../core/app-links';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 /** The levels the inline editor offers, « aucune » included. */
 const NIVEAUX: readonly (NiveauCompetence | null)[] = [null, 'DEBUTANT', 'AUTONOME', 'REFERENT'];
@@ -142,6 +144,7 @@ interface FreedSeatLine {
 @Component({
   selector: 'app-animateur-fiche-page',
   imports: [
+    EditionInactiveNote,
     DatePipe,
     DecimalPipe,
     PercentPipe,
@@ -170,6 +173,8 @@ interface FreedSeatLine {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateurFichePage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly animateursApi = inject(AnimateursApi);
   private readonly planningApi = inject(PlanningApi);
   private readonly postesApi = inject(PostesApi);

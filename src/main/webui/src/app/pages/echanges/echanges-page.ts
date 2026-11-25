@@ -62,6 +62,8 @@ import {
 } from './echanges-filter';
 import { readStatisticsPeriod, statisticsPeriodParams } from './statistics-format';
 import { HhmmPipe } from '../../shared/hhmm-pipe';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -104,6 +106,7 @@ interface DemandeRow extends DemandeEchangeView {
 @Component({
   selector: 'app-echanges-page',
   imports: [
+    EditionInactiveNote,
     HhmmPipe,
     DatePipe,
     EchangeStatisticsTab,
@@ -124,6 +127,8 @@ interface DemandeRow extends DemandeEchangeView {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EchangesPage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly echangesApi = inject(EchangesApi);
   private readonly planningApi = inject(PlanningApi);
   private readonly jobs = inject(SolverJobService);

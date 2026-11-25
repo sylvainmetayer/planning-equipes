@@ -96,6 +96,8 @@ import { DisponibilitesPage } from '../disponibilites/disponibilites-page';
 import { readOngletAnimateurs } from './animateurs-onglet';
 import { copyEspaceLink } from '../../core/clipboard';
 import { espaceUrl } from '../../core/app-links';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -119,6 +121,7 @@ import { espaceUrl } from '../../core/app-links';
 @Component({
   selector: 'app-animateurs-page',
   imports: [
+    EditionInactiveNote,
     CompetencesPage,
     DisponibilitesPage,
     ImportButton,
@@ -152,6 +155,8 @@ import { espaceUrl } from '../../core/app-links';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AnimateursPage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly competences = viewChild(CompetencesPage);
 
   /**
