@@ -44,6 +44,7 @@ public class RhService {
     private final RapportConformiteService rapports;
     private final RapportConformitePdf pdf;
     private final JournalActionService journal;
+    private final ContactsService contacts;
 
     @Inject
     public RhService(
@@ -51,12 +52,14 @@ public class RhService {
             EditionContext editionContext,
             RapportConformiteService rapports,
             RapportConformitePdf pdf,
-            JournalActionService journal) {
+            JournalActionService journal,
+            ContactsService contacts) {
         this.editions = editions;
         this.editionContext = editionContext;
         this.rapports = rapports;
         this.pdf = pdf;
         this.journal = journal;
+        this.contacts = contacts;
     }
 
     /** The editions the caller may read the report of: every one for an administrator, the ones of its RH rights otherwise. */
@@ -70,7 +73,9 @@ public class RhService {
 
     public RapportConformite rapport(Compte compte, boolean admin, String editionId) {
         return authorized(compte, admin, editionId, edition -> {
-            RapportConformite rapport = rapports.build(editionId, edition.getNom());
+            RapportConformite base = rapports.build(editionId, edition.getNom());
+            RapportConformite rapport =
+                    base.withMinorsWithoutRepresentative(contacts.minorsWithoutRepresentative(base.personnes()));
             journal.recordAdminAction("CONFORMITE_CONSULTEE", null);
             return rapport;
         });
@@ -78,7 +83,7 @@ public class RhService {
 
     public byte[] pdf(Compte compte, boolean admin, String editionId) {
         return authorized(compte, admin, editionId, edition -> {
-            byte[] document = pdf.render(rapports.build(editionId, edition.getNom()));
+            byte[] document = pdf.render(withContacts(rapports.build(editionId, edition.getNom())));
             journal.recordAdminAction("EXPORT_CONFORMITE_PDF", null);
             return document;
         });
@@ -86,9 +91,32 @@ public class RhService {
 
     public String csv(Compte compte, boolean admin, String editionId) {
         return authorized(compte, admin, editionId, edition -> {
-            String fichier = RapportConformiteCsv.write(rapports.build(editionId, edition.getNom()));
+            String fichier = RapportConformiteCsv.write(withContacts(rapports.build(editionId, edition.getNom())));
             journal.recordAdminAction("EXPORT_CONFORMITE_CSV", null);
             return fichier;
+        });
+    }
+
+    private RapportConformite withContacts(RapportConformite base) {
+        return base.withMinorsWithoutRepresentative(contacts.minorsWithoutRepresentative(base.personnes()));
+    }
+
+    /** The contacts of the edition: every animateur holding some, and every minor. Journalled like the report. */
+    public List<ContactsService.ContactView> contacts(Compte compte, boolean admin, String editionId) {
+        return authorized(compte, admin, editionId, edition -> {
+            List<ContactsService.ContactView> vues = contacts.list();
+            journal.recordAdminAction("CONTACTS_CONSULTES", null);
+            return vues;
+        });
+    }
+
+    /** Saves the contacts of one animateur on behalf of the RH right or an administrator. */
+    public ContactsService.Saved saveContacts(
+            Compte compte, boolean admin, String editionId, String animateurId, ContactsAnimateur sent) {
+        return authorized(compte, admin, editionId, edition -> {
+            ContactsService.Saved saved = contacts.save(animateurId, sent);
+            journal.recordAdminAction("CONTACTS_MODIFIES", animateurId);
+            return saved;
         });
     }
 

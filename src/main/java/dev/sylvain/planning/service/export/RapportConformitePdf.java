@@ -96,6 +96,15 @@ public class RapportConformitePdf {
             document.add(new Paragraph("Aucun mineur n'est planifié dans cette édition.", theme.tableBodyFont()));
         } else {
             document.add(mineursSection(mineurs));
+            if (!rapport.mineursSansRepresentant().isEmpty()) {
+                document.add(new Paragraph(
+                        "Représentant légal non renseigné : "
+                                + rapport.mineursSansRepresentant().stream()
+                                        .map(RapportConformite.MinorWithoutRepresentative::nom)
+                                        .collect(java.util.stream.Collectors.joining(", "))
+                                + ".",
+                        theme.tableAlertFont()));
+            }
         }
 
         List<Personne> avecEcarts = rapport.personnes().stream()

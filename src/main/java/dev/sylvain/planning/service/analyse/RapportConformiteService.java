@@ -131,7 +131,8 @@ public class RapportConformiteService {
                 synthese(personnes, regles),
                 heures.semaines(),
                 regles,
-                personnes);
+                personnes,
+                List.of());
     }
 
     private static Personne person(

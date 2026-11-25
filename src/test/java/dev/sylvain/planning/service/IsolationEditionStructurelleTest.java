@@ -92,6 +92,7 @@ class IsolationEditionStructurelleTest {
             "animateur_competence",
             "animateur_souhait",
             "animateur_jour_indispo",
+            "animateur_contact",
             "stand_indisponibilite",
             "stand_ouverture",
             "stand_horaire",

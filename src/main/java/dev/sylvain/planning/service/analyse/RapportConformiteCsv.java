@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.referentiel.CsvFormulaGuard;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -34,8 +35,12 @@ public final class RapportConformiteCsv {
         for (String semaine : rapport.semaines()) {
             csv.append(';').append(semaine);
         }
-        csv.append(";total (h);plafond hebdomadaire (h);semaines au-dessus du plafond;dimanche (h);jours feries (h);"
-                + "nuit apres 22h (h);repos quotidien minimal observe (h);detail des ecarts\n");
+        csv.append(
+                ";total (h);plafond hebdomadaire (h);semaines au-dessus du plafond;dimanche (h);jours feries (h);"
+                        + "nuit apres 22h (h);repos quotidien minimal observe (h);detail des ecarts;representant legal\n");
+        Set<String> manquants = rapport.mineursSansRepresentant().stream()
+                .map(RapportConformite.MinorWithoutRepresentative::animateurId)
+                .collect(Collectors.toSet());
         for (Personne p : rapport.personnes()) {
             csv.append(CsvFormulaGuard.cell(p.nom())).append(';').append(p.mineur() ? "oui" : "non");
             for (String semaine : rapport.semaines()) {
@@ -59,6 +64,8 @@ public final class RapportConformiteCsv {
                     .append(CsvFormulaGuard.cell(p.ecartsDetail().stream()
                             .map(e -> e.libelle() + " : " + e.texte())
                             .collect(Collectors.joining(" | "))))
+                    .append(';')
+                    .append(!p.mineur() ? "" : manquants.contains(p.animateurId()) ? "non renseigne" : "renseigne")
                     .append('\n');
         }
         return csv.toString();

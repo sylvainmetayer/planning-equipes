@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,7 +94,8 @@ class RhResourceTest {
     @AfterEach
     void clean() {
         sql("DELETE FROM plan_snapshot");
-        sql("DELETE FROM journal_action WHERE action LIKE '%CONFORMITE%'");
+        sql("DELETE FROM animateur_contact");
+        sql("DELETE FROM journal_action WHERE action LIKE '%CONFORMITE%' OR action LIKE 'CONTACTS%'");
     }
 
     private String bearer(RoleHabilitation role, String editionId) {
@@ -189,6 +191,99 @@ class RhResourceTest {
         assertThat(journalCount("CONFORMITE_CONSULTEE")).isEqualTo(1);
         assertThat(journalCount("EXPORT_CONFORMITE_PDF")).isEqualTo(1);
         assertThat(journalCount("EXPORT_CONFORMITE_CSV")).isEqualTo(1);
+    }
+
+    /** A number built at run time: nothing here is somebody's. */
+    private static String phone() {
+        return "+" + (33_000_000_000L + ThreadLocalRandom.current().nextLong(1_000_000_000L));
+    }
+
+    @Test
+    void theRhRightSavesAndReadsContactsAndIsWarnedForAMinorWithoutARepresentative() throws Exception {
+        String rh = rh();
+        String urgence = phone();
+        String path = "/api/rh/editions/" + edition + "/contacts/RH-B";
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceNom", "Camille", "urgenceTelephone", urgence))
+                .put(path)
+                .then()
+                .statusCode(200)
+                .body("contacts.urgenceTelephone", equalTo(urgence))
+                .body("avertissements", hasSize(1))
+                .body("avertissements[0].type", equalTo("MINEUR_SANS_REPRESENTANT"))
+                .body("avertissements[0].message", org.hamcrest.Matchers.containsString("RH-B"))
+                .body(
+                        "avertissements[0].message",
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Bob")));
+        given().header("Authorization", rh)
+                .get("/api/rh/editions/" + edition + "/contacts")
+                .then()
+                .statusCode(200)
+                .body("animateurId", org.hamcrest.Matchers.contains("RH-B"))
+                .body("[0].mineur", equalTo(true))
+                .body("[0].contacts.urgenceNom", equalTo("Camille"));
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("representantNom", "Dominique", "representantTelephone", phone()))
+                .put(path)
+                .then()
+                .statusCode(200)
+                .body("avertissements", hasSize(0));
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceTelephone", "12"))
+                .put(path)
+                .then()
+                .statusCode(400);
+        assertThat(journalCount("CONTACTS_CONSULTES")).isEqualTo(1);
+        assertThat(journalCount("CONTACTS_MODIFIES")).isEqualTo(2);
+    }
+
+    @Test
+    void contactsAreClosedToOrganisersAndToTheRhOfAnotherEdition() {
+        String path = "/api/rh/editions/" + edition + "/contacts";
+        given().header("Authorization", bearer(RoleHabilitation.ORGANISATEUR, edition))
+                .get(path)
+                .then()
+                .statusCode(403);
+        given().header("Authorization", bearer(RoleHabilitation.ORGANISATEUR, edition))
+                .contentType("application/json")
+                .body("{}")
+                .put(path + "/RH-B")
+                .then()
+                .statusCode(403);
+        given().header("Authorization", bearer(RoleHabilitation.RH, autreEdition))
+                .get(path)
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void theReportListsTheMinorsWhoseRepresentativeIsMissingUntilItIsRecorded() {
+        publication.publier();
+        String rh = rh();
+        String report = "/api/rh/editions/" + edition + "/conformite";
+        given().header("Authorization", rh)
+                .get(report)
+                .then()
+                .statusCode(200)
+                .body("mineursSansRepresentant.animateurId", org.hamcrest.Matchers.contains("RH-B"));
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("representantNom", "Dominique"))
+                .put("/api/rh/editions/" + edition + "/contacts/RH-B")
+                .then()
+                .statusCode(200);
+        given().header("Authorization", rh).get(report).then().body("mineursSansRepresentant", hasSize(0));
+        assertThat(given().header("Authorization", rh)
+                        .get(report + ".csv")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString())
+                .contains("Bob Petit;oui;")
+                .contains(";renseigne");
     }
 
     private int journalCount(String action) throws Exception {

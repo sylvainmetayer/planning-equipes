@@ -18,12 +18,15 @@ import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.rh.ContactsAnimateur;
+import dev.sylvain.planning.service.rh.ContactsService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -82,6 +85,8 @@ public class EspaceAnimateurResource {
 
     private final SignalementAbsenceService signalementService;
 
+    private final ContactsService contactsService;
+
     @Inject
     public EspaceAnimateurResource(
             EspaceAccesService espaceAccesService,
@@ -94,7 +99,8 @@ public class EspaceAnimateurResource {
             ConfirmationPlanningService confirmationService,
             ReferenceDataService referenceDataService,
             TeammateRequestService teammateRequestService,
-            SignalementAbsenceService signalementService) {
+            SignalementAbsenceService signalementService,
+            ContactsService contactsService) {
         this.espaceAccesService = espaceAccesService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.demandeEchangeService = demandeEchangeService;
@@ -106,6 +112,7 @@ public class EspaceAnimateurResource {
         this.referenceDataService = referenceDataService;
         this.teammateRequestService = teammateRequestService;
         this.signalementService = signalementService;
+        this.contactsService = contactsService;
     }
 
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
@@ -237,6 +244,22 @@ public class EspaceAnimateurResource {
     @EspaceSessionRequired
     public EspaceAnimateurService.DeclarationEspaceView declaration() {
         return espaceAnimateurService.buildDeclarationView(animateurCourant());
+    }
+
+    /** My own emergency contact and legal representative — nobody else's, and nothing a colleague's espace shows. */
+    @GET
+    @Path("/{jeton}/contacts")
+    @EspaceSessionRequired
+    public ContactsAnimateur contacts() {
+        return contactsService.of(animateurCourant());
+    }
+
+    /** Replaces my contacts; the answer carries a warning for a minor with no legal representative. */
+    @PUT
+    @Path("/{jeton}/contacts")
+    @EspaceSessionRequired
+    public ContactsService.Saved saveContacts(ContactsAnimateur contacts) {
+        return contactsService.save(animateurCourant(), contacts);
     }
 
     /**
