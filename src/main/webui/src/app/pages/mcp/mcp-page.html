@@ -4,140 +4,136 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@mcp.connexion.title">Se connecter au serveur MCP</h2>
     <mat-card-subtitle i18n="@@mcp.connexion.subtitle">
-      Un assistant IA (Claude, un IDE, un agent) consulte et pilote le planning en langage naturel par le
-      protocole MCP.
+      Un assistant IA (Claude, un IDE, un agent) consulte et pilote le planning en langage naturel
+      par le protocole MCP.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <p i18n="@@mcp.connexion.endpoint">
-      Point d'entrée : <code>{{ origin }}/mcp</code>. Clé API dans l'en-tête <code>{{ enTeteCle() }}</code>
-      (variable serveur PLANNING_MCP_API_KEY, ou clé générée ci-dessous).
+      Point d'entrée : <code>{{ origin }}/mcp</code>. Clé API dans l'en-tête
+      <code>{{ enTeteCle() }}</code>
+      (variable serveur PLANNING_MCP_API_KEY).
     </p>
     <p i18n="@@mcp.confidentialite">
-      Le serveur MCP ne lit ni ne modifie les données personnelles des animateurs (nom, prénom, date de
-      naissance, e-mail) : seuls l'identifiant et les attributs de planification circulent.
+      Le serveur MCP ne lit ni ne modifie les données personnelles des animateurs (nom, prénom, date
+      de naissance, e-mail) : seuls l'identifiant et les attributs de planification circulent.
     </p>
-    @if (statut(); as etat) {
-      @if (!etat.configuree) {
-        <app-status-message
-          i18n-text="@@mcp.cle.absente"
-          text="Aucune clé : le MCP répond 401 à tout le monde tant qu'une clé n'est pas générée ci-dessous, ou renseignée par l'exploitant (variable PLANNING_MCP_API_KEY) puis l'application redémarrée."
-          tone="warning"
-        />
-      } @else if (etat.origine === 'GENERATED') {
-        <p class="mcp-cle-note" i18n="@@mcp.cle.generee">
-          La clé en vigueur a été générée depuis cet écran : seule son empreinte est conservée, elle n'a été
-          montrée qu'une fois. En cas de perte, générez-en une nouvelle.
-        </p>
-      }
-      @if (etat.ancienneExpireLe; as expire) {
-        <app-status-message
-          i18n-text="@@mcp.cle.recouvrement"
-          text="L'ancienne clé fonctionne encore jusqu'à la date ci-après : mettez à jour vos clients avant."
-          tone="warning"
-        />
-        <p class="mcp-cle-note">{{ expire | date: 'medium' }}</p>
-      }
-      <div class="card-actions">
-        @if (etat.origine === 'CONFIG' && !cle() && !formulaireOuvert()) {
-          <button matButton="tonal" type="button" (click)="ouvrirFormulaire('reveler')">
-            <mat-icon>key</mat-icon>
-            <ng-container i18n="@@mcp.cle.reveler">Révéler la clé d'API</ng-container>
-          </button>
-        }
-        @if (!formulaireOuvert()) {
-          <button matButton="tonal" type="button" (click)="ouvrirFormulaire('renouveler')">
-            <mat-icon>autorenew</mat-icon>
-            <ng-container i18n="@@mcp.cle.renouveler">Générer une nouvelle clé</ng-container>
-          </button>
-        }
-        @if (cle()) {
-          <button matButton="tonal" type="button" (click)="oublierCle()">
-            <mat-icon>visibility_off</mat-icon>
-            <ng-container i18n="@@mcp.cle.masquer">Masquer la clé</ng-container>
-          </button>
-        }
-      </div>
-
-      @if (formulaireOuvert()) {
-        <form class="mcp-cle-form" (submit)="reveler($event)">
-          @if (mode() === 'renouveler') {
-            <p i18n="@@mcp.cle.renouveler.pourquoi">
-              La nouvelle clé n'est montrée qu'une fois. L'ancienne reste valable pendant le recouvrement
-              choisi, le temps de mettre à jour vos clients ; « aucun » la coupe immédiatement. Confirmez le
-              mot de passe administrateur.
-            </p>
-            <mat-form-field appearance="outline">
-              <mat-label i18n="@@mcp.cle.recouvrement.label">L'ancienne clé reste valable</mat-label>
-              <select
-                matNativeControl
-                name="recouvrementMcp"
-                [ngModel]="recouvrement()"
-                (ngModelChange)="recouvrement.set(+$event)"
-              >
-                <option [ngValue]="0" i18n="@@mcp.cle.recouvrement.aucun">Aucun : coupée tout de suite</option>
-                <option [ngValue]="15" i18n="@@mcp.cle.recouvrement.15">15 minutes</option>
-                <option [ngValue]="60" i18n="@@mcp.cle.recouvrement.60">1 heure</option>
-                <option [ngValue]="1440" i18n="@@mcp.cle.recouvrement.1440">24 heures</option>
-              </select>
-            </mat-form-field>
-          } @else {
-            <p i18n="@@mcp.cle.pourquoi">
-              La clé donne un accès complet en écriture et survit à votre session : confirmez le mot de passe
-              administrateur pour l'afficher.
-            </p>
-          }
-          <mat-form-field appearance="outline">
-            <mat-label i18n="@@mcp.cle.motDePasse">Mot de passe administrateur</mat-label>
-            <input
-              matInput
-              type="password"
-              autocomplete="current-password"
-              [ngModel]="motDePasse()"
-              (ngModelChange)="motDePasse.set($event)"
-              name="motDePasseMcp"
-            />
-          </mat-form-field>
-          <div class="card-actions">
-            <button matButton="filled" type="submit" [disabled]="enCours() || !motDePasse()">
-              @if (mode() === 'renouveler') {
-                <ng-container i18n="@@mcp.cle.renouveler.confirmer">Générer et afficher la clé</ng-container>
-              } @else {
-                <ng-container i18n="@@mcp.cle.confirmer">Afficher la clé</ng-container>
-              }
-            </button>
-            <button matButton type="button" (click)="annuler()" i18n="@@mcp.cle.annuler">Annuler</button>
-          </div>
-          @if (erreur()) {
-            <app-status-message [text]="erreur()" tone="error" />
-          }
-        </form>
-      }
-
-      @if (cle()) {
-        <div class="mcp-cle-revelee">
-          <pre class="mcp-pre">{{ cle() }}</pre>
-          <div class="card-actions">
-            <button matButton="tonal" type="button" (click)="copy(cle())">
-              <mat-icon>content_copy</mat-icon>
-              <ng-container i18n="@@mcp.cle.copier">Copier la clé</ng-container>
-            </button>
-          </div>
-          <p class="mcp-cle-note" i18n="@@mcp.cle.ephemere">
-            La clé disparaît au bout de deux minutes ou en quittant la page ; copier la clé relance le délai.
-          </p>
-        </div>
-      }
-
-      @if (etat.oauth) {
-        <p i18n="@@mcp.oauth">
-          Un client MCP qui sait se connecter par OAuth n'a besoin d'aucune clé : il découvre le fournisseur
-          d'identité depuis <code>{{ origin }}/mcp</code> et ouvre la connexion de la personne. Le compte doit
-          être actif, avec un droit d'administrateur ou d'organisateur ; un organisateur n'atteint que ses
-          éditions.
-        </p>
-      }
+    @if (statut(); as etat) { @if (!etat.configuree) {
+    <app-status-message
+      i18n-text="@@mcp.cle.absente"
+      text="Aucune clé : le MCP répond 401 à tout le monde tant qu'une clé n'est pas générée ci-dessous, ou renseignée par l'exploitant (variable PLANNING_MCP_API_KEY) puis l'application redémarrée."
+      tone="warning"
+    />
+    } @else if (etat.origine === 'GENERATED') {
+    <p class="mcp-cle-note" i18n="@@mcp.cle.generee">
+      La clé en vigueur a été générée depuis cet écran : seule son empreinte est conservée, elle n'a
+      été montrée qu'une fois. En cas de perte, générez-en une nouvelle.
+    </p>
+    } @if (etat.ancienneExpireLe; as expire) {
+    <app-status-message
+      i18n-text="@@mcp.cle.recouvrement"
+      text="L'ancienne clé fonctionne encore jusqu'à la date ci-après : mettez à jour vos clients avant."
+      tone="warning"
+    />
+    <p class="mcp-cle-note">{{ expire | date: 'medium' }}</p>
     }
+    <div class="card-actions">
+      @if (etat.origine === 'CONFIG' && !cle() && !formulaireOuvert()) {
+      <button matButton="tonal" type="button" (click)="openForm('reveler')">
+        <mat-icon>key</mat-icon>
+        <ng-container i18n="@@mcp.cle.reveler">Révéler la clé d'API</ng-container>
+      </button>
+      } @if (!formulaireOuvert()) {
+      <button matButton="tonal" type="button" (click)="openForm('renouveler')">
+        <mat-icon>autorenew</mat-icon>
+        <ng-container i18n="@@mcp.cle.renouveler">Générer une nouvelle clé</ng-container>
+      </button>
+      } @if (cle()) {
+      <button matButton="tonal" type="button" (click)="oublierCle()">
+        <mat-icon>visibility_off</mat-icon>
+        <ng-container i18n="@@mcp.cle.masquer">Masquer la clé</ng-container>
+      </button>
+      }
+    </div>
+
+    @if (formulaireOuvert()) {
+    <form class="mcp-cle-form" (submit)="reveler($event)">
+      @if (mode() === 'renouveler') {
+      <p i18n="@@mcp.cle.renouveler.pourquoi">
+              La nouvelle clé n'est montrée qu'une fois. L'ancienne reste valable le temps choisi pour mettre
+              à jour vos clients ; « aucun » la coupe tout de suite. Confirmez le mot de passe.
+            </p>
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@mcp.cle.recouvrement.label">L'ancienne clé reste valable</mat-label>
+        <select
+          matNativeControl
+          name="recouvrementMcp"
+          [ngModel]="recouvrement()"
+          (ngModelChange)="recouvrement.set(+$event)"
+        >
+          <option [ngValue]="0" i18n="@@mcp.cle.recouvrement.aucun">
+            Aucun : coupée tout de suite
+          </option>
+          <option [ngValue]="15" i18n="@@mcp.cle.recouvrement.15">15 minutes</option>
+          <option [ngValue]="60" i18n="@@mcp.cle.recouvrement.60">1 heure</option>
+          <option [ngValue]="1440" i18n="@@mcp.cle.recouvrement.1440">24 heures</option>
+        </select>
+      </mat-form-field>
+      } @else {
+      <p i18n="@@mcp.cle.pourquoi">
+        La clé donne un accès complet en écriture et survit à votre session : confirmez le mot de
+        passe administrateur pour l'afficher.
+      </p>
+      }
+      <mat-form-field appearance="outline">
+        <mat-label i18n="@@mcp.cle.motDePasse">Mot de passe administrateur</mat-label>
+        <input
+          matInput
+          type="password"
+          autocomplete="current-password"
+          [ngModel]="motDePasse()"
+          (ngModelChange)="motDePasse.set($event)"
+          name="motDePasseMcp"
+        />
+      </mat-form-field>
+      <div class="card-actions">
+        <button matButton="filled" type="submit" [disabled]="enCours() || !motDePasse()">
+          @if (mode() === 'renouveler') {
+          <ng-container i18n="@@mcp.cle.renouveler.confirmer"
+            >Générer et afficher la clé</ng-container
+          >
+          } @else {
+          <ng-container i18n="@@mcp.cle.confirmer">Afficher la clé</ng-container>
+          }
+        </button>
+        <button matButton type="button" (click)="annuler()" i18n="@@mcp.cle.annuler">
+          Annuler
+        </button>
+      </div>
+      @if (erreur()) {
+      <app-status-message [text]="erreur()" tone="error" />
+      }
+    </form>
+    } @if (cle()) {
+    <div class="mcp-cle-revelee">
+      <pre class="mcp-pre">{{ cle() }}</pre>
+      <div class="card-actions">
+        <button matButton="tonal" type="button" (click)="copy(cle())">
+          <mat-icon>content_copy</mat-icon>
+          <ng-container i18n="@@mcp.cle.copier">Copier la clé</ng-container>
+        </button>
+      </div>
+      <p class="mcp-cle-note" i18n="@@mcp.cle.ephemere">
+        La clé disparaît au bout de deux minutes ou en quittant la page ; copier la clé relance le
+        délai.
+      </p>
+    </div>
+    } @if (etat.oauth) {
+    <p i18n="@@mcp.oauth">
+          Un client MCP qui sait faire OAuth n'a pas besoin de clé : il découvre le fournisseur d'identité
+          depuis <code>{{ origin }}/mcp</code>. Un compte actif est requis.
+        </p>
+    } }
 
     <p i18n="@@mcp.connexion.config">Configuration à déclarer dans votre client MCP :</p>
     <pre class="mcp-pre">{{ configurationClient() }}</pre>
@@ -157,12 +153,22 @@
   <mat-card-content>
     <section class="mcp-gratuit-client">
       <h3 class="mcp-gratuit-nom">
-        <a href="https://chat.mistral.ai/chat" target="_blank" rel="noopener" i18n="@@mcp.gratuit.lechat.nom">Le Chat (Mistral)</a>
+        <a
+          href="https://chat.mistral.ai/chat"
+          target="_blank"
+          rel="noopener"
+          i18n="@@mcp.gratuit.lechat.nom"
+          >Le Chat (Mistral)</a
+        >
       </h3>
       <p i18n="@@mcp.gratuit.lechat.texte">
         Créez un connecteur MCP personnalisé en suivant
-        <a href="https://docs.mistral.ai/vibe/work/connectors/mcp-connectors#custom-connectors" target="_blank" rel="noopener">la documentation de Mistral</a>,
-        avec ces informations de connexion :
+        <a
+          href="https://docs.mistral.ai/vibe/work/connectors/mcp-connectors#custom-connectors"
+          target="_blank"
+          rel="noopener"
+          >la documentation de Mistral</a
+        >, avec ces informations de connexion :
       </p>
       <dl class="mcp-gratuit-champs">
         <dt i18n="@@mcp.gratuit.champ.url">URL</dt>
@@ -172,9 +178,11 @@
         <dt i18n="@@mcp.gratuit.champ.valeur">Valeur de l'en-tête</dt>
         <dd>
           @if (cle()) {
-            <code>{{ cle() }}</code>
+          <code>{{ cle() }}</code>
           } @else {
-            <span class="mcp-cle-note" i18n="@@mcp.gratuit.champ.valeurMasquee">la clé d'API, à révéler ci-dessus</span>
+          <span class="mcp-cle-note" i18n="@@mcp.gratuit.champ.valeurMasquee"
+            >la clé d'API, à révéler ci-dessus</span
+          >
           }
         </dd>
       </dl>
@@ -186,63 +194,60 @@
 </mat-card>
 
 @if (pangolin()) {
-  <mat-card appearance="outlined" class="page-card">
-    <mat-card-header>
-      <h2 mat-card-title i18n="@@mcp.pangolin.title">Proxy d'accès Pangolin détecté</h2>
-    </mat-card-header>
-    <mat-card-content>
-      <app-status-message
-        i18n-text="@@mcp.pangolin.warning"
-        text="Derrière un proxy Pangolin, chaque requête MCP doit aussi présenter un jeton d'accès du proxy, créé dans Pangolin et paramétré dans le client."
-        tone="warning"
-      />
-      <p i18n="@@mcp.pangolin.headers">
-        En-têtes attendus : <code>P-Access-Token-Id</code> et <code>P-Access-Token</code> (déjà dans la
-        configuration), ou en query string ?p_token=&lt;id&gt;.&lt;jeton&gt;.
-      </p>
-      @if (pangolinAccessTokenId() || pangolinAccessToken()) {
-        <p i18n="@@mcp.pangolin.jeton.revele">
-          La configuration ci-dessus contient la vraie valeur du jeton Pangolin configuré côté serveur.
-        </p>
-      } @else {
-        <p i18n="@@mcp.pangolin.jeton.manuel">
-          Si le jeton est configuré côté serveur (PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID et
-          PLANNING_MCP_PANGOLIN_ACCESS_TOKEN), « Révéler la clé d'API » le révèle aussi ; sinon, collez-le à la
-          main.
-        </p>
-      }
-      <p i18n="@@mcp.pangolin.authorization">
-        Passez la clé API dans l'en-tête <code>X-MCP-Api-Key</code>, pas dans <code>Authorization</code>,
-        que le proxy consomme souvent pour lui-même.
-      </p>
-    </mat-card-content>
-  </mat-card>
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@mcp.pangolin.title">Proxy d'accès Pangolin détecté</h2>
+  </mat-card-header>
+  <mat-card-content>
+    <app-status-message
+      i18n-text="@@mcp.pangolin.warning"
+      text="Derrière un proxy Pangolin, chaque requête MCP doit aussi présenter un jeton d'accès du proxy, créé dans Pangolin et paramétré dans le client."
+      tone="warning"
+    />
+    <p i18n="@@mcp.pangolin.headers">
+      En-têtes attendus : <code>P-Access-Token-Id</code> et <code>P-Access-Token</code> (déjà dans
+      la configuration), ou en query string ?p_token=&lt;id&gt;.&lt;jeton&gt;.
+    </p>
+    @if (pangolinAccessTokenId() || pangolinAccessToken()) {
+    <p i18n="@@mcp.pangolin.jeton.revele">
+      La configuration ci-dessus contient la vraie valeur du jeton Pangolin configuré côté serveur.
+    </p>
+    } @else {
+    <p i18n="@@mcp.pangolin.jeton.manuel">
+      Si le jeton est configuré côté serveur (PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID et
+      PLANNING_MCP_PANGOLIN_ACCESS_TOKEN), « Révéler la clé d'API » le révèle aussi ; sinon,
+      collez-le à la main.
+    </p>
+    }
+    <p i18n="@@mcp.pangolin.authorization">
+      Passez la clé API dans l'en-tête <code>X-MCP-Api-Key</code>, pas dans
+      <code>Authorization</code>, que le proxy consomme souvent pour lui-même.
+    </p>
+  </mat-card-content>
+</mat-card>
+} @if (prompts().length) {
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@mcp.prompts.title">Prompts prêts à l'emploi</h2>
+    <mat-card-subtitle i18n="@@mcp.prompts.subtitle">
+      Prompts annoncés par le serveur : un client qui gère les prompts MCP les propose directement ;
+      sinon, collez le texte dans votre assistant.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @for (prompt of prompts(); track prompt.nom) {
+    <section class="mcp-prompt-bloc">
+      <h3 class="mcp-prompt-nom"><code>{{ prompt.nom }}</code></h3>
+      <p class="mcp-prompt-description">{{ prompt.description }}</p>
+      <pre class="mcp-pre mcp-prompt">{{ prompt.texte }}</pre>
+      <div class="card-actions">
+        <button matButton="tonal" type="button" (click)="copy(prompt.texte)">
+          <mat-icon>content_copy</mat-icon>
+          <ng-container i18n="@@mcp.copierPrompt">Copier le prompt</ng-container>
+        </button>
+      </div>
+    </section>
+    }
+  </mat-card-content>
+</mat-card>
 }
-
-@if (prompts().length) {
-  <mat-card appearance="outlined" class="page-card">
-    <mat-card-header>
-      <h2 mat-card-title i18n="@@mcp.prompts.title">Prompts prêts à l'emploi</h2>
-      <mat-card-subtitle i18n="@@mcp.prompts.subtitle">
-        Prompts annoncés par le serveur : un client qui gère les prompts MCP les propose directement ;
-        sinon, collez le texte dans votre assistant.
-      </mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      @for (prompt of prompts(); track prompt.nom) {
-        <section class="mcp-prompt-bloc">
-          <h3 class="mcp-prompt-nom"><code>{{ prompt.nom }}</code></h3>
-          <p class="mcp-prompt-description">{{ prompt.description }}</p>
-          <pre class="mcp-pre mcp-prompt">{{ prompt.texte }}</pre>
-          <div class="card-actions">
-            <button matButton="tonal" type="button" (click)="copy(prompt.texte)">
-              <mat-icon>content_copy</mat-icon>
-              <ng-container i18n="@@mcp.copierPrompt">Copier le prompt</ng-container>
-            </button>
-          </div>
-        </section>
-      }
-    </mat-card-content>
-  </mat-card>
-}
-

@@ -136,7 +136,7 @@ public class McpResource {
     @POST
     @Path("/cle")
     public synchronized Response reveal(DemandeRevelation demande) {
-        Response refus = verifierMotDePasse(demande == null ? null : demande.motDePasse());
+        Response refus = checkPassword(demande == null ? null : demande.motDePasse());
         if (refus != null) {
             return refus;
         }
@@ -163,13 +163,13 @@ public class McpResource {
     @POST
     @Path("/cle/rotation")
     public synchronized Response rotate(DemandeRotation demande) {
-        Response refus = verifierMotDePasse(demande == null ? null : demande.motDePasse());
+        Response refus = checkPassword(demande == null ? null : demande.motDePasse());
         if (refus != null) {
             return refus;
         }
         long recouvrement = demande.recouvrementMinutes() == null ? 0 : demande.recouvrementMinutes();
         McpKeyService.Rotation rotation = keys.rotate(recouvrement);
-        return Response.ok(new CleGeneree(
+        return Response.ok(new GeneratedMcpKey(
                         rotation.key(),
                         rotation.previousExpiresAt(),
                         mcp.pangolin().accessTokenId().filter(v -> !v.isBlank()).orElse(null),
@@ -178,7 +178,7 @@ public class McpResource {
     }
 
     /** {@code null} when the password is the admin's; else the refusal to answer, the lock-out counted. */
-    private Response verifierMotDePasse(String motDePasse) {
+    private Response checkPassword(String motDePasse) {
         if (blocageJusqua != null && Instant.now().isBefore(blocageJusqua)) {
             return Response.status(429).build();
         }
@@ -221,7 +221,7 @@ public class McpResource {
     public record DemandeRotation(String motDePasse, Long recouvrementMinutes) {}
 
     /** The new key, in clear, once; {@code ancienneExpireLe} is {@code null} when no key was in force. */
-    public record CleGeneree(
+    public record GeneratedMcpKey(
             String cle, Instant ancienneExpireLe, String pangolinAccessTokenId, String pangolinAccessToken) {}
 
     public record DemandeRevelation(String motDePasse) {}

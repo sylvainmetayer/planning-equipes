@@ -165,7 +165,7 @@ export class McpPage implements OnInit, OnDestroy {
     return JSON.stringify(config, null, 2);
   });
 
-  protected ouvrirFormulaire(mode: 'reveler' | 'renouveler' = 'reveler'): void {
+  protected openForm(mode: 'reveler' | 'renouveler' = 'reveler'): void {
     this.mode.set(mode);
     this.formulaireOuvert.set(true);
     this.erreur.set('');

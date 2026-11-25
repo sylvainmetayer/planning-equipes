@@ -2943,7 +2943,7 @@ export interface CleMcp {
 }
 
 /** A key generated from the MCP page: shown once, only its fingerprint is kept. */
-export interface CleGeneree extends CleMcp {
+export interface GeneratedMcpKey extends CleMcp {
   /** When the previous key stops working, `null` when no key was in force. */
   ancienneExpireLe: string | null;
 }
