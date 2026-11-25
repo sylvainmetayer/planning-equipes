@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 #
 # Deliberately unsolvable teaching fixture — see site/src/docs/comprendre/scenario-yaml.md.
 #

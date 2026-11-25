@@ -2,7 +2,7 @@
 
 Plusieurs personnes administrent une même instance, et l'historique doit dire laquelle a fait quoi. Vous saurez comment un compte, ses droits et son rôle se déduisent, ce que chacun des quatre rôles ouvre, et par quels tests le dépôt interdit qu'une nouvelle route s'ouvre à un rôle sans que quelqu'un l'ait décidé.
 
-Le côté exploitant (brancher un annuaire, créer des comptes locaux) est dans [Brancher votre annuaire](../installer/oidc.md) et [Choisir et protéger la connexion](../installer/securite-acces-administration.md#les-cinq-portes-de-ladministration). Le côté organisateur est dans [Gérer les comptes et les droits](../regles/comptes-et-droits.md). Les en-têtes, les codes de statut et les routes d'authentification sont décrits dans [les conventions de l'API](api-conventions.md).
+Le côté exploitant (brancher un annuaire, créer des comptes locaux) est dans [Brancher votre annuaire](../installer/oidc.md) et [Choisir et protéger la connexion](../installer/securite-acces-administration.md#les-quatre-portes-de-ladministration). Le côté organisateur est dans [Gérer les comptes et les droits](../regles/comptes-et-droits.md). Les en-têtes, les codes de statut et les routes d'authentification sont décrits dans [les conventions de l'API](api-conventions.md).
 
 ## Le compte et le droit
 

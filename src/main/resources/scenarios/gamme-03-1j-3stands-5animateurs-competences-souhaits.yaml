@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 3 : niveaux de compétence, stand premium et souhaits.
 # Trois typologies déclarées avec leur libellé, un stand premium (l'escape game)
 # que les débutants ne devraient pas tenir, et des souhaits qui laissent une

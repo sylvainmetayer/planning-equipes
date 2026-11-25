@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 20 : trois semaines d'un festival comme on en organise.
 # Une rotation du midi saisie en vacations (12 h-13 h et 13 h-14 h à effectif
 # réduit), des nocturnes jusqu'à 23 h 30 les vendredis et samedis, quinze stands

@@ -248,4 +248,18 @@ class ScenarioYamlReaderTest {
     void aPathOutsideTheScenariosFolderIsRefusedWhenRead(String path) {
         assertThatThrownBy(() -> ScenarioYamlReader.readScenario(path)).isInstanceOf(BusinessError.Invalid.class);
     }
+
+    /**
+     * A {@code schemaVersion} the reader cannot take reaches the caller as a
+     * business refusal (400 on REST, a tool error on MCP), never as a 500: a
+     * newer file says to update, anything else says what the key accepts.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"3", "abc", "1.5", "true", "0", "-18446744073709551615"})
+    void anUnreadableSchemaVersionIsABusinessRefusal(String value) {
+        assertThatThrownBy(() -> ScenarioYamlReader.parseScenarioText(
+                        "schemaVersion: " + value + "\nfestival:\n  dateDebut: 2026-07-08\n"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageStartingWith("Scénario invalide");
+    }
 }

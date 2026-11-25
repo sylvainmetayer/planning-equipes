@@ -34,10 +34,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthenticationRequest> {
 
-    /** Matches {@code quarkus.security.users.embedded.roles.admin}, so both login paths grant the same role. */
     /** Principal name of the form login's admin. */
     static final String PRINCIPAL_ADMIN = "admin";
 
+    /** Matches {@code quarkus.security.users.embedded.roles.admin}, so both login paths grant the same role. */
     static final String ROLE_ADMIN = "admin";
 
     /** Matches {@code quarkus.http.auth.policy.cle-mcp.roles-allowed}. */

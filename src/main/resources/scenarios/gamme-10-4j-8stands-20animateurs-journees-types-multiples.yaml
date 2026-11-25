@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 10 : trois journées types sur quatre jours, et une édition cible.
 # Montage le mercredi (un après-midi), jour normal le jeudi et le vendredi,
 # nocturne le samedi — le dernier jour, pour que personne n'enchaîne une

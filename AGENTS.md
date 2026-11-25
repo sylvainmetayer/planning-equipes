@@ -464,7 +464,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   interceptor every tool but `readOnlyHint = true` without `@Computes`, and `api/LecteurTokenMask`
   serialises an animateur's `accessToken` as `null` to them; a new route is classified by
   `RoutesLecteurStructuralTest` (`routes-lecteur.txt`). There is **no header mode**:
-  an access proxy never authenticates in the application's place (ADR 0100,
+  an access proxy never authenticates in the application's place (ADR 0102,
   `REMOTE_USER_*` removed in 4.0, named by a startup warning through
   `config/RetiredVariables` and nothing else — a removed variable warns, never
   refuses to boot). Hardening for an

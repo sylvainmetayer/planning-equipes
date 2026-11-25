@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Scénario extrême 4 : cent vingt jours sans un jour de relâche, avec un
 # effectif juste.
 # Dix stands ouverts matin et après-midi tous les jours pendant dix-huit

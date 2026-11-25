@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 18 : l'effectif porté par la fenêtre, pas par le stand.
 # Trois vacations par jour. Cinq profils de stand, sept stands chacun :
 # - une place le matin, deux l'après-midi ;

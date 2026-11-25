@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau infaisable 2 : une exception qui contredit une indisponibilité.
 # L'affectation forcée du matin tombe un jour où l'animatrice qu'elle nomme
 # s'est déclarée indisponible. Le contrôle des contradictions ne compare que les

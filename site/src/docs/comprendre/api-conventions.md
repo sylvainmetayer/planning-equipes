@@ -1,6 +1,6 @@
 # Les conventions de l'API : édition, authentification, erreurs
 
-Vous saurez comment un client désigne l'édition sur laquelle il travaille, comment il s'authentifie (session, proxy d'accès, jetons publics), et comment lire les refus du serveur : le statut HTTP, puis le `code` qui distingue deux `409` de même statut. Ce qui vaut pour tous les appels est ici ; la liste des routes et des schémas est dans la spécification générée.
+Vous saurez comment un client désigne l'édition sur laquelle il travaille, comment il s'authentifie (session, jetons publics), et comment lire les refus du serveur : le statut HTTP, puis le `code` qui distingue deux `409` de même statut. Ce qui vaut pour tous les appels est ici ; la liste des routes et des schémas est dans la spécification générée.
 
 Tout est sous `/api`, en JSON. La spécification fait foi pour la forme : [`openapi.json`](repo:docs/schema/openapi.json) dans le dépôt, `/q/openapi` sur une instance qui tourne, `/q/swagger-ui` pour l'explorer. Les pages d'API de cette partie ne portent que ce qu'un schéma ne sait pas dire : les invariants, les arbitrages métier, les pièges. Le serveur MCP a sa propre porte, présentée dans [la connexion MCP](mcp-connexion.md).
 
@@ -60,7 +60,7 @@ Les comptes, les rôles et les droits sont présentés dans [comptes, rôles et 
 - l'abonnement ICS, `/api/abonnements/*`, et l'affichage mural, `/api/mural/*` : chacun a son jeton dédié et n'ouvre qu'une lecture ([la page jour J et animateurs](api-jour-j-et-animateurs.md)) ;
 - les routes de session (`/api/auth/me`, `/api/auth/connexion`, `/api/auth/mot-de-passe`, `/api/auth/logout`), `/api/config`, `/api/branding` et `/api/mentions-legales`, que le frontend lit avant son démarrage, page de connexion comprise.
 
-![Connexion du coordinateur : formulaire ou proxy d'accès](repo:docs/diagrammes/authentification.svg)
+![Connexion du coordinateur par le formulaire intégré](repo:docs/diagrammes/authentification.svg)
 
 <sub>Source : [`diagrammes/authentification.puml`](repo:docs/diagrammes/authentification.puml).</sub>
 

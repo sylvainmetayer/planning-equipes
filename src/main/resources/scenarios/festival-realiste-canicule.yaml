@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Fixture anonymisée, GÉNÉRÉE par src/main/resources/anonymiser-scenario.py
 # depuis un scénario réel hors dépôt. Ne pas éditer ici ce qui devrait l'être
 # dans la source : la prochaine régénération écrase ce fichier.

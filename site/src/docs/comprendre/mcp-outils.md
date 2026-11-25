@@ -90,6 +90,14 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 | `planning://contraintes` | le catalogue des contraintes, généré depuis `ConstraintCatalog` : il ne peut ni décrire une règle absente ni en oublier une ajoutée la veille |
 | `planning://vocabulaire` | stand, créneau, poste, vacation, journée type, typologie, édition, et l'ordre dans lequel on prépare un événement ; le seul texte écrit à la main |
 
+## Anciens noms d'outils
+
+La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n'est publié que sous son nom courant ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
+
+<!-- mcp-renommages:debut -->
+Aucun outil n'est encore renommé ni retiré.
+<!-- mcp-renommages:fin -->
+
 ## Ce qui n'a pas d'outil
 
 | Ce qui reste dehors | Pourquoi |

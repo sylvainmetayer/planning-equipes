@@ -160,20 +160,27 @@ public class ScenarioMcpTools {
             // names: an import that says nothing about where it landed is
             // exactly the silence issue #181 closes.
             return new ImportResult(
-                    true, outcome.editionId(), outcome.editionNom(), Boolean.TRUE.equals(outcome.editionCreee()));
+                    true,
+                    outcome.editionId(),
+                    outcome.editionNom(),
+                    Boolean.TRUE.equals(outcome.editionCreee()),
+                    outcome.avertissements());
         }
         // The scenario named no edition, so the data landed wherever the call
         // was already pointing — which the outcome cannot know and this can.
         Edition courante = editionService.editionCourante();
-        return new ImportResult(true, courante.getId(), courante.getNom(), false);
+        return new ImportResult(true, courante.getId(), courante.getNom(), false, outcome.avertissements());
     }
 
     /**
      * @param editionId    the edition the data really landed in: the one the scenario names if it names one,
      *                     otherwise the one of the call
      * @param editionCreee the edition did not exist and has just been created by this import
+     * @param avertissements what the conversion of an older file format dropped, one sentence each, naming a
+     *                       field or an id, never a person
      */
-    public record ImportResult(boolean importe, String editionId, String editionNom, boolean editionCreee) {}
+    public record ImportResult(
+            boolean importe, String editionId, String editionNom, boolean editionCreee, List<String> avertissements) {}
 
     public record ValidationResult(boolean valide, List<String> erreurs) {}
 
