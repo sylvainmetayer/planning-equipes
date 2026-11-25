@@ -12,8 +12,8 @@ Une organisation veut pouvoir dire d'une règle d'organisation, édition par
 mot appelle une garantie : un plan qui la viole n'est pas livrable. Dans le
 solveur, la seule chose qui porte cette garantie est le niveau **dur** du
 score : un plan dont le score dur n'est pas nul est déclaré infaisable, la
-recherche s'arrête de le chercher à tout prix, et le diagnostic dit quelle
-règle bloque. Les règles légales y sont déjà, et ne se règlent pas.
+recherche cherche d'abord à l'annuler, et le diagnostic dit quelle règle
+bloque. Les règles légales y sont déjà, et ne se règlent pas.
 
 Pour les règles d'organisation, la forme actuelle est celle de
 [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) : **deux
@@ -24,13 +24,12 @@ n'a sa forme dure.
 
 Un banc a mesuré ce que coûterait de fusionner des règles d'organisation
 (`RuleBenchTest`, qui sait déplacer une règle d'un niveau à l'autre par
-`bench.level`). Son constat utile ici est qualitatif : sur le scénario réel
-joué, la règle des jours d'affilée n'est tenue que par sa forme dure, et la
-retirer laisse le plafond violé en grand nombre sans que le score medium
-perdu le montre. Le banc n'a pas mesuré un poids très élevé au niveau medium
-(la forme medium est éteinte dans ce scénario) : le choix entre les options
+`bench.level`). Son constat utile ici est qualitatif : la règle des jours
+d'affilée n'est tenue que par sa forme dure, et la retirer laisse le plafond
+violé sans que le score medium perdu le montre. Le banc n'a pas mesuré un
+poids très élevé au niveau medium : le choix entre les options
 ci-dessous repose donc sur la sémantique du niveau, pas sur un chiffre. Le
-scénario réel n'est pas versionné : le constat se rejoue sur la gamme, à la
+scénario joué n'est pas versionné : le constat se rejoue sur la gamme, à la
 PR qui fusionnera les règles de jours d'affilée.
 
 ## Options envisagées
@@ -63,7 +62,8 @@ dépend du réglage de l'édition :
   niveau par défaut de chaque règle. Une édition existante garde le niveau
   qu'elle a aujourd'hui : celle dont la forme dure d'une règle est active
   passe en « obligatoire », les autres en « préférence » au poids stocké. Aucun
-  plan ne change de score à la migration.
+  plan ne change de score à la migration des réglages ; la fusion des deux
+  formes des jours d'affilée en une règle, elle, se mesure (voir plus bas).
 
 Côté Timefold, la règle reste écrite une fois, et le niveau vient du poids qui
 lui est donné : la PR qui construit le mécanisme vérifie que
