@@ -15,6 +15,8 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { DeclarationAdminView, StatutDeclaration, TeammateRequestView } from '../../core/models';
+import { ApiError } from '../../core/api.service';
+import { CODE_EDITION_INACTIVE } from '../../core/edition-inactive';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
 import { seedStore } from '../../core/testing/seed-store';
@@ -165,6 +167,19 @@ describe('DisponibilitesPage « en attente »', () => {
     await fixture.whenStable();
 
     expect(sendLinks).not.toHaveBeenCalled();
+  });
+
+  it('leaves an inactive-edition refusal to the interceptor: no second message', async () => {
+    const { fixture } = await setUp({});
+    vi.mocked(TestBed.inject(DisponibilitesApi).sendLinks).mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'inactive', CODE_EDITION_INACTIVE),
+    );
+    const notify = vi.spyOn(TestBed.inject(NotificationService), 'notify');
+
+    button(fixture, 'Envoyer les liens').click();
+    await vi.waitFor(() => expect(TestBed.inject(DisponibilitesApi).sendLinks).toHaveBeenCalled());
+    await fixture.whenStable();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('greys out « Envoyer les liens » on an inactive edition and says why next to it', async () => {
