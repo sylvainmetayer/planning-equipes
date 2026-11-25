@@ -83,7 +83,7 @@ A spreadsheet retypes every cell that looks like a date and saves it again in sh
 | Birth `12.09.26` | today | 2026-09-12, then refused as implausible, quoting this reading |
 | Unavailability `5/9/26` | last day of the event | 2026-09-05 |
 
-The ceiling of an unavailability is the last day of the event, not today: an event is prepared the year before, and read against today `18/07/27` would land in 1927 and then be refused as "outside the event dates" for a reason nobody wrote. Resolution stays strict (`31/02/26` is not a date) and the message advises opening the CSV through the spreadsheet's import wizard, forcing the date column to the "Text" type. Each row read with two digits carries a warning with the date understood: the preview is where this interpretation passes under human eyes before the write. The plausibility check (future date, more than 120 years) applies to the date as read.
+The ceiling of an unavailability is the last day of the event, not today: an event is prepared the year before, and read against today `18/07/27` would land in 1927 and then be refused as "hors des dates de l'événement" (outside the event dates) for a reason nobody wrote. Resolution stays strict (`31/02/26` is not a date) and the message advises opening the CSV through the spreadsheet's import wizard, forcing the date column to the "Text" type. Each row read with two digits carries a warning with the date understood: the preview is where this interpretation passes under human eyes before the write. The plausibility check (future date, more than 120 years) applies to the date as read.
 
 ### What a row uses to recognise a record
 

@@ -3,7 +3,7 @@ twin: comprendre/api-regles-et-diagnostic
 ---
 # Reading the rules and diagnosing a plan through the API
 
-You will be able to read the rule catalogue with its weights, violations and floors, tune a rule, refresh the analysis without running the solver, explain an assignment, move or place someone by hand and use the repair assistant, with the refusals and preconditions of each write.
+You will be able to read the rule catalogue with its weights, breaches and floors, tune a rule, refresh the analysis without running the solver, explain an assignment, move or place someone by hand and use the repair assistant, with the refusals and preconditions of each write.
 
 ## The analysis catalogue
 
@@ -13,10 +13,10 @@ You will be able to read the rule catalogue with its weights, violations and flo
 | --- | --- |
 | `poids` | the deployment's value, overridden by what the edition has saved |
 | `protegee` | a public-order or minor-safety rule: the UI asks for confirmation before it is disabled |
-| `dosable` | the MEDIUM rules of "Organisation quality", the only ones whose relative importance varies from one organiser to another |
+| `dosable` | the MEDIUM rules of "Qualité d'organisation" (organisation quality), the only ones whose relative importance varies from one organiser to another |
 | `remediation` | the lever the organiser really has on the rule (recruit, open a stand later, lower a weight). The answer to a legal rule is never "change a setting"; never empty |
 
-The view also carries `contraintesAdHocEnCause`: the ad hoc exceptions entered by hand that the last analysis still finds in violation, the most violated first, with their id, their reason and their number of violations. It answers "which of my exceptions" when an ad hoc rule shows twelve matches. The list is empty when the plan honours all of them, and when nothing has been analysed.
+The view also carries `contraintesAdHocEnCause`: the ad hoc exceptions entered by hand that the last analysis still finds in breach, the most breached first, with their id, their reason and their number of breaches. It answers "which of my exceptions" when an ad hoc rule shows twelve matches. The list is empty when the plan honours all of them, and when nothing has been analysed.
 
 ## Tuning a rule
 
@@ -27,14 +27,14 @@ Two routes, one body each: `PUT /api/constraints/{name}` switches on or off, `PU
 - `poids: null` removes the override and gives the rule back the deployment's value.
 - A deactivation inserts a row in `constraint_toggle`, a reactivation deletes it; the table holds nothing else.
 
-What each setting changes for the plan is explained in [weighting and disabling rules](doser-et-desactiver-les-regles.md).
+What each setting changes for the plan is explained in [weight and disable rules](doser-et-desactiver-les-regles.md).
 
 ## History of weighting changes
 
 `GET /api/constraints/{name}/historique` (one rule) and `GET /api/constraints/historique` (all of them) answer `{ changes, resolutions }`.
 
 - `changes`: every change of weight or activation of the edition, with the **effective values** before and after, deployment default included (`backToDefault` for "20 to default (1)"), the `origin` (`SCREEN`, `ASSISTANT`, `SCENARIO`, `DUPLICATION`, the last one with `sourceEdition`) and the journal's `actor` derived from it. A row is written only if the effective value changes: a `PUT` that sets the same value writes nothing, and neither does a scenario import that moves nothing.
-- `resolutions`: the rows of the edition's Autopsy, with their score, the `dosage` under which each one ran and, for a given rule, `ruleViolations`, its number of violations.
+- `resolutions`: the rows of the edition's Autopsy, with their score, the `dosage` under which each one ran and, for a given rule, `ruleViolations`, its number of breaches.
 
 Three traps:
 
@@ -61,14 +61,14 @@ The object is `null` for a hard rule, for a rule with no per-element reading and
 
 The view also carries `scoreHorsPlancher`, `plancherMedium` and `plancherSoft`: the raw score minus, level by level, what the flagged rules cost, and the two constant parts, **signed like the score** (`-5000` for five thousand points that nothing will make up). On a `PlanningKpi`, `scoreMediumHorsPlancher` and `plancherMedium` follow the rule of `violationsParContrainte`: `null` when the measure did not exist, never zero. A floor changes neither `actif` nor `poids`: it is flagged, not decided. The reasoning is in [why these rules](pourquoi-ces-regles.md).
 
-## Where the violations concentrate
+## Where the breaches concentrate
 
-`pivotEcarts` says **where** the violations fall, where the rest of the view says how many there are: one cell per constraint and per axis key (`JOUR` as an ISO date, `STAND`, `ANIMATEUR`), with the number of violations the rule counts there. Only cells carrying at least one violation exist; the table of zeros is drawn by the screen. The keys are **identifiers**, never names.
+`pivotEcarts` says **where** the breaches fall, where the rest of the view says how many there are: one cell per constraint and per axis key (`JOUR` as an ISO date, `STAND`, `ANIMATEUR`), with the number of breaches the rule counts there. Only cells carrying at least one breach exist; the table of zeros is drawn by the screen. The keys are **identifiers**, never names.
 
 Two points to know:
 
 - All the rules appear there, not only the hard ones. `violations` stops at the hard rules because *listing* thousands of rows is costly; *counting* them is not. A medium rule's cell therefore opens on a count and a sentence, not on a list.
-- A violation that names three stands counts for all three. The cell answers "how many violations touch this stand", and discarding the ambiguous cases would answer nothing. This is the deliberate opposite of `references`, which opens a record and must not open the wrong one.
+- A breach that names three stands counts for all three. The cell answers "how many breaches touch this stand", and discarding the ambiguous cases would answer nothing. This is the deliberate opposite of `references`, which opens a record and must not open the wrong one.
 
 ## Refreshing the analysis without the solver
 
@@ -86,7 +86,7 @@ Saving a constraint again **under its own id** is never refused: the submitted v
 
 `GET /api/postes/{posteId}/explication` targets a single seat of the saved plan, **already solved and never solved again**. The plan is prepared on the server side as a solve prepares it (disabled constraints, the edition's weights and quotas); the MCP tool `expliquer_affectation` reads the same thing. A plan sent by the screen would not carry these rules: explained bare, it would blame the holder for a constraint the organiser has switched off.
 
-"Respected" only means that no violation was found for this precise seat, not that the constraint applies to it: the UI does not present it as a mark of satisfaction.
+"Respected" only means that no breach was found for this precise seat, not that the constraint applies to it: the UI does not present it as a mark of satisfaction.
 
 `POST /api/postes/{posteId}/simulation-swap` scores a candidate it is pointed to, without persisting anything. No screen calls it (the UI exposes only the assistant's viable replacements, so as not to let anyone choose a replacement that breaks a hard rule); it remains open to the API and to the MCP tool `simuler_swap`.
 

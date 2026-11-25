@@ -6,7 +6,7 @@ twin: comprendre/ajouter-une-regle
 
 You will know how to write a new solver rule from end to end: its constraint method, its catalogue entry, its second writing in the direct engine, its tests, and the lists that other tests keep up to date. A rule is finished only when all these tests pass.
 
-A rule exists **twice**: in Timefold's constraint streams, which define it, and in the direct engine of `solver/handsearch`, which must score it identically ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)). Changing what a rule counts, its level or the facts it reads means changing both. The reason for the levels is in [The solver rules and their catalogue](pourquoi-ces-regles.md).
+A rule exists **twice**: in Timefold's constraint streams, which define it, and in the direct engine of `solver/handsearch`, which must score it identically ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)). Changing what a rule counts, its level or the facts it reads means changing both. The reason for the levels is in [The solver's rules and their catalogue](pourquoi-ces-regles.md).
 
 ## 1. Choose the family and the level
 
@@ -22,14 +22,14 @@ Rules are grouped by family in `solver/constraints/`, one private method per rul
 | `QualiteConstraints` | organisational quality (medium) |
 | `PreferenceConstraints` | preferences (soft) |
 
-Decide the level too. The prescriptive types of ad hoc exception (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are hard deviations, at the same rank as the legal rules and the minors: never demote them. `AFFINITE` is the only deliberate exception, a soft reward: never promote it to hard, it would be a forced assignment in disguise. A weight never changes the level of a rule: if the same check must be both weighted *and* held hard, that is two rules, as for [days in a row](repos-et-jours-d-affilee.md).
+Decide the level too. The prescriptive types of ad hoc exception (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are hard breaches, at the same rank as the legal rules and the minors: never demote them. `AFFINITE` is the only deliberate exception, a soft reward: never promote it to hard, it would be a forced assignment in disguise. A weight never changes the level of a rule: if the same check must be both weighted *and* held hard, that is two rules, as for [days in a row](repos-et-jours-d-affilee.md).
 
 ## 2. Write the constraint method
 
 Read two neighbouring methods to pick up their style, then:
 
 - start from a `SeatStreams` stream (the seats held, per day, per staff member, per stand × timeslot line);
-- wrap the **final** stream, the deviations, just before `penalize`, in `ConstraintToggleSupport.actif(...)`: without it the rule's switch has no effect, and `ConstraintToggleStructurelleTest` fails on any catalogue rule whose name is not wrapped;
+- wrap the **final** stream, the breaches, just before `penalize`, in `ConstraintToggleSupport.actif(...)`: without it the rule's switch has no effect, and `ConstraintToggleStructurelleTest` fails on any catalogue rule whose name is not wrapped;
 - register the method in the family's `define` method. A new family is added in `PlanningConstraintProvider.defineConstraints`;
 - respect the past: a past seat counts but is never blamed, and a match is charged only if at least one of its seats is not past (`PastSeats`, see [Counted, not blamed](regles-de-couverture-et-de-confort.md)).
 
@@ -96,4 +96,4 @@ A rule that changes what the solver converges to also falls under the slow scena
 
 ## 6. Say why
 
-The catalogue description says *what*. If the rule arbitrates something it cannot carry (a choice of level, a tension with another rule, what it deliberately refuses to count), add the *why* to the page that covers its family: [legal rules and breaks](regles-legales-et-pauses.md), [rest and days in a row](repos-et-jours-d-affilee.md) or [coverage and comfort](regles-de-couverture-et-de-confort.md). If the rule opens a capability visible to the organiser, the functional part of the documentation changes too, in business language, with no class names.
+The catalogue description says *what*. If the rule arbitrates something it cannot carry (a choice of level, a tension with another rule, what it deliberately refuses to count), add the *why* to the page that covers its family: [legal rules and breaks](regles-legales-et-pauses.md), [rest and consecutive days](repos-et-jours-d-affilee.md) or [coverage and comfort](regles-de-couverture-et-de-confort.md). If the rule opens a capability visible to the organiser, the functional part of the documentation changes too, in business language, with no class names.

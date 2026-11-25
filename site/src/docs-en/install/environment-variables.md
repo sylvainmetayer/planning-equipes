@@ -14,14 +14,14 @@ Three conventions:
 
 | Family | To put it into practice |
 | --- | --- |
-| Mandatory, legal notice | [Installing the application on your server](installation.md), [Filling in the legal notice](mentions-legales.md) |
+| Mandatory, legal notice | [Install the application on your server](installation.md), [Fill in the legal notice](mentions-legales.md) |
 | Network, limits, headers | [hardening](securite.md) |
 | Login and accounts | [login through an identity provider](oidc.md), [local accounts](comptes-locaux.md) |
-| Schedule solve, solve machine | [Tuning the solve](calcul-du-planning.md), [Solving on another machine](calcul-sur-une-autre-machine.md) |
-| E-mails, night sends | [Getting your e-mails delivered](courriels.md), [Setting the automatic sends](envois-automatiques.md) |
-| Backup, retention | [Backing up and restoring](sauvegarde-et-restauration.md), [Purging and retaining data](conservation-des-donnees.md) |
-| Webhooks, weather | [Allowing webhooks and the weather alert](appels-sortants.md) |
-| Error tracking, audience | [Connecting error tracking and metrics](observabilite.md) |
+| Schedule solve, solve machine | [Tune the schedule solve](calcul-du-planning.md), [Solve on another machine](calcul-sur-une-autre-machine.md) |
+| E-mails, night sends | [Get your e-mails delivered](courriels.md), [Tune the automatic sends](envois-automatiques.md) |
+| Backup, retention | [Back up and restore](sauvegarde-et-restauration.md), [Purge and keep data](conservation-des-donnees.md) |
+| Webhooks, weather | [Allow webhooks and the weather alert](appels-sortants.md) |
+| Error tracking, audience | [Connect error tracking and metrics](observabilite.md) |
 | MCP server | [the MCP server](../comprendre/mcp-connexion.md) |
 
 ## Mandatory in production
@@ -173,7 +173,7 @@ compose file, in the following cases, each detailed on its line further down:
 | `PG_DUMP` | `pg_dump` | `pg_dump` binary to run |
 | `BACKUP_TIMEOUT` | `PT30M` | Time allowed for a dump |
 | `JOURNAL_RETENTION` | `P90D` | Retention period of the action history, the login journal and the result of the mails sent to staff members |
-| `NOTIFICATIONS_CRON` | `0 5 * * * ?` | Wake-up rhythm of the night sends (reminders) |
+| `NOTIFICATIONS_CRON` | `0 5 * * * ?` | Wake-up rhythm of the night sends (day-before reminders, reminders of the unconfirmed) |
 | `NOTIFICATIONS_TIMEZONE` | `Europe/Paris` | Time zone of the event, for these sends and for the weather alert |
 | `EDITIONS_RAPPEL_JOURS` | `7` | Number of days before the first timeslot at which a reminder to activate the edition is sent |
 | `HORLOGE_SIMULEE_AUTORISEE` | `false` | `true`: Settings can freeze the date and time read by "Today" and the staff espace. Demonstration or acceptance testing only |

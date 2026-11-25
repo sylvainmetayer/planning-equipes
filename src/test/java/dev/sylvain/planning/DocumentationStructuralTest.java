@@ -450,6 +450,37 @@ class DocumentationStructuralTest {
                 .isEqualTo(attendu);
     }
 
+    private static final Path CONTRAINTES_MD_EN = Path.of("site/src/docs-en/build/why-these-rules.md");
+
+    /**
+     * The catalogue carries no English, so the twin's table is translated by
+     * hand: it cannot be compared word for word, but it lists the same rules,
+     * in the same order, at the same level — a rule added to the catalogue
+     * without its English row fails here.
+     */
+    @Test
+    void theEnglishConstraintsTableListsTheCatalogueRules() throws IOException {
+        String doc = Files.readString(CONTRAINTES_MD_EN, StandardCharsets.UTF_8);
+        int debut = doc.indexOf(DEBUT);
+        int fin = doc.indexOf(FIN);
+        assertThat(debut).as("marker %s in %s", DEBUT, CONTRAINTES_MD_EN).isNotNegative();
+        assertThat(fin).as("marker %s in %s", FIN, CONTRAINTES_MD_EN).isGreaterThan(debut);
+
+        List<String> actuel = doc.substring(debut + DEBUT.length(), fin)
+                .strip()
+                .lines()
+                .skip(2)
+                .map(line -> line.split(" \\| ", 3))
+                .map(cells -> cells[0].replace("| ", "") + " " + cells[1])
+                .toList();
+        List<String> attendu = ConstraintCatalog.definitions().stream()
+                .map(definition -> "`" + definition.name() + "` " + definition.niveau())
+                .toList();
+        assertThat(actuel)
+                .as("rule names and levels of the table in %s, against the catalogue", CONTRAINTES_MD_EN)
+                .containsExactlyElementsOf(attendu);
+    }
+
     private static String tableau() {
         String lignes = ConstraintCatalog.definitions().stream()
                 .map(definition ->

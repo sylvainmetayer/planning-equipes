@@ -25,29 +25,29 @@ The inventory is [`ConstraintParameters`](repo:src/main/java/dev/sylvain/plannin
 
 | Lever | Button | What it opens |
 |---|---|---|
-| `SEAT` | "Who can hold this seat?" | the seat's bench, in Diagnostic, and its "Place" |
-| `SKILL` | "Enter the competence" | the skills grid filtered on the stand's game category |
-| `STAND_PROFILE` | "Open the stand's profile" | headcount, premium or exhausting flag, referent |
-| `STAFFING` | "Lower the required headcount" | the stand's hours, on that day |
-| `CAP` | "Set the cap" | the rule's line on Planning rules |
-| `THRESHOLD` | "Set the thresholds" | the same line, for a rule that measures against thresholds |
-| `REPAIR` | "Suggest a repair" | the Planning page, on the day and stand of the breach |
-| `GAME_CATEGORY_CAP` | "Set the game category's cap" | the Categories screen |
-| `ANIMATEUR_PROFILES` | "Review the profiles" | the person's profile: unavailability, wishes |
-| `WORKLOAD` | "See the workload per person" | the Planning page, by person |
-| `LOCK` | "Lock what must hold" | the locks |
+| `SEAT` | "Qui peut tenir ce siège ?" (who can hold this seat?) | the seat's bench, in Diagnostic, and its "Place" |
+| `SKILL` | "Saisir la compétence" (enter the competence) | the skills grid filtered on the stand's game category |
+| `STAND_PROFILE` | "Ouvrir la fiche du stand" (open the stand's profile) | headcount, premium or exhausting flag, referent |
+| `STAFFING` | "Baisser l'effectif demandé" (lower the required headcount) | the stand's hours, on that day |
+| `CAP` | "Régler le plafond" (set the cap) | the rule's line on Planning rules |
+| `THRESHOLD` | "Régler les seuils" (set the thresholds) | the same line, for a rule that measures against thresholds |
+| `REPAIR` | "Proposer une réparation" (suggest a repair) | the Planning page, on the day and stand of the breach |
+| `GAME_CATEGORY_CAP` | "Régler le plafond de la typologie" (set the game category's cap) | the Categories screen |
+| `ANIMATEUR_PROFILES` | "Revoir les fiches" (review the profiles) | the person's profile: unavailability, wishes |
+| `WORKLOAD` | "Voir la charge par personne" (see the workload per person) | the Planning page, by person |
+| `LOCK` | "Verrouiller ce qui doit tenir" (lock what must hold) | the locks |
 | `ADJUSTMENTS` | "Review the adjustment" | the manual adjustments involved |
-| `MEAL_WINDOW`, `SHIFT` | "Set the meal window", "Shorten the shift" | the line of the meal break, the timeslots |
-| `RULE` | "View the rule" | the rule's line |
+| `MEAL_WINDOW`, `SHIFT` | "Régler la fenêtre repas" (set the meal window), "Shorten the shift" | the line of the meal break, the timeslots |
+| `RULE` | "Voir la règle" (view the rule) | the rule's line |
 
 Four invariants hold the whole together, each tested by `BlockerPlaybookTest`:
 
 - no medium or soft rule has the weight as its only action: each names at least one lever that changes the plan or the reference data, and that lever comes first;
-- "Lower the importance" always comes last, added by the playbook to every weighted rule, never to a hard rule, and no longer at all when the weight is already at its lowest: a button that cannot lower anything lies;
+- "Baisser l'importance" (lower the importance) always comes last, added by the playbook to every weighted rule, never to a hard rule, and no longer at all when the weight is already at its lowest: a button that cannot lower anything lies;
 - only that button talks about the weight: the first action repeats the rule's advice word for word, except when that advice is to lower the importance;
-- "Set the cap" or "the thresholds" exists only on a rule that reads a setting (`ConstraintParameters`): with no field to fill in, the line has nothing to set.
+- "Régler le plafond" (set the cap) or "Régler les seuils" (set the thresholds) exists only on a rule that reads a setting (`ConstraintParameters`): with no field to fill in, the line has nothing to set.
 
-The "where" comes from the same analysis. The pivot says on which days, stands and people the breaches concentrate, but not which timeslot of which stand, the only thing you open to fix them. `BreachHotspots` therefore crosses stand and timeslot for the three places that gather the most breaches of each rule (`hotspots`, identifiers only), and each one opens the Planning page on that seat. The frozen past is excluded: a seat that has already started can no longer be corrected. An aggregate rule that names no place (load balancing) falls back on the most affected stands, then days. When the breach falls on a seat held by a single person, "Who can hold this seat?" becomes "Who can replace?" and opens on that person's seat.
+The "where" comes from the same analysis. The pivot says on which days, stands and people the breaches concentrate, but not which timeslot of which stand, the only thing you open to fix them. `BreachHotspots` therefore crosses stand and timeslot for the three places that gather the most breaches of each rule (`hotspots`, identifiers only), and each one opens the Planning page on that seat. The frozen past is excluded: a seat that has already started can no longer be corrected. An aggregate rule that names no place (load balancing) falls back on the most affected stands, then days. When the breach falls on a seat held by a single person, "Qui peut tenir ce siège ?" (who can hold this seat?) becomes "Qui peut remplacer ?" (who can replace?) and opens on that person's seat.
 
 ## Enable and disable
 
@@ -67,9 +67,9 @@ Three rules read who holds a stand at a given time: a referent present (`standCo
 
 ### Disabling a legal rule
 
-The solver can then produce a schedule that **breaches the Labour Code while showing a hard score of zero**, with nothing in the score to flag it. Four categories are protected (`CATEGORIES_PROTEGEES`, `protegee` field of the API): "Legal (minors)", "Legal (working time)", "Safety (minors)" and "Organisation (meals)". The others are unticked without friction: they arbitrate comfort.
+The solver can then produce a schedule that **breaches the Labour Code while showing a hard score of zero**, with nothing in the score to flag it. Four categories are protected (`CATEGORIES_PROTEGEES`, `protegee` field of the API): "Légal (mineurs)" (legal, minors), "Légal (temps de travail)" (legal, working time), "Sécurité (mineurs)" (safety, minors) and "Organisation (repas)" (organisation, meals). The others are unticked without friction: they arbitrate comfort.
 
-**Only two are grounded in law** (`CATEGORIES_LEGALES`, `legale` field): the two "Legal (…)". "Safety (minors)" and "Organisation (meals)" are rules the organiser gave itself: lifting them commits the organiser just as much, but the schedule does not become illegal, and the dialog must not claim it does. A warning that says too much is a warning people learn to skip: the dialog chooses its wording on `legale`, the server decides, never a test on the category label on the client side.
+**Only two are grounded in law** (`CATEGORIES_LEGALES`, `legale` field): the two "Légal (…)" (legal). "Sécurité (mineurs)" (safety, minors) and "Organisation (repas)" (organisation, meals) are rules the organiser gave itself: lifting them commits the organiser just as much, but the schedule does not become illegal, and the dialog must not claim it does. A warning that says too much is a warning people learn to skip: the dialog chooses its wording on `legale`, the server decides, never a test on the category label on the client side.
 
 The screen asks for a confirmation that names the rule, recalls what grounds it and repeats the wording of the terms of use: **the organiser remains the employer and the party responsible** for the schedule produced. Re-enabling asks nothing. **The API, for its part, asks nothing**: an MCP client or a `curl` disables a rule without going through the dialog, the guard is ergonomic, not contractual.
 
@@ -87,7 +87,7 @@ A weight that is not one of the three values is still allowed, the rule's panel 
 
 ### What is weighted, what is not
 
-The rules that really vary from one organiser to another are the **medium rules of "Organisation quality"** (`dosable()`): they arbitrate comfort against comfort, continuity on a premium stand against load balancing, wishes against experience. The rule you do not care about goes to low importance and gets beaten, the one that matters goes to high.
+The rules that really vary from one organiser to another are the **medium rules of "Qualité d'organisation"** (organisation quality) (`dosable()`): they arbitrate comfort against comfort, continuity on a premium stand against load balancing, wishes against experience. The rule you do not care about goes to low importance and gets beaten, the one that matters goes to high.
 
 A hard rule is respected or the schedule is invalid: its weight only changes the speed of convergence, and **reweighting a legal rule makes it neither more nor less mandatory**. Hard rules therefore have only their switch; offering them in three positions would suggest otherwise. A weight never changes a rule's level: this is why consecutive days exist in two forms ([Rest and consecutive days](repos-et-jours-d-affilee.md)).
 
@@ -107,7 +107,7 @@ Each analysis therefore reads every non-hard rule as a **ratio**: `breaches ÷ e
 
 Eleven rules have no per-element reading and are never a floor: those that have only an aggregate match (`equilibrerCharge`, `equilibrerCreneauxPenibles`), a reward (`affiniteAdHoc`), and the eight that penalise through a **weight function** (`repartitionMineursParCreneau`, `eviterRoulementStandsPremium`, `limiterEmplacementsParJour`, `limiterTypologiesDistinctesParAnimateur`, `maxJoursConsecutifsTravailles`, `eviterFermeturePuisOuverture`, `coupureRepasPlacementPrefere`, `preserverBufferPolyvalents`). For those, the number of matches is an amount of breach and not a boolean per element: a ratio of 1.0 means "everyone is in breach by an amount the solver can reduce", the opposite of a floor.
 
-**From 95%** (`FLOOR_THRESHOLD`, not 100%: a handful of seats always escape), the rule is flagged: a mark in the Violations column of Planning rules, and in its panel the ratio and the data named, with a link to the entry screen when the reference data holds none (wishes, appraisals, referents). A floor that nothing of the kind explains is flagged anyway, without a link: a premium stand that nobody can legally hold alone is just as constant. That one asks for a sample: under ten elements evaluated (`FLOOR_MIN_SAMPLE`), it is not reported, because one match out of one makes 100% of nothing. A floor that the reference data explains is flagged whatever the size: "no wish declared" is as true on three seats as on three thousand.
+**From 95%** (`FLOOR_THRESHOLD`, not 100%: a handful of seats always escape), the rule is flagged: a mark in the Breaches column of Planning rules, and in its panel the ratio and the data named, with a link to the entry screen when the reference data holds none (wishes, appraisals, referents). A floor that nothing of the kind explains is flagged anyway, without a link: a premium stand that nobody can legally hold alone is just as constant. That one asks for a sample: under ten elements evaluated (`FLOOR_MIN_SAMPLE`), it is not reported, because one match out of one makes 100% of nothing. A floor that the reference data explains is flagged whatever the size: "no wish declared" is as true on three seats as on three thousand.
 
 The following are **not** floors: the cases where the missing data makes the rule *inert* (zero premium stands, zero locations, zero minors, zero exhausting stands). The rule matches nothing, costs nothing, and "satisfied" is accurate.
 

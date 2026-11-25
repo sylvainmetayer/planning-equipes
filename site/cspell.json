@@ -30,7 +30,13 @@
   "overrides": [
     {
       "filename": "src/docs-en/**",
-      "language": "en-GB"
+      "language": "en-GB",
+      "ignoreRegExpList": [
+        "/\"[^\"\\n]+\"(?=,? \\()/g",
+        "/\\(\"[^\"\\n]+\",/g",
+        "/; \"[^\"\\n]+\",/g",
+        "/\\*\\*[^*\\n]+\\*\\*(?= \\()/g"
+      ]
     }
   ],
   "dictionaryDefinitions": [

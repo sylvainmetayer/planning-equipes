@@ -100,7 +100,7 @@ A timeslot has *started* if its date is past, or if it is today and the seat's e
 
 These seats **count** in the rules that link days (daily rest between yesterday and today, weekly durations, consecutive days, breaks, "close late then open early") but are **never blamed**: a hole from yesterday or a minor placed at night yesterday do not block today's hard zero. The scope of a re-plan never reopens a past seat.
 
-**The past can no longer be modified by hand either.** The actions that rewrite a seat without the solver ("Move to…" in the seat panel, `deplacer_affectation`, the acceptance of a swap, a repair applied or suggested) refuse a seat whose timeslot has started, with the same sentence: "This timeslot has already started: the past can no longer be modified." It comes out as a `400` on the REST side and as a business refusal on the MCP side (`FrozenPast.PAST_SEAT_REFUSAL`).
+**The past can no longer be modified by hand either.** The actions that rewrite a seat without the solver ("Move to…" in the seat panel, `deplacer_affectation`, the acceptance of a swap, a repair applied or suggested) refuse a seat whose timeslot has started, with the same sentence: "Ce créneau est déjà commencé : le passé ne se modifie plus." (this timeslot has already started: the past can no longer be modified) It comes out as a `400` on the REST side and as a business refusal on the MCP side (`FrozenPast.PAST_SEAT_REFUSAL`).
 
 ### The past is frozen to the minute
 
@@ -119,7 +119,7 @@ An **empty** seat is not split: placing someone there **trims** it (same line, s
 | Scenario export | The continuations are omitted: a scenario describes the seats to fill |
 | "New since this morning" (Today, wall display) | The continuation is a cell the published plan did not have: its empty seat is new |
 
-**Nothing to schedule.** A solve whose seats are all past (finished edition, simulated date after the event) is refused rather than producing an empty plan at hard zero. If some past seats stayed empty (first solve started during the event, deleted holder), the solve takes place and its result carries `postesPassesVides`, announced as a warning.
+**Nothing to plan.** A solve whose seats are all past (finished edition, simulated date after the event) is refused rather than producing an empty plan at hard zero. If some past seats stayed empty (first solve started during the event, deleted holder), the solve takes place and its result carries `postesPassesVides`, announced as a warning.
 
 `PASSE_FIGE=false` switches off the whole rule (pinning, refusal of the actions, refusal of a solve with no future), for an acceptance test that replays an old edition. It is off by default under the test profile.
 

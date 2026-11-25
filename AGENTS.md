@@ -17,6 +17,8 @@ in English, page for page (`README.fr.md` and `README.md`; `site/src/docs/` and 
 English twin `site/src/docs-en/`), and domain identifiers stay in French business
 vocabulary. In the English documentation an *animateur* is a **staff member**
 (the English interface says so too); the code keeps `Animateur`.
+A rule's *écart* is a **breach** on screen and in the English docs alike,
+while the code keeps `violation`.
 The Angular frontend UI (`src/main/webui`) is bilingual French/English via
 `@angular/localize`, translated at runtime (`loadTranslations()`, no per-locale
 build): French is the source language written directly in templates/components

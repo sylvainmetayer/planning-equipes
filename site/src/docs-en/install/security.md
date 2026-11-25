@@ -136,10 +136,10 @@ timeouts).
 | --- | --- |
 | Set `CSP` and `HSTS`, understand a browser block | [Setting the browser security headers and the CSP](securite-navigateur.md) |
 | Limit abuse (codes, declarations, MCP, solve quota) | [Limiting abuse: rate, lockouts and solve quota](securite-limites-de-debit.md) |
-| Choose the administration door and keep the fallback closed | [Choosing and protecting the administration login](securite-acces-administration.md) |
-| Connect your company directory | [Connecting your company directory (OIDC)](oidc.md) |
+| Choose the administration door and keep the fallback closed | [Choose and protect the admin login](securite-acces-administration.md) |
+| Connect your company directory | [Connect your corporate directory (OIDC)](oidc.md) |
 | Know what each role opens | [Knowing what each role can call](securite-roles-et-droits.md) |
 | Publish a calendar or a wall screen with no session | [Opening a calendar or a screen without opening the administration](securite-jetons-publics.md) |
-| Control webhooks, weather and remote solve | [Controlling what leaves the instance](securite-appels-sortants.md) |
+| Control webhooks, weather and remote solve | [Control what leaves the instance](securite-appels-sortants.md) |
 | Know what the release chain checks | [The security checks that run on every version](securite-analyses-automatiques.md) |
 | Authentication and tokens on the API and MCP side | [`api-conventions.md`](../comprendre/api-conventions.md), [`mcp-connexion.md`](../comprendre/mcp-connexion.md) |

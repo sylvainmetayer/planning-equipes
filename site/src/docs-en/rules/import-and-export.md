@@ -81,4 +81,4 @@ The files are those each screen would have downloaded. No access token appears i
 
 ## The formats in detail
 
-The exact columns of the CSV files are described in [the CSV imports](../comprendre/imports-csv.md), the scenario schema in [the scenario file](../comprendre/scenario-yaml.md) and how to go back on an import in [restoring an edition](../comprendre/restaurer-une-edition.md).
+The exact columns of the CSV files are described in [cSV imports](../comprendre/imports-csv.md), the scenario schema in [the scenario file](../comprendre/scenario-yaml.md) and how to go back on an import in [restoring an edition](../comprendre/restaurer-une-edition.md).

@@ -6,7 +6,7 @@ twin: comprendre/acces-et-comptes
 
 Several people administer the same instance, and the history has to say who did what. You will learn how an account, its rights and its role are derived, what each of the four roles opens, and which tests keep the repository from opening a new route to a role without someone having decided it.
 
-The operator side (plugging in a directory, creating local accounts) is in [Connecting your directory](../installer/oidc.md) and [Choosing and protecting the sign-in](../installer/securite-acces-administration.md#les-quatre-portes-de-ladministration). The organiser side is in [Managing accounts and rights](../regles/comptes-et-droits.md). Headers, status codes and authentication routes are described in [the API conventions](api-conventions.md).
+The operator side (plugging in a directory, creating local accounts) is in [Connecting your directory](../installer/oidc.md) and [Choosing and protecting the sign-in](../installer/securite-acces-administration.md#les-quatre-portes-de-ladministration). The organiser side is in [Manage accounts and rights](../regles/comptes-et-droits.md). Headers, status codes and authentication routes are described in [the API conventions](api-conventions.md).
 
 ## The account and the right
 
@@ -80,10 +80,10 @@ The role opens only `/api/responsable/*`. The rest of `/api/*` answers `403`, as
 - Read-only. Both routes are `GET`s (`ResponsableProjectionStructurelleTest` refuses any other method) and answer `Cache-Control: no-store`.
 - Active edition, published plan. The request names neither an edition nor a stand: `ResponsableService`, the only door to the seats, reads the active edition and the stands of the rights in force. An expired or withdrawn right, a deactivated account, an inactive edition all give the same empty view, which does not tell "not yours" from "does not exist".
 - A projection, never the domain. `ResponsableView` carries the hours, the filled and empty seats, and a name only if `ReglagesResponsables` says so at that moment: the edition's default, a per-stand exception in either direction, each with an optional opening date. Never an address, a phone number, an age or a minor status; the test reads the record's types. The PDF sheet is built from the same view, never from a second read.
-- Names are set on the administrator side (`@InstanceOnly`); the setting request deletes only the exceptions it names. An edition duplication copies these settings closed (hours only).
+- Names are set on the administrator side (`@InstanceOnly`); the setting request deletes only the exceptions it names. An edition duplication copies these settings closed ("Shifts only").
 - No foreign key to `stand`. The scope of a right lives in `habilitation_stand`, with no key to `stand` (as `habilitation.edition_id` has none to `edition`): importing a dump deletes then recreates the stands, and a cascade would erase the rights of the receiving instance. Wiping an edition therefore withdraws them explicitly.
 
-`ResponsableResourceTest` sweeps every `GET` route without a path parameter of the published contract with a stand manager's token: none answers `403` wrongly, and no body contains the name of a staff member of another stand, the name of another stand, or, in "hours only" mode, any name at all.
+`ResponsableResourceTest` sweeps every `GET` route without a path parameter of the published contract with a stand manager's token: none answers `403` wrongly, and no body contains the name of a staff member of another stand, the name of another stand, or, in "Shifts only" mode, any name at all.
 
 ## The HR right: the compliance report
 

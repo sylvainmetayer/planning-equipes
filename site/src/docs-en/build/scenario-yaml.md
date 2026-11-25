@@ -6,7 +6,7 @@ twin: comprendre/scenario-yaml
 
 You will know what a scenario file describes, what its import replaces in the edition, what the export guarantees on re-import, and what to touch when the format evolves.
 
-A scenario describes a whole event: reference data, grid, team, settings. It is the file you exchange, version and replay in tests. Its structure is the [JSON schema](repo:docs/schema/scenario-schema.json), generated from the DTOs of the `dev.sylvain.planning.scenario.dto` package. It therefore cannot diverge from what the code accepts. What follows covers the rules the schema does not express. Everything is read and written in the edition designated by `X-Edition-Id` (see [One edition, one data partition](cloisonnement-par-edition.md)).
+A scenario describes a whole event: reference data, grid, team, settings. It is the file you exchange, version and replay in tests. Its structure is the [JSON schema](repo:docs/schema/scenario-schema.json), generated from the DTOs of the `dev.sylvain.planning.scenario.dto` package. It therefore cannot diverge from what the code accepts. What follows covers the rules the schema does not express. Everything is read and written in the edition designated by `X-Edition-Id` (see [One edition, one partition of the data](cloisonnement-par-edition.md)).
 
 ## Where each action takes place
 
@@ -75,7 +75,7 @@ A constraint name absent from the catalogue is refused with a 400 instead of bei
 
 The shipped scenarios all carry this section, with the only two weights that differ from the default, `appreciationIncompatible: 15` and `maxJoursConsecutifsTravailles: 25`. The deployment's default is 1 for a hard rule and 5 for a medium or soft rule: the weighting travels with the scenario.
 
-Weights are read on the current scale (low 1, normal 5, high 25, see [ADR 0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md)). A file written on the old scale, where the default was 1, would make its cited rules weigh five times less than the others: multiply its medium and soft rule weights by five before importing it. The weighting is detailed in [Weighting and disabling rules](doser-et-desactiver-les-regles.md).
+Weights are read on the current scale (low 1, normal 5, high 25, see [ADR 0057](repo:docs/decisions/0057-importance-d-une-regle-en-trois-positions.md)). A file written on the old scale, where the default was 1, would make its cited rules weigh five times less than the others: multiply its medium and soft rule weights by five before importing it. The weighting is detailed in [Weight and disable rules](doser-et-desactiver-les-regles.md).
 
 `contraintesAdHoc` replaces those of the edition, and its absence installs none. It designates staff members, stands and timeslots by the file's ids. The import never inherits the exceptions of the current edition: an exception copied into another edition would target a stand and a timeslot that do not exist there, and in its own edition it would target timeslots the import has just deleted. What preserves exceptions across a round trip is the export, which writes the section as soon as the edition carries one. An exception that cannot hold together with another in the same file makes the whole import be refused before any write, with a message that names them: this is the input check (see [Ad hoc exceptions](exceptions-ad-hoc.md)).
 

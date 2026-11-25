@@ -3,7 +3,7 @@ twin: comprendre/api-jour-j-et-animateurs
 ---
 # Event day, bench and wall display through the API
 
-You will know what the routes that serve the day of the event itself answer: the Today screen and its absences, the bench, the simulated clock and the wall display. The capacity reads are in [feasibility, fragility and breaks through the API](api-faisabilite-et-pauses.md), the staff espace in [the staff espace through the API](api-espace-animateur.md).
+You will know what the routes that serve the day of the event itself answer: the Today screen and its absences, the bench, the simulated clock and the wall display. The capacity reads are in [feasibility, fragility and breaks on the API side](api-faisabilite-et-pauses.md), the staff espace in [the staff espace on the API side](api-espace-animateur.md).
 
 ## What is a day in progress
 

@@ -74,5 +74,5 @@ To understand why a seat stays empty or a rule gives way, see [Understand a stuc
 
 ## Going further
 
-- What the solve must respect: [Tune the planning rules](regles-du-planning.md) and [Set exceptions and locks](ajustements-et-verrous.md).
+- What the solve must respect: [Tune the schedule rules](regles-du-planning.md) and [Set exceptions and locks](ajustements-et-verrous.md).
 - The rules on breaks, consecutive days and travel: [Tune the planning rules](regles-du-planning.md#pauses-jours-daffilée-et-trajets).

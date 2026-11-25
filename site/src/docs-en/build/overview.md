@@ -58,7 +58,7 @@ The root of `service/` keeps only what all of them share: `EditionContext`, `Jdb
 
 | You are looking for... | Page |
 | --- | --- |
-| Why a query cannot read another edition | [One edition, one data partition](cloisonnement-par-edition.md) |
+| Why a query cannot read another edition | [One edition, one partition of the data](cloisonnement-par-edition.md) |
 | What a solve does from end to end, and why two engines | [From problem to plan](comment-le-planning-est-calcule.md) |
 | Who can call what | [Accounts, roles and access](acces-et-comptes.md) |
 | Night tasks, mails, webhooks, weather, the action journal, backup | [Scheduled tasks and notifications](taches-de-fond-et-notifications.md) |

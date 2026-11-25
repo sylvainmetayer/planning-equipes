@@ -53,12 +53,12 @@ You host Planning Équipes for an organiser, or for yourself: an application and
 - [Create the administration accounts](comptes-locaux.md): password, e-mail code, emergency account.
 - [Connect your company directory](oidc.md): sign-in through an OIDC provider.
 - [Connect Keycloak](keycloak.md): the realm, the client, the AI assistant over OAuth and the order of the switchover.
-- [Know what each role can call](securite-roles-et-droits.md): administrator, stand manager, human resources, staff member.
+- [Knowing what each role can call](securite-roles-et-droits.md): administrator, stand manager, human resources, staff member.
 
 ## I never want to lose data
 
 - [Back up and restore](sauvegarde-et-restauration.md): the nightly backup, the manual backup, the guided restore.
-- [Monitor the instance](surveillance.md): probes, metrics, logs.
+- [Monitoring the instance](surveillance.md): probes, metrics, logs.
 - [Connect error tracking and metrics](observabilite.md).
 
 ## I want to tune what the application does on its own
@@ -69,18 +69,18 @@ You host Planning Équipes for an organiser, or for yourself: an application and
 
 ## I want to update or release
 
-- [Update to a new version](mettre-a-jour.md), and [what a version number promises](versioning.md).
-- [Release a version and patch the previous one](publier-une-version.md), for whoever builds the image.
-- [Move from 3.x to 4.0](passer-a-la-4-0.md): what 4.0 will require, in preparation.
+- [Upgrade to a new version](mettre-a-jour.md), and [what a version number promises](versioning.md).
+- [Publish a version and patch the previous one](publier-une-version.md), for whoever builds the image.
+- [Moving from 3.x to 4.0](passer-a-la-4-0.md): what 4.0 will require, in preparation.
 
 ## I must meet my obligations
 
 - [Purge and keep data](conservation-des-donnees.md): the annual purge.
-- [Keep the GDPR register of your instance](rgpd.md), with the [processing agreement](rgpd-sous-traitance.md).
+- [Keep your instance's GDPR register](rgpd.md), with the [processing agreement](rgpd-sous-traitance.md).
 - [Publish your accessibility statement](accessibilite.md).
 
 ## I am looking for a specific setting
 
-- [Find an environment variable](variables-environnement.md): every variable, its default and its effect.
+- [Finding an environment variable](variables-environnement.md): every variable, its default and its effect.
 - [Run the instance during the event](exploitation.md): the check one week before, and where to look when a Saturday goes wrong.
 - [Third-party licences](licences-tierces.md): what the image redistributes.

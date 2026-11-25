@@ -31,9 +31,9 @@ The caps above limit **one** solve. An instance that shares its machine with ano
 
 The quota counts every solve **accepted at launch**, whatever the path: full or incremental solve, from the *Solver* screen, the API (including the synchronous `POST /api/solve`) or an MCP assistant, and the staffing check by a solve (*Diagnostic › Staffing need*, the default), which is a real solve; the bound alone does not consume any. A launch refused for another reason does not count; a job that was planned and then removed from the queue does. Beyond the limit, the launch is refused (`409`) with a sentence that the screen displays as is and that the MCP tool returns as an error:
 
-> This instance limits solving to 12 solves per hour. Next solve possible at 14:32.
+> "Cette instance limite le calcul à 12 résolutions par heure. Prochaine résolution possible à 14:32." (This instance limits solving to 12 solves per hour. Next solve possible at 14:32.)
 
-The time is given in the `NOTIFICATIONS_TIMEZONE` time zone, that of the event. A full queue is refused the same way ("This instance limits the solver queue to 2 planned solves…").
+The time is given in the `NOTIFICATIONS_TIMEZONE` time zone, that of the event. A full queue is refused the same way ("Cette instance limite la file d'attente du solveur à 2 résolutions planifiées…", this instance limits the solver queue to 2 planned solves).
 
 The counter lives **in memory**: a restart resets it to zero, which is enough against the abuse in view. The queue replayed at startup is neither refused nor counted a second time. For a demo, an order of magnitude: a quota of a dozen per hour and a queue of two, with `SOLVER_SECONDS_LIMIT_MAX` lowered to what a visitor is patient enough to wait for. The choice to limit here rather than at the reverse proxy is [ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
 
@@ -64,7 +64,7 @@ Three consequences for you:
 
 This is an **instance** setting. A compute machine follows that of the application that sends it the problem, not its own variable. The staffing check by a solve follows the instance's engine; the solves "until feasibility" stay on Timefold.
 
-The direct engine ([decision 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)) reaches a plan with no hard violation three to four times sooner on the `festival-hivernal` scenario, and in one minute gets under the score that Timefold's search reaches in five (measurement and command in the decision). It is not taken on trust: every plan it returns is scored again by the application's constraints before being saved.
+The direct engine ([decision 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)) reaches a plan with no hard breach three to four times sooner on the `festival-hivernal` scenario, and in one minute gets under the score that Timefold's search reaches in five (measurement and command in the decision). It is not taken on trust: every plan it returns is scored again by the application's constraints before being saved.
 
 - A solve that starts from the plan in place prefers to stay there: at equal score, it keeps the holder it found instead of swapping staff members that the rules do not distinguish. This is a preference of the search, not a seat-by-seat guarantee. A solve started from scratch is not concerned, and a published plan stays protected by its own rule, which weighs in the score.
 - A discrepancy between the two scores makes the solve fail, with a message that gives both; the saved plan is not touched and nothing switches to the other engine by itself. It is a defect to report; meanwhile, `SOLVER_ENGINE=timefold` and a restart hand control back to the original search.
@@ -79,12 +79,12 @@ The direct engine ([decision 0087](repo:docs/decisions/0087-un-second-moteur-de-
   | "… seat × staff member pairs" | More than 15 million pairs (15,000 seats for 1,000 staff members, for example): the engine's table no longer fits in a small machine. A current edition has fewer than a million; `extreme-09-120j-400stands-1000animateurs-cumul` (41,370 seats, 1,000 staff members) has 41 million. Under the `hand` default, the job **fails**, with no fallback to Timefold: an instance of that size sets `SOLVER_ENGINE=timefold` before launching a solve |
   | "the score … is outside what the engine can order" | More than 500 million soft points, or a medium of the same order: excessive weights |
 
-- "The direct engine contradicted itself in its own score" and "failed on an unexpected error" are not refusals but engine defects: report them, with the application log.
+- "Le moteur direct s'est contredit dans son propre score" (the direct engine contradicted itself in its own score) and "a échoué sur une erreur inattendue" (failed on an unexpected error) are not refusals but engine defects: report them, with the application log.
 - The log says which engine searched: every solve starts with "Solve with the HAND engine" (or `TIMEFOLD`), and a direct-engine plan accepted by the referee leaves "The direct engine's plan is refereed by Timefold at the same score", followed by the score.
 
 On a small machine, the direct engine asks for no more than Timefold's search. Measurement on `festival-hivernal` (3,438 seats, 153 staff members), two shared cores, the JVM bounded like the production container (1.5 GB heap, `ParallelGC`), 300 s, seed 0, one solve at a time:
 
-| Engine | Zero hard violations | Score at 300 s (medium / soft) | Resident memory at peak |
+| Engine | Zero hard breaches | Score at 300 s (medium / soft) | Resident memory at peak |
 | --- | --- | --- | --- |
 | `timefold` | 95 s | −30,775 / −89,360 | 548 MB |
 | `hand` | 10 s | −23,820 / −92,970 | 434 MB |

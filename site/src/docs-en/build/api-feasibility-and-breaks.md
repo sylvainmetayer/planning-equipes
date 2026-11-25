@@ -72,7 +72,7 @@ Three clarifications of the contract. A pair is really a triplet stand x timeslo
 
 ## Legal breaks
 
-`GET /api/pauses` says where breaks fall, for whom, from what time to what time, on which stand and who relays. The solver requires that a due break be takeable (a gap in the grid or a colleague on the same stand: art. L3121-16, six hours; art. L3162-3, 4h30 and thirty minutes at least for a minor) without saying at what minute it is taken. Laying down the rotation is what this report does. A break that nobody can relay is a hard deviation; a persisted plan may carry one, reported with `relaisDisponible` false.
+`GET /api/pauses` says where breaks fall, for whom, from what time to what time, on which stand and who relays. The solver requires that a due break be takeable (a gap in the grid or a colleague on the same stand: art. L3121-16, six hours; art. L3162-3, 4h30 and thirty minutes at least for a minor) without saying at what minute it is taken. Laying down the rotation is what this report does. A break that nobody can relay is a hard breach; a persisted plan may carry one, reported with `relaisDisponible` false.
 
 It is a read of the persisted plan, under the current legal parameters ("with what I declare today, what is left to organise"), never a solve. With no plan: empty report, `journeesAnalysees` at zero, no error.
 

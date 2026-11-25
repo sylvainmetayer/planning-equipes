@@ -22,7 +22,7 @@ Each edition is born **inactive**.
 
 Only one edition is **active**. Only it publishes, writes to staff, and opens their espace, their calendars and the wall display. You prepare the next one safely, then activate it in one gesture.
 
-1. In the *Editions* page, click the "Activate" button (a flag icon, tooltip "Activate: only this edition will publish and write to staff") on the row of the edition that is starting.
+1. In the *Editions* page, click the "Activate" button (a flag icon, tooltip "Activate: only this edition will publish and write to staff members") on the row of the edition that is starting.
 2. Read the preview of what the switch closes: the espace and calendar links and the wall displays of the old edition stop responding, its swap requests stay unanswered, and the solves queued on these editions are counted.
 3. Confirm with "Activate".
 

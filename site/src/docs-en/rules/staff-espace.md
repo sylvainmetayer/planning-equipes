@@ -23,7 +23,7 @@ The espace is read standing up, on a phone. Three tabs:
 
 - the **day**: a strip of days to scroll with the thumb, the state of the moment, one card per timeslot with its place, its route and its teammates;
 - the **overview**: four figures and a timeline of all the days, coloured by stand game category;
-- the **teammates**: "am I with someone?", by name, accents and case ignored. Days when almost the whole headcount is present give only a number.
+- the **teammates**: "Am I with anyone?", by name, accents and case ignored. Days when almost the whole headcount is present give only a number.
 
 Proposing a swap stays within thumb's reach under the three tabs.
 

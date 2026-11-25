@@ -54,7 +54,7 @@ One row per stand, one column per day: those of the week of the chosen day, or t
 
 On the right: the seats to fill, the filled ones, the share of seat-hours held and the hours. At the bottom: the totals of each day. A cell opens the seat panel on that stand that day.
 
-A second rendering shows the **breakdown of hours**: one rectangle per stand, the larger the more seat-hours the stand requires, coloured by the share held (striped below 80%). It can be grouped by location or by game category, and restricted to a week or a day. One click enlarges a group, a second opens the stand's day.
+A second rendering shows the **Hours breakdown**: one rectangle per stand, the larger the more seat-hours the stand requires, coloured by the share held (striped below 80%). It can be grouped by location or by game category, and restricted to a week or a day. One click enlarges a group, a second opens the stand's day.
 
 ## By person
 
