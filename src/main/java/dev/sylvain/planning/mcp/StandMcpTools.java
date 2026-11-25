@@ -786,12 +786,13 @@ public class StandMcpTools {
                             required = false)
                     String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        // The ninja flag is carried over: a rename must not demote the ninja
+        // The polyvalent flag is carried over: a rename must not demote the polyvalent
         // typologie. Same for the per-typologie cap (issue #594) and for the
         // organiser's note: an update replaces the whole row, and this tool
         // renames — it lifts no ceiling and erases no note somebody wrote on
         // the Typologies screen.
-        boolean ninja = referenceDataService.typologieNinja().filter(id::equals).isPresent();
+        boolean polyvalent =
+                referenceDataService.typologiePolyvalent().filter(id::equals).isPresent();
         TypologieItem actuelle = referenceDataService.listTypologies().stream()
                 .filter(typologie -> typologie.id().equals(id))
                 .findFirst()
@@ -803,7 +804,7 @@ public class StandMcpTools {
                         id,
                         actuelle == null ? null : actuelle.code(),
                         label,
-                        ninja,
+                        polyvalent,
                         actuelle == null ? null : actuelle.maxCreneauxParAnimateur(),
                         actuelle == null ? null : actuelle.description(),
                         precondition)));
@@ -989,7 +990,7 @@ public class StandMcpTools {
             String id,
             String code,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             Integer maxCreneauxParAnimateur,
             String description,
             Instant modifieLe,
@@ -1004,7 +1005,7 @@ public class StandMcpTools {
                     typologie.id(),
                     typologie.code(),
                     typologie.label(),
-                    typologie.ninja(),
+                    typologie.polyvalent(),
                     typologie.maxCreneauxParAnimateur(),
                     typologie.description(),
                     typologie.modifieLe(),
@@ -1025,7 +1026,7 @@ public class StandMcpTools {
             String id,
             String code,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             Integer maxCreneauxParAnimateur,
             String description,
             Instant modifieLe,
@@ -1037,7 +1038,7 @@ public class StandMcpTools {
                     typologie.id(),
                     typologie.code(),
                     typologie.label(),
-                    typologie.ninja(),
+                    typologie.polyvalent(),
                     typologie.maxCreneauxParAnimateur(),
                     typologie.description(),
                     typologie.modifieLe(),
@@ -1050,7 +1051,7 @@ public class StandMcpTools {
                     id,
                     code,
                     label,
-                    ninja,
+                    polyvalent,
                     maxCreneauxParAnimateur,
                     description,
                     modifieLe,

@@ -114,6 +114,27 @@ class ReferentielCsvImportServiceTest {
                 .body("find { it.code == 'EXT' }.latitude", org.hamcrest.Matchers.nullValue());
     }
 
+    /** A 3.x export says « ninja »: still read for the whole 4.x line, and said so on the row. */
+    @Test
+    void theThreeXNinjaHeaderStillFlagsThePolyvalentTypologieWithAWarning() {
+        poster("/api/typologies/import-csv", "code;libelle;ninja\nJOKER;Joker;oui\nECHECS;Échecs;non\n")
+                .then()
+                .statusCode(200)
+                .body("created", equalTo(2))
+                .body(
+                        "rows.find { it.id == 'JOKER' }.details",
+                        org.hamcrest.Matchers.hasItem(containsString("« ninja »")))
+                .body(
+                        "rows.find { it.id == 'ECHECS' }.details",
+                        org.hamcrest.Matchers.hasItem(containsString("« ninja »")));
+        given().header(HEADER, EDITION)
+                .when()
+                .get("/api/typologies")
+                .then()
+                .body("find { it.code == 'JOKER' }.polyvalent", equalTo(true))
+                .body("find { it.code == 'ECHECS' }.polyvalent", equalTo(false));
+    }
+
     @Test
     void aStandWithoutHeadcountHoldsOnePersonAndItsMissingTypologieIsCreatedAndAnnounced() {
         poster("/api/stands/import-csv/analyse", "code;nom;typologies\nSTAND-UN;Stand un;INCONNUE\n")

@@ -60,7 +60,7 @@ typologies:
     label: Musique
   - id: POLYVALENT
     label: Polyvalent
-    ninja: true
+    polyvalent: true
 
 emplacements:
   - id: EMP-01

@@ -194,7 +194,7 @@ class StaffingBoundEquivalenceTest {
                         dto.id(),
                         dto.code(),
                         dto.label(),
-                        Boolean.TRUE.equals(dto.ninja()),
+                        Boolean.TRUE.equals(dto.polyvalent()),
                         dto.maxCreneauxParAnimateur(),
                         dto.description(),
                         null))

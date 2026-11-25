@@ -91,14 +91,14 @@ public final class FormationAnalyzer {
                 "groupesSansSpecialiste",
                 "joursTension",
                 "manque",
-                "ninja",
+                "polyvalent",
                 "postesIrremplacables",
                 "specialistes"
             })
     public record TypologieAFormer(
             String typologie,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             int manque,
             int specialistes,
             int competencesRares,
@@ -148,7 +148,7 @@ public final class FormationAnalyzer {
      * @param planPersiste   whether a plan is persisted at all
      * @param animateurs     the referential's animateurs
      * @param stands         the referential's stands
-     * @param typologies     the referential's categories, for labels and the ninja flag
+     * @param typologies     the referential's categories, for labels and the polyvalent flag
      * @param joursEvenement the dates carrying a timeslot, for the minors' rule
      */
     public static PlanFormation compute(
@@ -159,8 +159,8 @@ public final class FormationAnalyzer {
             Collection<Stand> stands,
             Collection<TypologieItem> typologies,
             Collection<LocalDate> joursEvenement) {
-        String ninjaId = typologies.stream()
-                .filter(TypologieItem::ninja)
+        String polyvalentId = typologies.stream()
+                .filter(TypologieItem::polyvalent)
                 .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null);
@@ -201,7 +201,7 @@ public final class FormationAnalyzer {
             lignes.add(new TypologieAFormer(
                     typologie,
                     labels.getOrDefault(typologie, typologie),
-                    typologie.equals(ninjaId),
+                    typologie.equals(polyvalentId),
                     ligneBesoin == null ? 0 : ligneBesoin.manque(),
                     ligneBesoin == null ? specialistsOf(typologie, animateurs) : ligneBesoin.specialistes(),
                     sesRares.size(),
@@ -210,7 +210,7 @@ public final class FormationAnalyzer {
                             .count(),
                     irremplacables.getOrDefault(typologie, Set.of()).size(),
                     joursTension,
-                    candidates(typologie, ninjaId, animateurs, stands, joursTension, joursEvenement)));
+                    candidates(typologie, polyvalentId, animateurs, stands, joursTension, joursEvenement)));
         }
         lignes.sort(ORDRE_TYPOLOGIES);
 
@@ -258,7 +258,7 @@ public final class FormationAnalyzer {
 
     private static List<CandidatFormation> candidates(
             String typologie,
-            String ninjaId,
+            String polyvalentId,
             Collection<Animateur> animateurs,
             Collection<Stand> stands,
             List<LocalDate> joursTension,
@@ -275,8 +275,9 @@ public final class FormationAnalyzer {
                     animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
             NiveauCompetence niveau = competences.get(typologie);
             boolean trainable = niveau == NiveauCompetence.DEBUTANT || niveau == NiveauCompetence.AUTONOME;
-            boolean ninja = animateur.isNinja() || (ninjaId != null && competences.containsKey(ninjaId));
-            if (!trainable || ninja || (reserveeAuxMajeurs && minorThroughout(animateur, joursEvenement))) {
+            boolean polyvalent =
+                    animateur.isPolyvalent() || (polyvalentId != null && competences.containsKey(polyvalentId));
+            if (!trainable || polyvalent || (reserveeAuxMajeurs && minorThroughout(animateur, joursEvenement))) {
                 continue;
             }
             int disponibles = (int) joursTension.stream()

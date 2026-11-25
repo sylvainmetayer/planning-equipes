@@ -1,5 +1,5 @@
 // The rendered page — this screen holds the most destructive button of the
-// application (replay a SQL dump, every edition included). The ninja picker and
+// application (replay a SQL dump, every edition included). The polyvalent picker and
 // the end-of-solve mail moved to « Règles du planning › Calcul » and are tested
 // in `regles-calcul.spec.ts`.
 //

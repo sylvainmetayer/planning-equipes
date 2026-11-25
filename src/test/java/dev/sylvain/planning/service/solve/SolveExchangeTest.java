@@ -263,7 +263,7 @@ class SolveExchangeTest {
         assertThat(keys)
                 .as("what is written of a person, wherever they appear")
                 .containsExactlyInAnyOrder(
-                        "id", "dateNaissance", "competences", "souhaits", "joursIndisponibles", "ninja");
+                        "id", "dateNaissance", "competences", "souhaits", "joursIndisponibles", "polyvalent");
         assertThat(outbound.realIds().values())
                 .as("the way back knows everybody")
                 .containsAll(

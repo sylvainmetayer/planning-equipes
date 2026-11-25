@@ -89,7 +89,7 @@ class CoherenceAnalyzerTypologieUsageTest {
                     noeud.get("id").asText(),
                     null,
                     noeud.get("id").asText(),
-                    noeud.path("ninja").asBoolean(false),
+                    noeud.path("polyvalent").asBoolean(false),
                     null,
                     null,
                     null));

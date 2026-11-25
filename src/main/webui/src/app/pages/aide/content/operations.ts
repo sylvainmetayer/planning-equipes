@@ -351,7 +351,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragiliteGestes:Qui est irremplaçable. Pour chaque personne, l'écran donne les créneaux qui passeraient sous l'effectif minimum si elle se désiste et, dans la colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. Trois gestes suivent : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts.`,
+              text: $localize`:@@aide.views.def.fragiliteGestes:Qui est irremplaçable. Pour chaque personne, l'écran donne les créneaux qui passeraient sous l'effectif minimum si elle se désiste et, dans la colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. Trois gestes suivent : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents y sont comptés à part, en renforts.`,
             },
             {
               term: $localize`:@@aide.views.term.former:À former`,

@@ -26,7 +26,7 @@ export function familyScope(family: FreezeFamily): string {
     case 'CRENEAUX':
       return $localize`:@@gel.perimetre.creneaux:Création, suppression, date, heures, couverture de pause, journées types, séries, dérivation.`;
     case 'TYPOLOGIES_EMPLACEMENTS':
-      return $localize`:@@gel.perimetre.typologiesEmplacements:Création, suppression, quota par typologie, typologie ninja.`;
+      return $localize`:@@gel.perimetre.typologiesEmplacements:Création, suppression, quota par typologie, typologie polyvalente.`;
     case 'COMPETENCES':
       return $localize`:@@gel.perimetre.competences:Niveaux des animateurs déjà inscrits (fiche, grille, import).`;
   }

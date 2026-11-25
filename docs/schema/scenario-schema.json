@@ -710,7 +710,7 @@
           "format" : "int32",
           "exclusiveMinimum" : 0
         },
-        "ninja" : {
+        "polyvalent" : {
           "type" : "boolean"
         }
       },

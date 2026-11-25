@@ -342,8 +342,8 @@ describe('StandsPage', () => {
     it('lists the typologies of a stand by label, comma separated', () => {
       // The ids are generated (T1, T2…) and say nothing: the cell reads the label.
       seedStore(referenceData, 'typologies', [
-        { id: 'T1', code: 'AMBIANCE', label: "Jeux d'ambiance", ninja: false },
-        { id: 'T2', code: 'STRATEGIE', label: 'Stratégie', ninja: false },
+        { id: 'T1', code: 'AMBIANCE', label: "Jeux d'ambiance", polyvalent: false },
+        { id: 'T2', code: 'STRATEGIE', label: 'Stratégie', polyvalent: false },
       ]);
       const page = createPage();
 
@@ -356,7 +356,7 @@ describe('StandsPage', () => {
 
     it('finds a stand by the label of one of its typologies', () => {
       seedStore(referenceData, 'typologies', [
-        { id: 'T1', code: 'AMBIANCE', label: "Jeux d'ambiance", ninja: false },
+        { id: 'T1', code: 'AMBIANCE', label: "Jeux d'ambiance", polyvalent: false },
       ]);
       const page = createPage([
         stand({ id: 'S1', typologiesProposees: ['T1'] }),

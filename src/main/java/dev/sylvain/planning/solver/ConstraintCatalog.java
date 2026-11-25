@@ -799,7 +799,7 @@ public final class ConstraintCatalog {
                     "preserverBufferPolyvalents",
                     Niveau.SOFT,
                     CATEGORIE_PREFERENCES,
-                    "Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir "
+                    "Garder au moins un animateur polyvalent (typologie polyvalente) libre sur chaque créneau, pour pouvoir "
                             + "réparer le planning en cas d'absence de dernière minute.",
                     "Réserve de polyvalents"));
 

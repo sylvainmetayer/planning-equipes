@@ -19,49 +19,49 @@ parametresLegaux:
 typologies:
 - id: ESCAPE
   label: Escape game
-  ninja: false
+  polyvalent: false
 - id: RETRO
   label: Rétrogaming
-  ninja: false
+  polyvalent: false
 - id: ROLE
   label: Jeux de rôle
-  ninja: false
+  polyvalent: false
 - id: CARTES
   label: Jeux de cartes
-  ninja: false
+  polyvalent: false
 - id: STRATEGIE
   label: Stratégie
-  ninja: false
+  polyvalent: false
 - id: CASSE_TETE
   label: Casse-têtes
-  ninja: false
+  polyvalent: false
 - id: MANUTENTION
   label: Manutention (montage / démontage)
-  ninja: false
+  polyvalent: false
 - id: FIGURINES
   label: Figurines
-  ninja: false
+  polyvalent: false
 - id: CONCOURS
   label: Concours
-  ninja: false
+  polyvalent: false
 - id: SIGNES
   label: Accueil en langue des signes
-  ninja: false
+  polyvalent: false
 - id: PETITE_ENFANCE
   label: Petite enfance
-  ninja: false
+  polyvalent: false
 - id: JOKER
   label: Joker
-  ninja: true
+  polyvalent: true
 - id: BOIS
   label: Jeux en bois
-  ninja: false
+  polyvalent: false
 - id: PLATEAU
   label: Jeux de plateau
-  ninja: false
+  polyvalent: false
 - id: PLEIN_AIR
   label: Plein air
-  ninja: false
+  polyvalent: false
 creneaux:
 - id: C01
   jour: 1

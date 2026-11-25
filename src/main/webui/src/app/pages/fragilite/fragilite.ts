@@ -105,7 +105,7 @@ export interface SyntheseFragilite {
   sansSpecialiste: number;
   groupes: number;
   dejaSousEffectif: number;
-  ninjaConfigure: boolean;
+  polyvalentConfigure: boolean;
 }
 
 export function synthese(rapport: RapportFragilite): SyntheseFragilite {
@@ -116,7 +116,7 @@ export function synthese(rapport: RapportFragilite): SyntheseFragilite {
     sansSpecialiste: rapport.groupesSansSpecialiste,
     groupes: rapport.groupesAnalyses,
     dejaSousEffectif: rapport.groupesDejaSousEffectif,
-    ninjaConfigure: rapport.ninjaConfigure,
+    polyvalentConfigure: rapport.polyvalentConfigure,
   };
 }
 

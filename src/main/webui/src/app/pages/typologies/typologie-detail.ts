@@ -17,7 +17,7 @@ import {
  * view is opened to spot — so both counts are spelled out, empty or not, with
  * the badge of the table when there is one.
  *
- * `typologies` is the whole referential, needed to tell the ninja category
+ * `typologies` is the whole referential, needed to tell the polyvalent category
  * apart; left empty, the typologie alone is used.
  */
 export function buildTypologieDetail(
@@ -56,8 +56,8 @@ export function buildTypologieDetail(
           value: typologie.label || typologie.id,
         },
         {
-          label: $localize`:@@typologies.field.ninja:Typologie ninja`,
-          value: typologie.ninja ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`,
+          label: $localize`:@@typologies.field.polyvalent:Typologie polyvalente`,
+          value: typologie.polyvalent ? $localize`:@@common.oui:Oui` : $localize`:@@common.non:Non`,
         },
         {
           label: $localize`:@@typologies.field.maxCreneaux:Créneaux maximum par animateur`,

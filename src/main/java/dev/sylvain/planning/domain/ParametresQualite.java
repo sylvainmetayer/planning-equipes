@@ -39,7 +39,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        {@code limiterTypologiesDistinctesParAnimateur} starts penalising,
  *        proportionally to the excess. The scope is the edition and not the
  *        day: two typologies on one afternoon and two typologies a week apart
- *        count the same. Ninjas are exempt, versatility being what they are
+ *        count the same. Polyvalents are exempt, versatility being what they are
  *        there for.
  * @param joursConsecutifsMax how many days in a row an animateur may
  *        work before {@code maxJoursConsecutifsTravailles} — and its hard twin

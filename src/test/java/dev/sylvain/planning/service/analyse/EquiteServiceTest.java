@@ -205,18 +205,20 @@ class EquiteServiceTest {
     }
 
     @Test
-    void distinctTypologiesAreTheOnesTheAnimateurIsAppreciatedForAndAllOfThemForANinja() {
+    void distinctTypologiesAreTheOnesTheAnimateurIsAppreciatedForAndAllOfThemForAPolyvalent() {
         Animateur ada = animateur("A-ADA", "Ada", "Lovelace");
         ada.setCompetences(Map.of("echecs", NiveauCompetence.REFERENT));
-        Animateur ninja = animateur("A-NINJA", "Nina", "Ninja");
-        ninja.setNinja(true);
+        Animateur polyvalent = animateur("A-POLYVALENT", "Nina", "Polyvalent");
+        polyvalent.setPolyvalent(true);
         Stand stand = stand("S1", "echecs", "dames", "go");
         RapportEquite rapport = compute(
-                List.of(ada, ninja),
-                List.of(poste(stand, creneau(MERCREDI, 9, 12), ada), poste(stand, creneau(MERCREDI, 9, 12), ninja)));
+                List.of(ada, polyvalent),
+                List.of(
+                        poste(stand, creneau(MERCREDI, 9, 12), ada),
+                        poste(stand, creneau(MERCREDI, 9, 12), polyvalent)));
 
         assertThat(ligne(rapport, "A-ADA").typologiesDistinctes()).isEqualTo(1);
-        assertThat(ligne(rapport, "A-NINJA").typologiesDistinctes()).isEqualTo(3);
+        assertThat(ligne(rapport, "A-POLYVALENT").typologiesDistinctes()).isEqualTo(3);
     }
 
     @Test

@@ -73,8 +73,8 @@ class GelReferentielStructuralTest {
 
     /** A read says so in its name; nothing named this way may write. */
     private static final Pattern READ = Pattern.compile("^(list|find|get|count|preview|resolve|exemple|export|volumes"
-            + "|labels|validate|calendrier|etat|ninja|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
-            + "|typologieNinja|abonnementToken|idBy|idsBy|typologyIdsBy).*");
+            + "|labels|validate|calendrier|etat|polyvalent|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
+            + "|typologiePolyvalent|abonnementToken|idBy|idsBy|typologyIdsBy).*");
 
     /** Method → the method of the same class whose body calls {@code gel.refuseIfFrozen}. */
     private static final Map<String, String> CHECKED_IN_BODY = Map.ofEntries(

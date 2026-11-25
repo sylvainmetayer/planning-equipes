@@ -139,8 +139,8 @@
                 </li>
               }
             </ul>
-            @if (!rapport()?.ninjaConfigure) {
-              <p class="empty-hint" i18n="@@tension.detail.sansNinja">Aucune typologie ninja n'est définie : aucun polyvalent ne peut servir de renfort.</p>
+            @if (!rapport()?.polyvalentConfigure) {
+              <p class="empty-hint" i18n="@@tension.detail.sansPolyvalent">Aucune typologie polyvalente n'est définie : aucun polyvalent ne peut servir de renfort.</p>
             }
             <button matButton type="button" (click)="closeDetail()" i18n="@@common.close">Fermer</button>
           </aside>

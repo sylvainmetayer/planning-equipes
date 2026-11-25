@@ -259,7 +259,7 @@ class ScenarioYamlWriterTest {
                 .satisfies(typologie -> assertThat(typologie)
                         .containsEntry("id", "STRATEGIE")
                         .containsEntry("label", "Stratégie")
-                        .containsEntry("ninja", true));
+                        .containsEntry("polyvalent", true));
         assertThat((List<Map<String, Object>>) parsed.get("emplacements"))
                 .singleElement()
                 .satisfies(emplacement ->

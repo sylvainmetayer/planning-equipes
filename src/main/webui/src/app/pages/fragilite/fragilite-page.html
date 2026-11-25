@@ -71,9 +71,9 @@
         </mat-form-field>
       </div>
 
-      @if (!rapport()!.ninjaConfigure) {
-        <p class="empty-hint" i18n="@@fragilite.aucunNinja">
-          Aucune typologie n'est marquée « ninja » dans cette édition : la colonne des renforts polyvalents reste donc
+      @if (!rapport()!.polyvalentConfigure) {
+        <p class="empty-hint" i18n="@@fragilite.aucunPolyvalent">
+          Aucune typologie n'est marquée « polyvalente » dans cette édition : la colonne des renforts polyvalents reste donc
           vide partout.
         </p>
       }
@@ -105,8 +105,8 @@
                       <mat-icon>{{ ouvert() === ligne.animateurId ? 'expand_less' : 'expand_more' }}</mat-icon>
                     </button>
                     <a class="fragilite-nom" [routerLink]="['/animateurs', ligne.animateurId]" (click)="$event.stopPropagation()">{{ ligne.nom }}</a>
-                    @if (ligne.ninja) {
-                      <span class="fragilite-badge" i18n="@@fragilite.badge.ninja">ninja</span>
+                    @if (ligne.polyvalent) {
+                      <span class="fragilite-badge" i18n="@@fragilite.badge.polyvalent">polyvalent</span>
                     }
                   </th>
                   <td>{{ ligne.affectations }}</td>
@@ -186,7 +186,7 @@
                 <th scope="col" i18n="@@fragilite.colonne.creneau">Créneau</th>
                 <th scope="col" i18n="@@fragilite.colonne.typologies">Typologies</th>
                 <th scope="col" i18n="@@fragilite.colonne.specialiste">Seule personne compétente</th>
-                <th scope="col" i18n="@@fragilite.colonne.renforts">Renforts ninja</th>
+                <th scope="col" i18n="@@fragilite.colonne.renforts">Renforts polyvalents</th>
                 <th scope="col" i18n="@@fragilite.colonne.severite">Criticité</th>
               </tr>
             </thead>

@@ -32,7 +32,7 @@ Le même tableau pour les règles de qualité et les préférences. Chaque règl
 - la durée du calcul et l'arrêt quand plus rien ne progresse (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)) ;
 - l'e-mail de fin de résolution ;
 - le début de la soirée, la seule soirée de l'application ;
-- la typologie ninja.
+- la typologie polyvalente.
 
 ## Quand une règle ne peut pas s'améliorer : le plancher
 

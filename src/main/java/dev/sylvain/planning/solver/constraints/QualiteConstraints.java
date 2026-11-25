@@ -763,11 +763,11 @@ public final class QualiteConstraints {
     private Constraint limiterTypologiesDistinctesParAnimateur(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
                         seats.held()
-                                // A ninja is versatile by definition: spreading them across many
+                                // A polyvalent is versatile by definition: spreading them across many
                                 // typologies is what they are there for, so the cap doesn't apply.
                                 .filter(poste -> poste.getAnimateur() != null
                                         && poste.getStand() != null
-                                        && !poste.getAnimateur().isNinja())
+                                        && !poste.getAnimateur().isPolyvalent())
                                 .flatten(QualiteConstraints::likedTypologiesOfPoste)
                                 // The games already learnt count; the animateur is charged only
                                 // while one of their seats is still ahead of now (ADR 0044),

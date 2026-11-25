@@ -640,8 +640,8 @@ public class ReferenceDataService implements ReferenceData {
         return typologies.update(id, typologie);
     }
 
-    public Optional<String> typologieNinja() {
-        return typologies.ninja();
+    public Optional<String> typologiePolyvalent() {
+        return typologies.polyvalent();
     }
 
     public void deleteTypologie(String id) {

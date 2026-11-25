@@ -198,7 +198,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   it reads edited on the row —, the same table for the medium and soft rules
   with their importance in three positions (faible 1 / normale 5 / forte 25,
   `core/importance.ts`, ADR 0057), and the solve budget, the start of the
-  evening and the ninja typologie; nothing is written before the tab's
+  evening and the polyvalent typologie; nothing is written before the tab's
   « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
   exact weight, history of its settings — on its own tab, the stable address
   the Diagnostic and the reading of the score link to),
@@ -316,7 +316,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   one « Autres façons de créer la grille » menu; the grid check is a band read
   by itself on every visit and after every write), `/typologies` (a redirect
   to `/stands?onglet=typologies`: every count
-  links to the list it counts, the ninja category is ticked in the table, and
+  links to the list it counts, the polyvalent category is ticked in the table, and
   three columns read the computed plan: seats, hours, assigned without the
   skill),
   `/consignes-solveur` (now a redirect to `/regles`, its `onglet` and params

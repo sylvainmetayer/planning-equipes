@@ -38,7 +38,7 @@
   background: color-mix(in srgb, var(--mat-sys-error-container) 45%, transparent);
 }
 
-.staffing-ninja {
+.staffing-polyvalent {
   color: var(--mat-sys-primary);
   vertical-align: middle;
 }

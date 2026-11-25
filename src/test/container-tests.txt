@@ -182,6 +182,7 @@ dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java
 dev/sylvain/planning/service/solve/PlanningPersistenceServiceTest.java
+dev/sylvain/planning/service/solve/PolyvalentMigrationTest.java
 dev/sylvain/planning/service/solve/RemoteSolvesTest.java
 dev/sylvain/planning/service/solve/SolverJobArretTest.java
 dev/sylvain/planning/service/solve/SolverJobHandEngineTest.java

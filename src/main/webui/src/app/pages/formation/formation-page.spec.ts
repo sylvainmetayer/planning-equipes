@@ -17,7 +17,7 @@ const PLAN: PlanFormation = {
     {
       typologie: 'ESCAPE',
       label: 'Escape game',
-      ninja: false,
+      polyvalent: false,
       manque: 1,
       specialistes: 2,
       competencesRares: 2,
@@ -44,7 +44,7 @@ const PLAN: PlanFormation = {
     {
       typologie: 'QUIZ',
       label: 'Quiz',
-      ninja: false,
+      polyvalent: false,
       manque: 0,
       specialistes: 1,
       competencesRares: 1,

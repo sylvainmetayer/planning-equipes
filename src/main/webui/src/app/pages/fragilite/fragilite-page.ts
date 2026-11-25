@@ -271,11 +271,11 @@ export class FragilitePage {
   protected explicationCompetence(ligne: CompetenceRare): string {
     if (ligne.specialistes === 0) {
       return ligne.renforts > 0
-        ? $localize`:@@fragilite.competence.aucunSpecialisteRenfort:Aucun spécialiste de ce stand n'est disponible ; seuls ${ligne.renforts}:renforts: ninjas pourraient le tenir.`
+        ? $localize`:@@fragilite.competence.aucunSpecialisteRenfort:Aucun spécialiste de ce stand n'est disponible ; seuls ${ligne.renforts}:renforts: polyvalents pourraient le tenir.`
         : $localize`:@@fragilite.competence.aucunSpecialiste:Personne n'est compétent pour ce stand sur ce créneau.`;
     }
     return ligne.renforts > 0
-      ? $localize`:@@fragilite.competence.unSpecialisteRenfort:Une seule personne compétente, épaulée par ${ligne.renforts}:renforts: ninjas.`
-      : $localize`:@@fragilite.competence.unSpecialiste:Une seule personne compétente, et aucun ninja pour la remplacer.`;
+      ? $localize`:@@fragilite.competence.unSpecialisteRenfort:Une seule personne compétente, épaulée par ${ligne.renforts}:renforts: polyvalents.`
+      : $localize`:@@fragilite.competence.unSpecialiste:Une seule personne compétente, et aucun polyvalent pour la remplacer.`;
   }
 }

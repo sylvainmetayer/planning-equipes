@@ -61,7 +61,7 @@ import { TODAY_ANCHOR } from '../../core/date-mock.service';
  *   covoiturage, each opened and closed here with its dates —, the e-mails it
  *   sends of itself (`#emails`), and the organisation's contact shown in the
  *   espace animateur. What decides the plan — legal parameters, quality
- *   thresholds, weights, the solve budget, the ninja typologie — is « Règles
+ *   thresholds, weights, the solve budget, the polyvalent typologie — is « Règles
  *   du planning ».
  * - « Affichage mural » — the links that open the control room's television
  *   without an admin session (ADR 0053): per edition, created and revoked here.

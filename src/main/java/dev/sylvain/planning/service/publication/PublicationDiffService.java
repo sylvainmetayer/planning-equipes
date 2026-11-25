@@ -54,7 +54,7 @@ public class PublicationDiffService {
         /**
          * A seat replaced by another one the same day — another stand, other
          * hours, or both. Kept apart from an {@link #AJOUT} plus a
-         * {@link #RETRAIT} because that is how a human reads it: « Ninja
+         * {@link #RETRAIT} because that is how a human reads it: « Polyvalent
          * 14h-18h remplace Cirque 14h-18h » is one change, not two.
          */
         DEPLACEMENT

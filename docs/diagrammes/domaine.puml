@@ -38,7 +38,7 @@ class Animateur {
   competences : Map<typologieId, NiveauCompetence>
   souhaits : Set<typologieId>
   joursIndisponibles : Set<LocalDate>
-  ninja : boolean
+  polyvalent : boolean
 }
 
 class Stand {

@@ -396,8 +396,8 @@
       <!-- 5. Appreciations and wishes, edited in place -->
       <details class="fiche-section" id="fiche-section-competences" [open]="isOpen('competences')" (toggle)="onToggle('competences', $event)">
         <summary><h2 i18n="@@fiche.section.competences">Compétences et souhaits</h2></summary>
-        @if (fiche.animateur.ninja) {
-          <p i18n="@@fiche.competences.ninja">Ninja : compétent sur tous les stands.</p>
+        @if (fiche.animateur.polyvalent) {
+          <p i18n="@@fiche.competences.polyvalent">Polyvalent : compétent sur tous les stands.</p>
         }
         @if (competenceLines().length === 0) {
           <p class="empty-hint" i18n="@@fiche.competences.aucune">Ni appréciation ni souhait.</p>

@@ -423,7 +423,7 @@
               "examples" : [ "2022-03-10" ]
             }
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "modifieLe" : {
@@ -610,7 +610,7 @@
         }
       },
       "AnimateurFragilite" : {
-        "required" : [ "affectations", "competencesRares", "ninja", "postesEffondres", "postesIrremplacables", "postesNonDetailles" ],
+        "required" : [ "affectations", "competencesRares", "polyvalent", "postesEffondres", "postesIrremplacables", "postesNonDetailles" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -619,7 +619,7 @@
           "nom" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "affectations" : {
@@ -1850,7 +1850,7 @@
         }
       },
       "CompetenceStaffing" : {
-        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologieNinjaDefinie", "planchersCumules" ],
+        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologiePolyvalenteDefinie", "planchersCumules" ],
         "type" : "object",
         "properties" : {
           "parTypologie" : {
@@ -1883,7 +1883,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "typologieNinjaDefinie" : {
+          "typologiePolyvalenteDefinie" : {
             "type" : "boolean"
           },
           "planchersCumules" : {
@@ -6683,7 +6683,7 @@
         }
       },
       "LigneTypologie" : {
-        "required" : [ "ninja", "heures", "postes" ],
+        "required" : [ "polyvalent", "heures", "postes" ],
         "type" : "object",
         "properties" : {
           "typologie" : {
@@ -6692,7 +6692,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "maxCreneauxParAnimateur" : {
@@ -8571,7 +8571,7 @@
         }
       },
       "RapportFragilite" : {
-        "required" : [ "animateursIrremplacables", "aucunAnimateur", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "ninjaConfigure", "totalCompetencesRares" ],
+        "required" : [ "animateursIrremplacables", "aucunAnimateur", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "polyvalentConfigure", "totalCompetencesRares" ],
         "type" : "object",
         "properties" : {
           "animateurs" : {
@@ -8606,7 +8606,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "ninjaConfigure" : {
+          "polyvalentConfigure" : {
             "type" : "boolean"
           },
           "aucunAnimateur" : {
@@ -8894,7 +8894,7 @@
         }
       },
       "RapportTension" : {
-        "required" : [ "animateursTotal", "cellulesCritiques", "jours", "message", "ninjaConfigure", "referentielsManquants", "tranches" ],
+        "required" : [ "animateursTotal", "cellulesCritiques", "jours", "message", "polyvalentConfigure", "referentielsManquants", "tranches" ],
         "type" : "object",
         "properties" : {
           "tranches" : {
@@ -8920,7 +8920,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "ninjaConfigure" : {
+          "polyvalentConfigure" : {
             "type" : "boolean"
           },
           "referentielsManquants" : {
@@ -10788,7 +10788,7 @@
       },
       "TypologieAFormer" : {
         "type" : "object",
-        "required" : [ "candidats", "competencesRares", "groupesSansSpecialiste", "joursTension", "manque", "ninja", "postesIrremplacables", "specialistes" ],
+        "required" : [ "candidats", "competencesRares", "groupesSansSpecialiste", "joursTension", "manque", "polyvalent", "postesIrremplacables", "specialistes" ],
         "properties" : {
           "typologie" : {
             "type" : "string"
@@ -10796,7 +10796,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "manque" : {
@@ -10847,7 +10847,7 @@
         }
       },
       "TypologieItem" : {
-        "required" : [ "ninja" ],
+        "required" : [ "polyvalent" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -10859,7 +10859,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "maxCreneauxParAnimateur" : {
@@ -10876,7 +10876,7 @@
       },
       "TypologieStaffing" : {
         "type" : "object",
-        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes", "enchainementTotal", "minimumPlafond" ],
+        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "polyvalent", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes", "enchainementTotal", "minimumPlafond" ],
         "properties" : {
           "typologie" : {
             "type" : "string"
@@ -10884,7 +10884,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "sieges" : {

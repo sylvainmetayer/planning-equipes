@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 schemaVersion: 2
 # Barreau 9 : le référentiel des typologies, les polyvalents et les distances.
-# Six typologies déclarées avec libellé, plus la typologie ninja POLYVALENT :
+# Six typologies déclarées avec libellé, plus la typologie polyvalente POLYVALENT :
 # trois animateurs la portent et peuvent tenir n'importe quel stand. Le cirque et
 # la robotique n'ont chacun qu'un spécialiste ; tout le reste de leurs sièges
 # revient aux polyvalents. Trois emplacements, dont un gymnase à 1,6 km du parc,
@@ -25,7 +25,7 @@ typologies:
     label: "Jeux de piste"
   - id: POLYVALENT
     label: Polyvalent
-    ninja: true
+    polyvalent: true
 
 emplacements:
   - id: PARC

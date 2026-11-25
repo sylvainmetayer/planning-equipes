@@ -207,7 +207,7 @@ class FragiliteAnalyzerTest {
         assertThat(rare.renforts()).isZero();
         assertThat(rare.severite()).isEqualTo(SeveriteFragilite.CRITIQUE);
         assertThat(rapport.groupesSansSpecialiste()).isEqualTo(1);
-        assertThat(rapport.ninjaConfigure()).isFalse();
+        assertThat(rapport.polyvalentConfigure()).isFalse();
     }
 
     @Test
@@ -224,26 +224,26 @@ class FragiliteAnalyzerTest {
     }
 
     @Test
-    void aNinjaNeverHidesTheLastSpecialistButCountsAsAReinforcement() {
-        // The decision this analyzer documents: a ninja is competent everywhere
+    void aPolyvalentNeverHidesTheLastSpecialistButCountsAsAReinforcement() {
+        // The decision this analyzer documents: a polyvalent is competent everywhere
         // as far as the solver is concerned, so counting them as a specialist
         // would erase the very signal this screen exists for. They are counted
         // apart, as a mitigation.
         Stand stand = stand("A", 1, "ESCAPE");
         Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
         Animateur alice = animateur("alice", "ESCAPE");
-        Animateur ninja = animateur("ninja", "POLYVALENT");
-        ninja.applyNinjaTypologie("POLYVALENT");
+        Animateur polyvalent = animateur("polyvalent", "POLYVALENT");
+        polyvalent.applyPolyvalentTypologie("POLYVALENT");
 
-        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, ninja), seats(stand, matin, alice)));
+        RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, polyvalent), seats(stand, matin, alice)));
 
         CompetenceRare rare = rapport.competencesRares().getFirst();
         assertThat(rare.specialistes()).isEqualTo(1);
         assertThat(rare.animateurId()).isEqualTo("alice");
         assertThat(rare.renforts()).isEqualTo(1);
         assertThat(rare.severite()).isEqualTo(SeveriteFragilite.MODEREE);
-        assertThat(rapport.ninjaConfigure()).isTrue();
-        // …and the same ninja does make Alice's seat replaceable, because the
+        assertThat(rapport.polyvalentConfigure()).isTrue();
+        // …and the same polyvalent does make Alice's seat replaceable, because the
         // solver would dispatch them on it.
         assertThat(ligne(rapport, "alice").postesIrremplacables()).isZero();
         assertThat(ligne(rapport, "alice").competencesRares()).isEqualTo(1);

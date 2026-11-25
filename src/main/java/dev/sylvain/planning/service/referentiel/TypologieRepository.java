@@ -20,11 +20,11 @@ import java.util.Optional;
 import javax.sql.DataSource;
 
 /**
- * The typologie referential, and the single {@code ninja} flag it carries.
+ * The typologie referential, and the single {@code polyvalent} flag it carries.
  *
- * <p>Marking one typologie ninja demotes the previous holder — an
+ * <p>Marking one typologie polyvalent demotes the previous holder — an
  * {@code UPDATE} that must never leave its edition. It once did, and marking
- * a ninja on one edition silently cleared every other edition's; see
+ * a polyvalent on one edition silently cleared every other edition's; see
  * {@code IsolationEditionStructurelleTest}.</p>
  */
 @ApplicationScoped
@@ -49,7 +49,7 @@ public class TypologieRepository {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT id, code, label, ninja, max_creneaux_par_animateur, description, modifie_le
+                        SELECT id, code, label, polyvalent, max_creneaux_par_animateur, description, modifie_le
                         FROM typologie WHERE edition_id = ? ORDER BY id""");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -57,7 +57,7 @@ public class TypologieRepository {
                         rs.getString("id"),
                         rs.getString("code"),
                         rs.getString("label"),
-                        rs.getBoolean("ninja"),
+                        rs.getBoolean("polyvalent"),
                         (Integer) rs.getObject("max_creneaux_par_animateur"),
                         rs.getString("description"),
                         rs.getObject("modifie_le", OffsetDateTime.class).toInstant()));
@@ -68,15 +68,15 @@ public class TypologieRepository {
         return typologies;
     }
 
-    /** Id of the single typologie flagged ninja, empty when the referential has none. */
-    public Optional<String> findTypologieNinja() {
+    /** Id of the single typologie flagged polyvalent, empty when the referential has none. */
+    public Optional<String> findTypologiePolyvalent() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(
-                        connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
+                        connection, "SELECT id FROM typologie WHERE edition_id = ? AND polyvalent LIMIT 1");
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
         } catch (SQLException e) {
-            throw new IllegalStateException("Failed to read the ninja typology", e);
+            throw new IllegalStateException("Failed to read the polyvalent typology", e);
         }
     }
 
@@ -125,17 +125,17 @@ public class TypologieRepository {
     /** The same write inside a caller's transaction. */
     TypologieItem saveTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
             throws SQLException {
-        // Only one typologie may be ninja *per edition*: demote the previous
+        // Only one typologie may be polyvalent *per edition*: demote the previous
         // holder in the same transaction, otherwise the partial unique index
         // (V31, scoped per edition by V33) rejects the insert and the user
         // sees a raw constraint violation. The demotion carries the same
         // edition predicate as the index it protects — without it, flagging a
-        // ninja here would silently clear the one of every other edition.
-        if (typologie.ninja()) {
+        // polyvalent here would silently clear the one of every other edition.
+        if (typologie.polyvalent()) {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     UPDATE typologie
-                    SET ninja = FALSE, modifie_le = now()
-                    WHERE edition_id = ? AND ninja AND id <> ?""")) {
+                    SET polyvalent = FALSE, modifie_le = now()
+                    WHERE edition_id = ? AND polyvalent AND id <> ?""")) {
                 ps.setString(2, typologie.id());
                 ps.executeUpdate();
             }
@@ -171,10 +171,10 @@ public class TypologieRepository {
     private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
             throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO typologie (edition_id, id, code, label, ninja, max_creneaux_par_animateur, description)
+                INSERT INTO typologie (edition_id, id, code, label, polyvalent, max_creneaux_par_animateur, description)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET code = EXCLUDED.code, label = EXCLUDED.label, ninja = EXCLUDED.ninja,
+                DO UPDATE SET code = EXCLUDED.code, label = EXCLUDED.label, polyvalent = EXCLUDED.polyvalent,
                 max_creneaux_par_animateur = EXCLUDED.max_creneaux_par_animateur,
                 description = EXCLUDED.description, modifie_le = now()
                 WHERE CAST(? AS boolean)
@@ -185,7 +185,7 @@ public class TypologieRepository {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.code());
             ps.setString(4, typologie.label());
-            ps.setBoolean(5, typologie.ninja());
+            ps.setBoolean(5, typologie.polyvalent());
             ps.setObject(6, typologie.maxCreneauxParAnimateur(), java.sql.Types.INTEGER);
             ps.setString(7, typologie.description());
             WriteStamp.bindPrecondition(ps, 8, !failIfPresent, typologie.modifieLe());
@@ -201,12 +201,12 @@ public class TypologieRepository {
      * Insert used for the typologies {@link #importFromPlanning} derives from the
      * ids stands and animateurs reference, so that their foreign keys hold.
      * An existing row is left alone — its label, its code and above all its
-     * {@code ninja} flag: the import's {@code typologies:} section, applied
+     * {@code polyvalent} flag: the import's {@code typologies:} section, applied
      * next, is what writes those (see {@code ScenarioImportService}).
      */
     void insertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO typologie (edition_id, id, code, label, ninja)
+                INSERT INTO typologie (edition_id, id, code, label, polyvalent)
                 VALUES (?, ?, ?, ?, FALSE)
                 ON CONFLICT DO NOTHING""")) {
             ps.setString(2, typologie.id());
