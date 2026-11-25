@@ -18,6 +18,7 @@ import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
@@ -137,7 +138,7 @@ class RemoteSolvesTest {
     }
 
     @Test
-    void aWorkerThatRefusesFailsTheJobAndNothingFallsBackHere() {
+    void aWorkerThatRefusesFailsTheJobAndNothingFallsBackHere() throws IOException {
         importedPlan();
         // The worker takes one problem at a time: kept busy by another
         // client, it refuses the application's.
@@ -203,7 +204,7 @@ class RemoteSolvesTest {
     }
 
     /** A problem prepared without the application, as {@code RemoteSolverTest} builds one. */
-    private static PlanningEvenement aPreparedProblem() {
+    private static PlanningEvenement aPreparedProblem() throws IOException {
         EmptyReferenceData referenceData = new EmptyReferenceData();
         SolverConfiguration configuration = new SolverConfiguration(
                 30L,
