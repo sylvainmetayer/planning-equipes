@@ -76,6 +76,7 @@ export default function config(eleventyConfig) {
   eleventyConfig.addFilter('after', (text, sep) => text.slice(text.indexOf(sep) + 1).trim());
   eleventyConfig.addFilter('cap', (text) => text.charAt(0).toUpperCase() + text.slice(1));
   eleventyConfig.addFilter('byName', (items, name) => items.find((i) => i.name === name));
+  eleventyConfig.addFilter('head', (items, n) => items.slice(0, n));
   eleventyConfig.addFilter('byId', (items, id) => items.find((i) => i.id === id));
 
   return {

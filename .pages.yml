@@ -801,7 +801,7 @@ content:
         - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, plan), type: string, list: true }
 
   - name: docs
-    label: Documentation (les pages elles-mêmes sont les .md de docs/, hors du CMS)
+    label: Documentation (les pages elles-mêmes sont les .md de site/src/docs/, hors du CMS)
     type: file
     path: site/src/_data/pages/docs.json
     format: json
@@ -809,9 +809,19 @@ content:
       - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
       - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
       - { name: h1, label: Titre de la page d'accueil de la documentation, type: string, required: true }
-      - { name: accueil, label: Nom de l'accueil dans la liste des rubriques, type: string, required: true }
-      - { name: surCettePage, label: Titre du sommaire de la page, type: string, required: true }
-      - { name: rubriques, label: Titre de la liste des rubriques, type: string, required: true }
+      - { name: accueil, label: "Nom de la page d'accueil de la documentation", type: string, required: true }
+      - { name: surCettePage, label: "Titre du sommaire de la page", type: string, required: true }
+      - { name: recherche, label: "Libellé de la recherche", type: string, required: true }
+      - { name: chercher, label: "Bouton de recherche", type: string, required: true }
+      - { name: toutVoir, label: "Lien vers tous les guides d'une partie ({n} = leur nombre)", type: string, required: true }
+      - { name: guides, label: "Titre de la liste des guides d'une partie", type: string, required: true }
+      - { name: autresParties, label: "Introduction des autres parties (menu latéral)", type: string, required: true }
+      - { name: pagerLabel, label: "Libellé de la navigation précédent / suivant", type: string, required: true }
+      - { name: precedent, label: "Devant le guide précédent", type: string, required: true }
+      - { name: suivant, label: "Devant le guide suivant", type: string, required: true }
+      - { name: corriger, label: "Lien pour corriger une page sur GitHub", type: string, required: true }
+      - { name: fermeture, label: "Titre de la bande de fin", type: string, required: true }
+      - { name: autreLien, label: "Bouton vers l'hébergement", type: string, required: true }
       - name: en
         label: Version anglaise
         type: object
@@ -819,9 +829,19 @@ content:
           - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
           - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
           - { name: h1, label: Titre de la page d'accueil de la documentation, type: string, required: true }
-          - { name: accueil, label: Nom de l'accueil dans la liste des rubriques, type: string, required: true }
-          - { name: surCettePage, label: Titre du sommaire de la page, type: string, required: true }
-          - { name: rubriques, label: Titre de la liste des rubriques, type: string, required: true }
+          - { name: accueil, label: "Nom de la page d'accueil de la documentation", type: string, required: true }
+          - { name: surCettePage, label: "Titre du sommaire de la page", type: string, required: true }
+          - { name: recherche, label: "Libellé de la recherche", type: string, required: true }
+          - { name: chercher, label: "Bouton de recherche", type: string, required: true }
+          - { name: toutVoir, label: "Lien vers tous les guides d'une partie ({n} = leur nombre)", type: string, required: true }
+          - { name: guides, label: "Titre de la liste des guides d'une partie", type: string, required: true }
+          - { name: autresParties, label: "Introduction des autres parties (menu latéral)", type: string, required: true }
+          - { name: pagerLabel, label: "Libellé de la navigation précédent / suivant", type: string, required: true }
+          - { name: precedent, label: "Devant le guide précédent", type: string, required: true }
+          - { name: suivant, label: "Devant le guide suivant", type: string, required: true }
+          - { name: corriger, label: "Lien pour corriger une page sur GitHub", type: string, required: true }
+          - { name: fermeture, label: "Titre de la bande de fin", type: string, required: true }
+          - { name: autreLien, label: "Bouton vers l'hébergement", type: string, required: true }
 
   - name: mentions
     label: Page mentions légales
