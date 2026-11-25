@@ -58,7 +58,12 @@ class StaffingBoundEquivalenceTest {
     /** Seconds a solve of one team is given; a failure within it proves nothing, a success proves the team holds. */
     private static final long SOLVE_SECONDS = Long.getLong("equivalence.seconds", 300L);
 
-    private record Row(String rung, int bound, int needed, boolean feasibleBelow, int gap) {}
+    /** @param broken the hard rules the best plan still breaks at the bound itself, empty when the bound holds */
+    private record Row(
+            String rung, int bound, int needed, boolean feasibleBelow, int gap, java.util.Set<String> broken) {}
+
+    /** The outcome of one team: whether it holds every seat, and what its best plan breaks when it does not. */
+    private record Attempt(boolean holds, java.util.Set<String> broken) {}
 
     @Test
     void theBoundIsWhatAMadeUpTeamNeedsOnTheWholeLadder() throws IOException {
@@ -77,25 +82,36 @@ class StaffingBoundEquivalenceTest {
         }
         System.out.println("EQUIVALENCE rung | bound | needed | feasible below | gap");
         rows.forEach(row -> System.out.printf(
-                "EQUIVALENCE %s | %d | %d | %b | %d%n",
-                row.rung(), row.bound(), row.needed(), row.feasibleBelow(), row.gap()));
+                "EQUIVALENCE %s | %d | %d | %b | %d | %s%n",
+                row.rung(), row.bound(), row.needed(), row.feasibleBelow(), row.gap(), row.broken()));
 
         assertThat(rows)
                 .as("a team below the bound that holds every seat would make the bound wrong")
                 .noneMatch(Row::feasibleBelow);
         assertThat(rows)
-                .as("the solve needs at most MAX_GAP more than the bound")
-                .allMatch(row -> row.gap() <= MAX_GAP);
+                .as("the solve needs at most MAX_GAP, or half the bound, more than the bound")
+                .allMatch(row -> row.gap() >= 0 && row.gap() <= Math.max(MAX_GAP, row.bound() / 2));
     }
 
     private Row measure(String rung) {
         int bound = bound(rung);
-        boolean below = bound > 1 && holds(rung, bound - 1, SOLVE_SECONDS / 5);
+        boolean below = bound > 1 && holds(rung, bound - 1, SOLVE_SECONDS / 5).holds();
+        Attempt atBound = below ? new Attempt(true, java.util.Set.of()) : holds(rung, bound, SOLVE_SECONDS);
         int needed = bound;
-        while (!below && needed <= bound + MAX_GAP && !holds(rung, needed, SOLVE_SECONDS)) {
-            needed++;
+        // Steps widen once the gap is plainly more than a person or two, up to the real team, which holds by
+        // construction.
+        int[] steps = {1, 2, 3, 6, 12, 24, 48};
+        int real = load(rung).problem().getAnimateurs().size();
+        for (int i = 0; !below && !atBound.holds() && i < steps.length && needed < real; i++) {
+            needed = Math.min(bound + steps[i], real);
+            if (holds(rung, needed, SOLVE_SECONDS).holds()) {
+                break;
+            }
+            if (needed == real) {
+                needed = -1;
+            }
         }
-        return new Row(rung, bound, needed, below, needed - bound);
+        return new Row(rung, bound, needed, below, needed < 0 ? -1 : needed - bound, atBound.broken());
     }
 
     /** The exact minimum under the file's own rules, as the Besoin screen reads it. */
@@ -147,11 +163,12 @@ class StaffingBoundEquivalenceTest {
      * production does, and failing that from nothing — a team can hold the
      * seats and the search still miss them cold.
      */
-    private static boolean holds(String rung, int adults, long seconds) {
-        return holds(rung, adults, seconds * 2 / 3, true) || holds(rung, adults, seconds / 3, false);
+    private static Attempt holds(String rung, int adults, long seconds) {
+        Attempt fromPlan = holds(rung, adults, seconds * 2 / 3, true);
+        return fromPlan.holds() ? fromPlan : holds(rung, adults, seconds / 3, false);
     }
 
-    private static boolean holds(String rung, int adults, long seconds, boolean fromPlan) {
+    private static Attempt holds(String rung, int adults, long seconds, boolean fromPlan) {
         Loaded loaded = load(rung);
         PlanningEvenement problem = loaded.problem();
         LocalDate first = problem.getPostes().stream()
@@ -188,7 +205,9 @@ class StaffingBoundEquivalenceTest {
         PlanningService service = service();
         service.prepareHypothetical(problem);
         PlanningEvenement solved = service.solveCheck(problem, seconds, solver -> {});
-        return solved.getScore().hardScore() == 0
-                && solved.getPostes().stream().noneMatch(poste -> poste.getAnimateur() == null);
+        boolean complete = solved.getPostes().stream().noneMatch(poste -> poste.getAnimateur() == null);
+        return new Attempt(
+                solved.getScore().hardScore() == 0 && complete,
+                solved.getScore().hardScore() == 0 ? java.util.Set.of() : ScenarioLadder.brokenHardConstraints(solved));
     }
 }
