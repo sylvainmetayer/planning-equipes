@@ -4951,7 +4951,7 @@
   "staffing.restBound.description": " — whoever closes late cannot open the next day: the evening seats and the next morning's, which nobody holds together, need as many distinct people.",
   "staffing.lien.reposQuotidien": "Daily rest",
   "staffing.continuousBound.label": "Continuous work: {$INTERPOLATION}",
-  "staffing.continuousBound.description": " — a stretch of more than six hours needs a break relayed by a colleague of the same stand: where nobody can relay, seats that follow one another cannot be held by the same person and need as many distinct people.",
+  "staffing.continuousBound.description": " — more than six hours in a row need a break relayed by a colleague of the same stand: with no relay possible, two seats that follow one another cannot go to the same person.",
   "staffing.lien.travailContinu": "Continuous work",
   "staffing.verification.majeurs": "Adults",
   "staffing.verification.mineurs": "Minors",
