@@ -369,6 +369,7 @@ public class PlanningMcpTools {
                 toViews(explication.contraintesRespectees()));
     }
 
+    @Computes
     @Tool(
             name = "simuler_swap",
             description = "Simule l'affectation d'un poste à un autre animateur sur le dernier planning persisté, "
@@ -395,6 +396,7 @@ public class PlanningMcpTools {
                 toViews(simulation.contraintesVioleesApres()));
     }
 
+    @Computes
     @Tool(
             name = "suggerer_reparations",
             description = "Cherche qui pourrait tenir un poste du dernier planning persisté et chiffre chaque "
@@ -473,6 +475,7 @@ public class PlanningMcpTools {
         return new ReaffectationView(posteId, precedent, animateurId);
     }
 
+    @Computes
     @Tool(
             name = "simuler_deplacement",
             description = "Chiffre le déplacement d'une affectation du planning persisté sans rien écrire : "

@@ -182,6 +182,19 @@ public class EditionContext {
                 || CompteService.writeScope(compte, Instant.now()).test(editionId);
     }
 
+    /**
+     * Whether the caller of the request being served only reads the edition it works in: a lecteur with no
+     * organiser right there (ADR 0099). {@code false} off a request — the serialisations that outlive one (a
+     * job, a snapshot) are nobody's reading.
+     */
+    public boolean callerReadsOnly() {
+        if (!servingRequest()) {
+            return false;
+        }
+        String override = OVERRIDE.get();
+        return !callerCanWrite(override != null ? override : editionIdDemande());
+    }
+
     /** Whether the caller is an organiser narrowed to its editions (an administrator is not). */
     public boolean callerIsOrganiser() {
         return organiserOfRequest() != null;

@@ -19,7 +19,12 @@ dans l'interface n'aurait rien garanti, puisque l'API reste appelable.
    dans cette édition — dates de naissance et statut de mineur compris —,
    mais ni les contacts (ils restent au droit RH, qui se cumule) ni rien de
    l'instance (`@InstanceOnly` et `@InstanceOnlyTool` le refusent comme un
-   organisateur).
+   organisateur). Seule exception : il ne voit pas le jeton d'espace des
+   animateurs (`accessToken`), qui ouvre leur espace et donc une porte où
+   écrire. `LecteurTokenMask` le sérialise à `null` dans toute réponse lue par
+   un lecteur — liste, plan, fiche, instantanés — ; les PDF qu'il fait rendre
+   n'ont donc pas de lien d'espace. Le jeton d'abonnement ICS ne sort que par
+   l'espace lui-même.
 2. **Le serveur fait foi** (`LecteurFilter`). Pour un compte qui porte un droit
    de lecteur, toute requête hors `GET`/`HEAD`/`OPTIONS` répond `403`,
    **y compris un `POST` qui ne fait que calculer** : un lecteur ne lance ni
@@ -48,10 +53,15 @@ dans l'interface n'aurait rien garanti, puisque l'API reste appelable.
    `RoutesLecteurStructuralTest`.
 5. **MCP par OAuth.** Le jeton d'un lecteur ouvre le transport, mais
    `EditionCibleeInterceptor` ne laisse passer que les outils qui déclarent
-   `readOnlyHint = true`, sur ses éditions ; un autre outil répond par un refus
+   `readOnlyHint = true` sans porter `@Computes`, sur ses éditions. `@Computes`
+   marque l'outil qui n'écrit rien mais calcule — simulations,
+   prévisualisations, recherche de réparations, analyse rafraîchie, validation
+   d'un YAML : ce que l'écran demande par un `POST`, que le lecteur se voit
+   refuser par l'assistant comme à l'écran. Un autre outil répond par un refus
    métier (`BusinessError`, sans nom de personne). `McpLecteurStructurelleTest`
-   exige que tout outil écrivant traverse cet intercepteur ou soit réservé à
-   l'instance.
+   exige que tout outil écrivant ou calculant traverse cet intercepteur ou soit
+   réservé à l'instance, et dérive `@Computes` du nom de l'outil (`simuler_`,
+   `previsualiser_`, `suggerer_`, plus une liste argumentée).
 6. **Les filets.** `RoutesLecteurStructuralTest` tient l'inventaire des routes
    ouvertes (`routes-lecteur.txt`) : une nouvelle lecture non classée, une
    écriture ouverte ou un export brut ouvert font échouer le build.
@@ -72,5 +82,8 @@ dans l'interface n'aurait rien garanti, puisque l'API reste appelable.
   l'ICS suffisent à la relecture, les données brutes restent à qui écrit.
 - Les `POST` de simple calcul (simulations, prévisualisations, aperçus) sont
   refusés : l'écran correspondant s'affiche, son action pas.
+- La mesure « Réalisé vs planifié » est figée par la première lecture après
+  l'événement (ADR 0092), fût-elle celle d'un lecteur : c'est un cache de ce que
+  le plan dit déjà, accepté comme tel.
 - Les actions masquées côté interface sont les boutons principaux ; un bouton
   secondaire qui échoue répond `403` avec sa phrase.

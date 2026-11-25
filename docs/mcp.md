@@ -66,7 +66,8 @@ client découvre tout seul où ouvrir la connexion.
   droits. Un outil qui ne désigne pas d'édition est `@InstanceOnlyTool` ou
   justifié dans `McpEditionStructurelleTest`.
 - Un **lecteur** (droit en lecture seule d'une édition) n'a que les outils qui
-  déclarent `readOnlyHint = true`, sur ses éditions ; les autres répondent par
+  déclarent `readOnlyHint = true` sans calculer (`@Computes` : simulations,
+  prévisualisations, réparations…), sur ses éditions ; les autres répondent par
   un refus métier (ADR [0099](decisions/0099-le-lecteur-voit-sans-rien-ecrire.md)).
 - Le journal des actions garde l'assistant comme auteur, comme avec la clé.
 

@@ -7,17 +7,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.OidcTests;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteService;
 import dev.sylvain.planning.service.compte.RoleHabilitation;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -57,6 +61,23 @@ class LecteurCanariTest {
     @Inject
     EditionService editions;
 
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    ReferenceDataService referenceData;
+
+    /** An animateur of E1 holding an espace token, which no response read by a lecteur may carry. */
+    private record Tokened(String id, String token) {}
+
+    private Tokened tokenedAnimateur() {
+        return editionContext.executeIn("E1", () -> {
+            Animateur animateur = referenceData.createAnimateur(
+                    new Animateur(null, "Jeton", "Lecteur", LocalDate.of(1990, 1, 1), false));
+            return new Tokened(animateur.getId(), referenceData.regenerateAnimateurToken(animateur.getId()));
+        });
+    }
+
     private String bearerOf(Compte compte, String email) {
         return token("s-" + UUID.randomUUID(), email, true);
     }
@@ -71,6 +92,16 @@ class LecteurCanariTest {
     @Test
     void aLecteurReadsButNothingElseGetsThrough() throws Exception {
         String lecteur = bearer(RoleHabilitation.LECTEUR, "E1");
+        Tokened tokened = tokenedAnimateur();
+        try {
+            sweep(lecteur, tokened);
+        } finally {
+            editionContext.executeIn("E1", () -> referenceData.deleteAnimateur(tokened.id()));
+        }
+    }
+
+    private void sweep(String lecteur, Tokened tokened) throws Exception {
+        List<String> fuites = new ArrayList<>();
         JsonNode paths = new ObjectMapper()
                 .readTree(Files.readString(Path.of("docs/schema/openapi.json")))
                 .get("paths");
@@ -103,13 +134,26 @@ class LecteurCanariTest {
                     ecritures.add(verb + " " + chemin + " -> " + code);
                 }
             }
-            if (route.getValue().has("get") && !chemin.contains("{") && !chemin.equals("/api/jobs/stream")) {
-                given().header("X-Edition-Id", "E1")
+            if (route.getValue().has("get") && !chemin.equals("/api/jobs/stream")) {
+                String lu = given().header("X-Edition-Id", "E1")
                         .header("Authorization", lecteur)
-                        .get(url);
+                        .get(chemin.replace("{id}", tokened.id()).replaceAll("\\{[^}]+}", "1"))
+                        .asString();
+                if (lu.contains(tokened.token())) {
+                    fuites.add(chemin);
+                }
                 lues++;
             }
         }
+        assertThat(fuites)
+                .as("réponses lues par un lecteur qui portent un jeton d'espace")
+                .isEmpty();
+        // The same read by an organiser still carries it: the mask is the lecteur's, not everyone's.
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .header("Authorization", bearer(RoleHabilitation.ORGANISATEUR, "E1"))
+                        .get("/api/animateurs")
+                        .asString())
+                .contains(tokened.token());
         assertThat(ecritures).as("routes d'écriture que le lecteur atteint").isEmpty();
         assertThat(refusees).as("écritures refusées en 403").isGreaterThan(100);
         assertThat(lues).as("routes lues").isGreaterThan(50);

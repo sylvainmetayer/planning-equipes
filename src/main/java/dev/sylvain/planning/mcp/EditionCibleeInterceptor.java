@@ -65,13 +65,18 @@ public class EditionCibleeInterceptor {
     }
 
     /**
-     * A lecteur (ADR 0099) meets only the tools declaring {@code readOnlyHint = true}, in the editions it
-     * reads: any other tool is refused — as a business refusal, which names nobody. {@code editionId} is
+     * A lecteur (ADR 0099) meets only the tools declaring {@code readOnlyHint = true} and not {@link Computes},
+     * in the editions it reads: any other tool is refused — as a business refusal, which names nobody. {@code editionId} is
      * {@code null} for a tool designating none, judged on the rights that cover every edition.
      */
     private void refuseWriteToLecteur(InvocationContext context, String editionId) {
         Tool tool = context.getMethod().getAnnotation(Tool.class);
-        if (tool != null && !tool.annotations().readOnlyHint() && !editionContext.callerCanWrite(editionId)) {
+        if (tool == null) {
+            return;
+        }
+        boolean writesOrComputes =
+                !tool.annotations().readOnlyHint() || context.getMethod().isAnnotationPresent(Computes.class);
+        if (writesOrComputes && !editionContext.callerCanWrite(editionId)) {
             throw new BusinessError.Invalid(
                     "Ce compte lit cette édition sans pouvoir la modifier : cet outil écrit ou lance un calcul.");
         }

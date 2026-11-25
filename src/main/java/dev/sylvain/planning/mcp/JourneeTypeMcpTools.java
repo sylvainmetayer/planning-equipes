@@ -162,6 +162,7 @@ public class JourneeTypeMcpTools {
         return toView(referenceDataService.setCalendrierJourneesTypes(reecrit));
     }
 
+    @Computes
     @Tool(
             name = "previsualiser_application_journees_types",
             description = "Prévisualise ce qu'appliquer le calendrier changerait sur la grille — créneaux conservés, "
@@ -195,6 +196,7 @@ public class JourneeTypeMcpTools {
         return toView(referenceDataService.applyJourneesTypes());
     }
 
+    @Computes
     @Tool(
             name = "previsualiser_reconnaissance_journees_types",
             description = "Montre les journées types que la grille actuelle implique — chaque date aux mêmes "

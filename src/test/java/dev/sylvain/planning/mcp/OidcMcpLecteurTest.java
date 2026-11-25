@@ -105,6 +105,10 @@ class OidcMcpLecteurTest {
             JsonNode calcul = call(lecteur, "lancer_solveur", "{\"edition\":\"E1\"}");
             assertThat(isError(calcul)).isTrue();
             assertThat(calcul.toString()).contains(REFUS_ECRITURE);
+            // A read-only tool that computes (@Computes): refused as a write.
+            JsonNode simulation = call(lecteur, "diagnostiquer_plan", "{\"edition\":\"E1\"}");
+            assertThat(isError(simulation)).isTrue();
+            assertThat(simulation.toString()).contains(REFUS_ECRITURE);
             JsonNode sansEdition = call(lecteur, "supprimer_job", "{\"jobId\":\"x\"}");
             assertThat(isError(sansEdition)).isTrue();
             assertThat(sansEdition.toString()).contains(REFUS_ECRITURE);
