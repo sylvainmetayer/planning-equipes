@@ -19,6 +19,8 @@ export APP_IMAGE=${APP_IMAGE:-ghcr.io/sylvainmetayer/planning-equipes:main}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)}
 export ADMIN_PASSWORD
 playwright=1.65.1
+# ImageMagick 7 s'appelle magick, la 6 (Debian, Ubuntu) convert
+magick() { if type -P magick >/dev/null; then command magick "$@"; else convert "$@"; fi; }
 brut=$(mktemp -d)
 compose=(docker compose -f "$racine/docker-compose.yml" -f "$racine/site/scripts/tournage/compose.yml" --profile app)
 

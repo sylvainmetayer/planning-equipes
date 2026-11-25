@@ -174,7 +174,7 @@ async function ecrans(browser, etat, lang) {
 const ECRANS_DOCS = [
   ['comptes', '/parametres?onglet=comptes'],
   ['historique-auteur', '/parametres?onglet=historique', async (page) => {
-    await page.getByRole('button', { name: 'Administration', exact: true }).click();
+    await page.locator('mat-button-toggle').filter({ hasText: 'Administration' }).locator('button').click();
     await pause(1500);
   }],
   ['conformite', '/diagnostic?onglet=conformite'],
@@ -232,9 +232,14 @@ async function ecransDocs(browser, etat, lang) {
   const ctx = await contexte(browser, etat, lang, BUREAU);
   const page = await ctx.newPage();
   for (const [nom, chemin, avant] of ECRANS_DOCS) {
-    await ouvrir(page, chemin);
-    if (avant) await avant(page);
-    await page.screenshot({ path: join(dossier, `docs-${nom}.png`) });
+    // Un écran qui échoue est dit et sauté : le tournage coûte plus cher que la reprise d'un seul plan
+    try {
+      await ouvrir(page, chemin);
+      if (avant) await avant(page);
+      await page.screenshot({ path: join(dossier, `docs-${nom}.png`) });
+    } catch (e) {
+      console.error(`ECHEC ${nom} : ${String(e.message).split('\n')[0]}`);
+    }
   }
   await ctx.close();
 
