@@ -258,7 +258,8 @@
       "guide": "Guide (French)",
       "section": "Section (French)",
       "page": "Page",
-      "bouton": "Search"
+      "bouton": "Search",
+      "erreur": "Loading error: search is unavailable, try again."
     }
   },
   "palette": {
@@ -273,6 +274,7 @@
     "guide": "Guide",
     "section": "Section",
     "page": "Page",
-    "bouton": "Rechercher"
+    "bouton": "Rechercher",
+    "erreur": "Erreur de chargement : la recherche est indisponible, réessayez."
   }
 }

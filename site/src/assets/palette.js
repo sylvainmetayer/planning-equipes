@@ -38,10 +38,17 @@ if (dialog && typeof dialog.showModal === 'function') {
   let results = [];
   let active = -1;
 
-  const load = () =>
-    (index ??= fetch('/search.json')
-      .then((r) => (r.ok ? r.json() : []))
-      .catch(() => []));
+  // null when the index cannot be fetched; a failure is not kept, the next opening tries again
+  const load = () => {
+    index ??= fetch('/search.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((json) => {
+        if (!json) index = undefined;
+        return json;
+      });
+    return index;
+  };
 
   const say = (n, q) => {
     if (!q.trim()) return t.tAide;
@@ -61,8 +68,13 @@ if (dialog && typeof dialog.showModal === 'function') {
 
   const run = async () => {
     const q = input.value;
-    const found = search(await load(), q, lang);
+    const data = await load();
     if (q !== input.value) return; // a later keystroke owns the list
+    if (!data) {
+      status.textContent = t.tErreur;
+      return;
+    }
+    const found = search(data, q, lang);
     results = found;
     list.replaceChildren(
       ...found.map((r, i) => {
@@ -151,8 +163,9 @@ if (dialog && typeof dialog.showModal === 'function') {
   const q = new URLSearchParams(location.search).get('q')?.trim() ?? '';
   if (form && q) {
     form.querySelector('input[name="q"]').value = q;
-    const found = search(await load(), q, lang);
-    document.querySelector('[data-search-status]').textContent = say(found.length, q);
+    const data = await load();
+    const found = data ? search(data, q, lang) : [];
+    document.querySelector('[data-search-status]').textContent = data ? say(found.length, q) : t.tErreur;
     const out = document.querySelector('[data-search-results]');
     out.replaceChildren(
       ...found.map((r) => {

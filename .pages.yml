@@ -97,6 +97,7 @@ content:
           - { name: placeholder, label: "Texte d'aide du champ", type: string, required: true }
           - { name: fermer, label: "Bouton fermer", type: string, required: true }
           - { name: aide, label: "Message avant toute saisie", type: string, required: true }
+          - { name: erreur, label: "Message si l'index ne se charge pas", type: string, required: true }
           - { name: un, label: "Un résultat ({q} : les mots cherchés)", type: string, required: true }
           - { name: plusieurs, label: "Plusieurs résultats ({n} : leur nombre, {q} : les mots cherchés)", type: string, required: true }
           - { name: aucun, label: "Aucun résultat ({q} : les mots cherchés)", type: string, required: true }
@@ -184,6 +185,7 @@ content:
               - { name: placeholder, label: "Texte d'aide du champ", type: string, required: true }
               - { name: fermer, label: "Bouton fermer", type: string, required: true }
               - { name: aide, label: "Message avant toute saisie", type: string, required: true }
+              - { name: erreur, label: "Message si l'index ne se charge pas", type: string, required: true }
               - { name: un, label: "Un résultat ({q} : les mots cherchés)", type: string, required: true }
               - { name: plusieurs, label: "Plusieurs résultats ({n} : leur nombre, {q} : les mots cherchés)", type: string, required: true }
               - { name: aucun, label: "Aucun résultat ({q} : les mots cherchés)", type: string, required: true }
