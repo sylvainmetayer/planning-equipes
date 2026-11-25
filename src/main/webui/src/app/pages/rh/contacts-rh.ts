@@ -21,8 +21,8 @@ import { errorText, retainedValue } from '../../core/resource-state';
 import { StatusMessage } from '../../shared/status-message';
 import {
   BrouillonContacts,
-  brouillonDe,
-  contactsDe,
+  draftOf,
+  contactsOf,
   hasRepresentative,
   journalText,
   telHref,
@@ -63,14 +63,14 @@ export class ContactsRh {
   protected readonly erreur = errorText(this.contacts);
 
   protected readonly editing = signal<string | null>(null);
-  protected readonly brouillon = signal<BrouillonContacts>(brouillonDe(null));
+  protected readonly brouillon = signal<BrouillonContacts>(draftOf(null));
   protected readonly saving = signal(false);
 
   protected readonly hasRepresentative = hasRepresentative;
   protected readonly telHref = telHref;
 
   protected edit(ligne: ContactAnimateurView): void {
-    this.brouillon.set(brouillonDe(ligne.contacts));
+    this.brouillon.set(draftOf(ligne.contacts));
     this.editing.set(ligne.animateurId);
   }
 
@@ -84,7 +84,7 @@ export class ContactsRh {
       const saved = await this.api.saveContacts(
         this.editionId(),
         ligne.animateurId,
-        contactsDe(this.brouillon()),
+        contactsOf(this.brouillon()),
       );
       for (const avertissement of saved.avertissements) {
         this.notifications.notify({

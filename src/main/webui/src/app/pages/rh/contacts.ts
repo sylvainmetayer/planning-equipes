@@ -10,7 +10,7 @@ export interface BrouillonContacts {
   representantTelephone: string;
 }
 
-export function brouillonDe(contacts: ContactsAnimateur | null | undefined): BrouillonContacts {
+export function draftOf(contacts: ContactsAnimateur | null | undefined): BrouillonContacts {
   return {
     urgenceNom: contacts?.urgenceNom ?? '',
     urgenceTelephone: contacts?.urgenceTelephone ?? '',
@@ -20,7 +20,7 @@ export function brouillonDe(contacts: ContactsAnimateur | null | undefined): Bro
 }
 
 /** The body sent: blanks stay blank, the server trims and drops them. */
-export function contactsDe(brouillon: BrouillonContacts): ContactsAnimateur {
+export function contactsOf(brouillon: BrouillonContacts): ContactsAnimateur {
   return { ...brouillon };
 }
 

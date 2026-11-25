@@ -15,7 +15,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
-import { BrouillonContacts, brouillonDe, contactsDe } from '../rh/contacts';
+import { BrouillonContacts, draftOf, contactsOf } from '../rh/contacts';
 
 /**
  * « Mes contacts »: the animateur's own emergency contact and, for a minor, their legal
@@ -34,6 +34,7 @@ import { BrouillonContacts, brouillonDe, contactsDe } from '../rh/contacts';
     StatusMessage,
   ],
   templateUrl: './espace-contacts-page.html',
+  styleUrl: '../../../styles/espace-disponibilites.css',
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -45,7 +46,7 @@ export class EspaceContactsPage implements OnInit {
   protected readonly error = signal('');
   protected readonly warning = signal('');
   protected readonly saved = signal(false);
-  protected readonly brouillon = signal<BrouillonContacts>(brouillonDe(null));
+  protected readonly brouillon = signal<BrouillonContacts>(draftOf(null));
 
   ngOnInit(): void {
     void this.load();
@@ -53,7 +54,7 @@ export class EspaceContactsPage implements OnInit {
 
   private async load(): Promise<void> {
     try {
-      this.brouillon.set(brouillonDe(await this.espace.contacts()));
+      this.brouillon.set(draftOf(await this.espace.contacts()));
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -71,8 +72,8 @@ export class EspaceContactsPage implements OnInit {
     this.error.set('');
     this.warning.set('');
     try {
-      const answer = await this.espace.enregistrerContacts(contactsDe(this.brouillon()));
-      this.brouillon.set(brouillonDe(answer.contacts));
+      const answer = await this.espace.saveContacts(contactsOf(this.brouillon()));
+      this.brouillon.set(draftOf(answer.contacts));
       this.warning.set(answer.avertissements.map((a) => a.message).join(' '));
       this.saved.set(true);
     } catch (error) {
