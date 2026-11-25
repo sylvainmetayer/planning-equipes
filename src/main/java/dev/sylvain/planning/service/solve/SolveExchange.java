@@ -502,7 +502,7 @@ public final class SolveExchange {
     }
 
     /** An allow-list, not an ignore-list: what the rules read of a person, and nothing a new field adds. */
-    @JsonIncludeProperties({"id", "dateNaissance", "competences", "souhaits", "joursIndisponibles", "ninja"})
+    @JsonIncludeProperties({"id", "dateNaissance", "competences", "souhaits", "joursIndisponibles", "polyvalent"})
     private abstract static class AnimateurMixin {}
 
     /** The resolved opening hours the rules reason on, which the referential API recomputes instead of serving. */

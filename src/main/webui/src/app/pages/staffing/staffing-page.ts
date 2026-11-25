@@ -87,7 +87,7 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
  *
  * A polyvalent counts as a specialist only where they declared the competence,
  * and shows up apart as a reinforcement everywhere else — the same asymmetry
- * the "le ninja est un renfort, jamais un spécialiste" decision settles for the
+ * the "le polyvalent est un renfort, jamais un spécialiste" decision settles for the
  * fragilité screen, so two neighbouring screens do not answer the same question
  * two different ways.
  *
@@ -341,10 +341,10 @@ export class StaffingPage implements OnInit {
         ? $localize`:@@staffing.competence.noBottleneck:Aucun goulot : chaque typologie compte au moins autant de spécialistes que sa borne.`
         : $localize`:@@staffing.competence.noBottleneckWithReserve:Aucun goulot : chaque typologie compte au moins autant de spécialistes que sa borne, et ${polyvalents}:reserve: polyvalents restent mobilisables en renfort sur n'importe laquelle.`;
     }
-    if (!competence.typologieNinjaDefinie) {
-      // A reserve of zero because no typologie carries the ninja flag is not a
+    if (!competence.typologiePolyvalenteDefinie) {
+      // A reserve of zero because no typologie carries the polyvalent flag is not a
       // shortage of backup: there is no such notion in this référentiel.
-      return $localize`:@@staffing.competence.shortfallWithoutNinja:${manque}:manque: places de plus que de spécialistes sur les typologies ci-dessous. Aucune typologie n'est marquée « polyvalente » : il n'existe aucun renfort pour les absorber.`;
+      return $localize`:@@staffing.competence.shortfallWithoutPolyvalent:${manque}:manque: places de plus que de spécialistes sur les typologies ci-dessous. Aucune typologie n'est marquée « polyvalente » : il n'existe aucun renfort pour les absorber.`;
     }
     if (manque <= polyvalents) {
       return $localize`:@@staffing.competence.absorbable:${manque}:manque: places de plus que de spécialistes, cumulées sur les typologies ci-dessous. Les ${polyvalents}:reserve: polyvalents peuvent y répondre en renfort, mais chacun ne couvre qu'un siège à la fois.`;
@@ -365,7 +365,7 @@ export class StaffingPage implements OnInit {
   protected readonly siegesReservesLabel = computed(() => {
     const competence = this.competence();
     const sieges = competence?.siegesReservesAuxPolyvalents ?? 0;
-    return competence?.typologieNinjaDefinie
+    return competence?.typologiePolyvalenteDefinie
       ? $localize`:@@staffing.competence.polyvalentsOnly:${sieges}:count: sièges appartiennent à des stands ne proposant aucune typologie : seuls les polyvalents peuvent les tenir, ils sont donc comptés dans la ligne de la typologie polyvalente.`
       : $localize`:@@staffing.competence.nobodyEligible:${sieges}:count: sièges appartiennent à des stands sans typologie, et aucune typologie n'est marquée « polyvalente » : personne ne peut les tenir. Renseignez la typologie de ces stands.`;
   });
@@ -381,7 +381,7 @@ export class StaffingPage implements OnInit {
    * `aria-hidden`, which drops the tooltip's `aria-describedby` — the label
    * has to be carried explicitly. Same trap as the shell's icon buttons.
    */
-  protected readonly ninjaTooltip = $localize`:@@staffing.competence.ninjaTooltip:Typologie des polyvalents : ils peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent.`;
+  protected readonly polyvalentTooltip = $localize`:@@staffing.competence.polyvalentTooltip:Typologie des polyvalents : ils peuvent tenir n'importe quel stand, mais ne comptent comme spécialistes que dans les compétences qu'ils déclarent.`;
 
   protected jourCritiqueLabel(jour: JourStaffing): string {
     const date = jour.date;

@@ -12,7 +12,7 @@ L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, u
 
 | Référentiel | Colonnes obligatoires | Facultatives |
 | --- | --- | --- |
-| Typologies | `code`, `libelle` | `ninja` |
+| Typologies | `code`, `libelle` | `polyvalent` (l'ancien en-tête `ninja` est encore lu en 4.x) |
 | Emplacements | `code`, `nom` | `latitude`, `longitude` |
 | Stands | `code`, `nom`, `typologies` | `effectifMin`, `effectifMax` |
 | Créneaux | `date`, `heureDebut`, `heureFin` | `couverturePause` |

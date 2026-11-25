@@ -92,8 +92,8 @@ class RefusedWhileSolvingStructuralTest {
 
     /** A read says so in its name; nothing named this way may write ({@link #noMethodReadByItsNameWrites}). */
     private static final Pattern READ = Pattern.compile("^(list|find|get|count|preview|resolve|exemple|export|volumes"
-            + "|labels|validateIds|calendrier|etat|ninja|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
-            + "|typologieNinja|abonnementToken|idBy|idsBy|typologyIdsBy|report|joursEvenement|on[A-Z]"
+            + "|labels|validateIds|calendrier|etat|polyvalent|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
+            + "|typologiePolyvalent|abonnementToken|idBy|idsBy|typologyIdsBy|report|joursEvenement|on[A-Z]"
             + "|standsOnOwnHours|apercu|byDate|creneauxAjoutes|datesSousConsigne|indicateurs|lignesJourneesModifiees"
             + "|preselection|check|fenetre|impact|is[A-Z]|libelle|pendingDemandes|decisionsNonCommuniquees|simulate"
             + "|absentCount|suggestions|between|build|configuredWeight|constraintWeights|disabledContraintes"

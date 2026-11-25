@@ -17,7 +17,7 @@ Le type d'événement change les priorités : voir [un planning de festival](/pl
 Une **typologie** est un genre de jeu ou d'activité. C'est le vocabulaire commun entre les compétences des animateurs et ce que propose un stand. Elles se gèrent dans l'onglet *Typologies* de la page Stands.
 
 1. Ouvrez *Stands*, onglet *Typologies*.
-2. Créez chaque typologie. Vous pouvez y fixer le plafond de créneaux qu'un animateur peut y tenir, et cocher la typologie « ninja », celle des polyvalents, directement dans le tableau.
+2. Créez chaque typologie. Vous pouvez y fixer le plafond de créneaux qu'un animateur peut y tenir, et cocher la typologie « polyvalente », celle des polyvalents, directement dans le tableau.
 3. Lisez les chiffres de chaque ligne : combien de personnes la maîtrisent, combien l'ont souhaitée et combien de stands la proposent. Chaque chiffre mène à la liste qu'il compte.
 
 Un badge signale une typologie **orpheline** (proposée par un stand, maîtrisée par personne hors polyvalents), **fragile** (une seule personne) ou **inutilisée** (aucun stand). L'état de l'édition compte les orphelines avant tout calcul. Une fois un planning calculé, trois colonnes disent ce qu'il en a fait : les postes, les heures, et les personnes affectées sans la compétence.

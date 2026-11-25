@@ -161,7 +161,7 @@ public class EspaceAnimateurService {
      * One of the animateur's seats in the persisted planning.
      *
      * @param emplacementNom where the stand is set up, {@code null} when it is
-     *                       attached to no emplacement — « Ninja 14h-18h »
+     *                       attached to no emplacement — « Polyvalent 14h-18h »
      *                       alone leaves a volunteer asking somebody which hall
      *                       to look in, which occupies two people instead of
      *                       zero (issue #534)

@@ -1,5 +1,5 @@
 // The smallest form of the application, and the one carrying a field the user
-// never sees: `ninja`. Only one typologie may hold it, it is set from a
+// never sees: `polyvalent`. Only one typologie may hold it, it is set from a
 // dedicated select on the list page, and a PUT replaces the whole row — so a
 // dialog that forgot to carry it over would silently clear it on any edit.
 //
@@ -99,7 +99,7 @@ describe('TypologieFormDialog', () => {
   });
 
   it('titles itself after the typologie it was opened on', async () => {
-    const { fixture } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false });
+    const { fixture } = monter({ id: 'ambiance', label: 'Ambiance', polyvalent: false });
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
@@ -121,7 +121,7 @@ describe('TypologieFormDialog', () => {
   });
 
   it('shows the drawn identifier read-only on an edit, and asks none on a creation', async () => {
-    const { fixture } = monter({ id: 'T3', label: 'Ambiance', ninja: false });
+    const { fixture } = monter({ id: 'T3', label: 'Ambiance', polyvalent: false });
     await fixture.whenStable();
     expect((champ(fixture, 'id') as HTMLInputElement).readOnly).toBe(true);
     expect(champ(fixture, 'id').value).toBe('T3');
@@ -153,7 +153,11 @@ describe('TypologieFormDialog', () => {
   });
 
   it('fills the form from the typologie and saves the edited values, trimmed', async () => {
-    const { fixture, save, close } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false });
+    const { fixture, save, close } = monter({
+      id: 'ambiance',
+      label: 'Ambiance',
+      polyvalent: false,
+    });
     await fixture.whenStable();
     expect(champ(fixture, 'label').value).toBe('Ambiance');
 
@@ -169,7 +173,7 @@ describe('TypologieFormDialog', () => {
       id: 'ambiance',
       code: null,
       label: 'Ambiance festive',
-      ninja: false,
+      polyvalent: false,
       maxCreneauxParAnimateur: null,
       description: null,
       modifieLe: null,
@@ -183,7 +187,7 @@ describe('TypologieFormDialog', () => {
     const { fixture, save } = monter({
       id: 'hommes-jeu',
       label: 'Hommes jeu',
-      ninja: false,
+      polyvalent: false,
       maxCreneauxParAnimateur: 4,
     });
     await fixture.whenStable();
@@ -214,7 +218,7 @@ describe('TypologieFormDialog', () => {
     const { fixture, save } = monter({
       id: 'strategie',
       label: 'Stratégie',
-      ninja: false,
+      polyvalent: false,
       description: "Nécessite d'apprendre 45 jeux",
     });
     await fixture.whenStable();
@@ -234,23 +238,23 @@ describe('TypologieFormDialog', () => {
     expect(save.mock.calls[0][1]).toMatchObject({ description: null });
   });
 
-  it('carries the ninja flag over untouched, since a PUT replaces the whole row', async () => {
-    const { fixture, save } = monter({ id: 'ninja', label: 'Ninja', ninja: true });
+  it('carries the polyvalent flag over untouched, since a PUT replaces the whole row', async () => {
+    const { fixture, save } = monter({ id: 'polyvalent', label: 'Polyvalent', polyvalent: true });
     await fixture.whenStable();
 
-    saisir(fixture, 'label', 'Ninja warrior');
+    saisir(fixture, 'label', 'Polyvalent warrior');
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
 
     // The flag is invisible in this dialog: dropping it would silently move the
-    // ninja typologie to nothing on the next label fix.
-    expect(save.mock.calls[0][1]).toMatchObject({ ninja: true });
+    // polyvalent typologie to nothing on the next label fix.
+    expect(save.mock.calls[0][1]).toMatchObject({ polyvalent: true });
   });
 
   it('keeps the dialog open when the save is refused', async () => {
     const { fixture, close } = monter(
-      { id: 'ambiance', label: 'Ambiance', ninja: false },
+      { id: 'ambiance', label: 'Ambiance', polyvalent: false },
       { saveOk: false },
     );
     await fixture.whenStable();
@@ -273,7 +277,7 @@ describe('TypologieFormDialog', () => {
 
   it('disables the whole form and says why while a solve is running', async () => {
     const { fixture } = monter(
-      { id: 'ambiance', label: 'Ambiance', ninja: false },
+      { id: 'ambiance', label: 'Ambiance', polyvalent: false },
       { editingLocked: true },
     );
     await fixture.whenStable();

@@ -18,7 +18,7 @@ import javax.sql.DataSource;
  * {@link #prepareScoped}, and nine wrote the
  * {@code setAutoCommit(false)}/{@code commit}/{@code rollback} dance by hand.
  * That boilerplate is not a cosmetic problem: it is exactly where the
- * cross-edition ninja bug got in. The author needed a placeholder in a
+ * cross-edition polyvalent-flag bug got in. The author needed a placeholder in a
  * position the local helper did not offer, dropped to
  * {@code connection.prepareStatement} — and the {@code edition_id} predicate
  * went with it, silently, for two releases.</p>

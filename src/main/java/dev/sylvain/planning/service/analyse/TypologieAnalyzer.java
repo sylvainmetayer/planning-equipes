@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * what it weighs.
  *
  * <p>Nothing carried that reading (issue #590). The Typologies screen is a pure
- * referential — id, label, ninja — and its detail view lists the animateurs
+ * referential — id, label, polyvalent — and its detail view lists the animateurs
  * <i>vetted</i> on a typologie, never the ones the solver put there. The
  * assignment views are organised by stand, by day or by person. Yet the
  * typologie is the axis the organiser reasons about its games on, and the one a
@@ -112,7 +112,7 @@ public class TypologieAnalyzer {
         return new LigneTypologie(
                 id,
                 item == null ? id : item.label(),
-                item != null && item.ninja(),
+                item != null && item.polyvalent(),
                 item == null ? null : item.maxCreneauxParAnimateur(),
                 item == null ? null : item.description(),
                 noms(affectes, nomParAnimateur),
@@ -223,11 +223,11 @@ public class TypologieAnalyzer {
      * @param heuresParJour            the same hours, ISO day by ISO day; a day
      *                                 the typologie was not held has no entry
      */
-    @Schema(requiredProperties = {"ninja", "heures", "postes"})
+    @Schema(requiredProperties = {"polyvalent", "heures", "postes"})
     public record LigneTypologie(
             String typologie,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             Integer maxCreneauxParAnimateur,
             String description,
             List<AnimateurTypologie> animateursAffectes,

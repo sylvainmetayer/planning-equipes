@@ -8,7 +8,7 @@ Un identifiant n'est jamais choisi par l'appelant ([ADR 0050](repo:docs/decision
 
 Les stands, typologies et emplacements portent un `code` facultatif (`STRATEGIE`, `JEU-LIBRE`), unique dans l'édition (`409` s'il est pris) et jamais de la forme d'un identifiant (`400`) : c'est la clé que les fichiers d'import citent. Une typologie citée par un stand ou un animateur (`typologiesProposees`, `competences`, `souhaits`) s'écrit par identifiant ou par code, et c'est l'identifiant qui est enregistré. Un nom d'édition de la forme `E` suivi d'un nombre est refusé (`400`) : l'argument `edition` des outils MCP le prendrait pour un identifiant.
 
-Les typologies forment un référentiel référencé par clé étrangère : un `id` inconnu répond `400`, supprimer une typologie encore utilisée aussi. `ninja` désigne la typologie des profils polyvalents, au plus une à la fois : la poser sur une autre retire le drapeau de la précédente.
+Les typologies forment un référentiel référencé par clé étrangère : un `id` inconnu répond `400`, supprimer une typologie encore utilisée aussi. `polyvalent` désigne la typologie des profils polyvalents, au plus une à la fois : la poser sur une autre retire le drapeau de la précédente.
 
 ## Ce qu'une écriture exige
 

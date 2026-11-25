@@ -418,14 +418,14 @@ public class EquiteService {
 
     /**
      * The game categories this seat lets the animateur exercise: the stand's,
-     * for a ninja — versatile by definition — and only the ones the animateur
+     * for a polyvalent — versatile by definition — and only the ones the animateur
      * is appreciated for otherwise ({@code QualiteConstraints.likedTypologiesOfPoste}).
      */
     static Set<String> exercisedTypologies(Animateur animateur, Stand stand) {
         if (stand == null || stand.getTypologiesProposees() == null) {
             return Set.of();
         }
-        if (animateur.isNinja()) {
+        if (animateur.isPolyvalent()) {
             return new HashSet<>(stand.getTypologiesProposees());
         }
         Set<String> intersection = new HashSet<>(stand.getTypologiesProposees());

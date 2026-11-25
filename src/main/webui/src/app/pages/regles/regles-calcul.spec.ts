@@ -41,8 +41,8 @@ const LEGAUX = {
   dureeVacationMaxMinutes: 360,
 };
 
-function typologie(id: string, ninja = false): TypologieItem {
-  return { id, label: id, ninja } as TypologieItem;
+function typologie(id: string, polyvalent = false): TypologieItem {
+  return { id, label: id, polyvalent } as TypologieItem;
 }
 
 async function create(typologies: TypologieItem[] = []): Promise<ReglesCalcul> {
@@ -194,32 +194,32 @@ describe('ReglesCalcul', () => {
     expect(solverSettings.setSettings).not.toHaveBeenCalled();
   });
 
-  it('promotes the chosen ninja typologie, letting the server demote the previous one', async () => {
+  it('promotes the chosen polyvalent typologie, letting the server demote the previous one', async () => {
     const calcul = await create([typologie('JEUX', true), typologie('CREATIF')]);
-    expect(calcul['typologieNinjaId']()).toBe('JEUX');
+    expect(calcul['typologiePolyvalentId']()).toBe('JEUX');
 
-    calcul['ninjaDraft'].set('CREATIF');
+    calcul['polyvalentDraft'].set('CREATIF');
     await calcul['save']();
 
     expect(crud.save).toHaveBeenCalledOnce();
-    expect(crud.save.mock.calls[0][1]).toMatchObject({ id: 'CREATIF', ninja: true });
+    expect(crud.save.mock.calls[0][1]).toMatchObject({ id: 'CREATIF', polyvalent: true });
   });
 
   it('clears the flag on the current holder when « Aucune » is picked, and warns', async () => {
     const calcul = await create([typologie('JEUX', true)]);
 
-    calcul['ninjaDraft'].set(null);
-    expect(calcul['alerteNinjaManquant']()).toContain('ninja');
+    calcul['polyvalentDraft'].set(null);
+    expect(calcul['alertePolyvalentManquant']()).toContain('polyvalent');
     await calcul['save']();
 
-    expect(crud.save.mock.calls[0][1]).toMatchObject({ id: 'JEUX', ninja: false });
+    expect(crud.save.mock.calls[0][1]).toMatchObject({ id: 'JEUX', polyvalent: false });
   });
 
   it('puts every field back on « Annuler les modifications »', async () => {
     const calcul = await create([typologie('JEUX', true)]);
     calcul['onValueDraftChange'](10);
     calcul['soireeDraft'].set('18:00');
-    calcul['ninjaDraft'].set(null);
+    calcul['polyvalentDraft'].set(null);
 
     calcul.cancel();
 

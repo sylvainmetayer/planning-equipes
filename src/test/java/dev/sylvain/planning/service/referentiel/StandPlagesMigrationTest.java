@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 /**
  * V141 turns the recurring rules of a stand into dated plages. It runs once on
  * every database in service, so it is played here on a database filled the way
- * 3.x filled it: the migrations up to V139 once, in a schema of their own, then
+ * 3.x filled it: the migrations up to V140 once, in a schema of their own, then
  * for each case the rows and the V141 file itself — not a copy — in a transaction
  * rolled back afterwards.
  *
@@ -57,7 +57,7 @@ class StandPlagesMigrationTest {
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
-    static void migrateUpToV139() throws SQLException {
+    static void migrateUpToV140() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -68,7 +68,7 @@ class StandPlagesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("139")
+                .target("140")
                 .load()
                 .migrate();
     }

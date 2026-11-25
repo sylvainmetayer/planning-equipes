@@ -43,12 +43,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * training list.</li>
  * </ol>
  *
- * <h2>How a ninja is counted</h2>
+ * <h2>How a polyvalent is counted</h2>
  *
- * <p>{@link Animateur#hasCompetenceFor(Stand)} answers {@code true} for a ninja
+ * <p>{@link Animateur#hasCompetenceFor(Stand)} answers {@code true} for a polyvalent
  * on every stand — polyvalence is exactly what the flag means. Counting them as
  * competent everywhere would make the second question return almost nothing on
- * a referential holding a handful of ninjas, and that emptiness would be a
+ * a referential holding a handful of polyvalents, and that emptiness would be a
  * measurement artefact, not good news.</p>
  *
  * <p>So the two questions count them differently, on purpose:</p>
@@ -56,18 +56,18 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <ul>
  * <li>the <b>competence scarcity</b> list counts only <em>specialists</em> —
  * animateurs holding one of the stand's own typologies — and reports the
- * available ninjas beside them as reinforcements. A stand with one specialist
- * and three ninjas is still a stand with one specialist; it is simply less
+ * available polyvalents beside them as reinforcements. A stand with one specialist
+ * and three polyvalents is still a stand with one specialist; it is simply less
  * severe than one with none;</li>
- * <li>the <b>replaceability</b> of a seat counts ninjas in full: the question
+ * <li>the <b>replaceability</b> of a seat counts polyvalents in full: the question
  * there is whether the seat can be held tomorrow, and the solver does dispatch
- * a ninja on it.</li>
+ * a polyvalent on it.</li>
  * </ul>
  *
- * <p>A referential with no ninja typologie at all makes the two counts
- * coincide, which {@code ninjaConfigure} says out loud so a reader does not
+ * <p>A referential with no polyvalent typologie at all makes the two counts
+ * coincide, which {@code polyvalentConfigure} says out loud so a reader does not
  * take the absence of reinforcements for a shortage. See
- * {@code docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md}.</p>
+ * {@code docs/decisions/0017-fragilite-le-polyvalent-est-un-renfort-pas-un-specialiste.md}.</p>
  *
  * <h2>What this deliberately ignores</h2>
  *
@@ -153,7 +153,7 @@ public class FragiliteAnalyzer {
             requiredProperties = {
                 "affectations",
                 "competencesRares",
-                "ninja",
+                "polyvalent",
                 "postesEffondres",
                 "postesIrremplacables",
                 "postesNonDetailles"
@@ -161,7 +161,7 @@ public class FragiliteAnalyzer {
     public record AnimateurFragilite(
             String animateurId,
             String nom,
-            boolean ninja,
+            boolean polyvalent,
             int affectations,
             int postesEffondres,
             int postesIrremplacables,
@@ -176,7 +176,7 @@ public class FragiliteAnalyzer {
      * @param specialistes animateurs holding one of the stand's typologies and
      *                     free that day — zero or one, by construction
      * @param animateurId  the single specialist, {@code null} when there is none
-     * @param renforts     ninjas free that day, who could stand in
+     * @param renforts     polyvalents free that day, who could stand in
      * @param pourvu       true when the plan already staffs the group in full
      */
     @Schema(requiredProperties = {"creneauId", "jour", "pourvu", "renforts", "specialistes"})
@@ -217,7 +217,7 @@ public class FragiliteAnalyzer {
                 "groupesAnalyses",
                 "groupesDejaSousEffectif",
                 "groupesSansSpecialiste",
-                "ninjaConfigure",
+                "polyvalentConfigure",
                 "totalCompetencesRares"
             })
     public record RapportFragilite(
@@ -228,13 +228,13 @@ public class FragiliteAnalyzer {
             int groupesAnalyses,
             int groupesDejaSousEffectif,
             int animateursIrremplacables,
-            boolean ninjaConfigure,
+            boolean polyvalentConfigure,
             boolean aucunAnimateur,
             String message) {}
 
     /**
      * Scarcity rows worst first: a group nobody is competent for, then one
-     * specialist and no ninja, then the mitigated ones — and inside a severity,
+     * specialist and no polyvalent, then the mitigated ones — and inside a severity,
      * the groups the plan already staffs, since those are the ones a withdrawal
      * would empty tomorrow.
      */
@@ -341,7 +341,7 @@ public class FragiliteAnalyzer {
             List<CompetenceRare> competencesRares,
             int groupesAnalyses,
             int groupesDejaSousEffectif,
-            boolean ninjaConfigure,
+            boolean polyvalentConfigure,
             boolean aucunAnimateur) {}
 
     /** The screen's report: {@link #findings} with its two lists capped. */
@@ -352,7 +352,7 @@ public class FragiliteAnalyzer {
                 .map(ligne -> new AnimateurFragilite(
                         ligne.animateurId(),
                         ligne.nom(),
-                        ligne.ninja(),
+                        ligne.polyvalent(),
                         ligne.affectations(),
                         ligne.postesEffondres(),
                         ligne.postesIrremplacables(),
@@ -379,7 +379,7 @@ public class FragiliteAnalyzer {
                 findings.groupesAnalyses(),
                 findings.groupesDejaSousEffectif(),
                 animateursIrremplacables,
-                findings.ninjaConfigure(),
+                findings.polyvalentConfigure(),
                 findings.aucunAnimateur(),
                 findings.aucunAnimateur()
                         ? MESSAGE_SANS_ANIMATEUR
@@ -400,7 +400,7 @@ public class FragiliteAnalyzer {
 
         Map<SeatGroupKey, SeatGroup> groupes = groupSeats(postes);
         Map<String, List<Interval>> busy = busyIntervals(postes);
-        boolean ninjaConfigure = animateurs.stream().anyMatch(Animateur::isNinja);
+        boolean polyvalentConfigure = animateurs.stream().anyMatch(Animateur::isPolyvalent);
 
         List<CompetenceRare> rares = new ArrayList<>();
         Map<String, Integer> raresParAnimateur = new HashMap<>();
@@ -429,7 +429,7 @@ public class FragiliteAnalyzer {
                 List.copyOf(rares),
                 groupes.size(),
                 dejaSousEffectif,
-                ninjaConfigure,
+                polyvalentConfigure,
                 animateurs.isEmpty());
     }
 
@@ -486,7 +486,7 @@ public class FragiliteAnalyzer {
             lignes.add(new AnimateurFragilite(
                     animateur.getId(),
                     animateur.nomAffiche(),
-                    animateur.isNinja(),
+                    animateur.isPolyvalent(),
                     total,
                     fragiles.size(),
                     irremplacables,
@@ -515,7 +515,7 @@ public class FragiliteAnalyzer {
 
     /**
      * Animateurs holding one of the stand's own typologies, free that day and
-     * old enough for it. The blanket "a ninja is competent everywhere" rule of
+     * old enough for it. The blanket "a polyvalent is competent everywhere" rule of
      * {@link Animateur#hasCompetenceFor(Stand)} is deliberately not used here —
      * see the class javadoc.
      */
@@ -527,12 +527,12 @@ public class FragiliteAnalyzer {
                 .toList();
     }
 
-    /** Ninjas free that day who are not already counted as specialists. */
+    /** Polyvalents free that day who are not already counted as specialists. */
     private static List<Animateur> reinforcements(
             List<Animateur> animateurs, SeatGroup groupe, List<Animateur> specialistes) {
         Set<String> deja = specialistes.stream().map(Animateur::getId).collect(Collectors.toSet());
         return animateurs.stream()
-                .filter(Animateur::isNinja)
+                .filter(Animateur::isPolyvalent)
                 .filter(animateur -> !deja.contains(animateur.getId()))
                 .filter(animateur -> available(animateur, groupe))
                 .toList();
@@ -547,7 +547,7 @@ public class FragiliteAnalyzer {
     }
 
     /**
-     * How many of the competent animateurs — specialists <em>and</em> ninjas,
+     * How many of the competent animateurs — specialists <em>and</em> polyvalents,
      * since either can hold the seat — are neither already in the group nor
      * busy elsewhere at that very moment.
      */

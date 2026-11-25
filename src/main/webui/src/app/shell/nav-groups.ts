@@ -317,7 +317,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'calcul',
               $localize`:@@regles.onglet.calcul:Calcul`,
-              $localize`:@@nav.keywords.reglesCalcul:budget durée ninja soirée`,
+              $localize`:@@nav.keywords.reglesCalcul:budget durée polyvalent soirée`,
             ),
           ],
         },

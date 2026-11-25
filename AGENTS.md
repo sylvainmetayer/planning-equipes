@@ -959,6 +959,7 @@ visible half of the third, a French word that carries an accent.
 | `VerrouillagePlanning` | *lock* | |
 | `DemandeEchange` | *swap request* | |
 | `Typologie` | *game category* | a CRUD referential, not an enum |
+| `Polyvalent` | *polyvalent* | the animateur holding the one typologie flagged `polyvalent` (formerly `ninja`, renamed in 4.0): eligible on any stand, a reinforcement and never a specialist |
 | `Horaire` | *opening hours* | |
 | `ConsigneEdition` | *consigne* | **not translated** — "directive" and "instruction" both lose what the French word carries: an order received from outside (an arrêté) and relayed as such to the whole event. Its *bande* is *the band* in prose; `PrereglageConsigne` is *a preset* |
 | `Vacation` | ***shift*** | false friend: English *vacation* means holidays |

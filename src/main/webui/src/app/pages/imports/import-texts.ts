@@ -14,7 +14,7 @@ export function referentialImportTexts(target: ReferentielImportTarget): Referen
   switch (target) {
     case 'TYPOLOGIES':
       return {
-        colonnes: $localize`:@@imports.typologies.colonnes:Colonnes « code » et « libelle », obligatoires ; « ninja » facultative pour la typologie polyvalente. Un code vide désigne la ligne par son libellé.`,
+        colonnes: $localize`:@@imports.typologies.colonnes:Colonnes « code » et « libelle », obligatoires ; « polyvalent » facultative (l'ancien en-tête « ninja » reste lu). Un code vide désigne la ligne par son libellé.`,
         aide: $localize`:@@imports.typologies.aide:Le code est ce que les stands et les compétences citeront : court et stable. Un code déjà connu voit son libellé mis à jour ; l'identifiant, lui, est attribué par l'application.`,
       };
     case 'EMPLACEMENTS':

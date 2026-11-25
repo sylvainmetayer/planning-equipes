@@ -55,11 +55,35 @@ public final class ScenarioMigrations {
     public record Migrated(Map<String, Object> document, List<String> warnings) {}
 
     /**
-     * 1 → 2: the version that opens the 4.x chain. It changes no key by itself;
-     * the links of the model changes of 4.0 come after it, each in its own pull
-     * request. Kept as a link so that the mechanism is in place and tested.
+     * 1 → 2, the version that opens the 4.x chain; the links of the model
+     * changes of 4.0 are folded into it, as 4.0 is not released yet:
+     * <ul>
+     *   <li>{@code typologies[].ninja} becomes {@code polyvalent} (a file that
+     *       already carries {@code polyvalent} keeps it).</li>
+     * </ul>
      */
     static Map<String, Object> v1ToV2(Map<String, Object> document, List<String> warnings) {
-        return document;
+        if (!(document.get("typologies") instanceof List<?> typologies)) {
+            return document;
+        }
+        List<Object> converted = new ArrayList<>();
+        for (Object item : typologies) {
+            if (item instanceof Map<?, ?> typologie && typologie.containsKey("ninja")) {
+                Map<String, Object> renamed = new LinkedHashMap<>();
+                typologie.forEach((key, value) -> {
+                    if ("ninja".equals(key)) {
+                        renamed.putIfAbsent("polyvalent", value);
+                    } else {
+                        renamed.put(String.valueOf(key), value);
+                    }
+                });
+                converted.add(renamed);
+            } else {
+                converted.add(item);
+            }
+        }
+        Map<String, Object> result = new LinkedHashMap<>(document);
+        result.put("typologies", converted);
+        return result;
     }
 }

@@ -163,7 +163,7 @@ public class Stand {
         this.reserveMajeurs = reserveMajeurs;
     }
 
-    /** Editor/publisher-tier stand: high-visibility, needs experienced staffing continuity. */
+    /** High-stakes stand: needs experienced staff and continuity (two rules read it). */
     public boolean isPremium() {
         return premium;
     }

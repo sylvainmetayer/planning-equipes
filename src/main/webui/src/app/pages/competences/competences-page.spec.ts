@@ -26,9 +26,9 @@ import { CompetencesPage } from './competences-page';
 import { PastePreviewData, PastePreviewService } from '../../shared/paste-preview-dialog';
 
 const TYPOLOGIES: TypologieItem[] = [
-  { id: 'jeux', label: 'Jeux de société', ninja: false },
-  { id: 'ateliers', label: 'Ateliers', ninja: false },
-  { id: 'ninja', label: 'Ninja', ninja: true },
+  { id: 'jeux', label: 'Jeux de société', polyvalent: false },
+  { id: 'ateliers', label: 'Ateliers', polyvalent: false },
+  { id: 'polyvalent', label: 'Polyvalent', polyvalent: true },
 ];
 
 function roster(): Animateur[] {
@@ -201,7 +201,7 @@ describe('CompetencesPage', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('renders one button per animateur and typologie, the wish and the ninja column marked', async () => {
+  it('renders one button per animateur and typologie, the wish and the polyvalent column marked', async () => {
     const { fixture, store } = mount();
     await fixture.whenStable();
 
@@ -213,9 +213,9 @@ describe('CompetencesPage', () => {
     expect(cellule(fixture, 'A1', 'ateliers').classList.contains('cellule-souhait')).toBe(true);
     expect(cellule(fixture, 'A1', 'ateliers').getAttribute('aria-label')).toContain('souhaitée');
     expect(cellule(fixture, 'B2', 'ateliers').classList.contains('cellule-souhait')).toBe(false);
-    expect(cellule(fixture, 'A1', 'ninja').closest('td')!.classList.contains('colonne-ninja')).toBe(
-      true,
-    );
+    expect(
+      cellule(fixture, 'A1', 'polyvalent').closest('td')!.classList.contains('colonne-polyvalent'),
+    ).toBe(true);
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
@@ -480,8 +480,8 @@ describe('CompetencesPage', () => {
   it('heads a column with its label and code, never with the generated id', async () => {
     const { fixture, store } = mount();
     store.typologies.set([
-      { id: 'T1', code: 'JDS', label: 'Jeux de société', ninja: false },
-      { id: 'T2', label: 'Ateliers', ninja: false },
+      { id: 'T1', code: 'JDS', label: 'Jeux de société', polyvalent: false },
+      { id: 'T2', label: 'Ateliers', polyvalent: false },
     ]);
     await fixture.whenStable();
 

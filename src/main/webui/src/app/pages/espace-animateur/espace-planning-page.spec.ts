@@ -455,7 +455,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       view({
         postes: [poste()],
         changements: [
-          'samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h',
+          'samedi 11/07 : Polyvalent 14h-18h remplace Cirque 14h-18h',
           'dimanche 12/07 : Kubb 10h-12h (nouveau)',
         ],
         changementsLe: '2026-07-05T08:30:00Z',
@@ -467,7 +467,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     expect(
       Array.from(bandeau.querySelectorAll('li')).map((each) => each.textContent!.trim()),
     ).toEqual([
-      'samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h',
+      'samedi 11/07 : Polyvalent 14h-18h remplace Cirque 14h-18h',
       'dimanche 12/07 : Kubb 10h-12h (nouveau)',
     ]);
     // Above the day being read: it is what the button just below asks to
@@ -487,7 +487,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
   });
 
   it('fait passer le bandeau en second plan une fois la présence confirmée', async () => {
-    const changements = ['samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h'];
+    const changements = ['samedi 11/07 : Polyvalent 14h-18h remplace Cirque 14h-18h'];
     await rendre(new Date(2026, 6, 11, 9, 0), view({ postes: [poste()], changements }));
     expect(racine().querySelector('.espace-changements')!.classList).not.toContain(
       'espace-changements-actes',
@@ -513,7 +513,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
 
   it('replie les changements par défaut, en disant combien il y en a', async () => {
     const changements = [
-      'samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h',
+      'samedi 11/07 : Polyvalent 14h-18h remplace Cirque 14h-18h',
       'dimanche 12/07 : Kubb 10h-12h (nouveau)',
       'lundi 13/07 : Molkky 10h-12h (retiré)',
     ];

@@ -42,7 +42,7 @@ public final class ChampsModifies {
         map.put("dateNaissance", Animateur::getDateNaissance);
         map.put("email", Animateur::getEmail);
         map.put("manager", Animateur::isManager);
-        map.put("ninja", Animateur::isNinja);
+        map.put("polyvalent", Animateur::isPolyvalent);
         map.put("competences", Animateur::getCompetences);
         map.put("souhaits", Animateur::getSouhaits);
         map.put("joursIndisponibles", Animateur::getJoursIndisponibles);

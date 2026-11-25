@@ -614,7 +614,7 @@ describe('AnimateursPage table', () => {
 
   it('finds an animateur by the label of a typologie they master, not only by its id', async () => {
     seedStore(referenceData, 'typologies', [
-      { id: 'T1', label: 'Jeux de société', ninja: false } as TypologieItem,
+      { id: 'T1', label: 'Jeux de société', polyvalent: false } as TypologieItem,
     ]);
     await rendre([
       person('alice', { prenom: 'Amélie', nom: 'Nothomb', competences: { T1: 'AUTONOME' } }),

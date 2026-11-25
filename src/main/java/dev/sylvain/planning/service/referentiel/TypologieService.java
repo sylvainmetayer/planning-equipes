@@ -100,7 +100,7 @@ public class TypologieService implements TypologieLibelles {
                         ids.next(connection, IdGenerator.Kind.TYPOLOGIE),
                         code,
                         typologie.label(),
-                        typologie.ninja(),
+                        typologie.polyvalent(),
                         typologie.maxCreneauxParAnimateur(),
                         typologie.description(),
                         null),
@@ -136,7 +136,7 @@ public class TypologieService implements TypologieLibelles {
                         typologie.id(),
                         code,
                         typologie.label(),
-                        typologie.ninja(),
+                        typologie.polyvalent(),
                         typologie.maxCreneauxParAnimateur(),
                         typologie.description(),
                         null),
@@ -165,7 +165,7 @@ public class TypologieService implements TypologieLibelles {
                         id,
                         code,
                         typologie.label(),
-                        typologie.ninja(),
+                        typologie.polyvalent(),
                         typologie.maxCreneauxParAnimateur(),
                         typologie.description(),
                         typologie.modifieLe()),
@@ -207,11 +207,11 @@ public class TypologieService implements TypologieLibelles {
     }
 
     /**
-     * Id of the typologie flagged ninja, if any. Animateurs holding it are the
+     * Id of the typologie flagged polyvalent, if any. Animateurs holding it are the
      * versatile profiles the solver may dispatch on any stand.
      */
-    public Optional<String> ninja() {
-        return repository.findTypologieNinja();
+    public Optional<String> polyvalent() {
+        return repository.findTypologiePolyvalent();
     }
 
     /**

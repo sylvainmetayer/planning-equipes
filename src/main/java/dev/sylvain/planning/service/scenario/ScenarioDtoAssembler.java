@@ -250,7 +250,7 @@ final class ScenarioDtoAssembler {
                         typologie.id(),
                         typologie.code(),
                         typologie.label(),
-                        typologie.ninja(),
+                        typologie.polyvalent(),
                         typologie.maxCreneauxParAnimateur(),
                         typologie.description()))
                 .toList();

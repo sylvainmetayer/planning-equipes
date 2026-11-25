@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -24,12 +25,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *                  {@link ConcurrentModificationGuard}; {@code null} on an item
  *                  built in memory or on a write carrying no precondition
  */
-@Schema(requiredProperties = {"ninja"})
+@Schema(requiredProperties = {"polyvalent"})
 public record TypologieItem(
         String id,
         String code,
         String label,
-        boolean ninja,
+        @JsonAlias("ninja") boolean polyvalent,
         Integer maxCreneauxParAnimateur,
         String description,
         Instant modifieLe) {
@@ -58,8 +59,8 @@ public record TypologieItem(
      * every field of it — the two below are for fixtures, and say so by being
      * short enough that nobody mistakes them for complete.
      */
-    public TypologieItem(String id, String label, boolean ninja) {
-        this(id, null, label, ninja, null, null, null);
+    public TypologieItem(String id, String label, boolean polyvalent) {
+        this(id, null, label, polyvalent, null, null, null);
     }
 
     public TypologieItem(String id, String label) {
@@ -68,11 +69,11 @@ public record TypologieItem(
 
     /** The same item under the id the database gave it. */
     public TypologieItem withId(String id) {
-        return new TypologieItem(id, code, label, ninja, maxCreneauxParAnimateur, description, modifieLe);
+        return new TypologieItem(id, code, label, polyvalent, maxCreneauxParAnimateur, description, modifieLe);
     }
 
     /** The same item, stamped with the moment the database wrote it. */
     public TypologieItem stamped(Instant modifieLe) {
-        return new TypologieItem(id, code, label, ninja, maxCreneauxParAnimateur, description, modifieLe);
+        return new TypologieItem(id, code, label, polyvalent, maxCreneauxParAnimateur, description, modifieLe);
     }
 }

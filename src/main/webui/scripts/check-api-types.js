@@ -7,7 +7,7 @@
  *
  * `models.ts` est écrit à la main et personne ne le confronte au serveur. Six
  * types avaient dérivé sans que rien ne le signale — le serveur envoyait des
- * champs que le front ne déclarait pas (`Animateur.ninja`,
+ * champs que le front ne déclarait pas (`Animateur.polyvalent`,
  * `PlanningEvenement.parametresLegaux`, `JobView.message`…). Rien ne casse à
  * l'exécution : JSON.parse ignore ce qu'on ne lui demande pas. Le front est
  * simplement aveugle à une partie de ce qu'il reçoit, et le reste devient

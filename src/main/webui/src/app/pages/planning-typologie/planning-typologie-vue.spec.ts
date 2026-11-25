@@ -14,7 +14,7 @@ function ligne(typologie: string, label: string, description: string | null): Li
   return {
     typologie,
     label,
-    ninja: false,
+    polyvalent: false,
     maxCreneauxParAnimateur: null,
     description,
     animateursAffectes: qui,

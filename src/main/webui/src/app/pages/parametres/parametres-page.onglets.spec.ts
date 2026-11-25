@@ -267,7 +267,7 @@ describe('ParametresPage — onglets', () => {
     expect(textOf()).toContain('Alerte météo');
     // What decides the plan is not here any more: one line points to it.
     expect(textOf()).not.toContain('Paramètres légaux');
-    expect(textOf()).not.toContain('Typologie ninja');
+    expect(textOf()).not.toContain('Typologie polyvalente');
     expect(textOf()).not.toContain('Sauvegarde automatique');
   });
 

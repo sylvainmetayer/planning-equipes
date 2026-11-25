@@ -17,7 +17,7 @@ Le niveau, la catégorie, la description métier et l'article de loi de chaque r
 | Question | Page |
 |---|---|
 | Pourquoi une règle légale, de pause, de repos ou de semaine est écrite ainsi | [Règles légales et pauses](regles-legales-et-pauses.md) |
-| Typologie ninja, quotas, trajet, covoiturage, seuils de qualité, stabilité du plan publié | [Règles de couverture et de confort](regles-de-couverture-et-de-confort.md) |
+| Typologie polyvalente, quotas, trajet, covoiturage, seuils de qualité, stabilité du plan publié | [Règles de couverture et de confort](regles-de-couverture-et-de-confort.md) |
 | Éteindre, pondérer, lire un plancher, historique de dosage | [Doser et désactiver les règles](doser-et-desactiver-les-regles.md) |
 | Exceptions posées à la main et leurs contradictions | [Les exceptions ad hoc](exceptions-ad-hoc.md) |
 
@@ -116,5 +116,5 @@ Ce tableau est le rendu de `ConstraintCatalog`. Quand le catalogue change, `Docu
 | `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, réglable sur la ligne de la règle : les deux formes le lisent au même endroit. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
-| `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
+| `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie polyvalente) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
 <!-- catalogue:fin -->

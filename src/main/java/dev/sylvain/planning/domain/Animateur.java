@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -50,13 +51,13 @@ public class Animateur {
     private Set<LocalDate> joursIndisponibles = new HashSet<>();
     /**
      * Derived, never stored on the animateur: true when {@link #competences}
-     * contains the typologie flagged "ninja" in the referential. A ninja knows
+     * contains the typologie flagged "polyvalent" in the referential. A polyvalent knows
      * how to adapt, so the solver may dispatch them on any stand — see
      * {@link #hasCompetenceFor(Stand)} — and keeps some of them in reserve
      * (contrainte {@code preserverBufferPolyvalents}). Set when the problem is
-     * built, from the referential's single ninja typologie.
+     * built, from the referential's single polyvalent typologie.
      */
-    private boolean ninja;
+    private boolean polyvalent;
 
     /**
      * When this row was last written (issue #362), read from the referential
@@ -145,11 +146,11 @@ public class Animateur {
     }
 
     /**
-     * A ninja adapts to any stand, so they are competent everywhere; anyone else
+     * A polyvalent adapts to any stand, so they are competent everywhere; anyone else
      * needs at least one competence among the stand's typologies.
      */
     public boolean hasCompetenceFor(Stand stand) {
-        if (ninja) {
+        if (polyvalent) {
             return true;
         }
         // A loop rather than a stream: the move filter asks it of every
@@ -279,21 +280,23 @@ public class Animateur {
         this.accessToken = accessToken;
     }
 
-    /** True when the animateur holds the referential's ninja typologie — see {@link #ninja}. */
-    public boolean isNinja() {
-        return ninja;
+    /** True when the animateur holds the referential's polyvalent typologie — see {@link #polyvalent}. */
+    public boolean isPolyvalent() {
+        return polyvalent;
     }
 
-    public void setNinja(boolean ninja) {
-        this.ninja = ninja;
+    @JsonAlias("ninja")
+    public void setPolyvalent(boolean polyvalent) {
+        this.polyvalent = polyvalent;
     }
 
     /**
-     * Recomputes {@link #ninja} from the referential's ninja typologie id
+     * Recomputes {@link #polyvalent} from the referential's polyvalent typologie id
      * ({@code null} when no typologie carries the flag).
      */
-    public void applyNinjaTypologie(String typologieNinja) {
-        this.ninja = typologieNinja != null && competences != null && competences.containsKey(typologieNinja);
+    public void applyPolyvalentTypologie(String typologiePolyvalent) {
+        this.polyvalent =
+                typologiePolyvalent != null && competences != null && competences.containsKey(typologiePolyvalent);
     }
 
     public Map<String, NiveauCompetence> getCompetences() {

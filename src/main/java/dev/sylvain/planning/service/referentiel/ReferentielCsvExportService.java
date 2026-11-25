@@ -174,9 +174,9 @@ public class ReferentielCsvExportService {
 
     private String csvTypologies() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "code", "libelle", "ninja");
+        ligne(csv, "code", "libelle", "polyvalent");
         for (TypologieItem typologie : typologies.list()) {
-            ligne(csv, text(typologie.code()), typologie.label(), typologie.ninja() ? "oui" : "");
+            ligne(csv, text(typologie.code()), typologie.label(), typologie.polyvalent() ? "oui" : "");
         }
         return csv.toString();
     }

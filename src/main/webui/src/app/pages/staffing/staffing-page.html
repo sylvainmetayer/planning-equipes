@@ -351,7 +351,7 @@
               <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.typologie">Typologie</th>
               <td mat-cell *matCellDef="let row">
                 {{ row.label }}
-                @if (row.ninja) {
+                @if (row.polyvalent) {
                   <!--
                     aria-hidden="false" on purpose: MatIcon hides itself from assistive tech, which
                     would drop the tooltip's own description. Same trap as the shell's icon buttons.
@@ -359,9 +359,9 @@
                   <mat-icon
                     inline
                     aria-hidden="false"
-                    class="staffing-ninja"
-                    [matTooltip]="ninjaTooltip"
-                    [attr.aria-label]="ninjaTooltip"
+                    class="staffing-polyvalent"
+                    [matTooltip]="polyvalentTooltip"
+                    [attr.aria-label]="polyvalentTooltip"
                     >bolt</mat-icon
                   >
                 }
@@ -425,7 +425,7 @@
           </p>
         }
         @if (goulot.siegesReservesAuxPolyvalents > 0) {
-          <p class="empty-hint staffing-caveat" [class.staffing-critical]="!goulot.typologieNinjaDefinie">
+          <p class="empty-hint staffing-caveat" [class.staffing-critical]="!goulot.typologiePolyvalenteDefinie">
             <mat-icon inline aria-hidden="true">person_search</mat-icon>
             <span>{{ siegesReservesLabel() }}</span>
           </p>

@@ -243,7 +243,7 @@ describe('StandBulkEditDialog', () => {
       'Effectif minimum',
       'Effectif maximum',
       'Réservé aux majeurs',
-      'Premium (stand éditeur)',
+      'Stand premium',
       "Niveau d'effort",
       'Que faire des horaires',
     ]);

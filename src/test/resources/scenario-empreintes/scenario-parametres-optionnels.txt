@@ -1,5 +1,5 @@
 .planning.affectationsPubliees = (vide)
-.planning.animateurs[0]  db968b36a6c23958
+.planning.animateurs[0]  f6688fb769e8ad59
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-07-08

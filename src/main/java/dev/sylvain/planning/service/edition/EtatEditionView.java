@@ -118,7 +118,7 @@ public record EtatEditionView(
      *
      * @param typologiesOrphelines game categories a stand proposes and nobody
      *                             holds, polyvalents aside — enough to make the
-     *                             step « à vérifier », since only a ninja can
+     *                             step « à vérifier », since only a polyvalent can
      *                             then take those stands
      */
     @Schema(requiredProperties = {"animateurs", "creneaux", "stands", "statut", "typologiesOrphelines"})

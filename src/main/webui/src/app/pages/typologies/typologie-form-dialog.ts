@@ -61,7 +61,7 @@ export class TypologieFormDialog {
           id: '',
           code: '',
           // A single holder: the copy never takes the flag from its model.
-          ninja: false,
+          polyvalent: false,
           label: copyName(this.data.modele.label),
           modifieLe: null,
         },
@@ -86,14 +86,14 @@ export class TypologieFormDialog {
 
   protected async save(): Promise<void> {
     const draft = this.draft();
-    // ninja is carried over untouched: it is set from the list page's dedicated
+    // polyvalent is carried over untouched: it is set from the list page's dedicated
     // select (only one typologie may hold it), and a PUT replaces the whole row.
     const typologie: TypologieItem = {
       id: draft.id,
       // A blank code is no code: the server keeps the column empty.
       code: draft.code?.trim() || null,
       label: draft.label.trim(),
-      ninja: draft.ninja ?? false,
+      polyvalent: draft.polyvalent ?? false,
       // Empty field means « no cap », never zero: a cap of zero would put every
       // animateur of the typologie in breach (issue #594).
       maxCreneauxParAnimateur: capOrNull(draft.maxCreneauxParAnimateur),
@@ -121,7 +121,7 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
         id: typologie.id,
         code: typologie.code ?? '',
         label: typologie.label ?? '',
-        ninja: typologie.ninja ?? false,
+        polyvalent: typologie.polyvalent ?? false,
         maxCreneauxParAnimateur: typologie.maxCreneauxParAnimateur ?? null,
         description: typologie.description ?? '',
         modifieLe: typologie.modifieLe ?? null,
@@ -130,7 +130,7 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
         id: '',
         code: '',
         label: '',
-        ninja: false,
+        polyvalent: false,
         maxCreneauxParAnimateur: null,
         description: '',
         modifieLe: null,

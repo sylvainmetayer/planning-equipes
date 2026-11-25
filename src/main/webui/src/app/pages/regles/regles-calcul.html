@@ -85,21 +85,21 @@
         <mat-hint i18n="@@constraints.legal.hint.heureDebutSoiree">Les heures d'un poste après cette heure comptent en soirée.</mat-hint>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="ninja-select">
-        <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
-        <mat-select name="ninja" [disabled]="loading() || saving() || locked() || typologiesFrozen()"
-                    [ngModel]="typologieNinjaId()" (ngModelChange)="ninjaDraft.set($event)">
-          <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="polyvalent-select">
+        <mat-label i18n="@@typologies.field.polyvalent">Typologie polyvalente</mat-label>
+        <mat-select name="polyvalent" [disabled]="loading() || saving() || locked() || typologiesFrozen()"
+                    [ngModel]="typologiePolyvalentId()" (ngModelChange)="polyvalentDraft.set($event)">
+          <mat-option [value]="null" i18n="@@typologies.field.noPolyvalent">Aucune</mat-option>
           @for (typologie of store.typologies(); track typologie.id) {
             <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
           }
         </mat-select>
-        <mat-hint i18n="@@regles.calcul.ninjaHint">Ses animateurs peuvent tenir n'importe quel stand.</mat-hint>
+        <mat-hint i18n="@@regles.calcul.polyvalentHint">Ses animateurs peuvent tenir n'importe quel stand.</mat-hint>
       </mat-form-field>
     </mat-card-content>
     <mat-card-content>
       <app-gel-notice family="TYPOLOGIES_EMPLACEMENTS" />
-      <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
+      <app-status-message [text]="alertePolyvalentManquant()" tone="warning" />
       <a matButton routerLink="/stands" [queryParams]="{ onglet: 'typologies' }">
         <mat-icon>category</mat-icon>
         <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>

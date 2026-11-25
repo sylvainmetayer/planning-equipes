@@ -49,7 +49,7 @@ class ReferentielCsvExportServiceTest {
         importer(
                 SOURCE,
                 "/api/typologies/import-csv",
-                "code;libelle;ninja\nEXP-A;Jeux d'ambiance;\nEXP-B;Stratégie;oui\n");
+                "code;libelle;polyvalent\nEXP-A;Jeux d'ambiance;\nEXP-B;Stratégie;oui\n");
         importer(
                 SOURCE,
                 "/api/emplacements/import-csv",
@@ -236,7 +236,7 @@ class ReferentielCsvExportServiceTest {
                 .when()
                 .get("/api/typologies")
                 .then()
-                .body("find { it.code == 'EXP-B' }.ninja", equalTo(true));
+                .body("find { it.code == 'EXP-B' }.polyvalent", equalTo(true));
         given().header(HEADER, CIBLE)
                 .when()
                 .get("/api/emplacements")

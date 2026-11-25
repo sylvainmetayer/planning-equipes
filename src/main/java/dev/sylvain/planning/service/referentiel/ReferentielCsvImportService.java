@@ -157,7 +157,7 @@ public class ReferentielCsvImportService {
     public String exemple(ImportTarget cible) {
         return switch (cible) {
             case TYPOLOGIES -> """
-                    code;libelle;ninja
+                    code;libelle;polyvalent
                     AMBIANCE;Jeux d'ambiance;
                     STRATEGIE;Jeux de stratégie;
                     POLYVALENT;Polyvalent;oui
@@ -377,15 +377,22 @@ public class ReferentielCsvImportService {
         if (!raisons.isEmpty()) {
             return refusedRow(row, cle.cle(), libelle, raisons);
         }
-        boolean ninja = readFlag(colonnes.valeur(row, "ninja"));
+        // « ninja » is the 3.x header, still read for the whole 4.x line.
+        String drapeau = colonnes.valeur(row, "polyvalent");
+        String legacyFlag = drapeau.isEmpty() ? colonnes.valeur(row, "ninja") : "";
+        boolean polyvalent = readFlag(drapeau.isEmpty() ? legacyFlag : drapeau);
         List<String> details = new ArrayList<>();
         if (cle.note() != null) {
             details.add(cle.note());
         }
-        if (ninja) {
+        if (!legacyFlag.isEmpty()) {
+            details.add("Lu dans la colonne « ninja », l'ancien nom de « polyvalent » : renommez-la, "
+                    + "elle ne sera plus lue en 5.0.");
+        }
+        if (polyvalent) {
             details.add("Marquée polyvalente : elle retire le drapeau à la typologie qui le portait.");
         }
-        // The file carries code, libelle and ninja — no cap and no
+        // The file carries code, libelle and polyvalent — no cap and no
         // description column — so both are kept rather than erased: « une
         // colonne retirée du fichier n'efface rien » (site/src/docs/comprendre/scenario-yaml.md).
         TypologieItem existante = cle.id() == null ? null : existantes.parId().get(cle.id());
@@ -393,7 +400,7 @@ public class ReferentielCsvImportService {
                 cle.id(),
                 cle.code(),
                 libelle,
-                ninja,
+                polyvalent,
                 existante == null ? null : existante.maxCreneauxParAnimateur(),
                 existante == null ? null : existante.description(),
                 null);
