@@ -41,6 +41,10 @@ Les quatre *hints* de la spécification MCP sont déclarés sur **tous** les out
 
 Chaque outil et chaque prompt porte son nom publié en toutes lettres (`@Tool(name = "lister_stands", …)` sur la méthode Java `listStands`). La méthode suit la règle du reste du code (anglais, camelCase) ; le nom publié reste français, c'est celui que l'assistant choisit, que le journal enregistre (`CatalogueActions`) et que citent les prompts. Renommer la méthode ne doit jamais renommer l'outil pour les clients déjà branchés. `McpToolNamesTest` échoue sur un `@Tool` ou un `@Prompt` sans `name` explicite, et les autres tests structurels lisent ce nom publié, jamais le nom Java.
 
+## Nommer un outil
+
+Le nom d'un outil est `<objet>_<verbe>`, le verbe pris dans l'ensemble fermé `lire`, `lister`, `creer`, `modifier`, `supprimer`, `analyser`, `simuler`, `lancer`, `arreter`, `importer`, `exporter`, `publier`, `envoyer` ; un outil de réglages prend l'objet seul avec une `section` en argument. Les noms publiés en 3.1.0 gardent le leur tant que le modèle qu'ils servent n'est pas refondu en 4.0 : `src/main/resources/mcp-renommages.tsv` dit, pour chacun, son nom courant ou `retiré`, et `McpRenommageTest` refuse un nom sans ligne. Il n'y a pas d'alias ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)).
+
 ## Écrire pendant qu'un calcul tient l'édition
 
 L'atterrissage d'un calcul réécrit les places et reprend les stands, créneaux et animateurs de son problème : une écriture faite entre-temps serait défaite. Chaque outil d'écriture a donc une réponse à « et si un calcul tient l'édition ? », et `McpWarnsWhileSolvingStructuralTest` fait échouer le build sur un outil qui n'en a pas. Il relit aussi, pour chaque outil refusé, que la méthode de service nommée porte `@RefusedWhileSolving` (ou l'appel explicite d'un refus conditionnel que `RefusedWhileSolvingStructuralTest` argumente). Les trois listes sont disjointes et exhaustives.

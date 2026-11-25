@@ -131,3 +131,4 @@ documente une orchestration livrée puis retirée par 0009 — son raisonnement 
 conservé parce que ses mesures gardent leur valeur pour toute réflexion future
 sur le parallélisme.
 | [0099](0099-le-lecteur-voit-sans-rien-ecrire.md) | Le lecteur voit sans rien écrire : un droit `LECTEUR` par édition, le serveur refuse tout ce qui n'est pas une lecture (calculs compris), les exports PDF et ICS restent ouverts et les données brutes fermées, le MCP par OAuth ne lui ouvre que les outils en lecture seule, le cumul avec un droit d'organisateur se décide édition par édition | Accepté · prolonge 0093, 0097 |
+| [0100](0100-convention-de-nommage-des-outils-mcp.md) | Les outils MCP se nomment `<objet>_<verbe>` ; `mcp-renommages.tsv` dit où est passé chaque nom publié en 3.1.0, sans alias, et un test refuse un nom sans ligne | Accepté · prolonge 0097 |

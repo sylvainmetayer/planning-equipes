@@ -32,7 +32,9 @@ Chaque paragraphe dit *avant*, *après* et *ce que vous faites*. Aucun n'est éc
 
 ### Outils MCP
 
-À venir : correspondance des anciens noms d'outils.
+**Avant** : 157 outils aux noms libres (`lister_stands`, `equite_planning`, `volumes`…). **Après** : les outils se nomment `<objet>_<verbe>` ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)), certains sont regroupés ou retirés, et il n'existe **aucun alias** : un outil n'est publié que sous son nom courant. La correspondance complète, ancien nom puis nouveau nom ou `retiré`, est le fichier `src/main/resources/mcp-renommages.tsv`, remplie au fil des changements de la 4.0 (pour l'instant aucun outil n'est renommé).
+
+**Ce que vous faites** : si vous avez écrit des instructions, des invites ou des scripts qui nomment des outils, relisez-les avec cette table ; un assistant qui se reconnecte relit la liste des outils et n'a rien d'autre à changer.
 
 ### Données et migrations
 
