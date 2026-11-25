@@ -40,8 +40,14 @@ fournisseur d'identité et des comptes (0093).
    la génération ; 0 la coupe tout de suite. La clé de configuration marche
    tant qu'aucune clé n'a été générée ; la première génération la remplace pour
    de bon, une valeur de configuration changée ensuite ne la ressuscite pas.
-   Même mot de passe administrateur que la révélation, même verrou, et une
-   ligne au journal (`CLE_MCP_ROTEE`), jamais la clé.
+   Générer ou révéler une clé exige une **connexion récente** (10 minutes) :
+   le `auth_time` du jeton d'identité pour une session OIDC, l'instant noté par
+   la connexion elle-même pour un compte local ou le secours (en mémoire, par
+   empreinte du cookie de session) — le cookie de Quarkus est renouvelé et ne
+   dit pas quand la session s'est ouverte. Trop ancienne, le serveur refuse (`409 RECONNEXION_REQUISE_<mode>`)
+   et l'écran propose de se reconnecter. Le mot de passe de la configuration,
+   que seul le compte de secours possède, n'est plus demandé. Une ligne au
+   journal (`CLE_MCP_ROTEE`), jamais la clé.
 5. Le verrou sur les clés refusées ne compte pas un `Bearer` de forme JWT : un
    jeton OAuth expiré ne doit pas bloquer une adresse.
 

@@ -65,8 +65,20 @@ client découvre tout seul où ouvrir la connexion.
 
 ### Renouveler la clé sans toucher au serveur
 
-Écran MCP › **Générer une nouvelle clé** (mot de passe administrateur
-re-saisi). La clé n'est montrée **qu'une fois**, seule son empreinte est
+Écran MCP › **Générer une nouvelle clé**, réservé à un administrateur
+**connecté depuis moins de 10 minutes** (`AUTH_RECENT_WINDOW`) : la même
+exigence vaut pour la révélation de la clé de configuration, et remplace la
+re-saisie du mot de passe de la configuration, que ni un compte OIDC ni un
+compte local n'ont. Sinon le serveur répond `409` avec le code
+`RECONNEXION_REQUISE_<mode>` et l'écran propose de se reconnecter : chez le
+fournisseur (`OIDC`, qui est rappelé avec `prompt=login` et `max_age=0`, puis
+revient sur l'écran), ou par la page de connexion (compte `LOCAL` : mot de
+passe et code ; `BREAK_GLASS` : formulaire du secours). L'instant de connexion
+est le `auth_time` du jeton d'identité (un fournisseur qui ne l'envoie pas, ou
+qui ignore `max_age`/`prompt`, ne permet pas la reconnexion) ; pour un
+formulaire, l'instant que la connexion elle-même a noté (en mémoire, par
+empreinte du cookie de session) : un cookie renouvelé n'y est plus, donc pas
+récent, et un redémarrage demande à chacun de se reconnecter. La clé n'est montrée **qu'une fois**, seule son empreinte est
 conservée. On choisit combien de temps l'ancienne reste valable (aucun, 15
 minutes, 1 heure, 24 heures ; 7 jours au plus par l'API) : « aucun » la
 révoque tout de suite. L'écran affiche la date de fin tant qu'elle court, et le

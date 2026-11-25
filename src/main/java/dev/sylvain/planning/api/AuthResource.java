@@ -11,6 +11,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
@@ -164,8 +165,16 @@ public class AuthResource {
     @GET
     @Path("/oidc/login")
     @Authenticated
-    public Response oidcLogin(@Context UriInfo uriInfo) {
-        return Response.seeOther(uriInfo.getBaseUri().resolve("/")).build();
+    public Response oidcLogin(@Context UriInfo uriInfo, @QueryParam("retour") String retour) {
+        return Response.seeOther(uriInfo.getBaseUri().resolve(safeReturn(retour)))
+                .build();
+    }
+
+    /** A path of this application, never another site: anything else goes back to the root. */
+    public static String safeReturn(String retour) {
+        return retour != null && retour.startsWith("/") && !retour.startsWith("//") && !retour.contains("\\")
+                ? retour
+                : "/";
     }
 
     /**

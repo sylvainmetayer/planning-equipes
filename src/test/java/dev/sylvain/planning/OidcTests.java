@@ -57,6 +57,22 @@ public final class OidcTests {
         return token("planning-app", sujet, email, emailVerifie, roles);
     }
 
+    /** A token of the default tenant carrying the {@code auth_time} of a sign-in at {@code authTime} (none when null). */
+    public static String tokenAuthenticatedAt(String sujet, String email, java.time.Instant authTime) {
+        var claims = Jwt.claims()
+                .issuer("https://server.example.com")
+                .subject(sujet)
+                .upn(email)
+                .claim("email", email)
+                .claim("email_verified", true)
+                .audience("planning-app")
+                .expiresIn(300);
+        if (authTime != null) {
+            claims.claim("auth_time", authTime.getEpochSecond());
+        }
+        return "Bearer " + claims.sign();
+    }
+
     /** The same, issued for {@code audience}: the MCP transport only accepts {@code planning-mcp}. */
     public static String token(String audience, String sujet, String email, boolean emailVerifie, String... roles) {
         return "Bearer "

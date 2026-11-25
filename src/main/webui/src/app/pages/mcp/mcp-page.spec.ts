@@ -8,6 +8,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AdminApi } from '../../core/api/admin-api';
+import { ApiError } from '../../core/api.service';
 import { McpApi } from '../../core/api/mcp-api';
 import { NotificationService } from '../../core/notification.service';
 import { PromptMcp, StatutMcp } from '../../core/models';
@@ -31,6 +33,10 @@ describe('McpPage', () => {
   let write: ReturnType<typeof vi.fn>;
 
   let rotateKey: ReturnType<typeof vi.fn>;
+  let regenerateKey: ReturnType<typeof vi.fn>;
+  let logout: ReturnType<typeof vi.fn>;
+  let assign: ReturnType<typeof vi.fn>;
+  let reauthenticate: ReturnType<typeof vi.fn>;
 
   async function rendre(
     prompts: PromptMcp[] | Error,
@@ -44,7 +50,19 @@ describe('McpPage', () => {
         pangolinAccessToken: null,
       }),
     );
+    regenerateKey = vi.fn(() =>
+      Promise.resolve({
+        cle: 'cle-config',
+        pangolinAccessTokenId: null,
+        pangolinAccessToken: null,
+      }),
+    );
+    logout = vi.fn(() => Promise.resolve({ urlDeconnexion: null }));
+    assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign, origin: window.location.origin });
+    reauthenticate = vi.fn();
     const mcpApi = {
+      reauthenticate,
       rotateKey,
       prompts: vi.fn(() =>
         prompts instanceof Error ? Promise.reject(prompts) : Promise.resolve(prompts),
@@ -59,7 +77,7 @@ describe('McpPage', () => {
         }),
       ),
       configResponse: vi.fn(() => Promise.resolve(new Response(null, { status: 200 }))),
-      regenerateKey: vi.fn(),
+      regenerateKey,
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -67,6 +85,7 @@ describe('McpPage', () => {
         provideZonelessChangeDetection(),
         { provide: McpApi, useValue: mcpApi },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: AdminApi, useValue: { logout } },
       ],
     });
     fixture = TestBed.createComponent(McpPage);
@@ -140,23 +159,64 @@ describe('McpPage', () => {
     expect(racine().textContent).toContain('Générer une nouvelle clé');
   });
 
-  it('generates a key with the chosen overlap and shows it', async () => {
+  it('generates a key with the chosen overlap, without any password, and shows it', async () => {
     await rendre(PROMPTS);
 
     bouton('Générer une nouvelle clé').click();
     fixture.detectChanges();
     await fixture.whenStable();
-    const mdp = racine().querySelector<HTMLInputElement>('input[type=password]')!;
-    mdp.value = 'pw';
-    mdp.dispatchEvent(new Event('input'));
-    await fixture.whenStable();
-    fixture.detectChanges();
+    expect(racine().querySelector('input[type=password]')).toBeNull();
     bouton('Générer et afficher la clé').click();
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(rotateKey).toHaveBeenCalledWith('pw', 15);
+    expect(rotateKey).toHaveBeenCalledWith(15);
     expect(racine().querySelector('.mcp-cle-revelee')?.textContent).toContain('cle-generee');
+  });
+
+  it('reveals the configured key in one click', async () => {
+    await rendre(PROMPTS);
+
+    bouton("Révéler la clé d'API").click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(regenerateKey).toHaveBeenCalled();
+    expect(racine().querySelector('.mcp-cle-revelee')?.textContent).toContain('cle-config');
+  });
+
+  async function refuserParConnexionAncienne(mode: string): Promise<void> {
+    await rendre(PROMPTS);
+    regenerateKey.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'ancienne', `RECONNEXION_REQUISE_${mode}`),
+    );
+    bouton("Révéler la clé d'API").click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('asks to sign in again at the provider when the OIDC sign-in is too old', async () => {
+    await refuserParConnexionAncienne('OIDC');
+
+    expect(racine().textContent).toContain('Votre dernière connexion date de plus de dix minutes');
+    expect(racine().querySelector('.mcp-cle-revelee')).toBeNull();
+    bouton('Se reconnecter').click();
+    await fixture.whenStable();
+
+    expect(reauthenticate).toHaveBeenCalledWith('/parametres?onglet=mcp');
+    expect(logout).not.toHaveBeenCalled();
+  });
+
+  it('closes a local or break-glass session and goes back to the login page', async () => {
+    for (const mode of ['LOCAL', 'BREAK_GLASS']) {
+      assign?.mockClear?.();
+      await refuserParConnexionAncienne(mode);
+      bouton('Se reconnecter').click();
+      await fixture.whenStable();
+
+      expect(logout).toHaveBeenCalled();
+      expect(assign).toHaveBeenCalledWith('/login');
+    }
   });
 
   it('tells about OAuth only when a provider is configured', async () => {
