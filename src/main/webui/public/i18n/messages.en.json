@@ -5287,5 +5287,6 @@
   "api.forbidden": "Reserved to the administrators.",
   "comptes.stands": "Stands of “{$INTERPOLATION}”",
   "comptes.role.responsable": "Stand manager (read access to their stand)",
-  "comptes.droit.responsable": "{$role} — {$edition} ({$stands} stand(s))"
+  "comptes.droit.responsable": "{$role} — {$edition} ({$stands} stand(s))",
+  "comptes.droit.responsableStands": "{$role} — {$edition} ({$stands})"
 }

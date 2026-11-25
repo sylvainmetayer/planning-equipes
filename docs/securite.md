@@ -503,10 +503,12 @@ contient pas), et `@RolesAllowed` double la règle HTTP sur chaque méthode.
   et — selon le réglage — prénom et nom. Pas d'adresse, de téléphone, d'âge ni
   de statut mineur ; `ResponsableProjectionStructurelleTest` lit les types du
   record. Le plan lu est le plan **publié**, jamais le plan de travail.
+- **Rien n'est mis en cache** : les deux routes répondent `Cache-Control: no-store`.
+- **Seuls les administrateurs règlent la visibilité des noms** (`@InstanceOnly`).
 - **L'affichette suit le même réglage** : elle est construite à partir de la
   même vue, pas d'une seconde lecture.
-- `ResponsableResourceTest` balaie toutes les routes `GET` du contrat publié
-  avec le jeton d'un responsable du stand S : aucune ne répond `403` à tort, et
+- `ResponsableResourceTest` balaie toutes les routes `GET` **sans paramètre
+  de chemin** du contrat publié avec le jeton d'un responsable du stand S : aucune ne répond `403` à tort, et
   aucun corps ne contient le nom d'un animateur d'un autre stand, le nom d'un
   autre stand ni, quand le réglage dit « horaires seuls », aucun nom du tout.
 

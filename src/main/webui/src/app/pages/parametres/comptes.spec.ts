@@ -70,6 +70,16 @@ describe('labels', () => {
         { id: 'E1', nom: 'Année 2026', active: true, creeLe: null },
       ]),
     ).toBe('Responsable de stand (lecture de son stand) — Année 2026 (2 stand(s))');
+    expect(
+      rightLabel(
+        droit({ role: 'RESPONSABLE_STAND', standIds: ['S1', 'S2'] }),
+        [{ id: 'E1', nom: 'Année 2026', active: true, creeLe: null }],
+        [
+          { id: 'S1', nom: 'Buvette' },
+          { id: 'S2', nom: 'Billetterie' },
+        ],
+      ),
+    ).toBe('Responsable de stand (lecture de son stand) — Année 2026 (Buvette, Billetterie)');
   });
 });
 

@@ -68,7 +68,11 @@ class EditionDuplicationStructurelleTest {
                     "stand_indisponibilite.id",
                     "surrogate key on its own sequence — unlike stand_horaire, whose composite "
                             + "(edition_id, id) primary key is why its id IS copied"),
-            Map.entry("stand_ouverture.id", "same"));
+            Map.entry("stand_ouverture.id", "same"),
+            Map.entry(
+                    "reglage_noms_stand.noms_visibles",
+                    "names are never copied open: the copy falls back on FALSE (shifts only)"),
+            Map.entry("reglage_noms_stand.ouverture_le", "meaningless once names are closed"));
 
     /** Columns every copy writes itself, outside the declared list. */
     private static final Set<String> ECRITES_PAR_LA_COPIE = Set.of("edition_id");

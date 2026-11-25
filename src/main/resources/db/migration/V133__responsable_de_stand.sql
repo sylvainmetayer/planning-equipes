@@ -9,14 +9,17 @@
 -- 2. habilitation_stand : les stands que couvre ce droit. Comme
 --    habilitation.edition_id, sans clé étrangère vers `stand` : l'import d'un
 --    dump supprime puis recrée les stands, et une cascade effacerait au
---    passage le périmètre des responsables de l'instance. Un stand disparu
---    n'ouvre rien ;
+--    passage le périmètre des responsables de l'instance. Un stand
+--    disparu n'ouvre rien, et un vidage de l'édition retire les droits de
+--    ses responsables ;
 -- 3. reglage_noms_responsable : le réglage par défaut de l'édition. Absent
 --    tant que rien n'a été réglé, ce qui vaut « horaires seuls ». La date
 --    d'ouverture, facultative, est l'instant à partir duquel les noms
 --    s'affichent (avant : horaires seuls) ;
 -- 4. reglage_noms_stand : l'exception d'un stand, dans les deux sens, avec sa
---    propre date d'ouverture. Elle suit l'édition (export, duplication).
+--    propre date d'ouverture. Elle suit l'édition (export) ; une duplication la
+--    recopie FERMÉE (horaires seuls, sans date) et ne recopie pas le défaut :
+--    l'administrateur rouvre les noms dans la nouvelle édition.
 --
 -- Nominatif veut dire prénom et nom, jamais de coordonnées ni d'âge.
 
@@ -41,7 +44,8 @@ CREATE TABLE reglage_noms_responsable (
 CREATE TABLE reglage_noms_stand (
     edition_id VARCHAR(64) NOT NULL,
     stand_id VARCHAR(64) NOT NULL,
-    noms_visibles BOOLEAN NOT NULL,
+    -- FAUX par défaut : une duplication ne recopie pas ce choix, le copie fermé.
+    noms_visibles BOOLEAN NOT NULL DEFAULT FALSE,
     ouverture_le TIMESTAMP WITH TIME ZONE,
     PRIMARY KEY (edition_id, stand_id),
     FOREIGN KEY (edition_id, stand_id) REFERENCES stand (edition_id, id) ON DELETE CASCADE
