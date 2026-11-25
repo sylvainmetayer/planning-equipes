@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * The chain that turns an older scenario document into the shape this build
- * reads, applied to the parsed map before binding (ADR 0100).
+ * reads, applied to the parsed map before binding (ADR 0101).
  *
  * <p>Each link is one pure function from version {@code n} to {@code n + 1},
  * with its own test: a model change that renames or reshapes a key adds its
@@ -23,7 +23,10 @@ public final class ScenarioMigrations {
 
     @FunctionalInterface
     public interface Conversion {
-        /** @param warnings receives one French sentence per thing that could not be converted */
+        /**
+         * @param warnings receives one French sentence per thing that could not be converted, naming a key or an
+         *     id, never a person: it reaches the import report and the browser's notification log
+         */
         Map<String, Object> apply(Map<String, Object> document, List<String> warnings);
     }
 

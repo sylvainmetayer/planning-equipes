@@ -147,7 +147,7 @@ public final class ScenarioBinder {
                             + ", plus récent que celui que cette version de l'application lit (" + SCHEMA_VERSION
                             + ") : il a été produit par une version plus récente. Mettez l'application à jour pour l'importer.");
         }
-        if (!integer || ((Number) version).longValue() < 1) {
+        if (!integer || new BigInteger(version.toString()).signum() <= 0) {
             throw new ScenarioFormatException("« schemaVersion » doit être un entier entre 1 et " + SCHEMA_VERSION
                     + " (ou être absent), et non « " + version + " ».");
         }
