@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.analyse.RapportConformite.Synthese;
 import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -55,6 +56,11 @@ public class RapportConformiteService {
 
     @Inject
     public RapportConformiteService(
+            PlanPublieService planPublieService, PlanningHoursService hoursService, PlanningService planningService) {
+        this(planPublieService, hoursService, (ConstraintDiagnosticService) planningService::analyze);
+    }
+
+    RapportConformiteService(
             PlanPublieService planPublieService,
             PlanningHoursService hoursService,
             ConstraintDiagnosticService diagnostic) {
