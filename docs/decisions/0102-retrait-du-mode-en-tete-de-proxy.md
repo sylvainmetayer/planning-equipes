@@ -1,4 +1,4 @@
-# 0100 — Retrait du mode en-tête de proxy
+# 0102 — Retrait du mode en-tête de proxy
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026

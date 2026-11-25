@@ -1,10 +1,10 @@
 # Choisir et protéger la connexion à l'administration
 
-Avant d'ouvrir l'instance à d'autres personnes que vous, choisissez par quelle porte entrent vos administrateurs (annuaire OIDC, compte local ou compte `admin` de la configuration), gardez le compte de secours fermé sans vous enfermer dehors, et réglez le verrou de connexion derrière votre reverse proxy ou votre tunnel. Cette page décrit ces trois choix.
+Avant d'ouvrir l'instance à d'autres personnes que vous, choisissez par quelle porte entrent vos administrateurs (annuaire OIDC, compte local ou compte `admin` de la configuration), gardez le compte de secours fermé sans vous enfermer dehors, et réglez le verrou de connexion derrière votre reverse proxy ou votre tunnel. Cette page décrit ces trois choix, puis ce qui protège l'instance quand un proxy d'accès est placé devant.
 
-## Les cinq portes de l'administration
+## Les quatre portes de l'administration
 
-Cinq portes, de la plus forte à la plus faible :
+Quatre portes, de la plus forte à la plus faible :
 
 1. **Un fournisseur d'identité OIDC** ([mise en place](oidc.md), [ADR 0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)) : chaque
    organisateur se connecte sous son propre nom, avec le second facteur du
@@ -210,3 +210,26 @@ leur nombre suit en une ligne à l'ouverture de la fenêtre suivante. Seule la
 trace est bornée : le verrou compte toujours chaque échec. Une adresse seule
 reste loin du plafond (une vingtaine d'échecs par heure avec les réglages par
 défaut) : l'atteindre est déjà le signe d'une attaque distribuée.
+
+## Derrière un proxy d'accès
+
+Un proxy d'accès (un service qui authentifie ses visiteurs avant de les laisser
+passer, ou un tunnel partagé) reste une bonne première barrière, mais depuis la
+4.0 il **ne connecte plus personne à l'application** : le mode en-tête de proxy
+est retiré ([ADR 0102](repo:docs/decisions/0102-retrait-du-mode-en-tete-de-proxy.md)).
+Aucun en-tête d'identité qu'il pose (`Remote-Email`, `Remote-User`,
+`X-Forwarded-User`…) n'est lu. Ce qui protège l'instance derrière lui :
+
+| Protection | Ce qu'elle fait |
+| --- | --- |
+| La connexion de l'application | Toute route de `/api` hors des exceptions publiques exige une session ouverte par l'une des [quatre portes](#les-quatre-portes-de-ladministration). Passer le proxy ne suffit jamais |
+| L'espace animateur | Son jeton d'URL **et** la session que seul ouvre le code à six chiffres envoyé par mail |
+| Le `/mcp` | La clé ou un jeton OAuth ; `PLANNING_MCP_REQUIRED_HEADERS` peut exiger en plus un en-tête que seul le proxy pose ([la connexion MCP](../comprendre/mcp-connexion.md#passer-un-proxy-daccès)) |
+| Les verrous par adresse | Ils ne croient `X-Forwarded-For` que des proxys déclarés (`CONNEXION_PROXYS_FIABLES`, voir [le verrou du formulaire](#verrouiller-le-formulaire-de-connexion-de-ladmin)) |
+| L'origine fermée | Le port de l'application n'est joignable que depuis le proxy (réseau privé, pare-feu) : sans cela, on contourne le proxy et il ne reste que les protections ci-dessus |
+
+Côté proxy, n'exceptez de son authentification que les préfixes à jeton
+dédié, `/api/abonnements/*` et `/api/mural/*`, et rien d'autre ([les jetons
+publics](securite-jetons-publics.md)). Un second facteur imposé par le proxy
+peut justifier `AUTH_LOCAL_SECONDE_ETAPE=false` ([les comptes
+locaux](comptes-locaux.md)) ; il ne remplace pas la connexion.

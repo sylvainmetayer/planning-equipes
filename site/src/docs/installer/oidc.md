@@ -71,7 +71,7 @@ Le compte est lié au couple **émetteur + sujet** : si l'URL de l'émetteur cha
 
 Le compte `admin` de la configuration et son mot de passe (`ADMIN_PASSWORD`) sont la porte de dépannage, fermée par défaut derrière un fournisseur (`ADMIN_LOCAL_SECOURS` l'ouvre). La menace, la préparation et la conduite à tenir le jour où le fournisseur ne répond plus sont dans [Choisir et protéger la connexion à l'administration](securite-acces-administration.md#le-compte-de-secours--ne-jamais-senfermer-dehors).
 
-Les comptes locaux avec mot de passe restent ouverts même derrière un fournisseur ; ils sont décrits dans [les comptes locaux](comptes-locaux.md) et dans [les cinq portes de l'administration](securite-acces-administration.md#les-cinq-portes-de-ladministration).
+Les comptes locaux avec mot de passe restent ouverts même derrière un fournisseur ; ils sont décrits dans [les comptes locaux](comptes-locaux.md) et dans [les quatre portes de l'administration](securite-acces-administration.md#les-quatre-portes-de-ladministration).
 
 ## Ce que le fournisseur ne couvre pas
 

@@ -20,7 +20,7 @@ import jakarta.ws.rs.ext.Provider;
  * request), then requires a live {@code planning-espace} session of that
  * animateur. Aborts with 404 (unknown token) or 401 (no session — the
  * interface then offers the code screen) before the resource method runs.
- * Once the session (or the proxy's assertion) holds, it marks the identity as
+ * Once the session holds — nothing else proves it, no request header among them — it marks the identity as
  * proven on {@link EditionRequestScope}: that, and not the token, is what lets
  * the history name the animateur as the author of what follows.
  */
