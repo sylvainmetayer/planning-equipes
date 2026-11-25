@@ -136,7 +136,7 @@ jobs:
 
       - name: Install Chromium
         working-directory: src/main/webui
-        run: npx playwright install --with-deps chromium
+        run: npm run e2e-install-browser
 
       - name: Wait for Keycloak
         run: |
