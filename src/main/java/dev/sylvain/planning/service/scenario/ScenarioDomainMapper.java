@@ -5,23 +5,20 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ConsigneDto;
@@ -32,8 +29,6 @@ import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
-import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
-import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
@@ -57,7 +52,6 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenari
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.solver.ConstraintCatalog;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -71,7 +65,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
@@ -117,10 +110,6 @@ final class ScenarioDomainMapper {
     static PlanningEvenement planning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         ReferenceScenario reference = reference(scenario);
 
-        // Expand the recurring opening hours before deciding anything about
-        // openings: a file may describe the opening hours of a stand as rules
-        // rather than as dated windows, and they must be resolved on the days of
-        // its own timeslots. With no rule, the call changes nothing.
         HoraireStandResolver.apply(
                 reference.standsById().values(), reference.creneauxParId().values());
 
@@ -171,7 +160,7 @@ final class ScenarioDomainMapper {
             PosteAffectation poste = new PosteAffectation(posteDto.id(), stand, creneau);
             // Mirrors what buildPostes does: a hand-authored seat can still name
             // a timeslot the stand is only partially open for, through an
-            // IndisponibiliteStand or an OuvertureStand, so its effective window
+            // PlageStand or an PlageStand, so its effective window
             // is narrowed the same way instead of taking the whole opening span.
             List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
             if (segments.size() == 1) {
@@ -267,78 +256,19 @@ final class ScenarioDomainMapper {
         if (dto.emplacementId() != null) {
             stand.setEmplacement(emplacementsParId.get(dto.emplacementId()));
         }
-        if (dto.indisponibilites() != null) {
-            List<IndisponibiliteStand> indisponibilites = dto.indisponibilites().stream()
-                    .map(indispo -> new IndisponibiliteStand(
+        if (dto.plages() != null) {
+            stand.setPlages(dto.plages().stream()
+                    .map(plage -> new PlageStand(
                             null,
-                            required(indispo.date(), "stands.indisponibilites.date"),
-                            required(indispo.heureDebut(), "stands.indisponibilites.heureDebut"),
-                            indispo.heureFin(),
-                            indispo.motif()))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            stand.setIndisponibilites(indisponibilites);
-        }
-        if (dto.ouvertures() != null) {
-            List<OuvertureStand> ouvertures = dto.ouvertures().stream()
-                    .map(ouverture -> new OuvertureStand(
-                            null,
-                            required(ouverture.date(), "stands.ouvertures.date"),
-                            required(ouverture.heureDebut(), "stands.ouvertures.heureDebut"),
-                            ouverture.heureFin(),
-                            ouverture.motif(),
-                            ouverture.effectif()))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            stand.setOuvertures(ouvertures);
-        }
-        if (dto.horaires() != null) {
-            stand.setHoraires(horaires(dto.horaires()));
+                            plage.mode(),
+                            required(plage.date(), "stands.plages.date"),
+                            required(plage.heureDebut(), "stands.plages.heureDebut"),
+                            plage.heureFin(),
+                            plage.motif(),
+                            plage.mode() == ModeHoraire.OUVERTURE ? plage.effectif() : null))
+                    .collect(Collectors.toCollection(ArrayList::new)));
         }
         return stand;
-    }
-
-    /**
-     * The {@code horaires:} of a stand — recurring rules, with the day selector
-     * flattened onto the rule (see {@code ScenarioDtoAssembler}). An absent
-     * {@code jours} reads as {@link TypeJoursHoraire#TOUS}, which is what makes
-     * the common case a two-line entry; an absent window end means "until
-     * closing time" (see {@link FenetreHoraire}).
-     */
-    private static List<HoraireStand> horaires(List<HoraireStandDto> horairesDto) {
-        return horairesDto.stream().map(ScenarioDomainMapper::horaire).collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    private static HoraireStand horaire(HoraireStandDto dto) {
-        HoraireStand horaire = new HoraireStand();
-        if (dto.mode() == null) {
-            throw new BusinessError.Invalid("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
-        }
-        horaire.setMode(dto.mode());
-        horaire.setJours(dto.jours() == null ? TypeJoursHoraire.TOUS : dto.jours());
-        if (dto.joursSemaine() != null) {
-            horaire.setJoursSemaine(new TreeSet<DayOfWeek>(dto.joursSemaine()));
-        }
-        horaire.setDateDebut(dto.dateDebut());
-        horaire.setDateFin(dto.dateFin());
-        if (dto.dates() != null) {
-            horaire.setDates(new TreeSet<LocalDate>(dto.dates()));
-        }
-        horaire.setFenetres(fenetresHoraire(dto.fenetres()));
-        horaire.setMotif(dto.motif());
-        return horaire;
-    }
-
-    private static List<FenetreHoraire> fenetresHoraire(List<FenetreHoraireDto> dtos) {
-        if (dtos == null || dtos.isEmpty()) {
-            throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
-        }
-        List<FenetreHoraire> fenetres = new ArrayList<>();
-        for (FenetreHoraireDto fenetre : dtos) {
-            if (fenetre.heureDebut() == null) {
-                throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres.heureDebut");
-            }
-            fenetres.add(new FenetreHoraire(fenetre.heureDebut(), fenetre.heureFin(), fenetre.effectif()));
-        }
-        return fenetres;
     }
 
     private static Animateur animateur(AnimateurDto dto) {

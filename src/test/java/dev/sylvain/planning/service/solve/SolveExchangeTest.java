@@ -15,9 +15,9 @@ import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -151,14 +151,8 @@ class SolveExchangeTest {
         // exception leaves them.
         PosteAffectation anySeat = prepared.getPostes().get(0);
         anySeat.getStand()
-                .setFenetresEffectives(
-                        List.of(),
-                        List.of(new OuvertureStand(
-                                7L,
-                                anySeat.getCreneau().getDate(),
-                                LocalTime.of(10, 0),
-                                LocalTime.of(12, 0),
-                                WINDOW_REASON)));
+                .setPlagesEffectives(List.of(PlageStand.ouverture(
+                        7L, anySeat.getCreneau().getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), WINDOW_REASON)));
 
         // Work left for the search: every third seat still free to move is emptied.
         int index = 0;

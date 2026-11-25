@@ -2,15 +2,12 @@ package dev.sylvain.planning.service.consigne;
 
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.MinutesOfDay;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver.RuledDay;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver.SourceHoraire;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -102,11 +99,10 @@ public final class LayerCalendar {
     /**
      * One stand on one day, layer by layer.
      *
-     * @param source       which of the stand's own layers decided the day: no rule at all (open by default), a
-     *                     recurring rule, or a dated exception
-     * @param horaireIds   the rules that decided it, when {@code source} is {@code REGLE}; empty otherwise, or
-     *                     when the rules only say the day is not declared
-     * @param motif        the reason written on the rule or the exception, if any
+     * @param source       whether the stand's own plages decide the day, or nothing does (open by default)
+     * @param horaireIds   always empty since 4.0 (the recurring rules it listed no longer exist); kept on the
+     *                     payload until the API speaks plages
+     * @param motif        the reason written on the plage, if any
      * @param nominal      the stand's own windows that day, before the consigne
      * @param reopenings   the windows the consigne opens this stand on, empty without one
      * @param effective    what is left once the consigne has run: the windows the seats are cut from
@@ -222,23 +218,14 @@ public final class LayerCalendar {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(nominal, date);
         List<Long> horaireIds = List.of();
         String motif = null;
-        if (source == SourceHoraire.REGLE) {
-            RuledDay jour = HoraireStandResolver.resolveDayWithRules(nominal.getHoraires(), date);
-            if (jour != null) {
-                horaireIds = jour.rules().stream()
-                        .map(HoraireStand::getId)
-                        .filter(Objects::nonNull)
-                        .toList();
-                motif = jour.motif();
-            }
-        } else if (source == SourceHoraire.EXCEPTION) {
+        if (source == SourceHoraire.EXCEPTION) {
             motif = Stream.concat(
                             nominal.getOuvertures().stream()
                                     .filter(ouverture -> date.equals(ouverture.getDate()))
-                                    .map(OuvertureStand::getMotif),
+                                    .map(PlageStand::getMotif),
                             nominal.getIndisponibilites().stream()
                                     .filter(fermeture -> date.equals(fermeture.getDate()))
-                                    .map(IndisponibiliteStand::getMotif))
+                                    .map(PlageStand::getMotif))
                     .filter(Objects::nonNull)
                     .findFirst()
                     .orElse(null);

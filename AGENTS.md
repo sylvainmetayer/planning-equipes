@@ -291,10 +291,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     contract with such an account and refuses any other stand's or person's name.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
-    chosen stand by stand. `ConsigneResolver` is the **fourth layer** of a
-    stand's schedule, pure and static, applied by `StandService.resolve` on
-    top of `HoraireStandResolver` (rules, then dated exceptions) and on the
-    effective windows only; `ConsigneService` proposes, previews, lays down,
+    chosen stand by stand. `ConsigneResolver` is laid on top of a stand's
+    plages (ADR 0104; it was the fourth layer of the schedule while recurring
+    rules still existed), pure and static, applied by `StandService.resolve`
+    after `HoraireStandResolver` has set the stored plages as the effective
+    ones, and on the effective windows only; `ConsigneService` proposes, previews, lays down,
     changes and lifts consignes and their presets — the only grid write it
     makes is adding the timeslots an opening needs, and lifting removes those
     alone; `ConsigneRepository` owns the six tables. Every reader of
@@ -707,6 +708,16 @@ i18n rule at the top of this file:
   `Stand.effectifMin/Max`) at scenario/seed time; effectif min/max is enforced by
   counting non-null `animateur` assignments grouped by stand+créneau, not by a
   dedicated constraint class.
+- **A stand's schedule is a list of dated plages, nothing else** (ADR 0104):
+  `Stand.plages`, each an opening or a closure on one day (the two live in the
+  `stand_ouverture` and `stand_indisponibilite` tables; `getOuvertures()` and
+  `getIndisponibilites()` are read-only views of the one list). No recurring
+  rule is stored: a recurrence is a generator that writes plages, and
+  `HorairesRecurrents` is the one frozen reading of the 3.x rules (migration
+  `V141`, the scenario-file link 2 → 3, the `ajouter_horaire_stand` tool). A
+  day carries one mode, never both; no plage means open all day.
+  `ShippedSchedulesDigestTest` holds the windows of every shipped scenario to
+  what 3.x resolved, day by day.
 - Minor/adult status (`isMineurOn(LocalDate)` / `isMajeurOn(LocalDate)`) is
   always derived from `dateNaissance` at the créneau's date — never stored as a
   boolean flag.

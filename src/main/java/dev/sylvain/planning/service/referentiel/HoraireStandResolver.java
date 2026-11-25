@@ -1,63 +1,41 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
- * Expands a stand's recurring {@link HoraireStand} rules into the dated windows
- * the rest of the application already knows how to read, day by day, and records
- * the result on the stand ({@link Stand#setFenetresEffectives}).
+ * The first layer of a stand's schedule: its stored {@link PlageStand}s, read
+ * as they are. Since 4.0 there is no recurring rule to expand (ADR 0104): a
+ * stand's days are exactly the plages it carries, so "resolving" a stand means
+ * laying its stored plages down as its effective ones, which the consigne layer
+ * ({@code ConsigneResolver}) then amends on top.
  *
- * <p>This is the single place the layering described in {@link HoraireStand} is
- * implemented: per calendar day, a dated exception wins outright, otherwise the
- * covering rules of highest specificity do, otherwise the day is left alone
- * (open by default). Because the outcome is always a single
- * {@link ModeHoraire} per day, the three-state invariant
- * {@link Creneau#segmentsOuvertsMinutes(Stand)} relies on holds by construction
- * — which is why nothing downstream of here (constraints, poste generation,
- * exports) needed to change when rules were introduced.</p>
- *
- * <p>Pure and static, like {@code VacationGeneratorService}: no CDI, no
- * database, unit-testable on plain objects.</p>
+ * <p>Pure and static, no CDI, no database, unit-testable on plain objects.</p>
  */
 public final class HoraireStandResolver {
-
-    /**
-     * Why a day nobody declared came out closed, carried onto the window the
-     * resolution generates so an analysis can name it.
-     */
-    public static final String MOTIF_JOUR_NON_DECLARE = "Jour non déclaré par le stand";
 
     private HoraireStandResolver() {}
 
     /**
-     * Resolves every stand of {@code stands} against the days {@code creneaux}
-     * spans. Stands without a single rule are left strictly untouched, so a
-     * dataset that never uses rules keeps the exact object graph — and the exact
-     * behaviour — it had before.
+     * Resets every stand of {@code stands} to its stored plages — a stand that
+     * went through a consigne earlier is brought back to the nominal schedule,
+     * so calling this twice yields the same result.
      */
     public static void apply(Collection<Stand> stands, Collection<Creneau> creneaux) {
-        Set<LocalDate> dates = datesConcernees(creneaux);
-        if (dates.isEmpty()) {
-            return;
-        }
         for (Stand stand : stands) {
-            apply(stand, dates);
+            apply(stand, Set.of());
+        }
+    }
+
+    /** The same reset for one stand; {@code dates} is kept for the callers that resolve a single stand over a known set of days. */
+    public static void apply(Stand stand, Collection<LocalDate> dates) {
+        if (stand != null) {
+            stand.setPlagesEffectives(null);
         }
     }
 
@@ -65,228 +43,31 @@ public final class HoraireStandResolver {
      * Days a resolution has to cover: every date carrying a créneau, plus the
      * day after a créneau that crosses midnight — the only case
      * {@link Creneau#segmentsOuvertsMinutes(Stand)} reads a window dated later
-     * than the slot's own date. Expanding beyond that would be pointless at
-     * best (an unreadable window) and misleading at worst.
+     * than the slot's own date.
      */
     public static Set<LocalDate> datesConcernees(Collection<Creneau> creneaux) {
-        Set<LocalDate> dates = new TreeSet<>();
-        for (Creneau creneau : creneaux) {
-            LocalDate date = creneau.getDate();
-            if (date == null) {
-                continue;
-            }
-            dates.add(date);
-            if (creneau.getHeureDebut() != null
-                    && creneau.getHeureFin() != null
-                    && !creneau.getHeureFin().isAfter(creneau.getHeureDebut())) {
-                dates.add(date.plusDays(1));
-            }
-        }
-        return dates;
+        return HorairesRecurrents.datesConcernees(creneaux);
     }
 
-    /**
-     * Resolves one stand. A no-op without rules; otherwise both effective lists
-     * are rebuilt from scratch, so calling this twice on the same stand yields
-     * the same result (the dated exceptions it reads are never modified).
-     */
-    public static void apply(Stand stand, Collection<LocalDate> dates) {
-        if (stand == null || stand.getHoraires().isEmpty()) {
-            return;
-        }
-        Set<LocalDate> joursAvecException = new LinkedHashSet<>();
-        stand.getIndisponibilites().stream()
-                .map(IndisponibiliteStand::getDate)
-                .filter(Objects::nonNull)
-                .forEach(joursAvecException::add);
-        stand.getOuvertures().stream()
-                .map(OuvertureStand::getDate)
-                .filter(Objects::nonNull)
-                .forEach(joursAvecException::add);
-
-        List<IndisponibiliteStand> fermetures = new ArrayList<>(stand.getIndisponibilites());
-        List<OuvertureStand> ouvertures = new ArrayList<>(stand.getOuvertures());
-        boolean declaresOpenings = declaresOpenings(stand.getHoraires());
-        for (LocalDate date : dates) {
-            // Layer 1: a day stated by hand keeps the rules out of it.
-            if (!joursAvecException.contains(date)) {
-                resolveInto(stand, date, declaresOpenings, fermetures, ouvertures);
-            }
-        }
-        stand.setFenetresEffectives(fermetures, ouvertures);
-    }
-
-    /** Expands the rules onto one day no dated exception states. */
-    private static void resolveInto(
-            Stand stand,
-            LocalDate date,
-            boolean declaresOpenings,
-            List<IndisponibiliteStand> fermetures,
-            List<OuvertureStand> ouvertures) {
-        JourResolu resolu = resolveDay(stand.getHoraires(), date);
-        if (resolu == null) {
-            if (declaresOpenings) {
-                // Layer 3 with openings declared elsewhere: a day this stand
-                // never mentions is a day it does not open. See
-                // declaresOpenings below for why that reading, and not
-                // the historical open-all-day, is the right one here.
-                fermetures.add(new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_JOUR_NON_DECLARE));
-            }
-            return;
-        }
-        for (FenetreHoraire fenetre : resolu.fenetres()) {
-            if (resolu.mode() == ModeHoraire.OUVERTURE) {
-                // The window's effectif rides along: it is the whole point
-                // of a rule that a stand's staffing profile is stated once
-                // and expanded onto every day it covers.
-                ouvertures.add(new OuvertureStand(
-                        null,
-                        date,
-                        fenetre.getHeureDebut(),
-                        fenetre.getHeureFin(),
-                        resolu.motif(),
-                        fenetre.getEffectif()));
-            } else {
-                fermetures.add(new IndisponibiliteStand(
-                        null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), resolu.motif()));
-            }
-        }
-    }
-
-    /**
-     * True when the stand states, somewhere in its rules, hours at which it
-     * opens — and therefore reads as a schedule rather than as a list of
-     * exceptions to being always open.
-     *
-     * <p>This is what decides the meaning of a day no rule covers. A stand
-     * whose rules only ever <em>close</em> — "shut every afternoon", "shut on
-     * the 14th" — is describing exceptions to a stand that is otherwise open,
-     * and the historical default stands: silence means open. A stand that
-     * declares openings is describing its schedule, and silence there means
-     * exactly what it means on any opening schedule: that day, it does not
-     * open.</p>
-     *
-     * <p>Before this, saying "open on these twelve dates and nothing else"
-     * took a second rule whose only job was to shut the days the first did not
-     * name — and the only way to write it was a closure running from an hour
-     * early enough to cover every créneau, {@code 09:00} until closing on the
-     * reference event. Sixty-five stands carried one. It was boilerplate, and
-     * worse, it was a trap: a créneau added at {@code 08:00} would have
-     * silently reopened every one of them.</p>
-     */
-    static boolean declaresOpenings(List<HoraireStand> horaires) {
-        return horaires.stream()
-                .anyMatch(horaire -> horaire.getMode() == ModeHoraire.OUVERTURE
-                        && !horaire.validFenetres().isEmpty());
-    }
-
-    /** Which of the three layers decided a given day — see {@link HoraireStand}. */
+    /** What decided a given day of a stand's schedule. */
     public enum SourceHoraire {
         /** Nothing states anything about that day: open all day. */
         DEFAUT,
-        /** A recurring rule covers it. */
-        REGLE,
-        /** A dated window names it, and therefore overrides the rules. */
+        /** The stand carries at least one plage dated that day. */
         EXCEPTION
     }
 
     /**
-     * Which layer governs {@code date} for {@code stand}. Reads the <b>dated</b>
-     * lists, not the effective ones, so the answer stays the same whether or not
-     * a resolution has already run — otherwise every day would look like an
-     * exception once expanded.
+     * What governs {@code date} for {@code stand}. Reads the <b>stored</b>
+     * plages, not the effective ones, so the answer stays the same whether or
+     * not a consigne has been laid on top.
      */
     public static SourceHoraire sourceOfDay(Stand stand, LocalDate date) {
         if (stand == null || date == null) {
             return SourceHoraire.DEFAUT;
         }
-        boolean datee = stand.getIndisponibilites().stream().anyMatch(f -> date.equals(f.getDate()))
-                || stand.getOuvertures().stream().anyMatch(o -> date.equals(o.getDate()));
-        if (datee) {
-            return SourceHoraire.EXCEPTION;
-        }
-        if (resolveDay(stand.getHoraires(), date) != null) {
-            return SourceHoraire.REGLE;
-        }
-        // A day no rule covers is still governed by the rules when they declare
-        // openings: they say it is shut. Only a stand that declares none falls
-        // back to the open-all-day default.
-        return declaresOpenings(stand.getHoraires()) ? SourceHoraire.REGLE : SourceHoraire.DEFAUT;
+        return stand.getPlages().stream().anyMatch(plage -> date.equals(plage.getDate()))
+                ? SourceHoraire.EXCEPTION
+                : SourceHoraire.DEFAUT;
     }
-
-    /** What the rules say about one day: one mode, and the windows to apply. */
-    record JourResolu(ModeHoraire mode, List<FenetreHoraire> fenetres, String motif) {}
-
-    /**
-     * The rules' verdict for {@code date}, or {@code null} when none covers it
-     * (the day is then left open by default). Only the covering rules of highest
-     * {@link HoraireStand#specificite()} are kept, and the union of their windows
-     * is returned.
-     *
-     * <p>Should two rules of that same top specificity disagree on the mode,
-     * {@link ModeHoraire#OUVERTURE} wins and the closures are dropped. That
-     * combination is rejected at write time
-     * ({@code ReferenceDataService#validateHoraires}), so this is a defensive
-     * tie-break for data arriving another way — a hand-written scenario file,
-     * say. Opening wins because it is the more restrictive reading of the two:
-     * closed-by-default outside the listed windows never staffs a stand somebody
-     * declared shut, whereas the other choice would.</p>
-     */
-    static JourResolu resolveDay(List<HoraireStand> horaires, LocalDate date) {
-        RuledDay jour = resolveDayWithRules(horaires, date);
-        return jour == null ? null : new JourResolu(jour.mode(), jour.fenetres(), jour.motif());
-    }
-
-    /**
-     * What {@link #resolveDay} decides for {@code date}, plus <b>which rules</b>
-     * decided it: the covering rules of highest specificity whose mode won, in
-     * the order the stand lists them. The verdict is the very same — this is
-     * the one implementation, {@link #resolveDay} only drops the rules.
-     *
-     * <p>Exists so an analysis can tell a rule that governs some day from one
-     * that never does, and two rules merged on a same day from two rules that
-     * never meet ({@code HoraireRuleOverlaps}). Dated exceptions are not read
-     * here, exactly as in {@link #resolveDay}: the caller skips the days they
-     * name.</p>
-     *
-     * @return {@code null} when no rule with a valid window covers the day
-     */
-    public static RuledDay resolveDayWithRules(List<HoraireStand> horaires, LocalDate date) {
-        List<HoraireStand> couvrantes = horaires.stream()
-                .filter(horaire -> horaire.couvre(date))
-                .filter(horaire -> !horaire.validFenetres().isEmpty())
-                .toList();
-        if (couvrantes.isEmpty()) {
-            return null;
-        }
-        int specificiteMax =
-                couvrantes.stream().mapToInt(HoraireStand::specificite).max().orElseThrow();
-        List<HoraireStand> gagnantes = couvrantes.stream()
-                .filter(horaire -> horaire.specificite() == specificiteMax)
-                .toList();
-        ModeHoraire mode = gagnantes.stream().anyMatch(horaire -> horaire.getMode() == ModeHoraire.OUVERTURE)
-                ? ModeHoraire.OUVERTURE
-                : ModeHoraire.FERMETURE;
-        List<HoraireStand> retenues =
-                gagnantes.stream().filter(horaire -> horaire.getMode() == mode).toList();
-        List<FenetreHoraire> fenetres = retenues.stream()
-                .flatMap(horaire -> horaire.validFenetres().stream())
-                .distinct()
-                .sorted(Comparator.comparing(FenetreHoraire::getHeureDebut))
-                .toList();
-        String motif = retenues.stream()
-                .map(HoraireStand::getMotif)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-        return new RuledDay(mode, fenetres, motif, retenues);
-    }
-
-    /**
-     * The rules' verdict for one day and the rules that carry it.
-     *
-     * @param rules the rules whose windows were merged into {@code fenetres},
-     *              never empty
-     */
-    public record RuledDay(ModeHoraire mode, List<FenetreHoraire> fenetres, String motif, List<HoraireStand> rules) {}
 }

@@ -4,12 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.CelluleCreneau;
@@ -55,7 +52,6 @@ class GrilleHorairesStandsTest {
         Stand stand = new Stand(id, id, Set.of(), min, max, false);
         stand.setIndisponibilites(new ArrayList<>());
         stand.setOuvertures(new ArrayList<>());
-        stand.setHoraires(new ArrayList<>());
         return stand;
     }
 
@@ -78,27 +74,26 @@ class GrilleHorairesStandsTest {
     }
 
     @Test
-    void unMotifRepeteDevientUneRegleTousLesJoursAuxBornesDerivees() {
+    void unMotifRepeteDevientUnePlageParJourEtParFenetreAuxBornesDerivees() {
         List<Creneau> creneaux = grille(12);
         Stand stand = stand("BOURSE", 1, 1);
 
         LigneGrille ligne =
                 GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, 2, null, null, 4, 4));
 
-        assertThat(ligne.compacte()).isTrue();
-        assertThat(ligne.regles()).isEqualTo(1);
-        assertThat(ligne.exceptions()).isZero();
+        assertThat(ligne.compacte()).isFalse();
+        assertThat(ligne.regles()).isZero();
+        assertThat(ligne.exceptions()).isEqualTo(24);
         assertThat(stand.getEffectifMin()).isEqualTo(2);
         assertThat(stand.getEffectifMax()).isEqualTo(4);
-        HoraireStand regle = stand.getHoraires().get(0);
-        assertThat(regle.getJours()).isEqualTo(TypeJoursHoraire.TOUS);
-        assertThat(regle.getMode()).isEqualTo(ModeHoraire.OUVERTURE);
         // 14-20 and 20-00 at the same headcount are one window, open-ended:
         // the minimum is inherited, the afternoon names its four.
-        assertThat(regle.getFenetres())
+        assertThat(stand.getOuvertures())
+                .filteredOn(plage -> plage.getDate().equals(JOUR_1))
+                .extracting(PlageStand::getHeureDebut, PlageStand::getHeureFin, PlageStand::getEffectif)
                 .containsExactly(
-                        new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), null),
-                        new FenetreHoraire(LocalTime.of(14, 0), null, 4));
+                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(10, 0), LocalTime.of(12, 0), null),
+                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(14, 0), null, 4));
     }
 
     @Test
@@ -125,16 +120,10 @@ class GrilleHorairesStandsTest {
         List<SaisieCellule> saisie = sameCellsEveryDay(creneaux, 2, 2, null, 3, null);
 
         GrilleHorairesStands.apply(stand, creneaux, saisie);
-        List<HoraireStand> premiere = List.copyOf(stand.getHoraires());
-        int exceptions =
-                stand.getOuvertures().size() + stand.getIndisponibilites().size();
+        int plages = stand.getPlages().size();
         GrilleHorairesStands.apply(stand, creneaux, saisie);
 
-        assertThat(stand.getHoraires()).hasSameSizeAs(premiere);
-        assertThat(stand.getHoraires().get(0).getFenetres())
-                .isEqualTo(premiere.get(0).getFenetres());
-        assertThat(stand.getOuvertures().size() + stand.getIndisponibilites().size())
-                .isEqualTo(exceptions);
+        assertThat(stand.getPlages()).hasSize(plages);
     }
 
     /**
@@ -144,7 +133,7 @@ class GrilleHorairesStandsTest {
      * a closure the rules already imply, and this one they do not.
      */
     @Test
-    void unJourFermeResteFermeEtDevientLExceptionDuMotif() {
+    void unJourFermeResteFermeEtSEcritCommeUneFermeture() {
         List<Creneau> creneaux = grille(4);
         Stand stand = stand("REPOS", 1, 1);
         List<SaisieCellule> saisie = new ArrayList<>(sameCellsEveryDay(creneaux, 1, 1, 1, 1, 1));
@@ -156,8 +145,9 @@ class GrilleHorairesStandsTest {
         LigneGrille ligne = GrilleHorairesStands.apply(stand, creneaux, saisie);
         RapportOuvertures rapport = relire(stand, creneaux);
 
-        assertThat(ligne.regles()).isEqualTo(1);
-        assertThat(ligne.exceptions()).isEqualTo(1);
+        // Three open days of one window each, and the closed one.
+        assertThat(ligne.regles()).isZero();
+        assertThat(ligne.exceptions()).isEqualTo(4);
         assertThat(rapport.stands().get(0).jours().get(2).etat())
                 .isEqualTo(OuvertureStandsAnalyzer.EtatOuverture.FERME);
         assertThat(cellulesLues(rapport, 2))
@@ -180,9 +170,9 @@ class GrilleHorairesStandsTest {
         assertThat(ligne.effectifMax()).isEqualTo(5);
         // Not "nothing stated" — that would mean open all day.
         assertThat(rapport.stands().get(0).postes()).isZero();
-        assertThat(stand.getHoraires())
-                .singleElement()
-                .satisfies(regle -> assertThat(regle.getMode()).isEqualTo(ModeHoraire.FERMETURE));
+        assertThat(stand.getPlages())
+                .hasSize(3)
+                .allSatisfy(plage -> assertThat(plage.getMode()).isEqualTo(ModeHoraire.FERMETURE));
     }
 
     @Test
@@ -190,8 +180,8 @@ class GrilleHorairesStandsTest {
         List<Creneau> creneaux = grille(1);
         Stand stand = stand("VARIABLE", 2, 4);
         // 4 people from 14:00 to 19:00, then 2 until 20:00: the workbook's own shape.
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+        stand.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
+        stand.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
         RapportOuvertures avant = relire(stand, creneaux);
         assertThat(cellulesLues(avant, 0))
                 .extracting(CelluleCreneau::effectif)
@@ -217,8 +207,8 @@ class GrilleHorairesStandsTest {
     void uneCasePartielleRetapeeAutrementEstAligneeSurLeCreneau() {
         List<Creneau> creneaux = grille(1);
         Stand stand = stand("VARIABLE", 2, 4);
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
+        stand.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4));
+        stand.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2));
         relire(stand, creneaux);
 
         GrilleHorairesStands.apply(stand, creneaux, sameCellsEveryDay(creneaux, null, null, null, 3, null));
@@ -236,7 +226,7 @@ class GrilleHorairesStandsTest {
     void aplatirEtendUneCaseEnUnMorceauAuCreneauEntier() {
         List<Creneau> creneaux = grille(2);
         Stand stand = stand("DECALE", 1, 1);
-        stand.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(11, 0), null));
+        stand.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(11, 0), null));
         relire(stand, creneaux);
 
         // Sent in one piece as shown, the hour-long opening survives as its own column.

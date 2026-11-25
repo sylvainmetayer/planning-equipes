@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -385,7 +385,8 @@ class FragiliteAnalyzerTest {
         // otherwise « 3 seats required, minimum 1 » reads as a contradiction.
         Stand stand = stand("A", 1, "JEUX");
         Creneau slot = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
-        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0), null, 3)));
+        stand.setOuvertures(
+                List.of(PlageStand.ouverture(null, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0), null, 3)));
         Animateur alice = animateur("alice", "JEUX");
         Animateur bob = animateur("bob", "JEUX");
         Animateur carol = animateur("carol", "JEUX");
@@ -405,7 +406,8 @@ class FragiliteAnalyzerTest {
         // screen can honestly show.
         Stand stand = stand("A", 2, "JEUX");
         Creneau slot = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
-        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(10, 0), LocalTime.of(11, 0), null, 5)));
+        stand.setOuvertures(
+                List.of(PlageStand.ouverture(null, JOUR, LocalTime.of(10, 0), LocalTime.of(11, 0), null, 5)));
         Animateur alice = animateur("alice", "JEUX");
         Animateur bob = animateur("bob", "JEUX");
 

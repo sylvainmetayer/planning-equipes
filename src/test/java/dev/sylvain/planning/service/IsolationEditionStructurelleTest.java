@@ -95,8 +95,6 @@ class IsolationEditionStructurelleTest {
             "animateur_contact",
             "stand_indisponibilite",
             "stand_ouverture",
-            "stand_horaire",
-            "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
             "journee_type_date",

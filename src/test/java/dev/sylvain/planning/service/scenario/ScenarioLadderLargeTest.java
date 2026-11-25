@@ -8,7 +8,7 @@ import static dev.sylvain.planning.service.scenario.ScenarioLadder.solveUntilFea
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -115,7 +115,7 @@ class ScenarioLadderLargeTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(fermeParfois.getIndisponibilites()).hasSize(3);
-        for (IndisponibiliteStand fermeture : fermeParfois.getIndisponibilites()) {
+        for (PlageStand fermeture : fermeParfois.getIndisponibilites()) {
             assertThat(seatsOnStand(loaded.problem().getPostes(), "STAND-04"))
                     .filteredOn(poste -> poste.getCreneau().getDate().equals(fermeture.getDate())
                             && poste.getCreneau().getHeureDebut().equals(LocalTime.of(14, 0)))

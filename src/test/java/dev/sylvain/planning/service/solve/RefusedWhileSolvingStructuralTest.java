@@ -101,14 +101,10 @@ class RefusedWhileSolvingStructuralTest {
             + "|stateOf|view|refuseIfFrozen).*");
 
     /** Method → why it keeps an explicit {@code refuseIfSolving} call rather than the annotation. */
-    private static final Map<String, String> IMPERATIVE = Map.ofEntries(
-            Map.entry(
-                    "StandService#compactHoraires(boolean)",
-                    "refuses only when it applies: a dry run writes nothing and may be read during a solve"),
-            Map.entry(
-                    "PlanningPersistenceService#refuseIfSolving()",
-                    "the guard itself, asked on its own by PlanningWhatIf#prepareSeating, where no interceptor"
-                            + " can run (see IMPERATIVE_ELSEWHERE)"));
+    private static final Map<String, String> IMPERATIVE = Map.ofEntries(Map.entry(
+            "PlanningPersistenceService#refuseIfSolving()",
+            "the guard itself, asked on its own by PlanningWhatIf#prepareSeating, where no interceptor"
+                    + " can run (see IMPERATIVE_ELSEWHERE)"));
 
     /**
      * The explicit calls outside the guarded services, as {@code Class#method},
@@ -150,7 +146,6 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry(
                     "ReferenceDataService#writeStand(String,Stand)", "ReferenceDataService#updateStand(String,Stand)"),
             Map.entry("ReferenceDataService#deleteStand(String)", "StandService#delete(String)"),
-            Map.entry("ReferenceDataService#compactHoraires(boolean)", "StandService#compactHoraires(boolean)"),
             Map.entry("ReferenceDataService#saisirGrilleHoraires(List)", "StandService#saisirGrille(List)"),
             Map.entry("ReferenceDataService#createEmplacement(Emplacement)", "EmplacementService#create(Emplacement)"),
             Map.entry(

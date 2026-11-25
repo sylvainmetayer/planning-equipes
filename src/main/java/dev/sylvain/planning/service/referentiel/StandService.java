@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
@@ -71,9 +70,8 @@ public class StandService {
     }
 
     /**
-     * Stands as entered: the recurring {@link HoraireStand} rules and the dated
-     * exceptions, side by side, with no expansion. This is the CRUD view — what
-     * the admin UI edits and what a save writes back. Anything that needs the
+     * Stands as entered: their stored plages, nothing laid on top. This is the
+     * CRUD view — what the admin UI edits and what a save writes back. Anything that needs the
      * <em>effective</em> windows of a given day wants {@link #listSolved()}
      * instead.
      */
@@ -82,13 +80,13 @@ public class StandService {
     }
 
     /**
-     * Stands with their rules already expanded against the edition's days, so
+     * Stands with the consignes already laid on their plages, so
      * {@link Creneau#segmentsOuvertsMinutes(Stand)} sees the effective
      * windows — what the solver, the poste generation and the feasibility
      * analysis all build on.
      *
-     * <p>The expansion lands on {@link Stand#setFenetresEffectives} and never on
-     * the persisted lists, so these instances stay safe to hand to a save path
+     * <p>The result lands on {@link Stand#setPlagesEffectives} and never on
+     * the persisted list, so these instances stay safe to hand to a save path
      * (see {@link HoraireStandResolver}).</p>
      */
     public List<Stand> listSolved() {
@@ -98,9 +96,9 @@ public class StandService {
     }
 
     /**
-     * Rules and dated exceptions first, then the edition's consignes on top
-     * (issue #4): the one entry point every reader of effective windows goes
-     * through. A caller that expanded the rules itself would silently ignore
+     * The stored plages first, then the edition's consignes on top (issue
+     * #4): the one entry point every reader of effective windows goes
+     * through. A caller that read the plages itself would silently ignore
      * a consigne and staff a band an arrêté closed —
      * {@code ConsigneCoucheStructurelleTest} refuses any such caller.
      */
@@ -279,55 +277,5 @@ public class StandService {
         if (stand.getTypologiesProposees() != null) {
             typologies.validateIds(stand.getTypologiesProposees());
         }
-    }
-
-    /**
-     * Rewrites every stand's hand-entered dated windows as the recurring
-     * horaires they repeat, against the edition's days. With
-     * {@code apply} false nothing is written: the returned report describes
-     * what the operation <em>would</em> do, which is what makes it safe to show
-     * before committing to it.
-     *
-     * <p>Only stands the compaction proved equivalent are saved
-     * ({@link HoraireCompaction#maxGapMinutes}); the others come back in
-     * the report with the reason they were left alone. Each one is saved
-     * individually so a single problematic stand cannot roll back the rest.</p>
-     */
-    public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
-        List<Stand> stands = list();
-        HoraireCompaction.RapportCompactage rapport = HoraireCompaction.compact(stands, creneaux.list(), apply);
-        if (!apply) {
-            return rapport;
-        }
-        // Checked once for the whole compaction, not per stand: it rewrites every
-        // compacted stand through saveStand, and a landing solve would revert
-        // their typologies, indisponibilités and ouvertures. A dry run writes
-        // nothing, hence the check sitting after the early return — and the
-        // freeze with it: a compaction rewrites opening hours, which a
-        // STANDS freeze covers, but a dry run may still be read.
-        solverJobs.refuseIfSolving();
-        gel.refuseIfFrozen(ReferentialFamily.STANDS);
-        Set<String> compactes = rapport.stands().stream()
-                .filter(HoraireCompaction.LigneCompactage::compacte)
-                .map(HoraireCompaction.LigneCompactage::standId)
-                .collect(Collectors.toSet());
-        boolean modifie = false;
-        try {
-            for (Stand stand : stands) {
-                if (compactes.contains(stand.getId())) {
-                    repository.saveStand(stand, false);
-                    modifie = true;
-                }
-            }
-        } finally {
-            // One transaction per stand, so a failure midway leaves the earlier
-            // ones committed: mark what was written rather than nothing. See
-            // CreneauService#createInBulk for why over-marking is the safe
-            // direction.
-            if (modifie) {
-                changeTracker.markModified();
-            }
-        }
-        return rapport;
     }
 }

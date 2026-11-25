@@ -4,12 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -73,16 +69,14 @@ class ChampsModifiesTest {
 
     /**
      * The before-image is re-read from the base, the after-image is the
-     * caller's: two instances of every rule and window. A rename of a stand
-     * carrying one recurring rule used to be journaled « nom, horaires ».
+     * caller's: two instances of every window, so a rename of a stand carrying
+     * one must not be journaled « nom, indisponibilites ».
      */
     @Test
     void aStandsScheduleIsComparedByValueNotByInstance() {
         Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
-        avant.setHoraires(List.of(regle(null)));
         avant.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 18), 10, 12)));
         Stand apres = new Stand("S1", "Village (grand)", Set.of("STRATEGIE"), 2, 4, false);
-        apres.setHoraires(List.of(regle(3L)));
         apres.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 18), 10, 12)));
 
         assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("nom");
@@ -99,16 +93,8 @@ class ChampsModifiesTest {
         assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("indisponibilites");
     }
 
-    private static HoraireStand regle(Long id) {
-        return new HoraireStand(
-                id,
-                ModeHoraire.OUVERTURE,
-                TypeJoursHoraire.TOUS,
-                List.of(new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0), 2)));
-    }
-
-    private static IndisponibiliteStand fermeture(Long id, LocalDate date, int debut, int fin) {
-        return new IndisponibiliteStand(id, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0), "Pause");
+    private static PlageStand fermeture(Long id, LocalDate date, int debut, int fin) {
+        return PlageStand.fermeture(id, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0), "Pause");
     }
 
     @Test

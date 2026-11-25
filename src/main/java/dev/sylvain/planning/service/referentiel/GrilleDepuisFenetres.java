@@ -1,7 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
@@ -86,9 +86,6 @@ public final class GrilleDepuisFenetres {
         for (LocalDate date = parametres.dateDebut(); !date.isAfter(parametres.dateFin()); date = date.plusDays(1)) {
             dates.add(date);
         }
-        for (Stand stand : stands) {
-            HoraireStandResolver.apply(stand, dates);
-        }
         int fermeture = parametres.heureFermeture().toSecondOfDay() / 60;
         if (fermeture == 0) {
             fermeture = MINUTES_PAR_JOUR;
@@ -122,7 +119,7 @@ public final class GrilleDepuisFenetres {
             if (HoraireStandResolver.sourceOfDay(stand, date) == HoraireStandResolver.SourceHoraire.DEFAUT) {
                 continue;
             }
-            for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
+            for (PlageStand ouverture : stand.getOuverturesEffectives()) {
                 if (date.equals(ouverture.getDate()) && ouverture.hasValidRange()) {
                     int debut = ouverture.getHeureDebut().toSecondOfDay() / 60;
                     int fin = windowEnd(ouverture, debut, fermeture);
@@ -142,7 +139,7 @@ public final class GrilleDepuisFenetres {
      * window opening after the closing hour given, means the next day. Read as a
      * same-day end it was silently dropped.
      */
-    private static int windowEnd(OuvertureStand ouverture, int debut, int fermeture) {
+    private static int windowEnd(PlageStand ouverture, int debut, int fermeture) {
         if (ouverture.getHeureFin() != null) {
             return ouverture.getHeureFin().toSecondOfDay() / 60;
         }

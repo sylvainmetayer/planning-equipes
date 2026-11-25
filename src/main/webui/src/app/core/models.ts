@@ -137,16 +137,22 @@ export interface Stand {
  */
 export interface IndisponibiliteStand {
   id: number | null;
+  /** The plage's mode, always `FERMETURE` here. Since 4.0 the server stores one list of plages and serves both. */
+  mode?: ModeHoraire;
   date: string;
   heureDebut: string;
   heureFin: string | null;
   /** Free-text reason, nullable — purely informative, never read by the solver. */
   motif: string | null;
+  /** Always null on a closure. */
+  effectif?: number | null;
 }
 
 /** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
 export interface OuvertureStand {
   id: number | null;
+  /** The plage's mode, always `OUVERTURE` here. */
+  mode?: ModeHoraire;
   date: string;
   heureDebut: string;
   heureFin: string | null;

@@ -5,10 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -184,8 +183,8 @@ class FeasibilityAnalyzerTest {
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Stand ouvert = stand("stand-2", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        stand.setIndisponibilites(List.of(new IndisponibiliteStand(
-                null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
+        stand.setIndisponibilites(List.of(
+                PlageStand.fermeture(null, creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), null)));
 
         FeasibilityReport report =
                 analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(stand, ouvert), List.of(creneau));
@@ -202,7 +201,7 @@ class FeasibilityAnalyzerTest {
         Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setOuvertures(List.of(
-                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
+                PlageStand.ouverture(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
 
         FeasibilityReport report = analyzer.analyze(
                 List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")), List.of(stand), List.of(creneau));
@@ -221,7 +220,7 @@ class FeasibilityAnalyzerTest {
         Stand stand = stand("stand-1", 3, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setOuvertures(List.of(
-                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 1)));
+                PlageStand.ouverture(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 1)));
 
         FeasibilityReport report =
                 analyzer.analyze(List.of(animateur("a1", "STRATEGIE")), List.of(stand), List.of(creneau));
@@ -237,8 +236,8 @@ class FeasibilityAnalyzerTest {
         Stand stand = stand("stand-1", 1, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         stand.setOuvertures(List.of(
-                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(11, 0), null, 2),
-                new OuvertureStand(null, creneau.getDate(), LocalTime.of(11, 0), LocalTime.of(12, 0), null, 4)));
+                PlageStand.ouverture(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(11, 0), null, 2),
+                PlageStand.ouverture(null, creneau.getDate(), LocalTime.of(11, 0), LocalTime.of(12, 0), null, 4)));
         List<Animateur> quatre = List.of(
                 animateur("a1", "STRATEGIE"),
                 animateur("a2", "STRATEGIE"),
@@ -262,7 +261,7 @@ class FeasibilityAnalyzerTest {
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
         creneau.setCouverturePause(true);
         stand.setOuvertures(List.of(
-                new OuvertureStand(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
+                PlageStand.ouverture(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
 
         FeasibilityReport report = analyzer.analyze(
                 List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")), List.of(stand), List.of(creneau));
@@ -331,7 +330,7 @@ class FeasibilityAnalyzerTest {
     @Test
     void anEditionWhoseStandsOpenOnNoTimeslotIsNotFeasible() {
         Stand ferme = stand("stand-1", 1, "STRATEGIE");
-        ferme.setIndisponibilites(List.of(new dev.sylvain.planning.domain.IndisponibiliteStand(
+        ferme.setIndisponibilites(List.of(dev.sylvain.planning.domain.PlageStand.fermeture(
                 null, LocalDate.of(2026, 8, 1), LocalTime.of(9, 0), null, null)));
 
         FeasibilityReport report = analyzer.analyze(
@@ -580,7 +579,7 @@ class FeasibilityAnalyzerTest {
     void aShortfallOnATimeslotWhoseStandOpensLaterIsNotFrozenBeforeTheOpening() {
         LocalDate day = LocalDate.of(2026, 8, 1);
         Stand stand = stand("stand-1", 5, "STRATEGIE");
-        stand.setOuvertures(List.of(new OuvertureStand(null, day, LocalTime.of(11, 0), LocalTime.of(13, 0), null)));
+        stand.setOuvertures(List.of(PlageStand.ouverture(null, day, LocalTime.of(11, 0), LocalTime.of(13, 0), null)));
         Creneau creneau = new Creneau(1L, 1, day, LocalTime.of(9, 0), LocalTime.of(13, 0));
 
         CauseInfaisabilite atTen = shortfallAt(stand, creneau, new PastHorizon(day, LocalTime.of(10, 0)));

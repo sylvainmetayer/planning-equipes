@@ -938,9 +938,7 @@ public class ReferentielCsvImportService {
         stand.setReserveMajeurs(source.isReserveMajeurs());
         stand.setPremium(source.isPremium());
         stand.setNiveauEffort(source.getNiveauEffort());
-        stand.setHoraires(source.getHoraires());
-        stand.setOuvertures(source.getOuvertures());
-        stand.setIndisponibilites(source.getIndisponibilites());
+        stand.setPlages(new ArrayList<>(source.getPlages()));
         stand.setModifieLe(source.getModifieLe());
         return stand;
     }

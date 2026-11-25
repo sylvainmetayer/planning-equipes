@@ -55,7 +55,7 @@ Les créneaux sortent toujours tels quels, avec `couverturePause: true` quand il
 
 ## `schemaVersion`
 
-Un fichier écrit par l'application commence par `schemaVersion: 2` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
+Un fichier écrit par l'application commence par `schemaVersion: 3` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
 
 ## `postes` : absente et vide ne disent pas la même chose
 
@@ -77,12 +77,24 @@ Les poids se lisent sur l'échelle actuelle (faible 1, normale 5, forte 25, voir
 
 ## Horaires d'un stand
 
-Le sélecteur de jours est à plat : `jours` nomme lequel des champs voisins s'applique (`TOUS` par défaut, `JOURS_SEMAINE`, `PLAGE`, `DATES`), et seul celui-là est lu.
+Un stand porte une liste `plages` : chacune est une fenêtre datée, ouverte ou fermée (`mode: OUVERTURE` ou `FERMETURE`), avec sa `date` et ses heures. Il n'y a pas de règle récurrente ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)) : un horaire quotidien s'écrit une plage par jour.
 
-- `heureFin` omise signifie « jusqu'à la fermeture » : la fenêtre court jusqu'à la fin du créneau évalué. Une même règle couvre ainsi un jour qui ferme à 20 h et un jour qui ferme à minuit, sans le contournement `23:59` qu'imposait une heure concrète (une fenêtre ne peut pas chevaucher minuit).
-- `effectif` omis signifie « hériter de `effectifMin` », le cas le plus courant. Le renseigner sur une fenêtre permet à un stand dont la charge varie dans la journée (4 personnes le matin, 5 le soir) de rester un seul stand. Le champ existe sur une fenêtre de règle récurrente et sur une ouverture datée.
+```yaml
+stands:
+  - id: BOURSE
+    nom: Bourse
+    # …
+    plages:
+      - { date: 2026-07-08, mode: OUVERTURE, heureDebut: '10:00', heureFin: '12:00' }
+      - { date: 2026-07-08, mode: OUVERTURE, heureDebut: '14:00', effectif: 3 }
+      - { date: 2026-07-09, mode: FERMETURE, heureDebut: '00:00', motif: Absent ce jour }
+```
 
-Une portée plus précise prime sur une portée plus large, et une exception datée prime sur toutes les règles pour le seul jour qu'elle nomme. L'arbitrage complet est dans [Horaires, consignes et fenêtres effectives](horaires-et-fenetres-des-stands.md).
+- `heureFin` omise signifie « jusqu'à la fermeture » : la fenêtre court jusqu'à la fin du créneau évalué. Une fenêtre ne peut pas chevaucher minuit : la nuit s'écrit en deux plages, une par jour.
+- `effectif` omis signifie « hériter de `effectifMin` », le cas le plus courant. Le renseigner sur une ouverture permet à un stand dont la charge varie dans la journée (4 personnes le matin, 5 le soir) de rester un seul stand. Une fermeture n'en porte pas.
+- Un jour sans plage est ouvert toute la journée ; un jour ne porte pas à la fois une ouverture et une fermeture. L'arbitrage complet est dans [Horaires, consignes et fenêtres effectives](horaires-et-fenetres-des-stands.md).
+
+Un fichier de version 1 ou 2 porte encore `horaires` (règles récurrentes), `ouvertures` et `indisponibilites` : le maillon 2 → 3 les convertit en plages sur les jours des `creneaux` du fichier, avec la lecture que l'application leur donnait. Un stand dont les règles n'ont aucun jour où se poser (le fichier ne compte aucun créneau) perd ses règles, et le rapport d'import le dit.
 
 ## Typologies, journées types et clés retirées
 
@@ -190,6 +202,6 @@ Après avoir modifié un DTO, régénérez le schéma :
 ./mvnw process-classes -Pgenerate-schema
 ```
 
-Le schéma ne peut pas exprimer les règles conditionnelles d'un sélecteur d'horaires, vérifiées par `StandValidator`, ni les références croisées, vérifiées à l'import réel.
+Le schéma ne peut pas exprimer qu'un jour ne porte pas à la fois une ouverture et une fermeture, vérifié par `StandValidator`, ni les références croisées, vérifiées à l'import réel.
 
 Le fichier est lu en une seule passe, par `ScenarioYamlReader.buildFromScenarioText` ([`ScenarioYamlReader`](repo:src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java)), qui rend le planning et toutes les sections optionnelles ensemble (`ScenarioImporte`, `ScenarioSections`). Ajouter une section optionnelle, c'est un champ dans `ScenarioSections` et son remplissage dans `ScenarioDomainMapper.sections`, pas une méthode publique de plus : une méthode par section lirait de nouveau le fichier entier à chaque appel, soit autant de parses complets que de sections pour un seul clic.

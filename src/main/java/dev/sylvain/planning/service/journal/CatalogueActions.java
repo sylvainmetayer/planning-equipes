@@ -54,7 +54,6 @@ public final class CatalogueActions {
     private static final String STAND_SUPPRIME = "STAND_SUPPRIME";
     private static final String STAND_HORAIRES_COMPACTES = "STAND_HORAIRES_COMPACTES";
     private static final String STAND_HORAIRE_AJOUTE = "STAND_HORAIRE_AJOUTE";
-    private static final String STAND_HORAIRES_EFFACES = "STAND_HORAIRES_EFFACES";
     private static final String STAND_PLAGE_AJOUTEE = "STAND_PLAGE_AJOUTEE";
     private static final String STAND_PLAGES_EFFACEES = "STAND_PLAGES_EFFACEES";
     private static final String OUVERTURES_SAISIES = "OUVERTURES_SAISIES";
@@ -264,7 +263,6 @@ public final class CatalogueActions {
         changesData(STAND_SUPPRIME, "Stand supprimé", Entite.STAND);
         changesData(STAND_HORAIRES_COMPACTES, "Horaires de stands compactés", Entite.STAND);
         changesData(STAND_HORAIRE_AJOUTE, "Horaire de stand ajouté", Entite.STAND);
-        changesData(STAND_HORAIRES_EFFACES, "Horaires de stand effacés", Entite.STAND);
         changesData(STAND_PLAGE_AJOUTEE, "Plage d'ouverture ou de fermeture ajoutée", Entite.STAND);
         changesData(STAND_PLAGES_EFFACEES, "Plages d'un stand effacées", Entite.STAND);
         changesData(STANDS_IMPORTES, "Grille de stands importée", Entite.STAND);
@@ -746,8 +744,6 @@ public final class CatalogueActions {
         outil("ajouter_ouverture_stand", STAND_PLAGE_AJOUTEE);
         outil("effacer_plages_stand", STAND_PLAGES_EFFACEES);
         outil("ajouter_horaire_stand", STAND_HORAIRE_AJOUTE);
-        outil("effacer_horaires_stand", STAND_HORAIRES_EFFACES);
-        outil("compacter_horaires_stands", STAND_HORAIRES_COMPACTES);
 
         outil("creer_creneau", CRENEAU_CREE);
         outil("modifier_creneau", CRENEAU_MODIFIE);

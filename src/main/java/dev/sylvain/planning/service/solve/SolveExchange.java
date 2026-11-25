@@ -15,11 +15,8 @@ import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreDateeStand;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -105,8 +102,7 @@ public final class SolveExchange {
                 .addMixIn(Stand.class, StandMixin.class)
                 .addMixIn(ContrainteAdHoc.class, FreeTextMixin.class)
                 .addMixIn(VerrouillagePlanning.class, FreeTextMixin.class)
-                .addMixIn(FenetreDateeStand.class, FreeTextMixin.class)
-                .addMixIn(HoraireStand.class, FreeTextMixin.class);
+                .addMixIn(PlageStand.class, FreeTextMixin.class);
     }
 
     /** What travels: the problem, and its weights beside it — Timefold's own type is not a bean. */
@@ -512,18 +508,11 @@ public final class SolveExchange {
     /** The resolved opening hours the rules reason on, which the referential API recomputes instead of serving. */
     private abstract static class StandMixin {
         @JsonProperty
-        List<IndisponibiliteStand> indisponibilitesEffectives;
-
-        @JsonProperty
-        List<OuvertureStand> ouverturesEffectives;
+        List<PlageStand> plagesEffectives;
 
         @JsonIgnore(false)
         @JsonProperty
-        abstract List<IndisponibiliteStand> getIndisponibilitesEffectives();
-
-        @JsonIgnore(false)
-        @JsonProperty
-        abstract List<OuvertureStand> getOuverturesEffectives();
+        abstract List<PlageStand> getPlagesEffectives();
     }
 
     /** What somebody typed, and who typed it, stays home. */

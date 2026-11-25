@@ -96,19 +96,16 @@ public class StandResource {
     }
 
     /**
-     * Rewrites hand-entered dated windows as the recurring horaires they repeat
-     * — the way a dataset captured before rules existed catches up with them.
-     *
-     * <p>{@code apply} defaults to {@code false}: the call is then a dry run
-     * that returns exactly what it <em>would</em> do, per stand, so the report
-     * can be shown before anything is written. Only {@code apply=true}
-     * persists.</p>
+     * Nothing to compact since 4.0: a stand's schedule is a list of dated
+     * plages and there is no recurring rule left to fold them into (ADR 0104),
+     * so the answer is always the empty report. The route stays until the
+     * screen stops offering the action.
      */
     @POST
     @Path("/compactage-horaires")
     public HoraireCompaction.RapportCompactage compactHoraires(
             @QueryParam("appliquer") @DefaultValue("false") boolean apply) {
-        return referenceDataService.compactHoraires(apply);
+        return HoraireCompaction.nothing(apply);
     }
 
     /* ----------------------------- Matrix import ----------------------------- */

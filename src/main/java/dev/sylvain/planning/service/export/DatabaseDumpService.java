@@ -46,7 +46,7 @@ import org.flywaydb.core.api.MigrationVersion;
  * <p>
  * <b>It is still not a backup of the database.</b> What it restores is exactly
  * {@link #TABLES}: the referential, the plan and its publications, what the
- * animateurs declared, and the settings that shape a solve. Nine tables stay
+ * animateurs declared, and the settings that shape a solve. Eleven tables stay
  * out, and {@link #DELIBERATELY_NOT_DUMPED} says why each one does — they
  * describe the machine, its current sessions, or what it has been asked to do
  * next, none of which is the dataset. {@code DatabaseDumpCoverageTest} keeps
@@ -80,8 +80,6 @@ public class DatabaseDumpService {
             "creneau_stand_ouvert",
             "stand_indisponibilite",
             "stand_ouverture",
-            "stand_horaire",
-            "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
             "journee_type_date",
@@ -281,7 +279,12 @@ public class DatabaseDumpService {
             "sauvegarde_avant_vidage",
             "machine_calcul",
             "resolution_distante",
-            "animateur_contact");
+            "animateur_contact",
+            // The recurring rules of 3.x, kept (renamed) by V141 for the editions that had no timeslot to
+            // lay them on, and dropped in 5.0: an archive, not a dataset — a dump written by 4.0 has
+            // nothing to say about rules that no longer exist.
+            "stand_horaire_avant_4_0",
+            "stand_horaire_fenetre_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
@@ -296,8 +299,6 @@ public class DatabaseDumpService {
             "creneau",
             "stand_indisponibilite",
             "stand_ouverture",
-            "stand_horaire",
-            "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
             // BIGSERIAL since V48: left unsynced, the first measurement

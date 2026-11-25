@@ -119,7 +119,7 @@ dev/sylvain/planning/api/SpaCacheControlTest.java
 dev/sylvain/planning/api/StaffingResourceTest.java
 dev/sylvain/planning/api/StaleWriteResourceTest.java
 dev/sylvain/planning/api/StandGrilleImportResourceTest.java
-dev/sylvain/planning/api/StandHoraireDatesResourceTest.java
+dev/sylvain/planning/api/StandPlagesResourceTest.java
 dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
 dev/sylvain/planning/api/WalkingTimeResourceTest.java
@@ -202,3 +202,4 @@ dev/sylvain/planning/api/LocalSignInLockoutTest.java
 dev/sylvain/planning/api/LocalSignInSprayTest.java
 dev/sylvain/planning/api/LecteurCanariTest.java
 dev/sylvain/planning/mcp/OidcMcpLecteurTest.java
+dev/sylvain/planning/service/referentiel/StandPlagesMigrationTest.java

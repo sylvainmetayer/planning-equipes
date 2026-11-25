@@ -79,7 +79,6 @@ class GelReferentielStructuralTest {
     /** Method → the method of the same class whose body calls {@code gel.refuseIfFrozen}. */
     private static final Map<String, String> CHECKED_IN_BODY = Map.ofEntries(
             Map.entry("StandService#update(String,Stand)", "update"),
-            Map.entry("StandService#compactHoraires(boolean)", "compactHoraires"),
             Map.entry("TypologieService#update(String,TypologieItem)", "update"),
             Map.entry("AnimateurService#update(String,Animateur)", "update"),
             Map.entry("AnimateurService#update(String,Animateur,Animateur)", "update"),
@@ -116,7 +115,6 @@ class GelReferentielStructuralTest {
             Map.entry(
                     "ReferenceDataService#writeStand(String,Stand)", "ReferenceDataService#updateStand(String,Stand)"),
             Map.entry("ReferenceDataService#deleteStand(String)", "StandService#delete(String)"),
-            Map.entry("ReferenceDataService#compactHoraires(boolean)", "StandService#compactHoraires(boolean)"),
             Map.entry("ReferenceDataService#saisirGrilleHoraires(List)", "StandService#saisirGrille(List)"),
             Map.entry("ReferenceDataService#createEmplacement(Emplacement)", "EmplacementService#create(Emplacement)"),
             Map.entry(

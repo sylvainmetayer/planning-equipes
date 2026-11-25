@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -237,6 +236,14 @@ class ReferentielMcpToolsTest {
 
     @Test
     void creatingACompleteStandCreatesItsDependenciesAndListsThem() {
+        // The horaires of the stand are laid down as plages on the days of the edition's créneaux.
+        dev.sylvain.planning.domain.Creneau jour =
+                referenceDataService.createCreneau(new dev.sylvain.planning.domain.Creneau(
+                        null,
+                        1,
+                        LocalDate.of(2026, 7, 18),
+                        java.time.LocalTime.of(9, 0),
+                        java.time.LocalTime.of(20, 0)));
         StandMcpTools.CreationStandComplet creation = standTools.createCompleteStand(
                 "Stand complet",
                 "STAND-COMPLET-1",
@@ -276,8 +283,15 @@ class ReferentielMcpToolsTest {
                 .isEqualTo("EMP-COMPLET-1");
         assertThat(creation.stand().typologiesProposees()).containsExactly(typologie);
         assertThat(creation.stand().effectifMin()).isEqualTo(2);
-        assertThat(creation.stand().horaires()).hasSize(1);
+        assertThat(creation.stand().ouvertures())
+                .filteredOn(plage -> LocalDate.of(2026, 7, 18).equals(plage.date()))
+                .extracting(StandMcpTools.PlageView::heureDebut, StandMcpTools.PlageView::heureFin)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple(
+                                java.time.LocalTime.of(10, 0), java.time.LocalTime.of(12, 0)),
+                        org.assertj.core.groups.Tuple.tuple(java.time.LocalTime.of(14, 0), null));
 
+        referenceDataService.deleteCreneau(jour.getId());
         standTools.deleteStand(creation.stand().id(), "E1");
         standTools.deleteEmplacement(emplacement, "E1");
         standTools.deleteTypologie(typologie, "E1");
@@ -411,11 +425,14 @@ class ReferentielMcpToolsTest {
         creneauTools.deleteCreneaux(null, null, null, true, "E1");
         dev.sylvain.planning.domain.Stand stand = new dev.sylvain.planning.domain.Stand(
                 "DERIV-MCP", "Dérivé", java.util.Set.of("STRATEGIE"), 1, 1, false);
-        stand.setHoraires(new java.util.ArrayList<>(List.of(dev.sylvain.planning.domain.HoraireStand.everyDay(
-                dev.sylvain.planning.domain.ModeHoraire.OUVERTURE,
-                new dev.sylvain.planning.domain.FenetreHoraire(
-                        java.time.LocalTime.of(10, 0), java.time.LocalTime.of(12, 0)),
-                new dev.sylvain.planning.domain.FenetreHoraire(java.time.LocalTime.of(14, 0), null)))));
+        for (LocalDate date : List.of(LocalDate.of(2026, 7, 6), LocalDate.of(2026, 7, 7))) {
+            stand.getPlages()
+                    .add(dev.sylvain.planning.domain.PlageStand.ouverture(
+                            null, date, java.time.LocalTime.of(10, 0), java.time.LocalTime.of(12, 0), null));
+            stand.getPlages()
+                    .add(dev.sylvain.planning.domain.PlageStand.ouverture(
+                            null, date, java.time.LocalTime.of(14, 0), null, null));
+        }
         referenceDataService.createStand(stand);
 
         CreneauMcpTools.RapportDerivationMcp apercu =
@@ -467,6 +484,14 @@ class ReferentielMcpToolsTest {
 
     @Test
     void aScheduleWindowAndAnOpeningCarryTheirHeadcountOverMcp() {
+        // The rule is laid down on the days of the edition's créneaux: one on the 19th, the opening goes on the 18th.
+        dev.sylvain.planning.domain.Creneau jour =
+                referenceDataService.createCreneau(new dev.sylvain.planning.domain.Creneau(
+                        null,
+                        1,
+                        LocalDate.of(2026, 7, 19),
+                        java.time.LocalTime.of(9, 0),
+                        java.time.LocalTime.of(20, 0)));
         String stand = standTools
                 .createStand("Village", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
                 .stand()
@@ -477,47 +502,25 @@ class ReferentielMcpToolsTest {
                             stand, "OUVERTURE", "10:00-12:00@2, 14:00-@4", null, null, null, null, null, null, "E1")
                     .stand();
 
-            assertThat(avecRegle.horaires()).hasSize(1);
-            assertThat(avecRegle.horaires().getFirst().fenetres())
-                    .extracting(StandMcpTools.FenetreView::effectif)
+            assertThat(avecRegle.ouvertures())
+                    .extracting(StandMcpTools.PlageView::effectif)
                     .containsExactly(2, 4);
-            assertThat(avecRegle.horaires().getFirst().fenetres().get(1).heureFin())
-                    .isNull();
+            assertThat(avecRegle.ouvertures().get(1).heureFin()).isNull();
 
             StandView avecOuverture = standTools
                     .addStandOpening(stand, "2026-07-18", "14:00", "20:00", "Tournoi", 3, "E1")
                     .stand();
-            assertThat(avecOuverture.ouvertures()).hasSize(1);
-            assertThat(avecOuverture.ouvertures().getFirst().effectif()).isEqualTo(3);
+            assertThat(avecOuverture.ouvertures()).hasSize(3);
+            assertThat(avecOuverture.ouvertures().getLast().effectif()).isEqualTo(3);
 
             // Without the suffix, the window inherits the stand's minimum: nothing named.
             StandView sansEffectif = standTools
-                    .addStandOpening(stand, "2026-07-19", "14:00", null, null, null, "E1")
+                    .addStandOpening(stand, "2026-07-20", "14:00", null, null, null, "E1")
                     .stand();
-            assertThat(sansEffectif.ouvertures().get(1).effectif()).isNull();
+            assertThat(sansEffectif.ouvertures().getLast().effectif()).isNull();
             assertThat(sansEffectif.fermetures()).isEmpty();
         } finally {
-            standTools.deleteStand(stand, "E1");
-        }
-    }
-
-    /** A DATES rule used to stop at 46 dates, the 47th overflowing its column (V122). */
-    @Test
-    void aDatesRuleOfOneHundredAndTwentyDatesIsWrittenOverMcp() {
-        String stand = standTools
-                .createStand("Village", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
-                .stand()
-                .id();
-        List<String> dates = IntStream.range(0, 120)
-                .mapToObj(i -> LocalDate.of(2026, 5, 1).plusDays(2L * i).toString())
-                .toList();
-        try {
-            standTools.addStandHoraire(stand, "OUVERTURE", "10:00-18:00", "DATES", null, null, null, dates, null, "E1");
-
-            assertThat(standTools.getStand(stand, "E1").horaires().getFirst().dates())
-                    .extracting(LocalDate::toString)
-                    .containsExactlyElementsOf(dates);
-        } finally {
+            referenceDataService.deleteCreneau(jour.getId());
             standTools.deleteStand(stand, "E1");
         }
     }
@@ -541,7 +544,7 @@ class ReferentielMcpToolsTest {
                     .isInstanceOf(ToolCallException.class)
                     .hasMessageContaining("au moins 1");
             // Nothing was written by the refused calls.
-            assertThat(standTools.getStand(stand, "E1").horaires()).isEmpty();
+            assertThat(standTools.getStand(stand, "E1").ouvertures()).isEmpty();
         } finally {
             standTools.deleteStand(stand, "E1");
         }

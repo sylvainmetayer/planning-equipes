@@ -5485,52 +5485,6 @@
           }
         }
       },
-      "HoraireStand" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "mode" : {
-            "$ref" : "#/components/schemas/ModeHoraire"
-          },
-          "jours" : {
-            "$ref" : "#/components/schemas/TypeJoursHoraire"
-          },
-          "joursSemaine" : {
-            "type" : "array",
-            "uniqueItems" : true,
-            "items" : {
-              "$ref" : "#/components/schemas/DayOfWeek"
-            }
-          },
-          "dateDebut" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "dateFin" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "dates" : {
-            "type" : "array",
-            "uniqueItems" : true,
-            "items" : {
-              "type" : "string",
-              "format" : "date",
-              "examples" : [ "2022-03-10" ]
-            }
-          },
-          "fenetres" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/FenetreHoraire"
-            }
-          },
-          "motif" : {
-            "type" : "string"
-          }
-        }
-      },
       "Hotspot" : {
         "type" : "object",
         "required" : [ "ecarts" ],
@@ -5783,27 +5737,6 @@
           "animateursConcernes" : {
             "type" : "integer",
             "format" : "int32"
-          }
-        }
-      },
-      "IndisponibiliteStand" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "date" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "heureDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "heureFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "motif" : {
-            "type" : "string"
           }
         }
       },
@@ -7217,31 +7150,6 @@
           }
         }
       },
-      "OuvertureStand" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "date" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "heureDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "heureFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "motif" : {
-            "type" : "string"
-          },
-          "effectif" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        }
-      },
       "ParametresLegaux" : {
         "type" : "object",
         "properties" : {
@@ -7618,6 +7526,34 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "PlageStand" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "mode" : {
+            "$ref" : "#/components/schemas/ModeHoraire"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -10090,7 +10026,7 @@
       },
       "SourceHoraire" : {
         "type" : "string",
-        "enum" : [ "DEFAUT", "REGLE", "EXCEPTION" ]
+        "enum" : [ "DEFAUT", "EXCEPTION" ]
       },
       "StaffingSummary" : {
         "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "enchainementTotal", "effectifReference", "majeursMin", "mineursMax", "minimumTotal", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
@@ -10312,26 +10248,24 @@
           "emplacement" : {
             "$ref" : "#/components/schemas/Emplacement"
           },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
           "indisponibilites" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/IndisponibiliteStand"
+              "$ref" : "#/components/schemas/PlageStand"
             }
           },
           "ouvertures" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/OuvertureStand"
+              "$ref" : "#/components/schemas/PlageStand"
             }
           },
           "horaires" : {
             "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/HoraireStand"
-            }
-          },
-          "modifieLe" : {
-            "$ref" : "#/components/schemas/Instant"
+            "items" : { }
           }
         }
       },

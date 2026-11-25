@@ -25,7 +25,7 @@ Chaque paragraphe dit *avant*, *après* et *ce que vous faites*. Aucun n'est éc
 ### Format du scénario YAML
 
 - **Avant** : l'application écrit `schemaVersion: 1`.
-- **Après** : elle écrit `schemaVersion: 2`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Cette version-ci ne change aucune clé : le premier maillon est vide.
+- **Après** : elle écrit `schemaVersion: 3`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le premier maillon (1 → 2) ne change aucune clé ; le second (2 → 3) convertit les horaires des stands en plages (voir [Horaires des stands](#horaires-des-stands)).
 - **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
 
 ### Noms des règles du planning
@@ -38,6 +38,16 @@ Chaque paragraphe dit *avant*, *après* et *ce que vous faites*. Aucun n'est éc
 
 **Ce que vous faites** : si vous avez écrit des instructions, des invites ou des scripts qui nomment des outils, relisez-les avec cette table ; un assistant qui se reconnecte relit la liste des outils et n'a rien d'autre à changer.
 
+### Horaires des stands
+
+- **Avant** : un stand disait ses horaires par des **règles récurrentes** (« tous les jours de 10 h à 12 h puis de 14 h à la fermeture », ou chaque samedi, ou une plage de dates, ou des dates précises), plus des exceptions datées. L'application repliait ces règles à chaque lecture, et l'écran proposait de « compacter » des saisies datées en règles.
+- **Après** : un stand porte une **liste de plages datées**, une ouverture ou une fermeture par jour ([décision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). Une récurrence n'est plus stockée : elle sert à écrire des plages. La migration `V141` convertit vos règles sur les jours de chaque édition (du premier au dernier créneau, plus le lendemain d'un créneau qui passe minuit), **avec la lecture exacte que l'application en avait** : un test la rejoue sur chacun des scénarios livrés et compare, jour par jour, les fenêtres obtenues à celles de la 3.x. Le YAML passe de même en version 3, la clé `plages` remplaçant `horaires`, `ouvertures` et `indisponibilites`.
+- **Ce que vous faites** :
+  - **Exportez chaque édition en YAML avant de monter** (Fichiers, « Exporter les données actuelles en scénario »). C'est votre retour arrière, et le seul moyen de retrouver le détail de vos règles : la migration ne redescend pas.
+  - **Une édition sans aucun créneau n'a pas de jour où poser ses règles.** Elles ne sont ni converties ni perdues : la migration les garde, à part, dans les tables `stand_horaire_avant_4_0` et `stand_horaire_fenetre_avant_4_0` (supprimées en 5.0), et écrit un avertissement par édition concernée dans le journal de démarrage (`Édition X : ses horaires récurrents de stand ne sont pas convertis…`). Pour les retrouver : réimportez l'export YAML de cette édition une fois ses créneaux créés (le fichier 3.x reconvertit ses règles dès qu'il y a des jours), ou saisissez des plages.
+  - **Un jour ajouté après coup** à l'événement (un créneau sur une date que l'édition ne comptait pas) n'a plus de règle pour le gouverner : le stand y est ouvert toute la journée, même s'il « n'ouvrait que le week-end ».
+  - L'écran de saisie des horaires récurrents, l'action « Compacter les horaires » et l'outil MCP `compacter_horaires_stands` n'ont plus rien à faire : l'écran est remplacé par un éditeur de plages dans un changement suivant, et pendant ce temps l'API refuse d'enregistrer une règle (`400`, jamais une perte silencieuse). L'outil MCP `ajouter_horaire_stand` existe toujours : il écrit des plages sur les jours des créneaux de l'édition, et refuse une édition sans créneau. `effacer_horaires_stand` est retiré (voir [les anciens noms d'outils](../comprendre/mcp-outils.md#anciens-noms-doutils)).
+
 ### Données et migrations
 
-À venir : les migrations qui convertissent des données, et ce qu'elles font de vos éditions existantes.
+Les migrations qui convertissent des données sont décrites ci-dessus, une par changement, au fil de leur fusion : pour l'instant, [les horaires des stands](#horaires-des-stands).

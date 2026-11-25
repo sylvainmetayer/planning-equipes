@@ -1,9 +1,8 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.MinutesOfDay;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
@@ -22,16 +21,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * The opening schedule of a stand written the way the organiser's own
  * spreadsheet writes it: one integer per créneau, empty for closed — and
- * turned back into the rules and exceptions the rest of the application
- * reads.
+ * turned back into the plages the rest of the application reads.
  *
- * <p>The grid is the whole schedule of a stand: a save replaces its recurring
- * horaires and dated exceptions in full, so what the grid shows after a save
- * is exactly what was typed, and typing the same grid twice writes the same
- * thing twice. The conversion goes through dated windows first — one per run
- * of créneaux open at one headcount — then through {@link HoraireCompaction},
- * which folds the repeated days into rules where it can prove the result
- * equivalent, and leaves the odd days dated otherwise.</p>
+ * <p>The grid is the whole schedule of a stand: a save replaces its plages in
+ * full, so what the grid shows after a save is exactly what was typed, and
+ * typing the same grid twice writes the same thing twice. The conversion
+ * writes one dated window per run of créneaux open at one headcount.</p>
  *
  * <p><b>The grid never destroys what it cannot show.</b> A cell holds one
  * integer, but a stand may be open on part of a créneau only, or at two
@@ -90,7 +85,7 @@ public final class GrilleHorairesStands {
         }
     }
 
-    /** What the conversion did to one stand — the compaction's own line, plus the bounds it derived. */
+    /** What the conversion did to one stand: the plages it wrote and the bounds it derived. {@code regles} and {@code compacte} are always zero and false since 4.0. */
     @Schema(requiredProperties = {"compacte", "effectifMax", "effectifMin", "exceptions", "regles"})
     public record LigneGrille(
             String standId,
@@ -148,17 +143,7 @@ public final class GrilleHorairesStands {
 
         rewriteSchedule(stand, connus, segmentsParCreneau, effectifMin);
 
-        HoraireCompaction.LigneCompactage compactage = HoraireCompaction.compact(List.of(stand), creneaux, true)
-                .stands()
-                .get(0);
-        return new LigneGrille(
-                stand.getId(),
-                stand.getHoraires().size(),
-                stand.getOuvertures().size() + stand.getIndisponibilites().size(),
-                effectifMin,
-                effectifMax,
-                compactage.compacte(),
-                compactage.raison());
+        return new LigneGrille(stand.getId(), 0, stand.getPlages().size(), effectifMin, effectifMax, false, null);
     }
 
     /** The créneaux a cell may name: those with an id, a date and both hours. */
@@ -245,8 +230,8 @@ public final class GrilleHorairesStands {
         connus.values()
                 .forEach(creneau -> parJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>())
                         .add(creneau));
-        List<OuvertureStand> ouvertures = new ArrayList<>();
-        List<IndisponibiliteStand> fermetures = new ArrayList<>();
+        List<PlageStand> ouvertures = new ArrayList<>();
+        List<PlageStand> fermetures = new ArrayList<>();
         parJour.forEach((date, duJour) -> {
             List<Fenetre> fenetres = dayWindows(duJour, segmentsParCreneau);
             if (fenetres.isEmpty()) {
@@ -255,18 +240,17 @@ public final class GrilleHorairesStands {
                 // holds, so the stand means the same thing at every step; the
                 // pruning that follows compaction is what drops the ones the
                 // opening rules already imply.
-                fermetures.add(new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, null));
+                fermetures.add(PlageStand.fermeture(null, date, LocalTime.MIDNIGHT, null, null));
                 return;
             }
             for (Fenetre fenetre : fenetres) {
                 Integer effectif = fenetre.effectif == effectifMin ? null : fenetre.effectif;
-                ouvertures.add(new OuvertureStand(null, date, fenetre.debut, fenetre.fin, null, effectif));
+                ouvertures.add(PlageStand.ouverture(null, date, fenetre.debut, fenetre.fin, null, effectif));
             }
         });
-        stand.setHoraires(new ArrayList<>());
         stand.setOuvertures(ouvertures);
         stand.setIndisponibilites(fermetures);
-        stand.setFenetresEffectives(null, null);
+        stand.setPlagesEffectives(null);
     }
 
     /** A timeslot as a reader finds it on the grid: its day and its hours, not its database id. */

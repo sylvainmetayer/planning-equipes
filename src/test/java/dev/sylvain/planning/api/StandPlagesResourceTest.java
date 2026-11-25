@@ -14,40 +14,37 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 /**
- * A recurring rule scoped to precise dates holds as many dates as an event has
- * days. V37 kept them as comma-separated text in a {@code VARCHAR(512)}, which
- * refused the 47th date with a 500; V122 made the column a {@code date[]}.
- * Every write of a rule — the stand form, MCP, the scenario import, the
- * compaction — lands in the same repository method, so the round trips below
- * are about storage: the REST write and read, the edition duplication that
- * copies the column as is, and the SQL dump that writes it as a literal.
+ * A stand open one day out of two over a 240-day season carries a hundred and
+ * twenty plages. The REST write and read, the edition duplication that copies
+ * them, and the SQL dump that writes and replays them all land on the same
+ * list; and the recurring rules of 3.x, gone since the plages (ADR 0104), are
+ * refused rather than dropped in silence.
  */
 @QuarkusTest
-class StandHoraireDatesResourceTest {
+class StandPlagesResourceTest {
 
     private static final String HEADER = "X-Edition-Id";
 
-    /** A stand open one day out of two over a 240-day season: well past the 46 dates V37 could hold. */
     private static final List<String> DATES = IntStream.range(0, 120)
             .mapToObj(i -> LocalDate.of(2026, 5, 1).plusDays(2L * i).toString())
             .toList();
 
     @Test
-    void aRuleOfOneHundredAndTwentyDatesIsSavedAndReadBack() {
-        String edition = createEdition("Horaires longs");
-        String stand = createStandWithDatesRule(edition);
+    void oneHundredAndTwentyPlagesAreSavedAndReadBack() {
+        String edition = createEdition("Plages longues");
+        String stand = createStandWithPlages(edition);
 
         assertThat(readDates(edition, stand)).containsExactlyElementsOf(DATES);
     }
 
     @Test
-    void aDuplicatedEditionKeepsEveryDateOfTheRule() {
-        String source = createEdition("Horaires longs à dupliquer");
-        String stand = createStandWithDatesRule(source);
+    void aDuplicatedEditionKeepsEveryPlage() {
+        String source = createEdition("Plages longues à dupliquer");
+        String stand = createStandWithPlages(source);
 
         String copy = given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"nom\":\"Copie horaires longs\"}")
+                .body("{\"nom\":\"Copie plages longues\"}")
                 .when()
                 .post("/api/editions/" + source + "/dupliquer")
                 .then()
@@ -59,9 +56,9 @@ class StandHoraireDatesResourceTest {
     }
 
     @Test
-    void theSqlDumpWritesTheDatesAndReplaysThem() {
-        String edition = createEdition("Horaires longs au dump");
-        String stand = createStandWithDatesRule(edition);
+    void theSqlDumpWritesThePlagesAndReplaysThem() {
+        String edition = createEdition("Plages longues au dump");
+        String stand = createStandWithPlages(edition);
 
         String dump = given().header(HEADER, edition)
                 .when()
@@ -70,7 +67,7 @@ class StandHoraireDatesResourceTest {
                 .statusCode(200)
                 .extract()
                 .asString();
-        assertThat(dump).contains("'{" + String.join(",", DATES) + "}'");
+        assertThat(dump).contains("stand_ouverture");
 
         given().header(HEADER, edition)
                 .config(RestAssured.config()
@@ -86,6 +83,37 @@ class StandHoraireDatesResourceTest {
         assertThat(readDates(edition, stand)).containsExactlyElementsOf(DATES);
     }
 
+    @Test
+    void aStandCarryingARecurringRuleIsRefusedNotTruncated() {
+        String edition = createEdition("Règle refusée");
+        createTypologie(edition);
+
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Avec règle","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "horaires":[{"mode":"OUVERTURE","jours":"TOUS",
+                                      "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void theCompactionOfTheHorairesHasNothingLeftToDo() {
+        String edition = createEdition("Compactage vide");
+
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .when()
+                .post("/api/stands/compactage-horaires")
+                .then()
+                .statusCode(200)
+                .body("standsCompactes", org.hamcrest.Matchers.is(0))
+                .body("stands", org.hamcrest.Matchers.empty());
+    }
+
     private static String createEdition(String name) {
         return given().contentType("application/json")
                 .body("{\"nom\":\"" + name + "\"}")
@@ -97,7 +125,7 @@ class StandHoraireDatesResourceTest {
                 .path("id");
     }
 
-    private static String createStandWithDatesRule(String edition) {
+    private static void createTypologie(String edition) {
         given().header(HEADER, edition)
                 .contentType("application/json")
                 .body("{\"code\":\"TYPO\",\"label\":\"TYPO\",\"ninja\":false}")
@@ -105,14 +133,18 @@ class StandHoraireDatesResourceTest {
                 .post("/api/typologies")
                 .then()
                 .statusCode(200);
-        String dates = DATES.stream().map(date -> "\"" + date + "\"").collect(Collectors.joining(","));
+    }
+
+    private static String createStandWithPlages(String edition) {
+        createTypologie(edition);
+        String ouvertures = DATES.stream()
+                .map(date -> "{\"date\":\"" + date + "\",\"heureDebut\":\"10:00\",\"heureFin\":\"18:00\"}")
+                .collect(Collectors.joining(","));
         return given().header(HEADER, edition)
                 .contentType("application/json")
                 .body("""
                         {"nom":"Ouvert un jour sur deux","typologiesProposees":["TYPO"],
-                         "effectifMin":1,"effectifMax":2,
-                         "horaires":[{"mode":"OUVERTURE","jours":"DATES","dates":[%s],
-                                      "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}]}""".formatted(dates))
+                         "effectifMin":1,"effectifMax":2,"ouvertures":[%s]}""".formatted(ouvertures))
                 .when()
                 .post("/api/stands")
                 .then()
@@ -129,6 +161,6 @@ class StandHoraireDatesResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getList("find { it.id == '" + stand + "' }.horaires[0].dates", String.class);
+                .getList("find { it.id == '" + stand + "' }.ouvertures.date", String.class);
     }
 }

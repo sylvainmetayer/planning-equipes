@@ -4,10 +4,9 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -351,7 +350,7 @@ public class PlanningPersistenceService {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
                 if (stand.getIndisponibilites() != null) {
-                    for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+                    for (PlageStand indispo : stand.getIndisponibilites()) {
                         insert.setString(2, stand.getId());
                         insert.setObject(3, indispo.getDate());
                         insert.setObject(4, indispo.getHeureDebut());
@@ -377,7 +376,7 @@ public class PlanningPersistenceService {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
                 if (stand.getOuvertures() != null) {
-                    for (OuvertureStand ouverture : stand.getOuvertures()) {
+                    for (PlageStand ouverture : stand.getOuvertures()) {
                         insert.setString(2, stand.getId());
                         insert.setObject(3, ouverture.getDate());
                         insert.setObject(4, ouverture.getHeureDebut());

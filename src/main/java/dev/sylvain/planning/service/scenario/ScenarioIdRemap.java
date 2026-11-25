@@ -438,9 +438,7 @@ final class ScenarioIdRemap {
                         dto.reserveMajeurs(),
                         dto.premium(),
                         dto.niveauEffort(),
-                        dto.indisponibilites(),
-                        dto.ouvertures(),
-                        dto.horaires()))
+                        dto.plages()))
                 .toList();
     }
 

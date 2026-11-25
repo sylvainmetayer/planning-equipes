@@ -5,9 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
+import dev.sylvain.planning.domain.RecurringRules;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.consigne.LayerCalendar.LayerCell;
 import dev.sylvain.planning.service.consigne.LayerCalendar.LayerDay;
@@ -66,8 +67,8 @@ class LayerCalendarTest {
                 .extracting(LayerCalendar.LayerTimeslot::addedByConsigne)
                 .containsExactly(false, true);
         LayerCell cellule = couches.stands().get(0).jours().get(0);
-        assertThat(cellule.source()).isEqualTo(SourceHoraire.REGLE);
-        assertThat(cellule.horaireIds()).containsExactly(7L);
+        assertThat(cellule.source()).isEqualTo(SourceHoraire.EXCEPTION);
+        assertThat(cellule.horaireIds()).isEmpty();
         assertThat(cellule.nominal()).containsExactly(new LayerWindow(14 * 60, 20 * 60, 3));
         assertThat(cellule.reopenings()).containsExactly(new LayerWindow(20 * 60, 22 * 60, null));
         // 14h-20h amputated by the band, then the reopening at the headcount the band took.
@@ -82,12 +83,14 @@ class LayerCalendarTest {
     }
 
     @Test
-    void aDatedExceptionIsToldFromARuleAndAStandWithoutHoursSaysItIsOpenByDefault() {
+    void aDayCarryingPlagesIsToldFromADayWithoutAndAStandWithoutHoursSaysItIsOpenByDefault() {
         OpeningLayers couches = build(
                 () -> {
                     Stand stand = standWithRule();
-                    stand.setOuvertures(new ArrayList<>(List.of(new OuvertureStand(
-                            null, DIMANCHE, LocalTime.of(15, 0), LocalTime.of(17, 0), "Tournoi", 2))));
+                    stand.getPlages().removeIf(plage -> DIMANCHE.equals(plage.getDate()));
+                    stand.getPlages()
+                            .add(PlageStand.ouverture(
+                                    null, DIMANCHE, LocalTime.of(15, 0), LocalTime.of(17, 0), "Tournoi", 2));
                     return stand;
                 },
                 List.of(),
@@ -149,17 +152,16 @@ class LayerCalendarTest {
         Stand stand = new Stand(id, id, Set.of(), 1, 4, false);
         stand.setIndisponibilites(new ArrayList<>());
         stand.setOuvertures(new ArrayList<>());
-        stand.setHoraires(new ArrayList<>());
         return stand;
     }
 
-    /** « BOURSE », open 14h-20h every day at 3, by rule 7. */
+    /** « BOURSE », open 14h-20h every day of the grid at 3. */
     private static Stand standWithRule() {
         Stand stand = stand("BOURSE");
-        HoraireStand regle = HoraireStand.everyDay(
-                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(20, 0), 3));
-        regle.setId(7L);
-        stand.setHoraires(List.of(regle));
+        RecurringRules.poser(
+                stand,
+                GRILLE,
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(20, 0), 3)));
         return stand;
     }
 }
