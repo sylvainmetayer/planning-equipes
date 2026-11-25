@@ -133,8 +133,7 @@ public class ScenarioImportService {
      * nothing behind (ADR 0052). Checked inside the target edition rather than
      * by an interceptor, since the file may name another edition than the
      * call's.</p>
-     */
-    /**
+     *
      * @param restore    {@code null} for an ordinary import; for the import
      *                   of a restore, where to say what could not be created
      *                   again
@@ -236,10 +235,8 @@ public class ScenarioImportService {
         var courante = editionService.editionCourante();
         String id = cibleDto.get().id() == null ? "" : cibleDto.get().id().trim();
         String nom = cibleDto.get().nom() == null ? "" : cibleDto.get().nom().trim();
-        boolean current = id.isEmpty()
-                ? nom.equalsIgnoreCase(
-                        courante.getNom() == null ? "" : courante.getNom().trim())
-                : id.equals(courante.getId());
+        String nomCourant = courante.getNom() == null ? "" : courante.getNom().trim();
+        boolean current = id.isEmpty() ? nom.equalsIgnoreCase(nomCourant) : id.equals(courante.getId());
         if (!current) {
             throw new BusinessError.Invalid("L'import d'un organisateur se fait dans son édition courante : "
                     + "la section edition: du fichier en désigne une autre, ou une à créer.");

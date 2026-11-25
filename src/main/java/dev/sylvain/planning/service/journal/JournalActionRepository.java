@@ -59,8 +59,7 @@ public class JournalActionRepository {
             LIMIT ?""";
 
     /** Where the line a cursor names sits in time; nothing when it has aged out. */
-    private static final String SELECT_CURSOR = """
-            SELECT survenu_le FROM journal_action WHERE edition_id = ? AND id = ?""";
+    private static final String SELECT_CURSOR = "SELECT survenu_le FROM journal_action WHERE edition_id = ? AND id = ?";
 
     private static final String SELECT_SINCE = """
             SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,

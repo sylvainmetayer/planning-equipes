@@ -139,17 +139,19 @@ public class CompteAccesRepository {
         });
     }
 
+    private static final String UPSERT_CHALLENGE = """
+            INSERT INTO compte_defi (defi_hash, compte_id, code_hash, tentatives_restantes, expire_le)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT (compte_id) DO UPDATE SET defi_hash = EXCLUDED.defi_hash,
+            code_hash = EXCLUDED.code_hash, tentatives_restantes = EXCLUDED.tentatives_restantes,
+            expire_le = EXCLUDED.expire_le""";
+
     /** One challenge per account; {@code codeHash} is {@code null} when there is no second step. */
     public void replaceChallenge(
             String compteId, String challengeHash, String codeHash, int attempts, Instant expireLe) {
         scope.write("Failed to store a sign-in challenge", connection -> {
             purgeChallenges(connection);
-            try (PreparedStatement ps = connection.prepareStatement("""
-                    INSERT INTO compte_defi (defi_hash, compte_id, code_hash, tentatives_restantes, expire_le)
-                    VALUES (?, ?, ?, ?, ?)
-                    ON CONFLICT (compte_id) DO UPDATE SET defi_hash = EXCLUDED.defi_hash,
-                    code_hash = EXCLUDED.code_hash, tentatives_restantes = EXCLUDED.tentatives_restantes,
-                    expire_le = EXCLUDED.expire_le""")) {
+            try (PreparedStatement ps = connection.prepareStatement(UPSERT_CHALLENGE)) {
                 ps.setString(1, challengeHash);
                 ps.setString(2, compteId);
                 ps.setString(3, codeHash);

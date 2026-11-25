@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.responsable;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -158,7 +159,7 @@ public class ResponsableService {
                 .toList();
         String nom = editions.listEditions().stream()
                 .filter(e -> e.getId().equals(editionId))
-                .map(e -> e.getNom())
+                .map(Edition::getNom)
                 .findFirst()
                 .orElse(null);
         return new ResponsableView(

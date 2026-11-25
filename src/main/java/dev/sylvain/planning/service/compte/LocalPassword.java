@@ -28,7 +28,6 @@ public final class LocalPassword {
 
     private LocalPassword() {}
 
-    /** Refuses a password that is too short or longer than bcrypt reads. */
     /** NFC, so « é » typed as one character or as two is one password, on every device. */
     private static String nfc(String password) {
         return password == null ? null : Normalizer.normalize(password, Normalizer.Form.NFC);

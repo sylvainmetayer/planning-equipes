@@ -46,6 +46,12 @@ public class ReglageResponsableRepository {
         });
     }
 
+    private static final String UPSERT_DEFAULT = """
+            INSERT INTO reglage_noms_responsable (edition_id, noms_visibles, ouverture_le)
+            VALUES (?, ?, ?)
+            ON CONFLICT (edition_id)
+            DO UPDATE SET noms_visibles = EXCLUDED.noms_visibles, ouverture_le = EXCLUDED.ouverture_le""";
+
     /**
      * Writes the edition's default and the stand exceptions the body names, in one transaction:
      * a {@code null} value lifts that stand's exception, a stand the body does not name is left
@@ -53,11 +59,7 @@ public class ReglageResponsableRepository {
      */
     public void replace(ReglagesResponsables reglages) {
         scope.write("Failed to save the responsable settings", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    INSERT INTO reglage_noms_responsable (edition_id, noms_visibles, ouverture_le)
-                    VALUES (?, ?, ?)
-                    ON CONFLICT (edition_id)
-                    DO UPDATE SET noms_visibles = EXCLUDED.noms_visibles, ouverture_le = EXCLUDED.ouverture_le""")) {
+            try (PreparedStatement ps = scope.prepareScoped(connection, UPSERT_DEFAULT)) {
                 bind(ps, 2, reglages.parDefaut());
                 ps.executeUpdate();
             }

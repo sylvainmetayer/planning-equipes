@@ -1109,7 +1109,7 @@ public class AnimateurCsvImportService {
 
     private static String label(String prenom, String nom, String email) {
         String complet = (prenom + " " + nom).trim();
-        return !complet.isEmpty() ? complet : email;
+        return complet.isEmpty() ? email : complet;
     }
 
     /**

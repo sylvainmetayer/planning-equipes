@@ -352,11 +352,14 @@ public class RemoteSolves {
             return new ComputeMachine(true, false, remoteByDefault(), MachineState.PERMANENT, null, null, null);
         }
         Optional<RemoteSolveRepository.Machine> machine = repository.liveMachine();
-        MachineState state = machine.isEmpty()
-                ? MachineState.ABSENT
-                : machine.get().readyAt() == null
-                        ? MachineState.PREPARING
-                        : solvingJob.get() != null ? MachineState.SOLVING : MachineState.READY;
+        MachineState state;
+        if (machine.isEmpty()) {
+            state = MachineState.ABSENT;
+        } else if (machine.get().readyAt() == null) {
+            state = MachineState.PREPARING;
+        } else {
+            state = solvingJob.get() != null ? MachineState.SOLVING : MachineState.READY;
+        }
         Instant stopsAt =
                 state == MachineState.READY ? machine.get().lastActivity().plus(config.idleTimeout()) : null;
         return new ComputeMachine(
