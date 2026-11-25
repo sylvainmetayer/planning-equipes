@@ -69,7 +69,7 @@ services:
       # Marque blanche : une instance par client, réglée par déploiement. Sans
       # ces variables l'application s'appelle « Planning Équipes », n'affiche
       # aucun logo plutôt que celui d'un autre, et imprime ses PDF dans une
-      # palette neutre. Voir README.md § Marque blanche.
+      # palette neutre. Voir docs/variables-environnement.md § Marque blanche.
       BRANDING_PRODUCT_NAME: ${BRANDING_PRODUCT_NAME:-Planning Équipes}
       BRANDING_ORGANISATION: ${BRANDING_ORGANISATION:-}
       BRANDING_LOGO_URL: ${BRANDING_LOGO_URL:-}
