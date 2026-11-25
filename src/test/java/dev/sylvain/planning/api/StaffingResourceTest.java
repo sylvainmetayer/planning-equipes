@@ -141,12 +141,12 @@ class StaffingResourceTest {
 
     /** The default answer is the exact bound: finished on the spot, no solve behind it, and kept in the trail. */
     @Test
-    void byDefaultACheckAnswersFromTheExactBoundWithoutSolving() {
+    void aCheckWithoutACalculationAnswersFromTheExactBoundWithoutSolving() {
         seedSeats();
 
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{}")
+                .body("{\"calcul\":false}")
                 .when()
                 .post("/api/staffing/verification")
                 .then()
@@ -159,7 +159,7 @@ class StaffingResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"majeurs\":1}")
+                .body("{\"majeurs\":1,\"calcul\":false}")
                 .when()
                 .post("/api/staffing/verification")
                 .then()

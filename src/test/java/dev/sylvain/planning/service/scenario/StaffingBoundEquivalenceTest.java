@@ -120,7 +120,7 @@ class StaffingBoundEquivalenceTest {
         int needed = bound;
         // Steps widen once the gap is plainly more than a person or two, up to the real team, which holds by
         // construction.
-        int[] steps = {1, 2, 3, 6, 12, 24, 48};
+        int[] steps = {1, 2, 3, 6, 12, 24, 36, 48};
         int real = load(rung).problem().getAnimateurs().size();
         for (int i = 0; !below && !atBound.holds() && i < steps.length && needed < real; i++) {
             needed = Math.min(bound + steps[i], real);

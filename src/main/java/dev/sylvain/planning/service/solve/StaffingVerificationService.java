@@ -332,7 +332,7 @@ public class StaffingVerificationService {
             PlanningPersistenceService persistence,
             JobStreamBroadcaster jobStream,
             SolverQuota quota,
-            @ConfigProperty(name = DEFAULT_METHOD_PROPERTY, defaultValue = "borne") String defaultMethod) {
+            @ConfigProperty(name = DEFAULT_METHOD_PROPERTY, defaultValue = "calcul") String defaultMethod) {
         this.defaultMethod =
                 "calcul".equalsIgnoreCase(defaultMethod.trim()) ? VerificationMethod.CALCUL : VerificationMethod.BORNE;
         this.quota = quota;
@@ -381,7 +381,7 @@ public class StaffingVerificationService {
      *                      a solve only
      * @param calcul        {@code true} for a solve of the made-up team,
      *                      {@code false} for the exact bound, {@code null}
-     *                      for the instance's default (the bound)
+     *                      for the instance's default (the solve, for now)
      * @throws BusinessError.Conflict when a check is already running, in any
      *                                edition, a solve holds the solver, or
      *                                the instance's hourly quota is spent

@@ -857,7 +857,7 @@ describe('StaffingPage', () => {
           majeurs: 20,
           mineurs: 5,
           dureeSecondes: 120,
-          calcul: false,
+          calcul: true,
         });
         expect(page['verification']()?.etat).toBe('EN_COURS');
         expect(page['verificationLabel']()).toBe('');
@@ -929,7 +929,7 @@ describe('StaffingPage', () => {
       expect(page['verification']()).toBeNull();
     });
 
-    it('asks for the solve only when the advanced option is ticked, and reads the bound at once', async () => {
+    it('confirms by a solve by default, and reads the bound alone once the option is unticked', async () => {
       analysesApi.verifyStaffing.mockResolvedValue(
         verification({ etat: 'TERMINEE', methode: 'BORNE', minimum: 30, realisable: false }),
       );
@@ -941,7 +941,7 @@ describe('StaffingPage', () => {
         majeurs: 20,
         mineurs: null,
         dureeSecondes: null,
-        calcul: false,
+        calcul: true,
       });
       expect(page['verificationLabel']()).toContain('30');
       expect(page['verificationLabel']()).toContain('ne suffit pas');
@@ -972,7 +972,7 @@ describe('StaffingPage', () => {
         majeurs: null,
         mineurs: null,
         dureeSecondes: null,
-        calcul: false,
+        calcul: true,
       });
       expect(page['verificationLabel']()).toContain('3');
       expect(page['verificationLabel']()).toContain('pas une preuve');

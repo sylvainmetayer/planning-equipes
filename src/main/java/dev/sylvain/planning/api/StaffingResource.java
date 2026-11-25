@@ -57,7 +57,7 @@ public class StaffingResource {
      *                      solve only
      * @param calcul        {@code true} to solve the made-up team (the advanced
      *                      option), {@code false} for the exact bound; absent for
-     *                      the instance's default, the bound
+     *                      the instance's default, the solve until ADR 0098's switch
      */
     public record VerificationRequest(Integer majeurs, Integer mineurs, Long dureeSecondes, Boolean calcul) {}
 
@@ -73,10 +73,10 @@ public class StaffingResource {
 
     /**
      * Tells whether a team of this size holds the edition's seats. By default
-     * it answers at once from the exact bound ({@code 202}, already
-     * {@code TERMINEE}); with {@code calcul} it solves the seats with a made-up
-     * team in the background ({@code 202}, {@code EN_COURS}), and {@code 409}
-     * while another solve-check runs, in any edition.
+     * (and with {@code calcul}) it solves the seats with a made-up team in the
+     * background ({@code 202}, {@code EN_COURS}), and {@code 409} while another
+     * solve-check runs, in any edition; with {@code calcul: false} it answers at
+     * once from the exact bound ({@code 202}, already {@code TERMINEE}).
      */
     @POST
     @Path("/verification")

@@ -204,8 +204,8 @@ export class StaffingPage implements OnInit {
   protected readonly minorsToCheck = signal<number | null>(null);
   /** The time the solve is given at most, in seconds; `null` for the server's default. */
   protected readonly secondsToCheck = signal<number | null>(null);
-  /** The advanced option (ADR 0097): solve a made-up team instead of reading the exact bound. */
-  protected readonly byCalculation = signal(false);
+  /** The default (ADR 0098): the exact bound shows at once, a solve of a made-up team confirms; unticked, the bound alone answers. */
+  protected readonly byCalculation = signal(true);
   protected readonly avance = reglagesAvances();
   protected readonly verificationErreur = signal('');
   protected readonly verificationRunning = computed(() => this.verification()?.etat === 'EN_COURS');
@@ -508,7 +508,7 @@ export class StaffingPage implements OnInit {
     if (verification.methode === 'BORNE') {
       const minimum = verification.minimum ?? 0;
       return verification.realisable
-        ? $localize`:@@staffing.verification.borneOk:Avec ${team}:equipe:, le minimum exact (${minimum}:minimum: personnes) est atteint : l'effectif suffit pour les bornes prouvées. Un calcul (réglages avancés) vérifie aussi ce qu'elles ignorent.`
+        ? $localize`:@@staffing.verification.borneOk:Avec ${team}:equipe:, le minimum exact (au moins ${minimum}:minimum: personnes) est atteint. C'est une condition nécessaire : seul un calcul confirme qu'un plan existe.`
         : $localize`:@@staffing.verification.borneKo:Avec ${team}:equipe:, le minimum exact est de ${minimum}:minimum: personnes : l'effectif ne suffit pas.`;
     }
     const duree = verification.dureeSecondes ?? 0;

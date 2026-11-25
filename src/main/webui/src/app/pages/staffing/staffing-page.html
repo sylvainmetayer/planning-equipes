@@ -113,8 +113,8 @@
       <section class="staffing-verification" aria-labelledby="staffing-verification-titre">
         <h2 id="staffing-verification-titre" class="staffing-verification-titre" i18n="@@staffing.verification.title">Vérifier un effectif</h2>
         <p class="empty-hint" i18n="@@staffing.verification.description">
-          Une équipe de cette taille atteint-elle le minimum exact ? La réponse est immédiate, sans calcul. Le planning
-          n'est pas touché ; chaque essai va dans l'historique.
+          Une équipe fictive de cette taille tient-elle les sièges ? Le minimum exact (au moins N) se lit plus haut ;
+          le calcul le confirme. Le planning n'est pas touché ; chaque essai va dans l'historique.
         </p>
         <div class="staffing-verification-actions">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -140,11 +140,11 @@
           <ng-template>
             <mat-checkbox [ngModel]="byCalculation()" (ngModelChange)="byCalculation.set($event)" name="byCalculation"
                           [disabled]="verificationRunning()">
-              <ng-container i18n="@@staffing.verification.calcul">Vérifier par un calcul</ng-container>
+              <ng-container i18n="@@staffing.verification.calcul">Confirmer par un calcul</ng-container>
             </mat-checkbox>
             <p class="empty-hint" i18n="@@staffing.verification.calculAide">
-              Une équipe fictive, libre tous les jours et compétente partout, est résolue sur les sièges : cela vérifie
-              aussi repos, pauses et repas. Ses mineurs ont seize ans. Le calcul cède à toute résolution.
+              Décochée, seule la borne exacte répond, sans calcul : « au moins N ». Cochée, une équipe fictive libre tous
+              les jours est résolue ; ses mineurs ont seize ans, et le calcul cède à toute résolution.
             </p>
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-label i18n="@@staffing.verification.duree">Durée max (s)</mat-label>
