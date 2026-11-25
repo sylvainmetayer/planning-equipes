@@ -34,21 +34,21 @@ If you are new to Planning Équipes, start with [the thread of an edition](fil-d
 ## I am preparing my event
 
 - I describe my stands, their game categories and their locations: [Prepare your first edition](preparer-edition.md).
-- I enter my team and its skills: [Enter the staff and their skills](animateurs-et-competences.md).
-- I set the timeslots and the opening hours: [Build the calendar and the opening hours](calendrier-et-horaires.md).
+- I enter my team and its skills: [Enter staff and their skills](animateurs-et-competences.md).
+- I set the timeslots and the opening hours: [Build the calendar and the hours](calendrier-et-horaires.md).
 - I want to know how many people I need: [Know how many people to recruit](dimensionner-l-equipe.md).
 - I already have spreadsheets: [Import and export files](importer-exporter.md).
-- I ask the team for their days of unavailability: [Collect the staff's availability](collecter-disponibilites.md).
+- I ask the team for their days of unavailability: [Collect staff availability](collecter-disponibilites.md).
 
 ## I solve and correct the schedule
 
 - I start the solve: [Solve the schedule](calculer-planning.md).
 - I set the legal thresholds and the importance of preferences: [Tune the schedule rules](regles-du-planning.md).
 - I impose or forbid an assignment, I lock part of the plan: [Set exceptions and locks](ajustements-et-verrous.md).
-- Seats remain empty or a rule gives way: [Understand a schedule that gets stuck](comprendre-un-planning.md).
+- Seats remain empty or a rule gives way: [Understand a stuck schedule](comprendre-un-planning.md).
 - I correct a seat by hand and mark a day as reviewed: [Review and adjust the schedule](relire-et-retoucher.md).
-- I read the schedule by day, by stand or by person: [Read the schedule](consulter-planning.md).
-- A prefecture closes stands, or a heatwave is announced: [Apply a consigne from the authorities](appliquer-une-consigne.md).
+- I read the schedule by day, by stand or by person: [View the schedule](consulter-planning.md).
+- A prefecture closes stands, or a heatwave is announced: [Apply a consigne from the authority](appliquer-une-consigne.md).
 
 ## I share it
 

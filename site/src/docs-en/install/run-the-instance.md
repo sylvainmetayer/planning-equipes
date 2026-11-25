@@ -16,7 +16,7 @@ If you would rather not run the instance yourself, [write to us](/contact/): we 
 | The plan is **published** | the day-before reminder reads the published plan, never the working plan | [Tune the automatic sends](envois-automatiques.md) |
 | A recent nightly backup exists and you are warned if it fails | *Settings*, *Instance* tab; `MAIL_ADMIN` filled in | [Back up and restore](sauvegarde-et-restauration.md) |
 | You have already done a trial restore | `scripts/restaurer.sh --essai` | [Back up and restore](sauvegarde-et-restauration.md#3-restaurer) |
-| An external probe watches `/q/health/ready` | the application cannot report its own absence | [Monitor the instance](surveillance.md) |
+| An external probe watches `/q/health/ready` | the application cannot report its own absence | [Monitoring the instance](surveillance.md) |
 | Error tracking is connected | `SENTRY_DSN` filled in | [Connect error tracking](observabilite.md) |
 | The legal notice is complete | `scripts/verifier-deploiement.sh` | [Fill in the legal notice](mentions-legales.md) |
 | The deployed version is named | application footer, `APP_VERSION` | [Update](mettre-a-jour.md) |
@@ -44,6 +44,6 @@ Once the event is over, the measure of the realised freezes at the first read, a
 - [Tune the schedule solve](calcul-du-planning.md) and [Solve on another machine](calcul-sur-une-autre-machine.md)
 - [Allow webhooks and the weather alert](appels-sortants.md)
 - [Back up and restore](sauvegarde-et-restauration.md) and [Purge and keep data](conservation-des-donnees.md)
-- [Monitor the instance](surveillance.md) and [Connect error tracking and metrics](observabilite.md)
-- [Update to a new version](mettre-a-jour.md)
+- [Monitoring the instance](surveillance.md) and [Connect error tracking and metrics](observabilite.md)
+- [Upgrade to a new version](mettre-a-jour.md)
 - [Create the administration accounts](comptes-locaux.md)

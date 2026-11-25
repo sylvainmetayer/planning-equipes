@@ -92,4 +92,4 @@ The deployment files are taken from the [project repository](repo:docker-compose
 | Get e-mails to the inboxes | [Get your e-mails delivered](courriels.md) |
 | Fill in the organiser's legal notice | [Fill in the legal notice](mentions-legales.md) |
 | Never lose data | [Back up and restore](sauvegarde-et-restauration.md) |
-| Know that the instance is running | [Monitor the instance](surveillance.md) |
+| Know that the instance is running | [Monitoring the instance](surveillance.md) |

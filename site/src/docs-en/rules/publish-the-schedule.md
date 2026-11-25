@@ -35,7 +35,7 @@ On the Share screen, a permanent table covers the whole edition. It shows, for e
 - the sending state: sent, failure with its cause, no e-mail, deferred;
 - the day-before reminder, the reminder and the acknowledgement.
 
-Each row offers "Resend their schedule", "Remind" and "Defer". Filters exist by state and by day ("what changes on 06/09", counted as in the day view). A failed sending is visible and prevents the home screen from saying "up to date". Each printable document says who it is for.
+Each row offers "Resend their planning", "Remind" and "Defer". Filters exist by state and by day ("what changes on 06/09", counted as in the day view). A failed sending is visible and prevents the home screen from saying "up to date". Each printable document says who it is for.
 
 ### When a sending fails
 

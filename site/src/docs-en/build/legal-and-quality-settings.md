@@ -11,12 +11,12 @@ A timeslot is a **shift**: a slice of real work on which someone is assigned. Th
 
 ### What the grid check reports
 
-`CreneauGridService` (`GET /api/creneaux/controle`) sorts its anomalies into errors (the grid is malformed or guarantees a violation of a hard rule) and warnings (suspicious, possibly intended, never a refusal). Three concern duration and meals:
+`CreneauGridService` (`GET /api/creneaux/controle`) sorts its anomalies into errors (the grid is malformed or guarantees a breach of a hard rule) and warnings (suspicious, possibly intended, never a refusal). Three concern duration and meals:
 
 | Anomaly | Severity | Raised when |
 | --- | --- | --- |
 | `VACATION_TROP_LONGUE` | Warning | The shift exceeds `dureeVacationMaxMinutes` (6 h by default, the threshold of art. [L3121-16]). It will contain a break that needs a relay: check that a colleague at the stand holds a seat at that time, or split the day in two |
-| `REPOS_QUOTIDIEN_IMPOSSIBLE` | Error | The shift exceeds `1440 − reposQuotidienMinimalMinutes`: any assignment would produce a violation of a hard rule |
+| `REPOS_QUOTIDIEN_IMPOSSIBLE` | Error | The shift exceeds `1440 − reposQuotidienMinimalMinutes`: any assignment would produce a breach of a hard rule |
 | `RELAIS_REPAS_HORS_FENETRE` | Warning | A `couverturePause` shift outside every meal window: staffing is halved there, yet no break can be taken in it |
 
 A shift longer than 6 h is therefore not refused: it is legal if a colleague relays the person during the break. The threshold lives in `ParametresLegaux`, because it is an event rule judged on the grid the organiser has, however that grid was written.
@@ -77,17 +77,17 @@ The Code requires the break to be **real**, not to be scheduled: an organiser wh
 - **a gap** of at least `dureePauseMinutes` between two shifts. It breaks the sequence (`PauseSurPoste.sequences`), so nothing more is due on either side;
 - **a relay**: another staff member at the **same stand** holding a seat for the whole break (`PauseSurPoste.relayableBy`).
 
-A break that is due and has neither is a **hard deviation**, one point per break, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility-exclusion flat penalty for a minor. There is nothing to declare: a `pauseSurPoste` parameter used to exist and switched these two rules off, and it has been removed.
+A break that is due and has neither is a **hard breach**, one point per break, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility-exclusion flat penalty for a minor. There is nothing to declare: a `pauseSurPoste` parameter used to exist and switched these two rules off, and it has been removed.
 
 The duration is **a single setting**, `dureePauseMinutes` (section `parametresLegaux` of a scenario): 30 minutes by default, floor of 20 (art. L3121-16), raised to at least 30 for a minor (art. L3162-3) by `ParametresLegaux.dureePauseMinutes(mineur)`.
 
 **The calculation is written once.** `PauseSurPoste.dues(postes, parametres)` returns the breaks of one (staff member, day) pair: a sequence of `L` minutes beyond the ceiling `cap` owes `ceil((L − cap) / (cap + pause))` of them, the k-th one at the latest when the sequence reaches its k-th ceiling. The solver, the Breaks screen, the staff PDF and the ICS feed all read this method, so none of them can describe a break that another does not owe.
 
-**The deduction is unconditional.** A break that is due is rest, not effective work (art. L3121-1), so it is subtracted from the opening span: daily and weekly ceilings, hours report, fairness, Staffing need, KPIs. Nothing is hidden by this: in a plan with no hard deviation, every deducted break was indeed taken, and that is what the two hard rules guarantee. A 14:00-midnight day is thus worth 9 h 30 of effective work; 13:00-midnight is worth 10 h 30 and is still refused. The calculation lives in `EffectiveWork`. The places that still count the opening span, and why, are in [the legal rules and breaks](regles-legales-et-pauses.md).
+**The deduction is unconditional.** A break that is due is rest, not effective work (art. L3121-1), so it is subtracted from the opening span: daily and weekly ceilings, hours report, fairness, Staffing need, KPIs. Nothing is hidden by this: in a plan with no hard breach, every deducted break was indeed taken, and that is what the two hard rules guarantee. A 14:00-midnight day is thus worth 9 h 30 of effective work; 13:00-midnight is worth 10 h 30 and is still refused. The calculation lives in `EffectiveWork`. The places that still count the opening span, and why, are in [the legal rules and breaks](regles-legales-et-pauses.md).
 
 ## The meal break
 
-`FenetreRepas` is a problem fact, **one per declared window**: the start, the end and the duration of the required break. It is read by `coupureRepasObligatoire` and `coupureRepasPlacementPrefere`, whose rule is in [the legal rules and breaks](regles-legales-et-pauses.md). One fact per window rather than one object carrying both: a day straddling noon *and* the evening produces **one violation per window**, each naming its hours, rather than an aggregate nobody can act on.
+`FenetreRepas` is a problem fact, **one per declared window**: the start, the end and the duration of the required break. It is read by `coupureRepasObligatoire` and `coupureRepasPlacementPrefere`, whose rule is in [the legal rules and breaks](regles-legales-et-pauses.md). One fact per window rather than one object carrying both: a day straddling noon *and* the evening produces **one breach per window**, each naming its hours, rather than an aggregate nobody can act on.
 
 The values live in `ParametresLegaux` (`coupure_repas_*` columns), and `FenetreRepas.from(...)` projects them. The meal break is not a legal obligation but the rule the organisation sets for itself, judged on every grid: it is therefore set with the other rules. A [consigne](horaires-et-fenetres-des-stands.md#restater-la-coupure-repas-pour-une-date) (an official order, such as an arrêté, relayed to the whole event) can restate them for its date.
 

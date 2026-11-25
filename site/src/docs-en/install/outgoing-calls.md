@@ -41,8 +41,8 @@ Each morning, the active edition queries Open-Meteo for the geolocated places of
 | `METEO_CRON` | `0 0 6 * * ?` | The time of the query, in the `NOTIFICATIONS_TIMEZONE` time zone |
 
 - **The free Open-Meteo API is reserved for non-commercial use.** A host that bills for the instance uses Open-Meteo's paid offer, or a self-hosted instance (official Docker image) that it designates in `METEO_URL`.
-- **Attribution**: Open-Meteo data is licensed under CC BY 4.0; the settings screen and the alert e-mail carry "Weather data: Open-Meteo.com (CC BY 4.0)". It is not a dependency of the software: it has no place in [the inventory of third-party licences](licences-tierces.md).
-- Only the active edition is queried, and only if its alert is enabled; between two events, none is. "Today" follows the simulated clock of a trial run, but Open-Meteo only forecasts the next sixteen real days: a simulated date outside that window queries nothing, and the screen says "out of forecast". The *Test now* button queries on demand, without raising an alert.
+- **Attribution**: Open-Meteo data is licensed under CC BY 4.0; the settings screen and the alert e-mail carry "Données météo : Open-Meteo.com (CC BY 4.0)" (weather data). It is not a dependency of the software: it has no place in [the inventory of third-party licences](licences-tierces.md).
+- Only the active edition is queried, and only if its alert is enabled; between two events, none is. "Today" follows the simulated clock of a trial run, but Open-Meteo only forecasts the next sixteen real days: a simulated date outside that window queries nothing, and the screen says "Out of forecast". The *Test now* button queries on demand, without raising an alert.
 - An unreachable service stops nothing: the "unreachable since…" status is displayed, the task retries the next day, and a single warning goes out on the second consecutive day of failure.
 
 ## Check

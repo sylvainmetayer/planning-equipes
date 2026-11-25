@@ -18,7 +18,7 @@ One row per mandatory rule:
 - its plain name and the article that grounds it;
 - its state;
 - the thresholds that set it (weekly durations, break, meal window...), editable on the row itself;
-- the deviations of the last analysis.
+- the breaches of the last analysis.
 
 The full text of the rule and the history of its settings open in a panel.
 
@@ -28,7 +28,7 @@ Disabling a legal rule (minors, working time, safety of minors) asks for a confi
 
 The same table for the quality rules and the preferences. Each rule has an importance in three positions: low, normal, high. The exact weight is in the panel, for whoever wants it.
 
-"Lower the importance" is never the first gesture offered for a quality rule: the Diagnostic always puts it last, and it disappears when the importance is already at its lowest.
+"Baisser l'importance" (lower the importance) is never the first gesture offered for a quality rule: the Diagnostic always puts it last, and it disappears when the importance is already at its lowest.
 
 ## The Solve tab
 
@@ -45,7 +45,7 @@ The Planning rules page flags it, names the data and leads to where it is entere
 
 ## Find who changed a weight
 
-Each change of a rule's weight or activation is kept with its before and after values, its date and its origin (screen, assistant, scenario, duplication), with nothing nominative, for as long as the edition. A rule's panel sets it next to the solves that followed and their deviations from that rule.
+Each change of a rule's weight or activation is kept with its before and after values, its date and its origin (screen, assistant, scenario, duplication), with nothing nominative, for as long as the edition. A rule's panel sets it next to the solves that followed and their breaches from that rule.
 
 ## Breaks, consecutive days and travel
 
@@ -66,7 +66,7 @@ In return, the break is rest, so it is **deducted everywhere**: daily and weekly
 
 The rule limits consecutive days worked: **eight by default, and the number can be set** on the rule's row. The solve penalises the excess days without blocking, since no text imposes a sliding count. An organisation that wants a blocking ceiling turns it on for its edition from the same page.
 
-The threshold beats weighting: on a grid that calls for nearly everyone every day, one day more or less decides whether a schedule with no deviation exists, where no weight can.
+The threshold beats weighting: on a grid that calls for nearly everyone every day, one day more or less decides whether a schedule with no breach exists, where no weight can.
 
 ### Travel time between two seats
 

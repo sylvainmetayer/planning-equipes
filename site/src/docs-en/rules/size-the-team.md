@@ -24,7 +24,7 @@ Each figure leads to the screen that changes it: a bound leads to the stand hour
 ## Check the minimum with a real solve
 
 1. In the *Staffing need* tab, start the check.
-2. Choose the number of adults and minors of the fictitious team. In the *Advanced settings*, "Confirm by a solve" is ticked: unticked, only the exact bound answers, immediately, with "at least N"; the solve duration is set in the same place.
+2. Choose the number of adults and minors of the fictitious team. In the *Advanced settings*, "Confirm by a computation" is ticked: unticked, only the exact bound answers, immediately, with "at least N"; the solve duration is set in the same place.
 3. Read the result. The edition's schedule is not touched.
 
 Each trial is recorded in the history with its team, its duration and its result, so you can compare the sizes tried. A history filter isolates them. The solve runs outside the queue: it gives way to any solve that starts.

@@ -5,7 +5,7 @@ twin: comprendre/modele-des-donnees
 
 You know which objects carry the scheduling problem, what the application derives instead of storing, how a seat to fill is represented, and which rules of the model must not be bypassed when you add a feature.
 
-The schedule is a *shift rostering* problem in Timefold's sense: staff to place on seats, under constraints, with a three-level score (`HardMediumSoftScore`). The classes and their fields can be read in [`domain/`](repo:src/main/java/dev/sylvain/planning/domain). This page carries what the code does not say. Class and field names stay in French business vocabulary (`Animateur`, `Creneau`, `PosteAffectation`), comments and non-business identifiers in English; the glossary is in [`AGENTS.md`](repo:AGENTS.md). On the organiser side, [the course of an edition](../regles/fil-d-une-edition.md) presents the same objects.
+The schedule is a *shift rostering* problem in Timefold's sense: staff to place on seats, under constraints, with a three-level score (`HardMediumSoftScore`). The classes and their fields can be read in [`domain/`](repo:src/main/java/dev/sylvain/planning/domain). This page carries what the code does not say. Class and field names stay in French business vocabulary (`Animateur`, `Creneau`, `PosteAffectation`), comments and non-business identifiers in English; the glossary is in [`AGENTS.md`](repo:AGENTS.md). On the organiser side, [the thread of an edition](../regles/fil-d-une-edition.md) presents the same objects.
 
 ![The Timefold model: solution, entity, variable](repo:docs/diagrammes/domaine.svg)
 

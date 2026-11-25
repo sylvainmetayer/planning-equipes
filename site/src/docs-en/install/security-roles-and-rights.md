@@ -76,7 +76,7 @@ contain it), and `@RolesAllowed` doubles the HTTP rule on each method.
 - `ResponsableResourceTest` sweeps all the `GET` routes **with no path
   parameter** of the published contract with the token of a manager of stand S: none answers `403` wrongly, and
   no body contains the name of a staff member of another stand, the name of another
-  stand or, when the setting says "hours only", any name at all.
+  stand or, when the setting says "Shifts only", any name at all.
 
 ## The HR right: the compliance report, one edition at a time
 

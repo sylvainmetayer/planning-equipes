@@ -11,14 +11,14 @@ You will know what the solver keeps or reopens when you rerun a solve on an exis
 
 A lock targets a staff member, a stand, a day, a timeslot, or a staff member × timeslot pair (`TypeVerrouillage`: `ANIMATEUR`, `STAND`, `JOUR`, `CRENEAU`, `ANIMATEUR_CRENEAU`). The last one is laid automatically when a swap is validated.
 
-**A lock is not an ad hoc exception.** Both take freedom away from the solver, but not at the same moment nor on the same matter. An [ad hoc exception](exceptions-ad-hoc.md) is a tailor-made rule laid *before* the solve (place or exclude someone) that every solve honours, including one that starts from scratch. A lock is a gesture on a plan that is *already solved*: it keeps what a solve produced on one part of the schedule, says nothing about what should be there, and holds only for the saved plan. Imposing or forbidding an assignment is a job for the ad hoc exception; protecting a validated part of a plan you rerun is a job for the lock. On the organiser's side, see [Setting exceptions and locks](../regles/ajustements-et-verrous.md).
+**A lock is not an ad hoc exception.** Both take freedom away from the solver, but not at the same moment nor on the same matter. An [ad hoc exception](exceptions-ad-hoc.md) is a tailor-made rule laid *before* the solve (place or exclude someone) that every solve honours, including one that starts from scratch. A lock is a gesture on a plan that is *already solved*: it keeps what a solve produced on one part of the schedule, says nothing about what should be there, and holds only for the saved plan. Imposing or forbidding an assignment is a job for the ad hoc exception; protecting a validated part of a plan you rerun is a job for the lock. On the organiser's side, see [Set exceptions and locks](../regles/ajustements-et-verrous.md).
 
 **One target, never two.** In the database, a lock is a flat row (five nullable target columns and a discriminator) that the `CHECK` constraint keeps consistent. In the code, the target is a sealed hierarchy: a variant carries only its own fields and cannot designate two. The `switch` that writes the columns is exhaustive with no `default`, so adding a way of locking does not compile until somebody says where it lands.
 
 Two rules:
 
 - **an unfilled seat is never frozen.** Filled seats are re-seeded with the staff member of the last solve; those that were empty stay movable, otherwise freezing a hole would make it permanently unfilled;
-- **a frozen seat is scored normally.** A lock can therefore leave a visible deviation; it silently disables no rule.
+- **a frozen seat is scored normally.** A lock can therefore leave a visible breach; it silently disables no rule.
 
 **Pinning is not enough to lock a staff member**: it freezes the seats they hold, but the solver could assign them others elsewhere. Two hard constraints forbid that (`animateurVerrouilleFige` and `animateurVerrouilleCreneauFige`), based on the locks passed in as problem facts.
 
@@ -52,7 +52,7 @@ Matching is **positional**, on stand × timeslot, like that of locks: seats of t
 | Timeslot already started | **Pinned as worked**, before any other rule: holder kept even if invalidated since, empty seat left empty, never reopened by the scope. Counted separately (`postesPasses`). See [the frozen past](horaires-et-fenetres-des-stands.md#le-passé-est-figé) |
 | Designated by the requested scope | Released no matter what: the user says "redo this" |
 | Holder still valid | **Pinned** |
-| Holder invalidated by a late change (deleted, unavailable, covered by a forced unavailability) | Released: pinning would freeze a hard deviation that nobody could correct any more. The validity test reuses the solver's predicate, so the two cannot diverge |
+| Holder invalidated by a late change (deleted, unavailable, covered by a forced unavailability) | Released: pinning would freeze a hard breach that nobody could correct any more. The validity test reuses the solver's predicate, so the two cannot diverge |
 | Never filled, or new | Left free |
 
 Two choices to know about:

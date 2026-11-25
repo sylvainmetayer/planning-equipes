@@ -57,7 +57,7 @@ Different declared unavailabilities make some days inevitably misaligned: the Ca
 
 ## Quality thresholds
 
-The "Organisation quality" rules read their thresholds in `ParametresQualite`, a problem fact like `ParametresLegaux`. They are **persisted per edition** and set on Planning rules, Quality tab, on the row of the rule that reads them. The `planning.contraintes.*` block of the configuration gives the values of an edition that has never set them, and a scenario overrides them in its `parametresQualite:` section.
+The "Qualité d'organisation" (organisation quality) rules read their thresholds in `ParametresQualite`, a problem fact like `ParametresLegaux`. They are **persisted per edition** and set on Planning rules, Quality tab, on the row of the rule that reads them. The `planning.contraintes.*` block of the configuration gives the values of an edition that has never set them, and a scenario overrides them in its `parametresQualite:` section.
 
 | Threshold | Default | Rule that reads it |
 |---|---|---|
@@ -76,7 +76,7 @@ None has a public-policy floor: they are comforts that the organiser arbitrates.
 
 ## Stability of the published plan
 
-`stabiliteDuPlanPublie` (medium, "Organisation quality", weightable) answers an observation: a solve rerun after publication moved dozens of people who had already been notified for a marginal fairness gain, because nothing in the score said that moving an informed person has a cost ([ADR 0025](repo:docs/decisions/0025-stabilite-du-plan-publie.md)).
+`stabiliteDuPlanPublie` (medium, weightable, in the "Qualité d'organisation" (organisation quality) category) answers an observation: a solve rerun after publication moved dozens of people who had already been notified for a marginal fairness gain, because nothing in the score said that moving an informed person has a cost ([ADR 0025](repo:docs/decisions/0025-stabilite-du-plan-publie.md)).
 
 **What it counts.** One medium point per seat whose holder is not the one the published plan had on that stand and timeslot: one point per person to whom the publication would say "your timetable has changed". The facts are the seats of the last published snapshot (`AffectationPubliee`), loaded by `SolveRunner.prepareProblem` before every solve and every diagnosis, never sent by a client. A published seat left empty costs as much as a replacement: its holder was notified, the hole is theirs, and that is what stops the solver from freely drawing a holder onto a new row while leaving behind a hole that nobody fills without paying.
 

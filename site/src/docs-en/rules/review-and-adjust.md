@@ -41,7 +41,7 @@ In the *Table* view, each name and each empty seat opens the seat panel. "Move t
 ## Mark a day "reviewed and accepted"
 
 1. On the Planning page, find the counter of what is left to look at (empty seats and breaks with no relay): it leads to the problems of the Diagnostic.
-2. In the day's menu, choose "Reviewed and accepted...". The prerequisites of that day are displayed: hard deviations, empty seats, breaks with no relay, irreplaceable seats.
+2. In the day's menu, choose "Reviewed and accepted...". The prerequisites of that day are displayed: hard breaches, empty seats, breaks with no relay, irreplaceable seats.
 3. Accept, possibly anyway: the application then says so.
 
 Progress is read in the Solver ("3 days out of 12") and by a tick on each reviewed day of the Planning page's mini-month. The validation always covers the whole day, whatever the filter displayed.

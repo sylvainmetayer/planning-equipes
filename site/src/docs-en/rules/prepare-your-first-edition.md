@@ -37,7 +37,7 @@ A badge flags a game category as **orphan** (offered by a stand, mastered by nob
 
 1. Open *Stands* and click "Add". The wizard guides the creation: identity, game categories, location, then the edition's timeslots, which you untick as needed, with the headcount of each. No rule to write.
 2. Fill in at least one game category (always), the minimum and maximum headcounts, and whether the stand is reserved for adults. The *premium* and *effort* flags are also set in the fiche.
-3. Set the hours: recurring rules completed by dated exceptions. Each opening window can name its own headcount, for a stand that does not have the same need in the morning, the afternoon and at night. The detail is in [Build the calendar and the opening hours](calendrier-et-horaires.md).
+3. Set the hours: recurring rules completed by dated exceptions. Each opening window can name its own headcount, for a stand that does not have the same need in the morning, the afternoon and at night. The detail is in [Build the calendar and the hours](calendrier-et-horaires.md).
 
 The stands table sorts on every column and says, for each stand, its open days, its seats and, after a solve, its coverage.
 

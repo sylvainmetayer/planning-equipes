@@ -94,7 +94,7 @@ The MCP tool `consulter_alertes_meteo` reads the same alerts. The choice of thes
 | `meteo.alerte` | the morning query raised alerts | `nombre`, `alertes`: for each, `date`, `phenomene` (`chaleur`, `rafales`, `orage`), `valeur`, `seuil`, `palier`, `lieux` (a number), `prereglageSuggere` |
 | `test` | "Send a test" | none |
 
-An n8n flow filters on these codes: they are never renamed. **None carries a person** (no name, no address, no token), only counts and identifiers. The `raison` of a failed backup is a **category** ("pg_dump failed", "pg_dump did not finish within the allotted time"), never the message of `pg_dump`, which names the host, the user and server paths; the detail stays on the Settings screen.
+An n8n flow filters on these codes: they are never renamed. **None carries a person** (no name, no address, no token), only counts and identifiers. The `raison` of a failed backup is a **category** ("pg_dump a échoué", pg_dump failed; "pg_dump n'a pas terminé dans le délai imparti", pg_dump did not finish in time), never the message of `pg_dump`, which names the host, the user and server paths; the detail stays on the Settings screen.
 
 ### Generic format and signature
 

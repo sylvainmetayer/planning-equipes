@@ -18,7 +18,7 @@ There is no separate template library: the list of editions takes its place, and
 
 The year template mode leaves behind `animateur` and everything that hangs off a person (`animateur_competence`, `animateur_jour_indispo`, `animateur_souhait`), as well as the manual adjustments, since each type of `contrainte_ad_hoc` names at least one staff member: a copy pointing at absent people would be worse than no copy. `stand_typologie` stays, because it carries a stand and a game category, never somebody.
 
-The default does not change. Duplicating with the people is the action for a "heatwave plan" edition created in the middle of a festival, which must keep its team and its mailing to everyone. Unticking the box is the opposite case, preparing 2027 from 2026, and there copying names, birth dates and e-mails of people who have not re-registered is a problem of minimisation and retention period, not a convenience ([ADR 0009](repo:docs/decisions/0009-edition-unique-porteur-de-variantes.md) for the role of the edition, [One edition, one data partition](cloisonnement-par-edition.md) for the partitioning).
+The default does not change. Duplicating with the people is the action for a "heatwave plan" edition created in the middle of a festival, which must keep its team and its mailing to everyone. Unticking the box is the opposite case, preparing 2027 from 2026, and there copying names, birth dates and e-mails of people who have not re-registered is a problem of minimisation and retention period, not a convenience ([ADR 0009](repo:docs/decisions/0009-edition-unique-porteur-de-variantes.md) for the role of the edition, [One edition, one partition of the data](cloisonnement-par-edition.md) for the partitioning).
 
 ## Backups before a wipe
 

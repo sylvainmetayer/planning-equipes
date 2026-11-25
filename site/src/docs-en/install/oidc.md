@@ -55,7 +55,7 @@ Do this before leaving the emergency account closed: otherwise nobody gets in th
 
 For the following people, an administrator creates the **account** (address, name) and grants a right; the person links up at their first sign-in in the same way. **Deactivating** an account cuts its access at the next request, without touching the provider.
 
-The Settings › **Accounts** screen, visible to administrators only, lists the accounts; it lets you add them, deactivate and reactivate them, and grant and withdraw a right by role and by edition. The refusal to deactivate the last administrator, or to deactivate yourself, is displayed as the server states it. An organiser sees neither this tab nor the instance ones, and the server refuses them anyway (403). The history, the validation of a day and the event-day mode name the author by name (or failing that their address), resolved at read time. What each role opens is detailed in [Know what each role can call](securite-roles-et-droits.md).
+The Settings › **Accounts** screen, visible to administrators only, lists the accounts; it lets you add them, deactivate and reactivate them, and grant and withdraw a right by role and by edition. The refusal to deactivate the last administrator, or to deactivate yourself, is displayed as the server states it. An organiser sees neither this tab nor the instance ones, and the server refuses them anyway (403). The history, the validation of a day and the event-day mode name the author by name (or failing that their address), resolved at read time. What each role opens is detailed in [Knowing what each role can call](securite-roles-et-droits.md).
 
 ## Change the provider's URL
 

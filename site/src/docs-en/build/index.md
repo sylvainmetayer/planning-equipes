@@ -54,8 +54,8 @@ If you are new to the code, read [the overview](vue-d-ensemble.md), [how the sch
 
 ## I am discovering the project
 
-- I want to know how the code is organised: [The stack and the code layout](vue-d-ensemble.md).
-- I want to know how editions stay separate: [One edition, one data partition](cloisonnement-par-edition.md).
+- I want to know how the code is organised: [The stack and how the code is split](vue-d-ensemble.md).
+- I want to know how editions stay separate: [One edition, one partition of the data](cloisonnement-par-edition.md).
 - I want to know who can do what: [Accounts, roles and access](acces-et-comptes.md).
 - I want to know what runs without being launched, and what goes out by e-mail or webhook: [Background jobs and notifications](taches-de-fond-et-notifications.md).
 - I am working on the interface: [The Angular frontend](frontend.md).
@@ -100,7 +100,7 @@ If you are new to the code, read [the overview](vue-d-ensemble.md), [how the sch
 
 - [Setting up the environment and running](demarrer.md)
 - [Tests](tests.md) and [load scenarios](tests-de-scenarios.md)
-- [Tuning the solver](regler-le-solveur.md)
+- [Tune the solver](regler-le-solveur.md)
 - [Continuous integration and delivery](ci-et-livraison.md), [Renovate and licences](renovate-et-dependances.md)
 - [Repository conventions](conventions-du-depot.md)
 

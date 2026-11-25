@@ -18,7 +18,7 @@ It is a **floor**, unlike the two weekly durations, which are ceilings: 20 minut
 
 ### What the break deducts, what the opening span counts
 
-The break is rest, not actual work (art. L3121-1): it is **deducted**, paid or not, with nothing to declare. In a plan with no hard violation, every deducted break was indeed taken: that is what `travailContinuMax*` guarantees. The deduction applies everywhere:
+The break is rest, not actual work (art. L3121-1): it is **deducted**, paid or not, with nothing to declare. In a plan with no hard breach, every deducted break was indeed taken: that is what `travailContinuMax*` guarantees. The deduction applies everywhere:
 
 | Where | What is measured |
 |---|---|
@@ -48,19 +48,19 @@ A break that is due is taken in one of two ways, and the tool knows no third:
 - **a gap** of at least `dureePauseMinutes` in the grid. It breaks the sequence, and nothing is due on either side;
 - **a relay**: a colleague of the **same stand** holding a seat during the whole break.
 
-With neither, it is a **hard violation**, one point per break that cannot be relayed, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility exclusion flat penalty for a minor ([the eligibility exclusions](pourquoi-ces-regles.md)). The breaks due come from `PauseSurPoste`, which the Breaks and meals screen, the staff PDF and the ICS feed also read: none of the four diverges on what is due or when.
+With neither, it is a **hard breach**, one point per break that cannot be relayed, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility exclusion flat penalty for a minor ([the eligibility exclusions](pourquoi-ces-regles.md)). The breaks due come from `PauseSurPoste`, which the Breaks and meals screen, the staff PDF and the ICS feed also read: none of the four diverges on what is due or when.
 
 **Why hard and not weighted.** A relay that does not exist is not a lost comfort. With nobody to hold the stand, the person cannot leave it, their "break" remains actual work (art. L3121-1 and L3121-2; paying the break does not change its legal characterisation, Cass. soc. 22 May 2019, no. 17-26.914), and the twenty minutes of art. L3121-16 are not given. That is also what justifies the deduction above: the two decisions only hold together. A "break taken on the post" checkbox that switched off `travailContinuMax*` once existed; it left two readings of the same schedule and switched off the minors' rule although the 4 h 30 of art. L3162-3 are a matter of public policy.
 
 Where the rule bites: a **single-seat stand held for more than six hours in a row**. Nobody can relay, and no assignment reaches zero hard. The answer is to recut the grid or open one more seat; there is no weight to lower, the rule admits none.
 
-**A break due in a sequence that has already elapsed is held against nobody** ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)). Its seats are pinned: a hard violation placed there could not be repaired by any move, and a solve restarted in the middle of an event would never reach zero again. The rule groups by staff member and by day, but the day guard is not enough, because a day whose morning is over still has an evening seat. It is the seat the relay should have covered that decides.
+**A break due in a sequence that has already elapsed is held against nobody** ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)). Its seats are pinned: a hard breach placed there could not be repaired by any move, and a solve restarted in the middle of an event would never reach zero again. The rule groups by staff member and by day, but the day guard is not enough, because a day whose morning is over still has an evening seat. It is the seat the relay should have covered that decides.
 
 ## The meal break
 
 `coupureRepasObligatoire` (hard) and `coupureRepasPlacementPrefere` (soft) carry the meal break. Without them, a ten-hour day with no break came out at zero hard with nothing to flag it.
 
-**This is not the Labour Code.** The only break it imposes is the one in art. L3121-16, which `travailContinuMaxMajeur` already carries. The meal break is the event's own organisational rule, the one for which the grid of the source workbook cuts its midday shifts. It is held hard by choice, under the protected category "Organisation (meals)".
+**This is not the Labour Code.** The only break it imposes is the one in art. L3121-16, which `travailContinuMaxMajeur` already carries. The meal break is the event's own organisational rule, the one for which the grid of the source workbook cuts its midday shifts. It is held hard by choice, under the protected category "Organisation (repas)" (organisation, meals).
 
 ### The rule, exactly
 
@@ -97,7 +97,7 @@ A heavy weight on a medium rule is paid for in the feasibility phase, which acce
 
 ### Where the other screens read it
 
-The Breaks and meals screen lists the break due, the largest free gap and what is missing, through the **same `CoupureRepas`** as the rule: there is only one, so they cannot diverge. The Staffing need screen counts the break in its floor (fifth bound of `StaffingAnalyzer`), but `StaffingResource` passes it the windows only if the rule is active: a rule the solver does not have to honour must not raise the number of staff members to recruit. This bound counts a **seat that covers the whole window** as leaving no gap to eat for its holder: an evening seat 20:00-midnight against a 20:00-21:00 window forbids them the afternoon. A seat that overflows on both sides, on the other hand, raises nothing: it is the infeasible grid above, which no workforce can save. The Problems screen has nothing specific: the rule being hard, its violations come up through `ConstraintCatalog.NOMS_DURS`.
+The Breaks and meals screen lists the break due, the largest free gap and what is missing, through the **same `CoupureRepas`** as the rule: there is only one, so they cannot diverge. The Staffing need screen counts the break in its floor (fifth bound of `StaffingAnalyzer`), but `StaffingResource` passes it the windows only if the rule is active: a rule the solver does not have to honour must not raise the number of staff members to recruit. This bound counts a **seat that covers the whole window** as leaving no gap to eat for its holder: an evening seat 20:00-midnight against a 20:00-21:00 window forbids them the afternoon. A seat that overflows on both sides, on the other hand, raises nothing: it is the infeasible grid above, which no workforce can save. The Problems screen has nothing specific: the rule being hard, its breaches come up through `ConstraintCatalog.NOMS_DURS`.
 
 ## The Animation collective agreement (ÉCLAT, IDCC 1518)
 

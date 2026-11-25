@@ -39,7 +39,7 @@ In the **Credentials** tab, set a secret of **at least 32 characters** (for exam
 
 ## Open the AI assistant (MCP) over OAuth
 
-This step is only useful if you want an assistant (Claude, Le Chat) to connect to the instance over OAuth, without an API key. Without it, the assistant keeps the key; see [Connect an AI assistant to the MCP server](../comprendre/mcp-connexion.md).
+This step is only useful if you want an assistant (Claude, Le Chat) to connect to the instance over OAuth, without an API key. Without it, the assistant keeps the key; see [Connecting an AI assistant to the MCP server](../comprendre/mcp-connexion.md).
 
 ### The `planning-mcp` audience
 

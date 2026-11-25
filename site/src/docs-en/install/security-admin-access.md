@@ -18,7 +18,7 @@ Four doors, from strongest to weakest:
    `/q/swagger-ui` pages follow the same rule.
 2. **A local account** ([ADR 0094](repo:docs/decisions/0094-comptes-locaux-par-mot-de-passe.md)): an address and a password chosen by its
    owner alone, through a single-use link received by e-mail (72 h at
-   invitation, one hour for a reset or "forgotten password"),
+   invitation, one hour for a reset or "Forgot my password"),
    then a **six-digit code received by e-mail**, on by default
    (`AUTH_LOCAL_SECONDE_ETAPE=false` turns it off). The password is a bcrypt
    hash of at least twelve characters; link, challenge and code are stored only

@@ -488,7 +488,7 @@ changes nothing in the register.
 ## The compliance report names the people scheduled
 
 The labour inspectorate compliance report (*Compliance* tab of
-Diagnostic) lists, by name, the hours, the applicable caps, the deviations from the
+Diagnostic) lists, by name, the hours, the applicable caps, the breaches from the
 legal rules and the minor status of each person scheduled. It carries
 no date of birth, address or contact details. It is readable only by
 administrators and by accounts holding an `RH` right on the edition;

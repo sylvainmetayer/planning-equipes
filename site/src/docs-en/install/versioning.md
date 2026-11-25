@@ -4,7 +4,7 @@ twin: installer/versioning
 
 # Understanding what a version number promises
 
-A version number serves to answer two questions: "which version am I on?" and "is the fix in it?". Here you learn what each number promises you before you upgrade, and what, in a version upgrade, requires an action on your part. The upgrade procedure is in [Upgrading to a new version](mettre-a-jour.md); building a release and patching an old line, for whoever publishes, in [Releasing a version and patching the previous one](publier-une-version.md).
+A version number serves to answer two questions: "which version am I on?" and "is the fix in it?". Here you learn what each number promises you before you upgrade, and what, in a version upgrade, requires an action on your part. The upgrade procedure is in [Upgrade to a new version](mettre-a-jour.md); building a release and patching an old line, for whoever publishes, in [Publish a version and patch the previous one](publier-une-version.md).
 
 We start at `1.0.0`, at public opening. There is no `0.x`: a `0.x` says "I commit to nothing", which is false, the product runs in production on a real event.
 
@@ -18,7 +18,7 @@ Part of the public surface, and changing it incompatibly is a MAJOR upgrade:
 - the environment variables (`BRANDING_*`, `LEGAL_*`, `PLANNING_MCP_*`, `FLYWAY_REPAIR_AT_START`…): removing one, or changing a default in a way that changes behaviour;
 - the stable URLs, first of all the staff espace links printed on PDFs handed out to humans: breaking them invalidates paper already in circulation;
 - the REST API consumed by anything other than the product's frontend, MCP server included;
-- a Flyway migration that is irreversible in operational terms: dropping or renaming a column, a constraint that rejects existing data. The schema is *forward-only*: going back to the previous image is not enough to roll back, you have to restore a dump ([backing up and restoring](sauvegarde-et-restauration.md)). A version that makes rollback impossible must be visible from afar.
+- a Flyway migration that is irreversible in operational terms: dropping or renaming a column, a constraint that rejects existing data. The schema is *forward-only*: going back to the previous image is not enough to roll back, you have to restore a dump ([back up and restore](sauvegarde-et-restauration.md)). A version that makes rollback impossible must be visible from afar.
 
 An older image **refuses to start** on a more recent database, and you have two ways out, detailed in [A database ahead of the image](mettre-a-jour.md#une-base-en-avance-sur-limage): redeploy the version that migrated the database, or restore a backup from before the upgrade.
 
