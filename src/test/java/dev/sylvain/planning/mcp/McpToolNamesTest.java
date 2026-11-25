@@ -77,9 +77,12 @@ class McpToolNamesTest {
      * <ul>
      *   <li>{@code p_token} is Pangolin's query-string parameter, quoted in the
      *       English message catalogue.</li>
+     *   <li>{@code auth_time}, {@code max_age} and {@code resource_metadata} are
+     *       OpenID Connect and RFC 9728 names, quoted where docs/mcp.md explains
+     *       the OAuth connection (ADR 0097).</li>
      * </ul>
      */
-    private static final Set<String> NOT_TOOL_NAMES = Set.of("p_token");
+    private static final Set<String> NOT_TOOL_NAMES = Set.of("p_token", "auth_time", "max_age", "resource_metadata");
 
     /**
      * Every feature the MCP server actually announces, read from the

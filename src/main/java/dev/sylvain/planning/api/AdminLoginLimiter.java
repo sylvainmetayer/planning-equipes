@@ -4,12 +4,14 @@ import dev.sylvain.planning.config.ConfigAdminLogin;
 import dev.sylvain.planning.config.ConfigOidc;
 import dev.sylvain.planning.config.TrustedProxies;
 import dev.sylvain.planning.service.FailureLockout;
+import dev.sylvain.planning.service.compte.SessionOpenings;
 import dev.sylvain.planning.service.journal.LoginJournalEntry;
 import dev.sylvain.planning.service.journal.LoginJournalEntry.Evenement;
 import dev.sylvain.planning.service.journal.LoginJournalService;
 import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
@@ -132,6 +134,8 @@ public class AdminLoginLimiter {
 
     private final ConfigOidc oidc;
 
+    private final SessionOpenings openings;
+
     /** Read from the configuration so the two can never drift apart. */
     private final String nomCookieSession;
 
@@ -140,7 +144,9 @@ public class AdminLoginLimiter {
             ConfigAdminLogin config,
             LoginJournalService journal,
             ConfigOidc oidc,
-            @ConfigProperty(name = "quarkus.http.auth.form.cookie-name") String nomCookieSession) {
+            @ConfigProperty(name = "quarkus.http.auth.form.cookie-name") String nomCookieSession,
+            SessionOpenings openings) {
+        this.openings = openings;
         this.config = config;
         this.journal = journal;
         this.oidc = oidc;
@@ -203,6 +209,7 @@ public class AdminLoginLimiter {
 
     private void apply(RoutingContext contexte) {
         if (!isLoginPath(contexte.normalizedPath())) {
+            carryOpeningOver(contexte);
             contexte.next();
             return;
         }
@@ -222,6 +229,8 @@ public class AdminLoginLimiter {
             boolean locale = isLocalLoginPath(contexte.normalizedPath());
             contexte.addEndHandler(issue -> {
                 if (issue.succeeded() && successfulLogin(contexte)) {
+                    // When this session opens, for the recent sign-in control (ADR 0097).
+                    openings.record(sessionCookieValue(contexte), Instant.now());
                     recordSuccess(address, locale);
                 }
             });
@@ -347,17 +356,43 @@ public class AdminLoginLimiter {
      * checks.
      */
     private boolean successfulLogin(RoutingContext contexte) {
-        if (contexte.user() != null) {
-            return true;
+        return contexte.user() != null || sessionCookieSet(contexte);
+    }
+
+    /**
+     * The form cookie is reissued once it is a minute old
+     * ({@code quarkus.http.auth.form.new-cookie-interval}): the reissued value
+     * keeps the instant the session opened, or every session would stop being
+     * recent a minute after its login (ADR 0097).
+     */
+    private void carryOpeningOver(RoutingContext contexte) {
+        Cookie cookie = contexte.request().getCookie(nomCookieSession);
+        if (cookie == null || openings.openedAt(cookie.getValue()).isEmpty()) {
+            return;
         }
+        contexte.addEndHandler(issue -> {
+            String renewed = sessionCookieValue(contexte);
+            if (renewed != null && !renewed.equals(cookie.getValue())) {
+                openings.renew(cookie.getValue(), renewed);
+            }
+        });
+    }
+
+    /** Whether the response opens a session: a session cookie with a value. */
+    private boolean sessionCookieSet(RoutingContext contexte) {
+        return sessionCookieValue(contexte) != null;
+    }
+
+    /** The value of the session cookie the response sets, {@code null} when it sets none (a deletion is none). */
+    private String sessionCookieValue(RoutingContext contexte) {
         HttpServerResponse reponse = contexte.response();
         for (String entete : reponse.headers().getAll(HttpHeaders.SET_COOKIE)) {
-            // An empty value is a cookie deletion, not a session.
             if (entete.startsWith(nomCookieSession + "=") && !entete.startsWith(nomCookieSession + "=;")) {
-                return true;
+                int fin = entete.indexOf(';');
+                return entete.substring(nomCookieSession.length() + 1, fin < 0 ? entete.length() : fin);
             }
         }
-        return false;
+        return null;
     }
 
     /** Seconds the pair (this address, {@code account}) or the address itself is locked out for, {@code 0} when it may try. */

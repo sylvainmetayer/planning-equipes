@@ -38,7 +38,7 @@ monde partage (`MAIL_ADMIN`). Celles qui sont propres à une machine vont dans
 exclut — c'est le seul endroit où écrire une valeur qu'on ne veut pas voir dans
 un dépôt public. Exemple, pour voir la page `/mentions-legales` remplie plutôt
 que vide (les sept `LEGAL_*` sont décrites dans le
-[README](../README.md#configuration) et dans
+[`variables-environnement.md`](variables-environnement.md#mentions-légales) et dans
 [`exploitation.md`](exploitation.md#3-mentions-légales--à-renseigner-pas-à-laisser-vides)) :
 
 ```toml
@@ -75,7 +75,7 @@ les tests appellent l'API sans session — `AuthentificationAdminTest` la restau
 via `@TestProfile` pour couvrir le flux réel.
 
 Les variables d'environnement sont documentées dans le
-[`README.md`](../README.md#configuration) et
+[`variables-environnement.md`](variables-environnement.md) et
 [`exploitation.md`](exploitation.md).
 
 ### Avertissements JDK 25

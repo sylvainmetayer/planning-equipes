@@ -197,6 +197,37 @@ class WebhookResourceTest {
         assertThat(historique).contains("WEBHOOK_MODIFIE").doesNotContain("PRIVE-42");
     }
 
+    @Test
+    void aStaleEditIsRefusedAndTheFreshStampGoesThrough() {
+        JsonPath created = create("slack", "SLACK", receiver.url("/services/STALE"), List.of());
+        String id = created.getString("webhook.id");
+        String modifiedAt = created.getString("webhook.modifiedAt");
+        Map<String, Object> body =
+                new java.util.HashMap<>(Map.of("name", "renommé", "format", "SLACK", "url", "", "events", List.of()));
+
+        body.put("modifiedAt", "2020-01-01T00:00:00Z");
+        given().header(EditionContext.HEADER, EDITION)
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when()
+                .put("/api/webhooks/" + id)
+                .then()
+                .statusCode(409)
+                .body("code", org.hamcrest.Matchers.equalTo("MODIFICATION_CONCURRENTE"))
+                .body("modifieLe", org.hamcrest.Matchers.notNullValue());
+        assertThat(column("SELECT nom FROM webhook")).isEqualTo("slack");
+
+        body.put("modifiedAt", modifiedAt);
+        given().header(EditionContext.HEADER, EDITION)
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when()
+                .put("/api/webhooks/" + id)
+                .then()
+                .statusCode(200);
+        assertThat(column("SELECT nom FROM webhook")).isEqualTo("renommé");
+    }
+
     /* --------------------------------- Delivery ------------------------------- */
 
     @Test

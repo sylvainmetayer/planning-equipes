@@ -8,14 +8,17 @@ import {
   signal,
   ViewEncapsulation,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { AdminApi } from '../../core/api/admin-api';
 import { McpApi } from '../../core/api/mcp-api';
-import { PromptMcp, StatutMcp } from '../../core/models';
+import { ApiError } from '../../core/api.service';
+import { CleMcp, PromptMcp, StatutMcp } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
@@ -43,9 +46,13 @@ import { copyToClipboard } from '../../core/clipboard';
  * page is left open on screen; copying restarts that timer, since copying is
  * the one interaction that proves somebody is still there.
  */
+/** The server's code for a sign-in too old; the way back follows after an underscore. */
+const CODE_RECONNEXION = 'RECONNEXION_REQUISE';
+
 @Component({
   selector: 'app-mcp-page',
   imports: [
+    DatePipe,
     NewWindowLink,
     FormsModule,
     MatButtonModule,
@@ -67,6 +74,7 @@ export class McpPage implements OnInit, OnDestroy {
 
   private readonly mcpApi = inject(McpApi);
   private readonly notifications = inject(NotificationService);
+  private readonly adminApi = inject(AdminApi);
 
   /** Where this very app is served: the MCP endpoint lives on the same origin. */
   protected readonly origin = window.location.origin;
@@ -85,7 +93,12 @@ export class McpPage implements OnInit, OnDestroy {
   protected readonly prompts = signal<PromptMcp[]>([]);
 
   protected readonly formulaireOuvert = signal(false);
-  protected readonly motDePasse = signal('');
+
+  /** Set when the sign-in is too old for the key: how this session signs in again (`OIDC`, `LOCAL`, `BREAK_GLASS`). */
+  protected readonly reconnexion = signal<string | null>(null);
+
+  /** How long the old key keeps working after a renewal, in minutes (0: it stops at once). */
+  protected readonly recouvrement = signal(15);
   protected readonly enCours = signal(false);
   protected readonly erreur = signal('');
   protected readonly cle = signal('');
@@ -157,42 +170,73 @@ export class McpPage implements OnInit, OnDestroy {
     return JSON.stringify(config, null, 2);
   });
 
-  protected ouvrirFormulaire(): void {
+  protected openForm(): void {
     this.formulaireOuvert.set(true);
     this.erreur.set('');
-    this.motDePasse.set('');
   }
 
   protected annuler(): void {
     this.formulaireOuvert.set(false);
-    this.motDePasse.set('');
     this.erreur.set('');
   }
 
-  protected async reveler(event: Event): Promise<void> {
+  /** The configured key, to someone who signed in a few minutes ago. */
+  protected async reveal(): Promise<void> {
+    await this.fetchKey(() => this.mcpApi.regenerateKey());
+  }
+
+  /** A new key, with the chosen overlap for the old one. */
+  protected async renouveler(event: Event): Promise<void> {
     event.preventDefault();
-    if (this.enCours() || !this.motDePasse()) {
+    await this.fetchKey(async () => {
+      const reponse = await this.mcpApi.rotateKey(this.recouvrement());
+      await this.chargerStatut();
+      return reponse;
+    });
+  }
+
+  private async fetchKey(appel: () => Promise<CleMcp>): Promise<void> {
+    if (this.enCours()) {
       return;
     }
     this.enCours.set(true);
     this.erreur.set('');
+    this.reconnexion.set(null);
     try {
-      const reponse = await this.mcpApi.regenerateKey(this.motDePasse());
+      const reponse = await appel();
       this.cle.set(reponse.cle);
       this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
       this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');
       this.formulaireOuvert.set(false);
       this.armerEffacement();
-    } catch {
-      // Deliberately one message for every failure mode: telling a wrong
-      // password from a rate-limited one would help exactly the person this
-      // second check exists to stop.
-      this.erreur.set(
-        $localize`:@@mcp.cle.echec:Mot de passe refusé, ou trop de tentatives. Réessayez dans quelques minutes.`,
-      );
+    } catch (error) {
+      const prefixe = CODE_RECONNEXION + '_';
+      if (error instanceof ApiError && error.code?.startsWith(prefixe)) {
+        // The sign-in is too old: the server says which way back this session has.
+        this.reconnexion.set(error.code.substring(prefixe.length));
+        this.formulaireOuvert.set(false);
+      } else {
+        this.erreur.set($localize`:@@mcp.cle.echec:Impossible d'obtenir la clé.`);
+      }
     } finally {
       this.enCours.set(false);
-      this.motDePasse.set('');
+    }
+  }
+
+  /**
+   * Signs in again, then comes back here: the provider is asked afresh for an
+   * OIDC session; a local or break-glass session is closed and the login page
+   * takes over.
+   */
+  protected async reconnecter(): Promise<void> {
+    if (this.reconnexion() === 'OIDC') {
+      this.mcpApi.reauthenticate('/parametres?onglet=mcp');
+      return;
+    }
+    try {
+      await this.adminApi.logout();
+    } finally {
+      window.location.assign('/login');
     }
   }
 

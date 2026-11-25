@@ -40,7 +40,7 @@ onto `Stand`s over the days of an event, under hard/medium/soft constraints.
 
 Read before working on constraints or the domain model:
 
-- `README.md` (section *Fonctionnalités métier*) — functional scope and business capabilities
+- `docs/fonctionnel/` (start with `parcours.md`) — functional scope and business capabilities, in business language
 - `docs/domaine.md` — Timefold model and its invariants
 - `docs/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
 - `docs/architecture.md` — backend/frontend module layout
@@ -495,7 +495,10 @@ Single Quarkus service, no separate solver microservice. Package root:
      `@EditionArg`, on a class annotated `@EditionCiblee` (issue #181) — an MCP
      call carries no `X-Edition-Id`, so the argument is the edition, and a
      call without it is refused (`EDITION_REQUISE`, ADR 0072) rather than run
-     in an edition nobody named (`McpEditionStructurelleTest`). Beware CDI
+     in an edition nobody named (`McpEditionStructurelleTest`). A tool that
+     names no edition is `@InstanceOnlyTool` — refused to an organiser who
+     reaches `/mcp` by OAuth (ADR 0097) — or argued in that same test, with
+     what keeps it inside the organiser's editions. Beware CDI
      self-invocation: a tool calling another tool on `this` bypasses the
      interceptor.
   3. every tool declares the four MCP hints, and only the tools that **send
@@ -767,15 +770,30 @@ The doc layout is intentional — respect it when adding or updating docs.
    `src/main/webui/AGENTS.md` for the frontend and nothing else. Never split
    repository memory across `CLAUDE.md`, `.github/copilot-instructions.md`,
    or similar files.
-      mode, first steps, configuration, tests;
-   2. *Fonctionnalités métier* — what the app does, in business language, no
-      class names, no endpoint tables, no file paths.
-   A short intro and a closing documentation index table are allowed; anything
-   else technical goes to `docs/`.
-3. **All technical documentation lives in `docs/`**: `architecture.md`,
-   `domaine.md`, `contraintes.md`, `api.md`, `import-export.md`,
-   `developpement.md`. Adding a topic means adding a file there and a row in
-   `docs/README.md` — not a new root-level file and not a new README section.
+2. **`README.md` is an introduction and a local quickstart, nothing more**: a
+   short presentation of the application, then *Démarrage rapide* — « Essayer »
+   (the published image through `docker-compose.yml`) and « Développer »
+   (`./mvnw quarkus:dev`) — and a pointer to the documentation. A short intro
+   and a closing documentation index table are allowed; the functional
+   inventory, the configuration and everything else technical go to `docs/`.
+3. **All documentation lives in `docs/`, in three parts** that the site
+   publishes under `/docs` (`site/src/docs-parties.json` lists the pages of each
+   and their order; a page in none of them fails the site build):
+   - **Fonctionnel** — `docs/fonctionnel/*.md`, for a reader who is not
+     technical (organiser, stand lead): what the application does, by major use,
+     with no class name, route or variable;
+   - **Infra** — for whoever hosts the application: `installation.md`,
+     `variables-environnement.md`, `exploitation.md`, `securite.md`, `oidc.md`,
+     `observabilite.md`, `versioning.md`, `rgpd.md`, `accessibilite.md`,
+     `licences-tierces.md`;
+   - **Tech** — for whoever develops or audits: `architecture.md`, `domaine.md`,
+     `contraintes.md`, `api.md`, `mcp.md`, `import-export.md`, `developpement.md`
+     (ADRs and the project memory stay on GitHub, outside the site).
+   Adding a topic means adding a file in the right part, its row in
+   `docs/README.md` and its entry in `docs-parties.json` — not a new root-level
+   file and not a new README section. The environment variables inventory
+   (`variables-environnement.md`) is checked against `application.properties`:
+   a new variable is added there.
 4. Docs are written in **French**; keep the existing tone and Markdown style
    (tables for enumerable facts, fenced code blocks for commands).
 5. When behaviour changes, update the doc that owns it. Two owners are **not**
@@ -795,7 +813,8 @@ The doc layout is intentional — respect it when adding or updating docs.
      hands out. `docs/contraintes.md` no longer enumerates the constraints and
      must not go back to it: it answers *why* a rule exists and what it costs,
      which the catalogue's one-line description cannot carry;
-   - new business capability → README section 2; new command/CI/tooling →
+   - new business capability → the functional page that owns it
+     (`docs/fonctionnel/`); new command/CI/tooling →
      `docs/developpement.md`; anything touching the version contract, the
      release flow or the Docker image tags → `docs/versioning.md`.
    - a flow, a lifecycle or the model drawn in `docs/diagrammes/` → its

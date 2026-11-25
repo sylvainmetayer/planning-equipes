@@ -519,7 +519,9 @@ Cinq portes, de la plus forte à la plus faible :
    retiré en 4.0**. Il fonctionne encore, un avertissement le rappelle à chaque
    démarrage ; il reste indépendant du secours (le secret partagé est son
    identifiant).
-5. La clé d'API du `/mcp`, qui n'ouvre que le MCP.
+5. La clé d'API du `/mcp`, qui n'ouvre que le MCP : renouvelable depuis l'écran MCP
+   (hachée, montrée une fois, recouvrement choisi), ou jeton OAuth du fournisseur
+   pour un compte actif (ADR 0097, `mcp.md`).
 
 **Exécutez l'application derrière https.** Le cookie de session OIDC et celui du
 formulaire n'ont de sens que chiffrés en transit. Le déploiement étant agnostique,

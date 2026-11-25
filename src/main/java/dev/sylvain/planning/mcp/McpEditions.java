@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -29,9 +30,12 @@ class McpEditions {
 
     private final EditionService editionService;
 
+    private final EditionContext editionContext;
+
     @Inject
-    McpEditions(EditionService editionService) {
+    McpEditions(EditionService editionService, EditionContext editionContext) {
         this.editionService = editionService;
+        this.editionContext = editionContext;
     }
 
     /**
@@ -44,7 +48,11 @@ class McpEditions {
             return null;
         }
         String demande = edition.trim();
-        List<Edition> editions = editionService.listEditions();
+        // An organiser reaching /mcp through OAuth sees its editions only (ADR 0097): one outside
+        // its rights is refused as one that does not exist, as on the REST side.
+        List<Edition> editions = editionService.listEditions().stream()
+                .filter(candidate -> editionContext.visibleToCaller(candidate.getId()))
+                .toList();
 
         List<Edition> parId = editions.stream()
                 .filter(candidate -> candidate.getId().equalsIgnoreCase(demande))

@@ -16,6 +16,7 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { askStaleChoice, isStaleWrite, notifyStaleReloaded } from '../../shared/stale-write';
 import { WebhookFormData, WebhookFormDialog } from './webhook-form-dialog';
 import { WebhookLivraisonsData, WebhookLivraisonsDialog } from './webhook-livraisons-dialog';
 import { eventLabel, formatLabel, statusLabel } from './webhooks';
@@ -76,35 +77,72 @@ export class WebhooksCard implements OnInit {
   }
 
   private openForm(webhook: WebhookView | null): void {
-    const ref = this.dialog.open<WebhookFormDialog, WebhookFormData, WebhookRequest | null>(
-      WebhookFormDialog,
-      { data: { webhook }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
-    );
-    ref.afterClosed().subscribe((request) => {
-      if (request) {
-        void this.save(webhook, request);
-      }
+    this.dialog.open<WebhookFormDialog, WebhookFormData>(WebhookFormDialog, {
+      data: { webhook, save: (request) => this.save(webhook, request) },
+      width: '40rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable',
     });
   }
 
-  private async save(webhook: WebhookView | null, request: WebhookRequest): Promise<void> {
+  /** True once the form may close: written, or reloaded on the user's choice. */
+  private async save(webhook: WebhookView | null, request: WebhookRequest): Promise<boolean> {
     this.busy.set(true);
     try {
-      const saved = webhook
-        ? await this.api.update(webhook.id, request)
-        : await this.api.create(request);
-      this.secret.set(saved.secret ? { name: saved.webhook.name, secret: saved.secret } : null);
-      this.notifications.notify({
-        title: $localize`:@@parametres.webhooks.enregistre:Webhook enregistré.`,
-        variant: 'success',
-        timeout: 3000,
-      });
-      await this.load();
+      await this.write(webhook, { ...request, modifiedAt: webhook?.modifiedAt ?? null });
+      return true;
     } catch (error) {
-      this.notifyError(error);
+      return await this.answerError(webhook, request, error);
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Sends the form: the stamp it loaded is the precondition, `null` overwrites (issue #362). */
+  private async write(webhook: WebhookView | null, request: WebhookRequest): Promise<void> {
+    const saved = webhook
+      ? await this.api.update(webhook.id, request)
+      : await this.api.create(request);
+    this.secret.set(saved.secret ? { name: saved.webhook.name, secret: saved.secret } : null);
+    this.notifications.notify({
+      title: $localize`:@@parametres.webhooks.enregistre:Webhook enregistré.`,
+      variant: 'success',
+      timeout: 3000,
+    });
+    await this.load();
+  }
+
+  /**
+   * A webhook written since the form opened is answered with a choice, any
+   * other refusal with its message. False keeps the form open as typed, like
+   * `ReferenceCrudService`: a refusal, or a choice dismissed.
+   */
+  private async answerError(
+    webhook: WebhookView | null,
+    request: WebhookRequest,
+    error: unknown,
+  ): Promise<boolean> {
+    if (!isStaleWrite(error)) {
+      this.notifyError(error);
+      return false;
+    }
+    const choice = await askStaleChoice(this.confirm, error);
+    if (choice === 'overwrite') {
+      try {
+        await this.write(webhook, { ...request, modifiedAt: null });
+        return true;
+      } catch (again) {
+        this.notifyError(again);
+        return false;
+      }
+    }
+    if (choice === 'reload') {
+      await this.load();
+      notifyStaleReloaded(this.notifications);
+      return true;
+    }
+    this.notifyError(error);
+    return false;
   }
 
   protected async test(webhook: WebhookView): Promise<void> {

@@ -3339,6 +3339,14 @@
           },
           "repas" : {
             "$ref" : "#/components/schemas/RepasConsigne"
+          },
+          "modifieLe" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "format" : "date-time",
+              "examples" : [ "2022-03-10T16:15:50Z" ]
+            }
           }
         }
       },
@@ -3477,11 +3485,12 @@
           }
         }
       },
-      "DemandeRevelation" : {
+      "DemandeRotation" : {
         "type" : "object",
         "properties" : {
-          "motDePasse" : {
-            "type" : "string"
+          "recouvrementMinutes" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -10398,7 +10407,7 @@
         "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "EXCLU" ]
       },
       "StatutMcp" : {
-        "required" : [ "configuree" ],
+        "required" : [ "configuree", "origine", "oauth" ],
         "type" : "object",
         "properties" : {
           "configuree" : {
@@ -10406,6 +10415,18 @@
           },
           "header" : {
             "type" : "string"
+          },
+          "origine" : {
+            "type" : "string"
+          },
+          "genereeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "ancienneExpireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "oauth" : {
+            "type" : "boolean"
           }
         }
       },
@@ -11385,6 +11406,9 @@
           },
           "active" : {
             "type" : "boolean"
+          },
+          "modifiedAt" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -12357,6 +12381,13 @@
     },
     "/api/auth/oidc/login" : {
       "get" : {
+        "parameters" : [ {
+          "name" : "retour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16780,11 +16811,41 @@
     },
     "/api/mcp/cle" : {
       "post" : {
+        "parameters" : [ {
+          "name" : "planning-session",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Reveal",
+        "tags" : [ "Mcp Resource" ]
+      }
+    },
+    "/api/mcp/cle/rotation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "planning-session",
+          "in" : "cookie",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/DemandeRevelation"
+                "$ref" : "#/components/schemas/DemandeRotation"
               }
             }
           },
@@ -16803,7 +16864,7 @@
             "description" : "Bad Request"
           }
         },
-        "summary" : "Reveal",
+        "summary" : "Rotate",
         "tags" : [ "Mcp Resource" ]
       }
     },

@@ -19,9 +19,14 @@ import {
   toRequest,
 } from './webhooks';
 
-/** The webhook being edited, or `null` for a creation. */
+/**
+ * The webhook being edited (`null` for a creation), and the write: it resolves
+ * true once the dialog may close, false to keep the form as typed — a refusal,
+ * or a conflict the user dismissed without choosing.
+ */
 export interface WebhookFormData {
   webhook: WebhookView | null;
+  save: (request: WebhookRequest) => Promise<boolean>;
 }
 
 /**
@@ -46,13 +51,13 @@ export interface WebhookFormData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WebhookFormDialog {
-  protected readonly dialogRef =
-    inject<MatDialogRef<WebhookFormDialog, WebhookRequest | null>>(MatDialogRef);
+  protected readonly dialogRef = inject<MatDialogRef<WebhookFormDialog>>(MatDialogRef);
   protected readonly data = inject<WebhookFormData>(MAT_DIALOG_DATA);
 
   protected readonly formats = WEBHOOK_FORMATS;
   protected readonly events = SUBSCRIBABLE_EVENTS;
   protected readonly editing = this.data.webhook !== null;
+  protected readonly saving = signal(false);
 
   protected readonly draft = signal<WebhookDraft>({
     name: this.data.webhook?.name ?? '',
@@ -99,9 +104,17 @@ export class WebhookFormDialog {
     }));
   }
 
-  protected submit(): void {
-    if (this.complete()) {
-      this.dialogRef.close(toRequest(this.draft()));
+  protected async submit(): Promise<void> {
+    if (!this.complete() || this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    try {
+      if (await this.data.save(toRequest(this.draft()))) {
+        this.dialogRef.close();
+      }
+    } finally {
+      this.saving.set(false);
     }
   }
 }

@@ -297,10 +297,17 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await page.getByLabel('Filtrer').fill('E2E-JT-S3');
   await (await rowAction(page.getByRole('row', { name: /E2E-JT-S3/ }), 'Modifier')).click();
   const fiche = await dialogueOuvert(page);
-  await fiche.getByRole('button', { name: 'Ajouter une ouverture' }).click();
   // Le fieldset propre aux ouvertures : celui dont c'est la légende, pas le
   // formulaire entier qui la contient aussi.
   const ouvertures = fiche.locator('legend', { hasText: 'Ouvertures ponctuelles' }).locator('..');
+  const dates = ouvertures.getByLabel('Date', { exact: true });
+  const avant = await dates.count();
+  await fiche.getByRole('button', { name: 'Ajouter une ouverture' }).click();
+  // La ligne n'existe qu'au rendu suivant le clic : sans cette attente, `.last()`
+  // du premier fill désigne encore l'ancienne dernière ligne (la date y est
+  // réécrite), les deux autres champs la nouvelle, et sa date reste vide — le
+  // bouton de validation ne se dégrise jamais.
+  await expect(dates).toHaveCount(avant + 1);
   // La grille vient d'écrire l'horaire du stand en ouvertures datées : la
   // ligne ajoutée est la dernière.
   await ouvertures.getByLabel('Date', { exact: true }).last().fill(JOUR3);

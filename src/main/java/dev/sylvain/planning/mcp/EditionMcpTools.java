@@ -117,7 +117,10 @@ public class EditionMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     List<EditionView> listEditions() {
-        return editionService.listEditions().stream().map(this::view).toList();
+        return editionService.listEditions().stream()
+                .filter(edition -> editionContext.visibleToCaller(edition.getId()))
+                .map(this::view)
+                .toList();
     }
 
     @Tool(
@@ -137,6 +140,9 @@ public class EditionMcpTools {
                 .activeEditionId()
                 .orElseThrow(() -> new BusinessError.Conflict(
                         "Aucune édition n'est active : activer_edition en désigne une (voir lister_editions)."));
+        if (!editionContext.visibleToCaller(active)) {
+            throw new BusinessError.Conflict("Aucune édition active n'est visible avec vos droits.");
+        }
         return view(find(active));
     }
 
@@ -212,6 +218,7 @@ public class EditionMcpTools {
         return gelService.etat(cible);
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "creer_edition",
             description = "Crée une édition vide ; son id (E suivi d'un nombre) est attribué par l'application "
@@ -231,6 +238,7 @@ public class EditionMcpTools {
         return view(editionService.create(new Edition(null, nom, false, null)));
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "dupliquer_edition",
             description = "Duplique une édition dans une nouvelle : stands, typologies, emplacements, créneaux, "
@@ -268,6 +276,7 @@ public class EditionMcpTools {
      * works in ». Animateurs leave by id only: {@link EditionDeltaService#compare}
      * is the anonymous delta, the labels the screen shows are another method.
      */
+    @InstanceOnlyTool
     @Tool(
             name = "comparer_editions",
             description = "Compare le référentiel de deux éditions (l'an dernier et cette année, ou une édition et "
@@ -298,6 +307,7 @@ public class EditionMcpTools {
         return deltaService.compare(requireEdition(reference, "reference"), requireEdition(cible, "cible"));
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "renommer_edition",
             description = "Renomme une édition. Seul le nom affiché change : l'id, lui, est repris dans les URLs "
@@ -315,6 +325,7 @@ public class EditionMcpTools {
         return view(editionService.renommer(id, new Edition(id, nom, false, null)));
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "activer_edition",
             description = "Fait de cette édition l'édition ACTIVE, et désactive l'ancienne dans le même geste. "
@@ -333,6 +344,7 @@ public class EditionMcpTools {
         return view(activationService.activate(id));
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "desactiver_edition",
             description = "Désactive l'édition active, sans en activer d'autre : plus rien ne part vers "
@@ -351,6 +363,7 @@ public class EditionMcpTools {
         return view(find(id));
     }
 
+    @InstanceOnlyTool
     @Tool(
             name = "supprimer_edition",
             description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "

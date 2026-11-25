@@ -162,6 +162,7 @@ public final class CatalogueActions {
     private static final String SAUVEGARDE_BASCULEE = "SAUVEGARDE_BASCULEE";
     private static final String DATE_JOUR_J_FORCEE = "DATE_JOUR_J_FORCEE";
     private static final String CLE_MCP_REVELEE = "CLE_MCP_REVELEE";
+    private static final String CLE_MCP_ROTEE = "CLE_MCP_ROTEE";
     private static final String AFFICHAGE_MURAL_CREE = "AFFICHAGE_MURAL_CREE";
     private static final String AFFICHAGE_MURAL_REVOQUE = "AFFICHAGE_MURAL_REVOQUE";
     private static final String WEBHOOK_CREE = "WEBHOOK_CREE";
@@ -436,6 +437,7 @@ public final class CatalogueActions {
         action(SAUVEGARDE_BASCULEE, "Sauvegarde nocturne suspendue ou reprise", Entite.SAUVEGARDE);
         action(DATE_JOUR_J_FORCEE, "Date et heure simulées", Entite.PARAMETRES);
         action(CLE_MCP_REVELEE, "Clé MCP révélée", Entite.PARAMETRES);
+        action(CLE_MCP_ROTEE, "Clé MCP renouvelée", Entite.PARAMETRES);
         // A link that opens a screen without a session is a credential handed
         // out: who made it and who closed it belong in the history. The screen's
         // own reads, once a minute, do not — see MuralResource.
@@ -662,6 +664,7 @@ public final class CatalogueActions {
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);
         route("HorlogeResource#setDateJourJ", DATE_JOUR_J_FORCEE);
         route("McpResource#reveal", CLE_MCP_REVELEE);
+        route("McpResource#rotate", CLE_MCP_ROTEE);
         route("AffichageMuralResource#create", AFFICHAGE_MURAL_CREE);
         route("AffichageMuralResource#revoke", AFFICHAGE_MURAL_REVOQUE);
         route("WebhookResource#create", WEBHOOK_CREE);

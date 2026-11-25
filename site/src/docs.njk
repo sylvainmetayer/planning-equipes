@@ -32,7 +32,9 @@ eleventyComputed:
       </details></nav>
       {% endif %}
       <nav class="doc__nav" aria-labelledby="doc-all"><details data-open-wide><summary class="doc__label" id="doc-all">{{ c.rubriques }}</summary>
-        <ul>{% for d in docs %}<li><a href="{{ d.url }}"{% if d.url == p.url %} aria-current="page"{% endif %}>{{ (c.accueil if d.name == 'README' else d.h1) | typo('fr') }}</a></li>{% endfor %}</ul>
+        <ul><li><a href="/docs/"{% if p.name == 'README' %} aria-current="page"{% endif %}>{{ c.accueil | typo('fr') }}</a></li>
+        {% for part in docsParts %}<li><span class="doc__part">{{ part.titre }}</span>
+          <ul>{% for n in part.docs %}{% set d = docs | byName(n) %}<li><a href="{{ d.url }}"{% if d.url == p.url %} aria-current="page"{% endif %}>{{ d.h1 | typo('fr') }}</a></li>{% endfor %}</ul></li>{% endfor %}</ul>
       </details></nav>
     </div>
     <div class="doc__main">{{ p.body | safe }}</div>

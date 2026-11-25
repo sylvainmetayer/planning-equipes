@@ -34,6 +34,9 @@ Each player colour has a `-wash` companion for a light tint. Both faces are self
 ## Contact sheet
 The contact form sits on a paper card (`--color-sheet`, `--color-sheet-rule`) that stays light in dark mode: the two tokens are defined once and never overridden. The Tally form is styled to match it.
 
+## Masthead navigation
+Five text links left of the wordmark (the four answer pages, then « Doc », which leads to `/docs/`): 44px targets, underlined on hover and on the current page (`aria-current`, `page` on the docs home, `true` on one of its pages). Under 40rem they take their own row under the wordmark and wrap rather than overflow. On an English page « Doc » carries `hreflang="fr"`: the docs are French only.
+
 ## Theme switch
 One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `<html>`, none for auto); hidden until `theme.js` runs.
 
@@ -48,4 +51,4 @@ One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `
 `src/assets/tokens.css` in this project.
 
 ## Documentation
-The `/docs` pages render the `.md` files of `docs/` in the same system, no new face or colour: the answer pages' header (breadcrumb, title), then on a wide screen two columns, a side column of two navs ("Sur cette page", "Toutes les rubriques") and the text; one column under 60rem. Each nav is a native `<details>`, folded by default so that on a phone the text comes first, unfolded by `theme.js` on a wide screen. A table or a code block wider than the page scrolls in its own frame (`.scroll`, keyboard-reachable), never the page.
+The `/docs` pages render the `.md` files of `docs/` in the same system, no new face or colour: the answer pages' header (breadcrumb, title), then on a wide screen two columns, a side column of two navs ("Sur cette page", "Toutes les rubriques", the latter grouped under the three parts: Fonctionnel, Infra, Tech) and the text; one column under 60rem. Each nav is a native `<details>`, folded by default so that on a phone the text comes first, unfolded by `theme.js` on a wide screen. A table or a code block wider than the page scrolls in its own frame (`.scroll`, keyboard-reachable), never the page.

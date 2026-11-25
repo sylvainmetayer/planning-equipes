@@ -3010,6 +3010,20 @@ fusion qu'ils font relit la ligne juste avant d'écrire, ce qui revient au
 même. L'import de scénario et l'import CSV ne le portent pas : ils remplacent
 ou fusionnent un référentiel entier, pas une fiche qu'un écran a affichée.
 
+Trois autres tables portent la précondition, sous la forme qui leur va. Un
+**webhook** (`PUT /api/webhooks/{id}`) la lit dans `modifiedAt`, le nom qu'a la
+vue ; régénérer son secret ne la porte pas, l'action relit la ligne. Un
+**préréglage de consigne** (`PUT /api/consignes/prereglages/{id}`) la lit dans
+`modifieLe`. Une **consigne** est posée sur plusieurs dates à la fois : la
+demande porte `modifieLe`, une table `date → horodatage` — une date sans entrée
+n'est pas contrôlée, une première pose n'a rien à comparer ; une entrée pour
+une date que la demande ne pose pas est refusée en 400 — et le refus d'une
+date annule toute la pose, créneaux ajoutés compris. La levée et l'aperçu ne
+changent pas. L'outil MCP `appliquer_consigne` prend la même table en
+`modifieLe` (`AAAA-MM-JJ=horodatage`, séparés par des virgules),
+`definir_prereglage_consigne` l'horodatage du préréglage ; omis, aucun des deux
+ne contrôle rien, comme les autres outils d'écriture du référentiel.
+
 La vérification **fait partie de l'écriture** : un seul ordre SQL, dont le
 `ON CONFLICT DO UPDATE` porte la précondition et ne renvoie aucune ligne
 quand elle échoue. Une lecture suivie d'une écriture laisserait passer deux

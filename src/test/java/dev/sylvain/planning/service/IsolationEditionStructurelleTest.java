@@ -175,6 +175,8 @@ class IsolationEditionStructurelleTest {
      *   <li>{@code version_applicative} — the application versions that
      *       opened the database, written and read at boot, where no edition
      *       exists. It describes the database every edition lives in.</li>
+     *   <li>{@code mcp_cle} — the fingerprints of the MCP keys generated on this
+     *       instance (ADR 0097): the key of a machine, for the whole instance.</li>
      *   <li>{@code webhook}, {@code webhook_livraison} — the outgoing webhooks
      *       are configured for the instance (ADR 0074): the payload names the
      *       edition it speaks of, and the edition policy decides which edition
@@ -217,6 +219,7 @@ class IsolationEditionStructurelleTest {
             "version_applicative",
             "webhook",
             "webhook_livraison",
+            "mcp_cle",
             "journal_connexion",
             "machine_calcul",
             "resolution_distante",

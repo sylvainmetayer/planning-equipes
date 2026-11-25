@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 import dev.sylvain.planning.config.DevMode;
 import dev.sylvain.planning.domain.Animateur;
@@ -177,6 +178,118 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath();
+    }
+
+    @Test
+    void aStaleConsigneWriteIsRefusedAndTheFreshStampGoesThrough() {
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(demande(List.of(ouverture(standStrat))))
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+        String modifieLe = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("consignes[0].modifieLe");
+        // Other hours: laying them down creates a créneau before the stale row is met.
+        Map<String, Object> autreOuverture = ouverture(standStrat);
+        autreOuverture.put("debut", "20:00");
+        autreOuverture.put("fin", "22:00");
+        Map<String, Object> corps = demande(List.of(autreOuverture));
+        corps.put("fenetres", List.of(Map.of("debut", "20:00", "fin", "22:00")));
+
+        corps.put("modifieLe", Map.of(JOUR, "2020-01-01T00:00:00Z"));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(409)
+                .body("code", equalTo(StaleWriteError.STALE_WRITE_CODE))
+                .body("message", containsString("par une autre session"))
+                .body("modifieLe", notNullValue());
+        // The refusal rolled the whole laying down back: the créneau it had created is gone, the consigne unchanged.
+        assertThat(creneaux().getList("id")).hasSize(3);
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/consignes")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .<String>path("consignes[0].fenetres[0].debut"))
+                .startsWith("18:00");
+
+        corps.put("modifieLe", Map.of("2026-07-09", modifieLe));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(400);
+        corps.put("modifieLe", Map.of(JOUR, "pas un horodatage"));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(400);
+
+        corps.put("modifieLe", Map.of(JOUR, modifieLe));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void aStalePresetWriteIsRefusedAndTheFreshStampGoesThrough() {
+        Map<String, Object> corps = new HashMap<>(
+                Map.of("nom", "Plan stale", "fermetureDebut", "12:00", "fermetureFin", "16:00", "motif", "Arrêté"));
+        JsonPath cree = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes/prereglages")
+                .then()
+                .statusCode(200)
+                .body("modifieLe", notNullValue())
+                .extract()
+                .jsonPath();
+        String id = cree.getString("id");
+        try {
+            corps.put("modifieLe", "2020-01-01T00:00:00Z");
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
+                    .body(corps)
+                    .when()
+                    .put("/api/consignes/prereglages/" + id)
+                    .then()
+                    .statusCode(409)
+                    .body("code", equalTo(StaleWriteError.STALE_WRITE_CODE))
+                    .body("modifieLe", notNullValue());
+
+            corps.put("modifieLe", cree.getString("modifieLe"));
+            given().header("X-Edition-Id", "E1")
+                    .contentType("application/json")
+                    .body(corps)
+                    .when()
+                    .put("/api/consignes/prereglages/" + id)
+                    .then()
+                    .statusCode(200);
+        } finally {
+            given().header("X-Edition-Id", "E1").when().delete("/api/consignes/prereglages/" + id);
+        }
     }
 
     @Test

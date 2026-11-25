@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.config.ConfigOidc;
+import dev.sylvain.planning.service.mcp.McpKeyService;
 import io.quarkus.security.identity.IdentityProviderManager;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.AuthenticationRequest;
@@ -9,6 +10,9 @@ import io.quarkus.security.identity.request.TrustedAuthenticationRequest;
 import io.quarkus.vertx.http.runtime.security.ChallengeData;
 import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -22,8 +26,9 @@ import java.util.Set;
  * header basic auth par exemple"). There is no user/session model in this
  * application (see {@code ConstraintResource.ConstraintToggleUpdate}'s
  * javadoc), so a single shared API key compared against a configurable
- * header is the simplest fit — full OAuth2 would need a user/consent model
- * this app doesn't have.
+ * header is the simplest fit. Since ADR 0097 the same transport is also an
+ * OAuth2 resource server (the {@code mcptransport} OIDC tenant) when a provider
+ * is configured; the key stays for the clients that cannot do OAuth.
  *
  * <p>Implemented as a Quarkus {@link HttpAuthenticationMechanism} — paired
  * with {@code quarkus.http.auth.permission.mcp.paths=/mcp/*} in
@@ -61,26 +66,36 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
 
     private final ConfigOidc oidc;
 
+    private final McpKeyService keys;
+
     @Inject
-    McpApiKeyAuthenticationMechanism(ConfigMcp config, ConfigOidc oidc) {
+    McpApiKeyAuthenticationMechanism(ConfigMcp config, ConfigOidc oidc, McpKeyService keys) {
         this.config = config;
         this.oidc = oidc;
+        this.keys = keys;
     }
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
-        if (!context.request().path().startsWith("/mcp")) {
+        if (!isMcpTransport(context.normalizedPath())) {
             return Uni.createFrom().nullItem();
         }
-        if (config.apiKey().isEmpty()
-                || config.apiKey().get().isBlank()
-                || !keysEqual(config.apiKey().get(), presentedKey(context))) {
+        String presented = presentedKey(context);
+        if (presented == null || !requiredHeadersPresent(context)) {
             return Uni.createFrom().nullItem();
         }
-        if (!requiredHeadersPresent(context)) {
-            return Uni.createFrom().nullItem();
-        }
-        return identityProviderManager.authenticate(new TrustedAuthenticationRequest(PRINCIPAL));
+        // The keys live in the database (ADR 0097): read on a worker, never on the event loop —
+        // and the answer handed back to the request's context. Left on the worker, a refusal
+        // reached the MCP extension's failure handler off the event loop, which then read a
+        // body already consumed and answered 500 instead of the 401 an OAuth client refreshes on.
+        Context origin = Vertx.currentContext();
+        return Uni.createFrom()
+                .item(() -> keys.accepts(presented))
+                .runSubscriptionOn(Infrastructure.getDefaultWorkerPool())
+                .emitOn(origin == null ? Runnable::run : task -> origin.runOnContext(ignored -> task.run()))
+                .chain(accepted -> accepted
+                        ? identityProviderManager.authenticate(new TrustedAuthenticationRequest(PRINCIPAL))
+                        : Uni.createFrom().nullItem());
     }
 
     /**
@@ -112,17 +127,26 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
     }
 
     /**
-     * A bare 401 everywhere — except on the OIDC login route, whose whole
-     * purpose is the redirect to the authorization endpoint. This mechanism
-     * wins every challenge by priority, which is what {@code /api} wants (never
-     * a 302 to an HTML page, issue #165); standing aside there hands that one
-     * route to the OIDC mechanism. Only when OIDC is on: with it off, standing
-     * aside would hand the route to form auth, whose challenge is the 302.
+     * A bare 401 everywhere - except where another mechanism has something to
+     * say that a client needs: {@code /mcp} with OIDC on (an MCP client finds its
+     * authorization server in the {@code resource_metadata} of the 401's
+     * {@code WWW-Authenticate}, RFC 9728) and the OIDC login route (a redirect).
+     * Conditioned on OIDC being on: with it off, standing aside would hand the
+     * route to form auth, whose challenge is the 302 issue #165 exists to prevent.
      */
     @Override
     public Uni<ChallengeData> getChallenge(RoutingContext context) {
-        boolean cedeLaMain = oidc.enabled() && context.normalizedPath().startsWith(CHEMIN_CONNEXION_OIDC);
+        String path = context.normalizedPath();
+        boolean cedeLaMain = oidc.enabled() && (path.startsWith(CHEMIN_CONNEXION_OIDC) || isMcpTransport(path));
         return cedeLaMain ? Uni.createFrom().nullItem() : Uni.createFrom().item(new ChallengeData(401));
+    }
+
+    /**
+     * The transport and nothing that merely starts like it: the normalized path,
+     * compared exactly or as a parent, the way {@code McpTenantResolver} does.
+     */
+    public static boolean isMcpTransport(String path) {
+        return path != null && (path.equals("/mcp") || path.startsWith("/mcp/"));
     }
 
     /**
@@ -170,6 +194,27 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
      * this mechanism learns a third form.</p>
      */
     public static String presentedKey(RoutingContext context, String headerName) {
+        return presented(context, headerName);
+    }
+
+    /**
+     * The key a request presents <em>as a guess</em>: {@link #presentedKey}
+     * minus an {@code Authorization: Bearer} shaped like a JWT (three
+     * dot-separated segments). An MCP client sends its OAuth access token
+     * there, and counting that against the key lockout would lock an address
+     * out for an expired token. A key is a random string, never a JWT.
+     */
+    public static String presentedKeyAttempt(RoutingContext context, String headerName) {
+        String presented = presented(context, headerName);
+        if (presented != null
+                && context.request().getHeader(headerName) == null
+                && presented.chars().filter(c -> c == '.').count() == 2) {
+            return null;
+        }
+        return presented;
+    }
+
+    private static String presented(RoutingContext context, String headerName) {
         String header = context.request().getHeader(headerName);
         if (header != null) {
             return header;

@@ -3,7 +3,7 @@
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { CleMcp, PromptMcp, StatutMcp } from '../models';
+import { GeneratedMcpKey, CleMcp, PromptMcp, StatutMcp } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class McpApi {
@@ -27,8 +27,25 @@ export class McpApi {
     return this.api.get<PromptMcp[]>('/api/mcp/prompts');
   }
 
-  /** A fresh key, against the administrator's password: the old one stops working at once. */
-  regenerateKey(motDePasse: string): Promise<CleMcp> {
-    return this.api.post<CleMcp>('/api/mcp/cle', { motDePasse });
+  /** The key of the configuration, to an administrator who signed in a few minutes ago. */
+  regenerateKey(): Promise<CleMcp> {
+    return this.api.post<CleMcp>('/api/mcp/cle', {});
+  }
+
+  /**
+   * A new key, shown once: the old one keeps working for `recouvrementMinutes`
+   * (0: it stops at once).
+   */
+  rotateKey(recouvrementMinutes: number): Promise<GeneratedMcpKey> {
+    return this.api.post<GeneratedMcpKey>('/api/mcp/cle/rotation', { recouvrementMinutes });
+  }
+
+  /**
+   * Leaves for the provider to sign in again, then comes back to `retour`
+   * (a path of this application): the server drops the OIDC session and asks
+   * the provider to authenticate afresh.
+   */
+  reauthenticate(retour: string): void {
+    window.location.assign(`/api/auth/oidc/reconnexion?retour=${encodeURIComponent(retour)}`);
   }
 }

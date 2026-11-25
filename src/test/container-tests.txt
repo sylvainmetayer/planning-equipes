@@ -80,7 +80,10 @@ dev/sylvain/planning/api/JoursFeriesResourceTest.java
 dev/sylvain/planning/api/KpiHistoriqueResourceTest.java
 dev/sylvain/planning/api/MailFinResolutionTest.java
 dev/sylvain/planning/api/MargeTensionResourceTest.java
+dev/sylvain/planning/api/McpKeyFormSignInTest.java
+dev/sylvain/planning/api/McpKeyOidcSignInTest.java
 dev/sylvain/planning/api/McpResourcePangolinTokenTest.java
+dev/sylvain/planning/api/McpResourceRotationTest.java
 dev/sylvain/planning/api/McpResourceTest.java
 dev/sylvain/planning/api/MentionsLegalesResourceTest.java
 dev/sylvain/planning/api/OpenApiResourceTest.java
@@ -135,6 +138,7 @@ dev/sylvain/planning/mcp/McpRateLimitTest.java
 dev/sylvain/planning/mcp/McpRequiredHeadersTest.java
 dev/sylvain/planning/mcp/McpRunningSolveEditionTest.java
 dev/sylvain/planning/mcp/McpWarnsWhileSolvingTest.java
+dev/sylvain/planning/mcp/OidcMcpTest.java
 dev/sylvain/planning/mcp/ParametresSolveurMcpToolsTest.java
 dev/sylvain/planning/mcp/PlanificationMcpToolsTest.java
 dev/sylvain/planning/mcp/RealiseMcpToolsTest.java
@@ -158,6 +162,7 @@ dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
+dev/sylvain/planning/service/mcp/McpKeyServiceTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java
 dev/sylvain/planning/service/notification/NotificationsPlanifieesTest.java
 dev/sylvain/planning/service/notification/RelanceCollecteJobTest.java

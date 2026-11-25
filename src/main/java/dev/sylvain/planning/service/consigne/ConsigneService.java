@@ -28,6 +28,7 @@ import dev.sylvain.planning.service.validation.ValidationJourneeService;
 import dev.sylvain.planning.solver.handsearch.Rule;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -384,6 +385,12 @@ public class ConsigneService {
      * dates, and changing a date is the same call on that date. An end typed
      * {@code 00:00} — the band's, a window's, an opening's — is the day's end
      * and lands as an open end (see {@link ConsigneEdition#openEnd}).
+     *
+     * <p>{@code modifieLe} is the precondition of issue #362, one stamp per
+     * date since a request covers several: the {@code modifieLe} the caller
+     * read on the consigne it replaces. A date with no entry — or no map at
+     * all — checks nothing, which is how a first laying down or a deliberate
+     * overwrite says it has nothing to compare.</p>
      */
     @Schema(requiredProperties = {"dates", "fermetureDebut", "motif"})
     public record Demande(
@@ -394,11 +401,22 @@ public class ConsigneService {
             String prereglage,
             List<Fenetre> fenetres,
             List<Ouverture> ouvertures,
-            ConsigneEdition.RepasConsigne repas) {
+            ConsigneEdition.RepasConsigne repas,
+            Map<LocalDate, Instant> modifieLe) {
+
+        /** The same request, each date checked against the stamp the caller read. */
+        public Demande withStamps(Map<LocalDate, Instant> stamps) {
+            return new Demande(
+                    dates, fermetureDebut, fermetureFin, motif, prereglage, fenetres, ouvertures, repas, stamps);
+        }
 
         List<ConsigneEdition> versConsignes() {
             if (dates == null || dates.isEmpty()) {
                 throw new BusinessError.Invalid("Aucune date : une consigne s'applique à au moins un jour");
+            }
+            // A stamp for a date not laid down would check nothing while looking like a precondition.
+            if (modifieLe != null && !dates.containsAll(modifieLe.keySet())) {
+                throw new BusinessError.Invalid("modifieLe nomme une date que la consigne ne pose pas");
             }
             return dates.stream()
                     .distinct()
@@ -412,7 +430,7 @@ public class ConsigneService {
                                     ouvertures,
                                     List.of(),
                                     null,
-                                    null,
+                                    modifieLe == null ? null : modifieLe.get(date),
                                     repas != null && repas.surcharge() ? repas : null)
                             .normalised())
                     .toList();
@@ -983,7 +1001,7 @@ public class ConsigneService {
                 motif,
                 normalise.fenetres(),
                 null,
-                null,
+                normalise.modifieLe(),
                 normalise.repas() != null && normalise.repas().surcharge() ? normalise.repas() : null);
         repository.savePrereglage(propre);
         return repository.listPrereglages().stream()
