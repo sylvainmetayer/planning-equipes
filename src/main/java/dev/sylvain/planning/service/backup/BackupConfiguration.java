@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.backup;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
@@ -30,23 +31,28 @@ public class BackupConfiguration {
     public static final int RETENTION_MAX = 30;
     public static final int RETENTION_DEFAULT = 10;
 
-    @ConfigProperty(name = "planning.backup.directory")
-    Optional<String> directory;
+    private final Optional<String> directory;
+    private final int retention;
+    private final String cron;
+    private final String zone;
+    private final String pgDump;
+    private final Duration timeout;
 
-    @ConfigProperty(name = "planning.backup.retention", defaultValue = "10")
-    int retention;
-
-    @ConfigProperty(name = "planning.backup.cron", defaultValue = "0 0 4 * * ?")
-    String cron;
-
-    @ConfigProperty(name = "planning.backup.zone", defaultValue = "Europe/Paris")
-    String zone;
-
-    @ConfigProperty(name = "planning.backup.pg-dump", defaultValue = "pg_dump")
-    String pgDump;
-
-    @ConfigProperty(name = "planning.backup.timeout", defaultValue = "PT30M")
-    Duration timeout;
+    @Inject
+    public BackupConfiguration(
+            @ConfigProperty(name = "planning.backup.directory") Optional<String> directory,
+            @ConfigProperty(name = "planning.backup.retention", defaultValue = "10") int retention,
+            @ConfigProperty(name = "planning.backup.cron", defaultValue = "0 0 4 * * ?") String cron,
+            @ConfigProperty(name = "planning.backup.zone", defaultValue = "Europe/Paris") String zone,
+            @ConfigProperty(name = "planning.backup.pg-dump", defaultValue = "pg_dump") String pgDump,
+            @ConfigProperty(name = "planning.backup.timeout", defaultValue = "PT30M") Duration timeout) {
+        this.directory = directory;
+        this.retention = retention;
+        this.cron = cron;
+        this.zone = zone;
+        this.pgDump = pgDump;
+        this.timeout = timeout;
+    }
 
     /** Fails the boot rather than let a nonsensical retention decide what gets deleted. */
     void validate(@Observes StartupEvent startup) {
