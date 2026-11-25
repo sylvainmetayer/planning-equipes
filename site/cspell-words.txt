@@ -122,3 +122,4 @@ activees
 Eloigne
 eviter
 timeslots
+nginx
