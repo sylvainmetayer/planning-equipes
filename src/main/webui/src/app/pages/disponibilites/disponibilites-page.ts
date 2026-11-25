@@ -37,6 +37,8 @@ import {
   readDisponibilitesTab,
   readPendingOnly,
 } from './declarations-filter';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 /** Longest reason « Écarter » accepts — the server's own bound. */
 const REASON_MAX = 500;
@@ -58,6 +60,7 @@ const REASON_MAX = 500;
 @Component({
   selector: 'app-disponibilites-page',
   imports: [
+    EditionInactiveNote,
     DatePipe,
     GuichetEtat,
     MatButtonModule,
@@ -74,6 +77,8 @@ const REASON_MAX = 500;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DisponibilitesPage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly disponibilitesApi = inject(DisponibilitesApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);

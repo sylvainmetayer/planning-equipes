@@ -30,7 +30,7 @@ import { MatIconModule } from '@angular/material/icon';
       @if (reminder()) {
         <!-- Never greyed out by the solver lock: a reminder writes nothing the
              solver reads, and the day before the event is when it is needed. -->
-        <button matButton type="button" (click)="remind.emit()">
+        <button matButton type="button" [disabled]="reminderDisabled()" (click)="remind.emit()">
           <mat-icon>notifications_active</mat-icon>
           <ng-container i18n="@@bulk.remindSelection">Relancer maintenant</ng-container>
         </button>
@@ -77,6 +77,9 @@ export class BulkActionsBar {
   readonly reminder = input(false);
 
   readonly edit = output<void>();
+  /** The reminder is a mail: refused on an edition that is not the active one (ADR 0072). */
+  readonly reminderDisabled = input(false);
+
   /** « Relancer maintenant » — emitted only when {@link reminder} showed the button. */
   readonly remind = output<void>();
   readonly remove = output<void>();

@@ -39,6 +39,8 @@ import {
   versionLabel,
 } from './envois';
 import { PublicationSelection } from './publication-selection';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 /**
  * « Qui a reçu quelle version »: the permanent table of every person of the
@@ -55,6 +57,7 @@ import { PublicationSelection } from './publication-selection';
 @Component({
   selector: 'app-envois-table',
   imports: [
+    EditionInactiveNote,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
@@ -68,6 +71,8 @@ import { PublicationSelection } from './publication-selection';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EnvoisTable {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly planningApi = inject(PlanningApi);
   private readonly animateursApi = inject(AnimateursApi);
   protected readonly selection = inject(PublicationSelection);
