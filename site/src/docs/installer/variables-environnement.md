@@ -201,7 +201,7 @@ Les images et les couleurs se règlent par deux variables **groupées**, de la f
 | `BRANDING_IMAGES` | *(vide)* | Les images, par clés : `logo` (logo affiché dans l'application : URL, ou fichier servi à la racine), `mascot` (mascotte en grand, montrée par le code Konami), `mascot-icon` (la même en petit), `pdf-logo` (logo de l'en-tête des PDF et des mails HTML, embarqué, jamais chargé à distance), `pdf-strip` (bandeau décoratif de la première page du planning individuel) |
 | `BRANDING_COLORS` | *(vide)* | Les couleurs, par clés : `accent` (accent de l'interface, toute couleur CSS), `pdf-headline` (encre principale des PDF, `#1f2933`), `pdf-muted` (texte secondaire, `#6b7280`), `pdf-accent` (accent des PDF et des mails HTML, `#3a6ea5`), `pdf-highlight` (fond des tuiles de statistiques et des en-têtes de tableau, `#e4eaf1`), `pdf-pill` (fond des pastilles d'horaire et filets de tableau, `#f1f4f8`) |
 
-Exemple : `BRANDING_IMAGES=logo=logo.png;pdf-logo=classpath:/branding/logo.png` et `BRANDING_COLORS=accent=#8b1e3f;pdf-accent=#8b1e3f`.
+Exemple, entre guillemets (un shell lit le `;` comme une fin de commande) : `BRANDING_IMAGES="logo=logo.png;pdf-logo=classpath:/branding/logo.png"` et `BRANDING_COLORS="accent=#8b1e3f;pdf-accent=#8b1e3f"`.
 
 Les onze anciennes variables (`BRANDING_LOGO_URL`, `BRANDING_ACCENT_COLOR`, `BRANDING_MASCOT_URL`, `BRANDING_MASCOT_ICON_URL`, `BRANDING_PDF_LOGO`, `BRANDING_PDF_STRIP`, `BRANDING_PDF_HEADLINE`, `BRANDING_PDF_MUTED`, `BRANDING_PDF_ACCENT`, `BRANDING_PDF_HIGHLIGHT`, `BRANDING_PDF_PILL`) sont **encore lues** pendant toute la 4.x, avec un avertissement au démarrage, et retirées en 5.0 ; quand les deux sont posées, la clé groupée l'emporte. Voir [Passer de la 3.x à la 4.0](passer-a-la-4-0.md).
 

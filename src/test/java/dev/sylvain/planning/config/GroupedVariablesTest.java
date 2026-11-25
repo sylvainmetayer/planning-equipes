@@ -75,7 +75,43 @@ class GroupedVariablesTest {
         assertThat(GroupedVariables.warnings(env::get))
                 .anyMatch(l -> l.contains("LEGAL_CONTACT") && l.contains("LEGAL_MENTIONS") && !l.contains(secret))
                 .anyMatch(l -> l.contains("logoo") && l.contains("n'existe pas"))
-                .anyMatch(l -> l.contains("oups") && l.contains("clé=valeur"));
+                .anyMatch(l -> l.contains("segment") && l.contains("clé=valeur"))
+                .noneMatch(l -> l.contains("oups"));
         assertThat(GroupedVariables.warnings(Map.<String, String>of()::get)).isEmpty();
+    }
+
+    @Test
+    void theParserKeepsEqualsSignsUnicodeAndTrimsSpaces() {
+        assertThat(GroupedVariables.parse(
+                        "  editeur = Bénévoles du Jeu — 1 rue des Pions ; base-legale=art. 6.1.b=contrat;;"))
+                .containsEntry("editeur", "Bénévoles du Jeu — 1 rue des Pions")
+                .containsEntry("base-legale", "art. 6.1.b=contrat")
+                .hasSize(2);
+        assertThat(GroupedVariables.parse("")).isEmpty();
+    }
+
+    @Test
+    void anEmptyGroupedKeyFallsBackToTheOldName() {
+        SmallRyeConfig config = config(Map.of("LEGAL_MENTIONS", "contact=", "LEGAL_CONTACT", "old@example.invalid"));
+
+        assertThat(config.getConfigMapping(ConfigMentionsLegales.class).contact())
+                .contains("old@example.invalid");
+    }
+
+    /**
+     * An unknown key warns and is ignored, it does not refuse the boot; a
+     * value cut by an unescaped semicolon shows up as one, and its text never
+     * reaches the log.
+     */
+    @Test
+    void aValueCutByAnUnescapedSemicolonWarnsWithoutPrintingIt() {
+        String tail = "Rue " + java.util.UUID.randomUUID();
+        Map<String, String> env = Map.of("LEGAL_MENTIONS", "editeur=Asso; " + tail + ";hébergeur=" + tail);
+
+        assertThat(GroupedVariables.warnings(env::get))
+                .hasSize(2)
+                .allMatch(l -> l.startsWith("LEGAL_MENTIONS") && !l.contains(tail) && !l.contains("Rue"));
+        assertThat(config(env).getConfigMapping(ConfigMentionsLegales.class).editeur())
+                .contains("Asso");
     }
 }

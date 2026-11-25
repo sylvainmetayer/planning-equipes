@@ -9,9 +9,9 @@ import java.util.regex.Pattern;
 
 /**
  * The white-label and legal-notice settings, grouped (4.0): fourteen
- * {@code BRANDING_*} and twelve {@code LEGAL_*} variables became five grouped
- * ones, each holding {@code key=value} pairs separated by {@code ;} (a literal
- * semicolon in a value is written {@code \;}).
+ * {@code BRANDING_*} and twelve {@code LEGAL_*} variables became eight, four of
+ * them grouped, each holding {@code key=value} pairs separated by {@code ;} (a
+ * literal semicolon in a value is written {@code \;}).
  *
  * <p>The configuration properties the application reads ({@code planning.legal.*},
  * {@code planning.branding.*}) did not move: {@link GroupedVariablesInterceptor}
@@ -75,6 +75,12 @@ final class GroupedVariables {
 
     private static final Pattern UNESCAPED_SEMICOLON = Pattern.compile("(?<!\\\\);");
 
+    /**
+     * What a key looks like. Text that does not is more likely a piece of a
+     * value cut by an unescaped {@code ;}, and a warning never prints a value.
+     */
+    private static final Pattern KEY_SHAPE = Pattern.compile("[a-z0-9-]{1,40}");
+
     private GroupedVariables() {}
 
     /**
@@ -134,10 +140,14 @@ final class GroupedVariables {
         for (String group : List.of(MENTIONS, ACCESSIBILITE, IMAGES, COLORS)) {
             parse(env.apply(group)).forEach((key, value) -> {
                 if (value == null) {
-                    lines.add(group + " : « " + key + " » n'est pas de la forme clé=valeur, ignoré.");
+                    // The segment's text is not printed: it is most often the tail of a value.
+                    lines.add(group + " : un segment n'est pas de la forme clé=valeur, ignoré "
+                            + "(un point-virgule dans une valeur s'écrit \\;).");
                 } else if (ENTRIES.stream()
                         .noneMatch(e -> e.group().equals(group) && e.key().equals(key))) {
-                    lines.add(group + " : la clé « " + key + " » n'existe pas, ignorée.");
+                    lines.add(group + " : "
+                            + (KEY_SHAPE.matcher(key).matches() ? "la clé « " + key + " »" : "une clé")
+                            + " n'existe pas, ignorée.");
                 }
             });
         }
