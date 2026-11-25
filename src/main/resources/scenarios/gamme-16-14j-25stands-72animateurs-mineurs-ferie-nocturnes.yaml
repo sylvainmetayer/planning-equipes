@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 16 : deux semaines avec un tiers de mineurs, un jour férié et des
 # nocturnes.
 # Du lundi 9 au dimanche 22 août 2027. Le 15 août tombe un dimanche : aucun

@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 12 : une semaine civile entière, un jour férié et des mineurs.
 # Du lundi 12 au dimanche 18 juillet 2027 : personne ne travaille plus de six
 # jours, et les cinq mineurs gardent deux jours de repos consécutifs dans la

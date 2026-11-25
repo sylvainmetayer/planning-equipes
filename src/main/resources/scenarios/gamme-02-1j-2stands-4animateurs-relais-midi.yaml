@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 2 : la rotation du midi, saisie comme une organisation la tape.
 # Une journée type en quatre vacations jointives ; les deux vacations de midi
 # portent couverturePause, donc chaque stand de deux places n'en ouvre qu'une.

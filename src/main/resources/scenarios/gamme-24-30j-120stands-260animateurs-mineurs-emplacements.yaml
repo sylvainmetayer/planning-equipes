@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 24 : un mois sur douze emplacements, avec un cinquième de mineurs.
 # Du lundi 12 juillet au mardi 10 août 2027, 14 juillet compris. Les stands sont
 # regroupés par dix sur douze emplacements répartis sur deux kilomètres : changer

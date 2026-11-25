@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 6 : les quatre types de contraintes ad hoc, avec et sans périmètre.
 # Tout le monde sait tout faire, pour que seules les exceptions décident :
 # une indisponibilité forcée sur un stand et une autre sur un créneau, deux

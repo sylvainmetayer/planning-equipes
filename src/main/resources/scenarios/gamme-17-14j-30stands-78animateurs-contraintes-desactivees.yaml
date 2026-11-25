@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 17 : une organisation qui éteint des règles, et le fichier qui le dit.
 # Deux longues vacations par jour, 10 h-15 h 30 et 15 h 30-21 h : la première
 # traverse toute la fenêtre repas du midi, ce que la coupure repas ne permet pas.

@@ -335,5 +335,23 @@ describe('ScenarioImportService', () => {
 
       expect(outcome.result).toEqual(importResult);
     });
+
+    it('says what the conversion of an older file dropped, in one warning', async () => {
+      importResult = {
+        editionId: 'ed-2026',
+        editionNom: 'Année 2026',
+        editionCreee: false,
+        avertissements: ['Clé « a » ignorée.', 'Clé « b » ignorée.'],
+      };
+
+      await service.importer({ kind: 'name', name: 'edition-1708' });
+
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variant: 'warning',
+          message: 'Clé « a » ignorée.\nClé « b » ignorée.',
+        }),
+      );
+    });
   });
 });

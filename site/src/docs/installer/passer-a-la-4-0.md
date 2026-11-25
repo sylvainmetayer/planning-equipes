@@ -30,7 +30,9 @@ Chaque paragraphe dit *avant*, *après* et *ce que vous faites*. Les paragraphes
 
 ### Format du scénario YAML
 
-À venir : ce que le lecteur convertit seul, et ce qu'il ignore en le disant dans le rapport d'import.
+- **Avant** : l'application écrit `schemaVersion: 1`.
+- **Après** : elle écrit `schemaVersion: 2`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Cette version-ci ne change aucune clé : le premier maillon est vide.
+- **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
 
 ### Noms des règles du planning
 
@@ -38,7 +40,9 @@ Chaque paragraphe dit *avant*, *après* et *ce que vous faites*. Les paragraphes
 
 ### Outils MCP
 
-À venir : correspondance des anciens noms d'outils.
+**Avant** : 157 outils aux noms presque tous en verbe d'abord (`lister_stands`), avec une dizaine d'exceptions (`equite_planning`, `volumes`…). **Après** : les outils se nomment `<verbe>_<objet>`, le verbe pris dans un ensemble fermé ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)), certains sont regroupés ou retirés, et il n'existe **aucun alias** : un outil n'est publié que sous son nom courant. La correspondance, ancien nom puis nouveau nom ou « retiré », est dans [les anciens noms d'outils](../comprendre/mcp-outils.md#anciens-noms-doutils), remplie au fil des changements de la 4.0 (pour l'instant aucun outil n'est renommé).
+
+**Ce que vous faites** : si vous avez écrit des instructions, des invites ou des scripts qui nomment des outils, relisez-les avec cette table ; un assistant qui se reconnecte relit la liste des outils et n'a rien d'autre à changer.
 
 ### Données et migrations
 

@@ -2528,6 +2528,8 @@ export interface ImportScenarioResult {
   editionNom: string | null;
   /** True when that edition was created by this very import; null without an `edition:` section. */
   editionCreee: boolean | null;
+  /** What the conversion of an older file format dropped, one sentence each; empty when nothing was. */
+  avertissements: string[];
 }
 
 /**

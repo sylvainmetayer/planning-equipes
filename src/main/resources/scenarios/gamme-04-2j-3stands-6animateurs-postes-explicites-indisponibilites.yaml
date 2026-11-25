@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 4 : un week-end, des sièges écrits à la main et des indisponibilités.
 # La section postes est présente, donc reprise telle quelle : le stand Dominos
 # ouvre deux places le samedi après-midi alors que son effectif minimum est 1.

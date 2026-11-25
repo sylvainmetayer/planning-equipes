@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 15 : deux semaines de mercredi à dimanche, et une équipe qui n'est pas
 # disponible pareil tous les jours.
 # Deux journées types : l'après-midi de semaine, et le week-end avec sa rotation

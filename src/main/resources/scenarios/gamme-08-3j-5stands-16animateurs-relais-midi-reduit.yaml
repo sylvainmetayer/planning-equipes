@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 8 : une journée d'ouverture 10 h-19 h, exprimée en vacations jointives.
 # Quatre vacations par jour, identiques sur les trois jours : 10 h-12 h, le
 # relais de midi 12 h-13 h, 13 h-14 h puis 14 h-19 h. Le relais porte

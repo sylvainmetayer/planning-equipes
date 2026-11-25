@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Barreau 22 : un mois entier de vacations, deux formes de journée.
 # Juin 2027 : la semaine tient en une seule vacation 14 h-19 h ; le week-end
 # ouvre à 10 h et se lit en quatre vacations jointives, dont le relais de midi

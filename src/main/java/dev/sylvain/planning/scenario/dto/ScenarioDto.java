@@ -1,5 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
+import dev.sylvain.planning.scenario.ScenarioBinder;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -21,8 +22,9 @@ import java.util.List;
  * exported file.</p>
  */
 public record ScenarioDto(
-        // Absent means 1; a number above ScenarioBinder.SCHEMA_VERSION is refused on reading.
-        @Min(1) @Max(1) Integer schemaVersion,
+        // Absent means 1 and is converted on reading (ScenarioMigrations); a number above SCHEMA_VERSION is
+        // refused. The bound follows the constant, so a new link of the chain only raises the constant.
+        @Min(1) @Max(ScenarioBinder.SCHEMA_VERSION) Integer schemaVersion,
         @Valid EditionCibleDto edition,
         @NotNull @Valid FestivalDto festival,
         @Valid ParametresSolveurDto parametresSolveur,
