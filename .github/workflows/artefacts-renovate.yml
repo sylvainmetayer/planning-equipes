@@ -72,7 +72,7 @@ jobs:
         run: |
           angular="$(.github/scripts/angular-bump.sh "$BASE_REF")"
           fork="$(git merge-base "origin/$BASE_REF" HEAD)"
-          moved() { git diff --quiet "$fork" HEAD -- "$1" && echo false || echo true; }
+          moved() { local path="$1"; git diff --quiet "$fork" HEAD -- "$path" && echo false || echo true; }
           webui="$(moved src/main/webui/package.json)"
           if [ "$angular" = "true" ]; then webui=false; fi
           {

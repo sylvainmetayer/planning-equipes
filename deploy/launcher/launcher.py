@@ -302,32 +302,38 @@ class Handler(BaseHTTPRequestHandler):
     def authorised(self):
         return hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + SECRET)
 
+    def read_call(self, method, route, url):
+        """The instance the caller names and, for a POST, the whole body."""
+        if method == "GET" and route == "status":
+            return urllib.parse.parse_qs(url.query)["instance"][0], None
+        body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))) or b"{}")
+        return body["instance"], body
+
+    def run_call(self, method, route, instance, body):
+        if method == "GET" and route == "status":
+            return self.answer(200, driver.status(instance))
+        if method == "POST" and route == "start":
+            if not VERSION.fullmatch(body["version"]) or not WORKER_SECRET.fullmatch(body["secretWorker"]):
+                return self.answer(400, {"error": "version or secretWorker: unexpected characters"})
+            driver.start(instance, body["version"], body["secretWorker"])
+            return self.answer(200, {"state": "creating"})
+        if method == "POST" and route == "stop":
+            driver.stop(instance)
+            return self.answer(200, {"state": "absent"})
+        return self.answer(404, {"error": "no such route"})
+
     def handle_call(self, method):
         if not self.authorised():
             return self.answer(401, {"error": "missing or wrong secret"})
         url = urllib.parse.urlparse(self.path)
         route = url.path.rstrip("/").rsplit("/", 1)[-1]
         try:
-            if method == "GET" and route == "status":
-                instance = urllib.parse.parse_qs(url.query)["instance"][0]
-            else:
-                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))) or b"{}")
-                instance = body["instance"]
+            named, body = self.read_call(method, route, url)
             # The name used from here on is the operator's own, never the caller's string.
-            instance = next((name for name in INSTANCES if name == instance), None)
+            instance = next((name for name in INSTANCES if name == named), None)
             if instance is None:
                 return self.answer(400, {"error": "instance: not one of LAUNCHER_INSTANCES"})
-            if method == "GET" and route == "status":
-                return self.answer(200, driver.status(instance))
-            if method == "POST" and route == "start":
-                if not VERSION.fullmatch(body["version"]) or not WORKER_SECRET.fullmatch(body["secretWorker"]):
-                    return self.answer(400, {"error": "version or secretWorker: unexpected characters"})
-                driver.start(instance, body["version"], body["secretWorker"])
-                return self.answer(200, {"state": "creating"})
-            if method == "POST" and route == "stop":
-                driver.stop(instance)
-                return self.answer(200, {"state": "absent"})
-            return self.answer(404, {"error": "no such route"})
+            return self.run_call(method, route, instance, body)
         except (KeyError, ValueError) as error:
             return self.answer(400, {"error": "bad request: %s" % error})
         except Exception as error:  # the provider said no, or is down: the application reads the status

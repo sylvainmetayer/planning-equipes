@@ -35,9 +35,15 @@ added="$(git diff --name-only --no-renames --diff-filter=A "$fork" HEAD -- "$mig
 
 # The version of a migration file name (V122__x.sql → 122), nothing for a
 # repeatable or an unrelated file.
-migration_version() { [[ "$(basename "$1")" =~ ^V([0-9]+)__ ]] && echo "$((10#${BASH_REMATCH[1]}))"; }
+migration_version() {
+  local file="$1"
+  [[ "$(basename "$file")" =~ ^V([0-9]+)__ ]] && echo "$((10#${BASH_REMATCH[1]}))"
+}
 # The number of a decision record (0074-x.md → 0074), nothing for README.md.
-decision_number() { [[ "$(basename "$1")" =~ ^([0-9]{4})- ]] && echo "${BASH_REMATCH[1]}"; }
+decision_number() {
+  local file="$1"
+  [[ "$(basename "$file")" =~ ^([0-9]{4})- ]] && echo "${BASH_REMATCH[1]}"
+}
 
 highest=0
 highest_file=''

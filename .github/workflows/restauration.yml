@@ -93,7 +93,7 @@ jobs:
 
       - name: Put a backup in the volume, then change the database
         run: |
-          psql() { $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$1"; }
+          psql() { local sql="$1"; $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$sql"; }
           psql "CREATE TABLE restauration_ci (etat text); INSERT INTO restauration_ci VALUES ('avant')"
           $COMPOSE exec -T postgres pg_dump -U festival -d festival --format=custom \
             | $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'cat > "$BACKUP_DIR/planning-20260101-040000.dump"'
@@ -135,7 +135,7 @@ jobs:
       # put the state from before back and restart the application.
       - name: A restore failing midway puts the state from before back
         run: |
-          psql() { $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$1"; }
+          psql() { local sql="$1"; $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$sql"; }
           psql "UPDATE restauration_ci SET etat = 'orphelin'; CREATE ROLE restauration_ci_orphelin; GRANT SELECT ON restauration_ci TO restauration_ci_orphelin"
           $COMPOSE exec -T postgres pg_dump -U festival -d festival --format=custom > orphelin.dump
           psql "DROP OWNED BY restauration_ci_orphelin; DROP ROLE restauration_ci_orphelin; UPDATE restauration_ci SET etat = 'apres'"
