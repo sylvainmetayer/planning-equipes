@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  resource,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -11,6 +12,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
+import { RhApi } from '../../core/api/rh-api';
 import { ProblemesStore } from '../../core/problemes.store';
 import { EditionStore } from '../../core/edition.store';
 import { ROLE_ADMIN, ROLE_RH } from '../../core/session';
@@ -61,13 +63,37 @@ export class DiagnosticPage {
   private readonly session = inject(SessionStore);
   protected readonly editionStore = inject(EditionStore);
 
-  /** The Conformité tab: for an administrator and for an account holding an RH right. */
-  protected readonly conformiteVisible = computed(() => {
-    const roles = this.session.statut()?.roles ?? [];
-    return roles.includes(ROLE_ADMIN) || roles.includes(ROLE_RH);
+  private readonly rhApi = inject(RhApi);
+
+  /** The editions an RH right names, asked only of an account that holds one and is no administrator. */
+  private readonly rhEditions = resource({
+    params: () => {
+      const roles = this.session.statut()?.roles ?? [];
+      return !roles.includes(ROLE_ADMIN) && roles.includes(ROLE_RH) ? true : undefined;
+    },
+    loader: () => this.rhApi.editions(),
   });
 
-  protected readonly onglet = signal<OngletDiagnostic>('problemes');
+  /** The Conformité tab: for an administrator, and for an RH right on the edition this browser works in. */
+  protected readonly conformiteVisible = computed(() => {
+    const roles = this.session.statut()?.roles ?? [];
+    if (roles.includes(ROLE_ADMIN)) {
+      return true;
+    }
+    const courante = this.editionStore.courant()?.id;
+    const editions = this.rhEditions.hasValue() ? this.rhEditions.value() : [];
+    return courante !== undefined && editions.some((e) => e.id === courante);
+  });
+
+  /** The tab the URL asked for. */
+  private readonly ongletDemande = signal<OngletDiagnostic>('problemes');
+
+  /** The tab on screen: Conformité falls back on the default one for whoever may not read it. */
+  protected readonly onglet = computed<OngletDiagnostic>(() =>
+    this.ongletDemande() === 'conformite' && !this.conformiteVisible()
+      ? 'problemes'
+      : this.ongletDemande(),
+  );
 
   /** « Problèmes · 8 », once the list has been read by the tab; nothing before. */
   protected readonly problemCount = computed(() => this.problemes.comptage().total);
@@ -80,7 +106,7 @@ export class DiagnosticPage {
     // screen did not, until an F5. `replaceState` (ADR 0018) emits nothing
     // here, so the effect below cannot feed this subscription.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
-      this.onglet.set(readOnglet(params.get('onglet')));
+      this.ongletDemande.set(readOnglet(params.get('onglet')));
     });
     keepViewInQueryParams(() => ({
       onglet: this.onglet() === 'problemes' ? null : this.onglet(),
@@ -88,6 +114,6 @@ export class DiagnosticPage {
   }
 
   protected changerOnglet(onglet: OngletDiagnostic): void {
-    this.onglet.set(onglet);
+    this.ongletDemande.set(onglet);
   }
 }

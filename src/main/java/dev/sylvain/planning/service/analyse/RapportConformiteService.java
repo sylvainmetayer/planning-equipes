@@ -304,7 +304,8 @@ public class RapportConformiteService {
 
     private static void diff(List<String> lignes, String libelle, int minutes, int parDefaut) {
         if (minutes != parDefaut) {
-            lignes.add(libelle + " : " + minutes / 60.0 + " h au lieu de " + parDefaut / 60.0 + " h par défaut");
+            lignes.add(libelle + " : " + RapportConformite.hoursLabel(minutes / 60.0) + " au lieu de "
+                    + RapportConformite.hoursLabel(parDefaut / 60.0) + " par défaut");
         }
     }
 }

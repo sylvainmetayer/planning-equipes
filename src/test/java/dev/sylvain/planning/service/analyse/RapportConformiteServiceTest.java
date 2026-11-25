@@ -155,7 +155,8 @@ class RapportConformiteServiceTest {
         assertThat(rapport.plafonds().ecartsAuxDefauts())
                 .singleElement()
                 .asString()
-                .contains("44.0 h au lieu de 48.0 h");
+                .contains("44 h au lieu de 48 h");
+        assertThat(RapportConformite.hoursLabel(10.5)).isEqualTo("10,5 h");
     }
 
     @Test
@@ -179,7 +180,10 @@ class RapportConformiteServiceTest {
         String csv = RapportConformiteCsv.write(rapport);
 
         assertThat(csv.lines()).hasSize(3);
-        assertThat(csv).startsWith("Rapport de conformité : plan publié le ").contains("Ada Test;non;");
+        assertThat(csv)
+                .startsWith("Rapport de conformité : plan publié le ")
+                .contains(", plafonds en vigueur au ")
+                .contains("Ada Test;non;");
         assertThat(csv.lines().skip(1).findFirst().orElseThrow())
                 .contains("2026-W34")
                 .contains("plafond hebdomadaire");

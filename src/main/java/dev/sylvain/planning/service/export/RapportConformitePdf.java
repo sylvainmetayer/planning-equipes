@@ -61,7 +61,15 @@ public class RapportConformitePdf {
                         + " — travail effectif ; dimanche, jours fériés et nuit comptés en amplitude.",
                 theme.editionFont()));
 
-        section(document, "Plafonds appliqués");
+        section(
+                document,
+                "Plafonds en vigueur au "
+                        + PdfTheme.GENERATED_AT_FORMAT.format(
+                                rapport.genereLe().atZone(ZoneId.of(PdfTheme.EVENT_TIMEZONE))));
+        document.add(new Paragraph(
+                "Les paramètres légaux de l'édition tels qu'ils sont à cette date, qui peuvent différer de ceux "
+                        + "du jour de la publication.",
+                theme.editionFont()));
         document.add(plafonds(rapport));
         for (String ecart : rapport.plafonds().ecartsAuxDefauts()) {
             document.add(new Paragraph("Valeur modifiée : " + ecart, theme.tableAlertFont()));
@@ -127,7 +135,7 @@ public class RapportConformitePdf {
         for (double v : new double[] {
             p.hebdomadaireMajeurHeures(), p.hebdomadaireMineurHeures(), p.vacationHeures(), p.reposQuotidienHeures()
         }) {
-            table.addCell(cell(h(v) + " h", theme.tableBodyFont()));
+            table.addCell(cell(RapportConformite.hoursLabel(v), theme.tableBodyFont()));
         }
         return table;
     }

@@ -11,6 +11,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ApiService } from '../../core/api.service';
 import { ConstraintsApi } from '../../core/api/constraints-api';
+import { RhApi } from '../../core/api/rh-api';
+import { EditionStore } from '../../core/edition.store';
+import { SessionStore } from '../../core/session.store';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -38,7 +41,16 @@ describe('DiagnosticPage', () => {
     }
   });
 
-  async function monter(queryParams: Record<string, string> = {}): Promise<DiagnosticPage> {
+  /** Who is signed in, and which editions their RH rights name; nobody by default. */
+  interface Qui {
+    roles: string[];
+    rhEditions?: string[];
+  }
+
+  async function monter(
+    queryParams: Record<string, string> = {},
+    qui: Qui | null = null,
+  ): Promise<DiagnosticPage> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -47,6 +59,15 @@ describe('DiagnosticPage', () => {
         provideLocationMocks(),
         { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(null)) } },
         { provide: AnalysesApi, useValue: analysesApi },
+        {
+          provide: RhApi,
+          useValue: {
+            editions: vi.fn(() =>
+              Promise.resolve((qui?.rhEditions ?? []).map((id) => ({ id, nom: id }))),
+            ),
+            rapport: vi.fn(() => Promise.resolve(null)),
+          },
+        },
         { provide: ConstraintsApi, useValue: { catalogue: vi.fn(() => Promise.resolve(null)) } },
         { provide: PlanningApi, useValue: { persistedCount: vi.fn(() => Promise.resolve(null)) } },
         {
@@ -90,6 +111,20 @@ describe('DiagnosticPage', () => {
     // their own state from there, the router snapshot being frozen.
     const query = new URLSearchParams(queryParams).toString();
     TestBed.inject(Location).replaceState(query ? `/diagnostic?${query}` : '/diagnostic');
+    if (qui) {
+      TestBed.inject(SessionStore)['_statut'].set({
+        authentifie: true,
+        nom: null,
+        roles: qui.roles,
+        compteId: 'C1',
+      });
+      TestBed.inject(EditionStore)['_courant'].set({
+        id: 'E1',
+        nom: 'Édition 1',
+        active: true,
+        creeLe: null,
+      });
+    }
     fixture = TestBed.createComponent(DiagnosticPage);
     await fixture.whenStable();
     return fixture.componentInstance;
@@ -181,5 +216,34 @@ describe('DiagnosticPage', () => {
     TestBed.tick();
     await fixture.whenStable();
     expect(TestBed.inject(Location).path()).not.toContain('onglet=');
+  });
+
+  function onglets(): (string | null)[] {
+    return [...racine().querySelectorAll('mat-button-toggle')].map((toggle) =>
+      toggle.getAttribute('value'),
+    );
+  }
+
+  it('offers Conformité to an administrator', async () => {
+    await monter({}, { roles: ['admin'] });
+
+    expect(onglets()).toContain('conformite');
+  });
+
+  it('offers Conformité to an RH right on the current edition only', async () => {
+    await monter({}, { roles: ['organisateur', 'rh'], rhEditions: ['E1'] });
+    expect(onglets()).toContain('conformite');
+
+    await monter({}, { roles: ['organisateur', 'rh'], rhEditions: ['E2'] });
+    expect(onglets()).not.toContain('conformite');
+  });
+
+  it('sends an organiser asking for ?onglet=conformite back to the default tab', async () => {
+    const page = await monter({ onglet: 'conformite' }, { roles: ['organisateur'] });
+
+    expect(onglets()).not.toContain('conformite');
+    expect(page['onglet']()).toBe('problemes');
+    expect(racine().querySelector('app-problemes-page')).not.toBeNull();
+    expect(racine().querySelector('app-conformite-rapport')).toBeNull();
   });
 });
