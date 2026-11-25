@@ -27,8 +27,12 @@ public class InstanceOnlyFilter implements ContainerRequestFilter {
     @Context
     ResourceInfo resource;
 
+    private final SecurityIdentity identity;
+
     @Inject
-    SecurityIdentity identity;
+    public InstanceOnlyFilter(SecurityIdentity identity) {
+        this.identity = identity;
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {

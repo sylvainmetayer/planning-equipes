@@ -20,8 +20,12 @@ import jakarta.ws.rs.core.MediaType;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ReglageResponsablesResource {
 
+    private final ReglageResponsableService reglages;
+
     @Inject
-    ReglageResponsableService reglages;
+    public ReglageResponsablesResource(ReglageResponsableService reglages) {
+        this.reglages = reglages;
+    }
 
     @GET
     public ReglagesResponsables get() {

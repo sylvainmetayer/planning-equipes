@@ -46,16 +46,14 @@ public class AuthResource {
     static final String COOKIE_SESSION = "planning-session";
 
     private final SecurityIdentity identity;
+    private final CompteAccesService acces;
+    private final AdminLoginLimiter limiteur;
 
     @Inject
-    CompteAccesService acces;
-
-    @Inject
-    AdminLoginLimiter limiteur;
-
-    @Inject
-    public AuthResource(SecurityIdentity identity) {
+    public AuthResource(SecurityIdentity identity, CompteAccesService acces, AdminLoginLimiter limiteur) {
         this.identity = identity;
+        this.acces = acces;
+        this.limiteur = limiteur;
     }
 
     /**

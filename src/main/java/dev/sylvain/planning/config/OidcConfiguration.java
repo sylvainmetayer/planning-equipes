@@ -31,20 +31,25 @@ public class OidcConfiguration {
 
     static final int SECRET_MIN = 32;
 
-    @Inject
-    ConfigOidc config;
+    private final ConfigOidc config;
+    private final ConfigSecours secours;
+    private final boolean tenantEnabled;
+    private final Optional<String> authServerUrl;
+    private final Optional<String> clientSecret;
 
     @Inject
-    ConfigSecours secours;
-
-    @ConfigProperty(name = "quarkus.oidc.tenant-enabled")
-    boolean tenantEnabled;
-
-    @ConfigProperty(name = "quarkus.oidc.auth-server-url")
-    Optional<String> authServerUrl;
-
-    @ConfigProperty(name = "quarkus.oidc.credentials.secret")
-    Optional<String> clientSecret;
+    public OidcConfiguration(
+            ConfigOidc config,
+            ConfigSecours secours,
+            @ConfigProperty(name = "quarkus.oidc.tenant-enabled") boolean tenantEnabled,
+            @ConfigProperty(name = "quarkus.oidc.auth-server-url") Optional<String> authServerUrl,
+            @ConfigProperty(name = "quarkus.oidc.credentials.secret") Optional<String> clientSecret) {
+        this.config = config;
+        this.secours = secours;
+        this.tenantEnabled = tenantEnabled;
+        this.authServerUrl = authServerUrl;
+        this.clientSecret = clientSecret;
+    }
 
     void check(@Observes StartupEvent startup) {
         check(

@@ -31,11 +31,14 @@ public class ResponsableResource {
     /** On each method, not on the class: a class-level role is how the administrators' resources are told apart. */
     private static final String ROLE = "responsable_stand";
 
-    @Inject
-    ResponsableService responsables;
+    private final ResponsableService responsables;
+    private final SecurityIdentity identity;
 
     @Inject
-    SecurityIdentity identity;
+    public ResponsableResource(ResponsableService responsables, SecurityIdentity identity) {
+        this.responsables = responsables;
+        this.identity = identity;
+    }
 
     /** The caller's stands on the active edition, with their published shifts. */
     @GET

@@ -33,8 +33,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class LocalSignInIdentityProvider implements IdentityProvider<UsernamePasswordAuthenticationRequest> {
 
+    private final CompteAccesService acces;
+
     @Inject
-    CompteAccesService acces;
+    public LocalSignInIdentityProvider(CompteAccesService acces) {
+        this.acces = acces;
+    }
 
     /**
      * Before the embedded {@code admin}'s provider, whose default priority is
