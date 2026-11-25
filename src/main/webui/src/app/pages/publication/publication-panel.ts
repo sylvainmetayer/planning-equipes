@@ -41,6 +41,8 @@ import {
 } from './publication-diff';
 import { GelInvitation } from '../../core/gel-invitation';
 import { PublicationSelection } from './publication-selection';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
 
 /**
  * « Publier — N personnes concernées »: the publication (issue #245) that mails
@@ -57,6 +59,7 @@ import { PublicationSelection } from './publication-selection';
 @Component({
   selector: 'app-publication-panel',
   imports: [
+    EditionInactiveNote,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
@@ -69,6 +72,8 @@ import { PublicationSelection } from './publication-selection';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublicationPanel implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly planningApi = inject(PlanningApi);
   private readonly gelInvitation = inject(GelInvitation);
   private readonly confirm = inject(ConfirmService);

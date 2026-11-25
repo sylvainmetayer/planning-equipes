@@ -1,7 +1,10 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { clearStoredEditionId, getStoredEditionId } from './edition-courante';
+import { CODE_EDITION_INACTIVE, editionInactivePhrase } from './edition-inactive';
+import { NotificationService } from './notification.service';
 
 /** The codes of a request refused because it names no edition, or a deleted one (ADR 0072). */
 const CODES_CHOIX_EDITION = new Set(['EDITION_REQUISE', 'EDITION_INCONNUE']);
@@ -19,8 +22,14 @@ const RELOAD_KEY = 'planning-equipes.editionReload';
  * reloaded once, so `editionChosenGuard` picks again before any screen
  * loads — at most once a minute, so a refusal that persists is shown rather
  * than looped on.
+ *
+ * `EDITION_INACTIVE` (409) is the third refusal: the buttons are greyed out
+ * upstream, so one that still gets here (a stale tab, a second window) is
+ * told to the user whatever screen sent it — several of them only wrote the
+ * error into a panel at the bottom of the page.
  */
 export const editionInterceptor: HttpInterceptorFn = (request, next) => {
+  const notifications = inject(NotificationService);
   const editionId = getStoredEditionId();
   // A caller that set the header itself is deliberately reading ANOTHER
   // edition (e.g. the import-impact counts for a scenario's target edition):
@@ -38,6 +47,19 @@ export const editionInterceptor: HttpInterceptorFn = (request, next) => {
         CODES_CHOIX_EDITION.has((error.error as { code?: unknown } | null)?.code as string)
       ) {
         startOverEditionChoice();
+      }
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 409 &&
+        (error.error as { code?: unknown } | null)?.code === CODE_EDITION_INACTIVE
+      ) {
+        notifications.notify({
+          title: $localize`:@@edition.inactive.titre:Action refusée`,
+          message: editionInactivePhrase(),
+          variant: 'error',
+          timeout: 0,
+          lien: { route: '/editions', libelle: $localize`:@@edition.inactive.ouvrir:Éditions` },
+        });
       }
       return throwError(() => error);
     }),

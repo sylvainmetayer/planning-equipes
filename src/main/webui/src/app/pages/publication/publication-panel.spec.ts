@@ -5,8 +5,10 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanningApi } from '../../core/api/planning-api';
+import { EditionStore } from '../../core/edition.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PublicationPanel } from './publication-panel';
@@ -42,6 +44,7 @@ describe('PublicationPanel', () => {
   };
   const confirm = { ask: vi.fn() };
   const editingLocked = signal(false);
+  const editionInactive = signal(false);
 
   const apercuPret = {
     jamaisPublie: false,
@@ -61,6 +64,7 @@ describe('PublicationPanel', () => {
 
   beforeEach(() => {
     editingLocked.set(false);
+    editionInactive.set(false);
     for (const stub of [planningApi.publicationPreview, planningApi.publish, confirm.ask]) {
       stub.mockReset();
     }
@@ -68,8 +72,10 @@ describe('PublicationPanel', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: PlanningApi, useValue: planningApi },
         PublicationSelection,
+        { provide: EditionStore, useValue: { inactive: editionInactive } },
         { provide: ConfirmService, useValue: confirm },
         { provide: SolverJobService, useValue: { editingLocked: () => editingLocked() } },
         // The freeze invitation writes to localStorage: kept out of this file's storage.
@@ -105,6 +111,18 @@ describe('PublicationPanel', () => {
     await vi.waitFor(() => expect(panel['publishable']()).toBe(true));
     return panel;
   }
+
+  it('blocks the button and says why when the edition is not the active one', async () => {
+    editionInactive.set(true);
+    await panelPret();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const button = root.querySelector('button')!;
+    expect(button.disabled).toBe(true);
+    expect(root.textContent).toContain("Cette édition n'est pas active");
+    expect(root.querySelector('a[href="/editions"]')).not.toBeNull();
+  });
 
   it('reads who is concerned when it appears', async () => {
     createPanel();
