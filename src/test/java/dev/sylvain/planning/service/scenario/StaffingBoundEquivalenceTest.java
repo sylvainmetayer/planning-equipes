@@ -14,6 +14,7 @@ import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingRules;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.scenario.ScenarioLadder.Loaded;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -21,7 +22,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -138,8 +141,17 @@ class StaffingBoundEquivalenceTest {
                 .toList();
     }
 
-    /** Whether {@code adults} made-up adults hold every seat of the rung, as a staffing check solves it. */
+    /**
+     * Whether {@code adults} made-up adults hold every seat of the rung, as a
+     * staffing check solves it: from the plan in place when there is one, as
+     * production does, and failing that from nothing — a team can hold the
+     * seats and the search still miss them cold.
+     */
     private static boolean holds(String rung, int adults, long seconds) {
+        return holds(rung, adults, seconds * 2 / 3, true) || holds(rung, adults, seconds / 3, false);
+    }
+
+    private static boolean holds(String rung, int adults, long seconds, boolean fromPlan) {
         Loaded loaded = load(rung);
         PlanningEvenement problem = loaded.problem();
         LocalDate first = problem.getPostes().stream()
@@ -151,6 +163,24 @@ class StaffingBoundEquivalenceTest {
         for (PosteAffectation poste : problem.getPostes()) {
             poste.setAnimateur(null);
             poste.setVerrouille(false);
+        }
+        if (fromPlan) {
+            // The edition's own plan, as production reads it from the database.
+            Loaded real = load(rung);
+            PlanningEvenement solvedReal = service().solveUntilFeasible(real.problem(), SOLVE_SECONDS);
+            Map<String, List<String>> plan = new HashMap<>();
+            for (PosteAffectation poste : solvedReal.getPostes()) {
+                if (poste.getAnimateur() != null) {
+                    plan.computeIfAbsent(
+                                    PlanningPersistenceService.standCreneauKey(
+                                            poste.getStand().getId(),
+                                            poste.getCreneau().getId()),
+                                    key -> new ArrayList<>())
+                            .add(poste.getAnimateur().getId());
+                }
+            }
+            StaffingVerificationService.seedFromPlan(
+                    problem.getPostes(), team, adults, plan, solvedReal.getAnimateurs(), first);
         }
         problem.setContraintesAdHoc(List.of());
         problem.setVerrouillages(List.of());

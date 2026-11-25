@@ -677,7 +677,7 @@ public class StaffingVerificationService {
      * @param reels      the edition's animateurs, for their age on the first day
      * @return how many seats were seeded
      */
-    static int seedFromPlan(
+    public static int seedFromPlan(
             List<PosteAffectation> postes,
             List<Animateur> team,
             int majeurs,
