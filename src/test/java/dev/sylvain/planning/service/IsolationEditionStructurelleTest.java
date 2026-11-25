@@ -276,7 +276,6 @@ class IsolationEditionStructurelleTest {
             "SELECT l.edition_id, e.nom AS edition_nom, l.id, l.libelle, l.noms_complets, l.restreint"
                     + " FROM lien_affichage_mural l JOIN edition e ON e.id = l.edition_id"
                     + " WHERE l.token_hash = ? AND l.revoque_le IS NULL",
-            "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1",
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.kpi FROM plan_snapshot s"
                     + " LEFT JOIN edition e ON e.id = s.edition_id ORDER BY s.cree_le DESC, s.id DESC",
