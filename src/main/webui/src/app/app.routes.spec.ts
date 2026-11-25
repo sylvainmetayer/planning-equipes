@@ -170,8 +170,9 @@ describe('app.routes', () => {
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic;
     // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another;
-    // the nine screens that became tabs of another page gave theirs up.
-    expect(titrees).toHaveLength(32);
+    // the nine screens that became tabs of another page gave theirs up;
+    // `/mot-de-passe`, the page of a mailed link, brought one.
+    expect(titrees).toHaveLength(33);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });

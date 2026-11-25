@@ -31,6 +31,12 @@
                 } @else {
                   <ng-container i18n="@@comptes.jamaisConnecte">Jamais connecté</ng-container>
                 }
+                ·
+                @if (compte.passwordSet) {
+                  <ng-container i18n="@@comptes.motDePasse.defini">mot de passe défini</ng-container>
+                } @else {
+                  <ng-container i18n="@@comptes.motDePasse.aucun">pas de mot de passe local</ng-container>
+                }
               </div>
             </div>
             <ul class="comptes-droits">
@@ -55,6 +61,16 @@
                 <mat-icon>add</mat-icon>
                 <ng-container i18n="@@comptes.accorder">Accorder un droit</ng-container>
               </button>
+              @if (!compte.desactiveLe) {
+                <button matButton type="button" [disabled]="busy()" (click)="sendLink(compte)">
+                  <mat-icon>forward_to_inbox</mat-icon>
+                  @if (compte.passwordSet) {
+                    <ng-container i18n="@@comptes.reinitialiser">Réinitialiser le mot de passe</ng-container>
+                  } @else {
+                    <ng-container i18n="@@comptes.inviter">Inviter</ng-container>
+                  }
+                </button>
+              }
               <button matButton type="button" [disabled]="busy() || own(compte)" (click)="toggle(compte)">
                 @if (compte.desactiveLe) {
                   <ng-container i18n="@@comptes.reactiver">Réactiver</ng-container>
@@ -95,7 +111,6 @@
       <p class="empty-hint" role="status" i18n="@@comptes.chargement">Chargement des comptes…</p>
     }
 
-    <!-- The invitation of a local account (address, name, link by mail) lands here. -->
     <form class="comptes-ajout" (submit)="$event.preventDefault(); add()">
       <mat-form-field>
         <mat-label i18n="@@comptes.email">Adresse e-mail</mat-label>
@@ -105,6 +120,7 @@
         <mat-label i18n="@@comptes.nom">Nom (facultatif)</mat-label>
         <input matInput name="nom" autocomplete="off" [value]="nom()" (input)="nom.set($any($event.target).value)" />
       </mat-form-field>
+      <mat-checkbox [checked]="inviter()" (change)="inviter.set($event.checked)" i18n="@@comptes.inviterCase">Inviter par e-mail à choisir son mot de passe</mat-checkbox>
       <button matButton="filled" type="submit" [disabled]="busy() || !email().trim()">
         <mat-icon>person_add</mat-icon>
         <ng-container i18n="@@comptes.ajouter">Ajouter un compte</ng-container>

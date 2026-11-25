@@ -11,6 +11,7 @@ import {
   MentionsLegales,
   ParametresNotifications,
   Deconnexion,
+  SignInChallenge,
   StatutSession,
 } from '../models';
 
@@ -89,6 +90,28 @@ export class AdminApi {
 
   /** The route that hands the browser over to the identity provider; a navigation, not a call. */
   readonly providerSignInUrl = '/api/auth/oidc/login';
+
+  /**
+   * The password step of a local sign-in. Rejects with the server's sentence
+   * (« Adresse ou mot de passe incorrect », or the wait of a lockout): the
+   * answer is the same whatever the cause.
+   */
+  localSignIn(email: string, password: string): Promise<SignInChallenge> {
+    return this.api.post<SignInChallenge>('/api/auth/connexion', { email, password });
+  }
+
+  /** « Mot de passe oublié » — answers the same whether the address has an account or not. */
+  forgotPassword(email: string): Promise<void> {
+    return this.api.post<void>('/api/auth/mot-de-passe/oubli', { email });
+  }
+
+  /** Chooses a password with the single-use link of an invitation or a reset. */
+  choosePassword(token: string, password: string): Promise<void> {
+    return this.api.post<void>('/api/auth/mot-de-passe', { token, password });
+  }
+
+  /** Where the form post of a local account goes (the mechanism of the admin's, on a path of its own). */
+  readonly localFormPath = '/api/auth/connexion/j_security_check';
 
   /** Drops the local cookie; the answer names the provider's logout route, if any. */
   logout(): Promise<Deconnexion> {

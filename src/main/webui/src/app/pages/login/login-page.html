@@ -27,51 +27,88 @@
             <mat-icon>login</mat-icon>
             <span i18n="@@login.oidc.connexion">Se connecter avec mon compte</span>
           </button>
+          <h2 class="login-secours-titre">
+            <mat-icon inline>password</mat-icon>
+            <span i18n="@@login.locale.titre">Ou avec un mot de passe</span>
+          </h2>
         }
-        @if (modeSecours) {
-          <section class="login-secours">
-            @if (modeOidc) {
-              <h2 class="login-secours-titre">
-                <mat-icon inline>emergency</mat-icon>
-                <span i18n="@@login.secours.titre">Compte de secours</span>
-              </h2>
-              <p i18n="@@login.secours.aide">
-                Réservé aux interventions d'urgence, quand la connexion par compte est indisponible.
-                Chaque connexion est journalisée.
-              </p>
-            }
+        <section class="login-secours">
+          @if (defi(); as attente) {
+            <form (submit)="submitCode($event)">
+              <p i18n="@@login.code.aide">Un code à six chiffres vient d'être envoyé à {{ attente.maskedEmail }}. Il est valable dix minutes.</p>
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@login.code">Code reçu par e-mail</mat-label>
+                <input matInput name="code" inputmode="numeric" autocomplete="one-time-code"
+                       [ngModel]="code()" (ngModelChange)="code.set($event)" />
+              </mat-form-field>
+              @if (echec()) {
+                <app-status-message [text]="messageEchec(true)" tone="error" />
+              }
+              <button matButton="filled" type="submit" [disabled]="busy() || !code().trim()">
+                <mat-icon>login</mat-icon>
+                <span i18n="@@login.connexion">Se connecter</span>
+              </button>
+              <button matButton type="button" (click)="recommencer()">
+                <span i18n="@@login.recommencer">Recommencer</span>
+              </button>
+            </form>
+          } @else if (oubli()) {
+            <form (submit)="requestLink($event)">
+              <p i18n="@@login.oubli.aide">Saisissez l'adresse de votre compte : si elle correspond à un compte, un lien pour choisir un nouveau mot de passe vous est envoyé.</p>
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@login.email">Adresse e-mail</mat-label>
+                <input matInput type="email" name="email" autocomplete="username"
+                       [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
+              </mat-form-field>
+              @if (oubliEnvoye()) {
+                <p role="status">
+                  <mat-icon inline>mark_email_read</mat-icon>
+                  <span i18n="@@login.oubli.envoye">Si cette adresse correspond à un compte, un lien vient d'être envoyé. Il est valable une heure et ne sert qu'une fois.</span>
+                </p>
+              }
+              <button matButton="filled" type="submit" [disabled]="busy() || !utilisateur().includes('@')">
+                <mat-icon>mail</mat-icon>
+                <span i18n="@@login.oubli.envoyer">Envoyer le lien</span>
+              </button>
+              <button matButton type="button" (click)="oubli.set(false); oubliEnvoye.set(false)">
+                <span i18n="@@login.oubli.retour">Retour à la connexion</span>
+              </button>
+            </form>
+          } @else {
             <form (submit)="connecter($event)">
               <mat-form-field appearance="outline">
-                <mat-label i18n="@@login.utilisateur">Utilisateur</mat-label>
+                <mat-label i18n="@@login.identifiant">Adresse e-mail</mat-label>
                 <input matInput name="j_username" autocomplete="username"
                        [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
+                @if (modeSecours && modeOidc) {
+                  <mat-hint i18n="@@login.secours.indice">Compte de secours de la configuration : son nom, sans arobase.</mat-hint>
+                }
               </mat-form-field>
               <mat-form-field appearance="outline">
                 <mat-label i18n="@@login.motDePasse">Mot de passe</mat-label>
                 <input matInput type="password" name="j_password" autocomplete="current-password"
-                       [ngModel]="motDePasse()" (ngModelChange)="motDePasse.set($event)" />
+                       [ngModel]="password()" (ngModelChange)="password.set($event)" />
               </mat-form-field>
-              @switch (echec()) {
-                @case ('identifiants') {
-                  <p class="login-echec" role="alert">
-                    <mat-icon inline>error</mat-icon>
-                    <span i18n="@@login.echec">Identifiants incorrects.</span>
-                  </p>
-                }
-                @case ('fermee') {
+              @if (echec(); as e) {
+                @if (e.fermee) {
                   <p class="login-echec" role="alert">
                     <mat-icon inline>lock</mat-icon>
                     <span i18n="@@login.secours.fermee">La connexion par mot de passe est fermée sur ce serveur.</span>
                   </p>
+                } @else {
+                  <app-status-message [text]="messageEchec(false)" tone="error" />
                 }
               }
-              <button matButton="filled" type="submit" [disabled]="enCours() || !utilisateur() || !motDePasse()">
+              <button matButton="filled" type="submit" [disabled]="busy() || !utilisateur() || !password()">
                 <mat-icon>login</mat-icon>
                 <span i18n="@@login.connexion">Se connecter</span>
               </button>
+              <button matButton type="button" (click)="oubli.set(true)">
+                <span i18n="@@login.oubli.lien">Mot de passe oublié</span>
+              </button>
             </form>
-          </section>
-        }
+          }
+        </section>
       }
     </mat-card-content>
   </mat-card>

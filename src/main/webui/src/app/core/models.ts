@@ -2835,15 +2835,18 @@ export interface Compte {
   passwordSet: boolean;
 }
 
-/** Body of `POST /api/comptes`. */
 /** Body of `POST /api/comptes`: `invite` also mails the link to choose a password. */
 export interface NouveauCompte {
   email: string;
   nom: string | null;
-  invite?: boolean | null;
+  invite: boolean | null;
 }
 
-/** Answer of `POST /api/auth/connexion`: the one-time challenge of a local sign-in. */
+/**
+ * Answer of `POST /api/auth/connexion`, the password step of a local sign-in:
+ * the one-time challenge the form post exchanges, with the code that went by
+ * mail when the second step is on (`maskedEmail` then names where).
+ */
 export interface SignInChallenge {
   codeRequired: boolean;
   challenge: string;

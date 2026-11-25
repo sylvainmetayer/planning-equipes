@@ -32,6 +32,8 @@ describe('ComptesCard', () => {
     reactivate: vi.fn(),
     grant: vi.fn(),
     withdraw: vi.fn(),
+    invite: vi.fn(),
+    resetPassword: vi.fn(),
   };
   const notify = vi.fn();
 
@@ -41,6 +43,8 @@ describe('ComptesCard', () => {
     for (const f of [api.create, api.deactivate, api.reactivate, api.grant, api.withdraw]) {
       f.mockResolvedValue(compte('x'));
     }
+    api.invite.mockResolvedValue(undefined);
+    api.resetPassword.mockResolvedValue(undefined);
     notify.mockReset();
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -85,8 +89,26 @@ describe('ComptesCard', () => {
     card['email'].set(' ana@x.fr ');
     card['nom'].set('Ana');
     await card['add']();
-    expect(api.create).toHaveBeenCalledWith({ email: 'ana@x.fr', nom: 'Ana' });
+    expect(api.create).toHaveBeenCalledWith({ email: 'ana@x.fr', nom: 'Ana', invite: true });
     expect(api.list).toHaveBeenCalledTimes(2);
+  });
+
+  it('invites an account with no password yet, resets one that has it, and never shows the link', async () => {
+    const fixture = await rendre();
+    const card = fixture.componentInstance as unknown as { sendLink(c: Compte): Promise<void> };
+    await card.sendLink(compte('nouveau'));
+    expect(api.invite).toHaveBeenCalledWith('nouveau');
+    await card.sendLink(compte('ancien', { passwordSet: true }));
+    expect(api.resetPassword).toHaveBeenCalledWith('ancien');
+    expect(notify).toHaveBeenCalledTimes(2);
+  });
+
+  it('labels the button by what it does', async () => {
+    api.list.mockResolvedValue([compte('a'), compte('b', { passwordSet: true })]);
+    const fixture = await rendre();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Inviter');
+    expect(text).toContain('Réinitialiser le mot de passe');
   });
 
   it('shows the refusal of the server instead of swallowing it', async () => {
