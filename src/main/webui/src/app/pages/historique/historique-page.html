@@ -30,7 +30,7 @@
     @if (onglet() === 'connexions') {
       <app-connexions-admin />
     } @else {
-      @if (fiableDepuisTexte(); as depuisLe) {
+      @if (reliableSinceText(); as depuisLe) {
         <p class="empty-hint" i18n="@@historique.auteurFiable">
           Auteur fiable depuis le {{ depuisLe }} : avant, tous les administrateurs
           partageaient le compte de configuration, et une ligne « Compte de configuration » ne désigne personne en
