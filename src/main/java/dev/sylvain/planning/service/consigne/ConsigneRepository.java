@@ -2,7 +2,10 @@ package dev.sylvain.planning.service.consigne;
 
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.PrereglageConsigne;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.WriteStamp;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
@@ -152,10 +155,23 @@ public class ConsigneRepository {
     /**
      * Writes the consigne, replacing the one its date already carried — its
      * windows, its openings and its added créneaux with it. The creation stamp
-     * survives a replacement; the modification stamp is now.
+     * survives a replacement; the modification stamp is now. A {@code modifieLe}
+     * on {@code consigne} is the precondition (issue #362): a row written since
+     * is refused with {@link BusinessError.Stale}; {@code null} checks nothing.
      */
     public void save(ConsigneEdition consigne) {
         scope.write("Failed to save the consigne of " + consigne.date(), connection -> save(connection, consigne));
+    }
+
+    /** The stamp the stored consigne of {@code date} carries now, {@code null} when it has none. */
+    private Instant lastWriteOf(Connection connection, LocalDate date) throws SQLException {
+        try (PreparedStatement ps = scope.prepareScoped(
+                connection, "SELECT modifie_le FROM consigne_edition WHERE edition_id = ? AND date_jour = ?")) {
+            ps.setObject(2, date);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? instant(rs.getTimestamp("modifie_le")) : null;
+            }
+        }
     }
 
     /**
@@ -181,14 +197,22 @@ public class ConsigneRepository {
                         repas_soir_debut = EXCLUDED.repas_soir_debut,
                         repas_soir_fin = EXCLUDED.repas_soir_fin,
                         repas_coupure_minutes = EXCLUDED.repas_coupure_minutes,
-                        repas_justification = EXCLUDED.repas_justification""")) {
+                        repas_justification = EXCLUDED.repas_justification
+                    WHERE CAST(? AS boolean)
+                    AND (CAST(? AS timestamptz) IS NULL
+                         OR date_trunc('milliseconds', consigne_edition.modifie_le)
+                            = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                    RETURNING modifie_le""")) {
             ps.setObject(2, consigne.date());
             ps.setObject(3, consigne.fermetureDebut());
             ps.setObject(4, consigne.fermetureFin());
             ps.setString(5, consigne.motif());
             ps.setString(6, consigne.prereglage());
             bindRepas(ps, 7, consigne.repas());
-            ps.executeUpdate();
+            WriteStamp.bindPrecondition(ps, 13, true, consigne.modifieLe());
+            if (WriteStamp.writtenOrRefused(ps) == null) {
+                throw ConcurrentModificationGuard.stale("consigne_edition", lastWriteOf(connection, consigne.date()));
+            }
         }
         deleteDated(
                 connection,
@@ -326,7 +350,7 @@ public class ConsigneRepository {
         });
     }
 
-    /** Writes the preset, replacing the one of the same id. */
+    /** Writes the preset, replacing the one of the same id; its {@code modifieLe} is the precondition, as for a consigne. */
     public void savePrereglage(PrereglageConsigne prereglage) {
         String sql = """
                     INSERT INTO prereglage_consigne (edition_id, id, nom, fermeture_debut, fermeture_fin, motif,
@@ -344,7 +368,12 @@ public class ConsigneRepository {
                         repas_soir_debut = EXCLUDED.repas_soir_debut,
                         repas_soir_fin = EXCLUDED.repas_soir_fin,
                         repas_coupure_minutes = EXCLUDED.repas_coupure_minutes,
-                        repas_justification = EXCLUDED.repas_justification""";
+                        repas_justification = EXCLUDED.repas_justification
+                    WHERE CAST(? AS boolean)
+                    AND (CAST(? AS timestamptz) IS NULL
+                         OR date_trunc('milliseconds', prereglage_consigne.modifie_le)
+                            = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                    RETURNING modifie_le""";
         scope.write("Failed to save the consigne preset " + prereglage.id(), connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setString(2, prereglage.id());
@@ -353,7 +382,11 @@ public class ConsigneRepository {
                 ps.setObject(5, prereglage.fermetureFin());
                 ps.setString(6, prereglage.motif());
                 bindRepas(ps, 7, prereglage.repas());
-                ps.executeUpdate();
+                WriteStamp.bindPrecondition(ps, 13, true, prereglage.modifieLe());
+                if (WriteStamp.writtenOrRefused(ps) == null) {
+                    throw ConcurrentModificationGuard.stale(
+                            "prereglage_consigne", scope.lastWriteOf("prereglage_consigne", prereglage.id()));
+                }
             }
             try (PreparedStatement ps = scope.prepareScoped(
                     connection, "DELETE FROM prereglage_consigne_fenetre WHERE edition_id = ? AND prereglage_id = ?")) {

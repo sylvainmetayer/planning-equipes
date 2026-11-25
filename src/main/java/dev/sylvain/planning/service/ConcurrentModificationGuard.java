@@ -36,7 +36,10 @@ public class ConcurrentModificationGuard {
             "creneau", "Ce créneau",
             "emplacement", "Cet emplacement",
             "typologie", "Cette typologie",
-            "contrainte_ad_hoc", "Cet ajustement manuel");
+            "contrainte_ad_hoc", "Cet ajustement manuel",
+            "webhook", "Ce webhook",
+            "consigne_edition", "Cette consigne",
+            "prereglage_consigne", "Ce préréglage");
 
     private final JdbcEditionScope scope;
 
@@ -79,6 +82,11 @@ public class ConcurrentModificationGuard {
             refuseDuplicate(table, id);
         }
         refuseStale(table, id);
+    }
+
+    /** The refusal of a table that has no edition-scoped id to probe: the caller read the current stamp itself. */
+    public static BusinessError.Stale stale(String table, java.time.Instant current) {
+        return new BusinessError.Stale(staleMessage(table), current);
     }
 
     private static String staleMessage(String table) {

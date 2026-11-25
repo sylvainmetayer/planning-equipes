@@ -1,9 +1,11 @@
 package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.ConsigneEdition.Fenetre;
 import dev.sylvain.planning.domain.ConsigneEdition.Ouverture;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.consigne.ConsigneService.Demande;
 import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
@@ -35,5 +37,13 @@ class ConsigneMcpToolsParsingTest {
         assertThat(ConsigneMcpTools.dayWindows("20:00-")).containsExactly(new Fenetre(LocalTime.of(20, 0), null));
         assertThat(ConsigneMcpTools.endOrOpen(" ")).isNull();
         assertThat(ConsigneMcpTools.endOrOpen("18:30")).isEqualTo(LocalTime.of(18, 30));
+    }
+
+    @Test
+    void theStampsOfSeveralDatesAreReadPerDate() {
+        assertThat(ConsigneMcpTools.stamps(" ")).isNull();
+        assertThat(ConsigneMcpTools.stamps("2027-02-03=2026-09-06T10:15:30.123Z, 2027-02-04=2026-09-07T08:00:00Z"))
+                .containsOnlyKeys(java.time.LocalDate.of(2027, 2, 3), java.time.LocalDate.of(2027, 2, 4));
+        assertThatThrownBy(() -> ConsigneMcpTools.stamps("2027-02-03")).isInstanceOf(BusinessError.Invalid.class);
     }
 }

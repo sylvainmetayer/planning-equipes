@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -64,23 +63,10 @@ class WriteStampStructurelleTest {
                 .isEmpty();
     }
 
-    /**
-     * Tables created with {@code modifie_le} that carry it as a date shown, not
-     * as a precondition — each named with why, so that a new table created
-     * with the column is caught here instead of slipping past a scan that only
-     * read {@code ALTER TABLE}.
-     */
-    private static final Map<String, String> SANS_PRECONDITION_AVEC_MOTIF = Map.of(
-            "webhook",
-            "instance configuration: the date is shown on the webhook card; a precondition is still owed",
-            "consigne_edition",
-            "the date is shown on the consigne; a precondition is still owed",
-            "prereglage_consigne",
-            "the date is shown on the preset; a precondition is still owed");
-
     /** Every table a migration gave {@code modifie_le}: added by {@code ALTER TABLE}, or created with it. */
     private static List<String> tablesEstampillees() throws IOException {
-        String migrations = read(MIGRATIONS);
+        // Comments out: a « ; » in one of them cut a table short and hid its stamp from the scan.
+        String migrations = read(MIGRATIONS).replaceAll("--[^\\n]*", "");
         Matcher matcher =
                 Pattern.compile("ALTER TABLE (\\w+)\\s+ADD COLUMN modifie_le").matcher(migrations);
         List<String> tables = new ArrayList<>();
@@ -93,25 +79,18 @@ class WriteStampStructurelleTest {
                 .matcher(migrations);
         while (creees.find()) {
             String table = creees.group(1);
-            if (creees.group(2).contains("modifie_le")
-                    && !tables.contains(table)
-                    && !SANS_PRECONDITION_AVEC_MOTIF.containsKey(table)) {
+            if (creees.group(2).contains("modifie_le") && !tables.contains(table)) {
                 tables.add(table);
             }
         }
         return tables;
     }
 
-    /** The scan of created tables must see the one that prompted it, and a stale excuse is refused. */
+    /** The scan of created tables must see the ones that prompted it: none is excused any more. */
     @Test
     void aTableCreatedWithTheStampIsSeenToo() throws IOException {
-        assertThat(tablesEstampillees()).contains("animateur_contact", "journee_type");
-        String migrations = read(MIGRATIONS);
-        for (String table : SANS_PRECONDITION_AVEC_MOTIF.keySet()) {
-            assertThat(migrations)
-                    .as("%s is excused but no longer created", table)
-                    .contains("CREATE TABLE " + table);
-        }
+        assertThat(tablesEstampillees())
+                .contains("animateur_contact", "journee_type", "webhook", "consigne_edition", "prereglage_consigne");
     }
 
     /** Every precondition clause is bound, and bound through the one helper that words it. */

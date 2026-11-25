@@ -3339,6 +3339,14 @@
           },
           "repas" : {
             "$ref" : "#/components/schemas/RepasConsigne"
+          },
+          "modifieLe" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "format" : "date-time",
+              "examples" : [ "2022-03-10T16:15:50Z" ]
+            }
           }
         }
       },
@@ -11371,6 +11379,9 @@
           },
           "active" : {
             "type" : "boolean"
+          },
+          "modifiedAt" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },

@@ -16,6 +16,7 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { askStaleChoice, isStaleWrite, notifyStaleReloaded } from '../../shared/stale-write';
 import { WebhookFormData, WebhookFormDialog } from './webhook-form-dialog';
 import { WebhookLivraisonsData, WebhookLivraisonsDialog } from './webhook-livraisons-dialog';
 import { eventLabel, formatLabel, statusLabel } from './webhooks';
@@ -90,20 +91,50 @@ export class WebhooksCard implements OnInit {
   private async save(webhook: WebhookView | null, request: WebhookRequest): Promise<void> {
     this.busy.set(true);
     try {
-      const saved = webhook
-        ? await this.api.update(webhook.id, request)
-        : await this.api.create(request);
-      this.secret.set(saved.secret ? { name: saved.webhook.name, secret: saved.secret } : null);
-      this.notifications.notify({
-        title: $localize`:@@parametres.webhooks.enregistre:Webhook enregistré.`,
-        variant: 'success',
-        timeout: 3000,
-      });
-      await this.load();
+      await this.write(webhook, { ...request, modifiedAt: webhook?.modifiedAt ?? null });
     } catch (error) {
-      this.notifyError(error);
+      await this.answerError(webhook, request, error);
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  /** Sends the form: the stamp it loaded is the precondition, `null` overwrites (issue #362). */
+  private async write(webhook: WebhookView | null, request: WebhookRequest): Promise<void> {
+    const saved = webhook
+      ? await this.api.update(webhook.id, request)
+      : await this.api.create(request);
+    this.secret.set(saved.secret ? { name: saved.webhook.name, secret: saved.secret } : null);
+    this.notifications.notify({
+      title: $localize`:@@parametres.webhooks.enregistre:Webhook enregistré.`,
+      variant: 'success',
+      timeout: 3000,
+    });
+    await this.load();
+  }
+
+  /** A webhook written since the form opened is answered with a choice, any other refusal with its message. */
+  private async answerError(
+    webhook: WebhookView | null,
+    request: WebhookRequest,
+    error: unknown,
+  ): Promise<void> {
+    if (!isStaleWrite(error)) {
+      this.notifyError(error);
+      return;
+    }
+    const choice = await askStaleChoice(this.confirm, error);
+    if (choice === 'overwrite') {
+      try {
+        await this.write(webhook, { ...request, modifiedAt: null });
+      } catch (again) {
+        this.notifyError(again);
+      }
+    } else if (choice === 'reload') {
+      await this.load();
+      notifyStaleReloaded(this.notifications);
+    } else {
+      this.notifyError(error);
     }
   }
 
