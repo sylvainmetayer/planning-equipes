@@ -17,8 +17,8 @@ test.describe('organisateur avec compte local', () => {
   }) => {
     const admin = await contexteAdmin(playwright, baseURL as string);
     const email = `organisateur-${randomUUID()}@example.org`;
-    // Generated, never typed: a literal here would be a credential in the repository.
-    const motDePasse = `${randomUUID()}-${randomUUID()}`;
+    // Generated, never typed (a literal would be a credential in the repository), and under the 72-byte bcrypt cap.
+    const motDePasse = `pw-${randomUUID()}`;
     let compteId: string | null = null;
     try {
       const cree = await admin.post('/api/comptes', { data: { email, nom: 'Organisateur E2E' } });
