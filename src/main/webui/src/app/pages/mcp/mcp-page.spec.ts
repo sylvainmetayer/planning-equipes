@@ -185,7 +185,7 @@ describe('McpPage', () => {
     expect(racine().querySelector('.mcp-cle-revelee')?.textContent).toContain('cle-config');
   });
 
-  async function refuserParConnexionAncienne(mode: string): Promise<void> {
+  async function refuseForStaleSignIn(mode: string): Promise<void> {
     await rendre(PROMPTS);
     regenerateKey.mockRejectedValueOnce(
       new ApiError(409, 'conflict', 'ancienne', `RECONNEXION_REQUISE_${mode}`),
@@ -196,7 +196,7 @@ describe('McpPage', () => {
   }
 
   it('asks to sign in again at the provider when the OIDC sign-in is too old', async () => {
-    await refuserParConnexionAncienne('OIDC');
+    await refuseForStaleSignIn('OIDC');
 
     expect(racine().textContent).toContain('Votre dernière connexion date de plus de dix minutes');
     expect(racine().querySelector('.mcp-cle-revelee')).toBeNull();
@@ -210,7 +210,7 @@ describe('McpPage', () => {
   it('closes a local or break-glass session and goes back to the login page', async () => {
     for (const mode of ['LOCAL', 'BREAK_GLASS']) {
       assign?.mockClear?.();
-      await refuserParConnexionAncienne(mode);
+      await refuseForStaleSignIn(mode);
       bouton('Se reconnecter').click();
       await fixture.whenStable();
 
