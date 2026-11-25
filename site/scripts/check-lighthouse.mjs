@@ -33,18 +33,29 @@ if (!isUrl) {
 const sitemap = readFileSync(resolve(folder, 'sitemap.xml'), 'utf8');
 const pages = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
 
+// One audit at a time: Lighthouse measures performance on an idle browser
+async function audit(path, config) {
+  const { lhr } = await lighthouse(`${base}${path}`, { port: chrome.port, output: 'json', logLevel: 'error', onlyCategories: CATEGORIES }, config); // NOSONAR
+  if (lhr.runtimeError) throw new Error(`${path} : ${lhr.runtimeError.message}`);
+  return CATEGORIES.map((c) => Math.round((lhr.categories[c].score ?? 0) * 100));
+}
+
+const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+
 const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless=new', '--no-sandbox'] });
 const rows = [];
 let failed = false;
 try {
   for (const path of pages) {
     for (const [profile, config] of [['mobile', undefined], ['desktop', desktop]]) {
-      // One audit at a time: Lighthouse measures performance on an idle browser
-      const { lhr } = await lighthouse(`${base}${path}`, { port: chrome.port, output: 'json', logLevel: 'error', onlyCategories: CATEGORIES }, config); // NOSONAR
-      if (lhr.runtimeError) throw new Error(`${path} : ${lhr.runtimeError.message}`);
-      const scores = CATEGORIES.map((c) => Math.round((lhr.categories[c].score ?? 0) * 100));
+      const runs = [await audit(path, config)];
+      // A shared CI runner swings one performance score by 15 points on a page
+      // that scores 100 at home, a different page each run: a page under the
+      // bar is measured twice more and judged on the median, as Lighthouse advises.
+      if (runs[0].some((s) => s < MIN)) runs.push(await audit(path, config), await audit(path, config));
+      const scores = CATEGORIES.map((_, i) => median(runs.map((r) => r[i])));
       if (scores.some((s) => s < MIN)) failed = true;
-      rows.push(`| ${path} | ${profile} | ${scores.join(' | ')} |`);
+      rows.push(`| ${path} | ${profile} | ${scores.join(' | ')} |${runs.length > 1 ? ` médiane de ${runs.map((r) => r[0]).join(', ')}` : ''}`);
     }
   }
 } finally {
