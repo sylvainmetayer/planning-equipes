@@ -102,7 +102,7 @@ cd src/main/webui && npm run e2e         # + --headed, --ui, --project=mobile, u
 
 Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL` (`http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL` (`http://localhost:8025`), `E2E_CHROMIUM`, `E2E_VIDEO`.
 
-Le PostgreSQL local est en version 19 (`postgres:19` dans `docker-compose.yml`). Un volume de développement créé en 18 (`postgres_data_pg18`) ne démarre plus : faites un `pg_dump` avant de tirer l'image, puis supprimez le volume (`docker compose down -v`) et restaurez, ou repartez de zéro. Les dev services de `quarkus:dev` et des tests n'ont pas ce souci, leur base est jetable.
+Le PostgreSQL local est en version 19 (`postgres:19` dans `docker-compose.yml`). Les dev services de `quarkus:dev` et des tests ont leur propre base, jetable.
 
 ### Chaque spec repart d'un état de référence
 

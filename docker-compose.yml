@@ -149,6 +149,4 @@ services:
 
 volumes:
   postgres_data:
-    # Nom historique, voir docker-compose.prod.yml : ne pas le renommer.
-    name: postgres_data_pg18
   pgadmin_data:
