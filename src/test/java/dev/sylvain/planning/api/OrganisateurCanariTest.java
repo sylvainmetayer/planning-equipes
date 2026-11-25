@@ -52,6 +52,9 @@ class OrganisateurCanariTest {
     KpiHistoriqueService kpi;
 
     @Inject
+    dev.sylvain.planning.service.solve.SolverJobService jobs;
+
+    @Inject
     javax.sql.DataSource dataSource;
 
     private String bearerOf(RoleHabilitation role, String editionId) {
@@ -132,6 +135,14 @@ class OrganisateurCanariTest {
             assertThat(lues).as("routes lues").isGreaterThan(50);
             assertThat(fuites).as("routes qui rendent l'édition hors droits").isEmpty();
         } finally {
+            // The seeded solve must not outlive the test: a solver left busy would
+            // answer 409 to the next test's writes in this JVM.
+            jobs.list().stream()
+                    .filter(job -> editionId.equals(job.getEditionId()) && !job.isFinished())
+                    .forEach(job -> jobs.cancel(job.getId()));
+            org.awaitility.Awaitility.await()
+                    .atMost(java.time.Duration.ofSeconds(60))
+                    .untilAsserted(() -> assertThat(jobs.findActive()).isEmpty());
             editions.delete(editionId);
         }
     }
