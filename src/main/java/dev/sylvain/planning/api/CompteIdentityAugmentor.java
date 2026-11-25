@@ -49,17 +49,19 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
 
     static final String ROLE_ADMIN = "admin";
 
-    @Inject
-    CompteService comptes;
+    private final CompteService comptes;
+    private final CompteAccesService acces;
+    private final ConfigSecours secours;
+    private final ConfigOidc oidc;
 
     @Inject
-    CompteAccesService acces;
-
-    @Inject
-    ConfigSecours secours;
-
-    @Inject
-    ConfigOidc oidc;
+    public CompteIdentityAugmentor(
+            CompteService comptes, CompteAccesService acces, ConfigSecours secours, ConfigOidc oidc) {
+        this.comptes = comptes;
+        this.acces = acces;
+        this.secours = secours;
+        this.oidc = oidc;
+    }
 
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {

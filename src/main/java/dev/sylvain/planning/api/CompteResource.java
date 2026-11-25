@@ -32,11 +32,14 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CompteResource {
 
-    @Inject
-    CompteService comptes;
+    private final CompteService comptes;
+    private final CompteAccesService acces;
 
     @Inject
-    CompteAccesService acces;
+    public CompteResource(CompteService comptes, CompteAccesService acces) {
+        this.comptes = comptes;
+        this.acces = acces;
+    }
 
     @GET
     public List<Compte> list() {

@@ -30,8 +30,12 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 public class SolverOccupeMapper implements ExceptionMapper<SolverBusyException> {
 
+    private final EditionContext editionContext;
+
     @Inject
-    EditionContext editionContext;
+    public SolverOccupeMapper(EditionContext editionContext) {
+        this.editionContext = editionContext;
+    }
 
     @Override
     public Response toResponse(SolverBusyException occupe) {

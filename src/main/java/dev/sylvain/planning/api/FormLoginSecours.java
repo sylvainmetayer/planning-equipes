@@ -47,20 +47,25 @@ public class FormLoginSecours {
     /** Just above {@link AdminLoginLimiter}: a closed door has no attempts to count. */
     private static final int PRIORITE = 260;
 
-    @Inject
-    ConfigSecours secours;
+    private final ConfigSecours secours;
+    private final ConfigOidc oidc;
+    private final LoginJournalService journal;
+    private final CompteService comptes;
+    private final AdminLoginLimiter limiter;
 
     @Inject
-    ConfigOidc oidc;
-
-    @Inject
-    LoginJournalService journal;
-
-    @Inject
-    CompteService comptes;
-
-    @Inject
-    AdminLoginLimiter limiter;
+    public FormLoginSecours(
+            ConfigSecours secours,
+            ConfigOidc oidc,
+            LoginJournalService journal,
+            CompteService comptes,
+            AdminLoginLimiter limiter) {
+        this.secours = secours;
+        this.oidc = oidc;
+        this.journal = journal;
+        this.comptes = comptes;
+        this.limiter = limiter;
+    }
 
     public void register(@Observes Filters filtres) {
         filtres.register(this::apply, PRIORITE);

@@ -32,11 +32,14 @@ import java.util.List;
 @Path("/rh")
 public class RhResource {
 
-    @Inject
-    RhService rh;
+    private final RhService rh;
+    private final SecurityIdentity identity;
 
     @Inject
-    SecurityIdentity identity;
+    public RhResource(RhService rh, SecurityIdentity identity) {
+        this.rh = rh;
+        this.identity = identity;
+    }
 
     @GET
     @RolesAllowed({"rh", "admin"})
