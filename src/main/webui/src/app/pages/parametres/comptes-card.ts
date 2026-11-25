@@ -217,6 +217,9 @@ export class ComptesCard implements OnInit {
       await this.load();
     } catch (error) {
       this.notifyError(error);
+      // A write may have half succeeded (the account created, its invitation
+      // not sent): the list shows what is there, not what was expected.
+      await this.load();
     } finally {
       this.busy.set(false);
     }

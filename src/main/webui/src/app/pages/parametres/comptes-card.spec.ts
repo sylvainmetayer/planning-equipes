@@ -111,6 +111,21 @@ describe('ComptesCard', () => {
     expect(text).toContain('Réinitialiser le mot de passe');
   });
 
+  it('reads the list again when the invitation of a new account fails', async () => {
+    api.create.mockImplementation(async () => {
+      throw new Error("Le compte est créé, mais l'invitation n'a pas pu partir");
+    });
+    const fixture = await rendre();
+    const card = fixture.componentInstance as unknown as {
+      email: { set(v: string): void };
+      add(): Promise<void>;
+    };
+    card.email.set('ana@x.fr');
+    await card.add();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+    expect(api.list).toHaveBeenCalledTimes(2);
+  });
+
   it('shows the refusal of the server instead of swallowing it', async () => {
     api.deactivate.mockRejectedValue(new Error('Il doit rester au moins un administrateur actif'));
     const fixture = await rendre();

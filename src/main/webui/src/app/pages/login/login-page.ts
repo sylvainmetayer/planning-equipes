@@ -1,7 +1,10 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  Injector,
   inject,
   OnInit,
   signal,
@@ -76,6 +79,8 @@ export class LoginPage implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly adminApi = inject(AdminApi);
   private readonly router = inject(Router);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly utilisateur = signal('');
   protected readonly password = signal('');
@@ -103,9 +108,52 @@ export class LoginPage implements OnInit {
     return (
       this.echec()?.message ??
       (parCode
-        ? $localize`:@@login.code.echec:Code incorrect ou expiré : recommencez.`
+        ? $localize`:@@login.code.echec:Code incorrect ou expiré.`
         : this.identifiantsIncorrects)
     );
+  }
+
+  /** The sentence of a lockout, in the reader's language (read when shown, never at import). */
+  private get verrouille(): string {
+    return $localize`:@@login.verrouille:Trop de tentatives de connexion : réessayez dans quelques minutes.`;
+  }
+
+  /**
+   * What the password step's refusal says: a wrong password is a 401 — which the
+   * generic API layer would turn into « session expired » — and a lockout a 429.
+   */
+  private explain(error: unknown): { fermee: boolean; message: string | null } {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 401) {
+        return { fermee: false, message: null };
+      }
+      if (error.status === 429) {
+        return { fermee: false, message: this.verrouille };
+      }
+      const body = error.error as { message?: string } | null;
+      if (body && typeof body === 'object' && body.message) {
+        return { fermee: false, message: body.message };
+      }
+    }
+    return { fermee: false, message: errorMessage(error) };
+  }
+
+  /** Puts the focus where the next step starts, once it is on screen. */
+  private focusOn(selector: string): void {
+    afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(selector)?.focus(), {
+      injector: this.injector,
+    });
+  }
+
+  protected showForgot(): void {
+    this.oubli.set(true);
+    this.focusOn('input[name=email]');
+  }
+
+  protected backToSignIn(): void {
+    this.oubli.set(false);
+    this.oubliEnvoye.set(false);
+    this.focusOn('input[name=j_username]');
   }
 
   ngOnInit(): void {
@@ -144,6 +192,7 @@ export class LoginPage implements OnInit {
         if (defi.codeRequired) {
           this.defi.set(defi);
           this.password.set('');
+          this.focusOn('input[name=code]');
           return;
         }
         await this.openSession(
@@ -155,7 +204,7 @@ export class LoginPage implements OnInit {
         await this.openSession(CHEMIN_SECOURS, this.utilisateur(), this.password());
       }
     } catch (error) {
-      this.echec.set({ fermee: false, message: errorMessage(error) });
+      this.echec.set(this.explain(error));
     } finally {
       this.busy.set(false);
     }
@@ -177,7 +226,7 @@ export class LoginPage implements OnInit {
         `${defi.challenge}:${this.code().trim()}`,
       );
     } catch (error) {
-      this.echec.set({ fermee: false, message: errorMessage(error) });
+      this.echec.set(this.explain(error));
     } finally {
       this.busy.set(false);
     }
@@ -188,6 +237,7 @@ export class LoginPage implements OnInit {
     this.defi.set(null);
     this.code.set('');
     this.echec.set(null);
+    this.focusOn('input[name=j_password]');
   }
 
   protected async requestLink(event: Event): Promise<void> {
@@ -203,6 +253,7 @@ export class LoginPage implements OnInit {
     } finally {
       this.oubliEnvoye.set(true);
       this.busy.set(false);
+      this.focusOn('.login-oubli-envoye');
     }
   }
 
@@ -225,10 +276,7 @@ export class LoginPage implements OnInit {
         return;
       }
       if (error instanceof HttpErrorResponse && error.status === 429) {
-        throw new Error(
-          $localize`:@@login.verrouille:Trop de tentatives de connexion : réessayez dans quelques minutes.`,
-          { cause: error },
-        );
+        throw new Error(this.verrouille, { cause: error });
       }
       this.echec.set({ fermee: false, message: null });
       return;

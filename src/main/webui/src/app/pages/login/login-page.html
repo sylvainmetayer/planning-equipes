@@ -38,7 +38,7 @@
               <p i18n="@@login.code.aide">Un code à six chiffres vient d'être envoyé à {{ attente.maskedEmail }}. Il est valable dix minutes.</p>
               <mat-form-field appearance="outline">
                 <mat-label i18n="@@login.code">Code reçu par e-mail</mat-label>
-                <input matInput name="code" inputmode="numeric" autocomplete="one-time-code"
+                <input matInput name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
                        [ngModel]="code()" (ngModelChange)="code.set($event)" />
               </mat-form-field>
               @if (echec()) {
@@ -61,7 +61,7 @@
                        [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
               </mat-form-field>
               @if (oubliEnvoye()) {
-                <p role="status">
+                <p role="status" class="login-oubli-envoye" tabindex="-1">
                   <mat-icon inline>mark_email_read</mat-icon>
                   <span i18n="@@login.oubli.envoye">Si cette adresse correspond à un compte, un lien vient d'être envoyé. Il est valable une heure et ne sert qu'une fois.</span>
                 </p>
@@ -70,7 +70,7 @@
                 <mat-icon>mail</mat-icon>
                 <span i18n="@@login.oubli.envoyer">Envoyer le lien</span>
               </button>
-              <button matButton type="button" (click)="oubli.set(false); oubliEnvoye.set(false)">
+              <button matButton type="button" (click)="backToSignIn()">
                 <span i18n="@@login.oubli.retour">Retour à la connexion</span>
               </button>
             </form>
@@ -80,7 +80,7 @@
                 <mat-label i18n="@@login.identifiant">Adresse e-mail</mat-label>
                 <input matInput name="j_username" autocomplete="username"
                        [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
-                @if (modeSecours && modeOidc) {
+                @if (modeSecours) {
                   <mat-hint i18n="@@login.secours.indice">Compte de secours de la configuration : son nom, sans arobase.</mat-hint>
                 }
               </mat-form-field>
@@ -103,7 +103,7 @@
                 <mat-icon>login</mat-icon>
                 <span i18n="@@login.connexion">Se connecter</span>
               </button>
-              <button matButton type="button" (click)="oubli.set(true)">
+              <button matButton type="button" (click)="showForgot()">
                 <span i18n="@@login.oubli.lien">Mot de passe oublié</span>
               </button>
             </form>

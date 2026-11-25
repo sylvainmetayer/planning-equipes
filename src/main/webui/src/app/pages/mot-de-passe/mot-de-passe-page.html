@@ -7,7 +7,7 @@
     </mat-card-header>
     <mat-card-content>
       @if (choisi()) {
-        <p role="status">
+        <p role="status" class="mdp-fait" tabindex="-1">
           <mat-icon inline>check_circle</mat-icon>
           <span i18n="@@motDePasse.fait">Votre mot de passe est enregistré. Vous pouvez vous connecter.</span>
         </p>
@@ -25,18 +25,28 @@
         </a>
       } @else {
         <form (submit)="choisir($event)">
-          <p i18n="@@motDePasse.aide">Au moins {{ longueurMin }} caractères, sans autre règle : une phrase longue vaut mieux qu'un mot compliqué. Le lien ne sert qu'une fois.</p>
+          <p id="mdp-aide" i18n="@@motDePasse.aide">Au moins {{ longueurMin }} caractères, sans autre règle : une phrase longue vaut mieux qu'un mot compliqué. Le lien ne sert qu'une fois.</p>
           <mat-form-field appearance="outline">
             <mat-label i18n="@@motDePasse.nouveau">Nouveau mot de passe</mat-label>
             <input matInput type="password" name="nouveau" autocomplete="new-password"
+                   aria-describedby="mdp-aide mdp-etat"
                    [ngModel]="password()" (ngModelChange)="password.set($event)" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label i18n="@@motDePasse.confirmation">Confirmer le mot de passe</mat-label>
             <input matInput type="password" name="confirmation" autocomplete="new-password"
+                   aria-describedby="mdp-aide mdp-etat"
                    [ngModel]="confirmation()" (ngModelChange)="confirmation.set($event)" />
           </mat-form-field>
+          <div id="mdp-etat">
+            <app-status-message [text]="password() ? raison() : ''" tone="info" />
+          </div>
           <app-status-message [text]="erreur() ?? ''" tone="error" />
+          @if (erreur()) {
+            <a matButton routerLink="/login">
+              <span i18n="@@motDePasse.retour">Retour à la connexion</span>
+            </a>
+          }
           <button matButton="filled" type="submit" [disabled]="busy() || !valid()">
             <mat-icon>lock_reset</mat-icon>
             <span i18n="@@motDePasse.enregistrer">Enregistrer</span>

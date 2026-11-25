@@ -171,6 +171,12 @@ describe('maskUrlToken', () => {
     );
   });
 
+  it('replaces the token of a password link, the fragment included', () => {
+    expect(maskUrlToken('https://planning.example.org/mot-de-passe#AbC-123_x')).toBe(
+      'https://planning.example.org/mot-de-passe#<jeton>',
+    );
+  });
+
   it('leaves a URL carrying no token untouched', () => {
     expect(maskUrlToken('/mentions-legales')).toBe('/mentions-legales');
     // The admin routes of the wall links carry an id, not a token.
