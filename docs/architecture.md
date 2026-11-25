@@ -515,6 +515,31 @@ que son pendant Java.**
 `src/styles/`. `branding.css` est importé en premier : tous les autres lisent
 `--app-accent`.
 
+## Les comptes et le responsable de stand
+
+`service/compte/` porte les comptes nommés : la personne (`compte`) et les
+droits qu'on lui délègue (`habilitation` : un rôle `ADMIN`, `ORGANISATEUR` ou
+`RESPONSABLE_STAND`, une édition ou toutes, une expiration). Rien ne s'y
+supprime — un compte se désactive, un droit se retire — pour que le journal
+puisse dire qui détenait quoi, et quand. Une connexion OIDC ou par mot de passe
+local s'y rattache et un compte inconnu n'ouvre rien ; l'administrateur de la
+configuration reste hors de cette table, derrière sa propre porte, fermée par
+défaut derrière un fournisseur
+([`oidc.md`](oidc.md), [`securite.md`](securite.md#qui-ouvre-ladministration),
+ADR [0093](decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)
+et [0094](decisions/0094-comptes-locaux-par-mot-de-passe.md)).
+
+`service/responsable/` sert le responsable de stand, lecture seule : l'édition
+**active** seulement, le plan **publié** seulement, les stands que son droit
+nomme. `ResponsableService` est la seule porte vers les sièges et rend une
+projection (`ResponsableView`), jamais un type du domaine ; les noms ne
+s'affichent que si `ReglagesResponsables` le dit à cet instant (défaut de
+l'édition, exception par stand). Le rôle n'ouvre que `/api/responsable/*`, et
+les droits de stand n'ont pas de clé étrangère vers `stand`, pour qu'un import
+de dump qui recrée les stands n'efface pas les droits
+([ADR 0095](decisions/0095-le-responsable-de-stand-lit-son-stand.md),
+périmètre de sécurité dans [`securite.md`](securite.md#le-responsable-de-stand--un-droit-de-lecture-pas-une-porte-de-plus)).
+
 ## Base de données
 
 `quarkus.flyway.migrate-at-start=true`. **Un changement de schéma = un nouveau
