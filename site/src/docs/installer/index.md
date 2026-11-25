@@ -7,6 +7,7 @@ docs:
   - courriels
   - comptes-locaux
   - oidc
+  - keycloak
   - securite
   - securite-navigateur
   - securite-acces-administration
@@ -50,6 +51,7 @@ Vous hébergez Planning Équipes pour un organisateur, ou pour vous-même : une 
 
 - [Créer les comptes de l'administration](comptes-locaux.md) : mot de passe, code par e-mail, compte de secours.
 - [Brancher votre annuaire d'entreprise](oidc.md) : connexion par un fournisseur OIDC.
+- [Brancher Keycloak](keycloak.md) : le realm, le client, l'assistant IA en OAuth et l'ordre de bascule.
 - [Savoir ce que chaque rôle peut appeler](securite-roles-et-droits.md) : administrateur, responsable de stand, ressources humaines, animateur.
 
 ## Je veux ne jamais perdre les données

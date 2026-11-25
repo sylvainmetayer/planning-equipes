@@ -10,6 +10,8 @@ Pour que vos organisateurs se connectent avec leur compte d'entreprise et le sec
 
 ## Déclarer l'application chez le fournisseur
 
+Pour Keycloak, le pas-à-pas est dans [Brancher Keycloak](keycloak.md).
+
 Créez un client confidentiel (flux « code d'autorisation » avec PKCE), puis déclarez ces deux adresses, exactes et sans joker : le `redirect_uri` envoyé suit l'en-tête `Host` de la requête, et un joker laisserait un hôte inattendu recevoir le code.
 
 | Adresse | Valeur |
