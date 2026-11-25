@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 // Absolute path: the build must not run whatever `git` a modified PATH would find
 const GIT = '/usr/bin/git';
 
-export default function () {
+export default function build() {
   let modified = new Date().toISOString().slice(0, 10);
   try {
     const out = execFileSync(GIT, ['log', '-1', '--format=%cs', '--', '.'], { encoding: 'utf8' }).trim();

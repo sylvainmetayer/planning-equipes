@@ -347,7 +347,10 @@ async function pdf(etat) {
   // Le plan enregistré est le corps de la requête, comme le fait l'interface
   const plan = await (await etat.api.get('/api/planning/persisted', { headers: etat.h })).json();
   const animatrice = await animatriceDesPdf(etat, plan);
-  const individuel = (format) => `/api/planning/export/pdf/animateur/${animatrice.id}${format ? `?format=${format}` : ''}`;
+  const individuel = (format) => {
+    const query = format ? `?format=${format}` : '';
+    return `/api/planning/export/pdf/animateur/${animatrice.id}${query}`;
+  };
   await telecharger(await etat.api.post(individuel(), { headers: etat.h, data: plan }), 'planning-animateur.pdf');
   await telecharger(await etat.api.post(individuel('feuille'), { headers: etat.h, data: plan }), 'planning-animateur-feuille.pdf');
 }

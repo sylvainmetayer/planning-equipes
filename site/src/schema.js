@@ -16,7 +16,7 @@ const faq = (lang, items) => ({
   mainEntity: items.map((i) => ({
     '@type': 'Question',
     name: typo(i.q, lang),
-    acceptedAnswer: { '@type': 'Answer', text: typo(i.a, lang).replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') },
+    acceptedAnswer: { '@type': 'Answer', text: typo(i.a, lang).replace(/\[([^\][]+)\]\([^)]*\)/g, '$1') },
   })),
 });
 
@@ -105,8 +105,7 @@ export default function schema(p, modified) {
       author: { '@id': site.author.id },
       publisher: { '@id': site.author.id },
       sameAs: [site.repo],
-    });
-    graph.push(faq(lang, copy[lang].faq.items.filter((i) => i.accueil)));
+    }, faq(lang, copy[lang].faq.items.filter((i) => i.accueil)));
     for (const f of page.images.films) {
       graph.push({
         '@type': 'VideoObject',

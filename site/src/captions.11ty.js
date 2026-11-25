@@ -5,7 +5,7 @@ import copyOf from './_data/copy.js';
 const copy = copyOf();
 const clock = (seconds) => `00:${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}.000`;
 
-export default class {
+export default class Captions {
   data() {
     const tracks = ['fr', 'en'].flatMap((lang) =>
       copy[lang].accueil.images.films.map((f) => ({ lang, id: f.id, seconds: f.secondes, text: copy[lang].accueil.images.filmsLabels.sansSon })),

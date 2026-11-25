@@ -1,4 +1,4 @@
-export default class {
+export default class MarkdownTwins {
   data() {
     return {
       pagination: { data: 'allPages', size: 1, alias: 'p' },

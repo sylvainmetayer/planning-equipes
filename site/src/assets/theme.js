@@ -19,7 +19,8 @@ const apply = () => {
   if (ATTR[state]) root.dataset.theme = ATTR[state];
   else delete root.dataset.theme;
   // a forced theme must also drive the browser chrome, whatever the system says
-  metas.forEach((m, i) => { m.content = state === 'sombre' ? COLORS[1] : state === 'clair' ? COLORS[0] : COLORS[i]; });
+  const forced = { sombre: COLORS[1], clair: COLORS[0] }[state];
+  metas.forEach((m, i) => { m.content = forced ?? COLORS[i]; });
 };
 apply();
 

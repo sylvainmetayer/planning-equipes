@@ -2,7 +2,7 @@ import copyOf from './copy.js';
 import { ANSWER_KEYS, urlOf } from '../lib.js';
 
 // urls[lang][key]: the path of a page, for the navigation and the links between pages
-export default function () {
+export default function urls() {
   const copy = copyOf();
   const urls = {};
   for (const lang of ['fr', 'en']) {

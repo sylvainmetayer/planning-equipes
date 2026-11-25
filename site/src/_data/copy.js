@@ -11,16 +11,14 @@ import { typo } from '../text.js';
 // {articles}, {Articles}, {mineurs}: the counts of articles.js, never typed in a text.
 const fill = (text, lang) => text.replace(/\{(articles|Articles|mineurs)\}/g, (_, k) => countWords(lang)[k]);
 
-const set = (value, lang) =>
-  typeof value === 'string'
-    ? typo(fill(value, lang), lang)
-    : Array.isArray(value)
-      ? value.map((v) => set(v, lang))
-      : value && typeof value === 'object'
-        ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, set(v, lang)]))
-        : value;
+const set = (value, lang) => {
+  if (typeof value === 'string') return typo(fill(value, lang), lang);
+  if (Array.isArray(value)) return value.map((v) => set(v, lang));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, set(v, lang)]));
+  return value;
+};
 
-export default function () {
+export default function copyOf() {
   const content = { fr: {}, en: {} };
   for (const name of PAGES) {
     const { en, ...fr } = JSON.parse(readFileSync(new URL(`./pages/${name}.json`, import.meta.url), 'utf8'));
