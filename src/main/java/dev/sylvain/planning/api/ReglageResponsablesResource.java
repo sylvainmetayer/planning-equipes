@@ -28,7 +28,9 @@ public class ReglageResponsablesResource {
         return reglages.get();
     }
 
+    /** The administrators' alone: showing names to a responsable is their decision. */
     @PUT
+    @InstanceOnly
     public ReglagesResponsables put(ReglagesResponsables reglage) {
         return reglages.replace(reglage);
     }

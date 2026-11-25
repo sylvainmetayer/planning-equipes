@@ -36,10 +36,18 @@ dans une URL, le statut d'une fiche), ou leur donner un compte.
 6. **Le périmètre d'un droit ne porte pas de clé étrangère vers `stand`**,
    comme `habilitation.edition_id` n'en porte pas vers `edition` : l'import d'un
    dump supprime puis recrée les stands, et une cascade effacerait les droits de
-   l'instance qui reçoit. Un stand disparu n'ouvre rien.
-7. **Les réglages de noms suivent l'édition** (export, duplication, suppression
-   en cascade avec le stand), contrairement aux droits, qui sont ceux de
-   personnes et ne se dupliquent pas.
+   l'instance qui reçoit. Un stand disparu
+   n'ouvre rien ; et comme les droits ne tombent pas avec lui, le vidage d'une
+   édition (reset, import) les retire explicitement, avec les réglages de noms
+   qui reviennent au défaut sûr (horaires seuls).
+7. **Les réglages de noms suivent l'édition** (export, suppression en cascade
+   avec le stand), contrairement aux droits, qui sont ceux de personnes et ne se
+   dupliquent pas. Une duplication les recopie **fermés** : le défaut n'est pas
+   copié et l'exception d'un stand redevient « horaires seuls » — l'administrateur
+   rouvre les noms dans la nouvelle édition.
+8. **Régler les noms est l'affaire des administrateurs** (`@InstanceOnly`) ; la
+   requête de réglage ne supprime que les exceptions qu'elle nomme, pour qu'un
+   client qui ne connaît pas un stand n'efface pas ce qui y est réglé.
 
 ## Alternatives écartées
 

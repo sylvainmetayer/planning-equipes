@@ -5310,5 +5310,6 @@
   "responsable.chargement": "Loading…",
   "responsable.effectif.une": "1 seat",
   "responsable.effectif.n": "{$places} seats",
-  "responsable.effectif.vides": "{$base} — {$vides} to fill"
+  "responsable.effectif.vides": "{$base} — {$vides} to fill",
+  "comptes.droit.responsableStands": "{$role} — {$edition} ({$stands})"
 }
