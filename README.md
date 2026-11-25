@@ -395,7 +395,9 @@ Formats d'échange détaillés dans
 | L'architecture technique | [`docs/architecture.md`](docs/architecture.md) |
 | Le modèle de domaine | [`docs/domaine.md`](docs/domaine.md) |
 | Le référentiel de contraintes | [`docs/contraintes.md`](docs/contraintes.md) |
-| L'API REST | [`docs/api.md`](docs/api.md) |
+| L'API REST (invariants et pièges ; la liste des endpoints est le contrat OpenAPI) | [`docs/api.md`](docs/api.md) |
+| Le serveur MCP (outils pour un assistant IA) | [`docs/mcp.md`](docs/mcp.md) |
+| La connexion par un fournisseur d'identité (OIDC) et le compte de secours | [`docs/oidc.md`](docs/oidc.md) |
 | Le durcissement avant mise sur Internet | [`docs/securite.md`](docs/securite.md) |
 | **Exploiter une instance** (installation, e-mails, sauvegarde, conservation) | [`docs/exploitation.md`](docs/exploitation.md) |
 | Héberger pour un tiers : sous-traitance et registre RGPD | [`docs/rgpd.md`](docs/rgpd.md) |
