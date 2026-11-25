@@ -3476,6 +3476,19 @@ export interface EntreeHistorique {
   verification?: StaffingVerification | null;
 }
 
+/** `GET /api/historique/auteurs`: who wrote lines in the edition, and since when the author is reliable. */
+export interface AuteursHistorique {
+  /** When the journal started naming the person's own account; `null` if unknown or no line of the edition is older. */
+  fiableDepuis: string | null;
+  auteurs: AuteurHistorique[];
+}
+
+/** One author: `valeur` is what `?auteur=` takes, `nom` is joined at read time (`null` for fixed identities). */
+export interface AuteurHistorique {
+  valeur: string;
+  nom: string | null;
+}
+
 /** One entry of the action inventory, from `GET /api/historique/actions`. */
 export interface ActionHistorique {
   code: string;

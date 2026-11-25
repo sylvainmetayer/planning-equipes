@@ -10,6 +10,19 @@ Règle de structure : une question, un écran, ses variantes en onglets (`?ongle
 
 L'état circule dans un seul sens : la page Solveur pousse le planning résolu, les calendriers le relisent en lecture seule et ne lancent jamais de résolution.
 
+## Redéployer sans casser les navigateurs ouverts
+
+Chaque page du frontend est chargée à la demande, sous un nom qui change avec son contenu (`chunk-*.js`) : un redéploiement remplace tout le lot. Un navigateur qui garde l'ancien shell en cache demanderait alors des fichiers qui n'existent plus, et chaque lien du menu échouerait en silence, sur mobile comme sur bureau.
+
+Deux mécanismes évitent d'avoir à demander aux utilisateurs de « vider leur cache » :
+
+- le serveur sert en `Cache-Control: no-cache` tout ce qui porte un nom stable : `index.html`, les catalogues `/i18n/*.json`, mais aussi le favicon, le `robots.txt`, les logos et les polices, que le build Angular recopie tels quels depuis `public/`. *Revalider avant réutilisation* : une requête conditionnelle répondue `304` tant que rien n'a changé. Les fichiers hashés, eux, restent cachés longtemps sans risque (`SpaCacheControlFilter`) ;
+- si un shell périmé tourne malgré tout (onglet resté ouvert pendant le redéploiement), le premier clic dont le chunk a disparu déclenche **un rechargement complet vers la page demandée** au lieu d'échouer en silence (`core/stale-chunk-reload.ts` côté frontend). Le rechargement *remplace* l'entrée d'historique : le shell cassé n'est pas laissé à un retour arrière près. Navigateur hors ligne, en revanche, rien ne se déclenche : un tunnel produit la même erreur qu'un chunk supprimé, et recharger y échangerait un lien mort contre la page « pas de connexion » et toute la session avec.
+
+Aucun réglage : redéployer suffit, les navigateurs se remettent d'aplomb à la visite suivante ou au premier clic.
+
+Pour diagnostiquer, retenez ce détail. Le routage SPA étant actif (`quarkus.quinoa.enable-spa-routing`), un chunk disparu ne donne pas un `404` mais un `200` avec l'`index.html` courant. C'est le mauvais type MIME qui fait échouer l'import dynamique. Dans la console du navigateur, cherchez *failed to fetch dynamically imported module* (ou son équivalent Firefox et WebKit), pas un code d'erreur HTTP.
+
 ## Trois lectures avant `bootstrapApplication()`
 
 [`main.ts`](repo:src/main/webui/src/main.ts) charge en parallèle le catalogue de traductions anglaises (seulement quand l'anglais est le choix retenu), `/api/config` et `/api/branding`, avant d'amorcer l'application. Le titre de l'onglet et le logo décident de la première image : aucun écran ne doit attendre un aller-retour pour savoir comment il s'appelle. Si le catalogue anglais ne se charge pas, l'application retombe sur le français plutôt que de rester blanche.

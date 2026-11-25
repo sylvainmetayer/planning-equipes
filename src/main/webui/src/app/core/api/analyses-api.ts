@@ -12,6 +12,7 @@ import {
   AdminLoginView,
   Emplacement,
   ActionHistorique,
+  AuteursHistorique,
   EntreeHistorique,
   KpiHistoriqueEntry,
   ModeMarge,
@@ -35,6 +36,7 @@ import {
  */
 export interface HistoryQuery {
   nature: 'exports' | 'donnees' | null;
+  auteur: string | null;
   depuis: string | null;
   jusqua: string | null;
   avant: number | null;
@@ -156,6 +158,7 @@ export class AnalysesApi {
   actionHistory(query: HistoryQuery): Promise<EntreeHistorique[]> {
     const params = new URLSearchParams({
       nature: query.nature ?? '',
+      auteur: query.auteur ?? '',
       depuis: query.depuis ?? '',
       jusqua: query.jusqua ?? '',
       avant: query.avant === null ? '' : `${query.avant}`,
@@ -176,6 +179,11 @@ export class AnalysesApi {
     });
     dropEmpty(params);
     return this.api.get<AdminLoginView[]>(`/api/historique/connexions?${params}`);
+  }
+
+  /** Who wrote the lines of the edition, and since when an author can be believed. */
+  historyAuthors(): Promise<AuteursHistorique> {
+    return this.api.get<AuteursHistorique>('/api/historique/auteurs');
   }
 
   /** The inventory of actions, with the server's classification of each. */

@@ -14,11 +14,21 @@ import java.util.Set;
  *                    count reads, a refused write having changed nothing
  * @param since       exclusive lower bound, as {@code countSince} reads it
  * @param until       inclusive upper bound
+ * @param author      one author — an account id, {@code mcp}, an animateur id, or
+ *                    {@link #SYSTEM_AUTHOR} for the nightly jobs —, {@code null} for any
  */
-public record HistoryFilter(Collection<String> codes, boolean successOnly, Instant since, Instant until) {
+public record HistoryFilter(
+        Collection<String> codes, boolean successOnly, Instant since, Instant until, String author) {
+
+    /** The value standing for the application's own work: lines written off any request. */
+    public static final String SYSTEM_AUTHOR = "systeme";
+
+    public HistoryFilter(Collection<String> codes, boolean successOnly, Instant since, Instant until) {
+        this(codes, successOnly, since, until, null);
+    }
 
     /** Every line, whenever. */
-    public static final HistoryFilter ALL = new HistoryFilter(null, false, null, null);
+    public static final HistoryFilter ALL = new HistoryFilter(null, false, null, null, null);
 
     public HistoryFilter {
         codes = codes == null ? null : Set.copyOf(codes);

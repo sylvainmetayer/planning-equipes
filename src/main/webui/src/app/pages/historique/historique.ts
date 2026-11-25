@@ -2,7 +2,12 @@
 // reads. No Angular here, so it is unit-tested without rendering anything.
 
 import { HistoryQuery } from '../../core/api/analyses-api';
-import { ActionHistorique, AdminLoginView, EntreeHistorique } from '../../core/models';
+import {
+  ActionHistorique,
+  AdminLoginView,
+  AuteurHistorique,
+  EntreeHistorique,
+} from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { compareCodeUnits } from '../../core/string-order';
 import { historyLabel } from '../staffing/verification';
@@ -57,12 +62,14 @@ export function natureQuery(nature: FiltreNature): 'exports' | 'donnees' | null 
  */
 export function historyQuery(
   nature: FiltreNature,
+  auteur: string,
   depuis: string,
   jusqua: string,
   avant: number | null,
 ): HistoryQuery {
   return {
     nature: natureQuery(nature),
+    auteur: auteur || null,
     depuis: depuis || null,
     jusqua: jusqua || null,
     avant,
@@ -86,6 +93,23 @@ export function cutPage<T extends { id: number }>(
   }
   const entrees = lignes.slice(0, PAGE_HISTORIQUE);
   return { entrees, suivant: entrees.at(-1)?.id ?? null };
+}
+
+/** How an author reads in the selector: the joined name, else what the fixed identity stands for. */
+export function authorLabel(auteur: AuteurHistorique): string {
+  if (auteur.nom) {
+    return auteur.nom;
+  }
+  switch (auteur.valeur) {
+    case 'systeme':
+      return $localize`:@@historique.auteur.systeme:Application (tâches de nuit)`;
+    case 'mcp':
+      return $localize`:@@historique.auteur.mcp:Assistant (clé MCP)`;
+    case 'admin':
+      return $localize`:@@historique.auteur.admin:Compte de configuration`;
+    default:
+      return auteur.valeur;
+  }
 }
 
 /** Which tab the page shows: what was done in the edition, or who signed in. */

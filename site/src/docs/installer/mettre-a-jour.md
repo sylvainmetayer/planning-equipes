@@ -35,16 +35,7 @@ Chaque démarrage réussi d'une **autre** version que la précédente est noté 
 
 ## 3. Redéployer sans casser les navigateurs ouverts
 
-Chaque page du frontend est chargée à la demande, sous un nom qui change avec son contenu (`chunk-*.js`) : un redéploiement remplace tout le lot. Un navigateur qui garde l'ancien shell en cache demanderait alors des fichiers qui n'existent plus, et chaque lien du menu échouerait en silence, sur mobile comme sur bureau.
-
-Deux mécanismes évitent d'avoir à demander aux utilisateurs de « vider leur cache » :
-
-- le serveur sert en `Cache-Control: no-cache` tout ce qui porte un nom stable : `index.html`, les catalogues `/i18n/*.json`, mais aussi le favicon, le `robots.txt`, les logos et les polices, que le build Angular recopie tels quels depuis `public/`. *Revalider avant réutilisation* : une requête conditionnelle répondue `304` tant que rien n'a changé. Les fichiers hashés, eux, restent cachés longtemps sans risque (`SpaCacheControlFilter`) ;
-- si un shell périmé tourne malgré tout (onglet resté ouvert pendant le redéploiement), le premier clic dont le chunk a disparu déclenche **un rechargement complet vers la page demandée** au lieu d'échouer en silence (`core/stale-chunk-reload.ts` côté frontend). Le rechargement *remplace* l'entrée d'historique : le shell cassé n'est pas laissé à un retour arrière près. Navigateur hors ligne, en revanche, rien ne se déclenche : un tunnel produit la même erreur qu'un chunk supprimé, et recharger y échangerait un lien mort contre la page « pas de connexion » et toute la session avec.
-
-Aucun réglage : redéployer suffit, les navigateurs se remettent d'aplomb à la visite suivante ou au premier clic.
-
-Pour diagnostiquer, retenez ce détail. Le routage SPA étant actif (`quarkus.quinoa.enable-spa-routing`), un chunk disparu ne donne pas un `404` mais un `200` avec l'`index.html` courant. C'est le mauvais type MIME qui fait échouer l'import dynamique. Dans la console du navigateur, cherchez *failed to fetch dynamically imported module* (ou son équivalent Firefox et WebKit), pas un code d'erreur HTTP.
+Il n'y a rien à vider ni à demander aux utilisateurs : après une mise à jour, l'application recharge d'elle-même ses fichiers, à la visite suivante ou au premier clic d'un onglet resté ouvert. Aucun réglage, redéployer suffit. Le détail du mécanisme, utile seulement pour diagnostiquer un écran blanc après une mise à jour, est dans [Le frontend Angular](../comprendre/frontend.md#redéployer-sans-casser-les-navigateurs-ouverts).
 
 ## 4. Les montées qui demandent un geste
 

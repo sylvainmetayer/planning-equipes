@@ -89,17 +89,25 @@ function renderer(published, state) {
     const cls = lang ? ` class="language-${escapeHtml(lang)}"` : '';
     return `<pre class="scroll" role="group" aria-label="Code" tabindex="0"><code${cls}>${escapeHtml(t.content)}</code></pre>\n`;
   };
-  // A capture is a figure that opens in the site's dialog (/assets/popin.js); without script the link opens the image
+  // A capture is a figure with its caption under it, and opens in the site's dialog (/assets/popin.js); without script the link opens the image
+  const shot = (inline) => {
+    const [c] = inline.children;
+    return inline.children.length === 1 && c.type === 'image' && c.attrGet('src').startsWith('/images/') ? c : null;
+  };
+  // A figure cannot sit in a paragraph: a paragraph holding a capture alone renders as the figure
+  const paragraph = (tag) => (tokens, i, o, e, self) => (shot(tokens[tag === 'p' ? i + 1 : i - 1]) ? '' : self.renderToken(tokens, i, o));
+  md.renderer.rules.paragraph_open = paragraph('p');
+  md.renderer.rules.paragraph_close = paragraph('/p');
   md.renderer.rules.image = (tokens, i) => {
     const t = tokens[i];
     const src = t.attrGet('src');
     const alt = escapeHtml(plain(t));
-    const caption = t.attrGet('title');
     const size = imageSize(src);
     const dims = size ? ` width="${size[0]}" height="${size[1]}"` : '';
     const img = `<img src="${escapeHtml(src)}" alt="${alt}"${dims} loading="lazy" decoding="async">`;
     if (!src.startsWith('/images/')) return img;
-    return `<a class="shot" href="${escapeHtml(src)}" data-popin="docs" data-caption="${escapeHtml(caption ?? t.content)}">${img}</a>`;
+    const caption = escapeHtml(t.attrGet('title') ?? t.content);
+    return `<figure class="capture"><a class="shot" href="${escapeHtml(src)}" data-popin="docs" data-caption="${caption}">${img}</a><figcaption>${caption}</figcaption></figure>\n`;
   };
   md.renderer.rules.code_block = (tokens, i) => `<pre class="scroll" role="group" aria-label="Code" tabindex="0"><code>${escapeHtml(tokens[i].content)}</code></pre>\n`;
   md.core.ruler.push('docs', (s) => {
