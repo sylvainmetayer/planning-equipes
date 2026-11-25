@@ -565,14 +565,16 @@ function syntheseOf(
   const synthese: Record<string, ValeurSynthese> = {};
   for (const key of keys) {
     const amount = valeurs[key] ?? null;
-    synthese[key] = isWeek(key)
-      ? weekValue(key, amount)
-      : key === AMPLITUDE_MAX || key === JOURS_AMPLITUDE
-        ? amplitudeValue(key, amount)
-        : {
-            texte: formatValue(key, amount),
-            classe: key === MEDIAN_GAP || key === 'heuresTotal' ? gap : '',
-          };
+    if (isWeek(key)) {
+      synthese[key] = weekValue(key, amount);
+    } else if (key === AMPLITUDE_MAX || key === JOURS_AMPLITUDE) {
+      synthese[key] = amplitudeValue(key, amount);
+    } else {
+      synthese[key] = {
+        texte: formatValue(key, amount),
+        classe: key === MEDIAN_GAP || key === 'heuresTotal' ? gap : '',
+      };
+    }
   }
   return synthese;
 }

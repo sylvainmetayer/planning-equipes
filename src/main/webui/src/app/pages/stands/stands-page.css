@@ -9,5 +9,9 @@
   border-radius: 1rem;
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
+  font: inherit;
   font-size: 0.85em;
+  /* A button only so that the keyboard reaches the tooltip: it acts on nothing */
+  border: 0;
+  cursor: help;
 }

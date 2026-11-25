@@ -12,7 +12,7 @@
   <h1 class="rh-entete" i18n="@@rh.title">Conformité RH</h1>
   <app-status-message [text]="erreur()" tone="error" />
   @if (liste().length === 0) {
-    <p class="empty-hint" role="status" i18n="@@rh.aucune">Aucune édition à afficher : vos droits ne nomment aucune édition.</p>
+    <output class="empty-hint status-paragraph" i18n="@@rh.aucune">Aucune édition à afficher : vos droits ne nomment aucune édition.</output>
   } @else {
     <mat-form-field>
       <mat-label i18n="@@rh.edition">Édition</mat-label>

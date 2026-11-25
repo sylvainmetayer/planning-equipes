@@ -277,7 +277,7 @@ export class SolverJobService {
    */
   readonly feasibleSinceSeconds = computed(() => {
     const job = this.activeJob();
-    if (!job || job.feasibleAtSeconds == null) {
+    if (job?.feasibleAtSeconds == null) {
       return null;
     }
     const since = job.startedAtMs + job.feasibleAtSeconds * 1000;
@@ -744,6 +744,29 @@ export class SolverJobService {
     }
   }
 
+  // What a running job learns after it was adopted: the feasibility instant and
+  // the remote stage; the rest of the entry stays as it was.
+  private refreshTracked(tracked: TrackedJob, job: JobView, mine: boolean): void {
+    const feasibleAtSeconds = job.feasibleAtSeconds ?? null;
+    const remoteStage = job.remoteStage ?? null;
+    const stageChanged = remoteStage !== (tracked.remoteStage ?? null);
+    if (
+      !(mine && !tracked.mine) &&
+      feasibleAtSeconds === (tracked.feasibleAtSeconds ?? null) &&
+      !stageChanged
+    ) {
+      return;
+    }
+    const preparingDone = stageChanged && tracked.remoteStage === 'PREPARING';
+    this._activeJob.set({
+      ...tracked,
+      mine: tracked.mine || mine,
+      feasibleAtSeconds,
+      remoteStage,
+      budgetStartMs: preparingDone ? Date.now() : tracked.budgetStartMs,
+    });
+  }
+
   // Starts the local view of the server-side job. Elapsed time is rebased on
   // the server value so every client shows the same duration, whatever its
   // clock or when it connected. A job already followed is left untouched, so
@@ -751,27 +774,7 @@ export class SolverJobService {
   private adopt(job: JobView, mine: boolean): void {
     const tracked = this.activeJob();
     if (tracked?.id === job.id) {
-      const feasibleAtSeconds = job.feasibleAtSeconds ?? null;
-      const remoteStage = job.remoteStage ?? null;
-      const stageChanged = remoteStage !== (tracked.remoteStage ?? null);
-      if (
-        (mine && !tracked.mine) ||
-        feasibleAtSeconds !== (tracked.feasibleAtSeconds ?? null) ||
-        stageChanged
-      ) {
-        // The feasibility instant and the remote stage are what a running job
-        // learns after it was adopted; the rest of the entry stays as it was.
-        this._activeJob.set({
-          ...tracked,
-          mine: tracked.mine || mine,
-          feasibleAtSeconds,
-          remoteStage,
-          budgetStartMs:
-            stageChanged && tracked.remoteStage === 'PREPARING'
-              ? Date.now()
-              : tracked.budgetStartMs,
-        });
-      }
+      this.refreshTracked(tracked, job, mine);
       return;
     }
     // A job planned from this browser stays "mine" when it starts on its own,

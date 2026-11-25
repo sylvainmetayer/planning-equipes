@@ -22,9 +22,9 @@
       }
     </header>
     @if (v.stands.length === 0) {
-      <p class="empty-hint" role="status" i18n="@@responsable.aucun">
+      <output class="empty-hint status-paragraph" i18n="@@responsable.aucun">
         Aucun stand à afficher pour l'instant : vos droits ne s'appliquent qu'à l'édition en cours.
-      </p>
+      </output>
     } @else {
       @for (stand of v.stands; track stand.standId) {
         <mat-card appearance="outlined" class="responsable-stand">
@@ -65,6 +65,6 @@
       }
     }
   } @else if (!erreur()) {
-    <p class="empty-hint" role="status" i18n="@@responsable.chargement">Chargement…</p>
+    <output class="empty-hint status-paragraph" i18n="@@responsable.chargement">Chargement…</output>
   }
 </main>

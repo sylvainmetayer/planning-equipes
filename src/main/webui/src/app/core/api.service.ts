@@ -212,6 +212,14 @@ export class SessionExpireeError extends ApiError {
   }
 }
 
+/** The sentence for a failure whose body carried none. */
+function failureMessage(status: number): string {
+  if (status === 403) {
+    return $localize`:@@api.forbidden:Action réservée aux administrateurs.`;
+  }
+  return $localize`:@@api.requestFailed:Échec de la requête (code ${status}:status:)`;
+}
+
 /**
  * Turns an HTTP failure into a readable Error: the server message when the
  * backend sent one, the status code otherwise. A 401 becomes a
@@ -224,20 +232,12 @@ export function toError(error: unknown): Error {
     }
     const body = error.error as
       { message?: string; code?: string; modifieLe?: string } | string | null;
-    const message =
-      body && typeof body === 'object' && body.message
-        ? body.message
-        : error.status === 403
-          ? $localize`:@@api.forbidden:Action réservée aux administrateurs.`
-          : $localize`:@@api.requestFailed:Échec de la requête (code ${error.status}:status:)`;
-    const code =
-      body && typeof body === 'object' && typeof body.code === 'string' ? body.code : null;
+    const fields = body && typeof body === 'object' ? body : null;
+    const message = fields?.message || failureMessage(error.status);
+    const code = typeof fields?.code === 'string' ? fields.code : null;
     // Produced here and nowhere else: every caller can now switch on `kind`
     // instead of re-deriving the meaning from the message text.
-    const modifieLe =
-      body && typeof body === 'object' && typeof body.modifieLe === 'string'
-        ? body.modifieLe
-        : null;
+    const modifieLe = typeof fields?.modifieLe === 'string' ? fields.modifieLe : null;
     return new ApiError(error.status, kindForStatus(error.status), message, code, modifieLe);
   }
   return error instanceof Error ? error : new Error(String(error));

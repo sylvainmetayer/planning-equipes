@@ -87,13 +87,13 @@ export function buildDestinationsNavigation(devMode = false, admin = true): Comm
 }
 
 /** The tabs of Paramètres the server refuses to an organiser (`ONGLETS_ADMIN` there, plus the connections journal). */
-const ONGLETS_PARAMETRES_ADMIN = ['comptes', 'instance', 'mcp', 'connexions'];
+const ONGLETS_PARAMETRES_ADMIN = new Set(['comptes', 'instance', 'mcp', 'connexions']);
 
 function adminOnly(entry: CommandePalette): boolean {
   const onglet = entry.queryParams?.['onglet'];
   return (
     entry.route === '/debug' ||
-    (entry.route === '/parametres' && !!onglet && ONGLETS_PARAMETRES_ADMIN.includes(onglet))
+    (entry.route === '/parametres' && !!onglet && ONGLETS_PARAMETRES_ADMIN.has(onglet))
   );
 }
 
