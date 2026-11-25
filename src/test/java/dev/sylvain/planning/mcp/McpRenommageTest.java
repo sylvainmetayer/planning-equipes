@@ -1,0 +1,174 @@
+package dev.sylvain.planning.mcp;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+
+/**
+ * {@code mcp-renommages.tsv} maps every tool name published on {@code v3.1.0} to its current
+ * name, or to {@code retiré} (ADR 0100). The 3.1.0 list is frozen in a test resource, copied
+ * from the tag once: a CI checkout carries no tags to read it from.
+ */
+class McpRenommageTest {
+
+    private static final Path TABLE = Path.of("src/main/resources/mcp-renommages.tsv");
+    private static final Path V3_1_0 = Path.of("src/test/resources/mcp-outils-v3.1.0.txt");
+    private static final Path DOC = Path.of("site/src/docs/comprendre/mcp-outils.md");
+    private static final String DEBUT = "<!-- mcp-renommages:debut -->";
+    private static final String FIN = "<!-- mcp-renommages:fin -->";
+
+    static final String NOTHING_RENAMED = "Aucun outil n'est encore renommé ni retiré.";
+    private static final String REMOVED = "retiré";
+
+    /** {@code <verbe>_<objet>}, the verb drawn from the closed set of ADR 0100. */
+    static final Pattern CONVENTION = Pattern.compile("(?:lister|consulter|analyser|diagnostiquer|comparer|simuler"
+            + "|previsualiser|creer|modifier|supprimer|activer|desactiver|verrouiller|deverrouiller|appliquer"
+            + "|lancer|arreter|importer|exporter|publier|envoyer)(?:_[a-z0-9]+)+");
+
+    static Map<String, String> table(String tsv) {
+        Map<String, String> rows = new LinkedHashMap<>();
+        for (String line : tsv.split("\n")) {
+            if (line.isBlank() || line.startsWith("#")) {
+                continue;
+            }
+            String[] cells = line.split("\t", -1);
+            assertThat(cells).as("two tab-separated columns: %s", line).hasSize(2);
+            assertThat(rows.put(cells[0], cells[1]))
+                    .as("duplicate row for %s", cells[0])
+                    .isNull();
+        }
+        return rows;
+    }
+
+    /** Why a row is wrong, or {@code null}: the whole contract of the table, on plain data. */
+    static String violation(Set<String> frozen, Set<String> published, Map<String, String> table) {
+        if (!table.keySet().equals(frozen)) {
+            Set<String> missing = new TreeSet<>(frozen);
+            missing.removeAll(table.keySet());
+            Set<String> extra = new TreeSet<>(table.keySet());
+            extra.removeAll(frozen);
+            return "rows must be exactly the names of v3.1.0; missing " + missing + ", not of v3.1.0 " + extra;
+        }
+        for (var row : table.entrySet()) {
+            String old = row.getKey();
+            String now = row.getValue();
+            if (REMOVED.equals(now)) {
+                if (published.contains(old)) {
+                    return old + " is retired but still published";
+                }
+            } else if (!published.contains(now)) {
+                return old + " -> " + now + ": the server publishes no " + now;
+            } else if (!old.equals(now) && !CONVENTION.matcher(now).matches()) {
+                return old + " -> " + now + ": not <verbe>_<objet> with a verb of ADR 0100";
+            }
+        }
+        return null;
+    }
+
+    /** The table of {@code mcp-outils.md}: only the rows that changed something. */
+    static String rendered(Map<String, String> table) {
+        String rows = table.entrySet().stream()
+                .filter(row -> !row.getKey().equals(row.getValue()))
+                .map(row -> "| `" + row.getKey() + "` | "
+                        + (REMOVED.equals(row.getValue()) ? REMOVED : "`" + row.getValue() + "`") + " |")
+                .collect(Collectors.joining("\n"));
+        // An empty table is a header with no data cell, which axe refuses (th-has-data-cells).
+        if (rows.isEmpty()) {
+            return NOTHING_RENAMED;
+        }
+        return ("| Nom en 3.x | Nom en 4.0 |\n| --- | --- |\n" + rows).strip();
+    }
+
+    private static Map<String, String> table() throws IOException {
+        return table(Files.readString(TABLE, StandardCharsets.UTF_8));
+    }
+
+    private static Set<String> published() throws Exception {
+        return OutilsMcp.all().stream().map(FeatureNames::of).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    @Test
+    void theTableAccountsForEveryNameOfV310() throws Exception {
+        Set<String> frozen = Files.readAllLines(V3_1_0).stream()
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toCollection(TreeSet::new));
+        assertThat(frozen).as("the frozen 3.1.0 list").hasSize(157);
+        assertThat(violation(frozen, published(), table())).isNull();
+    }
+
+    @Test
+    void theDocumentationShowsTheTable() throws IOException {
+        String doc = Files.readString(DOC, StandardCharsets.UTF_8);
+        int debut = doc.indexOf(DEBUT);
+        int fin = doc.indexOf(FIN);
+        assertThat(debut).as("marker %s in %s", DEBUT, DOC).isNotNegative();
+        assertThat(fin).as("marker %s in %s", FIN, DOC).isGreaterThan(debut);
+        String attendu = rendered(table());
+        assertThat(doc.substring(debut + DEBUT.length(), fin).strip())
+                .as("the renamed tools table of %s is stale. Paste between the markers:\n\n%s\n", DOC, attendu)
+                .isEqualTo(attendu);
+    }
+
+    /* The guards above, each shown to fire on the mistake it exists for. */
+
+    @Test
+    void aToolGoneWithoutARowFails() {
+        assertThat(violation(
+                        Set.of("lister_stands", "volumes"),
+                        Set.of("lister_stands"),
+                        Map.of("lister_stands", "lister_stands")))
+                .contains("missing [volumes]");
+    }
+
+    @Test
+    void aRowNamingAnUnpublishedToolFails() {
+        assertThat(violation(Set.of("volumes"), Set.of("lister_stands"), Map.of("volumes", "volumes")))
+                .contains("publishes no volumes");
+    }
+
+    @Test
+    void aRetiredToolStillPublishedFails() {
+        assertThat(violation(Set.of("volumes"), Set.of("volumes"), Map.of("volumes", REMOVED)))
+                .contains("still published");
+    }
+
+    @Test
+    void aRenameOutsideTheConventionFails() {
+        assertThat(violation(Set.of("volumes"), Set.of("volumes_lister"), Map.of("volumes", "volumes_lister")))
+                .contains("not <verbe>_<objet>");
+        assertThat(violation(Set.of("volumes"), Set.of("calculer_volumes"), Map.of("volumes", "calculer_volumes")))
+                .contains("not <verbe>_<objet>");
+        assertThat(violation(Set.of("volumes"), Set.of("lister"), Map.of("volumes", "lister")))
+                .contains("not <verbe>_<objet>");
+        assertThat(violation(Set.of("volumes"), Set.of("consulter_volumes"), Map.of("volumes", "consulter_volumes")))
+                .isNull();
+    }
+
+    @Test
+    void anUnchangedTableRendersASentenceNotAnEmptyTable() {
+        Map<String, String> table = new LinkedHashMap<>();
+        table.put("lister_stands", "lister_stands");
+        assertThat(rendered(table)).isEqualTo(NOTHING_RENAMED);
+    }
+
+    @Test
+    void theRenderingKeepsOnlyChangedRows() {
+        Map<String, String> table = new LinkedHashMap<>();
+        table.put("lister_stands", "lister_stands");
+        table.put("volumes", "consulter_volumes");
+        table.put("lever_gel", REMOVED);
+        assertThat(rendered(table))
+                .isEqualTo("| Nom en 3.x | Nom en 4.0 |\n| --- | --- |\n"
+                        + "| `volumes` | `consulter_volumes` |\n| `lever_gel` | retiré |");
+    }
+}

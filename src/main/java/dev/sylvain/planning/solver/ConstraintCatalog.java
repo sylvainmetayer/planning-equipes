@@ -827,6 +827,18 @@ public final class ConstraintCatalog {
             .map(ConstraintDefinition::name)
             .collect(Collectors.toUnmodifiableSet());
 
+    /** Marks a rule of {@link #ANCIENS_NOMS} removed in 4.0 rather than renamed. */
+    public static final String RETIREE = "retirée";
+
+    /**
+     * Every constraint name dropped in 4.0, mapped to the name that replaces it
+     * or to {@link #RETIREE}: a stored toggle, weight or scenario key naming a
+     * rule that no longer exists is then never « unknown ». Empty until a 4.0
+     * rule merge or rename fills it; the API, the YAML reader and the import
+     * will read it then.
+     */
+    public static final Map<String, String> ANCIENS_NOMS = Map.of();
+
     /**
      * Whether {@code nom} is enforced when nothing says otherwise. Read by
      * {@code ConstraintToggleSupport}, so a harness that hands the solver no
