@@ -281,6 +281,8 @@ public final class SolveWorkerServer implements AutoCloseable {
      * and {@code SOLVER_WORKER_TLS_KEYSTORE_PASSWORD} switch HTTPS on, and
      * the listening address from the loopback one to every interface.
      */
+    // args unused: docker/entrypoint.sh forwards its own, the worker reads only its environment.
+    @SuppressWarnings("java:S1172")
     public static void main(String[] args) throws GeneralSecurityException, IOException {
         // Before anything logs: the solver logs through the JBoss log manager,
         // and only as the JDK's own does its root logger carry the tail above.

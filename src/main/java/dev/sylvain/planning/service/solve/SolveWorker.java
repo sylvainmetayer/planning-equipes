@@ -138,6 +138,8 @@ public final class SolveWorker {
         private volatile boolean stopRequested;
         private final AtomicReference<Solver<PlanningEvenement>> solver = new AtomicReference<>();
 
+        // Any Error too (OutOfMemoryError, StackOverflowError) must end as FAILED, or the caller polls forever.
+        @SuppressWarnings("java:S1181")
         void execute(PlanningEvenement problem, SolverConfiguration.SearchSettings settings) {
             try {
                 SolverConfiguration configuration = SolverConfiguration.ofSettings(settings);
