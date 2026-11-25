@@ -14,12 +14,16 @@ export const ROLE_RESPONSABLE = 'responsable_stand';
 /** The role that reads one edition's compliance report, and nothing else. */
 export const ROLE_RH = 'rh';
 
+/** The role that sees what an organiser sees in its editions and changes nothing (ADR 0099). */
+export const ROLE_LECTEUR = 'lecteur';
+
 /** True when someone is signed in but no role of the application opens anything for them. */
 export function signedInWithoutAccess(statut: StatutSession): boolean {
   return (
     statut.authentifie &&
     !statut.roles.includes(ROLE_ADMIN) &&
     !statut.roles.includes(ROLE_ORGANISATEUR) &&
+    !statut.roles.includes(ROLE_LECTEUR) &&
     !statut.roles.includes(ROLE_RESPONSABLE) &&
     !statut.roles.includes(ROLE_RH)
   );
@@ -31,7 +35,8 @@ export function responsableOnly(statut: StatutSession): boolean {
     statut.authentifie &&
     statut.roles.includes(ROLE_RESPONSABLE) &&
     !statut.roles.includes(ROLE_ADMIN) &&
-    !statut.roles.includes(ROLE_ORGANISATEUR)
+    !statut.roles.includes(ROLE_ORGANISATEUR) &&
+    !statut.roles.includes(ROLE_LECTEUR)
   );
 }
 
@@ -42,6 +47,20 @@ export function rhOnly(statut: StatutSession): boolean {
     statut.roles.includes(ROLE_RH) &&
     !statut.roles.includes(ROLE_ADMIN) &&
     !statut.roles.includes(ROLE_ORGANISATEUR) &&
+    !statut.roles.includes(ROLE_LECTEUR) &&
     !statut.roles.includes(ROLE_RESPONSABLE)
+  );
+}
+
+/**
+ * True for an account that reads and never writes: a lecteur right, no organiser one, not an administrator.
+ * It only hides the actions; the server refuses every write (403), and decides per edition.
+ */
+export function lectureSeule(statut: StatutSession | null): boolean {
+  return (
+    statut !== null &&
+    statut.roles.includes(ROLE_LECTEUR) &&
+    !statut.roles.includes(ROLE_ADMIN) &&
+    !statut.roles.includes(ROLE_ORGANISATEUR)
   );
 }

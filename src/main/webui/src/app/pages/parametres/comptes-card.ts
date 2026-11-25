@@ -182,9 +182,9 @@ export class ComptesCard implements OnInit {
   protected async grantRight(compte: Compte): Promise<void> {
     const role = this.role();
     const responsable = role === 'RESPONSABLE_STAND';
-    // A responsable's and an RH right are one edition's: the one this browser works in.
+    // A responsable's, an RH and a lecteur right are one edition's: the one this browser works in.
     const edition =
-      responsable || role === 'RH'
+      responsable || role === 'RH' || role === 'LECTEUR'
         ? (this.editionStore.courant()?.id ?? ALL_EDITIONS)
         : this.edition();
     await this.run(async () => {

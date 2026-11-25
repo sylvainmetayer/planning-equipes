@@ -30,6 +30,7 @@ Le jeton ne vaut que pour **un compte actif** de l'application qui a un droit d'
 
 - Un **administrateur** dispose des mêmes outils qu'avec la clé.
 - Un **organisateur** ne désigne que les éditions de ses droits : une autre est refusée comme inconnue et `lister_editions` ne la montre pas. Il n'a pas les outils d'instance (création, renommage, duplication, activation, désactivation, suppression et comparaison d'éditions, sauvegardes). Les outils de jobs (`lister_jobs`, `statut_solveur`, `arreter_solveur`, `supprimer_job`) se limitent à ses éditions, et un outil sans argument `edition` ne retombe jamais sur une édition active hors de ses droits. `McpEditionStructurelleTest` impose que tout outil sans édition soit `@InstanceOnlyTool` ou justifié.
+- Un **lecteur** (droit en lecture seule d'une édition) n'a que les outils qui déclarent `readOnlyHint = true` sans calculer (`@Computes` : simulations, prévisualisations, réparations…), sur ses éditions ; les autres répondent par un refus métier ([ADR 0099](repo:docs/decisions/0099-le-lecteur-voit-sans-rien-ecrire.md)).
 
 Le journal des actions garde l'assistant comme auteur, comme avec la clé.
 

@@ -606,3 +606,15 @@ a.referentiel-nom {
   gap: 1rem;
   margin-top: 0.5rem;
 }
+
+/* A lecteur (ADR 0099) reads and changes nothing: the primary actions are hidden, the server refuses them anyway. */
+.lecture-seule mat-sidenav-content button[matButton='filled'] {
+  display: none;
+}
+
+.lecture-seule-bandeau {
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}

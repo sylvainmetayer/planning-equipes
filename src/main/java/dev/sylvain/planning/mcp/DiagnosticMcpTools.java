@@ -456,6 +456,7 @@ public class DiagnosticMcpTools {
                 referenceDataService.countCreneauUsages(creneauIds == null ? List.of() : creneauIds));
     }
 
+    @Computes
     @Tool(
             name = "previsualiser_import",
             description = "Ce qu'un import de scénario écraserait dans l'édition : nombre d'animateurs, de stands, "

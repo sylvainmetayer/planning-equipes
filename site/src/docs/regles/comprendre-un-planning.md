@@ -6,6 +6,8 @@ Un planning laisse des places vides ou une règle cède : vous savez pourquoi, o
 
 Tout se lit dans *Diagnostic* (groupe *Planifier*) et, pour le résumé, en tête de la page Solveur.
 
+Pourquoi un calcul peut ne rien trouver, en termes simples : [quand le calcul ne trouve aucune solution](/comment-marche-le-calcul/).
+
 ## Lire le bilan en quelques phrases
 
 Le score se dit sans vocabulaire technique : 

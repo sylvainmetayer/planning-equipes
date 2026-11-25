@@ -4,6 +4,8 @@ Vous remplissez une édition depuis vos tableurs, vous exportez ce que vous voul
 
 Tout se passe dans *Fichiers* (groupe *Préparer*), un écran à trois onglets : *Importer*, *Exporter*, *Archive*. Chaque écran de référentiel a en plus son bouton « Importer », qui ouvre la même carte d'import sans quitter la liste. Le cycle complet tient en trois gestes : exporter, corriger dans le tableur, réimporter.
 
+Votre point de départ est un tableur ? [Passer d'un tableur à un logiciel de planning](/tableur-ou-logiciel-de-planning/) dit ce que ce changement apporte, et quand il ne s'impose pas.
+
 ## Importer
 
 L'onglet *Importer* propose une carte par référentiel, dans l'ordre où les données se tiennent :

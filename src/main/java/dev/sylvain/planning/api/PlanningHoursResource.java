@@ -37,6 +37,7 @@ public class PlanningHoursResource {
 
     @GET
     @Path("/export")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportCsv(@QueryParam("source") @Schema(enumeration = {"persiste", "publie"}) String source) {
         HoursReading reading = reader.read(Source.parse(source).orElse(null));

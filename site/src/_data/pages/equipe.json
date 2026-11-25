@@ -7,23 +7,23 @@
   "sections": [
     {
       "h2": "Salariés, bénévoles ou les deux",
-      "texte": "L'outil ne fait pas de différence : chacun a des disponibilités, des compétences et des souhaits, et il est placé sur un stand et un créneau. Ce qui change pour des bénévoles est dans [les questions](/questions/#benevoles). Pour un salon ou une foire, voir [un planning de salon ou de foire](/planning-salon-foire/)."
+      "texte": "L'outil ne fait pas de différence : chacun a des disponibilités, des compétences et des souhaits, et il est placé sur un stand et un créneau. Ce qui change pour des bénévoles est dans [les questions](/questions/#benevoles). Pour un salon ou une foire, voir [un planning de salon ou de foire](/planning-salon-foire/). Combien de personnes recruter se calcule avant toute saisie : voir [dimensionner l'équipe](/docs/regles/dimensionner-l-equipe/). Pour un festival, voir [le planning de festival](/planning-festival/) ; pour une course ou un tournoi, [l'événement sportif](/planning-evenement-sportif/)."
     },
     {
       "h2": "Importer le tableur",
-      "texte": "Les animateurs s'importent depuis un fichier CSV, avec un aperçu de ce qui serait créé ou refusé avant toute écriture. Compétences, souhaits et jours d'indisponibilité se saisissent ensuite fiche par fiche, ou en bloc dans une grille. Hésitez-vous entre garder le tableur et un logiciel ? [Comparez tableur et logiciel de planning](/tableur-ou-logiciel-de-planning/). Un fichier qui résiste à l'import ? [Envoyez-nous votre tableur](/contact/)."
+      "texte": "Les animateurs s'importent depuis un fichier CSV, avec un aperçu de ce qui serait créé ou refusé avant toute écriture. Compétences, souhaits et jours d'indisponibilité se saisissent ensuite fiche par fiche, ou en bloc dans une grille. Hésitez-vous entre garder le tableur et un logiciel ? [Comparez tableur et logiciel de planning](/tableur-ou-logiciel-de-planning/). Un fichier qui résiste à l'import ? [Envoyez-nous votre tableur](/contact/). Les fiches se remplissent selon [saisir les animateurs et leurs compétences](/docs/regles/animateurs-et-competences/)."
     },
     {
       "h2": "Collecter les disponibilités",
-      "texte": "Chacun déclare depuis son téléphone les jours où il n'est pas disponible. Sans déclaration, une personne est disponible. L'organisation relit les déclarations avant qu'elles entrent dans le calcul."
+      "texte": "Chacun déclare depuis son téléphone les jours où il n'est pas disponible. Sans déclaration, une personne est disponible. L'organisation relit les déclarations avant qu'elles entrent dans le calcul. Le guide [collecter les disponibilités des animateurs](/docs/regles/collecter-disponibilites/) détaille la période."
     },
     {
       "h2": "Ce que chacun reçoit",
-      "texte": "- un lien et un code par e-mail, valable 10 minutes ;\n- son planning, le prochain poste en tête, et le bouton « J'ai lu et je serai là » ;\n- une feuille PDF avec un QR code, et un abonnement à son agenda ;\n- des échanges en libre-service, que l'organisation arbitre ;\n- ses coéquipiers sur chaque créneau."
+      "texte": "- un lien et un code par e-mail, valable 10 minutes ;\n- son planning, le prochain poste en tête, et le bouton « J'ai lu et je serai là » ;\n- une feuille PDF avec un QR code, et un abonnement à son agenda ;\n- des échanges en libre-service, que l'organisation arbitre ;\n- ses coéquipiers sur chaque créneau. Ce que chacun voit est décrit dans [l'espace des animateurs](/docs/regles/espace-animateur/)."
     },
     {
       "h2": "Des mineurs dans l'équipe",
-      "texte": "Chacun se voit appliquer le droit de son âge réel à la date de chaque créneau (moins de 16 ans, 16 à 18 ans), sans rien saisir de plus. Le détail est sur la page [Code du travail](/code-du-travail/)."
+      "texte": "Chacun se voit appliquer le droit de son âge réel à la date de chaque créneau (moins de 16 ans, 16 à 18 ans), sans rien saisir de plus. Le détail est sur la page [Code du travail](/code-du-travail/). Les réponses article par article sont dans [les animateurs mineurs](/animateurs-mineurs/)."
     }
   ],
   "cta": "Vous préparez votre équipe ?",
@@ -46,23 +46,23 @@
     "sections": [
       {
         "h2": "Paid staff, volunteers or both",
-        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles). For a trade show or fair, see [a trade show staff rota](/en/trade-show-staff-rota/)."
+        "texte": "The tool makes no difference: everyone has availability, skills and wishes, and is placed on a stand and a shift. What changes for volunteers is in [the questions](/en/questions/#benevoles). For a trade show or fair, see [a trade show staff rota](/en/trade-show-staff-rota/). How many people to recruit can be worked out before any entry: see [sizing the team](/docs/regles/dimensionner-l-equipe/) (in French). For a festival, see [the festival rota](/en/festival-staff-rota/); for a race or a tournament, [the sports event](/en/sports-event-volunteer-rota/)."
       },
       {
         "h2": "Import the spreadsheet",
-        "texte": "Staff import from a CSV file, with a preview of what would be created or refused before anything is written. Skills, wishes and days off are then entered record by record, or in bulk in a grid. Unsure whether to keep the spreadsheet? [Compare spreadsheet and scheduling software](/en/spreadsheet-or-scheduling-software/). A file that resists the import? [Send us your spreadsheet](/en/contact/)."
+        "texte": "Staff import from a CSV file, with a preview of what would be created or refused before anything is written. Skills, wishes and days off are then entered record by record, or in bulk in a grid. Unsure whether to keep the spreadsheet? [Compare spreadsheet and scheduling software](/en/spreadsheet-or-scheduling-software/). A file that resists the import? [Send us your spreadsheet](/en/contact/). The records are filled in as described in [entering animateurs and their skills](/docs/regles/animateurs-et-competences/) (in French)."
       },
       {
         "h2": "Collect availability",
-        "texte": "Everyone declares from their phone the days they are not available. Without a declaration, a person is available. The organisation reviews the declarations before they reach the solver."
+        "texte": "Everyone declares from their phone the days they are not available. Without a declaration, a person is available. The organisation reviews the declarations before they reach the solver. The guide to [collecting animateurs' availabilities](/docs/regles/collecter-disponibilites/) details the period (in French)."
       },
       {
         "h2": "What everyone gets",
-        "texte": "- a link and a code by e-mail, valid for 10 minutes;\n- their rota, next shift first, and the “I have read it and I will be there” button;\n- a PDF sheet with a QR code, and a calendar subscription;\n- self-service swaps, which the organisation approves;\n- their teammates on every shift."
+        "texte": "- a link and a code by e-mail, valid for 10 minutes;\n- their rota, next shift first, and the “I have read it and I will be there” button;\n- a PDF sheet with a QR code, and a calendar subscription;\n- self-service swaps, which the organisation approves;\n- their teammates on every shift. What each person sees is described in [the animateurs' space](/docs/regles/espace-animateur/) (in French)."
       },
       {
         "h2": "Under-18s in the team",
-        "texte": "Everyone gets the law of their real age on the date of each shift (under 16, 16 to 18), with nothing more to enter. The details are on the [Labour Code](/en/labour-code/) page."
+        "texte": "Everyone gets the law of their real age on the date of each shift (under 16, 16 to 18), with nothing more to enter. The details are on the [Labour Code](/en/labour-code/) page. The article-by-article answers are in [under-18 staff](/en/under-18-staff/)."
       }
     ],
     "cta": "Getting your team ready?",

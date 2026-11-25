@@ -4,6 +4,8 @@ Vous savez ce que chaque import CSV écrit, comment une ligne reconnaît une fic
 
 Le scénario YAML décrit un événement entier et remplace le référentiel de l'édition ([Le fichier de scénario YAML](scenario-yaml.md)). Les imports CSV font l'inverse : ils ne touchent qu'un référentiel, ligne par ligne, et n'effacent rien par défaut. C'est ce qu'on utilise quand un organisateur arrive avec son tableur de bénévoles. Tout est lu et écrit dans l'édition désignée par `X-Edition-Id`.
 
+Un tableur de bénévoles est le cas typique ; pour décider s'il faut quitter le tableur, voir [tableur ou logiciel de planning](/tableur-ou-logiciel-de-planning/).
+
 L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, une carte chacun, la carte ouverte étant portée par `?cible=`. Cinq sont des référentiels courts (typologies, emplacements, stands, créneaux, journées types), deux sont des imports plus riches (animateurs, grille des stands). Chaque écran de référentiel ouvre la même carte dans un dialogue par son bouton « Importer ». Les routes sont `/api/<référentiel>/import-csv/analyse` (aperçu, aucune écriture), `/api/<référentiel>/import-csv` (écriture) et `/api/<référentiel>/import-csv/exemple` ; la liste exacte est dans le contrat OpenAPI ([Les référentiels côté API](api-referentiels.md)).
 
 ## Ce que partagent les cinq référentiels courts

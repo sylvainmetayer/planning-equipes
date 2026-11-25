@@ -9539,7 +9539,7 @@
       },
       "RoleHabilitation" : {
         "type" : "string",
-        "enum" : [ "ADMIN", "ORGANISATEUR", "RESPONSABLE_STAND", "RH" ]
+        "enum" : [ "ADMIN", "ORGANISATEUR", "RESPONSABLE_STAND", "RH", "LECTEUR" ]
       },
       "RunningCheck" : {
         "required" : [ "editionId", "id", "effectif", "lanceeLe", "plafondSecondes" ],

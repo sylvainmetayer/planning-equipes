@@ -61,6 +61,7 @@ public class PlanningExportResource {
      */
     @POST
     @Path("/pdf/all")
+    @ExportForLecteur
     @Produces("application/zip")
     public Response exportAllPdfZip(
             @QueryParam("format") String format,
@@ -76,6 +77,7 @@ public class PlanningExportResource {
 
     @POST
     @Path("/pdf/animateur/{animateurId}")
+    @ExportForLecteur
     @Produces("application/pdf")
     public Response exportAnimateurPdf(
             @PathParam("animateurId") String animateurId,
@@ -97,6 +99,7 @@ public class PlanningExportResource {
 
     @POST
     @Path("/bundle/all")
+    @ExportForLecteur
     @Produces("application/zip")
     public Response exportAllBundleZip(
             @QueryParam("format") String format,
@@ -112,6 +115,7 @@ public class PlanningExportResource {
 
     @POST
     @Path("/ics/all")
+    @ExportForLecteur
     @Produces("application/zip")
     public Response exportAllIcsZip(PlanningEvenement planningEvenement) {
         byte[] content = planningExportService.exportAllIcsZip(planningEvenement);
@@ -122,6 +126,7 @@ public class PlanningExportResource {
 
     @POST
     @Path("/ics/animateur/{animateurId}")
+    @ExportForLecteur
     @Produces("text/calendar")
     public Response exportAnimateurIcs(
             @PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {

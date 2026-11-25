@@ -2,6 +2,8 @@
 
 Vous vous assurez qu'une copie récente de la base existe chaque nuit, vous savez en faire une à la main, et vous savez restaurer sans aggraver les choses. Tout l'état de l'application vit dans PostgreSQL : référentiel, planning résolu, instantanés, jetons d'espace animateur, sessions. Il n'y a **rien à sauvegarder d'autre**, et rien qui se reconstruise sans la base.
 
+Pour un hébergeur qui décide encore, [la page sur l'hébergement](/heberger/) résume la sauvegarde de nuit en quelques lignes.
+
 ![Sauvegarde automatique et restauration hors application](repo:docs/diagrammes/sauvegarde.svg)
 
 <sub>Source : [`diagrammes/sauvegarde.puml`](repo:docs/diagrammes/sauvegarde.puml).</sub>
@@ -118,6 +120,3 @@ Restaurer pendant l'événement perd toutes les écritures postérieures au dump
 
 Les **sauvegardes avant vidage** d'une édition (`sauvegarde_avant_vidage`, [décision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) suivent le geste choisi. Restaurer un dump `pg_dump` les ramène telles qu'elles étaient à son heure. Rejouer un **export SQL de l'application** (outillage de test, plus proposé à l'opérateur) les **efface toutes**, pour toutes les éditions : l'export ne les porte pas, et l'import supprime chaque édition avant de la réécrire. C'est un geste global d'exploitation, pas un vidage d'édition ; rien n'est sauvegardé avant lui.
 
-## Et pour passer de PostgreSQL 18 à 19 ?
-
-C'est une opération de mise à jour qui passe par un dump : voir [Passer de PostgreSQL 18 à PostgreSQL 19](mettre-a-jour.md#passer-de-postgresql-18-à-postgresql-19).

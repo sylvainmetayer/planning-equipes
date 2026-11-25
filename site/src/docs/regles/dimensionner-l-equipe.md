@@ -4,6 +4,8 @@ Vous connaissez l'effectif minimum que vos stands exigent, avant même d'avoir s
 
 Tout se lit dans *Diagnostic*, onglet *Besoin en animateurs*, calculé à partir des seuls stands, créneaux et horaires.
 
+Pour situer ce besoin dans la vie d'une équipe, voir [organiser son équipe de salariés et de bénévoles](/organiser-son-equipe/).
+
 ## Lire la fiche de recrutement
 
 L'effectif minimum est **prouvé** : aucune équipe plus petite ne tient les sièges, y compris quand les jours d'affilée sont une règle impérative. La fiche donne :

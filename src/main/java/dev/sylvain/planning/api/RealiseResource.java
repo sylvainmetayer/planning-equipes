@@ -54,6 +54,7 @@ public class RealiseResource {
     /** The grid as a CSV: stand, day and counters, never a person. */
     @GET
     @Path("/export")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportCsv() {
         return CsvDownload.attachment(realisedService.csv(), "realise-vs-planifie.csv");

@@ -121,3 +121,5 @@ désérialisation
 activees
 Eloigne
 eviter
+timeslots
+nginx

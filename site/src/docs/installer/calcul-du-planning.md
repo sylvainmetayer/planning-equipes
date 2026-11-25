@@ -4,6 +4,8 @@ Vous décidez jusqu'où une édition peut pousser le calcul, vous protégez une 
 
 ## Plafonner le temps de calcul d'une édition
 
+Ce que le calcul fait de ce temps est expliqué dans [combien de temps ça prend](/comment-marche-le-calcul/).
+
 Chaque édition règle son budget sur l'écran *Solveur* (durée maximale, arrêt sans amélioration), mais c'est vous qui fixez jusqu'où elle peut aller.
 
 | Variable | Défaut | Rôle |

@@ -64,6 +64,7 @@ public class EmplacementResource {
     /** The shape the import expects, shown rather than described. */
     @GET
     @Path("/import-csv/exemple")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exempleCsv() {
         return CsvDownload.attachment(

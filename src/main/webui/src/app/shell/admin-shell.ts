@@ -103,6 +103,7 @@ import { GelInvitation } from '../core/gel-invitation';
   templateUrl: './admin-shell.html',
   styleUrl: './admin-shell.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.lecture-seule]': 'lectureSeule()' },
 })
 export class AdminShell {
   private readonly destroyRef = inject(DestroyRef);
@@ -135,12 +136,15 @@ export class AdminShell {
   private readonly draftStorages = [inject(LOCAL_DRAFT_STORAGE), inject(SESSION_DRAFT_STORAGE)];
   private readonly sessionEnd = inject(SESSION_END_BUS);
 
-  /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
+  /** A lecteur: the actions that change something are hidden (global rule of `styles/pages.css`). */
+  protected readonly lectureSeule = this.session.lectureSeule;
+
   /** Whether this account also holds a responsable de stand's right: « Mon stand » is one click away. */
   protected readonly hasStandRight = computed(
     () => this.session.statut()?.roles.includes(ROLE_RESPONSABLE) ?? false,
   );
 
+  /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   protected readonly hasUnreadAlert = computed(() =>
     this.notifications
       .notifications()

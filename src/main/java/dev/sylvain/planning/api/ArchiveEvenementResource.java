@@ -46,6 +46,7 @@ public class ArchiveEvenementResource {
      * its manifest alone.
      */
     @GET
+    @NotForLecteur
     @Produces("application/zip")
     public Response export(
             @QueryParam("pdfGlobal") boolean pdfGlobal,

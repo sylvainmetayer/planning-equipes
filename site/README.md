@@ -39,7 +39,7 @@ mise run preview   # émulateur Cloudflare Pages sur :8788, en-têtes compris
 npm test           # build + tests : articles, FR/EN, .pages.yml, liens, JSON-LD, hreflang
 npm run check:spelling   # cspell, français et anglais
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser npm run check:a11y   # pa11y-ci, WCAG 2 AA
-CHROME_PATH=/usr/bin/chromium-browser npm run check:lighthouse           # Lighthouse, mobile et bureau, 95 au moins partout
+CHROME_PATH=/usr/bin/chromium-browser npm run check:lighthouse           # Lighthouse, mobile et bureau, 95 au moins partout (en CI : le lundi, issue si échec)
 npm run validate         # html-validate sur _site/
 ```
 

@@ -2815,7 +2815,7 @@ export interface StatutSession {
 }
 
 /** The roles an administrator grants in this application. */
-export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR' | 'RESPONSABLE_STAND' | 'RH';
+export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR' | 'RESPONSABLE_STAND' | 'RH' | 'LECTEUR';
 
 /** What one account may do, and where; withdrawn by `retireeLe`, never deleted. */
 export interface Habilitation {

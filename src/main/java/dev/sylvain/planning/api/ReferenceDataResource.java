@@ -230,6 +230,7 @@ public class ReferenceDataResource {
      */
     @GET
     @Path("/export-csv")
+    @NotForLecteur
     @Produces("application/zip")
     public Response exportCsv(
             @QueryParam("typologies") boolean typologies,

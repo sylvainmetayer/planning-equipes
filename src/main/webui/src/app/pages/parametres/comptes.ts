@@ -7,6 +7,7 @@ import { Compte, Edition, Habilitation, RoleHabilitation, Stand } from '../../co
 /** The roles, in the order the grant form offers them. */
 export const ROLES: readonly RoleHabilitation[] = [
   'ORGANISATEUR',
+  'LECTEUR',
   'RESPONSABLE_STAND',
   'RH',
   'ADMIN',
@@ -36,6 +37,8 @@ export function roleLabel(role: RoleHabilitation): string {
       return $localize`:@@comptes.role.rh:RH (rapport de conformité)`;
     case 'ORGANISATEUR':
       return $localize`:@@comptes.role.organisateur:Organisateur`;
+    case 'LECTEUR':
+      return $localize`:@@comptes.role.lecteur:Lecteur (lecture seule)`;
   }
 }
 

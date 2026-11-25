@@ -6,6 +6,8 @@ Vous ajustez ce qui décide du plan : les seuils légaux, l'importance de chaque
 
 Tout se règle dans *Règles du planning* (groupe *Planifier*), en trois onglets de réglage : *Légal*, *Qualité* et *Calcul*. Ce sont des réglages d'expert : ils n'apparaissent qu'après un clic sur « Réglages avancés », sous la rangée d'onglets. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
 
+Ces seuils viennent du droit du travail : [ce que le Code du travail impose à un planning](/code-du-travail/) dit ce que le logiciel applique de lui-même et ce qu'il laisse à votre jugement.
+
 ## L'onglet Légal
 
 Une ligne par règle obligatoire :

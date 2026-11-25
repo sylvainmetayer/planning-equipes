@@ -12,6 +12,8 @@ Le calcul affecte les animateurs aux places à pourvoir sous trois niveaux d'exi
 
 Il se lance depuis *Solveur* (groupe *Planifier*).
 
+Pour savoir ce que ce calcul garantit avant de le lancer, lisez [comment fonctionne le calcul du planning](/comment-marche-le-calcul/), écrit pour un organisateur.
+
 ## Avant de lancer : ce que le calcul recevra
 
 L'écran dit ce que le calcul prendra en compte :
