@@ -54,13 +54,17 @@ client découvre tout seul où ouvrir la connexion.
 | `OIDC_MCP_AUDIENCE` | Audience que le jeton doit porter. À déclarer chez le fournisseur (mappeur d'audience Keycloak, identifiant de ressource ADFS) | `planning-mcp` |
 
 - Le jeton ne vaut que pour **un compte actif** de l'application avec un droit
-  en vigueur ; ses rôles propres ne comptent pas. Compte inconnu ou désactivé :
-  `403`.
+  d'administrateur ou d'organisateur en vigueur ; ses rôles propres ne comptent
+  pas. Compte inconnu, désactivé ou seulement responsable de stand : `403`.
 - Un **administrateur** a les mêmes outils que la clé. Un **organisateur** ne
   désigne que les éditions de ses droits (une autre est refusée comme
   inconnue, `lister_editions` ne la montre pas) et n'a pas les outils d'instance :
   création, renommage, duplication, activation, suppression et comparaison
-  d'éditions, sauvegardes.
+  d'éditions, sauvegardes. Les jobs du solveur (`lister_jobs`, `statut_solveur`,
+  `arreter_solveur`, `supprimer_job`) se limitent à ses éditions, et un outil
+  sans argument `edition` ne retombe jamais sur une édition active hors de ses
+  droits. Un outil qui ne désigne pas d'édition est `@InstanceOnlyTool` ou
+  justifié dans `McpEditionStructurelleTest`.
 - Le journal des actions garde l'assistant comme auteur, comme avec la clé.
 
 ### Renouveler la clé sans toucher au serveur
@@ -77,8 +81,8 @@ passe et code ; `BREAK_GLASS` : formulaire du secours). L'instant de connexion
 est le `auth_time` du jeton d'identité (un fournisseur qui ne l'envoie pas, ou
 qui ignore `max_age`/`prompt`, ne permet pas la reconnexion) ; pour un
 formulaire, l'instant que la connexion elle-même a noté (en mémoire, par
-empreinte du cookie de session) : un cookie renouvelé n'y est plus, donc pas
-récent, et un redémarrage demande à chacun de se reconnecter. La clé n'est montrée **qu'une fois**, seule son empreinte est
+empreinte du cookie de session, reportée sur le cookie que Quarkus réémet chaque
+minute) ; un redémarrage demande à chacun de se reconnecter. La clé n'est montrée **qu'une fois**, seule son empreinte est
 conservée. On choisit combien de temps l'ancienne reste valable (aucun, 15
 minutes, 1 heure, 24 heures ; 7 jours au plus par l'API) : « aucun » la
 révoque tout de suite. L'écran affiche la date de fin tant qu'elle court, et le
