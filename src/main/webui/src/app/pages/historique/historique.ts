@@ -85,7 +85,7 @@ export function cutPage<T extends { id: number }>(
     return { entrees: lignes, suivant: null };
   }
   const entrees = lignes.slice(0, PAGE_HISTORIQUE);
-  return { entrees, suivant: entrees[entrees.length - 1].id };
+  return { entrees, suivant: entrees.at(-1)?.id ?? null };
 }
 
 /** Which tab the page shows: what was done in the edition, or who signed in. */
@@ -168,7 +168,8 @@ function parseInstant(valeur: string): { iso: string; date: Date } | null {
   if (Number.isNaN(date.getTime())) {
     return null;
   }
-  const iso = `${minute}:${secondes}${fraction === undefined ? '' : `.${fraction}`}${offset}`;
+  const decimals = fraction === undefined ? '' : `.${fraction}`;
+  const iso = `${minute}:${secondes}${decimals}${offset}`;
   return { iso, date };
 }
 
@@ -226,7 +227,12 @@ export function endInstantFromLocalInput(local: string): string {
     return '';
   }
   const [, secondes, fraction] = parts;
-  const precision = secondes === undefined ? 60_000 : fraction === undefined ? 1_000 : 1;
+  let precision = 1;
+  if (secondes === undefined) {
+    precision = 60_000;
+  } else if (fraction === undefined) {
+    precision = 1_000;
+  }
   return new Date(start + precision - 1).toISOString().replace(/Z$/, '999Z');
 }
 

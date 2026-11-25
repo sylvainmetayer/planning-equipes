@@ -61,10 +61,10 @@
                        [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
               </mat-form-field>
               @if (oubliEnvoye()) {
-                <p role="status" class="login-oubli-envoye" tabindex="-1">
+                <output class="login-oubli-envoye status-paragraph" tabindex="-1">
                   <mat-icon inline>mark_email_read</mat-icon>
                   <span i18n="@@login.oubli.envoye">Si un compte correspond à cette adresse, un lien vous a été envoyé, ou attend déjà dans votre boîte. Un lien ne sert qu'une fois.</span>
-                </p>
+                </output>
               }
               <button matButton="filled" type="submit" [disabled]="busy() || !utilisateur().includes('@')">
                 <mat-icon>mail</mat-icon>

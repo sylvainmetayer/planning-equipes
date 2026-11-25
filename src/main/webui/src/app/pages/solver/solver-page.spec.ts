@@ -1090,7 +1090,7 @@ describe('SolverPage', () => {
 
       await page['onStopAndKeep']();
 
-      expect(jobs.cancel.mock.calls.length).toBe(before);
+      expect(jobs.cancel.mock.calls).toHaveLength(before);
     });
   });
 
@@ -1329,7 +1329,7 @@ describe('SolverPage', () => {
       activeJob.set(tracked());
       TestBed.tick();
 
-      await vi.waitFor(() => expect(machineApi.read.mock.calls.length).toBe(reads + 1));
+      await vi.waitFor(() => expect(machineApi.read.mock.calls).toHaveLength(reads + 1));
     });
   });
 });

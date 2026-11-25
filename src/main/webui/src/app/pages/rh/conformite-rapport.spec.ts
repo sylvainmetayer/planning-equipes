@@ -108,7 +108,7 @@ describe('ConformiteRapport', () => {
     expect(text(fixture)).toContain('Ada Test');
     expect(text(fixture)).toContain('2026-W34');
     expect(text(fixture)).toContain('Travail de nuit : poste à 21:00');
-    expect(fixture.nativeElement.querySelectorAll('.conformite-mineurs li').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.conformite-mineurs li')).toHaveLength(1);
   });
 
   it('lists the minors whose legal representative is missing', async () => {

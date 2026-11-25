@@ -31,12 +31,14 @@ export class SessionStore {
 
   /** Resolves once the session was read; the read is made once, then shared. */
   ready(): Promise<void> {
-    return (this.reading ??= this.read());
+    this.reading ??= this.read();
+    return this.reading;
   }
 
   /** Reads the session again (a right of one's own was withdrawn, say). */
   refresh(): Promise<void> {
-    return (this.reading = this.read());
+    this.reading = this.read();
+    return this.reading;
   }
 
   private async read(): Promise<void> {

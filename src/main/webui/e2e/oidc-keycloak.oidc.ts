@@ -36,6 +36,7 @@ async function nouvellePage(browser: Browser): Promise<Page> {
 }
 
 test.describe('connexion par Keycloak', () => {
+  // Skipped on purpose wherever the realm's password is not provided: the stack is optional.
   test.skip(!MOT_DE_PASSE, 'E2E_OIDC_USER_PASSWORD: le mot de passe importé dans le realm');
 
   test.beforeAll(async ({ playwright, baseURL }) => {

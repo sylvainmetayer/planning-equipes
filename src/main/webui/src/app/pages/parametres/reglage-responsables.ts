@@ -49,9 +49,13 @@ export function defaultOf(reglages: ReglagesResponsables): DefautEdition {
 export function rowsOf(reglages: ReglagesResponsables, standIds: readonly string[]): LigneStand[] {
   return standIds.map((standId) => {
     const exception = reglages.parStand[standId];
+    let mode: ModeStand = 'herite';
+    if (exception) {
+      mode = exception.nomsVisibles ? 'noms' : 'horaires';
+    }
     return {
       standId,
-      mode: !exception ? 'herite' : exception.nomsVisibles ? 'noms' : 'horaires',
+      mode,
       ouverture: toLocalInput(exception?.ouvertureLe ?? null),
     };
   });
