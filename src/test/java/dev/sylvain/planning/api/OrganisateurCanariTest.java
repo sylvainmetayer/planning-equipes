@@ -77,11 +77,31 @@ class OrganisateurCanariTest {
                 ps.executeUpdate();
             }
             editionContext.executeIn(editionId, () -> kpi.recordAfterSolve(1L));
+            // A realised measure frozen long ago for that edition: the « previous edition »
+            // an organiser of a later one must not be shown.
+            try (var connection = dataSource.getConnection();
+                    var ps = connection.prepareStatement("""
+                            INSERT INTO kpi_realise (edition_id, typologie_id, edition_nom, typologie_nom,
+                                premier_jour, dernier_jour, jours_comptes, sieges_publies, sieges_tenus, absences,
+                                remplacements, sieges_vides, sieges_retires, sieges_ajoutes, minutes_publiees,
+                                minutes_realisees, minutes_perdues)
+                            VALUES (?, 'T', ?, ?, DATE '2000-01-01', DATE '2000-01-02', 1, 1, 1, 0, 0, 0, 0, 0, 60, 60, 0)""")) {
+                ps.setString(1, editionId);
+                ps.setString(2, canari);
+                ps.setString(3, canari);
+                ps.executeUpdate();
+            }
+            // A solve of that edition, as an administrator launches it: the job is named after it.
+            String admin = bearerOf(RoleHabilitation.ADMIN, null);
+            given().header("X-Edition-Id", editionId)
+                    .header("Authorization", admin)
+                    .post("/api/solve/async/reference-data?seconds=1")
+                    .then()
+                    .statusCode(org.hamcrest.Matchers.lessThan(500));
 
             // Positive control: an administrator does see what was seeded, so the
             // organiser's silence below means something.
-            String admin = bearerOf(RoleHabilitation.ADMIN, null);
-            for (String chemin : List.of("/api/planning/snapshots/comparables", "/api/kpi/historique")) {
+            for (String chemin : List.of("/api/planning/snapshots/comparables", "/api/kpi/historique", "/api/jobs")) {
                 assertThat(given().header("X-Edition-Id", "E1")
                                 .header("Authorization", admin)
                                 .get(chemin)
