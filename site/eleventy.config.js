@@ -71,6 +71,7 @@ export default function config(eleventyConfig) {
   // The part of a sentence after its first separator ("Planning par jour : qui…" gives "qui…")
   eleventyConfig.addFilter('after', (text, sep) => text.slice(text.indexOf(sep) + 1).trim());
   eleventyConfig.addFilter('cap', (text) => text.charAt(0).toUpperCase() + text.slice(1));
+  eleventyConfig.addFilter('byName', (items, name) => items.find((i) => i.name === name));
   eleventyConfig.addFilter('byId', (items, id) => items.find((i) => i.id === id));
 
   return {

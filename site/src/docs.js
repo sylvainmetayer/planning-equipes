@@ -1,5 +1,5 @@
-// The technical documentation (../docs/*.md), read in place at build time and
-// published under /docs. Excluded: the decisions and the project memory, which
+// The documentation (../docs/*.md and ../docs/fonctionnel/*.md), read in place at
+// build time and published under /docs, in three parts (docs-parties.json). Excluded: the decisions and the project memory, which
 // stay on GitHub, as does every other file the pages link to (code, AGENTS.md…).
 // A link or an anchor that no longer resolves is a warning, never a failure: the
 // content of docs/ is not this build's to fix.
@@ -9,10 +9,14 @@ import { fileURLToPath } from 'node:url';
 import MarkdownIt from 'markdown-it';
 import site from './_data/site.json' with { type: 'json' };
 import home from './_data/pages/docs.json' with { type: 'json' };
+import parts from './docs-parties.json' with { type: 'json' };
 import { typo } from './text.js';
 
 const DIR = fileURLToPath(new URL('../../docs/', import.meta.url));
 const EXCLUDED = new Set(['memoire-du-projet.md']);
+// The only subfolder published: the functional pages, written for readers who are not technical
+const SUBDIRS = ['fonctionnel'];
+export const PARTS = parts;
 const GITHUB = `${site.repo}/blob/main/`;
 const warnings = [];
 const warn = (message) => warnings.push(message);
@@ -31,14 +35,14 @@ const decode = (text) => {
 
 const urlOfDoc = (name) => (name === 'README' ? '/docs/' : `/docs/${name}/`);
 
-function target(href, published) {
+function target(href, published, dir) {
   if (href.startsWith('#')) return { href: `#${decode(href.slice(1))}` };
   if (/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) return { href };
   const [path, rawHash] = href.split('#');
   // The anchors are written as the headings are, accents included: what GitHub's slugs and our ids are
   const hash = rawHash === undefined ? undefined : decode(rawHash);
-  const repoPath = posix.normalize(posix.join('docs', path));
-  const doc = repoPath.match(/^docs\/([^/]+)\.md$/)?.[1];
+  const repoPath = posix.normalize(posix.join('docs', dir, path));
+  const doc = repoPath.match(/^docs\/((?:fonctionnel\/)?[^/]+)\.md$/)?.[1];
   if (doc && published.has(doc)) return { href: urlOfDoc(doc) + (hash ? `#${hash}` : ''), doc, hash };
   if (/^docs\/diagrammes\/[^/]+\.svg$/.test(repoPath)) return { href: `/${repoPath}` };
   const kind = repoPath.endsWith('/') || !posix.extname(repoPath) ? 'tree' : 'blob';
@@ -103,7 +107,7 @@ function renderer(published, state) {
       if (c.type === 'link_open') key = 'href';
       else if (c.type === 'image') key = 'src';
       if (!key) return;
-      const r = target(c.attrGet(key), published);
+      const r = target(c.attrGet(key), published, posix.dirname(state.name));
       c.attrSet(key, r.href);
       if (r.doc || r.href.startsWith('#')) state.links.push({ href: r.href, doc: r.doc, hash: r.hash ?? (r.href.startsWith('#') ? r.href.slice(1) : '') });
       if (c.type === 'image' && !c.content) warn(`${state.name}.md : image sans texte alternatif (${r.href})`);
@@ -160,7 +164,10 @@ function readDoc(name, published) {
 let cache;
 export function loadDocs() {
   if (cache) return cache;
-  const names = readdirSync(DIR).filter((f) => f.endsWith('.md') && !EXCLUDED.has(f)).map((f) => f.slice(0, -3));
+  const names = [
+    ...readdirSync(DIR).filter((f) => f.endsWith('.md') && !EXCLUDED.has(f)).map((f) => f.slice(0, -3)),
+    ...SUBDIRS.flatMap((d) => readdirSync(`${DIR}${d}`).filter((f) => f.endsWith('.md')).map((f) => `${d}/${f.slice(0, -3)}`)),
+  ];
   const published = new Set(names);
   const docs = names.map((name) => readDoc(name, published));
   const byName = Object.fromEntries(docs.map((d) => [d.name, d]));
@@ -174,6 +181,13 @@ export function loadDocs() {
       d.body = d.body.replaceAll(`href="${href}"`, `href="${doc ? urlOfDoc(doc) : d.url}"`);
     }
   }
+  // Every page belongs to exactly one part: the sidebar and the index are drawn from them
+  for (const d of docs) {
+    const owners = parts.filter((p) => p.docs.includes(d.name));
+    if (d.name !== 'README' && owners.length !== 1) throw new Error(`docs/${d.name}.md : dans ${owners.length} parties de docs-parties.json (il en faut une)`);
+    d.part = owners[0]?.id;
+  }
+  for (const p of parts) for (const n of p.docs) if (!byName[n]) throw new Error(`docs-parties.json : docs/${n}.md n'existe pas`);
   for (const d of docs) delete d.state;
   docs.sort((a, b) => Number(b.name === 'README') - Number(a.name === 'README') || a.name.localeCompare(b.name, 'fr'));
   for (const w of warnings) console.warn(`[docs] ${w}`);

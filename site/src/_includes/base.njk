@@ -48,6 +48,7 @@
         {% for k in ['tableur', 'equipe', 'calcul', 'faq'] %}
         <li><a href="{{ urls[lang][k] }}"{% if k == key %} aria-current="page"{% endif %}>{{ common.nav[k] }}</a></li>
         {% endfor %}
+        <li><a href="/docs/"{% if lang != 'fr' %} hreflang="fr"{% endif %}{% if key == 'docs' %} aria-current="{{ 'page' if p.name == 'README' else 'true' }}"{% endif %}>{{ common.nav.docs }}</a></li>
       </ul>
     </nav>
     <a class="mark" href="{{ urls[lang].accueil }}" aria-label="{{ common.logoLabel }}"{% if key == 'accueil' %} aria-current="page"{% endif %}>{{ site.name }}</a>

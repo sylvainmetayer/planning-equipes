@@ -60,7 +60,7 @@ html { scroll-padding-top: calc(var(--nav-h) + var(--space-lg)); }
 .top__in { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-lg); min-height: calc(var(--nav-h) - var(--rule-hair)); }
 .top__nav ul { display: flex; flex-wrap: wrap; gap: 0 var(--space-lg); margin: 0; padding: 0; list-style: none; }
 .top__nav a, .top__lang { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-sm); font-weight: 600; text-decoration: none; }
-.top__nav a:hover, .top__lang:hover, .top__nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; }
+.top__nav a:hover, .top__lang:hover, .top__nav a[aria-current] { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; }
 .mark { font: 700 var(--text-xl)/1 var(--font-display); letter-spacing: var(--tracking-display); text-decoration: none; white-space: nowrap; }
 .theme { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: var(--rule-hair) solid transparent; border-radius: var(--radius-pill); background: transparent; color: var(--color-ink); cursor: pointer; }
 .theme[hidden] { display: none; }
@@ -270,9 +270,9 @@ abbr[title] { text-decoration: none; cursor: help; }
 @media (max-width: 40rem) {
   .cards, .tiles, .turns { grid-template-columns: minmax(0, 1fr); }
   .rows tbody th, .rows--law td:nth-child(2) { white-space: normal; }
-  /* Two rows: the wordmark with its actions, then the four links */
+  /* Two rows: the wordmark with its actions, then the five links (they wrap rather than overflow on the narrowest phones) */
   .top__acts { gap: var(--space-2xs); }
-  .top__nav ul { flex-wrap: nowrap; justify-content: space-between; gap: 0 var(--space-xs); }
+  .top__nav ul { justify-content: space-between; gap: 0 var(--space-xs); }
   /* No room for it beside the wordmark: the footer carries the language link */
   .top__lang { display: none; }
   .rows--law, .rows--cmp { display: block; }
@@ -309,6 +309,8 @@ abbr[title] { text-decoration: none; cursor: help; }
 .doc__side { display: grid; gap: var(--space-lg); }
 .doc__label { padding-block: 0.6rem; font-weight: 600; cursor: pointer; } /* a 44px target, the native marker kept */
 .doc__nav ul { overflow-wrap: anywhere; display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.doc__nav .doc__part { display: block; margin-top: var(--space-2xs); font-weight: 600; }
+.doc__nav ul ul { margin-top: var(--space-2xs); padding-left: var(--space-sm); }
 .doc__nav .doc__l3 { padding-left: var(--space-md); }
 .doc__nav a[aria-current="page"] { font-weight: 600; }
 .doc__main { min-width: 0; max-width: 80ch; line-height: 1.6; overflow-wrap: break-word; }
