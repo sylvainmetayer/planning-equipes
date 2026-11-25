@@ -130,6 +130,8 @@ class IsolationEditionStructurelleTest {
             "lien_affichage_mural",
             "lien_affichage_mural_emplacement",
             "parametres_meteo",
+            "reglage_noms_responsable",
+            "reglage_noms_stand",
             "meteo_etat",
             "sauvegarde_avant_vidage");
 
@@ -197,6 +199,10 @@ class IsolationEditionStructurelleTest {
      *       links and the sign-in challenges of an account: they belong to the
      *       person, who has no edition, and are redeemed before any request
      *       names one (the visitor is anonymous).</li>
+     *   <li>{@code habilitation_stand} — the stands one right covers, read with
+     *       the right it hangs from (and so before any edition is bound to the
+     *       request). Its stand ids are a scope, not a partition: no key to
+     *       {@code stand}, which a dump import deletes and recreates.</li>
      * </ul>
      */
     private static final List<String> TABLES_HORS_EDITION = List.of(
@@ -216,7 +222,8 @@ class IsolationEditionStructurelleTest {
             "compte",
             "habilitation",
             "compte_jeton",
-            "compte_defi");
+            "compte_defi",
+            "habilitation_stand");
 
     /**
      * The deliberately cross-edition statements, and why.

@@ -5314,5 +5314,8 @@
   "comptes.inviter": "Invite",
   "comptes.motDePasse.defini": "password set",
   "comptes.motDePasse.aucun": "no local password",
-  "comptes.inviterCase": "Invite by e-mail to choose their password"
+  "comptes.inviterCase": "Invite by e-mail to choose their password",
+  "comptes.stands": "Stands of “{$INTERPOLATION}”",
+  "comptes.role.responsable": "Stand manager (read access to their stand)",
+  "comptes.droit.responsable": "{$role} — {$edition} ({$stands} stand(s))"
 }

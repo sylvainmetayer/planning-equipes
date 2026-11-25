@@ -1,8 +1,11 @@
 package dev.sylvain.planning.service.compte;
 
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionRepository;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -40,6 +43,12 @@ public class CompteService {
 
     @Inject
     EditionRepository editions;
+
+    @Inject
+    EditionContext editionContext;
+
+    @Inject
+    ReferenceDataService referentiel;
 
     @Inject
     JournalActionService journal;
@@ -90,6 +99,12 @@ public class CompteService {
      * right that never opened anything; the same right twice is a conflict.
      */
     public Compte grant(String compteId, RoleHabilitation role, String editionId, Instant expireLe) {
+        return grant(compteId, role, editionId, expireLe, null);
+    }
+
+    /** Same, for a responsable de stand's right: {@code standIds} are the stands of {@code editionId} it covers. */
+    public Compte grant(
+            String compteId, RoleHabilitation role, String editionId, Instant expireLe, List<String> standIds) {
         required(compteId);
         if (role == null) {
             throw new BusinessError.Invalid("Rôle manquant.");
@@ -107,12 +122,35 @@ public class CompteService {
         if (expireLe != null && !expireLe.isAfter(Instant.now())) {
             throw new BusinessError.Invalid("La date d'expiration est déjà passée.");
         }
-        Habilitation droit =
-                new Habilitation(UUID.randomUUID().toString(), role, edition, expireLe, acteur(), null, null, null);
+        List<String> stands =
+                standIds == null ? List.of() : standIds.stream().distinct().toList();
+        if (role == RoleHabilitation.RESPONSABLE_STAND) {
+            checkStands(edition, stands);
+        } else if (!stands.isEmpty()) {
+            throw new BusinessError.Invalid("Seul un responsable de stand porte des stands.");
+        }
+        Habilitation droit = new Habilitation(
+                UUID.randomUUID().toString(), role, edition, expireLe, acteur(), null, null, null, stands);
         if (!repository.insertHabilitation(compteId, droit)) {
             throw new BusinessError.Conflict("Ce compte a déjà ce droit en vigueur.");
         }
         return required(compteId);
+    }
+
+    /** A responsable's right is one edition's and names at least one stand, each of that edition. */
+    private void checkStands(String edition, List<String> stands) {
+        if (edition == null) {
+            throw new BusinessError.Invalid("Un responsable de stand l'est d'une édition précise.");
+        }
+        if (stands.isEmpty()) {
+            throw new BusinessError.Invalid("Choisissez au moins un stand.");
+        }
+        Set<String> connus = editionContext.executeIn(
+                edition,
+                () -> referentiel.listStands().stream().map(Stand::getId).collect(Collectors.toSet()));
+        stands.stream().filter(id -> !connus.contains(id)).findFirst().ifPresent(id -> {
+            throw new BusinessError.Invalid("Stand inconnu dans cette édition : " + id);
+        });
     }
 
     /** Refused when it is the last administrator right in force. */

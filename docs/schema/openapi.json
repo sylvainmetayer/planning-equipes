@@ -5234,6 +5234,12 @@
           },
           "retireePar" : {
             "type" : "string"
+          },
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -7002,6 +7008,12 @@
           },
           "expireLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -7376,6 +7388,18 @@
           "assignments" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "PersonneVacation" : {
+        "type" : "object",
+        "required" : [ "prenom", "nom" ],
+        "properties" : {
+          "prenom" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
           }
         }
       },
@@ -8987,6 +9011,33 @@
         "type" : "string",
         "enum" : [ "STANDS", "CRENEAUX", "ANIMATEURS" ]
       },
+      "ReglageNoms" : {
+        "required" : [ "nomsVisibles" ],
+        "type" : "object",
+        "properties" : {
+          "nomsVisibles" : {
+            "type" : "boolean"
+          },
+          "ouvertureLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ReglagesResponsables" : {
+        "required" : [ "parDefaut", "parStand" ],
+        "type" : "object",
+        "properties" : {
+          "parDefaut" : {
+            "$ref" : "#/components/schemas/ReglageNoms"
+          },
+          "parStand" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/ReglageNoms"
+            }
+          }
+        }
+      },
       "RelaisView" : {
         "type" : "object",
         "properties" : {
@@ -9123,6 +9174,24 @@
           }
         }
       },
+      "ResponsableView" : {
+        "required" : [ "stands" ],
+        "type" : "object",
+        "properties" : {
+          "editionNom" : {
+            "type" : "string"
+          },
+          "publieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StandResponsable"
+            }
+          }
+        }
+      },
       "Restoration" : {
         "type" : "object",
         "properties" : {
@@ -9189,7 +9258,7 @@
       },
       "RoleHabilitation" : {
         "type" : "string",
-        "enum" : [ "ADMIN", "ORGANISATEUR" ]
+        "enum" : [ "ADMIN", "ORGANISATEUR", "RESPONSABLE_STAND" ]
       },
       "RunningCheck" : {
         "required" : [ "editionId", "id", "effectif", "lanceeLe", "plafondSecondes" ],
@@ -10037,6 +10106,33 @@
           }
         }
       },
+      "StandResponsable" : {
+        "type" : "object",
+        "required" : [ "standId", "standNom", "nominatif", "vacations" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "nominatif" : {
+            "type" : "boolean"
+          },
+          "nomsAttendus" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "vacations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationResponsable"
+            }
+          }
+        }
+      },
       "Statut" : {
         "type" : "string",
         "enum" : [ "A_FAIRE", "ATTENTION", "INFO", "FAIT" ]
@@ -10546,6 +10642,32 @@
           },
           "heureFin" : {
             "$ref" : "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "VacationResponsable" : {
+        "type" : "object",
+        "required" : [ "debut", "fin", "pourvus", "vides", "personnes" ],
+        "properties" : {
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "pourvus" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "vides" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "personnes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PersonneVacation"
+            }
           }
         }
       },
@@ -18255,6 +18377,111 @@
         },
         "summary" : "Validate Scenario File",
         "tags" : [ "Reference Data Resource" ]
+      }
+    },
+    "/api/reglage-responsables" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReglagesResponsables"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReglagesResponsables"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Put",
+        "tags" : [ "Reglage Responsables Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReglagesResponsables"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Reglage Responsables Resource" ]
+      }
+    },
+    "/api/responsable/stands" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResponsableView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Stands",
+        "tags" : [ "Responsable Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "responsable_stand" ]
+        } ]
+      }
+    },
+    "/api/responsable/stands/{standId}/affichette.pdf" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "standId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/pdf" : { }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Affichette",
+        "tags" : [ "Responsable Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "responsable_stand" ]
+        } ]
       }
     },
     "/api/solve" : {

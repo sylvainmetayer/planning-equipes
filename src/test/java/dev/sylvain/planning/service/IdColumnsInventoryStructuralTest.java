@@ -51,6 +51,11 @@ class IdColumnsInventoryStructuralTest {
                     "the edition a right is scoped to, NULL for all; no key so that a dump import, which deletes "
                             + "and recreates the editions, does not cascade the instance's rights away"),
             Map.entry(
+                    "habilitation_stand.stand_id",
+                    "a stand a responsable de stand's right covers; no key for the same reason as "
+                            + "habilitation.edition_id — a dump import recreates the stands, and a right "
+                            + "naming a vanished stand opens nothing"),
+            Map.entry(
                     "journal_action.acteur_id",
                     "an animateur id, or the id of the admin account (« admin » for the configuration's), or « mcp »"),
             Map.entry(
