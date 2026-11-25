@@ -1,10 +1,17 @@
-# Accessibilité
+# Publier votre déclaration d'accessibilité
 
-Ce que l'application tient en matière d'accessibilité, ce qui le garantit, et ce
-qui reste ouvert. Les **conventions** d'écriture (un `<h1>` par écran, les icônes
-porteuses d'information, les messages de statut…) sont dans
-[`developpement.md` § Accessibilité](../comprendre/developpement.md#accessibilité) : ce fichier
-dit *où on en est*, celui-là dit *comment écrire*.
+Si votre organisation est soumise à l'obligation d'accessibilité numérique, renseignez les quatre variables `LEGAL_ACCESSIBILITE_*` : l'application publie alors sa déclaration à l'adresse `/declaration-accessibilite`, liée depuis le pied de page, le tiroir et le menu légal de l'espace animateur. Cette page dit aussi où en est l'application (référentiel RGAA 4.1, audit mené, contrôles automatiques, points ouverts), de quoi fonder ce que vous déclarez ; les conventions d'écriture pour qui développe sont dans [`developpement.md`](../comprendre/developpement.md#accessibilité).
+
+## Renseigner la déclaration
+
+L'article 47 de la loi n° 2005-102 impose une déclaration aux organismes publics et aux entreprises au-dessus d'un seuil de chiffre d'affaires. **L'obligation pèse sur l'organisation qui déploie l'application**, pas sur le projet : elle seule sait jusqu'où son instance a été auditée, quand, et où recevoir un signalement. La page `/declaration-accessibilite` affiche ce que le déploiement configure, et dit « non renseigné » pour le reste.
+
+| Variable | Contenu |
+| --- | --- |
+| `LEGAL_ACCESSIBILITE_ETAT` | `totale`, `partielle` ou `non` ; toute autre valeur se lit comme non renseignée |
+| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | la date de l'audit sur lequel repose l'état |
+| `LEGAL_ACCESSIBILITE_CONTENUS` | les contenus non accessibles, et pourquoi ; un saut de ligne fait un paragraphe |
+| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | où signaler un défaut ; vide, l'adresse de contact des mentions légales (`LEGAL_CONTACT`) |
 
 ## Le référentiel et le périmètre
 
@@ -88,20 +95,3 @@ qu'elle n'est pas retirée de la liste.
 - **Les jetons `--mat-sys-*`** de `mat.theme()` ne sont pas recalculés : ils
   sont réputés conformes par construction, et seul axe les mesure une fois
   appliqués.
-
-## La déclaration d'accessibilité
-
-L'article 47 de la loi n° 2005-102 impose une déclaration aux organismes publics
-et aux entreprises au-dessus d'un seuil de chiffre d'affaires. **L'obligation
-pèse sur l'organisation qui déploie l'application**, pas sur ce dépôt : elle
-seule sait jusqu'où son instance a été auditée, quand, et où recevoir un
-signalement. La page `/declaration-accessibilite`, liée depuis le pied de page,
-le tiroir et le menu légal de l'espace animateur, affiche ce que le
-déploiement configure, et dit « non renseigné » pour le reste :
-
-| Variable | Contenu |
-| --- | --- |
-| `LEGAL_ACCESSIBILITE_ETAT` | `totale`, `partielle` ou `non` — toute autre valeur se lit comme non renseignée |
-| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | la date de l'audit sur lequel repose l'état |
-| `LEGAL_ACCESSIBILITE_CONTENUS` | les contenus non accessibles, et pourquoi ; un saut de ligne fait un paragraphe |
-| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | où signaler un défaut ; vide, l'adresse de contact des mentions légales (`LEGAL_CONTACT`) |

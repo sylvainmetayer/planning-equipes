@@ -1,28 +1,16 @@
-# Observabilité
+# Brancher le suivi d'erreurs et les métriques
 
-Deux briques, **désactivées en dev/test** : suivi d'erreurs
-[Bugsink](https://www.bugsink.com/) (protocole et SDK Sentry) et
-[Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/).
+Vous reliez l'instance à un suivi d'erreurs ([Bugsink](https://www.bugsink.com/), protocole et SDK Sentry), à une mesure d'audience facultative ([Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)) et à un Prometheus, en sachant ce que chacun voit et ce qu'il ne doit jamais voir. Les deux premières briques sont **désactivées** tant que vous ne leur donnez pas de clé, et en développement comme en test.
 
-Le câblage se lit dans `SentryInitializer`, `GlobalExceptionMapper` et
-`app/core/observability.ts` — ce document porte ce qui ne s'y voit pas.
+## Ce qui tourne toujours
 
-Une troisième brique est **toujours active** : les sondes de santé
-`/q/health/live` et `/q/health/ready` (SmallRye Health), publiques et muettes
-sur tout détail de connexion. La disponibilité repose sur un seul contrôle,
-l'historique Flyway (`FlywayMigrationsReadinessCheck`), dont le premier rôle
-est de dire la base injoignable : l'historique ne se lit pas sans elle. Une
-migration en attente ou en échec rend aussi l'instance non prête, mais c'est
-une défense en profondeur — une migration interrompue empêche déjà le
-démarrage — contre un historique modifié sous une instance en marche. Le
-verdict est gardé 5 s, la sonde étant publique. Le contrôle de
-source de données fourni par Quarkus est **coupé** : en échec, il recopie dans
-la réponse publique le message du pilote, et avec lui l'hôte de la base. Leur usage d'exploitation est
-dans [`exploitation.md`](exploitation.md) § 7.
+Deux briques n'ont pas d'interrupteur.
 
-Une quatrième l'est aussi : les **métriques de fonctionnement** au format
-Prometheus, servies sur un port à part que la pile de production ne publie
-pas — voir [Métriques](#métriques).
+Les **sondes de santé** `/q/health/live` et `/q/health/ready` (SmallRye Health) sont publiques et muettes sur tout détail de connexion. La disponibilité repose sur un seul contrôle, l'historique Flyway (`FlywayMigrationsReadinessCheck`), dont le premier rôle est de dire la base injoignable : l'historique ne se lit pas sans elle. Une migration en attente ou en échec rend aussi l'instance non prête, mais c'est une défense en profondeur (une migration interrompue empêche déjà le démarrage) contre un historique modifié sous une instance en marche. Le verdict est gardé 5 s, la sonde étant publique. Le contrôle de source de données fourni par Quarkus est **coupé** : en échec, il recopie dans la réponse publique le message du pilote, et avec lui l'hôte de la base. Leur usage au quotidien est dans [Surveiller l'instance](surveillance.md).
+
+Les **métriques de fonctionnement**, au format Prometheus, sont servies sur un port à part que la pile de production ne publie pas : voir [Métriques](#métriques).
+
+Le câblage du suivi d'erreurs se lit dans `SentryInitializer`, `GlobalExceptionMapper` et `app/core/observability.ts`. Ce qui suit porte ce que le code ne dit pas.
 
 ## Le point qui n'est pas négociable : le jeton de l'espace animateur
 

@@ -1,32 +1,24 @@
-# Variables d'environnement
+# Retrouver une variable d'environnement
 
-L'application se règle **par l'environnement**, jamais par un écran, à une
-exception près : ce qui change d'une édition à l'autre (durées, rappels, poids
-des règles) se règle dans *Paramètres*, et les variables ci-dessous ne donnent
-que le défaut ou le plafond de l'instance. Cette page est l'inventaire complet de
-ce que lit l'application : chaque nom et chaque défaut y sont relevés dans
-`application.properties`, dans les fichiers compose et dans le script d'entrée de
-l'image. Le fichier [`.env.prod.example`](repo:.env.prod.example) en donne la
-version à copier, commentée, pour le compose de production.
+Vous cherchez le nom, le défaut et l'effet d'un réglage de l'instance : chaque variable que lit l'application, le compose de production ou le script d'entrée de l'image est listée ici, par famille. L'application se règle **par l'environnement**, jamais par un écran, à une exception près : ce qui change d'une édition à l'autre (durées, rappels, poids des règles) se règle dans *Paramètres*, et les variables ci-dessous ne donnent que le défaut ou le plafond de l'instance. Le fichier [`.env.prod.example`](repo:.env.prod.example) en donne la version à copier, commentée, pour le compose de production.
 
 Trois conventions :
 
-- une durée est écrite au format ISO-8601 (`PT15M` : quinze minutes, `P90D` :
-  quatre-vingt-dix jours) ;
-- une valeur vide n'est pas une valeur absente : `BACKUP_DIR=` désactive la
-  sauvegarde, comme l'indique la colonne *Défaut* ;
-- tout réglage Quarkus qui n'a pas de variable propre se pose aussi par
-  l'environnement, en majuscules et soulignés (`quarkus.http.port` devient
-  `QUARKUS_HTTP_PORT`). Le compose de production en utilise deux
-  (`QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY`, `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`),
-  et [`securite.md`](securite.md#qui-ouvre-ladministration) en cite un troisième pour le cookie
-  de session OIDC.
+- une durée est écrite au format ISO-8601 (`PT15M` : quinze minutes, `P90D` : quatre-vingt-dix jours) ;
+- une valeur vide n'est pas une valeur absente : `BACKUP_DIR=` désactive la sauvegarde, comme l'indique la colonne *Défaut* ;
+- tout réglage Quarkus qui n'a pas de variable propre se pose aussi par l'environnement, en majuscules et soulignés (`quarkus.http.port` devient `QUARKUS_HTTP_PORT`). Le compose de production en utilise deux (`QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY`, `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`), et [le guide de l'accès à l'administration](securite-acces-administration.md) en cite un troisième pour le cookie de session OIDC.
 
-Le détail de chaque famille est dans le document qui la porte : le calcul et le
-worker dans [`exploitation.md`](exploitation.md), les limites et les en-têtes dans
-[`securite.md`](securite.md), la connexion par un fournisseur d'identité dans
-[`oidc.md`](oidc.md), le suivi d'erreurs dans [`observabilite.md`](observabilite.md),
-le serveur MCP dans [`mcp.md`](../comprendre/mcp.md).
+| Famille | Pour la mettre en œuvre |
+| --- | --- |
+| Obligatoires, mentions légales | [Installer l'application sur votre serveur](installation.md), [Renseigner les mentions légales](mentions-legales.md) |
+| Réseau, limites, en-têtes | [le durcissement](securite.md) |
+| Connexion et comptes | [la connexion par un fournisseur d'identité](oidc.md), [les comptes locaux](comptes-locaux.md) |
+| Calcul du planning, machine de calcul | [Régler le calcul du planning](calcul-du-planning.md), [Résoudre sur une autre machine](calcul-sur-une-autre-machine.md) |
+| Courriels, envois de nuit | [Faire arriver vos e-mails](courriels.md), [Régler les envois automatiques](envois-automatiques.md) |
+| Sauvegarde, conservation | [Sauvegarder et restaurer](sauvegarde-et-restauration.md), [Purger et conserver les données](conservation-des-donnees.md) |
+| Webhooks, météo | [Autoriser les webhooks et l'alerte météo](appels-sortants.md) |
+| Suivi d'erreurs, audience | [Brancher le suivi d'erreurs et les métriques](observabilite.md) |
+| Serveur MCP | [le serveur MCP](../comprendre/mcp.md) |
 
 ## Obligatoires en production
 
@@ -45,7 +37,7 @@ compose — dans les cas suivants, chacun détaillé à sa ligne plus bas :
 - `REMOTE_USER_ENABLED=true` sans `REMOTE_USER_SECRET` ;
 - un webhook existe et `WEBHOOKS_SECRET_KEY` est absente ou invalide ;
 - `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous 900,
-  `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` sous 300 ;
+  `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` sous 180 ;
 - une entrée de `CONNEXION_PROXYS_FIABLES` ou de `WEBHOOKS_RESEAUX_AUTORISES`
   est mal formée ;
 - la machine de calcul distante est mal décrite (voir *Calcul du planning*).
@@ -143,7 +135,7 @@ compose — dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | --- | --- | --- |
 | `SOLVER_ENGINE` | `hand` | `hand` : moteur direct, chaque plan re-scoré par les contraintes ; `timefold` : la recherche d'avant la 3.0.0 |
 | `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps de calcul qu'une édition peut régler ou qu'un lancement peut demander ; sous le défaut de 900 s, démarrage refusé |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (celui de la durée) | Plafond de l'arrêt sans amélioration ; sous le défaut de 300 s, démarrage refusé |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (celui de la durée) | Plafond de l'arrêt sans amélioration ; sous le défaut de 180 s, démarrage refusé |
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés par l'instance sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière le calcul en cours |
 | `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. À réserver à une recette qui rejoue une édition ancienne |
@@ -162,6 +154,7 @@ compose — dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | `SOLVER_WORKER_PORT` | `8443` | Mode worker : port d'écoute |
 | `SOLVER_WORKER_TLS_KEYSTORE` | (aucun) | Mode worker : fichier PKCS#12 du certificat TLS. Sans lui, le worker écoute en HTTP sur la seule boucle locale ; avec lui, en HTTPS sur toutes les interfaces |
 | `SOLVER_WORKER_TLS_KEYSTORE_PASSWORD` | *(vide)* | Mode worker : mot de passe de ce fichier |
+| `JDK_JAVA_OPTIONS` | `-XX:MaxRAMPercentage=75 -XX:+UseParallelGC` (posé par l'image) | Options de la JVM ; les redéfinir remplace la valeur de l'image en entier ([la mémoire](calcul-du-planning.md#la-mémoire-de-lapplication)) |
 
 ## Courriels
 
