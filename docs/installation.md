@@ -36,8 +36,10 @@ détail ; l'inventaire de tous les réglages est dans
   échouer la sauvegarde.
 - **Sept variables sont obligatoires** — `APP_VERSION`, `DB_PASSWORD`,
   `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST`,
-  `MAIL_FROM` — et le compose refuse de démarrer sans elles ; l'application
-  refuse de son côté les deux mots de passe d'exemple.
+  `MAIL_FROM` — et le compose refuse de démarrer sans elles. L'application
+  refuse de son côté les deux mots de passe d'exemple et cinq mentions légales
+  vides ; la liste complète de ses refus est en tête de
+  [`variables-environnement.md`](variables-environnement.md#obligatoires-en-production).
 
 ## Mise en route
 

@@ -39,6 +39,29 @@ aucun espace pour une édition qui n'est pas **l'édition active** : on peut
 préparer et recalculer une édition à l'abri, et ne la rendre visible qu'au
 moment choisi.
 
+## Les mots de l'application
+
+Quelques mots reviennent dans ces pages et sur les écrans ; les voici en clair.
+
+| Mot | Ce qu'il veut dire |
+| --- | --- |
+| Édition | Une occurrence de l'événement (« Année 2026 ») : ses stands, son équipe, son planning. Les éditions ne se mélangent jamais |
+| Créneau, vacation | Une tranche horaire d'une journée ; une vacation est une tranche de travail réelle sur un stand |
+| Siège, place | Une personne à trouver pour un stand sur un créneau : un stand qui demande trois animateurs a trois sièges |
+| Solveur | Le nom de l'écran qui lance le **calcul automatique** du planning ; « résolution » veut dire un calcul |
+| Règle impérative | Une règle que le planning ne doit jamais enfreindre (les règles légales, celles des mineurs, une indisponibilité). Les autres règles sont des préférences : le calcul fait de son mieux |
+| Score, note | Le bilan d'un planning en trois niveaux : les règles impératives, les places restées vides, puis la qualité (équité, souhaits, continuité). L'application le traduit toujours en phrases |
+| Plancher | La part d'une règle qu'aucun calcul ne peut améliorer, parce qu'une donnée manque (personne n'a déclaré de souhait, par exemple) |
+| Recalcul partiel | Un calcul qui garde le planning en place et ne refait que ce qu'un changement a cassé |
+| Verrou | Le planning d'une personne, d'un stand ou d'une journée, qu'aucun calcul ne touchera plus |
+| Ajustement manuel | Une exception posée à la main : une personne indisponible tel jour, deux personnes à ne pas mettre ensemble, une affectation imposée |
+| Consigne | Une fermeture imposée de l'extérieur (un arrêté préfectoral, une canicule) appliquée à tous les stands pour quelques dates |
+| Instantané | Une copie du planning mise de côté, qu'on peut remettre en place plus tard |
+| CSV, ICS, PDF | Les formats de fichier : CSV s'ouvre dans un tableur, ICS s'ajoute à un agenda (téléphone, Outlook, Google), PDF s'imprime |
+| Fichier scénario | Un fichier qui contient toute une édition, pour la recopier ou la partager |
+| Webhook | Un message que l'application envoie d'elle-même à un autre outil de l'équipe (Slack, Discord…) |
+| MCP | La porte par laquelle un assistant IA peut consulter l'application, sans jamais voir les données personnelles |
+
 ## Ce qu'elle ne fait pas
 
 - Le planning calculé est une proposition : l'organisateur relit, retouche et

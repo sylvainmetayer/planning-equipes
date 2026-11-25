@@ -35,17 +35,28 @@ docker compose --profile app up
 ```
 
 Puis ouvrir <http://localhost:8080> et se connecter avec le compte `admin` et le
-mot de passe `dev-admin-Zc6qL1yV` (celui de cette pile, réglable par
-`ADMIN_PASSWORD`). Les courriels que l'application envoie, dont les codes
-d'accès de l'espace animateur, arrivent dans Mailpit sur
-<http://localhost:8025>. Pour partir d'une édition remplie : *Fichiers*,
-onglet *Importer*, carte *Exemples*, puis **Charger cet exemple**, et enfin
-**Solveur › Calculer le planning**.
+mot de passe que `docker-compose.yml` donne à `ADMIN_PASSWORD` (le choisir en
+posant cette variable avant `up`). Les courriels que l'application envoie, dont
+les codes d'accès de l'espace animateur, arrivent dans Mailpit sur
+<http://localhost:8025>.
+
+Premiers pas, sur une édition remplie :
+
+1. **Fichiers**, onglet *Importer*, carte *Exemples* : choisir un exemple puis
+   **Charger cet exemple**.
+2. **Solveur › Calculer le planning** : le calcul tourne en fond, la courbe se
+   trace en direct et une notification annonce la fin.
+3. Lire le résultat dans **Planning**, ce qui bloque dans **Diagnostic**, le
+   respect des règles dans **Règles du planning**, puis exporter depuis
+   **Diffuser** ou depuis la fiche d'un animateur.
+
+<kbd>Ctrl</kbd>+<kbd>K</kbd> trouve n'importe quel écran, et la page **Aide**
+(icône « ? ») est le mode d'emploi complet.
 
 ⚠️ Cette pile est faite pour le poste de travail : elle publie PostgreSQL sur
-l'hôte, ajoute pgAdmin en `admin/admin` et utilise des mots de passe d'exemple.
-Elle tourne sur l'image `main`, celle de la recette. **Pour un déploiement
-accessible depuis Internet**, voir
+l'hôte, ajoute pgAdmin sans authentification sur <http://localhost:5050> et
+utilise des mots de passe d'exemple. Elle tourne sur l'image `main`, celle de
+la recette. **Pour un déploiement accessible depuis Internet**, voir
 [Installer l'application](docs/installation.md).
 
 ### Développer

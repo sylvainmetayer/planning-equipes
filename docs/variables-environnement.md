@@ -32,11 +32,29 @@ le serveur MCP dans [`mcp.md`](mcp.md).
 
 Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose), et l'application refuse de démarrer sur les deux mots de passe d'exemple.
 
+L'application, elle, refuse aussi de démarrer en production — quel que soit le
+compose — dans les cas suivants, chacun détaillé à sa ligne plus bas :
+
+- une des cinq mentions légales exigées est vide (`LEGAL_EDITEUR`,
+  `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_BASE_LEGALE`,
+  `LEGAL_CONSERVATION`), sauf `LEGAL_DEMO_INSTANCE=true` ;
+- `ADMIN_PASSWORD` ou `DB_PASSWORD` vaut la valeur d'exemple ou est vide ;
+- aucune porte n'ouvre l'administration (`OIDC_ENABLED=false` et
+  `ADMIN_LOCAL_SECOURS=false`), ou `OIDC_CLIENT_SECRET` fait moins de 32
+  caractères quand OIDC est actif ;
+- `REMOTE_USER_ENABLED=true` sans `REMOTE_USER_SECRET` ;
+- un webhook existe et `WEBHOOKS_SECRET_KEY` est absente ou invalide ;
+- `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous 900,
+  `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` sous 300 ;
+- une entrée de `CONNEXION_PROXYS_FIABLES` ou de `WEBHOOKS_RESEAUX_AUTORISES`
+  est mal formée ;
+- la machine de calcul distante est mal décrite (voir *Calcul du planning*).
+
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `APP_VERSION` | *(aucun : obligatoire)* | Version de l'image à déployer, une version nommée (`1.2.0`), jamais `main` ni `latest`. Lue par le compose seul, pas par l'application |
 | `DB_PASSWORD` | *(aucun : obligatoire)* | Mot de passe PostgreSQL, partagé par l'application et le conteneur de base. Le mot de passe d'exemple refuse le démarrage. Défaut hors compose : `festival` (en dev : celui du `docker-compose.yml`) |
-| `ADMIN_PASSWORD` | *(aucun : obligatoire)* | Mot de passe du compte `admin`. Le défaut `admin` refuse le démarrage en production |
+| `ADMIN_PASSWORD` | *(aucun : obligatoire)* | Mot de passe du compte `admin`. Défaut hors compose : `admin`, qui refuse le démarrage en production, comme une valeur vide |
 | `SESSION_ENCRYPTION_KEY` | *(aucun : obligatoire)* | Clé d'au moins 16 caractères qui chiffre le cookie de session. Le compose la transmet à l'application sous le nom `QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY` ; sans clé fixe, les sessions tombent à chaque redémarrage |
 | `PUBLIC_URL` | `http://localhost:8080` | URL publique de l'instance, imprimée comme lien « espace animateur » sur les PDF et dans les mails. Obligatoire dans le compose de production |
 | `MAIL_HOST` | `localhost` | Serveur SMTP. Obligatoire dans le compose de production |
@@ -57,8 +75,8 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | --- | --- | --- |
 | `HTTP_PORT` | `8080` | Port HTTP de l'application |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS (redirection de connexion en `https`, cookie `Secure`) |
-| `TRUSTED_PROXIES` | *(vide)* | Lue par le compose de production et transmise sous le nom `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` : les adresses dont les en-têtes `X-Forwarded-*` sont acceptés |
-| `CONNEXION_PROXYS_FIABLES` | *(vide)* | Proxys inverses dont l'en-tête `X-Forwarded-For` est cru, pour compter les échecs de connexion par adresse. Vide : l'adresse de la connexion est comptée. Une entrée mal formée empêche le démarrage |
+| `TRUSTED_PROXIES` | *(vide)* | Lue par le compose de production et transmise sous le nom `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` : les adresses dont les en-têtes `X-Forwarded-*` sont acceptés. Vide : ceux de tout appelant ; à poser dès que l'application est joignable sans passer par le proxy |
+| `CONNEXION_PROXYS_FIABLES` | *(vide)* | Proxys inverses dont l'en-tête `X-Forwarded-For` est cru, pour compter par adresse les échecs de connexion administrateur, les lectures refusées de l'affichage mural et, par défaut, les appels MCP. Vide : l'adresse de la connexion est comptée, donc tous les visiteurs derrière un proxy partagent un compteur. Une entrée mal formée empêche le démarrage |
 | `CSP` | (politique par défaut) | Politique de sécurité du contenu envoyée à chaque réponse ; vide : en-tête désactivé |
 | `HSTS` | `max-age=31536000; includeSubDomains` | En-tête HSTS, envoyé sur une visite HTTPS ; vide : désactivé |
 | `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête |
@@ -75,7 +93,7 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | `OIDC_ENABLED` | `false` | Activer la connexion par un fournisseur d'identité OpenID Connect |
 | `OIDC_AUTH_SERVER_URL` | *(vide)* | URL de l'émetteur du fournisseur, la même vue du navigateur et de l'application |
 | `OIDC_CLIENT_ID` | `planning-app` | Identifiant du client déclaré chez le fournisseur |
-| `OIDC_CLIENT_SECRET` | *(vide)* | Secret du client, d'au moins 32 caractères |
+| `OIDC_CLIENT_SECRET` | *(vide)* | Secret du client, d'au moins 32 caractères : plus court, démarrage refusé en production quand OIDC est actif |
 | `OIDC_REQUIRE_EMAIL_VERIFIED` | `true` | Exiger que le fournisseur affirme l'adresse vérifiée ; `false` pour un annuaire qui n'envoie pas cette information |
 | `OIDC_SCOPES` | `profile,email` | Périmètres demandés au fournisseur |
 | `OIDC_SESSION_AGE_EXTENSION` | `30M` | Prolongation de la session après expiration du jeton d'identité |
@@ -83,7 +101,7 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | `OIDC_PRINCIPAL_CLAIM` | `email` | Revendication qui porte l'identité de la personne |
 | `OIDC_CONNECTION_DELAY` | `30S` | Durée pendant laquelle la découverte du fournisseur est retentée au démarrage |
 | `OIDC_FORCE_HTTPS` | `false` | `true` derrière un proxy qui termine le TLS : redirections en `https` |
-| `ADMIN_LOCAL_SECOURS` | *(vide)* | Derrière un fournisseur OIDC, ouvrir (`true`) ou fermer le compte de secours `admin` |
+| `ADMIN_LOCAL_SECOURS` | *(vide)* | Compte `admin` de la configuration. Vide : ouvert sans OIDC, fermé derrière un fournisseur OIDC ; `true` le garde ouvert comme compte de secours. `false` sans OIDC refuse le démarrage (aucune porte n'ouvrirait l'administration) |
 | `AUTH_LOCAL_SECONDE_ETAPE` | `true` | Les comptes locaux reçoivent un code à six chiffres par mail après leur mot de passe ; `false` coupe cette seconde étape |
 | `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion tolérés avant verrouillage |
 | `CONNEXION_DUREE_BLOCAGE` | `PT15M` | Durée du verrouillage, depuis le dernier échec |
@@ -122,17 +140,17 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `SOLVER_ENGINE` | `hand` | `hand` : moteur direct, chaque plan re-scoré par les contraintes ; `timefold` : la recherche d'avant la 3.0.0 |
-| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps de calcul qu'une édition peut régler ou qu'un lancement peut demander |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (celui de la durée) | Plafond de l'arrêt sans amélioration |
-| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés par l'instance sur les 60 dernières minutes glissantes |
+| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps de calcul qu'une édition peut régler ou qu'un lancement peut demander ; sous le défaut de 900 s, démarrage refusé |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (celui de la durée) | Plafond de l'arrêt sans amélioration ; sous le défaut de 300 s, démarrage refusé |
+| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés par l'instance sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière le calcul en cours |
-| `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées |
+| `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. À réserver à une recette qui rejoue une édition ancienne |
 | `JOBS_STREAM_HEARTBEAT` | `PT20S` | Battement du flux de suivi des calculs, qui garde les proxys ouverts |
 | `JOBS_STREAM_SCORE` | `PT1S` | Fréquence d'envoi de la courbe de score d'un calcul en cours |
-| `SOLVER_WORKER_URL` | *(vide)* | Adresse d'un worker permanent qui reçoit les calculs complets |
-| `SOLVER_WORKER_SECRET` | *(vide)* | Secret partagé avec le worker |
+| `SOLVER_WORKER_URL` | *(vide)* | Adresse d'un worker permanent qui reçoit les calculs complets. En `https`, sauf sur la boucle locale ; exige `SOLVER_WORKER_SECRET` ; exclut `SOLVER_WORKER_HOOK_URL`. Sinon, démarrage refusé |
+| `SOLVER_WORKER_SECRET` | *(vide)* | Secret partagé avec le worker, la même valeur des deux côtés : obligatoire avec `SOLVER_WORKER_URL`, et pour démarrer l'image en mode worker |
 | `SOLVER_WORKER_TLS_FINGERPRINT` | *(vide)* | Empreinte du certificat du worker, épinglée |
-| `SOLVER_WORKER_HOOK_URL` | *(vide)* | Adresse du lanceur qui crée une machine à la demande (incompatible avec l'URL d'un worker permanent) |
+| `SOLVER_WORKER_HOOK_URL` | *(vide)* | Adresse du lanceur qui crée une machine à la demande (incompatible avec l'URL d'un worker permanent). En `https`, sauf sur la boucle locale ou un réseau privé ; exige `SOLVER_WORKER_HOOK_SECRET` |
 | `SOLVER_WORKER_HOOK_SECRET` | *(vide)* | Secret du lanceur |
 | `SOLVER_WORKER_INSTANCE` | `planning` | Nom que l'instance donne au lanceur, quand il en sert plusieurs |
 | `SOLVER_WORKER_DEFAULT` | `local` | `remote` : un calcul part sur la machine de calcul quand son lancement ne dit rien ; `local` sinon |
@@ -140,7 +158,7 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | `SOLVER_WORKER_IDLE_TIMEOUT` | `PT45M` | Inactivité au bout de laquelle une machine à la demande est arrêtée |
 | `SOLVER_WORKER_MODE` | `false` | `true` : l'image démarre le worker de calcul au lieu de l'application. Lue par `docker/entrypoint.sh` |
 | `SOLVER_WORKER_PORT` | `8443` | Mode worker : port d'écoute |
-| `SOLVER_WORKER_TLS_KEYSTORE` | (aucun) | Mode worker : fichier du certificat TLS |
+| `SOLVER_WORKER_TLS_KEYSTORE` | (aucun) | Mode worker : fichier PKCS#12 du certificat TLS. Sans lui, le worker écoute en HTTP sur la seule boucle locale ; avec lui, en HTTPS sur toutes les interfaces |
 | `SOLVER_WORKER_TLS_KEYSTORE_PASSWORD` | *(vide)* | Mode worker : mot de passe de ce fichier |
 
 ## Courriels
@@ -154,7 +172,7 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | `MAIL_START_TLS` | `DISABLED` | `DISABLED`, `OPTIONAL` ou `REQUIRED` (`REQUIRED` dans le compose de production) |
 | `MAIL_MOCK` | `false` | `true` : les mails sont journalisés au lieu d'être envoyés |
 | `MAIL_FROM` | `planning-equipes@localhost` | Adresse expéditrice |
-| `MAIL_ADMIN` | *(vide)* | Adresse de l'administrateur : demandes d'échange, fin de résolution si l'édition le demande, sauvegarde de nuit en échec puis rétablie ; vide : désactivé |
+| `MAIL_ADMIN` | *(vide)* | Adresse de l'administrateur : demandes d'échange, fin de résolution si l'édition le demande, alerte météo, sauvegarde de nuit en échec puis rétablie ; vide : désactivé, et un échec de sauvegarde ne se voit que sur l'écran des paramètres |
 
 ## Sauvegarde, tâches de nuit et conservation
 
@@ -178,8 +196,8 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 | --- | --- | --- |
 | `WEBHOOKS_ENABLED` | `true` | `false` coupe toute sortie par webhook |
 | `WEBHOOKS_CRON` | `0 * * * * ?` | Rythme de reprise des livraisons en attente de réessai |
-| `WEBHOOKS_SECRET_KEY` | *(vide)* | Clé AES-256 (32 octets en base64) qui chiffre les secrets des webhooks ; sans elle, démarrage refusé dès qu'un webhook existe |
-| `WEBHOOKS_RESEAUX_AUTORISES` | *(vide)* | Réseaux (adresses ou CIDR) qu'un webhook peut viser alors que la garde les refuse d'ordinaire |
+| `WEBHOOKS_SECRET_KEY` | *(vide)* | Clé AES-256 (32 octets en base64, `openssl rand -base64 32`) qui chiffre les secrets des webhooks. Sans elle, créer un webhook est refusé, et le démarrage l'est dès qu'un webhook existe ; une clé mal formée refuse le démarrage |
+| `WEBHOOKS_RESEAUX_AUTORISES` | *(vide)* | Réseaux (adresses ou CIDR, séparés par des virgules) qu'un webhook peut viser alors que la garde les refuse d'ordinaire (boucle locale, réseaux privés) ; `http://` n'est accepté que vers eux. Une entrée mal formée empêche le démarrage |
 | `METEO_ENABLED` | `true` | `false` coupe l'alerte météo pour toute l'instance |
 | `METEO_CRON` | `0 0 6 * * ?` | Heure de l'interrogation du service météo |
 | `METEO_URL` | `https://api.open-meteo.com/v1/forecast` | Service de prévision interrogé (l'offre gratuite d'Open-Meteo est réservée à un usage non commercial) |
@@ -208,18 +226,18 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 
 ## Mentions légales
 
-Cinq d'entre elles sont exigées au démarrage en production, sauf instance déclarée hors service.
+Les cinq marquées **exigée** refusent le démarrage en production quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true`. Elles s'affichent sur la page publique `/mentions-legales`.
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `LEGAL_DEMO_INSTANCE` | `false` | `true` : instance qui n'est pas en service, dispensée des mentions exigées |
-| `LEGAL_EDITEUR` | *(vide)* | Éditeur (nom, forme juridique, adresse, immatriculation) |
+| `LEGAL_EDITEUR` | *(vide)* | **Exigée.** Éditeur (nom, forme juridique, adresse, immatriculation) |
 | `LEGAL_DIRECTEUR_PUBLICATION` | *(vide)* | Directeur de la publication |
-| `LEGAL_HEBERGEUR` | *(vide)* | Hébergeur (nom et adresse) |
-| `LEGAL_CONTACT` | *(vide)* | Adresse de contact, y compris pour exercer ses droits |
+| `LEGAL_HEBERGEUR` | *(vide)* | **Exigée.** Hébergeur (nom et adresse) |
+| `LEGAL_CONTACT` | *(vide)* | **Exigée.** Adresse de contact, y compris pour exercer ses droits |
 | `LEGAL_RESPONSABLE_TRAITEMENT` | *(vide)* | Responsable de traitement, quand il diffère de l'éditeur ; vide : l'éditeur |
-| `LEGAL_BASE_LEGALE` | *(vide)* | Base légale du traitement des données personnelles |
-| `LEGAL_CONSERVATION` | *(vide)* | Durée de conservation des données personnelles |
+| `LEGAL_BASE_LEGALE` | *(vide)* | **Exigée.** Base légale du traitement des données personnelles |
+| `LEGAL_CONSERVATION` | *(vide)* | **Exigée.** Durée de conservation des données personnelles |
 | `LEGAL_ACCESSIBILITE_ETAT` | *(vide)* | Déclaration d'accessibilité : conformité `totale`, `partielle` ou `non` |
 | `LEGAL_ACCESSIBILITE_DATE_AUDIT` | *(vide)* | Date de l'audit d'accessibilité |
 | `LEGAL_ACCESSIBILITE_CONTENUS` | *(vide)* | Contenus non accessibles |
