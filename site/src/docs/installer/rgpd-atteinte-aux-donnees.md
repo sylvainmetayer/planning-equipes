@@ -1,6 +1,6 @@
 # Préparer la réponse à une atteinte aux données
 
-Décidez maintenant qui vous appelez et sous quel délai : cela coûte dix minutes, et l'improviser un dimanche de festival coûte la relation. Cette page donne la marche à suivre quand vous hébergez l'instance d'un client : ce qui compte comme atteinte, le délai à tenir, la personne à appeler, le contenu de l'alerte et le journal à tenir, y compris pour les atteintes qu'on ne notifie pas (art. 33).
+Décidez maintenant qui vous appelez et sous quel délai : cela coûte dix minutes, et l'improviser un dimanche de festival coûte la relation. Voici la marche à suivre quand vous hébergez l'instance d'un client : ce qui compte comme atteinte, le délai à tenir, la personne à appeler, le contenu de l'alerte et le journal à tenir, y compris pour les atteintes qu'on ne notifie pas (art. 33).
 
 Le sous-traitant ne notifie **jamais la CNIL** : il alerte le responsable de
 traitement, **sans délai injustifié**, et c'est le responsable qui décide de

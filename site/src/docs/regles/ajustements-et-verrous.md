@@ -28,7 +28,7 @@ Si l'ajustement place quelqu'un là où aucune place ne peut le tenir (un mineur
 
 Un verrou gèle une personne, un stand, une journée ou un créneau. La prochaine résolution n'y touche plus et optimise le reste. Un verrou est un geste sur un plan déjà calculé : il conserve ce qu'une résolution a produit, sans rien dire de ce qui devrait s'y trouver.
 
-1. Ouvrez *Règles du planning*, onglet *Verrouillages* (ou verrouillez depuis la fiche d'une personne, le panneau d'un siège, ou la page Fragilité).
+1. Ouvrez *Règles du planning*, onglet *Verrouillages* (ou verrouillez depuis la fiche d'une personne, le panneau d'un siège, ou l'onglet *Fragilité* du Diagnostic).
 2. Avant de poser un verrou, l'écran compte les affectations qu'il figera et mène à la journée qui les montre.
 3. Confirmez.
 
@@ -38,7 +38,7 @@ Ajustements et verrouillages se cochent à plusieurs (« Tout sélectionner » s
 
 ## Les arrivées groupées validées
 
-Une arrivée groupée validée (voir [Collecter les disponibilités](collecter-disponibilites.md#traiter-les-demandes-de-covoiturage)) devient un ajustement manuel que seule l'organisation peut annuler, depuis l'onglet Covoiturage de la page Disponibilités. La page des ajustements ne le modifie ni ne le supprime.
+Une arrivée groupée validée (voir [Collecter les disponibilités](collecter-disponibilites.md#traiter-les-demandes-de-covoiturage)) devient un ajustement manuel que seule l'organisation peut annuler, depuis *Animateurs*, onglet *Disponibilités*, puis *Covoiturage*. La page des ajustements ne le modifie ni ne le supprime.
 
 ## Les consignes de l'autorité
 

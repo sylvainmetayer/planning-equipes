@@ -4,7 +4,7 @@ Vous ajustez ce qui décide du plan : les seuils légaux, l'importance de chaque
 
 ![La page Règles du planning](/images/fr/regles.webp "Règles du planning")
 
-Tout se règle dans *Règles du planning* (groupe *Planifier*), en trois onglets de réglage. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
+Tout se règle dans *Règles du planning* (groupe *Planifier*), en trois onglets de réglage : *Légal*, *Qualité* et *Calcul*. Ce sont des réglages d'expert : ils n'apparaissent qu'après un clic sur « Réglages avancés », sous la rangée d'onglets. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
 
 ## L'onglet Légal
 

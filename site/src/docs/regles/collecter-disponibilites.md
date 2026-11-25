@@ -27,7 +27,7 @@ Si vous l'avez allumée avec la collecte, chaque animateur qui a reçu l'invitat
 
 - Il n'y a qu'une relance par personne et par date de fin.
 - Une nuit manquée est rattrapée le lendemain.
-- Rien ne part d'une collecte fermée ou sans date de fin, ni d'une édition qui n'est pas celle en cours.
+- Rien ne part d'une collecte fermée ou sans date de fin, ni d'une édition qui n'est pas l'édition active.
 
 ## Appliquer les déclarations
 
@@ -37,7 +37,7 @@ Une déclaration reste une **proposition** : elle n'est prise en compte qu'une f
 
 Pendant la collecte, dans l'onglet *Covoiturage* de son espace, un animateur nomme jusqu'à trois coéquipiers avec qui il vient (« Je viens avec… »). Cet onglet est à part de sa déclaration. Hors collecte, il montre où en est sa demande.
 
-Côté organisation, l'onglet *Covoiturage* de la page *Disponibilités* retrouve ces demandes. Si chacun a nommé les autres, il dit combien de jours leurs indisponibilités divergent. Vous décidez chaque demande à part :
+Côté organisation, *Animateurs*, onglet *Disponibilités*, puis *Covoiturage*, retrouve ces demandes. Si chacun a nommé les autres, il dit combien de jours leurs indisponibilités divergent. Vous décidez chaque demande à part :
 
 - **valider** l'arrivée groupée ;
 - ou l'**écarter**, avec un motif facultatif que l'animateur lit.

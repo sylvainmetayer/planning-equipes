@@ -34,7 +34,7 @@ On y lit la durée des résolutions et la file du solveur, la latence de l'API, 
 `docker compose logs` reste la première chose à lire :
 
 ```bash
-docker compose -f docker-compose.prod.yml logs -f app
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f app
 ```
 
 L'application écrit sur la sortie standard, la rotation relève donc du moteur de conteneurs, et `docker-compose.prod.yml` la règle lui-même pour `app` et `postgres` : pilote `local` (compressé, rotation native), **5 fichiers de 20 Mo, soit environ 100 Mo par service** au plus. Sans ce réglage, le pilote par défaut de Docker grossit sans limite, et un disque rempli par les journaux fait aussi échouer la sauvegarde de nuit, qui écrit sur le même disque.

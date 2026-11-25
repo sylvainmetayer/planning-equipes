@@ -1,6 +1,6 @@
 # Les contrôles de sécurité qui tournent à chaque version
 
-Des analyses automatiques protègent le code et l'image que vous déployez, à chaque poussée. Cette page dit ce qu'elles voient, ce qui bloque une publication et comment une exception se justifie ; c'est la page de l'auditeur ou du relecteur plus que celle de l'exploitant.
+Des analyses automatiques protègent le code et l'image que vous déployez, à chaque poussée. Vous savez ce qu'elles voient, ce qui bloque une publication et comment une exception se justifie : de quoi répondre à un auditeur ou à un relecteur, plus qu'un geste d'exploitation.
 
 ## Analyses automatiques
 

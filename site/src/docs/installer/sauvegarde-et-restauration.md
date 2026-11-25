@@ -12,7 +12,7 @@ L'application dumpe la base **toute seule, chaque nuit à 4 h**, dès que `BACKU
 
 | Variable | Défaut | Effet |
 | --- | --- | --- |
-| `BACKUP_DIR` | *(vide)* | Répertoire des sauvegardes. Vide : **rien n'est planifié**, et l'écran *Paramètres*, onglet *Instance*, l'annonce. Le compose de production le pose sur `/backup` |
+| `BACKUP_DIR` | *(vide)* | Répertoire des sauvegardes. Vide : **rien n'est planifié**, et l'écran *Paramètres*, onglet *Instance* (derrière « Réglages avancés »), l'annonce. Le compose de production le pose sur `/backup` |
 | `BACKUP_RETENTION` | `10` | Nombre de copies conservées, entre 1 et 30. Hors bornes, **le démarrage est refusé** : une rétention rognée en silence ne se découvre que le jour où l'on cherche le dump manquant |
 | `BACKUP_TIMEZONE` | `Europe/Paris` | Fuseau dans lequel « 4 h » se lit, et dans lequel le fichier est nommé ; réglé à part, indépendamment de `TZ` |
 | `BACKUP_CRON` | `0 0 4 * * ?` | La planification elle-même, si 4 h ne convient pas |

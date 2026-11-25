@@ -27,7 +27,7 @@ Le courriel, l'espace et le PDF disent « horaires modifiés » avec le motif. U
 
 ## Lever une consigne
 
-La levée rend leurs après-midis aux titulaires. Elle se prévisualise comme une pose. Une journée passée garde pour toujours la consigne qui l'a gouvernée.
+La levée rend leurs heures aux titulaires des sièges fermés. Elle se prévisualise comme une pose. Une journée passée garde pour toujours la consigne qui l'a gouvernée.
 
 ## Partir d'une alerte météo
 
@@ -35,7 +35,7 @@ Chaque matin, l'application lit la prévision d'Open-Meteo pour les lieux de l'�
 
 - « Préparer la consigne » ouvre le formulaire déjà rempli sur la bonne date. Rien ne s'applique sans votre relecture.
 - Une même prévision ne sonne qu'une fois, et de nouveau seulement si elle s'aggrave.
-- L'alerte se règle et s'allume par édition. Elle dépend de la configuration de l'instance (voir [Installer chez vous](../installer/index.md)).
+- L'alerte s'allume et se règle par édition, dans Paramètres, onglet *Édition* (seuils par phénomène, préréglage suggéré). Elle suppose que l'hébergeur ne l'a pas coupée pour l'instance (voir [Autoriser les webhooks et l'alerte météo](../installer/appels-sortants.md)).
 
 ## Un plan de repli du jour sans consigne
 

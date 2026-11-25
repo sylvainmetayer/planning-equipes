@@ -34,7 +34,7 @@ Chaque poste, et chaque pause, nomme l'emplacement de son stand quand il en a un
 
 ## Ce qui a changé pour vous
 
-Au-dessus de ses journées, l'animateur relit les phrases exactes de la dernière publication qui a déplacé son emploi du temps : les mêmes que son e-mail, repliées derrière un titre qui en donne le nombre. Un message perdu, classé en indésirable ou jamais reçu n'emporte plus avec lui la seule trace de ce qui a bougé. Une première diffusion annonce un planning et non une liste de corrections, et le bandeau passe en arrière-plan une fois la présence confirmée. Les demandes d'échange restent sur leur onglet, avec leur statut du moment.
+Au-dessus de ses journées, l'animateur relit les phrases exactes de la dernière publication qui a déplacé son emploi du temps : les mêmes que son e-mail, repliées derrière un titre qui en donne le nombre. Un message perdu ou classé en indésirable n'efface donc pas la trace de ce qui a bougé. Une première diffusion annonce un planning et non une liste de corrections, et le bandeau passe en arrière-plan une fois la présence confirmée. Les demandes d'échange restent sur leur onglet, avec leur statut du moment.
 
 ## « Je ne pourrai pas venir »
 

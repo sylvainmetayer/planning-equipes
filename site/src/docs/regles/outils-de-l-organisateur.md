@@ -4,7 +4,7 @@ Vous branchez l'application à vos autres outils, vous savez ce qui est sauvegar
 
 ## Brancher un assistant IA
 
-Un assistant IA peut consulter et piloter l'application en langage naturel, sans jamais voir les données personnelles des animateurs. Le branchement (clés, outils exposés, confidentialité) est décrit dans [Le serveur MCP](../comprendre/mcp-connexion.md). Les clés se gèrent dans Paramètres, onglet *MCP*.
+Un assistant IA peut consulter et piloter l'application en langage naturel, sans jamais voir les données personnelles des animateurs. Le branchement (clés, outils exposés, confidentialité) est décrit dans [Le serveur MCP](../comprendre/mcp-connexion.md). Les clés se gèrent dans Paramètres, onglet *MCP* (derrière « Réglages avancés »).
 
 ## Prévenir un autre outil de l'équipe (webhooks)
 
@@ -20,7 +20,7 @@ L'application peut annoncer ce qui se passe à l'outil où l'équipe travaille :
 
 Les messages portent des comptes, jamais un nom.
 
-1. Ouvrez Paramètres, onglet *Instance*.
+1. Ouvrez Paramètres, cliquez sur « Réglages avancés », puis l'onglet *Instance*, carte *Webhooks*.
 2. Créez le webhook (adresse et format).
 3. Testez-le d'un bouton.
 4. Suivez-le dans son journal de livraisons.
@@ -29,11 +29,11 @@ Un récepteur en panne est relancé plusieurs fois et ne retarde jamais l'opéra
 
 ## Savoir si la sauvegarde de nuit a réussi
 
-Chaque nuit, toute la base est copiée sur le disque de l'hébergeur, et seules les dernières copies sont gardées. Paramètres, onglet *Instance*, dit où elles vont, lesquelles existent et si la dernière nuit s'est bien passée.
+Chaque nuit, toute la base est copiée sur le disque de l'hébergeur, et seules les dernières copies sont gardées. Paramètres, onglet *Instance* (derrière « Réglages avancés »), dit où elles vont, lesquelles existent et si la dernière nuit s'est bien passée.
 
 - Une nuit en échec prévient l'administrateur par e-mail : la raison, la dernière copie réussie, le nombre de nuits d'affilée.
 - Un second message annonce la première nuit qui réussit de nouveau.
-- La restauration est une opération de l'exploitant sur la base : voir [Installer chez vous](../installer/index.md).
+- La restauration est une opération de l'exploitant sur la base : voir [Sauvegarder et restaurer](../installer/sauvegarde-et-restauration.md).
 
 ## Retrouver le mode d'emploi dans l'application
 

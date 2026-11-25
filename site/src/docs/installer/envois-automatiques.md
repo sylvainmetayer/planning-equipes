@@ -33,7 +33,7 @@ Le bandeau « Action requise » de l'administration signale une édition active 
 
 Dans l'ordre où ça casse :
 
-1. L'interrupteur de l'édition. C'est la cause de « je n'ai rien reçu » dans neuf cas sur dix, et il est silencieux par construction.
+1. L'édition active. Si l'édition de l'événement n'a pas été activée (étape 2), rien ne part et rien ne le signale : c'est la cause de « je n'ai rien reçu » dans neuf cas sur dix.
 2. Le plan doit être publié. Le rappel lit le planning **publié**, jamais le plan de travail : personne n'est rappelé pour un créneau qu'on ne lui a pas communiqué.
 3. Les fiches sans adresse. Elles sont sautées, comptées dans « À traiter aujourd'hui » de l'accueil et nommées dans ses « Messages récents » : ce sont les gens à prévenir à la main.
 4. Les envois en échec. Un rappel ou une relance que le relais a refusé laisse une alerte rouge dans les « Messages récents » de l'accueil, et la personne **n'est pas comptée comme relancée** : elle reste « échec d'envoi » sur la page Animateurs. La nuit ne réessaie pas, parce qu'un relais en panne à 19 h l'est souvent à 20 h et que réécrire chaque heure n'arrangerait rien. « Relancer maintenant » reste ouvert pour elle une fois le relais rétabli, quel que soit le courriel parti depuis, et deux clics simultanés n'écrivent qu'une fois. Seule exception : une adresse refusée, dont la relance reprend d'elle-même au passage qui suit la correction de la fiche ([les catégories d'échec](courriels.md#4-lire-ce-qui-est-gardé-de-chaque-envoi)).

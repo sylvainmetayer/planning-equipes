@@ -1,6 +1,6 @@
 # Renseigner les mentions légales
 
-Avant d'ouvrir l'instance à ses animateurs, vous renseignez dans l'environnement les informations légales de l'organisateur : sans cinq d'entre elles, l'application refuse de démarrer en production. Ce guide dit lesquelles, pourquoi, et comment tenir une instance de démonstration qui n'en a pas.
+Avant d'ouvrir l'instance à ses animateurs, vous renseignez dans l'environnement les informations légales de l'organisateur : sans cinq d'entre elles, l'application refuse de démarrer en production. Voici lesquelles, pourquoi, et comment tenir une instance de démonstration qui n'en a pas.
 
 ## Pourquoi elles ne restent pas vides
 

@@ -1,6 +1,6 @@
 # Savoir ce que chaque rôle peut appeler
 
-Chaque rôle de l'application (administrateur, organisateur, responsable de stand, droit RH) ouvre un périmètre précis de routes. Cette page dit lequel, jusqu'où va le droit d'un organisateur, et comment le dépôt empêche qu'une nouvelle route s'ouvre à un rôle sans que quelqu'un l'ait décidé. Les droits s'accordent dans Paramètres › Comptes ; les comptes eux-mêmes viennent de [l'annuaire OIDC](oidc.md) ou de [comptes locaux](securite-acces-administration.md#les-cinq-portes-de-ladministration).
+Chaque rôle de l'application (administrateur, organisateur, responsable de stand, droit RH) ouvre un périmètre précis de routes. Vous savez lequel, jusqu'où va le droit d'un organisateur, et comment le dépôt empêche qu'une nouvelle route s'ouvre à un rôle sans que quelqu'un l'ait décidé. Les droits s'accordent dans Paramètres › Comptes ; les comptes eux-mêmes viennent de [l'annuaire OIDC](oidc.md) ou de [comptes locaux](securite-acces-administration.md#les-cinq-portes-de-ladministration).
 
 ## Ce que le rôle organisateur n'ouvre pas
 

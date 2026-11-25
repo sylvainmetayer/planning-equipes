@@ -16,7 +16,7 @@ Ce que promet chaque numéro, et comment lire les notes de version, est dans [le
 
 Un déploiement de production référence une **version nommée** (`1.2.0`), jamais `:main` ni `:latest`. Le workflow publie aussi une image `:main` à chaque fusion et la reconstruit sans cache chaque dimanche pour les correctifs Ubuntu : c'est l'**image de recette**, qui sert à valider ce qui sortira, pas à tourner chez un client. `:main` désigne un commit différent chaque jour ; `:latest` désigne ce que le registre veut bien ; ni l'un ni l'autre n'est une réponse à « vous tourniez sur quoi ? ».
 
-`docker-compose.prod.yml` prend la version par la variable `APP_VERSION` du `.env.prod`. La version tourne aussi **en réponse** : `GET /api/config` porte un champ `version` (`X.Y.Z` sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en local), le même que la ligne de démarrage.
+`docker-compose.prod.yml` prend la version par la variable `APP_VERSION` du `.env.prod`. La version se lit aussi **dans les réponses** de l'application : `GET /api/config` porte un champ `version` (`X.Y.Z` sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en local), le même que la ligne de démarrage.
 
 Lisez les notes de la release avant de monter : l'entrée « ⚠️ Attention » signale ce qui demande une action de votre part, comme une nouvelle contrainte légale qui peut rendre insatisfiable un planning qui passait, ou une valeur à convertir à la main.
 
@@ -70,22 +70,22 @@ Une instance déjà en service qui n'a jamais renseigné les mentions légales n
 
 ## Passer de PostgreSQL 18 à PostgreSQL 19
 
-L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'image applicative sont en **version 19**. Un `pg_dump` d'une majeure plus ancienne que le serveur refuse de tourner (« server version mismatch »), et la sauvegarde de nuit échoue alors sans que l'application s'arrête. Le serveur 19 ne relit pas le répertoire de données d'un serveur 18 : il en crée un neuf, vide, à côté, et il faut y restaurer un dump.
+L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'image applicative sont en **version 19**. Les deux montent ensemble : un `pg_dump` plus ancien que le serveur refuse de tourner (« server version mismatch »), et la sauvegarde de nuit échouerait alors sans que l'application s'arrête. Le serveur 19 ne relit pas le répertoire de données d'un serveur 18 : il en crée un neuf, vide, à côté, et il faut y restaurer un dump.
 
 À faire **avant** de tirer cette image, depuis le répertoire de la pile :
 
 ```bash
-docker compose -f docker-compose.prod.yml exec -T postgres \
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres \
   pg_dump -U festival -d festival --format=custom > avant-pg19.dump   # sur l'ancienne image
-docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml --env-file .env.prod down
 # ne changez pas le `name:` du volume (`postgres_data_pg18`, un nom historique) :
 # un autre nom serait un volume vide. Le volume est monté sur `/var/lib/postgresql`
 # avec un sous-dossier par majeure : le serveur 19 initialise `19/docker` et laisse
 # `18/docker` intact, ce qui sert de retour arrière tant que vous ne le supprimez pas
-docker compose -f docker-compose.prod.yml up -d postgres
-docker compose -f docker-compose.prod.yml exec -T postgres \
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d postgres
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgres \
   pg_restore -U festival -d festival --no-owner --exit-on-error < avant-pg19.dump
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
 
 `pg_upgrade` reste possible pour qui le maîtrise (le volume est monté sur `/var/lib/postgresql`, un sous-dossier par majeure). Les dumps `--format=custom` déjà présents dans le volume des sauvegardes se restaurent sur le serveur 19.
@@ -103,7 +103,7 @@ La réparation ne touche **pas** aux migrations réussies que l'image ne connaî
 Redescendre d'image après une montée qui a migré la base fait démarrer un code plus ancien sur un schéma plus récent. **Une image plus ancienne refuse de démarrer sur une base plus récente.** Au démarrage, l'application compare l'historique Flyway de la base aux migrations qu'elle embarque. Si la base porte une migration que le binaire ne connaît pas, elle **s'arrête** avec un message qui nomme sa version, la dernière migration qu'elle connaît, la dernière appliquée et la version de l'application qui l'a appliquée. Pour le lire :
 
 ```bash
-docker compose -f docker-compose.prod.yml logs app
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs app
 ```
 
 Deux issues, et aucune n'est de retoucher le schéma à la main :

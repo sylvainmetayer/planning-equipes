@@ -90,6 +90,8 @@ Une purge manuelle sans écrit ne prouve rien. Seul ce journal rend tenable
 la durée annoncée par `LEGAL_CONSERVATION`.
 
 ## Le rythme de tenue
+
+| Quand | Quoi |
 | --- | --- |
 | Avant chaque première mise en production | Convention de sous-traitance signée des deux côtés (voir [la convention](rgpd-sous-traitance.md)), puis création de l'entrée de registre (voir [le gabarit d'entrée](rgpd.md#remplir-une-entrée-du-registre)) |
 | À chaque changement de brique tierce | Mise à jour des sous-traitants ultérieurs et des transferts, car un changement de variable d'environnement est un changement de registre |
@@ -98,5 +100,5 @@ la durée annoncée par `LEGAL_CONSERVATION`.
 | Une fois par an, après l'événement | Relecture de toutes les entrées, en même temps que la purge |
 | En fin d'hébergement | Sort des données tranché et exécuté, date portée au registre |
 
-Ce document coûte peu s'il démarre au premier client, beaucoup s'il
+Ce registre coûte peu s'il démarre au premier client, beaucoup s'il
 démarre au cinquième.

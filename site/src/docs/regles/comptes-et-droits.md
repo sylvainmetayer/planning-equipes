@@ -34,7 +34,7 @@ Le droit **RH** donne accès au **rapport de conformité** d'une édition, et à
 
 ![La page Conformité RH vue par un compte ressources humaines](/images/fr/docs/rh.webp "Ce que voit une personne des ressources humaines")
 
-Le rapport se lit dans *Diagnostic*, onglet *Conformité*, et s'exporte en PDF ou en CSV. Pour l'inspection du travail, à partir du planning publié, il donne par personne :
+Un compte RH s'ouvre directement sur sa page *Conformité RH*, hors de l'administration ; un administrateur lit le même rapport dans *Diagnostic*, onglet *Conformité*. Il s'exporte en PDF ou en CSV. Pour l'inspection du travail, à partir du planning publié, il donne par personne :
 
 - les heures de travail effectif par semaine, face au plafond qui s'applique (majeur ou mineur) ;
 - les heures de dimanche, de jours fériés et de nuit ;
@@ -48,7 +48,7 @@ Il ne change aucune règle du planning. Les contacts d'urgence et représentants
 
 ## Lire l'historique des actions
 
-L'**historique** (Paramètres, onglet *Historique*) garde ce qui a été fait dans l'édition et par qui : chaque écriture, chaque export, chaque envoi, qu'il vienne d'un écran, d'un assistant ou d'une tâche de nuit, avec les champs qu'une modification a réellement changés.
+L'**historique** (Paramètres, onglet *Historique*, derrière « Réglages avancés ») garde ce qui a été fait dans l'édition et par qui : chaque écriture, chaque export, chaque envoi, qu'il vienne d'un écran, d'un assistant ou d'une tâche de nuit, avec les champs qu'une modification a réellement changés.
 
 ![L'historique des actions, filtré par auteur](/images/fr/docs/historique-auteur.webp "L'historique filtré sur un auteur")
 

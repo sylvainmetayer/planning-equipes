@@ -48,7 +48,7 @@ Après un changement tardif, « Corriger après un changement » bouge le minimu
 
 ## Régler la durée du calcul
 
-Chaque édition règle combien de temps un calcul peut durer, et quand il s'arrête faute de progrès. L'arrêt faute de progrès ne joue qu'une fois le planning faisable, jamais tant que des places restent à pourvoir. Ces réglages sont plafonnés par une valeur que fixe l'exploitant de l'instance, affichée dans *Règles du planning*, onglet *Calcul*. « Revenir au défaut » rend l'édition aux valeurs de l'instance.
+Chaque édition règle combien de temps un calcul peut durer, et quand il s'arrête faute de progrès. L'arrêt faute de progrès ne joue qu'une fois le planning faisable, jamais tant que des places restent à pourvoir. Ces réglages sont plafonnés par une valeur que fixe l'exploitant de l'instance, affichée dans *Règles du planning*, onglet *Calcul* (derrière « Réglages avancés »). « Revenir au défaut » rend l'édition aux valeurs de l'instance.
 
 ## Lire le résultat
 

@@ -1,6 +1,6 @@
 # Ouvrir un agenda ou un écran sans ouvrir l'administration
 
-Deux liens s'ouvrent par une URL seule, sans session : le flux d'agenda d'un animateur et l'écran mural de la salle de contrôle. Cette page dit ce que permet exactement chacun, comment le révoquer, et quelle exception d'authentification déclarer sur un proxy d'accès sans ouvrir plus que nécessaire. Tous deux portent leur jeton dans le chemin, et leur périmètre est volontairement d'une seule route chacun : il ne doit pas s'élargir.
+Deux liens s'ouvrent par une URL seule, sans session : le flux d'agenda d'un animateur et l'écran mural de la salle de contrôle. Vous savez ce que permet exactement chacun, comment le révoquer, et quelle exception d'authentification déclarer sur un proxy d'accès sans ouvrir plus que nécessaire. Tous deux portent leur jeton dans le chemin, et leur périmètre est volontairement d'une seule route chacun : il ne doit pas s'élargir.
 
 ## L'abonnement à l'agenda (ICS) : un second jeton, au périmètre d'un seul document
 

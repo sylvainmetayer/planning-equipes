@@ -15,7 +15,7 @@ Vous donnez à chaque administrateur son compte nominatif, protégé par un mot 
 
 À la connexion, un **code à six chiffres reçu par mail** suit le mot de passe (dix minutes, cinq essais). Il est actif par défaut. `AUTH_LOCAL_SECONDE_ETAPE=false` le coupe : réservez-le à une instance sans messagerie, ou déjà derrière un proxy d'accès qui impose son propre second facteur.
 
-Les comptes locaux restent ouverts derrière un fournisseur OIDC. Chaque connexion, réussie ou non, est dans *Paramètres › Historique › Connexions* (adresse IP et heure, jamais ce qui a été saisi).
+Les comptes locaux restent ouverts derrière un fournisseur OIDC. Chaque connexion, réussie ou non, est dans *Paramètres › Connexions* (adresse IP et heure, jamais ce qui a été saisi).
 
 ## Ne jamais s'enfermer dehors
 

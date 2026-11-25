@@ -46,7 +46,7 @@ La page est en lecture seule, et l'export CSV ne nomme aucun animateur.
 
 ## Repartir de zéro
 
-« Vider cette édition » repart d'une édition vide sans toucher aux autres ni aux réglages de l'instance. Avant de la vider, comme avant d'y importer un scénario, l'application en garde une copie, planning et verrous compris. Un administrateur la restaure d'un geste pour revenir en arrière, mais par une opération technique de l'exploitant : aucun écran ne les liste. La procédure est dans [Les formats d'import et d'export](../comprendre/restaurer-une-edition.md#les-sauvegardes-avant-vidage).
+« Vider cette édition » repart d'une édition vide sans toucher aux autres ni aux réglages de l'instance. Avant de la vider, comme avant d'y importer un scénario, l'application en garde une copie, planning et verrous compris. Aucun écran ne liste ces copies : elles se retrouvent et se remettent en place par l'API de l'application, une opération technique. La procédure est dans [Repartir d'une édition, revenir en arrière](../comprendre/restaurer-une-edition.md#les-sauvegardes-avant-vidage).
 
 ## Supprimer une édition
 

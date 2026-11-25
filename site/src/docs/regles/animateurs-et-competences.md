@@ -10,7 +10,7 @@ Vous décrivez votre équipe : identité, compétences par typologie, souhaits, 
    - Le régime légal (mineur ou majeur) se déduit de l'âge à la date de chaque créneau : vous n'avez rien à cocher.
 3. Dans le formulaire, un clic sur un jour de la frise de l'édition le marque absent, et une plage « absent du … au … » se pose d'un geste.
 
-Les appréciations (niveaux de compétence) se saisissent dans la grille des compétences, ouverte sur la personne.
+Pour saisir les niveaux de toute l'équipe d'un coup, passez par la grille des compétences (onglet *Compétences* de la page Animateurs), décrite plus bas.
 
 Pour une équipe déjà dans un tableur, l'import CSV évite la saisie : voir [Importer et exporter des fichiers](importer-exporter.md#importer-vos-animateurs-depuis-un-tableur).
 
@@ -20,7 +20,7 @@ La liste montre l'âge et le régime, les compétences en pastilles, les indispo
 
 ## Saisir toutes les appréciations d'un coup : la grille des compétences
 
-La grille des compétences est le seul endroit où les appréciations se saisissent en masse : la fiche d'une personne ne modifie que les siennes. Elle ne s'échange pas par fichier.
+*Animateurs*, onglet *Compétences*. La grille est le seul endroit où les appréciations se saisissent en masse : la fiche d'une personne ne modifie que les siennes. Elle ne s'échange pas par fichier.
 
 - Animateurs en lignes, typologies en colonnes.
 - Une case se change au clic ou aux touches 0 à 3.

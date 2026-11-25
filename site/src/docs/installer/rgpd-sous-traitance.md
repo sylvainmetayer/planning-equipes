@@ -19,7 +19,7 @@ l'annexe sans être réécrit.
 | Obligations du sous-traitant | N'agir que sur instruction documentée, confidentialité des personnes autorisées, mesures de sécurité (voir [le gabarit d'entrée](rgpd.md#remplir-une-entrée-du-registre)), **pas de sous-traitance ultérieure sans autorisation** ; les briques de [la liste des sous-traitants ultérieurs](rgpd.md#qui-est-quoi) sont donc nommées dans l'écrit |
 | Sort des données en fin de contrat | Restitution ou suppression, **au choix du responsable**, à trancher explicitement. La restitution s'appuie sur l'export SQL ([`import-export.md`](../comprendre/exports-et-archives.md)), la suppression sur la procédure de purge (voir la procédure de purge de [`exploitation.md`](exploitation.md)) |
 | Assistance | Aide à répondre aux demandes d'exercice de droits, et **notification d'atteinte sans délai** ; la procédure et le délai engagé sont dans [la procédure d'atteinte](rgpd-atteinte-aux-donnees.md), d'où se recopie la clause |
-| Audit | Mise à disposition des informations nécessaires pour démontrer la conformité : ce document, le registre, et [`securite.md`](securite.md) |
+| Audit | Mise à disposition des informations nécessaires pour démontrer la conformité : le registre de l'instance et la description de son durcissement ([Exposer l'instance sur Internet](securite.md)) |
 
 ## Ce qu'il ne faut pas signer
 

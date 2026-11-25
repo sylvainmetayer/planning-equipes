@@ -1,6 +1,6 @@
 # Régler les en-têtes de sécurité du navigateur et la CSP
 
-L'application envoie d'elle-même des en-têtes de sécurité sur toute réponse, sans rien à poser de votre côté. Cette page dit lesquels, lesquels se règlent (`CSP`, `HSTS`) et pourquoi la politique de contenu refuse tout gestionnaire `on*` ; vous y revenez pour resserrer la politique, ajouter `preload` ou comprendre un blocage constaté dans un vrai navigateur.
+L'application envoie d'elle-même des en-têtes de sécurité sur toute réponse, sans rien à poser de votre côté. Vous savez lesquels partent, lesquels se règlent (`CSP`, `HSTS`) et pourquoi la politique de contenu refuse tout gestionnaire `on*` : de quoi resserrer la politique, ajouter `preload` ou comprendre un blocage constaté dans un vrai navigateur.
 
 ## En-têtes de sécurité navigateur
 

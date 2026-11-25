@@ -1,6 +1,6 @@
 # Le fil d'une édition
 
-Vous savez, d'un coup d'œil, par où commencer et ce qui vient ensuite : une édition suit six moments, de la préparation au jour J, et l'application les montre dans l'ordre.
+Une édition suit six moments, de la préparation au jour J. L'application vous les présente dans cet ordre : vous savez toujours par où commencer et ce qui vient ensuite.
 
 Planning Équipes sert à organiser le travail d'une équipe de bénévoles ou de salariés pendant un événement : qui tient quel stand, quel jour, à quelle heure, dans le respect des règles légales (celles des mineurs en particulier), des compétences, des disponibilités et d'une charge équitable entre les personnes. Une **édition** est une occurrence de l'événement : une année, un festival, un salon.
 
@@ -14,8 +14,8 @@ L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. 
 | Planifier | Lancer le calcul : l'application propose un planning qui respecte les règles, et la progression se suit en direct. Vous relisez, retouchez à la main, verrouillez ce qui ne doit plus bouger | [Calculer le planning](calculer-planning.md), [Relire et retoucher le planning](relire-et-retoucher.md) |
 | Comprendre | Quand un planning n'est pas réalisable ou laisse des places vides, l'application dit pourquoi et ce qu'il vaut mieux corriger en premier | [Comprendre un planning qui coince](comprendre-un-planning.md), [Consulter le planning](consulter-planning.md) |
 | Diffuser | Publier le planning, envoyer à chaque animateur le sien (PDF, calendrier), puis suivre qui l'a reçu et confirmé | [Publier le planning](publier-planning.md) |
-| Jour J | La page « Aujourd'hui » montre la journée en cours, les trous à combler et les imprévus ; l'écran mural affiche la journée sur un téléviseur du poste de contrôle | [Suivre le jour J](suivre-le-jour-j.md) |
-| Après | Comparer le prévu et le réalisé, archiver l'événement, repartir de cette édition pour la suivante | [Enchaîner les éditions](enchainer-les-editions.md), [Importer et exporter des fichiers](importer-exporter.md) |
+| Jour J | L'écran *Aujourd'hui* montre la journée en cours, les trous à combler et les imprévus ; l'écran mural affiche la journée sur un téléviseur du poste de contrôle | [Suivre le jour J](suivre-le-jour-j.md) |
+| Après | Comparer le prévu et le réalisé (onglet *Réalisé vs planifié* de l'écran Aujourd'hui), archiver l'événement, repartir de cette édition pour la suivante | [Enchaîner les éditions](enchainer-les-editions.md), [Importer et exporter des fichiers](importer-exporter.md) |
 
 ## Lire l'état de l'édition
 
@@ -31,7 +31,7 @@ L'accueil prend la forme du moment.
 - la ligne « Cohérence du référentiel » rassemble toutes les anomalies détectées ailleurs. Les anomalies identiques sont réunies en une ligne avec leur compte (« 16 jours : rien entre 12:00 et 13:00 ») et chaque ligne mène à la fiche qui la corrige ;
 - deux lignes comptent sans lister : les fiches sans téléphone (dont celles affectées à une date à venir) et, sur une édition qui saisit des emplacements, les stands sans emplacement. Pour ces derniers, l'application indique ceux pour lesquels les stands voisins suggèrent un emplacement, avec sa raison. Chaque ligne ouvre la liste filtrée ; la suggestion apparaît aussi dans la colonne Lieu des stands et à l'enregistrement d'un stand laissé sans emplacement.
 
-**Pendant l'événement**, la première ligne est celle du jour (J5, stands ouverts, places vides, absents, échanges à arbitrer). Elle ouvre l'écran Aujourd'hui, à côté du lien vers l'affichage mural, et la liste des étapes se déplie à la demande.
+**Pendant l'événement**, la première ligne est celle du jour : son numéro (J5 pour le cinquième jour), les stands ouverts, les places vides, les absents, les échanges à arbitrer. Elle ouvre l'écran Aujourd'hui, à côté du lien vers l'affichage mural, et la liste des étapes se déplie à la demande.
 
 **Après l'événement**, l'archive vient en tête.
 
