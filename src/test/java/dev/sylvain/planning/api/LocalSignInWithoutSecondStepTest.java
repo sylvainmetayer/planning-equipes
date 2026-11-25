@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -17,6 +18,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -98,7 +100,7 @@ class LocalSignInWithoutSecondStepTest {
     LoginJournalService journal;
 
     @Test
-    void laPorteFermeeNOuvreRienEtLaConnexionLocaleEstJournaliseeCommeTelle() throws InterruptedException {
+    void laPorteFermeeNOuvreRienEtLaConnexionLocaleEstJournaliseeCommeTelle() {
         // The configuration's password, posted on the local path: nothing opens.
         Response admin = given().contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
@@ -132,11 +134,8 @@ class LocalSignInWithoutSecondStepTest {
         assertThat(ok.getCookie("planning-session")).isNotBlank();
 
         // The journal writes off the event loop.
-        for (int i = 0;
-                i < 50 && journal.page(null, 50).stream().noneMatch(e -> e.evenement() == Evenement.CONNEXION);
-                i++) {
-            Thread.sleep(100);
-        }
+        await().atMost(Duration.ofSeconds(5))
+                .until(() -> journal.page(null, 50).stream().anyMatch(e -> e.evenement() == Evenement.CONNEXION));
         assertThat(journal.page(null, 50))
                 .extracting(e -> e.evenement())
                 .contains(Evenement.CONNEXION)

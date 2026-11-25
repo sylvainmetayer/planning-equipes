@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -11,6 +12,7 @@ import dev.sylvain.planning.service.journal.LoginJournalService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /** Behind a provider the break-glass door is closed by default (ADR 0093). */
@@ -43,7 +45,7 @@ class FormLoginSecoursFermeTest {
     }
 
     @Test
-    void uneTentativeSurLaPorteFermeeEstJournalisee() throws InterruptedException {
+    void uneTentativeSurLaPorteFermeeEstJournalisee() {
         int avant = journal.page(null, 500).size();
         given().contentType("application/x-www-form-urlencoded")
                 .formParam("j_username", "admin")
@@ -51,9 +53,8 @@ class FormLoginSecoursFermeTest {
                 .post("/j_security_check")
                 .then()
                 .statusCode(409);
-        for (int i = 0; i < 50 && journal.page(null, 500).size() <= avant; i++) {
-            Thread.sleep(100);
-        }
+        await().atMost(Duration.ofSeconds(5))
+                .until(() -> journal.page(null, 500).size() > avant);
         assertThat(journal.page(null, 1).get(0).evenement()).isEqualTo(Evenement.ECHEC);
     }
 }

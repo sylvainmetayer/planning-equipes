@@ -90,9 +90,12 @@ class RuleBenchTest {
                 .append(levels.keySet())
                 .append(" — seuil de medium perdu : ")
                 .append(percent(RuleBenchMeasure.MEDIUM_LOSS_THRESHOLD))
-                .append("\n\n| scénario | sièges | avant (h/m/s) | après (h/m/s) | après, re-scoré (h/m/s) |"
-                        + " faisable avant | faisable après | sièges changés | medium perdu | verdict |\n"
-                        + "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+                .append("\n\n")
+                .append("""
+                        | scénario | sièges | avant (h/m/s) | après (h/m/s) | après, re-scoré (h/m/s) \
+                        | faisable avant | faisable après | sièges changés | medium perdu | verdict |
+                        | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+                        """);
         StringBuilder csv = new StringBuilder("scenario,seats,before_hard,before_medium,before_soft,after_hard,"
                 + "after_medium,after_soft,rescored_hard,rescored_medium,rescored_soft,feasible_before_ms,"
                 + "feasible_after_ms,seats_changed,medium_lost,verdict\n");
@@ -270,7 +273,7 @@ class RuleBenchTest {
     }
 
     private static List<String> split(String csv) {
-        return csv.isBlank() ? List.of() : List.of(csv.split("\\s*,\\s*"));
+        return csv.isBlank() ? List.of() : List.of(csv.split("\\s*+,\\s*+"));
     }
 
     private static Map<String, HardMediumSoftScore> parseLevels(String spec) {

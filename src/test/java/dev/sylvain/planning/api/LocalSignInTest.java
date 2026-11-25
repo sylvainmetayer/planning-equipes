@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -17,6 +18,7 @@ import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -192,14 +194,12 @@ class LocalSignInTest {
                 .statusCode(400);
     }
 
-    private void waitForMails(int total) throws InterruptedException {
-        for (int i = 0; i < 100 && mailbox.getTotalMessagesSent() < total; i++) {
-            Thread.sleep(50);
-        }
+    private void waitForMails(int total) {
+        await().atMost(Duration.ofSeconds(5)).until(() -> mailbox.getTotalMessagesSent() >= total);
     }
 
     @Test
-    void lOubliRepondLaMemeChoseQueLAdresseExisteOuNon() throws InterruptedException {
+    void lOubliRepondLaMemeChoseQueLAdresseExisteOuNon() {
         Compte compte = withPassword(false);
         given().contentType("application/json")
                 .body(Map.of("email", compte.email()))
@@ -219,7 +219,7 @@ class LocalSignInTest {
     }
 
     @Test
-    void lOubliNAnnulePasUneInvitationEncoreValable() throws InterruptedException {
+    void lOubliNAnnulePasUneInvitationEncoreValable() {
         Compte compte = account(false);
         acces.sendLink(compte.id(), true);
         String invitation = linkToken(compte);
@@ -228,7 +228,10 @@ class LocalSignInTest {
                 .post("/api/auth/mot-de-passe/oubli")
                 .then()
                 .statusCode(204);
-        Thread.sleep(500);
+        // One mail and no other, held for half a second: the work is done off the request.
+        await().during(Duration.ofMillis(500))
+                .atMost(Duration.ofSeconds(5))
+                .until(() -> mailbox.getMailsSentTo(compte.email()).size() == 1);
         assertThat(mailbox.getMailsSentTo(compte.email())).hasSize(1);
         given().contentType("application/json")
                 .body(Map.of("token", invitation, "password", PASSWORD))

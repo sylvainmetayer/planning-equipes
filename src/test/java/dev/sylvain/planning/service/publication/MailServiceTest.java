@@ -83,7 +83,7 @@ class MailServiceTest {
 
     @Test
     void thePlanningMailAttachesThePdfAndTheEspaceLink() {
-        byte[] pdf = new byte[] {1, 2, 3};
+        byte[] pdf = {1, 2, 3};
 
         service.sendIndividualPlanning(
                 "A1",
