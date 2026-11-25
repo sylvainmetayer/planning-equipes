@@ -22,7 +22,13 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { CauseInfaisabilite, Emplacement, EtatGel, Stand } from '../../core/models';
+import {
+  CauseInfaisabilite,
+  Emplacement,
+  EmplacementsManquants,
+  EtatGel,
+  Stand,
+} from '../../core/models';
 import { StandsPage } from './stands-page';
 import { PastePreviewService } from '../../shared/paste-preview-dialog';
 import { PastePlan } from '../../core/paste-rows';
@@ -500,6 +506,8 @@ describe('StandsPage table', () => {
   const previewConfirm = vi.fn((_plan: PastePlan<Stand>) => Promise.resolve(false));
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
   let gel: EtatGel[] = [];
+  /** What `GET /api/stands/suggestions-emplacement` answers; none unless a test says so. */
+  let suggestions: EmplacementsManquants = { standIds: [], suggestions: [] };
   const crud = {
     reload: vi.fn(() => Promise.resolve(undefined)),
     remove: vi.fn(() => Promise.resolve(true)),
@@ -562,6 +570,7 @@ describe('StandsPage table', () => {
     TestBed.resetTestingModule();
     editingLocked.set(false);
     gel = [];
+    suggestions = { standIds: [], suggestions: [] };
     causeParStandId.set(new Map());
     crud.reportError.mockClear();
     dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
@@ -596,6 +605,7 @@ describe('StandsPage table', () => {
                 anomalies: [],
               }),
             ),
+            emplacementSuggestions: vi.fn(() => Promise.resolve(suggestions)),
           },
         },
         { provide: ReferenceCrudService, useValue: crud },
@@ -670,6 +680,28 @@ describe('StandsPage table', () => {
 
     const icone = racine().querySelector('.row-problem-icon')!;
     expect(icone.getAttribute('aria-label')).toBe('Il manque un animateur à ce stand.');
+  });
+
+  it('writes the reason of a suggested emplacement next to it, with no focusable stop', async () => {
+    suggestions = {
+      standIds: ['s1'],
+      suggestions: [
+        {
+          standId: 's1',
+          emplacementId: 'e1',
+          emplacementNom: 'Hall A',
+          raison: '2 stand(s) « Loup » sur 2 sont à Hall A',
+        },
+      ],
+    };
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+
+    const cellule = racine().querySelector('.stand-suggestion')!.closest('td')!;
+    expect(cellule.textContent).toContain('suggéré : Hall A');
+    expect(cellule.querySelector('.stand-suggestion-raison')!.textContent).toBe(
+      '2 stand(s) « Loup » sur 2 sont à Hall A',
+    );
+    expect(cellule.querySelector('button, [tabindex]')).toBeNull();
   });
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {
