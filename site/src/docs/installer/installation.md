@@ -2,6 +2,8 @@
 
 En une heure environ, vous mettez en ligne Planning Équipes sur votre propre serveur : l'application et sa base PostgreSQL, derrière votre reverse proxy, avec un contrôle qui confirme que tout répond. Il vous faut un serveur Linux avec Docker Compose, un nom de domaine et un relais SMTP.
 
+Vous hésitez encore sur le principe ? [Héberger soi-même ou le faire héberger](/heberger/) résume ce qu'il faut, et ce qu'on peut prendre en charge à votre place.
+
 ## Avant de commencer
 
 | Il vous faut | Pourquoi |

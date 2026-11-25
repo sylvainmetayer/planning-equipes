@@ -603,6 +603,7 @@ content:
           - { name: texte, label: Texte (Markdown), type: text, required: true }
       - { name: cta, label: Invitation à nous écrire, type: string, required: true }
       - { name: bouton, label: Bouton, type: string, required: true }
+      - { name: guide, label: "Bouton vers le guide d'installation", type: string }
       - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
       - name: en
         label: Version anglaise
@@ -625,6 +626,7 @@ content:
               - { name: texte, label: Texte (Markdown), type: text, required: true }
           - { name: cta, label: Invitation à nous écrire, type: string, required: true }
           - { name: bouton, label: Bouton, type: string, required: true }
+          - { name: guide, label: "Bouton vers le guide d'installation", type: string }
           - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs), type: string, list: true }
 
   - name: calcul

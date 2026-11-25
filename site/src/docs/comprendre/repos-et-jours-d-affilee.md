@@ -2,6 +2,8 @@
 
 Vous savez comment le solveur lit un repos à cheval sur deux semaines, pourquoi deux semaines pleines d'affilée sont interdites, pourquoi le plafond de jours consécutifs existe sous deux formes et se règle à huit jours, et ce que coûte une fermeture tardive suivie d'une ouverture matinale. Les articles cités sont ceux du Code du travail, seul cadre appliqué ; les pauses et la coupure repas sont dans [Règles légales, pauses et repas](regles-legales-et-pauses.md).
 
+Les repos des mineurs sont aussi résumés, article par article, dans [les questions sur les animateurs mineurs](/animateurs-mineurs/).
+
 ## La frontière de semaine
 
 Les deux repos hebdomadaires se lisent sur la **semaine civile**, du lundi 0 h au dimanche 24 h ([L3121-35], définition supplétive qu'un accord d'entreprise peut déplacer, donnée que l'application ne détient pas), la même fenêtre que `Creneau.semaineIso()` et les plafonds hebdomadaires. Reste la question d'un repos à cheval sur le lundi.

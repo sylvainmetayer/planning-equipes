@@ -4,6 +4,8 @@ Chaque calcul de planning suit le même parcours, quelle que soit la façon de l
 
 Le déroulé côté utilisateur est dans [Calculer le planning](../regles/calculer-planning.md), le réglage de l'exploitant dans [le calcul du planning](../installer/calcul-du-planning.md), les routes dans [lancer, suivre et arrêter un calcul](api-calcul.md).
 
+Pour un organisateur qui ne lit pas de code, [comment marche le calcul](/comment-marche-le-calcul/) en donne la version courte.
+
 ## Un calcul fait toujours la même chose
 
 Quatre façons de lancer un calcul existent : synchrone depuis un problème envoyé dans la requête, asynchrone depuis un problème envoyé, asynchrone depuis le référentiel, incrémentale. Toutes passent par [`SolvePipeline`](repo:src/main/java/dev/sylvain/planning/service/solve/SolvePipeline.java), et font donc toujours les mêmes huit choses :

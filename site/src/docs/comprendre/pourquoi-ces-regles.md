@@ -4,6 +4,8 @@ Vous savez où lire la liste des 47 règles, comment elles se rangent par niveau
 
 Un planning est valide quand aucune règle dure n'est violée, et bon quand les règles de qualité sont peu pénalisées. Les règles se rangent sur les trois niveaux du `HardMediumSoftScore` de Timefold : **dur** (bloquant), **medium** (fortement pénalisé, signalé à l'organisateur) et **soft** (préférence qui départage deux plannings valides).
 
+Les trois niveaux sont aussi racontés pour un organisateur dans [trois niveaux d'exigence](/comment-marche-le-calcul/), et le cadre juridique dans [le Code du travail](/code-du-travail/).
+
 > **Ne reclassez jamais une règle dure en medium ou soft sans validation explicite**, en particulier tout ce qui touche au cadre légal des mineurs.
 
 Chaque règle est écrite deux fois : dans les flux de contraintes de Timefold, qui la définissent, et dans le moteur direct (`solver/handsearch`), qui doit la noter à l'identique. [Comment le planning est calculé](comment-le-planning-est-calcule.md) décrit les deux moteurs et [Ajouter une règle](ajouter-une-regle.md) la marche à suivre.

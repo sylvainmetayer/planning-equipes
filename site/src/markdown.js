@@ -37,6 +37,7 @@ export function toMarkdown(p) {
     );
   } else {
     out.push(page.reponse);
+    if (page.guide) out.push(`[${page.guide}](${site.url}/docs/installer/)`);
     if (key === 'legal') out.push(`## ${page.articlesH}`, articles.map((a) => `- **${a.number}**, ${a[lang].subject}${sep}${a[lang].rule}`).join('\n'));
     if (page.sections) out.push(sections(page.sections));
     if (page.tableau) out.push(`## ${page.tableau.h2}`, [`| ${page.tableau.colonnes.join(' | ')} |`, '| --- | --- | --- |', ...page.tableau.lignes.map((l) => `| ${l.q} | ${l.tableur} | ${l.logiciel} |`)].join('\n'));

@@ -9,7 +9,7 @@
       "id": "aucune-solution",
       "accueil": true,
       "q": "Et si le calcul ne trouve aucune solution ?",
-      "a": "Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque juste quelqu'un un samedi soir. Le diagnostic des effectifs le signale avant même le premier calcul."
+      "a": "Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque juste quelqu'un un samedi soir. Le diagnostic des effectifs le signale avant même le premier calcul. Pour lire un blocage, voir [comprendre un planning qui coince](/docs/regles/comprendre-un-planning/)."
     },
     {
       "id": "donnees",
@@ -21,24 +21,24 @@
       "id": "informaticien",
       "accueil": true,
       "q": "Faut-il un informaticien chez nous ?",
-      "a": "Non, si on héberge pour vous. Tout se fait dans le navigateur, en français ou en anglais, et les animateurs n'installent rien."
+      "a": "Non, si on héberge pour vous. Tout se fait dans le navigateur, en français ou en anglais, et les animateurs n'installent rien. Pour l'installer vous-même, voir [héberger soi-même](/heberger/)."
     },
     {
       "id": "mineurs",
       "accueil": true,
       "q": "Comment sont gérés les animateurs mineurs ?",
-      "a": "Chacun se voit appliquer le droit de son âge réel à la date de chaque créneau : moins de 16 ans, 16 à 18 ans ou majeur. Durée, pauses, travail de nuit, repos et jours fériés suivent les articles de cet âge, et un poste interdit est refusé."
+      "a": "Chacun se voit appliquer le droit de son âge réel à la date de chaque créneau : moins de 16 ans, 16 à 18 ans ou majeur. Durée, pauses, travail de nuit, repos et jours fériés suivent les articles de cet âge, et un poste interdit est refusé. Les articles sont repris question par question dans [les animateurs mineurs](/animateurs-mineurs/)."
     },
     {
       "id": "benevoles",
       "accueil": true,
       "q": "Le Code du travail s'applique-t-il aux bénévoles ?",
-      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut donc désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire."
+      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut donc désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire. Un tableur ou un logiciel ? [Comparez les deux](/tableur-ou-logiciel-de-planning/)."
     },
     {
       "id": "taille",
       "q": "Pour combien de personnes et de stands ?",
-      "a": "Le logiciel est conçu pour environ 150 animateurs. Il est éprouvé sur des scénarios de 320 animateurs et 150 stands sur 30 jours."
+      "a": "Le logiciel est conçu pour environ 150 animateurs. Il est éprouvé sur des scénarios de 320 animateurs et 150 stands sur 30 jours. Comment estimer l'équipe : [savoir combien de personnes recruter](/docs/regles/dimensionner-l-equipe/)."
     },
     {
       "id": "tarif",
@@ -63,17 +63,17 @@
     {
       "id": "recevoir",
       "q": "Comment les animateurs reçoivent-ils leur planning ?",
-      "a": "Par un lien et un code envoyés par e-mail, qui ouvrent leur espace sur leur téléphone. Ils peuvent aussi télécharger une feuille PDF avec un QR code, ou s'abonner à leur agenda."
+      "a": "Par un lien et un code envoyés par e-mail, qui ouvrent leur espace sur leur téléphone. Ils peuvent aussi télécharger une feuille PDF avec un QR code, ou s'abonner à leur agenda. Ce qu'ils y voient est décrit dans [l'espace des animateurs](/docs/regles/espace-animateur/)."
     },
     {
       "id": "echanges",
       "q": "Peut-on échanger des créneaux entre animateurs ?",
-      "a": "Oui, en libre-service : un animateur propose un échange depuis son espace, et l'organisation l'arbitre."
+      "a": "Oui, en libre-service : un animateur propose un échange depuis son espace, et l'organisation l'arbitre. Le guide [laisser les animateurs échanger leurs créneaux](/docs/regles/echanger-creneaux/) montre l'ouverture."
     },
     {
       "id": "absent",
       "q": "Et si quelqu'un est absent le jour J ?",
-      "a": "On le marque absent depuis l'écran Aujourd'hui. La place vide apparaît, et l'application propose des remplaçants qui respectent déjà toutes les règles."
+      "a": "On le marque absent depuis l'écran Aujourd'hui. La place vide apparaît, et l'application propose des remplaçants qui respectent déjà toutes les règles. Le geste est dans [suivre le jour J](/docs/regles/suivre-le-jour-j/)."
     },
     {
       "id": "ia",
@@ -101,7 +101,7 @@
         "id": "aucune-solution",
         "accueil": true,
         "q": "What if the solver finds no solution?",
-        "a": "It shows which rule is blocking, on which shifts and for whom. Usually someone is just missing on a Saturday evening. The staffing check flags it before the first run."
+        "a": "It shows which rule is blocking, on which shifts and for whom. Usually someone is just missing on a Saturday evening. The staffing check flags it before the first run. To read a blockage, see [understanding a rota that gets stuck](/docs/regles/comprendre-un-planning/) (in French)."
       },
       {
         "id": "donnees",
@@ -113,24 +113,24 @@
         "id": "informaticien",
         "accueil": true,
         "q": "Do we need someone technical?",
-        "a": "Not if we host it for you. Everything happens in the browser, in English or French, and your staff install nothing."
+        "a": "Not if we host it for you. Everything happens in the browser, in English or French, and your staff install nothing. To install it yourself, see [self-hosting](/en/self-hosting/)."
       },
       {
         "id": "mineurs",
         "accueil": true,
         "q": "How are under-18 staff handled?",
-        "a": "Everyone gets the law of their real age on the date of each shift: under 16, 16 to 18, or adult. Working hours, breaks, night work, rest and public holidays follow the articles for that age, and a shift they may not work is refused."
+        "a": "Everyone gets the law of their real age on the date of each shift: under 16, 16 to 18, or adult. Working hours, breaks, night work, rest and public holidays follow the articles for that age, and a shift they may not work is refused. The articles are covered question by question in [under-18 staff](/en/under-18-staff/)."
       },
       {
         "id": "benevoles",
         "accueil": true,
         "q": "Does the Labour Code apply to volunteers?",
-        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call."
+        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. A spreadsheet or software? [Compare the two](/en/spreadsheet-or-scheduling-software/)."
       },
       {
         "id": "taille",
         "q": "For how many people and stands?",
-        "a": "The software is designed for about 150 staff. It is tested on scenarios of 320 staff and 150 stands over 30 days."
+        "a": "The software is designed for about 150 staff. It is tested on scenarios of 320 staff and 150 stands over 30 days. How to estimate the team: [knowing how many people to recruit](/docs/regles/dimensionner-l-equipe/) (in French)."
       },
       {
         "id": "tarif",
@@ -155,17 +155,17 @@
       {
         "id": "recevoir",
         "q": "How do staff receive their rota?",
-        "a": "By a link and a code sent by e-mail, which open their space on their phone. They can also download a PDF sheet with a QR code, or subscribe to their calendar."
+        "a": "By a link and a code sent by e-mail, which open their space on their phone. They can also download a PDF sheet with a QR code, or subscribe to their calendar. What they see there is described in [the animateurs' space](/docs/regles/espace-animateur/) (in French)."
       },
       {
         "id": "echanges",
         "q": "Can staff swap shifts?",
-        "a": "Yes, self-service: a team member proposes a swap from their space, and the organisation decides."
+        "a": "Yes, self-service: a team member proposes a swap from their space, and the organisation decides. The guide to [letting animateurs swap their timeslots](/docs/regles/echanger-creneaux/) shows how to open it (in French)."
       },
       {
         "id": "absent",
         "q": "What if someone is absent on the day?",
-        "a": "You mark them absent from the Today screen. The empty seat appears, and the application proposes replacements that already meet every rule."
+        "a": "You mark them absent from the Today screen. The empty seat appears, and the application proposes replacements that already meet every rule. The steps are in [following the day of the event](/docs/regles/suivre-le-jour-j/) (in French)."
       },
       {
         "id": "ia",

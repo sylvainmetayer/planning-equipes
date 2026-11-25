@@ -2,6 +2,8 @@
 
 Vous savez pourquoi la pause, la coupure repas et leurs déductions sont écrites comme elles le sont, ce que chacune coûte, ce que le solveur ne fait volontairement pas, et quel cadre juridique s'applique. Les repos hebdomadaires, les jours d'affilée et le repos après une fermeture tardive sont traités dans [Repos et jours d'affilée](repos-et-jours-d-affilee.md).
 
+Le cadre expliqué à un organisateur est dans [le Code du travail et les plannings](/code-du-travail/), et le cas des moins de 18 ans dans [les animateurs mineurs](/animateurs-mineurs/).
+
 ## La durée des pauses
 
 Une seule durée de pause vaut pour l'édition : `dureePauseMinutes`, réglée sur la page Règles du planning, onglet Légal, sur la ligne de chaque règle qui la lit ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). Elle est lue par `travailContinuMaxMajeur`, `travailContinuMaxMineur`, `PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et l'analyse des pauses, donc par l'écran Pauses et par la carte « Pause de 18:20 à 18:40 » du PDF animateur. Tous passent par `ParametresLegaux.dureePauseMinutes(mineur)`, seule façon de garantir qu'aucun ne soit plus strict qu'un autre.

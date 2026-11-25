@@ -4,6 +4,8 @@ Vous partez d'une édition vide et vous la décrivez : ses stands, leurs typolog
 
 Une édition se prépare dans l'ordre où elle se construit : les stands et ce qu'ils proposent, le calendrier sur lequel ils s'ouvrent, les personnes, puis les fichiers qui remplissent le tout. Le groupe *Préparer* du menu suit cet ordre (Stands, Calendrier, Animateurs, Fichiers).
 
+Le type d'événement change les priorités : voir [un planning de festival](/planning-festival/), [un planning de salon ou de foire](/planning-salon-foire/) ou [un planning d'événement sportif](/planning-evenement-sportif/).
+
 ## Avant de commencer
 
 - Choisissez l'édition de travail dans la barre d'édition, au-dessus de chaque page. Deux onglets du navigateur peuvent travailler sur deux éditions à la fois ; elles ne se mélangent jamais. Pour en créer une, voir [Enchaîner les éditions](enchainer-les-editions.md).

@@ -2,6 +2,8 @@
 
 Avant d'ouvrir l'instance au public, parcourez la liste courte ci-dessous, démarrez la pile de production et réglez votre reverse proxy : ces trois gestes couvrent ce que l'application ne peut pas faire à votre place. Le reste, elle l'applique d'elle-même (en-têtes de sécurité, plafonds de débit, verrous de connexion), et les pages voisines le détaillent pour que vous sachiez quoi régler et pourquoi.
 
+Pour un aperçu de ce qu'on attend d'un hébergeur, avant les détails, voir [héberger Planning Équipes soi-même](/heberger/).
+
 ## Avant d'ouvrir : la liste courte
 
 - [ ] `ADMIN_PASSWORD` long, généré, propre à ce déploiement : l'application

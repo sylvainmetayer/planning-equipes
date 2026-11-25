@@ -4,6 +4,8 @@ Un arrêté ferme des stands à certaines heures sur quelques jours : vous le po
 
 Une **consigne** est une fermeture imposée de l'extérieur (arrêté préfectoral, canicule) appliquée à tous les stands pour quelques dates. Elle se gère dans *Règles du planning*, onglet *Consignes*.
 
+Les épreuves en plein air sont les premières concernées : voir [quand l'autorité ou la météo s'en mêlent](/planning-evenement-sportif/) pour un événement sportif.
+
 ## Poser une consigne
 
 1. Ouvrez *Règles du planning*, onglet *Consignes*, et choisissez la bande horaire et les dates à venir.

@@ -11,7 +11,7 @@
     },
     {
       "h2": "Les sauvegardes",
-      "texte": "L'application sauvegarde toute la base chaque nuit à 4 h, avec `pg_dump`, et garde les copies les plus récentes. Restaurer reste un geste d'administrateur, hors de l'application : aucun bouton ne remplace tout d'un clic."
+      "texte": "L'application sauvegarde toute la base chaque nuit à 4 h, avec `pg_dump`, et garde les copies les plus récentes. Restaurer reste un geste d'administrateur, hors de l'application : aucun bouton ne remplace tout d'un clic. La marche à suivre est dans [sauvegarder et restaurer](/docs/installer/sauvegarde-et-restauration/)."
     },
     {
       "h2": "La sécurité",
@@ -19,7 +19,7 @@
     },
     {
       "h2": "Calculer sur une autre machine",
-      "texte": "Le calcul ne se sert que d'un cœur. Un petit serveur peut confier les calculs complets à un poste plus rapide, allumé en permanence ou loué le temps du calcul. Toutes les connexions partent de l'application, qui peut rester sans port ouvert."
+      "texte": "Le calcul ne se sert que d'un cœur. Un petit serveur peut confier les calculs complets à un poste plus rapide, allumé en permanence ou loué le temps du calcul. Toutes les connexions partent de l'application, qui peut rester sans port ouvert. Le montage se décrit dans [résoudre sur une autre machine](/docs/installer/calcul-sur-une-autre-machine/)."
     },
     {
       "h2": "Un assistant IA branché dessus",
@@ -27,11 +27,12 @@
     },
     {
       "h2": "Les versions",
-      "texte": "Chaque version porte un numéro `vX.Y.Z` qui suit [SemVer](https://semver.org/lang/fr/), et ses notes disent ce qui demande une action à la mise à jour. On déploie une version précise, jamais `latest`."
+      "texte": "Chaque version porte un numéro `vX.Y.Z` qui suit [SemVer](https://semver.org/lang/fr/), et ses notes disent ce qui demande une action à la mise à jour. On déploie une version précise, jamais `latest`. Pour passer d'une version à l'autre, suivez [mettre à jour vers une nouvelle version](/docs/installer/mettre-a-jour/)."
     }
   ],
   "cta": "Vous préférez qu'on l'héberge pour vous ?",
   "bouton": "Parlons-en",
+  "guide": "Installer chez vous",
   "liens": [
     "calcul",
     "legal",
@@ -50,7 +51,7 @@
       },
       {
         "h2": "Backups",
-        "texte": "The application backs up the whole database every night at 04:00, with `pg_dump`, and keeps the most recent copies. Restoring stays an administrator's job, outside the application: no button replaces everything in one click."
+        "texte": "The application backs up the whole database every night at 04:00, with `pg_dump`, and keeps the most recent copies. Restoring stays an administrator's job, outside the application: no button replaces everything in one click. The procedure is in [backing up and restoring](/docs/installer/sauvegarde-et-restauration/) (in French)."
       },
       {
         "h2": "Security",
@@ -58,7 +59,7 @@
       },
       {
         "h2": "Solve on another machine",
-        "texte": "The solver uses one core only. A small server can hand full runs to a faster machine, always on or rented for the duration. Every connection leaves from the application, which can keep every port closed."
+        "texte": "The solver uses one core only. A small server can hand full runs to a faster machine, always on or rented for the duration. Every connection leaves from the application, which can keep every port closed. The setup is described in [solving on another machine](/docs/installer/calcul-sur-une-autre-machine/) (in French)."
       },
       {
         "h2": "An AI assistant on top",
@@ -66,11 +67,12 @@
       },
       {
         "h2": "Versions",
-        "texte": "Each version carries a `vX.Y.Z` number that follows [SemVer](https://semver.org/), and its notes say what needs action at upgrade. You deploy a precise version, never `latest`."
+        "texte": "Each version carries a `vX.Y.Z` number that follows [SemVer](https://semver.org/), and its notes say what needs action at upgrade. You deploy a precise version, never `latest`. To move from one version to the next, follow [updating to a new version](/docs/installer/mettre-a-jour/) (in French)."
       }
     ],
     "cta": "Would you rather we hosted it for you?",
     "bouton": "Let's talk",
+    "guide": "Install it yourself (guide in French)",
     "liens": [
       "calcul",
       "legal",
