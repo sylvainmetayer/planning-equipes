@@ -119,7 +119,7 @@ la mesure ci-dessus.
    `e − s > 1440 − repos` ; les sièges du soir qui se chevauchent, plus ceux du matin
    suivant qui se chevauchent, forment une clique : leur somme minore l'effectif.
    Rang 11 : 7 → 9, rang 20 : 100 → 105, tous deux exacts.
-3. **Le travail continu relayé** (`travailContinuPlancher`). Un enchaînement de plus
+3. **Le travail continu relayé** (`continuousWorkFloor`). Un enchaînement de plus
    de six heures doit être relayé par un siège du même stand ; une « tête » (un siège
    que rien ne précède) et les sièges qui le suivent, que l'absence de relais
    empêche de lui succéder, forment une clique. Rang 18 : 58 → 63.

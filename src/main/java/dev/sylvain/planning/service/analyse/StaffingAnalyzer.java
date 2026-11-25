@@ -278,7 +278,7 @@ public class StaffingAnalyzer {
         PLAFOND_TYPOLOGIE,
         /** The daily rest: seats of two neighbouring days that no one person can hold together ({@link #reposQuotidienPlancher}). */
         REPOS_QUOTIDIEN,
-        /** The continuous-work cap: a stretch past it needs a relay that some seats cannot have ({@link #travailContinuPlancher}). */
+        /** The continuous-work cap: a stretch past it needs a relay that some seats cannot have ({@link #continuousWorkFloor}). */
         TRAVAIL_CONTINU
     }
 
@@ -777,7 +777,7 @@ public class StaffingAnalyzer {
                         withCapFloor(bornes(besoins, rules), plancherPlafonds),
                         reposQuotidienPlancher(sieges, rules.reposQuotidienMinutes()),
                         BorneRetenue.REPOS_QUOTIDIEN),
-                travailContinuPlancher(sieges, rules.travailContinuMaxMinutes(), dureePauseMinutes),
+                continuousWorkFloor(sieges, rules.travailContinuMaxMinutes(), dureePauseMinutes),
                 BorneRetenue.TRAVAIL_CONTINU);
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         // The team every « how many may » figure is read against: the floor,
@@ -1135,7 +1135,7 @@ public class StaffingAnalyzer {
      *
      * @param cap the continuous-work cap in minutes, {@code 0} when the rule is off
      */
-    static int travailContinuPlancher(List<Siege> sieges, int cap, int pause) {
+    static int continuousWorkFloor(List<Siege> sieges, int cap, int pause) {
         if (cap <= 0) {
             return 0;
         }
