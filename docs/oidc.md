@@ -10,9 +10,10 @@ l'[ADR 0093](decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.m
   le second facteur. Tout fournisseur OpenID Connect convient : un ADFS 2016+, un
   Keycloak ou un Zitadel intermédiaire.
 - **L'application** décide ce que la personne peut faire : table `compte` (la
-  personne) et `habilitation` (son droit). Sans compte actif portant un droit
-  `ADMIN` en vigueur, la session n'ouvre **rien** — quels que soient les rôles que
-  le fournisseur mettrait dans son jeton. Se connecter ne crée aucun compte.
+  personne) et `habilitation` (ses droits : `ADMIN`, `ORGANISATEUR` ou
+  `RESPONSABLE_STAND`). Sans compte actif portant un droit en vigueur, la session
+  n'ouvre **rien** — quels que soient les rôles que le fournisseur mettrait dans
+  son jeton. Se connecter ne crée aucun compte.
 - Les **animateurs** n'ont pas de compte : leur espace s'ouvre par le lien
   personnel et le code reçu par e-mail, comme sans fournisseur.
 
@@ -54,7 +55,7 @@ fournisseur, puis refermez le secours.
 ## Rattacher une personne
 
 1. Un administrateur crée le **compte** de la personne (son adresse) et lui
-   accorde un droit (`ADMIN`).
+   accorde un droit (`ADMIN`, `ORGANISATEUR` ou `RESPONSABLE_STAND`).
 2. À sa première connexion, si le fournisseur déclare son adresse vérifiée, le
    compte est lié au couple **émetteur + sujet** du fournisseur. Ensuite seul ce
    sujet le désigne : une autre personne qui reprendrait la même adresse chez le
@@ -96,5 +97,9 @@ duplication, activation et suppression d'une édition, comparaison de deux
 éditions. L'import de scénario reste ouvert à l'organisateur, dans son édition
 courante seulement : une section `edition:` qui en désigne une autre, ou une à
 créer, est refusée (400). L'inventaire est `InstanceRoutesStructuralTest` ; une nouvelle ressource
-non classée fait échouer le build. L'OAuth du `/mcp` (qui garde sa clé d'API) et
-les comptes locaux avec mot de passe viennent séparément.
+non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
+(ADR [0095](decisions/0095-le-responsable-de-stand-lit-son-stand.md)). Le `/mcp`
+garde sa clé d'API, sans OAuth. Les comptes locaux avec mot de passe, ouverts
+même derrière un fournisseur, sont décrits dans
+[`exploitation.md`](exploitation.md#les-comptes-locaux-mot-de-passe) et
+[`securite.md`](securite.md#qui-ouvre-ladministration).

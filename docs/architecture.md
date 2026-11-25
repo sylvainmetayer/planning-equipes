@@ -539,7 +539,7 @@ de la garde, joué après tous les autres contrôles de démarrage (un démarrag
 qu'ils refusent n'a pas ouvert la base), note dans `version_applicative` chaque
 changement de version de l'application, que la page *Débogage* affiche — voir [`versioning.md`](versioning.md) § 2.
 
-## Les trois tâches planifiées, et le seul endroit qui écrit sur le disque
+## Les tâches planifiées, et le seul endroit qui écrit sur le disque
 
 `service/backup/` sauvegarde la base chaque nuit par un vrai `pg_dump`, dans le
 répertoire que désigne `BACKUP_DIR`, en ne gardant que les `BACKUP_RETENTION`
