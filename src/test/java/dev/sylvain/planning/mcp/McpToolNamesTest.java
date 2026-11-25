@@ -60,6 +60,9 @@ class McpToolNamesTest {
             PROMPTS,
             Path.of("src/main/java/dev/sylvain/planning/mcp/McpResources.java"));
 
+    private static final Pattern RENAMES_TABLE =
+            Pattern.compile("<!-- mcp-renommages:debut -->.*?<!-- mcp-renommages:fin -->", Pattern.DOTALL);
+
     /** A tool name shape: {@code lister_stands}, {@code creer_stand_complet}. */
     private static final Pattern SNAKE_CASE = Pattern.compile("\\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\\b");
 
@@ -164,7 +167,8 @@ class McpToolNamesTest {
 
     /** The tool names a document quotes at its reader. */
     private static Set<String> citedNames(Path document) throws IOException {
-        String content = Files.readString(document);
+        // The renamed tools table quotes 3.x names on purpose (ADR 0100); McpRenommageTest holds it.
+        String content = RENAMES_TABLE.matcher(Files.readString(document)).replaceAll("");
         Set<String> cited = new TreeSet<>();
         if (document.toString().endsWith(".md")) {
             Matcher span = SPAN_CODE.matcher(content);
