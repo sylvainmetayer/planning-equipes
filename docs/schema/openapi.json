@@ -2464,6 +2464,9 @@
           },
           "representantTelephone" : {
             "type" : "string"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },

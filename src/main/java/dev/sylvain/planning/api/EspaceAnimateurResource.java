@@ -259,7 +259,7 @@ public class EspaceAnimateurResource {
     @Path("/{jeton}/contacts")
     @EspaceSessionRequired
     public ContactsService.Saved saveContacts(ContactsAnimateur contacts) {
-        return contactsService.save(animateurCourant(), contacts);
+        return contactsService.saveOwn(animateurCourant(), contacts);
     }
 
     /**

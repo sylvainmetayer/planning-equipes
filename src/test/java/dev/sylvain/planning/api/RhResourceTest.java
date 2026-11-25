@@ -203,19 +203,22 @@ class RhResourceTest {
         String rh = rh();
         String urgence = phone();
         String path = "/api/rh/editions/" + edition + "/contacts/RH-B";
-        given().header("Authorization", rh)
+        String stamp = given().header("Authorization", rh)
                 .contentType("application/json")
                 .body(java.util.Map.of("urgenceNom", "Camille", "urgenceTelephone", urgence))
                 .put(path)
                 .then()
                 .statusCode(200)
+                .body("contacts.modifieLe", org.hamcrest.Matchers.notNullValue())
                 .body("contacts.urgenceTelephone", equalTo(urgence))
                 .body("avertissements", hasSize(1))
                 .body("avertissements[0].type", equalTo("MINEUR_SANS_REPRESENTANT"))
                 .body("avertissements[0].message", org.hamcrest.Matchers.containsString("RH-B"))
                 .body(
                         "avertissements[0].message",
-                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Bob")));
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Bob")))
+                .extract()
+                .path("contacts.modifieLe");
         given().header("Authorization", rh)
                 .get("/api/rh/editions/" + edition + "/contacts")
                 .then()
@@ -225,7 +228,8 @@ class RhResourceTest {
                 .body("[0].contacts.urgenceNom", equalTo("Camille"));
         given().header("Authorization", rh)
                 .contentType("application/json")
-                .body(java.util.Map.of("representantNom", "Dominique", "representantTelephone", phone()))
+                .body(java.util.Map.of(
+                        "representantNom", "Dominique", "representantTelephone", phone(), "modifieLe", stamp))
                 .put(path)
                 .then()
                 .statusCode(200)
@@ -238,6 +242,61 @@ class RhResourceTest {
                 .statusCode(400);
         assertThat(journalCount("CONTACTS_CONSULTES")).isEqualTo(1);
         assertThat(journalCount("CONTACTS_MODIFIES")).isEqualTo(2);
+    }
+
+    @Test
+    void aWriteFromAStaleReadIsRefusedThenOverwritesOnceTold() {
+        String rh = rh();
+        String path = "/api/rh/editions/" + edition + "/contacts/RH-B";
+        String first = given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceNom", "Camille"))
+                .put(path)
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("contacts.modifieLe");
+        // Somebody else saved since that read (the animateur, say).
+        String second = given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceNom", "Claude", "modifieLe", first))
+                .put(path)
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("contacts.modifieLe");
+        // A read that saw no row creates, and only creates.
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceNom", "Dominique"))
+                .put(path)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo("MODIFICATION_CONCURRENTE"));
+        String told = given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceNom", "Dominique", "modifieLe", first))
+                .put(path)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo("MODIFICATION_CONCURRENTE"))
+                .extract()
+                .path("modifieLe");
+        assertThat(java.time.Instant.parse(told)).isEqualTo(java.time.Instant.parse(second));
+        // An empty set from a stale read deletes nothing either.
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("modifieLe", first))
+                .put(path)
+                .then()
+                .statusCode(409);
+        given().header("Authorization", rh)
+                .contentType("application/json")
+                .body(java.util.Map.of("urgenceNom", "Dominique", "modifieLe", told))
+                .put(path)
+                .then()
+                .statusCode(200)
+                .body("contacts.urgenceNom", equalTo("Dominique"));
     }
 
     @Test

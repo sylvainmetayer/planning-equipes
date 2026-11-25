@@ -15,7 +15,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
-import { BrouillonContacts, draftOf, contactsOf } from '../rh/contacts';
+import { BrouillonContacts, ChampContact, contactsOf, draftOf, staleStamp } from '../rh/contacts';
 
 /**
  * « Mes contacts »: the animateur's own emergency contact and, for a minor, their legal
@@ -62,7 +62,7 @@ export class EspaceContactsPage implements OnInit {
     }
   }
 
-  protected set(champ: keyof BrouillonContacts, valeur: string): void {
+  protected set(champ: ChampContact, valeur: string): void {
     this.saved.set(false);
     this.brouillon.update((b) => ({ ...b, [champ]: valeur }));
   }
@@ -77,6 +77,10 @@ export class EspaceContactsPage implements OnInit {
       this.warning.set(answer.avertissements.map((a) => a.message).join(' '));
       this.saved.set(true);
     } catch (error) {
+      const stamp = staleStamp(error);
+      if (stamp) {
+        this.brouillon.update((b) => ({ ...b, modifieLe: stamp }));
+      }
       this.error.set(errorMessage(error));
     } finally {
       this.sending.set(false);

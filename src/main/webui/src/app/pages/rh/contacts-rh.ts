@@ -21,10 +21,12 @@ import { errorText, retainedValue } from '../../core/resource-state';
 import { StatusMessage } from '../../shared/status-message';
 import {
   BrouillonContacts,
+  ChampContact,
   draftOf,
   contactsOf,
   hasRepresentative,
   journalText,
+  staleStamp,
   telHref,
 } from './contacts';
 
@@ -74,7 +76,7 @@ export class ContactsRh {
     this.editing.set(ligne.animateurId);
   }
 
-  protected set(champ: keyof BrouillonContacts, valeur: string): void {
+  protected set(champ: ChampContact, valeur: string): void {
     this.brouillon.update((b) => ({ ...b, [champ]: valeur }));
   }
 
@@ -97,6 +99,10 @@ export class ContactsRh {
       this.editing.set(null);
       this.contacts.reload();
     } catch (error) {
+      const stamp = staleStamp(error);
+      if (stamp) {
+        this.brouillon.update((b) => ({ ...b, modifieLe: stamp }));
+      }
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),

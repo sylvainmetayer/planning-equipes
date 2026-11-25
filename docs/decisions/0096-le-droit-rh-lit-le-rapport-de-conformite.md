@@ -54,7 +54,11 @@ téléphone, facultatifs). Quatre choix en découlent :
    saisie (par identifiant) et une ligne dans le rapport de conformité : refuser
    l'enregistrement bloquerait la saisie d'une personne à joindre pour un défaut
    d'information qu'on ne maîtrise pas.
-4. **Une duplication d'édition ne les recopie pas**, et la fiche supprimée les
+4. **Deux personnes les écrivent**, l'animateur et l'organisation : l'écriture porte
+   sa précondition (`modifie_le`, comme le référentiel), et la seconde est
+   refusée en `409 MODIFICATION_CONCURRENTE` au lieu d'écraser la première sans
+   le dire. Une lecture qui n'a vu aucune ligne ne peut que créer.
+5. **Une duplication d'édition ne les recopie pas**, et la fiche supprimée les
    emporte : la conservation d'un numéro de tiers ne dépasse pas l'édition.
 
 ## Alternatives écartées
