@@ -1,0 +1,91 @@
+<app-status-message [text]="erreur()" tone="error" />
+@if (lignes(); as liste) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@contacts.title">Contacts d'urgence et représentants légaux</h2>
+      <mat-card-subtitle i18n="@@contacts.sousTitre">Données de tiers : lisibles des administrateurs et du droit RH, jamais d'un export, d'un collègue ni d'un assistant. Chaque lecture et chaque modification est inscrite au journal.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (liste.length === 0) {
+        <p i18n="@@contacts.aucun">Aucun contact enregistré et aucun mineur dans cette édition.</p>
+      } @else {
+        <div class="conformite-defilement">
+          <table class="conformite-table">
+            <caption class="cdk-visually-hidden" i18n="@@contacts.caption">Contacts par animateur</caption>
+            <thead>
+              <tr>
+                <th scope="col" i18n="@@contacts.col.personne">Personne</th>
+                <th scope="col" i18n="@@contacts.col.urgence">Contact d'urgence</th>
+                <th scope="col" i18n="@@contacts.col.representant">Représentant légal</th>
+                <th scope="col"><span class="cdk-visually-hidden" i18n="@@contacts.col.actions">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of liste; track ligne.animateurId) {
+                <tr>
+                  <th scope="row">{{ ligne.nom }}@if (ligne.mineur) { <span i18n="@@contacts.mineur"> (mineur)</span> }</th>
+                  @if (editing() === ligne.animateurId) {
+                    <td colspan="2">
+                      <div class="contacts-form">
+                        <mat-form-field>
+                          <mat-label i18n="@@contacts.urgenceNom">Contact d'urgence : nom</mat-label>
+                          <input matInput maxlength="100" [ngModel]="brouillon().urgenceNom" (ngModelChange)="set('urgenceNom', $event)" name="urgenceNom" />
+                        </mat-form-field>
+                        <mat-form-field>
+                          <mat-label i18n="@@contacts.urgenceTel">Contact d'urgence : téléphone</mat-label>
+                          <input matInput type="tel" maxlength="30" [ngModel]="brouillon().urgenceTelephone" (ngModelChange)="set('urgenceTelephone', $event)" name="urgenceTelephone" />
+                        </mat-form-field>
+                        <mat-form-field>
+                          <mat-label i18n="@@contacts.representantNom">Représentant légal : nom</mat-label>
+                          <input matInput maxlength="100" [ngModel]="brouillon().representantNom" (ngModelChange)="set('representantNom', $event)" name="representantNom" />
+                        </mat-form-field>
+                        <mat-form-field>
+                          <mat-label i18n="@@contacts.representantTel">Représentant légal : téléphone</mat-label>
+                          <input matInput type="tel" maxlength="30" [ngModel]="brouillon().representantTelephone" (ngModelChange)="set('representantTelephone', $event)" name="representantTelephone" />
+                        </mat-form-field>
+                      </div>
+                    </td>
+                    <td>
+                      <button matButton="filled" type="button" [disabled]="saving()" (click)="save(ligne)" i18n="@@contacts.enregistrer">Enregistrer</button>
+                      <button matButton type="button" [disabled]="saving()" (click)="editing.set(null)" i18n="@@contacts.annuler">Annuler</button>
+                    </td>
+                  } @else {
+                    <td>
+                      @if (ligne.contacts.urgenceNom || ligne.contacts.urgenceTelephone) {
+                        {{ ligne.contacts.urgenceNom }}
+                        @if (ligne.contacts.urgenceTelephone; as tel) {
+                          <a [href]="telHref(tel)">{{ tel }}</a>
+                        }
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td [class.conformite-alerte]="ligne.mineur && !hasRepresentative(ligne.contacts)">
+                      @if (hasRepresentative(ligne.contacts)) {
+                        {{ ligne.contacts.representantNom }}
+                        @if (ligne.contacts.representantTelephone; as tel) {
+                          <a [href]="telHref(tel)">{{ tel }}</a>
+                        }
+                      } @else if (ligne.mineur) {
+                        <ng-container i18n="@@contacts.manquant">Non renseigné</ng-container>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>
+                      <button matButton type="button" (click)="edit(ligne)">
+                        <mat-icon>edit</mat-icon>
+                        <ng-container i18n="@@contacts.modifier">Modifier</ng-container>
+                        <span class="cdk-visually-hidden"> {{ ligne.nom }}</span>
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}

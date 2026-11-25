@@ -2421,6 +2421,24 @@
           }
         }
       },
+      "ContactAnimateurView" : {
+        "required" : [ "animateurId", "nom", "mineur", "contacts" ],
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "mineur" : {
+            "type" : "boolean"
+          },
+          "contacts" : {
+            "$ref" : "#/components/schemas/ContactsAnimateur"
+          }
+        }
+      },
       "ContactOrganisation" : {
         "type" : "object",
         "properties" : {
@@ -2429,6 +2447,38 @@
           },
           "email" : {
             "type" : "string"
+          }
+        }
+      },
+      "ContactsAnimateur" : {
+        "type" : "object",
+        "properties" : {
+          "urgenceNom" : {
+            "type" : "string"
+          },
+          "urgenceTelephone" : {
+            "type" : "string"
+          },
+          "representantNom" : {
+            "type" : "string"
+          },
+          "representantTelephone" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ContactsEnregistres" : {
+        "required" : [ "contacts", "avertissements" ],
+        "type" : "object",
+        "properties" : {
+          "contacts" : {
+            "$ref" : "#/components/schemas/ContactsAnimateur"
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Avertissement"
+            }
           }
         }
       },
@@ -6792,6 +6842,18 @@
           }
         }
       },
+      "MinorWithoutRepresentative" : {
+        "type" : "object",
+        "required" : [ "animateurId", "nom" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
       "Mode" : {
         "type" : "string",
         "enum" : [ "AVANT", "APRES" ]
@@ -8377,7 +8439,7 @@
         }
       },
       "RapportConformite" : {
-        "required" : [ "editionId", "publieLe", "genereLe", "plafonds", "synthese", "semaines", "regles", "personnes" ],
+        "required" : [ "editionId", "publieLe", "genereLe", "plafonds", "synthese", "semaines", "regles", "personnes", "mineursSansRepresentant" ],
         "type" : "object",
         "properties" : {
           "editionId" : {
@@ -8414,6 +8476,12 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PersonneConformite"
+            }
+          },
+          "mineursSansRepresentant" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MinorWithoutRepresentative"
             }
           }
         }
@@ -10658,7 +10726,7 @@
       },
       "TypeAvertissement" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE", "STAND_SANS_EMPLACEMENT" ]
+        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "MINEUR_SANS_REPRESENTANT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE", "STAND_SANS_EMPLACEMENT" ]
       },
       "TypeCauseInfaisabilite" : {
         "type" : "string",
@@ -14988,6 +15056,53 @@
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
+    "/api/espace-animateur/{jeton}/contacts" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ContactsAnimateur"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactsEnregistres"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Save Contacts",
+        "tags" : [ "Espace Animateur Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactsAnimateur"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Contacts",
+        "tags" : [ "Espace Animateur Resource" ]
+      }
+    },
     "/api/espace-animateur/{jeton}/covoiturage" : {
       "post" : {
         "requestBody" : {
@@ -18817,6 +18932,99 @@
           }
         },
         "summary" : "Export Pdf",
+        "tags" : [ "Rh Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "rh", "admin" ]
+        } ]
+      }
+    },
+    "/api/rh/editions/{editionId}/contacts" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "editionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ContactAnimateurView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Contacts",
+        "tags" : [ "Rh Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "rh", "admin" ]
+        } ]
+      }
+    },
+    "/api/rh/editions/{editionId}/contacts/{animateurId}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "animateurId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "editionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ContactsAnimateur"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ContactsEnregistres"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Save Contacts",
         "tags" : [ "Rh Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "rh", "admin" ]

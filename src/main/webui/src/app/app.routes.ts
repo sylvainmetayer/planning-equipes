@@ -753,6 +753,12 @@ export const routes: Routes = [
           import('./pages/espace-animateur/espace-echanges-page').then((m) => m.EspaceEchangesPage),
       },
       {
+        path: 'contacts',
+        title: () => $localize`:@@route.espace.contacts:Mes contacts`,
+        loadComponent: () =>
+          import('./pages/espace-animateur/espace-contacts-page').then((m) => m.EspaceContactsPage),
+      },
+      {
         path: 'disponibilites',
         title: () => $localize`:@@route.espace.disponibilites:Mes disponibilités`,
         loadComponent: () =>

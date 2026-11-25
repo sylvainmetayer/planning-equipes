@@ -229,7 +229,8 @@ Quatre mécanismes :
    stand sort tel quel — il décrit un stand, pas une personne.
 4. **Un test structurel.** `McpConfidentialiteStructurelleTest` parcourt par
    réflexion tous les `@Tool` et échoue si l'un expose `Animateur` ou un champ
-   `prenom` / `dateNaissance` / `email` / `accessToken` / `commentaire` /
+   `prenom` / `dateNaissance` / `email` / `accessToken` / `commentaire` / `urgenceNom` /
+   `urgenceTelephone` / `representantNom` / `representantTelephone` /
    `commentaireAdmin` / `raison`, **y compris à travers les génériques**. Un
    nouvel outil mal filtré casse le build sans qu'on ait à y penser.
 

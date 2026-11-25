@@ -120,6 +120,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   whole planning as four figures and a frieze coloured by typologie; and « suis-je
   avec quelqu'un ? », the teammates ranked by shared shifts and searched by
   name), `/animateur/:jeton/echanges`, `/animateur/:jeton/disponibilites`,
+  `/animateur/:jeton/contacts` (« Mes contacts » — the animateur's own emergency
+  contact and legal representative, read and written through the token's own
+  routes, never a colleague's; optional, ADR 0096),
   `/animateur/:jeton/covoiturage` (« Covoiturage » — « Je viens avec… », asked
   for apart from the declaration on the same collection window, read-only
   outside it) and `/animateur/:jeton/aide`. The espace's navigation is one row

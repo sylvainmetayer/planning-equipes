@@ -40,6 +40,23 @@ sont des décisions, pas des détails.
 6. **Jamais par MCP**, et ni date de naissance, ni adresse, ni coordonnées dans
    le PDF ou le CSV : un nom et le statut de mineur.
 
+## Les contacts d'urgence et représentants légaux
+
+Le même droit lit les contacts d'urgence et les représentants légaux (nom et
+téléphone, facultatifs). Quatre choix en découlent :
+
+1. **Une table à part, `animateur_contact`**, et non des colonnes de la fiche.
+   `Animateur` est un fait du problème du solveur, sérialisé par le scénario, les
+   exports, le MCP et l'espace des collègues : une donnée d'un tiers qui ne doit
+   sortir par aucun d'eux ne se range pas dans le type qu'ils lisent tous.
+2. **L'animateur voit et modifie les siens** dans son espace, jamais ceux d'un autre.
+3. **Le représentant légal d'un mineur reste facultatif**, avec un avertissement à la
+   saisie (par identifiant) et une ligne dans le rapport de conformité : refuser
+   l'enregistrement bloquerait la saisie d'une personne à joindre pour un défaut
+   d'information qu'on ne maîtrise pas.
+4. **Une duplication d'édition ne les recopie pas**, et la fiche supprimée les
+   emporte : la conservation d'un numéro de tiers ne dépasse pas l'édition.
+
 ## Alternatives écartées
 
 - **Un onglet réservé aux administrateurs** : l'organisation confie ce rapport à

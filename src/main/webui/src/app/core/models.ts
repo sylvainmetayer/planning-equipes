@@ -728,6 +728,7 @@ export type TypeAvertissement =
   | 'INDISPONIBILITE_HORS_EVENEMENT'
   | 'INDISPONIBILITE_JOUR_SANS_CRENEAU'
   | 'MINEUR_PENDANT_EVENEMENT'
+  | 'MINEUR_SANS_REPRESENTANT'
   | 'CRENEAU_HORS_OUVERTURE_STANDS'
   | 'STAND_EXCEPTION_HORS_EVENEMENT'
   | 'STAND_FENETRE_SANS_EFFET'
@@ -774,6 +775,7 @@ export interface Avertissement {
  */
 const AVERTISSEMENTS_HORS_JOURNAL: ReadonlySet<TypeAvertissement> = new Set<TypeAvertissement>([
   'MINEUR_PENDANT_EVENEMENT',
+  'MINEUR_SANS_REPRESENTANT',
 ]);
 
 /** See {@link AVERTISSEMENTS_HORS_JOURNAL}. */
@@ -5893,4 +5895,38 @@ export interface RapportConformite {
   semaines: string[];
   regles: RegleConformite[];
   personnes: PersonneConformite[];
+  /** The minors of the plan whose legal representative is not recorded. */
+  mineursSansRepresentant: MinorWithoutRepresentative[];
+}
+
+/** A minor of the plan with no legal representative recorded: an id and a name, nothing of a contact. */
+export interface MinorWithoutRepresentative {
+  animateurId: string;
+  nom: string;
+}
+
+/**
+ * The two people to call about an animateur: whoever to warn in an emergency and, for a
+ * minor, their legal representative. A third party's data — never in an export, in the
+ * scenario file, in the MCP tools or in a colleague's espace.
+ */
+export interface ContactsAnimateur {
+  urgenceNom?: string | null;
+  urgenceTelephone?: string | null;
+  representantNom?: string | null;
+  representantTelephone?: string | null;
+}
+
+/** `GET /api/rh/editions/{id}/contacts`: one animateur holding contacts, or a minor. */
+export interface ContactAnimateurView {
+  animateurId: string;
+  nom: string;
+  mineur: boolean;
+  contacts: ContactsAnimateur;
+}
+
+/** The answer of a contacts write: what is stored and the warnings of the write. */
+export interface ContactsEnregistres {
+  contacts: ContactsAnimateur;
+  avertissements: Avertissement[];
 }

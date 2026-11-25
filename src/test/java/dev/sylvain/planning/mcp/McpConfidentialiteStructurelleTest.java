@@ -46,7 +46,13 @@ class McpConfidentialiteStructurelleTest {
             "accesstoken",
             "commentaire",
             "commentaireadmin",
-            "raison");
+            "raison",
+            // A third party's contacts (the emergency contact and the legal representative): the RH right and
+            // the animateur read them, an assistant never does (docs/rgpd.md).
+            "urgencenom",
+            "urgencetelephone",
+            "representantnom",
+            "representanttelephone");
 
     /**
      * Components that bear a forbidden name but that the server writes itself,

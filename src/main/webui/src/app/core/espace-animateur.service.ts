@@ -18,6 +18,8 @@ import {
   PosteAnimateurView,
   SignalementView,
   SuggestionsEchangeView,
+  ContactsAnimateur,
+  ContactsEnregistres,
 } from './models';
 
 @Injectable({ providedIn: 'root' })
@@ -263,6 +265,23 @@ export class EspaceAnimateurService {
         `/api/espace-animateur/${jeton}/disponibilites`,
         nouvelle,
       ),
+    );
+  }
+
+  /* ----- Mes contacts: the animateur's own emergency contact and legal representative ----- */
+
+  /** My own contacts — nobody else's, and a colleague's espace never carries them. */
+  async contacts(): Promise<ContactsAnimateur> {
+    const jeton = this.requireJeton();
+    return await this.api.get<ContactsAnimateur>(`/api/espace-animateur/${jeton}/contacts`);
+  }
+
+  /** Replaces my contacts; the answer says what is stored and warns a minor without a representative. */
+  async enregistrerContacts(contacts: ContactsAnimateur): Promise<ContactsEnregistres> {
+    const jeton = this.requireJeton();
+    return await this.api.put<ContactsEnregistres>(
+      `/api/espace-animateur/${jeton}/contacts`,
+      contacts,
     );
   }
 

@@ -148,6 +148,12 @@
         <mat-icon>swap_horiz</mat-icon>
         <span i18n="@@espace.nav.echanges">Mes échanges</span>
       </a>
+      <a matButton [routerLink]="['/animateur', jeton(), 'contacts']" routerLinkActive="espace-nav-active"
+         #rlaContacts="routerLinkActive"
+         [attr.aria-current]="rlaContacts.isActive ? 'page' : null">
+        <mat-icon>contact_phone</mat-icon>
+        <span i18n="@@espace.nav.contacts">Mes contacts</span>
+      </a>
       <!-- Deux guichets qui n'ouvrent qu'avec la collecte : hors d'elle, ils
            n'étaient que deux onglets morts pendant tout l'événement. -->
       @if (collectionOpen()) {

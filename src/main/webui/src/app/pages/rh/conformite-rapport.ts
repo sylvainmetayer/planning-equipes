@@ -15,6 +15,7 @@ import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { StatusMessage } from '../../shared/status-message';
+import { ContactsRh } from './contacts-rh';
 import { hasFindings, hoursLabel, minorsOf, restLabel } from './conformite';
 
 /**
@@ -25,7 +26,7 @@ import { hasFindings, hoursLabel, minorsOf, restLabel } from './conformite';
  */
 @Component({
   selector: 'app-conformite-rapport',
-  imports: [DatePipe, MatButtonModule, MatCardModule, MatIconModule, StatusMessage],
+  imports: [ContactsRh, DatePipe, MatButtonModule, MatCardModule, MatIconModule, StatusMessage],
   templateUrl: './conformite-rapport.html',
   styleUrl: './conformite-rapport.css',
   encapsulation: ViewEncapsulation.None,

@@ -95,7 +95,7 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **résultat de chaque courriel adressé à un animateur (parti ou en échec, et pourquoi — ni adresse ni contenu)**, **le téléphone et l'adresse de contact que l'organisation publie à ses animateurs, par édition — souvent le numéro personnel d'un coordinateur, donc une donnée personnelle de l'encadrement, montrée à tous les animateurs de l'édition** |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **résultat de chaque courriel adressé à un animateur (parti ou en échec, et pourquoi — ni adresse ni contenu)**, **le contact d'urgence et le représentant légal d'un animateur (nom et téléphone, facultatifs — données d'un tiers)**, **le téléphone et l'adresse de contact que l'organisation publie à ses animateurs, par édition — souvent le numéro personnel d'un coordinateur, donc une donnée personnelle de l'encadrement, montrée à tous les animateurs de l'édition** |
 | Traitements réalisés | Hébergement, planification et résolution, **affichage du planning de travail du jour sur un écran de la salle de contrôle (prénom et initiale par défaut)**, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**) **et enregistrement de leur résultat**, sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; **toute personne présente devant un écran d'affichage mural** ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
@@ -656,6 +656,24 @@ administrateurs et des comptes titulaires d'un droit `RH` sur l'édition ;
 suit la purge de conservation du journal. Le PDF et le CSV téléchargés sortent
 de l'application : leur conservation est celle de l'organisation qui les
 produit, et ils ne sont jamais exposés par MCP.
+
+### Le contact d'urgence et le représentant légal : un tiers, une table à part
+
+Un animateur (ou son représentant légal) peut déposer le nom et le téléphone de la
+personne à prévenir en cas de malaise, et, pour un mineur, de son représentant
+légal. Ce sont des **données d'un tiers qui n'a rien demandé** : la politique de
+confidentialité l'annonce, avec sa finalité (la sécurité des personnes pendant
+l'événement).
+
+| Question | Réponse |
+| --- | --- |
+| Où ça vit | Table `animateur_contact`, à part de la fiche : l'animateur est lu par le scénario, les exports, le MCP et l'espace des collègues, et rien de tout cela ne doit en porter une ligne |
+| Qui lit | Les administrateurs et le droit `RH` de l'édition ; l'animateur lit et modifie les siens dans son espace (*Mes contacts*) |
+| Jamais dans | Scénario YAML, CSV et PDF d'export, ICS, archive, mails, MCP, espace d'un collègue, responsable de stand, liste des fiches |
+| Journal | Chaque lecture et chaque modification par l'organisation (`CONTACTS_CONSULTES`, `CONTACTS_MODIFIES`) et chaque modification par l'animateur (`CONTACTS_MODIFIES_PAR_ANIMATEUR`) — des identifiants, jamais une valeur |
+| Mineur sans représentant | Facultatif : un avertissement à la saisie (par identifiant, jamais l'identité ; il ne va pas dans le journal des notifications du navigateur) et une ligne dans le rapport de conformité |
+| Conservation | La fiche supprimée emporte ses contacts (clé étrangère en cascade) ; la purge de conservation de l'édition fait de même. Une **duplication d'édition ne les recopie pas** : une année nouvelle demande de nouveau, sans reporter le numéro d'un tiers d'une édition à l'autre. Réimporter un scénario qui recrée les fiches efface les contacts, qui n'y figurent pas |
+| Sauvegarde | La sauvegarde nocturne `pg_dump` les contient, comme le reste de la base ; elle n'est jamais téléchargeable |
 
 ## 8. Rythme de tenue
 
