@@ -924,19 +924,6 @@ class WipeBackupServiceTest {
         return referenceDataService.createAnimateur(animateur);
     }
 
-    /** How many persisted seats the fiche of that address holds. */
-    private long seatsOf(String email) {
-        String id = referenceDataService.listAnimateurs().stream()
-                .filter(animateur -> email.equals(animateur.getEmail()))
-                .map(Animateur::getId)
-                .findFirst()
-                .orElseThrow();
-        return persistenceService.loadPersistedPlanning().getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null
-                        && id.equals(poste.getAnimateur().getId()))
-                .count();
-    }
-
     private void inANewEdition(Runnable test) {
         String edition = editionService
                 .create(new Edition(null, "Édition sauvegarde", false, null))

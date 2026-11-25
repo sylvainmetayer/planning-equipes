@@ -153,7 +153,7 @@ class SolverBenchTest {
 
         List<Sample> samples = new ArrayList<>();
         long[] firstInitialized = {-1};
-        solver.addEventListener(event -> record(event, samples, firstInitialized));
+        solver.addEventListener(event -> recordSample(event, samples, firstInitialized));
         String jfr = System.getProperty("bench.jfr");
         long start = System.nanoTime();
         PlanningEvenement solved;
@@ -210,7 +210,7 @@ class SolverBenchTest {
     /** A problem and the quality thresholds its file pins, laid on after the server-side preparation. */
     record Loaded(PlanningEvenement problem, ParametresQualite qualite) {}
 
-    private static void record(
+    private static void recordSample(
             BestSolutionChangedEvent<PlanningEvenement> event, List<Sample> samples, long[] firstInitialized) {
         if (!event.isNewBestSolutionInitialized() || !(event.getNewBestScore() instanceof HardMediumSoftScore score)) {
             return;

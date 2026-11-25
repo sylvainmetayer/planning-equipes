@@ -55,8 +55,8 @@ class ResponsableProjectionStructurelleTest {
         }
     }
 
-    private static void walk(Class<?> record, List<String> intrus) {
-        for (RecordComponent composant : record.getRecordComponents()) {
+    private static void walk(Class<?> recordType, List<String> intrus) {
+        for (RecordComponent composant : recordType.getRecordComponents()) {
             Type type = composant.getGenericType();
             if (type instanceof ParameterizedType liste) {
                 type = liste.getActualTypeArguments()[0];
@@ -65,13 +65,13 @@ class ResponsableProjectionStructurelleTest {
             if (classe.isRecord() && classe.getName().startsWith(ResponsableView.class.getName())) {
                 walk(classe, intrus);
             } else if (!SCALAIRES.contains(classe)) {
-                intrus.add(record.getSimpleName() + "." + composant.getName() + " : " + classe.getName());
+                intrus.add(recordType.getSimpleName() + "." + composant.getName() + " : " + classe.getName());
             }
         }
     }
 
-    private static void collect(Class<?> record, List<String> noms) {
-        for (RecordComponent composant : record.getRecordComponents()) {
+    private static void collect(Class<?> recordType, List<String> noms) {
+        for (RecordComponent composant : recordType.getRecordComponents()) {
             noms.add(composant.getName());
             Type type = composant.getGenericType();
             if (type instanceof ParameterizedType liste) {

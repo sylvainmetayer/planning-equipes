@@ -218,7 +218,7 @@ class ClientVocabularyStructuralTest {
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
                     .decode(ByteBuffer.wrap(content));
             return false;
-        } catch (CharacterCodingException e) {
+        } catch (CharacterCodingException _) {
             return true;
         }
     }

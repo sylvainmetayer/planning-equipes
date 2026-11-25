@@ -88,9 +88,10 @@ class HandSearchFuzzTest {
         long deadline = System.nanoTime() + Long.getLong("fuzz.seconds", 60L) * 1_000_000_000L;
 
         long rounds = 0;
-        for (long round = only == null ? 0 : only; only != null ? rounds == 0 : System.nanoTime() < deadline; round++) {
+        for (long round = only == null ? 0 : only;
+                only != null ? rounds == 0 : System.nanoTime() < deadline;
+                round++, rounds++) {
             round(round);
-            rounds++;
         }
 
         String summary = "FUZZ | " + scenario + " | seed " + seed + " | rounds " + rounds + " | plans compared " + plans
