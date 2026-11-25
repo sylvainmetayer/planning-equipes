@@ -445,6 +445,7 @@ class DocumentationStructuralTest {
     private static final Path VARIABLES_MD = Path.of("site/src/docs/installer/variables-environnement.md");
     private static final Path PROPERTIES = Path.of("src/main/resources/application.properties");
     private static final Path DOCS = Path.of("docs");
+    private static final Path SITE_DOCS = Path.of("site/src/docs");
 
     /** A placeholder of a property value, {@code ${NAME:default}}: the environment variable it reads. */
     private static final Pattern ENVIRONMENT_VARIABLE = Pattern.compile("\\$\\{([A-Z][A-Z0-9_]*):");
@@ -476,27 +477,52 @@ class DocumentationStructuralTest {
     }
 
     /**
-     * Every page of {@code docs/} (and of {@code docs/fonctionnel/}) has its row
-     * in the index {@code docs/README.md}, whose three tables are the three parts
-     * the site publishes. The project memory is the one page the site leaves out
-     * and the index still lists.
+     * Every page of {@code site/src/docs/<part>/} is listed in the front matter
+     * ({@code docs:}) of its part's {@code index.md}: the site builds the part's
+     * guide list and the previous/next links from that list, and refuses a page
+     * missing from it. This holds the same thing without a build, where the
+     * backend tests run — and the other direction, a name listed that has no
+     * page. The licence inventory is generated and lives in {@code docs/}: the
+     * hosting part still lists it.
      */
     @Test
-    void everyDocumentIsListedInTheDocumentationIndex() throws IOException {
-        String index = Files.readString(DOCS.resolve("README.md"), StandardCharsets.UTF_8);
-        Set<String> missing = new TreeSet<>();
-        for (Path dir : List.of(DOCS, DOCS.resolve("fonctionnel"))) {
+    void everyPageIsListedInTheIndexOfItsPart() throws IOException {
+        Set<String> problems = new TreeSet<>();
+        for (String part : List.of("regles", "installer", "comprendre")) {
+            Path dir = SITE_DOCS.resolve(part);
+            String index = Files.readString(dir.resolve("index.md"), StandardCharsets.UTF_8);
+            Matcher front = Pattern.compile("\\A---\\n(.*?)\\n---\\n", Pattern.DOTALL).matcher(index);
+            assertThat(front.find()).as(part + "/index.md has a front matter").isTrue();
+            Set<String> listed = new TreeSet<>();
+            Matcher list = Pattern.compile("(?s)docs:\\s*(\\[.*?]|(?:\\n\\s*-\\s*[\\w-]+)+)").matcher(front.group(1));
+            assertThat(list.find()).as(part + "/index.md lists its pages in `docs:`").isTrue();
+            Matcher name = Pattern.compile("[\\w-]+").matcher(list.group(1));
+            while (name.find()) {
+                listed.add(name.group());
+            }
+            Set<String> present = new TreeSet<>();
             try (Stream<Path> files = Files.list(dir)) {
-                for (Path file : files.filter(f -> f.toString().endsWith(".md")).toList()) {
-                    String name = DOCS.relativize(file).toString();
-                    if (!name.equals("README.md") && !index.contains("(" + name + ")")) {
-                        missing.add(name);
-                    }
+                files.map(f -> f.getFileName().toString())
+                        .filter(f -> f.endsWith(".md") && !f.equals("index.md"))
+                        .forEach(f -> present.add(f.substring(0, f.length() - 3)));
+            }
+            if (part.equals("installer")) {
+                assertThat(Files.exists(DOCS.resolve("licences-tierces.md"))).isTrue();
+                present.add("licences-tierces");
+            }
+            for (String page : present) {
+                if (!listed.contains(page)) {
+                    problems.add(part + "/" + page + " is not listed in " + part + "/index.md");
+                }
+            }
+            for (String page : listed) {
+                if (!present.contains(page)) {
+                    problems.add(part + "/index.md lists " + page + ", which does not exist");
                 }
             }
         }
-        assertThat(missing)
-                .as("documents with no row in docs/README.md — add the row, and the page to site/src/docs-parties.json")
+        assertThat(problems)
+                .as("pages and the `docs:` list of their part's index.md must agree")
                 .isEmpty();
     }
 }

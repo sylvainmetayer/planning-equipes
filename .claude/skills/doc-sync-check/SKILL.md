@@ -1,6 +1,6 @@
 ---
 name: doc-sync-check
-description: Check whether a code change in planning-equipes requires a matching documentation update (README, docs/*, docs/fonctionnel/*, ConstraintCatalog), per the ownership rules in AGENTS.md. Use before wrapping up a task, or when the user asks "did I miss a doc update?" or "is the documentation in sync?".
+description: Check whether a code change in planning-equipes requires a matching documentation update (README, site/src/docs/*, ConstraintCatalog), per the ownership rules in AGENTS.md. Use before wrapping up a task, or when the user asks "did I miss a doc update?" or "is the documentation in sync?".
 ---
 
 # Documentation sync check
@@ -17,7 +17,7 @@ Match what changed to the doc that owns it:
 | --- | --- |
 | New/changed REST endpoint (`api/*Resource.java`) | the published OpenAPI — refresh `docs/schema/openapi.json` with `npm run api-schema` from `src/main/webui`. `site/src/docs/comprendre/api.md` only if there is a cross-cutting invariant or trap to record: it does **not** list endpoints |
 | New/changed Timefold constraint | `solver/ConstraintCatalog.java`, which `GET /api/constraints` serves. `site/src/docs/comprendre/contraintes.md` only for the *why* and the cost: it no longer enumerates the constraints |
-| New business capability visible to end users | the functional page that owns it in `docs/fonctionnel/` (`planifier.md`, `referentiels.md`, `diffuser-echanger.md`, …) — business language only, no class names, no routes, no variables |
+| New business capability visible to end users | the guide of `site/src/docs/regles/` that owns the task (`calculer-planning.md`, `preparer-edition.md`, `publier-planning.md`, …), or a new guide — business language only, no class names, no routes, no variables |
 | New/changed environment variable | `site/src/docs/installer/variables-environnement.md` (name, default, role — read from `application.properties`), and `.env.prod.example` when a production deployment sets it |
 | New/changed **screen behaviour an operator must understand** (new button or workflow, changed meaning of a banner/badge/setting, new lifecycle rule like retention or locking) | the in-app help page: `src/main/webui/src/app/pages/aide/aide-content.ts` (+ its new keys in `public/i18n/messages.en.json`). The guide answers "how do I use this screen" in business language — update the section covering that screen, don't create a doc-like dump. Skip for invisible or purely technical changes |
 | Change to Timefold model / invariants (`domain/*`) | `site/src/docs/comprendre/domaine.md` |
@@ -29,9 +29,12 @@ Match what changed to the doc that owns it:
 ## Rules to enforce
 
 1. **No new root-level Markdown files** and no new `README.md` sections —
-   everything goes under `docs/`, in one of its three parts (*Fonctionnel*,
-   *Infra*, *Tech*), with a new row added to `docs/README.md` and an entry in
-   `site/src/docs-parties.json` if it's a new file.
+   everything goes under `site/src/docs/`, in one of its three parts
+   (`regles/`, `installer/`, `comprendre/`), with the new page's slug added to
+   the `docs:` list of that part's `index.md`. `docs/` only keeps the
+   decisions, the schemas, the diagrams, the licence inventory and the project
+   memory. Pages are written for their reader (second person, named after a
+   task), never as notes about the documentation.
 2. **No `CLAUDE.md` or `.github/copilot-instructions.md`** — `AGENTS.md` is
    the single memory file. If repo conventions changed, edit `AGENTS.md`
    directly.

@@ -86,11 +86,11 @@ parties :
 
 | Partie | Pour qui | Point d'entrée |
 | --- | --- | --- |
-| **Fonctionnel** | L'organisateur, le bénévole responsable | [`docs/fonctionnel/parcours.md`](docs/fonctionnel/parcours.md) |
-| **Infra** | Qui héberge l'application | [`site/src/docs/installer/installation.md`](site/src/docs/installer/installation.md), [`site/src/docs/installer/variables-environnement.md`](site/src/docs/installer/variables-environnement.md) |
-| **Tech** | Qui développe ou audite | [`site/src/docs/comprendre/architecture.md`](site/src/docs/comprendre/architecture.md), [`site/src/docs/comprendre/developpement.md`](site/src/docs/comprendre/developpement.md) |
+| **Les règles du jeu** | L'organisateur, le bénévole responsable | [`site/src/docs/regles/`](site/src/docs/regles/index.md) |
+| **Installer chez vous** | Qui héberge l'application | [`site/src/docs/installer/installation.md`](site/src/docs/installer/installation.md), [`site/src/docs/installer/variables-environnement.md`](site/src/docs/installer/variables-environnement.md) |
+| **Comprendre comment c'est fait** | Qui développe ou audite | [`site/src/docs/comprendre/architecture.md`](site/src/docs/comprendre/architecture.md), [`site/src/docs/comprendre/developpement.md`](site/src/docs/comprendre/developpement.md) |
 
-L'index complet est dans [`docs/README.md`](docs/README.md). Le mode d'emploi
+Les décisions d'architecture, les schémas et les diagrammes restent dans [`docs/`](docs/README.md). Le mode d'emploi
 pas à pas est dans l'application, page « Aide ».
 
 | Pour… | Voir |

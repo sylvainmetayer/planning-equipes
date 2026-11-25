@@ -12,7 +12,7 @@ Custom reviewer agents are maintained for both ecosystems:
 When one version changes, update the other one in the same commit to keep them
 strictly synchronized.
 
-This file is written in English; user-facing documentation (`README.md`, `docs/`)
+This file is written in English; user-facing documentation (`README.md`, `site/src/docs/`)
 is written in French, and domain identifiers stay in French business vocabulary.
 The Angular frontend UI (`src/main/webui`) is bilingual French/English via
 `@angular/localize`, translated at runtime (`loadTranslations()`, no per-locale
@@ -40,7 +40,7 @@ onto `Stand`s over the days of an event, under hard/medium/soft constraints.
 
 Read before working on constraints or the domain model:
 
-- `docs/fonctionnel/` (start with `parcours.md`) — functional scope and business capabilities, in business language
+- `site/src/docs/regles/` (start with `fil-d-une-edition.md`) — functional scope and business capabilities, in business language
 - `site/src/docs/comprendre/domaine.md` — Timefold model and its invariants
 - `site/src/docs/comprendre/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
 - `site/src/docs/comprendre/architecture.md` — backend/frontend module layout
@@ -774,24 +774,38 @@ The doc layout is intentional — respect it when adding or updating docs.
    (`./mvnw quarkus:dev`) — and a pointer to the documentation. A short intro
    and a closing documentation index table are allowed; the functional
    inventory, the configuration and everything else technical go to `docs/`.
-3. **All documentation lives in `docs/`, in three parts** that the site
-   publishes under `/docs` (`site/src/docs-parties.json` lists the pages of each
-   and their order; a page in none of them fails the site build):
-   - **Fonctionnel** — `docs/fonctionnel/*.md`, for a reader who is not
-     technical (organiser, stand lead): what the application does, by major use,
-     with no class name, route or variable;
-   - **Infra** — for whoever hosts the application: `installation.md`,
-     `variables-environnement.md`, `exploitation.md`, `securite.md`, `oidc.md`,
-     `observabilite.md`, `versioning.md`, `rgpd.md`, `accessibilite.md`,
-     `licences-tierces.md`;
-   - **Tech** — for whoever develops or audits: `architecture.md`, `domaine.md`,
-     `contraintes.md`, `api.md`, `mcp.md`, `import-export.md`, `developpement.md`
-     (ADRs and the project memory stay on GitHub, outside the site).
-   Adding a topic means adding a file in the right part, its row in
-   `docs/README.md` and its entry in `docs-parties.json` — not a new root-level
-   file and not a new README section. The environment variables inventory
-   (`variables-environnement.md`) is checked against `application.properties`:
-   a new variable is added there.
+3. **All written documentation is a section of the showcase site**, under
+   `site/src/docs/`, and the site publishes it under `/docs`. It is written for
+   the person who reads the site, never as a copy of repository files: a guide
+   speaks to its reader ("vous"), is named after what they want to do
+   (« Préparer votre première édition »), and never says anything about the
+   documentation itself ("cette page", "voir la doc"). Three parts, one folder
+   each; the folder's `index.md` is the part's home, and its front matter
+   (`titre`, `pour`, `docs:`) names the part, says whom it is for and lists its
+   pages in reading order — a page missing from that list fails the site build and
+   `DocumentationStructuralTest`:
+   - **Les règles du jeu** (`regles/`) — for the organiser, the stand lead, the
+     person discovering the product: task guides, with no class name, route or
+     variable, naming the screens as the interface does;
+   - **Installer chez vous** (`installer/`) — for whoever hosts the application:
+     install, configure, secure, back up, update; `variables-environnement.md`
+     is the complete inventory, checked against `application.properties`
+     (a new variable is added there);
+   - **Comprendre comment c'est fait** (`comprendre/`) — for whoever develops or
+     audits: architecture, model, constraints, API, MCP, import/export, build.
+   A link between pages is a relative `.md` link; a link to anything outside the
+   site (code, an ADR, the OpenAPI contract, this file) is written
+   `repo:path/from/the/repository/root` and becomes a GitHub link; a screenshot is
+   `![alt](/images/fr/x.webp "caption")` from `site/src/images/`; a diagram is
+   `![alt](repo:docs/diagrammes/x.svg)`. A link to a page that does not exist
+   fails the build. The design of these pages is the « Documentation » section of
+   `site/design.md`. **`docs/` keeps only what serves contributors and tools**:
+   `decisions/` (never published; linked on GitHub), `schema/` (the OpenAPI
+   contract and the scenario schema), `diagrammes/` (PlantUML sources and SVGs;
+   the pages show the SVGs), `licences-tierces.md` (generated; the site shows it
+   in the hosting part) and `memoire-du-projet.md`. Adding a topic means adding a
+   page to the right part and its slug to that part's `index.md` — not a new
+   root-level file and not a new README section.
 4. Docs are written in **French**; keep the existing tone and Markdown style
    (tables for enumerable facts, fenced code blocks for commands).
 5. When behaviour changes, update the doc that owns it. Two owners are **not**
@@ -811,8 +825,8 @@ The doc layout is intentional — respect it when adding or updating docs.
      hands out. `site/src/docs/comprendre/contraintes.md` no longer enumerates the constraints and
      must not go back to it: it answers *why* a rule exists and what it costs,
      which the catalogue's one-line description cannot carry;
-   - new business capability → the functional page that owns it
-     (`docs/fonctionnel/`); new command/CI/tooling →
+   - new business capability → the guide of `site/src/docs/regles/` that owns it
+     (or a new guide, for a new task); new command/CI/tooling →
      `site/src/docs/comprendre/developpement.md`; anything touching the version contract, the
      release flow or the Docker image tags → `site/src/docs/installer/versioning.md`.
    - a flow, a lifecycle or the model drawn in `docs/diagrammes/` → its
@@ -823,7 +837,8 @@ The doc layout is intentional — respect it when adding or updating docs.
      conventions it relies on are in `site/src/docs/comprendre/developpement.md` (« Diagrammes »).
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
-   decision record answers *why*, where the rest of `docs/` answers *what*.
+   decision record answers *why*, where the pages of the site answer *what*
+   and *how*.
    Write one when a choice closes off alternatives that a future reader would
    otherwise reopen — a schema shape, a solver mechanism, a classification
    rule. Never rewrite a past decision: when it is revised, set its status and

@@ -2,7 +2,8 @@
 # PreToolUse hook (Edit|Write): blocks creating new root-level *.md files and
 # any planning/notes/tracking markdown files, per AGENTS.md's doc rules:
 # "Don't create planning/notes/tracking Markdown files in the repository" and
-# "all technical documentation lives in docs/".
+# "all the written documentation lives in site/src/docs/" (the pages of the site;
+# their names are tasks, which is why they are exempt from the notes/plan filter below).
 set -euo pipefail
 
 input="$(cat)"
@@ -36,11 +37,14 @@ esac
 
 rel_path="${abs_path#"$repo_root"/}"
 
+# The pages of the documentation are named after what the reader does ("calculer-planning").
+case "$rel_path" in site/src/docs/*) exit 0 ;; esac
+
 lower_path="$(printf '%s' "$rel_path" | tr '[:upper:]' '[:lower:]')"
 
 # New root-level markdown file (README.md already exists and is edited via Edit, not Write).
 if [[ "${rel_path#*/}" = "$rel_path" ]]; then
-  echo "Refusing to create root-level markdown file '$rel_path': AGENTS.md reserves the repo root for README.md only — technical docs go under docs/ (with a row added to docs/README.md), not a new root file." >&2
+  echo "Refusing to create root-level markdown file '$rel_path': AGENTS.md reserves the repo root for README.md only — a page of documentation goes under site/src/docs/<part>/ (and in the `docs:` list of that part's index.md), not a new root file." >&2
   exit 2
 fi
 

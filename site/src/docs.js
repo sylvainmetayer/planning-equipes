@@ -58,10 +58,7 @@ function target(href, published, fromName) {
   if (doc) {
     if (!published.has(doc)) {
       const message = `${fromName}.md : le lien ${href} ne mène à aucune page de la documentation`;
-      // DOCS_LENIENT=1 : a page being rewritten may point at a sibling not written yet
-      if (!process.env.DOCS_LENIENT) throw new Error(message);
-      warn(message);
-      return { href: '/docs/' };
+      throw new Error(message);
     }
     return { href: urlOfDoc(doc) + anchor, doc, hash };
   }
