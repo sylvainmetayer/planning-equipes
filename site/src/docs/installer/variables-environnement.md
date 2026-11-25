@@ -18,14 +18,14 @@ Trois conventions :
 | Sauvegarde, conservation | [Sauvegarder et restaurer](sauvegarde-et-restauration.md), [Purger et conserver les données](conservation-des-donnees.md) |
 | Webhooks, météo | [Autoriser les webhooks et l'alerte météo](appels-sortants.md) |
 | Suivi d'erreurs, audience | [Brancher le suivi d'erreurs et les métriques](observabilite.md) |
-| Serveur MCP | [le serveur MCP](../comprendre/mcp.md) |
+| Serveur MCP | [le serveur MCP](../comprendre/mcp-connexion.md) |
 
 ## Obligatoires en production
 
 Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose), et l'application refuse de démarrer sur les deux mots de passe d'exemple.
 
-L'application, elle, refuse aussi de démarrer en production — quel que soit le
-compose — dans les cas suivants, chacun détaillé à sa ligne plus bas :
+L'application, elle, refuse aussi de démarrer en production, quel que soit le
+compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 
 - une des cinq mentions légales exigées est vide (`LEGAL_EDITEUR`,
   `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_BASE_LEGALE`,
@@ -242,7 +242,7 @@ Les cinq marquées **exigée** refusent le démarrage en production quand elles 
 
 Le modèle de déploiement est **une instance par client** : l'identité se règle
 donc par déploiement, avec les variables `BRANDING_*` de la section *Marque et documents*, et rien n'est
-stocké en base — pas d'écran d'administration de la marque, un redémarrage est
+stocké en base : il n'y a pas d'écran d'administration de la marque, et un redémarrage est
 le seul moment où un logo change. Le frontend les lit une fois, avant son
 démarrage, sur l'endpoint public `GET /api/branding`.
 
@@ -258,7 +258,7 @@ Deux limites à connaître :
   style propres à l'application. Recolorer les composants Material eux-mêmes
   demande une recompilation du frontend ;
 - les **images** ne sont pas téléversables depuis l'application. Un logo se
-  fournit soit par une URL (`BRANDING_LOGO_URL` — la CSP par défaut accepte
+  fournit soit par une URL (`BRANDING_LOGO_URL` ; la CSP par défaut accepte
   `https:` et `data:`), soit par un fichier monté à côté du conteneur
   (`BRANDING_PDF_LOGO`), soit par une image embarquée dans le jar
   (`classpath:/branding/…`). **Aucun visuel n'est livré avec le dépôt** : les

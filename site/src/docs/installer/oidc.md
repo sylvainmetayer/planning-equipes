@@ -4,13 +4,13 @@ Pour que vos organisateurs se connectent avec leur compte d'entreprise et le sec
 
 ## Ce que fait le fournisseur, ce que fait l'application
 
-- Le **fournisseur** dit qui se connecte (un sujet stable, une adresse) et porte le second facteur.
-- **L'application** décide ce que la personne peut faire : la table `compte` (la personne) et la table `habilitation` (ses droits : `ADMIN`, `ORGANISATEUR` ou `RESPONSABLE_STAND`). Sans compte actif portant un droit en vigueur, la session n'ouvre **rien**, quels que soient les rôles que le fournisseur mettrait dans son jeton. Se connecter ne crée aucun compte.
-- Les **animateurs** n'ont pas de compte : leur espace s'ouvre par le lien personnel et le code reçu par e-mail, avec ou sans fournisseur.
+- Le fournisseur dit qui se connecte (un sujet stable, une adresse) et porte le second facteur.
+- L'application décide ce que la personne peut faire : la table `compte` (la personne) et la table `habilitation` (ses droits : `ADMIN`, `ORGANISATEUR` ou `RESPONSABLE_STAND`). Sans compte actif portant un droit en vigueur, la session n'ouvre rien, quels que soient les rôles que le fournisseur mettrait dans son jeton. Se connecter ne crée aucun compte.
+- Les animateurs n'ont pas de compte : leur espace s'ouvre par le lien personnel et le code reçu par e-mail, avec ou sans fournisseur.
 
 ## Déclarer l'application chez le fournisseur
 
-Créez un client **confidentiel** (flux « code d'autorisation » avec PKCE), puis déclarez ces deux adresses, **exactes et sans joker** : le `redirect_uri` envoyé suit l'en-tête `Host` de la requête, et un joker laisserait un hôte inattendu recevoir le code.
+Créez un client confidentiel (flux « code d'autorisation » avec PKCE), puis déclarez ces deux adresses, exactes et sans joker : le `redirect_uri` envoyé suit l'en-tête `Host` de la requête, et un joker laisserait un hôte inattendu recevoir le code.
 
 | Adresse | Valeur |
 | --- | --- |
@@ -34,14 +34,14 @@ Le fournisseur doit pouvoir annoncer l'adresse de l'utilisateur : les portées d
 | `OIDC_POST_LOGOUT_PATH` | Page où retombe la personne après la déconnexion | `/login` |
 | `OIDC_SESSION_AGE_EXTENSION` | Prolongation de session quand le jeton est rafraîchi | `30M` |
 | `OIDC_CONNECTION_DELAY` | Durée pendant laquelle la découverte du fournisseur est retentée au démarrage, l'application pouvant être prête avant lui | `30S` |
-| `OIDC_MCP_AUDIENCE` | Audience exigée d'un jeton OAuth présenté au serveur MCP (voir [`mcp.md`](../comprendre/mcp.md)) | `planning-mcp` |
+| `OIDC_MCP_AUDIENCE` | Audience exigée d'un jeton OAuth présenté au serveur MCP (voir [`mcp-connexion.md`](../comprendre/mcp-connexion.md)) | `planning-mcp` |
 | `ADMIN_LOCAL_SECOURS` | Ouvre (`true`) ou ferme (`false`) le compte de secours. Absent : fermé derrière un fournisseur, ouvert sans | (vide) |
 
 Derrière un proxy qui termine le TLS, posez `OIDC_FORCE_HTTPS=true` ; si le proxy ne transmet pas le schéma, ajoutez `QUARKUS_OIDC_AUTHENTICATION_COOKIE_FORCE_SECURE=true` pour que le cookie de session ne parte jamais en clair.
 
 ## Créer le premier compte et se connecter
 
-Faites-le **avant** de laisser le compte de secours fermé : sinon plus personne n'entre le jour où le fournisseur vous oublie.
+Faites-le avant de laisser le compte de secours fermé : sinon plus personne n'entre le jour où le fournisseur vous oublie.
 
 1. Connectez-vous en `admin` (mot de passe `ADMIN_PASSWORD`), ouvrez Paramètres › **Comptes**, créez votre compte (votre adresse) et accordez-lui le droit `ADMIN`.
 2. Connectez-vous **par le fournisseur** avec cette adresse. Si le fournisseur la déclare vérifiée, le compte se lie alors au couple **émetteur + sujet** du fournisseur. Ensuite seul ce sujet le désigne : une autre personne qui reprendrait la même adresse chez le fournisseur n'obtient rien, et un changement d'adresse ne bloque pas le titulaire.
@@ -67,10 +67,10 @@ Le compte est lié au couple **émetteur + sujet** : si l'URL de l'émetteur cha
 
 ## Garder une porte de dépannage
 
-Le compte `admin` de la configuration et son mot de passe (`ADMIN_PASSWORD`) sont la porte de dépannage, **fermée par défaut** derrière un fournisseur (`ADMIN_LOCAL_SECOURS` l'ouvre). La menace, la préparation et la conduite à tenir le jour où le fournisseur ne répond plus sont dans [Choisir et protéger la connexion à l'administration](securite-acces-administration.md#le-compte-de-secours--ne-jamais-senfermer-dehors).
+Le compte `admin` de la configuration et son mot de passe (`ADMIN_PASSWORD`) sont la porte de dépannage, fermée par défaut derrière un fournisseur (`ADMIN_LOCAL_SECOURS` l'ouvre). La menace, la préparation et la conduite à tenir le jour où le fournisseur ne répond plus sont dans [Choisir et protéger la connexion à l'administration](securite-acces-administration.md#le-compte-de-secours--ne-jamais-senfermer-dehors).
 
 Les comptes locaux avec mot de passe restent ouverts même derrière un fournisseur ; ils sont décrits dans [les comptes locaux](comptes-locaux.md) et dans [les cinq portes de l'administration](securite-acces-administration.md#les-cinq-portes-de-ladministration).
 
 ## Ce que le fournisseur ne couvre pas
 
-Le serveur MCP accepte aussi un jeton OAuth du fournisseur, sous les mêmes droits (voir [`mcp.md`](../comprendre/mcp.md)) ; sa clé d'API reste utilisable. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`, et le rôle `organisateur` ne couvre que les éditions que ses droits nomment : la liste des routes d'instance réservées aux administrateurs est dans [Savoir ce que chaque rôle peut appeler](securite-roles-et-droits.md#ce-que-le-rôle-organisateur-nouvre-pas).
+Le serveur MCP accepte aussi un jeton OAuth du fournisseur, sous les mêmes droits (voir [`mcp-connexion.md`](../comprendre/mcp-connexion.md)) ; sa clé d'API reste utilisable. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`, et le rôle `organisateur` ne couvre que les éditions que ses droits nomment : la liste des routes d'instance réservées aux administrateurs est dans [Savoir ce que chaque rôle peut appeler](securite-roles-et-droits.md#ce-que-le-rôle-organisateur-nouvre-pas).

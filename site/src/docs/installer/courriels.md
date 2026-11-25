@@ -1,6 +1,6 @@
 # Faire arriver vos e-mails
 
-Vous réglez le relais SMTP et le domaine d'envoi de façon que les codes d'accès, les plannings et les relances arrivent en boîte de réception, puis vous apprenez à lire ce que l'application garde de chaque envoi. C'est le point le plus facile à rater, parce qu'il **échoue en silence** : un lien d'espace classé en indésirable ne produit ni erreur ni alerte, seulement un animateur qui « n'a rien reçu » la veille de l'événement.
+Vous réglez le relais SMTP et le domaine d'envoi de façon que les codes d'accès, les plannings et les relances arrivent en boîte de réception, puis vous apprenez à lire ce que l'application garde de chaque envoi. C'est le point le plus facile à rater, parce qu'il échoue en silence : un lien d'espace classé en indésirable ne produit ni erreur ni alerte, seulement un animateur qui « n'a rien reçu » la veille de l'événement.
 
 ## 1. Brancher le relais SMTP
 
@@ -21,9 +21,9 @@ MAIL_FROM=planning@<domaine>
 
 Côté domaine, l'application n'y peut rien, et c'est pourtant ce qui décide si le message est accepté :
 
-- **SPF** : autorisez le relais utilisé ;
-- **DKIM** : signez, et publiez la clé ;
-- **DMARC** : au minimum une politique de surveillance, alignée sur le domaine de `MAIL_FROM`.
+- SPF : autorisez le relais utilisé ;
+- DKIM : signez, et publiez la clé ;
+- DMARC : au minimum une politique de surveillance, alignée sur le domaine de `MAIL_FROM`.
 
 ## 3. Tester avant la première diffusion
 

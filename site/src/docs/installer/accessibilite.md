@@ -1,6 +1,6 @@
 # Publier votre déclaration d'accessibilité
 
-Si votre organisation est soumise à l'obligation d'accessibilité numérique, renseignez les quatre variables `LEGAL_ACCESSIBILITE_*` : l'application publie alors sa déclaration à l'adresse `/declaration-accessibilite`, liée depuis le pied de page, le tiroir et le menu légal de l'espace animateur. Cette page dit aussi où en est l'application (référentiel RGAA 4.1, audit mené, contrôles automatiques, points ouverts), de quoi fonder ce que vous déclarez ; les conventions d'écriture pour qui développe sont dans [`developpement.md`](../comprendre/developpement.md#accessibilité).
+Si votre organisation est soumise à l'obligation d'accessibilité numérique, renseignez les quatre variables `LEGAL_ACCESSIBILITE_*` : l'application publie alors sa déclaration à l'adresse `/declaration-accessibilite`, liée depuis le pied de page, le tiroir et le menu légal de l'espace animateur. Cette page dit aussi où en est l'application (référentiel RGAA 4.1, audit mené, contrôles automatiques, points ouverts), de quoi fonder ce que vous déclarez ; les conventions d'écriture pour qui développe sont dans [`developpement.md`](../comprendre/demarrer.md#accessibilité).
 
 ## Renseigner la déclaration
 
@@ -16,7 +16,7 @@ L'article 47 de la loi n° 2005-102 impose une déclaration aux organismes publi
 ## Le référentiel et le périmètre
 
 Le référentiel est le **RGAA 4.1**, qui transpose les critères A et AA des
-WCAG 2.1. Trois périmètres, qui n'ont pas le même public :
+WCAG 2.1. Trois périmètres, avec chacun son public :
 
 | Périmètre | Public | Lu sur |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ comportement réel de `<mat-icon>`. Ses écarts ont tous été corrigés :
 | 13 — Consultation | nouvelles fenêtres non annoncées ; PDF non balisés ; pas de déclaration | directive `NewWindowLink` ; titre et langue des PDF ; page `/declaration-accessibilite` |
 
 Conforme sans correction, et consigné pour qu'un prochain audit ne le
-ré-instruise pas : les **formulaires** (thématique 11 — un `mat-label` par
+ré-instruise pas : les **formulaires** (thématique 11 : un `mat-label` par
 champ, les erreurs en `mat-error`, `autocomplete` là où la donnée est celle de
 l'utilisateur lui-même), l'absence de **cadres** et de **multimédia**, les
 **éléments obligatoires** (`<html lang>` réécrit avec le catalogue, un
@@ -59,8 +59,8 @@ l'utilisateur lui-même), l'absence de **cadres** et de **multimédia**, les
 ## Ce qui empêche les écarts de revenir
 
 Chaque famille d'écart corrigée a son contrôle en CI, sur le modèle des tests
-structurels du dépôt : il dit quelle ligne écrire, et ses exceptions sont
-argumentées une par une.
+structurels du dépôt : il dit quelle ligne écrire, et chaque exception est
+argumentée.
 
 | Contrôle | Où | Ce qu'il refuse |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ argumentées une par une.
 | `status-messages-check` | job `frontend` | une erreur ou un verdict dans un élément sans `role` |
 | `table-headers-check` | job `frontend` | un `<th>` sans `scope` |
 | `new-window-check` | job `frontend` | un lien `target="_blank"` qui ne l'annonce pas |
-| `e2e/accessibilite.spec.ts` | job `e2e` du workflow `tests.yml` | toute anomalie *serious* ou *critical* d'axe-core hors ligne de base, sur les écrans représentatifs — les quatre de l'espace animateur rejoués sur téléphone |
+| `e2e/accessibilite.spec.ts` | job `e2e` du workflow `tests.yml` | toute anomalie *serious* ou *critical* d'axe-core hors ligne de base, sur les écrans représentatifs (les quatre de l'espace animateur sont rejoués sur téléphone) |
 
 La spec axe mesure ce qu'aucun linter ne voit : le contraste une fois les thèmes
 appliqués, les régions, les noms accessibles calculés à l'exécution. Elle part
@@ -86,7 +86,7 @@ qu'elle n'est pas retirée de la liste.
   la grille complète.
 - **Les PDF** portent un titre et une langue, mais **ne sont pas balisés** :
   OpenPDF ne construit aucune structure sur ce que `Document.add` écrit, et un
-  PDF déclaré balisé sur un arbre vide se lit comme une page blanche — pire
+  PDF déclaré balisé sur un arbre vide se lit comme une page blanche, pire
   qu'un PDF non balisé, lu comme un flux de texte. L'espace animateur est la
   version accessible du même planning (critère 13.3, « si nécessaire »).
 - **La redirection vers `/login` sur une session expirée est silencieuse** et

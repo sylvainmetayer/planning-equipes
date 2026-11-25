@@ -33,22 +33,22 @@ Tout le reste dérive de ce geste, sans commande ni clone :
 
 | Ce qui part | Sur quoi | Ce qu'il fait |
 | --- | --- | --- |
-| `docker-ghcr.yml` | le push du tag | build `linux/amd64` poussé sous `sha-…` seulement, **smoke test** de l'image publiée, SBOM, signature cosign, puis tags `1.2.0` et `1.2`, et `:latest` si le tag est le plus récent |
+| `docker-ghcr.yml` | le push du tag | build `linux/amd64` poussé sous `sha-…` seulement, smoke test de l'image publiée, SBOM, signature cosign, puis tags `1.2.0` et `1.2`, et `:latest` si le tag est le plus récent |
 | `release.yml` | la publication de la release | écrit le corps de la release : la section rendue par `git cliff --current` |
 
 Les deux sont indépendants et tournent de front ; aucun ne pose ni ne déplace de tag, le numéro reste une décision humaine.
 
-**Le smoke test démarre l'image publiée**, par son digest, contre un PostgreSQL 19 et un Mailpit, avec l'environnement minimal de production. Il vérifie la disponibilité, la version exposée (celle du tag), l'uid 1000, qu'un `pg_dump` de la même majeure que le `postgres:` de `docker-compose.prod.yml` est présent, et que `/backup` est inscriptible ; en échec, les journaux du conteneur sont affichés. Ce n'est qu'ensuite que l'image est signée, puis que les tags lisibles sont posés, par digest, sans reconstruction. Une image qui ne démarre pas reste donc accessible sous `sha-…` pour diagnostic, mais n'est jamais `1.2.0`, `:main` ni `:latest`.
+Le smoke test démarre l'image publiée, par son digest, contre un PostgreSQL 19 et un Mailpit, avec l'environnement minimal de production. Il vérifie la disponibilité, la version exposée (celle du tag), l'uid 1000, qu'un `pg_dump` de la même majeure que le `postgres:` de `docker-compose.prod.yml` est présent, et que `/backup` est inscriptible ; en échec, les journaux du conteneur sont affichés. Ce n'est qu'ensuite que l'image est signée, puis que les tags lisibles sont posés, par digest, sans reconstruction. Une image qui ne démarre pas reste donc accessible sous `sha-…` pour diagnostic, mais n'est jamais `1.2.0`, `:main` ni `:latest`.
 
 Si ce contrôle échoue sur un tag de release, le tag git existe mais pas l'image `1.2.0` : la réparation est celle des contrôles ci-dessous. Supprimez la release et son tag, corrigez, recommencez au même numéro.
 
-**Si vous écrivez quelque chose dans le corps** au moment de créer la release, le résumé que portait le message d'un tag annoté, il est conservé : `release.yml` le laisse en tête et n'écrit la section générée qu'en dessous, après un trait de séparation et le marqueur `<!-- git-cliff -->`. Tout ce qui suit ce marqueur lui appartient et est réécrit à chaque exécution ; le relancer à la main (*Actions* → *Notes de release* → *Run workflow*, avec le tag) est donc sans risque, et c'est aussi ce qui permet de rattraper une release plus ancienne.
+Si vous écrivez quelque chose dans le corps au moment de créer la release, le résumé que portait le message d'un tag annoté, il est conservé : `release.yml` le laisse en tête et n'écrit la section générée qu'en dessous, après un trait de séparation et le marqueur `<!-- git-cliff -->`. Tout ce qui suit ce marqueur lui appartient et est réécrit à chaque exécution ; le relancer à la main (*Actions* → *Notes de release* → *Run workflow*, avec le tag) est donc sans risque, et c'est aussi ce qui permet de rattraper une release plus ancienne.
 
 Deux contrôles tournent ensuite, et ils échouent **après** avoir écrit les notes : la release est déjà publiée quand le workflow démarre, rien ne peut plus l'empêcher, et un job rouge est le seul canal qui prévienne. Ils disent qu'un numéro ment (un `!` fusionné sous une montée PATCH, un `feat` sous un PATCH) ou que le tag n'est ni sur `main` ni sur une branche `release/X.Y` (§ 3). Dans les deux cas la réparation est la même : supprimez la release et son tag, recommencez au bon numéro.
 
 ### `:latest` ne bouge jamais implicitement
 
-`docker/metadata-action` en défaut (`latest=auto`) déplacerait `:latest` à **chaque** push de tag : publier un correctif `1.2.4` après la sortie de la `1.3.0` ramènerait `:latest` sur l'ancienne ligne, silencieusement. Le workflow force donc `latest=false`, et une étape séparée ne pose `:latest` que si le tag poussé est le plus grand `vX.Y.Z` de tout le dépôt. `:latest` n'avance que vers l'avant, ou pas du tout.
+`docker/metadata-action` en défaut (`latest=auto`) déplacerait `:latest` à **chaque** push de tag : publier un correctif `1.2.4` après la sortie de la `1.3.0` ramènerait `:latest` sur l'ancienne ligne, silencieusement. Le workflow force donc `latest=false`, et une étape séparée ne pose `:latest` que si le tag poussé est le plus grand `vX.Y.Z` de tout le dépôt. `:latest` n'avance que vers l'avant.
 
 ### Les notes sont générées, pas écrites
 
@@ -62,7 +62,7 @@ Les mêmes sujets alimentent l'écran **Nouveautés** de l'application (`/nouvea
 
 ## 3. Patcher une version antérieure
 
-Des branches de maintenance **créées à la demande, jamais à l'avance.** Tant que tous les déploiements sont sur la dernière version, il n'existe aucune branche de maintenance : on n'en crée une que le jour où un exploitant réel ne peut pas monter de version.
+Les branches de maintenance se créent à la demande, jamais à l'avance. Tant que tous les déploiements sont sur la dernière version, il n'existe aucune branche de maintenance : on n'en crée une que le jour où un exploitant réel ne peut pas monter de version.
 
 Voici la procédure, ce jour-là (exemple : faille à corriger, une prod en `1.2.0`, `main` déjà en `1.3.x`) :
 
@@ -87,11 +87,11 @@ git push origin release/1.2
 
 Les règles qui rendent ça sûr :
 
-- **`main` d'abord, toujours** : c'est ce qui garantit qu'aucun correctif ne se perd ;
-- **`cherry-pick -x`**, pour que le commit de maintenance dise de quel commit de `main` il vient. Si le correctif ne s'applique pas tel quel, écrivez une adaptation, et relisez-la comme du code neuf, parce que c'en est ;
-- **rien sur une branche de maintenance qui ne soit pas déjà sur `main`** ;
-- **aucune migration Flyway dans un patch de maintenance**, sauf strictement additive : le schéma étant *forward-only*, une base déjà passée en `1.3.0` ne redescendra pas. Si le patch touche au schéma, ce n'est plus un patch, c'est une montée de version ;
-- **`release/1.2` ne fusionne jamais dans `main`** : elle vit et meurt sur sa ligne ;
-- **`:latest` ne bouge pas** : le `v1.2.1` n'est pas le tag le plus récent du dépôt, l'étape du workflow le laisse en place.
+- `main` d'abord, toujours : c'est ce qui garantit qu'aucun correctif ne se perd ;
+- `cherry-pick -x`, pour que le commit de maintenance dise de quel commit de `main` il vient. Si le correctif ne s'applique pas tel quel, écrivez une adaptation, et relisez-la comme du code neuf, parce que c'en est ;
+- rien sur une branche de maintenance qui ne soit pas déjà sur `main` ;
+- aucune migration Flyway dans un patch de maintenance, sauf strictement additive : le schéma étant *forward-only*, une base déjà passée en `1.3.0` ne redescendra pas. Si le patch touche au schéma, ce n'est plus un patch, c'est une montée de version ;
+- `release/1.2` ne fusionne jamais dans `main` : elle vit et meurt sur sa ligne ;
+- `:latest` ne bouge pas : le `v1.2.1` n'est pas le tag le plus récent du dépôt, l'étape du workflow le laisse en place.
 
-**Combien de lignes maintient-on ? Une seule** : la dernière `MAJOR.MINOR` publiée en dehors de la ligne courante, et seulement tant qu'un exploitant réel y est. Au-delà, la réponse est « montez de version » : un développeur seul ne maintient pas trois lignes.
+Combien de lignes maintient-on ? Une seule : la dernière `MAJOR.MINOR` publiée en dehors de la ligne courante, et seulement tant qu'un exploitant réel y est. Au-delà, la réponse est « montez de version » : un développeur seul ne maintient pas trois lignes.

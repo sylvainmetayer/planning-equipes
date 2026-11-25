@@ -61,8 +61,8 @@ Avant de remplacer une édition par un scénario, l'application en garde une cop
 
 L'onglet *Exporter* offre deux formes.
 
-- **L'archive ZIP** : un CSV par référentiel (typologies, emplacements, stands, créneaux, journées types, animateurs), chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit. De quoi recopier une édition sur l'autre, rejouer le calendrier d'une année sur l'autre, ou corriger en masse dans un tableur puis réimporter.
-- **Le fichier scénario** : l'édition entière dans un seul fichier, celui que la carte Scénario des imports relit.
+- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, journées types, animateurs), chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit. De quoi recopier une édition sur l'autre, rejouer le calendrier d'une année sur l'autre, ou corriger en masse dans un tableur puis réimporter.
+- Le fichier scénario : l'édition entière dans un seul fichier, celui que la carte Scénario des imports relit.
 
 Chaque liste de référentiel offre aussi « Exporter cette liste », qui télécharge en CSV ce que le tableau montre.
 
@@ -76,4 +76,4 @@ Les fichiers sont ceux que chaque écran aurait téléchargés. Aucun jeton d'ac
 
 ## Les formats en détail
 
-Les colonnes exactes de chaque fichier, le schéma du scénario et la façon de revenir sur un import sont décrits dans [Les formats d'import et d'export](../comprendre/import-export.md).
+Les colonnes exactes des fichiers CSV sont décrites dans [les imports CSV](../comprendre/imports-csv.md), le schéma du scénario dans [le fichier de scénario](../comprendre/scenario-yaml.md) et la façon de revenir sur un import dans [restaurer une édition](../comprendre/restaurer-une-edition.md).

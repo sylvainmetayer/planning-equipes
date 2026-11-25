@@ -91,7 +91,7 @@ test('the docs are published in place, without the decisions and the project mem
     assert.ok(!/href="(?:\.\.\/|\/docs\/(?:decisions|memoire))/.test(html), `${page} : lien relatif non réécrit`);
     assert.ok(!/href="[^"#:]*\.md[#"]/.test(html), `${page} : lien .md non réécrit`);
   }
-  assert.ok(read(join(dist, 'llms.txt')).includes('/docs/comprendre/architecture/index.md'), 'llms.txt sans la documentation');
+  assert.ok(read(join(dist, 'llms.txt')).includes('/docs/comprendre/vue-d-ensemble/index.md'), 'llms.txt sans la documentation');
 });
 
 test('an address of the former docs, published once, leads to a page that exists', () => {
@@ -101,7 +101,7 @@ test('an address of the former docs, published once, leads to a page that exists
     assert.ok(existsSync(join(dist, to.split('#')[0], 'index.html')), `${from} mène à ${to}, qui n'existe pas`);
     assert.ok(!existsSync(join(dist, from, 'index.html')) || from === to, `${from} est redirigée mais une page existe à cette adresse`);
   }
-  for (const old of ['architecture', 'api', 'exploitation', 'installation', 'fonctionnel/parcours', 'fonctionnel/planifier', 'variables-environnement']) {
+  for (const old of ['architecture', 'api', 'comprendre/mcp', 'exploitation', 'installation', 'fonctionnel/parcours', 'fonctionnel/planifier', 'variables-environnement']) {
     assert.ok(rules.some(([from]) => from === `/docs/${old}/`), `/docs/${old}/ : pas de redirection`);
   }
 });
@@ -120,10 +120,10 @@ test('the search reads a light index of the docs, and finds a page by a word of 
   const file = join(dist, 'docs/search.json');
   assert.ok(readFileSync(file).length < 100_000, 'index de recherche des docs trop lourd');
   const index = JSON.parse(read(file));
-  const api = index['/docs/comprendre/api/'];
+  const api = index['/docs/comprendre/api-conventions/'];
   const [id, heading] = api.h.at(-1);
   const word = heading.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 3).at(-1);
   const found = docMatch(api, [word]);
   assert.ok(found.excerpt, `#${id} introuvable par « ${word} »`);
-  if (found.hash) assert.ok(read(join(dist, 'docs/comprendre/api/index.html')).includes(`id="${decodeURIComponent(found.hash.slice(1))}"`), found.hash);
+  if (found.hash) assert.ok(read(join(dist, 'docs/comprendre/api-conventions/index.html')).includes(`id="${decodeURIComponent(found.hash.slice(1))}"`), found.hash);
 });

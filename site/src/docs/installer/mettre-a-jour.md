@@ -60,7 +60,7 @@ La migration `V108` multiplie par cinq les poids que chaque édition a enregistr
 | --- | --- |
 | une surcharge `planning.constraint-weights.<règle>` du déploiement | la multiplier par cinq en même temps que la mise à jour, ou la retirer si elle ne faisait que répéter l'ancien défaut `1` : le défaut est désormais celui du catalogue |
 | un export SQL de l'application (retiré de l'écran en 3.2) pris avant la mise à jour et réimporté après | multiplier par cinq les poids de la table `ponderation_contrainte` du fichier avant de l'importer, ou reprendre les importances sur l'écran Règles du planning après |
-| un fichier scénario écrit avant | multiplier ses `contraintes.poids` par cinq ([le format du scénario](../comprendre/import-export.md)) |
+| un fichier scénario écrit avant | multiplier ses `contraintes.poids` par cinq ([le format du scénario](../comprendre/scenario-yaml.md)) |
 
 Une restauration par `scripts/restaurer.sh` d'un dump `pg_dump` pris avant la mise à jour n'est pas concernée : l'historique Flyway du dump ne connaît pas `V108`, que l'application rejoue au démarrage.
 
@@ -70,7 +70,7 @@ Une instance déjà en service qui n'a jamais renseigné les mentions légales n
 
 ## Passer de PostgreSQL 18 à PostgreSQL 19
 
-L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'image applicative sont en **version 19**. Un `pg_dump` d'une majeure plus ancienne que le serveur refuse de tourner (« server version mismatch »), et la sauvegarde de nuit échoue alors sans que l'application s'arrête. Un volume de données créé par PostgreSQL 18 **ne démarre pas** sous le serveur 19.
+L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'image applicative sont en **version 19**. Un `pg_dump` d'une majeure plus ancienne que le serveur refuse de tourner (« server version mismatch »), et la sauvegarde de nuit échoue alors sans que l'application s'arrête. Le serveur 19 ne relit pas le répertoire de données d'un serveur 18 : il en crée un neuf, vide, à côté, et il faut y restaurer un dump.
 
 À faire **avant** de tirer cette image, depuis le répertoire de la pile :
 
@@ -78,8 +78,10 @@ L'image `postgres:` de `docker-compose.prod.yml` et le client `pg_dump` de l'ima
 docker compose -f docker-compose.prod.yml exec -T postgres \
   pg_dump -U festival -d festival --format=custom > avant-pg19.dump   # sur l'ancienne image
 docker compose -f docker-compose.prod.yml down
-# garder l'ancien volume pour un retour arrière : donner un autre `name:` au volume
-# `postgres_data` dans le fichier compose, le serveur 19 en crée alors un neuf
+# ne changez pas le `name:` du volume (`postgres_data_pg18`, un nom historique) :
+# un autre nom serait un volume vide. Le volume est monté sur `/var/lib/postgresql`
+# avec un sous-dossier par majeure : le serveur 19 initialise `19/docker` et laisse
+# `18/docker` intact, ce qui sert de retour arrière tant que vous ne le supprimez pas
 docker compose -f docker-compose.prod.yml up -d postgres
 docker compose -f docker-compose.prod.yml exec -T postgres \
   pg_restore -U festival -d festival --no-owner --exit-on-error < avant-pg19.dump

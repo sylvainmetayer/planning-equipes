@@ -22,7 +22,7 @@ Ces informations sont **celles de l'organisateur** : c'est lui l'employeur des p
 
 Les cinq exigées font échouer le démarrage en production quand elles sont vides, comme `ADMIN_PASSWORD` resté sur sa valeur d'exemple. Le message les nomme **toutes en une fois** : les corriger une par une coûterait cinq redémarrages.
 
-Les deux autres restent facultatives, et pas par oubli. `LEGAL_RESPONSABLE_TRAITEMENT` vide retombe sur l'éditeur, et l'exiger contredirait ce repli. Un directeur de publication n'est pas exigé de tout éditeur.
+Les deux autres restent facultatives volontairement. `LEGAL_RESPONSABLE_TRAITEMENT` vide retombe sur l'éditeur, et l'exiger contredirait ce repli. Un directeur de publication n'est pas exigé de tout éditeur.
 
 Soyez attentif à `LEGAL_CONSERVATION` : cette durée s'affiche dans la politique de confidentialité, et **rien dans le code ne l'applique**. N'annoncez que ce que vous tiendrez réellement, par la [purge annuelle](conservation-des-donnees.md#la-purge-annuelle).
 
@@ -34,7 +34,7 @@ Quatre variables de plus, `LEGAL_ACCESSIBILITE_ETAT`, `LEGAL_ACCESSIBILITE_DATE_
 
 Une démonstration ou une recette pose `LEGAL_DEMO_INSTANCE=true` et démarre avec une page vide. Le drapeau est explicite plutôt que déduit de `PUBLIC_URL` ou du mode de lancement : ce qu'une instance est *faite pour* ne se lit nulle part dans sa configuration ([décision 0040](repo:docs/decisions/0040-mentions-legales-exigees-au-demarrage.md)). Ne le posez pas sur une instance ouverte à ses animateurs.
 
-Un serveur de démonstration ou de recette peut aussi montrer le mode jour J et l'espace animateur hors saison. Lancé avec `HORLOGE_SIMULEE_AUTORISEE=true`, il affiche dans *Paramètres*, onglet *Instance* (derrière le bouton « Réglages avancés »), la carte « Date et heure simulées » : une date, une heure facultative, et « Revenir à l'horloge de la machine ». Tant qu'une date est posée, un sablier rouge dans la barre du haut le rappelle et ramène à cette carte. Sans la variable, la carte n'apparaît pas et l'API refuse l'écriture (`400`). Ne l'activez jamais en production : elle ferait mentir l'écran jour J sur un vrai événement. Le détail est dans [la note de l'API](../comprendre/api.md#figer-la-date-du-jour--développement-démonstration-et-recette-uniquement).
+Un serveur de démonstration ou de recette peut aussi montrer le mode jour J et l'espace animateur hors saison. Lancé avec `HORLOGE_SIMULEE_AUTORISEE=true`, il affiche dans *Paramètres*, onglet *Instance* (derrière le bouton « Réglages avancés »), la carte « Date et heure simulées » : une date, une heure facultative, et « Revenir à l'horloge de la machine ». Tant qu'une date est posée, un sablier rouge dans la barre du haut le rappelle et ramène à cette carte. Sans la variable, la carte n'apparaît pas et l'API refuse l'écriture (`400`). Ne l'activez jamais en production : elle ferait mentir l'écran jour J sur un vrai événement. Le détail est dans [la note de l'API](../comprendre/api-jour-j-et-animateurs.md#figer-la-date-du-jour).
 
 ## Monter de version avec une instance déjà en service
 

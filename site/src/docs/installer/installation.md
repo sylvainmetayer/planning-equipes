@@ -6,10 +6,10 @@ En une heure environ, vous mettez en ligne Planning Équipes sur votre propre se
 
 | Il vous faut | Pourquoi |
 | --- | --- |
-| Un nom de domaine et un certificat TLS | `PUBLIC_URL` construit les liens d'espace **imprimés sur les PDF** : ils doivent rester joignables après l'événement, pas seulement pendant |
+| Un nom de domaine et un certificat TLS | `PUBLIC_URL` construit les liens d'espace imprimés sur les PDF : ils doivent rester joignables après l'événement comme pendant |
 | Un relais SMTP authentifié | Codes d'accès, liens d'espace, plannings individuels, notifications d'échange : tout passe par l'e-mail ([les faire arriver](courriels.md)) |
 | Un reverse proxy | Il termine le TLS et doit être le seul chemin vers l'application : [le durcissement du déploiement](securite.md) |
-| Les informations légales de l'organisateur | Éditeur, hébergeur, contact, base légale, durée de conservation : ce sont les siennes, pas les vôtres ([les renseigner](mentions-legales.md)) |
+| Les informations légales de l'organisateur | Éditeur, hébergeur, contact, base légale, durée de conservation : ce sont celles de l'organisateur ([les renseigner](mentions-legales.md)) |
 | 2,5 Go de mémoire pour la pile | 2 Go pour l'application, 512 Mo pour PostgreSQL ([pourquoi autant](calcul-du-planning.md#la-mémoire-de-lapplication)) |
 
 ## Ce que vous recevez
@@ -27,7 +27,7 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
 
 ## Mettre la pile en route
 
-1. **Écrivez l'environnement.** Copiez le modèle, puis remplissez au moins les sept variables obligatoires et les mentions légales. Ne commitez jamais ce fichier : il porte des secrets.
+1. Écrivez l'environnement. Copiez le modèle, puis remplissez au moins les sept variables obligatoires et les mentions légales. Ne commitez jamais ce fichier : il porte des secrets.
 
    ```bash
    cp .env.prod.example .env.prod
@@ -35,15 +35,15 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
 
    Les sept variables obligatoires sont `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et `MAIL_FROM`. Le compose refuse de démarrer si l'une manque, et l'application refuse de son côté les deux mots de passe d'exemple et cinq mentions légales vides. La liste complète de ses refus ouvre [l'inventaire des variables](variables-environnement.md#obligatoires-en-production).
 
-2. **Choisissez une version nommée.** `APP_VERSION=1.2.0` dans le `.env.prod`, jamais `main` ni `latest`. `main` est l'image de recette, reconstruite à chaque fusion et chaque dimanche ; `latest` désigne ce que le registre veut bien. Un déploiement doit être nommable dans un rapport d'incident : « la 1.2.0 » en est un, « l'image de mardi » non. Ce que promet un numéro est dans [les numéros de version](versioning.md).
+2. Choisissez une version nommée. `APP_VERSION=1.2.0` dans le `.env.prod`, jamais `main` ni `latest`. `main` est l'image de recette, reconstruite à chaque fusion et chaque dimanche ; `latest` désigne ce que le registre veut bien. Un rapport d'incident doit pouvoir nommer le déploiement : « la 1.2.0 » le fait, « l'image de mardi » non. Ce que promet un numéro est dans [les numéros de version](versioning.md).
 
-3. **Préparez le répertoire des sauvegardes.** La sauvegarde de nuit écrit dans `./backup`, à côté du fichier compose. Il doit appartenir à l'utilisateur 1000, sinon Docker le crée en `root` et la première sauvegarde échoue.
+3. Préparez le répertoire des sauvegardes. La sauvegarde de nuit écrit dans `./backup`, à côté du fichier compose. Il doit appartenir à l'utilisateur 1000, sinon Docker le crée en `root` et la première sauvegarde échoue.
 
    ```bash
    mkdir -p backup && sudo chown 1000:1000 backup
    ```
 
-4. **Démarrez.**
+4. Démarrez.
 
    ```bash
    docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
@@ -51,7 +51,7 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
 
    Au premier démarrage, l'application applique ses migrations seule avant de répondre ; le contrôle de l'étape suivante patiente pour cela.
 
-5. **Vérifiez.** Le script livré dans le dépôt s'appelle depuis le répertoire du `.env.prod` (bash, `curl` et `jq`) :
+5. Vérifiez. Le script livré dans le dépôt s'appelle depuis le répertoire du `.env.prod` (bash, `curl` et `jq`) :
 
    ```bash
    scripts/verifier-deploiement.sh https://<domaine>          # version lue dans APP_VERSION
@@ -69,16 +69,16 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
 
    Le pied de page de l'application (administration comme espace animateur) et la page *Débogage* (hors menu : Ctrl+K, ou l'adresse `/debug`, onglet *Résolution*) affichent la version déployée : le tag `vX.Y.Z` pour une image de release, l'identifiant du commit pour une image de recette. C'est ce qu'un rapport de faille doit citer ([signaler une faille](repo:.github/SECURITY.md)).
 
-6. **Ouvrez l'administration.** Connectez-vous avec le compte `admin` et le mot de passe `ADMIN_PASSWORD`. Si vous branchez un fournisseur d'identité, créez d'abord votre compte nominatif ([OIDC](oidc.md), [comptes locaux](comptes-locaux.md)). Réglez ensuite les paramètres de l'instance, puis chargez ou saisissez la première édition : le guide [Préparer votre première édition](../regles/preparer-edition.md) prend la suite.
+6. Ouvrez l'administration. Connectez-vous avec le compte `admin` et le mot de passe `ADMIN_PASSWORD`. Si vous branchez un fournisseur d'identité, créez d'abord votre compte nominatif ([OIDC](oidc.md), [comptes locaux](comptes-locaux.md)). Réglez ensuite les paramètres de l'instance, puis chargez ou saisissez la première édition : le guide [Préparer votre première édition](../regles/preparer-edition.md) prend la suite.
 
 ## Ce que fait la pile de production
 
-- **L'application** n'est publiée que sur la boucle locale de l'hôte (`127.0.0.1:8080`) : c'est votre reverse proxy qui termine le TLS et qui est le seul chemin d'entrée. Son interface de supervision (port 9000, métriques) n'est jamais publiée.
-- **PostgreSQL** n'a aucun port publié : seul le réseau interne de la pile le voit. Ses données vivent dans un volume nommé, et l'application applique ses migrations seule, au démarrage.
-- **Les ressources** : 2 Go pour l'application (la JVM en prend les trois quarts) et 512 Mo pour la base, soit 2,5 Go pour la pile.
-- **La sauvegarde de nuit** écrit dans `./backup`, répertoire de l'hôte qui doit appartenir à l'utilisateur 1000 ([sauvegarder et restaurer](sauvegarde-et-restauration.md)).
-- **Les journaux** des conteneurs tournent (5 fichiers de 20 Mo par service par défaut, `LOG_MAX_SIZE` et `LOG_MAX_FILE`) pour qu'un disque plein ne fasse pas échouer la sauvegarde ([les journaux](surveillance.md#lire-et-limiter-les-journaux)).
-- **Le contrôle de santé** du service `app` interroge `/q/health/ready` : `docker compose ps` l'affiche `healthy` une fois les migrations passées (jusqu'à 180 s de grâce au démarrage).
+- L'application n'est publiée que sur la boucle locale de l'hôte (`127.0.0.1:8080`) : c'est votre reverse proxy qui termine le TLS et qui est le seul chemin d'entrée. Son interface de supervision (port 9000, métriques) n'est jamais publiée.
+- PostgreSQL n'a aucun port publié : seul le réseau interne de la pile le voit. Ses données vivent dans un volume nommé, et l'application applique ses migrations seule, au démarrage.
+- Les ressources : 2 Go pour l'application (la JVM en prend les trois quarts) et 512 Mo pour la base, soit 2,5 Go pour la pile.
+- La sauvegarde de nuit écrit dans `./backup`, répertoire de l'hôte qui doit appartenir à l'utilisateur 1000 ([sauvegarder et restaurer](sauvegarde-et-restauration.md)).
+- Les journaux des conteneurs tournent (5 fichiers de 20 Mo par service par défaut, `LOG_MAX_SIZE` et `LOG_MAX_FILE`) pour qu'un disque plein ne fasse pas échouer la sauvegarde ([les journaux](surveillance.md#lire-et-limiter-les-journaux)).
+- Le contrôle de santé du service `app` interroge `/q/health/ready` : `docker compose ps` l'affiche `healthy` une fois les migrations passées (jusqu'à 180 s de grâce au démarrage).
 
 ## Et ensuite
 

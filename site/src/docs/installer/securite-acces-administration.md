@@ -47,13 +47,13 @@ Cinq portes, de la plus forte à la plus faible :
    Sans fournisseur, c'est la porte ordinaire. Derrière un fournisseur, il est le
    **secours**, fermé par défaut : voir
    [Le compte de secours](#le-compte-de-secours--ne-jamais-senfermer-dehors).
-4. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir [`api.md`](../comprendre/api.md)) : **déprécié,
+4. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir [`api-conventions.md`](../comprendre/api-conventions.md)) : **déprécié,
    retiré en 4.0**. Il fonctionne encore, un avertissement le rappelle à chaque
    démarrage ; il reste indépendant du secours (le secret partagé est son
    identifiant).
 5. La clé d'API du `/mcp`, qui n'ouvre que le MCP : renouvelable depuis l'écran MCP
    (hachée, montrée une fois, recouvrement choisi), ou jeton OAuth du fournisseur
-   pour un compte actif ([ADR 0097](repo:docs/decisions/0097-mcp-par-oauth-et-rotation-de-la-cle.md), [`mcp.md`](../comprendre/mcp.md)).
+   pour un compte actif ([ADR 0097](repo:docs/decisions/0097-mcp-par-oauth-et-rotation-de-la-cle.md), [`mcp-connexion.md`](../comprendre/mcp-connexion.md)).
 
 **Exécutez l'application derrière https.** Le cookie de session OIDC et celui du
 formulaire n'ont de sens que chiffrés en transit. Le déploiement étant agnostique,
@@ -66,14 +66,14 @@ journalisées comme des échecs (adresse seulement), sans compter dans le verrou
 
 ### Le compte de secours : ne jamais s'enfermer dehors
 
-**La menace.** Le compte `admin` est un mot de passe partagé, sans second
+La menace : le compte `admin` est un mot de passe partagé, sans second
 facteur ni nom dans le journal. Derrière un fournisseur, le laisser ouvert
 annulerait ce que le fournisseur apporte ; le fermer expose à l'inverse au
 verrouillage de tous les administrateurs le jour où le fournisseur tombe, ou où
 son URL change (le compte est lié au couple émetteur + sujet,
 [`oidc.md`](oidc.md#changer-lurl-du-fournisseur)).
 
-**Ce que « fermé » veut dire.** `409` sur `/j_security_check` (y compris sous
+Ce que « fermé » veut dire : `409` sur `/j_security_check` (y compris sous
 un préfixe, que Quarkus accepte) et session préexistante dépouillée de son rôle.
 `ADMIN_LOCAL_SECOURS=true` le rouvre ; l'ouverture au démarrage
 (`Compte de secours ouvert au démarrage`) et chaque connexion par lui
@@ -108,7 +108,7 @@ paragraphe à portée de l'opérateur.
 L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire
 d'identifiants ouvre les données personnelles de ~150 personnes, mineurs
 compris. `/j_security_check` acceptait pourtant les tentatives au rythme du
-réseau — alors que la révélation de la clé MCP se verrouillait déjà au bout de
+réseau, alors que la révélation de la clé MCP se verrouillait déjà au bout de
 cinq essais.
 
 Au-delà de `CONNEXION_MAX_ECHECS` échecs consécutifs, l'adresse reçoit `429`
@@ -124,14 +124,14 @@ efface le compteur, et la fenêtre court depuis le dernier échec réel.
 Succès et échec répondent tous deux une redirection vers la **même page**, donc
 ni le statut ni `Location` ne les distinguent. Les deux se lisent ailleurs :
 l'échec par l'`AuthenticationFailureEvent` de Quarkus, qui porte le contexte
-HTTP donc l'adresse ; le succès sur la requête elle-même — l'événement Quarkus
+HTTP donc l'adresse ; le succès sur la requête elle-même, car l'événement Quarkus
 correspondant ne transporte aucun contexte, donc aucune adresse à qui rendre
 son crédit.
 
 **L'adresse retenue est l'entrée la plus à droite de `X-Forwarded-For` qui n'est
 pas un proxy déclaré**, et l'en-tête n'est lu que si la connexion elle-même
-vient d'un proxy déclaré dans `CONNEXION_PROXYS_FIABLES`. Sans cette liste —
-le défaut — l'en-tête est entièrement ignoré et c'est l'adresse de connexion qui
+vient d'un proxy déclaré dans `CONNEXION_PROXYS_FIABLES`. Sans cette liste
+(le défaut), l'en-tête est entièrement ignoré et c'est l'adresse de connexion qui
 compte : sûr par construction, et correct pour un déploiement sans proxy.
 
 Lire l'en-tête **par la gauche** est ce qui rendait le verrou inopérant. Un proxy
@@ -141,7 +141,7 @@ achetait un compteur neuf.
 
 `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` **ne ferme pas ce trou**, et il ne faut pas
 compter dessus pour cela : il décide si Quarkus lit l'en-tête, jamais quel
-élément il retient — `ForwardedParser` prend toujours le premier. Passer par
+élément il retient (`ForwardedParser` prend toujours le premier). Passer par
 `remoteAddress()` ne corrigeait donc rien non plus. C'est la raison pour laquelle
 le verrou lit l'en-tête lui-même, par la droite, avec sa propre liste de proxys.
 
@@ -152,7 +152,7 @@ la connexion de tout le monde.
 
 Le réglage accepte des **adresses littérales et des blocs CIDR**, séparés par des
 virgules : `172.18.0.0/16`, ou `127.0.0.1,10.0.0.0/8`. Une entrée mal formée
-empêche le démarrage plutôt que d'être ignorée — sans quoi vous croiriez avoir
+empêche le démarrage plutôt que d'être ignorée, sans quoi vous croiriez avoir
 déclaré votre proxy pendant que le verrou compterait tout le monde ensemble.
 
 Déclarer un bloc, c'est faire confiance à toutes les machines qu'il contient.
@@ -176,13 +176,13 @@ propres services, et la mauvaise pour une plage publique.
 > apportera rien et il faut d'abord le faire ajouter côté proxy.
 
 Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
-tout le reste — exports, résolution, API entière.
+tout le reste : exports, résolution, API entière.
 
 ### La trace qu'il laisse
 
 Chaque issue du form login est consignée dans le **journal des connexions** de
 l'instance (table `journal_connexion`, onglet « Connexions » de la page
-*Historique*, quelle que soit l'édition choisie —
+*Historique*, quelle que soit l'édition choisie ;
 [ADR 0076](repo:docs/decisions/0076-journal-des-connexions-admin-par-instance.md)) :
 la connexion réussie, **chaque échec**, et **le verrouillage**, une fois, sur
 l'échec qui atteint `CONNEXION_MAX_ECHECS`. Chaque ligne porte son horodatage et
@@ -206,7 +206,7 @@ trace est donc bornée, pour l'instance entière :
 | Plafond | Valeur | Au-delà |
 | --- | --- | --- |
 | Tentatives échouées journalisées | 1 000 par heure | comptées, non écrites (l'échec et son éventuel verrouillage ensemble) |
-| Écritures en attente d'un travailleur | 64 | comptées, non écrites — connexions réussies comprises |
+| Écritures en attente d'un travailleur | 64 | comptées, non écrites (connexions réussies comprises) |
 
 Une connexion réussie n'est jamais retenue par le premier plafond. Une fenêtre
 saturée le dit en **un seul** avertissement, à la première tentative écartée ;

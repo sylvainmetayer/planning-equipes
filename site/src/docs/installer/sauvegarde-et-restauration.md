@@ -29,7 +29,7 @@ Le répertoire doit appartenir à l'**uid 1000**, l'utilisateur du conteneur, qu
 mkdir -p backup && sudo chown 1000:1000 backup
 ```
 
-> Le répertoire survit au conteneur, **pas à la machine**. Une sauvegarde qui ne quitte jamais l'hôte ne protège que de la fausse manipulation, pas de la perte du serveur : recopiez `./backup` ailleurs, chiffré.
+> Le répertoire survit au conteneur, **pas à la machine**. Une sauvegarde qui ne quitte jamais l'hôte protège de la fausse manipulation, mais pas de la perte du serveur : recopiez `./backup` ailleurs, chiffré.
 
 ### Suivre l'état de la sauvegarde
 

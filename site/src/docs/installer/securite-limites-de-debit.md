@@ -11,7 +11,7 @@ remet à cinq le compteur d'essais du code à chaque demande.
 
 Ce qui est compté, ce sont les codes **jamais utilisés** : ouvrir la session
 avec le code reçu efface le compteur. Un animateur qui se connecte
-normalement, même souvent, n'atteint donc jamais le plafond — seule
+normalement, même souvent, n'atteint donc jamais le plafond ; seule
 l'accumulation de demandes sans suite, qui est exactement l'abus, y mène. Au
 delà, la réponse est `429` avec un `Retry-After`.
 
@@ -30,7 +30,7 @@ de la révélation de clé MCP.
 Internet avec une URL pour tout justificatif. Deux bornes, qui ne se remplacent
 pas :
 
-- le **volume** est borné par le métier — une seule proposition en attente par
+- le **volume** est borné par le métier : une seule proposition en attente par
   animateur, garantie par un index unique partiel (`V59`) : renvoyer mille fois
   laisse une ligne, et l'admin n'a jamais deux versions contradictoires de la
   même personne à arbitrer ;
@@ -45,7 +45,7 @@ pas :
 
 La demande de covoiturage (`POST /api/espace-animateur/{jeton}/covoiturage`)
 est la seconde écriture de la collecte : même plafond, même fenêtre de temps,
-mais un **compteur à part** — se corriger d'un côté n'épuise pas l'autre. Son
+mais un **compteur à part** (se corriger d'un côté n'épuise pas l'autre). Son
 volume est borné de la même façon, par une seule demande en attente par
 animateur.
 
@@ -66,7 +66,7 @@ pas l'un de l'autre.
 
 Deux garde-fous de plus, côté contenu : un jour hors des dates de l'événement
 et une typologie inconnue sont refusés, et la déclaration **n'écrit rien dans
-le référentiel** — elle attend une décision explicite de l'admin. Un porteur de
+le référentiel** : elle attend une décision explicite de l'admin. Un porteur de
 jeton ne peut donc pas modifier les données d'entrée du solveur, seulement
 proposer.
 
@@ -75,7 +75,7 @@ proposer.
 `GET /api/espace-animateur/{jeton}/collegues/{id}/postes` alimente le choix
 « son créneau que je veux en échange ». L'accès est **large par conception** :
 l'espace remet déjà à chaque animateur la liste nominative de ses collègues, et
-une réponse ne dit que des créneaux et des stands — ce que le planning global
+une réponse ne dit que des créneaux et des stands, ce que le planning global
 imprimé fait circuler. Il n'est pas restreint aux « collègues pertinents » :
 un échange dirigé peut viser n'importe qui, et un filtre viderait la liste au
 moment où l'animateur en a besoin.
@@ -103,8 +103,8 @@ Deux gardes de plus, qui ne comptent rien mais ferment la route :
   trois exigences d'un coup d'œil au lieu de chercher un contrôle au fond d'une
   méthode. Le filtre tourne **après** l'authentification, donc un appelant
   anonyme reçoit son `401` sans apprendre si la foire est ouverte. Les
-  écritures de la foire gardent leur contrôle dans le service — c'est là qu'est
-  l'application réelle de la règle, et elle ne doit pas dépendre d'une route
+  écritures de la foire gardent leur contrôle dans le service, là où la règle
+  s'applique réellement, sans dépendre d'une route
   annotée ; elles portent en outre leur autorisation dans le `WHERE` de leur
   requête, le motif le plus sûr ;
 - **le collègue doit exister dans l'édition**, sinon `404` nu. Un `200 []`
@@ -112,7 +112,7 @@ Deux gardes de plus, qui ne comptent rien mais ferment la route :
   donnerait à lire qu'à celui qui sonde.
 
 **Reste ouvert** : remplacer le trombinoscope entier par une recherche à la
-frappe. C'est le seul resserrement qui s'attaquerait à l'**agrégat** lui-même —
+frappe. C'est le seul resserrement qui s'attaquerait à l'**agrégat** lui-même :
 une session pouvant, dans les limites du plafond, reconstituer une part du
 planning nominatif de l'événement, mineurs compris.
 
@@ -121,7 +121,7 @@ planning nominatif de l'événement, mineurs compris.
 `/mcp` est la seule surface authentifiée dont l'identifiant est une **clé
 partagée à longue durée de vie**, dans un en-tête, sans session ni second
 facteur. Rien ne bornait le rythme auquel on pouvait l'essayer, ni celui auquel
-son porteur pouvait appeler — et les outils MCP lancent une résolution,
+son porteur pouvait appeler, et les outils MCP lancent une résolution,
 réécrivent les référentiels et lisent le planning de chacun.
 
 `McpRateLimiter` compte **toutes** les requêtes sous `/mcp`, authentifiées ou
@@ -137,7 +137,7 @@ qu'un mot de passe.
 | `PLANNING_MCP_TRUSTED_PROXIES` | *(la valeur de `CONNEXION_PROXYS_FIABLES`)* | Proxys inverses dont `X-Forwarded-For` est cru |
 
 La fenêtre est **fixe, ouverte à la première requête** : passé le plafond, elle
-se referme quand même à l'heure — une requête refusée ne la repousse pas. C'est
+se referme quand même à l'heure : une requête refusée ne la repousse pas. C'est
 l'inverse des deux verrous (celui des clés refusées, plus bas, et celui de la connexion), dont la
 fenêtre court depuis le dernier échec, et la différence tient à ce que chacun
 garde : un verrou veut qu'une tentative de plus ne rapporte rien, un plafond de
@@ -152,7 +152,7 @@ qu'une **série d'essais coûte du temps** plutôt que rien.
 
 `McpRateLimiter` compte donc aussi les **clés refusées**, séparément du débit :
 au-delà de `PLANNING_MCP_MAX_FAILURES` échecs consécutifs, l'adresse reçoit
-`429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, **y compris avec la bonne clé** —
+`429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, **y compris avec la bonne clé**,
 sans quoi il suffirait d'attendre son tour.
 
 | Variable | Défaut | Usage |
@@ -168,7 +168,7 @@ Deux garde-fous qui évitent qu'il se retourne contre un client légitime :
 - **une requête qui s'authentifie efface la série.** Un en-tête corrigé à
   l'essai suivant ne coûte donc rien.
 
-Un `403` — la session admin d'un navigateur, qui ne porte pas le rôle `mcp` — ne
+Un `403` (la session admin d'un navigateur, qui ne porte pas le rôle `mcp`) ne
 compte ni n'efface : aucune clé n'y a été essayée.
 
 > **Le succès se lit sur le statut, jamais sur `context.user()`.** Quarkus pose
@@ -181,11 +181,11 @@ L'adresse retenue est celle que décrit [le verrou de la connexion à l'administ
 c'est le même code (`ClientAddress`) qui la calcule : lecture de
 `X-Forwarded-For` **par la droite**, et seulement si la connexion elle-même vient
 d'un proxy déclaré. `PLANNING_MCP_TRUSTED_PROXIES` reprend par défaut la valeur
-de `CONNEXION_PROXYS_FIABLES` — les proxys sont un fait du déploiement, pas d'un
-endpoint —, et une valeur **vide** compte comme absente : un fichier compose qui
+de `CONNEXION_PROXYS_FIABLES` (les proxys sont un fait du déploiement, pas d'un
+endpoint), et une valeur **vide** compte comme absente : un fichier compose qui
 transmet la variable non renseignée la pose à la chaîne vide, que le repli
 `${A:${B:}}` de la configuration ne tient pas pour manquante. Sans ce repli en
-Java, tout appel à `/mcp` arrivant par le proxy tombait sur un seul compteur. Voir [`mcp.md`](../comprendre/mcp.md#limitation-de-débit) pour le réglage du
+Java, tout appel à `/mcp` arrivant par le proxy tombait sur un seul compteur. Voir [`mcp-connexion.md`](../comprendre/mcp-connexion.md#borner-le-rythme) pour le réglage du
 plafond selon l'usage.
 
 > **Derrière un proxy, cette liste n'est pas facultative ici.** Le verrou de
@@ -193,14 +193,14 @@ plafond selon l'usage.
 > reste utilisable : il faut cinq mauvais mots de passe pour gêner quelqu'un.
 > Ce plafond-ci compte **chaque requête**, alors sans la liste tous les appels
 > arrivant par le proxy tombent sur un seul compteur, et un appelant anonyme y
-> tient le client MCP légitime en `429` à deux requêtes par seconde — sans clé,
+> tient le client MCP légitime en `429` à deux requêtes par seconde, sans clé,
 > puisque le filtre passe avant l'authentification. Renseignez
 > `CONNEXION_PROXYS_FIABLES` en même temps que `PLANNING_MCP_API_KEY`.
 
 ## Quota de calcul
 
-Une instance exposée avec un mot de passe partagé — une démonstration
-publique — laisse quiconque lancer des calculs, et un calcul occupe la machine
+Une instance exposée avec un mot de passe partagé (une démonstration
+publique) laisse quiconque lancer des calculs, et un calcul occupe la machine
 des minutes durant. Si cette machine porte aussi une production, deux gardes
 d'exploitant bornent ce qu'un visiteur peut lui coûter :
 `SOLVER_MAX_SOLVES_PER_HOUR` (calculs acceptés sur 60 minutes glissantes) et

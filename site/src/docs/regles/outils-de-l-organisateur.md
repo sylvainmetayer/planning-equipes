@@ -4,7 +4,7 @@ Vous branchez l'application à vos autres outils, vous savez ce qui est sauvegar
 
 ## Brancher un assistant IA
 
-Un assistant IA peut consulter et piloter l'application en langage naturel, sans jamais voir les données personnelles des animateurs. Le branchement (clés, outils exposés, confidentialité) est décrit dans [Le serveur MCP](../comprendre/mcp.md). Les clés se gèrent dans Paramètres, onglet *MCP*.
+Un assistant IA peut consulter et piloter l'application en langage naturel, sans jamais voir les données personnelles des animateurs. Le branchement (clés, outils exposés, confidentialité) est décrit dans [Le serveur MCP](../comprendre/mcp-connexion.md). Les clés se gèrent dans Paramètres, onglet *MCP*.
 
 ## Prévenir un autre outil de l'équipe (webhooks)
 
@@ -37,14 +37,14 @@ Chaque nuit, toute la base est copiée sur le disque de l'hébergeur, et seules 
 
 ## Retrouver le mode d'emploi dans l'application
 
-- **Aide** : le mode d'emploi complet de l'application, avec une recherche, consultable pendant qu'une résolution tourne ou sur une édition vide (icône « ? » de la barre d'outils).
-- **Nouveautés** : ce que la version installée a apporté, et depuis quelle version. Les évolutions sont regroupées par version ; ce qui n'est pas encore publié apparaît sous « À venir », et la liste est triée comme les notes de version, « À surveiller » d'abord. Rien n'est à tenir à jour à la main.
+- Aide : le mode d'emploi complet de l'application, avec une recherche, consultable pendant qu'une résolution tourne ou sur une édition vide (icône « ? » de la barre d'outils).
+- Nouveautés : ce que la version installée a apporté, et depuis quelle version. Les évolutions sont regroupées par version ; ce qui n'est pas encore publié apparaît sous « À venir », et la liste est triée comme les notes de version, « À surveiller » d'abord. Rien n'est à tenir à jour à la main.
 
 ## Travailler plus vite
 
-- **Palette de commandes** : Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran (ou directement à l'un de ses onglets ou de ses vues) et retrouve un animateur, un stand ou un créneau. « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis. Les raccourcis à une touche se coupent.
-- **Tableaux au clavier** : voir [Travailler dans les tableaux](preparer-edition.md#travailler-dans-les-tableaux).
-- **Thème clair ou sombre** : un bouton de la barre d'outils fait tourner l'affichage entre « automatique », « clair » et « sombre ». « Automatique » suit le réglage du système d'exploitation, en direct. Un choix explicite est retenu par le navigateur et survit au rechargement.
+- Palette de commandes : Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran (ou directement à l'un de ses onglets ou de ses vues) et retrouve un animateur, un stand ou un créneau. « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis. Les raccourcis à une touche se coupent.
+- Tableaux au clavier : voir [Travailler dans les tableaux](preparer-edition.md#travailler-dans-les-tableaux).
+- Thème clair ou sombre : un bouton de la barre d'outils fait tourner l'affichage entre « automatique », « clair » et « sombre ». « Automatique » suit le réglage du système d'exploitation, en direct. Un choix explicite est retenu par le navigateur et survit au rechargement.
 
 ## Les pages publiques et leur contenu
 

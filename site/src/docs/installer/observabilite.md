@@ -25,7 +25,7 @@ qui le détient le planning nominatif du jour. Trois garde-fous, pour les deux :
   (`/api/espace-animateur/…`, `/api/mural/…`). Côté navigateur,
   `maskTokensEverywhere` parcourt le rapport **entier** (`beforeSend`,
   `beforeBreadcrumb`) plutôt qu'une liste de champs : ne masquer que
-  `request.url` et `data.url` laissait passer les deux cas les plus probables —
+  `request.url` et `data.url` laissait passer les deux cas les plus probables :
   un changement de page interne (`data.from` / `data.to`) et un échec HTTP dont
   le message contient l'URL. Côté serveur, `maskTokensInReport` fait de même ;
 - `Referrer-Policy: same-origin` ferme le canal des liens sortants.
@@ -38,7 +38,7 @@ aux animateurs. **Toute nouvelle voie d'envoi doit préserver cette propriété.
 Un solve est lancé en `202` : la requête est acceptée tout de suite, la
 résolution tourne à part, et son échec arrive plus tard **dans le job**. Il ne
 traverse donc jamais `GlobalExceptionMapper`, et sans rien de plus il ne
-serait jamais remonté — la seule catégorie de panne que l'organisateur voit
+serait jamais remonté. C'est la seule catégorie de panne que l'organisateur voit
 sur son écran et que personne d'autre ne voit jamais.
 
 `SolverJobService.reportFailure` la signale là où l'exception est encore en
@@ -52,7 +52,7 @@ Un job **annulé** n'est pas une panne et ne remonte pas.
 
 ## Métriques
 
-Sentry dit ce qui a cassé ; les métriques disent comment ça tourne — combien
+Sentry dit ce qui a cassé ; les métriques disent comment ça tourne : combien
 de temps prend une résolution, combien attendent derrière, si les mails
 partent, si la sauvegarde de nuit a tourné. Micrometer, registre Prometheus
 (`quarkus-micrometer-registry-prometheus`), toujours actif.
@@ -61,7 +61,7 @@ partent, si la sauvegarde de nuit a tourné. Micrometer, registre Prometheus
 
 L'endpoint est **`/q/metrics` sur l'interface de management**, port **9000** :
 un second serveur HTTP, distinct du port applicatif. Il n'a **aucune
-authentification** — un scraper Prometheus n'ouvre pas de session — et sa
+authentification** (un scraper Prometheus n'ouvre pas de session) et sa
 seule protection est de n'être joignable que du réseau interne :
 `docker-compose.prod.yml` ne publie que `127.0.0.1:8080`, le reverse proxy ne
 connaît que ce port-là, et l'image ne déclare pas 9000 en `EXPOSE` (un
@@ -76,17 +76,17 @@ Les sondes `/q/health/*` et la documentation d'API (`/q/openapi`,
 `/q/swagger-ui`) **restent sur le port applicatif** : l'interface de
 management les emmènerait sinon avec elle, et le `healthcheck` du compose, les
 scripts de déploiement et les sondes externes les cherchent là. Le choix
-inverse — tout sur 9000 — se ferait d'un bloc, sondes comprises.
+inverse, tout sur 9000, se ferait d'un bloc, sondes comprises.
 
 ### Ce qui est mesuré
 
 | Métrique | Type | Étiquettes | Ce qu'elle dit |
 | --- | --- | --- | --- |
 | `planning_solver_duration_seconds` | timer | `type` (`full`, `incremental`), `outcome` (`completed`, `failed`, `refused`, `cancelled`, `interrupted`) | durée d'une résolution, du démarrage à son état final ; `refused` = refus métier (rien à planifier), pas une panne |
-| `planning_solver_failures_total` | compteur | `type` | résolutions mortes sur une erreur inattendue — exactement celles que `reportFailure` envoie à Sentry |
+| `planning_solver_failures_total` | compteur | `type` | résolutions mortes sur une erreur inattendue, exactement celles que `reportFailure` envoie à Sentry |
 | `planning_solver_queue_size` | jauge | — | jobs en file ; reflète aussi la file rejouée au démarrage |
 | `planning_solver_active` | jauge (0/1) | — | un job tient le solveur |
-| `planning_mail_sent_total`, `planning_mail_failures_total` | compteurs | `template` (`code-acces`, `planning-publie`, `rappel-veille`…) | mails remis au serveur SMTP, ou refusés — y compris les notifications, dont l'échec est avalé sans être perdu pour autant |
+| `planning_mail_sent_total`, `planning_mail_failures_total` | compteurs | `template` (`code-acces`, `planning-publie`, `rappel-veille`…) | mails remis au serveur SMTP, ou refusés, notifications comprises (leur échec est avalé sans être perdu pour autant) |
 | `planning_backup_duration_seconds` | timer | `outcome` (`success`, `failure`) | durée de chaque `pg_dump` |
 | `planning_backup_last_success_timestamp_seconds` | jauge | — | date de la dernière sauvegarde réussie (secondes epoch) |
 | `planning_backup_size_bytes` | jauge | — | taille de ce dernier dump |
@@ -99,8 +99,8 @@ le pool de connexions (`agroal_*`, allumé par
 
 Trois comportements à connaître pour écrire une alerte :
 
-- **au redémarrage, les compteurs repartent de zéro** — c'est la règle
-  Prometheus, `increase()` et `rate()` en tiennent compte. La date de dernière
+- **au redémarrage, les compteurs repartent de zéro**, selon la règle
+  Prometheus : `increase()` et `rate()` en tiennent compte. La date de dernière
   sauvegarde réussie, elle, est relue en base au démarrage, et la taille sur le
   dump encore présent sur le disque ;
 - **sans `BACKUP_DIR`, les deux jauges de sauvegarde n'existent pas**, et une
@@ -114,7 +114,7 @@ Trois comportements à connaître pour écrire une alerte :
 
 Aucune étiquette ne porte une édition, un animateur, un jeton, une adresse ou
 un identifiant : chaque étiquette est un ensemble fermé. Une édition n'est pas
-une dimension d'exploitation — on surveille le solveur de l'instance.
+une dimension d'exploitation : on surveille le solveur de l'instance.
 
 Pour `uri`, c'est la même exigence que pour les rapports d'erreur : **le
 jeton de l'espace et celui de l'abonnement ICS voyagent dans le chemin**, et
@@ -124,8 +124,8 @@ réglages, dans `application.properties` :
 - une route REST est étiquetée par son **gabarit**, jamais par le chemin
   appelé : `/espace-animateur/{jeton}`, `/abonnements/{token}/planning.ics`
   (l'extension l'écrit sans le préfixe `/api`) ;
-- une réponse 4xx/5xx sans route reconnue — connexion refusée, limiteur de
-  débit, robot qui essaie `/wp-admin` — est étiquetée `UNKNOWN`
+- une réponse 4xx/5xx sans route reconnue (connexion refusée, limiteur de
+  débit, robot qui essaie `/wp-admin`) est étiquetée `UNKNOWN`
   (`suppress4xx-errors`), un 404 `NOT_FOUND` ;
 - tout ce que sert le frontend Angular, y compris le lien d'espace
   `/animateur/<jeton>` et les fichiers à empreinte, est replié en une seule
@@ -144,7 +144,7 @@ métrique doit préserver cette propriété.**
 ## Deux pièges de configuration
 
 **La mesure d'audience est éteinte tant qu'on ne lui donne pas de token.** Le
-profil `%prod` fournissait autrefois un repli — celui du compte de l'éditeur —
+profil `%prod` fournissait autrefois un repli (celui du compte de l'éditeur)
 et toute instance déployée sans y penser envoyait donc son audience dans ce
 compte, tout en déclarant un transfert hors UE dans ses propres mentions
 légales. Le défaut est vide depuis ; poser `CLOUDFLARE_WEB_ANALYTICS_TOKEN` est
@@ -174,7 +174,7 @@ Le frontend est construit **une seule fois** et servi tel quel : il ne peut pas
 recevoir ces clés au build sans dupliquer le bundle par environnement. Le
 backend les expose donc via `/api/config`, lu avant `bootstrapApplication()`. Un
 DSN et un token de beacon sont par construction des identifiants publics, prévus
-pour vivre dans du code navigateur — les exposer ainsi ne crée pas de fuite.
+pour vivre dans du code navigateur : les exposer ainsi ne crée pas de fuite.
 
 La page Débogage (onglet *Vérifications*) lève une exception de test de chaque côté, pour vérifier un
 DSN fraîchement configuré sans attendre un vrai bug.
@@ -183,15 +183,14 @@ DSN fraîchement configuré sans attendre un vrai bug.
 
 Bugsink est consommé en **offre hébergée**, pas auto-hébergé : c'est donc un
 **sous-traitant**, ce que la politique de confidentialité doit dire.
-Hébergement UE annoncé par l'éditeur, donc pas de transfert hors UE à déclarer —
+Hébergement UE annoncé par l'éditeur, donc pas de transfert hors UE à déclarer,
 contrairement à Cloudflare.
 
 Elle ne le dit **que si l'outil tourne** : `/api/mentions-legales` renvoie
 `mesureAudience` et `suiviErreurs`, calculés sur la **valeur effective** de ces
-deux clés — celle que lisent le beacon et le SDK — et la page n'affiche que les
-paragraphes correspondants. Poser une variable ne se contente donc pas d'allumer
-l'outil, cela ajoute aussi sa déclaration ; la vider retire les deux. Et c'est le
-point : un déploiement qui n'envoie rien à Cloudflare ne doit pas annoncer un
+deux clés (celle que lisent le beacon et le SDK), et la page n'affiche que les
+paragraphes correspondants. Poser une variable allume donc l'outil et ajoute
+sa déclaration ; la vider retire les deux. Un déploiement qui n'envoie rien à Cloudflare ne doit pas annoncer un
 transfert hors UE. Ajouter une troisième brique suppose donc un troisième
 drapeau, pas un paragraphe de plus en dur.
 
@@ -199,7 +198,7 @@ drapeau, pas un paragraphe de plus en dur.
 
 PostHog a été déposé. Personne ne consultait les tableaux de bord, et la brique
 coûtait une dépendance JavaScript, deux variables et un traitement de données
-personnelles à justifier — trois prix payés pour rien.
+personnelles à justifier. Trois prix payés pour rien.
 
 Si le besoin revient, les candidats regardés étaient PostHog (palier gratuit le
 plus généreux, hébergement EU), Umami et Plausible.

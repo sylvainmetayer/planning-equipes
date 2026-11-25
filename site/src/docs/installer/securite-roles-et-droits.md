@@ -17,7 +17,7 @@ courante seulement : une section `edition:` qui en désigne une autre, ou une à
 créer, est refusée (400). L'inventaire est tenu par `InstanceRoutesStructuralTest` (ressources) et par `RoutesOuvertesStructuralTest` (route par route, décrit plus haut) ; une nouvelle ressource ou route non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
 ([ADR 0095](repo:docs/decisions/0095-le-responsable-de-stand-lit-son-stand.md), détaillé plus bas). Le `/mcp`
 accepte aussi un jeton OAuth du fournisseur, sous les mêmes droits (voir
-[`mcp.md`](../comprendre/mcp.md)) ; sa clé d'API reste. Les comptes locaux avec mot de passe, ouverts
+[`mcp-connexion.md`](../comprendre/mcp-connexion.md)) ; sa clé d'API reste. Les comptes locaux avec mot de passe, ouverts
 même derrière un fournisseur, sont décrits dans
 [les comptes locaux](comptes-locaux.md) et
 [la connexion à l'administration](securite-acces-administration.md#les-cinq-portes-de-ladministration).
@@ -59,10 +59,10 @@ contient pas), et `@RolesAllowed` double la règle HTTP sur chaque méthode.
 - **Édition active seulement** (ADR 0072) : la requête ne nomme ni édition ni
   stand (pas d'en-tête `X-Edition-Id`). Le service lit l'édition active et les
   stands des droits en vigueur du compte, et rend une vue vide quand rien ne
-  s'ouvre — droit expiré, retiré, compte désactivé, édition inactive : la
+  s'ouvre (droit expiré, retiré, compte désactivé, édition inactive) : la
   réponse ne distingue pas « pas à vous » de « n'existe pas ».
-- **Une projection, jamais le domaine** : horaires, places pourvues et vides,
-  et — selon le réglage — prénom et nom. Pas d'adresse, de téléphone, d'âge ni
+- **Une projection, jamais le domaine** : horaires, places pourvues et vides
+  et, selon le réglage, prénom et nom. Pas d'adresse, de téléphone, d'âge ni
   de statut mineur ; `ResponsableProjectionStructurelleTest` lit les types du
   record. Le plan lu est le plan **publié**, jamais le plan de travail.
 - **Rien n'est mis en cache** : les deux routes répondent `Cache-Control: no-store`.
@@ -88,7 +88,7 @@ organisateur sans droit RH ne lit rien de ceci.
   refusé. `RhService` décide du droit, édition par édition ; une édition sans
   droit et une édition inconnue répondent **le même `404`**.
 - **Chaque consultation et chaque export (PDF, CSV) est journalisé** par
-  `RhService`, dans l'édition du rapport — pas par le filtre de réponse, qui
+  `RhService`, dans l'édition du rapport, pas par le filtre de réponse, qui
   classe sous l'édition de l'en-tête. L'identifiant du compte est écrit, jamais
   son adresse. Les deux routes de fichier sont dans la liste argumentée de
   `CatalogueActions` pour cette raison.

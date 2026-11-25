@@ -15,7 +15,7 @@ NOTIFICATIONS_TIMEZONE=Europe/Paris
 
 <sub>Source : [`diagrammes/notifications-planifiees.puml`](repo:docs/diagrammes/notifications-planifiees.puml).</sub>
 
-Le cron est **horaire**, et ce n'est pas une erreur de réglage. L'heure d'envoi du rappel se décide **par édition**, dans *Paramètres*, onglet *Édition*, carte *Rappels et relances automatiques* ; une tâche unique ne peut pas partir à quatre heures différentes pour quatre éditions. Elle se réveille donc souvent, et chaque édition envoie quand son heure à elle est passée. C'est sans danger parce que chaque envoi est réservé en base avant de partir : tourner douze fois dans la soirée n'écrit à personne deux fois.
+Le cron est horaire, volontairement. L'heure d'envoi du rappel se décide **par édition**, dans *Paramètres*, onglet *Édition*, carte *Rappels et relances automatiques* ; une tâche unique ne peut pas partir à quatre heures différentes pour quatre éditions. Elle se réveille donc souvent, et chaque édition envoie quand son heure à elle est passée. C'est sans danger parce que chaque envoi est réservé en base avant de partir : tourner douze fois dans la soirée n'écrit à personne deux fois.
 
 Le fuseau est celui de l'événement, réglé à part (`NOTIFICATIONS_TIMEZONE`), et non celui du conteneur (`TZ`, voir [sauvegarder et restaurer](sauvegarde-et-restauration.md#1-laisser-la-sauvegarde-de-nuit-tourner)) : « 18 h » sur l'écran doit vouloir dire 18 h pour la personne qui lit, quel que soit le fuseau de la machine.
 
@@ -33,10 +33,10 @@ Le bandeau « Action requise » de l'administration signale une édition active 
 
 Dans l'ordre où ça casse :
 
-1. **L'interrupteur de l'édition.** C'est la cause de « je n'ai rien reçu » dans neuf cas sur dix, et il est silencieux par construction.
-2. **Le plan doit être publié.** Le rappel lit le planning **publié**, jamais le plan de travail : personne n'est rappelé pour un créneau qu'on ne lui a pas communiqué.
-3. **Les fiches sans adresse.** Elles sont sautées, comptées dans « À traiter aujourd'hui » de l'accueil et nommées dans ses « Messages récents » : ce sont les gens à prévenir à la main.
-4. **Les envois en échec.** Un rappel ou une relance que le relais a refusé laisse une alerte rouge dans les « Messages récents » de l'accueil, et la personne **n'est pas comptée comme relancée** : elle reste « échec d'envoi » sur la page Animateurs. La nuit ne réessaie pas, parce qu'un relais en panne à 19 h l'est souvent à 20 h et que réécrire chaque heure n'arrangerait rien. « Relancer maintenant » reste ouvert pour elle une fois le relais rétabli, quel que soit le courriel parti depuis, et deux clics simultanés n'écrivent qu'une fois. Seule exception : une adresse refusée, dont la relance reprend d'elle-même au passage qui suit la correction de la fiche ([les catégories d'échec](courriels.md#4-lire-ce-qui-est-gardé-de-chaque-envoi)).
+1. L'interrupteur de l'édition. C'est la cause de « je n'ai rien reçu » dans neuf cas sur dix, et il est silencieux par construction.
+2. Le plan doit être publié. Le rappel lit le planning **publié**, jamais le plan de travail : personne n'est rappelé pour un créneau qu'on ne lui a pas communiqué.
+3. Les fiches sans adresse. Elles sont sautées, comptées dans « À traiter aujourd'hui » de l'accueil et nommées dans ses « Messages récents » : ce sont les gens à prévenir à la main.
+4. Les envois en échec. Un rappel ou une relance que le relais a refusé laisse une alerte rouge dans les « Messages récents » de l'accueil, et la personne **n'est pas comptée comme relancée** : elle reste « échec d'envoi » sur la page Animateurs. La nuit ne réessaie pas, parce qu'un relais en panne à 19 h l'est souvent à 20 h et que réécrire chaque heure n'arrangerait rien. « Relancer maintenant » reste ouvert pour elle une fois le relais rétabli, quel que soit le courriel parti depuis, et deux clics simultanés n'écrivent qu'une fois. Seule exception : une adresse refusée, dont la relance reprend d'elle-même au passage qui suit la correction de la fiche ([les catégories d'échec](courriels.md#4-lire-ce-qui-est-gardé-de-chaque-envoi)).
 
 ## 4. La relance de la collecte des disponibilités
 

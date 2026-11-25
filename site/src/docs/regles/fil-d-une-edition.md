@@ -23,7 +23,7 @@ L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. 
 
 L'accueil prend la forme du moment.
 
-**En préparation**, c'est une liste d'étapes : référentiels, gel, cohérence du référentiel, collecte des disponibilités, ouvertures, besoin, résolution, problèmes, relecture, publication, accusés de réception, foire. Chaque ligne dit si l'étape est faite, à vérifier, pour information ou à faire, avec le chiffre qui compte et le lien vers l'écran concerné. Quelques lignes méritent un mot :
+**En préparation**, c'est une liste d'étapes : référentiels, gel, cohérence du référentiel, collecte des disponibilités, ouvertures, besoin, résolution, problèmes, relecture, publication, accusés de réception, foire. Chaque ligne dit si l'étape est faite, à vérifier, pour information ou à faire, avec le chiffre qui compte et le lien vers l'écran concerné. Quelques lignes en détail :
 
 - la dernière résolution se lit en phrases, jamais en score brut ;
 - le gel du référentiel y est rappelé, et se règle dans les Paramètres ;
@@ -66,8 +66,6 @@ L'application ne publie rien vers l'extérieur, n'envoie aucun message et n'ouvr
 
 ## Les mots de l'application
 
-Ces mots reviennent dans les guides et sur les écrans.
-
 | Mot | Ce qu'il veut dire |
 | --- | --- |
 | Édition | Une occurrence de l'événement (« Année 2026 ») : ses stands, son équipe, son planning. Les éditions ne se mélangent jamais |
@@ -92,4 +90,4 @@ Ces mots reviennent dans les guides et sur les écrans.
 - Le planning calculé est une proposition : vous relisez, retouchez et décidez. Une journée relue peut être marquée comme telle.
 - Un animateur n'est jamais affecté contre une règle légale. Ces règles cèdent, au pire, par des places laissées vides et signalées, jamais par un mineur placé hors cadre.
 
-Pourquoi chaque règle existe et ce qu'elle coûte est expliqué dans [Les contraintes du planning](../comprendre/contraintes.md).
+Les raisons de chaque règle et son coût sont expliquées dans [Les règles du solveur](../comprendre/pourquoi-ces-regles.md).

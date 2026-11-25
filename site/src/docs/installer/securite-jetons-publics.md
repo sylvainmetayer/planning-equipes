@@ -19,7 +19,7 @@ resynchronisation.
 Le jeton d'espace ne suffit à rien seul aujourd'hui : il permet de *demander*
 un code par e-mail, et c'est tout. Le réutiliser ici en aurait fait, sur cette
 route, une preuve d'accès complète et durable au planning nominatif sans second
-facteur — et un lien imprimé sur un PDF circule.
+facteur, et un lien imprimé sur un PDF circule.
 
 Le jeton d'abonnement est donc une clé séparée (`animateur.abonnement_token`),
 avec la même génération que l'autre (`gen_random_uuid()`, 122 bits d'aléa,
@@ -29,8 +29,8 @@ unicité globale) et un cycle de vie indépendant. Voir
 ### Ce qu'il permet, exactement
 
 Qui détient un jeton d'abonnement peut lire, indéfiniment et sans rien d'autre,
-**un seul document** : le planning publié de son propriétaire — ses vacations,
-ses stands, et les coéquipiers que son PDF individuel imprime déjà. C'est une
+**un seul document** : le planning publié de son propriétaire, c'est-à-dire ses vacations,
+ses stands et les coéquipiers que son PDF individuel imprime déjà. C'est une
 donnée nominative, et il faut le lire ainsi : ce jeton dit *qui travaille où et
 quand*, pour une personne.
 
@@ -38,14 +38,14 @@ Il ne permet **rien** d'autre. Il n'ouvre pas l'espace animateur, ne lit ni les
 demandes d'échange, ni les disponibilités, ni le trombinoscope, ne télécharge
 pas le PDF, et n'écrit nulle part. Le garde qui le résout est lié à une seule
 route (`@AbonnementTokenRequired`), et le jeton d'espace ne fonctionne pas sur
-cette route — ni l'inverse. `AbonnementIcsTest` vérifie les deux sens.
+cette route, ni l'inverse. `AbonnementIcsTest` vérifie les deux sens.
 
 ### Révocation
 
 **L'animateur révoque lui-même**, depuis son espace (« cette adresse a fuité,
 la remplacer ») : l'adresse n'est jamais affichée ailleurs que là, donc son
 porteur est la seule personne en position de savoir qu'elle a fuité, et
-atteindre ce bouton coûte déjà le jeton d'espace **et** le code e-mail — une
+atteindre ce bouton coûte déjà le jeton d'espace **et** le code e-mail : une
 preuve plus forte que celle que l'abonnement demandera jamais. La rotation tue
 l'ancienne adresse immédiatement et n'affecte pas le jeton d'espace : le lien
 déjà imprimé sur un PDF survit.
@@ -55,7 +55,7 @@ l'adresse cesse simplement d'exister (`404`). Il n'existe pas d'état « abonné
 non abonné » : le jeton existe toujours, et ne sert que si quelqu'un s'en est
 servi.
 
-Ce qui **n'existe pas**, et qui est un manque assumé : un geste côté admin pour
+Il manque, et c'est assumé, un geste côté admin pour
 révoquer l'abonnement de quelqu'un d'autre. Un exploitant qui doit couper
 l'accès d'une personne partie supprime sa fiche, ce qui coupe tout. Ajouter le
 bouton à l'écran Animateurs est un ajout d'écran, pas de modèle.
@@ -64,7 +64,7 @@ bouton à l'écran Animateurs est un ajout d'écran, pas de modèle.
 
 Même défaut que le jeton d'espace, et la même conséquence : il atterrit tel
 quel dans les journaux d'accès du reverse proxy, **et il y atterrit beaucoup
-plus souvent** — un client d'agenda resynchronise seul, plusieurs fois par
+plus souvent** : un client d'agenda resynchronise seul, plusieurs fois par
 jour, depuis chaque appareil. Ces journaux se purgent ou s'écrivent sans ces
 chemins (voir [ce qui reste à la charge du reverse proxy](securite.md#ce-qui-reste-à-la-charge-du-reverse-proxy)). `Referrer-Policy: no-referrer` couvre le
 reste : le jeton ne part dans le `Referer` d'aucune navigation sortante.
@@ -72,28 +72,28 @@ reste : le jeton ne part dans le `Referer` d'aucune navigation sortante.
 ### Pas de limiteur de débit ici, et pourquoi
 
 `AdminLoginLimiter`, `CodeRequestLimiter` et `McpRateLimiter` bornent des choses
-précises : des tentatives d'authentification, un envoi de mail, et — pour le
-dernier — l'usage d'une clé partagée qui ouvre tout, plus les essais pour la
-deviner. Cette route ne fait rien de tout cela — elle
+précises : des tentatives d'authentification, un envoi de mail et, pour le
+dernier, l'usage d'une clé partagée qui ouvre tout, plus les essais pour la
+deviner. Cette route ne fait rien de tout cela : elle
 lit, sans effet de bord, sur un jeton qui n'ouvre qu'un document.
 
 Un plafond par animateur y serait **contre-productif** : un abonnement se
 resynchronise tout seul, depuis un téléphone, un ordinateur et une tablette à
 la fois, à un rythme que l'application ne choisit pas. Le plafond ne
 distinguerait pas l'abus de l'usage, et un flux coupé au mauvais moment se
-manifeste par un agenda silencieusement figé — exactement le symptôme que cette
+manifeste par un agenda silencieusement figé, exactement le symptôme que cette
 fonctionnalité supprime.
 
 Reste l'énumération : elle n'est pas praticable sur 122 bits d'aléa, un jeton
 inconnu ne répond qu'un `404` portant une phrase fixe (« Abonnement inconnu ou
-révoqué »), la même pour un jeton révoqué que pour un jeton inventé — elle ne
-renseigne donc sur rien —, et **la limitation par IP du reverse proxy reste la
+révoqué »), la même pour un jeton révoqué que pour un jeton inventé (elle ne
+renseigne donc sur rien), et **la limitation par IP du reverse proxy reste la
 première ligne**, comme pour les exports et le reste de l'API.
 
 Ce qui **reste ouvert** : rien ne borne le coût d'un client mal réglé qui
 appellerait toutes les minutes. Chaque appel reconstruit le plan publié, comme
 le fait déjà le téléchargement de l'espace, donc ce n'est pas une classe de
-charge nouvelle — mais c'est la première qui soit déclenchée par une machine
+charge nouvelle, mais c'est la première qui soit déclenchée par une machine
 plutôt que par un humain.
 
 ### La règle côté proxy d'accès
@@ -104,7 +104,7 @@ consorts) a besoin d'un motif d'URL qui ne désigne que le flux à excepter.
 
 | À configurer | Valeur |
 | --- | --- |
-| Exception d'authentification | `/api/abonnements/*` — et **ce préfixe seul** |
+| Exception d'authentification | `/api/abonnements/*`, et **ce préfixe seul** |
 | Ce qu'il ne faut pas faire | élargir l'exception à `/api/espace-animateur/*` : cela ouvrirait du même geste toutes les routes de l'espace, dont la seule écriture publique |
 
 Côté application, la même exception est déclarée dans `application.properties`
@@ -117,8 +117,8 @@ vérifie à la fois qu'elle s'applique et qu'elle **ne déborde pas** du préfix
 la **seule** sous le préfixe `/api/mural/`, exempté de l'authentification admin
 comme l'est `/api/abonnements/`. Le raisonnement est celui de l'abonnement ICS,
 appliqué à un écran : une TV reste allumée des jours dans une pièce où passent
-des bénévoles, et une session admin laissée dessus — prolongée par le
-rafraîchissement de l'écran lui-même — y donnerait l'écriture sur tout le
+des bénévoles, et une session admin laissée dessus, prolongée par le
+rafraîchissement de l'écran lui-même, y donnerait l'écriture sur tout le
 planning. Voir la
 [décision 0053](repo:docs/decisions/0053-affichage-mural-par-jeton-dedie.md).
 
@@ -128,7 +128,7 @@ Une lecture, pour **une** édition : les stands ouverts du jour, qui les tient
 (prénom et initiale du nom, ou nom complet si le lien a été créé ainsi), les
 places libres, les pauses sans relais et la consigne du jour. Rien d'autre : pas
 le référentiel, pas les exports, pas l'espace animateur, aucune écriture. Ni
-téléphone, ni e-mail, ni âge, ni motif d'absence — le numéro de téléphone que
+téléphone, ni e-mail, ni âge, ni motif d'absence. Le numéro de téléphone que
 la fiche porte désormais ne sort que vers une session d'administration (fiche,
 écran Aujourd'hui) : la vue murale n'a aucun champ qui puisse le recevoir, et
 le nombre de « changements non publiés » qu'elle affiche est un compte, jamais
@@ -142,14 +142,14 @@ d'authentification.
 
 L'administrateur crée les liens depuis **Paramètres → Affichage mural**, avec un
 libellé, l'option des noms complets et, au besoin, les emplacements affichés
-(une TV par zone). Le jeton — 256 bits d'aléa — n'est montré **qu'une fois**, à
+(une TV par zone). Le jeton (256 bits d'aléa) n'est montré **qu'une fois**, à
 la création : la base n'en garde que l'empreinte SHA-256, comme les sessions de
 l'espace. Une copie de la base ne rouvre donc aucun écran, et une adresse perdue
 se remplace par un nouveau lien. La liste montre la date du dernier accès, à la
 minute près. Révoquer coupe l'écran à sa lecture suivante ; supprimer l'édition
 emporte ses liens. Un jeton inconnu et un jeton révoqué reçoivent le même `404`,
 avec la même phrase. Création et révocation sont journalisées ; les lectures ne
-le sont pas — une par minute et par écran n'est pas une trace.
+le sont pas : une par minute et par écran n'est pas une trace.
 
 ### L'impression d'une journée par l'administrateur
 
@@ -157,13 +157,13 @@ le sont pas — une par minute et par écran n'est pas une trace.
 (`/impression/:date`) sans aucun jeton : elle lit
 `GET /api/affichage-mural/apercu`, **sous la session admin**, comme la gestion
 des liens. Rien ne s'ajoute donc sous `/api/mural/`, et le périmètre du jeton
-reste une seule route — `AffichageMuralSecurityTest` vérifie que l'aperçu refuse
+reste une seule route ; `AffichageMuralSecurityTest` vérifie que l'aperçu refuse
 une requête sans session, jeton en en-tête ou en paramètre compris.
 
 Les liens ne voyagent ni dans l'export SQL ni dans la duplication d'une édition :
 ce sont des accès de cette instance, pas des données du jeu. Revers attendu :
 **importer un dump SQL les supprime tous**, puisque l'import vide les éditions et
-que les liens partent avec elles en cascade — y compris pour une édition que le
+que les liens partent avec elles en cascade, y compris pour une édition que le
 dump recrée à l'identique. Les liens se recréent depuis Paramètres après chaque
 import, et chaque TV se rouvre sur sa nouvelle adresse.
 
@@ -172,8 +172,8 @@ import, et chaque TV se rouvre sur sa nouvelle adresse.
 `AffichageMuralRateLimiter` porte deux gardes, et aucune ne compte les
 lectures valides d'une adresse :
 
-- **les lectures refusées, par adresse.** Seul un `404` — jeton inconnu ou
-  révoqué — compte. Au-delà du plafond, l'adresse reçoit `429` avec un
+- **les lectures refusées, par adresse.** Seul un `404` (jeton inconnu ou
+  révoqué) compte. Au-delà du plafond, l'adresse reçoit `429` avec un
   `Retry-After` pour tout jeton qu'elle n'a pas déjà lu avec succès, jusqu'à une
   fenêtre après son dernier refus : essayer des jetons coûte du temps, et ne
   touche plus la base ;
@@ -183,12 +183,12 @@ lectures valides d'une adresse :
 Un jeton déjà servi (retenu en mémoire par son empreinte, jamais en clair)
 passe donc même quand son adresse est verrouillée : du bruit venu de la même
 adresse ne coupe jamais un écran. C'est ce qui compte **derrière un proxy non
-déclaré** — `CONNEXION_PROXYS_FIABLES` vide, le défaut —, où toutes les requêtes
+déclaré** (`CONNEXION_PROXYS_FIABLES` vide, le défaut), où toutes les requêtes
 portent l'adresse du proxy : un plafond sur toutes les requêtes laissait trente
 requêtes au hasard par minute, venues de n'importe où, éteindre toutes les TV de
 l'événement. Ce que la déclaration des proxys garde nécessaire : sans elle, un
-tel bruit verrouille l'adresse partagée, et un écran **nouveau** — ou le premier
-affichage après un redémarrage, qui vide la mémoire — attend la fin de la
+tel bruit verrouille l'adresse partagée, et un écran **nouveau**, ou le premier
+affichage après un redémarrage qui vide la mémoire, attend la fin de la
 fenêtre. L'adresse se lit comme pour les autres plafonds.
 
 | Variable | Défaut | Usage |
@@ -209,7 +209,7 @@ comme celui de l'espace ([`observabilite.md`](observabilite.md)).
 
 | À configurer | Valeur |
 | --- | --- |
-| Exception d'authentification | `/api/mural/*` — et **ce préfixe seul**, en plus de la route SPA `/mural/*` qui ne porte aucune donnée |
+| Exception d'authentification | `/api/mural/*`, et **ce préfixe seul**, en plus de la route SPA `/mural/*` qui ne porte aucune donnée |
 | Ce qu'il ne faut pas faire | élargir l'exception à `/api/affichage-mural/*` : c'est la gestion des liens, réservée à l'admin |
 
 Côté application : `quarkus.http.auth.permission.affichage-mural`.

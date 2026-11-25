@@ -17,11 +17,11 @@ Une ligne par règle obligatoire :
 
 Le texte complet de la règle et l'historique de ses réglages s'ouvrent dans un panneau.
 
-**Désactiver une règle légale** (mineurs, temps de travail, sécurité des mineurs) demande une confirmation, qui rappelle que vous restez l'employeur et le responsable du planning diffusé. L'écran montre en permanence ce qui est désactivé. Rien n'est désactivé à votre place.
+Désactiver une règle légale (mineurs, temps de travail, sécurité des mineurs) demande une confirmation, qui rappelle que vous restez l'employeur et le responsable du planning diffusé. L'écran montre en permanence ce qui est désactivé. Rien n'est désactivé à votre place.
 
 ## L'onglet Qualité
 
-Le même tableau pour les règles de qualité et les préférences. Chaque règle a une **importance en trois positions : faible, normale, forte**. Le poids exact est dans le panneau, pour qui le veut.
+Le même tableau pour les règles de qualité et les préférences. Chaque règle a une importance en trois positions : faible, normale, forte. Le poids exact est dans le panneau, pour qui le veut.
 
 « Baisser l'importance » n'est jamais le premier geste proposé pour une règle de qualité : le Diagnostic le met toujours en dernier, et il disparaît quand l'importance est déjà au plus bas.
 
@@ -75,4 +75,4 @@ Une fois le planning envoyé, chaque personne déplacée coûte au calcul : un r
 
 ## Pourquoi chaque règle existe
 
-Le nom, l'article de loi et la raison de chaque règle sont dans le catalogue de l'application (écran Règles du planning). La raison d'être de chacune, ce qu'elle coûte et ce qui a été écarté sont dans [Les contraintes du planning](../comprendre/contraintes.md).
+Le nom, l'article de loi et la raison de chaque règle sont dans le catalogue de l'application (écran Règles du planning). La raison d'être de chacune, ce qu'elle coûte et ce qui a été écarté sont dans [Les règles du solveur](../comprendre/pourquoi-ces-regles.md).

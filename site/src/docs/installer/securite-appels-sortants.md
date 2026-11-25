@@ -7,7 +7,7 @@ Tant que vous ne configurez rien, l'application ne joint que le relais SMTP et l
 L'application ne parlait au monde extérieur que par SMTP et Sentry. Les
 **webhooks** et l'**alerte météo** lui font émettre des requêtes HTTP. Les
 premiers visent une adresse **tapée par un administrateur** : c'est le cas
-d'école du SSRF — se servir du serveur pour joindre ce que lui seul peut joindre (le port de PostgreSQL, le service de
+d'école du SSRF : se servir du serveur pour joindre ce que lui seul peut joindre (le port de PostgreSQL, le service de
 métadonnées d'un cloud en `169.254.169.254`, une interface d'administration
 liée à la boucle locale). La décision et ses raisons :
 [ADR 0074](repo:docs/decisions/0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md).
@@ -22,7 +22,7 @@ aujourd'hui) :
 | --- | --- |
 | `https://` seulement | `http://` n'est accepté que vers un réseau autorisé |
 | Ports 443 et 8443 | tout port vers un réseau autorisé |
-| Aucune adresse interne | bouclage (`127.0.0.0/8`, `::1`), privé RFC 1918, lien local (`169.254.0.0/16` — métadonnées cloud —, `fe80::/10`), ULA `fc00::/7`, CGNAT `100.64.0.0/10`, multicast, non spécifiée (`0.0.0.0`, `::`), réservée ; une adresse IPv6 qui embarque une IPv4 — `::ffff:a.b.c.d`, `::a.b.c.d`, NAT64 `64:ff9b::/96`, 6to4 `2002::/16`, Teredo `2001::/32` — est jugée sur l'IPv4 qu'elle porte, et le NAT64 local `64:ff9b:1::/48` est refusé |
+| Aucune adresse interne | bouclage (`127.0.0.0/8`, `::1`), privé RFC 1918, lien local (`169.254.0.0/16`, métadonnées cloud ; `fe80::/10`), ULA `fc00::/7`, CGNAT `100.64.0.0/10`, multicast, non spécifiée (`0.0.0.0`, `::`), réservée ; une adresse IPv6 qui embarque une IPv4 (`::ffff:a.b.c.d`, `::a.b.c.d`, NAT64 `64:ff9b::/96`, 6to4 `2002::/16`, Teredo `2001::/32`) est jugée sur l'IPv4 qu'elle porte, et le NAT64 local `64:ff9b:1::/48` est refusé |
 | Pas d'identifiants dans l'URL | `utilisateur:motdepasse@` refusé |
 
 Le nom est **résolu par la garde**, toutes ses adresses vérifiées, et la
@@ -45,13 +45,13 @@ seul conteneur visé, pas `10.0.0.0/8`.
   n'a pas été vérifiée) ; la livraison est abandonnée.
 - **Être lu** : le corps de la réponse est vidé et jeté, jamais stocké, jamais
   montré. Le journal des livraisons ne garde qu'un code, une durée et une
-  phrase fixe — jamais le message d'une exception, qui peut recopier la ligne
+  phrase fixe, jamais le message d'une exception, qui peut recopier la ligne
   de requête et donc une adresse Slack secrète. Un webhook ne sert pas à
   *lire* un service interne.
 - **Faire attendre** : résolution du nom 5 s, connexion 5 s, puis 10 s pour
-  tout l'échange, de l'envoi à la fin de la réponse — passé ce délai la
+  tout l'échange, de l'envoi à la fin de la réponse ; passé ce délai la
   connexion est coupée, même si le récepteur envoie encore quelques octets.
-  L'envoi part d'un fil à lui — jamais du fil de la publication ou de la
+  L'envoi part d'un fil à lui, jamais du fil de la publication ou de la
   résolution qui l'a causé.
 
 ### Les secrets au repos
@@ -74,14 +74,14 @@ quand la variable revient à `true` (dans la limite de leurs 30 jours).
 
 Aucun outil MCP ne configure un webhook : une adresse de salon est un secret,
 et ouvrir une sortie réseau depuis une conversation est une voie
-d'exfiltration — voir [`mcp.md`](../comprendre/mcp.md).
+d'exfiltration ; voir [`mcp-connexion.md`](../comprendre/mcp-connexion.md).
 
 ### L'alerte météo
 
 Chaque matin, l'édition active interroge Open-Meteo (`METEO_URL`) sur les
 lieux de ses stands ouverts. Ce qui part : des **coordonnées de lieux**,
 arrondies à 0,01° (environ un kilomètre), des dates et l'adresse IP du
-serveur — aucune donnée personnelle. Le navigateur n'appelle jamais le
+serveur. Aucune donnée personnelle ne part. Le navigateur n'appelle jamais le
 service : la CSP (`connect-src`) n'a rien à ouvrir, et l'adresse de
 l'organisateur ne part chez aucun tiers.
 

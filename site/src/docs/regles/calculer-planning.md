@@ -39,10 +39,10 @@ Après un changement tardif, « Corriger après un changement » bouge le minimu
 
 ## Suivre le calcul
 
-- **La courbe de score en direct.** Les trois niveaux de la note (règles impératives, places à pourvoir, qualité) se tracent pendant la résolution, chacun à sa propre échelle. Vous voyez quand le calcul plafonne et vous pouvez l'arrêter à propos. Seule la résolution en cours est tracée.
-- **Plan faisable depuis…** Dès que le calcul tient un planning faisable (toutes les places pourvues, toutes les règles impératives tenues), la page le dit et compte depuis combien de temps. La suite n'améliore plus que la qualité. « Arrêter et garder ce plan » enregistre ce planning sans attendre la fin du budget.
-- **La file d'attente.** Vous pouvez planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours est perdue et signalée comme interrompue.
-- **L'e-mail de fin.** Activez-le par édition (Règles du planning, onglet *Calcul*) pour être prévenu dès qu'une résolution se termine, avec l'édition, le score et la faisabilité.
+- La courbe de score en direct. Les trois niveaux de la note (règles impératives, places à pourvoir, qualité) se tracent pendant la résolution, chacun à sa propre échelle. Vous voyez quand le calcul plafonne et vous pouvez l'arrêter à propos. Seule la résolution en cours est tracée.
+- Plan faisable depuis… Dès que le calcul tient un planning faisable (toutes les places pourvues, toutes les règles impératives tenues), la page le dit et compte depuis combien de temps. La suite n'améliore plus que la qualité. « Arrêter et garder ce plan » enregistre ce planning sans attendre la fin du budget.
+- La file d'attente. Vous pouvez planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours est perdue et signalée comme interrompue.
+- L'e-mail de fin. Activez-le par édition (Règles du planning, onglet *Calcul*) pour être prévenu dès qu'une résolution se termine, avec l'édition, le score et la faisabilité.
 
 ![Le suivi d'un calcul en cours](/images/fr/docs/solveur.webp "L'écran Solveur pendant un calcul")
 

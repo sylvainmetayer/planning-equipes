@@ -4,8 +4,8 @@ L'application envoie d'elle-même des en-têtes de sécurité sur toute réponse
 
 ## En-têtes de sécurité navigateur
 
-`SecurityHeadersFilter` ajoute à **toute** réponse — fichiers statiques du SPA
-compris — les en-têtes suivants :
+`SecurityHeadersFilter` ajoute à **toute** réponse, fichiers statiques du SPA
+compris, les en-têtes suivants :
 
 | En-tête | Valeur | Pourquoi ici |
 | --- | --- | --- |
@@ -14,9 +14,9 @@ compris — les en-têtes suivants :
 | `X-Frame-Options` | `DENY` | Rien n'est prévu pour être encadré, et détourner un clic dans une session qui peut réécrire tout le planning n'a pas de contrepartie |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isole la fenêtre de tout `window.opener` ouvert depuis un autre site |
 | `X-Content-Type-Options` | `nosniff` | Les exports (PDF, ICS, SQL, CSV) sont servis avec leur type ; qu'un navigateur en devine un autre n'apporte rien |
-| `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Aucune de ces API n'est utilisée — le sélecteur de carte place un point à la souris |
+| `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Aucune de ces API n'est utilisée : le sélecteur de carte place un point à la souris |
 | `Strict-Transport-Security` | `planning.securite.hsts`, **seulement sur une visite HTTPS** | Un an, sous-domaines compris. Absent sur la pile locale, qui est en clair |
-| `X-Robots-Tag` | `noindex, nofollow` | Un outil de planification interne n'a rien à faire dans un moteur de recherche, et la seule URL qu'un robot peut atteindre sans compte — l'espace d'un animateur — **est** son jeton d'accès. Non réglable, contrairement à la CSP : il n'existe pas de page à référencer ici |
+| `X-Robots-Tag` | `noindex, nofollow` | Un outil de planification interne n'a rien à faire dans un moteur de recherche, et la seule URL qu'un robot peut atteindre sans compte (l'espace d'un animateur) **est** son jeton d'accès. Non réglable, contrairement à la CSP : il n'existe pas de page à référencer ici |
 
 ### Ne pas être référencé, dit trois fois
 
@@ -27,7 +27,7 @@ réponse**. Les trois ne font pas double emploi :
 
 - le **fichier** est une consigne qu'un robot est libre d'ignorer, et il ne dit
   rien d'une URL déjà connue ;
-- la **balise** n'existe qu'une fois la page interprétée comme du HTML — elle
+- la **balise** n'existe qu'une fois la page interprétée comme du HTML ; elle
   ne couvre ni un PDF exporté, ni un flux ICS, ni une réponse d'API ;
 - l'**en-tête** est le seul des trois qui *désindexe* une adresse déjà
   atteinte. C'est le cas qui compte : un lien d'espace circule par courriel,
@@ -37,13 +37,13 @@ réponse**. Les trois ne font pas double emploi :
 ### `script-src` interdit tout `on*=""`, et ce que ça oblige à désactiver
 
 Pas d'`'unsafe-inline'`, pas d'`'unsafe-hashes'` : le navigateur refuse **tout
-attribut `on*=""`**. C'est la posture voulue, mais elle rend une optimisation
-d'Angular silencieusement destructrice.
+attribut `on*=""`**. C'est la posture voulue, mais une optimisation
+d'Angular devient alors silencieusement destructrice.
 
 L'*inlining du CSS critique* sert la vraie feuille de style en
 `media="print" onload="this.media='all'"`. Quand la CSP bloque ce gestionnaire,
 **la feuille reste en `print`** : rien ne lève d'erreur, et tout ce que
-l'extraction n'a pas retenu disparaît — une police d'icônes, par exemple.
+l'extraction n'a pas retenu disparaît (une police d'icônes, par exemple).
 
 `inlineCritical` est donc **désactivé**, et `scripts/check-csp-index.js` échoue
 le build si l'`index.html` produit contient le moindre gestionnaire inline. Ni
@@ -55,7 +55,7 @@ Trois exceptions volontaires :
 
 - **la CSP s'arrête au seuil de `/q/*`** : Swagger UI y sert des scripts inline
   que le projet ne contrôle pas. Les autres en-têtes s'y appliquent ;
-- **HSTS n'est envoyé que sur une visite HTTPS** — un navigateur l'ignorerait
+- **HSTS n'est envoyé que sur une visite HTTPS** : un navigateur l'ignorerait
   en clair, et le poser en local épinglerait `localhost` en https ;
 - **les tuiles de la carte échappent au `no-referrer`** :
   `tile.openstreetmap.org` [bloque le trafic sans `Referer`](https://osm.wiki/blocked),
@@ -74,7 +74,7 @@ Trois exceptions volontaires :
 La CSP par défaut laisse volontairement `connect-src https:` et `img-src https:`
 ouverts : l'endpoint Bugsink et le serveur de tuiles sont propres à chaque
 déploiement. Un déploiement qui connaît les siens gagne à les nommer dans `CSP`
-plutôt qu'à garder `https:` — en y ajoutant `https://api.github.com` s'il tient
+plutôt qu'à garder `https:`. Ajoutez-y `https://api.github.com` s'il tient
 à l'indication « nouvelle version disponible » de la barre d'outils, la seule
 autre destination qu'un navigateur contacte de lui-même, et seulement une fois
 la session d'administration confirmée

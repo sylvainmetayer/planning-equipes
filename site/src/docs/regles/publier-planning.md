@@ -16,7 +16,7 @@ Avant de publier, vous voyez une ligne par personne à prévenir : ce qui change
 
 - trier par ampleur et replier les changements mineurs ;
 - exporter le détail en CSV ;
-- **différer** le message de quelqu'un que vous préférez appeler d'abord. Cette personne ne reçoit rien et reste à prévenir à la publication suivante.
+- différer le message de quelqu'un que vous préférez appeler d'abord. Cette personne ne reçoit rien et reste à prévenir à la publication suivante.
 
 Le panneau de publication dit aussi combien de journées non relues partiraient.
 

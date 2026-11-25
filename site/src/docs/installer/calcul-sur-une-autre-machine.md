@@ -1,6 +1,6 @@
 # Résoudre sur une autre machine
 
-Vous confiez les résolutions complètes à une machine plus rapide que votre serveur, un poste du réseau ou une machine louée à l'heure, sans déménager l'application. Le solveur ne se sert que d'**un cœur** : ce qui fait la durée d'une résolution est la vitesse de ce cœur, pas la taille de la machine.
+Vous confiez les résolutions complètes à une machine plus rapide que votre serveur, un poste du réseau ou une machine louée à l'heure, sans déménager l'application. Le solveur ne se sert que d'**un cœur** : ce qui fait la durée d'une résolution est la vitesse de ce cœur, quelle que soit la taille de la machine.
 
 Rien de ce qui suit n'est obligatoire : **sans ces variables, tout se résout sur place, comme toujours**. La décision est dans l'[ADR 0086](repo:docs/decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md).
 

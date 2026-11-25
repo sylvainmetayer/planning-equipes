@@ -11,7 +11,7 @@ Chaque édition règle son budget sur l'écran *Solveur* (durée maximale, arrê
 | `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Durée maximale qu'une édition peut régler, ou qu'un lancement peut demander (`?seconds=`, MCP), en secondes |
 | `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | celle de `SOLVER_SECONDS_LIMIT_MAX` | Plafond de l'arrêt sans amélioration, en secondes |
 
-Au-dessus, la valeur est **refusée**, avec un message qui cite le plafond. Elle n'est pas rognée en silence, sans quoi un organisateur qui règle trois heures en obtiendrait deux en croyant le budget épuisé. Abaisser un plafond sous une valeur qu'une édition a déjà enregistrée ne casse rien : ses calculs tournent au plafond, et le moniteur du solveur le dit.
+Au-dessus, la valeur est **refusée**, avec un message qui cite le plafond. Elle n'est pas rognée en silence : un organisateur qui règle trois heures en obtiendrait deux en croyant le budget épuisé. Abaisser un plafond sous une valeur qu'une édition a déjà enregistrée ne casse rien : ses calculs tournent au plafond, et le moniteur du solveur le dit.
 
 **Le démarrage est refusé** si un plafond est inférieur au défaut correspondant (`planning.solver.seconds-limit`, 900 s ; `planning.solver.unimproved-seconds-limit`, 180 s) : chaque édition restée au défaut se verrait sinon refuser ses propres calculs.
 
@@ -47,9 +47,9 @@ Sur une petite machine (un Raspberry Pi 4, trois cœurs alloués, avec une image
 
 Trois conséquences pour vous :
 
-- **75 % suppose une limite de mémoire sur le conteneur** : c'est d'elle que la JVM tire le pourcentage. Lancée sans limite (un `docker run` nu, un manifeste sans `resources.limits`), elle prend les trois quarts de la mémoire de l'hôte au détriment de PostgreSQL et du système, et le collecteur parallèle rend rarement ce qu'il a pris. Posez toujours une limite, ou redéfinissez `JDK_JAVA_OPTIONS` avec un pourcentage plus bas.
-- **Ne gardez pas 1 Go de limite** avec cette image : 75 % d'un Go laissent trop peu hors du tas, et le conteneur risque d'être tué en plein calcul. Un hôte qui ne peut vraiment pas donner 2 Go redéfinit `JDK_JAVA_OPTIONS` avec un pourcentage plus bas, et accepte un calcul plus lent.
-- **Pour changer ces options, redéfinissez `JDK_JAVA_OPTIONS`** dans `environment:`. La valeur remplace celle de l'image en entier : reprenez ce que vous voulez garder. `JAVA_TOOL_OPTIONS` ne convient pas, car la JVM le lit avant la ligne de commande, où le lanceur place `JDK_JAVA_OPTIONS` : la valeur de l'image gagne alors sur la taille du tas, et un autre collecteur choisi là (`-XX:+UseG1GC`, que certains agents de supervision injectent) **empêche la JVM de démarrer** (« Multiple garbage collectors selected »), le conteneur redémarrant alors en boucle.
+- 75 % suppose une limite de mémoire sur le conteneur : c'est d'elle que la JVM tire le pourcentage. Lancée sans limite (un `docker run` nu, un manifeste sans `resources.limits`), elle prend les trois quarts de la mémoire de l'hôte au détriment de PostgreSQL et du système, et le collecteur parallèle rend rarement ce qu'il a pris. Posez toujours une limite, ou redéfinissez `JDK_JAVA_OPTIONS` avec un pourcentage plus bas.
+- Ne gardez pas 1 Go de limite avec cette image : 75 % d'un Go laissent trop peu hors du tas, et le conteneur risque d'être tué en plein calcul. Un hôte qui ne peut vraiment pas donner 2 Go redéfinit `JDK_JAVA_OPTIONS` avec un pourcentage plus bas, et accepte un calcul plus lent.
+- Pour changer ces options, redéfinissez `JDK_JAVA_OPTIONS` dans `environment:`. La valeur remplace celle de l'image en entier : reprenez ce que vous voulez garder. `JAVA_TOOL_OPTIONS` ne convient pas, car la JVM le lit avant la ligne de commande, où le lanceur place `JDK_JAVA_OPTIONS` : la valeur de l'image gagne alors sur la taille du tas, et un autre collecteur choisi là (`-XX:+UseG1GC`, que certains agents de supervision injectent) **empêche la JVM de démarrer** (« Multiple garbage collectors selected »), le conteneur redémarrant alors en boucle.
 
 ## Choisir le moteur de recherche
 
@@ -61,9 +61,9 @@ C'est un réglage d'**instance**. Une machine de calcul suit celui de l'applicat
 
 Le moteur direct ([décision 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md)) atteint un plan sans écart dur trois à quatre fois plus tôt sur le scénario `festival-hivernal`, et passe en une minute sous le score que la recherche de Timefold atteint en cinq (mesure et commande dans la décision). Il n'est pas cru sur parole : chaque plan qu'il rend est re-scoré par les contraintes de l'application avant d'être enregistré.
 
-- **Une résolution qui repart du plan en place préfère y rester** : à score égal, elle garde le titulaire qu'elle a trouvé au lieu d'échanger des animateurs que les règles ne distinguent pas. C'est une préférence de la recherche, pas une garantie siège par siège. Une résolution partie de zéro n'est pas concernée, et un plan publié reste protégé par sa propre règle, qui pèse dans le score.
-- **Un écart entre les deux scores fait échouer le calcul**, avec un message qui donne les deux ; le plan enregistré n'est pas touché et rien ne bascule tout seul sur l'autre moteur. C'est un défaut à signaler ; en attendant, `SOLVER_ENGINE=timefold` et un redémarrage rendent la main à la recherche d'origine.
-- **Le moteur refuse de lui-même, par un message sur la tâche, ce qu'il ne sait pas scorer.** Le remède est le même : `SOLVER_ENGINE=timefold`.
+- Une résolution qui repart du plan en place préfère y rester : à score égal, elle garde le titulaire qu'elle a trouvé au lieu d'échanger des animateurs que les règles ne distinguent pas. C'est une préférence de la recherche, pas une garantie siège par siège. Une résolution partie de zéro n'est pas concernée, et un plan publié reste protégé par sa propre règle, qui pèse dans le score.
+- Un écart entre les deux scores fait échouer le calcul, avec un message qui donne les deux ; le plan enregistré n'est pas touché et rien ne bascule tout seul sur l'autre moteur. C'est un défaut à signaler ; en attendant, `SOLVER_ENGINE=timefold` et un redémarrage rendent la main à la recherche d'origine.
+- Le moteur refuse de lui-même, par un message sur la tâche, ce qu'il ne sait pas scorer. Le remède est le même : `SOLVER_ENGINE=timefold`.
 
   | Refus | Quand |
   | --- | --- |
@@ -75,7 +75,7 @@ Le moteur direct ([décision 0087](repo:docs/decisions/0087-un-second-moteur-de-
   | « le score … sort de ce que le moteur sait ordonner » | Plus de 500 millions de points soft, ou un medium du même ordre : des poids démesurés |
 
 - « Le moteur direct s'est contredit dans son propre score » et « a échoué sur une erreur inattendue » ne sont pas des refus mais des défauts du moteur : signalez-les, avec le journal de l'application.
-- **Le journal dit quel moteur a cherché** : chaque calcul commence par « Solve with the HAND engine » (ou `TIMEFOLD`), et un plan du moteur direct accepté par l'arbitre laisse « The direct engine's plan is refereed by Timefold at the same score », suivi du score.
+- Le journal dit quel moteur a cherché : chaque calcul commence par « Solve with the HAND engine » (ou `TIMEFOLD`), et un plan du moteur direct accepté par l'arbitre laisse « The direct engine's plan is refereed by Timefold at the same score », suivi du score.
 
 Sur une petite machine, le moteur direct ne demande pas plus que la recherche de Timefold. Mesure sur `festival-hivernal` (3 438 sièges, 153 animateurs), deux cœurs partagés, la JVM bornée comme le conteneur de production (tas de 1,5 Go, `ParallelGC`), 300 s, graine 0, une résolution à la fois :
 
@@ -84,7 +84,7 @@ Sur une petite machine, le moteur direct ne demande pas plus que la recherche de
 | `timefold` | 95 s | −30 775 / −89 360 | 548 Mo |
 | `hand` | 10 s | −23 820 / −92 970 | 434 Mo |
 
-La commande est celle du [banc du solveur](../comprendre/developpement.md#le-banc-du-solveur), avec `-DargLine` pour borner la JVM.
+La commande est celle du [banc du solveur](../comprendre/tests-de-scenarios.md#le-banc-du-solveur), avec `-DargLine` pour borner la JVM.
 
 ## Calculer sur une autre machine
 

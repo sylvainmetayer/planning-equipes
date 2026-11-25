@@ -25,13 +25,13 @@ dépôt étant public, cet onglet ne coûte rien.
 
 Le scan de l'image dans `docker-ghcr.yml` **barre la publication** : une image
 qui porte une CVE corrigeable HIGH ou CRITICAL ne reçoit ni signature, ni
-`:main`, ni numéro de version — elle reste sous son seul `sha-…`, pour le
+`:main`, ni numéro de version : elle reste sous son seul `sha-…`, pour le
 diagnostic. Le cas ordinaire se règle en reconstruisant : le `Dockerfile`
 applique les correctifs Ubuntu du jour (`apt-get upgrade`), mais cette couche
 reste en cache tant que l'image de base `eclipse-temurin` ne change pas.
 `docker-ghcr.yml` reconstruit donc `:main` **sans cache chaque dimanche**
 (3 h UTC, la veille du scan hebdomadaire), comme sur un lancement manuel.
-`:latest` et les versions n'en profitent pas — un tag de release n'est jamais
+`:latest` et les versions n'en profitent pas, car un tag de release n'est jamais
 reconstruit : une CVE corrigée après une version se règle par une version de
 correctif. Ce qui ne vient d'aucun
 paquet n'en profite pas : `pebble`, binaire Go que l'image de base installe à
@@ -43,18 +43,18 @@ hériter.
 
 **Ajouter une entrée à `.trivyignore`** (le fichier n'existe pas tant qu'aucune
 n'est nécessaire) : l'identifiant de la CVE, et au-dessus, en commentaire, la
-date, la raison — chemin de code non atteint, aucun correctif publié pour le
-paquet de l'image — et la condition qui permettra de la retirer. Une entrée
+date, la raison (chemin de code non atteint, aucun correctif publié pour le
+paquet de l'image) et la condition qui permettra de la retirer. Une entrée
 sans date ne se relit jamais.
 
 Deux protections sont des **réglages du dépôt**, pas des fichiers, et se
 vérifient dans *Settings → Advanced Security* : le *secret scanning* avec la
-*push protection* — qui refuse le `git push` porteur d'un secret, là où
-GitGuardian ne le voit qu'une fois poussé — et le graphe de dépendances, que
+*push protection* (qui refuse le `git push` porteur d'un secret, là où
+GitGuardian ne le voit qu'une fois poussé) et le graphe de dépendances, que
 lit la revue des dépendances. CodeQL aussi y vit, en configuration « par
 défaut » : GitHub choisit les langages et lance l'analyse sur chaque PR, sans
 workflow dans le dépôt. Un workflow CodeQL « avancé » ne peut pas coexister
-avec elle — GitHub en refuse les résultats.
+avec elle : GitHub en refuse les résultats.
 
 ## Analyse statique : les suppressions et leur justification
 
@@ -66,7 +66,7 @@ SQL non annotée continue donc de faire rougir la CI.
 
 `java.lang.security.audit.formatted-sql-string` signale toute requête
 construite par concaténation. Dans ce dépôt, ce qui est concaténé est
-**toujours un identifiant** — un nom de table ou de colonne —, et SQL ne
+**toujours un identifiant** (un nom de table ou de colonne), et SQL ne
 permet pas de lier un identifiant en paramètre : `SELECT * FROM ?` n'existe
 pas. Ces identifiants viennent sans exception de littéraux écrits dans le code
 appelant ou de listes constantes (`DatabaseDumpService.TABLES`), jamais d'une
@@ -76,5 +76,5 @@ entrée utilisateur ; l'import de dump vérifie même la sienne contre
 
 **Avant d'ajouter un `nosemgrep`**, vérifier les appelants : si un identifiant
 peut venir d'une requête HTTP, c'est une injection SQL et non un faux positif.
-C'est ce qui a été fait pour ces neuf-là — chaque site d'appel passe une chaîne
+C'est ce qui a été fait pour ces neuf-là : chaque site d'appel passe une chaîne
 littérale.
