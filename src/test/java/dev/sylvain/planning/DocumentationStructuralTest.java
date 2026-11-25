@@ -439,4 +439,64 @@ class DocumentationStructuralTest {
                 .collect(Collectors.joining("\n"));
         return "| Contrainte | Niveau | Catégorie | Ce qu'elle dit |\n|---|---|---|---|\n" + lignes;
     }
+
+    /* ----------------------- variables-environnement.md ----------------------- */
+
+    private static final Path VARIABLES_MD = Path.of("docs/variables-environnement.md");
+    private static final Path PROPERTIES = Path.of("src/main/resources/application.properties");
+    private static final Path DOCS = Path.of("docs");
+
+    /** A placeholder of a property value, {@code ${NAME:default}}: the environment variable it reads. */
+    private static final Pattern ENVIRONMENT_VARIABLE = Pattern.compile("\\$\\{([A-Z][A-Z0-9_]*):");
+
+    /**
+     * Every variable {@code application.properties} reads is in the inventory
+     * of {@code docs/variables-environnement.md}: the page claims to be complete,
+     * and a variable added to the configuration without a line there is the
+     * drift that made the README's own table incomplete.
+     */
+    @Test
+    void everyEnvironmentVariableOfTheConfigurationIsDocumented() throws IOException {
+        String page = Files.readString(VARIABLES_MD, StandardCharsets.UTF_8);
+        Set<String> missing = new TreeSet<>();
+        for (String line : Files.readAllLines(PROPERTIES, StandardCharsets.UTF_8)) {
+            if (line.startsWith("#")) {
+                continue;
+            }
+            Matcher m = ENVIRONMENT_VARIABLE.matcher(line);
+            while (m.find()) {
+                if (!page.contains("`" + m.group(1) + "`")) {
+                    missing.add(m.group(1));
+                }
+            }
+        }
+        assertThat(missing)
+                .as("variables read by application.properties and absent from docs/variables-environnement.md")
+                .isEmpty();
+    }
+
+    /**
+     * Every page of {@code docs/} (and of {@code docs/fonctionnel/}) has its row
+     * in the index {@code docs/README.md}, whose three tables are the three parts
+     * the site publishes. The project memory is the one page the site leaves out
+     * and the index still lists.
+     */
+    @Test
+    void everyDocumentIsListedInTheDocumentationIndex() throws IOException {
+        String index = Files.readString(DOCS.resolve("README.md"), StandardCharsets.UTF_8);
+        Set<String> missing = new TreeSet<>();
+        for (Path dir : List.of(DOCS, DOCS.resolve("fonctionnel"))) {
+            try (Stream<Path> files = Files.list(dir)) {
+                for (Path file : files.filter(f -> f.toString().endsWith(".md")).toList()) {
+                    String name = DOCS.relativize(file).toString();
+                    if (!name.equals("README.md") && !index.contains("(" + name + ")")) {
+                        missing.add(name);
+                    }
+                }
+            }
+        }
+        assertThat(missing)
+                .as("documents with no row in docs/README.md — add the row, and the page to site/src/docs-parties.json")
+                .isEmpty();
+    }
 }
