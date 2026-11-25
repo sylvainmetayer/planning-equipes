@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { annotate } from '../src/text.js';
-import { docMatch, match } from '../src/assets/search.js';
+import { search } from '../src/assets/palette.js';
 
 const ABBR = [{ sigle: 'PDF', sens: 'Portable Document Format' }, { sigle: 'IA', sens: 'intelligence "artificielle"' }];
 
@@ -22,20 +22,19 @@ test('a link leaving the site says so to screen readers, an internal one does no
   assert.equal(out, '<body><a href="https://github.com/x">Code<span class="visually-hidden"> (site externe)</span></a><a href="https://planning.sylvain.dev/">Accueil</a><a href="/contact/">Contact</a></body>');
 });
 
-test('search: every word must appear, accents ignored, the excerpt has no Markdown', () => {
-  const md = '# Le calcul\n\nLe planning respecte le [Code du travail](/code-du-travail/) et les **mineurs**.';
-  assert.equal(match(md, ['travail', 'mineurs']), 'Le planning respecte le Code du travail et les mineurs.');
-  assert.equal(match(md, ['periode']), null);
-  assert.equal(match('Une période', ['periode']), 'Une période');
-  assert.equal(match('## Les mineurs\n\nTexte', ['mineurs']), 'Les mineurs');
-  assert.equal(match('- 2,5 Go de mémoire', ['memoire']), '2,5 Go de mémoire');
-});
-
-test('search: a docs page matches on its title and headings, and leads to the heading found', () => {
-  const entry = { t: 'API REST', d: 'Les invariants de l’API.', h: [['jobs-de-résolution', 'Jobs de résolution'], ['x', 'Le X_Edition_Id']] };
-  assert.deepEqual(docMatch(entry, ['resolution']), { excerpt: 'Jobs de résolution', hash: '#jobs-de-résolution' });
-  assert.deepEqual(docMatch(entry, ['edition']), { excerpt: 'Le XEditionId', hash: '#x' });
-  assert.deepEqual(docMatch(entry, ['invariants']), { excerpt: 'Les invariants de l’API.', hash: '' });
-  assert.equal(docMatch(entry, ['periode']).excerpt, null);
-  assert.equal(docMatch(undefined, ['api']).excerpt, null);
+test('palette: every word must appear, accents ignored; guides, then sections, then pages of the language', () => {
+  const index = [
+    { k: 'doc', l: 'fr', u: '/docs/api/', t: 'API REST', d: 'Les invariants.', h: [['jobs-de-résolution', 'Jobs de résolution']] },
+    { k: 'doc', l: 'fr', u: '/docs/solveur/', t: 'Le solveur', d: 'Résolution du planning.', h: [] },
+    { k: 'page', l: 'fr', u: '/le-calcul/', t: 'Le calcul', d: 'La résolution, expliquée.' },
+    { k: 'page', l: 'en', u: '/en/the-calculation/', t: 'The calculation', d: 'Resolution, explained.' },
+  ];
+  assert.deepEqual(
+    search(index, 'resolution', 'fr').map((r) => [r.kind, r.href]),
+    [['guide', '/docs/solveur/'], ['section', '/docs/api/#jobs-de-résolution'], ['page', '/le-calcul/']],
+  );
+  assert.deepEqual(search(index, 'resolution', 'en').map((r) => r.href), ['/docs/solveur/', '/docs/api/#jobs-de-résolution', '/en/the-calculation/']);
+  assert.deepEqual(search(index, 'api invariants', 'fr').map((r) => r.href), ['/docs/api/']);
+  assert.deepEqual(search(index, 'periode', 'fr'), []);
+  assert.deepEqual(search(index, '  ', 'fr'), []);
 });

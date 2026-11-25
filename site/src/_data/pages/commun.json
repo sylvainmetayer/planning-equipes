@@ -98,7 +98,7 @@
     "editeur": "Édité par [Sylvain Métayer](https://www.sylvain.dev/). Textes, illustrations et code sous la même licence. Hébergé par Cloudflare Pages. Mesure d'audience Cloudflare Web Analytics, sans cookie.",
     "liens": "Informations sur le site",
     "mentions": "Mentions légales et confidentialité",
-    "plan": "Plan du site et recherche",
+    "plan": "Plan du site",
     "docs": "Documentation",
     "nouveautes": "Nouveautés",
     "probleme": "Signaler un problème",
@@ -222,7 +222,7 @@
       "editeur": "Published by [Sylvain Métayer](https://www.sylvain.dev/en/). Text, illustrations and code under the same licence. Hosted by Cloudflare Pages. Audience measured with Cloudflare Web Analytics, no cookie.",
       "liens": "About this site",
       "mentions": "Legal notice and privacy",
-      "plan": "Site map and search",
+      "plan": "Site map",
       "docs": "Documentation (French only)",
       "nouveautes": "Release notes",
       "probleme": "Report a problem",
@@ -245,6 +245,36 @@
       "fermer": "Close",
       "precedente": "Previous screenshot",
       "suivante": "Next screenshot"
+    },
+    "palette": {
+      "label": "Site search",
+      "champ": "Search the site",
+      "placeholder": "A word, a guide, a page",
+      "fermer": "Close",
+      "aide": "Type a word to search the guides and the pages.",
+      "un": "One result for “{q}”.",
+      "plusieurs": "{n} results for “{q}”.",
+      "aucun": "No result for “{q}”.",
+      "guide": "Guide (French)",
+      "section": "Section (French)",
+      "page": "Page",
+      "bouton": "Search",
+      "erreur": "Loading error: search is unavailable, try again."
     }
+  },
+  "palette": {
+    "label": "Recherche dans le site",
+    "champ": "Rechercher dans le site",
+    "placeholder": "Un mot, un guide, une page",
+    "fermer": "Fermer",
+    "aide": "Tapez un mot pour chercher dans les guides et les pages.",
+    "un": "Un résultat pour « {q} ».",
+    "plusieurs": "{n} résultats pour « {q} ».",
+    "aucun": "Aucun résultat pour « {q} ».",
+    "guide": "Guide",
+    "section": "Section",
+    "page": "Page",
+    "bouton": "Rechercher",
+    "erreur": "Erreur de chargement : la recherche est indisponible, réessayez."
   }
 }

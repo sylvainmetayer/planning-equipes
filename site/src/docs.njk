@@ -28,10 +28,13 @@ eleventyComputed:
       <h1>{{ (c.h1 if p.kind == 'home' else p.h1) | typo('fr') }}</h1>
       {% if p.kind == 'part' %}<p class="lead">{{ part.pour | typo('fr') }}</p>{% endif %}
       {% if p.kind == 'home' %}
-      <form class="doc__search" role="search" method="get" action="{{ urls.fr.plan }}">
+      <form class="doc__search" role="search" method="get" action="/docs/" data-search>
         <label for="doc-q">{{ c.recherche }}</label>
         <span class="search__row"><input id="doc-q" name="q" type="search" autocomplete="off" required> <button class="btn btn--primary" type="submit">{{ c.chercher }}</button></span>
       </form>
+      <noscript><p>{{ c.sansJs }}</p></noscript>
+      <div role="status" class="search__out" data-search-status></div>
+      <ol class="search__results" data-search-results hidden></ol>
       {% endif %}
     </div>
   </header>
