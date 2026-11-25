@@ -26,6 +26,7 @@ import java.util.List;
  * anybody remembering. Off a request ({@link EditionContext#callerReadsOnly}) nothing is masked, so a job,
  * a snapshot or a solve exchange keeps the token.</p>
  */
+// @Singleton, as Quarkus documents for an ObjectMapperCustomizer: it runs while the mapper is built.
 @Singleton
 public class LecteurTokenMask implements ObjectMapperCustomizer {
 
@@ -48,9 +49,10 @@ public class LecteurTokenMask implements ObjectMapperCustomizer {
                         if (!Animateur.class.isAssignableFrom(description.getBeanClass())) {
                             return writers;
                         }
-                        return writers.stream()
-                                .map(w -> PROPERTY.equals(w.getName()) ? (BeanPropertyWriter) new Masked(w) : w)
-                                .toList();
+                        // In place: Jackson filters this list afterwards (a mix-in's include list), so it stays
+                        // mutable.
+                        writers.replaceAll(w -> PROPERTY.equals(w.getName()) ? new Masked(w) : w);
+                        return writers;
                     }
                 }));
     }

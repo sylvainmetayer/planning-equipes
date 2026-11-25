@@ -118,19 +118,7 @@ public class CompteService {
             throw new BusinessError.Invalid("Rôle manquant.");
         }
         String edition = blankToNull(editionId);
-        if (role == RoleHabilitation.ADMIN && edition != null) {
-            throw new BusinessError.Invalid("Un administrateur l'est de toute l'instance, pas d'une édition.");
-        }
-        if (role == RoleHabilitation.ADMIN && expireLe != null) {
-            throw new BusinessError.Invalid("Un droit d'administrateur n'expire pas : retirez-le quand il prend fin.");
-        }
-        if (role == RoleHabilitation.RH && edition == null) {
-            throw new BusinessError.Invalid("Le droit RH porte une édition : on l'est d'un événement, jamais de tous.");
-        }
-        if (role == RoleHabilitation.LECTEUR && edition == null) {
-            throw new BusinessError.Invalid(
-                    "Le droit de lecteur porte une édition : on lit un événement, jamais tous.");
-        }
+        checkScope(role, edition, expireLe);
         if (edition != null && !editions.exists(edition)) {
             throw new BusinessError.Invalid("Édition inconnue : " + edition);
         }
@@ -150,6 +138,23 @@ public class CompteService {
             throw new BusinessError.Conflict("Ce compte a déjà ce droit en vigueur.");
         }
         return required(compteId);
+    }
+
+    /** What a role says of its edition and its expiry: an administrator is the instance's, an RH or lecteur one edition's. */
+    private static void checkScope(RoleHabilitation role, String edition, Instant expireLe) {
+        if (role == RoleHabilitation.ADMIN && edition != null) {
+            throw new BusinessError.Invalid("Un administrateur l'est de toute l'instance, pas d'une édition.");
+        }
+        if (role == RoleHabilitation.ADMIN && expireLe != null) {
+            throw new BusinessError.Invalid("Un droit d'administrateur n'expire pas : retirez-le quand il prend fin.");
+        }
+        if (role == RoleHabilitation.RH && edition == null) {
+            throw new BusinessError.Invalid("Le droit RH porte une édition : on l'est d'un événement, jamais de tous.");
+        }
+        if (role == RoleHabilitation.LECTEUR && edition == null) {
+            throw new BusinessError.Invalid(
+                    "Le droit de lecteur porte une édition : on lit un événement, jamais tous.");
+        }
     }
 
     /** A responsable's right is one edition's and names at least one stand, each of that edition. */

@@ -78,7 +78,7 @@ class LecteurCanariTest {
         });
     }
 
-    private String bearerOf(Compte compte, String email) {
+    private String bearerOf(String email) {
         return token("s-" + UUID.randomUUID(), email, true);
     }
 
@@ -86,7 +86,7 @@ class LecteurCanariTest {
         String email = "lecteur-" + UUID.randomUUID() + "@example.org";
         Compte compte = comptes.create(email, null);
         comptes.grant(compte.id(), role, editionId, null);
-        return bearerOf(compte, email);
+        return bearerOf(email);
     }
 
     @Test
@@ -203,7 +203,7 @@ class LecteurCanariTest {
             Compte compte = comptes.create(email, null);
             comptes.grant(compte.id(), RoleHabilitation.LECTEUR, "E1", null);
             comptes.grant(compte.id(), RoleHabilitation.ORGANISATEUR, autre, null);
-            String bearer = bearerOf(compte, email);
+            String bearer = bearerOf(email);
 
             assertThat(given().header("X-Edition-Id", "E1")
                             .header("Authorization", bearer)
@@ -238,7 +238,7 @@ class LecteurCanariTest {
         Compte compte = comptes.create(email, null);
         comptes.grant(compte.id(), RoleHabilitation.LECTEUR, "E1", null);
         comptes.grant(compte.id(), RoleHabilitation.RH, "E1", null);
-        String bearer = bearerOf(compte, email);
+        String bearer = bearerOf(email);
 
         assertThat(given().header("X-Edition-Id", "E1")
                         .header("Authorization", bearer)

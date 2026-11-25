@@ -37,7 +37,7 @@ class OidcMcpLecteurTest {
     @Inject
     EditionService editions;
 
-    private String bearer(Compte compte, String email) {
+    private String bearer(String email) {
         return OidcTests.token(AUDIENCE, "s-" + UUID.randomUUID(), email, true);
     }
 
@@ -87,7 +87,7 @@ class OidcMcpLecteurTest {
             String email = "lecteur-" + UUID.randomUUID() + "@example.org";
             Compte compte = comptes.create(email, null);
             comptes.grant(compte.id(), RoleHabilitation.LECTEUR, "E1", null);
-            String lecteur = bearer(compte, email);
+            String lecteur = bearer(email);
 
             JsonNode liste = call(lecteur, "lister_editions", "{}");
             assertThat(liste.toString()).contains("E1").doesNotContain(hors);
@@ -130,7 +130,7 @@ class OidcMcpLecteurTest {
             Compte compte = comptes.create(email, null);
             comptes.grant(compte.id(), RoleHabilitation.LECTEUR, "E1", null);
             comptes.grant(compte.id(), RoleHabilitation.ORGANISATEUR, autre, null);
-            String bearer = bearer(compte, email);
+            String bearer = bearer(email);
 
             assertThat(call(bearer, "supprimer_creneau", "{\"id\":1,\"edition\":\"E1\"}")
                             .toString())
