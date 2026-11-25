@@ -50,6 +50,7 @@ const VERBES = {
   postRaw: 'post',
   put: 'put',
   delete: 'delete',
+  deleteReturning: 'delete',
   patch: 'patch',
 };
 
