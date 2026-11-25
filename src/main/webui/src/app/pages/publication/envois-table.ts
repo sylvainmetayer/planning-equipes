@@ -41,6 +41,7 @@ import {
 import { PublicationSelection } from './publication-selection';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /**
  * « Qui a reçu quelle version »: the permanent table of every person of the
@@ -232,7 +233,8 @@ export class EnvoisTable {
     try {
       this.reported.emit(await action());
     } catch (error) {
-      this.reported.emit(errorPrefix(error));
+      // An inactive edition is told by the interceptor, once.
+      this.reported.emit(isEditionInactive(error) ? '' : errorPrefix(error));
     } finally {
       this.busy.set(null);
       this.reload.update((n) => n + 1);

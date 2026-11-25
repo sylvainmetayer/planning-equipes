@@ -17,6 +17,8 @@ import {
   EchangeStatistics,
   StatutDemandeEchange,
 } from '../../core/models';
+import { EditionStore } from '../../core/edition.store';
+import { seedStore } from '../../core/testing/seed-store';
 import { EchangesPage } from './echanges-page';
 import {
   NO_LIST_FILTER,
@@ -194,13 +196,14 @@ describe('echanges-filter', () => {
   });
 });
 
-async function setUp(queryParams: Record<string, string>) {
+async function setUp(
+  queryParams: Record<string, string>,
+  demandes: DemandeEchangeView[] = [RECENTE, ANCIENNE, WITH_COLLEAGUE, DECIDEE],
+) {
   const replaceState = vi.fn();
   const params = new BehaviorSubject<ParamMap>(convertToParamMap(queryParams));
   // The server narrows by creation period; these four stand for whatever it answered.
-  const list = vi.fn<EchangesApi['list']>(() =>
-    Promise.resolve([RECENTE, ANCIENNE, WITH_COLLEAGUE, DECIDEE]),
-  );
+  const list = vi.fn<EchangesApi['list']>(() => Promise.resolve(demandes));
   const statistics = vi.fn<EchangesApi['statistics']>(() => Promise.resolve(NO_STATISTICS));
   TestBed.configureTestingModule({
     providers: [
@@ -244,6 +247,30 @@ function cards(root: HTMLElement): string[] {
 
 describe('EchangesPage « à arbitrer »', () => {
   beforeEach(() => TestBed.resetTestingModule());
+
+  it('greys out « Prévenir les 2 personnes » on an inactive edition, the sentence next to it', async () => {
+    const acceptee = demande('acceptee', 'ACCEPTEE', '2026-06-01T08:00:00Z', null, {
+      decideLe: '2026-06-02T08:00:00Z',
+    });
+    const { fixture } = await setUp({}, [acceptee]);
+    seedStore(TestBed.inject(EditionStore), 'courant', {
+      id: 'E1',
+      nom: 'Année 2025',
+      active: false,
+      creeLe: null,
+    });
+    await fixture.whenStable();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const prevenir = Array.from(root.querySelectorAll('button')).find((each) =>
+      each.textContent?.includes('Prévenir les 2 personnes'),
+    )!;
+    expect(prevenir.disabled).toBe(true);
+    expect(prevenir.getAttribute('aria-describedby')).toBe('echange-inactive-acceptee');
+    expect(root.querySelector('#echange-inactive-acceptee')!.textContent).toContain(
+      "Cette édition n'est pas active",
+    );
+  });
 
   it('opens on the requests to arbitrate only, the longest waiting first', async () => {
     const { fixture } = await setUp({ statut: 'a-arbitrer' });

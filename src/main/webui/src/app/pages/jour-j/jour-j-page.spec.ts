@@ -17,7 +17,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostesApi } from '../../core/api/postes-api';
 import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { JourJService } from '../../core/jour-j.service';
+import { ApiError } from '../../core/api.service';
+import { CODE_EDITION_INACTIVE } from '../../core/edition-inactive';
+import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
+import { seedStore } from '../../core/testing/seed-store';
 import type {
   AbsenceMarquee,
   EtatJourJ,
@@ -384,6 +388,38 @@ describe('JourJPage', () => {
     await cliquer('Prévenir les 2 personnes');
 
     expect(jourJ.prevenir).toHaveBeenCalledWith(['A1', 'A2']);
+  });
+
+  it('greys out « Prévenir » on an inactive edition, the sentence next to it', async () => {
+    await rendre(etat({ aPrevenir: ['A1', 'A2'] }));
+    seedStore(TestBed.inject(EditionStore), 'courant', {
+      id: 'E1',
+      nom: 'Année 2025',
+      active: false,
+      creeLe: null,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const prevenir = bouton('Prévenir les 2 personnes');
+    expect(prevenir.disabled).toBe(true);
+    expect(prevenir.getAttribute('aria-describedby')).toBe('prevenir-edition-inactive');
+    expect(racine().querySelector('#prevenir-edition-inactive')!.textContent).toContain(
+      "Cette édition n'est pas active",
+    );
+  });
+
+  it('leaves an inactive-edition refusal to the interceptor: no second message', async () => {
+    await rendre(etat({ aPrevenir: ['A1', 'A2'] }));
+    jourJ.prevenir.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'inactive', CODE_EDITION_INACTIVE),
+    );
+    notify.mockClear();
+
+    await cliquer('Prévenir les 2 personnes');
+
+    expect(jourJ.prevenir).toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('offers no send when everybody has the last version', () => {

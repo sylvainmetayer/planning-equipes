@@ -15,14 +15,14 @@
       }
     }
     @if (silentReachable().length > 0) {
-      <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" (click)="remindAll()">
+      <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" aria-describedby="envois-edition-inactive" (click)="remindAll()">
         <mat-icon>notifications_active</mat-icon>
         <ng-container i18n="@@diffuser.relancerTous">Relancer les {{ silentReachable().length }} silencieux</ng-container>
       </button>
     }
   </div>
 
-  <app-edition-inactive-note />
+  <app-edition-inactive-note id="envois-edition-inactive" />
   <app-status-message [text]="error()" tone="error" />
   @if (loading()) {
     <mat-progress-bar mode="indeterminate" i18n-aria-label="@@diffuser.chargement" aria-label="Lecture des envois" />
@@ -81,11 +81,11 @@
             <td>{{ pending(ligne) }}</td>
             <td class="diffuser-actions">
               @if (canResend(ligne)) {
-                <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" (click)="resend(ligne)"
+                <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" aria-describedby="envois-edition-inactive" (click)="resend(ligne)"
                         i18n="@@diffuser.action.renvoyer">Renvoyer son planning</button>
               }
               @if (canRemind(ligne)) {
-                <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" (click)="remind(ligne)"
+                <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" aria-describedby="envois-edition-inactive" (click)="remind(ligne)"
                         i18n="@@diffuser.action.relancer">Relancer</button>
               }
               @if (ligne.aPrevenir) {

@@ -64,6 +64,7 @@ import { readStatisticsPeriod, statisticsPeriodParams } from './statistics-forma
 import { HhmmPipe } from '../../shared/hhmm-pipe';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -539,6 +540,10 @@ export class EchangesPage implements OnInit {
   }
 
   private report(error: unknown): void {
+    // An inactive edition is told by the interceptor, once.
+    if (isEditionInactive(error)) {
+      return;
+    }
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
       message: errorMessage(error),

@@ -292,12 +292,12 @@
 
     <div class="aujourdhui-prevenir" aria-live="polite">
       <p>{{ nonPublie() }}</p>
-      <app-edition-inactive-note />
       @if (prevenir()) {
-        <button matButton="filled" type="button" [disabled]="notifyBusy() || editionInactive()" (click)="notifyConcerned()">
+        <button matButton="filled" type="button" [disabled]="notifyBusy() || editionInactive()" aria-describedby="prevenir-edition-inactive" (click)="notifyConcerned()">
           <mat-icon>send</mat-icon>
           {{ prevenir() }}
         </button>
+        <app-edition-inactive-note id="prevenir-edition-inactive" />
       }
     </div>
   </mat-card-content>

@@ -119,10 +119,10 @@
     <app-filter-chips [chips]="chips()" (remove)="removeChip($event)" (clear)="clearChips()" />
     @if (selection.hasSelection()) {
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
-                            [filtre]="!!filtre() || accuses() !== 'tous'" [reminder]="true" [reminderDisabled]="editionInactive()"
+                            [filtre]="!!filtre() || accuses() !== 'tous'" [reminder]="true" [reminderDisabled]="editionInactive()" reminderDescribedBy="animateurs-edition-inactive"
                             (edit)="editSelection()" (remove)="removeSelection()" (remind)="remindSelection()"
                             (clear)="selection.clear()" />
-    <app-edition-inactive-note />
+      <app-edition-inactive-note id="animateurs-edition-inactive" />
     }
     @if (store.animateurs().length > 0) {
     <p class="referentiel-collage-hint" i18n="@@animateurs.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : prénom, nom, e-mail, manager — ou une première ligne qui nomme les colonnes. Un aperçu précède l'enregistrement.</p>
