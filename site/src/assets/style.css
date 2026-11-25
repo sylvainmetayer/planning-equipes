@@ -309,8 +309,8 @@ abbr[title] { text-decoration: none; cursor: help; }
 /* Technical documentation (/docs): a side column of two navs beside the Markdown, which scrolls wide tables and code on its own */
 .doc__grid { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); gap: var(--space-xl) var(--gap-columns); align-items: start; padding-block: 0 var(--section-gap-s); }
 .doc__side { display: grid; gap: var(--space-lg); }
-.doc__label { margin: 0 0 var(--space-xs); font-weight: 600; }
-.doc__nav ul { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.doc__label { padding-block: 0.6rem; font-weight: 600; cursor: pointer; } /* a 44px target, the native marker kept */
+.doc__nav ul { overflow-wrap: anywhere; display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
 .doc__nav .doc__l3 { padding-left: var(--space-md); }
 .doc__nav a[aria-current="page"] { font-weight: 600; }
 .doc__main { min-width: 0; max-width: 80ch; line-height: 1.6; overflow-wrap: break-word; }
@@ -332,4 +332,4 @@ abbr[title] { text-decoration: none; cursor: help; }
 .doc__main .align-center { text-align: center; }
 .doc__main blockquote { margin-inline: 0; padding-left: var(--space-md); border-left: var(--rule-bar) solid var(--p); color: var(--color-ink-2); }
 .doc__main img { max-width: 100%; height: auto; background: #fff; border-radius: var(--radius-inner); }
-@media (max-width: 60rem) { .doc__grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 60rem) { .doc__grid { grid-template-columns: minmax(0, 1fr); } .doc__side { gap: 0; } }
