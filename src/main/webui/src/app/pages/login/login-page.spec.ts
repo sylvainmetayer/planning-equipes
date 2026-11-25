@@ -37,23 +37,11 @@ describe('LoginPage', () => {
     });
   });
 
-  type Page = {
-    utilisateur: { set(v: string): void };
-    password: { set(v: string): void };
-    code: { set(v: string): void };
-    defi(): unknown;
-    echec(): { message: string | null } | null;
-    connecter(e: Event): Promise<void>;
-    submitCode(e: Event): Promise<void>;
-    requestLink(e: Event): Promise<void>;
-    oubliEnvoye(): boolean;
-  };
-
   async function rendre() {
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
     await fixture.whenStable();
-    return fixture.componentInstance as unknown as Page;
+    return fixture.componentInstance;
   }
 
   it('waits for the mailed code after the right password, and posts the challenge with it', async () => {
@@ -63,15 +51,15 @@ describe('LoginPage', () => {
       maskedEmail: 'a•••@x.fr',
     });
     const page = await rendre();
-    page.utilisateur.set('a@x.fr');
-    page.password.set(crypto.randomUUID());
-    await page.connecter(new Event('submit'));
-    expect(page.defi()).not.toBeNull();
+    page['utilisateur'].set('a@x.fr');
+    page['password'].set(crypto.randomUUID());
+    await page['connecter'](new Event('submit'));
+    expect(page['defi']()).not.toBeNull();
 
     api.session.mockResolvedValue({ authentifie: true, nom: 'a@x.fr', roles: ['admin'] });
-    page.code.set('123456');
+    page['code'].set('123456');
     const http = TestBed.inject(HttpTestingController);
-    const fin = page.submitCode(new Event('submit'));
+    const fin = page['submitCode'](new Event('submit'));
     const request = await vi.waitFor(() => http.expectOne('/api/auth/connexion/j_security_check'));
     expect(request.request.body).toContain('j_password=D%3A123456');
     request.flush('');
@@ -81,10 +69,10 @@ describe('LoginPage', () => {
 
   it('sends the configuration account straight to the form login', async () => {
     const page = await rendre();
-    page.utilisateur.set('admin');
-    page.password.set(crypto.randomUUID());
+    page['utilisateur'].set('admin');
+    page['password'].set(crypto.randomUUID());
     const http = TestBed.inject(HttpTestingController);
-    const fin = page.connecter(new Event('submit'));
+    const fin = page['connecter'](new Event('submit'));
     (await vi.waitFor(() => http.expectOne('/j_security_check'))).flush('');
     await fin;
     expect(api.localSignIn).not.toHaveBeenCalled();
@@ -93,18 +81,18 @@ describe('LoginPage', () => {
   it('shows the sentence of a refused password step', async () => {
     api.localSignIn.mockRejectedValue(new Error('Adresse ou mot de passe incorrect.'));
     const page = await rendre();
-    page.utilisateur.set('a@x.fr');
-    page.password.set(crypto.randomUUID());
-    await page.connecter(new Event('submit'));
-    expect(page.echec()?.message).toBe('Adresse ou mot de passe incorrect.');
+    page['utilisateur'].set('a@x.fr');
+    page['password'].set(crypto.randomUUID());
+    await page['connecter'](new Event('submit'));
+    expect(page['echec']()?.message).toBe('Adresse ou mot de passe incorrect.');
   });
 
   it('answers « forgotten password » the same whatever the server did', async () => {
     api.forgotPassword.mockRejectedValue(new Error('boom'));
     const page = await rendre();
-    page.utilisateur.set('a@x.fr');
-    await page.requestLink(new Event('submit'));
-    expect(page.oubliEnvoye()).toBe(true);
+    page['utilisateur'].set('a@x.fr');
+    await page['requestLink'](new Event('submit'));
+    expect(page['oubliEnvoye']()).toBe(true);
   });
 });
 
@@ -122,17 +110,6 @@ describe('LoginPage, through the real API layer', () => {
     });
   });
 
-  type Page = {
-    utilisateur: { set(v: string): void };
-    password: { set(v: string): void };
-    code: { set(v: string): void };
-    defi: { set(v: unknown): void; (): unknown };
-    echec(): { fermee: boolean; message: string | null } | null;
-    connecter(e: Event): Promise<void>;
-    submitCode(e: Event): Promise<void>;
-    recommencer(): void;
-  };
-
   async function rendre() {
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
@@ -141,14 +118,14 @@ describe('LoginPage, through the real API layer', () => {
       .match('/api/auth/me')
       .forEach((r) => r.flush({ authentifie: false, nom: null, roles: [] }));
     await fixture.whenStable();
-    return { page: fixture.componentInstance as unknown as Page, http };
+    return { page: fixture.componentInstance, http };
   }
 
   async function signIn(status: number, body: object) {
     const { page, http } = await rendre();
-    page.utilisateur.set('a@x.fr');
-    page.password.set(crypto.randomUUID());
-    const fin = page.connecter(new Event('submit'));
+    page['utilisateur'].set('a@x.fr');
+    page['password'].set(crypto.randomUUID());
+    const fin = page['connecter'](new Event('submit'));
     const request = await vi.waitFor(() => http.expectOne('/api/auth/connexion'));
     request.flush(body, { status, statusText: 'x' });
     await fin;
@@ -157,37 +134,37 @@ describe('LoginPage, through the real API layer', () => {
 
   it('reads a wrong password as wrong credentials, not as an expired session', async () => {
     const page = await signIn(401, { message: 'Adresse ou mot de passe incorrect.' });
-    expect(page.echec()).toEqual({ fermee: false, message: null });
+    expect(page['echec']()).toEqual({ fermee: false, message: null });
   });
 
   it('says a lockout in its own words', async () => {
     const page = await signIn(429, { message: 'Trop de tentatives' });
-    expect(page.echec()?.message).toContain('Trop de tentatives de connexion');
+    expect(page['echec']()?.message).toContain('Trop de tentatives de connexion');
   });
 
   it('says the door is closed when the break-glass form answers 409', async () => {
     const { page, http } = await rendre();
-    page.utilisateur.set('admin');
-    page.password.set(crypto.randomUUID());
-    const fin = page.connecter(new Event('submit'));
+    page['utilisateur'].set('admin');
+    page['password'].set(crypto.randomUUID());
+    const fin = page['connecter'](new Event('submit'));
     const request = await vi.waitFor(() => http.expectOne('/j_security_check'));
     request.flush({ message: 'fermée' }, { status: 409, statusText: 'Conflict' });
     await fin;
-    expect(page.echec()).toEqual({ fermee: true, message: null });
+    expect(page['echec']()).toEqual({ fermee: true, message: null });
   });
 
   it('says a lockout of the form post too, and forgets the challenge on restart', async () => {
     const { page, http } = await rendre();
-    page.utilisateur.set('a@x.fr');
-    page.defi.set({ codeRequired: true, challenge: 'D', maskedEmail: null });
-    page.code.set('123456');
-    const fin = page.submitCode(new Event('submit'));
+    page['utilisateur'].set('a@x.fr');
+    page['defi'].set({ codeRequired: true, challenge: 'D', maskedEmail: null });
+    page['code'].set('123456');
+    const fin = page['submitCode'](new Event('submit'));
     const request = await vi.waitFor(() => http.expectOne('/api/auth/connexion/j_security_check'));
     request.flush({ message: 'x' }, { status: 429, statusText: 'Too Many' });
     await fin;
-    expect(page.echec()?.message).toContain('Trop de tentatives de connexion');
-    page.recommencer();
-    expect(page.defi()).toBeNull();
-    expect(page.echec()).toBeNull();
+    expect(page['echec']()?.message).toContain('Trop de tentatives de connexion');
+    page['recommencer']();
+    expect(page['defi']()).toBeNull();
+    expect(page['echec']()).toBeNull();
   });
 });

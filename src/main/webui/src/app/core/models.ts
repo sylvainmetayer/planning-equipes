@@ -2839,7 +2839,7 @@ export interface Compte {
 export interface NouveauCompte {
   email: string;
   nom: string | null;
-  invite: boolean | null;
+  invite?: boolean | null;
 }
 
 /**

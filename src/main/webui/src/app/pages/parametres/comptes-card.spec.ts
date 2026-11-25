@@ -95,10 +95,10 @@ describe('ComptesCard', () => {
 
   it('invites an account with no password yet, resets one that has it, and never shows the link', async () => {
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as { sendLink(c: Compte): Promise<void> };
-    await card.sendLink(compte('nouveau'));
+    const card = fixture.componentInstance;
+    await card['sendLink'](compte('nouveau'));
     expect(api.invite).toHaveBeenCalledWith('nouveau');
-    await card.sendLink(compte('ancien', { passwordSet: true }));
+    await card['sendLink'](compte('ancien', { passwordSet: true }));
     expect(api.resetPassword).toHaveBeenCalledWith('ancien');
     expect(notify).toHaveBeenCalledTimes(2);
   });
@@ -116,12 +116,9 @@ describe('ComptesCard', () => {
       throw new Error("Le compte est créé, mais l'invitation n'a pas pu partir");
     });
     const fixture = await rendre();
-    const card = fixture.componentInstance as unknown as {
-      email: { set(v: string): void };
-      add(): Promise<void>;
-    };
-    card.email.set('ana@x.fr');
-    await card.add();
+    const card = fixture.componentInstance;
+    card['email'].set('ana@x.fr');
+    await card['add']();
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
     expect(api.list).toHaveBeenCalledTimes(2);
   });

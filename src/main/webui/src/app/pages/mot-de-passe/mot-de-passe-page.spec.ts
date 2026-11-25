@@ -25,30 +25,21 @@ describe('ChoosePasswordPage', () => {
     return fixture;
   }
 
-  type Page = {
-    password: { set(v: string): void };
-    confirmation: { set(v: string): void };
-    valid(): boolean;
-    choisi(): boolean;
-    erreur(): string | null;
-    choisir(e: Event): Promise<void>;
-  };
-
   beforeEach(() => api.choosePassword.mockReset());
 
   it('sends the token of the fragment with the password, once the two agree and are long enough', async () => {
     api.choosePassword.mockResolvedValue(undefined);
-    const page = monter('JETON').componentInstance as unknown as Page;
-    page.password.set('court');
-    page.confirmation.set('court');
-    expect(page.valid()).toBe(false);
-    page.password.set('une phrase assez longue');
-    expect(page.valid()).toBe(false);
-    page.confirmation.set('une phrase assez longue');
-    expect(page.valid()).toBe(true);
-    await page.choisir(new Event('submit'));
+    const page = monter('JETON').componentInstance;
+    page['password'].set('court');
+    page['confirmation'].set('court');
+    expect(page['valid']()).toBe(false);
+    page['password'].set('une phrase assez longue');
+    expect(page['valid']()).toBe(false);
+    page['confirmation'].set('une phrase assez longue');
+    expect(page['valid']()).toBe(true);
+    await page['choisir'](new Event('submit'));
     expect(api.choosePassword).toHaveBeenCalledWith('JETON', 'une phrase assez longue');
-    expect(page.choisi()).toBe(true);
+    expect(page['choisi']()).toBe(true);
   });
 
   it('shows the refusal of an expired or used link', async () => {
@@ -64,11 +55,11 @@ describe('ChoosePasswordPage', () => {
     });
     const fixture = TestBed.createComponent(ChoosePasswordPage);
     fixture.detectChanges();
-    const page = fixture.componentInstance as unknown as Page;
-    page.password.set('une phrase assez longue');
-    page.confirmation.set('une phrase assez longue');
+    const page = fixture.componentInstance;
+    page['password'].set('une phrase assez longue');
+    page['confirmation'].set('une phrase assez longue');
     const http = TestBed.inject(HttpTestingController);
-    const fin = page.choisir(new Event('submit'));
+    const fin = page['choisir'](new Event('submit'));
     const request = http.expectOne('/api/auth/mot-de-passe');
     expect(request.request.body).toEqual({ token: 'JETON', password: 'une phrase assez longue' });
     request.flush(
@@ -76,8 +67,8 @@ describe('ChoosePasswordPage', () => {
       { status: 400, statusText: 'Bad Request' },
     );
     await fin;
-    expect(page.erreur()).toContain('lien');
-    expect(page.choisi()).toBe(false);
+    expect(page['erreur']()).toContain('lien');
+    expect(page['choisi']()).toBe(false);
   });
 
   it('takes the token out of the address bar as soon as it is read', () => {
@@ -92,24 +83,24 @@ describe('ChoosePasswordPage', () => {
 
   it('says why the button waits, counting code points like the server', () => {
     const fixture = monter('JETON');
-    const page = fixture.componentInstance as unknown as Page & { raison(): string };
-    page.password.set('court');
-    expect(page.raison()).toContain('7');
-    page.password.set('une phrase assez longue');
-    page.confirmation.set('une phrase assez longu');
-    expect(page.raison()).toContain('identiques');
+    const page = fixture.componentInstance;
+    page['password'].set('court');
+    expect(page['raison']()).toContain('7');
+    page['password'].set('une phrase assez longue');
+    page['confirmation'].set('une phrase assez longu');
+    expect(page['raison']()).toContain('identiques');
     // twelve code points, however they are encoded
-    page.password.set('e\u0301'.repeat(12));
-    page.confirmation.set('\u00e9'.repeat(12));
-    expect(page.raison()).toBe('');
+    page['password'].set('e\u0301'.repeat(12));
+    page['confirmation'].set('\u00e9'.repeat(12));
+    expect(page['raison']()).toBe('');
   });
 
   it('does nothing without a token', async () => {
     const fixture = monter(null);
-    const page = fixture.componentInstance as unknown as Page;
-    page.password.set('une phrase assez longue');
-    page.confirmation.set('une phrase assez longue');
-    await page.choisir(new Event('submit'));
+    const page = fixture.componentInstance;
+    page['password'].set('une phrase assez longue');
+    page['confirmation'].set('une phrase assez longue');
+    await page['choisir'](new Event('submit'));
     expect(api.choosePassword).not.toHaveBeenCalled();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('lien reçu');
   });
