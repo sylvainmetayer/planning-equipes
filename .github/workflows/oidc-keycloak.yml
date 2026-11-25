@@ -5,8 +5,9 @@
 # qui redirige, signe et clôt vraiment des sessions.
 #
 # Déclenché comme les specs @lourd (e2e-lourd.yml), pour ne rien coûter à
-# chaque PR : sous le label `e2e-lourd` sur une PR, sur main quand une fusion
-# touche ce qu'il traverse, et chaque nuit.
+# chaque PR : sous le label `e2e-lourd` sur une PR (ou `quarkus`, `playwright`
+# que Renovate pose sur les montées de quarkus-oidc et du navigateur), sur
+# main quand une fusion touche ce qu'il traverse, et chaque nuit.
 name: Essai OIDC (Keycloak)
 
 on:
@@ -19,9 +20,14 @@ on:
       - 'src/main/java/dev/sylvain/planning/config/**'
       - 'src/main/java/dev/sylvain/planning/service/compte/**'
       - 'src/main/java/dev/sylvain/planning/api/AuthResource.java'
+      - 'src/main/java/dev/sylvain/planning/api/CompteIdentityAugmentor.java'
+      - 'src/main/java/dev/sylvain/planning/api/FormLoginSecours.java'
       - 'src/main/resources/application.properties'
       - 'pom.xml'
       - 'src/main/webui/e2e/oidc-keycloak.oidc.ts'
+      - 'src/main/webui/e2e/support.ts'
+      - 'src/main/webui/src/app/pages/login/**'
+      - 'src/main/webui/src/app/shell/admin-shell.*'
       - 'src/main/webui/e2e/keycloak/**'
       - 'src/main/webui/playwright.oidc.config.ts'
       - '.github/workflows/oidc-keycloak.yml'
@@ -34,14 +40,18 @@ permissions:
 
 jobs:
   oidc:
-    # Même garde que e2e-lourd.yml : pas de fork, et sur une PR le seul label
-    # `e2e-lourd` (en poser un autre ne relance rien).
+    # Même garde que e2e-lourd.yml : pas de fork, et sur une PR un des labels
+    # `e2e-lourd`, `quarkus`, `playwright` (en poser un autre ne relance rien ;
+    # `timefold` ne change rien à la connexion).
     if: >-
       (github.event_name != 'pull_request'
         || github.event.pull_request.head.repo.full_name == github.repository)
       && (github.event_name != 'pull_request'
-        || ((github.event.action != 'labeled' || github.event.label.name == 'e2e-lourd')
-          && contains(github.event.pull_request.labels.*.name, 'e2e-lourd')))
+        || ((github.event.action != 'labeled'
+            || contains(fromJSON('["e2e-lourd","quarkus","playwright"]'), github.event.label.name))
+          && (contains(github.event.pull_request.labels.*.name, 'e2e-lourd')
+            || contains(github.event.pull_request.labels.*.name, 'quarkus')
+            || contains(github.event.pull_request.labels.*.name, 'playwright'))))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -84,11 +94,16 @@ jobs:
 
       # PostgreSQL à la main plutôt qu'en service du job : son mot de passe est
       # celui de ce run, et un service ne peut pas le recevoir.
+      # Ports liés à 127.0.0.1 : ni la base ni Keycloak n'ont à écouter au-delà
+      # du runner.
       - name: Start PostgreSQL
+        env:
+          # renovate: datasource=docker depName=postgres
+          POSTGRES_IMAGE: postgres:19
         run: |
-          docker run -d --name postgres -p 5432:5432 \
+          docker run -d --name postgres -p 127.0.0.1:5432:5432 \
             -e POSTGRES_DB=festival -e POSTGRES_USER=festival \
-            -e POSTGRES_PASSWORD="$E2E_DB_PASSWORD" postgres:19
+            -e POSTGRES_PASSWORD="$E2E_DB_PASSWORD" "$POSTGRES_IMAGE"
           for _ in $(seq 1 30); do
             docker exec postgres pg_isready -U festival && exit 0
             sleep 2
@@ -99,15 +114,18 @@ jobs:
       # sont remplacés par l'environnement du conteneur. Ce n'est pas un
       # service du job : un service ne reçoit ni fichier ni argument.
       - name: Start Keycloak
+        env:
+          # renovate: datasource=docker depName=quay.io/keycloak/keycloak
+          KEYCLOAK_IMAGE: quay.io/keycloak/keycloak:26.4.7
         run: |
-          docker run -d --name keycloak -p 8180:8080 \
+          docker run -d --name keycloak -p 127.0.0.1:8180:8080 \
             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
             -e KC_BOOTSTRAP_ADMIN_PASSWORD \
             -e E2E_OIDC_CLIENT_SECRET \
             -e E2E_OIDC_USER_PASSWORD \
             -e E2E_APP_URL="$APP_URL" \
             -v "$PWD/src/main/webui/e2e/keycloak/realm-planning.json:/opt/keycloak/data/import/realm-planning.json:ro" \
-            quay.io/keycloak/keycloak:26.4.7 start-dev --import-realm
+            "$KEYCLOAK_IMAGE" start-dev --import-realm
 
       - name: Build the application
         run: ./mvnw -B --no-transfer-progress package -DskipTests

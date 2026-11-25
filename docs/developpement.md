@@ -825,9 +825,11 @@ formulaire, `/api/auth/me`, refus d'un compte que l'application ne connaît pas
 (aucun rôle, `403`), déconnexion qui clôt aussi la session du fournisseur. Les
 tests Java (`OidcSignInTest`) restent la preuve des règles ; celui-ci prouve
 qu'elles tiennent face à un fournisseur qui redirige et signe vraiment.
-Déclenchement **comme `e2e-lourd.yml`** : sous le label `e2e-lourd` sur une PR,
-sur `main` quand une fusion touche la config, les comptes, `AuthResource` ou
-ses propres fichiers, et chaque nuit — jamais sur chaque PR. Keycloak et
+Déclenchement **comme `e2e-lourd.yml`** : sous le label `e2e-lourd` sur une PR
+(ou `quarkus`, `playwright`, que Renovate pose sur les montées de quarkus-oidc
+et du navigateur), sur `main` quand une fusion touche la config, les comptes,
+l'écran de connexion ou ses propres fichiers, et chaque nuit — jamais sur
+chaque PR. Keycloak et
 PostgreSQL sont lancés par `docker run` (un service de job ne reçoit ni fichier
 de realm ni argument) ; le realm est
 `src/main/webui/e2e/keycloak/realm-planning.json`, dont le secret du client, le
