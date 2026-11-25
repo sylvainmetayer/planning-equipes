@@ -1563,8 +1563,9 @@ Le déplacement se fait par « Déplacer vers… » du panneau du siège, par l'
 par les outils MCP `simuler_deplacement` / `deplacer_affectation`. Il n'y a plus de
 glisser-déposer à la souris.
 
-Deux routes, une pour chiffrer, une pour écrire, avec `?cible=P` (un siège)
-ou `?animateur=A` (une personne). La simulation **ne persiste rien** et, sans
+Deux routes, une pour chiffrer (`POST /api/postes/{id}/deplacement/simulation`),
+une pour écrire (`POST /api/postes/{id}/deplacement`), avec `?cible=P` (un
+siège) ou `?animateur=A` (une personne). La simulation **ne persiste rien** et, sans
 corps, lit le verdict sur les règles de l'édition — celles que l'organisateur a
 désactivées comprises —, qui ne sont pas à l'appelant de fournir. L'application
 écrit sur le plan enregistré ; `&occupant=X` dit qui l'appelant croit sur le
@@ -1726,11 +1727,11 @@ absences du jour, signalements, rang du jour, stands ouverts, alertes de
 l'affichage mural (le même calcul, sur la journée en cours seulement),
 `aPrevenir` (les destinataires de la prochaine publication, différés compris —
 ceux que compte Diffuser —, cibles de « Prévenir les N personnes ») et échanges
-à arbitrer ; l'effectif nommé porte le téléphone de la fiche.
+à arbitrer ; l'effectif nommé porte le téléphone de la fiche. Lecture seule.
 
-Une absence se déclare par `POST /api/jour-j/absences` (`{ "animateurId": "A1",
+Une absence se déclare par `POST /api/jour-j/absences?date=&maintenant=` (`{ "animateurId": "A1",
 "raison": "…" }`) : une `INDISPONIBILITE_FORCEE` par créneau restant, et les
-sièges tenus sur ces créneaux vidés. `DELETE /api/jour-j/absences/{animateurId}`
+sièges tenus sur ces créneaux vidés. `DELETE /api/jour-j/absences/{animateurId}?date=&creneauId=`
 l'annule — un créneau si `creneauId` est donné, toute la journée sinon.
 L'assistant de réparation ci-dessus répond ici sur le **plan enregistré**.
 
@@ -2620,7 +2621,8 @@ la grille existe est précisément le cas d'usage.
 l'état de la fenêtre, les jours de l'événement, les typologies, ce que le
 référentiel dit de la personne, sa proposition en attente et son historique —
 **lisible fenêtre fermée**, on doit pouvoir relire ce qu'on a déclaré. Le `POST`
-déclare et **remplace** la proposition en attente, s'il y en avait une.
+déclare, **remplace** la proposition en attente s'il y en avait une, et répond
+la même vue que le `GET`.
 
 Le formulaire s'ouvre sur la proposition en attente s'il y en a une, sinon sur
 ce que le référentiel contient : une page blanche voudrait dire « je suis
@@ -3242,8 +3244,6 @@ Quatre propriétés, et aucune n'est un oubli :
 
 ### Import CSV des animateurs
 
-Deux endpoints, même corps, et un seul écrit :
-
 Deux `POST` au même corps, et un seul écrit : `/api/animateurs/import-csv/analyse`
 lit le fichier et rend le rapport ligne par ligne, **sans ouvrir de
 transaction** ; `/api/animateurs/import-csv` relit le même fichier, rejoue
@@ -3458,7 +3458,7 @@ Le second import **partiel** du produit, calqué sur celui des animateurs
 de l'organisateur — une ligne par stand, une colonne par jour et par créneau, un
 entier par case — analysée, prévisualisée, rejouée, jamais écrite sur disque.
 
-Deux `POST` au même corps `{ fileName, content }`, et un seul écrit :
+Deux `POST` au même corps, et un seul écrit :
 `/api/stands/import-grille/analyse` lit le fichier et rend le rapport (chaque
 colonne et le créneau où elle se pose, une ligne par stand), **sans ouvrir de
 transaction** ; `/api/stands/import-grille` relit le même fichier, rejoue
