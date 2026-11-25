@@ -681,9 +681,17 @@ export async function ouvrirSessionEspace(
   expect(session.status(), await session.text()).toBe(204);
 }
 
-/** The newest access code Mailpit holds for `email` — for UI flows where the click itself sent it. */
-export function dernierCodeMailpit(requeteur: APIRequestContext, email: string): Promise<string> {
-  return lireCodeMailpit(requeteur, email, 0);
+/**
+ * The newest access code Mailpit holds for `email` — for UI flows where the
+ * click itself sent it. `mailsAvant` (from {@link nombreDeMails}, read before
+ * the click) skips the mails already there, which may carry six digits too.
+ */
+export function dernierCodeMailpit(
+  requeteur: APIRequestContext,
+  email: string,
+  mailsAvant = 0,
+): Promise<string> {
+  return lireCodeMailpit(requeteur, email, mailsAvant);
 }
 
 /** One page of a Mailpit search. `messages_count` is the REAL match total — `messages` is capped at 50 per page. */
