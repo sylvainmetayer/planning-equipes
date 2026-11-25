@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { annotate } from '../src/text.js';
-import { match } from '../src/assets/search.js';
+import { docMatch, match } from '../src/assets/search.js';
 
 const ABBR = [{ sigle: 'PDF', sens: 'Portable Document Format' }, { sigle: 'IA', sens: 'intelligence "artificielle"' }];
 
@@ -29,4 +29,13 @@ test('search: every word must appear, accents ignored, the excerpt has no Markdo
   assert.equal(match('Une période', ['periode']), 'Une période');
   assert.equal(match('## Les mineurs\n\nTexte', ['mineurs']), 'Les mineurs');
   assert.equal(match('- 2,5 Go de mémoire', ['memoire']), '2,5 Go de mémoire');
+});
+
+test('search: a docs page matches on its title and headings, and leads to the heading found', () => {
+  const entry = { t: 'API REST', d: 'Les invariants de l’API.', h: [['jobs-de-résolution', 'Jobs de résolution'], ['x', 'Le X_Edition_Id']] };
+  assert.deepEqual(docMatch(entry, ['resolution']), { excerpt: 'Jobs de résolution', hash: '#jobs-de-résolution' });
+  assert.deepEqual(docMatch(entry, ['edition']), { excerpt: 'Le XEditionId', hash: '#x' });
+  assert.deepEqual(docMatch(entry, ['invariants']), { excerpt: 'Les invariants de l’API.', hash: '' });
+  assert.equal(docMatch(entry, ['periode']).excerpt, null);
+  assert.equal(docMatch(undefined, ['api']).excerpt, null);
 });

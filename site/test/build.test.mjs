@@ -93,3 +93,25 @@ test('the docs are published in place, without the decisions and the project mem
   }
   assert.ok(read(join(dist, 'llms.txt')).includes('/docs/architecture/index.md'), 'llms.txt sans la documentation');
 });
+
+test('every page has its own title', () => {
+  const seen = new Map();
+  for (const page of pages.filter((p) => !p.endsWith('404.html'))) {
+    const title = read(page).match(/<title>([^<]*)<\/title>/)[1];
+    assert.ok(!seen.has(title), `${page} et ${seen.get(title)} : même titre « ${title} »`);
+    seen.set(title, page);
+  }
+});
+
+test('the search reads a light index of the docs, and finds a page by a word of its headings', async () => {
+  const { docMatch } = await import('../src/assets/search.js');
+  const file = join(dist, 'docs/search.json');
+  assert.ok(readFileSync(file).length < 100_000, 'index de recherche des docs trop lourd');
+  const index = JSON.parse(read(file));
+  const api = index['/docs/api/'];
+  const [id, heading] = api.h.at(-1);
+  const word = heading.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 3).at(-1);
+  const found = docMatch(api, [word]);
+  assert.ok(found.excerpt, `#${id} introuvable par « ${word} »`);
+  if (found.hash) assert.ok(read(join(dist, 'docs/api/index.html')).includes(`id="${decodeURIComponent(found.hash.slice(1))}"`), found.hash);
+});
