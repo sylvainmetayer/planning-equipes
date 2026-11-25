@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
@@ -14,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -270,8 +273,38 @@ public class StandService {
         return lignes;
     }
 
+    /**
+     * Temporary bridge for the 3.x schedule editor, removed with the plages editor
+     * (ADR 0104): rules it sends under {@code horaires} are expanded into plages
+     * over the edition's days, with the reading 3.x applied at every read — a day
+     * that already carries a plage keeps it. Without a timeslot there is no day to
+     * lay them on, and the write is refused rather than the rules dropped.
+     */
+    private void layDownReceivedRules(Stand stand) {
+        List<HorairesRecurrents.Regle> regles = stand.takeReglesRecues();
+        if (regles.isEmpty()) {
+            return;
+        }
+        for (HorairesRecurrents.Regle regle : regles) {
+            if (regle.fenetres().isEmpty()) {
+                throw new BusinessError.Invalid("Un horaire de stand requiert au moins une fenêtre horaire");
+            }
+            if (!regle.fenetres().stream().allMatch(FenetreHoraire::hasValidRange)) {
+                throw new BusinessError.Invalid("Une fenêtre horaire requiert une heure de début, et une heure de "
+                        + "fin après elle (vide : jusqu'à la fermeture) — une fenêtre ne peut pas chevaucher minuit");
+            }
+        }
+        Set<LocalDate> jours = HorairesRecurrents.datesConcernees(creneaux.list());
+        if (jours.isEmpty()) {
+            throw new BusinessError.Invalid("L'édition n'a aucun créneau : un horaire récurrent se pose sur les jours "
+                    + "de l'événement. Créez d'abord les créneaux, ou saisissez des ouvertures et fermetures datées.");
+        }
+        stand.setPlages(HorairesRecurrents.expand(regles, stand.getPlages(), jours));
+    }
+
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
     private void validate(Stand stand) {
+        layDownReceivedRules(stand);
         stand.setTypologiesProposees(typologies.resolveIds(stand.getTypologiesProposees()));
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {

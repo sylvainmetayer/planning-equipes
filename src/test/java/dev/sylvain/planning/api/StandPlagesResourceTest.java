@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
  * A stand open one day out of two over a 240-day season carries a hundred and
  * twenty plages. The REST write and read, the edition duplication that copies
  * them, and the SQL dump that writes and replays them all land on the same
- * list; and the recurring rules of 3.x, gone since the plages (ADR 0104), are
- * refused rather than dropped in silence.
+ * list; and the recurring rules the 3.x editor still sends are laid down as
+ * plages rather than dropped in silence (ADR 0104).
  */
 @QuarkusTest
 class StandPlagesResourceTest {
@@ -83,9 +83,49 @@ class StandPlagesResourceTest {
         assertThat(readDates(edition, stand)).containsExactlyElementsOf(DATES);
     }
 
+    /**
+     * The 3.x editor still sends rules until the plages editor ships: the server lays
+     * them down over the event's days, with the reading 3.x gave them at every read —
+     * the most specific rule wins, a dated window keeps its day, the morning after a
+     * timeslot crossing midnight is a day too, a day no créneau carries gets nothing.
+     */
     @Test
-    void aStandCarryingARecurringRuleIsRefusedNotTruncated() {
-        String edition = createEdition("Règle refusée");
+    void aRuleSentByTheEditorBecomesThePlagesThreeXResolvedItTo() {
+        String edition = createEdition("Règle convertie");
+        createTypologie(edition);
+        createCreneau(edition, "2026-07-10", "10:00", "12:00");
+        createCreneau(edition, "2026-07-11", "10:00", "12:00");
+        createCreneau(edition, "2026-07-12", "23:00", "01:00");
+        String rules = """
+                [{"id":7,"mode":"OUVERTURE","jours":"TOUS","joursSemaine":[],"dateDebut":null,"dateFin":null,
+                  "dates":[],"motif":null,"fenetres":[{"heureDebut":"10:00","heureFin":"18:00","effectif":2}]},
+                 {"id":8,"mode":"FERMETURE","jours":"DATES","joursSemaine":[],"dateDebut":null,"dateFin":null,
+                  "dates":["2026-07-11"],"motif":"Démo","fenetres":[{"heureDebut":"14:00","heureFin":"16:00"}]}]""";
+
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Avec règle","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "horaires":%s,
+                         "ouvertures":[{"date":"2026-07-12","heureDebut":"09:00","heureFin":"11:00"}]}"""
+                        .formatted(rules))
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .body("stand.horaires", org.hamcrest.Matchers.empty())
+                .extract()
+                .path("stand.id");
+
+        assertThat(readWindows(edition, stand, "ouvertures"))
+                .containsExactlyInAnyOrder(
+                        "2026-07-10 10:00-18:00 x2", "2026-07-12 09:00-11:00 x-", "2026-07-13 10:00-18:00 x2");
+        assertThat(readWindows(edition, stand, "indisponibilites")).containsExactly("2026-07-11 14:00-16:00 Démo");
+    }
+
+    @Test
+    void aRuleSentOnAnEditionWithoutTimeslotIsRefusedWithItsReason() {
+        String edition = createEdition("Règle sans créneau");
         createTypologie(edition);
 
         given().header(HEADER, edition)
@@ -97,7 +137,8 @@ class StandPlagesResourceTest {
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(400);
+                .statusCode(400)
+                .body(org.hamcrest.Matchers.containsString("aucun créneau"));
     }
 
     @Test
@@ -133,6 +174,38 @@ class StandPlagesResourceTest {
                 .post("/api/typologies")
                 .then()
                 .statusCode(200);
+    }
+
+    private static void createCreneau(String edition, String date, String debut, String fin) {
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"date\":\"%s\",\"heureDebut\":\"%s\",\"heureFin\":\"%s\"}".formatted(date, debut, fin))
+                .when()
+                .post("/api/creneaux")
+                .then()
+                .statusCode(200);
+    }
+
+    /** The stand's windows of one kind, each as « date début-fin » plus its headcount or its reason. */
+    private static List<String> readWindows(String edition, String stand, String kind) {
+        List<java.util.Map<String, Object>> fenetres = given().header(HEADER, edition)
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("find { it.id == '" + stand + "' }." + kind);
+        return fenetres.stream()
+                .map(f -> f.get("date") + " " + hour(f.get("heureDebut")) + "-" + hour(f.get("heureFin"))
+                        + ("ouvertures".equals(kind)
+                                ? " x" + (f.get("effectif") == null ? "-" : f.get("effectif"))
+                                : " " + f.get("motif")))
+                .toList();
+    }
+
+    private static String hour(Object value) {
+        return value == null ? "" : value.toString().substring(0, 5);
     }
 
     private static String createStandWithPlages(String edition) {

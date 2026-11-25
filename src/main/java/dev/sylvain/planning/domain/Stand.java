@@ -53,6 +53,14 @@ public class Stand {
     private List<PlageStand> plagesEffectives;
 
     /**
+     * Recurring rules a caller of the 3.x editor sent under {@code horaires},
+     * waiting for {@code StandService} to lay them down as plages over the
+     * edition's days. Never stored, never served. Temporary bridge, removed
+     * with the plages editor (ADR 0104).
+     */
+    private List<HorairesRecurrents.Regle> reglesRecues = List.of();
+
+    /**
      * When this row was last written (issue #362), read from the referential
      * and echoed back by a form on save: a write carrying a value older than
      * the row's is refused, see {@code ConcurrentModificationGuard}. {@code null}
@@ -221,20 +229,29 @@ public class Stand {
 
     /**
      * Always empty: the recurring rules of 3.x are not stored any more. The key stays on the
-     * payload only so the editor of the previous release keeps loading; a non-empty value sent
-     * back is refused (it would be dropped in silence otherwise).
+     * payload so the editor of the previous release keeps working until the plages editor
+     * replaces it (ADR 0104).
      */
     @JsonProperty("horaires")
     public List<Object> getHoraires() {
         return List.of();
     }
 
+    /**
+     * Rules sent by that editor: kept aside, then expanded into plages over the edition's
+     * days by {@code StandService} before the stand is validated — never dropped in silence.
+     */
     @JsonProperty("horaires")
-    public void setHoraires(List<Object> horaires) {
-        if (horaires != null && !horaires.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Les horaires récurrents n'existent plus : saisissez des plages datées (ouvertures et fermetures).");
-        }
+    public void setHoraires(List<HorairesRecurrents.Regle> horaires) {
+        this.reglesRecues = horaires != null ? List.copyOf(horaires) : List.of();
+    }
+
+    /** The rules {@link #setHoraires} received and nothing has laid down yet; reading them clears them. */
+    @JsonIgnore
+    public List<HorairesRecurrents.Regle> takeReglesRecues() {
+        List<HorairesRecurrents.Regle> regles = reglesRecues;
+        reglesRecues = List.of();
+        return regles;
     }
 
     private void replace(ModeHoraire mode, List<PlageStand> remplacantes) {

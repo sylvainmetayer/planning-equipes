@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -39,7 +40,11 @@ public final class HorairesRecurrents {
 
     private HorairesRecurrents() {}
 
-    /** One recurring rule of 3.x: a day selector and the windows it applies. */
+    /**
+     * One recurring rule of 3.x: a day selector and the windows it applies. Read from JSON by the
+     * 3.x editor's bridge ({@code Stand#setHoraires}), whose rules still carry an {@code id}.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Regle(
             ModeHoraire mode,
             TypeJoursHoraire jours,

@@ -6,7 +6,7 @@ Les horaires d'un stand se lisent et s'écrivent à trois niveaux : la fiche (se
 
 La fiche du stand rend ses plages datées, sans expansion, la vue que l'IHM édite : les ouvertures sous `ouvertures` et les fermetures sous `indisponibilites` (chaque plage porte aussi son `mode`). Un `heureFin` nul vaut « jusqu'à la fermeture ». Une écriture répond `400` si une plage est incohérente ou si un même jour porte à la fois une ouverture et une fermeture.
 
-Les règles récurrentes de la 3.x n'existent plus ([décision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)) : la clé `horaires` de la fiche reste dans la réponse, toujours vide, le temps que l'API parle de plages, et une écriture qui y renvoie une règle répond `400` plutôt que de la perdre en silence. `POST /api/stands/compactage-horaires` n'a plus rien à compacter et répond toujours un rapport vide.
+Les règles récurrentes de la 3.x n'existent plus ([décision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)) : la clé `horaires` de la fiche reste dans la réponse, toujours vide, le temps que l'API parle de plages. Une écriture qui y envoie encore une règle (l'éditeur d'horaires actuel le fait) la voit **convertie aussitôt en plages** sur les jours de l'événement, avec la lecture de la 3.x : un jour qui porte déjà une plage la garde. Sans aucun créneau, il n'y a pas de jour où la poser et l'écriture répond `400` plutôt que de la perdre en silence. Ce pont disparaît avec l'éditeur de plages. `POST /api/stands/compactage-horaires` n'a plus rien à compacter et répond toujours un rapport vide.
 
 ## Visualisation des ouvertures
 

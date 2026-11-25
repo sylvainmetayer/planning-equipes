@@ -123,6 +123,32 @@ class ScenarioPlagesLinkTest {
                 .contains("horaires récurrents"));
     }
 
+    /** A 3.x export without {@code schemaVersion} (version 1) walks the whole chain and finds its plages too. */
+    @Test
+    void aVersionOneFileRestoresItsRulesAsPlages() {
+        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings(HEAD + """
+                  - id: S
+                    nom: S
+                    typologiesProposees: [T]
+                    effectifMin: 1
+                    effectifMax: 3
+                    horaires:
+                      - mode: OUVERTURE
+                        fenetres:
+                          - { heureDebut: "10:00", heureFin: "12:00" }
+                    indisponibilites:
+                      - { date: 2026-07-09, heureDebut: "00:00", motif: Montage }
+                """);
+
+        StandDto stand = bound.scenario().stands().get(0);
+        assertThat(stand.plages())
+                .extracting(PlageStandDto::date, PlageStandDto::mode)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple(LocalDate.of(2026, 7, 9), ModeHoraire.FERMETURE),
+                        org.assertj.core.groups.Tuple.tuple(LocalDate.of(2026, 7, 8), ModeHoraire.OUVERTURE),
+                        org.assertj.core.groups.Tuple.tuple(LocalDate.of(2026, 7, 10), ModeHoraire.OUVERTURE));
+    }
+
     @Test
     void aVersionThreeDocumentIsLeftAlone() {
         ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings("schemaVersion: 3\n" + HEAD + """

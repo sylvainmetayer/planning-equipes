@@ -53,13 +53,24 @@ l'application s'en souvenait.
    sont **conservées à part**, dans les tables renommées, et un avertissement
    de migration nomme l'édition. Elles ne sont jamais perdues en silence. Le
    guide de passage demande en outre un export YAML de chaque édition avant la
-   montée : relu en 4.0, il reconvertit les règles dès que l'édition a des
-   créneaux.
+   montée : relu en 4.0, il reconvertit les règles sur les jours des créneaux
+   qu'il compte (on les y ajoute au besoin).
 6. **Le format YAML passe en version 3** : la clé `plages` remplace
    `horaires`, `ouvertures` et `indisponibilites` d'un stand. Le maillon 2 → 3
    convertit un fichier plus ancien de la même façon, sur les jours des créneaux
    du fichier, et avertit (rapport d'import) d'un stand dont les règles n'ont
    pas de jour ([0101](0101-schema-yaml-2-et-chaine-de-conversions.md)).
+
+7. **Pont temporaire pour l'écran de la 3.x**, retiré avec l'éditeur de
+   plages : tant que celui-ci n'est pas livré, l'éditeur d'horaires actuel
+   envoie encore des règles (`horaires`) dans la fiche du stand. Le serveur ne
+   les stocke pas : il les **convertit aussitôt en plages** sur les jours de
+   l'événement, avec la même lecture (`HorairesRecurrents`), comme le fait déjà
+   l'outil d'assistant `ajouter_horaire_stand`. Une édition sans créneau n'a
+   pas de jour où les poser : l'écriture est refusée avec sa raison, jamais
+   tronquée. La fiche relue ne montre donc plus de règle, mais les plages
+   qu'elle a produites. Ainsi `main` garde un écran qui enregistre entre deux
+   changements.
 
 ## Ce que ça coûte
 

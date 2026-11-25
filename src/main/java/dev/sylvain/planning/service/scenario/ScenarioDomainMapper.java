@@ -160,7 +160,7 @@ final class ScenarioDomainMapper {
             PosteAffectation poste = new PosteAffectation(posteDto.id(), stand, creneau);
             // Mirrors what buildPostes does: a hand-authored seat can still name
             // a timeslot the stand is only partially open for, through an
-            // PlageStand or an PlageStand, so its effective window
+            // closing or opening plage, so its effective window
             // is narrowed the same way instead of taking the whole opening span.
             List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
             if (segments.size() == 1) {

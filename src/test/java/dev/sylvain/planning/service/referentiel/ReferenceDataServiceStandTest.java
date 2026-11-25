@@ -176,16 +176,6 @@ class ReferenceDataServiceStandTest {
                 .containsExactly(org.assertj.core.groups.Tuple.tuple(JOUR.plusDays(1), LocalTime.of(9, 0), "Férié"));
     }
 
-    /** The recurring rules of 3.x are gone: a payload still carrying one is refused, not dropped in silence. */
-    @Test
-    void aStandPayloadCarryingARecurringRuleIsRefused() {
-        Stand stand = stand("STAND-PLG-2");
-
-        assertThatThrownBy(() -> stand.setHoraires(List.of(java.util.Map.of("mode", "OUVERTURE"))))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("plages datées");
-    }
-
     private static Stand find(List<Stand> stands, String id) {
         return stands.stream()
                 .filter(stand -> stand.getId().equals(id))
