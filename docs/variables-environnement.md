@@ -100,6 +100,8 @@ compose — dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | `OIDC_POST_LOGOUT_PATH` | `/login` | Chemin où l'on revient après la déconnexion |
 | `OIDC_PRINCIPAL_CLAIM` | `email` | Revendication qui porte l'identité de la personne |
 | `OIDC_CONNECTION_DELAY` | `30S` | Durée pendant laquelle la découverte du fournisseur est retentée au démarrage |
+| `OIDC_MCP_AUDIENCE` | `planning-mcp` | Audience exigée des jetons présentés par un assistant IA connecté en OAuth : un jeton émis pour un autre client du fournisseur est refusé. Déclarez cette audience chez le fournisseur |
+| `AUTH_RECENT_WINDOW` | `PT10M` | Ancienneté maximale de la connexion d'un administrateur pour générer ou afficher la clé de l'assistant IA |
 | `OIDC_FORCE_HTTPS` | `false` | `true` derrière un proxy qui termine le TLS : redirections en `https` |
 | `ADMIN_LOCAL_SECOURS` | *(vide)* | Compte `admin` de la configuration. Vide : ouvert sans OIDC, fermé derrière un fournisseur OIDC ; `true` le garde ouvert comme compte de secours. `false` sans OIDC refuse le démarrage (aucune porte n'ouvrirait l'administration) |
 | `AUTH_LOCAL_SECONDE_ETAPE` | `true` | Les comptes locaux reçoivent un code à six chiffres par mail après leur mot de passe ; `false` coupe cette seconde étape |
