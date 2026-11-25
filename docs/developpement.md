@@ -582,12 +582,16 @@ propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
   `infaisable`) et les `festival-*` ; `bench.only=gamme-01,gamme-02` les
   restreint par préfixe de nom, et `bench.scenario=<chemin absolu>` ajoute un
   fichier local lu **en place**, jamais copié dans le dépôt. Budget par solve :
-  `bench.seconds` (60) et `bench.plateau` (30), `bench.seed` (0),
+  `bench.seconds` (60) et `bench.plateau` (30), `bench.seed` (0, pour les deux moteurs),
   `bench.engine=timefold` pour la recherche de Timefold au lieu du moteur
   direct, `bench.label` (nom des fichiers). Le plan de la variante est
   **re-scoré sous les règles actuelles** : un plan résolu sans une règle
   se note mieux par ses propres règles qu'il ne le mérite, et le verdict se lit
-  sur ce medium re-scoré ; une faisabilité perdue refuse toujours. Sorties :
+  sur ce medium re-scoré ; un hard pire qu'avant refuse toujours. Les sièges
+  changés se comptent sur la clé naturelle (stand, jour, horaires), par la
+  comparaison de `ChangementsJourneeService`, jamais sur l'id du poste. Un
+  scénario en erreur (l'arbitre compris) garde sa ligne puis fait échouer le
+  test. Sorties :
   `target/bench/regles-<label>.md` et `.csv` (ignorés par git).
 
   ```bash

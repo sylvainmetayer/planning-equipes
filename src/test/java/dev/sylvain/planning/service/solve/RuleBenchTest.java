@@ -1,13 +1,16 @@
 package dev.sylvain.planning.service.solve;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
+import ai.timefold.solver.core.api.solver.Solver;
+import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.config.solver.SolverConfig;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
-import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.scenario.ScenariosLivres;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -20,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -46,29 +48,28 @@ import org.junit.jupiter.api.Test;
  * the shipped files whose name starts so; {@code bench.scenario=<absolute
  * path>} adds a local file, read in place and never copied. Budget:
  * {@code bench.seconds} (60) and {@code bench.plateau} (30) per solve,
- * {@code bench.seed} (0), {@code bench.engine=timefold} for Timefold's search
+ * {@code bench.seed} (0, for either engine), {@code bench.engine=timefold} for Timefold's search
  * in place of the direct engine, {@code bench.label} (the file names).</p>
  *
  * <p>The variant's plan is scored again <b>under the rules as they stand</b>
  * (the "re-scored" columns): a plan solved without a rule scores better by its
  * own rules than it deserves, and the verdict is read on the re-scored
- * medium, which is the loss the operator would actually see. Hard feasibility
- * lost always fails the verdict. Written to {@code target/bench/regles-<label>.md}
+ * medium, which is the loss the operator would actually see. A hard score
+ * worse than the baseline's always fails the verdict. Seats changed are
+ * counted on the natural key (stand, day, hours), never on the poste id; the
+ * pure half lives in {@link RuleBenchMeasure}. Written to {@code target/bench/regles-<label>.md}
  * and {@code .csv}.</p>
  */
 @Tag("scenario-lent")
 class RuleBenchTest {
 
-    /** Share of the baseline medium the decision accepts to lose. */
-    static final double MEDIUM_LOSS_THRESHOLD = 0.05;
-
-    /** The two solves of one scenario, as the bench measures them. */
+    /** One solve of one scenario, as the bench measures it. */
     record Run(
             HardMediumSoftScore ownScore,
             HardMediumSoftScore rescored,
             long feasibleMillis,
             long totalMillis,
-            Map<String, String> seats) {}
+            PlanningEvenement plan) {}
 
     @Test
     void bench() throws IOException {
@@ -88,26 +89,28 @@ class RuleBenchTest {
                 .append(" niveaux=")
                 .append(levels.keySet())
                 .append(" — seuil de medium perdu : ")
-                .append(percent(MEDIUM_LOSS_THRESHOLD))
+                .append(percent(RuleBenchMeasure.MEDIUM_LOSS_THRESHOLD))
                 .append("\n\n| scénario | sièges | avant (h/m/s) | après (h/m/s) | après, re-scoré (h/m/s) |"
                         + " faisable avant | faisable après | sièges changés | medium perdu | verdict |\n"
                         + "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         StringBuilder csv = new StringBuilder("scenario,seats,before_hard,before_medium,before_soft,after_hard,"
                 + "after_medium,after_soft,rescored_hard,rescored_medium,rescored_soft,feasible_before_ms,"
                 + "feasible_after_ms,seats_changed,medium_lost,verdict\n");
+        List<String> errors = new ArrayList<>();
         for (String scenario : scenarios) {
             String name = Path.of(scenario).getFileName().toString();
             try {
-                Run before = run(scenario, List.of(), Map.of(), null);
-                Run after = run(scenario, offRules, levels, before);
-                int changed = changedSeats(before.seats(), after.seats());
-                double lost = mediumLost(before.ownScore(), after.rescored());
-                String verdict = verdict(before.ownScore(), after.rescored(), lost);
+                Run before = run(scenario, List.of(), Map.of());
+                Run after = run(scenario, offRules, levels);
+                int changed = RuleBenchMeasure.changedSeats(before.plan(), after.plan());
+                double lost = RuleBenchMeasure.mediumLost(before.ownScore(), after.rescored());
+                String verdict = RuleBenchMeasure.verdict(before.ownScore(), after.rescored());
                 md.append(row(name, before, after, changed, lost, verdict));
                 csv.append(csvRow(name, before, after, changed, lost, verdict));
             } catch (RuntimeException e) {
                 // One scenario failing (the referee included) must not hide the others.
                 md.append("| ").append(name).append(" | ERREUR : ").append(e).append(" |\n");
+                errors.add(name + ": " + e);
                 csv.append(name).append(",,,,,,,,,,,,,,,ERREUR\n");
             }
             System.out.println("BENCH-REGLES " + name + " termine");
@@ -117,15 +120,18 @@ class RuleBenchTest {
         Files.writeString(dir.resolve("regles-" + label + ".md"), md, StandardCharsets.UTF_8);
         Files.writeString(dir.resolve("regles-" + label + ".csv"), csv, StandardCharsets.UTF_8);
         System.out.println(md);
+        // Written first, then loud: a referee that disagreed is a fault, not a row to skim past.
+        assertTrue(errors.isEmpty(), () -> "Scenarios in error: " + errors);
     }
 
     /**
-     * One solve. {@code baseline} is null for the plan as it stands; otherwise
-     * the plan is solved under the variant, then scored again under the rules
-     * as they stand.
+     * One solve. With no variant, the plan as it stands; otherwise the plan is
+     * solved under the variant, then scored again under the rules as they
+     * stand, by the same solution manager the direct engine is refereed with.
      */
-    private static Run run(String scenario, List<String> off, Map<String, HardMediumSoftScore> levels, Run baseline)
+    private static Run run(String scenario, List<String> off, Map<String, HardMediumSoftScore> levels)
             throws IOException {
+        boolean variant = !off.isEmpty() || !levels.isEmpty();
         long seconds = Long.getLong("bench.seconds", 60L);
         long plateau = Long.getLong("bench.plateau", 30L);
         long seed = Long.getLong("bench.seed", 0L);
@@ -148,15 +154,20 @@ class RuleBenchTest {
         ConstraintWeightOverrides<HardMediumSoftScore> weightsAsStand = problem.getPonderationsContraintes();
         applyVariant(problem, off, levels);
 
-        var solver = "timefold".equals(System.getProperty("bench.engine"))
-                ? configuration
-                        .resolveSolverFactory(new SolveBudget(seconds, plateau, null), problem)
-                        .buildSolver()
-                : new HandSearchSolver(
-                        new SolverConfiguration.SearchSettings(seconds, plateau, 0, SolverEngine.HAND),
-                        configuration.plateauGainMedium(problem),
-                        configuration.solutionManager(),
-                        seed);
+        Solver<PlanningEvenement> solver;
+        if ("timefold".equals(System.getProperty("bench.engine"))) {
+            // The seed solverConfig.xml pins would otherwise ignore bench.seed.
+            SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(seconds, plateau, null), problem);
+            solverConfig.setRandomSeed(seed);
+            SolverConfiguration.adaptToProblem(solverConfig, problem);
+            solver = SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
+        } else {
+            solver = new HandSearchSolver(
+                    new SolverConfiguration.SearchSettings(seconds, plateau, 0, SolverEngine.HAND),
+                    configuration.plateauGainMedium(problem),
+                    configuration.solutionManager(),
+                    seed);
+        }
         long[] feasibleAt = {-1};
         solver.addEventListener(event -> {
             if (feasibleAt[0] < 0
@@ -171,20 +182,12 @@ class RuleBenchTest {
         long total = (System.nanoTime() - start) / 1_000_000L;
         HardMediumSoftScore own = solved.getScore();
         HardMediumSoftScore rescored = own;
-        if (baseline != null) {
+        if (variant) {
             solved.setConstraintsDesactivees(asStands);
             solved.setPonderationsContraintes(weightsAsStand);
             rescored = configuration.solutionManager().update(solved);
         }
-        Map<String, String> seats = new HashMap<>();
-        for (PosteAffectation poste : solved.getPostes()) {
-            seats.put(
-                    poste.getId(),
-                    poste.getAnimateur() == null
-                            ? ""
-                            : Objects.toString(poste.getAnimateur().getId()));
-        }
-        return new Run(own, rescored, feasibleAt[0], total, seats);
+        return new Run(own, rescored, feasibleAt[0], total, solved);
     }
 
     private static void applyVariant(
@@ -207,35 +210,8 @@ class RuleBenchTest {
         }
     }
 
-    static int changedSeats(Map<String, String> before, Map<String, String> after) {
-        int changed = 0;
-        for (Map.Entry<String, String> seat : before.entrySet()) {
-            if (!Objects.equals(seat.getValue(), after.get(seat.getKey()))) {
-                changed++;
-            }
-        }
-        return changed;
-    }
-
-    /** The share of the baseline medium that the variant's plan gives up; 0 when it is as good or better. */
-    static double mediumLost(HardMediumSoftScore before, HardMediumSoftScore after) {
-        long base = Math.abs(before.mediumScore());
-        long worse = before.mediumScore() - after.mediumScore();
-        if (worse <= 0) {
-            return 0;
-        }
-        return base == 0 ? 1 : (double) worse / base;
-    }
-
-    static String verdict(HardMediumSoftScore before, HardMediumSoftScore after, double lost) {
-        if (before.isFeasible() && !after.isFeasible()) {
-            return "REFUSE (faisabilite perdue)";
-        }
-        return lost <= MEDIUM_LOSS_THRESHOLD ? "ACCEPTE" : "REFUSE (medium)";
-    }
-
     private static String row(String name, Run before, Run after, int changed, double lost, String verdict) {
-        return "| " + name + " | " + before.seats().size() + " | " + levels(before.ownScore()) + " | "
+        return "| " + name + " | " + before.plan().getPostes().size() + " | " + levels(before.ownScore()) + " | "
                 + levels(after.ownScore()) + " | " + levels(after.rescored()) + " | " + seconds(before.feasibleMillis())
                 + " | " + seconds(after.feasibleMillis()) + " | " + changed + " | " + percent(lost) + " | " + verdict
                 + " |\n";
@@ -245,7 +221,7 @@ class RuleBenchTest {
         return String.join(
                         ",",
                         name,
-                        String.valueOf(before.seats().size()),
+                        String.valueOf(before.plan().getPostes().size()),
                         csv(before.ownScore()),
                         csv(after.ownScore()),
                         csv(after.rescored()),
