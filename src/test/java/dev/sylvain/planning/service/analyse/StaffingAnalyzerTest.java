@@ -61,6 +61,35 @@ class StaffingAnalyzerTest {
     }
 
     @Test
+    void theDailyRestSeparatesTheEveningFromTheNextMorning() {
+        // Two people close at midnight, one opens at 6:00 the next day: whoever
+        // closes cannot open (6 h of rest), so three people are needed even
+        // though two are never there at once.
+        Creneau soir = new Creneau(1L, 1, JOUR, LocalTime.of(20, 0), LocalTime.of(23, 59));
+        Creneau matin = new Creneau(2L, 2, JOUR.plusDays(1), LocalTime.of(6, 0), LocalTime.of(9, 0));
+        List<PosteAffectation> postes = new ArrayList<>();
+        postes.addAll(postes(stand("A", 2), soir, 2));
+        postes.addAll(postes(stand("B", 1), matin, 1));
+
+        StaffingSummary sans = analyzer.analyze(
+                postes,
+                List.of(),
+                TYPOLOGIES,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, true),
+                List.of());
+        StaffingSummary avec = analyzer.analyze(
+                postes,
+                List.of(),
+                TYPOLOGIES,
+                new StaffingRules(48 * 60, 30, 35 * 60, List.of(), null, true, 11 * 60),
+                List.of());
+
+        assertThat(sans.minimumTotal()).isEqualTo(2);
+        assertThat(avec.minimumTotal()).isEqualTo(3);
+        assertThat(avec.borneRetenue()).isEqualTo(BorneRetenue.REPOS_QUOTIDIEN);
+    }
+
+    @Test
     void peakCountsSimultaneousSeatsOnly() {
         // Two stands of 2 seats open at the same time: 4 people at once. A
         // third stand opens only once they have closed, and needs nobody more.

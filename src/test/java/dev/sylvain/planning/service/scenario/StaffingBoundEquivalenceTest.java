@@ -161,7 +161,10 @@ class StaffingBoundEquivalenceTest {
                 legaux.getDureeHebdomadaireMaxMineurMinutes(),
                 repas ? problem.getFenetresRepas() : List.of(),
                 jours != null && jours.hard() ? jours.cap() : null,
-                ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), "plafondCreneauxParTypologie"));
+                ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), "plafondCreneauxParTypologie"),
+                ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), "reposQuotidienMinimal")
+                        ? legaux.getReposQuotidienMinimalMinutes()
+                        : 0);
     }
 
     private static List<TypologieItem> typologies(Loaded loaded) {

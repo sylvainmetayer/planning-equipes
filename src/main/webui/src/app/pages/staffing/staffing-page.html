@@ -89,6 +89,16 @@
           <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'maxJoursConsecutifsTravaillesDur' }"
              i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
         </p>
+        @if (estBorneRetenue('REPOS_QUOTIDIEN')) {
+          <p class="staffing-binding">
+            <mat-icon inline aria-hidden="true">bedtime</mat-icon>
+            <strong i18n="@@staffing.restBound.label">Repos quotidien : {{ resume.minimumTotal }}</strong>
+            <ng-container i18n="@@staffing.restBound.description"> — qui ferme tard ne peut pas ouvrir le lendemain : les
+            sièges du soir et ceux du matin suivant, que personne ne tient ensemble, exigent autant de personnes distinctes.</ng-container>
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'reposQuotidienMinimal' }"
+               i18n="@@staffing.lien.reposQuotidien">Repos quotidien</a>
+          </p>
+        }
         @if (estBorneRetenue('PLAFOND_TYPOLOGIE')) {
           <p class="staffing-binding">
             <mat-icon inline aria-hidden="true">block</mat-icon>

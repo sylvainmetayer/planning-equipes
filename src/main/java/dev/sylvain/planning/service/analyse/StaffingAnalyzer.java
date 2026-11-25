@@ -274,7 +274,9 @@ public class StaffingAnalyzer {
          * that many distinct people — a floor on the whole team as well as on
          * the category's row.
          */
-        PLAFOND_TYPOLOGIE
+        PLAFOND_TYPOLOGIE,
+        /** The daily rest: seats of two neighbouring days that no one person can hold together ({@link #reposQuotidienPlancher}). */
+        REPOS_QUOTIDIEN
     }
 
     /**
@@ -592,10 +594,29 @@ public class StaffingAnalyzer {
             int dureeHebdomadaireMaxMineurMinutes,
             List<FenetreRepas> fenetresRepas,
             Integer joursConsecutifsMax,
-            boolean plafondTypologieActif) {
+            boolean plafondTypologieActif,
+            int reposQuotidienMinutes) {
 
         public StaffingRules {
             fenetresRepas = fenetresRepas == null ? List.of() : List.copyOf(fenetresRepas);
+        }
+
+        /** Without the daily rest: what the entry points that never read it hand in. */
+        public StaffingRules(
+                int dureeHebdomadaireMaxMinutes,
+                int dureePauseMinutes,
+                int dureeHebdomadaireMaxMineurMinutes,
+                List<FenetreRepas> fenetresRepas,
+                Integer joursConsecutifsMax,
+                boolean plafondTypologieActif) {
+            this(
+                    dureeHebdomadaireMaxMinutes,
+                    dureePauseMinutes,
+                    dureeHebdomadaireMaxMineurMinutes,
+                    fenetresRepas,
+                    joursConsecutifsMax,
+                    plafondTypologieActif,
+                    0);
         }
 
         /**
@@ -726,7 +747,9 @@ public class StaffingAnalyzer {
         List<Siege> sieges = sieges(postes);
         Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, dureePauseMinutes, fenetres);
         Map<String, Integer> plancherPlafonds = capFloors(sieges, typologies, rules);
-        Bornes bornes = withCapFloor(bornes(besoins, rules), plancherPlafonds);
+        Bornes bornes = withRestFloor(
+                withCapFloor(bornes(besoins, rules), plancherPlafonds),
+                reposQuotidienPlancher(sieges, rules.reposQuotidienMinutes()));
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         // The team every « how many may » figure is read against: the floor,
         // or the animateurs already entered when there are more of them.
@@ -988,6 +1011,75 @@ public class StaffingAnalyzer {
         siegesProposant.forEach(
                 (typologie, nombre) -> planchers.put(typologie, Math.ceilDiv(nombre, plafonds.get(typologie))));
         return planchers;
+    }
+
+    /** {@code bornes}, raised to the daily-rest floor when it exceeds them. */
+    private static Bornes withRestFloor(Bornes bornes, int plancher) {
+        if (plancher <= bornes.minimumTotal()) {
+            return bornes;
+        }
+        return new Bornes(
+                bornes.heures(),
+                bornes.semaines(),
+                bornes.picSimultane(),
+                bornes.picAvecPause(),
+                bornes.picRepas(),
+                bornes.chargeTotal(),
+                bornes.rotationTotal(),
+                bornes.enchainementTotal(),
+                plancher,
+                BorneRetenue.REPOS_QUOTIDIEN,
+                bornes.parSemaine(),
+                bornes.semaineCritique());
+    }
+
+    /**
+     * The daily rest as a floor on the number of distinct animateurs.
+     *
+     * <h3>Proof</h3>
+     *
+     * <p>{@code reposQuotidienMinimal} forbids one animateur to hold a seat
+     * ending at {@code e} on a day and a seat starting at {@code s} on the next
+     * whenever {@code 1440 - e + s < repos}, that is {@code e - s > 1440 -
+     * repos}. Take a day {@code j}, an instant {@code T}, the seats {@code E} of
+     * day {@code j} ending at {@code T} or after, and the seats {@code M} of day
+     * {@code j + 1} starting strictly before {@code T - (1440 - repos)}. Every
+     * seat of {@code E} conflicts with every seat of {@code M}. The seats of
+     * {@code E} that overlap at one instant need as many people, so do those of
+     * {@code M}, and no person holds seats of both: the sum of the two peaks is
+     * a clique of the conflict graph, hence a floor — the largest over all days
+     * and all {@code T} (the ends of the day's seats).</p>
+     *
+     * @param repos the daily rest in minutes, {@code 0} when the rule is off
+     */
+    static int reposQuotidienPlancher(List<Siege> sieges, int repos) {
+        if (repos <= 0) {
+            return 0;
+        }
+        Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
+        for (Siege siege : sieges) {
+            byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
+        }
+        int plancher = 0;
+        for (Map.Entry<LocalDate, List<Siege>> jour : byDate.entrySet()) {
+            List<Siege> lendemain = byDate.get(jour.getKey().plusDays(1));
+            if (lendemain == null) {
+                continue;
+            }
+            for (int instant :
+                    jour.getValue().stream().mapToInt(Siege::fin).distinct().toArray()) {
+                List<Siege> soir = jour.getValue().stream()
+                        .filter(siege -> siege.fin() >= instant)
+                        .toList();
+                List<Siege> matin = lendemain.stream()
+                        .filter(siege -> siege.debut() < instant - (1440 - repos))
+                        .toList();
+                if (!matin.isEmpty()) {
+                    plancher = Math.max(plancher, pic(soir, 0) + pic(matin, 0));
+                }
+            }
+        }
+        return plancher;
     }
 
     /** {@code bornes}, raised to the largest cap floor when one exceeds it. */
