@@ -58,16 +58,34 @@ jobs:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
           fetch-depth: 0
 
-      # Même forme que la garde de `docker-ghcr.yml` et que `tag_pattern` dans
-      # `cliff.toml` : les trois doivent dire la même chose d'un tag de
-      # release, sans quoi l'image, les notes et le changelog divergeraient.
-      # Bloquant, et avant tout le reste : sur un tag hors forme il n'y a pas
-      # de section à rendre.
+      # Même forme que la garde de `docker-ghcr.yml` : elles doivent dire la
+      # même chose d'un tag de release, sans quoi l'image et les notes
+      # divergeraient. Un tag est `vX.Y.Z` ou une préversion `vX.Y.Z-rc.N`
+      # (N sans zéro de tête) ; `cliff.toml` ne garde que le premier comme
+      # borne de version, voir l'étape suivante. Bloquant, et avant tout le
+      # reste : sur un tag hors forme il n'y a pas de section à rendre.
       - name: Check the tag is a release tag
         run: |
-          if ! printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::$TAG n'est pas un tag de release vX.Y.Z"
+          if ! printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[1-9][0-9]*)?$'; then
+            echo "::error::$TAG n'est pas un tag de release vX.Y.Z ni de préversion vX.Y.Z-rc.N"
             exit 1
+          fi
+
+      # Un tag stable se lit par `--current` : `cliff.toml` ne reconnaît que
+      # `vX.Y.Z` comme borne, donc la section d'une 4.0.0 reprend tout ce qui
+      # est entré depuis la 3.5.0, rc comprises. Une rc n'est pas une borne et
+      # `--current` n'a rien à lui répondre : sa section est donnée par une
+      # plage explicite, du dernier tag stable à elle, avec son numéro. Le
+      # tag précédent se cherche avec `--exclude`, comme dans le contrôle de
+      # montée plus bas.
+      - name: Choose what the changelog section covers
+        id: portee
+        run: |
+          if printf '%s' "$TAG" | grep -q -- '-rc\.'; then
+            stable="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude 'v*-*' "$TAG^" 2>/dev/null || true)"
+            echo "args=--tag $TAG ${stable:+$stable..$TAG} --strip all --output notes-brutes.md" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--current --strip all --output notes-brutes.md" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Render the changelog section
@@ -78,7 +96,8 @@ jobs:
           # ligne de maintenance il remonte au tag parent de CETTE ligne, pas
           # au plus récent du dépôt. `--strip all` retire l'en-tête et le pied
           # du fichier, qui n'ont pas de sens dans un corps de release.
-          args: --current --strip all --output notes-brutes.md
+          # Pour une rc, la plage de l'étape précédente.
+          args: ${{ steps.portee.outputs.args }}
 
       - name: Write the release body
         # La sortie de l'étape passe par l'environnement, jamais par une
@@ -147,10 +166,13 @@ jobs:
           set -uo pipefail
           faute=0
 
-          # Le tag qui précède CELUI-CI par l'historique, pas le plus récent du
-          # dépôt : sur `release/1.2`, un v1.2.1 suit v1.2.0 et non v1.3.0.
-          # Même lecture que `--current` ci-dessus, les deux resteront d'accord.
-          precedent="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' "$TAG^" 2>/dev/null || true)"
+          # Le tag STABLE qui précède CELUI-CI par l'historique, pas le plus
+          # récent du dépôt : sur `release/1.2`, un v1.2.1 suit v1.2.0 et non
+          # v1.3.0. Les préversions sont écartées (`--exclude`) : une
+          # v4.0.0-rc.2 se compare à la v3.5.0, comme la v4.0.0, et non à sa
+          # propre rc.1, dont le numéro de base est le même. Même lecture que
+          # `--current` ci-dessus, les deux resteront d'accord.
+          precedent="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude 'v*-*' "$TAG^" 2>/dev/null || true)"
 
           if [ -z "$precedent" ]; then
             echo "::notice::$TAG est la première release de sa ligne : pas de montée à vérifier"

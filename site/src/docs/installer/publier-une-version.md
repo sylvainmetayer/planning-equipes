@@ -25,6 +25,8 @@ Le `pom.xml` ne porte donc **plus de numéro en dur** : sa version est `${revisi
 
 Une release, c'est **un formulaire** : *Releases* → *Draft a new release* sur GitHub. Choisissez le numéro `vX.Y.Z` ([ce que chaque numéro promet](versioning.md)), visez `main`, publiez. Le corps peut rester vide.
 
+Pour une **préversion**, nommez le tag `vX.Y.Z-rc.N` (`N` à partir de 1, sans zéro de tête) et cochez *Set as a pre-release*. Elle suit le même chemin : l'image est publiée sous `X.Y.Z-rc.N` seulement, sans `X.Y` ni `:latest`, et les notes couvrent la plage depuis le dernier tag stable. Un autre suffixe (`-beta`, `-alpha`) est refusé par les deux workflows.
+
 ![Fabrication d'une release et patch d'une version antérieure](repo:docs/diagrammes/release.svg)
 
 <sub>Source : [`diagrammes/release.puml`](repo:docs/diagrammes/release.puml).</sub>
@@ -33,7 +35,7 @@ Tout le reste dérive de ce geste, sans commande ni clone :
 
 | Ce qui part | Sur quoi | Ce qu'il fait |
 | --- | --- | --- |
-| `docker-ghcr.yml` | le push du tag | build `linux/amd64` poussé sous `sha-…` seulement, smoke test de l'image publiée, SBOM, signature cosign, puis tags `1.2.0` et `1.2`, et `:latest` si le tag est le plus récent |
+| `docker-ghcr.yml` | le push du tag | build `linux/amd64` poussé sous `sha-…` seulement, smoke test de l'image publiée, SBOM, signature cosign, puis tags `1.2.0` et `1.2`, et `:latest` si le tag est le plus récent ; pour une préversion, `1.2.0-rc.1` seulement |
 | `release.yml` | la publication de la release | écrit le corps de la release : la section rendue par `git cliff --current` |
 
 Les deux sont indépendants et tournent de front ; aucun ne pose ni ne déplace de tag, le numéro reste une décision humaine.
@@ -48,7 +50,7 @@ Deux contrôles tournent ensuite, et ils échouent **après** avoir écrit les n
 
 ### `:latest` ne bouge jamais implicitement
 
-`docker/metadata-action` en défaut (`latest=auto`) déplacerait `:latest` à **chaque** push de tag : publier un correctif `1.2.4` après la sortie de la `1.3.0` ramènerait `:latest` sur l'ancienne ligne, silencieusement. Le workflow force donc `latest=false`, et une étape séparée ne pose `:latest` que si le tag poussé est le plus grand `vX.Y.Z` de tout le dépôt. `:latest` n'avance que vers l'avant.
+`docker/metadata-action` en défaut (`latest=auto`) déplacerait `:latest` à **chaque** push de tag : publier un correctif `1.2.4` après la sortie de la `1.3.0` ramènerait `:latest` sur l'ancienne ligne, silencieusement. Le workflow force donc `latest=false`, et une étape séparée ne pose `:latest` que si le tag poussé est le plus grand `vX.Y.Z` de tout le dépôt. `:latest` n'avance que vers l'avant, et ne désigne jamais une préversion : l'étape est sautée pour un tag `-rc.N`.
 
 ### Les notes sont générées, pas écrites
 
