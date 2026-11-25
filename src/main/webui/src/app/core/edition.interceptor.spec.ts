@@ -91,6 +91,7 @@ describe('editionInterceptor', () => {
         ),
       ),
     ).rejects.toBe(refusal);
+    await vi.waitFor(() => expect(reload).toHaveBeenCalled());
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify.mock.calls[0][0]).toMatchObject({
       variant: 'error',
