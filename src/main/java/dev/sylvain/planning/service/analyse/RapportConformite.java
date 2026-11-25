@@ -20,6 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param semaines  the ISO weeks of the plan, sorted, the keys of every {@code heuresParSemaine}
  * @param regles    every legal rule, with its number of breaches (zero is the expected value)
  * @param personnes every animateur holding at least one seat, by name
+ * @param mineursSansRepresentant the minors among them whose legal representative is not recorded
  */
 @Schema(
         requiredProperties = {
@@ -30,7 +31,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
             "synthese",
             "semaines",
             "regles",
-            "personnes"
+            "personnes",
+            "mineursSansRepresentant"
         })
 public record RapportConformite(
         String editionId,
@@ -41,7 +43,20 @@ public record RapportConformite(
         Synthese synthese,
         List<String> semaines,
         List<Regle> regles,
-        List<Personne> personnes) {
+        List<Personne> personnes,
+        List<MinorWithoutRepresentative> mineursSansRepresentant) {
+
+    /** The same report with the minors whose legal representative is missing — known to the contacts, not to the plan. */
+    public RapportConformite withMinorsWithoutRepresentative(List<MinorWithoutRepresentative> manquants) {
+        return new RapportConformite(
+                editionId, editionNom, publieLe, genereLe, plafonds, synthese, semaines, regles, personnes, manquants);
+    }
+
+    /** A minor of the plan with no legal representative recorded: an id and a name, nothing of the contact itself. */
+    @Schema(
+            name = "MinorWithoutRepresentative",
+            requiredProperties = {"animateurId", "nom"})
+    public record MinorWithoutRepresentative(String animateurId, String nom) {}
 
     /** A ceiling as a reader writes it: « 44 h », « 10,5 h » — never « 44.0 h ». */
     public static String hoursLabel(double heures) {

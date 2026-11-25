@@ -2,11 +2,15 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.analyse.RapportConformite;
 import dev.sylvain.planning.service.compte.Compte;
+import dev.sylvain.planning.service.rh.ContactsAnimateur;
+import dev.sylvain.planning.service.rh.ContactsService;
 import dev.sylvain.planning.service.rh.RhService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -66,6 +70,28 @@ public class RhResource {
     @Produces("text/csv")
     public Response exportCsv(@PathParam("editionId") String editionId) {
         return CsvDownload.attachment(rh.csv(compte(), admin(), editionId), "rapport-conformite.csv");
+    }
+
+    /** The animateurs holding contacts, and every minor, with those contacts. */
+    @GET
+    @RolesAllowed({"rh", "admin"})
+    @Path("/editions/{editionId}/contacts")
+    @Produces("application/json")
+    public List<ContactsService.ContactView> contacts(@PathParam("editionId") String editionId) {
+        return rh.contacts(compte(), admin(), editionId);
+    }
+
+    /** Replaces the contacts of one animateur; the answer carries the warnings of the write. */
+    @PUT
+    @RolesAllowed({"rh", "admin"})
+    @Path("/editions/{editionId}/contacts/{animateurId}")
+    @Consumes("application/json")
+    @Produces("application/json")
+    public ContactsService.Saved saveContacts(
+            @PathParam("editionId") String editionId,
+            @PathParam("animateurId") String animateurId,
+            ContactsAnimateur contacts) {
+        return rh.saveContacts(compte(), admin(), editionId, animateurId, contacts);
     }
 
     private Compte compte() {

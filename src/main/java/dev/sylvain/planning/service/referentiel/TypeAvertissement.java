@@ -29,6 +29,12 @@ public enum TypeAvertissement {
      */
     MINEUR_PENDANT_EVENEMENT,
 
+    /**
+     * A minor's contacts were saved with no legal representative. Optional, so never a refusal — but the
+     * compliance report lists these people, and the sentence says so before the report does.
+     */
+    MINEUR_SANS_REPRESENTANT,
+
     /** No stand is open at any point of the timeslot: it will open no seat at all. */
     CRENEAU_HORS_OUVERTURE_STANDS,
 
