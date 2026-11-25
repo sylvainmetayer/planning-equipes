@@ -43,14 +43,13 @@ class RemoteSolvesTest {
     private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
     private static final String SECRET = "worker-secret-of-the-test";
 
+    /** Both sides must say the same: a worker refuses a problem of another version than its own. */
+    private static final String VERSION = "test-version";
+
     /** What an operator would run beside the application. */
     static final class Worker {
         static final SolveWorkerServer SERVER = new SolveWorkerServer(
-                new SolveWorker(),
-                SECRET,
-                "test",
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
-                null);
+                new SolveWorker(), SECRET, VERSION, new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), null);
     }
 
     public static class PermanentWorker implements QuarkusTestProfile {
@@ -60,7 +59,9 @@ class RemoteSolvesTest {
                     "planning.solver.worker.url",
                     "http://127.0.0.1:" + Worker.SERVER.port(),
                     "planning.solver.worker.secret",
-                    SECRET);
+                    SECRET,
+                    "quarkus.application.version",
+                    VERSION);
         }
     }
 
