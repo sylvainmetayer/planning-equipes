@@ -59,10 +59,45 @@ besoin de `B + 1`, `B + 2`… jusqu'au premier réalisable.
 
 ## Mesure d'équivalence
 
-Résultats de `StaffingBoundEquivalenceTest` sur la gamme (voir *Mesure* ci-dessous,
-complétée par la dernière exécution).
+`StaffingBoundEquivalenceTest`, joué le 25 novembre 2026 sur une machine louée
+pour l'occasion (12 cœurs partagés, moteur direct, 300 s par équipe, 60 s pour
+`B − 1`), sur les vingt-cinq rangs réalisables de la gamme. `besoin` est la
+première taille de la grille `B`, `B+1`, `B+2`, `B+3`, `B+6`, `B+12`, `B+24`… qui
+tient tous les sièges : une borne haute du besoin réel.
 
-MESURE_A_COMPLETER
+| Rang | Borne `B` | Besoin | Écart |
+| --- | --- | --- | --- |
+| 1 à 9 | 2, 4, 3, 4, 6, 5, 7, 9, 8 | `B` | 0 |
+| 10 (journées types multiples) | 13 | 14 | 1 |
+| 11 (semaine à cheval, nuit) | 7 | 9 | 2 |
+| 12 à 16 | 14, 14, 45, 32, 41 | `B` | 0 |
+| 17 (règles désactivées) | 35 | 78 | 43 |
+| 18 (effectifs par fenêtre) | 58 | 82 | 24 |
+| 19 | 53 | `B` | 0 |
+| 20 (festival type) | 100 | 112 | 12 |
+| 21 à 25 | 70, 123, 100, 168, 200 | `B` | 0 |
+
+Ce que cela dit :
+
+- **La borne n'est jamais trop haute** : aucune équipe de `B − 1` n'a tenu les
+  sièges, sur aucun rang. Un `ne suffit pas` de la borne est donc fiable.
+- **Sur vingt rangs sur vingt-cinq, la borne est le besoin**, à froid comme à
+  partir du plan en place. Sur les rangs 10 et 11 le solve demande une à deux
+  personnes de plus (le repos quotidien après une soirée, que la borne ignore).
+- **Sur trois rangs, la borne est loin du besoin** : 18 et 20 enfreignent, à `B`,
+  le non-chevauchement des postes d'une personne (18 y ajoute le travail continu
+  maximal) : le compte jour par jour de la borne ne voit pas que deux sièges
+  décalés d'une heure ne se tiennent pas à une seule personne. Sur le rang 17,
+  qui éteint la coupure repas et la limite de typologies pour devenir
+  réalisable, la recherche ne trouve aucun plan sous l'équipe entière (78) : à
+  `B` il ne reste que des sièges vides, et la mesure ne dit pas si c'est la
+  limite de la recherche ou une règle que la borne ignore.
+- Un `suffit` de la borne est donc une **condition nécessaire**, pas une
+  preuve : c'est pourquoi l'écran le formule ainsi et renvoie au calcul, et
+  pourquoi le calcul reste une option plutôt qu'une réserve supprimée.
+
+Le test fixe l'écart maximal de chaque rang (`ALLOWED_GAPS`) : une règle qui
+l'élargit casse le test, pas l'écran.
 
 ## Conséquences
 

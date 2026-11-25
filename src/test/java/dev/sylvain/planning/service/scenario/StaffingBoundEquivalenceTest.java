@@ -36,14 +36,21 @@ import org.junit.jupiter.api.Test;
  * <p>For each rung the bound {@code B} is read with {@link StaffingAnalyzer},
  * then a team of {@code B} adults is solved exactly as
  * {@link StaffingVerificationService} does it (hypothetical preparation, the
- * instance's engine, stop at the first feasible plan). Three outcomes:</p>
+ * instance's engine, stop at the first feasible plan, started from the rung's
+ * own plan and, failing that, from nothing), then {@code B + 1}, {@code B + 2},
+ * {@code B + 3}, {@code B + 6}… up to the rung's real team, which holds by
+ * construction. Three outcomes:</p>
  * <ul>
  *   <li>feasible at {@code B}, and not at {@code B - 1}: the bound is the need;</li>
- *   <li>feasible at {@code B + k}, {@code k} at most {@link #MAX_GAP}: the bound
- *       is a floor and the solve needs what it leaves out (the table printed
- *       says which rungs, and it is the gap the ADR explains);</li>
+ *   <li>feasible only above {@code B}: the bound is a floor and the solve needs
+ *       what it leaves out — {@link #ALLOWED_GAPS} names the rungs where that
+ *       is more than {@link #MAX_GAP}, with the figure last measured, so a rule
+ *       that widens the gap breaks this test instead of the screen;</li>
  *   <li>feasible at {@code B - 1}: the bound would be wrong — a hard failure.</li>
  * </ul>
+ * <p>{@code needed} is the first size of that grid that holds, so an upper
+ * bound of the true need; a failure within the time given proves nothing, a
+ * success proves the team holds.</p>
  *
  * <p>Tagged {@code scenario-lent}: run with {@code ./mvnw test -Pscenario-tests
  * -Dtest=StaffingBoundEquivalenceTest}, in the background, on a machine that
@@ -52,8 +59,17 @@ import org.junit.jupiter.api.Test;
 @Tag("scenario-lent")
 class StaffingBoundEquivalenceTest {
 
-    /** What a solve may need above the bound before the bound stops being a useful answer. */
-    static final int MAX_GAP = 3;
+    /** What a solve may need above the bound on a rung not named in {@link #ALLOWED_GAPS}. */
+    static final int MAX_GAP = 2;
+
+    /**
+     * The rungs where the solve needs more than {@link #MAX_GAP} people above the
+     * bound, by rung number, with the gap last measured (ADR 0098): 17 has the meal
+     * break and the typology limit switched off and the search finds no plan under
+     * its whole team, 18 and 20 break the overlap and the continuous-work rules
+     * that the bound's day-by-day count does not see.
+     */
+    static final Map<Integer, Integer> ALLOWED_GAPS = Map.of(17, 43, 18, 24, 20, 12);
 
     /** Seconds a solve of one team is given; a failure within it proves nothing, a success proves the team holds. */
     private static final long SOLVE_SECONDS = Long.getLong("equivalence.seconds", 300L);
@@ -89,8 +105,12 @@ class StaffingBoundEquivalenceTest {
                 .as("a team below the bound that holds every seat would make the bound wrong")
                 .noneMatch(Row::feasibleBelow);
         assertThat(rows)
-                .as("the solve needs at most MAX_GAP, or half the bound, more than the bound")
-                .allMatch(row -> row.gap() >= 0 && row.gap() <= Math.max(MAX_GAP, row.bound() / 2));
+                .as("the solve needs at most the gap measured for the rung more than the bound")
+                .allMatch(row -> row.gap() >= 0 && row.gap() <= allowedGap(row.rung()));
+    }
+
+    private static int allowedGap(String rung) {
+        return ALLOWED_GAPS.getOrDefault(Integer.parseInt(rung.substring(6, 8)), MAX_GAP);
     }
 
     private Row measure(String rung) {
