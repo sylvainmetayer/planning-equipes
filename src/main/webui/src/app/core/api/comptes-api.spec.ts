@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../api.service';
+import { NouveauCompte, NouvelleHabilitation } from '../models';
 import { ComptesApi } from './comptes-api';
 
 describe('ComptesApi', () => {
@@ -27,8 +28,8 @@ describe('ComptesApi', () => {
   it('lists and creates accounts', async () => {
     await api.list();
     expect(get).toHaveBeenCalledWith('/api/comptes');
-    const nouveau = { email: 'a@b.fr', nom: 'A' };
-    await api.create(nouveau as never);
+    const nouveau: NouveauCompte = { email: 'a@b.fr', nom: 'A' };
+    await api.create(nouveau);
     expect(post).toHaveBeenCalledWith('/api/comptes', nouveau);
   });
 
@@ -40,8 +41,8 @@ describe('ComptesApi', () => {
   });
 
   it('grants and withdraws a right', async () => {
-    const droit = { role: 'ORGANISATEUR', editionId: 'E1' };
-    await api.grant('c1', droit as never);
+    const droit: NouvelleHabilitation = { role: 'ORGANISATEUR', editionId: 'E1', expireLe: null };
+    await api.grant('c1', droit);
     expect(post).toHaveBeenCalledWith('/api/comptes/c1/habilitations', droit);
     await api.withdraw('c1', 'h1');
     expect(deleteReturning).toHaveBeenCalledWith('/api/comptes/c1/habilitations/h1');
