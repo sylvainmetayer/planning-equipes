@@ -27,6 +27,7 @@ import {
   trainingTabToNeed,
 } from './app.routes';
 import { BRANDING } from './core/branding';
+import { ResponsablePage } from './pages/responsable/responsable-page';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
 @Component({ template: '' })
@@ -186,6 +187,12 @@ describe('app.routes', () => {
       const resolu = (route.title as ResolveFn<string>)(state.root, state);
       expect(resolu, `route ${route.path}`).toBeTruthy();
     }
+  });
+
+  it('lazy-loads « Mon stand » from the responsable route', async () => {
+    const route = routes.find((r) => r.path === 'responsable');
+    const component = await (route?.loadComponent as () => Promise<unknown>)();
+    expect(component).toBe(ResponsablePage);
   });
 
   it("résout un titre fonction jusqu'au titre du document", async () => {
