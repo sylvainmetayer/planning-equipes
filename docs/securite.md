@@ -512,6 +512,34 @@ le schéma, `QUARKUS_OIDC_AUTHENTICATION_COOKIE_FORCE_SECURE=true`
 jamais en clair. Les tentatives de mot de passe sur le secours fermé sont
 journalisées comme des échecs (adresse seulement), sans compter dans le verrou.
 
+## Le responsable de stand : un droit de lecture, pas une porte de plus
+
+Un compte (OIDC ou local) peut porter un droit `RESPONSABLE_STAND`, accordé dans
+Paramètres › Comptes : **une édition, un ou plusieurs de ses stands**, une
+expiration facultative. Il donne le rôle `responsable_stand`, qui n'ouvre que
+`/api/responsable/*` ; `/api/*` en dehors de ce préfixe lui répond `403`, comme
+à n'importe quel compte sans droit d'organisation (`role-gestion` ne le
+contient pas), et `@RolesAllowed` double la règle HTTP sur chaque méthode.
+
+- **Lecture seule** : les deux routes sont des `GET`
+  (`ResponsableProjectionStructurelleTest` refuse une méthode qui n'en est pas
+  une).
+- **Édition active seulement** (ADR 0072) : la requête ne nomme ni édition ni
+  stand (pas d'en-tête `X-Edition-Id`). Le service lit l'édition active et les
+  stands des droits en vigueur du compte, et rend une vue vide quand rien ne
+  s'ouvre — droit expiré, retiré, compte désactivé, édition inactive : la
+  réponse ne distingue pas « pas à vous » de « n'existe pas ».
+- **Une projection, jamais le domaine** : horaires, places pourvues et vides,
+  et — selon le réglage — prénom et nom. Pas d'adresse, de téléphone, d'âge ni
+  de statut mineur ; `ResponsableProjectionStructurelleTest` lit les types du
+  record. Le plan lu est le plan **publié**, jamais le plan de travail.
+- **L'affichette suit le même réglage** : elle est construite à partir de la
+  même vue, pas d'une seconde lecture.
+- `ResponsableResourceTest` balaie toutes les routes `GET` du contrat publié
+  avec le jeton d'un responsable du stand S : aucune ne répond `403` à tort, et
+  aucun corps ne contient le nom d'un animateur d'un autre stand, le nom d'un
+  autre stand ni, quand le réglage dit « horaires seuls », aucun nom du tout.
+
 ## Abonnement ICS : le second jeton, et ce qu'il permet exactement
 
 `GET /api/abonnements/{token}/planning.ics` est la **seule** route de

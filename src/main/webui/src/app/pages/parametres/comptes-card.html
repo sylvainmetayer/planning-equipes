@@ -100,7 +100,17 @@
                     </mat-select>
                   </mat-form-field>
                 }
-                <button matButton="filled" type="submit" [disabled]="busy()" i18n="@@comptes.octroyer">Accorder</button>
+                @if (role() === 'RESPONSABLE_STAND') {
+                  <mat-form-field>
+                    <mat-label i18n="@@comptes.stands">Stands de « {{ currentEdition() }} »</mat-label>
+                    <mat-select multiple [value]="standIds()" (selectionChange)="standIds.set($event.value)">
+                      @for (s of stands(); track s.id) {
+                        <mat-option [value]="s.id">{{ s.nom }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
+                <button matButton="filled" type="submit" [disabled]="busy() || (role() === 'RESPONSABLE_STAND' && standIds().length === 0)" i18n="@@comptes.octroyer">Accorder</button>
               </form>
             }
           </li>

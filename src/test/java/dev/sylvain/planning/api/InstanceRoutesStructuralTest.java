@@ -68,7 +68,8 @@ class InstanceRoutesStructuralTest {
             "SolverJobResource",
             "TypologieAnalyseResource",
             "ValidationJourneeResource",
-            "WeatherResource");
+            "WeatherResource",
+            "ReglageResponsablesResource");
 
     /** Open to anybody on purpose (a token is the credential, or the route is public). */
     private static final Set<String> PUBLIQUES = Set.of(
@@ -79,6 +80,9 @@ class InstanceRoutesStructuralTest {
             "EspaceAnimateurResource",
             "AbonnementIcsResource",
             "MuralResource");
+
+    /** Opened by a right of its own, and by nothing else: the responsable de stand's reads. */
+    private static final Set<String> RESPONSABLE = Set.of("ResponsableResource");
 
     /** Reserved to the administrators as a whole resource. */
     private static final Set<String> INSTANCE = Set.of(
@@ -123,8 +127,9 @@ class InstanceRoutesStructuralTest {
 
     @Test
     void everyResourceIsClassified() throws Exception {
-        Set<String> classified =
-                Stream.of(PAR_EDITION, PUBLIQUES, INSTANCE).flatMap(Set::stream).collect(Collectors.toSet());
+        Set<String> classified = Stream.of(PAR_EDITION, PUBLIQUES, INSTANCE, RESPONSABLE)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
         Set<String> unclassified = resources().stream()
                 .map(Class::getSimpleName)
                 .filter(n -> !classified.contains(n))

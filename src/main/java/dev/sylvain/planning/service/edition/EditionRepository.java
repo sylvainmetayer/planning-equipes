@@ -130,6 +130,11 @@ public class EditionRepository {
                     "parametres_meteo",
                     "horizon_jours, seuil_temperature, seuil_rafales, orage, prereglage_chaleur, prereglage_vent, "
                             + "prereglage_orage"),
+            // What the responsables de stand read (names or shifts only) travels
+            // with the stands it names — their ids are copied verbatim. The
+            // rights of the accounts do not: a responsable is named per event.
+            new TableToCopy("reglage_noms_responsable", "noms_visibles, ouverture_le"),
+            new TableToCopy("reglage_noms_stand", "stand_id, noms_visibles, ouverture_le"),
             // The id counters travel with the ids they handed out (ADR 0050):
             // the copy keeps every id verbatim, so its next animateur must be
             // numbered after the ones it inherited, not from A1 again. Copied

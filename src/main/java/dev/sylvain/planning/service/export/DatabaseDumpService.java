@@ -112,6 +112,10 @@ public class DatabaseDumpService {
             // suggest, so after the presets they point at (ADR 0074). Its
             // state, meteo_etat, is the machine's and stays out.
             "parametres_meteo",
+            // What the responsables de stand read: names or shifts only, per
+            // edition and per stand — after the stands the exceptions name.
+            "reglage_noms_responsable",
+            "reglage_noms_stand",
             "demande_echange",
             "planning_resolution",
             "parametres_legaux",
@@ -201,6 +205,10 @@ public class DatabaseDumpService {
      *   <li>{@code compte_jeton}, {@code compte_defi} — the single-use password
      *       links and sign-in challenges of the accounts: hashes of credentials
      *       still in force. A restore would reopen links nobody here handed out.</li>
+     *   <li>{@code habilitation_stand} — the stands a responsable de stand's
+     *       right covers: part of the right it hangs from, with the same reason.
+     *       Not even a foreign key to {@code stand}, which a restore deletes and
+     *       recreates.</li>
      *   <li>{@code solver_job} — the queue, replayed at startup. A restore
      *       would make the receiving instance run somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
@@ -252,6 +260,7 @@ public class DatabaseDumpService {
             "habilitation",
             "compte_jeton",
             "compte_defi",
+            "habilitation_stand",
             "solver_job",
             "journal_action",
             "verification_besoin",

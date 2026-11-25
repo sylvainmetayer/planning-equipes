@@ -274,6 +274,19 @@ Single Quarkus service, no separate solver microservice. Package root:
     `FragiliteAnalyzer`, `ConfirmationPlanningService` and the referential,
     each report computed over the whole plan and only then narrowed to the
     person, so the fiche and the specialised screens cannot disagree.
+  - `service/responsable/` — the responsable de stand (`RESPONSABLE_STAND`
+    right of an account, one edition and the stands it names): read-only, the
+    **active** edition only (ADR 0072), the **published** plan, shifts and empty
+    seats without a name unless `ReglagesResponsables` says so at this instant
+    (the edition's default, a per-stand exception either way, each with an
+    optional opening date). `ResponsableService` is the one door to the seats
+    and returns a projection (`ResponsableView`, no domain type —
+    `ResponsableProjectionStructurelleTest`); the sheet
+    (`export/StandAffichettePdf`) is built from that same view. The role opens
+    `/api/responsable/*` and nothing else (`role-responsable`); the right's
+    stands live in `habilitation_stand`, with no key to `stand` (a dump import
+    recreates the stands). `ResponsableResourceTest` sweeps every `GET` of the
+    contract with such an account and refuses any other stand's or person's name.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
     chosen stand by stand. `ConsigneResolver` is the **fourth layer** of a
