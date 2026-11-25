@@ -30,6 +30,7 @@ import org.openpdf.text.pdf.PdfWriter;
  */
 @ApplicationScoped
 public class RapportConformitePdf {
+    private static final String PERSON = "Personne";
 
     private final PdfTheme theme;
 
@@ -115,7 +116,7 @@ public class RapportConformitePdf {
             PdfPTable table = new PdfPTable(new float[] {22f, 28f, 50f});
             table.setWidthPercentage(100f);
             table.setHeaderRows(1);
-            header(table, "Personne", "Règle", "Constat");
+            header(table, PERSON, "Règle", "Constat");
             for (Personne p : avecEcarts) {
                 p.ecartsDetail().forEach(e -> {
                     table.addCell(cell(p.nom(), theme.tableBodyFont()));
@@ -168,7 +169,7 @@ public class RapportConformitePdf {
         table.setHeaderRows(1);
         header(
                 table,
-                "Personne",
+                PERSON,
                 "Mineur",
                 "Total (h)",
                 "Plafond (h/sem.)",
@@ -199,7 +200,7 @@ public class RapportConformitePdf {
     private PdfPTable mineursSection(List<Personne> mineurs) {
         PdfPTable table = new PdfPTable(new float[] {25f, 75f});
         table.setWidthPercentage(100f);
-        header(table, "Personne", "Constat");
+        header(table, PERSON, "Constat");
         for (Personne p : mineurs) {
             table.addCell(cell(p.nom(), theme.tableBodyFont()));
             if (p.ecartsDetail().isEmpty() && p.semainesEnDepassement().isEmpty()) {

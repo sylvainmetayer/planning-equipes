@@ -41,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
 public class AuthResource {
+    private static final String MESSAGE = "message";
 
     /** Must match {@code quarkus.http.auth.form.cookie-name}. */
     static final String COOKIE_SESSION = "planning-session";
@@ -105,7 +106,7 @@ public class AuthResource {
             return Response.status(429)
                     .header("Retry-After", wait)
                     .entity(Map.of(
-                            "message",
+                            MESSAGE,
                             "Trop de tentatives de connexion : réessayez dans " + Math.max(1, (wait + 59) / 60)
                                     + " minute(s)."))
                     .build();
@@ -118,13 +119,13 @@ public class AuthResource {
         } catch (CompteAccesService.TooManyRequests e) {
             return Response.status(429)
                     .header("Retry-After", e.secondsBeforeNextTry())
-                    .entity(Map.of("message", e.getMessage()))
+                    .entity(Map.of(MESSAGE, e.getMessage()))
                     .build();
         }
         if (challenge.isEmpty()) {
             limiteur.recordFailure(routage, credentials == null ? null : credentials.email());
             return Response.status(401)
-                    .entity(Map.of("message", "Adresse ou mot de passe incorrect."))
+                    .entity(Map.of(MESSAGE, "Adresse ou mot de passe incorrect."))
                     .build();
         }
         limiteur.clearPair(routage, credentials.email());

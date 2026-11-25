@@ -61,6 +61,7 @@ import org.openpdf.text.pdf.PdfWriter;
  */
 @ApplicationScoped
 public class GlobalPlanningPdf {
+    private static final String BY_STAND = "Par stand";
 
     /** Section titles, shared by the summary, the headings and the PDF outline. */
     private static final String TITLE_OVERVIEW = "Vue d'ensemble";
@@ -378,8 +379,7 @@ public class GlobalPlanningPdf {
         jours.addElement(pastillesJours(plan));
         table.addCell(jours);
 
-        table.addCell(
-                entreeSommaire(3, "Par stand", destStand(plan.tousLesStands().get(0))));
+        table.addCell(entreeSommaire(3, BY_STAND, destStand(plan.tousLesStands().get(0))));
         PdfPCell stands = new PdfPCell();
         stands.setBorder(Rectangle.NO_BORDER);
         stands.setPaddingBottom(8f);
@@ -957,7 +957,7 @@ public class GlobalPlanningPdf {
                 }
                 premier = false;
                 if (signets == null) {
-                    signets = PdfTheme.bookmark(racine, destStand(stand), "Par stand");
+                    signets = PdfTheme.bookmark(racine, destStand(stand), BY_STAND);
                 }
                 PdfTheme.bookmark(signets, destStand(stand), stand.getNom());
                 long jours =
@@ -1166,7 +1166,7 @@ public class GlobalPlanningPdf {
         entrees.put("Sommaire", DEST_SOMMAIRE);
         entrees.put(TITLE_OVERVIEW, DEST_ENSEMBLE);
         entrees.put(TITLE_BY_DAY, destJour(plan.dates.get(0)));
-        entrees.put("Par stand", destStand(plan.tousLesStands().get(0)));
+        entrees.put(BY_STAND, destStand(plan.tousLesStands().get(0)));
         entrees.put(TITLE_ANIMATEURS, DEST_ANIMATEURS);
         boolean premier = true;
         for (Map.Entry<String, String> entree : entrees.entrySet()) {

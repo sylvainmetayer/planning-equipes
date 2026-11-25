@@ -42,6 +42,8 @@ import org.openpdf.text.pdf.PdfWriter;
  */
 @ApplicationScoped
 public class AnimateurPlanningPdf implements DocumentAnimateur {
+    private static final String YOUR_DAYS = "Vos journées";
+    private static final String WITH_WHOM = "Avec qui, et où";
 
     /** Content width of an A4 portrait page with the margins below. */
     private static final float LARGEUR = PageSize.A4.getWidth() - 80f;
@@ -97,16 +99,16 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
         }
 
         document.newPage();
-        document.add(titreSection("Vos journées", "Le détail de chaque jour, dans l'ordre"));
-        PdfOutline journees = PdfTheme.bookmark(writer.getRootOutline(), "Vos journées", "Vos journées");
+        document.add(titreSection(YOUR_DAYS, "Le détail de chaque jour, dans l'ordre"));
+        PdfOutline journees = PdfTheme.bookmark(writer.getRootOutline(), YOUR_DAYS, YOUR_DAYS);
         for (AnimateurPlanningView.Jour jour : view.jours()) {
             document.add(blocJour(jour));
             PdfTheme.bookmark(journees, destJour(jour), PdfTheme.formatFrenchDayDate(jour.date()));
         }
 
         document.newPage();
-        document.add(titreSection("Avec qui, et où", "Les personnes et les lieux de votre édition"));
-        PdfTheme.bookmark(writer.getRootOutline(), "Avec qui, et où", "Avec qui, et où");
+        document.add(titreSection(WITH_WHOM, "Les personnes et les lieux de votre édition"));
+        PdfTheme.bookmark(writer.getRootOutline(), WITH_WHOM, WITH_WHOM);
         document.add(blocCoequipiers(view));
         if (!view.equipesNombreuses().isEmpty()) {
             document.add(blocEquipesNombreuses(view));

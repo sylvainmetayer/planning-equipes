@@ -30,6 +30,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @ApplicationScoped
 public class ApplicationLinks {
+    private static final String JETON = "{jeton}";
 
     /** Admin screen where échange demandes are accepted or refused. */
     private static final String ECRAN_ECHANGES = "echanges";
@@ -166,7 +167,7 @@ public class ApplicationLinks {
     public Optional<String> passwordScreen(String token) {
         return base.map(url -> UriBuilder.fromUri(url)
                 .path(ECRAN_MOT_DE_PASSE)
-                .fragment("{jeton}")
+                .fragment(JETON)
                 .build(token)
                 .toString());
     }
@@ -225,7 +226,7 @@ public class ApplicationLinks {
         }
         return base.map(url -> UriBuilder.fromUri(url)
                 .path(ESPACE_ANIMATEUR)
-                .path("{jeton}")
+                .path(JETON)
                 .build(token)
                 .toString());
     }
@@ -254,7 +255,7 @@ public class ApplicationLinks {
         }
         return base.map(url -> UriBuilder.fromUri(url)
                 .path(ESPACE_ANIMATEUR)
-                .path("{jeton}")
+                .path(JETON)
                 .path(tab)
                 .build(token)
                 .toString());
