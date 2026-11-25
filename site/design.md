@@ -48,10 +48,4 @@ One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `
 `src/assets/tokens.css` in this project.
 
 ## Documentation
-
-Les pages de `/docs` rendent les `.md` de `docs/` dans la même charte, sans
-nouvelle police ni couleur : l'en-tête des pages-réponses (fil d'Ariane, titre,
-phrase d'introduction), puis deux colonnes sur grand écran, une colonne de
-navigation (« Sur cette page », « Toutes les rubriques ») et le texte, en une
-seule colonne sous 60 rem. Un tableau ou un bloc de code plus large que la page
-défile dans son propre cadre (`.scroll`, au clavier), jamais la page.
+The `/docs` pages render the `.md` files of `docs/` in the same system, no new face or colour: the answer pages' header (breadcrumb, title), then on a wide screen two columns, a side column of two navs ("Sur cette page", "Toutes les rubriques") and the text; one column under 60rem. Each nav is a native `<details>`, folded by default so that on a phone the text comes first, unfolded by `theme.js` on a wide screen. A table or a code block wider than the page scrolls in its own frame (`.scroll`, keyboard-reachable), never the page.
