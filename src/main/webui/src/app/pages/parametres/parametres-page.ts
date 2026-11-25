@@ -37,6 +37,7 @@ import { AffichageMuralLinks } from './affichage-mural-links';
 import { ComptesCard } from './comptes-card';
 import { SessionStore } from '../../core/session.store';
 import { ContactOrganisationCard } from './contact-organisation-card';
+import { ReglageResponsablesCard } from './reglage-responsables-card';
 import { GuichetsCard } from './guichets-card';
 import { ParametresNotificationsPanel } from './parametres-notifications';
 import { ParametresMeteoPanel } from './parametres-meteo';
@@ -81,6 +82,7 @@ import { TODAY_ANCHOR } from '../../core/date-mock.service';
     HistoriquePage,
     McpPage,
     ContactOrganisationCard,
+    ReglageResponsablesCard,
     GuichetsCard,
     SingleKeyShortcutsToggle,
     DatePipe,

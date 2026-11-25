@@ -1,0 +1,68 @@
+<mat-toolbar class="responsable-toolbar">
+  <app-brand-logo />
+  <span class="responsable-title" i18n="@@responsable.title">Mon stand</span>
+  <span class="responsable-spacer"></span>
+  <button matButton type="button" (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    <ng-container i18n="@@responsable.logout">Se déconnecter</ng-container>
+  </button>
+</mat-toolbar>
+
+<main class="responsable-page">
+  <app-status-message [text]="erreur()" tone="error" />
+  @if (vue(); as v) {
+    @if (v.stands.length === 0) {
+      <p class="empty-hint" role="status" i18n="@@responsable.aucun">
+        Aucun stand à afficher pour l'instant : vos droits ne s'appliquent qu'à l'édition en cours.
+      </p>
+    } @else {
+      <header class="responsable-entete">
+        <h1>{{ v.editionNom }}</h1>
+        @if (v.publieLe) {
+          <p class="calendar-meta" i18n="@@responsable.publie">Planning publié le {{ v.publieLe | date: 'short' }}</p>
+        } @else {
+          <p class="calendar-meta" i18n="@@responsable.nonPublie">Le planning n'est pas encore publié : aucun horaire à montrer.</p>
+        }
+      </header>
+      @for (stand of v.stands; track stand.standId) {
+        <mat-card appearance="outlined" class="responsable-stand">
+          <mat-card-header>
+            <h2 mat-card-title>{{ stand.standNom }}</h2>
+            @if (stand.emplacementNom) {
+              <mat-card-subtitle>{{ stand.emplacementNom }}</mat-card-subtitle>
+            }
+          </mat-card-header>
+          <mat-card-content>
+            @if (stand.nomsAttendus) {
+              <p class="calendar-meta" i18n="@@responsable.nomsAttendus">Les noms s'afficheront à partir du {{ stand.nomsAttendus | date: 'short' }}.</p>
+            }
+            @for (jour of daysOf(stand); track jour.jour) {
+              <h3 class="responsable-jour">{{ jour.jour | date: 'fullDate' }}</h3>
+              <ul class="responsable-vacations">
+                @for (vacation of jour.vacations; track vacation.debut) {
+                  <li>
+                    <strong>{{ windowLabel(vacation) }}</strong>
+                    <span [class.responsable-vide]="vacation.vides > 0">{{ staffingLabel(vacation) }}</span>
+                    @if (stand.nominatif && vacation.personnes.length > 0) {
+                      <span class="calendar-meta">{{ personLabelList(vacation) }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            } @empty {
+              <p class="empty-hint" i18n="@@responsable.sansVacation">Aucune vacation publiée pour ce stand.</p>
+            }
+          </mat-card-content>
+          <mat-card-actions>
+            <button matButton type="button" (click)="imprimer(stand)">
+              <mat-icon>print</mat-icon>
+              <ng-container i18n="@@responsable.affichette">Affichette à imprimer</ng-container>
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    }
+  } @else if (!erreur()) {
+    <p class="empty-hint" role="status" i18n="@@responsable.chargement">Chargement…</p>
+  }
+</main>

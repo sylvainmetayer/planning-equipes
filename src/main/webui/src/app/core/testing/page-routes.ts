@@ -6,7 +6,7 @@ import { routes } from '../../app.routes';
 
 /**
  * Every page as an address: the top-level routes and the children of the
- * admin shell, without the login page, a parameter or the wildcard.
+ * admin shell, without the login page, « Mon stand », a parameter or the wildcard.
  */
 export function pageRoutes(): string[] {
   const shell = routes.find((route) => route.path === '' && route.children);
@@ -19,6 +19,8 @@ export function pageRoutes(): string[] {
         route.path !== 'login' &&
         // Like /login: the page of a mailed link, opened before any session.
         route.path !== 'mot-de-passe' &&
+        // « Mon stand » is the responsable's one screen, outside the administration's menu and palette.
+        route.path !== 'responsable' &&
         !route.path.includes(':') &&
         !route.path.includes('*'),
     )

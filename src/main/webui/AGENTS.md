@@ -86,7 +86,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
   three knows. The standalone routes `/login`, `/mot-de-passe` (the page of the mailed single-use link,
   ADR 0094: the token rides in the URL fragment, the page makes the one call that
-  chooses the password), `/animateur/:jeton` (espace animateur, issue
+  chooses the password), `/responsable` (« Mon stand » — what a
+  responsable de stand reads outside the administration: the published shifts
+  and empty seats of the stands their right covers on the active edition, the
+  names only when the server says so, each stand's sheet to print; a
+  `responsableGuard` on the shell sends a session holding that right alone
+  here, the shell's every call being refused to it; the setting is the card
+  « Responsables de stand » of Paramètres › Édition, the right itself the
+  Comptes tab's, edition and stands of the edition this browser works in),
+  `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
   television, opened by a dedicated token and no session, ADR 0053: the stands
   of the day with the shift under way and the next one, over the pure
