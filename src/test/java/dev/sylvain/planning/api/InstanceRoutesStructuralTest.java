@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 class InstanceRoutesStructuralTest {
 
     /** Open to an organiser, in the edition its request designates (EditionContext narrows it). */
-    private static final Set<String> PAR_EDITION = Set.of(
+    static final Set<String> PAR_EDITION = Set.of(
             "AlerteResource",
             "AffichageMuralResource",
             "AnimateurResource",
@@ -82,7 +82,7 @@ class InstanceRoutesStructuralTest {
             "MuralResource");
 
     /** Opened by a right of its own, and by nothing else: the responsable de stand's reads. */
-    private static final Set<String> RESPONSABLE = Set.of("ResponsableResource");
+    static final Set<String> RESPONSABLE = Set.of("ResponsableResource");
 
     /** Reserved to the administrators as a whole resource. */
     private static final Set<String> INSTANCE = Set.of(
@@ -110,7 +110,7 @@ class InstanceRoutesStructuralTest {
             "HorlogeResource#setDateJourJ",
             "ReglageResponsablesResource#put");
 
-    private static Set<Class<?>> resources() throws IOException, ClassNotFoundException {
+    static Set<Class<?>> resources() throws IOException, ClassNotFoundException {
         Set<Class<?>> classes = new java.util.HashSet<>();
         try (Stream<java.nio.file.Path> files =
                 Files.list(java.nio.file.Path.of("src/main/java/dev/sylvain/planning/api"))) {

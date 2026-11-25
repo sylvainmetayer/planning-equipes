@@ -424,6 +424,16 @@ Quand il échoue sur un nom légitime : le renommer, ou l'ajouter à
 `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un troisième test vérifie que chaque
 exception correspond encore à du code réel.
 
+### Les routes ouvertes à l'organisateur, une à une
+
+`RoutesOuvertesStructuralTest` complète `InstanceRoutesStructuralTest`, qui ne
+classe que des ressources entières : les méthodes ouvertes à un organisateur
+(`routes-organisateur.txt`) et à un responsable de stand
+(`routes-responsable.txt`), toutes deux sous `src/test/resources/`, sont
+des inventaires versionnés comme `json-contract.txt`. Une route nouvelle non
+classée échoue en imprimant la ligne à ajouter ; la décision (ouverte, ou
+`@InstanceOnly`) est celle du relecteur. Voir `securite.md`.
+
 ### Le moteur direct : deux tests qui tiennent les règles en double
 
 `solver/handsearch` écrit les 47 règles une seconde fois, pour chercher sans
