@@ -385,9 +385,10 @@ test.describe('espace animateur', () => {
     const boite = await carte.boundingBox();
     expect(boite, "la carte n'a pas de boîte").not.toBeNull();
     expect(boite!.y).toBeLessThan(844);
-    // Hors collecte, ses deux guichets n'existent pas : une rangée, trois onglets.
+    // Hors collecte, ses deux guichets n'existent pas : une rangée, quatre onglets (dont « Mes contacts »).
     const nav = page.getByRole('navigation', { name: 'Espace animateur' });
-    await expect(nav.getByRole('link')).toHaveCount(3);
+    await expect(nav.getByRole('link')).toHaveCount(4);
+    await expect(nav.getByRole('link', { name: 'Mes contacts' })).toHaveCount(1);
     await expect(nav.getByRole('link', { name: 'Mes disponibilités' })).toHaveCount(0);
   });
 
