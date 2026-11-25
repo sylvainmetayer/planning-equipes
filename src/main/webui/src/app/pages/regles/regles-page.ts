@@ -120,7 +120,7 @@ function importanceLabel(importance: Importance): string {
  * - « Qualité » — the same table for the medium and soft rules, with their
  *   importance in three positions (faible / normale / forte, weights 1 / 5 /
  *   25) and the exact weight in the panel for whoever wants it.
- * - « Calcul » — the solve budget, the start of the evening, the ninja
+ * - « Calcul » — the solve budget, the start of the evening, the polyvalent
  *   typologie: `ReglesCalcul`.
  *
  * Nothing is written as it is typed: « Légal » and « Qualité » share one set

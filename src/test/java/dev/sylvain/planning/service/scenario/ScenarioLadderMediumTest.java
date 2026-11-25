@@ -65,7 +65,7 @@ class ScenarioLadderMediumTest {
      */
     @Test
     void rung09PolyvalentsCoverTheStandsNobodyElseCan() {
-        Loaded loaded = load("gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements");
+        Loaded loaded = load("gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements");
         assertThat(loaded.problem().getAnimateurs())
                 .filteredOn(Animateur::isPolyvalent)
                 .extracting(Animateur::getId)

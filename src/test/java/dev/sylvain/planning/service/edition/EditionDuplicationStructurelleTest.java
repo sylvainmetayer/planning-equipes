@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  * migration adding one does not touch it. Nothing held the two together, so
  * three columns drifted out of a duplication without a word: {@code
  * heure_debut_soiree} (V74) and {@code parametres_solveur.mail_fin_resolution}
- * came back at their default, and {@code typologie.ninja} with them — the
+ * came back at their default, and {@code typologie.polyvalent} with them — the
  * duplicated edition no longer knew which typologie was the polyvalent one.
  * None of it fails anything at duplication time: the {@code INSERT … SELECT}
  * is valid, the column simply takes its {@code DEFAULT}.</p>

@@ -1850,7 +1850,7 @@
         }
       },
       "CompetenceStaffing" : {
-        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologiePolyvalentDefinie", "planchersCumules" ],
+        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologiePolyvalenteDefinie", "planchersCumules" ],
         "type" : "object",
         "properties" : {
           "parTypologie" : {
@@ -1883,7 +1883,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "typologiePolyvalentDefinie" : {
+          "typologiePolyvalenteDefinie" : {
             "type" : "boolean"
           },
           "planchersCumules" : {

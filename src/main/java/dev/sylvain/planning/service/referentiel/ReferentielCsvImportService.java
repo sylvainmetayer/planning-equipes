@@ -379,10 +379,15 @@ public class ReferentielCsvImportService {
         }
         // « ninja » is the 3.x header, still read for the whole 4.x line.
         String drapeau = colonnes.valeur(row, "polyvalent");
-        boolean polyvalent = readFlag(drapeau.isEmpty() ? colonnes.valeur(row, "ninja") : drapeau);
+        String legacyFlag = drapeau.isEmpty() ? colonnes.valeur(row, "ninja") : "";
+        boolean polyvalent = readFlag(drapeau.isEmpty() ? legacyFlag : drapeau);
         List<String> details = new ArrayList<>();
         if (cle.note() != null) {
             details.add(cle.note());
+        }
+        if (!legacyFlag.isEmpty()) {
+            details.add("Lu dans la colonne « ninja », l'ancien nom de « polyvalent » : renommez-la, "
+                    + "elle ne sera plus lue en 5.0.");
         }
         if (polyvalent) {
             details.add("Marquée polyvalente : elle retire le drapeau à la typologie qui le portait.");

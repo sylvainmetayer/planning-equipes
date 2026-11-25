@@ -17,7 +17,7 @@ Le niveau, la catégorie, la description métier et l'article de loi de chaque r
 | Question | Page |
 |---|---|
 | Pourquoi une règle légale, de pause, de repos ou de semaine est écrite ainsi | [Règles légales et pauses](regles-legales-et-pauses.md) |
-| Typologie ninja, quotas, trajet, covoiturage, seuils de qualité, stabilité du plan publié | [Règles de couverture et de confort](regles-de-couverture-et-de-confort.md) |
+| Typologie polyvalente, quotas, trajet, covoiturage, seuils de qualité, stabilité du plan publié | [Règles de couverture et de confort](regles-de-couverture-et-de-confort.md) |
 | Éteindre, pondérer, lire un plancher, historique de dosage | [Doser et désactiver les règles](doser-et-desactiver-les-regles.md) |
 | Exceptions posées à la main et leurs contradictions | [Les exceptions ad hoc](exceptions-ad-hoc.md) |
 

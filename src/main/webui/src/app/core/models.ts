@@ -22,12 +22,12 @@ export interface TypologieItem {
   code?: string | null;
   label: string;
   /**
-   * The single "ninja" typologie of the referential: animateurs who hold it are
+   * The single "polyvalent" typologie of the referential: animateurs who hold it are
    * polyvalent — the solver may dispatch them on any stand, and keeps some of
    * them free as a buffer against last-minute absences. Promoting one typologie
    * demotes the previous holder server-side.
    */
-  ninja?: boolean;
+  polyvalent?: boolean;
   /**
    * How many créneaux one animateur may hold on this typologie over the WHOLE
    * edition (issue #594). Absent or `null` means no cap. A poste counts for
@@ -51,7 +51,7 @@ export interface TypologieItem {
 }
 
 export interface Animateur {
-  ninja?: boolean;
+  polyvalent?: boolean;
   id: string;
   prenom: string;
   nom: string;
@@ -493,7 +493,7 @@ export interface PosteFragile {
 export interface AnimateurFragilite {
   animateurId: string;
   nom: string;
-  ninja: boolean;
+  polyvalent: boolean;
   affectations: number;
   postesEffondres: number;
   postesIrremplacables: number;
@@ -504,7 +504,7 @@ export interface AnimateurFragilite {
 }
 
 /**
- * One stand × créneau at most one *specialist* can hold. Ninjas are counted
+ * One stand × créneau at most one *specialist* can hold. Polyvalents are counted
  * apart, as `renforts`: they are competent everywhere, so folding them in would
  * erase the scarcity this list exists to show.
  */
@@ -535,7 +535,7 @@ export interface RapportFragilite {
   groupesAnalyses: number;
   groupesDejaSousEffectif: number;
   animateursIrremplacables: number;
-  ninjaConfigure: boolean;
+  polyvalentConfigure: boolean;
   /** The edition holds no animateur at all: nothing is feasible, and `message` says so. */
   aucunAnimateur: boolean;
   message: string;
@@ -560,7 +560,7 @@ export interface CandidatFormation {
 export interface TypologieAFormer {
   typologie: string;
   label?: string | null;
-  ninja: boolean;
+  polyvalent: boolean;
   /** The staffing need's shortfall for it; 0 when the Besoin tab signals none. */
   manque: number;
   specialistes: number;
@@ -690,8 +690,8 @@ export interface RapportTension {
   pireCellule?: CelluleTension | null;
   animateursTotal: number;
   cellulesCritiques: number;
-  /** False: no ninja typologie, so « no reinforcement » is the rule, not a finding. */
-  ninjaConfigure: boolean;
+  /** False: no polyvalent typologie, so « no reinforcement » is the rule, not a finding. */
+  polyvalentConfigure: boolean;
   referentielsManquants: ReferentielManquant[];
   message: string;
 }
@@ -2108,8 +2108,8 @@ export type ReferentielManquant = 'STANDS' | 'CRENEAUX' | 'ANIMATEURS';
 export interface TypologieStaffing {
   typologie: string;
   label: string;
-  /** True for the referential's polyvalent ("ninja") typologie, if any. */
-  ninja: boolean;
+  /** True for the referential's polyvalent typologie, if any. */
+  polyvalent: boolean;
   sieges: number;
   heures: number;
   nombreSemaines: number;
@@ -2129,7 +2129,7 @@ export interface TypologieStaffing {
   borneRetenue: BorneStaffing;
   /**
    * Animateurs declaring this typologie among their competences. Polyvalents
-   * are not counted here unless they declared it: a ninja is a reinforcement,
+   * are not counted here unless they declared it: a polyvalent is a reinforcement,
    * never a specialist.
    */
   specialistes: number;
@@ -2146,30 +2146,30 @@ export interface TypologieStaffing {
  */
 export interface CompetenceStaffing {
   parTypologie: TypologieStaffing[];
-  /** Animateurs holding the ninja typologie: dispatchable anywhere, one seat at a time. */
+  /** Animateurs holding the polyvalent typologie: dispatchable anywhere, one seat at a time. */
   polyvalents: number;
   /** Seats of stands proposing **several** typologies: claimed by no row. */
   siegesNonAttribues: number;
   /**
    * Seats of stands proposing **no** typologie — the opposite case, and the
    * tightest demand there is: only a polyvalent can hold one. Folded into the
-   * ninja row when the referential has one, holdable by nobody when it has not.
+   * polyvalent row when the referential has one, holdable by nobody when it has not.
    */
   siegesReservesAuxPolyvalents: number;
   manqueTotal: number;
   /**
-   * The part of `manqueTotal` carried by the ninja row itself. No reinforcement
+   * The part of `manqueTotal` carried by the polyvalent row itself. No reinforcement
    * absorbs it: that row's pool *is* the reserve.
    */
   manquePolyvalents: number;
   /** `0` means the animateur referential is still empty and nothing was compared. */
   animateursTotal: number;
   /**
-   * Whether the referential marks a ninja typologie at all. Without one nobody
+   * Whether the referential marks a polyvalent typologie at all. Without one nobody
    * is polyvalent, and `polyvalents: 0` must read as "no such notion here"
    * rather than as a shortage of backup.
    */
-  typologieNinjaDefinie: boolean;
+  typologiePolyvalenteDefinie: boolean;
   /** Sum of every row's minimum: the team the seats would need if nobody held two typologies. */
   planchersCumules: number;
 }
@@ -2426,7 +2426,7 @@ export interface AnimateurTypologie {
 export interface LigneTypologie {
   typologie: string;
   label: string;
-  ninja: boolean;
+  polyvalent: boolean;
   /** The quota of issue #594; `null` when the typologie caps nothing. */
   maxCreneauxParAnimateur: number | null;
   /** The organiser's own note on the typologie; `null` when none was written. */

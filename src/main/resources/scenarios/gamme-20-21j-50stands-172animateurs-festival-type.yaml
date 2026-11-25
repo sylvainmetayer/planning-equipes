@@ -47,7 +47,7 @@ typologies:
     label: "Arts du cirque"
   - id: POLYVALENT
     label: Polyvalent
-    ninja: true
+    polyvalent: true
 
 emplacements:
   - id: EMP-01

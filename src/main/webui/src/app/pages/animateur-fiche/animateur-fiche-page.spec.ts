@@ -77,7 +77,7 @@ function profile(partial: Partial<AnimateurProfile> = {}): AnimateurProfile {
     fragilite: {
       animateurId: 'a1',
       nom: 'Camille Durand',
-      ninja: false,
+      polyvalent: false,
       affectations: 2,
       postesEffondres: 1,
       postesIrremplacables: 1,

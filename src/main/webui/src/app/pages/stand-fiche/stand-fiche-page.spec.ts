@@ -93,7 +93,7 @@ describe('StandFichePage', () => {
     queryParams = new BehaviorSubject(convertToParamMap(params));
     store = fakeOf<ReferenceDataStore>({
       stands: signal(stands),
-      typologies: signal([{ id: 'T1', label: 'Enfance', ninja: false }]),
+      typologies: signal([{ id: 'T1', label: 'Enfance', polyvalent: false }]),
       emplacements: signal([]),
       creneaux: signal([]),
       reload: () => Promise.resolve(undefined),

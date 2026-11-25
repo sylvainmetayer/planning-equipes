@@ -15,7 +15,7 @@ import {
   writeCell,
 } from './grille-competences';
 
-const TYPOLOGIES = ['jeux', 'ateliers', 'ninja'];
+const TYPOLOGIES = ['jeux', 'ateliers', 'polyvalent'];
 
 function animateur(id: string, competences: Animateur['competences'], nom = 'Martin'): Animateur {
   return {
@@ -40,7 +40,7 @@ describe('cellsFrom', () => {
   it('gives every animateur a cell per typologie of the referential, null when nothing is stored', () => {
     const cells = cellsFrom(ROSTER, TYPOLOGIES);
     expect(levelAt(cells, { animateurId: 'A1', typologieId: 'jeux' })).toBe('REFERENT');
-    expect(levelAt(cells, { animateurId: 'A1', typologieId: 'ninja' })).toBeNull();
+    expect(levelAt(cells, { animateurId: 'A1', typologieId: 'polyvalent' })).toBeNull();
     expect(Array.from(cells.get('B2')!.keys())).toEqual(TYPOLOGIES);
     expect(levelAt(cells, { animateurId: 'B2', typologieId: 'jeux' })).toBeNull();
   });
@@ -130,7 +130,7 @@ describe('moveFrom', () => {
     });
     expect(moveFrom('ArrowRight', from, ids, TYPOLOGIES)).toEqual({
       animateurId: 'B2',
-      typologieId: 'ninja',
+      typologieId: 'polyvalent',
     });
     expect(moveFrom('ArrowLeft', from, ids, TYPOLOGIES)).toEqual({
       animateurId: 'B2',
@@ -142,7 +142,7 @@ describe('moveFrom', () => {
     });
     expect(moveFrom('End', from, ids, TYPOLOGIES)).toEqual({
       animateurId: 'B2',
-      typologieId: 'ninja',
+      typologieId: 'polyvalent',
     });
   });
 
@@ -171,7 +171,10 @@ describe('filters and their URL form', () => {
   });
 
   it('keeps only the typologies the referential has, in referential order, and reads an empty param as every column', () => {
-    expect(readTypologiesParam('ninja, jeux,inconnue', TYPOLOGIES)).toEqual(['jeux', 'ninja']);
+    expect(readTypologiesParam('polyvalent, jeux,inconnue', TYPOLOGIES)).toEqual([
+      'jeux',
+      'polyvalent',
+    ]);
     expect(readTypologiesParam(null, TYPOLOGIES)).toEqual([]);
     expect(readTypologiesParam('', TYPOLOGIES)).toEqual([]);
   });

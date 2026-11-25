@@ -20,8 +20,8 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
     date: '2026-07-11',
     heureDebut: '10:00:00',
     heureFin: '12:00:00',
-    standId: 'ninja',
-    standNom: 'Ninja',
+    standId: 'polyvalent',
+    standNom: 'Polyvalent',
     coequipiers: [],
     emplacementNom: null,
     emplacementLatitude: null,
@@ -39,8 +39,8 @@ function pause(overrides: Partial<PauseAnimateurView> = {}): PauseAnimateurView 
     fin: '19:00:00',
     heureLimite: '19:00:00',
     dureeMinutes: 20,
-    standId: 'ninja',
-    standNom: 'Ninja',
+    standId: 'polyvalent',
+    standNom: 'Polyvalent',
     relaisDisponible: true,
     emplacementNom: null,
     emplacementLatitude: null,
@@ -93,7 +93,7 @@ describe('repereMaintenant', () => {
     const repere = repereMaintenant(jours, at(2026, 7, 11, 9, 0))!;
 
     expect(repere.enCours).toBeNull();
-    expect(repere.prochain?.standNom).toBe('Ninja');
+    expect(repere.prochain?.standNom).toBe('Polyvalent');
   });
 
   it('says « rest » when today holds no assignment', () => {
@@ -131,15 +131,15 @@ describe('repereMaintenant', () => {
     it('holds it before midnight', () => {
       // Reading the « 02:00 » end as an hour of the same day would drop the
       // shift off the screen of the very person working it.
-      expect(repereMaintenant(nuit, at(2026, 7, 11, 23, 0))!.enCours?.standNom).toBe('Ninja');
-      expect(repereMaintenant(nuit, at(2026, 7, 11, 23, 59))!.enCours?.standNom).toBe('Ninja');
+      expect(repereMaintenant(nuit, at(2026, 7, 11, 23, 0))!.enCours?.standNom).toBe('Polyvalent');
+      expect(repereMaintenant(nuit, at(2026, 7, 11, 23, 59))!.enCours?.standNom).toBe('Polyvalent');
     });
 
     it('still holds it after midnight, on the day it is being worked', () => {
       // 00:30 on the 12th: the seat is dated the 11th and the person is on it.
       const repere = repereMaintenant(nuit, at(2026, 7, 12, 0, 30))!;
 
-      expect(repere.enCours?.standNom).toBe('Ninja');
+      expect(repere.enCours?.standNom).toBe('Polyvalent');
       expect(repere.aujourdhui).toBe('2026-07-12');
       // And its day stays unfolded: folding away the day of the shift
       // somebody is working reads as a planning that lost a day.

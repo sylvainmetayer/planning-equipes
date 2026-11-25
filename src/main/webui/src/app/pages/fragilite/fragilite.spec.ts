@@ -15,7 +15,7 @@ function animateur(partial: Partial<AnimateurFragilite>): AnimateurFragilite {
   return {
     animateurId: 'a1',
     nom: 'Alice Martin',
-    ninja: false,
+    polyvalent: false,
     affectations: 3,
     postesEffondres: 3,
     postesIrremplacables: 0,
@@ -56,7 +56,7 @@ function rapport(partial: Partial<RapportFragilite>): RapportFragilite {
     groupesAnalyses: 0,
     groupesDejaSousEffectif: 0,
     animateursIrremplacables: 0,
-    ninjaConfigure: false,
+    polyvalentConfigure: false,
     aucunAnimateur: false,
     message: '',
     ...partial,
@@ -159,7 +159,7 @@ describe('synthese', () => {
         groupesSansSpecialiste: 2,
         groupesAnalyses: 120,
         groupesDejaSousEffectif: 3,
-        ninjaConfigure: true,
+        polyvalentConfigure: true,
       }),
     );
 
@@ -170,7 +170,7 @@ describe('synthese', () => {
       sansSpecialiste: 2,
       groupes: 120,
       dejaSousEffectif: 3,
-      ninjaConfigure: true,
+      polyvalentConfigure: true,
     });
   });
 });

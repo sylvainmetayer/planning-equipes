@@ -44,7 +44,7 @@ class FormationAnalyzerTest {
             new TypologieItem("ESCAPE", null, "Escape game", false, null, null, null),
             new TypologieItem("QUIZ", null, "Quiz", false, null, null, null),
             new TypologieItem("JEUX", null, "Jeux", false, null, null, null),
-            new TypologieItem("NINJA", null, "Ninja", true, null, null, null));
+            new TypologieItem("POLYVALENT", null, "Polyvalent", true, null, null, null));
 
     /**
      * Three categories, each in shortage for its own reason. ESCAPE rests on
@@ -64,7 +64,7 @@ class FormationAnalyzerTest {
         final Animateur bob = animateur("bob", Map.of("ESCAPE", NiveauCompetence.AUTONOME));
         final Animateur carole = animateur("carole", Map.of("ESCAPE", NiveauCompetence.DEBUTANT));
         final Animateur dan =
-                animateur("dan", Map.of("ESCAPE", NiveauCompetence.DEBUTANT, "NINJA", NiveauCompetence.AUTONOME));
+                animateur("dan", Map.of("ESCAPE", NiveauCompetence.DEBUTANT, "POLYVALENT", NiveauCompetence.AUTONOME));
         final Animateur eve = animateur("eve", Map.of());
         final Animateur fred = animateur("fred", Map.of("QUIZ", NiveauCompetence.AUTONOME));
         final Animateur gina = animateur("gina", Map.of("QUIZ", NiveauCompetence.AUTONOME));
@@ -80,7 +80,7 @@ class FormationAnalyzerTest {
             bob.getJoursIndisponibles().add(JOUR_2);
             carole.getJoursIndisponibles().add(JOUR_2);
             dan.getJoursIndisponibles().add(JOUR_2);
-            dan.applyPolyvalentTypologie("NINJA");
+            dan.applyPolyvalentTypologie("POLYVALENT");
             fred.setDateNaissance(LocalDate.of(2012, 1, 1));
             postes.addAll(seats(escape, matin1, alice));
             postes.addAll(seats(escape, matin2, alice));
@@ -148,10 +148,10 @@ class FormationAnalyzerTest {
     }
 
     @Test
-    void onlyBeginnersAndAutonomousPeopleAreCandidatesNeverAReferentANinjaOrSomebodyWithoutIt() {
+    void onlyBeginnersAndAutonomousPeopleAreCandidatesNeverAReferentAPolyvalentOrSomebodyWithoutIt() {
         PlanFormation plan = new Fixture().plan();
 
-        // alice is REFERENT, dan a ninja, eve wished for it without holding it.
+        // alice is REFERENT, dan a polyvalent, eve wished for it without holding it.
         assertThat(ligne(plan, "ESCAPE").candidats())
                 .extracting(CandidatFormation::animateurId)
                 .containsExactly("bob", "carole");

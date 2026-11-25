@@ -31,7 +31,7 @@ Le verrou fige des **sièges** d'un plan calculé ; le gel fige les **fiches** d
 | --- | --- |
 | Stands | Création, suppression, effectifs min et max, réserve majeurs, typologies proposées, horaires (règles, ouvertures et fermetures datées) |
 | Créneaux | Création, suppression, date, heures, couverture de pause ; journées types appliquées, dérivation, séries |
-| Typologies et emplacements | Création, suppression, plafond par typologie, typologie ninja |
+| Typologies et emplacements | Création, suppression, plafond par typologie, typologie polyvalente |
 | Compétences | Niveaux de compétence des animateurs déjà inscrits (fiche, grille, import) |
 
 Une famille figée refuse l'écriture **par tous les chemins** (formulaire, édition en lot, import CSV, import de grille, MCP) en `409` avec le code `REFERENTIEL_FIGE`. Restent libres : le nom, le lieu et le niveau d'effort d'un stand, le libellé et la description d'une typologie, le nom et la position d'un emplacement, les données des personnes hors compétences (disponibilités, souhaits, déclarations, e-mail), la **création** d'un animateur avec ses compétences, les ajustements, les verrous et les **consignes**, l'outil prévu pour fermer une bande tard sans rien détruire. L'import de scénario et la remise à zéro, qui remplacent tout, sont refusés tant qu'une famille est figée.

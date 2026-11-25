@@ -50,9 +50,14 @@ const RAPPORT: RealisedVsPlanned = {
   cells: [
     { standId: 'cirque', standNom: 'Cirque', date: '2026-07-11', counts: ABSENCE },
     { standId: 'cirque', standNom: 'Cirque', date: '2026-07-12', counts: counts() },
-    { standId: 'ninja', standNom: 'Ninja', date: '2026-07-12', counts: counts({ emptySeats: 1 }) },
+    {
+      standId: 'polyvalent',
+      standNom: 'Polyvalent',
+      date: '2026-07-12',
+      counts: counts({ emptySeats: 1 }),
+    },
   ],
-  // The late day is summed nowhere: Ninja, drawn on it alone, has no total.
+  // The late day is summed nowhere: Polyvalent, drawn on it alone, has no total.
   byStand: [{ key: 'cirque', label: 'Cirque', counts: ABSENCE }],
   byDay: [{ key: '2026-07-11', label: '2026-07-11', counts: ABSENCE }],
   byTypologie: [],
@@ -71,20 +76,20 @@ describe('grilleRealise', () => {
   it('draws one line per stand, a stand without a seat that day neutral and closed', () => {
     const grille = grilleRealise(RAPPORT);
 
-    expect(grille.lignes.map((ligne) => ligne.id)).toEqual(['cirque', 'ninja']);
-    const ninja = grille.lignes[1];
-    expect(ninja.cases[0]).toEqual({ classe: 'realise-sans', libelle: '', active: false });
-    expect(ninja.cases[1].active).toBe(true);
+    expect(grille.lignes.map((ligne) => ligne.id)).toEqual(['cirque', 'polyvalent']);
+    const polyvalent = grille.lignes[1];
+    expect(polyvalent.cases[0]).toEqual({ classe: 'realise-sans', libelle: '', active: false });
+    expect(polyvalent.cases[1].active).toBe(true);
     expect(grille.lignes[0].cases[0].classe).toBe('realise-remplace');
   });
 
   it('flags the cells of a late day and leaves them out of every total', () => {
     const grille = grilleRealise(RAPPORT);
 
-    const ninja = grille.lignes[1];
-    expect(ninja.cases[1].classe).toBe('realise-vide realise-tardif');
-    expect(ninja.cases[1].libelle).toContain('non comptée');
-    expect(ninja.synthese['vides']?.texte).toBe('0');
+    const polyvalent = grille.lignes[1];
+    expect(polyvalent.cases[1].classe).toBe('realise-vide realise-tardif');
+    expect(polyvalent.cases[1].libelle).toContain('non comptée');
+    expect(polyvalent.synthese['vides']?.texte).toBe('0');
     expect(grille.lignes[0].cases[1].classe).toBe('realise-tenu realise-tardif');
   });
 

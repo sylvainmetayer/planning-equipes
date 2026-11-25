@@ -531,7 +531,7 @@ public class StaffingAnalyzer {
      *                          that row's pool <em>is</em> the reserve
      * @param animateursTotal   animateurs known at all — {@code 0} means the
      *                          référentiel is still empty and nothing is compared
-     * @param typologiePolyvalentDefinie whether the referential marks a polyvalent category
+     * @param typologiePolyvalenteDefinie whether the referential marks a polyvalent category
      *                          at all. Without it nobody is polyvalent, and a
      *                          reserve of zero must be read as "no such notion
      *                          here" rather than as a shortage of backup
@@ -549,7 +549,7 @@ public class StaffingAnalyzer {
                 "polyvalents",
                 "siegesNonAttribues",
                 "siegesReservesAuxPolyvalents",
-                "typologiePolyvalentDefinie",
+                "typologiePolyvalenteDefinie",
                 "planchersCumules"
             })
     public record CompetenceStaffing(
@@ -560,7 +560,7 @@ public class StaffingAnalyzer {
             int manqueTotal,
             int manquePolyvalents,
             int animateursTotal,
-            boolean typologiePolyvalentDefinie,
+            boolean typologiePolyvalenteDefinie,
             int planchersCumules) {}
 
     /** Half-open interval of one seat, in minutes from the start of its day. */

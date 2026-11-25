@@ -54,7 +54,7 @@ function rapport(): RapportTension {
     pireCellule: critique,
     animateursTotal: 4,
     cellulesCritiques: 1,
-    ninjaConfigure: true,
+    polyvalentConfigure: true,
     referentielsManquants: [],
     message: '',
   };

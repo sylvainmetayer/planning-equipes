@@ -70,8 +70,8 @@ class HandSearchDifferentialTest {
         "gamme-05-2j-4stands-8animateurs-mineurs.yaml, false",
         "gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc.yaml, false",
         "gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc.yaml, true",
-        "gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml, false",
-        "gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml, true",
+        "gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml, false",
+        "gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml, true",
         "gamme-10-4j-8stands-20animateurs-journees-types-multiples.yaml, true",
         "gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit.yaml, true",
         "gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml, true",
@@ -210,7 +210,7 @@ class HandSearchDifferentialTest {
     @Test
     void anEditionWithMoreThanSixtyFourGameCategoriesIsScoredAlike() {
         HandSearchFixtures.Loaded loaded =
-                HandSearchFixtures.load("gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements.yaml");
+                HandSearchFixtures.load("gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml");
         List<Stand> stands = loaded.problem().getPostes().stream()
                 .map(PosteAffectation::getStand)
                 .distinct()

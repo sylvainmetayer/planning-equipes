@@ -69,10 +69,10 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
 
     @Test
     void seulPolyvalentOccupeSurUnCreneauEstPenalise() {
-        // The only ninja works this créneau: no polyvalent left to patch an absence.
-        Animateur ninja = polyvalent("N1");
+        // The only polyvalent works this créneau: no polyvalent left to patch an absence.
+        Animateur polyvalent = polyvalent("N1");
         verify("preserverBufferPolyvalents")
-                .given(ninja, poste(standStrat, creneauMatin, ninja))
+                .given(polyvalent, poste(standStrat, creneauMatin, polyvalent))
                 .penalizesBy(1);
     }
 
@@ -87,8 +87,8 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
 
     @Test
     void polyvalentSurPlusieursPostesDuMemeCreneauNestCompteQuUneFois() {
-        // Two seats, one and the same ninja: still exactly one polyvalent busy,
-        // so a second ninja keeps the buffer satisfied.
+        // Two seats, one and the same polyvalent: still exactly one polyvalent busy,
+        // so a second polyvalent keeps the buffer satisfied.
         Animateur occupe = polyvalent("N1");
         Animateur libre = polyvalent("N2");
         verify("preserverBufferPolyvalents")
@@ -97,8 +97,8 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void sansTypologieNinjaAucunePenalite() {
-        // No typologie flagged ninja in the referential: nobody is polyvalent and
+    void noPolyvalentTypologieMeansNoPenalty() {
+        // No typologie flagged polyvalent in the referential: nobody is polyvalent and
         // the constraint must stay silent rather than penalising every créneau.
         Animateur a1 = referentMajeur("A1");
         verify("preserverBufferPolyvalents")

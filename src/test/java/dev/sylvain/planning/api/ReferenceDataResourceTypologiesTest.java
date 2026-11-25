@@ -64,7 +64,7 @@ class ReferenceDataResourceTypologiesTest {
     }
 
     @Test
-    void importScenarioAppliqueLaTypologieNinjaDeclaree() {
+    void scenarioImportAppliesTheDeclaredPolyvalentTypologie() {
         given().header("X-Edition-Id", "E1")
                 .when()
                 .post("/api/planning/reset")
@@ -77,11 +77,11 @@ class ReferenceDataResourceTypologiesTest {
                 .then()
                 .statusCode(200);
 
-        assertThat(typologiesNinja()).containsExactly("STRATEGIE");
+        assertThat(typologiesPolyvalent()).containsExactly("STRATEGIE");
     }
 
     @Test
-    void promotingANewNinjaTypologieDemotesThePreviousOne() {
+    void promotingANewPolyvalentTypologieDemotesThePreviousOne() {
         given().header("X-Edition-Id", "E1")
                 .when()
                 .post("/api/planning/reset")
@@ -92,24 +92,32 @@ class ReferenceDataResourceTypologiesTest {
                 .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
                 .then()
                 .statusCode(200);
-        assertThat(typologiesNinja()).containsExactly("STRATEGIE");
+        assertThat(typologiesPolyvalent()).containsExactly("STRATEGIE");
 
-        // Only one typologie may be ninja at a time: promoting another one must
+        // Only one typologie may be polyvalent at a time: promoting another one must
         // demote the previous holder rather than fail on the unique index.
         String jeuxVideo = typologieIdByCode("JEUX_VIDEO");
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body(Map.of("id", jeuxVideo, "code", "JEUX_VIDEO", "label", "Jeux vidéo", "ninja", true))
+                .body(Map.of(
+                        "id",
+                        jeuxVideo,
+                        "code",
+                        "JEUX_VIDEO",
+                        "label",
+                        "Jeux vidéo",
+                        "ninja",
+                        true)) // the 3.x key, still read (@JsonAlias)
                 .when()
                 .put("/api/typologies/" + jeuxVideo)
                 .then()
                 .statusCode(200);
 
-        assertThat(typologiesNinja()).containsExactly("JEUX_VIDEO");
+        assertThat(typologiesPolyvalent()).containsExactly("JEUX_VIDEO");
     }
 
-    /** Codes of the typologies currently flagged ninja — expected to hold at most one. */
-    private static List<String> typologiesNinja() {
+    /** Codes of the typologies currently flagged polyvalent — expected to hold at most one. */
+    private static List<String> typologiesPolyvalent() {
         List<Map<String, Object>> typologies = given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/typologies")

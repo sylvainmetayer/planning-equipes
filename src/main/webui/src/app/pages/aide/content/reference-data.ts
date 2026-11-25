@@ -93,7 +93,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.gel.typologies.terme:Typologies et emplacements`,
-              text: $localize`:@@aide.gel.typologies.def:Création, suppression, plafond par typologie et typologie ninja. Libellés, descriptions, noms et positions restent modifiables.`,
+              text: $localize`:@@aide.gel.typologies.def:Création, suppression, plafond par typologie et typologie polyvalente. Libellés, descriptions, noms et positions restent modifiables.`,
             },
             {
               term: $localize`:@@aide.gel.competences.terme:Compétences`,
@@ -136,7 +136,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.lieux:Lieux et typologies`,
-              text: $localize`:@@aide.data.def.autres:Un lieu (ou emplacement) est un endroit géolocalisé auquel rattacher un stand ; il sert à éviter les allers-retours d'un créneau à l'autre. Les lieux sont l'onglet « Lieux » de la page Stands : une carte les montre tous avec leurs stands, et faire glisser un marqueur y corrige la position sans ouvrir de fiche ; le tableau, trié à volonté, dit quels stands sont rattachés à chacun. Le formulaire d'un stand propose « Nouveau lieu… » sans quitter la page. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand. Sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie ninja » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
+              text: $localize`:@@aide.data.def.autres:Un lieu (ou emplacement) est un endroit géolocalisé auquel rattacher un stand ; il sert à éviter les allers-retours d'un créneau à l'autre. Les lieux sont l'onglet « Lieux » de la page Stands : une carte les montre tous avec leurs stands, et faire glisser un marqueur y corrige la position sans ouvrir de fiche ; le tableau, trié à volonté, dit quels stands sont rattachés à chacun. Le formulaire d'un stand propose « Nouveau lieu… » sans quitter la page. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand. Sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie polyvalente » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
             },
           ],
         },
