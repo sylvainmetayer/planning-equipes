@@ -50,7 +50,7 @@ Il ne refuse pas l'inverse : une `4.0.0` posée sans aucun `!` entre les deux ta
 
 Avant une majeure, une préversion `vX.Y.Z-rc.N` (par exemple `v4.0.0-rc.1`) laisse un exploitant essayer la version sur une copie de ses données. Elle suit les mêmes règles de forme qu'une release, avec son suffixe :
 
-- le contrôle de `release.yml` la compare au dernier tag **stable** (une `v4.0.0-rc.2` se compare à la `v3.5.0`, pas à la `rc.1`), et le numéro posé ne peut pas être inférieur à ce que les sujets demandent ;
+- le contrôle de `release.yml` la compare au dernier tag **stable** (une `v4.0.0-rc.2` se compare à la `v3.5.0`, pas à la `rc.1`), et le numéro posé ne peut pas être inférieur à ce que les sujets demandent ; il refuse aussi une préversion posée après sa version finale, ou dont le `N` ne dépasse pas celui d'une préversion de même numéro ;
 - ses notes de version listent tout ce qui est entré depuis ce dernier tag stable ; celles de la version finale `4.0.0` reprennent la même plage, préversions comprises ;
 - son image est publiée sous `:X.Y.Z-rc.N` **et rien d'autre** : ni `:X.Y`, ni `:latest`, que l'exploitant qui tire `latest` ou suit une ligne `X.Y` ne reçoit donc jamais une préversion. *Choix prudent, à confirmer :* le dépôt ne l'avait pas tranché, et rien n'empêche de poser plus tard une étiquette `:X.Y-rc` mobile.
 
