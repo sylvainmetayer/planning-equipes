@@ -35,9 +35,8 @@ public final class RapportConformiteCsv {
         for (String semaine : rapport.semaines()) {
             csv.append(';').append(semaine);
         }
-        csv.append(
-                ";total (h);plafond hebdomadaire (h);semaines au-dessus du plafond;dimanche (h);jours feries (h);"
-                        + "nuit apres 22h (h);repos quotidien minimal observe (h);detail des ecarts;representant legal\n");
+        csv.append(";total (h);plafond hebdomadaire (h);semaines au-dessus du plafond;dimanche (h);jours feries (h);"
+                + "nuit apres 22h (h);repos quotidien minimal observe (h);detail des ecarts;representant legal\n");
         Set<String> manquants = rapport.mineursSansRepresentant().stream()
                 .map(RapportConformite.MinorWithoutRepresentative::animateurId)
                 .collect(Collectors.toSet());

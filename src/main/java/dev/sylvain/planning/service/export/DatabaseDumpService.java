@@ -247,6 +247,11 @@ public class DatabaseDumpService {
      *       machine of this instance and the solve it runs (ADR 0086): the
      *       state of a machine, not the dataset. Restored elsewhere, another
      *       instance would believe it owns a machine it never started.</li>
+     *   <li>{@code animateur_contact} — the emergency contact and legal
+     *       representative of an animateur (ADR 0096): a third party's name and
+     *       number, read by the RH right and the administrators only. A file
+     *       that leaves the instance does not carry them; restoring a dump
+     *       recreates the fiches without them.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -271,7 +276,8 @@ public class DatabaseDumpService {
             "journal_connexion",
             "sauvegarde_avant_vidage",
             "machine_calcul",
-            "resolution_distante");
+            "resolution_distante",
+            "animateur_contact");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

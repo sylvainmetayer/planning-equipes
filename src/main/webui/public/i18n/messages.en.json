@@ -2011,6 +2011,7 @@
   "mentions.donnees.quoi.naissance": " Date of birth. It is used solely to determine, on the date of each timeslot, which legal framework applies — minors' work is more strictly regulated (night hours, daily span, breaks, rest days). It is never displayed as an age nor used for any other purpose. ",
   "mentions.donnees.quoi.disponibilites": " Availability and preferences: declared days off, stand preferences, skills per type of game. ",
   "mentions.donnees.quoi.affectations": " Assignments: the timeslots allocated, the swap requests submitted and their outcome. ",
+  "confidentialite.quoi.contacts": " Contacts, if you give them: the person to call in an emergency and, for a minor, their legal representative (name and phone number). They are used only to reach someone during the event, are read only by the administrators and the person in charge of human resources, and are not carried over from one edition to the next. ",
   "mentions.donnees.pourquoi.title": "Why",
   "mentions.donnees.base.label": "Legal basis:",
   "mentions.donnees.duree.title": "For how long",

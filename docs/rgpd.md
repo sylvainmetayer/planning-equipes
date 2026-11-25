@@ -672,8 +672,8 @@ l'événement).
 | Jamais dans | Scénario YAML, CSV et PDF d'export, ICS, archive, mails, MCP, espace d'un collègue, responsable de stand, liste des fiches |
 | Journal | Chaque lecture et chaque modification par l'organisation (`CONTACTS_CONSULTES`, `CONTACTS_MODIFIES`) et chaque modification par l'animateur (`CONTACTS_MODIFIES_PAR_ANIMATEUR`) — des identifiants, jamais une valeur |
 | Mineur sans représentant | Facultatif : un avertissement à la saisie (par identifiant, jamais l'identité ; il ne va pas dans le journal des notifications du navigateur) et une ligne dans le rapport de conformité |
-| Conservation | La fiche supprimée emporte ses contacts (clé étrangère en cascade) ; la purge de conservation de l'édition fait de même. Une **duplication d'édition ne les recopie pas** : une année nouvelle demande de nouveau, sans reporter le numéro d'un tiers d'une édition à l'autre. Réimporter un scénario qui recrée les fiches efface les contacts, qui n'y figurent pas |
-| Sauvegarde | La sauvegarde nocturne `pg_dump` les contient, comme le reste de la base ; elle n'est jamais téléchargeable |
+| Conservation | La fiche supprimée emporte ses contacts (clé étrangère en cascade) ; la purge de conservation de l'édition fait de même. Une **duplication d'édition ne les recopie pas** : une année nouvelle demande de nouveau, sans reporter le numéro d'un tiers d'une édition à l'autre. Un import de scénario garde les contacts des fiches qu'il conserve et emporte ceux des fiches qu'il retire ; une réinitialisation de l'édition les efface tous, et sa restauration ne les ramène pas (ils ne figurent pas dans le scénario sauvegardé) |
+| Sauvegarde | La sauvegarde nocturne `pg_dump` les contient, comme le reste de la base ; elle n'est jamais téléchargeable. L'export SQL de l'outillage de test ne les emporte pas (`DELIBERATELY_NOT_DUMPED`) |
 
 ## 8. Rythme de tenue
 
