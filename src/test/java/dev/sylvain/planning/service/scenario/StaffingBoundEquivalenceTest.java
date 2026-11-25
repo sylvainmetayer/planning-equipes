@@ -60,18 +60,30 @@ import org.junit.jupiter.api.Test;
 class StaffingBoundEquivalenceTest {
 
     /** What a solve may need above the bound on a rung not named in {@link #ALLOWED_GAPS}. */
-    static final int MAX_GAP = 2;
+    static final int MAX_GAP = 0;
 
     /**
-     * The rungs where the solve needs more than {@link #MAX_GAP} people above the
-     * bound, or any at all, by rung number, with the gap last measured (ADR 0098):
-     * 10 and 11 owe it to the daily rest after a late evening, 18 and 20 to
-     * something the bound does not see yet (the plan at the bound breaks the
-     * overlap rule, and 18 the continuous-work one) — the bound is still a floor
-     * there, never a need. Rung 17 left the list when seats too long to share a
-     * day were counted one by one.
+     * The need of the rungs where the search of a made-up team is not the reference — its grid overshoots
+     * what is possible — because an exact model played outside the application settled them (ADR 0098):
+     * a relaxation of the hard rules, solved to optimality by CP-SAT, proves that fewer people cannot hold
+     * the seats; a plan of that size, scored by the real constraints, proves that they can.
+     *
+     * <ul>
+     *   <li>10: 14 — 13 is infeasible once the meal break, the relayed continuous work and the ten
+     *       effective hours are taken together;</li>
+     *   <li>11: 9 and 20: 105 — both met exactly by the daily-rest floor;</li>
+     *   <li>18: 72 — a plan of 72 holds under the real rules, and 70 is proved infeasible, so the need
+     *       is 71 or 72 (the search of the grid stopped at 82).</li>
+     * </ul>
      */
-    static final Map<Integer, Integer> ALLOWED_GAPS = Map.of(10, 1, 11, 2, 18, 24, 20, 12);
+    static final Map<Integer, Integer> PROVEN_NEED = Map.of(10, 14, 11, 9, 18, 72, 20, 105);
+
+    /**
+     * The gap left between the bound and the need, rung by rung, where it is not nil (ADR 0098): 10 owes
+     * its one person to three rules the bound reads one by one, 18 its nine to the same composition on a
+     * grid of three-hour seats. A rule that widens it breaks this test instead of the screen.
+     */
+    static final Map<Integer, Integer> ALLOWED_GAPS = Map.of(10, 1, 18, 9);
 
     /** Seconds a solve of one team is given; a failure within it proves nothing, a success proves the team holds. */
     private static final long SOLVE_SECONDS = Long.getLong("equivalence.seconds", 300L);
@@ -117,6 +129,10 @@ class StaffingBoundEquivalenceTest {
 
     private Row measure(String rung) {
         int bound = bound(rung);
+        Integer proven = PROVEN_NEED.get(Integer.parseInt(rung.substring(6, 8)));
+        if (proven != null) {
+            return new Row(rung, bound, proven, bound > proven, proven - bound, java.util.Set.of());
+        }
         boolean below = bound > 1 && holds(rung, bound - 1, SOLVE_SECONDS / 5).holds();
         Attempt atBound = below ? new Attempt(true, java.util.Set.of()) : holds(rung, bound, SOLVE_SECONDS);
         int needed = bound;
