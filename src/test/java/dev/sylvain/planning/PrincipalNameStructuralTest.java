@@ -13,11 +13,14 @@ import org.junit.jupiter.api.Test;
  * Under an OIDC session the principal's name is the person's address. Nothing
  * stored or journalled may read it: an author is the account id
  * ({@code JournalActionService.nomAdmin()}). {@code AuthResource} answers
- * {@code /api/auth/me} with it, to the person themselves — the one exception.
+ * {@code /api/auth/me} with it, to the person themselves — the first exception.
+ * The second is {@code CompteIdentityAugmentor}: the session cookie of a local
+ * account carries nothing but the address, which is how it finds the account
+ * to bind — to the request, never to a store, a log or a journal.
  */
 class PrincipalNameStructuralTest {
 
-    private static final List<String> ALLOWED = List.of("api/AuthResource.java");
+    private static final List<String> ALLOWED = List.of("api/AuthResource.java", "api/CompteIdentityAugmentor.java");
 
     @Test
     void noOneReadsThePrincipalNameButTheSessionProbe() throws IOException {

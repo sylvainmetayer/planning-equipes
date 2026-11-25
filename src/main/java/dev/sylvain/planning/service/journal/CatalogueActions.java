@@ -187,6 +187,8 @@ public final class CatalogueActions {
     private static final String COMPTE_CREE = "COMPTE_CREE";
     private static final String COMPTE_DESACTIVE = "COMPTE_DESACTIVE";
     private static final String COMPTE_REACTIVE = "COMPTE_REACTIVE";
+    private static final String COMPTE_INVITE = "COMPTE_INVITE";
+    private static final String COMPTE_REINITIALISE = "COMPTE_REINITIALISE";
     private static final String HABILITATION_ACCORDEE = "HABILITATION_ACCORDEE";
     private static final String HABILITATION_RETIREE = "HABILITATION_RETIREE";
     private static final String TELECHARGEMENT_ESPACE_PDF = "TELECHARGEMENT_ESPACE_PDF";
@@ -456,6 +458,8 @@ public final class CatalogueActions {
         action(COMPTE_CREE, "Compte créé", Entite.PARAMETRES);
         action(COMPTE_DESACTIVE, "Compte désactivé", Entite.PARAMETRES);
         action(COMPTE_REACTIVE, "Compte réactivé", Entite.PARAMETRES);
+        action(COMPTE_INVITE, "Invitation à choisir un mot de passe envoyée", Entite.PARAMETRES);
+        action(COMPTE_REINITIALISE, "Réinitialisation du mot de passe envoyée", Entite.PARAMETRES);
         action(HABILITATION_ACCORDEE, "Habilitation accordée", Entite.PARAMETRES);
         action(HABILITATION_RETIREE, "Habilitation retirée", Entite.PARAMETRES);
         // One line per explicit download, never per page shown: « a-t-il bien
@@ -647,6 +651,8 @@ public final class CatalogueActions {
         route("CompteResource#create", COMPTE_CREE);
         route("CompteResource#deactivate", COMPTE_DESACTIVE);
         route("CompteResource#reactivate", COMPTE_REACTIVE);
+        route("CompteResource#invite", COMPTE_INVITE);
+        route("CompteResource#reset", COMPTE_REINITIALISE);
         route("CompteResource#grant", HABILITATION_ACCORDEE);
         route("CompteResource#withdraw", HABILITATION_RETIREE);
 
@@ -807,6 +813,15 @@ public final class CatalogueActions {
     }
 
     static {
+        untracked(
+                "AuthResource#passwordStep",
+                "public password step of a sign-in: it opens nothing, and every attempt — failed or not — is in the admin login journal");
+        untracked(
+                "AuthResource#forgotPassword",
+                "public, answers the same for any address: nothing is learnt by journalling it, and the link it mails is a credential");
+        untracked(
+                "AuthResource#choosePassword",
+                "public, the single-use link is the credential and carries no identity: the sign-in that follows is in the admin login journal");
         untracked("AffectationExplanationResource#simulateSwap", SIMULATION);
         untracked("AffectationExplanationResource#simulateDeplacement", SIMULATION);
         untracked("AnimateurResource#analyseCsvAnimateurs", ANALYSE_FICHIER);

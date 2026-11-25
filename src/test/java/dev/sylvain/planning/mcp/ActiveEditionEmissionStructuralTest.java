@@ -36,7 +36,11 @@ class ActiveEditionEmissionStructuralTest {
     /** Mails that belong to the instance rather than to an edition, with the reason. */
     private static final Map<String, String> INSTANCE_MAILS = Map.of(
             "sendTestMail",
-            "the Débogage test mail checks the SMTP relay of the instance and goes to the admin address only");
+            "the Débogage test mail checks the SMTP relay of the instance and goes to the admin address only",
+            "sendAccountLink",
+            "a local account's password link: accounts serve every edition and nothing about one is in it",
+            "sendAccountCode",
+            "the code ending a local sign-in: accounts serve every edition and nothing about one is in it");
 
     /**
      * The service method each outward MCP tool goes through. A new outward

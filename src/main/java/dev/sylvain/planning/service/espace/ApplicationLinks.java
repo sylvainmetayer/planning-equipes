@@ -72,6 +72,9 @@ public class ApplicationLinks {
     /** Admin screen « Diffuser », where a publication is prepared and its sends are followed. */
     private static final String ECRAN_PUBLICATION = "publication";
 
+    /** Public page (outside the admin shell) where a local account chooses its password. */
+    private static final String ECRAN_MOT_DE_PASSE = "mot-de-passe";
+
     /** Espace animateur, whose {@code :token} segment IS the credential. */
     private static final String ESPACE_ANIMATEUR = "animateur";
 
@@ -138,6 +141,19 @@ public class ApplicationLinks {
                 .queryParam(TAB_PARAM, ONGLET_EDITION)
                 .fragment(ANCRE_METEO)
                 .build()
+                .toString());
+    }
+
+    /**
+     * The page where a local account chooses its password. The single-use token
+     * rides in the <b>fragment</b>: a fragment never reaches a server, a proxy's
+     * access log or a {@code Referer}, which a query string would.
+     */
+    public Optional<String> passwordScreen(String token) {
+        return base.map(url -> UriBuilder.fromUri(url)
+                .path(ECRAN_MOT_DE_PASSE)
+                .fragment("{jeton}")
+                .build(token)
                 .toString());
     }
 

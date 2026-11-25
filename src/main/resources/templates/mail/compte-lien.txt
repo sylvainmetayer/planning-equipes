@@ -1,0 +1,7 @@
+Bonjour{#if nom} {nom}{/if},
+
+{#if invitation}L'organisation vous a ouvert un compte sur {produit}. Choisissez votre mot de passe en suivant ce lien :{#else}Vous (ou un administrateur) avez demandé à changer le mot de passe de votre compte {produit}. Choisissez-en un nouveau en suivant ce lien :{/if}
+
+{lien}
+
+Ce lien ne sert qu'une fois et reste valable {duree}. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message : votre mot de passe actuel n'est pas modifié.

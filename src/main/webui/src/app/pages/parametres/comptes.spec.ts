@@ -28,6 +28,7 @@ function compte(email: string, desactiveLe: string | null = null): Compte {
     desactiveLe,
     desactivePar: null,
     habilitations: [],
+    passwordSet: false,
   };
 }
 

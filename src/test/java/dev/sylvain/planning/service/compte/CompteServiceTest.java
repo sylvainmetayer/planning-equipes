@@ -14,7 +14,7 @@ class CompteServiceTest {
 
     @Test
     void anAccountCannotDeactivateItself() {
-        Compte moi = new Compte("c-1", "moi@example.org", null, null, null, null, null, List.of());
+        Compte moi = new Compte("c-1", "moi@example.org", null, null, null, null, null, List.of(), false);
         CompteService service = new CompteService();
         service.journal = new JournalActionService(
                 null,

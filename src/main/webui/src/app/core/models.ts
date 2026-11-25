@@ -2831,12 +2831,23 @@ export interface Compte {
   /** The id of the account that deactivated it, never an address. */
   desactivePar: string | null;
   habilitations: Habilitation[];
+  /** Whether a local password is set — only that: the hash never leaves the server. */
+  passwordSet: boolean;
 }
 
 /** Body of `POST /api/comptes`. */
+/** Body of `POST /api/comptes`: `invite` also mails the link to choose a password. */
 export interface NouveauCompte {
   email: string;
   nom: string | null;
+  invite?: boolean | null;
+}
+
+/** Answer of `POST /api/auth/connexion`: the one-time challenge of a local sign-in. */
+export interface SignInChallenge {
+  codeRequired: boolean;
+  challenge: string;
+  maskedEmail: string | null;
 }
 
 /** Body of `POST /api/comptes/{id}/habilitations`. */

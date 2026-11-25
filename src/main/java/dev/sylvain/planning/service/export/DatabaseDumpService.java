@@ -198,6 +198,9 @@ public class DatabaseDumpService {
      *       — who administers this instance and what they may do. Restoring
      *       them would hand another instance's people access here, or strip
      *       this one's.</li>
+     *   <li>{@code compte_jeton}, {@code compte_defi} — the single-use password
+     *       links and sign-in challenges of the accounts: hashes of credentials
+     *       still in force. A restore would reopen links nobody here handed out.</li>
      *   <li>{@code solver_job} — the queue, replayed at startup. A restore
      *       would make the receiving instance run somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
@@ -247,6 +250,8 @@ public class DatabaseDumpService {
             "lien_affichage_mural_emplacement",
             "compte",
             "habilitation",
+            "compte_jeton",
+            "compte_defi",
             "solver_job",
             "journal_action",
             "verification_besoin",

@@ -1879,6 +1879,9 @@
             "items" : {
               "$ref" : "#/components/schemas/Habilitation"
             }
+          },
+          "passwordSet" : {
+            "type" : "boolean"
           }
         }
       },
@@ -2624,6 +2627,17 @@
             "$ref" : "#/components/schemas/AffichageMuralLink"
           },
           "token" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Credentials" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "password" : {
             "type" : "string"
           }
         }
@@ -5013,6 +5027,14 @@
           }
         }
       },
+      "ForgotRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          }
+        }
+      },
       "GapCounts" : {
         "type" : "object",
         "required" : [ "absences", "addedSeats", "emptySeats", "keptSeats", "lostMinutes", "publishedMinutes", "publishedSeats", "realisedMinutes", "removedSeats", "replacements" ],
@@ -6895,6 +6917,9 @@
           },
           "nom" : {
             "type" : "string"
+          },
+          "invite" : {
+            "type" : "boolean"
           }
         }
       },
@@ -7232,6 +7257,17 @@
           },
           "mailFinResolution" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "PasswordChoice" : {
+        "type" : "object",
+        "properties" : {
+          "token" : {
+            "type" : "string"
+          },
+          "password" : {
+            "type" : "string"
           }
         }
       },
@@ -9435,6 +9471,21 @@
       "SeveriteInfaisabilite" : {
         "type" : "string",
         "enum" : [ "CRITIQUE", "ELEVE" ]
+      },
+      "SignInChallenge" : {
+        "required" : [ "codeRequired", "challenge" ],
+        "type" : "object",
+        "properties" : {
+          "codeRequired" : {
+            "type" : "boolean"
+          },
+          "challenge" : {
+            "type" : "string"
+          },
+          "maskedEmail" : {
+            "type" : "string"
+          }
+        }
       },
       "SignalementJourJ" : {
         "type" : "object",
@@ -11760,6 +11811,37 @@
         "tags" : [ "Animateur Resource" ]
       }
     },
+    "/api/auth/connexion" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SignInChallenge"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Password Step",
+        "tags" : [ "Auth Resource" ]
+      }
+    },
     "/api/auth/logout" : {
       "post" : {
         "responses" : {
@@ -11793,6 +11875,64 @@
           }
         },
         "summary" : "Me",
+        "tags" : [ "Auth Resource" ]
+      }
+    },
+    "/api/auth/mot-de-passe" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordChoice"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Choose Password",
+        "tags" : [ "Auth Resource" ]
+      }
+    },
+    "/api/auth/mot-de-passe/oubli" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ForgotRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Forgot Password",
         "tags" : [ "Auth Resource" ]
       }
     },
@@ -12151,6 +12291,34 @@
         } ]
       }
     },
+    "/api/comptes/{id}/invitation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Invite",
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
+      }
+    },
     "/api/comptes/{id}/reactivation" : {
       "post" : {
         "parameters" : [ {
@@ -12180,6 +12348,34 @@
           }
         },
         "summary" : "Reactivate",
+        "tags" : [ "Compte Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
+      }
+    },
+    "/api/comptes/{id}/reinitialisation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "Created"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Reset",
         "tags" : [ "Compte Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "admin" ]

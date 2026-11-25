@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -62,6 +63,11 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
             identite.addRole(ROLE_ADMIN);
         } else if (McpApiKeyAuthenticationMechanism.PRINCIPAL.equals(request.getPrincipal())) {
             identite.addRole(ROLE_MCP);
+        } else if (request.getPrincipal().indexOf('@') > 0) {
+            // The session cookie of a local account, which names the address it
+            // was opened for: CompteIdentityAugmentor binds the account (and
+            // withdraws the session if it was deactivated since).
+            identite.addAttribute(Compte.LOCAL_ATTRIBUTE, Boolean.TRUE);
         }
         return Uni.createFrom().item(identite.build());
     }
