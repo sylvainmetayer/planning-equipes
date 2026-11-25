@@ -190,6 +190,7 @@ public class CreneauMcpTools {
 
     /* ----------------------------- Grid: recurrence -------------------------- */
 
+    @Computes
     @Tool(
             name = "previsualiser_creneaux_recurrents",
             description = "Prévisualise les créneaux qu'une règle récurrente produirait, et contrôle la grille qui "
@@ -261,6 +262,7 @@ public class CreneauMcpTools {
 
     /* ------------------------ Grid: derived from the stands ------------------------ */
 
+    @Computes
     @Tool(
             name = "previsualiser_derivation_creneaux",
             description = "Prévisualise la grille de créneaux que les horaires des stands impliquent : chaque heure "

@@ -15,7 +15,7 @@ duplication, activation et suppression d'une édition, comparaison de deux
 éditions. L'import de scénario reste ouvert à l'organisateur, dans son édition
 courante seulement : une section `edition:` qui en désigne une autre, ou une à
 créer, est refusée (400). L'inventaire est tenu par `InstanceRoutesStructuralTest` (ressources) et par `RoutesOuvertesStructuralTest` (route par route, décrit plus haut) ; une nouvelle ressource ou route non classée fait échouer le build. Le rôle `responsable_stand` n'ouvre que `/api/responsable/*`
-([ADR 0095](repo:docs/decisions/0095-le-responsable-de-stand-lit-son-stand.md), détaillé plus bas). Le `/mcp`
+([ADR 0095](repo:docs/decisions/0095-le-responsable-de-stand-lit-son-stand.md), détaillé plus bas). Le rôle `lecteur` (une édition) voit comme un organisateur, sans le jeton d'espace des animateurs, mais le serveur refuse toute écriture, tout calcul et tout export de données brutes ; seuls les PDF et ICS passent ([ADR 0099](repo:docs/decisions/0099-le-lecteur-voit-sans-rien-ecrire.md), inventaire : `RoutesLecteurStructuralTest`). Le `/mcp`
 accepte aussi un jeton OAuth du fournisseur, sous les mêmes droits (voir
 [`mcp-connexion.md`](../comprendre/mcp-connexion.md)) ; sa clé d'API reste. Les comptes locaux avec mot de passe, ouverts
 même derrière un fournisseur, sont décrits dans

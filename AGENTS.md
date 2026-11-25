@@ -457,7 +457,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   stored hashed in `lien_affichage_mural`, created and revoked by the admin,
   good for that one read of one edition. The same two rules hold — the prefix
   names that route alone, and `AffichageMuralSecurityTest` asserts the token
-  opens nothing else. An **opt-in** header mode (`planning.auth.remote-user.*`,
+  opens nothing else.
+  **A `LECTEUR` right reads and never writes** (ADR 0099): `api/LecteurFilter` refuses every
+  non-`GET` (calculations included) and every `@NotForLecteur` raw export per edition, the MCP
+  interceptor every tool but `readOnlyHint = true` without `@Computes`, and `api/LecteurTokenMask`
+  serialises an animateur's `accessToken` as `null` to them; a new route is classified by
+  `RoutesLecteurStructuralTest` (`routes-lecteur.txt`). An **opt-in** header mode (`planning.auth.remote-user.*`,
   off by default) lets an access proxy assert an already-authenticated
   address: `admin-email` gets the admin role, any other recognised address is
   an animateur whose espace opens without the e-mail code. It refuses to boot

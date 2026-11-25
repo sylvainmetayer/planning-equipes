@@ -95,6 +95,7 @@ public class ConsigneMcpTools {
                 timeOrNull(fermetureFin));
     }
 
+    @Computes
     @Tool(
             name = "simuler_consigne",
             description = "Simule une consigne sans rien écrire : par jour, sièges et minutes avant et après, "
@@ -230,6 +231,7 @@ public class ConsigneMcpTools {
                 .withStamps(stamps(modifieLe)));
     }
 
+    @Computes
     @Tool(
             name = "simuler_levee_consigne",
             description = "Simule la levée d'une consigne sans rien écrire : par date, les créneaux ajoutés qui "

@@ -7,6 +7,7 @@ export function provideSession(admin = true): Provider {
     provide: SessionStore,
     useValue: {
       isAdmin: () => admin,
+      lectureSeule: () => false,
       known: () => true,
       statut: () => ({
         authentifie: true,

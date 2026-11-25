@@ -98,6 +98,7 @@ public class PublicationResource {
      */
     @GET
     @Path("/export")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportCsv() {
         return CsvDownload.attachment(

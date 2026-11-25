@@ -25,5 +25,12 @@ public enum RoleHabilitation {
      * the administration. Like the other rights it adds to what the account already holds: an RH who is also an
      * organiser keeps the organiser's reach, and an organiser without it reads none of this.
      */
-    RH
+    RH,
+    /**
+     * « Lecteur »: sees what an organiser sees in <b>one</b> edition — birth dates and minor status included, the
+     * contacts of the RH right excluded — and writes nothing there: the server refuses every write, every
+     * computation and every raw-data export (ADR 0099). On another edition where the account is an organiser, the
+     * organiser's rights hold as they are.
+     */
+    LECTEUR
 }

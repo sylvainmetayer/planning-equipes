@@ -138,6 +138,7 @@ public class StandResource {
     /** The edition's own matrix as a CSV to start from: its créneaux as columns, its stands as rows. */
     @GET
     @Path("/import-grille/exemple")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exempleGrille() {
         return CsvDownload.attachment(grilleImport.exemple(), StandGrilleImportService.EXEMPLE_FICHIER);
@@ -148,6 +149,7 @@ public class StandResource {
     /** The shape the import expects, shown rather than described. */
     @GET
     @Path("/import-csv/exemple")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exempleCsv() {
         return CsvDownload.attachment(

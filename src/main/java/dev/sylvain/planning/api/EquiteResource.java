@@ -37,6 +37,7 @@ public class EquiteResource {
 
     @GET
     @Path("/export")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportCsv() {
         return CsvDownload.attachment(EquiteService.generateCsv(equiteService.rapport()), "equite-planning.csv");

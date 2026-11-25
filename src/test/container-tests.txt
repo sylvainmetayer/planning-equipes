@@ -200,3 +200,5 @@ dev/sylvain/planning/api/LocalSignInTest.java
 dev/sylvain/planning/api/LocalSignInWithoutSecondStepTest.java
 dev/sylvain/planning/api/LocalSignInLockoutTest.java
 dev/sylvain/planning/api/LocalSignInSprayTest.java
+dev/sylvain/planning/api/LecteurCanariTest.java
+dev/sylvain/planning/mcp/OidcMcpLecteurTest.java

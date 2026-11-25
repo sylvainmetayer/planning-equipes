@@ -194,6 +194,7 @@ public class SolveurMcpTools {
      * plan it just read. No business data changes, so a client is right to
      * call it without asking.</p>
      */
+    @Computes
     @Tool(
             name = "diagnostiquer_plan",
             description = "Diagnostic du planning persisté : score global et score de chaque contrainte, nombre de "

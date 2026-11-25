@@ -109,6 +109,7 @@ public class ScenarioMcpTools {
         return toImportResult(scenarioImportService.importYaml(yaml));
     }
 
+    @Computes
     @Tool(
             name = "valider_scenario_yaml",
             description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "

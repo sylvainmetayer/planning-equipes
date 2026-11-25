@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import io.quarkiverse.mcp.server.Tool;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
@@ -50,6 +51,7 @@ public class EditionCibleeInterceptor {
         int index = editionArgIndex(context);
         if (index < 0) {
             // A method that declares no EditionArg — most of this package's helpers.
+            refuseWriteToLecteur(context, null);
             return context.proceed();
         }
         String editionId = editions.solve((String) context.getParameters()[index]);
@@ -58,7 +60,26 @@ public class EditionCibleeInterceptor {
                     BusinessError.EditionRefused.Reason.REQUISE,
                     "L'argument « edition » est obligatoire : son id ou son nom (voir lister_editions).");
         }
+        refuseWriteToLecteur(context, editionId);
         return editionContext.executeIn(editionId, context::proceed);
+    }
+
+    /**
+     * A lecteur (ADR 0099) meets only the tools declaring {@code readOnlyHint = true} and not {@link Computes},
+     * in the editions it reads: any other tool is refused — as a business refusal, which names nobody. {@code editionId} is
+     * {@code null} for a tool designating none, judged on the rights that cover every edition.
+     */
+    private void refuseWriteToLecteur(InvocationContext context, String editionId) {
+        Tool tool = context.getMethod().getAnnotation(Tool.class);
+        if (tool == null) {
+            return;
+        }
+        boolean writesOrComputes =
+                !tool.annotations().readOnlyHint() || context.getMethod().isAnnotationPresent(Computes.class);
+        if (writesOrComputes && !editionContext.callerCanWrite(editionId)) {
+            throw new BusinessError.Invalid(
+                    "Ce compte lit cette édition sans pouvoir la modifier : cet outil écrit ou lance un calcul.");
+        }
     }
 
     /** Position of the {@link EditionArg} parameter, {@code -1} when the method declares none. */

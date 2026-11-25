@@ -228,6 +228,7 @@ public class AnimateurResource {
      */
     @GET
     @Path("/import-csv/exemple")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exempleCsvAnimateurs() {
         return CsvDownload.attachment(csvImport.exemple(), AnimateurCsvImportService.EXEMPLE_FICHIER);

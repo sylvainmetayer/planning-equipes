@@ -73,6 +73,7 @@ public class PauseResource {
     /** The same list, as the flat CSV the intendance takes with it. */
     @GET
     @Path("/intendance/export")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportIntendance() {
         return CsvDownload.attachment(intendanceAnalyzer.generateCsv(intendance()), "intendance-repas.csv");

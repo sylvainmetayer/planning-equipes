@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StatutSession } from './models';
-import { responsableOnly, rhOnly, signedInWithoutAccess } from './session';
+import { lectureSeule, responsableOnly, rhOnly, signedInWithoutAccess } from './session';
 
 function statut(authentifie: boolean, ...roles: string[]): StatutSession {
   return { authentifie, nom: authentifie ? 'a@b.fr' : null, roles, compteId: null };
@@ -34,5 +34,19 @@ describe('rhOnly', () => {
     expect(rhOnly(statut(true, 'admin'))).toBe(false);
     expect(rhOnly(statut(false, 'rh'))).toBe(false);
     expect(signedInWithoutAccess(statut(true, 'rh'))).toBe(false);
+  });
+});
+
+describe('lectureSeule', () => {
+  it('is true for a lecteur with no organiser or administrator right, and opens something', () => {
+    expect(lectureSeule(statut(true, 'lecteur'))).toBe(true);
+    expect(lectureSeule(statut(true, 'lecteur', 'rh'))).toBe(true);
+    expect(lectureSeule(statut(true, 'lecteur', 'organisateur'))).toBe(false);
+    expect(lectureSeule(statut(true, 'lecteur', 'admin'))).toBe(false);
+    expect(lectureSeule(statut(true, 'organisateur'))).toBe(false);
+    expect(lectureSeule(null)).toBe(false);
+    expect(signedInWithoutAccess(statut(true, 'lecteur'))).toBe(false);
+    expect(responsableOnly(statut(true, 'responsable_stand', 'lecteur'))).toBe(false);
+    expect(rhOnly(statut(true, 'rh', 'lecteur'))).toBe(false);
   });
 });

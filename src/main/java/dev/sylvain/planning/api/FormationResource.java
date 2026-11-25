@@ -37,6 +37,7 @@ public class FormationResource {
 
     @GET
     @Path("/export")
+    @NotForLecteur
     @Produces("text/csv")
     public Response exportCsv() {
         return CsvDownload.attachment(FormationAnalyzer.generateCsv(formationService.plan()), "plan-formation.csv");

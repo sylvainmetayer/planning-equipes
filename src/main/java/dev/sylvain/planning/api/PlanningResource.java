@@ -101,6 +101,7 @@ public class PlanningResource {
      */
     @GET
     @Path("/planning/export-scenario")
+    @NotForLecteur
     @Produces("application/x-yaml")
     public Response exportScenario() {
         String yaml = planningService.exportScenarioYaml();
@@ -179,6 +180,7 @@ public class PlanningResource {
     /** One of them, as a scenario file: what the restore re-imports, to read before restoring it. */
     @GET
     @Path("/planning/sauvegardes-avant-vidage/{id}")
+    @NotForLecteur
     @Produces("application/x-yaml")
     public Response downloadWipeBackup(@PathParam("id") long id) {
         return Response.ok(wipeBackup.loadContent(id))
