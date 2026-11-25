@@ -518,4 +518,12 @@ public class PlanningService {
     public PlanningDiagnosticService.PlanningDiagnostic diagnose(PlanningEvenement solved) {
         return diagnosticService.diagnose(solved);
     }
+
+    /**
+     * The plan scored by the rules as they are written, with no preparation: no toggle, no weight — what a
+     * report of the law needs, whatever the organiser switched off for the solver.
+     */
+    public dev.sylvain.planning.service.diagnostic.PlanningAnalysis analyze(PlanningEvenement plan) {
+        return solverConfiguration.diagnosticService().analyze(plan);
+    }
 }
