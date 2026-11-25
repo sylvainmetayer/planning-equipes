@@ -5293,7 +5293,7 @@
   "login.recommencer": "Start again",
   "login.oubli.lien": "Forgot my password",
   "login.oubli.aide": "Enter your account's address: if it matches an account, a link to choose a new password is sent to you.",
-  "login.oubli.envoye": "If this address matches an account, a link has just been sent. It is valid for one hour and works once.",
+  "login.oubli.envoye": "If an account matches this address, a link has been sent to you, or is already waiting in your mailbox. A link works once.",
   "login.oubli.envoyer": "Send the link",
   "login.oubli.retour": "Back to sign-in",
   "route.motDePasse": "Choose my password",

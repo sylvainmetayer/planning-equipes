@@ -31,8 +31,11 @@ export async function loadAppConfig(): Promise<AppConfig> {
 }
 
 /**
- * Two public pages carry a credential in their URL path: the espace animateur
- * (`/animateur/<token>`) and the wall display (`/mural/<token>`). The first is
+ * Three public pages carry a credential in their URL: the espace animateur
+ * (`/animateur/<token>`), the wall display (`/mural/<token>`) and the page of a
+ * mailed password link (`/mot-de-passe#<token>`, in the fragment — the single-use
+ * key to an account: handing it to a third party would hand it the account).
+ * The first is
  * a unique, stable identifier of one named person — often a minor — so any
  * telemetry that reports "which page was viewed" would be reporting who was
  * viewing it, to a third party, with no basis for doing so. The second opens
@@ -41,8 +44,8 @@ export async function loadAppConfig(): Promise<AppConfig> {
  *
  * <p>Hence the two guards below: audience measurement is not loaded at all on
  * those pages, and error reports have the token replaced before they leave the
- * browser. Checking `location.pathname` once at bootstrap is enough — both
- * pages are entered by their URL and no in-app navigation crosses into them.</p>
+ * browser. Checking `location.pathname` once at bootstrap is enough — all
+ * three are entered by their URL and no in-app navigation crosses into them.</p>
  */
 const TOKEN_PAGE_PREFIXES = ['/animateur/', '/mural/', '/mot-de-passe'];
 
