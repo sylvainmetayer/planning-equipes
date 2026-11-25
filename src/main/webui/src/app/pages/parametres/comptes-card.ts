@@ -15,6 +15,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ComptesApi } from '../../core/api/comptes-api';
 import { EditionStore } from '../../core/edition.store';
 import { errorMessage } from '../../core/error-message';
@@ -53,6 +54,7 @@ export class ComptesCard implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly session = inject(SessionStore);
   private readonly editionStore = inject(EditionStore);
+  private readonly referenceData = inject(ReferenceDataStore);
   private readonly injector = inject(Injector);
 
   protected readonly roles = ROLES;
@@ -74,6 +76,9 @@ export class ComptesCard implements OnInit {
   protected readonly grantFor = signal<string | null>(null);
   protected readonly role = signal<RoleHabilitation>('ORGANISATEUR');
   protected readonly edition = signal<string>(ALL_EDITIONS);
+  /** The stands a responsable de stand's right covers: those of the edition this browser works in. */
+  protected readonly stands = this.referenceData.stands;
+  protected readonly standIds = signal<string[]>([]);
 
   ngOnInit(): void {
     void this.load();
@@ -86,6 +91,8 @@ export class ComptesCard implements OnInit {
   protected rightLabel(habilitation: Habilitation): string {
     return rightLabel(habilitation, this.editions());
   }
+
+  protected readonly currentEdition = computed(() => this.editionStore.courant()?.nom ?? '');
 
   protected editionLabel(id: string): string {
     return editionLabel(id === ALL_EDITIONS ? null : id, this.editions());
@@ -140,18 +147,24 @@ export class ComptesCard implements OnInit {
     // Never « every edition » by default, and never the previous account's choice.
     this.role.set('ORGANISATEUR');
     this.edition.set(this.editionStore.courant()?.id ?? ALL_EDITIONS);
+    this.standIds.set([]);
     this.grantFor.set(compte.id);
     this.focusAfterRender(`comptes-role-${compte.id}`);
   }
 
   protected async grantRight(compte: Compte): Promise<void> {
     const role = this.role();
-    const edition = this.edition();
+    const responsable = role === 'RESPONSABLE_STAND';
+    // A responsable's right is one edition's: the one this browser works in.
+    const edition = responsable
+      ? (this.editionStore.courant()?.id ?? ALL_EDITIONS)
+      : this.edition();
     await this.run(async () => {
       await this.api.grant(compte.id, {
         role,
         editionId: role === 'ADMIN' || edition === ALL_EDITIONS ? null : edition,
         expireLe: null,
+        ...(responsable ? { standIds: this.standIds() } : {}),
       });
       this.grantFor.set(null);
     });

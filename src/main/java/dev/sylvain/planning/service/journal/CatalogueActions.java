@@ -149,6 +149,7 @@ public final class CatalogueActions {
     private static final String PARAMETRES_NOTIFICATIONS_MODIFIES = "PARAMETRES_NOTIFICATIONS_MODIFIES";
     private static final String PARAMETRES_METEO_MODIFIES = "PARAMETRES_METEO_MODIFIES";
     private static final String CONTACT_ORGANISATION_MODIFIE = "CONTACT_ORGANISATION_MODIFIE";
+    private static final String REGLAGE_RESPONSABLES_MODIFIE = "REGLAGE_RESPONSABLES_MODIFIE";
     private static final String CONTRAINTE_ACTIVEE = "CONTRAINTE_ACTIVEE";
     private static final String CONTRAINTE_DESACTIVEE = "CONTRAINTE_DESACTIVEE";
     private static final String CONTRAINTE_PONDEREE = "CONTRAINTE_PONDEREE";
@@ -406,6 +407,10 @@ public final class CatalogueActions {
         action(PARAMETRES_NOTIFICATIONS_MODIFIES, "Paramètres de notifications modifiés", Entite.PARAMETRES);
         action(PARAMETRES_METEO_MODIFIES, "Réglages de l'alerte météo modifiés", Entite.PARAMETRES);
         action(CONTACT_ORGANISATION_MODIFIE, "Contact de l'organisation modifié", Entite.PARAMETRES);
+        action(
+                REGLAGE_RESPONSABLES_MODIFIE,
+                "Visibilité des noms pour les responsables de stand modifiée",
+                Entite.PARAMETRES);
         changesData(CONTRAINTE_ACTIVEE, "Contrainte activée", Entite.PARAMETRES);
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
         changesData(CONTRAINTE_PONDEREE, "Poids d'une contrainte modifié", Entite.PARAMETRES);
@@ -630,6 +635,7 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         route("WeatherResource#update", PARAMETRES_METEO_MODIFIES);
         route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);
+        route("ReglageResponsablesResource#put", REGLAGE_RESPONSABLES_MODIFIE);
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);
@@ -816,6 +822,10 @@ public final class CatalogueActions {
         untracked("StandResource#analyseCsv", ANALYSE_FICHIER);
         untracked("CreneauResource#analyseCsv", ANALYSE_FICHIER);
         untracked("JourneeTypeResource#analyseCsv", ANALYSE_FICHIER);
+        untracked(
+                "ResponsableResource#affichette",
+                "The responsable's own sheet: what their screen already shows them, to the same person, "
+                        + "for the stands of their rights — the setting decides the names, not this route.");
         untracked("TypologieResource#exempleCsv", FICHIER_EXEMPLE);
         untracked("EmplacementResource#exempleCsv", FICHIER_EXEMPLE);
         untracked("StandResource#exempleCsv", FICHIER_EXEMPLE);

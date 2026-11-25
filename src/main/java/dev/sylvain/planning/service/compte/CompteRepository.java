@@ -225,8 +225,20 @@ public class CompteRepository {
                 ps.setString(4, habilitation.editionId());
                 ps.setTimestamp(5, habilitation.expireLe() == null ? null : Timestamp.from(habilitation.expireLe()));
                 ps.setString(6, habilitation.creePar());
-                return ps.executeUpdate() == 1;
+                if (ps.executeUpdate() != 1) {
+                    return false;
+                }
             }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "INSERT INTO habilitation_stand (habilitation_id, stand_id) VALUES (?, ?)")) {
+                for (String standId : habilitation.standIds()) {
+                    ps.setString(1, habilitation.id());
+                    ps.setString(2, standId);
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+            return true;
         });
     }
 
@@ -282,6 +294,20 @@ public class CompteRepository {
     private static Map<String, List<Habilitation>> habilitations(Connection connection, String compteId)
             throws SQLException {
         Map<String, List<Habilitation>> parCompte = new LinkedHashMap<>();
+        Map<String, List<String>> stands = new LinkedHashMap<>();
+        try (PreparedStatement ps = connection.prepareStatement("""
+                SELECT hs.habilitation_id, hs.stand_id FROM habilitation_stand hs
+                JOIN habilitation h ON h.id = hs.habilitation_id
+                WHERE (CAST(? AS VARCHAR) IS NULL OR h.compte_id = ?) ORDER BY hs.stand_id""")) {
+            ps.setString(1, compteId);
+            ps.setString(2, compteId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    stands.computeIfAbsent(rs.getString(1), ignore -> new ArrayList<>())
+                            .add(rs.getString(2));
+                }
+            }
+        }
         try (PreparedStatement ps = connection.prepareStatement("""
                 SELECT id, compte_id, role, edition_id, expire_le, cree_par, cree_le, retiree_le, retiree_par
                 FROM habilitation WHERE (CAST(? AS VARCHAR) IS NULL OR compte_id = ?) ORDER BY cree_le, id""")) {
@@ -299,7 +325,8 @@ public class CompteRepository {
                                     rs.getString("cree_par"),
                                     instant(rs, "cree_le"),
                                     instant(rs, "retiree_le"),
-                                    rs.getString("retiree_par")));
+                                    rs.getString("retiree_par"),
+                                    List.copyOf(stands.getOrDefault(rs.getString("id"), List.of()))));
                 }
             }
         }

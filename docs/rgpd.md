@@ -419,6 +419,26 @@ complètes. Quatre points sont connus et se consignent :
   (`JOURNAL_RETENTION`, appliquée chaque nuit) et cascade avec son édition ;
   elle survit à la fiche jusque-là, comme `notification_planifiee`, et ne
   nomme alors plus personne ;
+- **le responsable de stand** (droit `RESPONSABLE_STAND`) est une catégorie de
+  destinataires de plus du planning publié, et c'est sa **minimisation** qui
+  la rend tenable. Par défaut il lit **les horaires et les places à pourvoir**
+  de ses stands, **sans aucun nom**. Un administrateur peut y ajouter le
+  **prénom et le nom** des animateurs prévus — réglage par défaut de l'édition,
+  surchargeable stand par stand dans les deux sens, chacun avec une date
+  d'ouverture facultative avant laquelle seuls les horaires s'affichent —,
+  quand le planning est stabilisé et qu'il faut que le responsable sache qui
+  accueillir. **Jamais** d'adresse, de téléphone, de date de naissance, d'âge ni
+  de statut mineur, quel que soit le réglage. Le périmètre est borné trois fois :
+  les stands de son droit, l'**édition active** seulement (aucune lecture d'une
+  édition passée ou à venir), le plan **publié**. L'affichette imprimable suit
+  exactement le même réglage ; une fois imprimée elle sort du périmètre de
+  l'application, comme tout papier. Les réglages (`reglage_noms_responsable`,
+  `reglage_noms_stand`) ne portent aucune donnée personnelle ; le périmètre
+  d'un droit (`habilitation_stand`) suit `habilitation` — hors édition, hors
+  export SQL. Un nom n'est jamais rendu à un responsable pour un stand
+  hors de son droit, y compris celui d'une personne qui y travaille aussi
+  par ailleurs. À mentionner au registre : une catégorie de destinataires de plus,
+  internes à l'organisation, désignés par l'organisateur.
 - **les comptes des organisateurs (`compte`, `habilitation`)** gardent une
   **adresse e-mail**, un nom facultatif, les dates de création, de dernière
   connexion et de désactivation, les droits accordés (rôle, édition,

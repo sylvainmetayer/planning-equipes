@@ -2803,7 +2803,7 @@ export interface StatutSession {
 }
 
 /** The roles an administrator grants in this application. */
-export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR';
+export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR' | 'RESPONSABLE_STAND';
 
 /** What one account may do, and where; withdrawn by `retireeLe`, never deleted. */
 export interface Habilitation {
@@ -2817,6 +2817,8 @@ export interface Habilitation {
   retireeLe: string | null;
   /** The id of the account that withdrew it, never an address. */
   retireePar: string | null;
+  /** The stands a `RESPONSABLE_STAND` right covers; empty for the other roles. */
+  standIds: string[];
 }
 
 /** `GET /api/comptes`: one person able to sign in, whatever the edition. Never deleted. */
@@ -2845,6 +2847,54 @@ export interface NouvelleHabilitation {
   editionId: string | null;
   /** ISO instant, in the future; `null`: no expiry — the only value an `ADMIN` right accepts. */
   expireLe: string | null;
+  /** The stands of the edition a `RESPONSABLE_STAND` right covers; refused for the other roles. */
+  standIds?: string[];
+}
+
+/** Whether the responsable de stand reads names, and from when (`null`: at once). */
+export interface ReglageNoms {
+  nomsVisibles: boolean;
+  ouvertureLe: string | null;
+}
+
+/** `GET/PUT /api/reglage-responsables`: the edition's default and the exceptions by stand id. */
+export interface ReglagesResponsables {
+  parDefaut: ReglageNoms;
+  parStand: Record<string, ReglageNoms>;
+}
+
+/** A name and nothing else: no address, no phone, no age. */
+export interface PersonneVacation {
+  prenom: string;
+  nom: string;
+}
+
+/** One shift of a stand as the responsable reads it. */
+export interface VacationResponsable {
+  debut: string;
+  fin: string;
+  pourvus: number;
+  vides: number;
+  personnes: PersonneVacation[];
+}
+
+export interface StandResponsable {
+  standId: string;
+  standNom: string;
+  emplacementNom?: string | null;
+  /** Whether the shifts name who holds them, now. */
+  nominatif: boolean;
+  /** When names are set to show but not yet: the instant they will. */
+  nomsAttendus?: string | null;
+  vacations: VacationResponsable[];
+}
+
+/** `GET /api/responsable/stands`: the caller's stands on the active edition; empty when nothing is open now. */
+export interface ResponsableView {
+  editionNom?: string | null;
+  /** `null` while the edition has published nothing. */
+  publieLe?: string | null;
+  stands: StandResponsable[];
 }
 
 /** Where a logout ends: the provider's own logout route, `null` when there is none. */

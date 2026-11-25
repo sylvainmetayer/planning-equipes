@@ -14,6 +14,7 @@ function droit(extra: Partial<Habilitation> = {}): Habilitation {
     creeLe: null,
     retireeLe: null,
     retireePar: null,
+    standIds: [],
     ...extra,
   };
 }
@@ -61,6 +62,14 @@ describe('labels', () => {
   it('an administrator right names no edition', () => {
     expect(rightLabel(droit({ role: 'ADMIN', editionId: null }), [])).toBe('Administrateur');
     expect(rightLabel(droit({ editionId: null }), [])).toBe('Organisateur — Toutes les éditions');
+  });
+
+  it('a responsable de stand right says its edition and how many stands it covers', () => {
+    expect(
+      rightLabel(droit({ role: 'RESPONSABLE_STAND', standIds: ['S1', 'S2'] }), [
+        { id: 'E1', nom: 'Année 2026', active: true, creeLe: null },
+      ]),
+    ).toBe('Responsable de stand (lecture de son stand) — Année 2026 (2 stand(s))');
   });
 });
 

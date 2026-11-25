@@ -118,7 +118,8 @@ class CompteResourceTest {
                         "admin",
                         null,
                         null,
-                        null));
+                        null,
+                        java.util.List.of()));
 
         post(id, "/habilitations", "{\"role\":\"ORGANISATEUR\"}")
                 .statusCode(200)

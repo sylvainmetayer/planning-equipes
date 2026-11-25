@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ComptesApi } from '../../core/api/comptes-api';
 import { EditionStore } from '../../core/edition.store';
 import { Compte } from '../../core/models';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { NotificationService } from '../../core/notification.service';
 import { SessionStore } from '../../core/session.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -55,6 +56,7 @@ describe('ComptesCard', () => {
             refresh: vi.fn(() => Promise.resolve()),
           },
         },
+        { provide: ReferenceDataStore, useValue: { stands: () => [{ id: 'S1', nom: 'Buvette' }] } },
         { provide: EditionStore, useValue: { editions: () => [], courant: () => ({ id: 'E7' }) } },
       ],
     });
@@ -110,6 +112,21 @@ describe('ComptesCard', () => {
       role: 'ORGANISATEUR',
       editionId: 'E7',
       expireLe: null,
+    });
+  });
+
+  it('grants a responsable de stand right on the current edition, with the chosen stands', async () => {
+    const fixture = await rendre();
+    const card = fixture.componentInstance;
+    card['openGrant'](compte('autre'));
+    card['role'].set('RESPONSABLE_STAND');
+    card['standIds'].set(['S1']);
+    await card['grantRight'](compte('autre'));
+    expect(api.grant).toHaveBeenCalledWith('autre', {
+      role: 'RESPONSABLE_STAND',
+      editionId: 'E7',
+      expireLe: null,
+      standIds: ['S1'],
     });
   });
 });

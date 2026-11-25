@@ -62,7 +62,12 @@ public class CompteResource {
     public Compte grant(@PathParam("id") String id, NouvelleHabilitation habilitation) {
         return habilitation == null
                 ? comptes.grant(id, null, null, null)
-                : comptes.grant(id, habilitation.role(), habilitation.editionId(), habilitation.expireLe());
+                : comptes.grant(
+                        id,
+                        habilitation.role(),
+                        habilitation.editionId(),
+                        habilitation.expireLe(),
+                        habilitation.standIds());
     }
 
     /** Withdraws a right: it stays in the list, dated, and opens nothing any more. */
@@ -77,6 +82,8 @@ public class CompteResource {
     /**
      * @param editionId {@code null} for every edition
      * @param expireLe  {@code null} for no expiry
+     * @param standIds  the stands of a responsable de stand's right, absent for the other roles
      */
-    public record NouvelleHabilitation(RoleHabilitation role, String editionId, Instant expireLe) {}
+    public record NouvelleHabilitation(
+            RoleHabilitation role, String editionId, Instant expireLe, List<String> standIds) {}
 }
