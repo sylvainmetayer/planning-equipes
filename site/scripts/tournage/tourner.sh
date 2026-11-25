@@ -8,6 +8,8 @@
 # officielle : il n'est dans aucune dépendance du dépôt. Prévoir un quart d'heure ; à lancer de préférence
 # sur une machine jetable, la pile (PostgreSQL, application, Mailpit) est démontée à la fin.
 set -euo pipefail
+# printf and the frame maths read decimals with a dot, whatever the operator's locale
+export LC_ALL=C
 
 racine=$(cd "$(dirname "$0")/../../.." && pwd)
 sortie=$(cd "${1:-$racine/site/src}" && pwd)
