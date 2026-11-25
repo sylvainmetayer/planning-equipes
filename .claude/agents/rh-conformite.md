@@ -30,7 +30,7 @@ Read `AGENTS.md` at the repo root first. Then, always:
 - `src/test/java/.../LegalConstraintsTest.java` and
   `PlanningHardConstraintsTest.java`
 
-As needed: `docs/README.md` (section *Fonctionnalités métier*) for the
+As needed: `docs/fonctionnel/` for the
 declared scope, and `application.properties` /
 `ReferenceDataService`/`ReferenceDataRepository` for how legal parameters are
 actually configured and persisted (a legally-correct default is worthless if
