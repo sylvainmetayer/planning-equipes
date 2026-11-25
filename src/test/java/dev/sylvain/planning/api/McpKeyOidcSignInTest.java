@@ -80,6 +80,23 @@ class McpKeyOidcSignInTest {
         assertThat(AuthResource.safeReturn("//autre.example")).isEqualTo("/");
         assertThat(AuthResource.safeReturn(null)).isEqualTo("/");
         assertThat(AuthResource.safeReturn("/parametres")).isEqualTo("/parametres");
+        // A browser drops the tab and reads //autre.example; a backslash is a slash to it.
+        assertThat(AuthResource.safeReturn("/\t/autre.example")).isEqualTo("/");
+        assertThat(AuthResource.safeReturn("/\\autre.example")).isEqualTo("/");
+        assertThat(AuthResource.safeReturn("/a b")).isEqualTo("/");
+    }
+
+    @Test
+    void aLinkFromAnotherSiteSignsNobodyOut() {
+        Response response = given().redirects()
+                .follow(false)
+                .header("Sec-Fetch-Site", "cross-site")
+                .cookie("q_session", "x")
+                .get("/api/auth/oidc/reconnexion");
+
+        assertThat(response.statusCode()).isEqualTo(303);
+        assertThat(response.header("Location")).isEqualTo("/");
+        assertThat(response.headers().getValues("Set-Cookie")).isEmpty();
     }
 
     @Test
