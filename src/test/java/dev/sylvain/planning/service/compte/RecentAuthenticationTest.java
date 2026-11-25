@@ -17,10 +17,14 @@ class RecentAuthenticationTest {
 
     private final RecentAuthentication recent = new RecentAuthentication(openings, Duration.ofMinutes(10));
 
+    /** A local account's session carries the attribute its sign-in set; the break-glass one does not. */
     private static SecurityIdentity identity(String principal) {
-        return QuarkusSecurityIdentity.builder()
-                .setPrincipal(new QuarkusPrincipal(principal))
-                .build();
+        QuarkusSecurityIdentity.Builder builder =
+                QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal(principal));
+        if (!"admin".equals(principal)) {
+            builder.addAttribute(Compte.LOCAL_ATTRIBUTE, Boolean.TRUE);
+        }
+        return builder.build();
     }
 
     private String session(Duration ago) {

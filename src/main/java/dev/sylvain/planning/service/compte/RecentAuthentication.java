@@ -73,6 +73,7 @@ public class RecentAuthentication {
         if (identity.getPrincipal() instanceof JsonWebToken) {
             return Mode.OIDC;
         }
-        return identity.getPrincipal().getName().indexOf('#') > 0 ? Mode.LOCAL : Mode.BREAK_GLASS;
+        // Read from the attribute the local sign-in sets, never from the principal's name (an address).
+        return Boolean.TRUE.equals(identity.getAttribute(Compte.LOCAL_ATTRIBUTE)) ? Mode.LOCAL : Mode.BREAK_GLASS;
     }
 }
