@@ -1,0 +1,25 @@
+.rh-toolbar {
+  gap: 0.5rem;
+}
+
+.rh-title {
+  font: var(--mat-sys-title-medium);
+}
+
+.rh-spacer {
+  flex: 1 1 auto;
+}
+
+.rh-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 1rem;
+}
+
+.rh-entete {
+  font: var(--mat-sys-headline-small);
+  margin: 0;
+}

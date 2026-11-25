@@ -275,6 +275,12 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@nav.keywords.tension:marge disponible après résolution`,
             ),
             tab('onglet', 'fragilite', $localize`:@@diagnostic.onglet.fragilite:Fragilité`),
+            tab(
+              'onglet',
+              'conformite',
+              $localize`:@@diagnostic.onglet.conformite:Conformité`,
+              $localize`:@@nav.keywords.conformite:rapport inspection du travail RH plafonds mineurs`,
+            ),
           ],
         },
         {

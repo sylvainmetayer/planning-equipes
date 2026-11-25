@@ -8,13 +8,14 @@
  * (`former`) a section at the foot of Besoin. Tension is the former Marge
  * disponible screen's « après » and « tension » readings, merged.
  */
-export type OngletDiagnostic = 'problemes' | 'besoin' | 'tension' | 'fragilite';
+export type OngletDiagnostic = 'problemes' | 'besoin' | 'tension' | 'fragilite' | 'conformite';
 
 export const ONGLETS_DIAGNOSTIC: readonly OngletDiagnostic[] = [
   'problemes',
   'besoin',
   'tension',
   'fragilite',
+  'conformite',
 ];
 
 /** Reads the `onglet` query param; anything unknown is the problems tab, the one the page opens on. */

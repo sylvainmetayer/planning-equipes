@@ -542,6 +542,31 @@ contient pas), et `@RolesAllowed` double la règle HTTP sur chaque méthode.
   aucun corps ne contient le nom d'un animateur d'un autre stand, le nom d'un
   autre stand ni, quand le réglage dit « horaires seuls », aucun nom du tout.
 
+## Le droit RH : le rapport de conformité, une édition à la fois
+
+Un compte peut porter un droit `RH`, accordé dans Paramètres, onglet *Comptes*,
+**pour une édition** (la base refuse un droit RH sans édition). Il donne le rôle
+`rh`, qui n'ouvre que `/api/rh/*` (`role-rh`, aussi ouvert au rôle `admin`) ;
+tout le reste de l'API lui répond `403`. Il s'ajoute aux autres droits du
+compte : un RH qui est aussi organisateur garde la portée d'organisateur, et un
+organisateur sans droit RH ne lit rien de ceci.
+
+- **L'édition est dans le chemin**, jamais dans `X-Edition-Id` : un compte qui
+  n'est qu'RH n'est organisateur d'aucune édition, et l'en-tête lui serait
+  refusé. `RhService` décide du droit, édition par édition ; une édition sans
+  droit et une édition inconnue répondent **le même `404`**.
+- **Chaque consultation et chaque export (PDF, CSV) est journalisé** par
+  `RhService`, dans l'édition du rapport — pas par le filtre de réponse, qui
+  classe sous l'édition de l'en-tête. L'identifiant du compte est écrit, jamais
+  son adresse. Les deux routes de fichier sont dans la liste argumentée de
+  `CatalogueActions` pour cette raison.
+- **Le rapport lit le plan publié**, jamais un brouillon (`409` sans publication)
+  et ne contient ni date de naissance ni adresse : un nom, le statut mineur.
+- **Pas d'outil MCP** : le rapport est nominatif, il ne sort jamais vers un assistant.
+- `RhResourceTest` couvre : l'organisateur sans droit RH (`403`), le RH d'une
+  autre édition (`404`), l'administrateur (toutes les éditions), l'absence de
+  l'en-tête d'édition et la trace dans le journal.
+
 ## Abonnement ICS : le second jeton, et ce qu'il permet exactement
 
 `GET /api/abonnements/{token}/planning.ics` est la **seule** route de

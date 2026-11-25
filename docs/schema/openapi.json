@@ -1134,6 +1134,21 @@
           }
         }
       },
+      "BreachConformite" : {
+        "type" : "object",
+        "required" : [ "regle", "libelle", "texte" ],
+        "properties" : {
+          "regle" : {
+            "type" : "string"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "texte" : {
+            "type" : "string"
+          }
+        }
+      },
       "CandidatFormation" : {
         "required" : [ "animateurId", "joursTensionDisponibles", "niveau", "souhait" ],
         "type" : "object",
@@ -3888,6 +3903,18 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "EditionAccessible" : {
+        "required" : [ "id", "nom" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
           }
         }
       },
@@ -7391,6 +7418,64 @@
           }
         }
       },
+      "PersonneConformite" : {
+        "type" : "object",
+        "required" : [ "animateurId", "nom", "mineur", "heuresParSemaine", "heuresTotal", "plafondHebdomadaire", "semainesEnDepassement", "heuresDimanche", "heuresFerie", "heuresNuit", "ecartsDetail" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "mineur" : {
+            "type" : "boolean"
+          },
+          "heuresParSemaine" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "number",
+              "format" : "double"
+            }
+          },
+          "heuresTotal" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "plafondHebdomadaire" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "semainesEnDepassement" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "heuresDimanche" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresFerie" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresNuit" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "reposQuotidienMinHeures" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "ecartsDetail" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BreachConformite"
+            }
+          }
+        }
+      },
       "PersonneVacation" : {
         "type" : "object",
         "required" : [ "prenom", "nom" ],
@@ -7406,6 +7491,34 @@
       "Phase" : {
         "type" : "string",
         "enum" : [ "PREPARATION", "EVENEMENT", "APRES" ]
+      },
+      "PlafondsConformite" : {
+        "type" : "object",
+        "required" : [ "hebdomadaireMajeurHeures", "hebdomadaireMineurHeures", "vacationHeures", "reposQuotidienHeures", "ecartsAuxDefauts" ],
+        "properties" : {
+          "hebdomadaireMajeurHeures" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "hebdomadaireMineurHeures" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "vacationHeures" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "reposQuotidienHeures" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "ecartsAuxDefauts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
       },
       "PlanFormation" : {
         "required" : [ "aucunAnimateur", "aucuneCompetence", "planPersiste", "typologies" ],
@@ -8263,6 +8376,48 @@
           }
         }
       },
+      "RapportConformite" : {
+        "required" : [ "editionId", "publieLe", "genereLe", "plafonds", "synthese", "semaines", "regles", "personnes" ],
+        "type" : "object",
+        "properties" : {
+          "editionId" : {
+            "type" : "string"
+          },
+          "editionNom" : {
+            "type" : "string"
+          },
+          "publieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "genereLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "plafonds" : {
+            "$ref" : "#/components/schemas/PlafondsConformite"
+          },
+          "synthese" : {
+            "$ref" : "#/components/schemas/SyntheseConformite"
+          },
+          "semaines" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "regles" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RegleConformite"
+            }
+          },
+          "personnes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PersonneConformite"
+            }
+          }
+        }
+      },
       "RapportDerivation" : {
         "type" : "object",
         "properties" : {
@@ -9038,6 +9193,25 @@
           }
         }
       },
+      "RegleConformite" : {
+        "type" : "object",
+        "required" : [ "nom", "libelle", "mineurs", "ecarts" ],
+        "properties" : {
+          "nom" : {
+            "type" : "string"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "mineurs" : {
+            "type" : "boolean"
+          },
+          "ecarts" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "RelaisView" : {
         "type" : "object",
         "properties" : {
@@ -9258,7 +9432,7 @@
       },
       "RoleHabilitation" : {
         "type" : "string",
-        "enum" : [ "ADMIN", "ORGANISATEUR", "RESPONSABLE_STAND" ]
+        "enum" : [ "ADMIN", "ORGANISATEUR", "RESPONSABLE_STAND", "RH" ]
       },
       "RunningCheck" : {
         "required" : [ "editionId", "id", "effectif", "lanceeLe", "plafondSecondes" ],
@@ -10374,6 +10548,44 @@
           },
           "jamaisPublie" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "SyntheseConformite" : {
+        "type" : "object",
+        "required" : [ "personnes", "mineurs", "ecarts", "semainesEnDepassement", "heuresTravail", "heuresDimanche", "heuresFerie", "heuresNuit" ],
+        "properties" : {
+          "personnes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mineurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "ecarts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "semainesEnDepassement" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "heuresTravail" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresDimanche" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresFerie" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresNuit" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
@@ -18481,6 +18693,133 @@
         "tags" : [ "Responsable Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "responsable_stand" ]
+        } ]
+      }
+    },
+    "/api/rh/editions" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/EditionAccessible"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Editions",
+        "tags" : [ "Rh Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "rh", "admin" ]
+        } ]
+      }
+    },
+    "/api/rh/editions/{editionId}/conformite" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "editionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportConformite"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Rapport",
+        "tags" : [ "Rh Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "rh", "admin" ]
+        } ]
+      }
+    },
+    "/api/rh/editions/{editionId}/conformite.csv" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "editionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Rh Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "rh", "admin" ]
+        } ]
+      }
+    },
+    "/api/rh/editions/{editionId}/conformite.pdf" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "editionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/pdf" : { }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Export Pdf",
+        "tags" : [ "Rh Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "rh", "admin" ]
         } ]
       }
     },

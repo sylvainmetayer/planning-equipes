@@ -94,6 +94,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   here, the shell's every call being refused to it; the setting is the card
   « Responsables de stand » of Paramètres › Édition, the right itself the
   Comptes tab's, edition and stands of the edition this browser works in),
+  `/rh` (« Conformité RH » — the one screen of an account whose only right is an
+  RH one, ADR 0096: it picks among the editions its rights name and shows the
+  compliance report, which administrators and RH rights read in the Diagnostic's
+  Conformité tab; the same `ConformiteRapport` component, the edition in the
+  path of `/api/rh/*`, never `X-Edition-Id`; `responsableGuard` sends an RH-only
+  session here),
   `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
   television, opened by a dedicated token and no session, ADR 0053: the stands

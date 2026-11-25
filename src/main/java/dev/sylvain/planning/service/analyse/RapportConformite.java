@@ -49,6 +49,7 @@ public record RapportConformite(
      * @param ecartsAuxDefauts what differs from the legal default, one sentence each; empty when nothing does
      */
     @Schema(
+            name = "PlafondsConformite",
             requiredProperties = {
                 "hebdomadaireMajeurHeures",
                 "hebdomadaireMineurHeures",
@@ -72,6 +73,7 @@ public record RapportConformite(
      * @param heuresNuit            opening span after 22:00
      */
     @Schema(
+            name = "SyntheseConformite",
             requiredProperties = {
                 "personnes",
                 "mineurs",
@@ -93,7 +95,9 @@ public record RapportConformite(
             double heuresNuit) {}
 
     /** One legal rule: its name (the catalogue's), how it reads, and how many times the plan breaks it. */
-    @Schema(requiredProperties = {"nom", "libelle", "mineurs", "ecarts"})
+    @Schema(
+            name = "RegleConformite",
+            requiredProperties = {"nom", "libelle", "mineurs", "ecarts"})
     public record Regle(String nom, String libelle, boolean mineurs, int ecarts) {}
 
     /**
@@ -107,6 +111,7 @@ public record RapportConformite(
      * @param ecartsDetail            one line per breach of a legal rule naming them
      */
     @Schema(
+            name = "PersonneConformite",
             requiredProperties = {
                 "animateurId",
                 "nom",
@@ -135,6 +140,8 @@ public record RapportConformite(
             List<Breach> ecartsDetail) {}
 
     /** One breach of a legal rule, as a sentence. */
-    @Schema(requiredProperties = {"regle", "libelle", "texte"})
+    @Schema(
+            name = "BreachConformite",
+            requiredProperties = {"regle", "libelle", "texte"})
     public record Breach(String regle, String libelle, String texte) {}
 }

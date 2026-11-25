@@ -1,0 +1,115 @@
+<app-status-message [text]="erreur()" tone="error" />
+@if (vue(); as v) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@conformite.title">Rapport de conformité</h2>
+      <mat-card-subtitle i18n="@@conformite.publie">Plan publié le {{ v.publieLe | date: 'short' }} · travail effectif ; dimanche, jours fériés et nuit en amplitude</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="conformite-actions">
+        <button matButton="filled" type="button" (click)="exporter('pdf')">
+          <mat-icon>picture_as_pdf</mat-icon>
+          <ng-container i18n="@@conformite.pdf">Exporter en PDF</ng-container>
+        </button>
+        <button matButton type="button" (click)="exporter('csv')">
+          <mat-icon>table_view</mat-icon>
+          <ng-container i18n="@@conformite.csv">Exporter en CSV</ng-container>
+        </button>
+      </div>
+
+      <h3 i18n="@@conformite.plafonds">Plafonds appliqués</h3>
+      <p>
+        <ng-container i18n="@@conformite.plafonds.valeurs">Semaine : {{ hoursLabel(v.plafonds.hebdomadaireMajeurHeures) }} (majeur), {{ hoursLabel(v.plafonds.hebdomadaireMineurHeures) }} (mineur) · vacation : {{ hoursLabel(v.plafonds.vacationHeures) }} · repos quotidien : {{ hoursLabel(v.plafonds.reposQuotidienHeures) }}</ng-container>
+      </p>
+      @for (ecart of v.plafonds.ecartsAuxDefauts; track ecart) {
+        <p class="conformite-alerte">{{ ecart }}</p>
+      }
+
+      <h3 i18n="@@conformite.synthese">Synthèse</h3>
+      <p>
+        <ng-container i18n="@@conformite.synthese.texte">{{ v.synthese.personnes }} personne(s) planifiée(s), dont {{ v.synthese.mineurs }} mineur(s) · {{ v.synthese.ecarts }} écart(s) aux règles légales · {{ v.synthese.semainesEnDepassement }} semaine(s) au-dessus du plafond</ng-container>
+      </p>
+      <p>
+        <ng-container i18n="@@conformite.synthese.heures">Travail effectif {{ hoursLabel(v.synthese.heuresTravail) }} · dimanche {{ hoursLabel(v.synthese.heuresDimanche) }} · jours fériés {{ hoursLabel(v.synthese.heuresFerie) }} · nuit après 22 h {{ hoursLabel(v.synthese.heuresNuit) }}</ng-container>
+      </p>
+
+      <table class="conformite-table">
+        <caption class="cdk-visually-hidden" i18n="@@conformite.regles.caption">Écarts par règle légale</caption>
+        <thead>
+          <tr>
+            <th scope="col" i18n="@@conformite.regle">Règle légale</th>
+            <th scope="col" i18n="@@conformite.ecarts">Écarts</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (regle of v.regles; track regle.nom) {
+            <tr>
+              <td>{{ regle.libelle }}</td>
+              <td [class.conformite-alerte]="regle.ecarts > 0">{{ regle.ecarts }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <h3 i18n="@@conformite.personnes">Personnes</h3>
+      <div class="conformite-defilement">
+        <table class="conformite-table">
+          <caption class="cdk-visually-hidden" i18n="@@conformite.personnes.caption">Heures, plafonds et repos par personne</caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@conformite.col.personne">Personne</th>
+              <th scope="col" i18n="@@conformite.col.mineur">Mineur</th>
+              <th scope="col" i18n="@@conformite.col.total">Total</th>
+              <th scope="col" i18n="@@conformite.col.plafond">Plafond par semaine</th>
+              <th scope="col" i18n="@@conformite.col.depassement">Semaines au-dessus</th>
+              <th scope="col" i18n="@@conformite.col.dimanche">Dimanche</th>
+              <th scope="col" i18n="@@conformite.col.ferie">Jours fériés</th>
+              <th scope="col" i18n="@@conformite.col.nuit">Nuit</th>
+              <th scope="col" i18n="@@conformite.col.repos">Repos minimal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of v.personnes; track p.animateurId) {
+              <tr>
+                <th scope="row">{{ p.nom }}</th>
+                <td>{{ p.mineur ? 'oui' : 'non' }}</td>
+                <td>{{ hoursLabel(p.heuresTotal) }}</td>
+                <td>{{ hoursLabel(p.plafondHebdomadaire) }}</td>
+                <td [class.conformite-alerte]="p.semainesEnDepassement.length > 0">{{ p.semainesEnDepassement.length > 0 ? p.semainesEnDepassement.join(', ') : '—' }}</td>
+                <td>{{ hoursLabel(p.heuresDimanche) }}</td>
+                <td>{{ hoursLabel(p.heuresFerie) }}</td>
+                <td>{{ hoursLabel(p.heuresNuit) }}</td>
+                <td>{{ restLabel(p) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h3 i18n="@@conformite.mineurs">Mineurs</h3>
+      @if (minorsOf(v.personnes).length === 0) {
+        <p i18n="@@conformite.mineurs.aucun">Aucun mineur n'est planifié dans cette édition.</p>
+      } @else {
+        <ul class="conformite-mineurs">
+          @for (p of minorsOf(v.personnes); track p.animateurId) {
+            <li>
+              <strong>{{ p.nom }}</strong> —
+              @if (hasFindings(p)) {
+                <span class="conformite-alerte">
+                  @for (e of p.ecartsDetail; track $index) {
+                    {{ e.libelle }} : {{ e.texte }}.
+                  }
+                  @for (w of p.semainesEnDepassement; track w) {
+                    <ng-container i18n="@@conformite.mineurs.semaine">Semaine {{ w }} au-dessus du plafond.</ng-container>
+                  }
+                </span>
+              } @else {
+                <ng-container i18n="@@conformite.mineurs.ras">aucun écart relevé : pas de poste de nuit ni de jour férié, durées sous les plafonds, repos respectés.</ng-container>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </mat-card-content>
+  </mat-card>
+}

@@ -182,10 +182,11 @@ export class ComptesCard implements OnInit {
   protected async grantRight(compte: Compte): Promise<void> {
     const role = this.role();
     const responsable = role === 'RESPONSABLE_STAND';
-    // A responsable's right is one edition's: the one this browser works in.
-    const edition = responsable
-      ? (this.editionStore.courant()?.id ?? ALL_EDITIONS)
-      : this.edition();
+    // A responsable's and an RH right are one edition's: the one this browser works in.
+    const edition =
+      responsable || role === 'RH'
+        ? (this.editionStore.courant()?.id ?? ALL_EDITIONS)
+        : this.edition();
     await this.run(async () => {
       await this.api.grant(compte.id, {
         role,

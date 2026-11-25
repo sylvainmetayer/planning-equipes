@@ -34,6 +34,12 @@ describe('responsableGuard', () => {
     expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/responsable');
   });
 
+  it('sends an RH account alone to the compliance screen', async () => {
+    const result = await guard(['rh']);
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/rh');
+    expect(await guard(['rh', 'organisateur'])).toBe(true);
+  });
+
   it('lets an organiser, an administrator and an unread session through', async () => {
     expect(await guard(['organisateur', 'responsable_stand'])).toBe(true);
     expect(await guard(['admin'])).toBe(true);

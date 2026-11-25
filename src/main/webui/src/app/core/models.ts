@@ -2803,7 +2803,7 @@ export interface StatutSession {
 }
 
 /** The roles an administrator grants in this application. */
-export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR' | 'RESPONSABLE_STAND';
+export type RoleHabilitation = 'ADMIN' | 'ORGANISATEUR' | 'RESPONSABLE_STAND' | 'RH';
 
 /** What one account may do, and where; withdrawn by `retireeLe`, never deleted. */
 export interface Habilitation {
@@ -5823,4 +5823,74 @@ export interface EditionDelta {
   ajustements: DeltaValueLine[];
   referenceVolumes: DeltaVolumes;
   targetVolumes: DeltaVolumes;
+}
+
+/** `GET /api/rh/editions`: one edition the caller may read the compliance report of. */
+export interface EditionAccessible {
+  id: string;
+  nom: string;
+}
+
+/** The ceilings the compliance report was checked against, in hours. */
+export interface PlafondsConformite {
+  hebdomadaireMajeurHeures: number;
+  hebdomadaireMineurHeures: number;
+  vacationHeures: number;
+  reposQuotidienHeures: number;
+  /** What differs from the legal default, one sentence each. */
+  ecartsAuxDefauts: string[];
+}
+
+export interface SyntheseConformite {
+  personnes: number;
+  mineurs: number;
+  ecarts: number;
+  semainesEnDepassement: number;
+  heuresTravail: number;
+  heuresDimanche: number;
+  heuresFerie: number;
+  heuresNuit: number;
+}
+
+/** One legal rule and how many times the published plan breaks it. */
+export interface RegleConformite {
+  nom: string;
+  libelle: string;
+  mineurs: boolean;
+  ecarts: number;
+}
+
+/** One breach of a legal rule, as a sentence. */
+export interface BreachConformite {
+  regle: string;
+  libelle: string;
+  texte: string;
+}
+
+export interface PersonneConformite {
+  animateurId: string;
+  nom: string;
+  mineur: boolean;
+  heuresParSemaine: Record<string, number>;
+  heuresTotal: number;
+  plafondHebdomadaire: number;
+  semainesEnDepassement: string[];
+  heuresDimanche: number;
+  heuresFerie: number;
+  heuresNuit: number;
+  reposQuotidienMinHeures?: number | null;
+  ecartsDetail: BreachConformite[];
+}
+
+/** `GET /api/rh/editions/{id}/conformite`: the report of the published plan of one edition. */
+export interface RapportConformite {
+  editionId: string;
+  editionNom?: string | null;
+  publieLe: string;
+  genereLe: string;
+  plafonds: PlafondsConformite;
+  synthese: SyntheseConformite;
+  semaines: string[];
+  regles: RegleConformite[];
+  personnes: PersonneConformite[];
 }

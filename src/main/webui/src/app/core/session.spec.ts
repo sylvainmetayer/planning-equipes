@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StatutSession } from './models';
-import { responsableOnly, signedInWithoutAccess } from './session';
+import { responsableOnly, rhOnly, signedInWithoutAccess } from './session';
 
 function statut(authentifie: boolean, ...roles: string[]): StatutSession {
   return { authentifie, nom: authentifie ? 'a@b.fr' : null, roles, compteId: null };
@@ -23,5 +23,16 @@ describe('responsableOnly', () => {
     expect(responsableOnly(statut(true, 'responsable_stand', 'organisateur'))).toBe(false);
     expect(responsableOnly(statut(true, 'admin'))).toBe(false);
     expect(responsableOnly(statut(false, 'responsable_stand'))).toBe(false);
+  });
+});
+
+describe('rhOnly', () => {
+  it('is true for an RH account with no other role, which also opens something', () => {
+    expect(rhOnly(statut(true, 'rh'))).toBe(true);
+    expect(rhOnly(statut(true, 'rh', 'organisateur'))).toBe(false);
+    expect(rhOnly(statut(true, 'rh', 'responsable_stand'))).toBe(false);
+    expect(rhOnly(statut(true, 'admin'))).toBe(false);
+    expect(rhOnly(statut(false, 'rh'))).toBe(false);
+    expect(signedInWithoutAccess(statut(true, 'rh'))).toBe(false);
   });
 });
