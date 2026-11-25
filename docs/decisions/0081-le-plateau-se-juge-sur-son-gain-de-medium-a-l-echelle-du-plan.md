@@ -24,7 +24,7 @@ période de grâce initiale. Il fallait mesurer avant d'adopter.
 
 ## Mesures
 
-Le banc (`SolverBenchTest`, `site/src/docs/comprendre/developpement.md` § *Le banc du solveur*) a
+Le banc (`SolverBenchTest`, `site/src/docs/comprendre/tests-de-scenarios.md`) a
 enregistré la courbe complète de 900 s, graine fixe, sur deux grilles
 versionnées : `festival-hivernal` (3 438 sièges) et
 `festival-realiste-canicule` (1 994). `TerminationReplayTest` a ensuite rejoué

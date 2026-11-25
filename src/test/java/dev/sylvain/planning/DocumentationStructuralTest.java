@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 /**
  * What the documentation enumerates, checked against what the code declares.
  *
- * <p>Issue #392 measured the drift: {@code site/src/docs/comprendre/api.md} cited three endpoints
+ * <p>Issue #392 measured the drift: {@code api.md} cited three endpoints
  * that do not exist, {@code AGENTS.md} listed 31 of the 48 routes and
- * {@code site/src/docs/comprendre/contraintes.md} named 13 of the 40 constraints — and the
+ * {@code site/src/docs/comprendre/pourquoi-ces-regles.md} named 13 of the 40 constraints — and the
  * repository had already proved its own theorem, <em>only the tested rule
  * survives</em>. Each test here holds one enumeration, in the direction that
  * costs nothing to keep: a cited path must exist (the reverse — every path
@@ -36,19 +36,19 @@ import org.junit.jupiter.api.Test;
  */
 class DocumentationStructuralTest {
 
-    private static final Path API_MD = Path.of("site/src/docs/comprendre/api.md");
+    private static final Path COMPRENDRE = Path.of("site/src/docs/comprendre");
     private static final Path AGENTS_MD = Path.of("src/main/webui/AGENTS.md");
-    private static final Path CONTRAINTES_MD = Path.of("site/src/docs/comprendre/contraintes.md");
+    private static final Path CONTRAINTES_MD = Path.of("site/src/docs/comprendre/pourquoi-ces-regles.md");
     private static final Path RESOURCES = Path.of("src/main/java/dev/sylvain/planning/api");
     private static final Path ROUTES_TS = Path.of("src/main/webui/src/app/app.routes.ts");
 
     /** {@code quarkus.rest.path} — every resource path hangs under it. */
     private static final String ROOT = "/api";
 
-    /* -------------------------------- api.md ------------------------------- */
+    /* ------------------------------ api pages ------------------------------ */
 
     /**
-     * A cited endpoint exists. {@code site/src/docs/comprendre/api.md} is the narrated reading of
+     * A cited endpoint exists. the {@code api-*.md} pages of {@code site/src/docs/comprendre/} are the narrated reading of
      * the API (rule 5 of AGENTS.md: the contract is the OpenAPI), so it need
      * not cite everything — but what it cites must be real, otherwise a reader
      * follows it to a 404.
@@ -57,16 +57,29 @@ class DocumentationStructuralTest {
     void everyEndpointCitedInApiMdExists() throws IOException {
         Set<String> declarees = declaredRoutes();
         Set<String> inexistantes = new TreeSet<>();
-        for (String[] citation : citations(Files.readString(API_MD, StandardCharsets.UTF_8))) {
+        for (String[] citation : citations(apiPages())) {
             if (!declarees.contains(citation[0] + " " + normalise(citation[1]))) {
                 inexistantes.add(citation[0] + " " + citation[1]);
             }
         }
         assertThat(inexistantes)
                 .as(
-                        "endpoints cited in site/src/docs/comprendre/api.md that no resource declares — a typo, a renamed route, "
+                        "endpoints cited in site/src/docs/comprendre/api-*.md that no resource declares — a typo, a renamed route, "
                                 + "or shorthand like `PUT /api/stands` for `PUT /api/stands/{id}`")
                 .isEmpty();
+    }
+
+    /** The text of every {@code api-*.md} page, the ones that narrate the HTTP contract. */
+    private static String apiPages() throws IOException {
+        StringBuilder text = new StringBuilder();
+        try (Stream<Path> pages = Files.list(COMPRENDRE)) {
+            for (Path page : pages.filter(p -> p.getFileName().toString().matches("api-.*\\.md"))
+                    .sorted()
+                    .toList()) {
+                text.append(Files.readString(page, StandardCharsets.UTF_8)).append('\n');
+            }
+        }
+        return text.toString();
     }
 
     /**
@@ -406,13 +419,13 @@ class DocumentationStructuralTest {
                 .containsExactly("/animateur/:jeton", "/animateur/:jeton/echanges", "/echanges");
     }
 
-    /* --------------------------- contraintes.md --------------------------- */
+    /* ----------------------------- constraints table ----------------------------- */
 
     private static final String DEBUT = "<!-- catalogue:debut -->";
     private static final String FIN = "<!-- catalogue:fin -->";
 
     /**
-     * The table of constraints in {@code site/src/docs/comprendre/contraintes.md} is the catalogue,
+     * The table of constraints in {@code site/src/docs/comprendre/pourquoi-ces-regles.md} is the catalogue,
      * rendered — kept between two markers so the prose around it stays
      * hand-written. When it is stale the failure prints the block to paste.
      */
@@ -422,17 +435,18 @@ class DocumentationStructuralTest {
         int debut = doc.indexOf(DEBUT);
         int fin = doc.indexOf(FIN);
         assertThat(debut)
-                .as("marker %s in site/src/docs/comprendre/contraintes.md", DEBUT)
+                .as("marker %s in site/src/docs/comprendre/pourquoi-ces-regles.md", DEBUT)
                 .isNotNegative();
         assertThat(fin)
-                .as("marker %s in site/src/docs/comprendre/contraintes.md", FIN)
+                .as("marker %s in site/src/docs/comprendre/pourquoi-ces-regles.md", FIN)
                 .isGreaterThan(debut);
 
         String attendu = tableau();
         String actuel = doc.substring(debut + DEBUT.length(), fin).strip();
         assertThat(actuel)
-                .as("the constraints table of site/src/docs/comprendre/contraintes.md is not the catalogue any more. "
-                        + "Replace what stands between the markers with:\n\n" + attendu + "\n")
+                .as(
+                        "the constraints table of site/src/docs/comprendre/pourquoi-ces-regles.md is not the catalogue any more. "
+                                + "Replace what stands between the markers with:\n\n" + attendu + "\n")
                 .isEqualTo(attendu);
     }
 

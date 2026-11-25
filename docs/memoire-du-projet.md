@@ -290,7 +290,7 @@ ailleurs (§2.k).
 ### k. Ce qui a vraiment réduit le temps, et ce qui ne l'a pas réduit
 
 Octobre 2026, même protocole (graine fixe, runs séquentiels, banc de
-`site/src/docs/comprendre/developpement.md` § *Le banc du solveur*) :
+`site/src/docs/comprendre/tests-de-scenarios.md`) :
 
 - **Le tirage des entités**, pas leur évaluation : un cinquième du CPU de la
   phase de faisabilité partait dans les 40 000 tirages qu'un sélecteur filtré
@@ -486,7 +486,7 @@ résultat.
 **Isoler le port n'isole pas la base.** Le profil de développement pointe sur
 la même base quelle que soit le port de l'application : une suite de tests de
 bout en bout écrase la base qu'elle vise. La recette d'une pile jetable est
-documentée dans [`developpement.md`](../site/src/docs/comprendre/developpement.md).
+documentée dans [`developpement.md`](../site/src/docs/comprendre/tests.md).
 
 **Un stub global survit au fichier qui le pose.** Deux specs stubbaient
 `ResizeObserver` sans sa méthode `unobserve` ; le stub restait en place pour

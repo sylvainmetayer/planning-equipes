@@ -2,7 +2,7 @@
 ' Une demande d'échange, de l'espace de l'animateur jusqu'à la décision du
 ' coordinateur. Rien ne relance le solveur : un échange accepté est appliqué
 ' au plan de travail et verrouillé ; il part chez les intéressés avec la
-' publication suivante. Voir site/src/docs/comprendre/api.md, « Échanges », et echange-etats.
+' publication suivante. Voir site/src/docs/comprendre/api-espace-animateur.md, et echange-etats.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

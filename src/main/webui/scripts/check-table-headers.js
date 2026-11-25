@@ -6,7 +6,7 @@
  *
  * The HTML association algorithm covers the simple table and most screen
  * readers cope without it — but the repository's convention is explicit
- * (site/src/docs/comprendre/developpement.md § Accessibilité, RGAA 5.7), and the one place it was
+ * (site/src/docs/comprendre/demarrer.md, RGAA 5.7), and the one place it was
  * broken is invisible from the template: `MatHeaderCell` sets
  * `role="columnheader"` and never writes a `scope`, so the 106 `<th
  * mat-header-cell>` of the audit of issue #44 carried none. The ESLint rule

@@ -3,7 +3,7 @@
 ' Le cloisonnement ne tient pas à la discipline des appelants : chaque requête
 ' lie l'édition au premier paramètre (prepareScoped), et
 ' IsolationEditionStructurelleTest refuse le SQL qui l'oublie.
-' Voir site/src/docs/comprendre/architecture.md et docs/decisions/0001, 0023, 0072.
+' Voir site/src/docs/comprendre/vue-d-ensemble.md et docs/decisions/0001, 0023, 0072.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

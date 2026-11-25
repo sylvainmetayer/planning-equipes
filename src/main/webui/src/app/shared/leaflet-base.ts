@@ -34,7 +34,7 @@ const TUILES_OSM = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
  *
  * The tiles stay light in dark mode on purpose: they are content, not chrome,
  * and darkening them would mean another tile provider rather than a variable
- * (see `site/src/docs/comprendre/architecture.md`).
+ * (see `site/src/docs/comprendre/vue-d-ensemble.md`).
  */
 export function ajouterTuilesOsm(map: L.Map): L.TileLayer {
   return L.tileLayer(TUILES_OSM, {

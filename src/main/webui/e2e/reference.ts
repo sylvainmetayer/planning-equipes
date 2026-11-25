@@ -51,7 +51,7 @@ import { MOT_DE_PASSE_ADMIN } from './support';
  *
  * <p>Reste que la référence est un dump en clair de la base visée, écrit sous
  * `node_modules/.cache/`. Sur une pile jetable il ne contient que les données
- * des migrations ; visez une pile jetable, comme `site/src/docs/comprendre/developpement.md` le
+ * des migrations ; visez une pile jetable, comme `site/src/docs/comprendre/demarrer.md` le
  * demande déjà.</p>
  */
 

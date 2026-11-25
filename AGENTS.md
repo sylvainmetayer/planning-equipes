@@ -26,7 +26,7 @@ id while its English string stayed put is not caught: it is a human review
 matter. Never call `$localize` at module scope
 (only from a method, a `computed()`, or a constructor): it must run after
 `main.ts` has loaded translations, not at import time. See
-`site/src/docs/comprendre/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.
+`site/src/docs/comprendre/demarrer.md` for the full workflow. Code comments and non-domain identifiers stay in English.
 
 A route `title` is a **function** returning a `$localize` string, never a
 literal: evaluated after bootstrap, it is seen by `ng extract-i18n` and counted
@@ -41,9 +41,9 @@ onto `Stand`s over the days of an event, under hard/medium/soft constraints.
 Read before working on constraints or the domain model:
 
 - `site/src/docs/regles/` (start with `fil-d-une-edition.md`) — functional scope and business capabilities, in business language
-- `site/src/docs/comprendre/domaine.md` — Timefold model and its invariants
-- `site/src/docs/comprendre/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
-- `site/src/docs/comprendre/architecture.md` — backend/frontend module layout
+- `site/src/docs/comprendre/modele-des-donnees.md` — Timefold model and its invariants
+- `site/src/docs/comprendre/pourquoi-ces-regles.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
+- `site/src/docs/comprendre/vue-d-ensemble.md` — backend/frontend module layout
 
 ## Build, test, run
 
@@ -52,7 +52,7 @@ Read before working on constraints or the domain model:
   need nothing but a JVM, in about a minute and a half, with neither Docker nor
   PostgreSQL. The classes it leaves out are the ones that boot the application,
   listed in `src/test/container-tests.txt`; see *La boucle sans conteneur* in
-  `site/src/docs/comprendre/developpement.md`. It is the loop while writing, never the proof: CI
+  `site/src/docs/comprendre/tests.md`. It is the loop while writing, never the proof: CI
   plays the whole suite, and so should you before pushing.
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
@@ -60,7 +60,7 @@ Read before working on constraints or the domain model:
   `./mvnw -Pmutation test-compile pitest:mutationCoverage`. Below
   `mutationThreshold` the build fails; a surviving mutant is killed by a test
   case, never by lowering the threshold. See *Les tests de mutation* in
-  `site/src/docs/comprendre/developpement.md`.
+  `site/src/docs/comprendre/tests-de-scenarios.md`.
 
 ### Costly test jobs
 
@@ -103,7 +103,7 @@ are the `heavy-tests` skill. Four rules hold without it:
   starts and proxies the dev server — but a direct navigation (curl, F5, deep
   link) to any route but `/` on `:8080` 404s in dev mode (upstream Quinoa bug,
   doesn't affect production); test deep links against `:4200` directly
-  instead — see `site/src/docs/comprendre/developpement.md`.
+  instead — see `site/src/docs/comprendre/tests.md`.
 - `docs/licences-tierces.md` (the third-party licence inventory the AGPL image
   owes whoever deploys it) is **generated, never hand-edited**: the
   `dependency-update` skill regenerates it, and the `test` job of the Tests
@@ -525,7 +525,7 @@ Single Quarkus service, no separate solver microservice. Package root:
      (`McpWarnsWhileSolvingStructuralTest`). Never turn a refused write into
      a warned one: the refusal protects against the landing resurrecting data.
 
-  See `site/src/docs/comprendre/mcp.md`.
+  See `site/src/docs/comprendre/mcp-connexion.md` (keys, OAuth, limits) and `mcp-conventions-des-outils.md` (what every tool follows).
 - **`service/backup/` is the only place the application writes to disk**: a
   nightly `pg_dump` of the whole cluster into
   `BACKUP_DIR`, keeping the `BACKUP_RETENTION` most recent copies. Three rules
@@ -812,29 +812,29 @@ The doc layout is intentional — respect it when adding or updating docs.
    Markdown files, and writing prose instead of touching them is the mistake
    this rule exists to prevent:
    - **new endpoint → the OpenAPI the application publishes**, which is the
-     contract (audit #392, question 12). `site/src/docs/comprendre/api.md` does not list endpoints
-     and must not start: it carries what a schema cannot express — the
+     contract (audit #392, question 12). The `site/src/docs/comprendre/api-*.md` pages do not list endpoints
+     and must not start: they carry what a schema cannot express — the
      cross-cutting invariants, the business trade-offs, and the traps that cost
-     half a day. Add to it only when there is such a thing to say. The
+     half a day. Add to them only when there is such a thing to say. The
      committed `docs/schema/openapi.json` is refreshed by `npm run api-schema`
      (from `src/main/webui`, like every npm command here), and `npm run
      api-types-check` fails when the frontend's hand-written models drift from
      it;
    - **new constraint → `ConstraintCatalog`**, which `GET /api/constraints`
      serves and which is therefore the documentation the application itself
-     hands out. `site/src/docs/comprendre/contraintes.md` no longer enumerates the constraints and
+     hands out. `site/src/docs/comprendre/pourquoi-ces-regles.md` no longer enumerates the constraints and
      must not go back to it: it answers *why* a rule exists and what it costs,
      which the catalogue's one-line description cannot carry;
    - new business capability → the guide of `site/src/docs/regles/` that owns it
      (or a new guide, for a new task); new command/CI/tooling →
-     `site/src/docs/comprendre/developpement.md`; anything touching the version contract, the
+     `site/src/docs/comprendre/demarrer.md` or `ci-et-livraison.md`; anything touching the version contract, the
      release flow or the Docker image tags → `site/src/docs/installer/versioning.md`.
    - a flow, a lifecycle or the model drawn in `docs/diagrammes/` → its
      `.puml` (PlantUML), then `./mvnw validate -Pgenerate-diagrams` and commit
      the regenerated `.svg` with it. `DiagramsStructuralTest` fails on a
      stale SVG, a participant or method that no longer exists, a cited route
      that does not, and a state diagram that drifted from its enum — the
-     conventions it relies on are in `site/src/docs/comprendre/developpement.md` (« Diagrammes »).
+     conventions it relies on are in `site/src/docs/comprendre/conventions-du-depot.md`.
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
    decision record answers *why*, where the pages of the site answer *what*
@@ -857,7 +857,7 @@ The doc layout is intentional — respect it when adding or updating docs.
 ## Dependency updates
 
 Renovate manages them (`renovate.json`, one file — keep the config there, and
-document behaviour changes in `site/src/docs/comprendre/developpement.md`). What a Quarkus or
+document behaviour changes in `site/src/docs/comprendre/renovate-et-dependances.md`). What a Quarkus or
 Timefold bump must be validated with, how a Renovate PR regenerates the licence
 inventory and re-dispatches its own checks, and which labels trigger the
 scenario workflow are the `dependency-update` skill.

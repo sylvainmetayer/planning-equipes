@@ -183,7 +183,7 @@ class DiagramsStructuralTest {
 
     /**
      * The document without its fenced blocks: an example of the embedding
-     * syntax, like the one {@code site/src/docs/comprendre/developpement.md} gives, shows nothing
+     * syntax, like the one {@code site/src/docs/comprendre/demarrer.md} gives, shows nothing
      * and must not count as showing the diagram it names.
      */
     static String withoutFencedCode(String markdown) {
@@ -645,7 +645,7 @@ class DiagramsStructuralTest {
 
     /**
      * A field drawn in a class box is a field of that class. The box of
-     * {@code site/src/docs/comprendre/domaine.md} is the one reading of the model many people
+     * {@code site/src/docs/comprendre/modele-des-donnees.md} is the one reading of the model many people
      * start from, and a renamed planning variable in it misleads more than a
      * missing one.
      */

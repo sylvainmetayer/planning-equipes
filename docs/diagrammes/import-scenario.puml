@@ -3,7 +3,7 @@
 ' ce que l'import va remplacer, l'édition visée, la validité du fichier.
 ' L'écriture relit le YAML en entier. Seul le référentiel tient en une
 ' transaction ; paramètres, typologies, journées types, contraintes et
-' consignes s'écrivent à part. Voir site/src/docs/comprendre/import-export.md.
+' consignes s'écrivent à part. Voir site/src/docs/comprendre/scenario-yaml.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

@@ -102,7 +102,7 @@ tienne, et l'organisation le resserre par édition dès que l'effectif ou la
 grille le permettent.
 
 La mesure de ce qu'un resserrement demanderait est dans
-`site/src/docs/comprendre/contraintes.md` : sur la fenêtre la plus tendue, six ne tolère que cinq
+`site/src/docs/comprendre/pourquoi-ces-regles.md` : sur la fenêtre la plus tendue, six ne tolère que cinq
 personnes de plus que le minimum théorique les jours de pic, quand sept en
 tolère douze et qu'un plan réel en demande dix. L'écart se comble par la grille
 ou par l'effectif, jamais par le score.

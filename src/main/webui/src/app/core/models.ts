@@ -3228,7 +3228,7 @@ export interface EspaceAnimateurView {
   editionNom: string | null;
   /**
    * First day of that edition's event, derived from its créneaux rather than
-   * stored (`site/src/docs/comprendre/domaine.md`) — `null` when the edition holds no créneau.
+   * stored (`site/src/docs/comprendre/modele-des-donnees.md`) — `null` when the edition holds no créneau.
    */
   editionDebut: string | null;
   /** Last day, `null` under the same condition. */

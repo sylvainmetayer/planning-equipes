@@ -6,7 +6,7 @@ import java.util.Optional;
 
 /**
  * What a webhook can subscribe to — the published vocabulary of the payload's
- * {@code evenement} field, documented in {@code site/src/docs/comprendre/api.md}. The codes are a
+ * {@code evenement} field, documented in {@code site/src/docs/comprendre/api-integrations.md}. The codes are a
  * contract with whoever filters on them in an n8n flow: never rename one.
  *
  * <p>Each event carries counts and ids, never a person (see

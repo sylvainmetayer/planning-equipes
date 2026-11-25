@@ -30,7 +30,7 @@ import java.time.LocalTime;
  *
  * <p>Run via {@code ./mvnw process-classes -Pgenerate-schema} (see the
  * generate-schema profile in pom.xml) after changing a scenario DTO, then
- * commit the regenerated file. See site/src/docs/comprendre/import-export.md.
+ * commit the regenerated file. See site/src/docs/comprendre/scenario-yaml.md.
  */
 public final class ScenarioSchemaGenerator {
 

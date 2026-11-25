@@ -65,7 +65,7 @@ au défaut et qui gagnent le même facteur par la configuration.
 - **Un fichier scénario écrit avant ce changement** porte ses poids sur
   l'ancienne échelle ; réimporté tel quel, ses règles citées pèseraient cinq
   fois moins que les autres. Le fichier ne porte pas de numéro de version qui
-  permettrait de le convertir à la lecture ; `site/src/docs/comprendre/import-export.md` dit de le
+  permettrait de le convertir à la lecture ; `site/src/docs/comprendre/scenario-yaml.md` dit de le
   multiplier à la main.
 - **Deux autres sources de poids échappent à la migration**, pour la même
   raison — elle ne réécrit que la base : une surcharge

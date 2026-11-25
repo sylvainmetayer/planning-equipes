@@ -88,7 +88,7 @@ consider the change done until this passes.
 
 The constraint's business description lives in `ConstraintCatalog` (step
 above), which `GET /api/constraints` serves: that is the documentation the
-application hands out, and `site/src/docs/comprendre/contraintes.md` no longer enumerates the
+application hands out, and `site/src/docs/comprendre/pourquoi-ces-regles.md` no longer enumerates the
 constraints. Add a section there only for the *why* and the cost — the
 arbitration a one-line description cannot carry. If the
 constraint introduces a new business capability visible to end users, also

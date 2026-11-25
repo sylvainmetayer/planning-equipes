@@ -204,7 +204,7 @@ class SolveEnginesPerimetersTest {
 
     /**
      * The same perimeters on a full-size grid, both engines side by side: the
-     * lines it prints are the comparison {@code site/src/docs/comprendre/developpement.md} points
+     * lines it prints are the comparison {@code site/src/docs/comprendre/tests-de-scenarios.md} points
      * at. Thirty seconds a solve.
      */
     @Test

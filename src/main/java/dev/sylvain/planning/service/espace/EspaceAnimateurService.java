@@ -259,7 +259,7 @@ public class EspaceAnimateurService {
      *                 links, both valid for ever and both saying « votre
      *                 planning »: nothing on either page said which year it was
      * @param editionDebut first day of that edition's event, derived from its
-     *                 créneaux and not stored ({@code site/src/docs/comprendre/domaine.md}),
+     *                 créneaux and not stored ({@code site/src/docs/comprendre/modele-des-donnees.md}),
      *                 {@code null} when the edition holds no créneau
      * @param editionFin last day, {@code null} under the same condition
      * @param dateDuJourFigee the date a developer froze on this server (see

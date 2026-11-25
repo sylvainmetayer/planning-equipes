@@ -58,7 +58,7 @@ prend ce mouvement neutre comme un pas, et ce pas fait avancer sa fenêtre.
 - Le medium progresse **à chaque graine de chaque scénario**, de +965
   (`gamme-25`) à +7 135 (`scenario-complet`) ; le détail par graine est dans
   le commentaire de la seconde phase de `solverConfig.xml`, la synthèse dans
-  `site/src/docs/comprendre/developpement.md`.
+  `site/src/docs/comprendre/regler-le-solveur.md`.
 - Le prix est de 14 à 32 % d'évaluations par seconde en moins, et de la moitié
   des tirages retirée au *change* et au *swap*. Le soft, classé sous le medium,
   recule sur quatre scénarios.

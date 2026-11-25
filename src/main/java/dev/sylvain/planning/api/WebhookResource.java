@@ -24,7 +24,7 @@ import org.jboss.resteasy.reactive.ResponseStatus;
 /**
  * The outgoing webhooks of the instance (ADR 0074), as Paramètres › Instance
  * configures them. Admin only, like everything under {@code /api}; no MCP
- * tool mirrors it — see {@code site/src/docs/comprendre/mcp.md}.
+ * tool mirrors it — see {@code site/src/docs/comprendre/api-integrations.md}.
  *
  * <p>No secret is ever read back: the HMAC key is in the answer of the call
  * that generated it and nowhere else, and the address of a chat preset is

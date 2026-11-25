@@ -76,7 +76,7 @@ aussi le serveur de développement Angular et le proxifie, tout passe donc par
 <http://localhost:8080>. Le compte est `admin`, mot de passe `admin` (variable
 `ADMIN_PASSWORD`). Les tests : `./mvnw test`. Le détail (tests d'intégration,
 Podman, réglages du solveur, CI) est dans
-[`site/src/docs/comprendre/developpement.md`](site/src/docs/comprendre/developpement.md).
+[`demarrer.md`](site/src/docs/comprendre/demarrer.md), [`tests.md`](site/src/docs/comprendre/tests.md), [`regler-le-solveur.md`](site/src/docs/comprendre/regler-le-solveur.md) et [`ci-et-livraison.md`](site/src/docs/comprendre/ci-et-livraison.md).
 
 ## Documentation
 
@@ -88,7 +88,7 @@ parties :
 | --- | --- | --- |
 | **Les règles du jeu** | L'organisateur, le bénévole responsable | [`site/src/docs/regles/`](site/src/docs/regles/index.md) |
 | **Installer chez vous** | Qui héberge l'application | [`site/src/docs/installer/installation.md`](site/src/docs/installer/installation.md), [`site/src/docs/installer/variables-environnement.md`](site/src/docs/installer/variables-environnement.md) |
-| **Comprendre comment c'est fait** | Qui développe ou audite | [`site/src/docs/comprendre/architecture.md`](site/src/docs/comprendre/architecture.md), [`site/src/docs/comprendre/developpement.md`](site/src/docs/comprendre/developpement.md) |
+| **Comprendre comment c'est fait** | Qui développe ou audite | [`site/src/docs/comprendre/vue-d-ensemble.md`](site/src/docs/comprendre/vue-d-ensemble.md), [`site/src/docs/comprendre/demarrer.md`](site/src/docs/comprendre/demarrer.md) |
 
 Les décisions d'architecture, les schémas et les diagrammes restent dans [`docs/`](docs/README.md). Le mode d'emploi
 pas à pas est dans l'application, page « Aide ».

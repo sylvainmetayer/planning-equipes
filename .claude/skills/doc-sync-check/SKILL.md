@@ -15,16 +15,16 @@ Match what changed to the doc that owns it:
 
 | Change | Doc(s) to update |
 | --- | --- |
-| New/changed REST endpoint (`api/*Resource.java`) | the published OpenAPI — refresh `docs/schema/openapi.json` with `npm run api-schema` from `src/main/webui`. `site/src/docs/comprendre/api.md` only if there is a cross-cutting invariant or trap to record: it does **not** list endpoints |
-| New/changed Timefold constraint | `solver/ConstraintCatalog.java`, which `GET /api/constraints` serves. `site/src/docs/comprendre/contraintes.md` only for the *why* and the cost: it no longer enumerates the constraints |
+| New/changed REST endpoint (`api/*Resource.java`) | the published OpenAPI — refresh `docs/schema/openapi.json` with `npm run api-schema` from `src/main/webui`. `site/src/docs/comprendre/api-conventions.md` (and its `api-*` siblings) only if there is a cross-cutting invariant or trap to record: it does **not** list endpoints |
+| New/changed Timefold constraint | `solver/ConstraintCatalog.java`, which `GET /api/constraints` serves. `site/src/docs/comprendre/pourquoi-ces-regles.md` only for the *why* and the cost: it no longer enumerates the constraints |
 | New business capability visible to end users | the guide of `site/src/docs/regles/` that owns the task (`calculer-planning.md`, `preparer-edition.md`, `publier-planning.md`, …), or a new guide — business language only, no class names, no routes, no variables |
 | New/changed environment variable | `site/src/docs/installer/variables-environnement.md` (name, default, role — read from `application.properties`), and `.env.prod.example` when a production deployment sets it |
 | New/changed **screen behaviour an operator must understand** (new button or workflow, changed meaning of a banner/badge/setting, new lifecycle rule like retention or locking) | the in-app help page: `src/main/webui/src/app/pages/aide/aide-content.ts` (+ its new keys in `public/i18n/messages.en.json`). The guide answers "how do I use this screen" in business language — update the section covering that screen, don't create a doc-like dump. Skip for invisible or purely technical changes |
-| Change to Timefold model / invariants (`domain/*`) | `site/src/docs/comprendre/domaine.md` |
-| Change to backend/frontend module layout, new top-level package | `site/src/docs/comprendre/architecture.md` |
-| Change to CSV/dump/PDF/ICS import-export formats | `site/src/docs/comprendre/import-export.md` |
-| New command, CI job, tooling, Renovate behaviour | `site/src/docs/comprendre/developpement.md` |
-| New route/page | verify `site/src/docs/comprendre/architecture.md` frontend section still matches if the page list is enumerated there, and add the page to the in-app help (`aide-content.ts`) |
+| Change to Timefold model / invariants (`domain/*`) | `site/src/docs/comprendre/modele-des-donnees.md` |
+| Change to backend/frontend module layout, new top-level package | `site/src/docs/comprendre/vue-d-ensemble.md` |
+| Change to CSV/dump/PDF/ICS import-export formats | `site/src/docs/comprendre/scenario-yaml.md`, `imports-csv.md`, `exports-et-archives.md` or `restaurer-une-edition.md` |
+| New command, CI job, tooling, Renovate behaviour | `site/src/docs/comprendre/ci-et-livraison.md` |
+| New route/page | verify `site/src/docs/comprendre/frontend.md` frontend section still matches if the page list is enumerated there, and add the page to the in-app help (`aide-content.ts`) |
 
 ## Rules to enforce
 

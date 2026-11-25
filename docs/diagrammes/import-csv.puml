@@ -2,7 +2,7 @@
 ' Prévisualiser puis écrire, en deux appels portant le même corps. Aucun jeton
 ' ne relie les deux : l'écriture relit le fichier et refait chaque contrôle,
 ' si bien qu'elle ne peut pas écrire autre chose que ce qu'elle a vérifié.
-' Voir site/src/docs/comprendre/import-export.md et docs/decisions/0021.
+' Voir site/src/docs/comprendre/imports-csv.md et docs/decisions/0021.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

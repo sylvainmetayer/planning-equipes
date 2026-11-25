@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
  * development machine reached 67 s under the old mode, so read the two
  * numbers as machines, not as rules). The grid needed no retailoring: the
  * relay places are already there, which is what the organisation said when it
- * settled the framework. Consigné dans {@code site/src/docs/comprendre/contraintes.md}.</p>
+ * settled the framework. Consigné dans {@code site/src/docs/comprendre/regles-de-couverture-et-de-confort.md}.</p>
  *
  * <p>The file pins no constraint weight, on purpose. Under the previous
  * design the relay was a separate rule that could be dosed, and dosing it to

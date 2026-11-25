@@ -65,8 +65,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * taken on the post is <em>not</em> deducted here, where the legal caps of
  * {@code LegalConstraints} do deduct it. What is being shared out fairly is
  * presence asked for, not the payroll's effective minutes. See
- * {@code site/src/docs/comprendre/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
- * l'amplitude ».</p>
+ * {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
  */
 @ApplicationScoped
 public class EquiteService {

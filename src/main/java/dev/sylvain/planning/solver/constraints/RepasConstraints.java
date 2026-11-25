@@ -76,7 +76,7 @@ public final class RepasConstraints {
      * cannot step away, and {@code posteDoitEtrePourvu} still demands the seat
      * be filled. No assignment then scores zero hard, and the answer is to
      * re-cut the grid, or to switch this rule off from the Contraintes screen.
-     * See {@code site/src/docs/comprendre/contraintes.md}.</p>
+     * See {@code site/src/docs/comprendre/pourquoi-ces-regles.md}.</p>
      */
     private Constraint coupureRepasObligatoire(SeatStreams seats) {
         return ConstraintToggleSupport.actif(

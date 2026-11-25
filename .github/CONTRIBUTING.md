@@ -14,7 +14,7 @@ Toute contribution est acceptée sous cette même licence.
 
 ## Avant d'ouvrir une pull request
 
-Le détail du workflow est dans [`site/src/docs/comprendre/developpement.md`](../site/src/docs/comprendre/developpement.md) ;
+Le détail du workflow est dans [`site/src/docs/comprendre/demarrer.md`](../site/src/docs/comprendre/demarrer.md) ;
 l'essentiel :
 
 ```bash
@@ -27,7 +27,7 @@ npm run lint && npm run i18n-check   # lint et cohérence des traductions
   de son entrée dans `public/i18n/messages.en.json` — `npm run i18n-check`
   échoue sinon.
 - Une nouvelle contrainte de planification se déclare aussi dans
-  `ConstraintCatalog`, que `GET /api/constraints` sert ; [`site/src/docs/comprendre/contraintes.md`](../site/src/docs/comprendre/contraintes.md)
+  `ConstraintCatalog`, que `GET /api/constraints` sert ; [`site/src/docs/comprendre/pourquoi-ces-regles.md`](../site/src/docs/comprendre/pourquoi-ces-regles.md)
   ne porte que le *pourquoi* de la règle, pas sa fiche.
 - Le vocabulaire métier reste en français, le reste du code en anglais : la
   règle est vérifiée par un test, et expliquée dans [`AGENTS.md`](../AGENTS.md).

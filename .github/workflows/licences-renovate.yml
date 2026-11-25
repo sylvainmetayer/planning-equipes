@@ -93,7 +93,7 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # Les deux générateurs, dans l'ordre que site/src/docs/comprendre/developpement.md prescrit :
+      # Les deux générateurs, dans l'ordre que site/src/docs/comprendre/ci-et-livraison.md prescrit :
       # Maven résout le côté Java, le script lit le verrou npm sans
       # node_modules — `node` est préinstallé sur le runner.
       - name: Regenerate the inventory

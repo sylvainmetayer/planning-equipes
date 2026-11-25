@@ -57,7 +57,7 @@ référence qui l'implémentent, et ils renvoient ici.
 9. **Les ruptures sont annoncées, jamais silencieuses.** Les noms changés
    de variables et de règles gardent un alias et un avertissement pendant
    toute la 4.x ; les outils MCP renommés sont listés ancien → nouveau dans
-   `site/src/docs/comprendre/mcp.md`, sans alias ; le lecteur YAML convertit l'ancien format. Un numéro de version de format explicite refuse un fichier plus
+   `site/src/docs/comprendre/mcp-outils.md`, sans alias ; le lecteur YAML convertit l'ancien format. Un numéro de version de format explicite refuse un fichier plus
    récent que le produit.
 
 ## Conséquences

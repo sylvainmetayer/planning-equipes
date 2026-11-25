@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 #
-# Deliberately unsolvable teaching fixture — see site/src/docs/comprendre/import-export.md.
+# Deliberately unsolvable teaching fixture — see site/src/docs/comprendre/scenario-yaml.md.
 #
 # Every other shipped scenario is meant to converge; this one is not. Its job
 # is to make the six mistakes an organiser really makes on stand openings show

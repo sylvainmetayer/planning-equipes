@@ -68,7 +68,7 @@ construction : la levée est une reconstruction, jamais un retour.
 **(C) Une consigne datée, quatrième couche du résolveur d'horaires.** Retenu.
 Le modèle sait déjà fermer sans détruire : un stand fermé sur tout un créneau
 n'y engendre aucun siège, un stand fermé sur une partie engendre les sièges du
-reste, aux heures effectives ([`domaine.md`](../../site/src/docs/comprendre/domaine.md#fenêtre-effective)),
+reste, aux heures effectives ([les fenêtres effectives](../../site/src/docs/comprendre/horaires-et-fenetres-des-stands.md#fenêtre-effective)),
 et aucun créneau n'est touché. Il suffit d'une couche qui dise, pour une date,
 « tout le monde est fermé de 12 h à 18 h, et voici qui rouvre quand ».
 
@@ -272,7 +272,7 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
     tardives se ferment aux mineurs par les règles de nuit et de repos, pas
     par une indisponibilité horaire, qui n'existe pas.
   - **La règle de nuit des mineurs lit le créneau entier**, pas la fenêtre
-    effective ([`contraintes.md`](../../site/src/docs/comprendre/contraintes.md#fenêtre-effective--ce-qui-la-lit-et-ce-qui-ne-la-lit-pas-délibérément)) :
+    effective ([la page des règles](../../site/src/docs/comprendre/pourquoi-ces-regles.md)) :
     un créneau 18 h-23 h dont la consigne ne rouvre que 18 h-20 h reste
     interdit à un mineur. Délibéré : une règle de sécurité ne devient pas plus
     permissive par effet de bord.

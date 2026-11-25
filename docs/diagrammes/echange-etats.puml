@@ -1,6 +1,6 @@
 @startuml
 ' enum: StatutDemandeEchange
-' Le cycle de vie d'une demande d'échange. Voir site/src/docs/comprendre/api.md, « Échanges ».
+' Le cycle de vie d'une demande d'échange. Voir site/src/docs/comprendre/api-espace-animateur.md.
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 hide empty description

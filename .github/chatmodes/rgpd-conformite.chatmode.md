@@ -31,7 +31,7 @@ Read `AGENTS.md` at the repo root first. Then, always:
 - `src/main/resources/db/migration/V*.sql` — what's actually persisted and
   since when (data collected before a retention policy existed is itself a
   finding)
-- `site/src/docs/comprendre/domaine.md`, `site/src/docs/comprendre/import-export.md`, `site/src/docs/comprendre/api.md` — current
+- `site/src/docs/comprendre/modele-des-donnees.md`, `site/src/docs/comprendre/scenario-yaml.md`, `site/src/docs/comprendre/api-conventions.md` — current
   documentation of data fields, export formats and endpoints
 - `docker-compose.yml` — default local credentials for Postgres/pgAdmin, and
   whether any deployment path could expose them beyond local dev
@@ -103,9 +103,9 @@ process at all for a system handling minors' data.
    `docker-compose.yml` credentials are a normal dev pattern; flag them only
    if there's evidence they could reach a shared/staging/production path.
 6. **Keep documentation synchronized.** If you add or correct a data-handling
-   rationale, put it where a future reviewer will find it — `site/src/docs/comprendre/domaine.md`
-   for what's modeled, `site/src/docs/comprendre/import-export.md` for what leaves the system,
-   `site/src/docs/comprendre/api.md` for what an endpoint exposes — rather than only in this
+   rationale, put it where a future reviewer will find it — `site/src/docs/comprendre/modele-des-donnees.md`
+   for what's modeled, `site/src/docs/comprendre/scenario-yaml.md` for what leaves the system,
+   `site/src/docs/comprendre/api-conventions.md` for what an endpoint exposes — rather than only in this
    agent's report.
 
 ## Output

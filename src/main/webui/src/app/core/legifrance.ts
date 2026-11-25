@@ -24,8 +24,7 @@ const RECHERCHE_ARTICLE =
 // too generic to be recognised in prose the way an article number is. The
 // organisation has confirmed it does not fall under that convention, the
 // citations that pointed at it were wrong on their article anyway, and nothing
-// called the constant any more. See site/src/docs/comprendre/contraintes.md, « La convention
-// collective de l'Animation ».
+// called the constant any more. See site/src/docs/comprendre/pourquoi-ces-regles.md.
 
 /**
  * Matches an article of a French code as our texts write it: a `L`, `D` or `R`

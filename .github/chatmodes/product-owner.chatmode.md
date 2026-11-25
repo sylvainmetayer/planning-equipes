@@ -23,7 +23,7 @@ invent English synonyms for French business terms). Then, as needed:
 - `site/src/docs/regles/` (start with `fil-d-une-edition.md`) — the declared functional
   scope; a new feature proposal should say whether it extends this scope or
   sits outside it.
-- `site/src/docs/comprendre/domaine.md` and `site/src/docs/comprendre/contraintes.md` — domain model and constraint
+- `site/src/docs/comprendre/modele-des-donnees.md` and `site/src/docs/comprendre/pourquoi-ces-regles.md` — domain model and constraint
   catalogue, so acceptance criteria use real entity/field names
   (`Animateur`, `Stand`, `Creneau`, `PosteAffectation`, hard/medium/soft) and
   don't propose something the model can't express.

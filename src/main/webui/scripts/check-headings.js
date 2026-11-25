@@ -4,7 +4,7 @@
 /*
  * One `<h1>` per screen, and `mat-card-title` written as an attribute.
  *
- * `site/src/docs/comprendre/developpement.md § Accessibilité` has said both for a while, and the
+ * `site/src/docs/comprendre/demarrer.md` has said both for a while, and the
  * repository followed them 107 times out of 126 — the RGAA audit (issue #43)
  * found the other 19: `/login` and the three legal pages with no `<h1>` at
  * all, `/notifications` with two, and fourteen `<mat-card-title>` written as

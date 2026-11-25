@@ -13,7 +13,7 @@ pour une première édition. La saisie se faisait créneau par créneau, ou par 
 série récurrente sans nom ni mémoire : rien ne disait qu'un mardi est « un
 jour normal » et un samedi « une nocturne », et rien ne portait les dates
 de l'édition avant le premier créneau (les bornes se dérivent des créneaux,
-voir `site/src/docs/comprendre/domaine.md`). Le relais repas de 12-13 et 13-14 — la moitié des
+voir `site/src/docs/comprendre/modele-des-donnees.md`). Le relais repas de 12-13 et 13-14 — la moitié des
 sièges, arrondie au supérieur — n'était posé que par le découpage.
 
 ## Options envisagées
