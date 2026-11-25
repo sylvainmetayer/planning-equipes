@@ -656,7 +656,7 @@ public class DiagnosticMcpTools {
     public record TypologieView(
             String typologie,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             Integer maxCreneauxParAnimateur,
             double heures,
             int postes,
@@ -670,7 +670,7 @@ public class DiagnosticMcpTools {
             return new TypologieView(
                     ligne.typologie(),
                     ligne.label(),
-                    ligne.ninja(),
+                    ligne.polyvalent(),
                     ligne.maxCreneauxParAnimateur(),
                     ligne.heures(),
                     ligne.postes(),
@@ -698,7 +698,7 @@ public class DiagnosticMcpTools {
     public record TypologieAFormerView(
             String typologie,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             int manque,
             int specialistes,
             int competencesRares,
@@ -711,7 +711,7 @@ public class DiagnosticMcpTools {
             return new TypologieAFormerView(
                     ligne.typologie(),
                     ligne.label(),
-                    ligne.ninja(),
+                    ligne.polyvalent(),
                     ligne.manque(),
                     ligne.specialistes(),
                     ligne.competencesRares(),

@@ -49,12 +49,12 @@ public class EditionRepository {
      * in {@code EditionDuplicationStructurelleTest}.</b> The list is written by
      * hand and a migration adding a column does not touch it: {@code
      * heure_debut_soiree} (V74) and {@code mail_fin_resolution} were silently
-     * reset to their default on every duplication, and {@code typologie.ninja}
+     * reset to their default on every duplication, and {@code typologie.polyvalent}
      * with them — a duplicated edition lost which typologie was the polyvalent
      * one. That test is what makes the next added column loud.</p>
      */
     static final List<TableToCopy> TABLES_A_COPIER = List.of(
-            new TableToCopy("typologie", "id, code, label, ninja, max_creneaux_par_animateur, description"),
+            new TableToCopy("typologie", "id, code, label, polyvalent, max_creneaux_par_animateur, description"),
             new TableToCopy("emplacement", "id, code, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
             // #172 ends with « Envoyer à all », mute without it); neither token

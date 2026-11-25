@@ -29,7 +29,7 @@ public final class PreferenceConstraints {
     private static final BigDecimal UNFAIRNESS_SCALE = BigDecimal.TEN;
 
     /**
-     * How many polyvalent (ninja) animateurs should stay unassigned on any given
+     * How many polyvalent animateurs should stay unassigned on any given
      * créneau, so a last-minute absence can be patched by someone who can take
      * over any stand. One is enough to make a plan repairable without freezing a
      * whole reserve of animateurs.
@@ -115,13 +115,13 @@ public final class PreferenceConstraints {
     /**
      * Robustness to last-minute absences (issue #83): on every créneau, keep at
      * least {@link #POLYVALENTS_LIBRES_MIN} polyvalent animateur — one holding
-     * the referential's "ninja" typologie — free rather than saturating the very
+     * the referential's "polyvalent" typologie — free rather than saturating the very
      * profiles able to replace anyone on any stand.
      *
-     * <p>Counted against the whole ninja pool of the problem
+     * <p>Counted against the whole polyvalent pool of the problem
      * ({@code forEach(Animateur.class)}) rather than against the postes alone,
      * so "free" really means "not assigned anywhere on that créneau". When the
-     * referential defines no ninja typologie nobody is polyvalent, the left-hand
+     * referential defines no polyvalent typologie nobody is polyvalent, the left-hand
      * stream stays empty and the constraint costs nothing.</p>
      *
      * <p>Deliberately in tension with {@code QualiteConstraints.equilibrerCharge}:
@@ -132,7 +132,7 @@ public final class PreferenceConstraints {
     private Constraint preserverBufferPolyvalents(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
                         seats.held()
-                                .filter(poste -> poste.getAnimateur().isNinja() && poste.getCreneau() != null)
+                                .filter(poste -> poste.getAnimateur().isPolyvalent() && poste.getCreneau() != null)
                                 // A timeslot already started keeps whoever it has
                                 // (ADR 0044): the reserve is only asked of the
                                 // timeslots still ahead, folded next to the count.
@@ -144,7 +144,7 @@ public final class PreferenceConstraints {
                                 .map((creneau, occupes) -> creneau, (creneau, occupes) -> occupes.value())
                                 .join(seats.factory()
                                         .forEach(Animateur.class)
-                                        .filter(Animateur::isNinja)
+                                        .filter(Animateur::isPolyvalent)
                                         .groupBy(ConstraintCollectors.count()))
                                 .filter((creneau, occupes, total) -> total - occupes < POLYVALENTS_LIBRES_MIN),
                         "preserverBufferPolyvalents")

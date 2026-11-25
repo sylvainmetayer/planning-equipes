@@ -125,7 +125,7 @@ class EditionResourceTest {
                 .path("id");
     }
 
-    private boolean isNinja(String editionId, String typologieId) {
+    private boolean isPolyvalent(String editionId, String typologieId) {
         return given().header(HEADER, editionId)
                 .when()
                 .get("/api/typologies")
@@ -133,7 +133,7 @@ class EditionResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getList("findAll { it.id == '" + typologieId + "' }.ninja", Boolean.class)
+                .getList("findAll { it.id == '" + typologieId + "' }.polyvalent", Boolean.class)
                 .getFirst();
     }
 
@@ -533,7 +533,7 @@ class EditionResourceTest {
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == '" + polyvalent + "' }.ninja", org.hamcrest.Matchers.equalTo(true))
+                .body("find { it.id == '" + polyvalent + "' }.polyvalent", org.hamcrest.Matchers.equalTo(true))
                 .body("find { it.id == '" + polyvalent + "' }.code", org.hamcrest.Matchers.equalTo("POLYVALENT"));
     }
 
@@ -644,7 +644,7 @@ class EditionResourceTest {
 
         String ninja2026 = createTypologie(annee2026, "NINJA_2026", true);
 
-        assertThat(isNinja(annee2026, ninja2026)).isTrue();
-        assertThat(isNinja(annee2025, ninja2025)).isTrue();
+        assertThat(isPolyvalent(annee2026, ninja2026)).isTrue();
+        assertThat(isPolyvalent(annee2025, ninja2025)).isTrue();
     }
 }

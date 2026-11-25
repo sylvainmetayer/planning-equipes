@@ -80,7 +80,7 @@ class FormationAnalyzerTest {
             bob.getJoursIndisponibles().add(JOUR_2);
             carole.getJoursIndisponibles().add(JOUR_2);
             dan.getJoursIndisponibles().add(JOUR_2);
-            dan.applyNinjaTypologie("NINJA");
+            dan.applyPolyvalentTypologie("NINJA");
             fred.setDateNaissance(LocalDate.of(2012, 1, 1));
             postes.addAll(seats(escape, matin1, alice));
             postes.addAll(seats(escape, matin2, alice));

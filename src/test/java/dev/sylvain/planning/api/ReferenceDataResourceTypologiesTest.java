@@ -119,7 +119,7 @@ class ReferenceDataResourceTypologiesTest {
                 .jsonPath()
                 .getList("$");
         return typologies.stream()
-                .filter(t -> Boolean.TRUE.equals(t.get("ninja")))
+                .filter(t -> Boolean.TRUE.equals(t.get("polyvalent")))
                 .map(t -> (String) t.get("code"))
                 .toList();
     }

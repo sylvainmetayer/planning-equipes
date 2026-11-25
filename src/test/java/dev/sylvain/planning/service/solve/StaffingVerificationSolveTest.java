@@ -129,7 +129,7 @@ class StaffingVerificationSolveTest {
 
         assertThat(team).hasSize(3).allSatisfy(animateur -> {
             assertThat(animateur.getCompetences()).containsOnlyKeys("JEUX", "NINJA");
-            assertThat(animateur.isNinja()).isTrue();
+            assertThat(animateur.isPolyvalent()).isTrue();
             assertThat(animateur.isMajeurOn(LocalDate.of(2026, 7, 6))).isTrue();
             assertThat(animateur.getJoursIndisponibles()).isNullOrEmpty();
         });

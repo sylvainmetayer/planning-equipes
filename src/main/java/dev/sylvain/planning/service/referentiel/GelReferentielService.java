@@ -209,6 +209,6 @@ public class GelReferentielService {
     static boolean changesFrozenTypologieFields(TypologieItem avant, TypologieItem apres) {
         return avant != null
                 && (!Objects.equals(avant.maxCreneauxParAnimateur(), apres.maxCreneauxParAnimateur())
-                        || avant.ninja() != apres.ninja());
+                        || avant.polyvalent() != apres.polyvalent());
     }
 }

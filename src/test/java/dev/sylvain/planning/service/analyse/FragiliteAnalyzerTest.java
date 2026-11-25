@@ -207,7 +207,7 @@ class FragiliteAnalyzerTest {
         assertThat(rare.renforts()).isZero();
         assertThat(rare.severite()).isEqualTo(SeveriteFragilite.CRITIQUE);
         assertThat(rapport.groupesSansSpecialiste()).isEqualTo(1);
-        assertThat(rapport.ninjaConfigure()).isFalse();
+        assertThat(rapport.polyvalentConfigure()).isFalse();
     }
 
     @Test
@@ -233,7 +233,7 @@ class FragiliteAnalyzerTest {
         Creneau matin = creneau(1, LocalTime.of(10, 0), LocalTime.of(12, 0));
         Animateur alice = animateur("alice", "ESCAPE");
         Animateur ninja = animateur("ninja", "POLYVALENT");
-        ninja.applyNinjaTypologie("POLYVALENT");
+        ninja.applyPolyvalentTypologie("POLYVALENT");
 
         RapportFragilite rapport = analyzer.analyze(planning(List.of(alice, ninja), seats(stand, matin, alice)));
 
@@ -242,7 +242,7 @@ class FragiliteAnalyzerTest {
         assertThat(rare.animateurId()).isEqualTo("alice");
         assertThat(rare.renforts()).isEqualTo(1);
         assertThat(rare.severite()).isEqualTo(SeveriteFragilite.MODEREE);
-        assertThat(rapport.ninjaConfigure()).isTrue();
+        assertThat(rapport.polyvalentConfigure()).isTrue();
         // …and the same ninja does make Alice's seat replaceable, because the
         // solver would dispatch them on it.
         assertThat(ligne(rapport, "alice").postesIrremplacables()).isZero();

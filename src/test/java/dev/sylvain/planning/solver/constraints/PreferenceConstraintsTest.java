@@ -70,7 +70,7 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     @Test
     void seulPolyvalentOccupeSurUnCreneauEstPenalise() {
         // The only ninja works this créneau: no polyvalent left to patch an absence.
-        Animateur ninja = ninja("N1");
+        Animateur ninja = polyvalent("N1");
         verify("preserverBufferPolyvalents")
                 .given(ninja, poste(standStrat, creneauMatin, ninja))
                 .penalizesBy(1);
@@ -78,8 +78,8 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
 
     @Test
     void unPolyvalentLibreSuffitAConstituerLeBuffer() {
-        Animateur occupe = ninja("N1");
-        Animateur libre = ninja("N2");
+        Animateur occupe = polyvalent("N1");
+        Animateur libre = polyvalent("N2");
         verify("preserverBufferPolyvalents")
                 .given(occupe, libre, poste(standStrat, creneauMatin, occupe))
                 .penalizesBy(0);
@@ -89,8 +89,8 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     void polyvalentSurPlusieursPostesDuMemeCreneauNestCompteQuUneFois() {
         // Two seats, one and the same ninja: still exactly one polyvalent busy,
         // so a second ninja keeps the buffer satisfied.
-        Animateur occupe = ninja("N1");
-        Animateur libre = ninja("N2");
+        Animateur occupe = polyvalent("N1");
+        Animateur libre = polyvalent("N2");
         verify("preserverBufferPolyvalents")
                 .given(occupe, libre, poste(standStrat, creneauMatin, occupe), poste(standAutre, creneauMatin, occupe))
                 .penalizesBy(0);

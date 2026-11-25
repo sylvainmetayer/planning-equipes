@@ -597,14 +597,14 @@ class StaffingAnalyzerTest {
                 .parCompetence();
 
         assertThat(competence.polyvalents()).isEqualTo(2);
-        assertThat(competence.typologieNinjaDefinie()).isTrue();
+        assertThat(competence.typologiePolyvalentDefinie()).isTrue();
         assertThat(competence.parTypologie())
                 .extracting(TypologieStaffing::typologie)
                 .containsExactly("ESCAPE", "NINJA");
         assertThat(competence.parTypologie().get(0).specialistes()).isZero();
         assertThat(competence.parTypologie().get(0).manque()).isEqualTo(2);
         TypologieStaffing ninja = competence.parTypologie().get(1);
-        assertThat(ninja.ninja()).isTrue();
+        assertThat(ninja.polyvalent()).isTrue();
         assertThat(ninja.specialistes()).isEqualTo(2);
         assertThat(ninja.manque()).isZero();
         // The reserve can absorb the shortfall here — one polyvalent per seat.
@@ -625,9 +625,9 @@ class StaffingAnalyzerTest {
                         0)
                 .parCompetence();
 
-        assertThat(competence.typologieNinjaDefinie()).isFalse();
+        assertThat(competence.typologiePolyvalentDefinie()).isFalse();
         assertThat(competence.polyvalents()).isZero();
-        assertThat(competence.parTypologie().get(0).ninja()).isFalse();
+        assertThat(competence.parTypologie().get(0).polyvalent()).isFalse();
     }
 
     @Test
@@ -691,7 +691,7 @@ class StaffingAnalyzerTest {
                         0)
                 .parCompetence();
 
-        assertThat(competence.typologieNinjaDefinie()).isFalse();
+        assertThat(competence.typologiePolyvalentDefinie()).isFalse();
         assertThat(competence.siegesReservesAuxPolyvalents()).isEqualTo(4);
         assertThat(competence.siegesNonAttribues()).isZero();
         assertThat(competence.parTypologie()).isEmpty();
@@ -959,8 +959,8 @@ class StaffingAnalyzerTest {
             declarees.put(competence, NiveauCompetence.AUTONOME);
         }
         animateur.setCompetences(declarees);
-        animateur.applyNinjaTypologie(TYPOLOGIES.stream()
-                .filter(TypologieItem::ninja)
+        animateur.applyPolyvalentTypologie(TYPOLOGIES.stream()
+                .filter(TypologieItem::polyvalent)
                 .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null));

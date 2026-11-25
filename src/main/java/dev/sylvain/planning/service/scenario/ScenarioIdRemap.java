@@ -388,7 +388,7 @@ final class ScenarioIdRemap {
                     typologies.getOrDefault(dto.id(), dto.id()),
                     typologieCodes.get(dto.id()),
                     dto.label(),
-                    dto.ninja(),
+                    dto.polyvalent(),
                     dto.maxCreneauxParAnimateur(),
                     dto.description()));
         }

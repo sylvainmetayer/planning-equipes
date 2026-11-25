@@ -89,7 +89,8 @@ class CoherenceAnalyzerTypologieUsageTest {
                     noeud.get("id").asText(),
                     null,
                     noeud.get("id").asText(),
-                    noeud.path("ninja").asBoolean(false),
+                    // the cases file is shared with the screens, which still write « ninja » until they follow
+                    noeud.path(noeud.has("polyvalent") ? "polyvalent" : "ninja").asBoolean(false),
                     null,
                     null,
                     null));

@@ -120,8 +120,8 @@ public final class EditionDeltaComparator {
             Map<TypeContrainteAdHoc, Integer> ajustements,
             DeltaVolumes volumes) {}
 
-    /** Animateur fields left out: dates are the edition's own, ninja is derived from the competences. */
-    private static final Set<String> ANIMATEUR_FIELDS_IGNORED = Set.of("joursIndisponibles", "ninja");
+    /** Animateur fields left out: dates are the edition's own, polyvalent is derived from the competences. */
+    private static final Set<String> ANIMATEUR_FIELDS_IGNORED = Set.of("joursIndisponibles", "polyvalent");
 
     /** The date is what tells two editions apart, and what the position replaces. */
     private static final Set<String> CRENEAU_FIELDS_IGNORED = Set.of("date", "heureDebut");
@@ -454,8 +454,8 @@ public final class EditionDeltaComparator {
         if (!Objects.equals(a.label(), b.label())) {
             fields.add("label");
         }
-        if (a.ninja() != b.ninja()) {
-            fields.add("ninja");
+        if (a.polyvalent() != b.polyvalent()) {
+            fields.add("polyvalent");
         }
         if (!Objects.equals(a.maxCreneauxParAnimateur(), b.maxCreneauxParAnimateur())) {
             fields.add("maxCreneauxParAnimateur");

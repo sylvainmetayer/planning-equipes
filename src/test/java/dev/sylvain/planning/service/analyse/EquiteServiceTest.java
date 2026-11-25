@@ -209,7 +209,7 @@ class EquiteServiceTest {
         Animateur ada = animateur("A-ADA", "Ada", "Lovelace");
         ada.setCompetences(Map.of("echecs", NiveauCompetence.REFERENT));
         Animateur ninja = animateur("A-NINJA", "Nina", "Ninja");
-        ninja.setNinja(true);
+        ninja.setPolyvalent(true);
         Stand stand = stand("S1", "echecs", "dames", "go");
         RapportEquite rapport = compute(
                 List.of(ada, ninja),
