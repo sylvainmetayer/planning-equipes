@@ -127,3 +127,12 @@ test('the search reads a light index of the docs, and finds a page by a word of 
   assert.ok(found.excerpt, `#${id} introuvable par « ${word} »`);
   if (found.hash) assert.ok(read(join(dist, 'docs/comprendre/api-conventions/index.html')).includes(`id="${decodeURIComponent(found.hash.slice(1))}"`), found.hash);
 });
+
+test('"À lire aussi" never lists the home page, and the hosting page leads to the install guide', () => {
+  for (const page of pages) {
+    const related = read(page).match(/<aside class="container related"[\s\S]*?<\/aside>/)?.[0] ?? '';
+    assert.ok(!/href="(\/|\/en\/)"/.test(related), `${page} : lien vers l'accueil dans « À lire aussi »`);
+  }
+  assert.match(read(join(dist, 'heberger/index.html')), /<a class="btn" href="\/docs\/installer\/">Installer chez vous<\/a>/);
+  assert.match(read(join(dist, 'en/self-hosting/index.html')), /<a class="btn" href="\/docs\/installer\/" hreflang="fr">[^<]*in French\)<\/a>/);
+});

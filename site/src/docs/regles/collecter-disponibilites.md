@@ -4,6 +4,8 @@ Vous ouvrez une période pendant laquelle chaque animateur déclare lui-même se
 
 Prérequis : les animateurs ont une adresse e-mail et l'édition est **l'édition active**. Chaque animateur déclare depuis son espace (voir [L'espace des animateurs](espace-animateur.md)), au doigt sur un téléphone, en cochant des jours.
 
+Pourquoi laisser chacun déclarer lui-même : voir [collecter les disponibilités de l'équipe](/organiser-son-equipe/), côté organisateur.
+
 ## Ouvrir la collecte
 
 1. Ouvrez Paramètres, onglet *Édition*, et réglez la période de collecte des disponibilités (elle s'ouvre et se ferme depuis cet onglet ; la page Disponibilités en garde une ligne d'état).

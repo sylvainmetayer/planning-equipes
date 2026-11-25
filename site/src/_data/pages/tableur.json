@@ -7,11 +7,11 @@
   "sections": [
     {
       "h2": "Quand le tableur suffit",
-      "texte": "Une équipe réduite, un seul jour ou presque, peu de postes, personne de mineur, des horaires qui ne bougent pas : un tableur partagé fait très bien l'affaire, il est gratuit et tout le monde sait s'en servir. Dans ce cas, **n'installez rien**. Nous vous le dirons aussi si vous nous écrivez."
+      "texte": "Une équipe réduite, un seul jour ou presque, peu de postes, personne de mineur, des horaires qui ne bougent pas : un tableur partagé fait très bien l'affaire, il est gratuit et tout le monde sait s'en servir. Dans ce cas, **n'installez rien**. Nous vous le dirons aussi si vous nous écrivez. Pour une équipe plus grande, voir [organiser son équipe](/organiser-son-equipe/)."
     },
     {
       "h2": "Ce qui casse quand l'événement grandit",
-      "texte": "Les règles de durée, de pause et de repos se vérifient à la main, pour chaque personne et chaque jour. L'âge change le droit applicable, selon la date. Une indisponibilité annoncée tard, une absence le jour J, et c'est toute la grille qu'il faut revérifier. Puis il faut envoyer à chacun sa version. Un logiciel automatise ces quatre travaux, et surtout il les refait à chaque changement."
+      "texte": "Les règles de durée, de pause et de repos se vérifient à la main, pour chaque personne et chaque jour. L'âge change le droit applicable, selon la date. Une indisponibilité annoncée tard, une absence le jour J, et c'est toute la grille qu'il faut revérifier. Puis il faut envoyer à chacun sa version. Un logiciel automatise ces quatre travaux, et surtout il les refait à chaque changement. Pour reprendre votre fichier, suivez [importer vos animateurs depuis un tableur](/docs/regles/importer-exporter/) ; ce que chaque import écrit est dans [les imports CSV](/docs/comprendre/imports-csv/). Les règles que le logiciel tient pour vous sont sur [la page du Code du travail](/code-du-travail/), et le calcul est décrit dans [comment il marche](/comment-marche-le-calcul/)."
     }
   ],
   "tableau": {
@@ -81,11 +81,11 @@
     "sections": [
       {
         "h2": "When a spreadsheet is enough",
-        "texte": "A small team, one day or close to it, few posts, no under-18s, hours that do not move: a shared spreadsheet does the job very well, it is free and everybody can use it. In that case, **install nothing**. We will tell you so too, if you write to us."
+        "texte": "A small team, one day or close to it, few posts, no under-18s, hours that do not move: a shared spreadsheet does the job very well, it is free and everybody can use it. In that case, **install nothing**. We will tell you so too, if you write to us. For a larger team, see [organising your team](/en/organising-your-team/)."
       },
       {
         "h2": "What breaks as the event grows",
-        "texte": "Rules on hours, breaks and rest are checked by hand, for each person and each day. Age changes the law that applies, depending on the date. A late unavailability, an absence on the day, and the whole grid has to be checked again. Then everyone has to be sent their version. Software automates those four jobs, and above all redoes them at every change."
+        "texte": "Rules on hours, breaks and rest are checked by hand, for each person and each day. Age changes the law that applies, depending on the date. A late unavailability, an absence on the day, and the whole grid has to be checked again. Then everyone has to be sent their version. Software automates those four jobs, and above all redoes them at every change. To reuse your file, follow [importing your animateurs from a spreadsheet](/docs/regles/importer-exporter/); what each import writes is in [the CSV imports](/docs/comprendre/imports-csv/) (in French). The rules the software keeps for you are on [the Labour Code page](/en/labour-code/), and the calculation is described in [how it works](/en/how-the-calculation-works/)."
       }
     ],
     "tableau": {

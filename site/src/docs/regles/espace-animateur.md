@@ -4,6 +4,8 @@ Vous savez ce que chaque animateur voit et peut faire dans son espace personnel,
 
 Un animateur n'a pas de compte. Il reçoit un lien nominatif vers son **espace** et s'identifie par un code reçu par e-mail. L'espace n'est ouvert que pour **l'édition active** (voir [Enchaîner les éditions](enchainer-les-editions.md#activer-une-édition)). Vous copiez ce lien depuis la fiche de la personne ou vous le lui envoyez avec son planning (voir [Publier le planning](publier-planning.md)).
 
+Côté organisateur, [ce que chaque membre de l'équipe reçoit](/organiser-son-equipe/) résume le même parcours.
+
 ## Ce qu'il y trouve
 
 - son planning, ses jours de repos ;

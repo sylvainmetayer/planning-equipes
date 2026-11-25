@@ -7,7 +7,7 @@
   "sections": [
     {
       "h2": "Trois niveaux d'exigence",
-      "texte": "1. **Les règles impératives**, jamais franchies : le cadre légal, les incompatibilités, les affectations imposées.\n2. **La couverture** : chaque place à pourvoir est tenue.\n3. **La qualité** : équité, souhaits, moins de jours d'affilée, des journées continues.\n\nUn niveau ne se paie jamais sur celui du dessus."
+      "texte": "1. **Les règles impératives**, jamais franchies : le cadre légal, les incompatibilités, les affectations imposées.\n2. **La couverture** : chaque place à pourvoir est tenue.\n3. **La qualité** : équité, souhaits, moins de jours d'affilée, des journées continues.\n\nUn niveau ne se paie jamais sur celui du dessus. Ce cadre est détaillé sur [le Code du travail et les plannings](/code-du-travail/)."
     },
     {
       "h2": "Ce qu'il affiche en route",
@@ -15,15 +15,15 @@
     },
     {
       "h2": "Combien de temps ça prend",
-      "texte": "Pour une équipe d'environ 150 personnes, un plan qui tient toutes les règles impératives arrive en général en moins d'une minute.\n\nLe calcul continue ensuite quelques minutes pour satisfaire le plus de monde : équité, souhaits, journées continues. Il s'arrête de lui-même quand il ne trouve plus mieux, et au plus tard au bout d'un quart d'heure. Vous pouvez l'arrêter avant : le meilleur plan trouvé est gardé."
+      "texte": "Pour une équipe d'environ 150 personnes, un plan qui tient toutes les règles impératives arrive en général en moins d'une minute.\n\nLe calcul continue ensuite quelques minutes pour satisfaire le plus de monde : équité, souhaits, journées continues. Il s'arrête de lui-même quand il ne trouve plus mieux, et au plus tard au bout d'un quart d'heure. Vous pouvez l'arrêter avant : le meilleur plan trouvé est gardé. Le budget de temps se règle dans [le guide de réglage du calcul](/docs/installer/calcul-du-planning/)."
     },
     {
       "h2": "Trois façons de le lancer",
-      "texte": "- **Calculer le planning** repart du plan enregistré.\n- **Corriger après un changement** fige ce qui tient et ne recalcule que les places rouvertes.\n- **Recommencer de zéro** abandonne l'acquis, et le dit avant.\n\nAvant de lancer, la page dit ce que le calcul recevra : verrouillages, ajustements, consignes, règles désactivées."
+      "texte": "- **Calculer le planning** repart du plan enregistré.\n- **Corriger après un changement** fige ce qui tient et ne recalcule que les places rouvertes.\n- **Recommencer de zéro** abandonne l'acquis, et le dit avant.\n\nAvant de lancer, la page dit ce que le calcul recevra : verrouillages, ajustements, consignes, règles désactivées. Le pas à pas est dans [le guide pour calculer le planning](/docs/regles/calculer-planning/)."
     },
     {
       "h2": "Quand il ne trouve rien",
-      "texte": "Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque quelqu'un un samedi soir. Le diagnostic des effectifs le dit avant même le premier calcul, avec l'équipe minimale et les compétences à former."
+      "texte": "Il indique la règle qui bloque, sur quels créneaux et pour qui. En général, il manque quelqu'un un samedi soir. Le diagnostic des effectifs le dit avant même le premier calcul, avec l'équipe minimale et les compétences à former. Pour lire ces blocages, suivez [comprendre un planning qui coince](/docs/regles/comprendre-un-planning/)."
     },
     {
       "h2": "Après la publication",
@@ -31,7 +31,7 @@
     },
     {
       "h2": "Ce qui tourne dessous",
-      "texte": "Depuis la version 3.0.0, un moteur de recherche écrit pour ce planning cherche le plan. Il n'est pas cru sur parole : chaque plan est noté à nouveau par [Timefold Solver](https://timefold.ai/) (en anglais), et un écart fait échouer le calcul. Le code des règles est ouvert et [documenté](/docs/comprendre/pourquoi-ces-regles/). Le logiciel est libre : vous pouvez [l'héberger vous-même](/heberger/)."
+      "texte": "Depuis la version 3.0.0, un moteur de recherche écrit pour ce planning cherche le plan. Il n'est pas cru sur parole : chaque plan est noté à nouveau par [Timefold Solver](https://timefold.ai/) (en anglais), et un écart fait échouer le calcul. Le code des règles est ouvert et [documenté](/docs/comprendre/pourquoi-ces-regles/). Le logiciel est libre : vous pouvez [l'héberger vous-même](/heberger/). Pour confier les gros calculs à une machine plus rapide, voir [résoudre sur une autre machine](/docs/installer/calcul-sur-une-autre-machine/). Le même logiciel peut [s'héberger chez vous](/heberger/)."
     }
   ],
   "cta": "Vous voulez le voir sur vos données ?",
@@ -51,7 +51,7 @@
     "sections": [
       {
         "h2": "Three levels of demand",
-        "texte": "1. **Mandatory rules**, never broken: the legal frame, incompatibilities, imposed assignments.\n2. **Coverage**: every seat to fill is held.\n3. **Quality**: fairness, wishes, fewer days in a row, unbroken days.\n\nA level is never paid for with the one above it."
+        "texte": "1. **Mandatory rules**, never broken: the legal frame, incompatibilities, imposed assignments.\n2. **Coverage**: every seat to fill is held.\n3. **Quality**: fairness, wishes, fewer days in a row, unbroken days.\n\nA level is never paid for with the one above it. This frame is detailed on [the Labour Code and rotas](/en/labour-code/)."
       },
       {
         "h2": "What it shows on the way",
@@ -59,15 +59,15 @@
       },
       {
         "h2": "How long it takes",
-        "texte": "For a team of about 150 people, a plan that holds every mandatory rule usually arrives in under a minute.\n\nThe solver then keeps going for a few minutes to satisfy as many people as it can: fairness, wishes, continuous days. It stops by itself once it finds nothing better, and after a quarter of an hour at most. You can stop it sooner: the best plan found is kept."
+        "texte": "For a team of about 150 people, a plan that holds every mandatory rule usually arrives in under a minute.\n\nThe solver then keeps going for a few minutes to satisfy as many people as it can: fairness, wishes, continuous days. It stops by itself once it finds nothing better, and after a quarter of an hour at most. You can stop it sooner: the best plan found is kept. The time budget is set in [the guide to tuning the solver](/docs/installer/calcul-du-planning/) (in French)."
       },
       {
         "h2": "Three ways to start it",
-        "texte": "- **Calculate the rota** starts from the saved plan.\n- **Fix after a change** freezes what holds and recalculates only the reopened seats.\n- **Start over from scratch** drops what was there, and says so first.\n\nBefore it starts, the page says what the solver will receive: locks, adjustments, consignes, disabled rules."
+        "texte": "- **Calculate the rota** starts from the saved plan.\n- **Fix after a change** freezes what holds and recalculates only the reopened seats.\n- **Start over from scratch** drops what was there, and says so first.\n\nBefore it starts, the page says what the solver will receive: locks, adjustments, consignes, disabled rules. The step by step is in [the guide to running the solver](/docs/regles/calculer-planning/) (in French)."
       },
       {
         "h2": "When it finds nothing",
-        "texte": "It names the rule that blocks, on which shifts and for whom. Usually someone is missing on a Saturday evening. The staffing check says so before the first run, with the smallest team that works and the skills to train."
+        "texte": "It names the rule that blocks, on which shifts and for whom. Usually someone is missing on a Saturday evening. The staffing check says so before the first run, with the smallest team that works and the skills to train. To read these blockages, follow [understanding a rota that gets stuck](/docs/regles/comprendre-un-planning/) (in French)."
       },
       {
         "h2": "After publication",
@@ -75,7 +75,7 @@
       },
       {
         "h2": "What runs underneath",
-        "texte": "Since version 3.0.0, a search engine written for this rota looks for the plan. It is not taken at its word: every plan is scored again by [Timefold Solver](https://timefold.ai/), and a difference fails the run. The rules' code is open and [documented](/docs/comprendre/pourquoi-ces-regles/) (in French). The software is free: you can [host it yourself](/en/self-hosting/)."
+        "texte": "Since version 3.0.0, a search engine written for this rota looks for the plan. It is not taken at its word: every plan is scored again by [Timefold Solver](https://timefold.ai/), and a difference fails the run. The rules' code is open and [documented](/docs/comprendre/pourquoi-ces-regles/) (in French). The software is free: you can [host it yourself](/en/self-hosting/). To hand the big runs to a faster machine, see [solving on another machine](/docs/installer/calcul-sur-une-autre-machine/) (in French). The same software can be [hosted at your place](/en/self-hosting/)."
       }
     ],
     "cta": "Want to see it on your own data?",
