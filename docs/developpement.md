@@ -810,6 +810,35 @@ c'est dire qu'elle résout une fixture réelle, ou qu'il lui faut la pile de
 `e2e-lourd.yml` (l'horloge simulée, ci-dessous) ; ce n'est pas l'endroit où
 ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
 
+**L'organisateur démarre sur un compte local** (`organisateur-compte-local.spec.ts`,
+suite ordinaire) : le compte est créé par l'API d'administration, invité, le lien
+est lu dans Mailpit, le mot de passe est généré (jamais écrit dans la spec), le
+code arrive par mail ; l'organisateur doit atteindre l'application sans boucle
+vers `/login`, voir son édition, ne voir ni l'onglet Comptes ni l'onglet
+Instance, et recevoir `403` sur une route d'instance. La pile e2e monte
+l'application avec `PUBLIC_URL=http://e2e.example.org:8080` et non `localhost` :
+un lien d'invitation vers la machine elle-même est refusé hors dev et test.
+
+**L'essai OIDC contre Keycloak** (`oidc-keycloak.yml`, `npm run e2e-oidc`) joue
+le code d'autorisation avec PKCE contre un vrai Keycloak : connexion par son
+formulaire, `/api/auth/me`, refus d'un compte que l'application ne connaît pas
+(aucun rôle, `403`), déconnexion qui clôt aussi la session du fournisseur. Les
+tests Java (`OidcSignInTest`) restent la preuve des règles ; celui-ci prouve
+qu'elles tiennent face à un fournisseur qui redirige et signe vraiment.
+Déclenchement **comme `e2e-lourd.yml`** : sous le label `e2e-lourd` sur une PR,
+sur `main` quand une fusion touche la config, les comptes, `AuthResource` ou
+ses propres fichiers, et chaque nuit — jamais sur chaque PR. Keycloak et
+PostgreSQL sont lancés par `docker run` (un service de job ne reçoit ni fichier
+de realm ni argument) ; le realm est
+`src/main/webui/e2e/keycloak/realm-planning.json`, dont le secret du client, le
+mot de passe des deux utilisateurs et l'adresse de l'application sont des
+`${…}` remplis par l'environnement : aucun secret dans le dépôt. Le compte de
+secours reste ouvert (`ADMIN_LOCAL_SECOURS=true`) pour créer le premier compte,
+une connexion OIDC n'en créant jamais. La spec porte le suffixe `.oidc.ts` et
+sa propre config (`playwright.oidc.config.ts`) : la suite ordinaire ne la
+ramasse pas. En local, pointer `E2E_BASE_URL`, `E2E_KEYCLOAK_URL` et
+`E2E_OIDC_USER_PASSWORD` vers une pile **jetable**.
+
 `passe-fige.spec.ts` est l'autre spec `@lourd`, pour une autre raison : elle
 rejoue `FrozenPastAcceptanceTest` depuis l'écran — la date posée dans
 Paramètres › Instance, trois résolutions, les journées passées identiques, le compte rendu
