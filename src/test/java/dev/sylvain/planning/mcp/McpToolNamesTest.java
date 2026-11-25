@@ -227,7 +227,8 @@ class McpToolNamesTest {
                 .as("the prompts the server serves name the tools they chain")
                 .isNotEmpty();
         assertThat(citedNames(DOC_MCP))
-                .as("site/src/docs/comprendre/mcp.md still quotes tool names, so the check above has something to bite on")
+                .as(
+                        "site/src/docs/comprendre/mcp.md still quotes tool names, so the check above has something to bite on")
                 .isNotEmpty();
     }
 

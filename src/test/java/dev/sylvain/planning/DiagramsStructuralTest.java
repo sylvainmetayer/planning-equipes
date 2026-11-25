@@ -51,6 +51,7 @@ class DiagramsStructuralTest {
     private static final Path DIAGRAMS = Path.of("docs/diagrammes");
     /** The pages the site publishes; a diagram is shown by one of them, as {@code ![…](repo:docs/diagrammes/x.svg)}. */
     private static final Path DOCS = Path.of("site/src/docs");
+
     private static final Path SOURCES = Path.of("src/main/java");
 
     private static final Pattern TYPE_NAME = Pattern.compile("[A-Z][A-Za-z0-9]*");
@@ -142,7 +143,9 @@ class DiagramsStructuralTest {
         assertThat(missing)
                 .as("images of docs/diagrammes shown by a document but absent")
                 .isEmpty();
-        assertThat(neverShown).as("diagrams that no page of site/src/docs/ shows").isEmpty();
+        assertThat(neverShown)
+                .as("diagrams that no page of site/src/docs/ shows")
+                .isEmpty();
     }
 
     /**
@@ -175,7 +178,8 @@ class DiagramsStructuralTest {
     }
 
     /** A Markdown image of this directory — the syntax a reader sees rendered, not a mention of the path. */
-    private static final Pattern SHOWN_DIAGRAM = Pattern.compile("!\\[[^\\]]*]\\(repo:docs/diagrammes/([\\w-]+)\\.svg\\)");
+    private static final Pattern SHOWN_DIAGRAM =
+            Pattern.compile("!\\[[^\\]]*]\\(repo:docs/diagrammes/([\\w-]+)\\.svg\\)");
 
     /**
      * The document without its fenced blocks: an example of the embedding

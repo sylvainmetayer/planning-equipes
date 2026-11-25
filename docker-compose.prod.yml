@@ -19,7 +19,7 @@
 # le pilote par défaut (json-file) grossit sans limite, et un disque plein par
 # les journaux fait aussi échouer la sauvegarde de nuit. Plafond par défaut :
 # 5 fichiers de 20 Mo, ≈ 100 Mo par service. Pilote `local` : compressé, lu
-# par `docker compose logs` comme json-file. Voir site/src/docs/installer/exploitation.md § 7.
+# par `docker compose logs` comme json-file. Voir site/src/docs/installer/surveillance.md.
 x-logging: &logging
   driver: local
   options:
@@ -30,7 +30,7 @@ services:
   app:
     # Une version NOMMÉE (APP_VERSION=1.2.0), jamais `main` ni `latest` : un
     # déploiement doit être nommable dans un rapport d'incident. Sans défaut,
-    # comme les mots de passe. Voir site/src/docs/installer/versioning.md § Déployer.
+    # comme les mots de passe. Voir site/src/docs/installer/mettre-a-jour.md.
     image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir site/src/docs/installer/versioning.md}
     restart: unless-stopped
     logging: *logging
@@ -38,7 +38,7 @@ services:
     # (JDK_JAVA_OPTIONS, voir le Dockerfile) : 1,5 Go ici, ce que le solveur
     # demande pour ne pas passer son temps à collecter. Sous 1 Go, il ne
     # resterait pas assez hors du tas et le conteneur serait tué en plein
-    # calcul. Voir site/src/docs/installer/exploitation.md § La mémoire de l'application.
+    # calcul. Voir site/src/docs/installer/calcul-du-planning.md.
     mem_limit: 2g
     # Sur la boucle locale seulement : le reverse proxy est le seul chemin
     # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —
@@ -84,7 +84,7 @@ services:
       MAIL_START_TLS: ${MAIL_START_TLS:-REQUIRED}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # Sauvegarde de nuit : le répertoire monté ci-dessous. Vider BACKUP_DIR
-      # désactive la fonctionnalité. Voir site/src/docs/installer/exploitation.md § Sauvegarde.
+      # désactive la fonctionnalité. Voir site/src/docs/installer/sauvegarde-et-restauration.md.
       BACKUP_DIR: ${BACKUP_DIR-/backup}
       TZ: ${TZ:-Europe/Paris}
     volumes:

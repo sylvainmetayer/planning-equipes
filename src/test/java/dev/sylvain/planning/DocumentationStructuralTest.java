@@ -63,8 +63,9 @@ class DocumentationStructuralTest {
             }
         }
         assertThat(inexistantes)
-                .as("endpoints cited in site/src/docs/comprendre/api.md that no resource declares — a typo, a renamed route, "
-                        + "or shorthand like `PUT /api/stands` for `PUT /api/stands/{id}`")
+                .as(
+                        "endpoints cited in site/src/docs/comprendre/api.md that no resource declares — a typo, a renamed route, "
+                                + "or shorthand like `PUT /api/stands` for `PUT /api/stands/{id}`")
                 .isEmpty();
     }
 
@@ -420,8 +421,12 @@ class DocumentationStructuralTest {
         String doc = Files.readString(CONTRAINTES_MD, StandardCharsets.UTF_8);
         int debut = doc.indexOf(DEBUT);
         int fin = doc.indexOf(FIN);
-        assertThat(debut).as("marker %s in site/src/docs/comprendre/contraintes.md", DEBUT).isNotNegative();
-        assertThat(fin).as("marker %s in site/src/docs/comprendre/contraintes.md", FIN).isGreaterThan(debut);
+        assertThat(debut)
+                .as("marker %s in site/src/docs/comprendre/contraintes.md", DEBUT)
+                .isNotNegative();
+        assertThat(fin)
+                .as("marker %s in site/src/docs/comprendre/contraintes.md", FIN)
+                .isGreaterThan(debut);
 
         String attendu = tableau();
         String actuel = doc.substring(debut + DEBUT.length(), fin).strip();
@@ -472,7 +477,8 @@ class DocumentationStructuralTest {
             }
         }
         assertThat(missing)
-                .as("variables read by application.properties and absent from site/src/docs/installer/variables-environnement.md")
+                .as(
+                        "variables read by application.properties and absent from site/src/docs/installer/variables-environnement.md")
                 .isEmpty();
     }
 
@@ -491,12 +497,16 @@ class DocumentationStructuralTest {
         for (String part : List.of("regles", "installer", "comprendre")) {
             Path dir = SITE_DOCS.resolve(part);
             String index = Files.readString(dir.resolve("index.md"), StandardCharsets.UTF_8);
-            Matcher front = Pattern.compile("\\A---\\n(.*?)\\n---\\n", Pattern.DOTALL).matcher(index);
+            Matcher front =
+                    Pattern.compile("\\A---\\n(.*?)\\n---\\n", Pattern.DOTALL).matcher(index);
             assertThat(front.find()).as(part + "/index.md has a front matter").isTrue();
             Set<String> listed = new TreeSet<>();
-            Matcher list = Pattern.compile("(?s)docs:\\s*(\\[.*?]|(?:\\n\\s*-\\s*[\\w-]+)+)").matcher(front.group(1));
-            assertThat(list.find()).as(part + "/index.md lists its pages in `docs:`").isTrue();
-            Matcher name = Pattern.compile("[\\w-]+").matcher(list.group(1));
+            Matcher list = Pattern.compile("(?s)docs:\\s*(\\[.*?]|(?:\\n\\s*-\\s*[\\w-]+)+)")
+                    .matcher(front.group(1));
+            assertThat(list.find())
+                    .as(part + "/index.md lists its pages in `docs:`")
+                    .isTrue();
+            Matcher name = Pattern.compile("[a-z][a-z0-9-]*").matcher(list.group(1));
             while (name.find()) {
                 listed.add(name.group());
             }

@@ -51,14 +51,6 @@ eleventyComputed:
 
   {% elif p.kind == 'part' %}
   <div class="container doc__intro"><div class="doc__main doc__main--intro">{{ p.body | safe }}</div></div>
-  <div class="container">
-    <h2 class="doc__guides-h" id="guides-t">{{ c.guides }}</h2>
-    <ol class="doc__guides" aria-labelledby="guides-t">
-      {% for n in part.docs %}{% set d = docs | byName(n) %}
-      <li class="card"><h3><a href="{{ d.url }}">{{ d.h1 | typo('fr') }}</a></h3><p>{{ d.description | typo('fr') }}</p></li>
-      {% endfor %}
-    </ol>
-  </div>
 
   {% else %}
   <div class="container doc__grid">

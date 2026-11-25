@@ -160,7 +160,7 @@ class SchemaCompatibilityTest {
                 .contains("appliquée par la version 1.3.0")
                 .contains("APP_VERSION=1.3.0")
                 .contains("scripts/restaurer.sh")
-                .contains("site/src/docs/installer/versioning.md § 2")
+                .contains("https://planning.sylvain.dev/docs/installer/mettre-a-jour/")
                 .contains("ALLOW_SCHEMA_AHEAD=true");
     }
 

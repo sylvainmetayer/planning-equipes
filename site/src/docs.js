@@ -127,6 +127,8 @@ function renderer(published, state) {
       if (t.tag === 'h2' || t.tag === 'h3') state.toc.push({ level: Number(t.tag[1]), id, text });
     };
     const rewrite = (c) => {
+      // The site's typography (curly apostrophes, no-break spaces before ? ! : ;), as in its own pages
+      if (c.type === 'text') c.content = typo(c.content, 'fr');
       // A text made of an arrow alone (a cell reading "→ `{…}`") is no text to the contrast check: the arrow is decoration
       if (c.type === 'text' && /^\s*→\s*$/.test(c.content)) {
         c.type = 'html_inline';
@@ -229,9 +231,7 @@ export function loadDocs() {
       if (!hash) continue;
       const ids = (doc ? byName[doc] : d).state.ids;
       if (ids.has(hash)) continue;
-      warn(`${d.name}.md : ancre #${hash} introuvable dans ${doc ?? d.name}.md`);
-      // The link keeps its page, without the anchor that no longer exists
-      d.body = d.body.replaceAll(`href="${href}"`, `href="${doc ? urlOfDoc(doc) : d.url}"`);
+      throw new Error(`${d.name}.md : ancre #${hash} introuvable dans ${doc ?? d.name}.md`);
     }
   }
   const parts = PART_IDS.map((id) => {
@@ -240,7 +240,7 @@ export function loadDocs() {
     return { id, player: PLAYERS[id], titre: home.meta.titre, pour: home.meta.pour, docs: (home.meta.docs ?? []).map((n) => `${id}/${n}`) };
   });
   cachedParts = parts;
-  // Every page belongs to exactly one part (its folder), is listed once in docs-parties.json, and the part has its home
+  // Every page belongs to exactly one part (its folder), is listed once in the front matter of its part's index.md
   for (const d of docs) {
     d.part = d.name === 'index' ? undefined : parts.find((p) => p.docs.includes(d.name) || d.name === `${p.id}/index`)?.id;
     if (d.name !== 'index' && !d.part) throw new Error(`${sourcePath(d.name)} : absente du front matter (docs:) de l'index de sa partie`);
