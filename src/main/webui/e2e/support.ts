@@ -2,6 +2,7 @@
 // and the seeding of a tiny two-seat planning through the admin API only —
 // exactly what a browser could do, no backdoor into the database.
 
+import { randomInt, randomUUID } from 'node:crypto';
 import {
   APIRequestContext,
   APIResponse,
@@ -750,4 +751,80 @@ export async function jetonDe(admin: APIRequestContext, animateurId: string): Pr
   const jeton = animateurs.find((animateur) => animateur.id === animateurId)?.accessToken;
   expect(jeton, `animateur ${animateurId} must exist with a token`).toBeTruthy();
   return jeton as string;
+}
+
+/* ------------------------- Comptes locaux (RH, responsable…) ------------------------- */
+
+export interface CompteLocal {
+  id: string;
+  email: string;
+  motDePasse: string;
+}
+
+/**
+ * A local account the way an organiser's first day goes: created and granted
+ * through the admin API, invited, its password chosen through the mailed link
+ * (the token rides in the URL fragment, read in Mailpit). Everything is
+ * generated — a literal would be a credential in the repository — and the
+ * password stays under bcrypt's 72-byte cap. Callers deactivate it.
+ */
+export async function creerCompteLocal(
+  admin: APIRequestContext,
+  requeteur: APIRequestContext,
+  nom: string,
+  droit: { role: string; editionId: string; standIds?: string[] },
+): Promise<CompteLocal> {
+  const email = `${nom.toLowerCase().replace(/\W+/g, '-')}-${randomUUID()}@example.org`;
+  const motDePasse = `pw-${randomUUID()}`;
+  const cree = await admin.post('/api/comptes', { data: { email, nom } });
+  expect(cree.ok(), await cree.text()).toBe(true);
+  const id = ((await cree.json()) as { id: string }).id;
+  const accorde = await admin.post(`/api/comptes/${id}/habilitations`, { data: droit });
+  expect(accorde.ok(), await accorde.text()).toBe(true);
+  const invitation = await admin.post(`/api/comptes/${id}/invitation`);
+  expect(invitation.ok(), await invitation.text()).toBe(true);
+
+  let jeton: string | undefined;
+  await expect
+    .poll(async () => {
+      const recherche = await requeteur.get(
+        `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
+      );
+      for (const message of ((await recherche.json()) as { messages: { ID: string }[] }).messages) {
+        const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${message.ID}`);
+        jeton = /\/mot-de-passe#(\S+)/.exec(((await detail.json()) as { Text: string }).Text)?.[1];
+        if (jeton) return true;
+      }
+      return false;
+    })
+    .toBe(true);
+  const choix = await requeteur.post('/api/auth/mot-de-passe', {
+    data: { token: jeton, password: motDePasse },
+  });
+  expect(choix.status()).toBe(204);
+  return { id, email, motDePasse };
+}
+
+/** Signs in through the login screen: password, then the code mailed to the address. */
+export async function connecterCompteLocal(page: Page, compte: CompteLocal): Promise<void> {
+  await page.goto('/login');
+  await page.getByLabel('Adresse e-mail').fill(compte.email);
+  await page.getByLabel('Mot de passe').fill(compte.motDePasse);
+  // The invitation already sits in Mailpit: only a mail after the click carries the code.
+  const mailsAvant = await nombreDeMails(page.request, compte.email);
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+  const code = await dernierCodeMailpit(page.request, compte.email, mailsAvant);
+  await page.getByLabel('Code reçu par e-mail').fill(code);
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+}
+
+/** A made-up phone number in the range ARCEP reserves for fiction (01 99 00 xx xx). */
+export function telephoneFictif(): string {
+  const deux = () => String(randomInt(0, 100)).padStart(2, '0');
+  return `01 99 00 ${deux()} ${deux()}`;
+}
+
+/** A made-up name, unique per call. */
+export function nomFictif(prefixe: string): string {
+  return `${prefixe}-${randomUUID().slice(0, 8)}`;
 }
