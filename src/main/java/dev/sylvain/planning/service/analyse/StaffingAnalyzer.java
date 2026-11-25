@@ -1144,39 +1144,46 @@ public class StaffingAnalyzer {
         }
         int plancher = 0;
         for (List<Siege> jour : byDate.values()) {
-            Map<List<Integer>, Integer> tetes = new HashMap<>();
-            for (Siege x : jour) {
-                boolean tete = x.fin() - x.debut() <= cap
-                        && jour.stream().noneMatch(a -> a.fin() > x.debut() - pause && a.fin() <= x.debut());
-                if (tete) {
-                    tetes.merge(List.of(x.debut(), x.fin()), 1, Integer::sum);
-                }
-            }
-            for (Map.Entry<List<Integer>, Integer> tete : tetes.entrySet()) {
-                int debut = tete.getKey().get(0);
+            for (Map.Entry<List<Integer>, Integer> tete :
+                    chainHeads(jour, cap, pause).entrySet()) {
                 int fin = tete.getKey().get(1);
-                int coupure = debut + cap;
-                long suite = jour.stream()
-                        .filter(y -> y.debut() >= fin
-                                && y.debut() < fin + pause
-                                && y.debut() <= coupure
-                                && coupure < y.fin()
-                                && y.stand() != null
-                                && jour.stream()
-                                        .noneMatch(o -> o != y
-                                                && o.stand() != null
-                                                && o.stand()
-                                                        .getId()
-                                                        .equals(y.stand().getId())
-                                                && o.debut() <= coupure
-                                                && o.fin() >= coupure + pause))
-                        .count();
+                long suite = unrelayedSuccessors(jour, fin, tete.getKey().get(0) + cap, pause);
                 if (suite > 0) {
                     plancher = Math.max(plancher, tete.getValue() + (int) suite);
                 }
             }
         }
         return plancher;
+    }
+
+    /** The heads of a day, counted by their {@code [debut, fin]}: seats no other seat touches from before. */
+    private static Map<List<Integer>, Integer> chainHeads(List<Siege> jour, int cap, int pause) {
+        Map<List<Integer>, Integer> tetes = new HashMap<>();
+        for (Siege x : jour) {
+            boolean tete = x.fin() - x.debut() <= cap
+                    && jour.stream().noneMatch(a -> a.fin() > x.debut() - pause && a.fin() <= x.debut());
+            if (tete) {
+                tetes.merge(List.of(x.debut(), x.fin()), 1, Integer::sum);
+            }
+        }
+        return tetes;
+    }
+
+    /** The seats that follow a head ending at {@code fin} and cover the break at {@code coupure} with no relay. */
+    private static long unrelayedSuccessors(List<Siege> jour, int fin, int coupure, int pause) {
+        return jour.stream()
+                .filter(y -> y.debut() >= fin
+                        && y.debut() < fin + pause
+                        && y.debut() <= coupure
+                        && coupure < y.fin()
+                        && y.stand() != null
+                        && jour.stream()
+                                .noneMatch(o -> o != y
+                                        && o.stand() != null
+                                        && o.stand().getId().equals(y.stand().getId())
+                                        && o.debut() <= coupure
+                                        && o.fin() >= coupure + pause))
+                .count();
     }
 
     /** {@code bornes}, raised to the largest cap floor when one exceeds it. */

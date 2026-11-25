@@ -407,9 +407,7 @@ public class StaffingVerificationService {
             throw new BusinessError.Invalid(
                     "L'effectif à vérifier doit être compris entre 1 et " + EFFECTIF_MAX + " : " + taille + ".");
         }
-        VerificationMethod methode =
-                calcul == null ? defaultMethod : calcul ? VerificationMethod.CALCUL : VerificationMethod.BORNE;
-        if (methode == VerificationMethod.BORNE) {
+        if (methodOf(calcul) == VerificationMethod.BORNE) {
             return byBound(summary, seats.postes().size(), nombreMajeurs, nombreMineurs);
         }
         long plafond = budgetSeconds(dureeSecondes);
@@ -469,6 +467,14 @@ public class StaffingVerificationService {
             enCours.set(false);
             throw e;
         }
+    }
+
+    /** What a request asks for: {@code calcul} when it says so, the instance's default when it does not. */
+    private VerificationMethod methodOf(Boolean calcul) {
+        if (calcul == null) {
+            return defaultMethod;
+        }
+        return calcul ? VerificationMethod.CALCUL : VerificationMethod.BORNE;
     }
 
     /**
