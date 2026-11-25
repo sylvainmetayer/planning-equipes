@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * build serve every environment: the values live in server-side env vars
  * (see docker-compose.yml) instead of being baked into the Angular bundle at
  * build time. Blank when unset, which the frontend treats as "disabled" —
- * see docs/observabilite.md.
+ * see site/src/docs/installer/observabilite.md.
  *
  * <p>It also answers whether the server runs in <b>dev mode</b>, which is what
  * lets the UI offer the Quarkus Dev UI only where it exists. The frontend's own
@@ -30,7 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>And which <b>version</b> of the backend answers — the value the startup
  * line prints, derived from the git tag the image was built from
- * (docs/versioning.md). It is what {@code scripts/verifier-deploiement.sh}
+ * (site/src/docs/installer/versioning.md). It is what {@code scripts/verifier-deploiement.sh}
  * compares with the version the operator meant to deploy; the footer of every
  * page already shows it, so publishing it here reveals nothing new.</p>
  *

@@ -199,10 +199,10 @@ export class AdminShell {
   constructor() {
     const destroyRef = this.destroyRef;
     // A draft is a net against an accident, not a workspace: past a day it
-    // goes, whichever edition and form it belongs to (docs/rgpd.md §7).
+    // goes, whichever edition and form it belongs to (site/src/docs/installer/rgpd.md §7).
     this.draftStorages.forEach((storage) => purgeExpiredDrafts(storage));
     // A logout in another tab reaches this one's sessionStorage only through
-    // this tab: its fiche animateur draft goes too (docs/rgpd.md §7).
+    // this tab: its fiche animateur draft goes too (site/src/docs/installer/rgpd.md §7).
     const sessionDrafts = this.draftStorages[1];
     destroyRef.onDestroy(onLogoutElsewhere(() => purgeAllDrafts(sessionDrafts), this.sessionEnd));
     // Starts polling the server-side solver lock for the whole session, and

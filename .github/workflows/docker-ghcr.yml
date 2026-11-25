@@ -289,7 +289,7 @@ jobs:
       # HIGH or CRITICAL fails the job here, before anything is signed or
       # tagged, so a vulnerable build never becomes `:main` or a release. A
       # finding that cannot be acted on goes to `.trivyignore`, dated and with
-      # its reason (docs/securite.md). The published images are scanned again
+      # its reason (site/src/docs/installer/securite.md). The published images are scanned again
       # every week by securite.yml, for the CVE published after the build.
       #
       # `cache: false`: this workflow publishes, and reads no cache it does not

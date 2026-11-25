@@ -480,7 +480,7 @@ public class DatabaseDumpService {
      *
      * <p>A script naming no schema is let through, as before: a dump exported
      * before the header existed, or a few statements written by hand. Its
-     * replay is then the operator's call, and {@code docs/import-export.md}
+     * replay is then the operator's call, and {@code site/src/docs/comprendre/scenario-yaml.md}
      * says how to check it first.</p>
      */
     static void checkSchemaVersion(String script, String current) {

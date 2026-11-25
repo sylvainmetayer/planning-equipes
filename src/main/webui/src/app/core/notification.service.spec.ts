@@ -55,7 +55,7 @@ describe('NotificationService', () => {
   /**
    * The log is written to `localStorage` and outlives the logout, so a sentence
    * that may be shown is not always a sentence that may be kept — a warning
-   * naming a minor, typically (docs/rgpd.md §7).
+   * naming a minor, typically (site/src/docs/installer/rgpd.md §7).
    */
   it('keeps messageJournal in the log while the snack bar shows message', () => {
     const { service, snackBar } = configure();

@@ -26,7 +26,7 @@ on:
 # Lecture seule par défaut ; le job reçoit `contents: write` pour le seul
 # `gh release edit`. Rien n'est poussé sur une branche : il n'y a plus de
 # CHANGELOG.md à tenir, la page de release est la sortie (voir
-# docs/versioning.md § 3).
+# site/src/docs/installer/versioning.md § 3).
 permissions:
   contents: read
 
@@ -156,7 +156,7 @@ jobs:
             echo "::notice::$TAG est la première release de sa ligne : pas de montée à vérifier"
           else
             sujets="$(git log --format='%s' "$precedent..$TAG")"
-            demande=1  # 1 PATCH, 2 MINOR, 3 MAJOR — cf. docs/versioning.md § 2
+            demande=1  # 1 PATCH, 2 MINOR, 3 MAJOR — cf. site/src/docs/installer/versioning.md § 2
             if printf '%s\n' "$sujets" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
               demande=3
             elif printf '%s\n' "$sujets" | grep -qE '^feat'; then
@@ -176,7 +176,7 @@ jobs:
               echo "::error::$TAG n'est pas supérieur à $precedent"
               faute=1
             elif [ "$pose" -lt "$demande" ]; then
-              echo "::error::${noms[$pose]} posée entre $precedent et $TAG, mais les sujets demandaient ${noms[$demande]} (docs/versioning.md § 2)"
+              echo "::error::${noms[$pose]} posée entre $precedent et $TAG, mais les sujets demandaient ${noms[$demande]} (site/src/docs/installer/versioning.md § 2)"
               faute=1
             fi
           fi
@@ -195,7 +195,7 @@ jobs:
           if ! git branch -r --contains "$TAG" \
                | sed 's/^[* ]*//' \
                | grep -qE '^origin/(main|release/[0-9]+\.[0-9]+)$'; then
-            echo "::error::$TAG n'est sur ni main ni une branche release/X.Y (docs/versioning.md § 5)"
+            echo "::error::$TAG n'est sur ni main ni une branche release/X.Y (site/src/docs/installer/versioning.md § 5)"
             faute=1
           fi
 

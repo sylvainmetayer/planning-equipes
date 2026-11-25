@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  * <p>The labels are closed sets — the two job types and the terminal states —
  * and never an edition, a job id or anything a caller typed: an operator
  * watches the solver of the instance, not of an edition (see
- * {@code docs/observabilite.md} § Métriques).</p>
+ * {@code site/src/docs/installer/observabilite.md} § Métriques).</p>
  */
 @ApplicationScoped
 public class SolverMetrics {

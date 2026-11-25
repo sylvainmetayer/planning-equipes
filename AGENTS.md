@@ -12,7 +12,7 @@ Custom reviewer agents are maintained for both ecosystems:
 When one version changes, update the other one in the same commit to keep them
 strictly synchronized.
 
-This file is written in English; user-facing documentation (`README.md`, `docs/`)
+This file is written in English; user-facing documentation (`README.md`, `site/src/docs/`)
 is written in French, and domain identifiers stay in French business vocabulary.
 The Angular frontend UI (`src/main/webui`) is bilingual French/English via
 `@angular/localize`, translated at runtime (`loadTranslations()`, no per-locale
@@ -26,7 +26,7 @@ id while its English string stayed put is not caught: it is a human review
 matter. Never call `$localize` at module scope
 (only from a method, a `computed()`, or a constructor): it must run after
 `main.ts` has loaded translations, not at import time. See
-`docs/developpement.md` for the full workflow. Code comments and non-domain identifiers stay in English.
+`site/src/docs/comprendre/demarrer.md` for the full workflow. Code comments and non-domain identifiers stay in English.
 
 A route `title` is a **function** returning a `$localize` string, never a
 literal: evaluated after bootstrap, it is seen by `ng extract-i18n` and counted
@@ -40,10 +40,10 @@ onto `Stand`s over the days of an event, under hard/medium/soft constraints.
 
 Read before working on constraints or the domain model:
 
-- `docs/fonctionnel/` (start with `parcours.md`) — functional scope and business capabilities, in business language
-- `docs/domaine.md` — Timefold model and its invariants
-- `docs/contraintes.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
-- `docs/architecture.md` — backend/frontend module layout
+- `site/src/docs/regles/` (start with `fil-d-une-edition.md`) — functional scope and business capabilities, in business language
+- `site/src/docs/comprendre/modele-des-donnees.md` — Timefold model and its invariants
+- `site/src/docs/comprendre/pourquoi-ces-regles.md` — why each rule exists and what it costs (the list itself is `ConstraintCatalog`)
+- `site/src/docs/comprendre/vue-d-ensemble.md` — backend/frontend module layout
 
 ## Build, test, run
 
@@ -52,7 +52,7 @@ Read before working on constraints or the domain model:
   need nothing but a JVM, in about a minute and a half, with neither Docker nor
   PostgreSQL. The classes it leaves out are the ones that boot the application,
   listed in `src/test/container-tests.txt`; see *La boucle sans conteneur* in
-  `docs/developpement.md`. It is the loop while writing, never the proof: CI
+  `site/src/docs/comprendre/tests.md`. It is the loop while writing, never the proof: CI
   plays the whole suite, and so should you before pushing.
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
@@ -60,7 +60,7 @@ Read before working on constraints or the domain model:
   `./mvnw -Pmutation test-compile pitest:mutationCoverage`. Below
   `mutationThreshold` the build fails; a surviving mutant is killed by a test
   case, never by lowering the threshold. See *Les tests de mutation* in
-  `docs/developpement.md`.
+  `site/src/docs/comprendre/tests-de-scenarios.md`.
 
 ### Costly test jobs
 
@@ -103,7 +103,7 @@ are the `heavy-tests` skill. Four rules hold without it:
   starts and proxies the dev server — but a direct navigation (curl, F5, deep
   link) to any route but `/` on `:8080` 404s in dev mode (upstream Quinoa bug,
   doesn't affect production); test deep links against `:4200` directly
-  instead — see `docs/developpement.md`.
+  instead — see `site/src/docs/comprendre/tests.md`.
 - `docs/licences-tierces.md` (the third-party licence inventory the AGPL image
   owes whoever deploys it) is **generated, never hand-edited**: the
   `dependency-update` skill regenerates it, and the `test` job of the Tests
@@ -478,7 +478,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   `AffichageMuralRateLimiter` on `/api/mural/`; the three address-keyed
   classes share `ClientAddress`, which reads `X-Forwarded-For` from the right
   and is the half that makes any of them count anything), the production compose
-  stack and what is left to the reverse proxy — lives in `docs/securite.md`;
+  stack and what is left to the reverse proxy — lives in `site/src/docs/installer/securite.md`;
   a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so
   functional tests skip the session; `AuthentificationAdminTest` restores and
@@ -530,7 +530,7 @@ Single Quarkus service, no separate solver microservice. Package root:
      (`McpWarnsWhileSolvingStructuralTest`). Never turn a refused write into
      a warned one: the refusal protects against the landing resurrecting data.
 
-  See `docs/mcp.md`.
+  See `site/src/docs/comprendre/mcp-connexion.md` (keys, OAuth, limits) and `mcp-conventions-des-outils.md` (what every tool follows).
 - **`service/backup/` is the only place the application writes to disk**: a
   nightly `pg_dump` of the whole cluster into
   `BACKUP_DIR`, keeping the `BACKUP_RETENTION` most recent copies. Three rules
@@ -723,7 +723,7 @@ i18n rule at the top of this file:
 - **A write-time warning names an animateur by their id, never by their
   identity.** No nom, no prénom, no date de naissance in an `Avertissement`
   message: the browser copies every notification into a `localStorage` log that
-  outlives the logout (`docs/rgpd.md` §7). The sentence saying somebody is a
+  outlives the logout (`site/src/docs/installer/rgpd.md` §7). The sentence saying somebody is a
   minor goes one step further — shown, never logged
   (`models.ts`/`AVERTISSEMENTS_HORS_JOURNAL`).
 - **A warning is only raised on what the write changed.** An edit compares
@@ -779,56 +779,71 @@ The doc layout is intentional — respect it when adding or updating docs.
    (`./mvnw quarkus:dev`) — and a pointer to the documentation. A short intro
    and a closing documentation index table are allowed; the functional
    inventory, the configuration and everything else technical go to `docs/`.
-3. **All documentation lives in `docs/`, in three parts** that the site
-   publishes under `/docs` (`site/src/docs-parties.json` lists the pages of each
-   and their order; a page in none of them fails the site build):
-   - **Fonctionnel** — `docs/fonctionnel/*.md`, for a reader who is not
-     technical (organiser, stand lead): what the application does, by major use,
-     with no class name, route or variable;
-   - **Infra** — for whoever hosts the application: `installation.md`,
-     `variables-environnement.md`, `exploitation.md`, `securite.md`, `oidc.md`,
-     `observabilite.md`, `versioning.md`, `rgpd.md`, `accessibilite.md`,
-     `licences-tierces.md`;
-   - **Tech** — for whoever develops or audits: `architecture.md`, `domaine.md`,
-     `contraintes.md`, `api.md`, `mcp.md`, `import-export.md`, `developpement.md`
-     (ADRs and the project memory stay on GitHub, outside the site).
-   Adding a topic means adding a file in the right part, its row in
-   `docs/README.md` and its entry in `docs-parties.json` — not a new root-level
-   file and not a new README section. The environment variables inventory
-   (`variables-environnement.md`) is checked against `application.properties`:
-   a new variable is added there.
+3. **All written documentation is a section of the showcase site**, under
+   `site/src/docs/`, and the site publishes it under `/docs`. It is written for
+   the person who reads the site, never as a copy of repository files: a guide
+   speaks to its reader ("vous"), is named after what they want to do
+   (« Préparer votre première édition »), and never says anything about the
+   documentation itself ("cette page", "voir la doc"). Three parts, one folder
+   each; the folder's `index.md` is the part's home, and its front matter
+   (`titre`, `pour`, `docs:`) names the part, says whom it is for and lists its
+   pages in reading order — a page missing from that list fails the site build and
+   `DocumentationStructuralTest`:
+   - **Les règles du jeu** (`regles/`) — for the organiser, the stand lead, the
+     person discovering the product: task guides, with no class name, route or
+     variable, naming the screens as the interface does;
+   - **Installer chez vous** (`installer/`) — for whoever hosts the application:
+     install, configure, secure, back up, update; `variables-environnement.md`
+     is the complete inventory, checked against `application.properties`
+     (a new variable is added there);
+   - **Comprendre comment c'est fait** (`comprendre/`) — for whoever develops or
+     audits: architecture, model, constraints, API, MCP, import/export, build.
+   A link between pages is a relative `.md` link; a link to anything outside the
+   site (code, an ADR, the OpenAPI contract, this file) is written
+   `repo:path/from/the/repository/root` and becomes a GitHub link; a screenshot is
+   `![alt](/images/fr/x.webp "caption")` from `site/src/images/`; a diagram is
+   `![alt](repo:docs/diagrammes/x.svg)`. A link to a page that does not exist
+   fails the build. The design of these pages is the « Documentation » section of
+   `site/design.md`. **`docs/` keeps only what serves contributors and tools**:
+   `decisions/` (never published; linked on GitHub), `schema/` (the OpenAPI
+   contract and the scenario schema), `diagrammes/` (PlantUML sources and SVGs;
+   the pages show the SVGs), `licences-tierces.md` (generated; the site shows it
+   in the hosting part) and `memoire-du-projet.md`. Adding a topic means adding a
+   page to the right part and its slug to that part's `index.md` — not a new
+   root-level file and not a new README section.
 4. Docs are written in **French**; keep the existing tone and Markdown style
    (tables for enumerable facts, fenced code blocks for commands).
 5. When behaviour changes, update the doc that owns it. Two owners are **not**
    Markdown files, and writing prose instead of touching them is the mistake
    this rule exists to prevent:
    - **new endpoint → the OpenAPI the application publishes**, which is the
-     contract (audit #392, question 12). `docs/api.md` does not list endpoints
-     and must not start: it carries what a schema cannot express — the
+     contract (audit #392, question 12). The `site/src/docs/comprendre/api-*.md` pages do not list endpoints
+     and must not start: they carry what a schema cannot express — the
      cross-cutting invariants, the business trade-offs, and the traps that cost
-     half a day. Add to it only when there is such a thing to say. The
+     half a day. Add to them only when there is such a thing to say. The
      committed `docs/schema/openapi.json` is refreshed by `npm run api-schema`
      (from `src/main/webui`, like every npm command here), and `npm run
      api-types-check` fails when the frontend's hand-written models drift from
      it;
    - **new constraint → `ConstraintCatalog`**, which `GET /api/constraints`
      serves and which is therefore the documentation the application itself
-     hands out. `docs/contraintes.md` no longer enumerates the constraints and
+     hands out. `site/src/docs/comprendre/pourquoi-ces-regles.md` no longer enumerates the constraints and
      must not go back to it: it answers *why* a rule exists and what it costs,
      which the catalogue's one-line description cannot carry;
-   - new business capability → the functional page that owns it
-     (`docs/fonctionnel/`); new command/CI/tooling →
-     `docs/developpement.md`; anything touching the version contract, the
-     release flow or the Docker image tags → `docs/versioning.md`.
+   - new business capability → the guide of `site/src/docs/regles/` that owns it
+     (or a new guide, for a new task); new command/CI/tooling →
+     `site/src/docs/comprendre/demarrer.md` or `ci-et-livraison.md`; anything touching the version contract, the
+     release flow or the Docker image tags → `site/src/docs/installer/versioning.md`.
    - a flow, a lifecycle or the model drawn in `docs/diagrammes/` → its
      `.puml` (PlantUML), then `./mvnw validate -Pgenerate-diagrams` and commit
      the regenerated `.svg` with it. `DiagramsStructuralTest` fails on a
      stale SVG, a participant or method that no longer exists, a cited route
      that does not, and a state diagram that drifted from its enum — the
-     conventions it relies on are in `docs/developpement.md` (« Diagrammes »).
+     conventions it relies on are in `site/src/docs/comprendre/conventions-du-depot.md`.
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
-   decision record answers *why*, where the rest of `docs/` answers *what*.
+   decision record answers *why*, where the pages of the site answer *what*
+   and *how*.
    Write one when a choice closes off alternatives that a future reader would
    otherwise reopen — a schema shape, a solver mechanism, a classification
    rule. Never rewrite a past decision: when it is revised, set its status and
@@ -847,7 +862,7 @@ The doc layout is intentional — respect it when adding or updating docs.
 ## Dependency updates
 
 Renovate manages them (`renovate.json`, one file — keep the config there, and
-document behaviour changes in `docs/developpement.md`). What a Quarkus or
+document behaviour changes in `site/src/docs/comprendre/renovate-et-dependances.md`). What a Quarkus or
 Timefold bump must be validated with, how a Renovate PR regenerates the licence
 inventory and re-dispatches its own checks, and which labels trigger the
 scenario workflow are the `dependency-update` skill.
@@ -865,7 +880,7 @@ scenario workflow are the `dependency-update` skill.
   without bumping the major: `contraintes-legales` for a new or hardened legal
   constraint, `attention` for any other change an operator must act on at
   upgrade time (a rescaled setting, a value to convert by hand). See
-  `docs/versioning.md`. A body only when it carries what the diff
+  `site/src/docs/installer/versioning.md`. A body only when it carries what the diff
   cannot — the why, an option rejected on the way, a consequence at
   deployment — and then three to five lines, not thirty. No body at all is a
   perfectly good outcome. Never restate the diff, never narrate the work that

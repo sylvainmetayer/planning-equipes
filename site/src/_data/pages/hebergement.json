@@ -7,7 +7,7 @@
   "sections": [
     {
       "h2": "Ce qu'il faut",
-      "texte": "- un nom de domaine et un certificat TLS : les liens imprimés sur les PDF doivent rester joignables ;\n- un relais SMTP, car codes d'accès et plannings partent par e-mail ;\n- un reverse proxy devant l'application ;\n- 2,5 Go de mémoire : 2 Go pour l'application, 512 Mo pour PostgreSQL.\n\nLe guide complet est dans [la documentation d'exploitation](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/exploitation.md)."
+      "texte": "- un nom de domaine et un certificat TLS : les liens imprimés sur les PDF doivent rester joignables ;\n- un relais SMTP, car codes d'accès et plannings partent par e-mail ;\n- un reverse proxy devant l'application ;\n- 2,5 Go de mémoire : 2 Go pour l'application, 512 Mo pour PostgreSQL.\n\nLe guide complet est dans [la documentation d'exploitation](/docs/installer/exploitation/)."
     },
     {
       "h2": "Les sauvegardes",
@@ -15,7 +15,7 @@
     },
     {
       "h2": "La sécurité",
-      "texte": "En-têtes de sécurité, plafonds de débit, verrouillage de la connexion admin après des échecs, jetons distincts pour l'agenda et la télé. Un mode facultatif délègue la connexion à votre proxy d'accès, avec un secret partagé. Le détail est dans [le guide de durcissement](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/securite.md)."
+      "texte": "En-têtes de sécurité, plafonds de débit, verrouillage de la connexion admin après des échecs, jetons distincts pour l'agenda et la télé. Un mode facultatif délègue la connexion à votre proxy d'accès, avec un secret partagé. Le détail est dans [le guide de durcissement](/docs/installer/securite/)."
     },
     {
       "h2": "Calculer sur une autre machine",
@@ -46,7 +46,7 @@
     "sections": [
       {
         "h2": "What you need",
-        "texte": "- a domain name and a TLS certificate: the links printed on the PDFs must stay reachable;\n- an SMTP relay, since access codes and rotas go out by e-mail;\n- a reverse proxy in front of the application;\n- 2.5 GB of memory: 2 GB for the application, 512 MB for PostgreSQL.\n\nThe full guide is in [the operations documentation](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/exploitation.md) (in French)."
+        "texte": "- a domain name and a TLS certificate: the links printed on the PDFs must stay reachable;\n- an SMTP relay, since access codes and rotas go out by e-mail;\n- a reverse proxy in front of the application;\n- 2.5 GB of memory: 2 GB for the application, 512 MB for PostgreSQL.\n\nThe full guide is in [the operations documentation](/docs/installer/exploitation/) (in French)."
       },
       {
         "h2": "Backups",
@@ -54,7 +54,7 @@
       },
       {
         "h2": "Security",
-        "texte": "Security headers, rate limits, an admin login lockout after failures, separate tokens for the calendar and the TV. An optional mode hands the login to your access proxy, with a shared secret. The details are in [the hardening guide](https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/securite.md) (in French)."
+        "texte": "Security headers, rate limits, an admin login lockout after failures, separate tokens for the calendar and the TV. An optional mode hands the login to your access proxy, with a shared secret. The details are in [the hardening guide](/docs/installer/securite/) (in French)."
       },
       {
         "h2": "Solve on another machine",

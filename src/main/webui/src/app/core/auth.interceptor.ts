@@ -17,7 +17,7 @@ import { catchError } from 'rxjs/operators';
  * The drafts are left alone: recovering an entry after the session expired
  * is what they are for, and the fiche animateur's lives in this tab's
  * sessionStorage, which nobody else reads. Only the explicit logout purges
- * them (docs/rgpd.md §7).
+ * them (site/src/docs/installer/rgpd.md §7).
  */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);

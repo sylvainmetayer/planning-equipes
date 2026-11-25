@@ -32,7 +32,7 @@ import org.jboss.logging.Logger;
  * goes through a browser and needs the application standing; this one writes to
  * a volume, on its own, and what it writes is restored by the infrastructure
  * operator with {@code pg_restore} — <b>restoring is deliberately outside this
- * application</b>, see {@code docs/exploitation.md}.</p>
+ * application</b>, see {@code site/src/docs/installer/exploitation.md}.</p>
  *
  * <p>A failed backup never propagates: the scheduler would swallow it into a
  * log line nobody reads, and the next night would try again as if nothing had

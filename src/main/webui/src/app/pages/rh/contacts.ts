@@ -50,7 +50,7 @@ export function telHref(telephone: string): string {
 
 /**
  * The sentence the notification log keeps for a warning: the screen shows the text as sent, but
- * what says somebody is a minor does not outlive it (`docs/rgpd.md` §7).
+ * what says somebody is a minor does not outlive it (`site/src/docs/installer/rgpd.md` §7).
  */
 export function journalText(avertissement: Avertissement): string {
   return estJournalisable(avertissement) ? avertissement.message : '';

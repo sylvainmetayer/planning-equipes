@@ -2,7 +2,7 @@
 
 Ce dossier consigne les **décisions structurantes** du projet : ce qui a été
 choisi, contre quelles alternatives, et ce que ça engage. Il ne remplace pas la
-documentation de référence de [`docs/`](../README.md), qui décrit *ce que fait*
+documentation du site ([`site/src/docs/`](../../site/src/docs/index.md)), qui décrit *ce que fait*
 le système — ici on trouve le **pourquoi**.
 
 ## Convention

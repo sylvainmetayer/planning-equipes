@@ -3,7 +3,7 @@
 ' pour tout le monde, puis écrit à chaque personne retenue. Un envoi qui échoue
 ' est compté, pas rejoué, et n'arrête pas les autres. Une personne différée
 ' garde son ancien repère : la prochaine publication lui dira tout.
-' Voir docs/api.md, « Publication », et docs/decisions/0011, 0025, 0047.
+' Voir site/src/docs/comprendre/api-planning-et-publication.md, et docs/decisions/0011, 0025, 0047.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

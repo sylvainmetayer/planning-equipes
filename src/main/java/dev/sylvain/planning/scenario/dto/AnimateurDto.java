@@ -13,7 +13,7 @@ import java.util.Map;
  *
  * @param telephone optional; travels in the file like the e-mail address —
  *                  a scenario is a full copy of the referential, never an
- *                  export meant for somebody else (docs/rgpd.md)
+ *                  export meant for somebody else (site/src/docs/installer/rgpd.md)
  */
 public record AnimateurDto(
         @NotBlank String id,

@@ -2,7 +2,7 @@
 ' Une release : un humain crée la release dans GitHub et choisit vX.Y.Z ;
 ' deux workflows indépendants suivent, et aucun ne crée ni ne déplace de tag.
 ' Les contrôles de version tournent après coup : un échec se corrige en
-' supprimant release et tag, puis en recommençant. Voir docs/versioning.md.
+' supprimant release et tag, puis en recommençant. Voir site/src/docs/installer/versioning.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

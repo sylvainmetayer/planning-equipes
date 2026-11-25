@@ -1,7 +1,7 @@
 @startuml
 ' Entrer dans son espace : le lien personnel désigne la fiche, le code à six
 ' chiffres reçu par e-mail ouvre une session de 30 jours. L'espace ne montre
-' que le plan publié. Voir docs/api.md, « Espace animateur » et
+' que le plan publié. Voir site/src/docs/comprendre/api-espace-animateur.md et
 ' « Accusé de réception du planning ».
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true

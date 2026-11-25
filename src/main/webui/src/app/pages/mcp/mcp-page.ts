@@ -26,7 +26,7 @@ import { copyToClipboard } from '../../core/clipboard';
 
 /**
  * How to plug an AI assistant into the application's MCP server (see
- * docs/mcp.md): endpoint, API-key header, and — when the app answers through
+ * site/src/docs/comprendre/mcp-connexion.md): endpoint, API-key header, and — when the app answers through
  * a Pangolin access proxy (detected via the `X-Pangolin: true` response
  * header on any API call) — the proxy access-token headers that must ride
  * along on every MCP request. Ends with the prompts the server announces,

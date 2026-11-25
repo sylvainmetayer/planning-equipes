@@ -11,7 +11,7 @@ contact_links:
       voir SECURITY.md.
 
   - name: Question d'utilisation
-    url: https://github.com/sylvainmetayer/planning-equipes/blob/main/docs/README.md
+    url: https://planning.sylvain.dev/docs/
     about: >-
       La documentation technique répond peut-être déjà — modèle de données,
       contraintes, formats d'import/export, exploitation.

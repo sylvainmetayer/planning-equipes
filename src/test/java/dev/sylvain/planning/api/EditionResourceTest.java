@@ -405,7 +405,7 @@ class EditionResourceTest {
      *
      * <p>Preparing 2027 from 2026 otherwise copies names, birth dates and
      * e-mail addresses of people who have not signed up again — a minimisation
-     * and retention problem ({@code docs/rgpd.md}), not a convenience. Every ad
+     * and retention problem ({@code site/src/docs/installer/rgpd.md}), not a convenience. Every ad
      * hoc constraint names at least one animateur, so none of them survives
      * either: a copy pointing at absent persons would be worse than no copy.</p>
      */

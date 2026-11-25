@@ -45,7 +45,7 @@ function contrainteTypes(): { value: TypeContrainteAdHoc; label: string }[] {
  * What an adjustment is called on screen, for want of a name: its type and the
  * animateurs it concerns (« Incompatibilité — Jean Dupont, Marie Martin »).
  * Its id is drawn per edition and tells a reader nothing. The names are
- * personal data: this may be shown, never logged (docs/rgpd.md §7).
+ * personal data: this may be shown, never logged (site/src/docs/installer/rgpd.md §7).
  */
 export function adHocDescription(
   contrainte: Pick<ContrainteAdHoc, 'type' | 'animateursConcernes'>,

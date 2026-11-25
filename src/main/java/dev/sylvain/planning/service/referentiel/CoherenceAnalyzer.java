@@ -208,7 +208,7 @@ public final class CoherenceAnalyzer {
      * <p>The sentence names the animateur by their <b>id</b>, and never spells
      * out the date de naissance. This text is shown by a browser that keeps a
      * log of what it showed: an identity and a birth date have no business
-     * being written there (see {@code docs/rgpd.md} §7). The id is the least
+     * being written there (see {@code site/src/docs/installer/rgpd.md} §7). The id is the least
      * that keeps the warning actionable in a bulk edit, where the screen no
      * longer says which row it is about.</p>
      */

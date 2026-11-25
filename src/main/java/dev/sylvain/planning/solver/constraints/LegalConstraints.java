@@ -45,7 +45,7 @@ import java.util.function.ToIntFunction;
  * <caption>Applicable articles</caption>
  * <tr><th>Sujet</th><th>Moins de 16 ans</th><th>16 à 18 ans</th><th>Majeur</th></tr>
  * <tr><td>Travail de nuit</td><td>20 h-6 h (L3163-1)</td><td>22 h-6 h (L3163-1)</td>
- *     <td>non encadré par l'outil, voir docs/contraintes.md</td></tr>
+ *     <td>non encadré par l'outil, voir site/src/docs/comprendre/pourquoi-ces-regles.md</td></tr>
  * <tr><td>Repos quotidien</td><td>14 h (L3164-1)</td><td>12 h (L3164-1)</td><td>11 h (L3131-1)</td></tr>
  * <tr><td>Durée quotidienne</td><td>7 h (D4153-3)</td><td>8 h (L3162-1)</td><td>10 h (L3121-18)</td></tr>
  * <tr><td>Durée hebdomadaire</td><td colspan="2">35 h (L3162-1, D4153-3)</td><td>48 h (L3121-20)</td></tr>
@@ -99,7 +99,7 @@ public final class LegalConstraints {
      * forbidden to under-18s (art. L4153-8, D4153-15 et suivants
      * <b>[JUR-1 non vérifié — à faire valider]</b>) or from a purely internal policy
      * (bar stand, adult-only games…). The model does not distinguish the two;
-     * see docs/contraintes.md.</p>
+     * see site/src/docs/comprendre/pourquoi-ces-regles.md.</p>
      */
     private Constraint standReserveAuxMajeurs(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
@@ -215,7 +215,7 @@ public final class LegalConstraints {
      *
      * <p>Note that {@code Creneau.getDureeMinutes()} measures amplitude, which
      * equals travail effectif only because no break is modelled inside a
-     * créneau — see {@code docs/domaine.md}.</p>
+     * créneau — see {@code site/src/docs/comprendre/modele-des-donnees.md}.</p>
      */
     private Constraint dureeQuotidienneMaxMineur(SeatStreams seats) {
         return dailyCapPenalty(
@@ -408,8 +408,7 @@ public final class LegalConstraints {
      * the relay check to a second rule. Four notions called « pause », two
      * modes, one of which switched the other's rules off. The relay is now the
      * rule itself, and a stretch with no relay is a hard breach whatever the
-     * organiser declares. See {@code docs/contraintes.md}, « La pause légale,
-     * trou ou relais ».</p>
+     * organiser declares. See {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
      *
      * <p>Grouped per animateur <i>and date</i> so each group holds a handful of
      * postes. A stretch chained across midnight is caught by
@@ -606,7 +605,7 @@ public final class LegalConstraints {
      * only what it spends in each: reaching the 35 h floor takes 24 h
      * <em>inside</em> the week, and only the adjoining daily rest is allowed to
      * overflow, as L3132-2 is written. Two consecutive days cannot be split
-     * that way. See {@code docs/contraintes.md}, « La frontière de semaine ».</p>
+     * that way. See {@code site/src/docs/comprendre/repos-et-jours-d-affilee.md}.</p>
      */
     private Constraint reposHebdomadaireMineur(SeatStreams seats) {
         // Same reading as maxJoursTravaillesParSemaine (ADR 0044): the week is
@@ -1183,8 +1182,7 @@ public final class LegalConstraints {
      * break, and the weekly rule counted them 50 h and refused the plan. The
      * over-count was protective, but it contradicted the daily rule's own
      * arithmetic, and no organiser can act on two contradictory readings. See
-     * {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
-     * l'amplitude ».</p>
+     * {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
      */
     private static QuadConstraintStream<Animateur, String, PastSeats.Ahead<Long>, ParametresLegaux> weeklyCap(
             SeatStreams seats,

@@ -1,7 +1,7 @@
 // Where a version string leads on GitHub, and how two of them compare.
 //
 // `APP_VERSION` (generated, `scripts/generate-version.js`) is either the exact
-// tag the build sits on — `v1.2.0`, the form `docs/versioning.md` prescribes —
+// tag the build sits on — `v1.2.0`, the form `site/src/docs/installer/versioning.md` prescribes —
 // or the short commit SHA. The two do not land on the same page: a tag has a
 // release (or, failing one, GitHub's own page for the bare tag, at the very
 // same URL), a SHA only has its commit.

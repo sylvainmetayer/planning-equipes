@@ -40,7 +40,7 @@ export interface NotifyOptions {
    * What the persisted log keeps instead of `message`, when what is shown must
    * not survive the session. The snack bar always shows `message`; only this
    * goes to `localStorage`. Left out, the two are the same — which is the case
-   * everywhere but the write-time warnings naming a minor (`docs/rgpd.md` §7).
+   * everywhere but the write-time warnings naming a minor (`site/src/docs/installer/rgpd.md` §7).
    */
   messageJournal?: string;
   variant?: ToastVariant;

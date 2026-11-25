@@ -235,7 +235,7 @@ describe('ReferenceCrudService', () => {
     /**
      * Toute notification est écrite dans un journal `localStorage` de 200
      * entrées qui survit à la déconnexion. Une phrase disant qu'une personne
-     * nommée est mineure n'a rien à y faire (docs/rgpd.md §7) : la bulle la
+     * nommée est mineure n'a rien à y faire (site/src/docs/installer/rgpd.md §7) : la bulle la
      * montre, le journal ne la garde pas.
      */
     it('garde hors du journal la phrase qui dit qu’une personne est mineure', async () => {
@@ -513,7 +513,7 @@ describe('ReferenceCrudService', () => {
     /**
      * The confirmation is never logged, so it may name the person; the
      * notification is copied into a `localStorage` log that outlives the
-     * logout, so it names the id instead (docs/rgpd.md §7).
+     * logout, so it names the id instead (site/src/docs/installer/rgpd.md §7).
      */
     it('keeps a personal name out of the notification of a deletion', async () => {
       await service.remove('animateurs', 'A1', 'Animateur', {
