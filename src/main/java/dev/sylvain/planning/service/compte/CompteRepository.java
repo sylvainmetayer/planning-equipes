@@ -33,8 +33,12 @@ public class CompteRepository {
             "SELECT id, email, nom, cree_le, derniere_connexion_le, desactive_le, desactive_par,"
                     + " mot_de_passe_hash IS NOT NULL AS mot_de_passe_defini FROM compte";
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public CompteRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     public List<Compte> list() {
         return scope.read("Failed to list the accounts", connection -> {

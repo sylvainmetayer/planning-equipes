@@ -14,8 +14,12 @@ import java.util.Map;
 @ApplicationScoped
 public class ReglageResponsableRepository {
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public ReglageResponsableRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     public ReglagesResponsables get() {
         return scope.read("Failed to load the responsable settings", connection -> {

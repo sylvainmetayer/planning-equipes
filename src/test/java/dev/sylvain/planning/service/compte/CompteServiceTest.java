@@ -15,14 +15,18 @@ class CompteServiceTest {
     @Test
     void anAccountCannotDeactivateItself() {
         Compte moi = new Compte("c-1", "moi@example.org", null, null, null, null, null, List.of(), false);
-        CompteService service = new CompteService();
-        service.journal = new JournalActionService(
+        CompteService service = new CompteService(
                 null,
-                QuarkusSecurityIdentity.builder()
-                        .setPrincipal(new QuarkusPrincipal("moi@example.org"))
-                        .addAttribute(Compte.IDENTITY_ATTRIBUTE, moi)
-                        .build(),
-                Duration.ofDays(90));
+                null,
+                null,
+                null,
+                new JournalActionService(
+                        null,
+                        QuarkusSecurityIdentity.builder()
+                                .setPrincipal(new QuarkusPrincipal("moi@example.org"))
+                                .addAttribute(Compte.IDENTITY_ATTRIBUTE, moi)
+                                .build(),
+                        Duration.ofDays(90)));
 
         assertThatThrownBy(() -> service.deactivate("c-1")).isInstanceOf(BusinessError.Conflict.class);
     }

@@ -38,20 +38,25 @@ public class CompteService {
 
     static final int NOM_MAX = 255;
 
-    @Inject
-    CompteRepository repository;
+    private final CompteRepository repository;
+    private final EditionRepository editions;
+    private final EditionContext editionContext;
+    private final ReferenceDataService referentiel;
+    private final JournalActionService journal;
 
     @Inject
-    EditionRepository editions;
-
-    @Inject
-    EditionContext editionContext;
-
-    @Inject
-    ReferenceDataService referentiel;
-
-    @Inject
-    JournalActionService journal;
+    public CompteService(
+            CompteRepository repository,
+            EditionRepository editions,
+            EditionContext editionContext,
+            ReferenceDataService referentiel,
+            JournalActionService journal) {
+        this.repository = repository;
+        this.editions = editions;
+        this.editionContext = editionContext;
+        this.referentiel = referentiel;
+        this.journal = journal;
+    }
 
     public List<Compte> list() {
         return repository.list();

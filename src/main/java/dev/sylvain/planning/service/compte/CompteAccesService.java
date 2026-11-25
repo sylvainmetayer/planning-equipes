@@ -61,26 +61,31 @@ public class CompteAccesService {
 
     private final SecureRandom random = new SecureRandom();
 
-    @Inject
-    CompteAccesRepository acces;
+    private final CompteAccesRepository acces;
+    private final CompteRepository comptes;
+    private final MailService mail;
+    private final ApplicationLinks liens;
+    private final ConfigComptesLocaux config;
+    private final CodeRequestLimiter limiteur;
+    private final ConfigAdminLogin adminLogin;
 
     @Inject
-    CompteRepository comptes;
-
-    @Inject
-    MailService mail;
-
-    @Inject
-    ApplicationLinks liens;
-
-    @Inject
-    ConfigComptesLocaux config;
-
-    @Inject
-    CodeRequestLimiter limiteur;
-
-    @Inject
-    ConfigAdminLogin adminLogin;
+    public CompteAccesService(
+            CompteAccesRepository acces,
+            CompteRepository comptes,
+            MailService mail,
+            ApplicationLinks liens,
+            ConfigComptesLocaux config,
+            CodeRequestLimiter limiteur,
+            ConfigAdminLogin adminLogin) {
+        this.acces = acces;
+        this.comptes = comptes;
+        this.mail = mail;
+        this.liens = liens;
+        this.config = config;
+        this.limiteur = limiteur;
+        this.adminLogin = adminLogin;
+    }
 
     /**
      * Failures of the password step <b>per account address</b> (existing or not:
