@@ -3001,11 +3001,13 @@ vue ; régénérer son secret ne la porte pas, l'action relit la ligne. Un
 **préréglage de consigne** (`PUT /api/consignes/prereglages/{id}`) la lit dans
 `modifieLe`. Une **consigne** est posée sur plusieurs dates à la fois : la
 demande porte `modifieLe`, une table `date → horodatage` — une date sans entrée
-n'est pas contrôlée, une première pose n'a rien à comparer — et le refus d'une
+n'est pas contrôlée, une première pose n'a rien à comparer ; une entrée pour
+une date que la demande ne pose pas est refusée en 400 — et le refus d'une
 date annule toute la pose, créneaux ajoutés compris. La levée et l'aperçu ne
 changent pas. L'outil MCP `appliquer_consigne` prend la même table en
 `modifieLe` (`AAAA-MM-JJ=horodatage`, séparés par des virgules),
-`definir_prereglage_consigne` l'horodatage du préréglage.
+`definir_prereglage_consigne` l'horodatage du préréglage ; omis, aucun des deux
+ne contrôle rien, comme les autres outils d'écriture du référentiel.
 
 La vérification **fait partie de l'écriture** : un seul ordre SQL, dont le
 `ON CONFLICT DO UPDATE` porte la précondition et ne renvoie aucune ligne

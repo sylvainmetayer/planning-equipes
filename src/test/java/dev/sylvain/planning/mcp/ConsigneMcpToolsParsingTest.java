@@ -45,5 +45,11 @@ class ConsigneMcpToolsParsingTest {
         assertThat(ConsigneMcpTools.stamps("2027-02-03=2026-09-06T10:15:30.123Z, 2027-02-04=2026-09-07T08:00:00Z"))
                 .containsOnlyKeys(java.time.LocalDate.of(2027, 2, 3), java.time.LocalDate.of(2027, 2, 4));
         assertThatThrownBy(() -> ConsigneMcpTools.stamps("2027-02-03")).isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> ConsigneMcpTools.stamps("2027-02-03=")).isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> ConsigneMcpTools.stamps("=2026-09-06T10:15:30Z"))
+                .isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> ConsigneMcpTools.stamps("2027-02-30=2026-09-06T10:15:30Z"))
+                .isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> ConsigneMcpTools.stamps("2027-02-03=hier")).isInstanceOf(BusinessError.Invalid.class);
     }
 }

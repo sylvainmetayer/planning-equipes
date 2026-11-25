@@ -391,7 +391,13 @@ public class ConsigneMcpTools {
                 throw new BusinessError.Invalid(
                         ARG_MODIFIE_LE + " : « " + pair.strip() + " » attendu sous la forme AAAA-MM-JJ=horodatage");
             }
-            stamps.put(McpArgs.date(parts[0], ARG_MODIFIE_LE), McpArgs.instant(parts[1], ARG_MODIFIE_LE));
+            LocalDate date = McpArgs.date(parts[0], ARG_MODIFIE_LE);
+            Instant stamp = McpArgs.instant(parts[1], ARG_MODIFIE_LE);
+            if (date == null || stamp == null) {
+                throw new BusinessError.Invalid(
+                        ARG_MODIFIE_LE + " : « " + pair.strip() + " » attendu sous la forme AAAA-MM-JJ=horodatage");
+            }
+            stamps.put(date, stamp);
         }
         return stamps;
     }

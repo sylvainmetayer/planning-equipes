@@ -77,23 +77,22 @@ export class WebhooksCard implements OnInit {
   }
 
   private openForm(webhook: WebhookView | null): void {
-    const ref = this.dialog.open<WebhookFormDialog, WebhookFormData, WebhookRequest | null>(
-      WebhookFormDialog,
-      { data: { webhook }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
-    );
-    ref.afterClosed().subscribe((request) => {
-      if (request) {
-        void this.save(webhook, request);
-      }
+    this.dialog.open<WebhookFormDialog, WebhookFormData>(WebhookFormDialog, {
+      data: { webhook, save: (request) => this.save(webhook, request) },
+      width: '40rem',
+      maxWidth: '95vw',
+      autoFocus: 'first-tabbable',
     });
   }
 
-  private async save(webhook: WebhookView | null, request: WebhookRequest): Promise<void> {
+  /** True once the form may close: written, or reloaded on the user's choice. */
+  private async save(webhook: WebhookView | null, request: WebhookRequest): Promise<boolean> {
     this.busy.set(true);
     try {
       await this.write(webhook, { ...request, modifiedAt: webhook?.modifiedAt ?? null });
+      return true;
     } catch (error) {
-      await this.answerError(webhook, request, error);
+      return await this.answerError(webhook, request, error);
     } finally {
       this.busy.set(false);
     }
@@ -113,29 +112,37 @@ export class WebhooksCard implements OnInit {
     await this.load();
   }
 
-  /** A webhook written since the form opened is answered with a choice, any other refusal with its message. */
+  /**
+   * A webhook written since the form opened is answered with a choice, any
+   * other refusal with its message. False keeps the form open as typed, like
+   * `ReferenceCrudService`: a refusal, or a choice dismissed.
+   */
   private async answerError(
     webhook: WebhookView | null,
     request: WebhookRequest,
     error: unknown,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (!isStaleWrite(error)) {
       this.notifyError(error);
-      return;
+      return false;
     }
     const choice = await askStaleChoice(this.confirm, error);
     if (choice === 'overwrite') {
       try {
         await this.write(webhook, { ...request, modifiedAt: null });
+        return true;
       } catch (again) {
         this.notifyError(again);
+        return false;
       }
-    } else if (choice === 'reload') {
+    }
+    if (choice === 'reload') {
       await this.load();
       notifyStaleReloaded(this.notifications);
-    } else {
-      this.notifyError(error);
+      return true;
     }
+    this.notifyError(error);
+    return false;
   }
 
   protected async test(webhook: WebhookView): Promise<void> {

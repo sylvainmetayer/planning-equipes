@@ -196,7 +196,12 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .extract()
                 .path("consignes[0].modifieLe");
-        Map<String, Object> corps = demande(List.of(ouverture(standStrat)));
+        // Other hours: laying them down creates a créneau before the stale row is met.
+        Map<String, Object> autreOuverture = ouverture(standStrat);
+        autreOuverture.put("debut", "20:00");
+        autreOuverture.put("fin", "22:00");
+        Map<String, Object> corps = demande(List.of(autreOuverture));
+        corps.put("fenetres", List.of(Map.of("debut", "20:00", "fin", "22:00")));
 
         corps.put("modifieLe", Map.of(JOUR, "2020-01-01T00:00:00Z"));
         given().header("X-Edition-Id", "E1")
@@ -209,8 +214,33 @@ class ConsigneResourceTest {
                 .body("code", equalTo(StaleWriteError.STALE_WRITE_CODE))
                 .body("message", containsString("par une autre session"))
                 .body("modifieLe", notNullValue());
-        // The refusal rolled the whole laying down back: nothing was added to the grid twice.
+        // The refusal rolled the whole laying down back: the créneau it had created is gone, the consigne unchanged.
         assertThat(creneaux().getList("id")).hasSize(3);
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/consignes")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .<String>path("consignes[0].fenetres[0].debut"))
+                .startsWith("18:00");
+
+        corps.put("modifieLe", Map.of("2026-07-09", modifieLe));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(400);
+        corps.put("modifieLe", Map.of(JOUR, "pas un horodatage"));
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(400);
 
         corps.put("modifieLe", Map.of(JOUR, modifieLe));
         given().header("X-Edition-Id", "E1")

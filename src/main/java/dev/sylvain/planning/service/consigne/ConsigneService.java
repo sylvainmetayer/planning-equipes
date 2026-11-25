@@ -414,6 +414,10 @@ public class ConsigneService {
             if (dates == null || dates.isEmpty()) {
                 throw new BusinessError.Invalid("Aucune date : une consigne s'applique à au moins un jour");
             }
+            // A stamp for a date not laid down would check nothing while looking like a precondition.
+            if (modifieLe != null && !dates.containsAll(modifieLe.keySet())) {
+                throw new BusinessError.Invalid("modifieLe nomme une date que la consigne ne pose pas");
+            }
             return dates.stream()
                     .distinct()
                     .map(date -> new ConsigneEdition(
