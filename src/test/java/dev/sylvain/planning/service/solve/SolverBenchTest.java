@@ -190,7 +190,7 @@ class SolverBenchTest {
      * import — a bench that ignored them measured the grid under the default
      * rules, not under the edition's.
      */
-    private static Loaded load(String scenario, EmptyReferenceData referenceData) throws IOException {
+    static Loaded load(String scenario, EmptyReferenceData referenceData) throws IOException {
         Path path = Path.of(scenario);
         ScenarioDto dto = path.isAbsolute() && Files.isRegularFile(path)
                 ? ScenarioYamlReader.parseScenarioText(Files.readString(path, StandardCharsets.UTF_8))
@@ -208,7 +208,7 @@ class SolverBenchTest {
     }
 
     /** A problem and the quality thresholds its file pins, laid on after the server-side preparation. */
-    private record Loaded(PlanningEvenement problem, ParametresQualite qualite) {}
+    record Loaded(PlanningEvenement problem, ParametresQualite qualite) {}
 
     private static void record(
             BestSolutionChangedEvent<PlanningEvenement> event, List<Sample> samples, long[] firstInitialized) {

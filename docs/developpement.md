@@ -539,7 +539,7 @@ Côté tests, `ScenariosLivres` est la seule lecture de ce dossier :
 
 ### Le banc du solveur
 
-Deux classes de `service/solve`, taguées `scenario-lent`, servent à **mesurer**
+Des classes de `service/solve`, taguées `scenario-lent`, servent à **mesurer**
 une résolution plutôt qu'à la valider ; elles ne font rien sans leurs
 propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
 
@@ -570,6 +570,37 @@ propriétés système, donc `./mvnw test -Pscenario-tests` les ignore.
   recherche de Timefold, sous le même budget, le même plateau et la même
   graine — les options qui réécrivent la terminaison de Timefold
   (`calculations`, `stopWhenFeasible`, `drWindow`) sont alors sans effet.
+- `RuleBenchTest` mesure ce que coûterait un changement de règles **avant de
+  l'écrire** : chaque scénario est résolu deux fois, au même budget et à la
+  même graine, tel quel puis avec la variante, et le banc écrit le score par
+  niveau avant/après, le temps jusqu'à la faisabilité, les sièges changés de
+  main (la différence de plan) et un verdict contre le seuil de décision
+  (au plus 5 % de medium perdu). La variante se dit par propriété :
+  `bench.off=regleA,regleB` (règles désactivées : une suppression, ou les règles
+  qu'une fusion remplacerait) et/ou `bench.level=regle:HARD|MEDIUM|SOFT[:poids]`
+  (une règle changée de niveau). Les scénarios : les `gamme-*` (hors
+  `infaisable`) et les `festival-*` ; `bench.only=gamme-01,gamme-02` les
+  restreint par préfixe de nom, et `bench.scenario=<chemin absolu>` ajoute un
+  fichier local lu **en place**, jamais copié dans le dépôt. Budget par solve :
+  `bench.seconds` (60) et `bench.plateau` (30), `bench.seed` (0),
+  `bench.engine=timefold` pour la recherche de Timefold au lieu du moteur
+  direct, `bench.label` (nom des fichiers). Le plan de la variante est
+  **re-scoré sous les règles actuelles** : un plan résolu sans une règle
+  se note mieux par ses propres règles qu'il ne le mérite, et le verdict se lit
+  sur ce medium re-scoré ; une faisabilité perdue refuse toujours. Sorties :
+  `target/bench/regles-<label>.md` et `.csv` (ignorés par git).
+
+  ```bash
+  # essai court : deux marches, quelques secondes chacune
+  ./mvnw test -Pscenario-tests -Dtest=RuleBenchTest \
+      -Dbench.off=preserverBufferPolyvalents -Dbench.only=gamme-05,gamme-08 \
+      -Dbench.seconds=8 -Dbench.plateau=4 -Dbench.label=essai
+
+  # la mesure complète, gamme et festivals, plus le scénario réel local
+  ./mvnw test -Pscenario-tests -Dtest=RuleBenchTest \
+      -Dbench.off=regleA,regleB -Dbench.label=fusion-ab \
+      -Dbench.scenario=/chemin/absolu/vers/scenario.yaml
+  ```
 - `HandSearchFuzzTest` chasse les plans que le moteur direct et les
   contraintes ne scorent pas pareil : pendant `-Dfuzz.seconds=N`, sur
   `-Dfuzz.scenario=…` (nom versionné ou chemin absolu), il tire des variations
