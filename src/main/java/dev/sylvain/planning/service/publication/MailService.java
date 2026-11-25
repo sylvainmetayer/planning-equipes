@@ -63,6 +63,7 @@ public class MailService {
     private static final String TEST_MAIL = "mail/test";
     private static final String ACCOUNT_LINK = "mail/compte-lien";
     private static final String ACCOUNT_CODE = "mail/compte-code";
+    private static final String ACCOUNT_CHANGED = "mail/compte-modifie";
 
     private final Mailer mailer;
 
@@ -273,6 +274,15 @@ public class MailService {
                         "invitation", invitation,
                         "produit", productName.value()));
         metrics.send(mailer, ACCOUNT_LINK, templates.toMail(to, content));
+    }
+
+    /** Tells the owner that the password of their account was just changed: the one thing an intruder cannot hide. */
+    public void sendPasswordChanged(String to, String nom) {
+        MailContent content = templates.render(
+                ACCOUNT_CHANGED,
+                productName.subject("votre mot de passe a été changé"),
+                MailTemplates.values("nom", blankToNull(nom), "produit", productName.value()));
+        metrics.send(mailer, ACCOUNT_CHANGED, templates.toMail(to, content));
     }
 
     /** Sends the six-digit code that ends a local sign-in: the mailbox is the second factor. */

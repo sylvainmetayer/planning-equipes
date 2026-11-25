@@ -39,6 +39,8 @@ class ActiveEditionEmissionStructuralTest {
             "the Débogage test mail checks the SMTP relay of the instance and goes to the admin address only",
             "sendAccountLink",
             "a local account's password link: accounts serve every edition and nothing about one is in it",
+            "sendPasswordChanged",
+            "the notice that a local account's password changed: accounts serve every edition and nothing about one is in it",
             "sendAccountCode",
             "the code ending a local sign-in: accounts serve every edition and nothing about one is in it");
 

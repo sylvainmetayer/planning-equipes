@@ -469,7 +469,15 @@ Cinq portes, de la plus forte à la plus faible :
    (`CONNEXION_MAX_ECHECS`), les demandes de code et de lien sont limitées par
    compte, et une réponse ne dit jamais si une adresse a un compte. Ouvert **même
    derrière un fournisseur OIDC** : seul le secours est fermé. Désactiver un
-   compte coupe sa session à la requête suivante.
+   compte coupe sa session à la requête suivante, et **choisir un nouveau mot
+   de passe ferme toutes les sessions ouvertes avec l'ancien** (le cookie porte
+   l'adresse et la date du dernier mot de passe) ; le titulaire en est prévenu
+   par mail. Le verrou compte par adresse IP **et** par compte (une pulvérisation
+   depuis plusieurs IP contre un compte est arrêtée, et une connexion réussie ne
+   remet pas à zéro les échecs d'une adresse). Réponses `429` et `409` après un
+   bon mot de passe (verrou, code non envoyé) le confirment : risque faible,
+   accepté. Hors développement, un lien n'est jamais écrit vers `localhost`
+   (`PUBLIC_URL` à renseigner, avertissement au démarrage).
 3. **Le compte `admin` de la configuration**, un mot de passe partagé sans
    second facteur et sans nom dans le journal des actions (l'acteur y est `admin`).
    Sans fournisseur, c'est la porte ordinaire. Derrière un fournisseur, il est le

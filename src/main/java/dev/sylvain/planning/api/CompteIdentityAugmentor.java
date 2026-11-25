@@ -71,7 +71,7 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
             // read again on every request, so a deactivation cuts the session.
             return context.runBlocking(() -> {
                 Compte compte =
-                        acces.activeByEmail(identity.getPrincipal().getName()).orElse(null);
+                        acces.activeSession(identity.getPrincipal().getName()).orElse(null);
                 return withRoles(
                         identity, compte == null ? Set.of() : CompteService.roles(compte, Instant.now()), compte);
             });

@@ -102,8 +102,9 @@ public class AdminLoginLimiter {
     /** The password step of a local sign-in: not a form login, but an attempt the lock counts. */
     static final String CHEMIN_MOT_DE_PASSE = "/api/auth/connexion";
 
+    /** Trailing slashes do not make another route: {@code /api/auth/connexion/} is the same one. */
     static boolean isPasswordStepPath(String path) {
-        return path != null && path.equals(CHEMIN_MOT_DE_PASSE);
+        return path != null && path.replaceAll("/+$", "").equals(CHEMIN_MOT_DE_PASSE);
     }
 
     static boolean isLocalLoginPath(String path) {
@@ -207,7 +208,11 @@ public class AdminLoginLimiter {
             boolean locale = isLocalLoginPath(contexte.normalizedPath());
             contexte.addEndHandler(issue -> {
                 if (issue.succeeded() && successfulLogin(contexte)) {
-                    failures.clear(address);
+                    if (!locale) {
+                        // A local success must not wipe the failures other accounts
+                        // earned this address: that is how a spray resets itself.
+                        failures.clear(address);
+                    }
                     // Behind an OIDC provider the admin form is the break-glass
                     // door: the journal says so, it is the line an operator
                     // looks for. A local account is an ordinary sign-in.
@@ -303,6 +308,11 @@ public class AdminLoginLimiter {
             }
         }
         return false;
+    }
+
+    /** Seconds this request's address is still locked out for, {@code 0} when it may try. */
+    long lockoutFor(RoutingContext contexte) {
+        return lockoutSeconds(address(contexte));
     }
 
     /** Seconds of lockout left, {@code 0} when the address may try its luck. */

@@ -1,0 +1,5 @@
+Bonjour{#if nom} {nom}{/if},
+
+Le mot de passe de votre compte {produit} vient d'être changé. Toutes les sessions ouvertes avec l'ancien ont été fermées.
+
+Si c'est bien vous, il n'y a rien à faire. Sinon, demandez un nouveau lien depuis la page de connexion (« Mot de passe oublié ») et prévenez l'administrateur de l'instance.
