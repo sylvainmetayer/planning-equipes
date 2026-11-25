@@ -20,7 +20,7 @@ Read `AGENTS.md` at the repo root first — it is the single source of
 repository memory and defines the domain vocabulary you must reuse (never
 invent English synonyms for French business terms). Then, as needed:
 
-- `README.md`, section *Fonctionnalités métier* — the declared functional
+- `docs/fonctionnel/` (start with `parcours.md`) — the declared functional
   scope; a new feature proposal should say whether it extends this scope or
   sits outside it.
 - `docs/domaine.md` and `docs/contraintes.md` — domain model and constraint

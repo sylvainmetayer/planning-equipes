@@ -1,6 +1,6 @@
 ---
 name: doc-sync-check
-description: Check whether a code change in planning-equipes requires a matching documentation update (README, docs/*, ConstraintCatalog), per the ownership rules in AGENTS.md. Use before wrapping up a task, or when the user asks "did I miss a doc update?" or "is the documentation in sync?".
+description: Check whether a code change in planning-equipes requires a matching documentation update (README, docs/*, docs/fonctionnel/*, ConstraintCatalog), per the ownership rules in AGENTS.md. Use before wrapping up a task, or when the user asks "did I miss a doc update?" or "is the documentation in sync?".
 ---
 
 # Documentation sync check
@@ -17,7 +17,8 @@ Match what changed to the doc that owns it:
 | --- | --- |
 | New/changed REST endpoint (`api/*Resource.java`) | the published OpenAPI — refresh `docs/schema/openapi.json` with `npm run api-schema` from `src/main/webui`. `docs/api.md` only if there is a cross-cutting invariant or trap to record: it does **not** list endpoints |
 | New/changed Timefold constraint | `solver/ConstraintCatalog.java`, which `GET /api/constraints` serves. `docs/contraintes.md` only for the *why* and the cost: it no longer enumerates the constraints |
-| New business capability visible to end users | `README.md` section 2 (*Fonctionnalités métier*) — business language only, no class names, no file paths |
+| New business capability visible to end users | the functional page that owns it in `docs/fonctionnel/` (`planifier.md`, `referentiels.md`, `diffuser-echanger.md`, …) — business language only, no class names, no routes, no variables |
+| New/changed environment variable | `docs/variables-environnement.md` (name, default, role — read from `application.properties`), and `.env.prod.example` when a production deployment sets it |
 | New/changed **screen behaviour an operator must understand** (new button or workflow, changed meaning of a banner/badge/setting, new lifecycle rule like retention or locking) | the in-app help page: `src/main/webui/src/app/pages/aide/aide-content.ts` (+ its new keys in `public/i18n/messages.en.json`). The guide answers "how do I use this screen" in business language — update the section covering that screen, don't create a doc-like dump. Skip for invisible or purely technical changes |
 | Change to Timefold model / invariants (`domain/*`) | `docs/domaine.md` |
 | Change to backend/frontend module layout, new top-level package | `docs/architecture.md` |
@@ -28,8 +29,9 @@ Match what changed to the doc that owns it:
 ## Rules to enforce
 
 1. **No new root-level Markdown files** and no new `README.md` sections —
-   everything technical goes under `docs/`, with a new row added to
-   `docs/README.md`'s index table if it's a new file.
+   everything goes under `docs/`, in one of its three parts (*Fonctionnel*,
+   *Infra*, *Tech*), with a new row added to `docs/README.md` and an entry in
+   `site/src/docs-parties.json` if it's a new file.
 2. **No `CLAUDE.md` or `.github/copilot-instructions.md`** — `AGENTS.md` is
    the single memory file. If repo conventions changed, edit `AGENTS.md`
    directly.
@@ -38,9 +40,9 @@ Match what changed to the doc that owns it:
 4. Docs are written in **French**, code/comments in **English**; domain
    identifiers (`Animateur`, `Creneau`, `TypologieJeu`, …) stay in French
    business vocabulary everywhere.
-5. `README.md` must keep exactly its two sections (*Démarrer l'application en
-   local*, *Fonctionnalités métier*) plus the optional intro/doc-index table
-   — nothing else.
+5. `README.md` must stay an introduction, the *Démarrage rapide* (« Essayer »,
+   « Développer ») and the documentation pointer — nothing else; the functional
+   inventory and the configuration live in `docs/`.
 
 ## How to run this check
 
