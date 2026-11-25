@@ -19,5 +19,11 @@ public enum RoleHabilitation {
      * « Lecture de mon stand »: read-only access to the published shifts of the stands the right names, on
      * <b>one</b> edition — and only while it is the active one (ADR 0072). Opens no route of the administration.
      */
-    RESPONSABLE_STAND
+    RESPONSABLE_STAND,
+    /**
+     * « RH »: reads the compliance report of <b>one</b> edition (and the contacts of its animateurs), nothing of
+     * the administration. Like the other rights it adds to what the account already holds: an RH who is also an
+     * organiser keeps the organiser's reach, and an organiser without it reads none of this.
+     */
+    RH
 }

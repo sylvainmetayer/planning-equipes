@@ -116,6 +116,9 @@ public class CompteService {
         if (role == RoleHabilitation.ADMIN && expireLe != null) {
             throw new BusinessError.Invalid("Un droit d'administrateur n'expire pas : retirez-le quand il prend fin.");
         }
+        if (role == RoleHabilitation.RH && edition == null) {
+            throw new BusinessError.Invalid("Le droit RH porte une édition : on l'est d'un événement, jamais de tous.");
+        }
         if (edition != null && !editions.exists(edition)) {
             throw new BusinessError.Invalid("Édition inconnue : " + edition);
         }
@@ -250,6 +253,14 @@ public class CompteService {
         }
         Set<String> ids = droits.stream().map(Habilitation::editionId).collect(Collectors.toSet());
         return ids::contains;
+    }
+
+    /** The editions an RH right in force names; an account with none reads no report and no contact. */
+    public static Set<String> rhEditions(Compte compte, Instant now) {
+        return inForce(compte, now)
+                .filter(h -> h.role() == RoleHabilitation.RH)
+                .map(Habilitation::editionId)
+                .collect(Collectors.toSet());
     }
 
     private static Stream<Habilitation> inForce(Compte compte, Instant now) {
