@@ -456,13 +456,16 @@ public final class CoherenceAnalyzer {
                 .filter(other -> nameRoot(other.getNom()).equalsIgnoreCase(root))
                 .toList();
         boolean onName = !byName.isEmpty();
-        List<Stand> neighbours = onName
-                ? byName
-                : stand.getTypologiesProposees().isEmpty()
-                        ? List.of()
-                        : others.stream()
-                                .filter(other -> other.getTypologiesProposees().equals(stand.getTypologiesProposees()))
-                                .toList();
+        List<Stand> neighbours;
+        if (onName) {
+            neighbours = byName;
+        } else if (stand.getTypologiesProposees().isEmpty()) {
+            neighbours = List.of();
+        } else {
+            neighbours = others.stream()
+                    .filter(other -> other.getTypologiesProposees().equals(stand.getTypologiesProposees()))
+                    .toList();
+        }
         List<Stand> placed =
                 neighbours.stream().filter(v -> v.getEmplacement() != null).toList();
         if (placed.size() < 2) {

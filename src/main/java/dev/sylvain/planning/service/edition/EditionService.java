@@ -172,9 +172,7 @@ public class EditionService {
         refuseIfComputing(id);
         // Best effort: a finished, published edition leaves its measure behind (ADR 0092).
         try {
-            editionContext.executeIn(id, () -> {
-                realised.report();
-            });
+            editionContext.executeIn(id, (Runnable) realised::report);
         } catch (RuntimeException e) {
             LOG.errorf(e, "The realised measure of edition %s could not be cached before its deletion", id);
         }

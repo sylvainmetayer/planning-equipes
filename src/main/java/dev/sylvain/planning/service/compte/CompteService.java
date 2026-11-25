@@ -92,7 +92,9 @@ public class CompteService {
         switch (repository.setDeactivated(id, le, par)) {
             case NOT_FOUND -> throw new BusinessError.NotFound("Compte inconnu : " + id);
             case LAST_ADMIN -> throw new BusinessError.Conflict(DERNIER_ADMINISTRATEUR);
-            case DONE -> {}
+            case DONE -> {
+                // nothing to refuse
+            }
         }
         return required(id);
     }
@@ -169,7 +171,9 @@ public class CompteService {
                 throw new BusinessError.NotFound(
                         "Aucune habilitation en vigueur " + habilitationId + " sur ce compte.");
             case LAST_ADMIN -> throw new BusinessError.Conflict(DERNIER_ADMINISTRATEUR);
-            case DONE -> {}
+            case DONE -> {
+                // nothing to refuse
+            }
         }
         return required(compteId);
     }

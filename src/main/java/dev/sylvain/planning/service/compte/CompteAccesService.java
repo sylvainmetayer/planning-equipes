@@ -182,7 +182,7 @@ public class CompteAccesService {
                     pendingForgot.decrementAndGet();
                 }
             });
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             pendingForgot.decrementAndGet();
         }
     }
