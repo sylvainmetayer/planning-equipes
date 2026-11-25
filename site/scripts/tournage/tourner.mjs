@@ -16,6 +16,7 @@
 import { chromium, request } from 'playwright';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:8080';
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://localhost:8025';
@@ -210,7 +211,7 @@ async function compteAvecDroit(etat, email, nom, habilitation) {
     if (!jeton) await pause(500);
   }
   if (!jeton) throw new Error(`Aucun lien de mot de passe pour ${email}`);
-  const motDePasse = `Demo-${Math.random().toString(36).slice(2)}-Aa1`;
+  const motDePasse = `Demo-${randomBytes(9).toString('hex')}-Aa1`;
   const anonyme = await request.newContext({ baseURL: BASE });
   await ok(await anonyme.post('/api/auth/mot-de-passe', { data: { token: jeton, password: motDePasse } }), 'Mot de passe');
   const defi = await (await ok(await anonyme.post('/api/auth/connexion', { data: { email, password: motDePasse } }), 'Connexion')).json();
