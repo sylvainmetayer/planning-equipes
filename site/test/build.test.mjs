@@ -23,7 +23,7 @@ test('every internal link and resource resolves', () => {
     const html = read(page);
     for (const [, url] of html.matchAll(/(?:href|src|poster)="(\/[^"]*)"/g)) assert.ok(resolves(url), `${page} : ${url}`);
     for (const [, url] of html.matchAll(/srcset="([^"]*)"/g)) for (const part of url.split(',')) assert.ok(resolves(part.trim().split(' ')[0]), `${page} : ${part}`);
-    for (const [, id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(html.includes(`id="${id}"`), `${page} : #${id}`);
+    for (const [, id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(html.includes(`id="${decodeURIComponent(id)}"`), `${page} : #${id}`);
   }
 });
 

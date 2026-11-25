@@ -68,6 +68,7 @@ content:
           - { name: liens, label: Nom de la liste (lecteurs d'écran), type: string, required: true }
           - { name: mentions, label: Lien mentions légales, type: string, required: true }
           - { name: plan, label: Lien plan du site, type: string, required: true }
+          - { name: docs, label: Lien documentation technique, type: string, required: true }
           - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
           - { name: probleme, label: Lien signaler un problème, type: string, required: true }
           - { name: ecrire, label: Lien « nous écrire », type: string, required: true }
@@ -136,6 +137,7 @@ content:
               - { name: liens, label: Nom de la liste (lecteurs d'écran), type: string, required: true }
               - { name: mentions, label: Lien mentions légales, type: string, required: true }
               - { name: plan, label: Lien plan du site, type: string, required: true }
+              - { name: docs, label: Lien documentation technique, type: string, required: true }
               - { name: nouveautes, label: Lien nouveautés, type: string, required: true }
               - { name: probleme, label: Lien signaler un problème, type: string, required: true }
               - { name: ecrire, label: Lien « nous écrire », type: string, required: true }
@@ -795,6 +797,29 @@ content:
             - { name: sansJs, label: "Message sans JavaScript", type: string, required: true }
         - { name: planH, label: Titre de la liste des pages, type: string, required: true }
         - { name: liens, label: Pages à lire aussi (legal, equipe, calcul, hebergement, faq, festival, salon, sport, tableur, mineurs, contact, mentions, plan), type: string, list: true }
+
+  - name: docs
+    label: Documentation technique (les pages elles-mêmes sont les .md de docs/, hors du CMS)
+    type: file
+    path: site/src/_data/pages/docs.json
+    format: json
+    fields:
+      - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+      - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+      - { name: h1, label: Titre de la page d'accueil de la documentation, type: string, required: true }
+      - { name: accueil, label: Nom de l'accueil dans la liste des rubriques, type: string, required: true }
+      - { name: surCettePage, label: Titre du sommaire de la page, type: string, required: true }
+      - { name: rubriques, label: Titre de la liste des rubriques, type: string, required: true }
+      - name: en
+        label: Version anglaise
+        type: object
+        fields:
+          - { name: titre, label: Titre Google (65 caractères au plus), type: string, required: true, options: { maxlength: 65 } }
+          - { name: description, label: Description Google (155 caractères au plus), type: text, required: true, options: { maxlength: 155 } }
+          - { name: h1, label: Titre de la page d'accueil de la documentation, type: string, required: true }
+          - { name: accueil, label: Nom de l'accueil dans la liste des rubriques, type: string, required: true }
+          - { name: surCettePage, label: Titre du sommaire de la page, type: string, required: true }
+          - { name: rubriques, label: Titre de la liste des rubriques, type: string, required: true }
 
   - name: mentions
     label: Page mentions légales

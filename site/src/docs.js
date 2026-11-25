@@ -22,8 +22,11 @@ const slugify = (text) => text.toLowerCase().replace(/[^\p{L}\p{N}\p{M} _-]/gu, 
 const urlOfDoc = (name) => (name === 'README' ? '/docs/' : `/docs/${name}/`);
 
 function target(href, published) {
-  if (/^([a-z][a-z0-9+.-]*:|#|\/\/)/i.test(href)) return { href };
-  const [path, hash] = href.split('#');
+  if (href.startsWith('#')) return { href: `#${decodeURIComponent(href.slice(1))}` };
+  if (/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) return { href };
+  const [path, rawHash] = href.split('#');
+  // The anchors are written as the headings are, accents included: what GitHub's slugs and our ids are
+  const hash = rawHash === undefined ? undefined : decodeURIComponent(rawHash);
   const repoPath = posix.normalize(posix.join('docs', path));
   const doc = repoPath.match(/^docs\/([^/]+)\.md$/)?.[1];
   if (doc && published.has(doc)) return { href: urlOfDoc(doc) + (hash ? `#${hash}` : ''), doc, hash };
@@ -47,9 +50,9 @@ function renderer(published, state) {
   md.renderer.rules.fence = (tokens, i) => {
     const t = tokens[i];
     const lang = t.info.trim().split(/\s+/)[0];
-    return `<div class="scroll" role="group" aria-label="Code" tabindex="0"><pre><code${lang ? ` class="language-${escapeHtml(lang)}"` : ''}>${escapeHtml(t.content)}</code></pre></div>\n`;
+    return `<pre class="scroll" role="group" aria-label="Code" tabindex="0"><code${lang ? ` class="language-${escapeHtml(lang)}"` : ''}>${escapeHtml(t.content)}</code></pre>\n`;
   };
-  md.renderer.rules.code_block = (tokens, i) => `<div class="scroll" role="group" aria-label="Code" tabindex="0"><pre><code>${escapeHtml(tokens[i].content)}</code></pre></div>\n`;
+  md.renderer.rules.code_block = (tokens, i) => `<pre class="scroll" role="group" aria-label="Code" tabindex="0"><code>${escapeHtml(tokens[i].content)}</code></pre>\n`;
   md.core.ruler.push('docs', (s) => {
     const used = new Map();
     let first = true;
@@ -77,12 +80,22 @@ function renderer(published, state) {
       if (t.type === 'paragraph_open' && !state.lead) {
         state.lead = plain(s.tokens[i + 1]);
       }
+      // A cell's alignment is a class, not an inline style (the CSP forbids it)
+      if (t.type === 'th_open' || t.type === 'td_open') {
+        const align = t.attrGet('style')?.match(/text-align:(\w+)/)?.[1];
+        t.attrs = align ? [['class', `align-${align}`]] : null;
+      }
       for (const c of t.children ?? []) {
+        // A text made of an arrow alone (a cell reading "→ `{…}`") is no text to the contrast check: the arrow is decoration
+        if (c.type === 'text' && /^\s*→\s*$/.test(c.content)) {
+          c.type = 'html_inline';
+          c.content = ' <span aria-hidden="true">→</span> ';
+        }
         const key = c.type === 'link_open' ? 'href' : c.type === 'image' ? 'src' : null;
         if (!key) continue;
         const r = target(c.attrGet(key), published);
         c.attrSet(key, r.href);
-        if (r.doc || r.href.startsWith('#')) state.links.push({ doc: r.doc, hash: decodeURIComponent(r.hash ?? (r.href.startsWith('#') ? r.href.slice(1) : '')) });
+        if (r.doc || r.href.startsWith('#')) state.links.push({ href: r.href, doc: r.doc, hash: r.hash ?? (r.href.startsWith('#') ? r.href.slice(1) : '') });
         if (c.type === 'image' && !c.content) warn(`${state.name}.md : image sans texte alternatif (${r.href})`);
       }
     }
@@ -115,7 +128,7 @@ export function loadDocs() {
       lang: 'fr',
       key: 'docs',
       h1: state.h1 || name,
-      title: name === 'README' ? `Documentation technique | ${site.name}` : `${cut(typo(state.h1 || name, 'fr'), 45)} | Documentation | ${site.name}`,
+      title: name === 'README' ? `Documentation technique | ${site.name}` : `${cut(typo(state.h1 || name, 'fr'), 34)} | Documentation | ${site.name}`,
       description: cut(state.lead, 155),
       body,
       toc: state.toc,
@@ -125,10 +138,13 @@ export function loadDocs() {
   });
   const byName = Object.fromEntries(docs.map((d) => [d.name, d]));
   for (const d of docs) {
-    for (const { doc, hash } of d.state.links) {
+    for (const { doc, hash, href } of d.state.links) {
       if (!hash) continue;
       const ids = (doc ? byName[doc] : d).state.ids;
-      if (!ids.has(hash)) warn(`${d.name}.md : ancre #${hash} introuvable dans ${doc ?? d.name}.md`);
+      if (ids.has(hash)) continue;
+      warn(`${d.name}.md : ancre #${hash} introuvable dans ${doc ?? d.name}.md`);
+      // The link keeps its page, without the anchor that no longer exists
+      d.body = d.body.replaceAll(`href="${href}"`, `href="${doc ? urlOfDoc(doc) : d.url}"`);
     }
   }
   for (const d of docs) delete d.state;

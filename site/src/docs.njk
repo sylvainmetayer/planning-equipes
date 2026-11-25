@@ -22,11 +22,10 @@ eleventyComputed:
     <div class="container">
       <nav class="crumbs" aria-label="{{ copy.fr.commun.ariane }}"><ol><li><a href="{{ urls.fr.accueil }}">{{ copy.fr.commun.nav.accueil }}</a></li>{% if p.name == 'README' %}<li aria-current="page">{{ c.h1 }}</li>{% else %}<li><a href="/docs/">{{ c.h1 }}</a></li><li aria-current="page">{{ p.h1 | typo('fr') }}</li>{% endif %}</ol></nav>
       <h1>{{ (c.h1 if p.name == 'README' else p.h1) | typo('fr') }}</h1>
-      <p class="lead">{{ p.description | typo('fr') }}</p>
     </div>
   </header>
   <div class="container doc__grid">
-    <aside class="doc__side">
+    <aside class="doc__side" aria-label="{{ c.rubriques }}">
       {% if p.toc.length %}
       <nav class="doc__nav" aria-labelledby="doc-toc"><p class="doc__label" id="doc-toc">{{ c.surCettePage }}</p>
         <ul>{% for h in p.toc %}<li class="doc__l{{ h.level }}"><a href="#{{ h.id }}">{{ h.text | typo('fr') }}</a></li>{% endfor %}</ul>
