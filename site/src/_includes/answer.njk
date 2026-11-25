@@ -60,7 +60,7 @@
   <section class="container sitemap" aria-labelledby="plan-docs-t">
     <h2 id="plan-docs-t">{{ copy[lang].docs.h1 }}</h2>
     <ul lang="fr">
-      {% for d in docs %}<li><a href="{{ d.url }}" data-page>{{ (copy.fr.docs.accueil if d.name == 'README' else d.h1) | typo('fr') }}</a></li>{% endfor %}
+      {% for d in docs %}<li><a href="{{ d.url }}" data-page>{{ (copy.fr.docs.accueil if d.name == 'index' else d.h1) | typo('fr') }}</a></li>{% endfor %}
     </ul>
   </section>
   {% endif %}

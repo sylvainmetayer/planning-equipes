@@ -85,7 +85,7 @@ public class NotificationDispatcher {
      *
      * <p>Still best-effort: nothing is thrown, whatever happens. The outcome
      * is <b>returned</b> rather than propagated, so a caller learns of a
-     * failure without the policy of {@code docs/architecture.md} changing —
+     * failure without the policy of {@code site/src/docs/comprendre/taches-de-fond-et-notifications.md} changing —
      * the operation it reports on stands either way. The outcome is also
      * recorded against the animateur by {@link MailMetrics} when the
      * notification names one ({@link Notification.ToAnimateur}).</p>

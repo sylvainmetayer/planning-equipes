@@ -115,7 +115,7 @@ export class AnimateurFormDialog {
   /**
    * The interrupted entry, kept in sessionStorage and nowhere else: a fiche
    * carries an identity, a birth date and an e-mail, which must not outlive
-   * the tab on a shared computer (docs/rgpd.md §7).
+   * the tab on a shared computer (site/src/docs/installer/rgpd.md §7).
    */
   protected readonly formDraft = new FormDraft<AnimateurDraft>({
     type: 'animateur',
@@ -170,7 +170,7 @@ export class AnimateurFormDialog {
   /**
    * Names the animateur as the fiche was loaded. A dialog title is never
    * logged, so it may carry the identity the notifications keep out of their
-   * log (docs/rgpd.md §7).
+   * log (site/src/docs/installer/rgpd.md §7).
    */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();

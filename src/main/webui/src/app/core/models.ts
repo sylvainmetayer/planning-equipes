@@ -769,7 +769,7 @@ export interface Avertissement {
  * which outlives the logout and is readable from the recent messages of the home page by
  * anyone reopening that browser profile. A sentence saying that a named person
  * is a minor — and, when they turn 18 during the event, saying exactly when —
- * has no business surviving the screen it was shown on (`docs/rgpd.md` §7).
+ * has no business surviving the screen it was shown on (`site/src/docs/installer/rgpd.md` §7).
  * The snack bar still shows it: it is the persistence that is refused, not the
  * warning.
  */
@@ -2541,7 +2541,7 @@ export interface AppConfig {
   cloudflareWebAnalyticsToken: string;
   /** Server running under `quarkus:dev`: the Dev UI exists at `/q/dev-ui`. */
   devMode: boolean;
-  /** Backend version, as the startup line prints it (docs/versioning.md). */
+  /** Backend version, as the startup line prints it (site/src/docs/installer/versioning.md). */
   version: string;
   /** The mailer is mocked (`MAIL_MOCK=true`): a mail recorded as sent never left the server. */
   mailMock: boolean;
@@ -3238,7 +3238,7 @@ export interface EspaceAnimateurView {
   editionNom: string | null;
   /**
    * First day of that edition's event, derived from its créneaux rather than
-   * stored (`docs/domaine.md`) — `null` when the edition holds no créneau.
+   * stored (`site/src/docs/comprendre/modele-des-donnees.md`) — `null` when the edition holds no créneau.
    */
   editionDebut: string | null;
   /** Last day, `null` under the same condition. */
@@ -3484,6 +3484,19 @@ export interface EntreeHistorique {
   statut: number | null;
   /** The staffing check the line names, joined at read time; absent on every other line. */
   verification?: StaffingVerification | null;
+}
+
+/** `GET /api/historique/auteurs`: who wrote lines in the edition, and since when the author is reliable. */
+export interface AuteursHistorique {
+  /** When the journal started naming the person's own account; `null` if unknown or no line of the edition is older. */
+  fiableDepuis: string | null;
+  auteurs: AuteurHistorique[];
+}
+
+/** One author: `valeur` is what `?auteur=` takes, `nom` is joined at read time (`null` for fixed identities). */
+export interface AuteurHistorique {
+  valeur: string;
+  nom: string | null;
 }
 
 /** One entry of the action inventory, from `GET /api/historique/actions`. */

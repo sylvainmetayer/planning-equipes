@@ -127,7 +127,7 @@ public final class PreferenceConstraints {
      * <p>Deliberately in tension with {@code QualiteConstraints.equilibrerCharge}:
      * a polyvalent left idle to stay in reserve is, mechanically, a workload
      * imbalance. Soft against medium, so the balance wins unless everything else
-     * is equal — see {@code docs/contraintes.md}.</p>
+     * is equal — see {@code site/src/docs/comprendre/pourquoi-ces-regles.md}.</p>
      */
     private Constraint preserverBufferPolyvalents(SeatStreams seats) {
         return ConstraintToggleSupport.actif(

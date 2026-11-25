@@ -92,7 +92,7 @@ devops concern, not an application-code one.
 4. **Respect the invariants in AGENTS.md.** Migrations are new files, never
    edits to applied ones; toolchain versions stay pinned via `mise.toml`
    rather than hardcoded per-file; document tooling/CI changes in
-   `docs/developpement.md` per the doc-ownership table.
+   `site/src/docs/comprendre/ci-et-livraison.md` per the doc-ownership table.
 5. **Treat destructive infra changes as requiring explicit sign-off.** Image
    tag deletion, volume removal, migration rollback strategies, and secrets
    handling are not things to change unprompted.

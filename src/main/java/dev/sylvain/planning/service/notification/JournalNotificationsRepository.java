@@ -28,7 +28,7 @@ import java.util.Map;
  * screen; the others are pure locks. Either way <b>nothing nominative is
  * stored</b>: an animateur id at most, never a name and never an address —
  * the screen resolves the identity from the referential when it reads (see
- * {@code docs/rgpd.md}).</p>
+ * {@code site/src/docs/installer/rgpd.md}).</p>
  */
 @ApplicationScoped
 public class JournalNotificationsRepository {

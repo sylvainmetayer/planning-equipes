@@ -279,7 +279,7 @@ test.describe('avertissements de saisie', () => {
 
     // Le journal du navigateur survit à la déconnexion et se relit dans les
     // messages récents de l'accueil : la phrase qui dit qu'une personne est
-    // mineure n'y est pas écrite (docs/rgpd.md §7).
+    // mineure n'y est pas écrite (site/src/docs/installer/rgpd.md §7).
     await page.goto('/');
     await page.getByRole('button', { name: /Messages récents/ }).click();
     await expect(page.getByText(/point\(s\) à vérifier/).first()).toBeVisible();

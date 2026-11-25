@@ -57,7 +57,7 @@ Recorder profile of the solve; `-Dbench.engine=hand` to measure the direct
 engine of ADR 0087 instead of Timefold's search) and `TerminationReplayTest`
 (`-Dreplay.curve=<csv>`, which replays the termination rules on a recorded
 curve). Every solver tuning committed with figures was measured with them —
-see *Le banc du solveur* in `docs/developpement.md`.
+see *Le banc du solveur* in `site/src/docs/comprendre/tests-de-scenarios.md`.
 
 The **scenario ladder** — the thirty `gamme-…` files of
 `src/main/resources/scenarios/`,
@@ -66,7 +66,7 @@ solvable — is played by `ScenarioLadder*Test` in `service/scenario`. Rungs 1 t
 15 and the infeasible ones stay in the default run (each reaches zero hard in
 its construction heuristic); `ScenarioLadderLargeTest` is `scenario-lent`.
 When a change moves a rung, fix the file or the assertion knowingly — the
-table and the rules are in `docs/developpement.md` (*La gamme de scénarios*).
+table and the rules are in `site/src/docs/comprendre/tests-de-scenarios.md`.
 
 The **extreme scenarios** (the `extreme-…` files of the same folder) probe the
 limits — a thousand animateurs, 120 days, 500 stands a day, two thousand ad hoc

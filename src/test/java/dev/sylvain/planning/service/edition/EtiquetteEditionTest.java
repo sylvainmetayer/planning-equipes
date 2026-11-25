@@ -40,7 +40,7 @@ class EtiquetteEditionTest {
 
     /**
      * An édition with no créneau has no span at all — the domain derives the
-     * bounds from the créneaux and stores nothing (`docs/domaine.md`). Its name
+     * bounds from the créneaux and stores nothing (`site/src/docs/comprendre/modele-des-donnees.md`). Its name
      * is still worth printing.
      */
     @Test

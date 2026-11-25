@@ -13,8 +13,8 @@ production as Quarkus static resources through Quinoa.
 ## Context you must load first
 
 Read `AGENTS.md` at the repo root before anything else — the *Frontend* section
-and the *Working conventions* are binding. Then `docs/architecture.md` and
-`docs/developpement.md` (i18n workflow) as needed.
+and the *Working conventions* are binding. Then `site/src/docs/comprendre/frontend.md` and
+`site/src/docs/comprendre/demarrer.md` (i18n workflow) as needed.
 
 ## What you know deeply
 

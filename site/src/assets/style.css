@@ -6,6 +6,7 @@
 /* Hallmark · dropped #images · the screens section is now #ecrans, the hero's second button points there */
 /* Hallmark · reworded every home and answer-page heading · the owner asked for a full rewrite of the copy for organisers first, facts kept, then rulebook chapter names */
 /* Hallmark · answered F15 · three gaps for three kinds of pair: card grids, a film beside text, a head beside its list · each pairing keeps one gap wherever it repeats */
+/* Hallmark · redesign: full on /docs · the documentation is one home, three part homes and guides on the same tokens · three parts take three player colours as markers · dismissed 58 on the guides: they are long text read for a task, never a screen of the site */
 /* Hallmark · dismissed 77 · the answer pages run three or four sections · each answers one question as a document, banner, chapters, the quote band */
 @import url("./tokens.css");
 @import url("./base.css");
@@ -294,6 +295,7 @@ abbr[title] { text-decoration: none; cursor: help; }
 }
 /* Opquast 195 and 196: the page prints as its content, without the navigation blocks */
 @media print {
+  .doc__side, .doc__pager, .doc__search { display: none !important; }
   :root { --color-paper: #fff; --color-ink: #000; --color-ink-2: #222; --color-muted: #444; }
   .skip, .top, .foot__links, .related, .popin, .acts, .film video, .search form, .crumbs { display: none !important; }
   body { background: #fff; color: #000; }
@@ -304,32 +306,64 @@ abbr[title] { text-decoration: none; cursor: help; }
   main a[href^="http"]::after { content: " (" attr(href) ")"; mask: none; -webkit-mask: none; background: none; width: auto; height: auto; font-size: 0.85em; }
 }
 
-/* Technical documentation (/docs): a side column of two navs beside the Markdown, which scrolls wide tables and code on its own */
-.doc__grid { display: grid; grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); gap: var(--space-xl) var(--gap-columns); align-items: start; padding-block: 0 var(--section-gap-s); }
-.doc__side { display: grid; gap: var(--space-lg); }
+/* Documentation (/docs): three parts, each marked by a player colour. A home and a part page are one column of cards; a guide is a side column (contents, the part's guides) beside the text, which scrolls wide tables and code on its own */
+.doc__intro, .doc__parts { padding-block: 0 var(--section-gap-s); }
+.doc__search { display: grid; gap: var(--space-xs); max-width: 40rem; }
+.doc__search label { font-weight: 600; }
+.doc__search input { flex: 1 1 16rem; min-height: 48px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-ink-2); border-radius: var(--radius-pill); background: var(--color-card); color: var(--color-ink); font: inherit; }
+.doc__parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap-columns); align-items: stretch; }
+.doc__part-card { align-content: start; padding: var(--space-lg); }
+.doc__part-card h2 { margin: 0; padding: 0; font-size: var(--text-xl); }
+.doc__part-card h2 a { text-decoration: none; }
+.doc__part-card h2 a:hover { text-decoration: underline; }
+.doc__part-card p, .doc__part-card li { padding-inline: 0; }
+.doc__part-card ul { display: grid; gap: var(--space-xs); margin: var(--space-xs) 0 0; padding: 0; list-style: none; }
+.doc__part-card li { padding-top: var(--space-xs); border-top: var(--rule-hair) solid var(--color-rule); }
+.doc__part-card .doc__more { margin-top: var(--space-sm); font-weight: 600; }
+.doc__grid { display: grid; grid-template-columns: minmax(0, 17rem) minmax(0, 1fr); gap: var(--space-xl) var(--gap-columns); align-items: start; padding-block: 0 var(--section-gap-s); }
+.doc__side { display: grid; gap: var(--space-lg); position: sticky; top: var(--space-md); max-height: calc(100vh - 2 * var(--space-md)); overflow-y: auto; padding-right: var(--space-xs); }
 .doc__label { padding-block: 0.6rem; font-weight: 600; cursor: pointer; } /* a 44px target, the native marker kept */
 .doc__nav ul { overflow-wrap: anywhere; display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
-.doc__nav .doc__part { display: block; margin-top: var(--space-2xs); font-weight: 600; }
-.doc__nav ul ul { margin-top: var(--space-2xs); padding-left: var(--space-sm); }
 .doc__nav .doc__l3 { padding-left: var(--space-md); }
-.doc__nav a[aria-current="page"] { font-weight: 600; }
-.doc__main { min-width: 0; max-width: 80ch; line-height: 1.6; overflow-wrap: break-word; }
+.doc__nav a { display: inline-block; padding-block: 0.2rem; }
+.doc__nav a[aria-current="page"] { font-weight: 700; color: var(--p); }
+.doc__others { margin: var(--space-sm) 0 0; font-size: var(--text-sm); color: var(--color-ink-2); }
+.doc__main { min-width: 0; max-width: 76ch; line-height: 1.65; overflow-wrap: break-word; }
+.doc__main--intro > p:first-child { font-size: var(--text-lg); color: var(--color-ink-2); }
 .doc__main > * + * { margin-top: var(--space-md); }
-.doc__main h2 { margin-top: var(--space-2xl); padding-top: var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule); font-size: var(--text-2xl); max-width: none; }
+.doc__grid .doc__main > p:first-child { font-size: var(--text-lg); color: var(--color-ink-2); }
+.doc__main h2 { margin-top: var(--space-2xl); padding-top: var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule); position: relative; font-size: var(--text-2xl); max-width: none; }
+.doc__main h2::before { content: ""; position: absolute; top: -1px; left: 0; width: 2.5rem; height: var(--rule-bar); background: var(--p); border-radius: 2px; }
+.doc__main h2, .doc__main h3 { min-width: 0; overflow-wrap: break-word; }
 .doc__main h3 { margin-top: var(--space-xl); }
 .doc__main h4, .doc__main h5 { margin-top: var(--space-lg); font-size: var(--text-md); }
 .doc__main ul, .doc__main ol { padding-left: var(--space-lg); }
+.doc__main ol { padding-left: var(--space-xl); }
 .doc__main li + li { margin-top: var(--space-2xs); }
-.doc__main code { font-size: 0.9em; overflow-wrap: anywhere; }
-.doc__main pre { margin: 0; padding: var(--space-md); background: var(--color-paper-2); border-radius: var(--radius-inner); font-size: var(--text-sm); line-height: 1.5; }
-.doc__main pre code { overflow-wrap: normal; }
+.doc__main li::marker { color: var(--p); font-weight: 700; }
+.doc__main code { padding: 0.1em 0.3em; border-radius: 4px; background: var(--color-paper-2); font-size: 0.9em; overflow-wrap: anywhere; }
+.doc__main pre { margin: 0; padding: var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-left: var(--rule-bar) solid var(--p); background: var(--color-paper-2); border-radius: var(--radius-inner); font-size: var(--text-sm); line-height: 1.5; }
+.doc__main pre code { padding: 0; background: none; overflow-wrap: normal; }
 .doc__main .scroll { max-width: 100%; }
 .doc__main .scroll:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .doc__main table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); line-height: 1.45; }
 .doc__main th, .doc__main td { padding: var(--space-xs) var(--space-md) var(--space-xs) 0; border-top: var(--rule-hair) solid var(--color-rule); text-align: left; vertical-align: top; min-width: 8ch; }
-.doc__main thead th { border-top: 0; color: var(--color-muted); font-weight: 600; }
+.doc__main thead th { border-top: 0; border-bottom: var(--rule-hair) solid var(--color-ink-2); color: var(--color-ink); font-weight: 600; }
 .doc__main .align-right { text-align: right; }
 .doc__main .align-center { text-align: center; }
-.doc__main blockquote { margin-inline: 0; padding-left: var(--space-md); border-left: var(--rule-bar) solid var(--p); color: var(--color-ink-2); }
-.doc__main img { max-width: 100%; height: auto; background: #fff; border-radius: var(--radius-inner); }
-@media (max-width: 60rem) { .doc__grid { grid-template-columns: minmax(0, 1fr); } .doc__side { gap: 0; } }
+.doc__main blockquote { margin-inline: 0; padding: var(--space-sm) var(--space-md); border-left: var(--rule-bar) solid var(--p); border-radius: 0 var(--radius-inner) var(--radius-inner) 0; background: var(--p-wash); color: var(--color-ink); }
+.doc__main blockquote > * + * { margin-top: var(--space-xs); }
+.doc__main img { max-width: 100%; height: auto; background: var(--color-card); border-radius: var(--radius-inner); }
+.doc__main a.shot { display: block; border: var(--rule-hair) solid var(--color-rule); border-top: var(--rule-bar) solid var(--p); border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
+.doc__main a.shot img { display: block; width: 100%; border-radius: 0; }
+.doc__main .capture { display: grid; gap: var(--space-xs); margin: 0; }
+.doc__main .capture figcaption { font-size: var(--text-sm); color: var(--color-ink-2); max-width: 70ch; }
+.doc__pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-columns); margin-top: var(--space-2xl); }
+.doc__pager a { display: grid; gap: var(--space-2xs); padding: var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-top: var(--rule-bar) solid var(--p); border-radius: var(--radius-card); background: var(--color-card); font-weight: 600; text-decoration: none; }
+.doc__pager a:hover { background: var(--color-paper-2); }
+.doc__pager span { font-weight: 400; font-size: var(--text-sm); color: var(--color-ink-2); }
+.doc__pager .doc__next { grid-column: 2; text-align: right; }
+.doc__edit { font-size: var(--text-sm); }
+.doc__close { margin-top: 0; }
+@media (max-width: 60rem) { .doc__grid { grid-template-columns: minmax(0, 1fr); } .doc__side { gap: 0; position: static; max-height: none; overflow: visible; } .doc__parts { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 40rem) { .doc__pager { grid-template-columns: minmax(0, 1fr); } .doc__pager .doc__next { grid-column: 1; text-align: left; } }

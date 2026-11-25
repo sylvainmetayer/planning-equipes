@@ -1012,6 +1012,33 @@
           }
         }
       },
+      "AuteurView" : {
+        "required" : [ "valeur" ],
+        "type" : "object",
+        "properties" : {
+          "valeur" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AuteursView" : {
+        "required" : [ "auteurs" ],
+        "type" : "object",
+        "properties" : {
+          "fiableDepuis" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "auteurs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AuteurView"
+            }
+          }
+        }
+      },
       "Avertissement" : {
         "type" : "object",
         "properties" : {
@@ -15711,6 +15738,12 @@
     "/api/historique" : {
       "get" : {
         "parameters" : [ {
+          "name" : "auteur",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
           "name" : "avant",
           "in" : "query",
           "schema" : {
@@ -15781,6 +15814,24 @@
           }
         },
         "summary" : "Actions",
+        "tags" : [ "Historique Resource" ]
+      }
+    },
+    "/api/historique/auteurs" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuteursView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Auteurs",
         "tags" : [ "Historique Resource" ]
       }
     },

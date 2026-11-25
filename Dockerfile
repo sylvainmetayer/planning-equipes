@@ -16,7 +16,7 @@ COPY .mvn ./.mvn
 RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 COPY .git ./.git
-# The Maven revision comes from the git tag being built (docs/versioning.md):
+# The Maven revision comes from the git tag being built (site/src/docs/installer/versioning.md):
 # an exact `v*` tag becomes the version (v1.2.0 → 1.2.0), any other commit
 # keeps its short SHA so the startup line never claims a version that was
 # not released.
@@ -82,7 +82,7 @@ RUN apt-get update \
 # `/backups` est l'ancien chemin, celui qu'un `.env.prod` d'avant ce changement
 # écrit encore (BACKUP_DIR=/backups) : un lien vers `/backup` le garde valide,
 # faute de quoi la sauvegarde de nuit échouerait sans que personne n'ait rien
-# touché. Voir docs/exploitation.md § La sauvegarde automatique.
+# touché. Voir site/src/docs/installer/exploitation.md site/src/docs/installer/sauvegarde-et-restauration.md.
     && install -d -o 1000 -g 1000 /backup \
     && ln -s /backup /backups \
     && chown -h 1000:1000 /backups
@@ -102,7 +102,7 @@ EXPOSE 8080
 #
 # `JDK_JAVA_OPTIONS` plutôt que `JAVA_TOOL_OPTIONS` : seul le lanceur `java` le
 # lit, et un exploitant le remplace entièrement en le redéfinissant dans son
-# environnement. Voir docs/exploitation.md § La mémoire de l'application.
+# environnement. Voir site/src/docs/installer/exploitation.md site/src/docs/installer/calcul-du-planning.md.
 ENV JDK_JAVA_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseParallelGC"
 # The application, or the solve worker under SOLVER_WORKER_MODE=true (ADR 0086).
 ENTRYPOINT ["/app/entrypoint.sh"]

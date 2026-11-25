@@ -267,8 +267,9 @@ describe('the period fields', () => {
 
 describe('the pages of the history', () => {
   it('asks one line more than a page, with the server-side filters', () => {
-    expect(historyQuery('DONNEES', '2026-09-12T10:00:00Z', '', 42)).toEqual({
+    expect(historyQuery('DONNEES', 'cmp-1', '2026-09-12T10:00:00Z', '', 42)).toEqual({
       nature: 'donnees',
+      auteur: 'cmp-1',
       depuis: '2026-09-12T10:00:00Z',
       jusqua: null,
       avant: 42,

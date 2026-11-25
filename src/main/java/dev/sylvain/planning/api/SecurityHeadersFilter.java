@@ -79,7 +79,7 @@ public class SecurityHeadersFilter {
         // outgoing link would leak the identifier of a person — often a minor —
         // to the site visited. Strictly "no-referrer", not "same-origin": a
         // token is a credential, and nothing needs the Referer here. See
-        // docs/securite.md; the OpenStreetMap tiles opt out per-element.
+        // site/src/docs/installer/securite.md; the OpenStreetMap tiles opt out per-element.
         reponse.putHeader("Referrer-Policy", "no-referrer");
         reponse.putHeader("Cross-Origin-Opener-Policy", "same-origin");
         reponse.putHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=()");

@@ -29,7 +29,7 @@ public class Animateur {
     /**
      * Phone number, optional (the replacement has to be called on the day).
      * Shown on the fiche and on Aujourd'hui only: never over MCP, never on the
-     * wall display, in a PDF, an ICS feed or a CSV export (docs/rgpd.md).
+     * wall display, in a PDF, an ICS feed or a CSV export (site/src/docs/installer/rgpd.md).
      */
     private String telephone;
 

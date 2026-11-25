@@ -24,7 +24,7 @@ import java.util.Optional;
  * <p>The asymmetry this class removes: {@link DefaultSecrets} already refuses
  * the boot on a password left at its example value, while the seven
  * {@code LEGAL_*} variables — listed as a pre-opening checkbox in
- * {@code docs/securite.md} — were silently optional. A checklist nobody ticks
+ * {@code site/src/docs/installer/securite.md} — were silently optional. A checklist nobody ticks
  * protects nothing, and this is the one item on it a boot check can hold.</p>
  *
  * <p>Five of the seven are required, and the other two are deliberately not.

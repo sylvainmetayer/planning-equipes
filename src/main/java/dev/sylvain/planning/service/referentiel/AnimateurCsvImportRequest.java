@@ -15,7 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param fileName                   the name as picked, used only to recognise
  *                                   a spreadsheet and say so
  * @param content                    the file's text, held in memory and never
- *                                   written to disk (see {@code docs/rgpd.md})
+ *                                   written to disk (see {@code site/src/docs/installer/rgpd.md})
  * @param mapping                    column-to-field mapping; {@code null} asks
  *                                   for the proposal
  * @param replaceAnimateurs          delete the animateurs the file does not

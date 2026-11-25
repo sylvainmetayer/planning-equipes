@@ -65,6 +65,6 @@ dans une URL, le statut d'une fiche), ou leur donner un compte.
   le droit et on le redonne.
 - Un responsable dont l'édition n'est pas (ou plus) active ne voit rien : la
   désactivation d'une édition coupe ses responsables sans autre geste.
-- La relecture RGPD du registre est consignée dans `docs/rgpd.md` : une
+- La relecture RGPD du registre est consignée dans `site/src/docs/installer/rgpd.md` : une
   catégorie de destinataires interne de plus, bornée trois fois (stands, édition
   active, plan publié).

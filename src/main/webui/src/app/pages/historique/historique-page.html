@@ -30,6 +30,13 @@
     @if (onglet() === 'connexions') {
       <app-connexions-admin />
     } @else {
+      @if (reliableSinceText(); as depuisLe) {
+        <p class="empty-hint" i18n="@@historique.auteurFiable">
+          Auteur fiable depuis le {{ depuisLe }} : avant, tous les administrateurs
+          partageaient le compte de configuration, et une ligne « Compte de configuration » ne désigne personne en
+          particulier.
+        </p>
+      }
       <div class="historique-controles">
         <mat-form-field appearance="outline" class="historique-search">
           <mat-label i18n="@@historique.filter.search">Rechercher</mat-label>
@@ -100,6 +107,16 @@
             >Données</mat-button-toggle
           >
         </mat-button-toggle-group>
+
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@historique.filter.auteur">Auteur</mat-label>
+          <mat-select [ngModel]="auteur()" (ngModelChange)="changeAuteur($event)">
+            <mat-option value="" i18n="@@historique.filter.auteurTous">Tous</mat-option>
+            @for (a of auteurs(); track a.valeur) {
+              <mat-option [value]="a.valeur">{{ authorLabel(a) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
         <mat-form-field appearance="outline" class="historique-periode">
           <mat-label i18n="@@historique.filter.depuis">Depuis</mat-label>

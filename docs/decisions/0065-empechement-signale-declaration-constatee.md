@@ -34,7 +34,7 @@ référentiel ni du planning.
   règle au téléphone ; l'ajouter ferait d'un signal simple un formulaire.
 - Motif **facultatif, en liste fermée** — raison personnelle, transport, autre.
   **Aucun texte libre** : c'est le champ où l'on écrit une raison de santé que
-  personne n'a demandée (`docs/rgpd.md`).
+  personne n'a demandée (`site/src/docs/installer/rgpd.md`).
 - L'organisation est **prévenue tout de suite**, sans attendre l'ouverture d'un
   écran, par `service/notification/` — donc au mieux : un serveur de messagerie
   en panne ne refuse pas le signalement.

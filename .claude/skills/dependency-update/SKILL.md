@@ -12,7 +12,7 @@ dependencies (including the `quarkus.platform.version` /
 `timefold.solver.version` properties), the npm dependencies of
 `src/main/webui`, Docker images, GitHub Actions and the `mise.toml` toolchain.
 Keep the config in that one file; document behaviour changes in
-`docs/developpement.md`.
+`site/src/docs/comprendre/renovate-et-dependances.md`.
 
 ## A Renovate PR
 
@@ -65,4 +65,4 @@ re-runs both steps and fails on a stale file:
 cd src/main/webui && npm run licences  # reads package-lock.json, needs no node_modules
 ```
 
-The *why* and the two known limits are in `docs/developpement.md`.
+The *why* and the two known limits are in `site/src/docs/comprendre/renovate-et-dependances.md`.

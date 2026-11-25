@@ -8,15 +8,25 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.journal.Acteur;
+import dev.sylvain.planning.service.journal.EntreeJournal;
+import dev.sylvain.planning.service.journal.JournalActionRepository;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -25,6 +35,18 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 class HistoriqueResourceTest {
+
+    @Inject
+    EditionContext editions;
+
+    @Inject
+    JournalActionService journal;
+
+    @Inject
+    JournalActionRepository repository;
+
+    @Inject
+    Flyway flyway;
 
     @Test
     void aWriteLeavesALineNamingWhatItTouched() {
@@ -661,5 +683,77 @@ class HistoriqueResourceTest {
                 .body("find { it.code == 'EXPORT_REFERENTIELS' }.export", equalTo(true))
                 .body("find { it.code == 'TELECHARGEMENT_ESPACE_PDF' }.export", equalTo(true))
                 .body("find { it.code == 'EXPORT_EQUITE' }.entite", equalTo("PLANNING"));
+    }
+
+    @Test
+    void theAuthorFilterSelectsInTheDatabaseAndAnswersAnUnknownAuthorWithNothing() {
+        editions.executeIn("E1", () -> journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null));
+
+        given().header("X-Edition-Id", "E1")
+                .queryParam("auteur", "systeme")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("size()", greaterThan(0))
+                .body("acteur", everyItem(equalTo("SYSTEME")));
+        given().header("X-Edition-Id", "E1")
+                .queryParam("auteur", "personne-de-ce-nom")
+                .when()
+                .get("/api/historique")
+                .then()
+                // Not a 400: a refusal would tell which account ids exist elsewhere.
+                .statusCode(200)
+                .body("size()", equalTo(0));
+        // A known identity with no line in this edition is an empty answer, not a refusal.
+        given().header("X-Edition-Id", "E1")
+                .queryParam("auteur", "mcp")
+                .queryParam("nature", "exports")
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .body("acteur", everyItem(equalTo("ASSISTANT")));
+    }
+
+    @Test
+    void theAuthorsAreListedAndTheReliableDateOnlyWhenALineIsOlder() {
+        editions.executeIn("E1", () -> journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null));
+
+        // Every line of this database postdates V130: nothing is doubtful, nothing to warn about.
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/historique/auteurs")
+                .then()
+                .statusCode(200)
+                .body("auteurs.valeur", hasItem("systeme"))
+                .body("fiableDepuis", nullValue());
+
+        Instant v130 = Arrays.stream(flyway.info().applied())
+                .filter(m -> m.getVersion() != null && m.getVersion().isAtLeast("130"))
+                .findFirst()
+                .orElseThrow()
+                .getInstalledOn()
+                .toInstant();
+        editions.executeIn(
+                "E1",
+                () -> repository.append(new EntreeJournal(
+                        0,
+                        v130.minusSeconds(60),
+                        Acteur.ADMIN,
+                        "admin",
+                        "NOTIFICATIONS_ENVOYEES",
+                        null,
+                        null,
+                        List.of(),
+                        EntreeJournal.Resultat.SUCCES,
+                        null)));
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/historique/auteurs")
+                .then()
+                .statusCode(200)
+                .body("fiableDepuis", notNullValue());
     }
 }

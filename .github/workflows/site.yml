@@ -3,7 +3,9 @@ name: Site
 # La vitrine (site/, Eleventy, publiée par Cloudflare Pages) : build, tests,
 # orthographe, HTML valide, accessibilité, liens. Rien ici ne touche
 # l'application ; le filtre de chemins fait que l'inverse est vrai aussi, à une
-# exception : docs/ est publié par la vitrine sous /docs, il la déclenche donc.
+# exception : la documentation est publiée par la vitrine sous /docs (les pages
+# sont dans site/src/docs/ ; docs/ ne garde que les licences et les diagrammes
+# qu'elle affiche), elle la déclenche donc.
 on:
   push:
     branches:

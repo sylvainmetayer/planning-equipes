@@ -63,8 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * makes each animateur look like they can carry slightly fewer hours than the
  * cap really allows, so the bound comes out <em>higher</em> — pessimistic, and
  * a floor that is too high is never a floor that lets an infeasible edition
- * through. See {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce
- * qui compte l'amplitude ».</p>
+ * through. See {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
  *
  * <h2>The six bounds</h2>
  *

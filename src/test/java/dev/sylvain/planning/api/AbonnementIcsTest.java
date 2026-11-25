@@ -137,7 +137,7 @@ class AbonnementIcsTest {
     /**
      * The body is pinned here because it is the one thing a calendar client
      * will display to its owner, and because it is what the guard's javadoc
-     * and {@code docs/securite.md} describe: a fixed sentence that echoes
+     * and {@code site/src/docs/installer/securite.md} describe: a fixed sentence that echoes
      * neither the token nor whether it ever existed.
      */
     @Test

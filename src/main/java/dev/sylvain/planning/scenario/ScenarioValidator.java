@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Structural validator for scenario YAML files (see docs/import-export.md):
+ * Structural validator for scenario YAML files (see site/src/docs/comprendre/scenario-yaml.md):
  * the beginning of an import, without the import.
  *
  * <p>It reads through {@link ScenarioBinder}, the same door the import walks

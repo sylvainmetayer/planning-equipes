@@ -109,6 +109,7 @@ FormationResource#exportCsv GET /formation/export
 FormationResource#plan GET /formation
 FragiliteResource#analyze GET /fragilite
 HistoriqueResource#actions GET /historique/actions
+HistoriqueResource#auteurs GET /historique/auteurs
 HistoriqueResource#changements GET /historique/changements
 HistoriqueResource#list GET /historique
 HorlogeResource#dateJourJ GET /horloge

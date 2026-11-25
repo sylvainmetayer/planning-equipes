@@ -341,7 +341,7 @@ export class FormDraft<T> {
  * rather than wonder why the banner never came back. Called by a page once
  * its records are loaded; `describe` names the records — by id for an
  * animateur, never by identity, since a notification is copied into a log
- * that outlives the logout (docs/rgpd.md §7).
+ * that outlives the logout (site/src/docs/installer/rgpd.md §7).
  */
 export function reportOrphanDrafts(
   notifications: NotificationService,

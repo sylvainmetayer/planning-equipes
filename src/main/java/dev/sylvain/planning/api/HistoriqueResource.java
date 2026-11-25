@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.journal.JournalActionService.HistoryNature;
 import dev.sylvain.planning.service.journal.LoginJournalService;
 import dev.sylvain.planning.service.journal.ReferenceDataChanges;
+import dev.sylvain.planning.service.journal.ReliableAuthorSince;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService;
 import dev.sylvain.planning.service.solve.StaffingVerificationService.StaffingVerification;
@@ -67,14 +68,18 @@ public class HistoriqueResource {
 
     private final CompteService comptes;
 
+    private final ReliableAuthorSince reliableSince;
+
     @Inject
     public HistoriqueResource(
             JournalActionService journal,
             ReferenceDataService referenceData,
             StaffingVerificationService verifications,
             LoginJournalService connexions,
-            CompteService comptes) {
+            CompteService comptes,
+            ReliableAuthorSince reliableSince) {
         this.comptes = comptes;
+        this.reliableSince = reliableSince;
         this.journal = journal;
         this.referenceData = referenceData;
         this.verifications = verifications;
@@ -98,6 +103,13 @@ public class HistoriqueResource {
      *               every action. Anything else is refused rather than read
      *               as « all »: a filter silently dropped would answer a
      *               question nobody asked.
+     * @param auteur one author: an account id, {@code mcp}, {@code systeme} for
+     *               the nightly jobs, or an animateur id — selected in the
+     *               database like {@code nature}; one that wrote nothing in
+     *               this edition gets an empty page, never a refusal that
+     *               would tell which accounts exist. The lines written before
+     *               the accounts existed all say {@code admin}, the
+     *               configuration's account.
      * @param depuis exclusive lower bound, ISO-8601 — the very instant
      *               {@code /changements} counts from
      * @param jusqua inclusive upper bound, ISO-8601
@@ -107,11 +119,17 @@ public class HistoriqueResource {
     public List<EntreeHistoriqueView> list(
             @QueryParam("limite") Integer limite,
             @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS, NATURE_DONNEES}) String nature,
+            @QueryParam("auteur") String auteur,
             @QueryParam("depuis") String depuis,
             @QueryParam("jusqua") String jusqua,
             @QueryParam("avant") Long avant) {
         List<EntreeJournal> entrees = journal.page(
-                nature(nature), optionalInstant(depuis, "depuis"), optionalInstant(jusqua, "jusqua"), avant, limite);
+                nature(nature),
+                auteur(auteur),
+                optionalInstant(depuis, "depuis"),
+                optionalInstant(jusqua, "jusqua"),
+                avant,
+                limite);
         Map<String, String> noms = noms();
         Map<Long, StaffingVerification> checks = verifications.findAll(entrees.stream()
                 .map(HistoriqueResource::verificationId)
@@ -119,6 +137,49 @@ public class HistoriqueResource {
                 .collect(Collectors.toSet()));
         return entrees.stream().map(entree -> view(entree, noms::get, checks)).toList();
     }
+
+    /**
+     * Never checked against a list: an author unknown to this edition answers
+     * like a known one with no line — an empty page. Refusing it would tell an
+     * organiser which account ids exist in editions they cannot read.
+     */
+    private static String auteur(String auteur) {
+        return auteur == null || auteur.isBlank() ? null : auteur;
+    }
+
+    /**
+     * Who wrote the lines of the edition, for the screen's selector, and since
+     * when a line's author can be believed.
+     */
+    @GET
+    @Path("/auteurs")
+    public AuteursView auteurs() {
+        Map<String, String> noms = noms();
+        return new AuteursView(
+                reliableSince.forCurrentEdition().orElse(null),
+                journal.authors().stream()
+                        .map(valeur -> new AuteurView(valeur, noms.get(valeur)))
+                        .toList());
+    }
+
+    /**
+     * @param fiableDepuis when the journal started naming the person's own
+     *                     account — the application of the accounts migration;
+     *                     {@code null} when it is not applied, or when no line
+     *                     of the edition predates it. Older lines say
+     *                     {@code admin} whoever acted, and are not rewritten.
+     * @param auteurs      who wrote at least one line of the edition
+     */
+    @Schema(requiredProperties = {"auteurs"})
+    public record AuteursView(Instant fiableDepuis, List<AuteurView> auteurs) {}
+
+    /**
+     * @param valeur the value {@code auteur} takes to select this author
+     * @param nom    the account's or animateur's name, {@code null} for the
+     *               fixed identities and for a fiche deleted since
+     */
+    @Schema(requiredProperties = {"valeur"})
+    public record AuteurView(String valeur, String nom) {}
 
     private static HistoryNature nature(String nature) {
         if (nature == null || nature.isBlank()) {

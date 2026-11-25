@@ -22,7 +22,7 @@ import java.util.function.Function;
  * <p><b>Names, never values.</b> The history says that an edit touched
  * {@code nom} and {@code email}; it does not say what they became, because a
  * name and an address are exactly what must not enter a table that outlives
- * the fiche describing them (issue #406, {@code docs/rgpd.md}).</p>
+ * the fiche describing them (issue #406, {@code site/src/docs/installer/rgpd.md}).</p>
  *
  * <p>Compared against the fiche <b>as it stood before</b> rather than against
  * what the request carried, for the same reason the write-time warnings are:

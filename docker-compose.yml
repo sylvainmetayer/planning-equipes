@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
     # The image gives the JVM 75 % of the container's limit: without one, that
-    # would be 75 % of the machine. See docs/exploitation.md, « La mémoire de
+    # would be 75 % of the machine. See site/src/docs/installer/exploitation.md, « La mémoire de
     # l'application ».
     mem_limit: 2g
     ports:
@@ -18,24 +18,24 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-dev-db-Pw4hN8sJ}
       HTTP_PORT: 8080
       # Observability, both opt-in: blank (the default) disables error
-      # reporting / analytics entirely. See docs/observabilite.md.
+      # reporting / analytics entirely. See site/src/docs/installer/observabilite.md.
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # MCP server, opt-in: blank (the default) makes every /mcp request fail
-      # authentication. See docs/mcp.md.
+      # authentication. See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
       PLANNING_MCP_API_KEY_HEADER: ${PLANNING_MCP_API_KEY_HEADER:-X-MCP-Api-Key}
       # Extra headers to require alongside the key, e.g. behind Pangolin:
-      # "P-Access-Token-Id=<id>,P-Access-Token=<token>". See docs/mcp.md.
+      # "P-Access-Token-Id=<id>,P-Access-Token=<token>". See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_REQUIRED_HEADERS: ${PLANNING_MCP_REQUIRED_HEADERS:-}
       # Rate limit on /mcp, per source address: every request is counted, key
       # or no key, and the answer past the ceiling is 429. Raise it for a
-      # batch client, 0 disables it. See docs/mcp.md.
+      # batch client, 0 disables it. See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
       PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
       # Reverse proxies whose X-Forwarded-For the two per-address guards believe
       # (admin login lock, /mcp). Blank, every caller behind the proxy shares one
-      # counter. See docs/securite.md.
+      # counter. See site/src/docs/installer/securite.md.
       CONNEXION_PROXYS_FIABLES: ${CONNEXION_PROXYS_FIABLES:-}
       # Blank (the default) takes CONNEXION_PROXYS_FIABLES; set it only to count
       # /mcp callers on a different proxy list than the login lock does.
@@ -46,7 +46,7 @@ services:
       PLANNING_MCP_MAX_FAILURES: ${PLANNING_MCP_MAX_FAILURES:-5}
       PLANNING_MCP_LOCKOUT_DURATION: ${PLANNING_MCP_LOCKOUT_DURATION:-PT10M}
       # Same Pangolin token, so the MCP page can reveal it (admin-password
-      # gated, like the API key) instead of pasting it in by hand. See docs/mcp.md.
+      # gated, like the API key) instead of pasting it in by hand. See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID:-}
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN:-}
       # Admin login (issue #165): username is "admin", change the password for
@@ -69,7 +69,7 @@ services:
       # Marque blanche : une instance par client, réglée par déploiement. Sans
       # ces variables l'application s'appelle « Planning Équipes », n'affiche
       # aucun logo plutôt que celui d'un autre, et imprime ses PDF dans une
-      # palette neutre. Voir docs/variables-environnement.md § Marque blanche.
+      # palette neutre. Voir site/src/docs/installer/variables-environnement.md § Marque blanche.
       BRANDING_PRODUCT_NAME: ${BRANDING_PRODUCT_NAME:-Planning Équipes}
       BRANDING_ORGANISATION: ${BRANDING_ORGANISATION:-}
       BRANDING_LOGO_URL: ${BRANDING_LOGO_URL:-}
@@ -149,5 +149,6 @@ services:
 
 volumes:
   postgres_data:
+    # Nom historique, voir docker-compose.prod.yml : ne pas le renommer.
     name: postgres_data_pg18
   pgadmin_data:

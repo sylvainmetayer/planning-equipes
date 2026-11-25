@@ -574,7 +574,7 @@ export class AnimateurFichePage implements OnInit {
       const id = profile.animateur.id;
       await this.planningApi.sendToAnimateur(id);
       // The name is shown, never logged: the journal of notifications
-      // outlives the session in this browser (docs/rgpd.md §7).
+      // outlives the session in this browser (site/src/docs/installer/rgpd.md §7).
       this.notifications.notify({
         title: $localize`:@@fiche.envoi.succes:Planning envoyé`,
         message: nom,

@@ -92,7 +92,7 @@ public final class ConstraintCatalog {
      * that nonetheless breaks the Code du travail — or holds a ten-hour day
      * with no meal break — so the UI asks for a confirmation naming the rule
      * and what founds it, and the Contraintes screen keeps showing what is
-     * off. See {@code docs/contraintes.md}.
+     * off. See {@code site/src/docs/comprendre/pourquoi-ces-regles.md}.
      */
     public static final Set<String> CATEGORIES_PROTEGEES = Set.of(
             CATEGORIE_LEGAL_MINEURS,
@@ -446,7 +446,7 @@ public final class ConstraintCatalog {
                     "Stands réservés aux majeurs"),
             // Reclassified under "Sécurité (mineurs)": no article of the Code du travail requires an
             // adult next to a young worker on their seat. It is a safety policy of the organiser, kept
-            // as a HARD constraint by choice. See docs/contraintes.md.
+            // as a HARD constraint by choice. See site/src/docs/comprendre/pourquoi-ces-regles.md.
             new ConstraintDefinition(
                     "mineurNecessiteEncadrementMajeur",
                     Niveau.HARD,

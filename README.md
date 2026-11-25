@@ -57,7 +57,7 @@ Premiers pas, sur une édition remplie :
 l'hôte, ajoute pgAdmin sans authentification sur <http://localhost:5050> et
 utilise des mots de passe d'exemple. Elle tourne sur l'image `main`, celle de
 la recette. **Pour un déploiement accessible depuis Internet**, voir
-[Installer l'application](docs/installation.md).
+[Installer l'application](site/src/docs/installer/installation.md).
 
 ### Développer
 
@@ -76,7 +76,7 @@ aussi le serveur de développement Angular et le proxifie, tout passe donc par
 <http://localhost:8080>. Le compte est `admin`, mot de passe `admin` (variable
 `ADMIN_PASSWORD`). Les tests : `./mvnw test`. Le détail (tests d'intégration,
 Podman, réglages du solveur, CI) est dans
-[`docs/developpement.md`](docs/developpement.md).
+[`demarrer.md`](site/src/docs/comprendre/demarrer.md), [`tests.md`](site/src/docs/comprendre/tests.md), [`regler-le-solveur.md`](site/src/docs/comprendre/regler-le-solveur.md) et [`ci-et-livraison.md`](site/src/docs/comprendre/ci-et-livraison.md).
 
 ## Documentation
 
@@ -86,11 +86,11 @@ parties :
 
 | Partie | Pour qui | Point d'entrée |
 | --- | --- | --- |
-| **Fonctionnel** | L'organisateur, le bénévole responsable | [`docs/fonctionnel/parcours.md`](docs/fonctionnel/parcours.md) |
-| **Infra** | Qui héberge l'application | [`docs/installation.md`](docs/installation.md), [`docs/variables-environnement.md`](docs/variables-environnement.md) |
-| **Tech** | Qui développe ou audite | [`docs/architecture.md`](docs/architecture.md), [`docs/developpement.md`](docs/developpement.md) |
+| **Les règles du jeu** | L'organisateur, le bénévole responsable | [`site/src/docs/regles/`](site/src/docs/regles/index.md) |
+| **Installer chez vous** | Qui héberge l'application | [`site/src/docs/installer/installation.md`](site/src/docs/installer/installation.md), [`site/src/docs/installer/variables-environnement.md`](site/src/docs/installer/variables-environnement.md) |
+| **Comprendre comment c'est fait** | Qui développe ou audite | [`site/src/docs/comprendre/vue-d-ensemble.md`](site/src/docs/comprendre/vue-d-ensemble.md), [`site/src/docs/comprendre/demarrer.md`](site/src/docs/comprendre/demarrer.md) |
 
-L'index complet est dans [`docs/README.md`](docs/README.md). Le mode d'emploi
+Les décisions d'architecture, les schémas et les diagrammes restent dans [`docs/`](docs/README.md). Le mode d'emploi
 pas à pas est dans l'application, page « Aide ».
 
 | Pour… | Voir |

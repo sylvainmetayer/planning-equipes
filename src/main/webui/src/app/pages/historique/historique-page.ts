@@ -25,7 +25,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
-import { EntreeHistorique } from '../../core/models';
+import { AuteurHistorique, EntreeHistorique } from '../../core/models';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { StatusMessage } from '../../shared/status-message';
 import { ConnexionsAdmin } from './connexions-admin';
@@ -34,6 +34,7 @@ import {
   FiltreNature,
   FiltreResultat,
   HistoriqueTab,
+  authorLabel,
   cutPage,
   entitesPresentes,
   exportCodes,
@@ -105,6 +106,29 @@ export class HistoriquePage {
   protected readonly acteur = signal<FiltreActeur>('TOUS');
   protected readonly resultat = signal<FiltreResultat>('TOUS');
   protected readonly nature = signal<FiltreNature>('TOUTES');
+  /** One author, asked of the server (`?auteur=`): an account id, `systeme`, `mcp`; `''` for anyone. */
+  protected readonly auteur = signal('');
+  private readonly auteursConnus = signal<AuteurHistorique[]>([]);
+  /**
+   * The selector's choices, plus the one the address names when this edition
+   * has no line of it (a link carried over from another edition): shown
+   * selected rather than as an empty field over an empty list.
+   */
+  protected readonly auteurs = computed(() => {
+    const connus = this.auteursConnus();
+    const choisi = this.auteur();
+    return choisi === '' || connus.some((a) => a.valeur === choisi)
+      ? connus
+      : [...connus, { valeur: choisi, nom: null }];
+  });
+  /** When the author became reliable; older lines say `admin` whoever acted. */
+  protected readonly fiableDepuis = signal<string | null>(null);
+  protected readonly reliableSinceText = computed(() => {
+    const instant = this.fiableDepuis();
+    return instant === null
+      ? ''
+      : new Date(instant).toLocaleString(intlLocale(), { dateStyle: 'long', timeStyle: 'short' });
+  });
   /**
    * The period, as the server reads it: instants, `depuis` exclusive and
    * `jusqua` inclusive, `''` for no bound. Kept verbatim from the URL — the
@@ -140,6 +164,7 @@ export class HistoriquePage {
       this.acteur() !== 'TOUS' ||
       this.resultat() !== 'TOUS' ||
       this.nature() !== 'TOUTES' ||
+      this.auteur() !== '' ||
       this.depuis() !== '' ||
       this.jusqua() !== '' ||
       this.entite() !== '' ||
@@ -152,6 +177,7 @@ export class HistoriquePage {
     this.acteur.set(readActorFilter(params.get('acteur')));
     this.resultat.set(readOutcomeFilter(params.get('resultat')));
     this.nature.set(readNatureFilter(params.get('nature')));
+    this.auteur.set(params.get('auteur') ?? '');
     this.depuis.set(readInstant(params.get('depuis')));
     this.jusqua.set(readInstant(params.get('jusqua')));
     this.entite.set(params.get('entite') ?? '');
@@ -175,6 +201,7 @@ export class HistoriquePage {
         untracked(() => {
           void this.recharger();
           void this.loadActionInventory();
+          void this.loadAuthors();
         });
       }
     });
@@ -184,6 +211,7 @@ export class HistoriquePage {
       acteur: this.acteur() === 'TOUS' ? null : this.acteur(),
       resultat: this.resultat() === 'TOUS' ? null : this.resultat(),
       nature: natureQuery(this.nature()),
+      auteur: optionalParam(this.auteur()),
       depuis: optionalParam(this.depuis()),
       jusqua: optionalParam(this.jusqua()),
       entite: optionalParam(this.entite()),
@@ -203,7 +231,7 @@ export class HistoriquePage {
     try {
       const page = cutPage(
         await this.analysesApi.actionHistory(
-          historyQuery(this.nature(), this.depuis(), this.jusqua(), null),
+          historyQuery(this.nature(), this.auteur(), this.depuis(), this.jusqua(), null),
         ),
       );
       if (ticket === this.currentLoad) {
@@ -242,7 +270,7 @@ export class HistoriquePage {
     try {
       const page = cutPage(
         await this.analysesApi.actionHistory(
-          historyQuery(this.nature(), this.depuis(), this.jusqua(), before),
+          historyQuery(this.nature(), this.auteur(), this.depuis(), this.jusqua(), before),
         ),
       );
       if (ticket === this.currentLoad) {
@@ -257,6 +285,30 @@ export class HistoriquePage {
       if (ticket === this.currentLoad) {
         this.chargement.set(false);
       }
+    }
+  }
+
+  /** Asked of the server like the nature, so changing it reloads. */
+  protected changeAuteur(auteur: string): void {
+    if (auteur === this.auteur()) {
+      return;
+    }
+    this.auteur.set(auteur);
+    void this.recharger();
+  }
+
+  protected authorLabel(auteur: AuteurHistorique): string {
+    return authorLabel(auteur);
+  }
+
+  /** The selector's choices; a failure leaves the list readable without it. */
+  private async loadAuthors(): Promise<void> {
+    try {
+      const reponse = await this.analysesApi.historyAuthors();
+      this.auteursConnus.set(reponse.auteurs);
+      this.fiableDepuis.set(reponse.fiableDepuis);
+    } catch {
+      // The selector stays empty and the notice absent: nothing on screen is wrong.
     }
   }
 
@@ -355,10 +407,15 @@ export class HistoriquePage {
     this.cancelPendingTimer();
     this.pendingDepuis = null;
     this.pendingJusqua = null;
-    const serverSide = this.nature() !== 'TOUTES' || this.depuis() !== '' || this.jusqua() !== '';
+    const serverSide =
+      this.nature() !== 'TOUTES' ||
+      this.auteur() !== '' ||
+      this.depuis() !== '' ||
+      this.jusqua() !== '';
     this.acteur.set('TOUS');
     this.resultat.set('TOUS');
     this.nature.set('TOUTES');
+    this.auteur.set('');
     this.depuis.set('');
     this.jusqua.set('');
     this.entite.set('');

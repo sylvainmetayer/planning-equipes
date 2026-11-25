@@ -14,7 +14,7 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 | `src/_includes/`, `src/pages.njk`, `src/404.njk` | les gabarits : l'accueil, les pages-réponses, le film, la mise en page commune |
 | `src/schema.js`, `src/markdown.js` | les données structurées JSON-LD de chaque page, et son jumeau Markdown |
 | `src/llms.njk`, `src/robots.njk`, `src/sitemap.njk` | `llms.txt`, `robots.txt`, `sitemap.xml`, tous trois générés |
-| `src/docs.js`, `src/docs.njk`, `src/_data/docs.js` | **la documentation technique** : les `.md` de `../docs/` lus en place au build et publiés sous `/docs/<nom>/` (français seul, sans copie). Exclus : `decisions/` et `memoire-du-projet.md` ; un lien vers eux, vers `AGENTS.md`, le code ou tout fichier non publié devient un lien GitHub, les `.svg` de `docs/diagrammes/` sont servis tels quels. La recherche du plan du site lit, pour elles, un index léger (`/docs/search.json` : titre, description, titres h2/h3 et leurs ancres) plutôt que leurs jumeaux Markdown. Un lien `.md#ancre` ou une ancre introuvable est un avertissement (`[docs]`) du build, jamais une erreur |
+| `src/docs/`, `src/docs.js`, `src/docs.njk`, `src/_data/docs.js` | **la documentation** : les `.md` de `src/docs/` (trois dossiers, un par partie : `regles/`, `installer/`, `comprendre/`) plus l'inventaire des licences généré (`../docs/licences-tierces.md`), lus au build et publiés sous `/docs/<partie>/<page>/` (français seul). Le `index.md` de chaque dossier est l'accueil de la partie ; son front matter (`titre`, `pour`, `docs:`) la nomme et liste ses pages dans l'ordre de lecture (une page absente de la liste fait échouer le build). Un lien `repo:chemin` pointe un fichier du dépôt (code, décisions, schéma) et devient un lien GitHub ; un lien vers une page inexistante est une erreur ; une ancre introuvable est aussi une erreur. Les captures sont `![](/images/fr/x.webp "légende")` et s'ouvrent dans la fenêtre du site ; les `.svg` de `../docs/diagrammes/` sont servis tels quels. `DOCS_DIR` lit les pages ailleurs (un instantané, pendant une réécriture), La recherche du plan du site lit, pour elles, un index léger (`/docs/search.json`) |
 | `src/assets/` | la feuille de style (`style.css`, `tokens.css`, `base.css`, minifiée et assemblée au build), les scripts (minifiés au build, dont `search.js`, la recherche du plan du site) et l'icône des liens sortants |
 | `src/text.js` | la typographie, et la passe sur chaque page construite : le sens de chaque abréviation à sa première apparition (liste dans `commun.json`), la mention « site externe » des liens sortants |
 | `src/images/{fr,en}/`, `src/videos/{fr,en}/` | les captures et les vidéos de l'application, une série par langue |
@@ -43,7 +43,7 @@ CHROME_PATH=/usr/bin/chromium-browser npm run check:lighthouse           # Light
 npm run validate         # html-validate sur _site/
 ```
 
-La CI (`.github/workflows/site.yml`, filtrée sur `site/**`, `docs/**` et
+La CI (`.github/workflows/site.yml`, filtrée sur `site/**` (les pages de la documentation y sont), `docs/**` (licences, diagrammes) et
 `ConstraintCatalog.java`) rejoue tout cela, plus la vérification des liens avec
 lychee (hors ligne à chaque poussée, tous les liens le lundi).
 

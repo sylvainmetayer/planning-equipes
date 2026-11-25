@@ -4,7 +4,7 @@
 //
 // The names stay in the snack bar. What the notification journal keeps is the
 // same report counted rather than named: that journal lives in `localStorage`
-// (see `docs/rgpd.md` §7), it is not cleared on sign-out and it is read back on
+// (see `site/src/docs/installer/rgpd.md` §7), it is not cleared on sign-out and it is read back on
 // the recent messages of the home page, so a list that can cover the whole roster has no
 // business being written to the machine of the régie.
 

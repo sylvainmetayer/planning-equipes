@@ -4,7 +4,7 @@
 ' est d'abord réservé en base sur une clé : un passage de plus ne renvoie
 ' rien. Tout part en meilleur effort, par le
 ' dispatcher, qui rend l'issue au lieu de la lever : un échec laisse une
-' alerte et ne compte pas comme un envoi. Voir docs/exploitation.md, « Les
+' alerte et ne compte pas comme un envoi. Voir site/src/docs/installer/exploitation.md, « Les
 ' envois automatiques de nuit ».
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true

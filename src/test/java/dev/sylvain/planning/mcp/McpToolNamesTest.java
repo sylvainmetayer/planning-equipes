@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * An MCP tool name cited outside the Java code — in the ready-to-copy prompt of
- * the MCP page, in its English translation, or in {@code docs/mcp.md} — must
+ * the MCP page, in its English translation, or in {@code site/src/docs/comprendre/mcp-outils.md} — must
  * name a tool that actually exists.
  *
  * <p>Nothing enforced that, and it had already drifted: the prompt handed to
@@ -49,12 +49,14 @@ class McpToolNamesTest {
      */
     private static final Path PROMPTS = Path.of("src/main/java/dev/sylvain/planning/mcp/McpPrompts.java");
 
-    private static final Path DOC_MCP = Path.of("docs/mcp.md");
+    private static final Path DOC_MCP = Path.of("site/src/docs/comprendre/mcp-outils.md");
 
     private static final List<Path> DOCUMENTS = List.of(
             Path.of("src/main/webui/src/app/pages/mcp/mcp-page.ts"),
             Path.of("src/main/webui/public/i18n/messages.en.json"),
             DOC_MCP,
+            Path.of("site/src/docs/comprendre/mcp-conventions-des-outils.md"),
+            Path.of("site/src/docs/comprendre/mcp-connexion.md"),
             PROMPTS,
             Path.of("src/main/java/dev/sylvain/planning/mcp/McpResources.java"));
 
@@ -78,7 +80,7 @@ class McpToolNamesTest {
      *   <li>{@code p_token} is Pangolin's query-string parameter, quoted in the
      *       English message catalogue.</li>
      *   <li>{@code auth_time}, {@code max_age} and {@code resource_metadata} are
-     *       OpenID Connect and RFC 9728 names, quoted where docs/mcp.md explains
+     *       OpenID Connect and RFC 9728 names, quoted where site/src/docs/comprendre/mcp-outils.md explains
      *       the OAuth connection (ADR 0097).</li>
      * </ul>
      */
@@ -206,7 +208,7 @@ class McpToolNamesTest {
      * citations. A reflection lookup that found nothing, or a document that
      * moved, would turn it green for the worst of reasons.
      *
-     * <p>{@code docs/mcp.md} is only required to quote <em>some</em> tool name,
+     * <p>{@code site/src/docs/comprendre/mcp-outils.md} is only required to quote <em>some</em> tool name,
      * not the whole catalogue: the server announces its own tools, and the
      * documentation deliberately stops at what the server cannot say.</p>
      *
@@ -227,7 +229,8 @@ class McpToolNamesTest {
                 .as("the prompts the server serves name the tools they chain")
                 .isNotEmpty();
         assertThat(citedNames(DOC_MCP))
-                .as("docs/mcp.md still quotes tool names, so the check above has something to bite on")
+                .as(
+                        "site/src/docs/comprendre/mcp-outils.md still quotes tool names, so the check above has something to bite on")
                 .isNotEmpty();
     }
 

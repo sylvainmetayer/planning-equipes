@@ -163,7 +163,7 @@ prix du glisser-déposer, sur un geste cent fois moins fréquent.
 - `POST /api/verrouillages` répond `{ verrouillage, avertissements }` au lieu
   du verrou seul, comme les autres référentiels qui préviennent. `verrouiller`
   en MCP rend les **codes**, jamais les phrases
-  ([`mcp.md`](../mcp.md)).
+  ([`mcp.md`](../../site/src/docs/comprendre/mcp-connexion.md)).
 - `affecter_poste` et `POST /api/postes/{id}/affectation` peuvent désormais
   répondre 400 sur un animateur que l'écran de réparation n'aurait jamais
   proposé. C'est le comportement voulu : ces deux portes acceptaient

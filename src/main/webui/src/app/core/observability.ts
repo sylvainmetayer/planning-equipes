@@ -1,6 +1,6 @@
 // Error tracking (Sentry-protocol, typically a Bugsink instance) and audience
 // analytics (Cloudflare Web Analytics) for the frontend. Both stay off unless
-// the server-side env vars are set: see docs/observabilite.md.
+// the server-side env vars are set: see site/src/docs/installer/observabilite.md.
 
 import { ErrorHandler, Provider } from '@angular/core';
 

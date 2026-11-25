@@ -201,7 +201,7 @@ prévue :
   vidage** : l'export ne les porte pas, et l'import supprime chaque édition,
   donc en cascade ses sauvegardes. Rien n'est sauvegardé avant lui ; un dump
   `pg_dump` restauré les ramène telles qu'il les avait
-  ([`exploitation.md`](../exploitation.md) § Restaurer).
+  ([`exploitation.md`](../../site/src/docs/installer/exploitation.md) § Restaurer).
 - Une édition sans créneau est exportée avec `festival.dateDebut: 1970-01-01`,
   que le format exige et que rien ne lit sans créneau.
 - Chaque vidage coûte un export de scénario et une lecture du plan, faits sur
@@ -214,7 +214,7 @@ prévue :
   longtemps que l'édition. La purge annuelle (suppression de l'édition) les
   emporte ; une demande d'effacement sur une édition encore en cours doit en
   revanche supprimer, une à une, les sauvegardes qui portent la personne
-  ([`rgpd.md`](../rgpd.md) §7). La table grossit d'une sauvegarde par vidage :
+  ([`rgpd.md`](../../site/src/docs/installer/rgpd.md) §7). La table grossit d'une sauvegarde par vidage :
   quelques centaines de kilooctets à un mégaoctet chacune, selon la taille du
   planning (le plan pèse comme un instantané, le scénario en sus) ; supprimer
   celles qui ne servent plus est un geste d'administrateur.

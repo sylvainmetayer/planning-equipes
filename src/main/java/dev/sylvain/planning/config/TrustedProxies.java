@@ -13,7 +13,7 @@ import java.util.Objects;
  * and its address is handed out at attach time — a reboot that starts the
  * stacks in another order moves it. The <b>subnet</b>, on the other hand, is
  * fixed when the network is created and does not move, which is why a block is
- * accepted here. See {@code docs/exploitation.md} for the deployment note.</p>
+ * accepted here. See {@code site/src/docs/installer/exploitation.md} for the deployment note.</p>
  *
  * <p>Trusting a block means trusting every machine in it. That is the right
  * granularity for a private bridge whose members are the deployment's own

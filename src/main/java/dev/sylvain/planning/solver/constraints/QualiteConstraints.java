@@ -612,7 +612,7 @@ public final class QualiteConstraints {
      * {@link #eviterRoulementStandsPremium} pushes towards keeping the same
      * heads and this rule pushes towards rotating them. Both are MEDIUM and
      * both are {@code dosable()}, so an edition arbitrates between them through
-     * {@code ponderation_contrainte} — see {@code docs/contraintes.md}.</p>
+     * {@code ponderation_contrainte} — see {@code site/src/docs/comprendre/doser-et-desactiver-les-regles.md}.</p>
      */
     private Constraint eviterFermeturePuisOuverture(SeatStreams seats) {
         UniConstraintStream<Journee> journees = journees(seats);
@@ -836,8 +836,7 @@ public final class QualiteConstraints {
      * 13 nov. 2025, n° 24-10.733; same reading CJUE C-306/16). Filing it as a
      * legal rule would make the disabling confirmation claim a plan breaks the
      * law when it does not. It is the organiser's policy, held at whatever
-     * level the organiser chose — see {@code docs/contraintes.md}, « Le niveau
-     * de la règle des jours d'affilée ».</p>
+     * level the organiser chose — see {@code site/src/docs/comprendre/repos-et-jours-d-affilee.md}.</p>
      *
      * <p>Both forms may be on at once: the hard one then blocks past six days
      * and the medium one keeps costing on top, which is a legitimate way of

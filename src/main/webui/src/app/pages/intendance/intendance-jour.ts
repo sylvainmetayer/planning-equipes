@@ -130,7 +130,7 @@ function libelleCellule(personnes: number, mineurs: number): string {
  * never a solve.
  *
  * Nobody is named: the intendance needs a headcount and a place, and a minor
- * is counted, never identified — no name, no birth date (`docs/rgpd.md` §7).
+ * is counted, never identified — no name, no birth date (`site/src/docs/installer/rgpd.md` §7).
  */
 @Component({
   selector: 'app-intendance-jour',

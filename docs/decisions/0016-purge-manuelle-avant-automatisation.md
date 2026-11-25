@@ -36,10 +36,10 @@ instantanés et jetons partent avec. Ce qui manque n'est pas le mécanisme, c'es
 ## Décision
 
 **La purge est manuelle d'abord**, décrite pas à pas dans
-[`exploitation.md`](../exploitation.md) §6 : dump chiffré archivé, suppression
+[`exploitation.md`](../../site/src/docs/installer/exploitation.md) §6 : dump chiffré archivé, suppression
 des éditions échues depuis l'écran *Éditions*, vérification qu'un jeton
 supprimé répond bien `404`, inscription au journal du registre
-([`rgpd.md`](../rgpd.md) §5).
+([`rgpd.md`](../../site/src/docs/installer/rgpd.md) §5).
 
 L'automatisation vient **quand plusieurs instances tournent en parallèle** —
 c'est le nombre de clients, pas le calendrier, qui la rend nécessaire : à une

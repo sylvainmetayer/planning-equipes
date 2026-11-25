@@ -290,7 +290,7 @@ ailleurs (§2.k).
 ### k. Ce qui a vraiment réduit le temps, et ce qui ne l'a pas réduit
 
 Octobre 2026, même protocole (graine fixe, runs séquentiels, banc de
-`docs/developpement.md` § *Le banc du solveur*) :
+`site/src/docs/comprendre/tests-de-scenarios.md`) :
 
 - **Le tirage des entités**, pas leur évaluation : un cinquième du CPU de la
   phase de faisabilité partait dans les 40 000 tirages qu'un sélecteur filtré
@@ -392,7 +392,7 @@ vaut d'être connue avant de la réintroduire.
 | Groupes de créneaux | Second niveau de variante à l'intérieur d'une édition. L'édition suffit ; le double niveau imposait un vocabulaire, une bannière, un sélecteur et une garde de restauration pour rien — décision [0009](decisions/0009-edition-unique-porteur-de-variantes.md). |
 | Simulation « et si ? » | Livrée, jamais sortie du groupe « en cours de développement » ni entrée dans l'usage. |
 | Simulateur de remplacement manuel | Rendu inutile par l'assistant de réparation : il laissait désigner un collègue puis annonçait *après coup* ce que l'échange cassait, quand l'assistant n'énumère que les remplacements qui tiennent. L'endpoint survit, l'outil MCP s'en sert. |
-| PostHog | Analytics produit jamais consultée, qui coûtait une dépendance dans le bundle, deux variables, une clé exposée et un traitement de données à justifier. La trace du retrait est conservée dans [`observabilite.md`](observabilite.md) avec les candidats évalués à l'époque, pour que la question ne soit pas ré-instruite de zéro. |
+| PostHog | Analytics produit jamais consultée, qui coûtait une dépendance dans le bundle, deux variables, une clé exposée et un traitement de données à justifier. La trace du retrait est conservée dans [`observabilite.md`](../site/src/docs/installer/observabilite.md) avec les candidats évalués à l'époque, pour que la question ne soit pas ré-instruite de zéro. |
 | `favoriserRotationDesStands` | Conflit avec deux règles de niveau supérieur (§2.h). |
 | Confirmation motivée d'une désactivation légale | Ne prouvait rien et ne survivait pas à son annulation (§3). |
 | Analyse lancée en tâche de fond (`/api/solve/analyze`, `/api/solve/analyze/async`, `/api/solve/analyze/async/reference-data`, type de job `ANALYZE`) | Une résolution complète dont le résultat n'était jamais persisté : l'écran affichait le score d'un planning que rien d'autre ne montrait, au prix du budget d'un solve. Remplacée en août 2026 par `POST /api/constraints/diagnostic`, qui recalcule le score du plan persisté sans solveur ; la migration `V55` a purgé les lignes `solver_job` que `JobType.valueOf` ne savait plus relire. |
@@ -486,7 +486,7 @@ résultat.
 **Isoler le port n'isole pas la base.** Le profil de développement pointe sur
 la même base quelle que soit le port de l'application : une suite de tests de
 bout en bout écrase la base qu'elle vise. La recette d'une pile jetable est
-documentée dans [`developpement.md`](developpement.md).
+documentée dans [`developpement.md`](../site/src/docs/comprendre/tests.md).
 
 **Un stub global survit au fichier qui le pose.** Deux specs stubbaient
 `ResizeObserver` sans sa méthode `unobserve` ; le stub restait en place pour

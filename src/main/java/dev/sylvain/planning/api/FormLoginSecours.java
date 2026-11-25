@@ -76,9 +76,10 @@ public class FormLoginSecours {
             return;
         }
         if (!secours.open(true) && !hasActiveAdministrator()) {
-            Log.warn("Aucun compte administrateur actif et le compte de secours est fermé : personne ne peut "
-                    + "administrer cette instance. Rouvrir le secours (ADMIN_LOCAL_SECOURS=true), créer son "
-                    + "compte et lui accorder le droit ADMIN (docs/exploitation.md).");
+            Log.warn(
+                    "Aucun compte administrateur actif et le compte de secours est fermé : personne ne peut "
+                            + "administrer cette instance. Rouvrir le secours (ADMIN_LOCAL_SECOURS=true), créer son "
+                            + "compte et lui accorder le droit ADMIN (https://planning.sylvain.dev/docs/installer/comptes-locaux/).");
         }
         if (secours.open(true)) {
             Log.warn("Le compte de secours est OUVERT (ADMIN_LOCAL_SECOURS=true) alors qu'un fournisseur OIDC "

@@ -1,6 +1,6 @@
 // A logout said to every tab of this browser, so each one drops what it keeps
 // of the session — the sessionStorage draft of a fiche animateur, above all,
-// which the tab that logged out cannot reach (docs/rgpd.md §7).
+// which the tab that logged out cannot reach (site/src/docs/installer/rgpd.md §7).
 //
 // A BroadcastChannel when the browser has one; otherwise a `storage` event
 // raised by writing then removing one localStorage key, which carries no data

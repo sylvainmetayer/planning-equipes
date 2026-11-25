@@ -1,7 +1,7 @@
 // The auto-saved draft of the long admin forms — fiche animateur, stand,
 // consigne: a net against the accident (a tab closed, a session expired, a
 // reload), never a workspace. Nothing here reaches the server, the history,
-// an export or the MCP; see docs/rgpd.md §7 for where each draft lives and
+// an export or the MCP; see site/src/docs/installer/rgpd.md §7 for where each draft lives and
 // how long.
 //
 // Pure functions over an injected storage, like `panel-collapse`: every read

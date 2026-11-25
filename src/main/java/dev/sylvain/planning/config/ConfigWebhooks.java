@@ -9,8 +9,8 @@ import java.util.Optional;
  * The outgoing webhooks of the instance (ADR 0074): whether anything may leave
  * at all, how often the retries are swept, the key that encrypts their secrets
  * at rest, and the internal networks an operator opened to them. See
- * {@code docs/exploitation.md} and the « Appels sortants » section of
- * {@code docs/securite.md}.
+ * {@code site/src/docs/installer/exploitation.md} and the « Appels sortants » section of
+ * {@code site/src/docs/installer/securite.md}.
  */
 @ConfigMapping(prefix = "planning.webhooks")
 public interface ConfigWebhooks {

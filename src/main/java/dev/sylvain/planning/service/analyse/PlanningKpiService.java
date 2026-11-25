@@ -43,8 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * screens: a break declared taken on the post is not deducted, where the legal
  * caps of {@code LegalConstraints} do deduct it. A KPI history compared across
  * editions must count the same thing whatever an edition declared about its
- * breaks. See {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui
- * compte l'amplitude ».</p>
+ * breaks. See {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
  */
 @ApplicationScoped
 public class PlanningKpiService {

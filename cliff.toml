@@ -1,4 +1,4 @@
-# git-cliff configuration (https://git-cliff.org) — see docs/versioning.md.
+# git-cliff configuration (https://git-cliff.org) — see site/src/docs/installer/versioning.md.
 #
 # What this renders is the BODY OF A GITHUB RELEASE, written by
 # `.github/workflows/release.yml` when one is published. There is no
@@ -15,7 +15,7 @@ header = """
 
 Les évolutions notables du projet, générées par [git-cliff](https://git-cliff.org)
 à partir des messages de commit. Ce que promet un numéro de version est défini
-dans [docs/versioning.md](docs/versioning.md).
+dans [site/src/docs/installer/versioning.md](site/src/docs/installer/versioning.md).
 """
 body = """
 {% if version %}\
@@ -43,7 +43,7 @@ tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
 sort_commits = "oldest"
 commit_parsers = [
   # A `!` is the conventional breaking marker and nothing else: it means
-  # MAJOR (docs/versioning.md § Le contrat), which is also how
+  # MAJOR (site/src/docs/installer/versioning.md § Le contrat), which is also how
   # `git cliff --bumped-version` reads it.
   { message = '^[a-z]+(\(.*\))?!:', group = "<!-- 0 -->⚠️ Attention" },
   # A new or hardened legal constraint stays MINOR, but it can make a planning
