@@ -56,60 +56,87 @@ besoin de `B + 1`, `B + 2`… jusqu'au premier réalisable.
 
 ## Mesure d'équivalence
 
-`StaffingBoundEquivalenceTest`, joué le 25 novembre 2026 sur des machines louées
-pour l'occasion (12 cœurs partagés, moteur direct, 300 à 600 s par équipe, 60 à
-120 s pour `B − 1`), sur les vingt-cinq rangs réalisables de la gamme. `besoin`
-est la première taille de la grille `B`, `B+1`, `B+2`, `B+3`, `B+6`, `B+12`,
-`B+24`, `B+36`… qui tient tous les sièges : une borne haute du besoin réel.
+`StaffingBoundEquivalenceTest` compare, sur les vingt-cinq rangs réalisables de la
+gamme, la borne `B` au **besoin** : le plus petit effectif d'une équipe fictive qui
+tient tous les sièges. Le besoin vient d'abord de la recherche : la première taille de la
+grille `B`, `B+1`, `B+2`, `B+3`, `B+6`, `B+12`, `B+24`… qui tient (moteur direct,
+300 à 600 s par équipe, joué sur des machines louées pour l'occasion, détruites
+ensuite). Une recherche qui échoue dans son temps ne prouve rien : pour les quatre
+rangs où elle et la borne divergeaient (10, 11, 18, 20), le besoin est donc
+**prouvé hors application**, par un modèle exact (voir plus bas).
 
-| Rang | Borne `B` | Besoin | Écart |
-| --- | --- | --- | --- |
-| 1 à 9 | 2, 4, 3, 4, 6, 5, 7, 9, 8 | `B` | 0 |
-| 10 (journées types multiples) | 13 | 14 | 1 |
-| 11 (semaine à cheval, nuit) | 7 | 9 | 2 |
-| 12 à 16 | 14, 14, 45, 32, 41 | `B` | 0 |
-| 17 (règles désactivées) | 60 (35 avant l'ajout ci-dessous) | `B` | 0 |
-| 18 (effectifs par fenêtre) | 58 | 82 | 24 |
-| 19 | 53 | `B` | 0 |
-| 20 (festival type) | 100 | 112 | 12 |
-| 21 à 25 | 70, 123, 100, 168, 200 | `B` | 0 |
+| Rang | Borne `B` | Besoin | Écart | Besoin établi par |
+| --- | --- | --- | --- | --- |
+| 1 à 9 | 2, 4, 3, 4, 6, 5, 7, 9, 8 | `B` | 0 | recherche (et aucune équipe de `B − 1` ne tient) |
+| 10 (journées types multiples) | 13 | 14 | 1 | preuve exacte |
+| 11 (semaine à cheval, nuit) | 9 | 9 | 0 | preuve exacte |
+| 12 à 16 | 14, 14, 45, 32, 41 | `B` | 0 | recherche |
+| 17 (règles désactivées) | 60 | 60 | 0 | recherche |
+| 18 (effectifs par fenêtre) | 63 | 72 | 9 | preuve exacte |
+| 19 | 53 | `B` | 0 | recherche |
+| 20 (festival type) | 105 | 105 | 0 | preuve exacte |
+| 21 à 25 | 70, 123, 100, 168, 200 | `B` | 0 | recherche |
 
-Ce que cela dit :
+La borne égale le besoin sur **23 rangs sur 25**. Elle n'est jamais trop haute : sur
+les rangs de la recherche, aucune équipe de `B − 1` n'a tenu ; sur les quatre autres,
+la preuve exacte donne le besoin lui-même.
 
-- **La borne n'est jamais trop haute** : aucune équipe de `B − 1` n'a tenu les
-  sièges, sur aucun rang. Un « ne suffit pas » de la borne est fiable.
-- **Elle égale le besoin sur 21 rangs sur 25.** Les rangs 10 et 11 demandent une
-  à deux personnes de plus (le repos quotidien après une soirée, que la borne
-  ignore). Les rangs 18 et 20 demandent 24 et 12 de plus ; à `B`, le meilleur
-  plan enfreint le non-chevauchement (et, au rang 18, le travail continu
-  maximal), sans que la mesure dise si c'est un fait de la grille que la borne
-  ne voit pas ou la limite de la recherche : les deux moteurs, essayés sur le
-  rang 17 avant l'ajout, s'arrêtent au même score, ce qui plaide pour un fait
-  de la grille et non de la recherche.
+### La preuve exacte, hors application
+
+`scripts/besoin-exact/modele.py` (OR-Tools CP-SAT, **jamais dans l'image ni dans
+l'application** : le Dockerfile ne copie que `pom.xml`, `src` et `.git`) pose les
+règles dures d'un rang en une **relaxation** : chaque règle est exacte ou plus faible
+que la vraie, jamais plus forte. Un « infaisable » à `N` prouve donc que `N` personnes
+ne tiennent pas les sièges sous les vraies règles. Dans l'autre sens, un plan que le
+modèle trouve est noté par les vraies contraintes (le scoreur de l'application) : zéro
+point dur le prouve réalisable. Les deux ensemble donnent le besoin exact.
+
+- **Rang 11 : 9.** `{chevauchement, repos quotidien}` suffit. La borne passe de 7 à 9
+  par le plancher du repos quotidien (ci-dessous), qui égale le besoin.
+- **Rang 20 : 105.** Le modèle est optimal à 105 en vingt secondes ; le plan, noté
+  avec les vraies règles, ne casse rien. Le plancher du repos quotidien donne 105.
+- **Rang 10 : 14.** 13 est infaisable dès que la coupure repas, le travail continu
+  relayé et les dix heures effectives (la pause d'un étirement de plus de six heures
+  est déduite) sont posés ensemble ; aucun couple de ces trois règles ne suffit. La
+  borne, qui lit chacune séparément, reste à 13 : **l'écart de 1 est prouvé**.
+- **Rang 18 : 72.** Infaisable à 63, 64, 66, 67, 70 et 71, faisable à 72 (plan noté à
+  zéro dur). La borne (63) vient du travail continu seul ; les 9 de plus viennent de
+  sa composition avec le repos quotidien et la pause, que la borne ne sait pas
+  combiner : **l'écart de 9 est prouvé**, la recherche de la grille s'arrêtait à 82.
 
 ### Ce que la borne gagne
 
-**Les sièges trop longs pour se partager un jour** (`grosSieges`). La borne d'un
-jour comptait le pic simultané, le volume d'heures sur le plafond quotidien et
-les fenêtres de repas. Elle ignorait l'empaquetage : deux sièges de plus de la
-moitié du plafond quotidien (travail effectif plus la pause, comme pour le
-volume) dépassent ensemble ce plafond, donc nul ne tient deux d'entre eux le même
-jour, et chacun veut sa personne. C'est une minoration prouvée du même type que
-le volume (le plafond est le même) ; elle ne peut que monter le besoin d'un jour.
-Au rang 17, dont les sièges font plus de cinq heures, le minimum passe de 35 à 60
-et devient exact ; aucun autre rang ne bouge (le test le dit : leur borne est
-inchangée).
+Chaque ajout est une minoration prouvée (la preuve est dans le Javadoc de la méthode)
+et couverte par un test unitaire. Aucun autre rang ne bouge : leur borne est celle de
+la mesure ci-dessus.
 
-Les rangs 10, 11, 18 et 20 restent ouverts : le repos quotidien entre deux jours
-(onze heures) et le travail continu ne se laissent pas ajouter au flot des jours
-de repos sans le réécrire, et ce n'est pas l'objet d'ici.
+1. **Les sièges trop longs pour se partager un jour** (`grosSieges`). Deux sièges de
+   plus de la moitié du plafond quotidien (travail effectif plus pause, comme pour le
+   volume d'heures) dépassent ensemble ce plafond : nul n'en tient deux le même jour.
+   Rang 17 : 35 → 60, exact.
+2. **Le repos quotidien** (`reposQuotidienPlancher`). Un siège qui finit à `e` un jour
+   et un siège qui commence à `s` le lendemain ne se tiennent pas ensemble quand
+   `e − s > 1440 − repos` ; les sièges du soir qui se chevauchent, plus ceux du matin
+   suivant qui se chevauchent, forment une clique : leur somme minore l'effectif.
+   Rang 11 : 7 → 9, rang 20 : 100 → 105, tous deux exacts.
+3. **Le travail continu relayé** (`travailContinuPlancher`). Un enchaînement de plus
+   de six heures doit être relayé par un siège du même stand ; une « tête » (un siège
+   que rien ne précède) et les sièges qui le suivent, que l'absence de relais
+   empêche de lui succéder, forment une clique. Rang 18 : 58 → 63.
+
+### Ce qui reste
+
+Les rangs 10 et 18 : la borne lit chaque règle à part, le besoin vient de leur
+composition. Une borne qui les combine est un petit modèle exact, non un compte : elle
+n'entre pas dans l'application (0080 reste une étude close). C'est l'écart prouvé, et
+c'est ce qui garde le calcul comme défaut.
 
 ### Conséquence sur le défaut
 
-L'équivalence n'est pas totale (21 rangs sur 25) : **le défaut reste le calcul**.
-Le test fixe l'écart de chaque rang (`ALLOWED_GAPS`) : une règle qui l'élargit
-casse le test. Le défaut passera à la borne par la propriété quand l'écart sera
-nul partout, ou prouvé dû à la recherche seule.
+L'équivalence n'est pas totale (23 rangs sur 25) : **le défaut reste le calcul**. Le
+test fixe le besoin des rangs prouvés (`PROVEN_NEED`) et l'écart de chaque rang
+(`ALLOWED_GAPS`) : une règle qui l'élargit casse le test. Le défaut passera à la
+borne par la propriété quand l'écart sera nul partout.
 
 ## Conséquences
 

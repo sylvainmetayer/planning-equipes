@@ -687,7 +687,7 @@ qu'une contrainte qui cesserait de pénaliser ne passe pas au vert avec lui.
 | `ScenarioLadderInfeasibleTest` | 26 à 30 | suite par défaut |
 | `ScenarioLadderImportTest` | 2, 7, 8, 10 | suite par défaut (`@QuarkusTest`) |
 | `ScenarioLadderLargeTest` | 16 à 25 | `scenario-lent`, `./mvnw test -Pscenario-tests` |
-| `StaffingBoundEquivalenceTest` | 1 à 25 | `scenario-lent` : la borne exacte du besoin contre le solve d'une équipe fictive, rang par rang ([`0098`](decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) ; `-Dequivalence.rungs=1,2` pour en choisir |
+| `StaffingBoundEquivalenceTest` | 1 à 25 | `scenario-lent` : la borne exacte du besoin contre le besoin réel de l'équipe fictive, rang par rang — recherche pour la plupart, preuve exacte (`scripts/besoin-exact/modele.py`, CP-SAT, hors image) pour les rangs 10, 11, 18 et 20 ([`0098`](decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) ; `-Dequivalence.rungs=1,2` pour en choisir |
 
 Les barreaux sont dimensionnés avec de la marge — au plus trois quarts de
 l'effectif sollicité le jour le plus chargé : tous atteignent zéro écart dur
