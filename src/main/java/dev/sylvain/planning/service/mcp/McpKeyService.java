@@ -21,6 +21,8 @@ import java.util.HexFormat;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
 
 /**
@@ -42,7 +44,7 @@ import javax.sql.DataSource;
 public class McpKeyService {
 
     /** The longest overlap an administrator can leave the old key: a week. */
-    public static final long MAX_OVERLAP_MINUTES = 7 * 24 * 60;
+    public static final long MAX_OVERLAP_MINUTES = 7L * 24 * 60;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -50,7 +52,14 @@ public class McpKeyService {
 
     private final ConfigMcp config;
 
-    private volatile State state;
+    /** Immutable once loaded; {@code null} means "read it again". */
+    private final AtomicReference<State> state = new AtomicReference<>();
+
+    /**
+     * Bumped by every invalidation: a load that started before a rotation does not
+     * store what it read, or the retired key would stay open until the next one.
+     */
+    private final AtomicLong generation = new AtomicLong();
 
     @Inject
     public McpKeyService(DataSource dataSource, ConfigMcp config) {
@@ -93,7 +102,9 @@ public class McpKeyService {
         // Not a known fingerprint: only the configured key can still be right, and
         // only while nothing generated has replaced it.
         return !current.anyGenerated
-                && configured().filter(key -> equal(key, presented)).isPresent();
+                && configured()
+                        .filter(key -> constantTimeEquals(key, presented))
+                        .isPresent();
     }
 
     public Status status() {
@@ -141,7 +152,7 @@ public class McpKeyService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to rotate the MCP key", e);
         } finally {
-            state = null;
+            invalidate();
         }
         return new Rotation(key, previousExpiry.orElse(null));
     }
@@ -189,14 +200,18 @@ public class McpKeyService {
 
     /** Forgets what was read, for a test (or an operator's SQL repair) that rewrites the table behind the service's back. */
     public void invalidate() {
-        state = null;
+        generation.incrementAndGet();
+        state.set(null);
     }
 
     private State state() {
-        State current = state;
+        State current = state.get();
         if (current == null) {
+            long seen = generation.get();
             current = load();
-            state = current;
+            if (generation.get() == seen) {
+                state.compareAndSet(null, current);
+            }
         }
         return current;
     }
@@ -221,7 +236,7 @@ public class McpKeyService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the MCP keys", e);
         }
-        return new State(rows, anyGenerated);
+        return new State(Map.copyOf(rows), anyGenerated);
     }
 
     private Optional<String> configured() {
@@ -238,7 +253,7 @@ public class McpKeyService {
     }
 
     /** Constant-time, so a mistyped key cannot be brute-forced by timing. */
-    private static boolean equal(String expected, String presented) {
+    private static boolean constantTimeEquals(String expected, String presented) {
         return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8), presented.getBytes(StandardCharsets.UTF_8));
     }
