@@ -118,7 +118,7 @@
       {
         "id": "calcul",
         "titre": "Le calcul",
-        "secondes": 30,
+        "secondes": 31,
         "legende": "En une minute, il repart de zéro, annonce dès qu'un plan respecte les règles impératives, puis l'améliore. Le passage d'attente est accéléré.",
         "transcription": [
           "L'écran Solveur résume ce dont le calcul tiendra compte : verrouillages, ajustements, consignes, déclarations de disponibilité non traitées et règles désactivées.",
@@ -131,7 +131,7 @@
       {
         "id": "jourj",
         "titre": "Une absence le jour J",
-        "secondes": 20,
+        "secondes": 21,
         "legende": "On cherche la personne, on la déclare absente, la place vide apparaît et l'application propose qui peut la tenir. Il reste à prévenir les personnes concernées.",
         "transcription": [
           "L'écran Aujourd'hui, le 10 août 2027 à 15 h : 25 stands ouverts, une vacation restante, aucun absent.",
@@ -360,7 +360,7 @@
         {
           "id": "calcul",
           "titre": "The calculation",
-          "secondes": 29,
+          "secondes": 28,
           "legende": "In one minute it starts from nothing, says as soon as a plan meets the mandatory rules, then improves it. The wait is sped up.",
           "transcription": [
             "The Solver screen sums up what the run will take into account: locks, manual adjustments, consignes, unprocessed availability declarations and disabled rules.",
