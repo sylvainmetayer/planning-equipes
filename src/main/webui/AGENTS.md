@@ -84,7 +84,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/nouveautes` (the foot of the menu), `/editions/comparer` (opened from the
   Éditions page) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
-  three knows. The standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
+  three knows. The standalone routes `/login`, `/mot-de-passe` (the page of the mailed single-use link,
+  ADR 0094: the token rides in the URL fragment, the page makes the one call that
+  chooses the password), `/animateur/:jeton` (espace animateur, issue
   #165) and `/mural/:jeton` (« Affichage mural » — the control room's
   television, opened by a dedicated token and no session, ADR 0053: the stands
   of the day with the shift under way and the next one, over the pure

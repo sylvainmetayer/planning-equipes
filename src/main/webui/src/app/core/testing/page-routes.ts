@@ -17,6 +17,8 @@ export function pageRoutes(): string[] {
         route.children === undefined &&
         route.path !== undefined &&
         route.path !== 'login' &&
+        // Like /login: the page of a mailed link, opened before any session.
+        route.path !== 'mot-de-passe' &&
         !route.path.includes(':') &&
         !route.path.includes('*'),
     )

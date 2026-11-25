@@ -1,0 +1,48 @@
+<main class="login-page">
+  <mat-card class="login-card" appearance="outlined">
+    <mat-card-header>
+      <app-brand-logo />
+      <h1 mat-card-title i18n="@@motDePasse.titre">Choisir mon mot de passe</h1>
+      <mat-card-subtitle>{{ productName }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if (choisi()) {
+        <p role="status">
+          <mat-icon inline>check_circle</mat-icon>
+          <span i18n="@@motDePasse.fait">Votre mot de passe est enregistré. Vous pouvez vous connecter.</span>
+        </p>
+        <a matButton="filled" routerLink="/login">
+          <mat-icon>login</mat-icon>
+          <span i18n="@@motDePasse.connexion">Aller à la connexion</span>
+        </a>
+      } @else if (!jeton) {
+        <p class="login-echec" role="alert">
+          <mat-icon inline>link_off</mat-icon>
+          <span i18n="@@motDePasse.sansLien">Cette page s'ouvre depuis le lien reçu par e-mail. Si vous l'avez perdu, demandez-en un nouveau depuis la page de connexion (« Mot de passe oublié »).</span>
+        </p>
+        <a matButton routerLink="/login">
+          <span i18n="@@motDePasse.retour">Retour à la connexion</span>
+        </a>
+      } @else {
+        <form (submit)="choisir($event)">
+          <p i18n="@@motDePasse.aide">Au moins {{ longueurMin }} caractères, sans autre règle : une phrase longue vaut mieux qu'un mot compliqué. Le lien ne sert qu'une fois.</p>
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@motDePasse.nouveau">Nouveau mot de passe</mat-label>
+            <input matInput type="password" name="nouveau" autocomplete="new-password"
+                   [ngModel]="password()" (ngModelChange)="password.set($event)" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label i18n="@@motDePasse.confirmation">Confirmer le mot de passe</mat-label>
+            <input matInput type="password" name="confirmation" autocomplete="new-password"
+                   [ngModel]="confirmation()" (ngModelChange)="confirmation.set($event)" />
+          </mat-form-field>
+          <app-status-message [text]="erreur() ?? ''" tone="error" />
+          <button matButton="filled" type="submit" [disabled]="busy() || !valid()">
+            <mat-icon>lock_reset</mat-icon>
+            <span i18n="@@motDePasse.enregistrer">Enregistrer</span>
+          </button>
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

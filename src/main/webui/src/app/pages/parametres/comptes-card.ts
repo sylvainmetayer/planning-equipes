@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -39,6 +40,7 @@ const ALL_EDITIONS = '*';
     DatePipe,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -69,6 +71,8 @@ export class ComptesCard implements OnInit {
 
   protected readonly email = signal('');
   protected readonly nom = signal('');
+  /** Mail the account the link to choose its password — on by default: the local account is the usual case. */
+  protected readonly inviter = signal(true);
 
   /** The account whose grant form is open, and what it holds. */
   protected readonly grantFor = signal<string | null>(null);
@@ -109,9 +113,28 @@ export class ComptesCard implements OnInit {
       return;
     }
     await this.run(async () => {
-      await this.api.create({ email, nom: this.nom().trim() || null });
+      await this.api.create({ email, nom: this.nom().trim() || null, invite: this.inviter() });
       this.email.set('');
       this.nom.set('');
+      if (this.inviter()) {
+        this.notifyLinkSent();
+      }
+    });
+  }
+
+  /** « Inviter » before a first password, « Réinitialiser » after: the link is mailed, never shown. */
+  protected async sendLink(compte: Compte): Promise<void> {
+    await this.run(async () => {
+      await (compte.passwordSet ? this.api.resetPassword(compte.id) : this.api.invite(compte.id));
+      this.notifyLinkSent();
+    });
+  }
+
+  private notifyLinkSent(): void {
+    this.notifications.notify({
+      title: $localize`:@@comptes.lien.envoye.titre:Lien envoyé`,
+      message: $localize`:@@comptes.lien.envoye.message:Le compte reçoit par e-mail un lien à usage unique pour choisir son mot de passe. Vous ne le voyez pas.`,
+      variant: 'success',
     });
   }
 

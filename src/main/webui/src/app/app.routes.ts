@@ -691,6 +691,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage),
   },
   {
+    // Outside both shells, like /login: whoever follows the mailed link has no
+    // session yet. The single-use token rides in the URL fragment.
+    path: 'mot-de-passe',
+    title: () => $localize`:@@route.motDePasse:Choisir mon mot de passe`,
+    loadComponent: () =>
+      import('./pages/mot-de-passe/mot-de-passe-page').then((m) => m.ChoosePasswordPage),
+  },
+  {
     // Outside both shells on purpose: a legal notice must stay readable
     // without a session and without a valid access token — the reader who
     // needs it most is often the one who has neither.

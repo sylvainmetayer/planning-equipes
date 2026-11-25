@@ -1,6 +1,6 @@
 // The `/api/comptes/*` endpoints: named accounts and the rights delegated to
 // them. An account is deactivated, never deleted; a right is withdrawn, never
-// deleted. Nothing here sets a password or a second factor.
+// deleted. A password is only ever chosen by its owner, through a mailed single-use link.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
@@ -18,6 +18,19 @@ export class ComptesApi {
   /** An account ahead of the person's first sign-in: 409 when the address already has one. */
   create(nouveau: NouveauCompte): Promise<Compte> {
     return this.api.post<Compte>('/api/comptes', nouveau);
+  }
+
+  /** Mails the link to choose a first password (72 h, single use): the admin never sees it. */
+  invite(compteId: string): Promise<void> {
+    return this.api.post<void>(`/api/comptes/${encodeURIComponent(compteId)}/invitation`, null);
+  }
+
+  /** Mails the link to choose a new password (1 h, single use). */
+  resetPassword(compteId: string): Promise<void> {
+    return this.api.post<void>(
+      `/api/comptes/${encodeURIComponent(compteId)}/reinitialisation`,
+      null,
+    );
   }
 
   deactivate(compteId: string): Promise<Compte> {
