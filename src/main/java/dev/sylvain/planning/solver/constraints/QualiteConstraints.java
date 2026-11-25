@@ -497,9 +497,9 @@ public final class QualiteConstraints {
      */
     private Constraint limiterEmplacementsParJour(SeatStreams seats) {
         // The zones already crossed count; the day is charged only while one
-        // of its located seats is still ahead of now (ADR 0044). Read on the
-        // shared day (SeatStreams.days), the located seats picked out of it;
-        // the match keeps the shape it had — the day number and the set.
+        // of its located seats is still ahead of now, as ADR 0044 says. It is
+        // read on the shared day stream of SeatStreams, the located seats
+        // picked out of it, and the match keeps the day number and the set.
         return ConstraintToggleSupport.actif(
                         seats.days()
                                 .map(

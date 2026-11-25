@@ -36,12 +36,12 @@ public class PlanningConstraintProvider implements ConstraintProvider {
         SeatStreams seats = new SeatStreams(constraintFactory);
         return Stream.of(
                         new AffectationConstraints().define(constraintFactory, seats),
-                        new LegalConstraints().define(constraintFactory, seats),
+                        new LegalConstraints().define(seats),
                         new AdHocConstraints().define(constraintFactory, seats),
                         new VerrouillageConstraints().define(constraintFactory),
-                        new RepasConstraints().define(constraintFactory, seats),
+                        new RepasConstraints().define(seats),
                         new QualiteConstraints().define(constraintFactory, seats),
-                        new PreferenceConstraints().define(constraintFactory, seats))
+                        new PreferenceConstraints().define(seats))
                 .flatMap(Stream::of)
                 .toArray(Constraint[]::new);
     }

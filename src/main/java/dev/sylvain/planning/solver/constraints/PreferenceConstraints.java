@@ -37,11 +37,11 @@ public final class PreferenceConstraints {
     private static final int POLYVALENTS_LIBRES_MIN = 1;
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
-        return define(constraintFactory, new SeatStreams(constraintFactory));
+        return define(new SeatStreams(constraintFactory));
     }
 
     /** The same rules over the seat streams shared with the other families (see {@link SeatStreams}). */
-    public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
+    public Constraint[] define(SeatStreams seats) {
         return new Constraint[] {
             favoriserMixiteDesNiveaux(seats), equilibrerCreneauxPenibles(seats), preserverBufferPolyvalents(seats)
         };

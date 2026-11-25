@@ -577,7 +577,7 @@ public final class WeekRelocationMoveIteratorFactory
 
         private static List<LocalDate> sorted(Set<LocalDate> days) {
             List<LocalDate> list = new ArrayList<>(days);
-            Collections.sort(list);
+            list.sort(null);
             return list;
         }
 
