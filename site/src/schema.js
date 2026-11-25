@@ -20,7 +20,36 @@ const faq = (lang, items) => ({
   })),
 });
 
+function docSchema(p, modified) {
+  const url = abs(p.url);
+  const home = copy.fr.commun.nav.accueil;
+  const trail = [{ name: home, item: abs(link.fr.accueil) }];
+  if (p.name !== 'README') trail.push({ name: copy.fr.docs.h1, item: abs('/docs/') });
+  trail.push({ name: p.name === 'README' ? copy.fr.docs.h1 : p.h1, item: url });
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'Person', '@id': site.author.id, name: site.author.name, url: site.author.url, sameAs: site.author.sameAs },
+      { '@type': 'WebSite', '@id': abs('/#site'), name: site.name, url: abs('/'), inLanguage: ['fr', 'en'], publisher: { '@id': site.author.id } },
+      {
+        '@type': 'TechArticle',
+        '@id': `${url}#page`,
+        url,
+        name: typo(p.title, 'fr'),
+        description: p.description,
+        inLanguage: 'fr',
+        isPartOf: { '@id': abs('/#site') },
+        dateModified: modified,
+        author: { '@id': site.author.id },
+        primaryImageOfPage: { '@type': 'ImageObject', url: abs('/og-fr.png') },
+      },
+      { '@type': 'BreadcrumbList', itemListElement: trail.map((t, i) => ({ '@type': 'ListItem', position: i + 1, ...t })) },
+    ],
+  };
+}
+
 export default function schema(p, modified) {
+  if (p.doc) return docSchema(p, modified);
   const { lang, key } = p;
   const page = copy[lang][key];
   const url = abs(p.url);

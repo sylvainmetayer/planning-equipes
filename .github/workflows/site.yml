@@ -2,19 +2,22 @@ name: Site
 
 # La vitrine (site/, Eleventy, publiée par Cloudflare Pages) : build, tests,
 # orthographe, HTML valide, accessibilité, liens. Rien ici ne touche
-# l'application ; le filtre de chemins fait que l'inverse est vrai aussi.
+# l'application ; le filtre de chemins fait que l'inverse est vrai aussi, à une
+# exception : docs/ est publié par la vitrine sous /docs, il la déclenche donc.
 on:
   push:
     branches:
       - main
     paths:
       - 'site/**'
+      - 'docs/**'
       - '.pages.yml'
       - '.github/workflows/site.yml'
       - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'
   pull_request:
     paths:
       - 'site/**'
+      - 'docs/**'
       - '.pages.yml'
       - '.github/workflows/site.yml'
       - 'src/main/java/dev/sylvain/planning/solver/ConstraintCatalog.java'

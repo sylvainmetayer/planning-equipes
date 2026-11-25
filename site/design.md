@@ -46,3 +46,12 @@ One 44px icon button in the masthead cycles auto, light, dark (`data-theme` on `
 
 ## Exports
 `src/assets/tokens.css` in this project.
+
+## Documentation
+
+Les pages de `/docs` rendent les `.md` de `docs/` dans la même charte, sans
+nouvelle police ni couleur : l'en-tête des pages-réponses (fil d'Ariane, titre,
+phrase d'introduction), puis deux colonnes sur grand écran, une colonne de
+navigation (« Sur cette page », « Toutes les rubriques ») et le texte, en une
+seule colonne sous 60 rem. Un tableau ou un bloc de code plus large que la page
+défile dans son propre cadre (`.scroll`, au clavier), jamais la page.
