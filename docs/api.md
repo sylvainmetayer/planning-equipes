@@ -1496,13 +1496,8 @@ libellés depuis son propre référentiel.
 calcul de score, aucun solveur tenu : le bouton « Actualiser » de l'écran
 Contraintes reste donc disponible pendant qu'une résolution tourne.
 
-Il remplace un lancement d'analyse en tâche de fond — une résolution complète
-dont le résultat n'était jamais persisté. L'écran affichait alors le score d'un
-planning que rien d'autre ne montrait, au prix du budget d'un solve. Les trois
-routes `/api/solve/analyze`, `/api/solve/analyze/async` et
-`/api/solve/analyze/async/reference-data` ont disparu avec lui, ainsi que le
-type de job `ANALYZE` (`V55` purge les lignes restantes de `solver_job`, que
-`JobType.valueOf` ne saurait plus relire).
+Il remplace un lancement d'analyse en tâche de fond, retiré (voir
+[`memoire-du-projet.md`](memoire-du-projet.md#4-ce-qui-a-été-retiré-et-pourquoi)).
 
 Sans rien de persisté, la réponse est la vue vide (`analysedAt` nul) : c'est
 l'état que l'écran affiche déjà avant la première résolution.

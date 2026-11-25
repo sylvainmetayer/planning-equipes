@@ -383,7 +383,7 @@ formalisée dans la décision
 ## 4. Ce qui a été retiré, et pourquoi
 
 Une fonctionnalité retirée coûte moins cher qu'une fonctionnalité qu'on
-maintient sans usage. Sept l'ont été, chacune pour une raison différente qui
+maintient sans usage. Huit l'ont été, chacune pour une raison différente qui
 vaut d'être connue avant de la réintroduire.
 
 | Retiré | Motif |
@@ -395,6 +395,7 @@ vaut d'être connue avant de la réintroduire.
 | PostHog | Analytics produit jamais consultée, qui coûtait une dépendance dans le bundle, deux variables, une clé exposée et un traitement de données à justifier. La trace du retrait est conservée dans [`observabilite.md`](observabilite.md) avec les candidats évalués à l'époque, pour que la question ne soit pas ré-instruite de zéro. |
 | `favoriserRotationDesStands` | Conflit avec deux règles de niveau supérieur (§2.h). |
 | Confirmation motivée d'une désactivation légale | Ne prouvait rien et ne survivait pas à son annulation (§3). |
+| Analyse lancée en tâche de fond (`/api/solve/analyze`, `/api/solve/analyze/async`, `/api/solve/analyze/async/reference-data`, type de job `ANALYZE`) | Une résolution complète dont le résultat n'était jamais persisté : l'écran affichait le score d'un planning que rien d'autre ne montrait, au prix du budget d'un solve. Remplacée en août 2026 par `POST /api/constraints/diagnostic`, qui recalcule le score du plan persisté sans solveur ; la migration `V55` a purgé les lignes `solver_job` que `JobType.valueOf` ne savait plus relire. |
 
 Un cas voisin mérite d'être noté : le **contrôle DCO** en CI a été retiré comme
 prématuré — une règle que seul son auteur pouvait enfreindre — mais avec une
