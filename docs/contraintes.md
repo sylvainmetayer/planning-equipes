@@ -7,7 +7,7 @@ Trois niveaux, alignés sur le `HardMediumSoftScore` de Timefold : **dur**
 > **Ne jamais reclasser une contrainte dure en medium ou soft sans validation
 > explicite**, en particulier tout ce qui touche au cadre légal des mineurs.
 
-**La liste des 43 contraintes, leur niveau, leur catégorie, leur description
+**La liste des 47 contraintes, leur niveau, leur catégorie, leur description
 métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — et
 sont servies par `GET /api/constraints`, affichées sur la page « Règles du
 planning » (`/regles`). Ce document ne les recopie pas : il porte les

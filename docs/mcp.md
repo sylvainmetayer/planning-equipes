@@ -288,7 +288,7 @@ sous-effectif le samedi.
 
 Un `BusinessError` levé par le domaine repartait en erreur JSON-RPC générique
 (`{"code": -32603, "message": "Internal error"}`) : la phrase qui dit ce qui a
-été refusé — et souvent comment le corriger — était perdue sur les 132 outils.
+été refusé — et souvent comment le corriger — était perdue sur tous les outils.
 Un assistant ne pouvait ni corriger son appel, ni distinguer « tu as mal
 saisi » de « le serveur est cassé » : il réessayait à l'identique.
 
