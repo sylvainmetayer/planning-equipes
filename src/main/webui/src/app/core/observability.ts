@@ -44,7 +44,7 @@ export async function loadAppConfig(): Promise<AppConfig> {
  * browser. Checking `location.pathname` once at bootstrap is enough — both
  * pages are entered by their URL and no in-app navigation crosses into them.</p>
  */
-const TOKEN_PAGE_PREFIXES = ['/animateur/', '/mural/'];
+const TOKEN_PAGE_PREFIXES = ['/animateur/', '/mural/', '/mot-de-passe'];
 
 /**
  * Replaces the token of an espace or wall-display URL with a placeholder,
@@ -55,10 +55,9 @@ const TOKEN_PAGE_PREFIXES = ['/animateur/', '/mural/'];
  * left alone (the segment before `mural` is not a slash there).
  */
 export function maskUrlToken(value: string): string {
-  return value.replace(
-    /\/(api\/espace-animateur|animateur|api\/mural|mural)\/[^/?#\s"']+/g,
-    '/$1/<jeton>',
-  );
+  return value
+    .replace(/\/(api\/espace-animateur|animateur|api\/mural|mural)\/[^/?#\s"']+/g, '/$1/<jeton>')
+    .replace(/\/mot-de-passe#[^\s"']+/g, '/mot-de-passe#<jeton>');
 }
 
 /**

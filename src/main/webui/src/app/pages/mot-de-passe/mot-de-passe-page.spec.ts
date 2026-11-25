@@ -80,6 +80,30 @@ describe('ChoosePasswordPage', () => {
     expect(page.choisi()).toBe(false);
   });
 
+  it('takes the token out of the address bar as soon as it is read', () => {
+    const replace = vi.spyOn(window.history, 'replaceState');
+    window.history.replaceState(null, '', '/mot-de-passe#SECRET');
+    replace.mockClear();
+    monter('SECRET');
+    expect(replace).toHaveBeenCalled();
+    expect(window.location.hash).toBe('');
+    replace.mockRestore();
+  });
+
+  it('says why the button waits, counting code points like the server', () => {
+    const fixture = monter('JETON');
+    const page = fixture.componentInstance as unknown as Page & { raison(): string };
+    page.password.set('court');
+    expect(page.raison()).toContain('7');
+    page.password.set('une phrase assez longue');
+    page.confirmation.set('une phrase assez longu');
+    expect(page.raison()).toContain('identiques');
+    // twelve code points, however they are encoded
+    page.password.set('e\u0301'.repeat(12));
+    page.confirmation.set('\u00e9'.repeat(12));
+    expect(page.raison()).toBe('');
+  });
+
   it('does nothing without a token', async () => {
     const fixture = monter(null);
     const page = fixture.componentInstance as unknown as Page;

@@ -92,12 +92,15 @@ export class AdminApi {
   readonly providerSignInUrl = '/api/auth/oidc/login';
 
   /**
-   * The password step of a local sign-in. Rejects with the server's sentence
-   * (« Adresse ou mot de passe incorrect », or the wait of a lockout): the
-   * answer is the same whatever the cause.
+   * The password step of a local sign-in. Rejects with the raw HTTP failure:
+   * the wrong password is a 401 here, which the generic layer would read as an
+   * expired session, and the lockout a 429.
    */
   localSignIn(email: string, password: string): Promise<SignInChallenge> {
-    return this.api.post<SignInChallenge>('/api/auth/connexion', { email, password });
+    return this.api.postPreservingHttpError<SignInChallenge>('/api/auth/connexion', {
+      email,
+      password,
+    });
   }
 
   /** « Mot de passe oublié » — answers the same whether the address has an account or not. */

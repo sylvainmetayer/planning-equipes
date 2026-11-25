@@ -46,6 +46,7 @@ const VERBES = {
   downloadGet: 'get',
   downloadGetNamedByServer: 'get',
   post: 'post',
+  postPreservingHttpError: 'post',
   downloadPost: 'post',
   postRaw: 'post',
   put: 'put',

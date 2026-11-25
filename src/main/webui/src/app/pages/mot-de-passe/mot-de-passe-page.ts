@@ -1,6 +1,9 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  Injector,
   computed,
   inject,
   signal,
@@ -52,6 +55,8 @@ export class ChoosePasswordPage {
   protected readonly productName = inject(BRANDING).productName;
 
   private readonly api = inject(AdminApi);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   /** `null` when the link was opened without its token: nothing to submit. */
   protected readonly jeton = inject(ActivatedRoute).snapshot.fragment;
 
@@ -62,9 +67,36 @@ export class ChoosePasswordPage {
   protected readonly erreur = signal<string | null>(null);
   protected readonly choisi = signal(false);
 
-  protected readonly valid = computed(
-    () => this.password().length >= LONGUEUR_MIN && this.password() === this.confirmation(),
-  );
+  constructor() {
+    // The token leaves the address bar at once: it would otherwise stay in the
+    // history, a bookmark, a screenshot, and travel in the error reports.
+    if (this.jeton) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        window.location.pathname + window.location.search,
+      );
+    }
+  }
+
+  /** In code points of the NFC form, as the server counts. */
+  private length(value: string): number {
+    return [...value.normalize('NFC')].length;
+  }
+
+  /** Why the button waits, said in words — a disabled button alone explains nothing. */
+  protected readonly raison = computed(() => {
+    const count = this.length(this.password());
+    if (count < LONGUEUR_MIN) {
+      return $localize`:@@motDePasse.court:Encore ${LONGUEUR_MIN - count}:manque: caractère(s) au moins.`;
+    }
+    if (this.password().normalize('NFC') !== this.confirmation().normalize('NFC')) {
+      return $localize`:@@motDePasse.differents:Les deux mots de passe ne sont pas identiques.`;
+    }
+    return '';
+  });
+
+  protected readonly valid = computed(() => this.raison() === '');
 
   protected async choisir(event: Event): Promise<void> {
     event.preventDefault();
@@ -76,6 +108,12 @@ export class ChoosePasswordPage {
     try {
       await this.api.choosePassword(this.jeton, this.password());
       this.choisi.set(true);
+      afterNextRender(
+        () => this.host.nativeElement.querySelector<HTMLElement>('.mdp-fait')?.focus(),
+        {
+          injector: this.injector,
+        },
+      );
     } catch (error) {
       this.erreur.set(errorMessage(error));
     } finally {
