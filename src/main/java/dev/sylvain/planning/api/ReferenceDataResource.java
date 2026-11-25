@@ -163,7 +163,8 @@ public class ReferenceDataResource {
      * rule.
      */
     private static Response toResponse(ScenarioImportService.ScenarioImportOutcome outcome) {
-        return Response.ok(new ImportScenarioResult(outcome.editionId(), outcome.editionNom(), outcome.editionCreee()))
+        return Response.ok(new ImportScenarioResult(
+                        outcome.editionId(), outcome.editionNom(), outcome.editionCreee(), outcome.avertissements()))
                 .build();
     }
 
@@ -171,7 +172,8 @@ public class ReferenceDataResource {
      * Body returned by {@link #importScenario} and {@link #importScenarioFile}:
      * where the data landed, and whether the import had to create that edition.
      */
-    public record ImportScenarioResult(String editionId, String editionNom, Boolean editionCreee) {}
+    public record ImportScenarioResult(
+            String editionId, String editionNom, Boolean editionCreee, List<String> avertissements) {}
 
     /**
      * Validates a scenario YAML file's structure (types, required fields,

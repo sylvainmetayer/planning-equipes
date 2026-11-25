@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Scénario extrême 6 : une semaine en exploitation continue, jour et nuit.
 # Six vacations de quatre heures qui couvrent les vingt-quatre heures, la
 # dernière finissant à minuit. Repos quotidien de onze heures, travail de nuit,

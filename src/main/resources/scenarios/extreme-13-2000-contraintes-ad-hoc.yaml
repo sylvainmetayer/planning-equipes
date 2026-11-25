@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+schemaVersion: 2
 # Cas dégénéré 13 : deux mille contraintes ad hoc sur une semaine.
 # Deux cents affectations forcées (une par personne), cinq cents incompatibilités,
 # trois cents affinités et mille indisponibilités forcées sur un stand, tirées

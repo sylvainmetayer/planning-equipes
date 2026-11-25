@@ -21,8 +21,9 @@ import java.util.List;
  * exported file.</p>
  */
 public record ScenarioDto(
-        // Absent means 1; a number above ScenarioBinder.SCHEMA_VERSION is refused on reading.
-        @Min(1) @Max(1) Integer schemaVersion,
+        // Absent means 1 and is converted on reading (ScenarioMigrations); a number above ScenarioBinder.SCHEMA_VERSION
+        // is refused.
+        @Min(1) @Max(2) Integer schemaVersion,
         @Valid EditionCibleDto edition,
         @NotNull @Valid FestivalDto festival,
         @Valid ParametresSolveurDto parametresSolveur,
