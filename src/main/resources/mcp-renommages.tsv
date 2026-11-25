@@ -1,6 +1,6 @@
-# Correspondance des noms d outils MCP : ancien (publié sur v3.1.0) -> nouveau, ou "retiré".
-# Colonnes séparées par une tabulation : ancien, nouveau. Convention : docs/decisions/0100-convention-de-nommage-des-outils-mcp.md.
-# Tant qu une PR de modèle n a pas renommé un outil, son nouveau nom est son ancien. Jamais d alias : un outil ne se publie que sous son nom courant.
+# Correspondance des noms d'outils MCP : ancien (publié sur v3.1.0) -> nouveau, ou "retiré".
+# Colonnes séparées par une tabulation : ancien, nouveau. Convention : docs/decisions/0100-convention-de-nommage-des-outils-mcp.md. Les lignes changées sont recopiées dans site/src/docs/comprendre/mcp-outils.md (McpRenommageTest).
+# Tant qu'une PR de modèle n'a pas renommé un outil, son nouveau nom est son ancien. Jamais d'alias : un outil ne se publie que sous son nom courant.
 accepter_demande_echange	accepter_demande_echange
 activer_contrainte	activer_contrainte
 activer_edition	activer_edition
