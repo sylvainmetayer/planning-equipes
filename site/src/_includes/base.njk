@@ -71,7 +71,7 @@
       <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
       <li><a href="{{ urls[lang].mentions }}">{{ common.pied.mentions }}</a></li>
       <li><a href="{{ urls[lang].plan }}">{{ common.pied.plan }}</a></li>
-      <li><a href="/docs/"{% if lang != 'fr' %} hreflang="fr" lang="fr"{% endif %}>{{ common.pied.docs }}</a></li>
+      <li><a href="/docs/"{% if lang != 'fr' %} hreflang="fr"{% endif %}>{{ common.pied.docs }}</a></li>
       <li><a href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a></li>
     </ul>
     <div class="foot__fine">

@@ -8,6 +8,7 @@ import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import MarkdownIt from 'markdown-it';
 import site from './_data/site.json' with { type: 'json' };
+import home from './_data/pages/docs.json' with { type: 'json' };
 import { typo } from './text.js';
 
 const DIR = fileURLToPath(new URL('../../docs/', import.meta.url));
@@ -19,14 +20,23 @@ const warn = (message) => warnings.push(message);
 // GitHub's own anchors, so that the links written for GitHub keep working
 const slugify = (text) => text.toLowerCase().replace(/[^\p{L}\p{N}\p{M} _-]/gu, '').trim().replaceAll(' ', '-');
 
+// A malformed escape in a link is the source's to fix, not a reason to fail the build
+const decode = (text) => {
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;
+  }
+};
+
 const urlOfDoc = (name) => (name === 'README' ? '/docs/' : `/docs/${name}/`);
 
 function target(href, published) {
-  if (href.startsWith('#')) return { href: `#${decodeURIComponent(href.slice(1))}` };
+  if (href.startsWith('#')) return { href: `#${decode(href.slice(1))}` };
   if (/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) return { href };
   const [path, rawHash] = href.split('#');
   // The anchors are written as the headings are, accents included: what GitHub's slugs and our ids are
-  const hash = rawHash === undefined ? undefined : decodeURIComponent(rawHash);
+  const hash = rawHash === undefined ? undefined : decode(rawHash);
   const repoPath = posix.normalize(posix.join('docs', path));
   const doc = repoPath.match(/^docs\/([^/]+)\.md$/)?.[1];
   if (doc && published.has(doc)) return { href: urlOfDoc(doc) + (hash ? `#${hash}` : ''), doc, hash };
@@ -108,7 +118,9 @@ function renderer(published, state) {
 
 const cut = (text, max) => {
   const flat = text.replace(/\s+/g, ' ').trim();
-  return flat.length <= max ? flat : `${flat.slice(0, flat.lastIndexOf(' ', max - 1))}…`;
+  if (flat.length <= max) return flat;
+  const space = flat.lastIndexOf(' ', max - 1);
+  return `${flat.slice(0, space > 0 ? space : max - 1)}…`;
 };
 
 let cache;
@@ -128,8 +140,9 @@ export function loadDocs() {
       lang: 'fr',
       key: 'docs',
       h1: state.h1 || name,
-      title: name === 'README' ? `Documentation technique | ${site.name}` : `${cut(typo(state.h1 || name, 'fr'), 34)} | Documentation | ${site.name}`,
-      description: cut(state.lead, 155),
+      // The home of /docs takes its title and description from the CMS (docs.json)
+      title: name === 'README' ? typo(home.titre, 'fr') : `${cut(typo(state.h1 || name, 'fr'), 34)} | Documentation | ${site.name}`,
+      description: name === 'README' ? typo(home.description, 'fr') : cut(state.lead || state.h1 || name, 155),
       body,
       toc: state.toc,
       source,

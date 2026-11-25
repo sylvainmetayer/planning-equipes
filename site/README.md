@@ -14,7 +14,7 @@ Le site de présentation de Planning Équipes, en deux langues, construit avec
 | `src/_includes/`, `src/pages.njk`, `src/404.njk` | les gabarits : l'accueil, les pages-réponses, le film, la mise en page commune |
 | `src/schema.js`, `src/markdown.js` | les données structurées JSON-LD de chaque page, et son jumeau Markdown |
 | `src/llms.njk`, `src/robots.njk`, `src/sitemap.njk` | `llms.txt`, `robots.txt`, `sitemap.xml`, tous trois générés |
-| `src/docs.js`, `src/docs.njk`, `src/_data/docs.js` | **la documentation technique** : les `.md` de `../docs/` lus en place au build et publiés sous `/docs/<nom>/` (français seul, sans copie). Exclus : `decisions/` et `memoire-du-projet.md` ; un lien vers eux, vers `AGENTS.md`, le code ou tout fichier non publié devient un lien GitHub, les `.svg` de `docs/diagrammes/` sont servis tels quels. Un lien `.md#ancre` ou une ancre introuvable est un avertissement (`[docs]`) du build, jamais une erreur |
+| `src/docs.js`, `src/docs.njk`, `src/_data/docs.js` | **la documentation technique** : les `.md` de `../docs/` lus en place au build et publiés sous `/docs/<nom>/` (français seul, sans copie). Exclus : `decisions/` et `memoire-du-projet.md` ; un lien vers eux, vers `AGENTS.md`, le code ou tout fichier non publié devient un lien GitHub, les `.svg` de `docs/diagrammes/` sont servis tels quels. La recherche du plan du site lit, pour elles, un index léger (`/docs/search.json` : titre, description, titres h2/h3 et leurs ancres) plutôt que leurs jumeaux Markdown. Un lien `.md#ancre` ou une ancre introuvable est un avertissement (`[docs]`) du build, jamais une erreur |
 | `src/assets/` | la feuille de style (`style.css`, `tokens.css`, `base.css`, minifiée et assemblée au build), les scripts (minifiés au build, dont `search.js`, la recherche du plan du site) et l'icône des liens sortants |
 | `src/text.js` | la typographie, et la passe sur chaque page construite : le sens de chaque abréviation à sa première apparition (liste dans `commun.json`), la mention « site externe » des liens sortants |
 | `src/images/{fr,en}/`, `src/videos/{fr,en}/` | les captures et les vidéos de l'application, une série par langue |
@@ -237,8 +237,9 @@ Analytics sont décrits dans le dépôt homelab. Le projet Pages est relié au d
 par l'application GitHub de Cloudflare avec le dossier racine `site`, la
 **commande de build `npm run build`**, la sortie `_site` (relue dans
 `wrangler.toml`) ; ses
-chemins surveillés se limitent à `site/**`, pour qu'un commit de l'application ne
-redéploie rien. Chaque merge sur `main` qui touche `site/` publie ; une PR reçoit
+chemins surveillés se limitent à `site/**` et `docs/**` (la documentation est
+publiée sous `/docs`), pour qu'un commit de l'application ne redéploie rien.
+Chaque merge sur `main` qui touche `site/` ou `docs/` publie ; une PR reçoit
 un déploiement d'aperçu, que Pages sert en `noindex` et sans la mesure
 d'audience (`ELEVENTY_ENV=preview`, posé par `eleventy.config.js` depuis
 `CF_PAGES_BRANCH`).
