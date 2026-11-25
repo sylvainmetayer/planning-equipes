@@ -185,6 +185,9 @@ public class PlanningPersistenceService {
             "consigne_edition",
             "prereglage_consigne_fenetre",
             "prereglage_consigne",
+            // What the responsables read: back to the safe default (shifts only) with the stands.
+            "reglage_noms_stand",
+            "reglage_noms_responsable",
             "stand_typologie",
             "animateur_competence",
             "animateur_jour_indispo",
@@ -203,6 +206,13 @@ public class PlanningPersistenceService {
                     scope.prepareScoped(connection, "DELETE FROM " + table + " WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
+        }
+        // The stands the responsables' rights covered are gone: withdrawn, dated, kept
+        // (the same as when the edition itself is deleted). Not edition-partitioned: the right names it.
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
+                UPDATE habilitation SET retiree_le = now(), retiree_par = 'systeme'
+                WHERE edition_id = ? AND role = 'RESPONSABLE_STAND' AND retiree_le IS NULL""")) {
+            ps.executeUpdate();
         }
     }
 

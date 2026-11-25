@@ -24,7 +24,10 @@ public class ReglageResponsableService {
         return repository.get();
     }
 
-    /** Replaces the default and the exceptions; an exception on a stand of another edition is refused. */
+    /**
+     * Sets the default and the exceptions the body names ({@code null} lifts one); the stands it
+     * does not name keep theirs. An exception on a stand of another edition is refused.
+     */
     public ReglagesResponsables replace(ReglagesResponsables demande) {
         if (demande == null || demande.parDefaut() == null) {
             throw new BusinessError.Invalid("Réglage par défaut manquant.");
@@ -33,9 +36,10 @@ public class ReglageResponsableService {
         Set<String> connus = referentiel.listStands().stream().map(Stand::getId).collect(Collectors.toSet());
         if (demande.parStand() != null) {
             demande.parStand().forEach((standId, reglage) -> {
-                if (reglage == null || !connus.contains(standId)) {
+                if (!connus.contains(standId)) {
                     throw new BusinessError.Invalid("Stand inconnu dans cette édition : " + standId);
                 }
+                // null lifts the exception of that stand; a stand left out of the body is untouched.
                 exceptions.put(standId, reglage);
             });
         }

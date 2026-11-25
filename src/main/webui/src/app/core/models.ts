@@ -2874,7 +2874,8 @@ export interface ReglageNoms {
 /** `GET/PUT /api/reglage-responsables`: the edition's default and the exceptions by stand id. */
 export interface ReglagesResponsables {
   parDefaut: ReglageNoms;
-  parStand: Record<string, ReglageNoms>;
+  /** In a request, `null` lifts that stand's exception and a stand left out is untouched. */
+  parStand: Record<string, ReglageNoms | null>;
 }
 
 /** A name and nothing else: no address, no phone, no age. */

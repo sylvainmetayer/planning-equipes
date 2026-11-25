@@ -2,7 +2,7 @@
 // without rendering. Every wording is built on call, never at module scope:
 // `$localize` only resolves once `main.ts` has loaded the translations.
 
-import { Compte, Edition, Habilitation, RoleHabilitation } from '../../core/models';
+import { Compte, Edition, Habilitation, RoleHabilitation, Stand } from '../../core/models';
 
 /** The roles, in the order the grant form offers them. */
 export const ROLES: readonly RoleHabilitation[] = ['ORGANISATEUR', 'RESPONSABLE_STAND', 'ADMIN'];
@@ -41,15 +41,25 @@ export function editionLabel(editionId: string | null, editions: readonly Editio
 }
 
 /** One right in a sentence: « Organisateur — Année 2026 ». */
-export function rightLabel(habilitation: Habilitation, editions: readonly Edition[]): string {
+export function rightLabel(
+  habilitation: Habilitation,
+  editions: readonly Edition[],
+  stands: readonly Pick<Stand, 'id' | 'nom'>[] = [],
+): string {
   const role = roleLabel(habilitation.role);
   const edition = editionLabel(habilitation.editionId ?? null, editions);
   if (habilitation.role === 'ADMIN') {
     return role;
   }
   if (habilitation.role === 'RESPONSABLE_STAND') {
-    const stands = habilitation.standIds.length;
-    return $localize`:@@comptes.droit.responsable:${role}:role: — ${edition}:edition: (${stands}:stands: stand(s))`;
+    // The names are known only for the stands this browser holds (its edition's): else a count.
+    const noms = habilitation.standIds.map((id) => stands.find((s) => s.id === id)?.nom);
+    if (noms.every((nom) => nom !== undefined)) {
+      const liste = noms.join(', ');
+      return $localize`:@@comptes.droit.responsableStands:${role}:role: — ${edition}:edition: (${liste}:stands:)`;
+    }
+    const n = habilitation.standIds.length;
+    return $localize`:@@comptes.droit.responsable:${role}:role: — ${edition}:edition: (${n}:stands: stand(s))`;
   }
   return $localize`:@@comptes.droit:${role}:role: — ${edition}:edition:`;
 }

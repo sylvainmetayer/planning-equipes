@@ -42,7 +42,11 @@ public class ReglageResponsableRepository {
         });
     }
 
-    /** Replaces the edition's default and all its stand exceptions, in one transaction. */
+    /**
+     * Writes the edition's default and the stand exceptions the body names, in one transaction:
+     * a {@code null} value lifts that stand's exception, a stand the body does not name is left
+     * as it is — a client that did not know a stand cannot erase what was set on it.
+     */
     public void replace(ReglagesResponsables reglages) {
         scope.write("Failed to save the responsable settings", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
@@ -53,18 +57,23 @@ public class ReglageResponsableRepository {
                 bind(ps, 2, reglages.parDefaut());
                 ps.executeUpdate();
             }
-            try (PreparedStatement ps =
-                    scope.prepareScoped(connection, "DELETE FROM reglage_noms_stand WHERE edition_id = ?")) {
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps = scope.prepareScoped(
-                    connection,
-                    "INSERT INTO reglage_noms_stand (edition_id, stand_id, noms_visibles, ouverture_le) "
-                            + "VALUES (?, ?, ?, ?)")) {
+            try (PreparedStatement delete = scope.prepareScoped(
+                            connection, "DELETE FROM reglage_noms_stand WHERE edition_id = ? AND stand_id = ?");
+                    PreparedStatement upsert = scope.prepareScoped(connection, """
+                            INSERT INTO reglage_noms_stand (edition_id, stand_id, noms_visibles, ouverture_le)
+                            VALUES (?, ?, ?, ?)
+                            ON CONFLICT (edition_id, stand_id)
+                            DO UPDATE SET noms_visibles = EXCLUDED.noms_visibles,
+                            ouverture_le = EXCLUDED.ouverture_le""")) {
                 for (var exception : reglages.parStand().entrySet()) {
-                    ps.setString(2, exception.getKey());
-                    bind(ps, 3, exception.getValue());
-                    ps.executeUpdate();
+                    if (exception.getValue() == null) {
+                        delete.setString(2, exception.getKey());
+                        delete.executeUpdate();
+                    } else {
+                        upsert.setString(2, exception.getKey());
+                        bind(upsert, 3, exception.getValue());
+                        upsert.executeUpdate();
+                    }
                 }
             }
         });

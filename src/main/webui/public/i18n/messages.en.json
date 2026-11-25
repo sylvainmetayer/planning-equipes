@@ -5317,5 +5317,6 @@
   "comptes.inviterCase": "Invite by e-mail to choose their password",
   "comptes.stands": "Stands of “{$INTERPOLATION}”",
   "comptes.role.responsable": "Stand manager (read access to their stand)",
-  "comptes.droit.responsable": "{$role} — {$edition} ({$stands} stand(s))"
+  "comptes.droit.responsable": "{$role} — {$edition} ({$stands} stand(s))",
+  "comptes.droit.responsableStands": "{$role} — {$edition} ({$stands})"
 }

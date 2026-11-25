@@ -8,7 +8,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * and the exception of the stands that have one.
  *
  * @param parDefaut the default of the edition
- * @param parStand  the stands whose setting differs from the default, by stand id
+ * @param parStand  the stands whose setting differs from the default, by stand id; in a request, a
+ *                  {@code null} value lifts that stand's exception and a stand left out is untouched
  */
 @Schema(requiredProperties = {"parDefaut", "parStand"})
 public record ReglagesResponsables(ReglageNoms parDefaut, Map<String, ReglageNoms> parStand) {
