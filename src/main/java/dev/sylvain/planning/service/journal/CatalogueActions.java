@@ -138,6 +138,9 @@ public final class CatalogueActions {
     private static final String EXPORT_INTENDANCE = "EXPORT_INTENDANCE";
     private static final String EXPORT_ARCHIVE_EVENEMENT = "EXPORT_ARCHIVE_EVENEMENT";
     private static final String EXPORT_FORMATION = "EXPORT_FORMATION";
+    private static final String CONFORMITE_CONSULTEE = "CONFORMITE_CONSULTEE";
+    private static final String EXPORT_CONFORMITE_PDF = "EXPORT_CONFORMITE_PDF";
+    private static final String EXPORT_CONFORMITE_CSV = "EXPORT_CONFORMITE_CSV";
     private static final String EXPORT_LISTE_ANIMATEURS = "EXPORT_LISTE_ANIMATEURS";
     private static final String EXPORT_REALISE = "EXPORT_REALISE";
     private static final String EXPORT_DELTA_EDITIONS = "EXPORT_DELTA_EDITIONS";
@@ -370,6 +373,11 @@ public final class CatalogueActions {
         // Declared through `export`, never `action`: the flag it sets is what
         // the history's « Exports » filter selects on.
         export(EXPORT_PDF, "Plannings exportés en PDF", Entite.PLANNING);
+        // The RH right's reads: written by RhService in the edition the report is about, never by the
+        // response filter (an RH account names its edition in the path, not in the header).
+        action(CONFORMITE_CONSULTEE, "Rapport de conformité consulté", Entite.PLANNING);
+        export(EXPORT_CONFORMITE_PDF, "Rapport de conformité exporté en PDF", Entite.PLANNING);
+        export(EXPORT_CONFORMITE_CSV, "Rapport de conformité exporté en CSV", Entite.PLANNING);
         export(EXPORT_PDF_ANIMATEUR, "Planning d'un animateur exporté en PDF", Entite.ANIMATEUR);
         export(EXPORT_ICS, "Plannings exportés en calendrier", Entite.PLANNING);
         export(EXPORT_ICS_ANIMATEUR, "Planning d'un animateur exporté en calendrier", Entite.ANIMATEUR);
@@ -841,6 +849,12 @@ public final class CatalogueActions {
                 "ResponsableResource#affichette",
                 "The responsable's own sheet: what their screen already shows them, to the same person, "
                         + "for the stands of their rights — the setting decides the names, not this route.");
+        untracked(
+                "RhResource#exportPdf",
+                "journalled by RhService in the edition of the report (EXPORT_CONFORMITE_PDF): the response filter files under the header's edition, which this route does not use");
+        untracked(
+                "RhResource#exportCsv",
+                "journalled by RhService in the edition of the report (EXPORT_CONFORMITE_CSV): the response filter files under the header's edition, which this route does not use");
         untracked("TypologieResource#exempleCsv", FICHIER_EXEMPLE);
         untracked("EmplacementResource#exempleCsv", FICHIER_EXEMPLE);
         untracked("StandResource#exempleCsv", FICHIER_EXEMPLE);
