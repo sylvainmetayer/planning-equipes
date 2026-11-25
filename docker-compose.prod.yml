@@ -34,9 +34,10 @@ services:
     image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir site/src/docs/installer/versioning.md}
     restart: unless-stopped
     logging: *logging
-    # L'image donne à la JVM les trois quarts de cette limite pour son tas
-    # (JDK_JAVA_OPTIONS, voir le Dockerfile) : 1,5 Go ici, ce que le solveur
-    # demande pour ne pas passer son temps à collecter. Sous 1 Go, il ne
+    # L'image donne à la JVM 75 % de la limite du conteneur pour son tas
+    # (JDK_JAVA_OPTIONS, voir le Dockerfile), soit 1,5 Go avec les 2 Go
+    # ci-dessous : ce que le solveur demande pour ne pas passer son temps à
+    # collecter. Sous 1 Go, il ne
     # resterait pas assez hors du tas et le conteneur serait tué en plein
     # calcul. Voir site/src/docs/installer/calcul-du-planning.md.
     mem_limit: 2g
@@ -133,4 +134,8 @@ services:
 
 volumes:
   postgres_data:
+    # Le « pg18 » est historique : le volume porte un sous-dossier par version
+    # majeure de PostgreSQL (18/docker, 19/docker…), son nom n'en dit rien. Ne
+    # le renommez pas sur une instance en service : un autre nom est un volume
+    # vide, donc une base vide.
     name: postgres_data_pg18

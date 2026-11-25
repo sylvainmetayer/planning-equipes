@@ -22,15 +22,15 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # MCP server, opt-in: blank (the default) makes every /mcp request fail
-      # authentication. See site/src/docs/comprendre/mcp.md.
+      # authentication. See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
       PLANNING_MCP_API_KEY_HEADER: ${PLANNING_MCP_API_KEY_HEADER:-X-MCP-Api-Key}
       # Extra headers to require alongside the key, e.g. behind Pangolin:
-      # "P-Access-Token-Id=<id>,P-Access-Token=<token>". See site/src/docs/comprendre/mcp.md.
+      # "P-Access-Token-Id=<id>,P-Access-Token=<token>". See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_REQUIRED_HEADERS: ${PLANNING_MCP_REQUIRED_HEADERS:-}
       # Rate limit on /mcp, per source address: every request is counted, key
       # or no key, and the answer past the ceiling is 429. Raise it for a
-      # batch client, 0 disables it. See site/src/docs/comprendre/mcp.md.
+      # batch client, 0 disables it. See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
       PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
       # Reverse proxies whose X-Forwarded-For the two per-address guards believe
@@ -46,7 +46,7 @@ services:
       PLANNING_MCP_MAX_FAILURES: ${PLANNING_MCP_MAX_FAILURES:-5}
       PLANNING_MCP_LOCKOUT_DURATION: ${PLANNING_MCP_LOCKOUT_DURATION:-PT10M}
       # Same Pangolin token, so the MCP page can reveal it (admin-password
-      # gated, like the API key) instead of pasting it in by hand. See site/src/docs/comprendre/mcp.md.
+      # gated, like the API key) instead of pasting it in by hand. See site/src/docs/comprendre/mcp-connexion.md.
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID:-}
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN:-}
       # Admin login (issue #165): username is "admin", change the password for
@@ -149,5 +149,6 @@ services:
 
 volumes:
   postgres_data:
+    # Nom historique, voir docker-compose.prod.yml : ne pas le renommer.
     name: postgres_data_pg18
   pgadmin_data:
