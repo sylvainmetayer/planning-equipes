@@ -4,6 +4,8 @@ Vous confiez les résolutions complètes à une machine plus rapide que votre se
 
 Rien de ce qui suit n'est obligatoire : **sans ces variables, tout se résout sur place, comme toujours**. La décision est dans l'[ADR 0086](repo:docs/decisions/0086-le-calcul-deporte-un-worker-sans-conteneur-et-un-crochet.md).
 
+Pour la version sans jargon, avec ce que le calcul fait et le temps qu'il prend, voir [comment fonctionne le calcul du planning](/comment-marche-le-calcul/).
+
 ## 1. Choisir la formule
 
 | Votre situation | Ce qu'il vous faut |

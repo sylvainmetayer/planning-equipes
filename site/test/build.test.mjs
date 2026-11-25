@@ -141,3 +141,12 @@ test('the header search is a link to the docs search without script, and the sit
   assert.match(plan, /<h1>Plan du site<\/h1>/);
   assert.ok(read(join(dist, 'docs/index.html')).includes('data-search-results'));
 });
+
+test('"À lire aussi" never lists the home page, and the hosting page leads to the install guide', () => {
+  for (const page of pages) {
+    const related = read(page).match(/<aside class="container related"[\s\S]*?<\/aside>/)?.[0] ?? '';
+    assert.ok(!/href="(\/|\/en\/)"/.test(related), `${page} : lien vers l'accueil dans « À lire aussi »`);
+  }
+  assert.match(read(join(dist, 'heberger/index.html')), /<a class="btn" href="\/docs\/installer\/">Installer chez vous<\/a>/);
+  assert.match(read(join(dist, 'en/self-hosting/index.html')), /<a class="btn" href="\/docs\/installer\/" hreflang="fr">[^<]*in French\)<\/a>/);
+});

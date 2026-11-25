@@ -7,27 +7,27 @@
   "sections": [
     {
       "h2": "Beaucoup de petits postes",
-      "texte": "Une course ou un tournoi, c'est un grand nombre de postes tenus par une ou deux personnes : signaleurs, ravitaillements, accueil, vestiaires. Chaque poste est un **stand** avec son horaire et son effectif minimum et maximum, rattaché à un emplacement sur la carte. Les catégories de compétence (signaleur, ravitaillement, accueil…) sont celles que vous créez ; chaque bénévole se voit attribuer les siennes, avec un niveau."
+      "texte": "Une course ou un tournoi, c'est un grand nombre de postes tenus par une ou deux personnes : signaleurs, ravitaillements, accueil, vestiaires. Chaque poste est un **stand** avec son horaire et son effectif minimum et maximum, rattaché à un emplacement sur la carte. Les catégories de compétence (signaleur, ravitaillement, accueil…) sont celles que vous créez ; chaque bénévole se voit attribuer les siennes, avec un niveau. Pour une équipe qui sort d'un tableur, voir [quand passer à un logiciel](/tableur-ou-logiciel-de-planning/)."
     },
     {
       "h2": "Des bénévoles d'un jour",
-      "texte": "La collecte des disponibilités se fait depuis le téléphone, par jour, et **sans déclaration une personne est disponible**. Même pour une seule journée, vous voyez avant le calcul s'il manque du monde : le diagnostic des effectifs dit combien de personnes et quelles compétences manquent, avant même le premier calcul."
+      "texte": "La collecte des disponibilités se fait depuis le téléphone, par jour, et **sans déclaration une personne est disponible**. Même pour une seule journée, vous voyez avant le calcul s'il manque du monde : le diagnostic des effectifs dit combien de personnes et quelles compétences manquent, avant même le premier calcul. Le guide [collecter les disponibilités](/docs/regles/collecter-disponibilites/) décrit la période de collecte. La page [organiser son équipe](/organiser-son-equipe/) détaille l'import et la collecte."
     },
     {
       "h2": "Des jeunes dans l'équipe",
-      "texte": "Les mineurs sont nombreux dans les équipes de bénévoles. Le calcul applique à chacun le droit de son âge réel à la date du créneau, et refuse un poste interdit en citant l'article. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire. Voir [les questions sur les mineurs](/animateurs-mineurs/)."
+      "texte": "Les mineurs sont nombreux dans les équipes de bénévoles. Le calcul applique à chacun le droit de son âge réel à la date du créneau, et refuse un poste interdit en citant l'article. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire. Voir [les questions sur les mineurs](/animateurs-mineurs/). Les règles exactes sont sur [le Code du travail et les plannings](/code-du-travail/)."
     },
     {
       "h2": "Quand l'autorité ou la météo s'en mêlent",
-      "texte": "Un arrêté ferme une tranche horaire ? La **consigne** la pose sur les dates à venir et propose les stands à fermer ou à rouvrir en compensation, avec un aperçu chiffré. Chaque matin, l'application peut aussi lire la prévision pour les lieux de l'événement et prévenir l'organisation quand la chaleur, les rafales ou l'orage franchissent les seuils choisis : elle suggère un préréglage de consigne, elle n'en pose jamais sans vous."
+      "texte": "Un arrêté ferme une tranche horaire ? La **consigne** la pose sur les dates à venir et propose les stands à fermer ou à rouvrir en compensation, avec un aperçu chiffré. Chaque matin, l'application peut aussi lire la prévision pour les lieux de l'événement et prévenir l'organisation quand la chaleur, les rafales ou l'orage franchissent les seuils choisis : elle suggère un préréglage de consigne, elle n'en pose jamais sans vous. Pas à pas : [appliquer une consigne de l'autorité](/docs/regles/appliquer-une-consigne/). Un festival connaît le même cas : [quand le programme change](/planning-festival/)."
     },
     {
       "h2": "Le jour de l'épreuve",
-      "texte": "Un bénévole manque ? On le marque absent depuis l'écran *Aujourd'hui* sur un téléphone : l'application propose des remplaçants qui respectent déjà les règles, avec leur numéro, et prévient les seules personnes concernées. Le PC course peut garder l'**affichage mural** sur une télé."
+      "texte": "Un bénévole manque ? On le marque absent depuis l'écran *Aujourd'hui* sur un téléphone : l'application propose des remplaçants qui respectent déjà les règles, avec leur numéro, et prévient les seules personnes concernées. Le PC course peut garder l'**affichage mural** sur une télé. Voir aussi [suivre le jour J](/docs/regles/suivre-le-jour-j/). Même écran pour [un salon ou une foire](/planning-salon-foire/)."
     },
     {
       "h2": "Donner son poste à chacun",
-      "texte": "Chaque bénévole reçoit son planning par e-mail ou sur une feuille PDF avec un QR code, et peut proposer un échange à un collègue depuis son espace ; l'organisation arbitre."
+      "texte": "Chaque bénévole reçoit son planning par e-mail ou sur une feuille PDF avec un QR code, et peut proposer un échange à un collègue depuis son espace ; l'organisation arbitre. L'ouverture de la foire aux échanges est décrite dans [laisser les animateurs échanger leurs créneaux](/docs/regles/echanger-creneaux/)."
     }
   ],
   "cta": "Une course ou un tournoi à organiser ?",
@@ -48,27 +48,27 @@
     "sections": [
       {
         "h2": "Many small posts",
-        "texte": "A race or tournament means many posts held by one or two people: marshals, aid stations, reception, changing rooms. Each post is a **stand** with its hours and its minimum and maximum headcount, attached to a location on the map. The skill categories (marshal, aid station, reception…) are the ones you create; each volunteer is given theirs, with a level."
+        "texte": "A race or tournament means many posts held by one or two people: marshals, aid stations, reception, changing rooms. Each post is a **stand** with its hours and its minimum and maximum headcount, attached to a location on the map. The skill categories (marshal, aid station, reception…) are the ones you create; each volunteer is given theirs, with a level. For a team coming out of a spreadsheet, see [when to move to software](/en/spreadsheet-or-scheduling-software/)."
       },
       {
         "h2": "One-day volunteers",
-        "texte": "Availability is collected from the phone, day by day, and **with no declaration a person is available**. Even for a single day, you see before the calculation whether you are short: the staffing check says how many people and which skills are missing, before the first run."
+        "texte": "Availability is collected from the phone, day by day, and **with no declaration a person is available**. Even for a single day, you see before the calculation whether you are short: the staffing check says how many people and which skills are missing, before the first run. The guide to [collecting availabilities](/docs/regles/collecter-disponibilites/) describes the collection period (in French). The page [organising your team](/en/organising-your-team/) details the import and the collection."
       },
       {
         "h2": "Young people on the team",
-        "texte": "Under-18s are common on volunteer teams. The solver applies to each person the law of their real age on the date of the shift, and refuses a forbidden shift while citing the article. A volunteer has no employment contract: your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. See the [questions about under-18s](/en/under-18-staff/)."
+        "texte": "Under-18s are common on volunteer teams. The solver applies to each person the law of their real age on the date of the shift, and refuses a forbidden shift while citing the article. A volunteer has no employment contract: your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. See the [questions about under-18s](/en/under-18-staff/). The exact rules are on [the Labour Code and rotas](/en/labour-code/)."
       },
       {
         "h2": "When the authorities or the weather step in",
-        "texte": "An order shuts a time band? The **consigne** lays it on the coming dates and proposes the stands to close or to reopen as compensation, with a preview with figures. Each morning, the application can also read the forecast for the event's locations and warn the organisation when heat, gusts or storms cross the thresholds you chose: it suggests a consigne preset, and never lays one down without you."
+        "texte": "An order shuts a time band? The **consigne** lays it on the coming dates and proposes the stands to close or to reopen as compensation, with a preview with figures. Each morning, the application can also read the forecast for the event's locations and warn the organisation when heat, gusts or storms cross the thresholds you chose: it suggests a consigne preset, and never lays one down without you. Step by step: [applying an authority's order](/docs/regles/appliquer-une-consigne/) (in French). A festival knows the same case: [when the programme changes](/en/festival-staff-rota/)."
       },
       {
         "h2": "On the day of the event",
-        "texte": "A volunteer is missing? Mark them absent from the *Today* screen on a phone: the application suggests replacements who already respect the rules, with their phone number, and notifies only the people concerned. The race office can keep the **wall display** on a TV."
+        "texte": "A volunteer is missing? Mark them absent from the *Today* screen on a phone: the application suggests replacements who already respect the rules, with their phone number, and notifies only the people concerned. The race office can keep the **wall display** on a TV. See also [following the day of the event](/docs/regles/suivre-le-jour-j/) (in French). The same screen serves [a trade show or fair](/en/trade-show-staff-rota/)."
       },
       {
         "h2": "Giving everyone their post",
-        "texte": "Each volunteer receives their rota by e-mail or on a PDF sheet with a QR code, and can propose a swap to a colleague from their own space; the organisation arbitrates."
+        "texte": "Each volunteer receives their rota by e-mail or on a PDF sheet with a QR code, and can propose a swap to a colleague from their own space; the organisation arbitrates. Opening the swap fair is described in [letting animateurs swap their timeslots](/docs/regles/echanger-creneaux/) (in French)."
       }
     ],
     "cta": "A race or a tournament to organise?",

@@ -2,6 +2,8 @@
 
 Vous décrivez votre équipe : identité, compétences par typologie, souhaits, indisponibilités, et vous retrouvez tout ce qu'on sait d'une personne sur une seule fiche.
 
+Les moins de 18 ans relèvent d'un régime à part : [ce que change la présence d'animateurs mineurs](/animateurs-mineurs/) est expliqué en questions courtes, avec les articles.
+
 ## Ajouter un animateur
 
 1. Ouvrez *Animateurs* et ajoutez une personne.

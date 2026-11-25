@@ -2,6 +2,8 @@
 
 Vous passez l'instance à une version plus récente sans casser les navigateurs ouverts ni la base, et vous savez revenir en arrière ou débloquer une migration interrompue. Avant de commencer, faites une [sauvegarde](sauvegarde-et-restauration.md#2-sauvegarder-à-la-main) : le schéma de la base ne va que vers l'avant, et revenir à l'image précédente ne suffit pas à revenir en arrière.
 
+La politique de versions, en deux mots, est dans [héberger soi-même](/heberger/) : on déploie un numéro précis, jamais `latest`.
+
 ## Savoir qu'une version plus récente existe
 
 Vous n'avez pas à surveiller le dépôt : sur un build **posé sur un tag**, la barre d'outils de l'administration affiche, à côté de la cloche des notifications, une icône dont l'infobulle nomme la dernière release publiée quand elle est plus récente que celle qui tourne. Le clic ouvre ses notes de version.

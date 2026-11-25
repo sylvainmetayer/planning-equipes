@@ -2,6 +2,8 @@
 
 Vous vous assurez qu'une copie récente de la base existe chaque nuit, vous savez en faire une à la main, et vous savez restaurer sans aggraver les choses. Tout l'état de l'application vit dans PostgreSQL : référentiel, planning résolu, instantanés, jetons d'espace animateur, sessions. Il n'y a **rien à sauvegarder d'autre**, et rien qui se reconstruise sans la base.
 
+Pour un hébergeur qui décide encore, [la page sur l'hébergement](/heberger/) résume la sauvegarde de nuit en quelques lignes.
+
 ![Sauvegarde automatique et restauration hors application](repo:docs/diagrammes/sauvegarde.svg)
 
 <sub>Source : [`diagrammes/sauvegarde.puml`](repo:docs/diagrammes/sauvegarde.puml).</sub>

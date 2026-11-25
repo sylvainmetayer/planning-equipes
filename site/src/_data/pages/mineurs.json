@@ -23,7 +23,7 @@
     {
       "id": "repos-quotidien",
       "q": "Quel repos entre deux journées de travail ?",
-      "a": "12 heures pour un mineur de 16 à 18 ans, 14 heures avant 16 ans (article L3164-1). Pour un majeur, c'est 11 heures (article L3131-1)."
+      "a": "12 heures pour un mineur de 16 à 18 ans, 14 heures avant 16 ans (article L3164-1). Pour un majeur, c'est 11 heures (article L3131-1). Les repos entre deux journées sont expliqués dans [repos et jours d'affilée](/docs/comprendre/repos-et-jours-d-affilee/)."
     },
     {
       "id": "repos-hebdomadaire",
@@ -38,17 +38,17 @@
     {
       "id": "age",
       "q": "Quel âge compte, celui du premier jour ou du jour du créneau ?",
-      "a": "Celui du jour de chaque créneau. Quelqu'un qui fête ses 16 ans pendant l'événement change de régime ce jour-là. La date de naissance ne sert qu'à ce calcul."
+      "a": "Celui du jour de chaque créneau. Quelqu'un qui fête ses 16 ans pendant l'événement change de régime ce jour-là. La date de naissance ne sert qu'à ce calcul. La date de naissance se saisit dans [la fiche de l'animateur](/docs/regles/animateurs-et-competences/)."
     },
     {
       "id": "convention",
       "q": "Le logiciel applique-t-il une convention collective ou une dérogation ?",
-      "a": "Non. Il applique le Code du travail, et lui seul. Une convention, un accord d'entreprise ou une dérogation sont à vérifier de votre côté, et l'organisation qui publie le planning reste l'employeur."
+      "a": "Non. Il applique le Code du travail, et lui seul. Une convention, un accord d'entreprise ou une dérogation sont à vérifier de votre côté, et l'organisation qui publie le planning reste l'employeur. Les autres réponses courantes sont dans [les questions fréquentes](/questions/)."
     },
     {
       "id": "benevoles",
       "q": "Ces règles valent-elles aussi pour des bénévoles mineurs ?",
-      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire. Pour un exemple, voir [le planning d'un événement sportif](/planning-evenement-sportif/)."
+      "a": "Par défaut, l'outil applique les mêmes règles à toute l'équipe. Un bénévole n'a pas de contrat de travail : votre organisation peut désactiver une règle, et l'outil lui fait confirmer ce choix. Le statut des bénévoles reste votre affaire. Pour un exemple, voir [le planning d'un événement sportif](/planning-evenement-sportif/). Le réglage se fait dans [régler les règles du planning](/docs/regles/regles-du-planning/). Pour une course ou un tournoi, voir [l'événement sportif](/planning-evenement-sportif/)."
     }
   ],
   "cta": "Une règle à vérifier pour votre événement ?",
@@ -84,7 +84,7 @@
       {
         "id": "repos-quotidien",
         "q": "How much rest between two working days?",
-        "a": "12 hours for an under-18 from 16 to 18, 14 hours before 16 (article L3164-1). For an adult, it is 11 hours (article L3131-1)."
+        "a": "12 hours for an under-18 from 16 to 18, 14 hours before 16 (article L3164-1). For an adult, it is 11 hours (article L3131-1). Rest between two days is explained in [rest and consecutive days](/docs/comprendre/repos-et-jours-d-affilee/) (in French)."
       },
       {
         "id": "repos-hebdomadaire",
@@ -99,17 +99,17 @@
       {
         "id": "age",
         "q": "Which age counts, the first day's or the shift's?",
-        "a": "The age on the day of each shift. Someone who turns 16 mid-event changes regime that day. The date of birth is used for that calculation alone."
+        "a": "The age on the day of each shift. Someone who turns 16 mid-event changes regime that day. The date of birth is used for that calculation alone. The date of birth is entered in [the animateur's record](/docs/regles/animateurs-et-competences/) (in French)."
       },
       {
         "id": "convention",
         "q": "Does the software apply a collective agreement or a derogation?",
-        "a": "No. It applies the Labour Code, and only the Labour Code. A collective agreement, a company agreement or a derogation is for you to check, and the organisation that publishes the rota remains the employer."
+        "a": "No. It applies the Labour Code, and only the Labour Code. A collective agreement, a company agreement or a derogation is for you to check, and the organisation that publishes the rota remains the employer. Other common answers are in [the questions](/en/questions/)."
       },
       {
         "id": "benevoles",
         "q": "Do these rules apply to volunteers under 18 too?",
-        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. For an example, see [a sports event volunteer rota](/en/sports-event-volunteer-rota/)."
+        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. For an example, see [a sports event volunteer rota](/en/sports-event-volunteer-rota/). The setting is in [adjusting the planning rules](/docs/regles/regles-du-planning/) (in French). For a race or a tournament, see [the sports event](/en/sports-event-volunteer-rota/)."
       }
     ],
     "cta": "A rule to check for your event?",

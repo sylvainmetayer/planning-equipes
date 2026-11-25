@@ -13,15 +13,15 @@
   "sections": [
     {
       "h2": "Le droit applicable selon l'âge réel",
-      "texte": "Chacun se voit appliquer le droit de son âge réel, calculé **à la date de chaque créneau** : moins de 16 ans, 16 à 18 ans ou majeur. Quelqu'un qui fête ses 16 ans pendant l'événement change de régime ce jour-là.\n\n- **Avant 16 ans** : 7 heures par jour, aucun poste entre 20 h et 6 h, 14 heures de repos entre deux journées.\n- **De 16 à 18 ans** : 8 heures par jour et 35 par semaine, aucun poste entre 22 h et 6 h, 12 heures de repos.\n- **Tous les mineurs** : une pause de 30 minutes après 4 h 30, deux jours de repos consécutifs par semaine, aucun jour férié.\n- **Un majeur** : 10 heures par jour, 48 par semaine (réglable), 11 heures de repos, une pause après 6 heures.\n\nLa date de naissance ne sert qu'à ce calcul : ni la télé de la salle de contrôle, ni la messagerie de l'équipe, ni l'assistant IA ne la voient.\n\nCes règles valent pour tout événement, par exemple [un planning de festival](/planning-festival/)."
+      "texte": "Chacun se voit appliquer le droit de son âge réel, calculé **à la date de chaque créneau** : moins de 16 ans, 16 à 18 ans ou majeur. Quelqu'un qui fête ses 16 ans pendant l'événement change de régime ce jour-là.\n\n- **Avant 16 ans** : 7 heures par jour, aucun poste entre 20 h et 6 h, 14 heures de repos entre deux journées.\n- **De 16 à 18 ans** : 8 heures par jour et 35 par semaine, aucun poste entre 22 h et 6 h, 12 heures de repos.\n- **Tous les mineurs** : une pause de 30 minutes après 4 h 30, deux jours de repos consécutifs par semaine, aucun jour férié.\n- **Un majeur** : 10 heures par jour, 48 par semaine (réglable), 11 heures de repos, une pause après 6 heures.\n\nLa date de naissance ne sert qu'à ce calcul : ni la télé de la salle de contrôle, ni la messagerie de l'équipe, ni l'assistant IA ne la voient.\n\nCes règles valent pour tout événement, par exemple [un planning de festival](/planning-festival/). Les seuils se règlent dans [le guide des règles du planning](/docs/regles/regles-du-planning/). Les cas courants, question par question, sont dans [les animateurs mineurs](/animateurs-mineurs/)."
     },
     {
       "h2": "Une pause, c'est un trou ou un relais",
-      "texte": "Une pause due se place de deux façons seulement : un trou dans la grille, ou un collègue du même stand qui tient la place pendant toute la pause. Sinon, le plan est refusé."
+      "texte": "Une pause due se place de deux façons seulement : un trou dans la grille, ou un collègue du même stand qui tient la place pendant toute la pause. Sinon, le plan est refusé. Le pourquoi des durées de pause est dans [règles légales, pauses et repas](/docs/comprendre/regles-legales-et-pauses/)."
     },
     {
       "h2": "Ce que le logiciel ne décide pas",
-      "texte": "**L'organisation qui publie le planning reste l'employeur.** Désactiver une règle légale demande une confirmation, et l'écran montre ce qui est désactivé.\n\nSeul le Code du travail est appliqué, pas une convention collective. Une dérogation, comme celle de l'article R3164-2 pour les mineurs, n'est pas appliquée d'office."
+      "texte": "**L'organisation qui publie le planning reste l'employeur.** Désactiver une règle légale demande une confirmation, et l'écran montre ce qui est désactivé.\n\nSeul le Code du travail est appliqué, pas une convention collective. Une dérogation, comme celle de l'article R3164-2 pour les mineurs, n'est pas appliquée d'office. Pour voir comment le calcul tient ces règles, lisez [comment marche le calcul](/comment-marche-le-calcul/)."
     },
     {
       "h2": "Où lire les règles exactes",
@@ -29,7 +29,7 @@
     },
     {
       "h2": "Des règles propres à votre événement",
-      "texte": "Pas encore disponible : à terme, l'outil pourra prendre en compte des contraintes supplémentaires, pour adapter le planning aux règles de votre événement.\n\nVous avez déjà un besoin particulier ? [Écrivez-nous pour en parler](/contact/)."
+      "texte": "Pas encore disponible : à terme, l'outil pourra prendre en compte des contraintes supplémentaires, pour adapter le planning aux règles de votre événement.\n\nVous avez déjà un besoin particulier ? [Écrivez-nous pour en parler](/contact/). Beaucoup de réponses sont déjà dans [les questions fréquentes](/questions/)."
     }
   ],
   "cta": "Vous voulez vérifier vos propres règles ?",
@@ -55,15 +55,15 @@
     "sections": [
       {
         "h2": "The law that applies at each person's real age",
-        "texte": "Everyone gets the law of their real age, worked out **on the date of each shift**: under 16, 16 to 18, or adult. Someone who turns 16 mid-event changes regime that day.\n\n- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours.\n\nThe date of birth is used for that calculation alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it.\n\nThese rules hold for any event, [a festival staff rota](/en/festival-staff-rota/) for instance."
+        "texte": "Everyone gets the law of their real age, worked out **on the date of each shift**: under 16, 16 to 18, or adult. Someone who turns 16 mid-event changes regime that day.\n\n- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours.\n\nThe date of birth is used for that calculation alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it.\n\nThese rules hold for any event, [a festival staff rota](/en/festival-staff-rota/) for instance. The thresholds are set in [the planning rules guide](/docs/regles/regles-du-planning/) (in French). The common cases, question by question, are in [under-18 staff](/en/under-18-staff/)."
       },
       {
         "h2": "A break is a gap or a relief",
-        "texte": "A break that is due fits in two ways only: a gap in the grid, or a colleague on the same stand holding the seat for the whole break. Otherwise the plan is refused."
+        "texte": "A break that is due fits in two ways only: a gap in the grid, or a colleague on the same stand holding the seat for the whole break. Otherwise the plan is refused. The reasoning behind the break lengths is in [legal rules, breaks and meals](/docs/comprendre/regles-legales-et-pauses/) (in French)."
       },
       {
         "h2": "What the software does not decide",
-        "texte": "**The organisation that publishes the rota remains the employer.** Disabling a legal rule asks for confirmation, and the screen shows what is disabled.\n\nOnly the Labour Code is applied, not a collective agreement. A derogation, such as article R3164-2 for under-18s, is not applied by default."
+        "texte": "**The organisation that publishes the rota remains the employer.** Disabling a legal rule asks for confirmation, and the screen shows what is disabled.\n\nOnly the Labour Code is applied, not a collective agreement. A derogation, such as article R3164-2 for under-18s, is not applied by default. To see how the calculation keeps these rules, read [how the calculation works](/en/how-the-calculation-works/)."
       },
       {
         "h2": "Where to read the exact rules",
@@ -71,7 +71,7 @@
       },
       {
         "h2": "Rules of your own event",
-        "texte": "Not available yet: in time, the tool will be able to take extra constraints into account, to fit the rota to the rules of your event.\n\nAlready have a specific need? [Write to us to talk it over](/en/contact/)."
+        "texte": "Not available yet: in time, the tool will be able to take extra constraints into account, to fit the rota to the rules of your event.\n\nAlready have a specific need? [Write to us to talk it over](/en/contact/). Many answers are already in [the questions](/en/questions/)."
       }
     ],
     "cta": "Want to check your own rules?",

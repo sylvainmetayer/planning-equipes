@@ -4,6 +4,8 @@ Vous gérez les imprévus de la journée depuis un téléphone (absent à rempla
 
 ![L'affichage mural](/images/fr/mural.webp "L'affichage mural de la salle de contrôle")
 
+Ce que ces écrans changent pendant l'événement est raconté dans [le jour J d'un festival](/planning-festival/) et dans [la salle de contrôle d'un salon ou d'une foire](/planning-salon-foire/).
+
 ## Gérer la journée sur l'écran Aujourd'hui
 
 *Aujourd'hui* (groupe *Aujourd'hui*) est l'écran du jour même, pensé pour un téléphone. En tête, la journée en une ligne : jour, stands ouverts, vacations restantes. Des compteurs mènent là où l'on s'en occupe. Aucun calcul n'est relancé.

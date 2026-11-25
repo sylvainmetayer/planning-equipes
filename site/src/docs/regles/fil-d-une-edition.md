@@ -4,6 +4,8 @@ Une édition suit six moments, de la préparation au jour J. L'application vous 
 
 Planning Équipes sert à organiser le travail d'une équipe de bénévoles ou de salariés pendant un événement : qui tient quel stand, quel jour, à quelle heure, dans le respect des règles légales (celles des mineurs en particulier), des compétences, des disponibilités et d'une charge équitable entre les personnes. Une **édition** est une occurrence de l'événement : une année, un festival, un salon.
 
+Si vous découvrez l'outil, [peut-on le confier à une équipe de bénévoles ?](/organiser-son-equipe/) répond sans jargon, et [les questions fréquentes](/questions/) couvrent le reste.
+
 ## Les six moments
 
 L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. Le menu suit le même fil, en groupes : *Préparer*, *Planifier*, *Diffuser*, *Aujourd'hui* et *Administrer*.
