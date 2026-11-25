@@ -44,7 +44,7 @@ public class LoginJournalService {
      * database gone away while the form is hammered would otherwise bury the
      * log under one trace per attempt.</p>
      */
-    public void record(List<LoginJournalEntry> entries) {
+    public void append(List<LoginJournalEntry> entries) {
         try {
             repository.append(entries);
         } catch (RuntimeException e) {

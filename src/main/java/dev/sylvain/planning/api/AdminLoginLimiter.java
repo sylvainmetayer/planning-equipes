@@ -80,6 +80,9 @@ public class AdminLoginLimiter {
     /** Target of the Quarkus form login ({@code quarkus.http.auth.form.post-location} by default). */
     static final String CHEMIN_CONNEXION = "/j_security_check";
 
+    /** The password step of a local sign-in: not a form login, but an attempt the lock counts. */
+    static final String CHEMIN_MOT_DE_PASSE = "/api/auth/connexion";
+
     /**
      * Whether {@code path} is one the form mechanism treats as a login. Quarkus'
      * {@code FormAuthenticationMechanism} accepts any POST whose path
@@ -97,14 +100,18 @@ public class AdminLoginLimiter {
      * and the same journal, on a path of its own so that the closed
      * break-glass door ({@link FormLoginSecours}) does not shut it.
      */
-    static final String CHEMIN_CONNEXION_LOCALE = "/api/auth/connexion" + CHEMIN_CONNEXION;
-
-    /** The password step of a local sign-in: not a form login, but an attempt the lock counts. */
-    static final String CHEMIN_MOT_DE_PASSE = "/api/auth/connexion";
+    static final String CHEMIN_CONNEXION_LOCALE = CHEMIN_MOT_DE_PASSE + CHEMIN_CONNEXION;
 
     /** Trailing slashes do not make another route: {@code /api/auth/connexion/} is the same one. */
     static boolean isPasswordStepPath(String path) {
-        return path != null && path.replaceAll("/+$", "").equals(CHEMIN_MOT_DE_PASSE);
+        if (path == null) {
+            return false;
+        }
+        int end = path.length();
+        while (end > 0 && path.charAt(end - 1) == '/') {
+            end--;
+        }
+        return path.substring(0, end).equals(CHEMIN_MOT_DE_PASSE);
     }
 
     static boolean isLocalLoginPath(String path) {
@@ -201,9 +208,7 @@ public class AdminLoginLimiter {
         }
         String address = address(contexte);
         // The password step asks its own lock in the resource, which knows the account.
-        long attente = isPasswordStepPath(contexte.normalizedPath())
-                ? 0
-                : isLocalLoginPath(contexte.normalizedPath()) ? localAddressLockout(address) : lockoutSeconds(address);
+        long attente = lockoutFor(contexte.normalizedPath(), address);
         if (attente > 0) {
             contexte.response()
                     .setStatusCode(429)
@@ -217,20 +222,32 @@ public class AdminLoginLimiter {
             boolean locale = isLocalLoginPath(contexte.normalizedPath());
             contexte.addEndHandler(issue -> {
                 if (issue.succeeded() && successfulLogin(contexte)) {
-                    if (!locale) {
-                        // A local success must not wipe the failures other accounts
-                        // earned this address: that is how a spray resets itself.
-                        failures.clear(address);
-                    }
-                    // Behind an OIDC provider the admin form is the break-glass
-                    // door: the journal says so, it is the line an operator
-                    // looks for. A local account is an ordinary sign-in.
-                    Evenement evenement = oidc.enabled() && !locale ? Evenement.CONNEXION_SECOURS : Evenement.CONNEXION;
-                    record(false, List.of(new LoginJournalEntry(0, Instant.now(), evenement, address)));
+                    recordSuccess(address, locale);
                 }
             });
         }
         contexte.next();
+    }
+
+    /** Seconds the address is locked out of this login path; 0 when it may try. */
+    private long lockoutFor(String path, String address) {
+        if (isPasswordStepPath(path)) {
+            return 0;
+        }
+        return isLocalLoginPath(path) ? localAddressLockout(address) : lockoutSeconds(address);
+    }
+
+    private void recordSuccess(String address, boolean locale) {
+        if (!locale) {
+            // A local success must not wipe the failures other accounts
+            // earned this address: that is how a spray resets itself.
+            failures.clear(address);
+        }
+        // Behind an OIDC provider the admin form is the break-glass
+        // door: the journal says so, it is the line an operator
+        // looks for. A local account is an ordinary sign-in.
+        Evenement evenement = oidc.enabled() && !locale ? Evenement.CONNEXION_SECOURS : Evenement.CONNEXION;
+        recordAttempt(false, List.of(new LoginJournalEntry(0, Instant.now(), evenement, address)));
     }
 
     /**
@@ -240,7 +257,7 @@ public class AdminLoginLimiter {
      * it would be one more thing to explain.
      */
     void recordClosedDoorAttempt(RoutingContext contexte) {
-        record(true, List.of(new LoginJournalEntry(0, Instant.now(), Evenement.ECHEC, address(contexte))));
+        recordAttempt(true, List.of(new LoginJournalEntry(0, Instant.now(), Evenement.ECHEC, address(contexte))));
     }
 
     void onFailure(@Observes AuthenticationFailureEvent evenement) {
@@ -283,7 +300,8 @@ public class AdminLoginLimiter {
             int addressRun = localAddressFailures.recordFailure(address, config.dureeBlocage());
             int pairRun =
                     account == null ? 0 : pairFailures.recordFailure(pairKey(address, account), config.dureeBlocage());
-            run = pairRun == ceiling ? ceiling : addressRun == ceiling * LOCAL_ADDRESS_FACTOR ? ceiling : 0;
+            boolean reached = pairRun == ceiling || addressRun == ceiling * LOCAL_ADDRESS_FACTOR;
+            run = reached ? ceiling : 0;
         } else {
             run = failures.recordFailure(address, config.dureeBlocage());
         }
@@ -294,7 +312,7 @@ public class AdminLoginLimiter {
         if (run == ceiling) {
             lines.add(new LoginJournalEntry(0, now, Evenement.VERROUILLAGE, address));
         }
-        record(true, lines);
+        recordAttempt(true, lines);
     }
 
     /**
@@ -303,14 +321,14 @@ public class AdminLoginLimiter {
      * lockout it triggered land in that order — or are dropped together, when
      * the throttle says the journal has had its share.
      */
-    private void record(boolean failure, List<LoginJournalEntry> lines) {
+    private void recordAttempt(boolean failure, List<LoginJournalEntry> lines) {
         if (!throttle.admit(failure, Instant.now())) {
             return;
         }
         try {
             Infrastructure.getDefaultWorkerPool().execute(() -> {
                 try {
-                    journal.record(lines);
+                    journal.append(lines);
                 } finally {
                     throttle.done();
                 }

@@ -109,23 +109,27 @@ public final class SolveWorkerServer implements AutoCloseable {
         java.util.logging.Logger.getLogger("").removeHandler(logs);
     }
 
+    private static final String ERROR = "error";
+    private static final String VERSION = "version";
+    private static final String SOLVES = "solves";
+
     private void handle(HttpExchange exchange) throws IOException {
         try (exchange) {
             if (!authorised(exchange)) {
-                answer(exchange, 401, Map.of("error", "Missing or wrong secret"));
+                answer(exchange, 401, Map.of(ERROR, "Missing or wrong secret"));
                 return;
             }
             try {
                 route(exchange);
             } catch (SolveWorker.Busy | VersionMismatch e) {
-                answer(exchange, 409, Map.of("error", e.getMessage()));
+                answer(exchange, 409, Map.of(ERROR, e.getMessage()));
             } catch (SolveWorker.Unknown e) {
-                answer(exchange, 404, Map.of("error", e.getMessage()));
+                answer(exchange, 404, Map.of(ERROR, e.getMessage()));
             } catch (SolveExchange.Refused | IllegalArgumentException | UncheckedIOException e) {
                 // A body that is not a problem of this format, down to one that is not even zipped.
-                answer(exchange, 400, Map.of("error", String.valueOf(e.getMessage())));
+                answer(exchange, 400, Map.of(ERROR, String.valueOf(e.getMessage())));
             } catch (RuntimeException e) {
-                answer(exchange, 500, Map.of("error", e.toString()));
+                answer(exchange, 500, Map.of(ERROR, e.toString()));
             }
         }
     }
@@ -143,36 +147,46 @@ public final class SolveWorkerServer implements AutoCloseable {
                 exchange.getRequestURI().getPath().substring(PREFIX.length()).split("/");
         Map<String, String> query = query(exchange.getRequestURI().getRawQuery());
         boolean get = "GET".equals(method);
-        boolean post = "POST".equals(method);
         if (get && path.length == 1 && "health".equals(path[0])) {
-            answer(exchange, 200, Map.of("version", version, "solving", worker.isSolving()));
+            answer(exchange, 200, Map.of(VERSION, version, "solving", worker.isSolving()));
         } else if (get && path.length == 1 && "logs".equals(path[0])) {
             answer(exchange, 200, Map.of("lines", logs.lines()));
-        } else if (post && path.length == 1 && "solves".equals(path[0])) {
+        } else if (!SOLVES.equals(path[0]) || !routeSolve(exchange, method, path, query)) {
+            answer(exchange, 404, Map.of(ERROR, "No such route"));
+        }
+    }
+
+    /** The routes under {@code /solves}; {@code false} when none of them matches. */
+    private boolean routeSolve(HttpExchange exchange, String method, String[] path, Map<String, String> query)
+            throws IOException {
+        boolean get = "GET".equals(method);
+        boolean post = "POST".equals(method);
+        if (post && path.length == 1) {
             submit(exchange, query);
-        } else if (get && path.length == 2 && "solves".equals(path[0])) {
+        } else if (get && path.length == 2) {
             answer(exchange, 200, worker.status(path[1], Integer.parseInt(query.getOrDefault("cursor", "0"))));
-        } else if (post && path.length == 3 && "solves".equals(path[0]) && "stop".equals(path[2])) {
+        } else if (post && path.length == 3 && "stop".equals(path[2])) {
             worker.stop(path[1]);
             answer(exchange, 202, Map.of());
-        } else if (get && path.length == 3 && "solves".equals(path[0]) && "result".equals(path[2])) {
+        } else if (get && path.length == 3 && "result".equals(path[2])) {
             SolveWorker.Answer plan = worker.answer(path[1]);
             if (plan == null) {
-                answer(exchange, 409, Map.of("error", "This solve has no plan: still running, or failed"));
+                answer(exchange, 409, Map.of(ERROR, "This solve has no plan: still running, or failed"));
             } else {
                 answer(exchange, 200, plan);
             }
         } else {
-            answer(exchange, 404, Map.of("error", "No such route"));
+            return false;
         }
+        return true;
     }
 
     private void submit(HttpExchange exchange, Map<String, String> query) throws IOException {
         // A score computed under another version's rules is worth nothing to
         // the caller: refused before anything is read.
-        if (!version.equals(query.get("version"))) {
+        if (!version.equals(query.get(VERSION))) {
             throw new VersionMismatch(
-                    "This worker runs version " + version + ", the problem comes from " + query.get("version"));
+                    "This worker runs version " + version + ", the problem comes from " + query.get(VERSION));
         }
         byte[] payload;
         try (InputStream body = exchange.getRequestBody()) {

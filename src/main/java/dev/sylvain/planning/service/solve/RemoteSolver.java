@@ -198,10 +198,7 @@ final class RemoteSolver implements Solver<PlanningEvenement> {
         while (true) {
             try {
                 if (stopRequested && !stopSent) {
-                    if (shuttingDown.getAsBoolean()) {
-                        throw new Detached();
-                    }
-                    worker.stop(solveId);
+                    sendStop(worker, solveId);
                     stopSent = true;
                 }
                 SolveWorker.Status status = worker.status(solveId, cursor);
@@ -215,24 +212,38 @@ final class RemoteSolver implements Solver<PlanningEvenement> {
                 if (status.state() == SolveWorker.State.DONE) {
                     return worker.answer(solveId);
                 }
-                if (status.state() == SolveWorker.State.FAILED) {
-                    throw new Failed(
-                            "Le calcul a échoué sur la machine de calcul : " + status.error() + logsOf(worker));
-                }
+                failIfFailed(worker, status);
             } catch (WorkerClient.Refused e) {
-                if (e.status() < 500) {
-                    // The worker answers and no longer knows this solve: it
-                    // restarted, or solves something else. Nothing to wait for.
-                    throw new Failed("La machine de calcul a perdu ce calcul : " + e.getMessage() + logsOf(worker), e);
-                }
-                // A gateway in front of it saying 502 for one poll is a cut
-                // like any other: the worker goes on solving.
-                giveUpIfLost(lastContact, e);
+                onRefused(worker, e, lastContact);
             } catch (UncheckedIOException e) {
                 giveUpIfLost(lastContact, e);
             }
             pause();
         }
+    }
+
+    private void sendStop(WorkerClient worker, String solveId) {
+        if (shuttingDown.getAsBoolean()) {
+            throw new Detached();
+        }
+        worker.stop(solveId);
+    }
+
+    private static void failIfFailed(WorkerClient worker, SolveWorker.Status status) {
+        if (status.state() == SolveWorker.State.FAILED) {
+            throw new Failed("Le calcul a échoué sur la machine de calcul : " + status.error() + logsOf(worker));
+        }
+    }
+
+    private static void onRefused(WorkerClient worker, WorkerClient.Refused e, long lastContact) {
+        if (e.status() < 500) {
+            // The worker answers and no longer knows this solve: it
+            // restarted, or solves something else. Nothing to wait for.
+            throw new Failed("La machine de calcul a perdu ce calcul : " + e.getMessage() + logsOf(worker), e);
+        }
+        // A gateway in front of it saying 502 for one poll is a cut
+        // like any other: the worker goes on solving.
+        giveUpIfLost(lastContact, e);
     }
 
     private static void giveUpIfLost(long lastContact, RuntimeException e) {
