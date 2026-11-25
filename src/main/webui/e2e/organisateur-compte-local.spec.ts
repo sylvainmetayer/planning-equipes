@@ -5,7 +5,7 @@
 
 import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
-import { contexteAdmin, dernierCodeMailpit, EDITION_REFERENCE } from './support';
+import { contexteAdmin, dernierCodeMailpit, EDITION_REFERENCE, nombreDeMails } from './support';
 
 const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
 
@@ -61,8 +61,10 @@ test.describe('organisateur avec compte local', () => {
       await page.goto('/login');
       await page.getByLabel('Adresse e-mail').fill(email);
       await page.getByLabel('Mot de passe').fill(motDePasse);
+      // The invitation already sits in Mailpit: only a mail after the click carries the code.
+      const mailsAvant = await nombreDeMails(page.request, email);
       await page.getByRole('button', { name: 'Se connecter' }).click();
-      const code = await dernierCodeMailpit(page.request, email);
+      const code = await dernierCodeMailpit(page.request, email, mailsAvant);
       await page.getByLabel('Code reçu par e-mail').fill(code);
       await page.getByRole('button', { name: 'Se connecter' }).click();
 
@@ -92,9 +94,10 @@ test.describe('organisateur avec compte local', () => {
       // The instance tabs are not offered, and landing on one by its address
       // brings the organiser back to the edition's own.
       await page.goto('/parametres?onglet=comptes');
-      await expect(page.locator('mat-button-toggle', { hasText: 'Édition' })).toBeVisible();
-      await expect(page.locator('mat-button-toggle', { hasText: 'Comptes' })).toHaveCount(0);
-      await expect(page.locator('mat-button-toggle', { hasText: 'Instance' })).toHaveCount(0);
+      const onglets = page.getByRole('radiogroup', { name: 'Onglet des paramètres' });
+      await expect(onglets.getByRole('radio', { name: 'Édition', exact: true })).toBeChecked();
+      await expect(onglets.getByRole('radio', { name: 'Comptes', exact: true })).toHaveCount(0);
+      await expect(onglets.getByRole('radio', { name: 'Instance', exact: true })).toHaveCount(0);
       await expect(page).not.toHaveURL(/onglet=comptes/);
 
       // And the API refuses an instance route, whatever the screen shows.
