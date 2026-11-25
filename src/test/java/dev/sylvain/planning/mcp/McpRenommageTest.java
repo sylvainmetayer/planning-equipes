@@ -26,6 +26,8 @@ class McpRenommageTest {
     private static final Path DOC = Path.of("site/src/docs/comprendre/mcp-outils.md");
     private static final String DEBUT = "<!-- mcp-renommages:debut -->";
     private static final String FIN = "<!-- mcp-renommages:fin -->";
+
+    static final String NOTHING_RENAMED = "Aucun outil n'est encore renommé ni retiré.";
     private static final String REMOVED = "retiré";
 
     /** {@code <verbe>_<objet>}, the verb drawn from the closed set of ADR 0100. */
@@ -80,6 +82,10 @@ class McpRenommageTest {
                 .map(row -> "| `" + row.getKey() + "` | "
                         + (REMOVED.equals(row.getValue()) ? REMOVED : "`" + row.getValue() + "`") + " |")
                 .collect(Collectors.joining("\n"));
+        // An empty table is a header with no data cell, which axe refuses (th-has-data-cells).
+        if (rows.isEmpty()) {
+            return NOTHING_RENAMED;
+        }
         return ("| Nom en 3.x | Nom en 4.0 |\n| --- | --- |\n" + rows).strip();
     }
 
@@ -146,6 +152,13 @@ class McpRenommageTest {
                 .contains("not <verbe>_<objet>");
         assertThat(violation(Set.of("volumes"), Set.of("consulter_volumes"), Map.of("volumes", "consulter_volumes")))
                 .isNull();
+    }
+
+    @Test
+    void anUnchangedTableRendersASentenceNotAnEmptyTable() {
+        Map<String, String> table = new LinkedHashMap<>();
+        table.put("lister_stands", "lister_stands");
+        assertThat(rendered(table)).isEqualTo(NOTHING_RENAMED);
     }
 
     @Test
