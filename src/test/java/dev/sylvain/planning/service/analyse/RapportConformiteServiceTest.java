@@ -93,6 +93,38 @@ class RapportConformiteServiceTest {
     }
 
     @Test
+    void aWeekSplitByABirthdayHoldsEachPartToItsOwnCeiling() {
+        // Eighteen on Wednesday: Monday and Tuesday against 35 h, the rest of the week against 48 h.
+        Animateur eve = new Animateur("E1", "Eve", "Test", LocalDate.of(2008, 8, 19), false);
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            postes.add(seat(eve, LUNDI.plusDays(i), LocalTime.of(9, 0), LocalTime.of(16, 0)));
+        }
+
+        Personne ligne = report(eve, postes).personnes().get(0);
+
+        assertThat(ligne.mineur()).isTrue();
+        assertThat(ligne.heuresTotal()).isGreaterThan(35.0);
+        assertThat(ligne.semainesEnDepassement()).isEmpty();
+    }
+
+    @Test
+    void aCappedListOfBreachesSaysHowManyItLeftOut() {
+        Animateur bob = new Animateur("B1", "Bob", "Test", LocalDate.of(2011, 2, 2), false);
+        List<PosteAffectation> postes = new ArrayList<>();
+        for (int i = 0; i < RapportConformiteService.MAX_ECARTS_PAR_REGLE_ET_PERSONNE + 2; i++) {
+            postes.add(seat(bob, LUNDI.plusDays(i), LocalTime.of(21, 0), LocalTime.of(23, 0)));
+        }
+
+        List<RapportConformite.Breach> nuit = report(bob, postes).personnes().get(0).ecartsDetail().stream()
+                .filter(e -> e.regle().equals("travailDeNuitInterditPourMineur"))
+                .toList();
+
+        assertThat(nuit).hasSize(RapportConformiteService.MAX_ECARTS_PAR_REGLE_ET_PERSONNE + 1);
+        assertThat(nuit.get(nuit.size() - 1).texte()).isEqualTo("… et 2 autre(s) écart(s) de cette règle");
+    }
+
+    @Test
     void aPlanWithinTheCeilingsReportsNoBreach() {
         Animateur ada = new Animateur("A1", "Ada", "Test", LocalDate.of(1990, 1, 1), false);
         RapportConformite rapport = report(
