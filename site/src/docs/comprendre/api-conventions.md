@@ -1,6 +1,6 @@
 # Les conventions de l'API : édition, authentification, erreurs
 
-Vous saurez comment un client désigne l'édition sur laquelle il travaille, comment il s'authentifie (session, proxy d'accès, jetons publics), et comment lire les refus du serveur : le statut HTTP, puis le `code` qui distingue deux `409` de même statut. Ce qui vaut pour tous les appels est ici ; la liste des routes et des schémas est dans la spécification générée.
+Vous saurez comment un client désigne l'édition sur laquelle il travaille, comment il s'authentifie (session, jetons publics), et comment lire les refus du serveur : le statut HTTP, puis le `code` qui distingue deux `409` de même statut. Ce qui vaut pour tous les appels est ici ; la liste des routes et des schémas est dans la spécification générée.
 
 Tout est sous `/api`, en JSON. La spécification fait foi pour la forme : [`openapi.json`](repo:docs/schema/openapi.json) dans le dépôt, `/q/openapi` sur une instance qui tourne, `/q/swagger-ui` pour l'explorer. Les pages d'API de cette partie ne portent que ce qu'un schéma ne sait pas dire : les invariants, les arbitrages métier, les pièges. Le serveur MCP a sa propre porte, présentée dans [la connexion MCP](mcp-connexion.md).
 
@@ -60,7 +60,7 @@ Les comptes, les rôles et les droits sont présentés dans [comptes, rôles et 
 - l'abonnement ICS, `/api/abonnements/*`, et l'affichage mural, `/api/mural/*` : chacun a son jeton dédié et n'ouvre qu'une lecture ([la page jour J et animateurs](api-jour-j-et-animateurs.md)) ;
 - les routes de session (`/api/auth/me`, `/api/auth/connexion`, `/api/auth/mot-de-passe`, `/api/auth/logout`), `/api/config`, `/api/branding` et `/api/mentions-legales`, que le frontend lit avant son démarrage, page de connexion comprise.
 
-![Connexion du coordinateur : formulaire ou proxy d'accès](repo:docs/diagrammes/authentification.svg)
+![Connexion du coordinateur par le formulaire intégré](repo:docs/diagrammes/authentification.svg)
 
 <sub>Source : [`diagrammes/authentification.puml`](repo:docs/diagrammes/authentification.puml).</sub>
 
@@ -80,15 +80,3 @@ Quarkus fabrique la redirection de connexion en URL absolue, depuis le schéma d
 
 - `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`, à renseigner dès que l'origine est joignable sans passer par le proxy : sinon n'importe quel client annonce le schéma et l'adresse de son choix ;
 - `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST` si le proxy réécrit `Host`.
-
-## Le mode « remote user »
-
-Pour un proxy d'accès qui authentifie lui-même ses visiteurs et transmet l'adresse retenue (variables `REMOTE_USER_*`). Il est désactivé par défaut et **déprécié** : un avertissement le rappelle à chaque démarrage où il est actif, et il sera retiré en 4.0. La connexion par un fournisseur OIDC et les comptes de l'application le remplacent ([ADR 0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)). Le formulaire reste disponible en parallèle : une origine atteinte directement, ou un proxy mal configuré, laisse toujours `/login` utilisable.
-
-Le secret partagé est obligatoire. Un en-tête affirme sans prouver : sans secret, quiconque atteint l'origine sans passer par le proxy devient administrateur en envoyant une ligne d'en-tête, et une origine joignable en direct est l'état ordinaire (un port publié pour déboguer, une seconde ingress, un réseau interne). Activer le mode sans secret fait échouer le démarrage. Le secret voyage sur un en-tête que le proxy écrase inconditionnellement en entrée.
-
-Qui est qui :
-
-- `REMOTE_USER_ADMIN_EMAIL` reçoit le rôle admin ;
-- toute autre adresse est un animateur, et l'attestation du proxy remplace alors le code à six chiffres, puisque c'est précisément ce que ce code prouve. Le jeton reste nécessaire et doit désigner la fiche qui porte cette adresse : l'attestation d'un animateur n'ouvre pas l'espace d'un collègue dont il aurait ramassé le lien ;
-- si l'adresse admin est aussi celle d'un animateur, l'admin l'emporte et la personne perd son espace. Le démarrage signale cette collision.

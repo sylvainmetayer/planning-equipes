@@ -307,29 +307,6 @@ public class AnimateurRepository {
     }
 
     /**
-     * Whether any animateur, in any edition, carries this address. Like
-     * {@link #resolveAnimateurToken}, deliberately not edition-scoped: the
-     * caller is the startup check of the remote-user mode, which has no
-     * edition to speak of and wants to know whether the collision exists
-     * anywhere at all.
-     */
-    public boolean emailAnimateurExiste(String email) {
-        if (email == null || email.isBlank()) {
-            return false;
-        }
-        try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps =
-                        connection.prepareStatement("SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1")) {
-            ps.setString(1, email.trim());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException("Failed to look up animator e-mail", e);
-        }
-    }
-
-    /**
      * Resolves an espace-animateur token to its owner. Deliberately <b>not</b>
      * edition-scoped — one of the two statements in the whole backend that are
      * not, both of them here and both listed in

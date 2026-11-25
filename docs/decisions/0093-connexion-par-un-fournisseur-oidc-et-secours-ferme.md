@@ -1,6 +1,6 @@
 # 0093 — Connexion par un fournisseur OIDC, compte de secours fermé par défaut
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; le point 5 (mode en-tête de proxy déprécié) est **remplacé** par [0102](0102-retrait-du-mode-en-tete-de-proxy.md), qui retire le mode
 - **Date** : novembre 2026
 - **Portée** : authentification de l'administration, comptes
 - **Prolonge** : [0076](0076-journal-des-connexions-admin-par-instance.md) (le journal des connexions)

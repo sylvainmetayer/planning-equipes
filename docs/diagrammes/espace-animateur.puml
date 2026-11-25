@@ -41,7 +41,7 @@ acces -> db : INSERT espace_session (30 jours), code supprimé
 espace --> front : 204 + cookie planning-espace\n(HttpOnly, SameSite=Strict, chemin /api/espace-animateur)
 
 front -> session : GET /api/espace-animateur/{jeton}
-note right of session : sans cookie valide : 401.\nUn proxy d'accès qui atteste l'e-mail\n(mode remote user) en tient lieu.
+note right of session : sans cookie valide : 401.
 session -> espace : espace()
 espace --> front : plan publié de la personne\n(vide avant toute publication)
 

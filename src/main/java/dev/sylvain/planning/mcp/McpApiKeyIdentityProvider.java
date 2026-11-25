@@ -1,7 +1,6 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.service.compte.Compte;
-import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -17,8 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * the credential check already happened, this provider only assembles the identity).
  *
  * <p>Serves <b>every</b> mechanism of the application producing a trusted
- * request — {@link McpApiKeyAuthenticationMechanism} and, when the mode is
- * enabled, {@code RemoteUserAuthenticationMechanism}. Deliberately one
+ * request — {@link McpApiKeyAuthenticationMechanism} and the form session. Deliberately one
  * provider rather than one per mechanism: Quarkus resolves providers by
  * request type, so two of them registered for
  * {@link TrustedAuthenticationRequest} would compete for the same requests.
@@ -36,6 +34,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthenticationRequest> {
 
+    /** Principal name of the form login's admin. */
+    static final String PRINCIPAL_ADMIN = "admin";
+
     /** Matches {@code quarkus.security.users.embedded.roles.admin}, so both login paths grant the same role. */
     static final String ROLE_ADMIN = "admin";
 
@@ -52,14 +53,7 @@ public class McpApiKeyIdentityProvider implements IdentityProvider<TrustedAuthen
             TrustedAuthenticationRequest request, AuthenticationRequestContext context) {
         QuarkusSecurityIdentity.Builder identite =
                 QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal(request.getPrincipal()));
-        if (RemoteUserAuthentication.REQUEST_PRINCIPAL.equals(request.getPrincipal())) {
-            // The proxy's admin, marked: CompteIdentityAugmentor must tell it
-            // from a form session of the same name, which it strips of its
-            // role once the break-glass door is closed.
-            identite.setPrincipal(new QuarkusPrincipal(RemoteUserAuthentication.PRINCIPAL_ADMIN))
-                    .addRole(ROLE_ADMIN)
-                    .addAttribute(RemoteUserAuthentication.IDENTITY_ATTRIBUTE, Boolean.TRUE);
-        } else if (RemoteUserAuthentication.PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
+        if (PRINCIPAL_ADMIN.equals(request.getPrincipal())) {
             identite.addRole(ROLE_ADMIN);
         } else if (McpApiKeyAuthenticationMechanism.PRINCIPAL.equals(request.getPrincipal())) {
             identite.addRole(ROLE_MCP);
