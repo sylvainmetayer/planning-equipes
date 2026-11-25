@@ -27,7 +27,8 @@ reservation() {
 }
 
 added_files() {
-  gh api --paginate "repos/$REPO/pulls/$1/files?per_page=100" \
+  local pr="$1"
+  gh api --paginate "repos/$REPO/pulls/$pr/files?per_page=100" \
     --jq '.[] | select(.status == "added") | .filename'
 }
 
