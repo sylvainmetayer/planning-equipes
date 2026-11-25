@@ -159,7 +159,8 @@
           } @else {
             —
             @if (suggestions().get(stand.id); as suggestion) {
-              <button type="button" class="stand-suggestion" [matTooltip]="suggestion.raison" i18n="@@stands.suggestion">suggéré : {{ suggestion.emplacementNom }}</button>
+              <span class="stand-suggestion" i18n="@@stands.suggestion">suggéré : {{ suggestion.emplacementNom }}</span>
+              <span class="stand-suggestion-raison">{{ suggestion.raison }}</span>
             }
           }
         </td>

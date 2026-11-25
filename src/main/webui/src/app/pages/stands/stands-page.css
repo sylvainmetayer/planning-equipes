@@ -9,9 +9,13 @@
   border-radius: 1rem;
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
-  font: inherit;
   font-size: 0.85em;
-  /* A button only so that the keyboard reaches the tooltip: it acts on nothing */
-  border: 0;
-  cursor: help;
+}
+
+/* The reason in plain text rather than a tooltip: a tooltip needs a focusable
+   host, and the badge acts on nothing. */
+.stand-suggestion-raison {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
 }
