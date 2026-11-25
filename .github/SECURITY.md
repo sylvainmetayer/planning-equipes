@@ -41,7 +41,7 @@ disponibilités). Sont donc prioritaires :
 Le dépôt couvre l'application. Un déploiement donné relève de son exploitant :
 reverse proxy, TLS, sauvegardes, mot de passe administrateur et variables
 d'environnement ne sont pas dans le périmètre de ce projet. Voir
-[`docs/securite.md`](../docs/securite.md) pour la liste des points à vérifier
+[`site/src/docs/installer/securite.md`](../site/src/docs/installer/securite.md) pour la liste des points à vérifier
 côté exploitation.
 
 ## Versions soutenues

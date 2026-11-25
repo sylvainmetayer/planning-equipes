@@ -171,7 +171,7 @@ class NotificationsPlanifieesTest {
                 .satisfies(alerte -> {
                     assertThat(alerte.animateurId()).isEqualTo("PLAN-B");
                     // The name is joined at read time; the table itself stores
-                    // only the id (docs/rgpd.md).
+                    // only the id (site/src/docs/installer/rgpd.md).
                     assertThat(alerte.nomAffiche()).isEqualTo("Bruno Petit");
                     assertThat(alerte.libelle()).doesNotContain("Bruno");
                 });

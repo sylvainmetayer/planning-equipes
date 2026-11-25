@@ -25,8 +25,8 @@ const apply = () => {
 apply();
 
 document.addEventListener('DOMContentLoaded', () => {
-  // The docs' side navs start folded, so that on a phone the text comes first; a wide screen unfolds them
-  if (matchMedia('(min-width: 60rem)').matches) document.querySelectorAll('details[data-open-wide]').forEach((d) => { d.open = true; });
+  // The docs' side navs are open in the HTML (nothing is hidden without script); under the breakpoint the script folds them, so that on a phone the text comes first
+  if (!matchMedia('(min-width: 60rem)').matches) document.querySelectorAll('details[data-fold-narrow]').forEach((d) => { d.open = false; });
   const button = document.querySelector('[data-theme-toggle]');
   if (!button) return;
   const sync = () => {

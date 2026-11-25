@@ -50,7 +50,7 @@ export interface EntityName {
   /**
    * The name is personal data (an animateur's identity): the confirmation
    * shows it, but a notification names the id instead — every one is copied
-   * into a `localStorage` log that outlives the logout (`docs/rgpd.md` §7).
+   * into a `localStorage` log that outlives the logout (`site/src/docs/installer/rgpd.md` §7).
    */
   personal?: boolean;
 }
@@ -81,7 +81,7 @@ export class ReferenceCrudService {
    * The warnings the last save of each row raised, keyed `resource:id`: the
    * snack bar goes, the mark on the row stays until a save of that row raises
    * none. In memory only — a warning may say somebody is a minor, and that is
-   * shown, never logged (`docs/rgpd.md` §7).
+   * shown, never logged (`site/src/docs/installer/rgpd.md` §7).
    */
   private readonly _rowWarnings = signal<ReadonlyMap<string, readonly string[]>>(new Map());
   readonly rowWarnings = this._rowWarnings.asReadonly();
@@ -447,7 +447,7 @@ export class ReferenceCrudService {
  * store — the planning locks — so every table words its bulk outcome alike.
  * `name` says what a failure line calls its row; the id by default, and
  * never a person's identity: every notification is copied into a log that
- * outlives the logout (`docs/rgpd.md` §7).</p>
+ * outlives the logout (`site/src/docs/installer/rgpd.md` §7).</p>
  */
 export function bulkNotifications(
   result: BulkResult,
@@ -527,7 +527,7 @@ function shownName(id: RecordId, name: EntityName | undefined): string {
  * The notification's title naming the entity — by its id when that name is
  * personal: a write-time notification never names a person (AGENTS.md), since
  * the browser copies every one into a `localStorage` log that outlives the
- * logout (docs/rgpd.md §7). Only the confirmation, which is never logged,
+ * logout (site/src/docs/installer/rgpd.md §7). Only the confirmation, which is never logged,
  * shows the person's name.
  */
 function namedTitles(

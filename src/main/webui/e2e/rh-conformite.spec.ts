@@ -2,7 +2,7 @@
 // and reads the compliance report of ITS edition (screen, PDF, CSV), keeps the
 // emergency and legal-representative contacts of the people planned, while an
 // organiser sees none of it and a colleague's espace carries no contact at all
-// (docs/rgpd.md). Every name and phone number is generated, never typed.
+// (site/src/docs/installer/rgpd.md). Every name and phone number is generated, never typed.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';

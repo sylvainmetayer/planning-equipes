@@ -10,7 +10,7 @@
 10027	IGNORE	(Information Disclosure - Suspicious Comments)
 # Storable and Cacheable Content — Voulu (SpaCacheControlFilter) : les bundles hachés sont mis en cache longtemps, le reste est revalidé (no-cache). Les seules réponses lues sans compte sont ces fichiers statiques, identiques pour tous ; l'API, elle, répond 401.
 10049	IGNORE	(Storable and Cacheable Content)
-# CSP: Wildcard Directive — img-src https: et connect-src https: sont ouverts exprès : le serveur de tuiles et l'endpoint Bugsink sont propres à chaque déploiement, qui les nomme dans CSP (docs/securite.md, « Réglage »).
+# CSP: Wildcard Directive — img-src https: et connect-src https: sont ouverts exprès : le serveur de tuiles et l'endpoint Bugsink sont propres à chaque déploiement, qui les nomme dans CSP (site/src/docs/installer/securite.md, « Réglage »).
 10055	IGNORE	(CSP: Wildcard Directive)
 # Timestamp Disclosure - Unix — Faux positif : des constantes à dix chiffres du bundle Angular minifié (1073741824 = 2^30, des graines de hachage), pas un horodatage du serveur.
 10096	IGNORE	(Timestamp Disclosure - Unix)

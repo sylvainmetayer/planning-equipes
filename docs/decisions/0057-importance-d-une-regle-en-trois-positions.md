@@ -65,14 +65,14 @@ au défaut et qui gagnent le même facteur par la configuration.
 - **Un fichier scénario écrit avant ce changement** porte ses poids sur
   l'ancienne échelle ; réimporté tel quel, ses règles citées pèseraient cinq
   fois moins que les autres. Le fichier ne porte pas de numéro de version qui
-  permettrait de le convertir à la lecture ; `docs/import-export.md` dit de le
+  permettrait de le convertir à la lecture ; `site/src/docs/comprendre/scenario-yaml.md` dit de le
   multiplier à la main.
 - **Deux autres sources de poids échappent à la migration**, pour la même
   raison — elle ne réécrit que la base : une surcharge
   `planning.constraint-weights.<règle>` posée par un déploiement garde son
   ancienne valeur, et un export SQL de l'application pris avant la mise à jour
   réimporte les poids d'avant dans une base déjà migrée. L'une et l'autre sont
-  à multiplier par cinq ; `docs/exploitation.md` le dit à l'exploitant. Un dump
+  à multiplier par cinq ; `site/src/docs/installer/exploitation.md` le dit à l'exploitant. Un dump
   `pg_dump` restauré n'est pas concerné : son historique Flyway ne connaît pas
   `V108`, rejouée au démarrage.
 - Le Diagnostic peut masquer « Baisser l'importance » sur une règle déjà au

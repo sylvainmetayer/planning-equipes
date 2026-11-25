@@ -1,7 +1,7 @@
 @startuml
 ' L'abonnement ICS : un second jeton, qui ne sert qu'à lire son propre plan
 ' publié depuis un agenda, sans session ni code. Le changer est la seule
-' révocation. Voir docs/securite.md et docs/decisions/0019.
+' révocation. Voir site/src/docs/installer/securite.md et docs/decisions/0019.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

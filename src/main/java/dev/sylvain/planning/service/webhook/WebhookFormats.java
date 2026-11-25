@@ -327,7 +327,7 @@ public final class WebhookFormats {
     /**
      * {@code sha256=<hex HMAC-SHA256(secret, timestamp + "." + body)>}: the
      * timestamp is signed with the body, so a receiver that refuses one older
-     * than five minutes refuses a replay too (see {@code docs/api.md}).
+     * than five minutes refuses a replay too (see {@code site/src/docs/comprendre/api-integrations.md}).
      */
     public static String signature(String secret, String timestamp, byte[] body) {
         try {

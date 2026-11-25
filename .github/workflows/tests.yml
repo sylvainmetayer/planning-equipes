@@ -30,16 +30,29 @@ on:
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
       - 'docs/decisions/**'
-      - 'docs/architecture.md'
-      - 'docs/domaine.md'
-      - 'docs/exploitation.md'
-      - 'docs/import-export.md'
-      - 'docs/securite.md'
-      - 'docs/versioning.md'
+      - 'site/src/docs/comprendre/vue-d-ensemble.md'
+      - 'site/src/docs/comprendre/cloisonnement-par-edition.md'
+      - 'site/src/docs/comprendre/comment-le-planning-est-calcule.md'
+      - 'site/src/docs/comprendre/modele-des-donnees.md'
+      - 'site/src/docs/comprendre/pourquoi-ces-regles.md'
+      - 'site/src/docs/comprendre/scenario-yaml.md'
+      - 'site/src/docs/comprendre/imports-csv.md'
+      - 'site/src/docs/comprendre/api-calcul.md'
+      - 'site/src/docs/comprendre/api-conventions.md'
+      - 'site/src/docs/comprendre/api-espace-animateur.md'
+      - 'site/src/docs/comprendre/api-planning-et-publication.md'
+      - 'site/src/docs/comprendre/mcp-connexion.md'
+      - 'site/src/docs/comprendre/api-*.md'
+      - 'site/src/docs/comprendre/mcp-*.md'
+      - 'site/src/docs/installer/exploitation.md'
+      - 'site/src/docs/installer/securite.md'
+      - 'site/src/docs/installer/versioning.md'
+      - 'site/src/docs/installer/securite-jetons-publics.md'
+      - 'site/src/docs/installer/sauvegarde-et-restauration.md'
+      - 'site/src/docs/installer/publier-une-version.md'
+      - 'site/src/docs/installer/envois-automatiques.md'
+      - 'site/src/docs/installer/variables-environnement.md'
       - 'docs/licences-tierces.md'
-      - 'docs/api.md'
-      - 'docs/contraintes.md'
-      - 'docs/mcp.md'
       - 'AGENTS.md'
   pull_request:
     paths:
@@ -50,16 +63,29 @@ on:
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
       - 'docs/decisions/**'
-      - 'docs/architecture.md'
-      - 'docs/domaine.md'
-      - 'docs/exploitation.md'
-      - 'docs/import-export.md'
-      - 'docs/securite.md'
-      - 'docs/versioning.md'
+      - 'site/src/docs/comprendre/vue-d-ensemble.md'
+      - 'site/src/docs/comprendre/cloisonnement-par-edition.md'
+      - 'site/src/docs/comprendre/comment-le-planning-est-calcule.md'
+      - 'site/src/docs/comprendre/modele-des-donnees.md'
+      - 'site/src/docs/comprendre/pourquoi-ces-regles.md'
+      - 'site/src/docs/comprendre/scenario-yaml.md'
+      - 'site/src/docs/comprendre/imports-csv.md'
+      - 'site/src/docs/comprendre/api-calcul.md'
+      - 'site/src/docs/comprendre/api-conventions.md'
+      - 'site/src/docs/comprendre/api-espace-animateur.md'
+      - 'site/src/docs/comprendre/api-planning-et-publication.md'
+      - 'site/src/docs/comprendre/mcp-connexion.md'
+      - 'site/src/docs/comprendre/api-*.md'
+      - 'site/src/docs/comprendre/mcp-*.md'
+      - 'site/src/docs/installer/exploitation.md'
+      - 'site/src/docs/installer/securite.md'
+      - 'site/src/docs/installer/versioning.md'
+      - 'site/src/docs/installer/securite-jetons-publics.md'
+      - 'site/src/docs/installer/sauvegarde-et-restauration.md'
+      - 'site/src/docs/installer/publier-une-version.md'
+      - 'site/src/docs/installer/envois-automatiques.md'
+      - 'site/src/docs/installer/variables-environnement.md'
       - 'docs/licences-tierces.md'
-      - 'docs/api.md'
-      - 'docs/contraintes.md'
-      - 'docs/mcp.md'
       - 'AGENTS.md'
   workflow_dispatch:
 
@@ -80,7 +106,7 @@ jobs:
       packaged: ${{ steps.app.outputs.packaged }}
     # Runner GitHub : le résultat des tests se suit depuis la PR, sans dépendre
     # de la disponibilité de la machine d'un seul développeur. Les runners
-    # standard sont gratuits sur un dépôt public — voir docs/developpement.md.
+    # standard sont gratuits sur un dépôt public — voir site/src/docs/comprendre/demarrer.md.
     #
     # La garde sur les PR de fork tenait au socket Docker du runner
     # auto-hébergé, sur lequel une PR externe aurait fait tourner du code
@@ -432,7 +458,7 @@ jobs:
   # *baseline* parcourt ce qu'un visiteur sans compte atteint et lit chaque
   # réponse — en-têtes, cookies, contenu des erreurs, fichiers servis. Il
   # n'attaque rien (aucun scan actif) : c'est la vérification, sur le jar que
-  # le job `test` vient de packager, de ce que docs/securite.md affirme et que
+  # le job `test` vient de packager, de ce que site/src/docs/installer/securite.md affirme et que
   # `SecurityHeadersFilter` teste de l'intérieur.
   #
   # Chaque alerte fait échouer le job, avertissements compris : une règle
@@ -690,7 +716,7 @@ jobs:
         run: npm run icon-labels-check
 
       # One <h1> per screen, and `mat-card-title` as an attribute rather than
-      # an element — the two conventions of docs/developpement.md § a11y that
+      # an element — the two conventions of site/src/docs/comprendre/demarrer.md § a11y that
       # the audit found broken 19 times (issue #43).
       - name: Headings check
         run: npm run headings-check

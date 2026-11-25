@@ -162,7 +162,7 @@ test.describe('piste 1 — la raison légale', () => {
     expect(legal?.message).toContain(exception);
     expect(legal?.message).toContain('travailDeNuitInterditPourMineur');
     // La phrase est recopiée dans un journal que le navigateur garde après la
-    // déconnexion : elle nomme l'exception, jamais la personne (docs/rgpd.md §7).
+    // déconnexion : elle nomme l'exception, jamais la personne (site/src/docs/installer/rgpd.md §7).
     expect(legal?.message).not.toContain(MINEUR);
 
     // Averti, jamais refusé : la ligne est bien là.

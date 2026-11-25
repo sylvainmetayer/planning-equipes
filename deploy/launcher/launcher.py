@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Example launcher for the remote solve (ADR 0086, docs/exploitation.md).
+"""Example launcher for the remote solve (ADR 0086, site/src/docs/installer/calcul-sur-une-autre-machine.md).
 
 The application never creates a machine: it calls this small service, which
 holds the provider's token and does. Three calls, all carrying

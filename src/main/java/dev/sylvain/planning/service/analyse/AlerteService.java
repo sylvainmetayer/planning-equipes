@@ -21,7 +21,7 @@ import java.util.function.Function;
  * at read time, from the referential. That is what keeps a person's name out of
  * a table that survives them — an animateur deleted from the referential leaves
  * an alert that no longer names anybody, which is the correct outcome rather
- * than a bug (see {@code docs/rgpd.md}).</p>
+ * than a bug (see {@code site/src/docs/installer/rgpd.md}).</p>
  */
 @ApplicationScoped
 public class AlerteService {

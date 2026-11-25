@@ -107,7 +107,7 @@ public class EditionService {
      * <i>year template</i> — preparing 2027 from 2026 otherwise copies the
      * names, birth dates and e-mail addresses of people who have not signed up
      * again, which is a minimisation and retention problem
-     * ({@code docs/rgpd.md}), not a convenience.</p>
+     * ({@code site/src/docs/installer/rgpd.md}), not a convenience.</p>
      *
      * <p>The copy is born <b>inactive</b> (ADR 0072): it reaches nobody until
      * the organiser activates it.</p>

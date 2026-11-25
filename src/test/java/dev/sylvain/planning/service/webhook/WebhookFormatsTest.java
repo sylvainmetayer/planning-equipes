@@ -139,7 +139,7 @@ class WebhookFormatsTest {
         assertThat(render(WebhookFormat.DISCORD, message)).contains("\"allowed_mentions\":{\"parse\":[]}");
     }
 
-    /** The signature of a known body, as a receiver recomputes it (docs/api.md gives the recipe). */
+    /** The signature of a known body, as a receiver recomputes it (site/src/docs/comprendre/api-integrations.md gives the recipe). */
     @Test
     void theSignatureIsTheHmacOfTimestampDotBody() {
         assertThat(WebhookFormats.signature(

@@ -158,7 +158,7 @@ public class JdbcEditionScope {
      * <p>{@code table} comes from a repository's own call sites, never from
      * user input: a table name cannot be bound as a parameter, so it is
      * concatenated, while the id that varies travels bound. Same reasoning for
-     * every {@code nosemgrep} below (see {@code docs/securite.md}).</p>
+     * every {@code nosemgrep} below (see {@code site/src/docs/installer/securite.md}).</p>
      */
     public boolean exists(String table, String id) {
         return exists(table, ps -> ps.setString(2, id), table + " " + id);

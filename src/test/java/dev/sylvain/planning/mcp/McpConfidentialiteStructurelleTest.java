@@ -41,14 +41,14 @@ class McpConfidentialiteStructurelleTest {
             "nomdefamille",
             "email",
             // The phone number of the fiche: an admin screen reads it, an
-            // assistant never does (docs/rgpd.md).
+            // assistant never does (site/src/docs/installer/rgpd.md).
             "telephone",
             "accesstoken",
             "commentaire",
             "commentaireadmin",
             "raison",
             // A third party's contacts (the emergency contact and the legal representative): the RH right and
-            // the animateur read them, an assistant never does (docs/rgpd.md).
+            // the animateur read them, an assistant never does (site/src/docs/installer/rgpd.md).
             "urgencenom",
             "urgencetelephone",
             "representantnom",

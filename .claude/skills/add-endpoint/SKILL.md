@@ -61,10 +61,10 @@ The contract is the OpenAPI the application publishes, not a Markdown table:
 refresh the committed schema with `npm run api-schema` from `src/main/webui`,
 and check the frontend still matches with `npm run api-types-check`.
 
-`docs/api.md` does **not** list endpoints and must not start — it carries what a
+The `site/src/docs/comprendre/api-*.md` pages do **not** list endpoints and must not start — they carry what a
 schema cannot express (cross-cutting invariants, business trade-offs, traps).
 Add a paragraph there only if this endpoint brings such a thing. If it changes
-CSV/dump/PDF/ICS formats, update `docs/import-export.md`.
+CSV/dump/PDF/ICS formats, update `site/src/docs/comprendre/scenario-yaml.md`, `imports-csv.md`, `exports-et-archives.md` or `restaurer-une-edition.md`.
 
 ## 7. Wire the frontend if needed
 

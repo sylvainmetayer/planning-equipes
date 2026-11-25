@@ -52,7 +52,7 @@ entier, des comptes et des minutes, aucune personne.
   `ON CONFLICT DO NOTHING` : deux passages concurrents n'écrivent qu'une fois,
   et seul celui qui a écrit trace `REALISE_FIGE` dans l'historique des
   actions. Pour refiger une édition, un exploitant supprime ses lignes en SQL
-  (`docs/exploitation.md`) : la nuit suivante les réécrit. Il n'y a pas de
+  (`site/src/docs/installer/exploitation.md`) : la nuit suivante les réécrit. Il n'y a pas de
   route pour le faire — c'est un geste rare, qui efface une mesure dont
   l'édition suivante a besoin.
 - **Pas sans passé figé** : une édition dont le rapport dit le passé figé

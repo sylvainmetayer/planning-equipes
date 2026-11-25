@@ -855,7 +855,7 @@ export class AnimateursPage implements OnInit {
   /**
    * « Exporter cette liste »: the rows as displayed — filtered, sorted — built
    * in the browser. A nominative export leaves a line in the history
-   * (`docs/rgpd.md`), and the server never sees this file: the export is
+   * (`site/src/docs/installer/rgpd.md`), and the server never sees this file: the export is
    * announced first, and nothing is saved when the announcement fails.
    */
   protected async exportList(): Promise<void> {

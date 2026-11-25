@@ -66,7 +66,7 @@ en-tête propre au fournisseur) et qui porte l'id de la ligne.
   - c'est une **troisième route publique** hors session d'administration, après
     l'abonnement au calendrier et l'affichage mural : elle doit vérifier la
     signature du fournisseur, être limitée en débit, figurer dans
-    `docs/securite.md`, et le reverse proxy doit l'excepter de son
+    `site/src/docs/installer/securite.md`, et le reverse proxy doit l'excepter de son
     authentification sous un préfixe qui ne nomme qu'elle.
 
 ### Ce qui est commun aux deux
@@ -95,7 +95,7 @@ Une fois le relais choisi :
 ## Conséquences
 
 - En attendant, « parti » veut dire « remis au relais » et rien de plus ; les
-  écrans et `docs/exploitation.md` §4 le disent, et la catégorie
+  écrans et `site/src/docs/installer/exploitation.md` §4 le disent, et la catégorie
   `ADRESSE_REFUSEE` se verra rarement.
 - Le lot déjà livré n'a rien à défaire : la décision ajoutera une colonne de
   corrélation et une écriture sur une ligne existante, pas un second registre.

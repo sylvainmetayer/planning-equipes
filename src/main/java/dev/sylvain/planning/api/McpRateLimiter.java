@@ -92,7 +92,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>In memory and per address, like the other two limiters, on the counters
  * the application shares ({@link SlidingWindowCounter}, {@link FailureLockout}).
  * Rate limiting the whole site per IP remains the reverse proxy's job — see
- * {@code docs/securite.md}.</p>
+ * {@code site/src/docs/installer/securite.md}.</p>
  */
 @ApplicationScoped
 public class McpRateLimiter {

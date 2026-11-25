@@ -3,7 +3,7 @@
 ' la préremplir, la simuler, la poser, puis la lever. Rien n'est détruit :
 ' les créneaux nominaux, leurs postes et leurs verrous restent ; le résolveur
 ' de consignes ne génère simplement plus de poste dans la bande.
-' Voir docs/api.md, « Consignes », et docs/decisions/0043.
+' Voir site/src/docs/comprendre/api-planning-et-publication.md, et docs/decisions/0043.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox

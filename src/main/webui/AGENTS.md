@@ -49,7 +49,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   light and an OKLCH-lightened twin on dark, because it is a *text* colour on
   `--mat-sys-surface` in a dozen partials. Deliberately outside the switch: the
   brand toolbar, the OpenStreetMap tiles of the maps, and the
-  server-side PDFs — see `docs/architecture.md`.
+  server-side PDFs — see `site/src/docs/comprendre/frontend.md`.
 - Shell: `app/app.ts` is a bare `<router-outlet/>`; the admin chrome
   (`mat-toolbar` + `mat-sidenav`, the solver `app-job-monitor`, the logout
   button) lives in `app/shell/admin-shell.ts`, a layout route wrapping every
@@ -672,7 +672,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solver's score curve). An unsaved entry is neither, and has its own module:
   `core/brouillon-formulaire.ts` keeps the draft of the three long forms,
   scoped by edition, 24 h at most, sessionStorage for the fiche animateur and
-  never localStorage — its bounds are `docs/rgpd.md` §7. What is typed and not
+  never localStorage — its bounds are `site/src/docs/installer/rgpd.md` §7. What is typed and not
   saved is asked of one place, `core/formulaires-modifies.ts`, which those
   forms register with and the Solveur page reads before « Calculer ». The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
@@ -709,7 +709,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   plateau is what the screen is for. The elapsed time is what draws it, so a
   running solve beats every tick even with nothing new to send. That curve is
   not polled: the stream is already reopened on error and after 45 s of
-  silence, and a new connection is sent the whole series. See `docs/api.md`.
+  silence, and a new connection is sent the whole series. See `site/src/docs/comprendre/api-calcul.md`.
   Both loops are stopped with the shell that started
   them (the service is `providedIn: 'root'` and would outlive it).
 - CSS is **unscoped, and loaded with the route** (issue #392, B9). Two
@@ -735,7 +735,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   or the form shows, and the *why* lives in the help page. `npm run i18n-check`
   refuses a message over 200 characters outside the help and legal pages — a
   warning that names a legal rule with its article is the one exception, kept
-  whole. The full rule is in `docs/developpement.md` § *Textes des écrans*.
+  whole. The full rule is in `site/src/docs/comprendre/demarrer.md`.
 - Keep the frontend dependency-light. What is actually there, and why: Angular
   + its CLI + Angular Material + `@angular/localize` (the stack proper);
   `@sentry/angular` (error reporting, loaded by a dynamic `import()` only when a
@@ -751,7 +751,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `shared/leaflet-base.ts`).
   Dev-only: `@playwright/test`, `@axe-core/playwright` (the axe-core sweep of
   `e2e/accessibilite.spec.ts`, against a frozen per-screen baseline — see
-  `docs/accessibilite.md`), `vitest`, `@vitest/coverage-v8`
+  `site/src/docs/installer/accessibilite.md`), `vitest`, `@vitest/coverage-v8`
   (`npm run test:coverage`, run in CI — the report is published as an artifact
   and nothing consumes it: no threshold, no external service), `jsdom`,
   `prettier` (`npm run format` / `format-check`, the latter run in CI — the
@@ -818,4 +818,4 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   job skips those too. Locally
   they **erase the database
   they target**: run them only against a disposable stack (see
-  `docs/developpement.md` § Tests de bout en bout).
+  `site/src/docs/comprendre/tests.md`).

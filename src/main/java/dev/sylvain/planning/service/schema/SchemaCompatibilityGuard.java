@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
  * back onto a schema a later version migrated — and records, on every boot
  * that gets through, which application version opened the database.
  *
- * <p>The schema is forward-only ({@code docs/versioning.md} § 2): an older
+ * <p>The schema is forward-only ({@code site/src/docs/installer/versioning.md} § 2): an older
  * binary on a newer schema meets NOT NULL columns it never writes, constraints
  * it never heard of, tables under another name — errors at run time, during
  * the event, or worse, writes that succeed. A refused boot is seen at once.

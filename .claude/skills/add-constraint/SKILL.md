@@ -88,11 +88,11 @@ consider the change done until this passes.
 
 The constraint's business description lives in `ConstraintCatalog` (step
 above), which `GET /api/constraints` serves: that is the documentation the
-application hands out, and `docs/contraintes.md` no longer enumerates the
+application hands out, and `site/src/docs/comprendre/pourquoi-ces-regles.md` no longer enumerates the
 constraints. Add a section there only for the *why* and the cost — the
 arbitration a one-line description cannot carry. If the
 constraint introduces a new business capability visible to end users, also
-check whether the matching page of `docs/fonctionnel/` needs a line —
+check whether the matching guide of `site/src/docs/regles/` needs a line —
 but keep it free of class names, routes and variables.
 
 ## 8. Verify

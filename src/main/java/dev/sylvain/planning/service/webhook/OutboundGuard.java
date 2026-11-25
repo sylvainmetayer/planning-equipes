@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Decides whether a webhook address may be called, and <b>which IP</b> the
  * call goes to (see the « Appels sortants » section of
- * {@code docs/securite.md}).
+ * {@code site/src/docs/installer/securite.md}).
  *
  * <p>An admin types the URL, and the server calls it: without a guard, a
  * webhook is a way to make the server reach what only it can reach — the

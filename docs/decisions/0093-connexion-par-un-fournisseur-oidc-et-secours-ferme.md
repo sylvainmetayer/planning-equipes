@@ -58,7 +58,7 @@ son organisation gère déjà chez son fournisseur d'identité.
 
 - Premier démarrage derrière un fournisseur : l'opérateur crée son compte
   administrateur **avant** de fermer le secours (procédure dans
-  `docs/exploitation.md`). Un avertissement au démarrage signale l'absence
+  `site/src/docs/installer/exploitation.md`). Un avertissement au démarrage signale l'absence
   d'administrateur actif.
 - Chaque requête authentifiée lit son compte en base (deux requêtes brèves) : le
   prix d'une désactivation qui prend effet à la requête suivante, sans cache.

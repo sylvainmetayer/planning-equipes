@@ -216,7 +216,7 @@ export class DisponibilitesPage implements OnInit {
           report.sansEmail.length + report.echecs.length === 0
             ? undefined
             : $localize`:@@dispo.invitationRestes:Sans adresse : ${report.sansEmail.join(', ')}:sansEmail:. Échecs : ${report.echecs.join(', ')}:echecs:.`,
-        // Names stay on screen only: the persisted log outlives the logout (docs/rgpd.md §7).
+        // Names stay on screen only: the persisted log outlives the logout (site/src/docs/installer/rgpd.md §7).
         messageJournal:
           report.sansEmail.length + report.echecs.length === 0
             ? undefined

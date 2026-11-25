@@ -4,7 +4,7 @@
 // reading the whole planning and remembering. Pure functions, over the days
 // the page already builds: this ranks nobody and reveals nobody — every name
 // here is one the animateur already reads on one of their own cards
-// (`docs/securite.md`, perimeter of the espace).
+// (`site/src/docs/installer/securite.md`, perimeter of the espace).
 
 import { correspondAuFiltre } from '../../core/text-filter';
 import { JourPlanning } from './espace-maintenant';

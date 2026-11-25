@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>In memory: the application is single-instance, and a restart is not within
  * reach of the attacker these counters aim at. Rate limiting per IP address
- * belongs to the reverse proxy — see {@code docs/securite.md}.</p>
+ * belongs to the reverse proxy — see {@code site/src/docs/installer/securite.md}.</p>
  */
 public class SlidingWindowCounter {
 

@@ -23,7 +23,7 @@ import jakarta.inject.Inject;
  * already names the animateur, and an IP is what a phone changes between two
  * cells. Over the ceiling the answer is {@code 429} with a {@code Retry-After}.
  * Rate limiting per address stays the reverse proxy's job — see
- * {@code docs/securite.md}.</p>
+ * {@code site/src/docs/installer/securite.md}.</p>
  */
 @ApplicationScoped
 public class DeclarationRateLimiter {

@@ -59,7 +59,7 @@ import { takeFile } from '../../core/take-file';
  * <b>twice</b>, on purpose: the preview and the import take the same body, and
  * the server re-reads and re-validates the file before writing rather than
  * trusting the report this screen was shown. Nothing here is ever written to
- * disk, on either side (see {@code docs/rgpd.md}).</p>
+ * disk, on either side (see {@code site/src/docs/installer/rgpd.md}).</p>
  */
 @Component({
   selector: 'app-import-animateurs-page',

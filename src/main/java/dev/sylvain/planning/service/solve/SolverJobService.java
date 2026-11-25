@@ -129,7 +129,7 @@ public class SolverJobService {
      */
     private final SolverScoreTrace scoreTrace;
 
-    /** Operating metrics — durations, outcomes, the queue (docs/observabilite.md). */
+    /** Operating metrics — durations, outcomes, the queue (site/src/docs/installer/observabilite.md). */
     private final SolverMetrics metrics;
 
     /**

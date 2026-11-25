@@ -59,7 +59,7 @@ import org.jboss.logging.Logger;
  * {@code duree-blocage} after the last real attempt.</p>
  *
  * <p>In memory and per address: see {@link #address(RoutingContext)} for what
- * "address" means behind a proxy, and {@code docs/securite.md} for what is
+ * "address" means behind a proxy, and {@code site/src/docs/installer/securite.md} for what is
  * left to the reverse proxy.</p>
  *
  * <h2>The trace it leaves</h2>

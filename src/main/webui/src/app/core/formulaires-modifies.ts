@@ -13,7 +13,7 @@
 // and asking about it before every solve would teach the user to click
 // through the question. A fiche animateur typed in another tab is not seen:
 // its draft lives in that tab's sessionStorage, deliberately out of reach
-// (docs/rgpd.md §7).
+// (site/src/docs/installer/rgpd.md §7).
 
 import { Injectable, Injector, Signal, computed, inject, signal } from '@angular/core';
 import {

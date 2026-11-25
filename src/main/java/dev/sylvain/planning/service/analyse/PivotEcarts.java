@@ -35,7 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>Ids only, never names: the screen resolves the labels from its own
  * referential, and an aggregate that named people would be one more place a
- * name travels ({@code docs/rgpd.md} §7).</p>
+ * name travels ({@code site/src/docs/installer/rgpd.md} §7).</p>
  */
 public final class PivotEcarts {
 

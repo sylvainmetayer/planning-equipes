@@ -109,7 +109,7 @@ public class WebhookService {
                 throw new IllegalStateException(
                         "Des webhooks sont configurés mais WEBHOOKS_SECRET_KEY n'est pas définie : "
                                 + "leurs secrets sont chiffrés avec cette clé, et sans elle aucune livraison ne pourrait "
-                                + "partir. Redéfinissez la clé d'origine (voir docs/exploitation.md).");
+                                + "partir. Redéfinissez la clé d'origine (voir https://planning.sylvain.dev/docs/installer/appels-sortants/).");
             }
             return;
         }
@@ -120,7 +120,7 @@ public class WebhookService {
                 throw new IllegalStateException(
                         "WEBHOOKS_SECRET_KEY n'ouvre pas les secrets des webhooks configurés : ce n'est pas la clé "
                                 + "avec laquelle ils ont été chiffrés, et aucune livraison ne pourrait partir. "
-                                + "Redéfinissez la clé d'origine (voir docs/exploitation.md).",
+                                + "Redéfinissez la clé d'origine (voir https://planning.sylvain.dev/docs/installer/appels-sortants/).",
                         e);
             }
         });

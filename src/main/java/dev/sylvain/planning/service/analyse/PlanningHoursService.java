@@ -49,8 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * which is what a premium is paid on, and a break cannot be assigned to one
  * side of midnight or to one of two windows without inventing where it was
  * taken. So the three columns do not add up to the total, and never did. See
- * {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
- * l'amplitude ».</p>
+ * {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
  *
  * <p><b>One evening in the whole application.</b> The evening hours are the
  * ones {@link EquiteService} counts, from the same settable

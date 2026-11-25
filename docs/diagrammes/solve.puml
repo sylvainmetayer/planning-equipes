@@ -2,7 +2,7 @@
 ' Un solve lancé depuis le référentiel : le chemin de l'écran Solveur et de
 ' l'outil MCP lancer_solveur. Les quatre façons de lancer un solve passent par
 ' le même SolvePipeline.execute ; seuls changent le fournisseur du problème et
-' la présence d'un détenteur du solveur. Voir docs/architecture.md.
+' la présence d'un détenteur du solveur. Voir site/src/docs/comprendre/comment-le-planning-est-calcule.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox
