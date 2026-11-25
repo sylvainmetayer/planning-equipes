@@ -187,11 +187,10 @@ class IsolationEditionStructurelleTest {
      *       form login is handled before any request names an edition, and a
      *       login opens every edition at once: there is no edition to file
      *       it under, and the screen shows it whatever edition is chosen.</li>
-     *   <li>{@code machine_calcul}, {@code resolution_distante} — the machine
-     *       a solve is run on and the solve a job left there (ADR 0086). One
-     *       machine serves every edition, as the queue is one for the whole
-     *       instance, and a restart looks for both before any request names
-     *       an edition; the job a remote solve belongs to carries its edition.</li>
+     *   <li>{@code resolution_distante} — the solve a job left on the
+     *       worker (ADR 0086), which a restart looks for before any request
+     *       names an edition; the job a remote solve belongs to carries its
+     *       edition. ({@code machine_calcul} is no longer queried: ADR 0103.)</li>
      *   <li>{@code compte} — a person, not a fiche: one account serves every
      *       edition, so the table has no edition to be partitioned by.</li>
      *   <li>{@code habilitation} — what that person may do, read for the whole
@@ -221,7 +220,6 @@ class IsolationEditionStructurelleTest {
             "webhook_livraison",
             "mcp_cle",
             "journal_connexion",
-            "machine_calcul",
             "resolution_distante",
             "compte",
             "habilitation",

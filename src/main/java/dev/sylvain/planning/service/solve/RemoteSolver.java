@@ -39,13 +39,12 @@ final class RemoteSolver implements Solver<PlanningEvenement> {
 
     private static final int LOG_LINES_KEPT = 15;
 
-    /** Hands over the worker to solve on, starting its machine first if it has to. */
+    /** Hands over the worker to solve on. */
     @FunctionalInterface
     interface Machine {
 
         /**
-         * @param cancelled read while waiting for a machine being prepared:
-         *                  true ends the wait
+         * @param cancelled read while waiting for the worker: true ends the wait
          * @throws Failed when no worker can be had
          */
         WorkerClient acquire(BooleanSupplier cancelled);

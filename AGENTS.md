@@ -171,10 +171,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     as an allow-list under a pseudonym and a stand-in birth date, free text
     stays home, and the plan that comes back is scored again before it is
     believed), the remote solve of ADR 0086 — `RemoteSolves` (where a full
-    solve runs when not here: a permanent worker's address, or a machine
-    asked of the operator's launcher through an HTTP hook, kept until idle
-    and found again after a restart; **a remote failure fails the job, never
-    falls back here**), `RemoteSolver` (a worker behind Timefold's `Solver`
+    solve runs when not here: a permanent worker's address, a solve left on
+    it found again after a restart — no machine on demand, ADR 0103;
+    **a remote failure fails the job, never falls back here**), `RemoteSolver` (a worker behind Timefold's `Solver`
     interface, so the queue, the stop and the score curve do not know where
     the search runs), `HandSearchSolver` (the direct engine of ADR 0087 behind
     the same interface, refereed by Timefold; `SolveRunner.solvePrepared` is

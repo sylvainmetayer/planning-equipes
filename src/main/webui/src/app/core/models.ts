@@ -1955,25 +1955,14 @@ export interface JobView {
   result: unknown;
 }
 
-/** `PREPARING` while the compute machine comes up — the time budget does not run yet. */
+/** `PREPARING` until the worker has taken the problem — the time budget does not run yet. */
 export type RemoteStage = 'PREPARING' | 'SOLVING';
 
-/** State of the compute machine; `PERMANENT` for a worker that is always there. */
-export type MachineCalculState = 'PERMANENT' | 'ABSENT' | 'PREPARING' | 'READY' | 'SOLVING';
-
-/** `GET /api/machine-calcul`: the machine a full solve may run on instead of here (ADR 0086). */
+/** `GET /api/machine-calcul`: whether a full solve may run on the permanent worker instead of here (ADR 0086). */
 export interface MachineCalcul {
-  /** False: the instance has no compute machine, and nothing of it is shown. */
+  /** False: the instance has no worker, and nothing of it is shown. */
   configured: boolean;
-  /** True when the machine is created by a launcher and stopped after an idle delay. */
-  onDemand: boolean;
   remoteByDefault: boolean;
-  state: MachineCalculState | null;
-  /** When an idle machine will be stopped, or null. */
-  stopsAt: string | null;
-  billedHoursThisMonth: number | null;
-  /** A rented machine that could not be stopped, and keeps costing: shown as a warning. */
-  lastStopError: string | null;
 }
 
 /**
