@@ -8,8 +8,13 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.journal.Acteur;
+import dev.sylvain.planning.service.journal.EntreeJournal;
+import dev.sylvain.planning.service.journal.JournalActionRepository;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -17,9 +22,11 @@ import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,6 +41,12 @@ class HistoriqueResourceTest {
 
     @Inject
     JournalActionService journal;
+
+    @Inject
+    JournalActionRepository repository;
+
+    @Inject
+    Flyway flyway;
 
     @Test
     void aWriteLeavesALineNamingWhatItTouched() {
@@ -673,7 +686,7 @@ class HistoriqueResourceTest {
     }
 
     @Test
-    void theAuthorFilterSelectsInTheDatabaseAndRefusesWhatItDoesNotKnow() {
+    void theAuthorFilterSelectsInTheDatabaseAndAnswersAnUnknownAuthorWithNothing() {
         editions.executeIn("E1", () -> journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null));
 
         given().header("X-Edition-Id", "E1")
@@ -689,7 +702,9 @@ class HistoriqueResourceTest {
                 .when()
                 .get("/api/historique")
                 .then()
-                .statusCode(400);
+                // Not a 400: a refusal would tell which account ids exist elsewhere.
+                .statusCode(200)
+                .body("size()", equalTo(0));
         // A known identity with no line in this edition is an empty answer, not a refusal.
         given().header("X-Edition-Id", "E1")
                 .queryParam("auteur", "mcp")
@@ -702,15 +717,43 @@ class HistoriqueResourceTest {
     }
 
     @Test
-    void theAuthorsAreListedWithTheMomentTheyBecomeReliable() {
+    void theAuthorsAreListedAndTheReliableDateOnlyWhenALineIsOlder() {
         editions.executeIn("E1", () -> journal.recordSystemAction("NOTIFICATIONS_ENVOYEES", null));
 
+        // Every line of this database postdates V130: nothing is doubtful, nothing to warn about.
         given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/historique/auteurs")
                 .then()
                 .statusCode(200)
                 .body("auteurs.valeur", hasItem("systeme"))
-                .body("fiableDepuis", not(org.hamcrest.Matchers.nullValue()));
+                .body("fiableDepuis", nullValue());
+
+        Instant v130 = Arrays.stream(flyway.info().applied())
+                .filter(m -> m.getVersion() != null && m.getVersion().isAtLeast("130"))
+                .findFirst()
+                .orElseThrow()
+                .getInstalledOn()
+                .toInstant();
+        editions.executeIn(
+                "E1",
+                () -> repository.append(new EntreeJournal(
+                        0,
+                        v130.minusSeconds(60),
+                        Acteur.ADMIN,
+                        "admin",
+                        "NOTIFICATIONS_ENVOYEES",
+                        null,
+                        null,
+                        List.of(),
+                        EntreeJournal.Resultat.SUCCES,
+                        null)));
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/historique/auteurs")
+                .then()
+                .statusCode(200)
+                .body("fiableDepuis", notNullValue());
     }
 }

@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 
 /**
  * The moment the author of a history line becomes believable.
@@ -14,29 +15,52 @@ import org.flywaydb.core.Flyway;
  * configuration's one shared account, so a line said {@code admin} whoever
  * typed. From the migration that created {@code compte} (V130) on, the line
  * names the person's account. The date is that migration's own installation
- * time in Flyway's history: derived, never configured, and exact for the
- * instance — a fresh install dates from its first boot, so none of its lines is
- * doubtful. The older lines are not rewritten.</p>
+ * time in Flyway's history — read through the application's {@link Flyway},
+ * so from whatever schema and table it is configured with: derived, never
+ * configured, and exact for the instance. A schema baselined at or above V130
+ * has no V130 row; its baseline row, the first one at or above that version,
+ * stands for it. The older lines are not rewritten.</p>
  */
 @ApplicationScoped
 public class ReliableAuthorSince {
 
     /** The migration that created the accounts, and from which the journal names one. */
-    static final String ACCOUNTS_MIGRATION = "130";
+    static final MigrationVersion ACCOUNTS_MIGRATION = MigrationVersion.fromVersion("130");
 
     private final Flyway flyway;
 
+    private final JournalActionRepository repository;
+
+    /** Flyway's history only moves at boot; read once, on first use. */
+    private volatile Optional<Instant> installed;
+
     @Inject
-    public ReliableAuthorSince(Flyway flyway) {
+    public ReliableAuthorSince(Flyway flyway, JournalActionRepository repository) {
         this.flyway = flyway;
+        this.repository = repository;
     }
 
-    /** Empty when the migration is not applied (an instance that has not booted this version yet). */
-    public Optional<Instant> instant() {
-        return Arrays.stream(flyway.info().applied())
-                .filter(m -> m.getVersion() != null
-                        && ACCOUNTS_MIGRATION.equals(m.getVersion().getVersion()))
-                .map(m -> m.getInstalledOn().toInstant())
-                .findFirst();
+    /**
+     * The date to warn about, for the current edition: empty when the
+     * migration is not applied, or when no line of the edition predates it —
+     * a fresh install, or an edition born since, has no doubtful line, and a
+     * notice there would only cast doubt on correct ones.
+     */
+    public Optional<Instant> forCurrentEdition() {
+        return installed().filter(repository::hasLinesBefore);
+    }
+
+    Optional<Instant> installed() {
+        Optional<Instant> known = installed;
+        if (known == null) {
+            known = Arrays.stream(flyway.info().applied())
+                    .filter(m -> m.getVersion() != null
+                            && m.getVersion().isAtLeast(ACCOUNTS_MIGRATION.getVersion())
+                            && m.getInstalledOn() != null)
+                    .map(m -> m.getInstalledOn().toInstant())
+                    .findFirst();
+            installed = known;
+        }
+        return known;
     }
 }

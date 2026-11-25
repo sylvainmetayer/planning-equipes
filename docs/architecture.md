@@ -301,15 +301,17 @@ rendra rien.
 **L'auteur d'une ligne** est l'identifiant du compte (jamais son adresse), et
 `GET /api/historique?auteur=` le sélectionne en base, sur toute la rétention :
 un identifiant de compte ou d'animateur, `mcp`, ou `systeme` pour les tâches de
-nuit ; une valeur qui n'est ni un auteur de l'édition ni un compte connu est
-refusée (400), jamais ignorée. Avant les comptes nominatifs (migration V130)
-tous les administrateurs partageaient le compte de configuration, et leurs
-lignes disent `admin` quel que soit celui qui agissait : elles ne sont pas
-réécrites. L'écran affiche donc « Auteur fiable depuis le … », date
-**lue dans `flyway_schema_history`** (installation de V130,
-`ReliableAuthorSince`) — exacte pour l'instance, et antérieure à toute ligne
-d'une installation neuve —, plutôt que « la première ligne portant un compte »,
-qui n'existerait pas tant que personne n'a ouvert de compte nominatif.
+nuit. Une valeur qui n'a rien écrit dans l'édition rend une page vide, comme un
+auteur connu sans ligne : un refus dirait à un organisateur quels comptes
+existent dans des éditions qu'il ne lit pas. Avant les comptes nominatifs
+(migration V130) tous les administrateurs partageaient le compte de
+configuration, et leurs lignes disent `admin` quel que soit celui qui agissait :
+elles ne sont pas réécrites. L'écran affiche donc « Auteur fiable depuis le … »,
+date **lue dans l'historique de Flyway** (installation de V130, ou la ligne de
+baseline qui la couvre, `ReliableAuthorSince`) — exacte pour l'instance —, et
+seulement quand l'édition garde une ligne antérieure : une installation neuve
+n'a aucune ligne douteuse, et la mention y jetterait le doute sur des lignes
+justes.
 
 Les champs réellement modifiés viennent d'ailleurs : seul le service sait ce
 qui a changé. `ReferenceDataService` lit déjà la fiche telle qu'elle était

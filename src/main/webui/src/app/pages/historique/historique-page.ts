@@ -108,14 +108,26 @@ export class HistoriquePage {
   protected readonly nature = signal<FiltreNature>('TOUTES');
   /** One author, asked of the server (`?auteur=`): an account id, `systeme`, `mcp`; `''` for anyone. */
   protected readonly auteur = signal('');
-  protected readonly auteurs = signal<AuteurHistorique[]>([]);
+  private readonly auteursConnus = signal<AuteurHistorique[]>([]);
+  /**
+   * The selector's choices, plus the one the address names when this edition
+   * has no line of it (a link carried over from another edition): shown
+   * selected rather than as an empty field over an empty list.
+   */
+  protected readonly auteurs = computed(() => {
+    const connus = this.auteursConnus();
+    const choisi = this.auteur();
+    return choisi === '' || connus.some((a) => a.valeur === choisi)
+      ? connus
+      : [...connus, { valeur: choisi, nom: null }];
+  });
   /** When the author became reliable; older lines say `admin` whoever acted. */
   protected readonly fiableDepuis = signal<string | null>(null);
   protected readonly fiableDepuisTexte = computed(() => {
     const instant = this.fiableDepuis();
     return instant === null
       ? ''
-      : new Date(instant).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' });
+      : new Date(instant).toLocaleString(intlLocale(), { dateStyle: 'long', timeStyle: 'short' });
   });
   /**
    * The period, as the server reads it: instants, `depuis` exclusive and
@@ -276,11 +288,7 @@ export class HistoriquePage {
     }
   }
 
-  /**
-   * « Exports » and « Données » are questions put to the server — over the
-   * whole retention, not over the lines already on screen — so changing the
-   * nature reloads.
-   */
+  /** Asked of the server like the nature, so changing it reloads. */
   protected changeAuteur(auteur: string): void {
     if (auteur === this.auteur()) {
       return;
@@ -297,13 +305,18 @@ export class HistoriquePage {
   private async loadAuthors(): Promise<void> {
     try {
       const reponse = await this.analysesApi.historyAuthors();
-      this.auteurs.set(reponse.auteurs);
+      this.auteursConnus.set(reponse.auteurs);
       this.fiableDepuis.set(reponse.fiableDepuis);
     } catch {
       // The selector stays empty and the notice absent: nothing on screen is wrong.
     }
   }
 
+  /**
+   * « Exports » and « Données » are questions put to the server — over the
+   * whole retention, not over the lines already on screen — so changing the
+   * nature reloads.
+   */
   protected changeNature(nature: FiltreNature): void {
     if (nature === this.nature()) {
       return;
