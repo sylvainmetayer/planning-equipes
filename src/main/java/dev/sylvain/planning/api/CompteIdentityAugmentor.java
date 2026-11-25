@@ -7,7 +7,6 @@ import dev.sylvain.planning.mcp.McpTenantResolver;
 import dev.sylvain.planning.service.compte.Compte;
 import dev.sylvain.planning.service.compte.CompteAccesService;
 import dev.sylvain.planning.service.compte.CompteService;
-import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.SecurityIdentityAugmentor;
@@ -35,9 +34,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
  *       it.</li>
  *   <li><b>A form session while the break-glass door is closed</b> loses its
  *       role: {@link FormLoginSecours} stops new logins, and a cookie issued
- *       while the door was open must not outlive the incident. The admin the
- *       opt-in remote-user mode asserts is not a form session and keeps its
- *       role.</li>
+ *       while the door was open must not outlive the incident.</li>
  *   <li><b>A local session</b> (a password; the cookie names the account's
  *       address): the account is read again, so a deactivated one keeps no
  *       role from one request to the next.</li>
@@ -120,14 +117,10 @@ public class CompteIdentityAugmentor implements SecurityIdentityAugmentor {
 
     /**
      * A form session while the door is closed: a principal that is not a token
-     * and carries {@code admin}, unless the identity comes from the remote-user
-     * mode, which has no door to close — the proxy's secret is its credential.
+     * and carries {@code admin}.
      */
     private boolean formSessionClosed(SecurityIdentity identity) {
-        if (secours.open(oidc.enabled()) || !identity.hasRole(ROLE_ADMIN)) {
-            return false;
-        }
-        return !Boolean.TRUE.equals(identity.getAttribute(RemoteUserAuthentication.IDENTITY_ATTRIBUTE));
+        return !secours.open(oidc.enabled()) && identity.hasRole(ROLE_ADMIN);
     }
 
     /** The same principal, credentials and attributes — with exactly {@code roles}. */

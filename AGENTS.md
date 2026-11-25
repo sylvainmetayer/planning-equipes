@@ -463,11 +463,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   non-`GET` (calculations included) and every `@NotForLecteur` raw export per edition, the MCP
   interceptor every tool but `readOnlyHint = true` without `@Computes`, and `api/LecteurTokenMask`
   serialises an animateur's `accessToken` as `null` to them; a new route is classified by
-  `RoutesLecteurStructuralTest` (`routes-lecteur.txt`). An **opt-in** header mode (`planning.auth.remote-user.*`,
-  off by default) lets an access proxy assert an already-authenticated
-  address: `admin-email` gets the admin role, any other recognised address is
-  an animateur whose espace opens without the e-mail code. It refuses to boot
-  without a shared secret — a header is a claim, not a proof. Hardening for an
+  `RoutesLecteurStructuralTest` (`routes-lecteur.txt`). There is **no header mode**:
+  an access proxy never authenticates in the application's place (ADR 0100,
+  `REMOTE_USER_*` removed in 4.0, named by a startup warning through
+  `config/RetiredVariables` and nothing else — a removed variable warns, never
+  refuses to boot). Hardening for an
   Internet-facing deployment — browser security headers
   (`SecurityHeadersFilter`), HTTP limits, the four rate limiters
   (`AdminLoginLimiter` on `/j_security_check`, which also writes the

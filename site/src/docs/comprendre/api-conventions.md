@@ -80,15 +80,3 @@ Quarkus fabrique la redirection de connexion en URL absolue, depuis le schéma d
 
 - `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES`, à renseigner dès que l'origine est joignable sans passer par le proxy : sinon n'importe quel client annonce le schéma et l'adresse de son choix ;
 - `QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST` si le proxy réécrit `Host`.
-
-## Le mode « remote user »
-
-Pour un proxy d'accès qui authentifie lui-même ses visiteurs et transmet l'adresse retenue (variables `REMOTE_USER_*`). Il est désactivé par défaut et **déprécié** : un avertissement le rappelle à chaque démarrage où il est actif, et il sera retiré en 4.0. La connexion par un fournisseur OIDC et les comptes de l'application le remplacent ([ADR 0093](repo:docs/decisions/0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md)). Le formulaire reste disponible en parallèle : une origine atteinte directement, ou un proxy mal configuré, laisse toujours `/login` utilisable.
-
-Le secret partagé est obligatoire. Un en-tête affirme sans prouver : sans secret, quiconque atteint l'origine sans passer par le proxy devient administrateur en envoyant une ligne d'en-tête, et une origine joignable en direct est l'état ordinaire (un port publié pour déboguer, une seconde ingress, un réseau interne). Activer le mode sans secret fait échouer le démarrage. Le secret voyage sur un en-tête que le proxy écrase inconditionnellement en entrée.
-
-Qui est qui :
-
-- `REMOTE_USER_ADMIN_EMAIL` reçoit le rôle admin ;
-- toute autre adresse est un animateur, et l'attestation du proxy remplace alors le code à six chiffres, puisque c'est précisément ce que ce code prouve. Le jeton reste nécessaire et doit désigner la fiche qui porte cette adresse : l'attestation d'un animateur n'ouvre pas l'espace d'un collègue dont il aurait ramassé le lien ;
-- si l'adresse admin est aussi celle d'un animateur, l'admin l'emporte et la personne perd son espace. Le démarrage signale cette collision.

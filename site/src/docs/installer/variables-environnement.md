@@ -34,7 +34,6 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 - aucune porte n'ouvre l'administration (`OIDC_ENABLED=false` et
   `ADMIN_LOCAL_SECOURS=false`), ou `OIDC_CLIENT_SECRET` fait moins de 32
   caractères quand OIDC est actif ;
-- `REMOTE_USER_ENABLED=true` sans `REMOTE_USER_SECRET` ;
 - un webhook existe et `WEBHOOKS_SECRET_KEY` est absente ou invalide ;
 - `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous 900,
   `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` sous 180 ;
@@ -108,11 +107,6 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | `AFFICHAGE_MURAL_MAX_REFUS` | `30` | Lectures refusées (lien inconnu ou révoqué) de l'affichage mural tolérées par adresse sur la fenêtre |
 | `AFFICHAGE_MURAL_MAX_LECTURES_PAR_LIEN` | `120` | Lectures permises par lien d'affichage mural sur la fenêtre |
 | `AFFICHAGE_MURAL_FENETRE` | `PT1M` | Fenêtre de ces deux plafonds |
-| `REMOTE_USER_ENABLED` | `false` | Authentification par en-tête derrière un proxy d'accès (déprécié) |
-| `REMOTE_USER_HEADER` | `Remote-Email` | En-tête qui porte l'adresse authentifiée |
-| `REMOTE_USER_SECRET_HEADER` | `Remote-Auth-Secret` | En-tête qui porte le secret partagé |
-| `REMOTE_USER_SECRET` | *(vide)* | Secret partagé avec le proxy ; obligatoire si le mode est actif |
-| `REMOTE_USER_ADMIN_EMAIL` | *(vide)* | Adresse qui obtient le rôle administrateur |
 
 ## Serveur MCP
 

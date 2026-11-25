@@ -47,11 +47,7 @@ Cinq portes, de la plus forte à la plus faible :
    Sans fournisseur, c'est la porte ordinaire. Derrière un fournisseur, il est le
    **secours**, fermé par défaut : voir
    [Le compte de secours](#le-compte-de-secours--ne-jamais-senfermer-dehors).
-4. **Le mode en-tête de proxy** (`REMOTE_USER_*`, voir [`api-conventions.md`](../comprendre/api-conventions.md)) : **déprécié,
-   retiré en 4.0**. Il fonctionne encore, un avertissement le rappelle à chaque
-   démarrage ; il reste indépendant du secours (le secret partagé est son
-   identifiant).
-5. La clé d'API du `/mcp`, qui n'ouvre que le MCP : renouvelable depuis l'écran MCP
+4. La clé d'API du `/mcp`, qui n'ouvre que le MCP : renouvelable depuis l'écran MCP
    (hachée, montrée une fois, recouvrement choisi), ou jeton OAuth du fournisseur
    pour un compte actif ([ADR 0097](repo:docs/decisions/0097-mcp-par-oauth-et-rotation-de-la-cle.md), [`mcp-connexion.md`](../comprendre/mcp-connexion.md)).
 
@@ -214,7 +210,3 @@ leur nombre suit en une ligne à l'ouverture de la fenêtre suivante. Seule la
 trace est bornée : le verrou compte toujours chaque échec. Une adresse seule
 reste loin du plafond (une vingtaine d'échecs par heure avec les réglages par
 défaut) : l'atteindre est déjà le signe d'une attaque distribuée.
-
-Une connexion attestée par le proxy (mode `planning.auth.remote-user.*`) ne
-passe pas par ce formulaire et n'y figure donc pas : c'est le proxy qui la
-journalise.
