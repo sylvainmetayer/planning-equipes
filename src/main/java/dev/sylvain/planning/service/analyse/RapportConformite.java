@@ -132,9 +132,9 @@ public record RapportConformite(
             double heuresFerie,
             double heuresNuit,
             Double reposQuotidienMinHeures,
-            List<Ecart> ecartsDetail) {}
+            List<Breach> ecartsDetail) {}
 
     /** One breach of a legal rule, as a sentence. */
     @Schema(requiredProperties = {"regle", "libelle", "texte"})
-    public record Ecart(String regle, String libelle, String texte) {}
+    public record Breach(String regle, String libelle, String texte) {}
 }

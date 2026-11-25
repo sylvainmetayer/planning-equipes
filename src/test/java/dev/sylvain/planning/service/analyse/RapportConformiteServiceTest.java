@@ -65,7 +65,7 @@ class RapportConformiteServiceTest {
             assertThat(r.ecarts()).isGreaterThanOrEqualTo(1);
         });
         assertThat(ligne.ecartsDetail())
-                .extracting(RapportConformite.Ecart::regle)
+                .extracting(RapportConformite.Breach::regle)
                 .contains("dureeHebdomadaireMax");
         assertThat(ligne.reposQuotidienMinHeures()).isEqualTo(13.5);
     }
@@ -87,7 +87,7 @@ class RapportConformiteServiceTest {
         assertThat(rapport.synthese().mineurs()).isEqualTo(1);
         assertThat(ligne.semainesEnDepassement()).isNotEmpty();
         assertThat(ligne.ecartsDetail())
-                .extracting(RapportConformite.Ecart::regle)
+                .extracting(RapportConformite.Breach::regle)
                 .contains("travailDeNuitInterditPourMineur");
         assertThat(ligne.heuresNuit()).isPositive();
     }
