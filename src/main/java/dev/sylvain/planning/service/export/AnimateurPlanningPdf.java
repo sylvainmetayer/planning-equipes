@@ -16,6 +16,7 @@ import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
 import org.openpdf.text.Phrase;
 import org.openpdf.text.Rectangle;
+import org.openpdf.text.pdf.PdfOutline;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
@@ -97,12 +98,15 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
 
         document.newPage();
         document.add(titreSection("Vos journées", "Le détail de chaque jour, dans l'ordre"));
+        PdfOutline journees = PdfTheme.bookmark(writer.getRootOutline(), "Vos journées", "Vos journées");
         for (AnimateurPlanningView.Jour jour : view.jours()) {
             document.add(blocJour(jour));
+            PdfTheme.bookmark(journees, destJour(jour), PdfTheme.formatFrenchDayDate(jour.date()));
         }
 
         document.newPage();
         document.add(titreSection("Avec qui, et où", "Les personnes et les lieux de votre édition"));
+        PdfTheme.bookmark(writer.getRootOutline(), "Avec qui, et où", "Avec qui, et où");
         document.add(blocCoequipiers(view));
         if (!view.equipesNombreuses().isEmpty()) {
             document.add(blocEquipesNombreuses(view));
@@ -443,7 +447,9 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
         cell.setBorderColorBottom(theme.headline());
         cell.setBorderWidthBottom(1f);
         cell.setPaddingBottom(6f);
-        cell.addElement(new Paragraph(titre, theme.nameFont()));
+        Chunk ancre = new Chunk(titre, theme.nameFont());
+        ancre.setLocalDestination(titre);
+        cell.addElement(new Paragraph(ancre));
         cell.addElement(new Paragraph(sousTitre, theme.sousTitreFont()));
         table.addCell(cell);
         return table;
@@ -455,6 +461,10 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
      * an animateur reading « 14:00 » at the top of a page must not have to
      * turn back to know which day it is.
      */
+    private static String destJour(AnimateurPlanningView.Jour jour) {
+        return "jour-" + jour.numero();
+    }
+
     private PdfPTable blocJour(AnimateurPlanningView.Jour jour) {
         PdfPTable table = new PdfPTable(new float[] {70f, 375f, 45f});
         table.setTotalWidth(LARGEUR);
@@ -466,7 +476,9 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
         date.setColspan(2);
         date.setBorder(Rectangle.NO_BORDER);
         date.setPaddingBottom(4f);
-        Paragraph dateLigne = new Paragraph(PdfTheme.formatFrenchDayDate(jour.date()), theme.jourTitreFont());
+        Chunk dateAncre = new Chunk(PdfTheme.formatFrenchDayDate(jour.date()), theme.jourTitreFont());
+        dateAncre.setLocalDestination(destJour(jour));
+        Paragraph dateLigne = new Paragraph(dateAncre);
         date.addElement(dateLigne);
         date.addElement(new Paragraph("Jour " + jour.numero(), theme.jourNumeroFont()));
         table.addCell(date);
