@@ -197,3 +197,10 @@
   gap: 0.5rem 1rem;
   flex-basis: 100%;
 }
+
+.responsables-ligne {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
