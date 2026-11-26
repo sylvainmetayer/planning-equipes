@@ -30,17 +30,18 @@ JDK 25 restricts native access (JEP 472) and flags `sun.misc.Unsafe` (JEP 498). 
 
 ## Local environment variables
 
-`mise.toml` carries the variables everyone shares (`MAIL_ADMIN`). Those that depend on the machine go in `mise.local.toml`, at the root: mise loads it on top and `.gitignore` excludes it, so it is the only place to write a value that must not reach a public repository. Example to see the `/mentions-legales` page filled in (the seven `LEGAL_*` variables are described in [the environment variables](../installer/variables-environnement.md) and in [the legal notice](../installer/mentions-legales.md)):
+`mise.toml` carries the variables everyone shares (`MAIL_ADMIN`). Those that depend on the machine go in `mise.local.toml`, at the root: mise loads it on top and `.gitignore` excludes it, so it is the only place to write a value that must not reach a public repository. Example to see the `/mentions-legales` page filled in (the notices are set by `LEGAL_MENTIONS`, described in [the environment variables](../installer/variables-environnement.md) and in [the legal notice](../installer/mentions-legales.md)):
 
 ```toml
 [env]
-LEGAL_EDITEUR = "Association Les Bénévoles du Jeu, 12 rue des Pions, 79000 Niort, RNA W791234567"
-LEGAL_DIRECTEUR_PUBLICATION = "Camille Exemple, présidente"
-LEGAL_HEBERGEUR = "Hébergeur Fictif SAS, 1 avenue des Serveurs, 75000 Paris"
-LEGAL_CONTACT = "planning@exemple.invalid"
-LEGAL_RESPONSABLE_TRAITEMENT = "Association Les Bénévoles du Jeu, représentée par sa présidente"
-LEGAL_BASE_LEGALE = "Exécution du contrat de bénévolat et intérêt légitime de l'organisateur (art. 6.1.b et 6.1.f RGPD)"
-LEGAL_CONSERVATION = "Jusqu'au 31 décembre de l'année suivant l'édition, puis suppression"
+LEGAL_MENTIONS = """\
+editeur=Association Les Bénévoles du Jeu, 12 rue des Pions, 79000 Niort, RNA W791234567;\
+directeur-publication=Camille Exemple, présidente;\
+hebergeur=Hébergeur Fictif SAS, 1 avenue des Serveurs, 75000 Paris;\
+contact=planning@exemple.invalid;\
+responsable-traitement=Association Les Bénévoles du Jeu, représentée par sa présidente;\
+base-legale=Exécution du contrat de bénévolat et intérêt légitime de l'organisateur (art. 6.1.b et 6.1.f RGPD);\
+conservation=Jusqu'au 31 décembre de l'année suivant l'édition, puis suppression"""
 ```
 
 A `quarkus:dev` that is already running does not reread the environment: restart it. The rest of the variables is in [running the instance](../installer/exploitation.md).
@@ -125,7 +126,7 @@ These conventions apply to all screens: those of the administration and the four
 - A tooltip is not a name. `MatIcon` imposes `role="img"`, a role that does not take its name from its content: an icon with only a tooltip is announced as an anonymous graphic. The `matTooltip` is the description, the `aria-label` the name, and the two go together. `npm run icon-labels-check` refuses an icon carrying `aria-label`, `aria-labelledby` or `matTooltip` without a static `aria-hidden="false"`, and an icon exposed that way without `aria-label` or `aria-labelledby`.
 - Colour is never alone: pair it with text, an icon or an initial. A tooltip does not exist on touch, nor on keyboard for an element that does not take focus (`<span>`, `<td>`): its text is doubled there by a `<span class="visually-hidden">`, because an `aria-label` on an element without a role is not reliably read.
 - Every colour written by the repository is measured before being committed, except the `--mat-sys-*` tokens that `mat.theme()` supplies already compliant. The threshold is 4.5:1 for text and 3:1 for a component or a focus ring, measured on both surfaces, light and dark, since the theme compiles both. The measuring tool is `core/testing/contrast.ts`: a figure a test can replay is worth more than a figure taken once. An opacity on text is a measurement to redo, not a styling detail (an `opacity: 0.5` on an already muted ink once dropped a grid cell to 2.2:1).
-- The brand accent is bounded in both schemes. `BRANDING_ACCENT_COLOR` is chosen by an operator who often looks at the light surface. `core/branding.ts` therefore caps its OKLCH lightness in light mode and floors it in dark mode, and `branding.spec.ts` measures it on pastel accents that are deliberately bad. Raising one of the bounds without redoing the measurement makes the focus ring of the grids invisible below 3:1.
+- The brand accent is bounded in both schemes. The `accent` key of `BRANDING_COLORS` is chosen by an operator who often looks at the light surface. `core/branding.ts` therefore caps its OKLCH lightness in light mode and floors it in dark mode, and `branding.spec.ts` measures it on pastel accents that are deliberately bad. Raising one of the bounds without redoing the measurement makes the focus ring of the grids invisible below 3:1.
 
 ### Tables, links, gestures
 

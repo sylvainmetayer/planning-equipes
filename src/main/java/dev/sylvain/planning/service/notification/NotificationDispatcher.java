@@ -144,8 +144,6 @@ public class NotificationDispatcher {
                     Notification.AbsenceReportFiled _,
                     Notification.AbsenceReportAccepted _,
                     Notification.CarpoolValidated _,
-                    Notification.CarpoolSetAside _,
-                    Notification.CarpoolCancelled _,
                     Notification.ResolutionTerminee _,
                     Notification.RappelVeille _,
                     Notification.RelanceConfirmation _,

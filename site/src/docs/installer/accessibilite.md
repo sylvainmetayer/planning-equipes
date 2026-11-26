@@ -1,17 +1,17 @@
 # Publier votre déclaration d'accessibilité
 
-Si votre organisation est soumise à l'obligation d'accessibilité numérique, renseignez les quatre variables `LEGAL_ACCESSIBILITE_*` : l'application publie alors sa déclaration à l'adresse `/declaration-accessibilite`, liée depuis le pied de page, le tiroir et le menu légal de l'espace animateur. Cette page dit aussi où en est l'application (référentiel RGAA 4.1, audit mené, contrôles automatiques, points ouverts), de quoi fonder ce que vous déclarez ; les conventions d'écriture pour qui développe sont dans [`developpement.md`](../comprendre/demarrer.md#accessibilité).
+Si votre organisation est soumise à l'obligation d'accessibilité numérique, renseignez les quatre clés de `LEGAL_ACCESSIBILITE` : l'application publie alors sa déclaration à l'adresse `/declaration-accessibilite`, liée depuis le pied de page, le tiroir et le menu légal de l'espace animateur. Cette page dit aussi où en est l'application (référentiel RGAA 4.1, audit mené, contrôles automatiques, points ouverts), de quoi fonder ce que vous déclarez ; les conventions d'écriture pour qui développe sont dans [`developpement.md`](../comprendre/demarrer.md#accessibilité).
 
 ## Renseigner la déclaration
 
 L'article 47 de la loi n° 2005-102 impose une déclaration aux organismes publics et aux entreprises au-dessus d'un seuil de chiffre d'affaires. **L'obligation pèse sur l'organisation qui déploie l'application**, pas sur le projet : elle seule sait jusqu'où son instance a été auditée, quand, et où recevoir un signalement. La page `/declaration-accessibilite` affiche ce que le déploiement configure, et dit « non renseigné » pour le reste.
 
-| Variable | Contenu |
+| Clé de `LEGAL_ACCESSIBILITE` | Contenu |
 | --- | --- |
-| `LEGAL_ACCESSIBILITE_ETAT` | `totale`, `partielle` ou `non` ; toute autre valeur se lit comme non renseignée |
-| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | la date de l'audit sur lequel repose l'état |
-| `LEGAL_ACCESSIBILITE_CONTENUS` | les contenus non accessibles, et pourquoi ; un saut de ligne fait un paragraphe |
-| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | où signaler un défaut ; vide, l'adresse de contact des mentions légales (`LEGAL_CONTACT`) |
+| `etat` | `totale`, `partielle` ou `non` ; toute autre valeur se lit comme non renseignée |
+| `date-audit` | la date de l'audit sur lequel repose l'état |
+| `contenus` | les contenus non accessibles, et pourquoi ; un saut de ligne fait un paragraphe |
+| `signalement` | où signaler un défaut ; vide, l'adresse de contact des mentions légales (clé `contact` de `LEGAL_MENTIONS`) |
 
 ## Le référentiel et le périmètre
 

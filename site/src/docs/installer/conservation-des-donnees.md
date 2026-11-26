@@ -12,7 +12,7 @@ La page *Historique* la lit ; personne ne l'écrit à la main et rien ne l'effac
 
 ## Ce qui reste jusqu'à ce que vous le supprimiez
 
-Pour tout le reste, la durée annoncée par `LEGAL_CONSERVATION` s'affiche dans la politique de confidentialité et **rien dans le code ne l'applique** : aucune purge automatique n'existe aujourd'hui. Un engagement écrit qui n'est pas tenu expose plus qu'une absence d'engagement, donc la purge se fait à la main, à date fixe. C'est voulu, et ce que l'automatisation devra porter le jour venu est écrit dans la [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
+Pour tout le reste, la durée annoncée par la clé `conservation` de `LEGAL_MENTIONS` s'affiche dans la politique de confidentialité et **rien dans le code ne l'applique** : aucune purge automatique n'existe aujourd'hui. Un engagement écrit qui n'est pas tenu expose plus qu'une absence d'engagement, donc la purge se fait à la main, à date fixe. C'est voulu, et ce que l'automatisation devra porter le jour venu est écrit dans la [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
 
 ### La purge annuelle
 
@@ -30,6 +30,12 @@ La procédure ci-dessus ne couvre pas les données d'une édition **encore activ
 Ces sauvegardes ne sont **jamais purgées automatiquement** ([décision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) : une par vidage (réinitialisation, import, restauration), hors état identique au précédent, conservée jusqu'à la suppression de l'édition, qui les emporte en cascade. La purge annuelle les couvre donc. Chacune pèse de quelques centaines de kilooctets à un mégaoctet ; supprimer celles qui ne servent plus est un geste d'administrateur, par la même route.
 
 Automatiser la purge ne réglerait pas ce cas : elle raisonne par édition échue.
+
+### L'archive du covoiturage 3.x
+
+La migration de la 4.0 range les demandes de covoiturage que la 3.x avait écartées ou annulées, avec le motif libre écrit pour l'animateur, dans la table `declaration_coequipier_avant_4_0` ([ce qu'elle contient](rgpd-limites-a-consigner.md#les-demandes-de-covoiturage)). L'application ne la lit plus et ne l'exporte pas. Elle est **gardée jusqu'à la 5.0**, qui la supprime ; d'ici là, elle part avec son édition (la purge annuelle la couvre) ou avec la fiche du demandeur.
+
+Une fois la 4.0 en place et le retour à la 3.x exclu, rien ne vous oblige à attendre : `DROP TABLE declaration_coequipier_avant_4_0;` la supprime, sans effet sur l'application. Notez-le au registre comme une purge.
 
 ## La mesure du réalisé
 

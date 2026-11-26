@@ -50,7 +50,7 @@ renseigne le `.env.prod`** : les deux listes se recouvrent.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** (celui de l'espace animateur et celui de l'abonnement au calendrier), **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service, dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **résultat de chaque courriel adressé à un animateur (parti ou en échec, et pourquoi, sans adresse ni contenu)**, **le contact d'urgence et le représentant légal d'un animateur (nom et téléphone, facultatifs : données d'un tiers)**, **le téléphone et l'adresse de contact que l'organisation publie à ses animateurs, par édition, souvent le numéro personnel d'un coordinateur, donc une donnée personnelle de l'encadrement, montrée à tous les animateurs de l'édition** |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), **numéro de téléphone (facultatif, pour appeler un remplaçant le jour J)**, compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** (celui de l'espace animateur et celui de l'abonnement au calendrier), **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service, dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés ; jusqu'à la 5.0, les demandes écartées ou annulées en 3.x, avec le motif libre que l'organisation y joignait, archivées par la migration de la 4.0)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **résultat de chaque courriel adressé à un animateur (parti ou en échec, et pourquoi, sans adresse ni contenu)**, **le contact d'urgence et le représentant légal d'un animateur (nom et téléphone, facultatifs : données d'un tiers)**, **le téléphone et l'adresse de contact que l'organisation publie à ses animateurs, par édition, souvent le numéro personnel d'un coordinateur, donc une donnée personnelle de l'encadrement, montrée à tous les animateurs de l'édition** |
 | Traitements réalisés | Hébergement, planification et résolution, **affichage du planning de travail du jour sur un écran de la salle de contrôle (prénom et initiale par défaut)**, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**) **et enregistrement de leur résultat**, sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir [`securite.md`](securite.md)) ; **toute personne présente devant un écran d'affichage mural** ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` (**les jetons voyagent dans l'URL**) ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (voir la sauvegarde dans [`exploitation.md`](exploitation.md)) |
@@ -59,10 +59,10 @@ renseigne le `.env.prod`** : les deux listes se recouvrent.
 
 | Rubrique | Où le lire |
 | --- | --- |
-| Responsable de traitement et contact | `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_CONTACT` |
-| Base légale déclarée | `LEGAL_BASE_LEGALE` |
-| Durée de conservation annoncée | `LEGAL_CONSERVATION` ; voir [la limite de conservation](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
-| Hébergeur d'infrastructure | `LEGAL_HEBERGEUR` |
+| Responsable de traitement et contact | clés `responsable-traitement` et `contact` de `LEGAL_MENTIONS` |
+| Base légale déclarée | clé `base-legale` de `LEGAL_MENTIONS` |
+| Durée de conservation annoncée | clé `conservation` de `LEGAL_MENTIONS` ; voir [la limite de conservation](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
+| Hébergeur d'infrastructure | clé `hebergeur` de `LEGAL_MENTIONS` |
 | Relais SMTP | `MAIL_HOST` |
 | Suivi d'erreurs | `SENTRY_DSN` renseigné ⇒ Bugsink, hébergement UE, **pas de transfert à déclarer** |
 | Mesure d'audience | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` renseigné ⇒ **transfert hors UE à déclarer**. Le défaut est vide : ne rien poser suffit à l'éteindre. Ce ne fut pas toujours le cas : le profil `%prod` portait le token de l'éditeur ([`observabilite.md`](observabilite.md)) |
@@ -87,7 +87,7 @@ dans le même document que le registre :
 | Vérification | Espace animateur **et adresse d'abonnement** d'un jeton supprimé répondant bien `404` |
 
 Une purge manuelle sans écrit ne prouve rien. Seul ce journal rend tenable
-la durée annoncée par `LEGAL_CONSERVATION`.
+la durée annoncée par la clé `conservation` de `LEGAL_MENTIONS`.
 
 ## Le rythme de tenue
 

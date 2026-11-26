@@ -63,6 +63,7 @@ dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
 dev/sylvain/planning/api/FormationResourceTest.java
 dev/sylvain/planning/api/FrozenPastAcceptanceTest.java
 dev/sylvain/planning/api/GelReferentielResourceTest.java
+dev/sylvain/planning/api/GroupedVariablesResourceTest.java
 dev/sylvain/planning/api/HistoriqueResourceTest.java
 dev/sylvain/planning/api/HorlogeSimuleeRecetteTest.java
 dev/sylvain/planning/api/ImpactPublicationTest.java
@@ -161,6 +162,7 @@ dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
+dev/sylvain/planning/service/espace/CarpoolArchiveMigrationTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
 dev/sylvain/planning/service/mcp/McpKeyServiceTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java

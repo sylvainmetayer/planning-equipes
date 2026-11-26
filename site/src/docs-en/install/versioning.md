@@ -50,6 +50,16 @@ A MAJOR upgrade is prepared in the commit messages. Between two tags, `release.y
 
 It does not refuse the reverse: a `4.0.0` set without any `!` between the two tags would pass. Yet it is this `!` that files the change under "⚠️ Attention" in the notes and in the *What's new* screen, and that lets `git cliff --bumped-version` propose 4.0.0. Every 4.0 break PR therefore carries a `!` in its subject, and its paragraph in [the moving guide](passer-a-la-4-0.md).
 
+## Pre-releases (release candidates)
+
+Before a major, a pre-release `vX.Y.Z-rc.N` (for example `v4.0.0-rc.1`) lets an operator try the version on a copy of their data. It follows the same form rules as a release, with its suffix:
+
+- the `release.yml` check compares it with the last **stable** tag (a `v4.0.0-rc.2` is compared with `v3.5.0`, not with `rc.1`), and the number set cannot be lower than what the subjects call for; it also refuses a pre-release set after its final version, or whose `N` does not exceed that of a pre-release of the same number;
+- its release notes list everything that has entered since that last stable tag; those of the final version `4.0.0` take the same range, pre-releases included;
+- its image is published under `:X.Y.Z-rc.N` **and nothing else**: neither `:X.Y` nor `:latest`, so an operator who pulls `latest` or follows an `X.Y` line never receives a pre-release. *Cautious choice, to be confirmed:* the repository had not decided it, and nothing prevents setting a moving `:X.Y-rc` label later.
+
+A pre-release promises nothing more than a trial: it may migrate the schema, and the schema does not go back down ([back up first](sauvegarde-et-restauration.md)).
+
 ## Reading an instance's version
 
-The version displayed in the footer, on the *Debug* page, in `GET /api/config` (`version` field) and in the startup line is that of the git tag `vX.Y.Z`: `X.Y.Z` on a release image, the short SHA on an acceptance image, `999-SNAPSHOT` in a local build, a value that deliberately looks like no published version. Where this tag comes from: [Releasing a version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).
+The version displayed in the footer, on the *Debug* page, in `GET /api/config` (`version` field) and in the startup line is that of the git tag `vX.Y.Z`: `X.Y.Z` (or `X.Y.Z-rc.N` for a pre-release) on a release image, the short SHA on an acceptance image, `999-SNAPSHOT` in a local build, a value that deliberately looks like no published version. Where this tag comes from: [Releasing a version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).

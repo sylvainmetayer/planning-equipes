@@ -32,7 +32,7 @@ To diagnose, remember this detail. SPA routing being active (`quarkus.quinoa.ena
 
 **Runtime translation.** French is written directly in the templates, `loadTranslations()` loads `messages.en.json`. There is only one build, with no bundle per language, hence no extra Quinoa configuration. The writing rules (the two halves of a string, `$localize` never at module level) are in [the repository conventions](conventions-du-depot.md).
 
-**Branding.** An empty `logoUrl` means "show nothing", never "show the default logo": an instance serves one client, and none inherits another's brand. A limit worth knowing: `mat.theme()` compiles the whole tonal palette into the bundle, and the configurable accent colour (`BRANDING_ACCENT_COLOR`) only feeds `--app-accent`. Recolouring the Material components requires a recompilation, not an environment variable.
+**Branding.** An empty `logoUrl` means "show nothing", never "show the default logo": an instance serves one client, and none inherits another's brand. A limit worth knowing: `mat.theme()` compiles the whole tonal palette into the bundle, and the configurable accent colour (the `accent` key of `BRANDING_COLORS`) only feeds `--app-accent`. Recolouring the Material components requires a recompilation, not an environment variable.
 
 ## Light or dark theme
 
@@ -41,7 +41,7 @@ To diagnose, remember this detail. SPA routing being active (`quarkus.quinoa.ena
 Two colours escape `mat.theme()` and carry their own `light-dark()` pairs:
 
 - the categorical palette of the game categories, `styles/typologie-colors.css`: eight hues that no `--mat-sys-*` provides;
-- `--app-accent`, when `BRANDING_ACCENT_COLOR` fills it in (otherwise it equals `--mat-sys-primary`, already a pair). It serves as a text colour on `--mat-sys-surface` and as a focus ring; [`core/branding.ts`](repo:src/main/webui/src/app/core/branding.ts) therefore sets it as a pair, each half bounded in OKLCH at constant hue: lightness capped in light, bounded from below in dark (with a chroma ceiling). Both bounds, because an operator picks their colour looking at one surface and the other is then the one nobody checked: a pastel accent fell below 4.5:1 in light. A browser that cannot parse the pair keeps the raw colour.
+- `--app-accent`, when the `accent` key of `BRANDING_COLORS` fills it in (otherwise it equals `--mat-sys-primary`, already a pair). It serves as a text colour on `--mat-sys-surface` and as a focus ring; [`core/branding.ts`](repo:src/main/webui/src/app/core/branding.ts) therefore sets it as a pair, each half bounded in OKLCH at constant hue: lightness capped in light, bounded from below in dark (with a chroma ceiling). Both bounds, because an operator picks their colour looking at one surface and the other is then the one nobody checked: a pastel accent fell below 4.5:1 in light. A browser that cannot parse the pair keeps the raw colour.
 
 Three surfaces deliberately stay outside the theme:
 

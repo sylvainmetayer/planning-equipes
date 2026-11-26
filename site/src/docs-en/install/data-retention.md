@@ -15,7 +15,7 @@ The *History* page reads it; nobody writes it by hand and nothing erases it at t
 
 ## What stays until you delete it
 
-For everything else, the period announced by `LEGAL_CONSERVATION` is displayed in the privacy policy and **nothing in the code enforces it**: no automatic purge exists today. A written commitment that is not kept exposes you more than no commitment, so the purge is done by hand, on a fixed date. This is deliberate, and what automation will have to carry when the day comes is written in [decision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
+For everything else, the period announced by the `conservation` key of `LEGAL_MENTIONS` is displayed in the privacy policy and **nothing in the code enforces it**: no automatic purge exists today. A written commitment that is not kept exposes you more than no commitment, so the purge is done by hand, on a fixed date. This is deliberate, and what automation will have to carry when the day comes is written in [decision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
 
 ### The annual purge
 
@@ -33,6 +33,12 @@ The procedure above does not cover the data of an edition that is **still active
 These backups are **never purged automatically** ([decision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)): one per emptying (reset, import, restore), unless the state is identical to the previous one, kept until the edition is deleted, which carries them away in cascade. The annual purge therefore covers them. Each weighs from a few hundred kilobytes to a megabyte; deleting those that are no longer needed is an administrator's action, through the same route.
 
 Automating the purge would not settle this case: it reasons by expired edition.
+
+### The 3.x carpool archive
+
+The 4.0 migration moves the carpool requests that 3.x had rejected or cancelled, with the free-text reason written for the staff member, into the `declaration_coequipier_avant_4_0` table ([what it holds](rgpd-limites-a-consigner.md#les-demandes-de-covoiturage)). The application no longer reads it and does not export it. It is **kept until 5.0**, which drops it; until then, it goes with its edition (the annual purge covers it) or with the requester's record.
+
+Once 4.0 is in place and going back to 3.x is ruled out, nothing forces you to wait: `DROP TABLE declaration_coequipier_avant_4_0;` drops it, with no effect on the application. Record it in the register as a purge.
 
 ## Measuring the realised
 

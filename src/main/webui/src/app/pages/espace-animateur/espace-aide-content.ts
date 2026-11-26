@@ -409,10 +409,10 @@ export function buildEspaceAideSections(options?: EspaceAideOptions): EspaceAide
           items: [
             $localize`:@@espace.aide.covoiturage.item1:Chacun de vos coéquipiers peut faire la même demande depuis son espace : l'organisation voit alors que le groupe est « confirmé par tous ».`,
             $localize`:@@espace.aide.covoiturage.item2:Tant qu'elle est « en attente », un nouvel envoi remplace votre demande ; retirer tous les noms et envoyer la retire.`,
-            $localize`:@@espace.aide.covoiturage.item3:L'organisation valide l'arrivée groupée, ou l'écarte en disant parfois pourquoi. Dans les deux cas, vous êtes prévenu par e-mail et l'onglet l'affiche.`,
+            $localize`:@@espace.aide.covoiturage.item3:L'organisation valide l'arrivée groupée, ou l'écarte. Validée, vous êtes prévenu par e-mail et l'onglet l'affiche ; écartée, la demande disparaît de l'onglet, sans e-mail.`,
             $localize`:@@espace.aide.covoiturage.item4:Écartée, votre demande n'empêche rien : vous pouvez en envoyer une nouvelle tant que la collecte est ouverte.`,
             $localize`:@@espace.aide.covoiturage.item5:Validée, elle appartient à l'organisation : pour la modifier ou la retirer, adressez-vous à elle.`,
-            $localize`:@@espace.aide.covoiturage.item6:L'organisation peut annuler une arrivée groupée déjà validée, en disant parfois pourquoi : chaque membre est prévenu par e-mail et l'onglet l'affiche. Une nouvelle demande est alors possible tant que la collecte est ouverte ; sinon, adressez-vous à l'organisation.`,
+            $localize`:@@espace.aide.covoiturage.item6:L'organisation peut annuler une arrivée groupée déjà validée : l'onglet n'affiche plus de groupe et elle vous le dit elle-même. Une nouvelle demande est alors possible tant que la collecte est ouverte ; sinon, adressez-vous à l'organisation.`,
           ],
         },
         {

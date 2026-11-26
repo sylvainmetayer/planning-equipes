@@ -91,7 +91,7 @@ const ACCENT_LIGHT_LIGHTNESS = 0.53;
  *
  * <p>`--app-accent` is a *text* colour on `--mat-sys-surface` in a dozen
  * partials (help titles, detail labels, the active drawer link), and the focus
- * ring of five grids. An operator picks `BRANDING_ACCENT_COLOR` by looking at
+ * ring of five grids. An operator picks `BRANDING_COLORS (accent)` by looking at
  * the light surface, so a deep brand ink — `#8b1e3f` reads 8.5:1 on `#faf9fd`
  * — collapses to 2.1:1 once the dark scheme paints `#121316` under it. Raising
  * the lightness in OKLCH keeps the hue, and therefore the identity, while
@@ -110,7 +110,7 @@ const ACCENT_LIGHT_LIGHTNESS = 0.53;
  * shipped in Firefox 128 while `light-dark()` shipped in 120, so a handful of
  * versions would read the whole value as invalid. They keep the flat colour,
  * which is exactly what they showed before the theme switch existed. A
- * malformed `BRANDING_ACCENT_COLOR` falls back the same way.</p>
+ * malformed `BRANDING_COLORS (accent)` falls back the same way.</p>
  */
 export function accentForBothSchemes(accent: string): string {
   const light = `oklch(from ${accent} min(l, ${ACCENT_LIGHT_LIGHTNESS}) c h)`;

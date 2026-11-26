@@ -54,7 +54,7 @@ fill in `.env.prod`**: the two lists overlap.
 | Heading | Content |
 | --- | --- |
 | Categories of people | Staff members, **including minors**; supervisors and managers |
-| Categories of data | Last name, first name, **date of birth**, e-mail address (optional), **phone number (optional, to call a replacement on the event day)**, skills, assignment wishes, unavailability days, **two access tokens** (the staff espace's and the calendar subscription's), **the organisation's wall display links (hashed token, label, date of last access)**, assignments and swaps, **self-service availability declarations, including a free-text comment**, **carpool requests (teammates named, and the free-text reason the organisation can attach when rejecting them)**, schedule snapshots, sessions and access logs, **action history (identifiers and field names, no values)**, **the result of each e-mail sent to a staff member (sent or failed, and why, with no address or content)**, **a staff member's emergency contact and legal representative (name and phone, optional: third-party data)**, **the phone number and contact address the organisation publishes to its staff, per edition, often a coordinator's personal number, hence personal data of the supervisory staff, shown to all staff members of the edition** |
+| Categories of data | Last name, first name, **date of birth**, e-mail address (optional), **phone number (optional, to call a replacement on the event day)**, skills, assignment wishes, unavailability days, **two access tokens** (the staff espace's and the calendar subscription's), **the organisation's wall display links (hashed token, label, date of last access)**, assignments and swaps, **self-service availability declarations, including a free-text comment**, **carpool requests (teammates named; until 5.0, the requests rejected or cancelled in 3.x, with the free-text reason the organisation attached to them, archived by the 4.0 migration)**, schedule snapshots, sessions and access logs, **action history (identifiers and field names, no values)**, **the result of each e-mail sent to a staff member (sent or failed, and why, with no address or content)**, **a staff member's emergency contact and legal representative (name and phone, optional: third-party data)**, **the phone number and contact address the organisation publishes to its staff, per edition, often a coordinator's personal number, hence personal data of the supervisory staff, shown to all staff members of the edition** |
 | Processing carried out | Hosting, scheduling and solving, **display of the day's work schedule on a control-room screen (first name and initial by default)**, **import of a spreadsheet of staff supplied by the organisation (processed in memory, never kept)**, sending e-mails (access codes, individual schedules, swap notifications, **automatic night reminders and follow-ups**) **and recording their result**, backup, **logging of admin actions**, purge |
 | Recipients | The organiser through the admin interface; the staff member through their espace **and through the calendar application to which they give their subscription address**; the other staff members for the visible part of the schedule (see [`securite.md`](securite.md)); **anyone standing in front of a wall display screen**; the SMTP relay |
 | Security measures | TLS and HSTS; CSP and `Referrer-Policy` headers (**tokens travel in the URL**); session encryption; rate limiting on espace codes and lockout of the login form; origin reachable only through the reverse proxy; automatic nightly backup by `pg_dump`, rotated in a dedicated volume, whose **encrypted off-machine copy remains the operator's responsibility** (see the backup in [`exploitation.md`](exploitation.md)) |
@@ -63,10 +63,10 @@ fill in `.env.prod`**: the two lists overlap.
 
 | Heading | Where to read it |
 | --- | --- |
-| Data controller and contact | `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_CONTACT` |
-| Declared legal basis | `LEGAL_BASE_LEGALE` |
-| Announced retention period | `LEGAL_CONSERVATION`; see [the retention limit](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
-| Infrastructure host | `LEGAL_HEBERGEUR` |
+| Data controller and contact | `responsable-traitement` and `contact` keys of `LEGAL_MENTIONS` |
+| Declared legal basis | `base-legale` key of `LEGAL_MENTIONS` |
+| Announced retention period | `conservation` key of `LEGAL_MENTIONS`; see [the retention limit](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
+| Infrastructure host | `hebergeur` key of `LEGAL_MENTIONS` |
 | SMTP relay | `MAIL_HOST` |
 | Error tracking | `SENTRY_DSN` set ⇒ Bugsink, EU hosting, **no transfer to declare** |
 | Audience measurement | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` set ⇒ **transfer outside the EU to declare**. The default is empty: setting nothing is enough to turn it off. This was not always so: the `%prod` profile used to carry the publisher's token ([`observabilite.md`](observabilite.md)) |
@@ -91,7 +91,7 @@ in the same document as the register:
 | Check | Staff espace **and subscription address** of a deleted token indeed answering `404` |
 
 A manual purge with nothing in writing proves nothing. Only this log makes
-the period announced by `LEGAL_CONSERVATION` tenable.
+the period announced by the `conservation` key of `LEGAL_MENTIONS` tenable.
 
 ## Maintenance rhythm
 

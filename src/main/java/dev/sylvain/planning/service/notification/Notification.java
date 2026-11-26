@@ -114,42 +114,6 @@ public sealed interface Notification {
             implements ToAnimateur {}
 
     /**
-     * The organisation set a covoiturage request aside: told to the animateur
-     * who sent it, with the reason when one was given — the same sentence
-     * their espace shows, and the reason they may send a new request.
-     *
-     * @param reason     what the admin typed for them, {@code null} when nothing
-     * @param espaceLink the Covoiturage tab of their espace, {@code null} when
-     *                   none can be printed
-     */
-    record CarpoolSetAside(String animateurId, String email, String prenom, String reason, String espaceLink)
-            implements ToAnimateur {}
-
-    /**
-     * The organisation cancelled a validated grouped arrival: one notification
-     * per member, each told who else was in the car, why when the admin said,
-     * and what is left to them — a new request while the collection window
-     * is open, the organisation otherwise.
-     *
-     * @param teammates       the others in the car, named as in
-     *                        {@link CarpoolValidated}
-     * @param reason          what the admin typed, {@code null} when nothing
-     * @param collectionOpen  the collection window was open when the
-     *                        cancellation was decided
-     * @param espaceLink      the Covoiturage tab of their espace, {@code null}
-     *                        when none can be printed
-     */
-    record CarpoolCancelled(
-            String animateurId,
-            String email,
-            String prenom,
-            List<String> teammates,
-            String reason,
-            boolean collectionOpen,
-            String espaceLink)
-            implements ToAnimateur {}
-
-    /**
      * A solve just finished: which edition, what score, and whether the plan is
      * feasible — the three facts one waits for when a multi-minute run was
      * launched before walking away.

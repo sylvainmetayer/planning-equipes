@@ -345,7 +345,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry(
                     "TeammateRequestService#validate(String)",
                     "writes its grouped arrival through the ad hoc path, " + NOT_LANDED),
-            Map.entry("TeammateRequestService#setAside(String,String)", "a pending request had written no exception"),
+            Map.entry("TeammateRequestService#setAside(String)", "a pending request had written no exception"),
             Map.entry(
                     "JourJService#cancelAbsence(String,LocalDate,Long)",
                     "removes the exceptions the absence wrote and hands no seat back: " + NOT_LANDED));

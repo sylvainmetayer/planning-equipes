@@ -162,8 +162,6 @@ public class WebhookEmitter {
                     Notification.AbsenceReportFiled _,
                     Notification.AbsenceReportAccepted _,
                     Notification.CarpoolValidated _,
-                    Notification.CarpoolSetAside _,
-                    Notification.CarpoolCancelled _,
                     Notification.RappelVeille _,
                     Notification.RelanceConfirmation _,
                     // One mail per person, like the two reminders above: the

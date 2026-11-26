@@ -46,6 +46,16 @@ Une montée MAJOR se prépare dans les messages de commit. Entre deux tags, `rel
 
 Il ne refuse pas l'inverse : une `4.0.0` posée sans aucun `!` entre les deux tags passerait. C'est pourtant ce `!` qui range le changement sous « ⚠️ Attention » dans les notes et dans l'écran *Nouveautés*, et qui permet à `git cliff --bumped-version` de proposer 4.0.0. Toute PR de rupture de la 4.0 porte donc un `!` dans son sujet, et son paragraphe dans [le guide de passage](passer-a-la-4-0.md).
 
+## Les préversions (release candidates)
+
+Avant une majeure, une préversion `vX.Y.Z-rc.N` (par exemple `v4.0.0-rc.1`) laisse un exploitant essayer la version sur une copie de ses données. Elle suit les mêmes règles de forme qu'une release, avec son suffixe :
+
+- le contrôle de `release.yml` la compare au dernier tag **stable** (une `v4.0.0-rc.2` se compare à la `v3.5.0`, pas à la `rc.1`), et le numéro posé ne peut pas être inférieur à ce que les sujets demandent ; il refuse aussi une préversion posée après sa version finale, ou dont le `N` ne dépasse pas celui d'une préversion de même numéro ;
+- ses notes de version listent tout ce qui est entré depuis ce dernier tag stable ; celles de la version finale `4.0.0` reprennent la même plage, préversions comprises ;
+- son image est publiée sous `:X.Y.Z-rc.N` **et rien d'autre** : ni `:X.Y`, ni `:latest`, que l'exploitant qui tire `latest` ou suit une ligne `X.Y` ne reçoit donc jamais une préversion. *Choix prudent, à confirmer :* le dépôt ne l'avait pas tranché, et rien n'empêche de poser plus tard une étiquette `:X.Y-rc` mobile.
+
+Une préversion ne promet rien de plus qu'un essai : elle peut migrer le schéma, et le schéma ne redescend pas ([sauvegardez avant](sauvegarde-et-restauration.md)).
+
 ## Lire la version d'une instance
 
-La version affichée dans le pied de page, sur la page *Débogage*, dans `GET /api/config` (champ `version`) et dans la ligne de démarrage est celle du tag git `vX.Y.Z` : `X.Y.Z` sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en build local, valeur qui ne ressemble volontairement à aucune version publiée. D'où vient ce tag : [Publier une version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).
+La version affichée dans le pied de page, sur la page *Débogage*, dans `GET /api/config` (champ `version`) et dans la ligne de démarrage est celle du tag git `vX.Y.Z` : `X.Y.Z` (ou `X.Y.Z-rc.N` pour une préversion) sur une image de release, le SHA court sur une image de recette, `999-SNAPSHOT` en build local, valeur qui ne ressemble volontairement à aucune version publiée. D'où vient ce tag : [Publier une version](publier-une-version.md#1-la-source-de-vérité--un-tag-git).

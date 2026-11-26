@@ -3,18 +3,18 @@ twin: installer/accessibilite
 ---
 # Publish your accessibility statement
 
-If your organisation is subject to the digital accessibility obligation, fill in the four `LEGAL_ACCESSIBILITE_*` variables: the application then publishes its statement at `/declaration-accessibilite`, linked from the footer, the drawer and the legal menu of the staff espace. This page also says where the application stands (RGAA 4.1 standard, audit carried out, automated checks, open points), which is what you can base your declaration on; the writing conventions for developers are in [`developpement.md`](../comprendre/demarrer.md#accessibilité).
+If your organisation is subject to the digital accessibility obligation, fill in the four keys of `LEGAL_ACCESSIBILITE`: the application then publishes its statement at `/declaration-accessibilite`, linked from the footer, the drawer and the legal menu of the staff espace. This page also says where the application stands (RGAA 4.1 standard, audit carried out, automated checks, open points), which is what you can base your declaration on; the writing conventions for developers are in [`developpement.md`](../comprendre/demarrer.md#accessibilité).
 
 ## Fill in the statement
 
 Article 47 of law no. 2005-102 requires a statement from public bodies and from companies above a turnover threshold. **The obligation falls on the organisation that deploys the application**, not on the project: only the organisation knows how far its instance has been audited, when, and where to receive a report. The `/declaration-accessibilite` page shows what the deployment configures, and says "not provided" for the rest.
 
-| Variable | Content |
+| Key of `LEGAL_ACCESSIBILITE` | Content |
 | --- | --- |
-| `LEGAL_ACCESSIBILITE_ETAT` | `totale`, `partielle` or `non`; any other value reads as not provided |
-| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | the date of the audit the status rests on |
-| `LEGAL_ACCESSIBILITE_CONTENUS` | the inaccessible content, and why; a line break makes a paragraph |
-| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | where to report a defect; if empty, the contact address of the legal notice (`LEGAL_CONTACT`) |
+| `etat` | `totale`, `partielle` or `non`; any other value reads as not provided |
+| `date-audit` | the date of the audit the status rests on |
+| `contenus` | the inaccessible content, and why; a line break makes a paragraph |
+| `signalement` | where to report a defect; if empty, the contact address of the legal notice (`contact` key of `LEGAL_MENTIONS`) |
 
 ## The standard and the scope
 

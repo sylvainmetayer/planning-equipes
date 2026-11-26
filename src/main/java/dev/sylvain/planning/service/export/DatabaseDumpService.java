@@ -256,6 +256,11 @@ public class DatabaseDumpService {
      *       number, read by the RH right and the administrators only. A file
      *       that leaves the instance does not carry them; restoring a dump
      *       recreates the fiches without them.</li>
+     *   <li>{@code declaration_coequipier_avant_4_0} — the covoiturage
+     *       demands 3.x had set aside or cancelled, free-text motif included,
+     *       archived by V142 and dropped in 5.0: an archive nothing reads, not
+     *       a dataset, and a text about a person that a file leaving the
+     *       instance has no reason to carry.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -282,7 +287,8 @@ public class DatabaseDumpService {
             "sauvegarde_avant_vidage",
             "machine_calcul",
             "resolution_distante",
-            "animateur_contact");
+            "animateur_contact",
+            "declaration_coequipier_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

@@ -23,8 +23,6 @@ import java.util.List;
  *                     otherwise
  * @param creeLe       when it was declared
  * @param decideLe     when an admin decided, {@code null} while pending
- * @param motif        why an admin set it aside, as they typed it for the
- *                     animateur to read; {@code null} when none was given
  */
 public record DemandeCoequipier(
         String id,
@@ -34,14 +32,10 @@ public record DemandeCoequipier(
         StatutDemandeCoequipier statut,
         String contrainteId,
         Instant creeLe,
-        Instant decideLe,
-        String motif) {
+        Instant decideLe) {
 
     /** Largest car the feature plans for: the declarant and three teammates. */
     public static final int COEQUIPIERS_MAX = 3;
-
-    /** Longest reason an admin may give when setting a demand aside: a sentence, not a letter. */
-    public static final int MOTIF_MAX = 500;
 
     public DemandeCoequipier {
         coequipiers = coequipiers == null ? List.of() : List.copyOf(coequipiers);

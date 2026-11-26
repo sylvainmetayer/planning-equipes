@@ -4,35 +4,45 @@ twin: installer/mentions-legales
 
 # Fill in the legal notice
 
-Before you open the instance to its staff, you set the organiser's legal information in the environment: without five of the settings below, the application refuses to start in production. This page lists them, explains why, and shows how to run a demonstration instance that has none.
+Before you open the instance to its staff, you set the organiser's legal information in the environment: without five of them (the five required keys of `LEGAL_MENTIONS`), the application refuses to start in production. This page lists them, explains why, and shows how to run a demonstration instance that has none.
 
 ## Why they cannot stay empty
 
-The seven `LEGAL_*` variables default to `""`, and the public `/mentions-legales` page says so itself: "No legal information has been entered for this deployment". That is acceptable on a demonstration instance, not on a live one, where the LCEN (the French law on trust in the digital economy) requires an identified publisher and host, and the GDPR requires a data controller, a legal basis and a retention period.
+The notices default to `""`, and the public `/mentions-legales` page says so itself: "No legal information has been entered for this deployment". That is acceptable on a demonstration instance, not on a live one, where the LCEN (the French law on trust in the digital economy) requires an identified publisher and host, and the GDPR requires a data controller, a legal basis and a retention period.
 
 This information is **the organiser's**: the organiser is the employer of the people scheduled and the data controller. You, as host, are a **processor** within the meaning of article 28 of the GDPR, which calls for a written agreement between the two parties from the first hosting, even a free one. Its mandatory content and the register that goes with it are in [what the host must write and keep](rgpd.md).
 
 ## The variables to fill in
 
-| Variable | Status | What it holds |
+The notices are set by **one variable**, `LEGAL_MENTIONS`, of the form `key=value;key=value`: a literal semicolon in a value is written `\;`, and an unknown key is reported at startup and then ignored.
+
+| Key of `LEGAL_MENTIONS` | Status | What it holds |
 | --- | --- | --- |
-| `LEGAL_EDITEUR` | **required** | Publisher: name, legal form, address, registration |
-| `LEGAL_HEBERGEUR` | **required** | Host: name and address |
-| `LEGAL_CONTACT` | **required** | Contact address, including for exercising one's rights |
-| `LEGAL_BASE_LEGALE` | **required** | Legal basis for processing personal data |
-| `LEGAL_CONSERVATION` | **required** | Retention period for personal data |
-| `LEGAL_RESPONSABLE_TRAITEMENT` | optional | Data controller, if different from the publisher; empty means the publisher |
-| `LEGAL_DIRECTEUR_PUBLICATION` | optional | Publication director |
+| `editeur` | **required** | Publisher: name, legal form, address, registration |
+| `hebergeur` | **required** | Host: name and address |
+| `contact` | **required** | Contact address, including for exercising one's rights |
+| `base-legale` | **required** | Legal basis for processing personal data |
+| `conservation` | **required** | Retention period for personal data |
+| `responsable-traitement` | optional | Data controller, if different from the publisher; empty means the publisher |
+| `directeur-publication` | optional | Publication director |
 
-The five required ones make startup fail in production when they are empty, like an `ADMIN_PASSWORD` left on its sample value. The message names **all of them at once**: fixing them one by one would cost five restarts.
+Example, in the compose `.env`:
 
-The other two are deliberately optional. An empty `LEGAL_RESPONSABLE_TRAITEMENT` falls back to the publisher, and requiring it would contradict that fallback. Not every publisher is required to have a publication director.
+```
+LEGAL_MENTIONS="editeur=Association Exemple, 1 rue des Pions, 79000 Niort;hebergeur=Hébergeur Fictif SAS, Paris;contact=planning@exemple.invalid;base-legale=Intérêt légitime de l'organisateur;conservation=Jusqu'au 31 décembre de l'année suivant l'édition"
+```
 
-Take care with `LEGAL_CONSERVATION`: this period is shown in the privacy policy, and **nothing in the code enforces it**. Announce only what you will actually do, through the [annual purge](conservation-des-donnees.md#la-purge-annuelle).
+The five required ones make startup fail in production when they are empty, like an `ADMIN_PASSWORD` left on its sample value. The message names **all of them at once**: fixing them one by one would cost five restarts. This refusal stays in place in 4.0.
+
+The other two are deliberately optional. An empty `responsable-traitement` falls back to the publisher, and requiring it would contradict that fallback. Not every publisher is required to have a publication director.
+
+Take care with `conservation`: this period is shown in the privacy policy, and **nothing in the code enforces it**. Announce only what you will actually do, through the [annual purge](conservation-des-donnees.md#la-purge-annuelle).
+
+The seven old variables (`LEGAL_EDITEUR`, `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_BASE_LEGALE`, `LEGAL_CONSERVATION`, `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_DIRECTEUR_PUBLICATION`) are still read throughout 4.x, with a warning at startup, and removed in 5.0: see [Moving from 3.x to 4.0](passer-a-la-4-0.md).
 
 ## The accessibility statement
 
-Four more variables, `LEGAL_ACCESSIBILITE_ETAT`, `LEGAL_ACCESSIBILITE_DATE_AUDIT`, `LEGAL_ACCESSIBILITE_CONTENUS` and `LEGAL_ACCESSIBILITE_SIGNALEMENT`, fill in the `/declaration-accessibilite` page: the RGAA compliance status (the French accessibility standard), the audit date, the inaccessible content, and the address for reporting problems. They do not block startup: the obligation in article 47 of law no. 2005-102 applies only to certain organisations, and the empty page itself says that no audit has been declared rather than claiming compliance. The details are in [accessibility](accessibilite.md).
+A second variable, `LEGAL_ACCESSIBILITE`, fills in the `/declaration-accessibilite` page through four keys, `etat`, `date-audit`, `contenus` and `signalement`: the RGAA compliance status (the French accessibility standard), the audit date, the inaccessible content, and the address for reporting problems. They do not block startup: the obligation in article 47 of law no. 2005-102 applies only to certain organisations, and the empty page itself says that no audit has been declared rather than claiming compliance. The details are in [accessibility](accessibilite.md).
 
 ## An instance that is not live
 
