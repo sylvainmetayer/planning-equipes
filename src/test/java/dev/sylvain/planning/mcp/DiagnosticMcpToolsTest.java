@@ -302,7 +302,7 @@ class DiagnosticMcpToolsTest {
         ParametresMcpTools.ParametresLegauxView ecrit = (ParametresMcpTools.ParametresLegauxView) parametresTools
                 .updateParametres(
                         "legal", null, null, null, null, 45, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, "E1")
+                        null, null, null, null, null, null, null, null, null, null, null, "E1")
                 .parametres();
 
         assertThat(ecrit.dureePauseMinutes()).isEqualTo(45);
@@ -313,7 +313,7 @@ class DiagnosticMcpToolsTest {
 
         assertThatThrownBy(() -> parametresTools.updateParametres(
                         "legal", null, null, null, null, 19, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, "E1"))
+                        null, null, null, null, null, null, null, null, null, null, null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("L3121-16");
     }

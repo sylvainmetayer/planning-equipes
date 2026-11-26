@@ -56,3 +56,51 @@ export function notifyStaleReloaded(notifications: NotificationService): void {
     timeout: 8000,
   });
 }
+
+/** What a write of a whole section of settings needs to answer a 409. */
+export interface StaleSectionDeps {
+  readonly confirm: Pick<ConfirmService, 'askThreeWay'>;
+  readonly notifications: Pick<NotificationService, 'notify'>;
+}
+
+/**
+ * Writes a section of the edition's parameters with the stamp the screen
+ * loaded, and answers a stale 409 with the usual dialog.
+ *
+ * - « Écraser quand même » runs `write(true)`: the caller re-reads the section
+ *   and sends the typed fields over it, without a stamp.
+ * - « Recharger » runs `reload`, says nothing was saved, and returns `null`:
+ *   the caller stops there.
+ * - Dismissing the dialog rethrows the 409, which the caller shows as any
+ *   refusal, the typed values kept.
+ *
+ * Any other error is the caller's.
+ */
+export async function writeOrAskStale<T>(
+  deps: StaleSectionDeps,
+  write: (overwrite: boolean) => Promise<T>,
+  reload: () => Promise<void>,
+): Promise<{ saved: T } | null> {
+  try {
+    return { saved: await write(false) };
+  } catch (error) {
+    if (!isStaleWrite(error)) {
+      throw error;
+    }
+    const choice = await askStaleChoice(deps.confirm, error);
+    if (choice === 'overwrite') {
+      return { saved: await write(true) };
+    }
+    if (choice === 'reload') {
+      await reload();
+      deps.notifications.notify({
+        title: $localize`:@@parametres.concurrent.reloaded:Paramètres rechargés, vos modifications n'ont pas été enregistrées.`,
+        message: $localize`:@@parametres.concurrent.reloadedHint:Saisissez-les à nouveau sur la version actuelle.`,
+        variant: 'warning',
+        timeout: 8000,
+      });
+      return null;
+    }
+    throw error;
+  }
+}

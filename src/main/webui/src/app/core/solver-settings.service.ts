@@ -31,6 +31,9 @@ export class SolverSettingsService {
 
   private readonly api = inject(ApiService);
 
+  /** The stamp of the section as last read, sent back as the precondition of a write. */
+  private stamp: string | null = null;
+
   constructor() {
     void this.refresh().catch(() => {
       // Server unreachable at startup: keep the in-memory default. A caller
@@ -43,13 +46,20 @@ export class SolverSettingsService {
     this.apply(await this.api.get<SolverSettingsView>('/api/parametres/calcul'));
   }
 
-  /** Saves the edition's end-of-solve mail switch. */
-  async setMailFinResolution(mailFinResolution: boolean): Promise<void> {
-    const parametres: ParametresSolveur = { mailFinResolution };
+  /**
+   * Saves the edition's end-of-solve mail switch under the stamp last read: a
+   * section written since is a 409. `overwrite` sends no stamp.
+   */
+  async setMailFinResolution(mailFinResolution: boolean, overwrite = false): Promise<void> {
+    const parametres: ParametresSolveur = {
+      mailFinResolution,
+      ...(overwrite ? {} : { modifieLe: this.stamp }),
+    };
     this.apply(await this.api.put<SolverSettingsView>('/api/parametres/calcul', parametres));
   }
 
   private apply(parametres: SolverSettingsView): void {
+    this.stamp = parametres.modifieLe ?? null;
     this._mailFinResolution.set(parametres.mailFinResolution ?? false);
     if (parametres.instance) {
       this._bounds.set(parametres.instance);
