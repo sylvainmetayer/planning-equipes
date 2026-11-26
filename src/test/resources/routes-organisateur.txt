@@ -68,6 +68,8 @@ CreneauResource#previewDerivation POST /creneaux/derivation/apercu
 CreneauResource#previewRecurrence POST /creneaux/recurrence/apercu
 CreneauResource#updateCreneau PUT /creneaux/{id}
 CreneauResource#validateGrid GET /creneaux/controle
+DayStateResource#list GET /etats-journee
+DayStateResource#set PUT /etats-journee/{jour}
 DeclarationDisponibiliteResource#apply POST /disponibilites/{id}/application
 DeclarationDisponibiliteResource#cancelCarpool POST /disponibilites/coequipiers/{id}/annulation
 DeclarationDisponibiliteResource#carpools GET /disponibilites/coequipiers

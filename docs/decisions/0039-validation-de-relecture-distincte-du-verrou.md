@@ -1,6 +1,6 @@
 # 0039 — Une validation de relecture, distincte du verrou
 
-- **Statut** : accepté, implémenté ; le retrait après résolution est **précisé par [0069](0069-une-relecture-survit-a-ce-que-le-calcul-n-a-pas-recalcule.md)**
+- **Statut** : accepté, implémenté ; le retrait après résolution est **précisé par [0069](0069-une-relecture-survit-a-ce-que-le-calcul-n-a-pas-recalcule.md)** ; relecture et verrou de journée se lisent ensemble comme l'état de la journée depuis [0121](0121-l-etat-de-la-journee-se-lit-sur-la-relecture-et-le-verrou.md)
 - **Date** : septembre 2026
 - **Portée** : relecture du plan, résolution, publication, MCP, IHM
 

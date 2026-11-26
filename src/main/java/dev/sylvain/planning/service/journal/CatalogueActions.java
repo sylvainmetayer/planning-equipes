@@ -85,6 +85,7 @@ public final class CatalogueActions {
     private static final String VERROU_RETIRE = "VERROU_RETIRE";
     private static final String JOURNEE_VALIDEE = "JOURNEE_VALIDEE";
     private static final String JOURNEE_VALIDATION_RETIREE = "JOURNEE_VALIDATION_RETIREE";
+    private static final String JOURNEE_ETAT_CHANGE = "JOURNEE_ETAT_CHANGE";
     private static final String CONSIGNE_POSEE = "CONSIGNE_POSEE";
     private static final String CONSIGNE_LEVEE = "CONSIGNE_LEVEE";
     private static final String PREREGLAGE_CONSIGNE_ENREGISTRE = "PREREGLAGE_CONSIGNE_ENREGISTRE";
@@ -310,6 +311,10 @@ public final class CatalogueActions {
         // validation lays a lock down: that lock writes its own VERROU_POSE.
         action(JOURNEE_VALIDEE, "Journée relue et acceptée", Entite.PLANNING);
         action(JOURNEE_VALIDATION_RETIREE, "Validation de journée retirée", Entite.PLANNING);
+        // The state of a day (ADR 0121) lays the day lock down when it
+        // freezes, and lifts it when it leaves the frozen state: what a solve
+        // is given may change, hence changesData.
+        changesData(JOURNEE_ETAT_CHANGE, "État de la journée changé", Entite.PLANNING);
         // A consigne (issue #4) changes which seats a solve is given — a band
         // closed for every stand, openings chosen, créneaux added to the grid
         // — hence changesData. A preset changes nothing until a consigne is
@@ -587,6 +592,7 @@ public final class CatalogueActions {
         route("VerrouillageResource#delete", VERROU_RETIRE);
         route("ValidationJourneeResource#accept", JOURNEE_VALIDEE);
         route("ValidationJourneeResource#withdraw", JOURNEE_VALIDATION_RETIREE);
+        route("DayStateResource#set", JOURNEE_ETAT_CHANGE);
         route("ConsigneResource#poser", CONSIGNE_POSEE);
         route("ConsigneResource#lever", CONSIGNE_LEVEE);
         route("ConsigneResource#createPrereglage", PREREGLAGE_CONSIGNE_ENREGISTRE);

@@ -24,6 +24,7 @@ CreneauResource#countCreneauUsages GET /creneaux/usages
 CreneauResource#diagnoseGrid GET /creneaux/diagnostic
 CreneauResource#listCreneaux GET /creneaux
 CreneauResource#validateGrid GET /creneaux/controle
+DayStateResource#list GET /etats-journee
 DeclarationDisponibiliteResource#carpools GET /disponibilites/coequipiers
 DeclarationDisponibiliteResource#configuration GET /disponibilites/configuration
 DeclarationDisponibiliteResource#list GET /disponibilites

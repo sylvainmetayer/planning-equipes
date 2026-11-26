@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.validation;
 
+import dev.sylvain.planning.domain.DayState;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.ValidationJournee;
@@ -16,24 +17,30 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * « Relu et accepté » : the review state of a day, which the lock mechanism
- * never carried (see {@code docs/decisions/0033-validation-de-relecture.md}).
+ * The state of a day — to be read, read, frozen (ADR 0121) — and the reading
+ * behind it (ADR 0039).
  *
- * <p>Three things live here and nowhere else: what a validation may name (a
- * day of the edition, and only a whole one), that validating may
- * <em>offer</em> to lay a lock down without ever doing it unasked, and that a
- * solve which recomputed a validated day withdraws that validation — unless
- * the day was in the frozen past or under a {@code JOUR} lock, or a solve
- * started from the plan in place gave it back unchanged.</p>
+ * <p>The state is derived, never stored: {@link DayState#FIGEE} is the
+ * {@link TypeVerrouillage#JOUR} lock, {@link DayState#RELUE} a reading
+ * without one. Four things live here and nowhere else: what a state may name
+ * (a day of the edition, and only a whole one); that a lock is laid down
+ * only when asked — {@link DayState#FIGEE}, or the deprecated
+ * {@code poserVerrou} of {@link #accept}; that here, only leaving the frozen
+ * state lifts one; and that a solve which recomputed a read
+ * day withdraws its reading — unless the day was in the frozen past or
+ * frozen, or a solve started from the plan in place gave it back unchanged
+ * (ADR 0069).</p>
  */
 @ApplicationScoped
 public class ValidationJourneeService {
@@ -75,19 +82,125 @@ public class ValidationJourneeService {
     }
 
     /**
-     * Whether this edition carries any reading at all.
+     * Whether a day of this edition is read or frozen at all.
      *
      * <p>Read before a solve builds the before-image it would compare days on:
      * that image is the whole persisted plan, seat by seat, and an edition
      * nobody reviews must not pay for it on every run.</p>
      */
     public boolean hasValidations() {
-        return !repository.list().isEmpty();
+        return !repository.list().isEmpty() || !lockedDays().isEmpty();
     }
 
     /**
-     * Records a reading of one day, and lays the lock down when the request
-     * asked for one.
+     * One day and where it stands, with the reading behind it when there is
+     * one — a frozen day laid down from the Verrouillages screen has none.
+     *
+     * @param validationId the reading, {@code null} when the day carries none
+     */
+    @Schema(requiredProperties = {"jour", "etat"})
+    public record DayStateView(
+            LocalDate jour,
+            DayState etat,
+            String validationId,
+            Instant valideLe,
+            String validePar,
+            String commentaire) {}
+
+    /** Every day of the edition's grid and its state, in calendar order. */
+    public List<DayStateView> states() {
+        Map<LocalDate, ValidationJournee> readings = readingsByDay();
+        Set<LocalDate> locked = lockedDays();
+        return joursEvenement().stream()
+                .sorted()
+                .map(jour -> view(jour, readings.get(jour), locked.contains(jour)))
+                .toList();
+    }
+
+    /**
+     * Moves one day to {@code etat}, with the comment of the reading it
+     * records. Asking for {@link DayState#FIGEE} lays the {@code JOUR} lock
+     * down, asking for another state lifts it — never a side effect (ADR
+     * 0039).
+     *
+     * <ul>
+     *   <li>{@link DayState#FIGEE}: records the reading, lays the lock if the
+     *       day has none;</li>
+     *   <li>{@link DayState#RELUE}: records the reading, lifts the day's
+     *       lock;</li>
+     *   <li>{@link DayState#A_RELIRE}: withdraws both.</li>
+     * </ul>
+     */
+    public DayStateView setState(LocalDate jour, DayState etat, String commentaire) {
+        if (jour == null) {
+            throw new BusinessError.Invalid("Journée manquante");
+        }
+        if (etat == null) {
+            throw new BusinessError.Invalid("État manquant : A_RELIRE, RELUE ou FIGEE");
+        }
+        if (etat != DayState.A_RELIRE && !joursEvenement().contains(jour)) {
+            throw new BusinessError.Invalid("Aucun créneau ce jour-là : " + jour);
+        }
+        String checked = checkedComment(commentaire);
+        if (etat == DayState.A_RELIRE) {
+            repository.deleteJours(List.of(jour));
+        } else {
+            repository.save(new ValidationJournee(
+                    UUID.randomUUID().toString(), jour, Instant.now(), journal.nomAdmin(), checked));
+        }
+        if (etat == DayState.FIGEE) {
+            lockDay(jour);
+        } else {
+            unlockDay(jour);
+        }
+        return view(jour, readingsByDay().get(jour), lockedDays().contains(jour));
+    }
+
+    /** Where one day stands, grid or not. */
+    public DayState stateOf(LocalDate jour) {
+        return DayState.of(readingsByDay().containsKey(jour), lockedDays().contains(jour));
+    }
+
+    private static DayStateView view(LocalDate jour, ValidationJournee reading, boolean locked) {
+        return new DayStateView(
+                jour,
+                DayState.of(reading != null, locked),
+                reading == null ? null : reading.id(),
+                reading == null ? null : reading.valideLe(),
+                reading == null ? null : reading.validePar(),
+                reading == null ? null : reading.commentaire());
+    }
+
+    private Map<LocalDate, ValidationJournee> readingsByDay() {
+        Map<LocalDate, ValidationJournee> byDay = new LinkedHashMap<>();
+        repository.list().stream()
+                .filter(reading -> reading.jour() != null)
+                .forEach(reading -> byDay.putIfAbsent(reading.jour(), reading));
+        return byDay;
+    }
+
+    /**
+     * The days that are not to be read any more — read or frozen, the rule of
+     * {@link DayState#of} — whatever the grid holds: the progression narrows
+     * them to the grid's days, the solve's recap does not need to.
+     */
+    public Set<LocalDate> reviewedDays() {
+        return reviewedDays(readingsByDay().keySet(), lockedDays());
+    }
+
+    /** The rule, on facts alone: a day read, frozen, or both. */
+    static Set<LocalDate> reviewedDays(Collection<LocalDate> read, Collection<LocalDate> locked) {
+        Set<LocalDate> days = new TreeSet<>(read);
+        days.addAll(locked);
+        return days;
+    }
+
+    /**
+     * The 3.x gesture, kept for the routes and tools it serves until 5.0:
+     * records a reading of one day, and lays the lock down when the request
+     * asked for one — {@link DayState#RELUE}, or {@link DayState#FIGEE} with
+     * the lock. Unlike {@link #setState}, it never lifts a lock: a day frozen
+     * before stays frozen.
      *
      * <p>Re-validating a day already read replaces its row rather than piling a
      * second one: what is worth keeping is the reading that stands, with its
@@ -109,7 +222,11 @@ public class ValidationJourneeService {
         return new ResultatValidation(validation, verrouPose);
     }
 
-    /** Withdraws one reading. An unknown id is reported rather than silently accepted. */
+    /**
+     * Withdraws one reading: a read day goes back to be read, a frozen one
+     * stays frozen (its lock is left alone, as in 3.x). An unknown id is
+     * reported rather than silently accepted.
+     */
     public void withdraw(String id) {
         if (id == null || id.isBlank()) {
             throw new BusinessError.Invalid("Id de validation manquant");
@@ -186,18 +303,18 @@ public class ValidationJourneeService {
      */
     public ReadingsOutcome withdrawAfterSolve(
             Collection<LocalDate> joursBouges, Collection<LocalDate> joursFiges, boolean coldStart) {
-        List<ValidationJournee> validations = repository.list();
-        if (validations.isEmpty()) {
+        Set<LocalDate> lockedDays = lockedDays();
+        Set<LocalDate> reviewed = reviewedDays(readingsByDay().keySet(), lockedDays);
+        if (reviewed.isEmpty()) {
             return ReadingsOutcome.NONE;
         }
         Set<LocalDate> bouges = joursBouges == null ? Set.of() : Set.copyOf(joursBouges);
         Set<LocalDate> figes = joursFiges == null ? Set.of() : Set.copyOf(joursFiges);
-        Set<LocalDate> lockedDays = lockedDays();
         Set<LocalDate> retires = new LinkedHashSet<>();
         int keptPast = 0;
         int keptLocked = 0;
         int keptUnchanged = 0;
-        for (LocalDate jour : validatedDays(validations)) {
+        for (LocalDate jour : reviewed) {
             if (figes.contains(jour)) {
                 keptPast++;
             } else if (lockedDays.contains(jour)) {
@@ -224,15 +341,15 @@ public class ValidationJourneeService {
      *                the freeze is off, and then no day is past
      */
     public List<KeptReading> keptByColdStart(PastHorizon horizon) {
-        List<ValidationJournee> validations = repository.list();
-        if (validations.isEmpty()) {
+        Set<LocalDate> lockedDays = lockedDays();
+        Set<LocalDate> reviewed = reviewedDays(readingsByDay().keySet(), lockedDays);
+        if (reviewed.isEmpty()) {
             return List.of();
         }
-        Set<LocalDate> lockedDays = lockedDays();
         Set<LocalDate> figes = FeasibilityAnalyzer.frozenDays(
                 referenceDataService.listCreneaux(), referenceDataService.listSolvedStands(), horizon);
         List<KeptReading> gardees = new ArrayList<>();
-        for (LocalDate jour : validatedDays(validations)) {
+        for (LocalDate jour : reviewed) {
             if (figes.contains(jour)) {
                 gardees.add(new KeptReading(jour, KeepReason.PASSE));
             } else if (lockedDays.contains(jour)) {
@@ -240,15 +357,6 @@ public class ValidationJourneeService {
             }
         }
         return gardees;
-    }
-
-    private static List<LocalDate> validatedDays(List<ValidationJournee> validations) {
-        return validations.stream()
-                .map(ValidationJournee::jour)
-                .filter(Objects::nonNull)
-                .distinct()
-                .sorted()
-                .toList();
     }
 
     /**
@@ -294,6 +402,16 @@ public class ValidationJourneeService {
                         verrouillage.getType() == TypeVerrouillage.JOUR && verrouillage.getJour() != null)
                 .map(VerrouillagePlanning::getJour)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /** Lifts the day's {@code JOUR} lock — only ever asked for by leaving the frozen state. */
+    private void unlockDay(LocalDate jour) {
+        referenceDataService.listVerrouillages().stream()
+                .filter(verrouillage ->
+                        verrouillage.getType() == TypeVerrouillage.JOUR && jour.equals(verrouillage.getJour()))
+                .map(VerrouillagePlanning::getId)
+                .toList()
+                .forEach(referenceDataService::deleteVerrouillage);
     }
 
     /** Whether a lock had to be created; an already-frozen day is not one laid down here. */

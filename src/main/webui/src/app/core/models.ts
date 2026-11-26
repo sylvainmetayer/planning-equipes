@@ -5120,7 +5120,12 @@ export interface PrerequisJournee {
   commentaire: string | null;
   prerequis: PrerequisValidation[];
   tousSatisfaits: boolean;
+  /** Where the day stands (ADR 0121): a frozen day may carry no reading. */
+  etat: DayState;
 }
+
+/** The state of a day: to be read, read, frozen (ADR 0121). */
+export type DayState = 'A_RELIRE' | 'RELUE' | 'FIGEE';
 
 /** How far the reading has got — « 3 journées sur 12 validées ». */
 export interface ProgressionValidations {
