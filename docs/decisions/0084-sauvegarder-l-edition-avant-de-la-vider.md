@@ -1,6 +1,6 @@
 # 0084 — Sauvegarder l'édition (scénario et planning) avant de la vider, sans purge, et la restaurer d'un geste
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; **remplacé en partie** par [0112](0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md) : le plan n'a plus de colonne à part (il est la section `plan:` du fichier) et la restauration passe par l'import normal ; le reste (sauvegarde obligatoire avant le vidage, aucune purge, droits, clés métier, non-atomicité de l'import) tient
 - **Date** : novembre 2026
 - **Portée** : schéma PostgreSQL (migration), service, API, RGPD
 - **Complète** : [0015](0015-sauvegarde-par-pg-dump-restauration-hors-application.md) (le dump nocturne, qui ne restaure qu'une instance entière)
