@@ -48,6 +48,18 @@ Progress is read in the Solver ("3 days out of 12") and by a tick on each review
 
 Accepting freezes nothing: locking is offered alongside, never imposed (see [Set exceptions and locks](ajustements-et-verrous.md)).
 
+### The three states of a day
+
+Each day is **to review**, **reviewed** or **frozen**.
+
+| State | What it means | What a new solve does with it |
+| --- | --- | --- |
+| To review | Nobody has accepted it | It recomputes it freely |
+| Reviewed | Someone accepted it, nothing is frozen | It may recompute it, and the day then goes back to review |
+| Frozen | It carries a whole-day lock | It no longer touches it |
+
+Only your gesture freezes a day: accepting it never does. Removing the whole-day lock makes it reviewed if it had been accepted, to review otherwise. A frozen day counts as reviewed in the progress, even when locked from the locks screen without being accepted. The edition's phase does not change the state of the days: you can review or freeze a day in preparation, while computing as well as after publication.
+
 ### When a new solve removes a review
 
 A review survives a solve only if its day was not recomputed.

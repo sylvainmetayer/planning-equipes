@@ -70,6 +70,7 @@ class InstanceRoutesStructuralTest {
             "SolverJobResource",
             "TypologieAnalyseResource",
             "ValidationJourneeResource",
+            "DayStateResource",
             "WeatherResource",
             "ReglageResponsablesResource");
 

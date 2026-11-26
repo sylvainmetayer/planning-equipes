@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.validation;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.DayState;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.ValidationJournee;
@@ -18,6 +19,7 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -96,7 +98,10 @@ public class ValidationPrerequisService {
     /**
      * The state of one day for the validation panel.
      *
-     * @param validee       whether the day is already accepted
+     * @param validee       whether the day carries a reading — the 3.x panel's
+     *                      question; {@code etat} is the day's state, which a
+     *                      frozen day without a reading also has
+     * @param etat          where the day stands (ADR 0121)
      * @param validationId  the reading that stands, so the panel withdraws
      *                      exactly the one it is showing; {@code null} when
      *                      the day is not accepted
@@ -105,7 +110,7 @@ public class ValidationPrerequisService {
      *                      accepted it, resolved at read time; {@code null}
      *                      when that is no account
      */
-    @Schema(requiredProperties = {"jour", "prerequis", "tousSatisfaits", "validee"})
+    @Schema(requiredProperties = {"jour", "prerequis", "tousSatisfaits", "validee", "etat"})
     public record PrerequisJournee(
             LocalDate jour,
             boolean validee,
@@ -115,10 +120,12 @@ public class ValidationPrerequisService {
             String valideParNom,
             String commentaire,
             List<Prerequis> prerequis,
-            boolean tousSatisfaits) {}
+            boolean tousSatisfaits,
+            DayState etat) {}
 
     /**
-     * How far the reading has got — « 3 journées sur 12 validées ».
+     * How far the reading has got — « 3 journées sur 12 validées ». A day
+     * counts once it is no longer to be read: read, or frozen (ADR 0121).
      *
      * @param journees days the edition's timeslots span; zero before the grid
      *                 exists, and the banner then says nothing
@@ -128,15 +135,14 @@ public class ValidationPrerequisService {
 
     /** How far the reading of the current edition has got. */
     public ProgressionValidations progression() {
-        return progression(validationService.joursEvenement(), validationService.list());
+        return progression(validationService.joursEvenement(), validationService.reviewedDays());
     }
 
     /** The rule, on facts alone, so it is tested without a container. */
-    static ProgressionValidations progression(Set<LocalDate> joursEvenement, List<ValidationJournee> validations) {
+    static ProgressionValidations progression(Set<LocalDate> joursEvenement, Collection<LocalDate> reviewedDays) {
         // Only the days the grid actually holds: a validation left behind by a
         // créneau since deleted must not make the banner read « 13 sur 12 ».
-        List<LocalDate> retenus = validations.stream()
-                .map(ValidationJournee::jour)
+        List<LocalDate> retenus = reviewedDays.stream()
                 .filter(joursEvenement::contains)
                 .distinct()
                 .sorted(Comparator.naturalOrder())
@@ -169,7 +175,8 @@ public class ValidationPrerequisService {
                 comptes.nomAffiche(lu.validePar()),
                 lu.commentaire(),
                 lu.prerequis(),
-                lu.tousSatisfaits());
+                lu.tousSatisfaits(),
+                validationService.stateOf(jour));
     }
 
     /**
@@ -201,7 +208,8 @@ public class ValidationPrerequisService {
                 null,
                 validation == null ? null : validation.commentaire(),
                 prerequis,
-                tous);
+                tous,
+                DayState.of(validation != null, false));
     }
 
     /**

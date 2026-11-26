@@ -239,13 +239,20 @@ Single Quarkus service, no separate solver microservice. Package root:
     and writing without a database; `PlanningServiceScenarioAllerRetourTest`
     keeps them in step), `ScenarioDomainMapper`, `ScenarioDtoAssembler`,
     `ScenarioImportService`. The DTO itself is `scenario/` at the package root.
-  - `service/validation/` — « relu et accepté » on a day: the review state that
-    the lock mechanism never carried (ADR 0039). `ValidationJourneeService`
-    owns the two rules that keep the two apart — validating never lays a lock
-    down unasked, and a reading survives a solve only when its day was not
-    recomputed: in the frozen past, under a `JOUR` lock, or given back
+  - `service/validation/` — the state of a day: à relire, relue, figée
+    (`domain/DayState`, ADR 0121). The state is **derived, never stored**:
+    figée *is* the `JOUR` lock, relue a reading (`validation_journee`) without
+    one — so the solver, the `plan:` section and the Verrouillages screen read
+    a frozen day as they always did, and no migration was needed.
+    `ValidationJourneeService` owns the rules — nothing but an explicit
+    `FIGEE` (`PUT /api/etats-journee/{jour}`) lays a lock down (ADR 0039),
+    only leaving that state lifts it, and a reading survives a solve only when
+    its day was not recomputed: in the frozen past, frozen, or given back
     unchanged by a solve started from the plan in place — « Recommencer de
-    zéro » withdraws every other one (ADR 0069);
+    zéro » withdraws every other one (ADR 0069). The `/api/validations` writes
+    and the three `*_validation_journee` tools are `@Deprecated` aliases until
+    5.0, which never lift a lock; the state is open in every phase and during
+    a solve, like a lock;
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
