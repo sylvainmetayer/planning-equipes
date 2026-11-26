@@ -89,7 +89,14 @@ public class JournalOutilInterceptor {
             // A refused tool call is a fact worth keeping: an assistant that
             // tried to delete an edition and was told no belongs in the
             // history quite as much as one that succeeded.
-            journal.recordAction(stated(action.get()), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 400);
+            // The tool may have named its subject before refusing (a known rule, an invalid weight).
+            journal.recordAction(
+                    stated(action.get()),
+                    Acteur.ASSISTANT,
+                    PRINCIPAL,
+                    entiteId != null ? entiteId : currentAction.entiteId(),
+                    List.of(),
+                    400);
             throw e;
         }
     }
