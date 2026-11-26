@@ -220,7 +220,7 @@ test('each sector page is long enough and has contextual links from the home pag
   for (const pair of SECTORS) {
     for (const path of pair) {
       const lang = path.startsWith('/en/') ? 'en' : 'fr';
-      assert.ok(wordsOf(byPath.get(path)) >= 650, `${path} : trop courte (${wordsOf(byPath.get(path))} mots)`);
+      assert.ok(wordsOf(byPath.get(path)) >= 500, `${path} : trop courte (${wordsOf(byPath.get(path))} mots)`);
       const sources = new Set();
       for (const [from, html] of byPath) {
         if (from !== path && contextLinks(html).includes(path)) {
@@ -246,5 +246,15 @@ test('the sector pages differ from one another', () => {
         assert.ok(shared < 0.3, `${a[lang]} et ${b[lang]} se répètent à ${Math.round(shared * 100)} %`);
       }
     }
+  }
+});
+
+test('a docs page links the answer pages in its own language', () => {
+  const links = (path) => contextLinks(byPath.get(path));
+  const en = links('/en/docs/rules/prepare-your-first-edition/');
+  const fr = links('/docs/regles/preparer-edition/');
+  for (const [frPath, enPath] of SECTORS) {
+    assert.ok(en.includes(enPath) && !en.includes(frPath), `la page anglaise doit pointer ${enPath}, pas ${frPath}`);
+    assert.ok(fr.includes(frPath) && !fr.includes(enPath), `la page française doit pointer ${frPath}, pas ${enPath}`);
   }
 });

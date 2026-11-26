@@ -27,7 +27,7 @@
     },
     {
       "h2": "Un exemple : un trail et son village d'arrivée",
-      "texte": "Un cas imaginé pour illustrer, pas celui d'un client. Un trail le dimanche : des signaleurs aux carrefours, deux ravitaillements, un accueil des coureurs, un vestiaire, un poste de chronométrage. Chaque poste est un stand avec son horaire, souvent de quelques heures seulement, et son effectif d'une ou deux personnes. Le chronométrage demande une compétence que peu de bénévoles ont : le calcul ne place qu'eux, et le diagnostic montre tout de suite si une seule personne tient ce poste. Les premiers départs sont tôt, les derniers arrivants tard : c'est la grille horaire de chaque poste qui le dit, pas une règle à part."
+      "texte": "Un cas imaginé, sans lien avec un client. Un trail le dimanche : des signaleurs aux carrefours, deux ravitaillements, un accueil des coureurs, un vestiaire, un poste de chronométrage. Chaque poste est un stand avec son horaire, souvent de quelques heures seulement, et son effectif d'une ou deux personnes. Le chronométrage demande une compétence que peu de bénévoles ont : le calcul les cherche pour ce poste, et l'onglet *Fragilité* montre si une seule personne le tient. Les premiers départs sont tôt, les derniers arrivants tard : c'est la grille horaire de chaque poste qui le dit."
     },
     {
       "h2": "Dimensionner avant de recruter",
@@ -80,7 +80,7 @@
       },
       {
         "h2": "An example: a trail run and its finish village",
-        "texte": "A made-up case to illustrate, not a customer's. A trail on Sunday: marshals at crossroads, two aid stations, a runner reception, a cloakroom, a timing post. Each post is a stand with its hours, often only a few hours, and a headcount of one or two. Timing needs a skill few volunteers have: the solver places only them, and the diagnostic shows at once if a single person holds that post. The first starts are early and the last finishers late: each post's hours say so, there is no separate rule."
+        "texte": "A made-up case, unrelated to any customer. A trail on Sunday: marshals at crossroads, two aid stations, a runner reception, a cloakroom, a timing post. Each post is a stand with its hours, often only a few hours, and a headcount of one or two. Timing needs a skill few volunteers have: the solver looks for them for that post, and the *Fragility* tab shows if a single person holds it. The first starts are early and the last finishers late: each post's hours say so."
       },
       {
         "h2": "Size the team before recruiting",

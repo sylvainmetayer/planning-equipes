@@ -43,7 +43,7 @@
     {
       "id": "cas-d-usage",
       "q": "Est-ce adapté à un festival, un salon ou une course ?",
-      "a": "Oui, ce sont les trois cas que le logiciel connaît le mieux. Ce qui change d'un événement à l'autre se lit page par page : [un festival ou une convention](/planning-festival/) (compétences, soirées tardives), [un salon ou une foire](/planning-salon-foire/) (pauses, relais, plusieurs jours de suite), [une course ou un tournoi](/planning-evenement-sportif/) (beaucoup de petits postes, bénévoles d'un jour)."
+      "a": "Oui. Ce qui change d'un événement à l'autre se lit page par page : [un festival ou une convention](/planning-festival/) (compétences, soirées tardives), [un salon ou une foire](/planning-salon-foire/) (pauses, relais, plusieurs jours de suite), [une course ou un tournoi](/planning-evenement-sportif/) (beaucoup de petits postes, bénévoles d'un jour)."
     },
     {
       "id": "tarif",
@@ -140,7 +140,7 @@
       {
         "id": "cas-d-usage",
         "q": "Does it suit a festival, a trade show or a race?",
-        "a": "Yes, those are the three cases the software knows best. What changes from one event to the next is read page by page: [a festival or convention](/en/festival-staff-rota/) (skills, late evenings), [a trade show or fair](/en/trade-show-staff-rota/) (breaks, relays, several days in a row), [a race or tournament](/en/sports-event-volunteer-rota/) (many small posts, one-day volunteers)."
+        "a": "Yes. What changes from one event to the next is read page by page: [a festival or convention](/en/festival-staff-rota/) (skills, late evenings), [a trade show or fair](/en/trade-show-staff-rota/) (breaks, relays, several days in a row), [a race or tournament](/en/sports-event-volunteer-rota/) (many small posts, one-day volunteers)."
       },
       {
         "id": "tarif",

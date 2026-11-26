@@ -27,7 +27,7 @@
     },
     {
       "h2": "Un exemple : un salon de quatre jours",
-      "texte": "Un cas imaginé pour illustrer, pas celui d'un client. L'accueil ouvre de 9 h à 19 h, la buvette de 8 h à 21 h, le vestiaire de 10 h à 18 h, avec plus de monde l'après-midi que le matin : chaque fenêtre d'ouverture porte son effectif. La buvette est tenue par deux personnes ; quand l'une part en pause, l'autre reste, et le plan n'est accepté que si c'est le cas pour chaque pause due. La même personne n'est pas placée au vestiaire puis à l'autre bout du site sans le temps de s'y rendre."
+      "texte": "Un cas imaginé, sans lien avec un client. L'accueil ouvre de 9 h à 19 h, la buvette de 8 h à 21 h, le vestiaire de 10 h à 18 h, avec plus de monde l'après-midi que le matin : chaque fenêtre d'ouverture porte son effectif. La buvette est tenue par deux personnes. Une pause due se prend en relais (quand l'une part, l'autre reste) ou par un trou assez long ; un plan qui n'offre ni l'un ni l'autre est refusé. Le calcul pénalise aussi l'enchaînement trop serré entre le vestiaire et l'autre bout du site, faute de temps pour s'y rendre."
     },
     {
       "h2": "Le salon de l'an prochain",
@@ -76,7 +76,7 @@
       },
       {
         "h2": "An example: a four-day trade show",
-        "texte": "A made-up case to illustrate, not a customer's. The reception desk opens from 9 am to 7 pm, the bar from 8 am to 9 pm, the cloakroom from 10 am to 6 pm, with more people in the afternoon than in the morning: each opening window carries its own headcount. The bar is run by two people; when one goes on break, the other stays, and the plan is only accepted if that holds for every break that is due. The same person is not placed at the cloakroom and then at the far end of the site without time to walk there."
+        "texte": "A made-up case, unrelated to any customer. The reception desk opens from 9 am to 7 pm, the bar from 8 am to 9 pm, the cloakroom from 10 am to 6 pm, with more people in the afternoon than in the morning: each opening window carries its own headcount. The bar is run by two people. A break that is due is taken as a relay (when one leaves, the other stays) or as a gap long enough; a plan offering neither is refused. The solver also discourages a tight sequence between the cloakroom and the far end of the site, with too little time to walk there."
       },
       {
         "h2": "Next year's show",
