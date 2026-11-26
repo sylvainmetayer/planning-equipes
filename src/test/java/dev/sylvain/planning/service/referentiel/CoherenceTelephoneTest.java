@@ -22,7 +22,6 @@ class CoherenceTelephoneTest {
                 stands,
                 List.of(),
                 List.of(),
-                Set::of,
                 null,
                 List.of(),
                 List.of(),

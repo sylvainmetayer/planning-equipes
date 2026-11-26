@@ -34,7 +34,7 @@ function animateur(partial: Partial<Animateur> = {}): Animateur {
 function adjustment(partial: Partial<ProfileAdjustment> = {}): ProfileAdjustment {
   return {
     id: 'adj',
-    type: 'INDISPONIBILITE_FORCEE',
+    type: 'INCOMPATIBILITE',
     creneauId: null,
     date: null,
     heureDebut: null,
@@ -91,20 +91,14 @@ describe('regime', () => {
 });
 
 describe('availabilityStrip', () => {
-  it('marks the declared days off and the days a forced unavailability rules out', () => {
+  it('marks the declared days off', () => {
     const strip = availabilityStrip(
-      profile({
-        animateur: animateur({ joursIndisponibles: ['2026-07-12'] }),
-        ajustements: [
-          adjustment({ date: '2026-07-13', creneauId: 4 }),
-          adjustment({ id: 'aff', type: 'AFFINITE', date: '2026-07-11' }),
-        ],
-      }),
+      profile({ animateur: animateur({ joursIndisponibles: ['2026-07-12'] }) }),
     );
     expect(strip).toEqual([
-      { date: '2026-07-11', declaredOff: false, forcedOff: false },
-      { date: '2026-07-12', declaredOff: true, forcedOff: false },
-      { date: '2026-07-13', declaredOff: false, forcedOff: true },
+      { date: '2026-07-11', declaredOff: false },
+      { date: '2026-07-12', declaredOff: true },
+      { date: '2026-07-13', declaredOff: false },
     ]);
   });
 

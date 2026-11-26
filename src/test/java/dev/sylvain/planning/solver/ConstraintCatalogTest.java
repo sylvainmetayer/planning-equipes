@@ -53,9 +53,12 @@ class ConstraintCatalogTest {
                 .toList();
 
         assertThat(reglables)
-                .contains("coupureRepasObligatoire", "mineurNecessiteEncadrementMajeur", "equilibrerCharge")
-                // The day-run cap keeps its two forms until they merge into one adjustable rule (ADR 0045).
-                .doesNotContain("maxJoursConsecutifsTravailles", "maxJoursConsecutifsTravaillesDur");
+                .contains(
+                        "coupureRepasObligatoire",
+                        "mineurNecessiteEncadrementMajeur",
+                        "equilibrerCharge",
+                        // One rule of adjustable level since its two forms merged (ADR 0118).
+                        "maxJoursConsecutifsTravailles");
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             if (definition.legale()
                     || definition.categorie().equals("Affectation")

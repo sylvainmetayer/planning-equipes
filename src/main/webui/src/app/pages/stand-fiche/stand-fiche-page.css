@@ -1,5 +1,5 @@
-/* Fiche stand: the head of a stand, its grid day × timeslot edited in place,
-   then what the openings and the plan say of it. */
+/* Fiche stand: the head of a stand, its recurring model and its dated plages
+   edited in place, then what the openings and the plan say of it. */
 
 .stand-fiche-fil {
   display: flex;
@@ -29,8 +29,8 @@
   color: var(--mat-sys-error);
 }
 
-/* The grid of the stand: a day per line, a window per column. */
-.stand-grille-actions {
+/* The recurring model and the dated plages of the stand. */
+.stand-modele-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -38,75 +38,89 @@
   margin: 0.5rem 0;
 }
 
-.stand-grille-modifie {
+.stand-modele-modifie {
   font: var(--mat-sys-label-large);
   color: var(--mat-sys-tertiary);
 }
 
-.stand-grille-defilement {
+.stand-plages-filtre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.stand-plages-jour {
+  width: 14rem;
+  max-width: 100%;
+}
+
+.stand-plages-compte {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.stand-plages-defilement {
   overflow-x: auto;
 }
 
-.stand-grille {
+.stand-plages {
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
 
-.stand-grille th,
-.stand-grille td {
-  padding: 0.15rem 0.5rem 0.15rem 0;
+.stand-plages th,
+.stand-plages td {
+  padding: 0.15rem 0.75rem 0.15rem 0;
   text-align: left;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
   white-space: nowrap;
 }
 
-.stand-grille thead th {
+.stand-plages thead th {
   font: var(--mat-sys-label-large);
   color: var(--mat-sys-on-surface-variant);
 }
 
-.stand-grille-jour {
+.stand-plages tbody th {
   font-weight: 500;
 }
 
-.stand-grille-type {
-  font-weight: 400;
+.stand-plage-badge {
+  display: inline-block;
+  padding: 0 0.5rem;
+  border-radius: var(--mat-sys-corner-full);
+  font: var(--mat-sys-label-medium);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.stand-plage-ferme {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.stand-plage-modele {
+  background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface-variant);
 }
 
-.stand-grille-ferie .stand-grille-jour {
-  color: var(--mat-sys-tertiary);
-}
-
-.stand-grille-case {
-  width: 3.25rem;
-  padding: 0.25rem;
-  font: inherit;
-  text-align: center;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-extra-small);
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-}
-
-.stand-grille-case-modifiee {
-  border-color: var(--mat-sys-tertiary);
+.stand-plage-saisie {
   background: var(--mat-sys-tertiary-container);
   color: var(--mat-sys-on-tertiary-container);
 }
 
-/* A cell whose stretches cover part of the column only: kept as they are unless retyped. */
-.stand-grille-case-partielle {
-  border-style: dashed;
+.stand-plage-ajout h3 {
+  margin: 1rem 0 0.5rem;
+  font: var(--mat-sys-title-small);
 }
 
-.stand-grille-absent {
-  display: inline-block;
-  width: 3.25rem;
-  text-align: center;
-  color: var(--mat-sys-outline);
+.stand-plage-champs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.stand-grille-apercu {
-  color: var(--mat-sys-on-surface-variant);
+.stand-plage-effectif {
+  width: 7rem;
 }

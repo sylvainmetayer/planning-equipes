@@ -1,10 +1,9 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 schemaVersion: 2
-# Barreau 6 : les quatre types de contraintes ad hoc, avec et sans périmètre.
+# Barreau 6 : les types de contraintes ad hoc, avec et sans périmètre.
 # Tout le monde sait tout faire, pour que seules les exceptions décident :
-# une indisponibilité forcée sur un stand et une autre sur un créneau, deux
-# animateurs incompatibles, une affectation forcée sur un créneau et une autre
-# sur un stand, un binôme à réunir sur le grand jeu (deux places).
+# deux animateurs incompatibles, un binôme à réunir sur le grand jeu (deux
+# places), un jour indisponible sur la fiche.
 
 festival:
   dateDebut: 2027-07-23
@@ -95,7 +94,8 @@ animateurs:
       CREATIF: AUTONOME
       JEUX_DE_SOCIETE: AUTONOME
       CONTES: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2027-07-24
   - id: A029
     prenom: Mila
     nom: Chauvin
@@ -170,36 +170,12 @@ animateurs:
     joursIndisponibles: []
 
 contraintesAdHoc:
-  - id: C01
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A027
-    standId: CONTES
-    raison: "Ne souhaite plus animer les contes"
-  - id: C02
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A028
-    creneauId: J2-APREM
-    raison: "Rendez-vous médical"
   - id: C03
     type: INCOMPATIBILITE
     animateurs:
       - A029
       - A030
     raison: "Conflit à apaiser"
-  - id: C04
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A031
-    creneauId: J3-MATIN
-    raison: "Accueille le groupe scolaire qu'elle connaît"
-  - id: C05
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A032
-    standId: GRAND-JEU
-    raison: "A conçu le grand jeu"
   - id: C06
     type: AFFINITE
     animateurs:

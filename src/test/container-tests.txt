@@ -192,12 +192,14 @@ dev/sylvain/planning/service/solve/AgeWeeklyCapMergeMigrationTest.java
 dev/sylvain/planning/service/solve/ComputeBudgetArchiveMigrationTest.java
 dev/sylvain/planning/service/solve/ConstraintLevelMigrationTest.java
 dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java
+dev/sylvain/planning/service/solve/MealPlacementMigrationTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java
 dev/sylvain/planning/service/solve/PlanningPersistenceServiceTest.java
 dev/sylvain/planning/service/solve/PolyvalentMigrationTest.java
 dev/sylvain/planning/service/solve/RemoteSolvesTest.java
+dev/sylvain/planning/service/solve/RunCapMergeMigrationTest.java
 dev/sylvain/planning/service/solve/SolverJobArretTest.java
 dev/sylvain/planning/service/solve/SolverJobHandEngineTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
@@ -218,5 +220,6 @@ dev/sylvain/planning/api/LocalSignInLockoutTest.java
 dev/sylvain/planning/api/LocalSignInSprayTest.java
 dev/sylvain/planning/api/LecteurCanariTest.java
 dev/sylvain/planning/mcp/OidcMcpLecteurTest.java
+dev/sylvain/planning/service/referentiel/AdHocTypesMigrationTest.java
 dev/sylvain/planning/service/referentiel/LockTypesMigrationTest.java
 dev/sylvain/planning/service/referentiel/StandPlagesMigrationTest.java

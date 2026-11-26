@@ -5,7 +5,6 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
-import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -18,10 +17,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * One-off administrative exceptions. The prescriptive ones
- * (INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE) are enforced
- * as hard constraints, at the same priority as the legal ones, so the
- * optimiser can never silently work around them. AFFINITE is the one
+ * One-off administrative exceptions. INCOMPATIBILITE is the one prescriptive
+ * type left: a hard constraint, at the same priority as the legal ones, so the
+ * optimiser can never silently work around it. The forced assignment and the
+ * forced unavailability are gone (ADR 0117): an animateur pinned to a seat is
+ * a lock, an animateur off a day is a day off on the fiche. AFFINITE is the
  * deliberate exception: a soft reward — hard, a preferred pair would be a
  * forced assignment in disguise, colliding with load balancing and individual
  * availability (issue #80). ARRIVEE_GROUPEE is soft too, for the same reason:
@@ -45,9 +45,7 @@ public final class AdHocConstraints {
     /** The same rules, the grouped arrival reading the days shared with the other families (see {@link SeatStreams}). */
     public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
         return new Constraint[] {
-            indisponibiliteForcee(constraintFactory),
             incompatibiliteAdHoc(constraintFactory),
-            affectationForcee(constraintFactory),
             affiniteAdHoc(constraintFactory),
             arriveeGroupee(constraintFactory, seats)
         };
@@ -182,23 +180,6 @@ public final class AdHocConstraints {
     }
 
     /**
-     * Driven from the (few) ad hoc facts rather than from the (thousands of)
-     * postes: with no INDISPONIBILITE_FORCEE recorded — the usual case — the
-     * stream is empty and neither the toggle lookup nor the perimeter predicate
-     * is ever evaluated.
-     */
-    private Constraint indisponibiliteForcee(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "indisponibiliteForcee")
-                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .join(
-                        PosteAffectation.class,
-                        Joiners.filtering((contrainte, poste) ->
-                                PastSeats.reproachable(poste) && violatesForcedIndisponibilite(contrainte, poste)))
-                .penalize(HardMediumSoftScore.ONE_HARD)
-                .asConstraint("indisponibiliteForcee");
-    }
-
-    /**
      * Also driven from the ad hoc facts, and joined on the two incompatible
      * animateur ids with indexed joiners.
      *
@@ -311,70 +292,6 @@ public final class AdHocConstraints {
     private static String concernedAnimateurId(ContrainteAdHoc contrainte, int index) {
         Animateur animateur = contrainte.getAnimateursConcernes().get(index);
         return animateur == null ? null : animateur.getId();
-    }
-
-    /**
-     * Unsatisfied while a seat of its scope is still ahead of now — or while
-     * its scope holds no seat at all, which is what a forced assignment on a
-     * vacation the grid does not carry looks like, and stays a violation to
-     * read on the Problèmes page. What is <em>not</em> charged (ADR 0044) is
-     * the third case, a scope whose every seat is past: a forced assignment
-     * on a timeslot already worked without it is history, not a hole the
-     * solver can fill. That case is the {@link #forcedAssignmentsInThePast}
-     * stream, excluded by an {@code ifNotExists} on the fact itself.
-     */
-    private Constraint affectationForcee(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "affectationForcee")
-                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
-                .ifNotExists(forcedAssignmentsInThePast(constraintFactory), Joiners.equal(ContrainteAdHoc::getId))
-                .ifNotExists(PosteAffectation.class, Joiners.filtering(this::satisfiesForcedAffectation))
-                .penalize(HardMediumSoftScore.ONE_HARD)
-                .asConstraint("affectationForcee");
-    }
-
-    /** The forced assignments whose scope holds seats, every one of them past. */
-    private static UniConstraintStream<ContrainteAdHoc> forcedAssignmentsInThePast(
-            ConstraintFactory constraintFactory) {
-        return constraintFactory
-                .forEach(ContrainteAdHoc.class)
-                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
-                .ifExistsIncludingUnassigned(
-                        PosteAffectation.class,
-                        Joiners.filtering((contrainte, poste) -> poste.isPasse() && matchesScope(contrainte, poste)))
-                .ifNotExistsIncludingUnassigned(
-                        PosteAffectation.class,
-                        Joiners.filtering((contrainte, poste) ->
-                                PastSeats.reproachable(poste) && matchesScope(contrainte, poste)));
-    }
-
-    /**
-     * Whether this seat, as currently staffed, breaks that forced
-     * unavailability. Public and static because the incremental reconciliation
-     * (issue #86) asks the same question outside the solver: a seat it would
-     * pin must not carry a violation nobody can then fix — and the two must
-     * never drift apart, hence one implementation.
-     */
-    public static boolean violatesForcedIndisponibilite(ContrainteAdHoc contrainte, PosteAffectation poste) {
-        return concernsAnimateur(contrainte, poste.getAnimateur()) && matchesScope(contrainte, poste);
-    }
-
-    private boolean satisfiesForcedAffectation(ContrainteAdHoc contrainte, PosteAffectation poste) {
-        return poste.getAnimateur() != null
-                && concernsAnimateur(contrainte, poste.getAnimateur())
-                && matchesScope(contrainte, poste);
-    }
-
-    private static boolean concernsAnimateur(ContrainteAdHoc contrainte, Animateur animateur) {
-        return contrainte.getAnimateursConcernes() != null
-                && contrainte.getAnimateursConcernes().stream()
-                        .anyMatch(target -> correspondAnimateur(target, animateur));
-    }
-
-    private static boolean correspondAnimateur(Animateur expected, Animateur actual) {
-        return expected != null
-                && actual != null
-                && expected.getId() != null
-                && expected.getId().equals(actual.getId());
     }
 
     /**

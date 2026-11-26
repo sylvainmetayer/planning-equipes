@@ -2,7 +2,6 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -12,9 +11,7 @@ import dev.sylvain.planning.config.DevMode;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -370,12 +367,10 @@ class DateJourJResourceTest {
                 .extract()
                 .jsonPath();
 
-        // One unavailability, on the afternoon timeslot of the frozen day.
-        assertThat(marquee.getList("entrees.creneauId", Integer.class)).hasSize(1);
-        assertThat(marquee.getList("entrees.heureDebut", String.class))
-                .singleElement()
-                .asString()
-                .startsWith("14:00");
+        // The day off is the whole day (ADR 0117): both timeslots of the frozen day are listed,
+        // the one still ahead being the one whose seat is freed.
+        assertThat(marquee.getList("entrees.creneauId", Integer.class)).hasSize(2);
+        assertThat(marquee.getList("entrees.heureDebut", String.class)).anyMatch(heure -> heure.startsWith("14:00"));
     }
 
     /**
@@ -447,55 +442,6 @@ class DateJourJResourceTest {
         assertThat(lue)
                 .isNotEqualTo(LocalDate.parse(JOUR))
                 .isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
-    }
-
-    /**
-     * The mock moves the date and nothing else: the trace of what was written
-     * still says when it really was. A record that lies about its own timestamp
-     * is worse than no record.
-     */
-    @Test
-    void theTraceOfAnAbsenceKeepsTheRealTimestamp() {
-        solveScenario();
-        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("{\"dateDuJour\":\"" + JOUR + "\"}")
-                .when()
-                .put("/api/horloge")
-                .then()
-                .statusCode(200);
-        String absent = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/jour-j?maintenant=2026-07-08T13:30")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getList("animateursDeService.animateurId", String.class)
-                .getFirst();
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("{\"animateurId\":\"" + absent + "\"}")
-                .when()
-                .post("/api/jour-j/absences?maintenant=2026-07-08T13:30")
-                .then()
-                .statusCode(200);
-
-        String creeLe = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath()
-                .getString("find { it.type == 'INDISPONIBILITE_FORCEE' }.creeLe");
-
-        // Compared as an instant, not as a date prefix: creeLe is UTC and the
-        // server's day may already have turned over locally.
-        assertThat(Instant.parse(creeLe))
-                .as("written now, not on the frozen day")
-                .isCloseTo(Instant.now(), within(10, ChronoUnit.MINUTES));
     }
 
     private static void solveScenario() {

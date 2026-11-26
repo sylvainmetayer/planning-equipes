@@ -276,6 +276,10 @@ public class DatabaseDumpService {
      *       the phase of the edition (ADR 0115) and dropped in 5.0: an archive
      *       nothing reads. The phase travels with the {@code edition} row, so a
      *       restore does not reopen what the organiser had frozen.</li>
+     *   <li>{@code contrainte_ad_hoc_avant_4_0} — the forced assignments and
+     *       unavailabilities the 4.0 withdrew, kept by V161 and dropped in 5.0:
+     *       an archive nothing reads, a free-text reason that may name a person
+     *       included.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -309,7 +313,8 @@ public class DatabaseDumpService {
             "kpi_historique_avant_4_0",
             "kpi_realise_avant_4_0",
             "ponderation_contrainte_historique_avant_4_0",
-            "gel_referentiel");
+            "gel_referentiel",
+            "contrainte_ad_hoc_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

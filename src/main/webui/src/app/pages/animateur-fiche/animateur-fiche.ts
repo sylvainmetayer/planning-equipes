@@ -43,8 +43,6 @@ export interface AvailabilityDay {
   date: string;
   /** Declared off on the fiche. */
   declaredOff: boolean;
-  /** Ruled out by an « indisponibilité forcée » adjustment on a timeslot of that day. */
-  forcedOff: boolean;
 }
 
 /**
@@ -54,15 +52,9 @@ export interface AvailabilityDay {
  */
 export function availabilityStrip(profile: AnimateurProfile): AvailabilityDay[] {
   const declared = new Set(profile.animateur.joursIndisponibles ?? []);
-  const forced = new Set(
-    profile.ajustements
-      .filter((ajustement) => ajustement.type === 'INDISPONIBILITE_FORCEE' && ajustement.date)
-      .map((ajustement) => ajustement.date as string),
-  );
   return profile.joursEvenement.map((date) => ({
     date,
     declaredOff: declared.has(date),
-    forcedOff: forced.has(date),
   }));
 }
 
@@ -113,12 +105,8 @@ export function competenceRows(
 
 export function adjustmentTypeLabel(type: TypeContrainteAdHoc): string {
   switch (type) {
-    case 'INDISPONIBILITE_FORCEE':
-      return $localize`:@@adHoc.type.indisponibiliteForcee:Indisponibilité forcée`;
     case 'INCOMPATIBILITE':
       return $localize`:@@adHoc.type.incompatibilite:Incompatibilité`;
-    case 'AFFECTATION_FORCEE':
-      return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
     case 'AFFINITE':
       return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
     case 'ARRIVEE_GROUPEE':

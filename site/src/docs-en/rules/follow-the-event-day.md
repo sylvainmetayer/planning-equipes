@@ -24,7 +24,7 @@ What these screens change during the event is told in [the event day of a festiv
 
 If the first candidates evaluated do not fit, "Search further" continues until it finds someone, or says that nobody can hold the seat without breaking a hard rule.
 
-The current timeslot can also be repaired: the seat is cut at the current time, what has been held stays in the absentee's name, the rest of the timeslot is replaced.
+A marked absence appears under "Today's absences" and can be cancelled, even before any publication (with no published plan, every absence of the day is listed). The current timeslot can also be repaired: the seat is cut at the current time, what has been held stays in the absentee's name, the rest of the timeslot is replaced.
 
 Seats opened since this morning are distinguished from the gaps already known at publication.
 

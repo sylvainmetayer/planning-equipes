@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * An edition solved and published with the run of days at eight, then
- * tightened to six with the hard rule on — the path of ADR 0067, on
+ * tightened to six with the rule made obligatoire — the path of ADR 0067, on
  * {@code festival-realiste-canicule.yaml}.
  *
  * <p>The published plan breaks the new ceiling for dozens of people, so the
@@ -67,8 +67,8 @@ class PlanningServiceScenarioPublishedRunCapTest {
         }
 
         @Override
-        public Map<String, Boolean> getEtatsContraintes() {
-            return hardRunRule ? Map.of("maxJoursConsecutifsTravaillesDur", true) : Map.of();
+        public Map<String, Boolean> getNiveauxObligatoires() {
+            return hardRunRule ? Map.of("maxJoursConsecutifsTravailles", true) : Map.of();
         }
     }
 

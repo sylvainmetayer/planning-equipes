@@ -78,12 +78,6 @@ class CoherenceReferentielServiceTest {
         return animateur;
     }
 
-    private static ContrainteAdHoc forced(String id, Animateur... animateurs) {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        contrainte.setAnimateursConcernes(List.of(animateurs));
-        return contrainte;
-    }
-
     /** What a line of the checklist reads as in an assertion. */
     private record Line(CoherenceFamily famille, CoherenceSeverity gravite, String code, String objetId) {}
 
@@ -127,7 +121,6 @@ class CoherenceReferentielServiceTest {
                 ownHoursStands,
                 contraintes,
                 verrouillages,
-                Set::of,
                 null,
                 diagnostics,
                 CreneauGridService.gridAnomalies(creneaux, new ParametresLegaux(), verrouillages, List.of()),
@@ -327,41 +320,22 @@ class CoherenceReferentielServiceTest {
     }
 
     /**
-     * The four readings of the exceptions, with the sentences Diagnostic →
+     * The readings of the exceptions, with the sentences Diagnostic →
      * Problèmes shows — blocking, since a critical cause guarantees a failed
      * solve.
      */
     @Test
     void theExceptionsAreTheOnesOfTheProblemsScreenWithTheSameSentences() {
         List<Creneau> creneaux = grille();
-        Animateur absent = adulte("A1", SAMEDI, LUNDI);
-        Animateur jeune = mineur("A2");
-        Animateur fige = adulte("A3");
-        Stand plateau = stand("PLATEAU", false);
-        Stand bar = stand("BAR", true);
-        ContrainteAdHoc surAbsent = forced("C01", absent);
-        ContrainteAdHoc surJeune = forced("C02", jeune);
-        surJeune.setStand(bar);
-        ContrainteAdHoc surFige = forced("C03", fige);
         ContrainteAdHoc incompatibles = new ContrainteAdHoc("C04", TypeContrainteAdHoc.INCOMPATIBILITE);
         incompatibles.setAnimateursConcernes(List.of(adulte("A4"), adulte("A5")));
         ContrainteAdHoc affines = new ContrainteAdHoc("C05", TypeContrainteAdHoc.AFFINITE);
         affines.setAnimateursConcernes(List.of(adulte("A4"), adulte("A5")));
-        // A whole schedule frozen is one lock per timeslot of the grid.
-        List<VerrouillagePlanning> verrous = creneaux.stream()
-                .map(creneau -> {
-                    VerrouillagePlanning verrou =
-                            new VerrouillagePlanning("V" + creneau.getId(), TypeVerrouillage.ANIMATEUR_CRENEAU);
-                    verrou.setAnimateurId("A3");
-                    verrou.setCreneauId(creneau.getId());
-                    return verrou;
-                })
-                .toList();
-        List<Animateur> animateurs = List.of(absent, jeune, fige, adulte("A4"), adulte("A5"));
-        List<Stand> stands = List.of(plateau, bar);
-        List<ContrainteAdHoc> contraintes = List.of(surAbsent, surJeune, surFige, incompatibles, affines);
+        List<Animateur> animateurs = List.of(adulte("A4"), adulte("A5"));
+        List<Stand> stands = List.of(stand("PLATEAU", false));
+        List<ContrainteAdHoc> contraintes = List.of(incompatibles, affines);
 
-        CoherenceReport rapport = build(animateurs, stands, creneaux, contraintes, verrous, List.of(), false);
+        CoherenceReport rapport = build(animateurs, stands, creneaux, contraintes, List.of(), List.of(), false);
 
         List<CoherenceIssue> ajustements = rapport.anomalies().stream()
                 .filter(ligne -> ligne.famille() == CoherenceFamily.AJUSTEMENTS)
@@ -369,13 +343,7 @@ class CoherenceReferentielServiceTest {
         assertThat(ajustements)
                 .extracting(CoherenceIssue::code, CoherenceIssue::objetId)
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("CONTRAINTES_AD_HOC_CONTRADICTOIRES", "C04"),
-                        org.assertj.core.groups.Tuple.tuple(
-                                TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE.name(), "C01"),
-                        org.assertj.core.groups.Tuple.tuple(
-                                TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL.name(), "C02"),
-                        org.assertj.core.groups.Tuple.tuple(
-                                TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE.name(), "C03"));
+                        org.assertj.core.groups.Tuple.tuple("CONTRAINTES_AD_HOC_CONTRADICTOIRES", "C04"));
         assertThat(ajustements).allSatisfy(ligne -> {
             assertThat(ligne.gravite()).isEqualTo(CoherenceSeverity.BLOQUANT);
             assertThat(ligne.objet()).isEqualTo(CoherenceSubject.CONTRAINTE_AD_HOC);
@@ -388,7 +356,7 @@ class CoherenceReferentielServiceTest {
                                 creneaux,
                                 contraintes,
                                 true,
-                                new FeasibilityAnalyzer.PlanContext(verrous, Set::of, null))
+                                new FeasibilityAnalyzer.PlanContext(null))
                         .causes()
                         .stream()
                         .filter(cause -> cause.type() != TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF)
@@ -468,9 +436,6 @@ class CoherenceReferentielServiceTest {
                 // As the opening report's FENETRE_SANS_EFFET and STAND_JAMAIS_OUVERT.
                 TypeAvertissement.STAND_FENETRE_SANS_EFFET,
                 TypeAvertissement.STAND_JAMAIS_OUVERT,
-                TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
-                TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL,
-                TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
                 // aCarWhoseMembersDeclaredDifferentDaysOffIsListed below.
                 TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
                 TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE,

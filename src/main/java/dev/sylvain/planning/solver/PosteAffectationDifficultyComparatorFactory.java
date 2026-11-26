@@ -23,49 +23,21 @@ import java.util.Map;
  * animateurs: on {@code scenario-complet.yaml} that is ~2088 postes reduced to
  * at most 20 stands × 15 dates of distinct work.</p>
  *
- * <p><b>Under the hard run of days, the calendar comes first</b> (ADR 0068).
- * With {@code maxJoursConsecutifsTravaillesDur} on, what the plan runs short
- * of is person-days in a row, and scarcity alone places the seats nearly
- * everyone can hold — set-up, dismantling — last, after most people already
- * work the days that follow: a set-up day added in front of their run would
- * break the cap, so the construction leaves it empty, and the local search
- * then spends its time building the chains of days that fill it. Placed day
- * by day, earliest first, the runs are built in the order they are counted,
- * and the holes the construction leaves are spread over the days, where a
- * change or a swap fills them. Scarcity still orders the seats of a same
- * day. Every other edition keeps the scarcity order alone.</p>
+ * <p>3.x put the calendar first under the hard run of days (ADR 0068); the
+ * order was withdrawn with the merge of the two forms of that rule (ADR 0118):
+ * scarcity alone, whatever the rule's level.</p>
  */
 public final class PosteAffectationDifficultyComparatorFactory
         implements ComparatorFactory<PlanningEvenement, PosteAffectation> {
-
-    /**
-     * Seam of the consecutive-days bench ({@code ConsecutiveRunsBenchTest}) and
-     * of nothing else: {@code false} drops the calendar order above, to measure
-     * what removing it costs. Left {@code true} everywhere else.
-     */
-    public static volatile boolean calendarOrderUnderHardRunCap = true;
 
     @Override
     public Comparator<PosteAffectation> createComparator(PlanningEvenement solution) {
         // Confined to the comparator returned here, which Timefold uses from a
         // single thread while sorting the entities of that one solution.
         Map<EligibilityKey, Long> cache = new HashMap<>();
-        Comparator<PosteAffectation> scarcity = Comparator.comparingLong((PosteAffectation poste) ->
+        return Comparator.comparingLong((PosteAffectation poste) ->
                         cache.computeIfAbsent(EligibilityKey.of(poste), key -> eligibleAnimateurCount(solution, poste)))
                 .reversed();
-        if (!calendarOrderUnderHardRunCap || WeekRelocationMoveIteratorFactory.hardRunCap(solution) <= 0) {
-            return scarcity;
-        }
-        // The heuristic places the greatest first: an earlier date is the
-        // greater, and a seat with no date comes last.
-        return Comparator.comparing(
-                        PosteAffectationDifficultyComparatorFactory::dateOf,
-                        Comparator.nullsFirst(Comparator.<LocalDate>reverseOrder()))
-                .thenComparing(scarcity);
-    }
-
-    private static LocalDate dateOf(PosteAffectation poste) {
-        return poste.getCreneau() == null ? null : poste.getCreneau().getDate();
     }
 
     private static long eligibleAnimateurCount(PlanningEvenement solution, PosteAffectation poste) {

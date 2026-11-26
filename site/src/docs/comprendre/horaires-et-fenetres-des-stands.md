@@ -81,7 +81,7 @@ La coupure repas est la règle de l'organisateur, pas celle du Code du travail (
 
 ## Le passé est figé
 
-Toute résolution, complète ou incrémentale, depuis l'écran ou par MCP, reprend du plan enregistré les places des créneaux déjà commencés et les épingle, quel que soit leur état ([décision 0044](repo:docs/decisions/0044-le-passe-est-fige.md)). Le titulaire est gardé même s'il a depuis déclaré la journée indisponible ou qu'une indisponibilité forcée le couvre maintenant (il était là) ; un titulaire supprimé laisse la place vide ; une place passée vide est épinglée quand même, puisque personne ne peut tenir hier.
+Toute résolution, complète ou incrémentale, depuis l'écran ou par MCP, reprend du plan enregistré les places des créneaux déjà commencés et les épingle, quel que soit leur état ([décision 0044](repo:docs/decisions/0044-le-passe-est-fige.md)). Le titulaire est gardé même s'il a depuis déclaré la journée indisponible (il était là) ; un titulaire supprimé laisse la place vide ; une place passée vide est épinglée quand même, puisque personne ne peut tenir hier.
 
 Un créneau est *commencé* si sa date est passée, ou si c'est aujourd'hui et que le début effectif de la place est atteint. Un créneau à cheval sur minuit appartient à sa date de début. « Aujourd'hui » est celui de l'horloge du jour J : la machine en production, ou la date figée depuis Paramètres › Instance sous `quarkus:dev` ou avec `HORLOGE_SIMULEE_AUTORISEE=true`.
 

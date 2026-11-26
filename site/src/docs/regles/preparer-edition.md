@@ -34,7 +34,7 @@ Les **lieux** sont les emplacements géolocalisés rattachés aux stands. Ils se
 
 1. Ouvrez *Stands* et cliquez sur « Ajouter ». L'assistant guide la création : identité, typologies, lieu, puis les créneaux de l'édition, à décocher, avec l'effectif de chacun. Aucune règle à écrire.
 2. Renseignez au moins une typologie (toujours), les effectifs minimum et maximum, et si le stand est réservé aux majeurs. Les indicateurs *premium* et *effort* se règlent aussi dans la fiche.
-3. Réglez les horaires : des plages datées, d'ouverture ou de fermeture, jour par jour. Chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne. Le détail est dans [Construire le calendrier et les horaires](calendrier-et-horaires.md).
+3. Réglez les horaires dans la fiche du stand : un **modèle récurrent** (« chaque samedi et dimanche de 10 h à 18 h, effectif 2 »), qui se pose en **plages datées** sur les jours de l'événement, et les plages que vous ajoutez à la main (une ouverture ou une fermeture un jour précis). Chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne. Le détail est dans [Construire le calendrier et les horaires](calendrier-et-horaires.md).
 
 Le tableau des stands se trie sur chaque colonne et dit, pour chacun, ses jours ouverts, ses postes et, après calcul, sa couverture.
 
@@ -42,14 +42,16 @@ Le tableau des stands se trie sur chaque colonne et dit, pour chacun, ses jours 
 
 Chaque stand a sa fiche, qui réunit :
 
-- sa grille jour × créneau, modifiable sur place comme dans la grille des Horaires des stands ;
+- son **modèle récurrent**, en haut, modifiable sur place : la règle que le stand garde, par exemple « chaque samedi et dimanche de 10 h à 18 h, effectif 2 ». Enregistré, il est posé en plages sur les jours de l'événement ;
+- ses **plages datées**, en dessous : une ligne par ouverture ou fermeture, avec son origine, *modèle* (posée par le modèle) ou *saisie* (ajoutée à la main). On filtre par jour, on ajoute une plage, on en retire une ou tout un jour. Une plage posée par le modèle et retirée à la main ne revient pas, jusqu'à ce que les règles du modèle changent ;
 - ses anomalies d'ouverture, dont une fenêtre déclarée à une heure qu'aucune vacation ne couvre ;
 - ses sièges après calcul ;
 - la comparaison avec un autre stand ;
-- l'historique de ses modifications ;
-- ses règles en forme condensée.
+- l'historique de ses modifications.
 
-Les horaires d'un stand se copient sur un autre depuis sa fiche, ou sur toute une sélection depuis la modification en masse. Les règles, les exceptions datées et les effectifs de fenêtre sont copiés avec un signal quand une fenêtre dépasse l'effectif maximum du stand cible.
+Pendant un calcul, ou quand les stands sont figés (phase *Calcul*, ou *Publiée* sans déblocage), la fiche se lit sans rien pouvoir écrire, et un bandeau dit pourquoi. Un lecteur voit tout, sans bouton. Si quelqu'un a modifié le stand entre-temps, l'enregistrement du modèle propose de recharger ou d'écraser en connaissance de cause.
+
+Les horaires d'un stand se copient sur un autre depuis sa fiche, ou sur toute une sélection depuis la modification en masse. Le modèle, les plages et les effectifs de fenêtre sont copiés avec un signal quand une fenêtre dépasse l'effectif maximum du stand cible.
 
 ## Travailler dans les tableaux
 

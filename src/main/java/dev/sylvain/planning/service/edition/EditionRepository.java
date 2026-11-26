@@ -111,7 +111,7 @@ public class EditionRepository {
                     "max_emplacements_distincts_par_jour, heure_service_tardif, heure_service_matinal, "
                             + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max, "
                             + "jours_consecutifs_max, vitesse_marche_km_h, facteur_detour, "
-                            + "tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes"),
+                            + "tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes, placement_repas"),
             new TableToCopy("parametres_solveur", "mail_fin_resolution"),
             // Who the animateurs call: the organisation rarely changes number from one year to the next.
             new TableToCopy("contact_organisation", "telephone, email"),

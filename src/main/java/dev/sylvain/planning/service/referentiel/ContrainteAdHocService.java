@@ -11,10 +11,7 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -92,57 +89,6 @@ public class ContrainteAdHocService {
         repository.saveContrainte(contrainte, false);
         changeTracker.markModified();
         return contrainte;
-    }
-
-    /**
-     * Writes several exceptions as one indivisible gesture: every one of them
-     * is checked against what is already recorded <b>and</b> against the ones
-     * ahead of it in the batch, and nothing is written unless all of them pass.
-     *
-     * <p>Calling {@link #create} in a loop would leave the first entries behind
-     * when the third is refused, which is worse than refusing outright: the
-     * caller is told "no" while half of its intent is already in the database.
-     * The one gesture that needs this is marking somebody absent for the rest
-     * of a day (issue #297) — one exception per remaining timeslot.</p>
-     *
-     * <p>Every contradiction is named, not just the first, for the same reason
-     * a scenario import names them all: the answer has to be actionable in one
-     * read.</p>
-     *
-     * <p>Written on the caller's transaction, rows and all: the gesture that
-     * needs it writes seats and claims a report with them, and nothing of it
-     * stays when any part is refused.</p>
-     */
-    public List<ContrainteAdHoc> createAll(Connection connection, List<ContrainteAdHoc> contraintes)
-            throws SQLException {
-        List<Creneau> creneaux = creneauService.list();
-        List<ContrainteAdHoc> deja = new ArrayList<>(list());
-        List<String> messages = new ArrayList<>();
-        for (ContrainteAdHoc contrainte : contraintes) {
-            requireKnownOrNew(contrainte);
-            if (contrainte.getId() == null) {
-                contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
-            }
-            checkShape(contrainte);
-            ContrainteAdHocContradictions.detect(contrainte, deja, creneaux).stream()
-                    .map(Contradiction::message)
-                    .filter(message -> !messages.contains(message))
-                    .forEach(messages::add);
-            deja.add(contrainte);
-        }
-        if (!messages.isEmpty()) {
-            throw new BusinessError.Invalid(String.join(" ", messages));
-        }
-        for (ContrainteAdHoc contrainte : contraintes) {
-            nameVacation(contrainte);
-            stampAuthor(contrainte);
-            if (contrainte.getCreeLe() == null) {
-                contrainte.setCreeLe(Instant.now());
-            }
-            repository.upsertContrainte(connection, contrainte);
-        }
-        changeTracker.markModified();
-        return contraintes;
     }
 
     /**
@@ -226,9 +172,9 @@ public class ContrainteAdHocService {
      * by editing the file, and answering one contradiction per round-trip
      * would be a poor way to spend an afternoon.</p>
      */
-    public void checkNoContradiction(List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
+    public void checkNoContradiction(List<ContrainteAdHoc> contraintes) {
         contraintes.forEach(ContrainteAdHocService::checkShape);
-        List<Contradiction> contradictions = ContrainteAdHocContradictions.detectAll(contraintes, creneaux);
+        List<Contradiction> contradictions = ContrainteAdHocContradictions.detectAll(contraintes);
         if (contradictions.isEmpty()) {
             return;
         }
@@ -271,15 +217,11 @@ public class ContrainteAdHocService {
      * and expensive: the user reads "the solver can't do it" where the truth
      * is "your own exceptions contradict each other".
      *
-     * <p>The créneaux are read because two forced assignments only clash when
-     * their slots overlap in time, and a {@link ContrainteAdHoc} carries the
-     * créneau id alone. See {@link ContrainteAdHocContradictions} for what
-     * counts as a contradiction — and for what is deliberately left to the
-     * solver.</p>
+     * <p>See {@link ContrainteAdHocContradictions} for what counts as a
+     * contradiction — and for what is deliberately left to the solver.</p>
      */
     private void refuseContradiction(ContrainteAdHoc contrainte) {
-        List<Contradiction> contradictions =
-                ContrainteAdHocContradictions.detect(contrainte, list(), creneauService.list());
+        List<Contradiction> contradictions = ContrainteAdHocContradictions.detect(contrainte, list());
         if (!contradictions.isEmpty()) {
             throw new BusinessError.Invalid(contradictions.getFirst().message());
         }

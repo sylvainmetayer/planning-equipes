@@ -15,7 +15,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
-import { ParametresLegaux, ParametresQualite } from '../../core/models';
+import { ParametresLegaux, ParametresQualite, PlacementRepas } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 import { ModifiedFormsRegistry } from '../../core/formulaires-modifies';
 import { NotificationService } from '../../core/notification.service';
@@ -83,6 +83,7 @@ function fieldsOf(section: SectionReglages): Champ[] {
           heureServiceTardif: $localize`:@@parametres.section.serviceTardif:Heure d'un service tardif`,
           heureServiceMatinal: $localize`:@@parametres.section.serviceMatinal:Heure d'un service matinal`,
           reposSouhaiteApresServiceTardifMinutes: $localize`:@@parametres.section.reposApresTardif:Repos souhaité après un service tardif`,
+          placementRepas: $localize`:@@parametres.section.placementRepas:Placement préféré de la coupure repas`,
         };
   return Object.entries(libelles).map(([cle, libelle]) => ({
     cle,
@@ -91,9 +92,22 @@ function fieldsOf(section: SectionReglages): Champ[] {
   }));
 }
 
+/** Called lazily: the values of the meal-break placement, in the words of the screen. */
+function placementOptions(): readonly { value: PlacementRepas; label: string }[] {
+  return [
+    {
+      value: 'FIN_MIDI_DEBUT_SOIR',
+      label: $localize`:@@parametres.placement.defaut:Fin du midi, début du soir (par défaut)`,
+    },
+    { value: 'DEBUT', label: $localize`:@@parametres.placement.debut:Début de chaque fenêtre` },
+    { value: 'FIN', label: $localize`:@@parametres.placement.fin:Fin de chaque fenêtre` },
+    { value: 'AUCUN', label: $localize`:@@parametres.placement.aucun:Aucune préférence` },
+  ];
+}
+
 /** A typed value the server can store as is: a number in its bounds, a window end. A single hour may be emptied: no hour makes its rule inert. */
 function acceptable(descriptor: SeuilDescriptor, field: string, draft: SettingsRecord): boolean {
-  if (descriptor.kind === 'heure') {
+  if (descriptor.kind === 'heure' || descriptor.kind === 'choix') {
     return true;
   }
   if (draft[field] === null || draft[field] === undefined || draft[field] === '') {
@@ -215,6 +229,8 @@ export class ParametresSection implements OnInit {
         return '';
     }
   }
+
+  protected readonly placements = computed(placementOptions);
 
   protected shownInvalid(field: string): boolean {
     return this.attempted() && this.invalid().has(field);

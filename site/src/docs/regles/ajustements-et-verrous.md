@@ -1,28 +1,34 @@
 # Poser des exceptions et des verrous
 
-Vous imposez ou interdisez une affectation avant le calcul, et vous gelez une partie du plan pour que le prochain calcul n'y touche plus.
+Vous interdisez à deux personnes de travailler ensemble, vous gardez quelqu'un sur un créneau ou vous l'écartez d'un jour, et vous gelez une partie du plan pour que le prochain calcul n'y touche plus.
 
 Les **ajustements manuels**, les **verrouillages** et les **consignes** sont les trois premiers onglets de *Règles du planning* : ce que le prochain calcul doit respecter. Après chaque saisie, relancer le calcul est proposé sur place :
 
 - une *correction* après une consigne, qui ne rouvre que les places qu'elle a ôtées ou ajoutées ;
 - un *calcul complet* repartant du plan après un ajustement ou un verrou.
 
-## Ajustements manuels : placer ou écarter quelqu'un avant le calcul
+## Ajustements manuels : interdire ou rapprocher avant le calcul
 
-Un ajustement est une exception ponctuelle, tracée avec sa raison. C'est l'inverse d'un verrou, qui fige après coup. Les types :
+Un ajustement est une exception ponctuelle, tracée avec sa raison. C'est l'inverse d'un verrou, qui fige après coup. Il n'en reste que trois types :
 
-- indisponibilité forcée ;
-- incompatibilité entre deux personnes ;
-- affectation imposée ;
-- paire à privilégier.
+- incompatibilité entre deux personnes (jamais le même créneau) ;
+- paire à privilégier ;
+- arrivée groupée (covoiturage, de deux à quatre personnes).
 
 1. Ouvrez *Règles du planning*, onglet *Ajustements*.
 2. Commencez la saisie par la personne ; la liste se filtre aussi sur une personne.
-3. Indiquez le type, la raison et les dates.
+3. Indiquez le type, la raison et, si le type le permet, le créneau ou le stand.
 
-**Les contradictions sont refusées à l'enregistrement.** Un ajustement qui ne peut pas tenir en même temps qu'un autre déjà saisi est refusé avec un message qui nomme les deux, plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard sans que rien n'en désigne la cause.
+**Les contradictions sont refusées à l'enregistrement.** Un ajustement qui ne peut pas tenir en même temps qu'un autre déjà saisi (la même paire à la fois incompatible et en affinité) est refusé avec un message qui nomme les deux, plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard sans que rien n'en désigne la cause.
 
-Si l'ajustement place quelqu'un là où aucune place ne peut le tenir (un mineur forcé sur une nuit, un jour férié ou un stand réservé aux majeurs, quelqu'un dont l'emploi du temps est verrouillé), il est signalé à la saisie et nommé dans les causes bloquantes.
+## Comment faire sans affectation forcée
+
+L'affectation forcée et l'indisponibilité forcée n'existent plus depuis la 4.0. Deux gestes les remplacent, et se défont d'un clic :
+
+- **Garder quelqu'un sur un créneau** : placez-le sur le siège depuis la page *Planning* (« Placer », avec « La garder au prochain calcul » cochée), ou verrouillez son siège. Le verrou lie cette personne à ce créneau ; le prochain calcul le respecte, et le reste de sa journée reste libre.
+- **Écarter quelqu'un d'un jour** : sur sa fiche, un clic sur le jour, puis « Indisponible ce jour ». Elle ou il n'est plus proposé ce jour-là, et ses sièges du jour sont libérés dans le même geste. Le jour est toujours entier : la fiche ne connaît pas le créneau. Pour une indisponibilité sur une plage de la journée, retirez la personne du siège et verrouillez-la ailleurs.
+
+Un verrou fige ce que porte le plan enregistré, rien de plus : après une réinitialisation ou un import, posez-le de nouveau. Les exceptions forcées d'une édition de la 3.x ont été converties à la migration de la même façon, et ce qui ne pouvait pas l'être est signalé ([Passer de la 3.x à la 4.0](../installer/passer-a-la-4-0.md)).
 
 ## Verrouillages : geler une partie du plan
 

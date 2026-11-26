@@ -292,4 +292,102 @@ class ScenarioMigrationsTest {
                 .isSameAs(document);
         assertThat(warnings).isEmpty();
     }
+
+    @Test
+    void theHardRunFormSwitchedOnIsReadAsTheRuleMadeObligatoire() {
+        ScenarioMigrations.Migrated migrated = ScenarioMigrations.migrate(
+                withRules(Map.of(
+                        "activees", List.of("maxJoursConsecutifsTravaillesDur"),
+                        "desactivees", List.of("maxJoursConsecutifsTravailles", "reposQuotidienMinimal"),
+                        "poids", Map.of("maxJoursConsecutifsTravailles", 25, "maxJoursConsecutifsTravaillesDur", 1))),
+                ScenarioBinder.SCHEMA_VERSION);
+        Map<String, Object> converted = migrated.document();
+
+        assertThat(rulesOf(converted).get("activees")).isEqualTo(List.of());
+        assertThat(rulesOf(converted).get("desactivees")).isEqualTo(List.of("reposQuotidienMinimal"));
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(Map.of("maxJoursConsecutifsTravailles", 25));
+        assertThat(rulesOf(converted).get("niveaux")).isEqualTo(Map.of("maxJoursConsecutifsTravailles", "OBLIGATOIRE"));
+        assertThat(migrated.warnings())
+                .singleElement()
+                .asString()
+                .contains("maxJoursConsecutifsTravaillesDur")
+                .contains("obligatoire");
+    }
+
+    @Test
+    void theHardRunFormSwitchedOffChangesNothingButIsSaid() {
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.foldHardRunForm(
+                withRules(Map.of(
+                        "desactivees", List.of("maxJoursConsecutifsTravaillesDur"),
+                        "poids", Map.of("maxJoursConsecutifsTravailles", 5))),
+                warnings);
+
+        assertThat(rulesOf(converted).get("desactivees")).isEqualTo(List.of());
+        assertThat(rulesOf(converted)).doesNotContainKey("niveaux");
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(Map.of("maxJoursConsecutifsTravailles", 5));
+        assertThat(warnings).singleElement().asString().contains("maxJoursConsecutifsTravaillesDur");
+    }
+
+    @Test
+    void aDocumentWithoutTheHardRunFormIsLeftAlone() {
+        List<String> warnings = new java.util.ArrayList<>();
+        Map<String, Object> document = withRules(Map.of("desactivees", List.of("maxJoursConsecutifsTravailles")));
+
+        assertThat(ScenarioMigrations.foldHardRunForm(document, warnings)).isSameAs(document);
+        assertThat(warnings).isEmpty();
+    }
+
+    /**
+     * A 3.x file carrying the two retired ad hoc types (ADR 0117) reads as what
+     * replaces them, as migration V161 converts the database: a forced
+     * unavailability is a day off on the fiche, a forced assignment a lock on
+     * the seat the plan of the file holds, and everything that converts to
+     * nothing is said by exception id.
+     */
+    @Test
+    void theRetiredAdHocTypesAreReadAsDaysOffAndLocksAndEachConversionIsSaid() {
+        String yaml = """
+                schemaVersion: 3
+                animateurs:
+                - {id: A1, prenom: Alice, nom: Un, dateNaissance: 1990-01-01, joursIndisponibles: [2026-07-03]}
+                - {id: A2, prenom: Bob, nom: Deux, dateNaissance: 1990-01-01}
+                - {id: A3, prenom: Chloe, nom: Trois, dateNaissance: 1990-01-01}
+                - {id: A4, prenom: Dan, nom: Quatre, dateNaissance: 1990-01-01}
+                creneaux:
+                - {id: C1, jour: 1, date: 2026-07-01, heureDebut: "09:00", heureFin: "12:00"}
+                - {id: C2, jour: 2, date: 2026-07-02, heureDebut: "09:00", heureFin: "12:00"}
+                contraintesAdHoc:
+                - {id: I1, type: INDISPONIBILITE_FORCEE, animateurs: [A1], creneauId: C1}
+                - {id: I2, type: INDISPONIBILITE_FORCEE, animateurs: [A2]}
+                - {id: I3, type: INDISPONIBILITE_FORCEE, animateurs: [A3], standId: S1}
+                - {id: F1, type: AFFECTATION_FORCEE, animateurs: [A3, A4], creneauId: C1, raison: promis}
+                - {id: F2, type: AFFECTATION_FORCEE, animateurs: [A4], creneauId: C2}
+                - {id: K1, type: INCOMPATIBILITE, animateurs: [A1, A2]}
+                plan:
+                  affectations:
+                  - {posteId: P1, standId: S1, date: 2026-07-01, heureDebut: "09:00", heureFin: "12:00", animateurId: A3}
+                """;
+
+        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings(yaml);
+
+        assertThat(bound.scenario().contraintesAdHoc())
+                .extracting(c -> c.id() + "|" + c.type())
+                .containsExactly("K1|INCOMPATIBILITE");
+        assertThat(bound.scenario().animateurs())
+                .extracting(a -> a.id() + "|" + a.joursIndisponibles())
+                .containsExactly("A1|[2026-07-01, 2026-07-03]", "A2|[2026-07-01, 2026-07-02]", "A3|null", "A4|null");
+        assertThat(bound.scenario().plan().verrous())
+                .extracting(v -> v.type() + "|" + v.animateurId() + "|" + v.creneauDate() + "|" + v.raison())
+                .containsExactly("ANIMATEUR_CRENEAU|A3|2026-07-01|promis");
+        assertThat(bound.scenario().plan().affectations()).hasSize(1);
+        assertThat(bound.warnings())
+                .hasSize(5)
+                .anyMatch(w -> w.startsWith("Exception I1") && w.contains("JOUR ENTIER"))
+                .anyMatch(w -> w.startsWith("Exception I2") && w.contains("tous les jours"))
+                .anyMatch(w -> w.startsWith("Exception I3") && w.contains("n'est pas reprise"))
+                .anyMatch(w -> w.startsWith("Exception F1") && w.contains("1 verrou"))
+                .anyMatch(w -> w.startsWith("Exception F2") && w.contains("n'est pas reprise"));
+    }
 }

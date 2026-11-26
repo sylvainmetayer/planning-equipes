@@ -409,14 +409,14 @@ class ScenarioYamlWriterTest {
     /**
      * A constraint scoped to a créneau the export does not carry loses the
      * scope, and keeps everything else. The guard's inverse would re-export a
-     * one-créneau INDISPONIBILITE_FORCEE as covering the whole event: a hard
+     * one-créneau INCOMPATIBILITE as covering the whole event: a hard
      * constraint silently widened, which no shipped scenario could reveal —
      * none declares an ad hoc constraint.
      */
     @Test
     @SuppressWarnings("unchecked")
     void aConstraintScopedToAnUnknownCreneauKeepsEverythingButTheScope() {
-        ContrainteAdHoc indisponibilite = new ContrainteAdHoc("INDISPO-1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+        ContrainteAdHoc indisponibilite = new ContrainteAdHoc("INDISPO-1", TypeContrainteAdHoc.INCOMPATIBILITE);
         indisponibilite.getAnimateursConcernes().add(animateur);
         indisponibilite.setCreneau(creneau);
         indisponibilite.setStand(stand);
@@ -440,7 +440,7 @@ class ScenarioYamlWriterTest {
                 .satisfies(contrainte -> {
                     assertThat(contrainte)
                             .containsEntry("id", "INDISPO-1")
-                            .containsEntry("type", "INDISPONIBILITE_FORCEE")
+                            .containsEntry("type", "INCOMPATIBILITE")
                             .containsEntry("standId", "STAND-A")
                             .doesNotContainKey("creneauId");
                     assertThat((List<String>) contrainte.get("animateurs")).containsExactly("A1");

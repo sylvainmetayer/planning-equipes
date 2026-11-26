@@ -18,7 +18,7 @@ Les règles sont rangées par famille dans `solver/constraints/`, une méthode p
 | `QualiteConstraints` | qualité d'organisation (medium) |
 | `PreferenceConstraints` | préférences (soft) |
 
-Décidez aussi le niveau. Les types prescriptifs d'exception ad hoc (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) sont des écarts durs, au même rang que le légal et les mineurs : ne les rétrogradez jamais. `AFFINITE` est la seule exception voulue, une récompense soft : ne la promouvez jamais en dure, ce serait une affectation forcée déguisée. Un poids ne change jamais le niveau d'une règle : si le même contrôle doit pouvoir être dosé *et* tenu en dur, ce sont deux règles, comme pour les [jours d'affilée](repos-et-jours-d-affilee.md).
+Décidez aussi le niveau. Le type prescriptif d'exception ad hoc, `INCOMPATIBILITE`, est un écart dur, au même rang que le légal et les mineurs : ne le rétrogradez jamais. `AFFINITE` est la seule exception voulue, une récompense soft : ne la promouvez jamais en dure, ce serait une affectation forcée déguisée. Un poids ne change jamais le niveau d'une règle : si le même contrôle doit pouvoir être dosé *et* tenu en dur, ce sont deux règles, comme pour les [jours d'affilée](repos-et-jours-d-affilee.md).
 
 ## 2. Écrire la méthode de contrainte
 

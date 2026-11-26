@@ -86,7 +86,7 @@
           <strong i18n="@@staffing.sequenceBound.label">Enchaînement des jours : {{ resume.enchainementTotal }}</strong>
           <ng-container i18n="@@staffing.sequenceBound.description"> — les calendriers de repos réels, jour après jour :
           {{ joursTravaillesMax() }} jours par semaine, {{ consecutiveCapLabel() }}.</ng-container>
-          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'maxJoursConsecutifsTravaillesDur' }"
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'maxJoursConsecutifsTravailles' }"
              i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
         </p>
         @if (estBorneRetenue('REPOS_QUOTIDIEN')) {

@@ -2,20 +2,14 @@ package dev.sylvain.planning.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.sylvain.planning.domain.ContrainteAdHoc;
-import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.TimefoldEngineConfig;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -107,24 +101,6 @@ class PlanningHardConstraintsTest {
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();
-    }
-
-    @Test
-    void planningViolatesHardScoreWhenForcedAssignmentCannotBeSatisfied() {
-        PlanningEvenement problem = planningService.buildSimpleExample();
-
-        ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        contrainte.setAnimateursConcernes(List.of(problem.getAnimateurs().get(0)));
-        contrainte.setCreneau(
-                new Creneau(Long.MAX_VALUE, 10, LocalDate.now().plusDays(20), LocalTime.of(9, 0), LocalTime.of(12, 0)));
-        contrainte.setStand(problem.getPostes().get(0).getStand());
-        contrainte.setCreeLe(Instant.now());
-        problem.setContraintesAdHoc(List.of(contrainte));
-
-        PlanningEvenement solved = planningService.solve(problem);
-
-        assertThat(solved.getScore()).isNotNull();
-        assertThat(solved.getScore().hardScore()).isLessThan(0);
     }
 
     /**

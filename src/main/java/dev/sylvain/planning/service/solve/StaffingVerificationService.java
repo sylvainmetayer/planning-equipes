@@ -711,7 +711,7 @@ public class StaffingVerificationService {
         Map<String, List<String>> traduit = new HashMap<>();
         plan.forEach((cle, ids) -> traduit.put(
                 cle, ids.stream().map(id -> alias.getOrDefault(id, "")).toList()));
-        return ProblemBuilder.reamorcerDepuisAffectations(postes, team, traduit, List.of())[0];
+        return ProblemBuilder.reamorcerDepuisAffectations(postes, team, traduit)[0];
     }
 
     /** The first dated timeslot of the grid, {@code null} when there is none. */

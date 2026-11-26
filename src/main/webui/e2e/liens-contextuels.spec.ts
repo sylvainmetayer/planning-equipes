@@ -21,7 +21,12 @@ test.afterAll(async () => {
 });
 
 /** The fiche opened by a deep link, once the page has landed. */
-async function ficheOuverte(page: Page, url: string, titre: RegExp): Promise<void> {
+async function ficheOuverte(
+  page: Page,
+  url: string,
+  titre: RegExp,
+  apresRechargement = '#contenu table',
+): Promise<void> {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -36,7 +41,7 @@ async function ficheOuverte(page: Page, url: string, titre: RegExp): Promise<voi
   await expect(dialog).toBeHidden();
   // And a refresh shows the list, not the dialog a second time.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#contenu table')).toBeVisible();
+  await expect(page.locator(apresRechargement)).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
 
@@ -48,7 +53,13 @@ test('« ?edit= » opens the named animateur’s form, once only', async ({ brow
 
 test('« ?edit= » opens the named stand’s fiche, its identity form open', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await ficheOuverte(page, `/stands?edit=${SEED.standDemandeur}`, /Modifier le stand Stand E2E un/);
+  // The fiche has no table while the stand carries no plage: its plages section is what stays.
+  await ficheOuverte(
+    page,
+    `/stands?edit=${SEED.standDemandeur}`,
+    /Modifier le stand Stand E2E un/,
+    '#stand-section-plages',
+  );
   // The stand has a page of its own: the link lands there.
   await expect(page).toHaveURL(new RegExp(`/stands/${SEED.standDemandeur}$`));
   await page.context().close();
