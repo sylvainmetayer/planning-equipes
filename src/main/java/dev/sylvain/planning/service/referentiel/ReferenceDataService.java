@@ -313,10 +313,6 @@ public class ReferenceDataService implements ReferenceData {
         return usages.forStands(ids);
     }
 
-    public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
-        return stands.compactHoraires(apply);
-    }
-
     public List<GrilleHorairesStands.LigneGrille> saisirGrilleHoraires(List<GrilleHorairesStands.SaisieStand> saisies) {
         return stands.saisirGrille(saisies);
     }

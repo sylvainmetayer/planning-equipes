@@ -6,10 +6,10 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Creneau.SegmentOuvert;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
+import dev.sylvain.planning.domain.RecurringRules;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
@@ -111,8 +111,10 @@ class ConsigneResolverTest {
     @Test
     void eachWindowOfAStandCarriesItsOwnHeadcount() {
         Stand bourse = stand("BOURSE", 1);
-        bourse.setHoraires(List.of(HoraireStand.everyDay(
-                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 3))));
+        RecurringRules.poser(
+                bourse,
+                GRILLE,
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 3)));
         ConsigneEdition consigne = consigne(
                         LocalTime.of(12, 0),
                         LocalTime.of(18, 0),
@@ -170,7 +172,7 @@ class ConsigneResolverTest {
     void unJourDitALaMainEstFermeParLaBandeEtRouvertSeulementSurChoix() {
         Stand panne = stand("PANNE", 2);
         panne.setOuvertures(new ArrayList<>(
-                List.of(new OuvertureStand(null, LUNDI, LocalTime.of(14, 0), LocalTime.of(20, 0), "réparation", 2))));
+                List.of(PlageStand.ouverture(null, LUNDI, LocalTime.of(14, 0), LocalTime.of(20, 0), "réparation", 2))));
         ConsigneEdition sansOuverture = consigne(LocalTime.of(12, 0), LocalTime.of(18, 0), List.of());
 
         resolve(List.of(panne), sansOuverture);
@@ -200,13 +202,14 @@ class ConsigneResolverTest {
         }
         assertThat(bourse.getIndisponibilitesEffectives())
                 .filteredOn(fermeture -> LUNDI.equals(fermeture.getDate()))
-                .extracting(IndisponibiliteStand::getMotif)
+                .extracting(PlageStand::getMotif)
                 .containsExactly(ConsigneResolver.MOTIF_CONSIGNE);
     }
 
     @Test
     void uneAutreDateEtLesListesPersisteesNeSontPasTouchees() {
         Stand bourse = standWithRule("BOURSE", 2);
+        List<PlageStand> stockees = List.copyOf(bourse.getPlages());
         ConsigneEdition consigne = consigne(
                 LocalTime.of(12, 0),
                 LocalTime.of(18, 0),
@@ -215,15 +218,17 @@ class ConsigneResolverTest {
         resolve(List.of(bourse), consigne);
 
         assertThat(segments(MARDI_APRES_MIDI, bourse)).containsExactly(new SegmentOuvert(0, 360, 2));
-        assertThat(bourse.getOuvertures()).isEmpty();
-        assertThat(bourse.getIndisponibilites()).isEmpty();
+        assertThat(bourse.getPlages()).hasSameSizeAs(stockees);
+        for (int i = 0; i < stockees.size(); i++) {
+            assertThat(bourse.getPlages().get(i)).isSameAs(stockees.get(i));
+        }
     }
 
     @Test
     void sansConsigneRienNeChange() {
         Stand bourse = standWithRule("BOURSE", 2);
         HoraireStandResolver.apply(List.of(bourse), GRILLE);
-        List<OuvertureStand> avant = List.copyOf(bourse.getOuverturesEffectives());
+        List<PlageStand> avant = List.copyOf(bourse.getOuverturesEffectives());
 
         ConsigneResolver.apply(List.of(bourse), List.of(), GRILLE);
 
@@ -252,10 +257,13 @@ class ConsigneResolverTest {
     /** Open 10h-12h then 14h-20h every day, at {@code effectif}. */
     private static Stand standWithRule(String id, int effectif) {
         Stand stand = stand(id, 1);
-        stand.setHoraires(List.of(HoraireStand.everyDay(
-                ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), effectif),
-                new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(20, 0), effectif))));
+        RecurringRules.poser(
+                stand,
+                GRILLE,
+                Regle.everyDay(
+                        ModeHoraire.OUVERTURE,
+                        new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), effectif),
+                        new FenetreHoraire(LocalTime.of(14, 0), LocalTime.of(20, 0), effectif)));
         return stand;
     }
 

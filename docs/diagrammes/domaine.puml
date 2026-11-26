@@ -47,7 +47,7 @@ class Stand {
   effectifMin : int
   effectifMax : int
   emplacement : Emplacement
-  ouvertures : List<OuvertureStand>
+  plages : List<PlageStand>
 }
 
 class Creneau {

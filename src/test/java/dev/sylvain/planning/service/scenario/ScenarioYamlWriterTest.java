@@ -7,19 +7,15 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EmptyReferenceData;
@@ -28,7 +24,6 @@ import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -60,15 +55,15 @@ class ScenarioYamlWriterTest {
         animateur.setCompetences(Map.of("STRATEGIE", NiveauCompetence.REFERENT));
         animateur.setJoursIndisponibles(Set.of(LocalDate.of(2026, 8, 15)));
         stand.setNiveauEffort(NiveauEffort.EPUISANT);
-        stand.setIndisponibilites(List.of(new IndisponibiliteStand(
+        stand.setIndisponibilites(List.of(PlageStand.fermeture(
                 1L, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(16, 0), "Pause")));
         // A date clearly unrelated to the créneau's day (2026-08-14) and the day
         // after (2026-08-15, which Creneau#segmentsOuvertsMinutes also treats as
         // relevant for a créneau crossing into it) — an ouverture on either would
         // switch the stand to closed-by-default for this créneau's day and starve
         // buildPostes of a poste to build below.
-        stand.setOuvertures(List.of(
-                new OuvertureStand(2L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), null, 3)));
+        stand.setOuvertures(List.of(PlageStand.ouverture(
+                2L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), null, 3)));
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(creneau));
 
         String yaml =
@@ -95,22 +90,20 @@ class ScenarioYamlWriterTest {
                 .containsEntry("niveauEffort", "EPUISANT");
         assertThat((List<String>) stands.get(0).get("typologiesProposees")).containsExactly("STRATEGIE");
 
-        List<Map<String, Object>> indisponibilites =
-                (List<Map<String, Object>>) stands.get(0).get("indisponibilites");
-        assertThat(indisponibilites).hasSize(1);
-        assertThat(indisponibilites.get(0))
+        List<Map<String, Object>> plages =
+                (List<Map<String, Object>>) stands.get(0).get("plages");
+        assertThat(plages).hasSize(2);
+        assertThat(plages.get(0))
+                .containsEntry("mode", "FERMETURE")
                 .containsEntry("date", "2026-08-14")
                 .containsEntry("heureDebut", "14:00")
                 .containsEntry("heureFin", "16:00")
                 .containsEntry("motif", "Pause");
-
-        List<Map<String, Object>> ouvertures =
-                (List<Map<String, Object>>) stands.get(0).get("ouvertures");
-        assertThat(ouvertures).hasSize(1);
         // The headcount an opening names travels too, else re-importing the file
         // silently falls back on the stand's minimum and loses the volume.
-        assertThat(ouvertures.get(0)).containsEntry("effectif", 3);
-        assertThat(ouvertures.get(0))
+        assertThat(plages.get(1))
+                .containsEntry("mode", "OUVERTURE")
+                .containsEntry("effectif", 3)
                 .containsEntry("date", "2026-08-20")
                 .containsEntry("heureDebut", "20:00")
                 .containsEntry("heureFin", "23:00")
@@ -118,6 +111,7 @@ class ScenarioYamlWriterTest {
                 // the two apart; a key that says nothing is noise in a file
                 // meant to be read and diffed by hand.
                 .doesNotContainKey("motif");
+        assertThat(stands.get(0)).doesNotContainKeys("indisponibilites", "ouvertures", "horaires");
 
         List<Map<String, Object>> animateurs = (List<Map<String, Object>>) parsed.get("animateurs");
         assertThat(animateurs).hasSize(1);
@@ -141,75 +135,54 @@ class ScenarioYamlWriterTest {
     }
 
     /**
-     * The recurring horaires are exported as <b>rules</b>, with the day selector
-     * flattened onto the rule and only the fields that selector uses — which is
-     * the whole point: a stand open "10:00-12:00 then 14:00 to closing, every
-     * day" takes four lines here instead of twenty-four dated entries. An
-     * open-ended window drops its {@code heureFin} key entirely rather than
-     * writing an explicit null.
-     */
-    @Test
-    @SuppressWarnings("unchecked")
-    void recurringHorairesAreWrittenAsRules() {
-        HoraireStand quotidien = HoraireStand.everyDay(
-                ModeHoraire.OUVERTURE,
-                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0)),
-                new FenetreHoraire(LocalTime.of(14, 0), null));
-        HoraireStand weekend = new HoraireStand(
-                null,
-                ModeHoraire.FERMETURE,
-                TypeJoursHoraire.JOURS_SEMAINE,
-                List.of(new FenetreHoraire(LocalTime.of(0, 0), null)));
-        weekend.setJoursSemaine(Set.of(DayOfWeek.SUNDAY));
-        stand.setHoraires(List.of(quotidien, weekend));
-
-        String yaml =
-                ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());
-        Map<String, Object> parsed = new Yaml().load(yaml);
-
-        List<Map<String, Object>> stands = (List<Map<String, Object>>) parsed.get("stands");
-        List<Map<String, Object>> horaires =
-                (List<Map<String, Object>>) stands.get(0).get("horaires");
-        assertThat(horaires).hasSize(2);
-
-        assertThat(horaires.get(0)).containsEntry("mode", "OUVERTURE").containsEntry("jours", "TOUS");
-        // A TOUS rule carries no selector data: emitting empty date keys would be
-        // noise in a file meant to be read and diffed by hand.
-        assertThat(horaires.get(0)).doesNotContainKeys("joursSemaine", "dateDebut", "dateFin", "dates");
-        List<Map<String, Object>> fenetres =
-                (List<Map<String, Object>>) horaires.get(0).get("fenetres");
-        assertThat(fenetres).hasSize(2);
-        assertThat(fenetres.get(0)).containsEntry("heureDebut", "10:00").containsEntry("heureFin", "12:00");
-        assertThat(fenetres.get(1)).containsEntry("heureDebut", "14:00").doesNotContainKey("heureFin");
-
-        assertThat(horaires.get(1)).containsEntry("mode", "FERMETURE").containsEntry("jours", "JOURS_SEMAINE");
-        assertThat((List<String>) horaires.get(1).get("joursSemaine")).containsExactly("SUNDAY");
-    }
-
-    /**
-     * A dated exception with no end hour leaves the key out, exactly like a
-     * rule's window does.
-     *
-     * <p>It used to write {@code heureFin: null} there and omit it in a rule's
-     * window — two helper methods written at different times, not a
-     * distinction anybody meant: the reader does {@code map.get()} either way.
-     * Since the export serialises a {@code ScenarioDto}, one rule decides for
-     * the whole file.</p>
+     * A plage with no end hour leaves the key out: the reader does
+     * {@code map.get()} either way, and the export serialises a
+     * {@code ScenarioDto}, where one rule decides for the whole file.
      */
     @Test
     @SuppressWarnings("unchecked")
     void aDatedOpeningWithoutAnEndHourLeavesTheKeyOut() {
         stand.setOuvertures(
-                List.of(new OuvertureStand(1L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), null, null)));
+                List.of(PlageStand.ouverture(1L, LocalDate.of(2026, 8, 20), LocalTime.of(20, 0), null, null)));
 
         String yaml =
                 ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         List<Map<String, Object>> stands = (List<Map<String, Object>>) parsed.get("stands");
-        List<Map<String, Object>> ouvertures =
-                (List<Map<String, Object>>) stands.get(0).get("ouvertures");
-        assertThat(ouvertures.get(0)).containsEntry("heureDebut", "20:00").doesNotContainKey("heureFin");
+        List<Map<String, Object>> plages =
+                (List<Map<String, Object>>) stands.get(0).get("plages");
+        assertThat(plages.get(0)).containsEntry("heureDebut", "20:00").doesNotContainKey("heureFin");
+    }
+
+    /** A stand's model (ADR 0104) travels under {@code horaires} and comes back as the same rules. */
+    @Test
+    void aStandsModelTravelsUnderHorairesAndComesBackAsTheSameRules() {
+        stand.setHoraires(List.of(new HorairesRecurrents.Regle(
+                dev.sylvain.planning.domain.ModeHoraire.OUVERTURE,
+                dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE,
+                java.util.Set.of(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY),
+                null,
+                null,
+                null,
+                List.of(new dev.sylvain.planning.domain.FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0), 2)),
+                "Week-end")));
+
+        String yaml =
+                ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());
+        dev.sylvain.planning.scenario.dto.StandDto read =
+                ScenarioYamlReader.parseScenarioText(yaml).stands().get(0);
+
+        assertThat(yaml).contains("horaires:").contains("joursSemaine:");
+        assertThat(read.horaires()).singleElement().satisfies(dto -> {
+            assertThat(dto.jours()).isEqualTo(dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE);
+            assertThat(dto.joursSemaine()).containsExactly(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY);
+            assertThat(dto.fenetres()).singleElement().satisfies(fenetre -> {
+                assertThat(fenetre.heureFin()).isEqualTo(LocalTime.of(18, 0));
+                assertThat(fenetre.effectif()).isEqualTo(2);
+            });
+            assertThat(dto.motif()).isEqualTo("Week-end");
+        });
     }
 
     /**
@@ -372,7 +345,7 @@ class ScenarioYamlWriterTest {
     @SuppressWarnings("unchecked")
     void keysComeOutInTheOrderTheFileHasAlwaysHad() {
         animateur.setCompetences(Map.of("STRATEGIE", NiveauCompetence.REFERENT));
-        stand.setIndisponibilites(List.of(new IndisponibiliteStand(
+        stand.setIndisponibilites(List.of(PlageStand.fermeture(
                 1L, LocalDate.of(2026, 8, 14), LocalTime.of(14, 0), LocalTime.of(16, 0), "Pause")));
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(creneau));
 
@@ -393,9 +366,7 @@ class ScenarioYamlWriterTest {
                         "reserveMajeurs",
                         "premium",
                         "niveauEffort",
-                        "indisponibilites",
-                        "ouvertures",
-                        "horaires");
+                        "plages");
     }
 
     /** The hand-entered constraints travel with the scenario, animateurs and scope included. */

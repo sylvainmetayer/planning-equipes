@@ -144,8 +144,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `GET /api/editions/courant/etat`, its form decided by the server's phase:
   while preparing, the checklist of the cycle, one line per step with its
   state and a link to the screen that moves it — the solve read in sentences,
-  identical coherence anomalies merged with their count, the freeze a state
-  linking to Paramètres; during the event, the day under way first, opening
+  identical coherence anomalies merged with their count, the phase of the
+  edition a line that unfolds `shared/phase-edition-control` — the same
+  component as Administrer › Éditions, whose gestures (change the phase,
+  « Débloquer la structure », « Refiger ») `PhaseEditionActions` confirms and
+  runs, a lecteur seeing the phase and no button, and the edition bar showing
+  a banner while a published edition's structure is unblocked; during the event, the day under way first, opening
   `/aujourdhui`, and the checklist folded; after it, the archive first; on an
   empty edition, a « Démarrer » block. « À traiter aujourd'hui »
   (`#a-traiter`, where the toolbar's bell lands) is always drawn, and folds
@@ -178,8 +182,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   mail, the start of the evening, the polyvalent typologie) — and the last two the former
   `/historique` (its « Connexions » tab `?onglet=connexions`) and
   `/mcp-client`: the edition's own settings that no rule
-  reads — its name, the freeze of its referential (the only place it is
-  edited), its guichets (the collection of availabilities, the foire au
+  reads — its name, its guichets (the collection of availabilities, the foire au
   planning, the covoiturage that follows the collection — each opened and
   closed here with its dates, Échanges and Disponibilités keeping one line of
   their state, `shared/guichet-etat.ts`), the weather alert (`#meteo`, `pages/parametres/parametres-meteo`

@@ -2,7 +2,6 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
-import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
@@ -15,7 +14,6 @@ import dev.sylvain.planning.service.referentiel.WrittenStand;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -28,7 +26,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
- * CRUD of the stands, plus the compaction of their opening hours.
+ * CRUD of the stands, and the import of their opening hours as a matrix.
  */
 @Path("/stands")
 @Produces(MediaType.APPLICATION_JSON)
@@ -93,22 +91,6 @@ public class StandResource {
     @Path("/usages")
     public ReferenceUsage countStandUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countStandUsages(ids);
-    }
-
-    /**
-     * Rewrites hand-entered dated windows as the recurring horaires they repeat
-     * — the way a dataset captured before rules existed catches up with them.
-     *
-     * <p>{@code apply} defaults to {@code false}: the call is then a dry run
-     * that returns exactly what it <em>would</em> do, per stand, so the report
-     * can be shown before anything is written. Only {@code apply=true}
-     * persists.</p>
-     */
-    @POST
-    @Path("/compactage-horaires")
-    public HoraireCompaction.RapportCompactage compactHoraires(
-            @QueryParam("appliquer") @DefaultValue("false") boolean apply) {
-        return referenceDataService.compactHoraires(apply);
     }
 
     /* ----------------------------- Matrix import ----------------------------- */

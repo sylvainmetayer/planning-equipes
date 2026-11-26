@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ formTitle }}</h2>
 <form (ngSubmit)="save()">
 <mat-dialog-content>
-<!-- Outside the fieldset: the freeze disables it, and « Lever le gel » must stay clickable. -->
+<!-- Outside the fieldset: the freeze disables it, and the notice's way out must stay clickable. -->
 <app-gel-notice family="STANDS" />
 <fieldset class="form-fieldset" [disabled]="locked()">
 @if (editingLocked()) {

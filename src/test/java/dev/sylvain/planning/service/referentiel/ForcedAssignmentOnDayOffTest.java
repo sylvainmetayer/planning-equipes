@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import java.time.LocalDate;
@@ -74,7 +74,7 @@ class ForcedAssignmentOnDayOffTest {
     @Test
     void aStandScopeCoversOnlyTheDaysTheStandOpens() {
         Animateur absentSamedi = offOn("A1", SAMEDI);
-        plateau.setIndisponibilites(List.of(new IndisponibiliteStand(null, DIMANCHE, LocalTime.of(9, 0), null, null)));
+        plateau.setIndisponibilites(List.of(PlageStand.fermeture(null, DIMANCHE, LocalTime.of(9, 0), null, null)));
         ContrainteAdHoc contrainte = forced(absentSamedi);
         contrainte.setStand(plateau);
 

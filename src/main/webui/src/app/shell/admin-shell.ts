@@ -225,13 +225,13 @@ export class AdminShell {
     // `SOLVE` alone left that banner up after a targeted replan until the next
     // referential write or a page reload — telling the operator their fresh
     // plan was stale.
-    // A landed solve is also the first of the two milestones at which freezing
-    // the stands and the timeslots is offered (ADR 0052), once per edition.
+    // A landed solve is also the milestone at which the Calcul phase, which
+    // freezes the stands and the timeslots, is offered (ADR 0115), once per edition.
     for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
       destroyRef.onDestroy(
         this.jobs.onResult(type, () => {
           void this.resolution.reload();
-          void this.gelInvitation.offer('resolution');
+          this.gelInvitation.offer('resolution');
         }),
       );
     }

@@ -1,6 +1,6 @@
 # 0069 — Une relecture survit à ce que le calcul n'a pas recalculé, et à rien d'autre
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; une journée figée sans relecture est gardée de même depuis [0121](0121-l-etat-de-la-journee-se-lit-sur-la-relecture-et-le-verrou.md)
 - **Date** : octobre 2026
 - **Portée** : relecture du plan, résolution, IHM (Solveur)
 - **Précise** : [0039](0039-validation-de-relecture-distincte-du-verrou.md)

@@ -72,20 +72,20 @@ public class EditionRepository {
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),
             new TableToCopy("stand_typologie", "stand_id, typologie"),
-            new TableToCopy("stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
-            new TableToCopy("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif"),
-            // The recurring opening rules (V37) predated by this list: without
-            // them a duplicated edition silently fell back to « open on every
-            // slot ». Their BIGSERIAL ids are kept as-is — the PKs are
-            // composite (edition_id, id), the child FK follows the new
-            // edition_id, and the shared sequence has already consumed those
-            // values, so future inserts cannot collide.
+            new TableToCopy(
+                    "stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee"),
+            new TableToCopy(
+                    "stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee"),
+            // The stand's model (V37, ADR 0104): the recurring rules a dateless edition keeps until
+            // it has days. Their BIGSERIAL ids are kept as-is — the PKs are composite (edition_id,
+            // id), the child FK follows the new edition_id, and the shared sequence has already
+            // consumed those values, so future inserts cannot collide.
             new TableToCopy(
                     "stand_horaire",
                     "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
             new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin, effectif"),
-            // Day templates (V75): ids copied verbatim like stand_horaire's — one
-            // global sequence, so a copied id never meets a generated one.
+            // Day templates (V75): ids copied verbatim — one global sequence, so a
+            // copied id never meets a generated one.
             new TableToCopy("journee_type", "id, nom"),
             new TableToCopy(
                     "journee_type_vacation", "id, journee_type_id, position, heure_debut, heure_fin, couverture_pause"),

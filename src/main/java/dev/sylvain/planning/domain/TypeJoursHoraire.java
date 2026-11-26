@@ -1,11 +1,11 @@
 package dev.sylvain.planning.domain;
 
 /**
- * Which days a {@link HoraireStand} applies to. The declaration order is also
- * the <b>specificity</b> order used to arbitrate between two rules covering the
- * same day: the most specific one wins, and only its windows are honoured (see
- * {@link HoraireStand#specificite()} and
- * {@code HoraireStandResolver}).
+ * Which days a recurring schedule applies to: the day selector of the calendar
+ * generator (and of the pre-4.0 recurring rules that {@link HorairesRecurrents}
+ * still expands into {@link PlageStand}s). The declaration order is also the
+ * <b>specificity</b> order used to arbitrate between two rules covering the
+ * same day: the most specific one wins.
  */
 public enum TypeJoursHoraire {
 

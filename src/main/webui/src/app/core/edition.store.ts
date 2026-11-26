@@ -38,6 +38,14 @@ export class EditionStore {
    */
   readonly situations = this._situations.asReadonly();
 
+  /** Where the edition this browser works in stands in its cycle (ADR 0115); `null` until known. */
+  readonly phase = computed(() => this.courant()?.phase ?? null);
+
+  /** In `PUBLIEE` only: the structure was reopened for a last-minute change — the shell says so. */
+  readonly structureDebloquee = computed(
+    () => this.courant()?.phase === 'PUBLIEE' && this.courant()?.structureDebloquee === true,
+  );
+
   /** The one edition allowed to reach outside, `null` between two events. */
   readonly active = computed(() => this.editions().find((edition) => edition.active) ?? null);
 

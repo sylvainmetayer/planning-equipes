@@ -24,6 +24,11 @@ import java.util.List;
  * journée-là, qu'est-ce qui cloche » — and none of it was reachable without
  * them.</p>
  *
+ * <p>Since 4.0 a day has a state — à relire, relue, figée (ADR 0121). The
+ * three tools that list, add and withdraw readings are the 3.x gestures, kept
+ * until 5.0: they write the same reading and the same day lock, so the state
+ * follows. Their state-named successors come with the Journée screen.</p>
+ *
  * <p>Nothing here names a person: a validation carries the admin account it was
  * written under, which the views drop, and the prerequisites are counts.</p>
  */
@@ -45,15 +50,17 @@ public class ValidationJourneeMcpTools {
 
     @Tool(
             name = "lister_validations_journee",
-            description = "Liste les journées relues et acceptées, et l'avancement de la relecture "
-                    + "(« 3 journées sur 12 »). Une validation dit qu'un humain a relu la journée ; elle ne fige "
-                    + "rien — figer, c'est verrouiller (verrouiller).",
+            description = "Ancien nom, gardé jusqu'en 5.0. Liste les relectures et l'avancement de la relecture "
+                    + "(« 3 journées sur 12 ») : une journée compte quand elle est relue ou figée. Une journée a "
+                    + "trois états : à relire, relue (une relecture, rien de figé), figée (verrou de journée). "
+                    + "Une journée figée depuis l'écran des verrous n'a pas de relecture dans la liste.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     AvancementValidations listJourneeValidations(
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ProgressionValidations progression = prerequisService.progression();
@@ -92,8 +99,9 @@ public class ValidationJourneeMcpTools {
 
     @Tool(
             name = "ajouter_validation_journee",
-            description = "Marque une journée entière « relue et acceptée ». poserVerrou fige en plus la journée "
-                    + "pour les prochaines résolutions — facultatif, et faux par défaut. Relire une journée déjà "
+            description = "Ancien nom, gardé jusqu'en 5.0. Passe une journée entière à l'état « relue » ; "
+                    + "poserVerrou la passe à « figée » (verrou de journée) — facultatif, et faux par défaut, une "
+                    + "journée déjà figée le reste. Relire une journée déjà "
                     + "acceptée remplace la validation précédente. Pendant une résolution de l'édition, la "
                     + "validation est enregistrée mais la réponse porte RESOLUTION_EN_COURS : la résolution en "
                     + "cours ne la voit pas, et à son atterrissage elle la retirera si elle déplace un poste de "
@@ -105,6 +113,7 @@ public class ValidationJourneeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
+    @Deprecated
     ResultatValidationView addJourneeValidation(
             @ToolArg(description = "Journée relue (AAAA-MM-JJ)") String jour,
             @ToolArg(description = "Commentaire de relecture, libre", required = false) String commentaire,
@@ -117,14 +126,16 @@ public class ValidationJourneeMcpTools {
 
     @Tool(
             name = "retirer_validation_journee",
-            description = "Retire une validation : la journée redevient à relire. Le verrouillage éventuellement posé "
-                    + "avec elle reste en place — c'est un mécanisme distinct (deverrouiller).",
+            description = "Ancien nom, gardé jusqu'en 5.0. Retire une relecture : une journée relue redevient à "
+                    + "relire ; une journée figée le reste, son verrou de journée est laissé en place "
+                    + "(deverrouiller le retire).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     SuppressionResult removeJourneeValidation(
             @ToolArg(description = "Id de la validation") String id,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {

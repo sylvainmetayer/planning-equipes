@@ -50,6 +50,8 @@ Une grille est faite de vacations et ne se demande plus en mode : un créneau es
 
 Quand les stands ont leurs horaires, `previsualiser_derivation_creneaux` montre la grille qu'ils impliquent (une coupure à chaque heure où un stand ouvre ou ferme) et `generer_creneaux_depuis_stands` l'écrit, en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
 
+Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `ajouter_horaire_stand` d'une règle identique à une règle existante ne change rien ; `effacer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`ajouter_fermeture_stand`, `ajouter_ouverture_stand`).
+
 Une fenêtre d'ouverture (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
 
 `definir_journee_type` crée ou remplace une journée type par son nom et ses vacations sur une ligne (« 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux), `affecter_journee_type` la pose sur une plage ou des dates. Rien de cela n'écrit un créneau : `previsualiser_application_journees_types` dit ce qu'appliquer changerait et `materialiser_journees_types` l'écrit. `reconnaitre_journees_types` fait le chemin inverse depuis les créneaux, et `lister_journees_types` rend les dates en écart ou sous consigne, que la matérialisation ne touche pas ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
@@ -100,6 +102,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
 | `capturer_instantane` | `creer_version` |
+| `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
 | `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
@@ -107,6 +110,8 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `figer_referentiel` | `modifier_phase_edition` |
+| `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `modifier_parametres_legaux` | `modifier_parametres` |

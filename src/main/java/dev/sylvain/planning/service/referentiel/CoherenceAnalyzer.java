@@ -3,12 +3,9 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
@@ -342,12 +339,12 @@ public final class CoherenceAnalyzer {
         Set<LocalDate> lues = HoraireStandResolver.datesConcernees(creneaux);
         List<LocalDate> horsEvenement = new ArrayList<>();
         apres.getIndisponibilites().stream()
-                .map(IndisponibiliteStand::getDate)
+                .map(PlageStand::getDate)
                 .filter(Objects::nonNull)
                 .filter(date -> !jours.covers(date) && !lues.contains(date))
                 .forEach(horsEvenement::add);
         apres.getOuvertures().stream()
-                .map(OuvertureStand::getDate)
+                .map(PlageStand::getDate)
                 .filter(Objects::nonNull)
                 .filter(date -> !jours.covers(date) && !lues.contains(date))
                 .forEach(horsEvenement::add);
@@ -530,39 +527,13 @@ public final class CoherenceAnalyzer {
 
     /**
      * The schedule as typed, flattened to one string so two writes can be told
-     * apart. Deliberately not {@code equals} on the rules, which have none
-     * (see {@link HoraireStand}); the dated lists are read, never the
-     * resolved ones.
+     * apart. Deliberately not {@code equals} on the plages, which compare ids
+     * only; the stored lists are read, never the resolved ones.
      */
     private static String scheduleSignature(Stand stand) {
         StringBuilder signature = new StringBuilder();
-        for (HoraireStand horaire : stand.getHoraires()) {
-            signature
-                    .append(horaire.getMode())
-                    .append('|')
-                    .append(horaire.getJours())
-                    .append('|')
-                    .append(horaire.getJoursSemaine())
-                    .append('|')
-                    .append(horaire.getDateDebut())
-                    .append('|')
-                    .append(horaire.getDateFin())
-                    .append('|')
-                    .append(horaire.getDates())
-                    .append('|');
-            for (FenetreHoraire fenetre : horaire.getFenetres()) {
-                signature
-                        .append(fenetre.getHeureDebut())
-                        .append('-')
-                        .append(fenetre.getHeureFin())
-                        .append('@')
-                        .append(fenetre.getEffectif())
-                        .append(',');
-            }
-            signature.append(';');
-        }
         signature.append('#');
-        for (IndisponibiliteStand fermeture : stand.getIndisponibilites()) {
+        for (PlageStand fermeture : stand.getIndisponibilites()) {
             signature
                     .append(fermeture.getDate())
                     .append(' ')
@@ -572,7 +543,7 @@ public final class CoherenceAnalyzer {
                     .append(';');
         }
         signature.append('#');
-        for (OuvertureStand ouverture : stand.getOuvertures()) {
+        for (PlageStand ouverture : stand.getOuvertures()) {
             signature
                     .append(ouverture.getDate())
                     .append(' ')

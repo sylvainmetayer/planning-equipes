@@ -64,7 +64,6 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("ajouter_horaire_stand", "StandService.update"),
             Map.entry("effacer_horaires_stand", "StandService.update"),
             Map.entry("supprimer_stand", "StandService.delete"),
-            Map.entry("compacter_horaires_stands", "StandService.compactHoraires"),
             Map.entry("supprimer_creneau", "CreneauService.delete"),
             Map.entry("supprimer_creneaux", "CreneauService.deleteInBulk"),
             Map.entry("creer_creneaux_recurrents", "CreneauService.createInBulk"),
@@ -135,8 +134,9 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("envoyer_planning_animateur", "envoie le plan enregistré, n'écrit rien que le calcul lise"),
             Map.entry("relancer_animateurs", "envoie des relances, n'écrit rien que le calcul lise"),
             Map.entry("modifier_sauvegardes", "réglage de la base entière, jamais lu par le calcul"),
-            Map.entry("figer_referentiel", "le gel refuse les écritures à venir, il ne change aucune donnée lue"),
-            Map.entry("lever_gel", "le gel refuse les écritures à venir, il ne change aucune donnée lue"));
+            Map.entry(
+                    "modifier_phase_edition",
+                    "la phase refuse les écritures à venir, elle ne change aucune donnée lue (ADR 0115)"));
 
     @Test
     void everyWriteToolSaysWhatHappensDuringASolve() throws Exception {

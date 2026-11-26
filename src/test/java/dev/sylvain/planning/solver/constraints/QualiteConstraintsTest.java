@@ -8,8 +8,8 @@ import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalTime;
@@ -341,8 +341,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // largest crew the stand ever needs.
         Stand stand = standPremium("STAND-PREMIUM-FENETRE");
         stand.setOuvertures(List.of(
-                new OuvertureStand(null, D1, creneauMatin.getHeureDebut(), creneauMatin.getHeureFin(), null, 3),
-                new OuvertureStand(null, D1, creneauAprem.getHeureDebut(), creneauAprem.getHeureFin(), null, 1)));
+                PlageStand.ouverture(null, D1, creneauMatin.getHeureDebut(), creneauMatin.getHeureFin(), null, 3),
+                PlageStand.ouverture(null, D1, creneauAprem.getHeureDebut(), creneauAprem.getHeureFin(), null, 1)));
         Animateur a1 = referentMajeur("A1");
         Animateur a2 = referentMajeur("A2");
         Animateur a3 = referentMajeur("A3");

@@ -176,7 +176,7 @@ class ReferentielCsvImportServiceTest {
                 .contentType("application/json")
                 .body("""
                         {"nom":"Stand neuf","typologiesProposees":["JEU"],"effectifMin":3,"effectifMax":5,
-                         "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"10:00:00"}]}]}
+                         "ouvertures":[{"date":"2026-07-08","heureDebut":"10:00:00"}]}
                         """)
                 .when()
                 .post("/api/stands")
@@ -199,7 +199,7 @@ class ReferentielCsvImportServiceTest {
                 // Neither the headcount nor the schedule was in the file: both stayed.
                 .body("find { it.id == '" + stand + "' }.effectifMin", equalTo(3))
                 .body("find { it.id == '" + stand + "' }.effectifMax", equalTo(5))
-                .body("find { it.id == '" + stand + "' }.horaires", hasSize(1));
+                .body("find { it.id == '" + stand + "' }.ouvertures", hasSize(1));
     }
 
     @Test

@@ -59,10 +59,7 @@ class McpConfidentialiteStructurelleTest {
      * as {@code Record.component}. Named one by one, with what they hold, so the
      * list cannot quietly become the way around the rule.
      */
-    private static final Set<String> TEXTES_DU_SERVEUR = Set.of(
-            // Why a stand's dated windows were not compacted, e.g. « Aucune
-            // fenêtre datée à compacter »: HoraireCompaction writes every one.
-            "LigneCompactage.raison");
+    private static final Set<String> TEXTES_DU_SERVEUR = Set.of();
 
     @Test
     void aucunOutilNeRenvoieDeDonneePersonnelleIdentifiante() throws Exception {

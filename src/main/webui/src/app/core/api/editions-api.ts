@@ -7,10 +7,10 @@ import {
   CoherenceReport,
   Edition,
   EditionDelta,
+  EditionPhase,
   EditionSituation,
   EtatEdition,
   EtatGel,
-  FreezeFamily,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -42,14 +42,19 @@ export class EditionsApi {
     return this.api.get<EtatGel[]>('/api/editions/courant/gel');
   }
 
-  /** Freezes the family; freezing twice keeps the first date. */
-  freeze(famille: FreezeFamily): Promise<EtatGel> {
-    return this.api.put<EtatGel>(`/api/editions/courant/gel/${encodeURIComponent(famille)}`, {});
+  /** Declares the phase of the current edition, backwards included (ADR 0115). */
+  setPhase(phase: EditionPhase): Promise<Edition> {
+    return this.api.put<Edition>('/api/editions/courant/phase', { phase });
   }
 
-  /** Lifts the freeze of the family. */
-  lift(famille: FreezeFamily): Promise<void> {
-    return this.api.delete(`/api/editions/courant/gel/${encodeURIComponent(famille)}`);
+  /** In `PUBLIEE`: reopens the structure for a last-minute change, without leaving the phase. */
+  unblockStructure(): Promise<Edition> {
+    return this.api.put<Edition>('/api/editions/courant/deblocage-structure', {});
+  }
+
+  /** Freezes the structure of a published edition again. */
+  refreezeStructure(): Promise<Edition> {
+    return this.api.deleteReturning<Edition>('/api/editions/courant/deblocage-structure');
   }
 
   /**

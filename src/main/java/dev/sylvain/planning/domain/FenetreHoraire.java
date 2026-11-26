@@ -4,7 +4,7 @@ import java.time.LocalTime;
 import java.util.Objects;
 
 /**
- * One time window of a {@link HoraireStand}, without a date: the date comes
+ * One time window of a recurring schedule, without a date: the date comes
  * from the rule's day selector, which is exactly what lets a single rule cover
  * twelve event days.
  *
