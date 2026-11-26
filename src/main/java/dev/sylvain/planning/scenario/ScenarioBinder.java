@@ -61,7 +61,7 @@ public final class ScenarioBinder {
      * converting older ones through {@link ScenarioMigrations}. A file may omit
      * the key, meaning 1.
      */
-    public static final int SCHEMA_VERSION = 4;
+    public static final int SCHEMA_VERSION = 5;
 
     private ScenarioBinder() {}
 

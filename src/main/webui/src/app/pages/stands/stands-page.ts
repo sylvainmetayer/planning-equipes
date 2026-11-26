@@ -22,7 +22,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { labelStandsPluriel } from '../../core/entity-labels';
-import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
@@ -53,7 +52,6 @@ import { GelNotice } from '../../shared/gel-notice';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { ImportedRowsFilter } from '../../shared/imported-rows-filter';
 import { TableFilter } from '../../shared/table-filter';
-import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { MAX_STANDS_COMPARES, MIN_STANDS_COMPARES } from '../ouvertures/comparaison-ouvertures';
 import { StandCreationDialog } from './stand-creation-dialog';
@@ -209,17 +207,12 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     return chips;
   });
 
-  /** True while the compaction round-trip is in flight, to keep it from being fired twice. */
-  protected readonly compactageEnCours = signal(false);
-
   /** Holds `causeParStandId`: a memoised map, so each row only does a lookup. */
   protected readonly problemes = inject(ProblemesStore);
 
   /** Bounds the form's callback: this page is lazy, and a callback on a dead one writes into nothing. */
   private readonly destroyRef = inject(DestroyRef);
   private readonly standsApi = inject(StandsApi);
-  private readonly confirm = inject(ConfirmService);
-  private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
   private readonly router = inject(Router);
 
@@ -537,51 +530,6 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
   }
 
   /**
-   * Rewrites hand-entered dated windows as the recurring rules they repeat.
-   * Always a dry run first: the report it returns is what the confirmation
-   * dialog shows, so nothing is written before the user has seen the trade.
-   */
-  protected async compacterHoraires(): Promise<void> {
-    this.compactageEnCours.set(true);
-    try {
-      await this.lancerCompactage();
-    } catch (error) {
-      // Same channel as every other write of this page: a snack bar, not an
-      // unhandled rejection swallowed by the click handler.
-      this.crud.reportError(error);
-    } finally {
-      this.compactageEnCours.set(false);
-    }
-  }
-
-  private async lancerCompactage(): Promise<void> {
-    const apercu = await this.standsApi.compactSchedules(false);
-    if (apercu.standsCompactes === 0) {
-      this.notifications.notify({
-        title: $localize`:@@stands.compactage.rienATitle:Aucun horaire à compacter`,
-        message: $localize`:@@stands.compactage.rienAMessage:Aucun stand ne répète un motif qui pourrait devenir une règle.`,
-        variant: 'info',
-      });
-      return;
-    }
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@stands.compactage.confirmTitle:Compacter les horaires ?`,
-      message: $localize`:@@stands.compactage.confirmMessage:${apercu.standsCompactes}:stands: stand(s) : ${apercu.fenetresAvant}:avant: plages datées remplacées par ${apercu.fenetresApres}:apres: règles et exceptions. Un stand dont les règles changeraient ses ouvertures est laissé inchangé.`,
-      confirmLabel: $localize`:@@stands.compactage.confirmLabel:Compacter`,
-    });
-    if (!confirme) {
-      return;
-    }
-    const rapport = await this.standsApi.compactSchedules(true);
-    await this.crud.reload();
-    this.notifications.notify({
-      title: $localize`:@@stands.compactage.doneTitle:Horaires compactés`,
-      message: $localize`:@@stands.compactage.doneMessage:${rapport.standsCompactes}:stands: stand(s) compacté(s), ${rapport.fenetresAvant}:avant: plages ramenées à ${rapport.fenetresApres}:apres: entrées.`,
-      variant: 'success',
-    });
-  }
-
-  /**
    * The link to the openings comparator for the ticked stands, or null outside
    * two to eight — one stand has nothing to be compared with, and past eight
    * the Consulter grid, filtered, is the tool.
@@ -637,7 +585,7 @@ function effectifColumn(
     read: (stand) => String(stand[key]),
     write: (stand, text) => {
       if (frozen()) {
-        return $localize`:@@stands.collage.fige:figé par le gel des stands`;
+        return $localize`:@@stands.collage.fige:figé par la phase de l'édition`;
       }
       const value = Number(text);
       if (!Number.isInteger(value) || value < 1) {

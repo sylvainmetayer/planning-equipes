@@ -14,23 +14,23 @@ import java.util.List;
  * <p>This used to be the middle third of {@code Creneau} — 290 lines of
  * window geometry inside a planning fact whose own business is a date and
  * two hours (issue #392, A10). A fact that knows {@code Stand},
- * {@code IndisponibiliteStand}, {@code OuvertureStand} and the arithmetic of
+ * {@code PlageStand}, {@code PlageStand} and the arithmetic of
  * a day crossing midnight is not a fact any more; it is this value object,
  * which {@code Creneau} now delegates to. Nothing on the scoring path calls
  * it: seats carry their effective window on {@code PosteAffectation}, so
  * this runs at problem building and in the analyses, never per move.</p>
  *
  * <p>A stand's day is in exactly one of three states — see
- * {@link OuvertureStand}'s javadoc:</p>
+ * {@link PlageStand}'s javadoc:</p>
  * <ul>
- * <li><b>No {@link OuvertureStand} that day.</b> Open-by-default: the whole
- * créneau, unless an {@link IndisponibiliteStand} that day carves out closed
+ * <li><b>No {@link PlageStand} that day.</b> Open-by-default: the whole
+ * créneau, unless an {@link PlageStand} that day carves out closed
  * stretches (nothing left if it closes the slot entirely, several segments if
  * it sits strictly inside the slot).</li>
- * <li><b>At least one {@link OuvertureStand} that day.</b> Closed-by-default:
+ * <li><b>At least one {@link PlageStand} that day.</b> Closed-by-default:
  * the segments are exactly the (possibly merged) opening windows clamped to
  * the créneau — none if none of them overlap it. Any
- * {@link IndisponibiliteStand} for that same day is ignored (the two are
+ * {@link PlageStand} for that same day is ignored (the two are
  * mutually exclusive per day; {@code ReferenceDataService} enforces it at
  * write time — this class has no other way to arbitrate a conflict).</li>
  * </ul>
@@ -110,7 +110,7 @@ public final class ProfilOuverture {
         int dureeSecondes = dureeMinutes * 60;
         int effectifStand = stand == null ? 0 : stand.getEffectifMin();
         if (dayInOuvertureMode(creneau, stand)) {
-            // The day has at least one OuvertureStand: closed-by-default. This
+            // The day has at least one PlageStand: closed-by-default. This
             // slot's open segments are exactly whichever of that day's opening
             // windows overlap it — possibly none at all, i.e. this slot is
             // fully closed even though the stand does open elsewhere that day.
@@ -147,7 +147,7 @@ public final class ProfilOuverture {
         }
         int debutSlotSecondes = creneau.getHeureDebut().toSecondOfDay();
         List<int[]> fermetures = new ArrayList<>();
-        for (IndisponibiliteStand indispo : stand.getIndisponibilitesEffectives()) {
+        for (PlageStand indispo : stand.getIndisponibilitesEffectives()) {
             int[] fermeture = clampedInSeconds(creneau, indispo, debutSlotSecondes, dureeSecondes, 2);
             if (fermeture.length > 0) {
                 fermetures.add(fermeture);
@@ -166,7 +166,7 @@ public final class ProfilOuverture {
      * another day, or does not overlap the créneau.
      */
     private static int[] clampedInSeconds(
-            Creneau creneau, FenetreDateeStand fenetre, int debutSlotSecondes, int dureeSecondes, int size) {
+            Creneau creneau, PlageStand fenetre, int debutSlotSecondes, int dureeSecondes, int size) {
         int decalageJour = fenetre.hasValidRange() ? decalageJourFenetre(creneau, fenetre.getDate()) : -1;
         if (decalageJour < 0) {
             return NO_WINDOW;
@@ -220,7 +220,7 @@ public final class ProfilOuverture {
     }
 
     /**
-     * True when {@code stand} has at least one valid {@link OuvertureStand}
+     * True when {@code stand} has at least one valid {@link PlageStand}
      * bearing on the créneau's day — regardless of whether its time window
      * actually overlaps the créneau. Deciding "closed-by-default" mode on this
      * alone (rather than on whether {@link #ouverturesInSeconds} came back
@@ -240,7 +240,7 @@ public final class ProfilOuverture {
         if (stand == null || stand.getOuverturesEffectives().isEmpty() || creneau.getDate() == null) {
             return false;
         }
-        for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
+        for (PlageStand ouverture : stand.getOuverturesEffectives()) {
             if (ouverture.hasValidRange() && decalageJourFenetre(creneau, ouverture.getDate()) >= 0) {
                 return true;
             }
@@ -263,7 +263,7 @@ public final class ProfilOuverture {
         }
         int debutSlotSecondes = creneau.getHeureDebut().toSecondOfDay();
         List<int[]> ouvertures = new ArrayList<>();
-        for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
+        for (PlageStand ouverture : stand.getOuverturesEffectives()) {
             int[] fenetre = clampedInSeconds(creneau, ouverture, debutSlotSecondes, dureeSecondes, 3);
             if (fenetre.length > 0) {
                 Integer effectif = ouverture.getEffectif();

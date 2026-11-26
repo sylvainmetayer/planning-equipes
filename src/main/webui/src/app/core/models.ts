@@ -137,16 +137,24 @@ export interface Stand {
  */
 export interface IndisponibiliteStand {
   id: number | null;
+  /** The plage's mode, always `FERMETURE` here. Since 4.0 the server stores one list of plages and serves both. */
+  mode?: ModeHoraire;
   date: string;
   heureDebut: string;
   heureFin: string | null;
   /** Free-text reason, nullable — purely informative, never read by the solver. */
   motif: string | null;
+  /** Always null on a closure. */
+  effectif?: number | null;
+  /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
+  depliee?: boolean;
 }
 
 /** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
 export interface OuvertureStand {
   id: number | null;
+  /** The plage's mode, always `OUVERTURE` here. */
+  mode?: ModeHoraire;
   date: string;
   heureDebut: string;
   heureFin: string | null;
@@ -154,6 +162,8 @@ export interface OuvertureStand {
   motif: string | null;
   /** Seats to fill on this dated window; absent or null = the stand's `effectifMin`. Never below 1. */
   effectif?: number | null;
+  /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
+  depliee?: boolean;
 }
 
 /** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */
@@ -202,39 +212,6 @@ export interface FenetreHoraire {
   heureFin: string | null;
   /** Seats to fill on this window; absent or null = the stand's `effectifMin`. Never below 1. */
   effectif?: number | null;
-}
-
-/**
- * What `POST /api/stands/compactage-horaires` reports, per stand: dated windows
- * before, rules and exceptions after, plus why a stand was left alone. A call
- * with `appliquer=false` returns the same shape without writing anything.
- */
-export interface LigneCompactage {
-  standId: string;
-  fenetresAvant: number;
-  reglesApres: number;
-  exceptionsApres: number;
-  /**
-   * Difference in minutes between the open segments before and after — non-zero
-   * only where a `23:59` window becomes a genuine "until closing time" one.
-   */
-  ecartMinutes: number;
-  compacte: boolean;
-  /**
-   * Closures the pruning took away: the rule that only shut the days the
-   * openings did not name, and the "shut, all day" markers the rules already
-   * imply. Openings are never pruned.
-   */
-  reglesElaguees: number;
-  raison: string;
-}
-
-export interface RapportCompactage {
-  applique: boolean;
-  standsCompactes: number;
-  fenetresAvant: number;
-  fenetresApres: number;
-  stands: LigneCompactage[];
 }
 
 /* ------------------ Ouvertures des stands (`/api/ouvertures-stands`) ------------------ */
@@ -832,6 +809,9 @@ export interface Creneau {
   couverturePause?: boolean;
 }
 
+/** Where an edition stands in its cycle, the order of the cycle (ADR 0115). */
+export type EditionPhase = 'PREPARATION' | 'CALCUL' | 'PUBLIEE' | 'TERMINEE';
+
 /**
  * A whole edition of the event — "Année 2025", "Année 2026" — and the scope
  * every piece of reference data belongs to (`/api/editions`). `active` is not
@@ -846,7 +826,7 @@ export interface Edition {
   active: boolean;
   creeLe: string | null;
   /** Where the edition stands in its cycle (ADR 0115). */
-  phase?: 'PREPARATION' | 'CALCUL' | 'PUBLIEE' | 'TERMINEE';
+  phase?: EditionPhase;
   /** When the edition entered its phase. */
   phaseDepuis?: string;
   /** In `PUBLIEE` only: the structure was reopened for a last-minute change. */
@@ -5120,7 +5100,12 @@ export interface PrerequisJournee {
   commentaire: string | null;
   prerequis: PrerequisValidation[];
   tousSatisfaits: boolean;
+  /** Where the day stands (ADR 0121): a frozen day may carry no reading. */
+  etat: DayState;
 }
+
+/** The state of a day: to be read, read, frozen (ADR 0121). */
+export type DayState = 'A_RELIRE' | 'RELUE' | 'FIGEE';
 
 /** How far the reading has got — « 3 journées sur 12 validées ». */
 export interface ProgressionValidations {

@@ -53,6 +53,8 @@ A grid is made of shifts and is no longer asked for in a mode: a timeslot is a s
 
 When the stands have their hours, `previsualiser_derivation_creneaux` shows the grid they imply (a cut at each hour where a stand opens or closes) and `generer_creneaux_depuis_stands` writes it, as an addition or, with `remplacer=true`, in place of the grid and of the plan along with it. `creer_creneau` and `modifier_creneau` take an optional `couverturePause`: the meal relay keeps the stand open at half its headcount, rounded up.
 
+A stand's schedule model (its recurring rules, ADR 0104) appears in `consulter_stand` and `lister_stands` under `horaires`. `ajouter_horaire_stand` with a rule identical to an existing one changes nothing; `effacer_horaires_stand` clears the model **and** the plages it unfolded, and keeps the hand-entered ones (`ajouter_fermeture_stand`, `ajouter_ouverture_stand`).
+
 An opening window (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
 
 `definir_journee_type` creates or replaces a day template by its name and its shifts on one line ("09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00", `R` marking a meal relay with seats halved), `affecter_journee_type` lays it over a range or dates. None of this writes a timeslot: `previsualiser_application_journees_types` says what applying would change and `materialiser_journees_types` writes it. `reconnaitre_journees_types` goes the other way from the timeslots, and `lister_journees_types` returns the dates out of line or under a consigne, which materialisation does not touch ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
@@ -103,6 +105,7 @@ Two **resources**, to attach once to inform all following calls:
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
 | `capturer_instantane` | `creer_version` |
+| `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
 | `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
@@ -110,6 +113,8 @@ Two **resources**, to attach once to inform all following calls:
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `figer_referentiel` | `modifier_phase_edition` |
+| `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `modifier_parametres_legaux` | `modifier_parametres` |

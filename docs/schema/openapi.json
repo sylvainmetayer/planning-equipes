@@ -2902,6 +2902,46 @@
           }
         }
       },
+      "DayState" : {
+        "type" : "string",
+        "enum" : [ "A_RELIRE", "RELUE", "FIGEE" ]
+      },
+      "DayStateChange" : {
+        "required" : [ "etat" ],
+        "type" : "object",
+        "properties" : {
+          "etat" : {
+            "$ref" : "#/components/schemas/DayState"
+          },
+          "commentaire" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DayStateView" : {
+        "required" : [ "jour", "etat" ],
+        "type" : "object",
+        "properties" : {
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "etat" : {
+            "$ref" : "#/components/schemas/DayState"
+          },
+          "validationId" : {
+            "type" : "string"
+          },
+          "valideLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "validePar" : {
+            "type" : "string"
+          },
+          "commentaire" : {
+            "type" : "string"
+          }
+        }
+      },
       "Decision" : {
         "type" : "object",
         "properties" : {
@@ -5456,10 +5496,6 @@
       "HoraireStand" : {
         "type" : "object",
         "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "mode" : {
             "$ref" : "#/components/schemas/ModeHoraire"
           },
@@ -5496,6 +5532,10 @@
           },
           "motif" : {
             "type" : "string"
+          },
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -5751,27 +5791,6 @@
           "animateursConcernes" : {
             "type" : "integer",
             "format" : "int32"
-          }
-        }
-      },
-      "IndisponibiliteStand" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "date" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "heureDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "heureFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "motif" : {
-            "type" : "string"
           }
         }
       },
@@ -6307,41 +6326,6 @@
               "format" : "date",
               "examples" : [ "2022-03-10" ]
             }
-          }
-        }
-      },
-      "LigneCompactage" : {
-        "required" : [ "compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres", "reglesElaguees" ],
-        "type" : "object",
-        "properties" : {
-          "standId" : {
-            "type" : "string"
-          },
-          "fenetresAvant" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "reglesApres" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "exceptionsApres" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "ecartMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "compacte" : {
-            "type" : "boolean"
-          },
-          "reglesElaguees" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "raison" : {
-            "type" : "string"
           }
         }
       },
@@ -7181,31 +7165,6 @@
           }
         }
       },
-      "OuvertureStand" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "date" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "heureDebut" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "heureFin" : {
-            "$ref" : "#/components/schemas/LocalTime"
-          },
-          "motif" : {
-            "type" : "string"
-          },
-          "effectif" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        }
-      },
       "ParametresLegaux" : {
         "type" : "object",
         "properties" : {
@@ -7612,6 +7571,37 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "PlageStand" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "mode" : {
+            "$ref" : "#/components/schemas/ModeHoraire"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "depliee" : {
+            "type" : "boolean"
           }
         }
       },
@@ -8059,7 +8049,7 @@
         }
       },
       "PrerequisJournee" : {
-        "required" : [ "jour", "prerequis", "tousSatisfaits", "validee" ],
+        "required" : [ "jour", "prerequis", "tousSatisfaits", "validee", "etat" ],
         "type" : "object",
         "properties" : {
           "jour" : {
@@ -8091,6 +8081,9 @@
           },
           "tousSatisfaits" : {
             "type" : "boolean"
+          },
+          "etat" : {
+            "$ref" : "#/components/schemas/DayState"
           }
         }
       },
@@ -8441,33 +8434,6 @@
           },
           "controle" : {
             "$ref" : "#/components/schemas/RapportGrille"
-          }
-        }
-      },
-      "RapportCompactage" : {
-        "required" : [ "applique", "fenetresApres", "fenetresAvant", "standsCompactes" ],
-        "type" : "object",
-        "properties" : {
-          "applique" : {
-            "type" : "boolean"
-          },
-          "standsCompactes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "fenetresAvant" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "fenetresApres" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "stands" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/LigneCompactage"
-            }
           }
         }
       },
@@ -10261,18 +10227,6 @@
           "emplacement" : {
             "$ref" : "#/components/schemas/Emplacement"
           },
-          "indisponibilites" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/IndisponibiliteStand"
-            }
-          },
-          "ouvertures" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/OuvertureStand"
-            }
-          },
           "horaires" : {
             "type" : "array",
             "items" : {
@@ -10281,6 +10235,18 @@
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "indisponibilites" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlageStand"
+            }
+          },
+          "ouvertures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlageStand"
+            }
           }
         }
       },
@@ -15512,6 +15478,66 @@
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
+    "/api/etats-journee" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DayStateView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Day State Resource" ]
+      }
+    },
+    "/api/etats-journee/{jour}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "jour",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DayStateChange"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DayStateView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set",
+        "tags" : [ "Day State Resource" ]
+      }
+    },
     "/api/exports/archive-evenement" : {
       "get" : {
         "parameters" : [ {
@@ -19877,32 +19903,6 @@
         "tags" : [ "Stand Resource" ]
       }
     },
-    "/api/stands/compactage-horaires" : {
-      "post" : {
-        "parameters" : [ {
-          "name" : "appliquer",
-          "in" : "query",
-          "schema" : {
-            "type" : "boolean",
-            "default" : false
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/RapportCompactage"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Compact Horaires",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
     "/api/stands/import-csv" : {
       "post" : {
         "requestBody" : {
@@ -20351,6 +20351,7 @@
     },
     "/api/validations" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -20370,6 +20371,7 @@
         "tags" : [ "Validation Journee Resource" ]
       },
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -20465,6 +20467,7 @@
     },
     "/api/validations/{id}" : {
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",

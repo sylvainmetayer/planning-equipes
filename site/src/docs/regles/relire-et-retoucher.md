@@ -45,6 +45,18 @@ L'avancement se lit dans le Solveur (« 3 journées sur 12 ») et par une coche 
 
 Accepter ne fige rien : le verrouillage est proposé à côté, jamais imposé (voir [Poser des exceptions et des verrous](ajustements-et-verrous.md)).
 
+### Les trois états d'une journée
+
+Chaque journée est **à relire**, **relue** ou **figée**.
+
+| État | Ce que cela veut dire | Ce qu'un nouveau calcul en fait |
+| --- | --- | --- |
+| À relire | Personne ne l'a acceptée | Il la recalcule librement |
+| Relue | Quelqu'un l'a acceptée, rien n'est figé | Il peut la recalculer, et elle redevient alors à relire |
+| Figée | Elle porte un verrouillage de journée entière | Il n'y touche plus |
+
+Seul votre geste fige une journée : l'accepter ne la fige jamais. Retirer le verrouillage de journée entière la rend relue si elle avait été acceptée, à relire sinon. Une journée figée compte comme relue dans l'avancement, même verrouillée depuis l'écran des verrous sans avoir été acceptée. La phase de l'édition ne change pas l'état des journées : vous pouvez relire ou figer une journée en préparation, en calcul comme après publication.
+
 ### Quand un nouveau calcul retire une relecture
 
 Une relecture ne survit à une résolution que si sa journée n'a pas été recalculée.

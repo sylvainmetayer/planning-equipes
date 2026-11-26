@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Creneau.SegmentOuvert;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
+import dev.sylvain.planning.domain.RecurringRules;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import java.io.IOException;
@@ -50,12 +50,11 @@ class OuverturesEditionReelleTest {
     private static final Path EMPREINTE = Path.of("src/test/resources/ouvertures/edition-reelle-empreinte.txt");
 
     /** The edition as read from the fixture: its stands, its créneaux, nothing resolved yet. */
-    record Edition(List<Stand> stands, List<Creneau> creneaux) {}
+    record Edition(List<Stand> stands, List<Creneau> creneaux, int regles) {}
 
     @Test
     void lesOuverturesResoluesSontCellesDeLEmpreinteGelee() throws IOException {
         Edition edition = readEdition();
-        HoraireStandResolver.apply(edition.stands(), edition.creneaux());
 
         String empreinte = empreinte(edition);
 
@@ -79,40 +78,7 @@ class OuverturesEditionReelleTest {
 
         assertThat(edition.stands()).hasSize(65);
         assertThat(edition.creneaux()).hasSize(62);
-        assertThat(edition.stands().stream()
-                        .mapToInt(stand -> stand.getHoraires().size())
-                        .sum())
-                .isEqualTo(157);
-        assertThat(edition.stands().stream()
-                        .mapToInt(stand -> stand.getOuvertures().size()
-                                + stand.getIndisponibilites().size())
-                        .sum())
-                .isEqualTo(27);
-    }
-
-    /**
-     * The point of the whole change, measured on the edition it was measured
-     * on: once a stand that declares openings is closed where it declares
-     * none, a third of its rules stop carrying anything — and not one minute
-     * of opening moves. Fifty-three of them are the closure that only shut the
-     * days the openings did not name, one per stand.
-     */
-    @Test
-    void lElagageRetireUnTiersDesReglesSansDeplacerUneOuverture() throws IOException {
-        Edition edition = readEdition();
-        HoraireStandResolver.apply(edition.stands(), edition.creneaux());
-        String avant = empreinte(edition);
-
-        List<HoraireElagage.LigneElagage> lignes = HoraireElagage.elaguer(edition.stands(), edition.creneaux());
-
-        int restantes = edition.stands().stream()
-                .mapToInt(stand -> stand.getHoraires().size())
-                .sum();
-        assertThat(restantes).isEqualTo(104);
-        assertThat(lignes.stream().filter(HoraireElagage.LigneElagage::elague).count())
-                .isEqualTo(53);
-        HoraireStandResolver.apply(edition.stands(), edition.creneaux());
-        assertThat(empreinte(edition)).isEqualTo(avant);
+        assertThat(edition.regles()).isEqualTo(157);
     }
 
     /* ------------------------------ empreinte ------------------------------ */
@@ -173,26 +139,24 @@ class OuverturesEditionReelleTest {
             creneaux.add(creneau);
         }
         List<Stand> stands = new ArrayList<>();
+        int regles = 0;
         for (JsonNode noeud : racine.get("stands")) {
-            stands.add(stand(noeud));
+            stands.add(stand(noeud, creneaux));
+            regles += noeud.path("horaires").size();
         }
-        return new Edition(stands, creneaux);
+        return new Edition(stands, creneaux, regles);
     }
 
-    private static Stand stand(JsonNode noeud) {
+    /** The stand as 3.x stored it — rules and dated windows — laid down as the plages the migration writes. */
+    private static Stand stand(JsonNode noeud, List<Creneau> creneaux) {
         Stand stand = new Stand();
         stand.setId(noeud.get("id").asText());
         stand.setNom(noeud.get("id").asText());
         stand.setEffectifMin(noeud.get("effectifMin").asInt());
         stand.setEffectifMax(noeud.get("effectifMax").asInt());
-        List<HoraireStand> horaires = new ArrayList<>();
-        for (JsonNode regle : noeud.path("horaires")) {
-            horaires.add(horaire(regle));
-        }
-        stand.setHoraires(horaires);
-        List<OuvertureStand> ouvertures = new ArrayList<>();
+        List<PlageStand> ouvertures = new ArrayList<>();
         for (JsonNode fenetre : noeud.path("ouvertures")) {
-            ouvertures.add(new OuvertureStand(
+            ouvertures.add(PlageStand.ouverture(
                     null,
                     LocalDate.parse(fenetre.get("date").asText()),
                     LocalTime.parse(fenetre.get("heureDebut").asText()),
@@ -201,9 +165,9 @@ class OuverturesEditionReelleTest {
                     entier(fenetre, "effectif")));
         }
         stand.setOuvertures(ouvertures);
-        List<IndisponibiliteStand> fermetures = new ArrayList<>();
+        List<PlageStand> fermetures = new ArrayList<>();
         for (JsonNode fenetre : noeud.path("indisponibilites")) {
-            fermetures.add(new IndisponibiliteStand(
+            fermetures.add(PlageStand.fermeture(
                     null,
                     LocalDate.parse(fenetre.get("date").asText()),
                     LocalTime.parse(fenetre.get("heureDebut").asText()),
@@ -211,29 +175,23 @@ class OuverturesEditionReelleTest {
                     null));
         }
         stand.setIndisponibilites(fermetures);
+        List<Regle> regles = new ArrayList<>();
+        for (JsonNode regle : noeud.path("horaires")) {
+            regles.add(regle(regle));
+        }
+        RecurringRules.poser(stand, creneaux, regles.toArray(Regle[]::new));
         return stand;
     }
 
-    private static HoraireStand horaire(JsonNode noeud) {
-        HoraireStand horaire = new HoraireStand();
-        horaire.setMode(ModeHoraire.valueOf(noeud.get("mode").asText()));
-        horaire.setJours(TypeJoursHoraire.valueOf(noeud.get("jours").asText()));
+    private static Regle regle(JsonNode noeud) {
         TreeSet<DayOfWeek> joursSemaine = new TreeSet<>();
         for (JsonNode jour : noeud.path("joursSemaine")) {
             joursSemaine.add(DayOfWeek.valueOf(jour.asText()));
-        }
-        horaire.setJoursSemaine(joursSemaine);
-        if (noeud.hasNonNull("dateDebut")) {
-            horaire.setDateDebut(LocalDate.parse(noeud.get("dateDebut").asText()));
-        }
-        if (noeud.hasNonNull("dateFin")) {
-            horaire.setDateFin(LocalDate.parse(noeud.get("dateFin").asText()));
         }
         TreeSet<LocalDate> dates = new TreeSet<>();
         for (JsonNode date : noeud.path("dates")) {
             dates.add(LocalDate.parse(date.asText()));
         }
-        horaire.setDates(dates);
         List<FenetreHoraire> fenetres = new ArrayList<>();
         for (JsonNode fenetre : noeud.path("fenetres")) {
             fenetres.add(new FenetreHoraire(
@@ -241,8 +199,19 @@ class OuverturesEditionReelleTest {
                     heure(fenetre, "heureFin"),
                     entier(fenetre, "effectif")));
         }
-        horaire.setFenetres(fenetres);
-        return horaire;
+        return new Regle(
+                ModeHoraire.valueOf(noeud.get("mode").asText()),
+                TypeJoursHoraire.valueOf(noeud.get("jours").asText()),
+                joursSemaine,
+                noeud.hasNonNull("dateDebut")
+                        ? LocalDate.parse(noeud.get("dateDebut").asText())
+                        : null,
+                noeud.hasNonNull("dateFin")
+                        ? LocalDate.parse(noeud.get("dateFin").asText())
+                        : null,
+                dates,
+                fenetres,
+                null);
     }
 
     private static LocalTime heure(JsonNode noeud, String champ) {
@@ -256,7 +225,6 @@ class OuverturesEditionReelleTest {
     /** Regenerates the frozen fingerprint; run by hand when a change is meant to move it. */
     public static void main() throws IOException {
         Edition edition = readEdition();
-        HoraireStandResolver.apply(edition.stands(), edition.creneaux());
         Files.writeString(EMPREINTE, empreinte(edition), StandardCharsets.UTF_8);
     }
 }

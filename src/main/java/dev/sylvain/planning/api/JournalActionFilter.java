@@ -45,7 +45,7 @@ public class JournalActionFilter implements ContainerResponseFilter {
      * it designates is read from the resolved owner instead.
      */
     private static final List<String> PARAMS_ENTITE =
-            List.of("id", "animateurId", "standId", "creneauId", "posteId", "name");
+            List.of("id", "animateurId", "standId", "creneauId", "posteId", "name", "jour");
 
     @Context
     ResourceInfo resourceInfo;

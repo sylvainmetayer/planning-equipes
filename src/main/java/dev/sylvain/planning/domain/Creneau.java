@@ -140,19 +140,19 @@ public class Creneau {
      * {@link ProfilOuverture}'s, which this delegates to.
      *
      * <p>A stand's day is in exactly one of three states — see
-     * {@link OuvertureStand}'s javadoc:</p>
+     * {@link PlageStand}'s javadoc:</p>
      * <ul>
-     * <li><b>No {@link OuvertureStand} that day.</b> Open-by-default, same as
-     * before {@link OuvertureStand} existed: a single pair
-     * {@code [0, getDureeMinutes()]} unless an {@link IndisponibiliteStand}
+     * <li><b>No {@link PlageStand} that day.</b> Open-by-default, same as
+     * before {@link PlageStand} existed: a single pair
+     * {@code [0, getDureeMinutes()]} unless an {@link PlageStand}
      * that day carves out closed stretches (an empty list if it closes the
      * slot entirely, more than one pair if it sits strictly inside the slot).</li>
-     * <li><b>At least one {@link OuvertureStand} that day.</b> Closed-by-default:
+     * <li><b>At least one {@link PlageStand} that day.</b> Closed-by-default:
      * the returned pairs are exactly the (possibly merged, if two windows
      * overlap or touch) opening windows clamped to this slot — an empty list
-     * if none of them overlap it at all. Any {@link IndisponibiliteStand} for
+     * if none of them overlap it at all. Any {@link PlageStand} for
      * that same day is ignored (the two are mutually exclusive per day, see
-     * {@link OuvertureStand}; {@code ReferenceDataService} enforces it at
+     * {@link PlageStand}; {@code ReferenceDataService} enforces it at
      * write time — this method has no other way to arbitrate a conflict).</li>
      * </ul>
      *

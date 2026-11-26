@@ -5,20 +5,17 @@ import java.time.LocalDate;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * One day marked « relu et accepté ». Persistent
- * state (one row per validation in {@code validation_journee}), not a journal:
- * deleting the row un-validates.
+ * One day marked « relu et accepté » — the reading behind the {@link
+ * DayState#RELUE} and {@link DayState#FIGEE} states of a day (ADR 0121).
+ * Persistent state (one row per day in {@code validation_journee}), not a
+ * journal: deleting the row un-reads the day.
  *
- * <p><b>A validation is not a lock, and that is its whole point.</b> A lock is
- * a mechanism the solver obeys: it freezes seats, it says nothing about anyone
- * having read them. A validation says a human went over that day and accepted
- * it, and freezes nothing at all — the screen offers to lay a lock down at the
- * same time, and never does it on its own.</p>
- *
- * <p>The two nonetheless meet once: a solve that moves a seat of a validated
- * day <b>withdraws</b> the validation, since nobody has read what the solver
- * just wrote — unless that day also carries a {@link TypeVerrouillage#JOUR}
- * lock, in which case the reading still describes what is there.</p>
+ * <p><b>A reading is not a lock.</b> The frozen state is the
+ * {@link TypeVerrouillage#JOUR} lock itself, never a flag here: a reading
+ * freezes nothing, and a solve that recomputes the day withdraws it (ADR 0039,
+ * 0069). It survives one only where nothing was recomputed — the frozen past,
+ * a frozen day, a day a solve started from the plan in place gave back
+ * unchanged.</p>
  *
  * @param validePar   the id of the account that validated ({@code "admin"} for the
  *                    configuration's), {@code "mcp"} for an assistant, {@code null}

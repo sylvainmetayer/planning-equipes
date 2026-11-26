@@ -341,24 +341,6 @@
       },
       "required" : [ "fenetres", "mode" ]
     },
-    "IndisponibiliteStandDto" : {
-      "type" : "object",
-      "properties" : {
-        "date" : {
-          "$ref" : "#/$defs/LocalDate"
-        },
-        "heureDebut" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "heureFin" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "motif" : {
-          "type" : "string"
-        }
-      },
-      "required" : [ "date", "heureDebut" ]
-    },
     "JourneeTypeDto" : {
       "type" : "object",
       "properties" : {
@@ -441,29 +423,6 @@
         }
       },
       "required" : [ "debut", "standId" ]
-    },
-    "OuvertureStandDto" : {
-      "type" : "object",
-      "properties" : {
-        "date" : {
-          "$ref" : "#/$defs/LocalDate"
-        },
-        "effectif" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "heureDebut" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "heureFin" : {
-          "$ref" : "#/$defs/LocalTime"
-        },
-        "motif" : {
-          "type" : "string"
-        }
-      },
-      "required" : [ "date", "heureDebut" ]
     },
     "ParametresDto" : {
       "type" : "object",
@@ -575,6 +534,35 @@
           "maximum" : 15
         }
       }
+    },
+    "PlageStandDto" : {
+      "type" : "object",
+      "properties" : {
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "depliee" : {
+          "type" : "boolean"
+        },
+        "effectif" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "mode" : {
+          "$ref" : "#/$defs/ModeHoraire"
+        },
+        "motif" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "date", "heureDebut", "mode" ]
     },
     "PlanDto" : {
       "type" : "object",
@@ -702,12 +690,6 @@
           "type" : "string",
           "minLength" : 1
         },
-        "indisponibilites" : {
-          "type" : "array",
-          "items" : {
-            "$ref" : "#/$defs/IndisponibiliteStandDto"
-          }
-        },
         "niveauEffort" : {
           "$ref" : "#/$defs/NiveauEffort"
         },
@@ -715,10 +697,10 @@
           "type" : "string",
           "minLength" : 1
         },
-        "ouvertures" : {
+        "plages" : {
           "type" : "array",
           "items" : {
-            "$ref" : "#/$defs/OuvertureStandDto"
+            "$ref" : "#/$defs/PlageStandDto"
           }
         },
         "premium" : {
@@ -892,7 +874,7 @@
       "type" : "integer",
       "format" : "int32",
       "minimum" : 1,
-      "maximum" : 4
+      "maximum" : 5
     },
     "stands" : {
       "type" : "array",

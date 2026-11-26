@@ -25,6 +25,8 @@ import { ActivationPreview, Edition, EditionSituation } from '../../core/models'
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
+import { phaseLabel } from '../../core/phase-edition';
+import { PhaseEditionControl } from '../../shared/phase-edition-control';
 import { EmptyEditionCard } from './empty-edition-card';
 
 /** The shape of an edition id (`E1`, `E2`…), which the server refuses as a name. */
@@ -58,6 +60,7 @@ const NOM_FORME_ID = /^[Ee][1-9]\d*$/;
     MatTooltipModule,
     RouterLink,
     EmptyEditionCard,
+    PhaseEditionControl,
   ],
   templateUrl: './editions-page.html',
   styleUrl: './editions-page.css',
@@ -66,7 +69,7 @@ const NOM_FORME_ID = /^[Ee][1-9]\d*$/;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditionsPage implements OnInit {
-  protected readonly columns = ['nom', 'id', 'etat', 'actions'];
+  protected readonly columns = ['nom', 'id', 'phase', 'etat', 'actions'];
   protected readonly store = inject(EditionStore);
 
   /** Name typed in the creation form; the server draws the id. */
@@ -89,6 +92,10 @@ export class EditionsPage implements OnInit {
 
   ngOnInit(): void {
     void this.recharger();
+  }
+
+  protected phaseOf(edition: Edition): string {
+    return edition.phase ? phaseLabel(edition.phase) : '';
   }
 
   protected async creer(): Promise<void> {

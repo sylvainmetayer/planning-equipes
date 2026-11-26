@@ -34,7 +34,7 @@ Les **lieux** sont les emplacements géolocalisés rattachés aux stands. Ils se
 
 1. Ouvrez *Stands* et cliquez sur « Ajouter ». L'assistant guide la création : identité, typologies, lieu, puis les créneaux de l'édition, à décocher, avec l'effectif de chacun. Aucune règle à écrire.
 2. Renseignez au moins une typologie (toujours), les effectifs minimum et maximum, et si le stand est réservé aux majeurs. Les indicateurs *premium* et *effort* se règlent aussi dans la fiche.
-3. Réglez les horaires : des règles récurrentes complétées d'exceptions datées. Chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne. Le détail est dans [Construire le calendrier et les horaires](calendrier-et-horaires.md).
+3. Réglez les horaires : des plages datées, d'ouverture ou de fermeture, jour par jour. Chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne. Le détail est dans [Construire le calendrier et les horaires](calendrier-et-horaires.md).
 
 Le tableau des stands se trie sur chaque colonne et dit, pour chacun, ses jours ouverts, ses postes et, après calcul, sa couverture.
 
@@ -77,15 +77,15 @@ Une modification ne signale que ce qu'elle change : une donnée que vous n'avez 
 
 Si deux onglets ou deux personnes ouvrent la même fiche, la seconde à enregistrer est prévenue que la fiche a bougé depuis son ouverture. Elle choisit de recharger ou d'écraser en connaissance de cause : rien n'est écrasé en silence.
 
-## Figer le référentiel quand la préparation est terminée
+## Changer de phase quand la préparation est terminée
 
 Une édition avance par phases : Préparation, Calcul, Publiée, Terminée. Tant qu'elle est en Préparation, tout se modifie. Dès qu'elle passe en Calcul, le référentiel est figé : stands, créneaux, typologies et emplacements, compétences des animateurs. Plus aucun chemin (formulaire, modification en masse, import, assistant) ne modifie alors ces fiches, et les champs figés s'affichent en lecture seule avec un cadenas.
 
-Pour passer en Calcul, figez une famille dans Paramètres, onglet *Édition* : les quatre se figent ensemble. Levez-en une pour revenir en Préparation, et les quatre se rouvrent.
+Pour changer de phase, ouvrez l'accueil (ligne « Phase de l'édition ») ou Administrer › Éditions : les quatre phases y sont côte à côte, la courante est marquée, et chaque changement demande une confirmation qui dit ce que la nouvelle phase fige ou ouvre. Tout retour en arrière est permis : repasser en Préparation rouvre le référentiel. Un compte en lecture seule voit la phase et n'a aucun bouton.
 
-La première publication fait passer l'édition en Publiée. La structure (stands, créneaux, typologies et emplacements) y reste figée, mais les fiches des animateurs se modifient de nouveau. Pour un changement de dernière minute, comme ajouter un stand la veille, levez le gel des stands : la structure se débloque sans quitter la phase Publiée, et la publication suivante la refige d'elle-même.
+La première publication fait passer l'édition en Publiée. La structure (stands, créneaux, typologies et emplacements) y reste figée, mais les fiches des animateurs se modifient de nouveau. Pour un changement de dernière minute, comme ajouter un stand la veille, cliquez sur « Débloquer la structure » : elle se rouvre sans quitter la phase Publiée, un bandeau en haut de l'écran le rappelle tant qu'elle est débloquée, et la publication suivante la refige d'elle-même (« Refiger » le fait à la main).
 
-Dans toutes les phases, les disponibilités, les ajustements, les verrous et les consignes restent libres. À la levée du gel, l'application rappelle si le planning est déjà publié.
+Dans toutes les phases, les disponibilités, les ajustements, les verrous et les consignes restent libres. Quand la phase rouvre le référentiel, l'application rappelle si le planning est déjà publié.
 
 ## Et ensuite
 

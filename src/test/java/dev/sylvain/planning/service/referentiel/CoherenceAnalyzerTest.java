@@ -5,10 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
+import dev.sylvain.planning.domain.RecurringRules;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import java.time.DayOfWeek;
@@ -50,7 +50,6 @@ class CoherenceAnalyzerTest {
         Stand stand = new Stand(id, id, Set.of(), 1, 1, false);
         stand.setIndisponibilites(new ArrayList<>());
         stand.setOuvertures(new ArrayList<>());
-        stand.setHoraires(new ArrayList<>());
         return stand;
     }
 
@@ -371,8 +370,10 @@ class CoherenceAnalyzerTest {
     @Test
     void aStandOpenedByARecurringRuleIsNotMistakenForAClosedOne() {
         Stand regle = stand("APREM");
-        regle.setHoraires(
-                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
+        RecurringRules.poserSurJours(
+                regle,
+                List.of(JOUR_1),
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null)));
 
         assertThat(surCreneau(creneau(1L, JOUR_1, 14, 20), new ArrayList<>(List.of(regle))))
                 .isEmpty();
@@ -382,8 +383,10 @@ class CoherenceAnalyzerTest {
     @Test
     void aTimeslotStartingBeforeEveryStandOpensReportsTheDeadStretch() {
         Stand regle = stand("APREM");
-        regle.setHoraires(
-                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
+        RecurringRules.poserSurJours(
+                regle,
+                List.of(JOUR_1),
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null)));
 
         List<Avertissement> avertissements = surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(regle)));
 
@@ -400,13 +403,16 @@ class CoherenceAnalyzerTest {
     @Test
     void aWeekdayRuleThatDoesNotCoverTheDayClosesTheStand() {
         Stand weekend = stand("WEEKEND");
-        HoraireStand regle = new HoraireStand(
-                null,
+        Regle regle = new Regle(
                 ModeHoraire.OUVERTURE,
                 TypeJoursHoraire.JOURS_SEMAINE,
-                List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
-        regle.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
-        weekend.setHoraires(List.of(regle));
+                Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
+                null,
+                null,
+                null,
+                List.of(new FenetreHoraire(LocalTime.of(14, 0), null)),
+                null);
+        RecurringRules.poserSurJours(weekend, List.of(JOUR_1), regle);
 
         // JOUR_1 is a Wednesday: no rule covers it, and the stand declares openings.
         assertThat(types(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(weekend)))))
@@ -421,13 +427,16 @@ class CoherenceAnalyzerTest {
     @Test
     void aClosingOnlyRuleThatDoesNotCoverTheDayLeavesTheStandOpen() {
         Stand weekend = stand("WEEKEND");
-        HoraireStand regle = new HoraireStand(
-                null,
+        Regle regle = new Regle(
                 ModeHoraire.FERMETURE,
                 TypeJoursHoraire.JOURS_SEMAINE,
-                List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
-        regle.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
-        weekend.setHoraires(List.of(regle));
+                Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
+                null,
+                null,
+                null,
+                List.of(new FenetreHoraire(LocalTime.of(14, 0), null)),
+                null);
+        RecurringRules.poserSurJours(weekend, List.of(JOUR_1), regle);
 
         assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(weekend))))
                 .isEmpty();
@@ -436,7 +445,7 @@ class CoherenceAnalyzerTest {
     @Test
     void aTimeslotNoStandIsOpenOnAtAllIsReported() {
         Stand ferme = stand("FERME");
-        ferme.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(0, 0), null, "Montage"));
+        ferme.getPlages().add(PlageStand.fermeture(null, JOUR_1, LocalTime.of(0, 0), null, "Montage"));
 
         List<Avertissement> avertissements = surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(ferme)));
 
@@ -448,7 +457,7 @@ class CoherenceAnalyzerTest {
     @Test
     void oneOpenStandAmongClosedOnesIsEnoughToStaySilent() {
         Stand ferme = stand("FERME");
-        ferme.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(0, 0), null, "Montage"));
+        ferme.getPlages().add(PlageStand.fermeture(null, JOUR_1, LocalTime.of(0, 0), null, "Montage"));
         Stand ouvert = stand("OUVERT");
 
         assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(ferme, ouvert))))
@@ -462,8 +471,8 @@ class CoherenceAnalyzerTest {
     @Test
     void aMiddayClosureCommonToEveryStandIsNotReported() {
         Stand pause = stand("PAUSE");
-        pause.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null));
-        pause.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(20, 0), null));
+        pause.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null));
+        pause.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(20, 0), null));
 
         assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(pause))))
                 .isEmpty();
@@ -473,7 +482,7 @@ class CoherenceAnalyzerTest {
     @Test
     void anOverhangShorterThanTheFloorIsIgnored() {
         Stand presque = stand("PRESQUE");
-        presque.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 10), LocalTime.of(20, 0), null));
+        presque.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(10, 10), LocalTime.of(20, 0), null));
 
         assertThat(surCreneau(creneau(1L, JOUR_1, 10, 20), new ArrayList<>(List.of(presque))))
                 .isEmpty();
@@ -483,7 +492,7 @@ class CoherenceAnalyzerTest {
     @Test
     void aNightTimeslotReportsItsOverhangInWallClockHours() {
         Stand tard = stand("TARD");
-        tard.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(20, 0), LocalTime.of(23, 0), null));
+        tard.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(20, 0), LocalTime.of(23, 0), null));
 
         List<Avertissement> avertissements = surCreneau(
                 new Creneau(1L, 0, JOUR_1, LocalTime.of(20, 0), LocalTime.of(0, 0)), new ArrayList<>(List.of(tard)));
@@ -508,7 +517,7 @@ class CoherenceAnalyzerTest {
     @Test
     void aWindowOverlappingNoTimeslotOfItsDayIsReportedWithTheDay() {
         Stand tot = stand("TOT");
-        tot.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+        tot.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
 
         List<Avertissement> avertissements = surStand(null, tot, troisJours());
 
@@ -523,8 +532,10 @@ class CoherenceAnalyzerTest {
     @Test
     void aRuleWhoseWindowsMissEveryTimeslotIsReportedOnceAndAsNeverOpen() {
         Stand nuit = stand("NUIT");
-        nuit.setHoraires(List.of(HoraireStand.everyDay(
-                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(21, 0), LocalTime.of(23, 0)))));
+        RecurringRules.poserSurJours(
+                nuit,
+                troisJours().stream().map(Creneau::getDate).toList(),
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(21, 0), LocalTime.of(23, 0))));
 
         List<Avertissement> avertissements = surStand(null, nuit, troisJours());
 
@@ -549,8 +560,8 @@ class CoherenceAnalyzerTest {
         List<Creneau> creneaux = new ArrayList<>(List.of(
                 creneau(1L, JOUR_1, 10, 20), new Creneau(2L, 0, JOUR_3, LocalTime.of(22, 0), LocalTime.of(2, 0))));
         Stand nuit = stand("NUIT");
-        nuit.getIndisponibilites()
-                .add(new IndisponibiliteStand(null, JOUR_3.plusDays(1), LocalTime.MIDNIGHT, LocalTime.of(2, 0), null));
+        nuit.getPlages()
+                .add(PlageStand.fermeture(null, JOUR_3.plusDays(1), LocalTime.MIDNIGHT, LocalTime.of(2, 0), null));
 
         assertThat(types(surStand(null, nuit, creneaux)))
                 .doesNotContain(TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT);
@@ -559,8 +570,7 @@ class CoherenceAnalyzerTest {
     @Test
     void aDatedExceptionOutsideTheEventIsReportedWithBothBounds() {
         Stand glisse = stand("GLISSE");
-        glisse.getIndisponibilites()
-                .add(new IndisponibiliteStand(null, JOUR_1.plusMonths(1), LocalTime.of(10, 0), null, null));
+        glisse.getPlages().add(PlageStand.fermeture(null, JOUR_1.plusMonths(1), LocalTime.of(10, 0), null, null));
 
         List<Avertissement> avertissements = surStand(null, glisse, troisJours());
 
@@ -574,10 +584,10 @@ class CoherenceAnalyzerTest {
     @Test
     void aWarningNamesTheStandRatherThanItsId() {
         Stand ferme = new Stand("S12", "Buvette du parc", Set.of(), 1, 1, false);
-        ferme.setIndisponibilites(new ArrayList<>());
-        ferme.setOuvertures(new ArrayList<>());
-        ferme.setHoraires(
-                List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null))));
+        RecurringRules.poserSurJours(
+                ferme,
+                troisJours().stream().map(Creneau::getDate).toList(),
+                Regle.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null)));
 
         assertThat(surStand(null, ferme, troisJours()).get(0).message())
                 .startsWith("Le stand « Buvette du parc » ")
@@ -587,8 +597,10 @@ class CoherenceAnalyzerTest {
     @Test
     void aStandClosedEveryDayIsReportedAsNeverOpen() {
         Stand ferme = stand("FERME");
-        ferme.setHoraires(
-                List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null))));
+        RecurringRules.poserSurJours(
+                ferme,
+                troisJours().stream().map(Creneau::getDate).toList(),
+                Regle.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null)));
 
         assertThat(types(surStand(null, ferme, troisJours()))).containsExactly(TypeAvertissement.STAND_JAMAIS_OUVERT);
     }
@@ -597,10 +609,10 @@ class CoherenceAnalyzerTest {
     @Test
     void anEditLeavingTheScheduleAloneSaysNothingAboutIt() {
         Stand avant = stand("FERME");
-        avant.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+        avant.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
         Stand apres = stand("FERME");
         apres.setNom("Renommé");
-        apres.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+        apres.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
 
         assertThat(surStand(avant, apres, troisJours())).isEmpty();
     }
@@ -608,9 +620,9 @@ class CoherenceAnalyzerTest {
     @Test
     void anEditChangingAWindowWarnsAgain() {
         Stand avant = stand("BOUGE");
-        avant.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null));
+        avant.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null));
         Stand apres = stand("BOUGE");
-        apres.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+        apres.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
 
         assertThat(types(surStand(avant, apres, troisJours()))).contains(TypeAvertissement.STAND_FENETRE_SANS_EFFET);
     }
@@ -618,7 +630,7 @@ class CoherenceAnalyzerTest {
     @Test
     void withoutAnyTimeslotNothingIsSaidAboutAStand() {
         Stand tot = stand("TOT");
-        tot.getOuvertures().add(new OuvertureStand(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
+        tot.getPlages().add(PlageStand.ouverture(null, JOUR_1, LocalTime.of(7, 0), LocalTime.of(9, 0), null));
 
         assertThat(surStand(null, tot, new ArrayList<>())).isEmpty();
     }

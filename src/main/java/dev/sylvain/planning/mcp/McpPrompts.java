@@ -227,8 +227,8 @@ public class McpPrompts {
                 %s
 
                 1. etat_edition : la famille CRENEAUX est-elle figée (bloc gel) ? Si oui, toute \
-                création ou modification de créneau sera refusée : dis-le-moi et arrête-toi. lever_gel \
-                n'est à proposer que si je le demande.
+                création ou modification de créneau sera refusée : dis-le-moi et arrête-toi. \
+                modifier_phase_edition n'est à proposer que si je le demande.
                 2. diagnostiquer_grille_creneaux pour voir ce qui existe déjà, et lister_journees_types \
                 pour savoir si un calendrier de journées types est déjà en place.
                 3. Si les journées de l'évènement se ressemblent, propose-moi les journées types :
@@ -250,8 +250,8 @@ public class McpPrompts {
                 longue, trou dans une journée, date isolée, stand que personne ne pourra tenir, \
                 sous-effectif — en disant pour chacune si c'est une vraie erreur ou un choix légitime \
                 de ma part.
-                6. Quand la grille est arrêtée, propose-moi de la figer (figer_referentiel, famille \
-                CRENEAUX) : c'est le prompt figer_le_referentiel.""".formatted(suffixe(edition), editionFrame(edition)));
+                6. Quand la grille est arrêtée, propose-moi de la figer (modifier_phase_edition, \
+                phase CALCUL) : c'est le prompt figer_le_referentiel.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
     @Prompt(
@@ -316,31 +316,32 @@ public class McpPrompts {
 
     @Prompt(
             name = "figer_le_referentiel",
-            description = "Figer le référentiel une fois sa préparation terminée — stands, créneaux, "
+            description = "Passer l'édition en phase Calcul une fois sa préparation terminée — stands, créneaux, "
                     + "typologies et emplacements, compétences — pour qu'aucune écriture ne le fasse plus bouger.")
     PromptMessage freezeTheReferential(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
-                Aide-moi à figer le référentiel%s, famille par famille.
+                Aide-moi à figer le référentiel%s en changeant la phase de l'édition.
 
                 %s
 
                 1. etat_edition : quelles familles sont déjà figées (bloc gel), et depuis quand ? Le \
                 reste de la checklist dit si la préparation est vraiment finie.
                 2. lister_anomalies_referentiel : une anomalie BLOQUANT sur une famille se corrige \
-                avant de la figer — après, la fiche ne se corrige plus sans lever le gel.
-                3. figer_referentiel, une famille à la fois et après mon accord : STANDS, CRENEAUX, \
-                TYPOLOGIES_EMPLACEMENTS ou COMPETENCES. Dis-moi chaque fois ce qui ne s'écrira plus, \
-                et ce qui reste libre : disponibilités, souhaits, déclarations, ajustements, verrous et \
-                consignes.
-                4. Ne confonds pas figer et verrouiller : figer_referentiel gèle des fiches du \
-                référentiel, verrouiller fige des sièges du planning pour les prochaines résolutions. \
-                Les deux se décident séparément.
+                avant de la figer — après, la fiche ne se corrige plus sans rouvrir le référentiel.
+                3. modifier_phase_edition avec la phase CALCUL, après mon accord : STANDS, CRENEAUX, \
+                TYPOLOGIES_EMPLACEMENTS et COMPETENCES se figent ensemble. Dis-moi ce qui ne \
+                s'écrira plus, et ce qui reste libre : disponibilités, souhaits, déclarations, \
+                ajustements, verrous et consignes.
+                4. Ne confonds pas figer et verrouiller : la phase gèle des fiches du référentiel, \
+                verrouiller fige des sièges du planning pour les prochaines résolutions. Les deux se \
+                décident séparément.
 
-                lever_gel seulement si je le demande explicitement : après une publication, toute \
-                modification fait bouger des plannings déjà envoyés. Fermer une bande horaire à tous \
-                les stands reste possible sous gel, par une consigne (prompt \
+                Rouvrir (modifier_phase_edition avec la phase PREPARATION, ou, dans une édition \
+                PUBLIEE, avec structure DEBLOQUER) seulement si je le demande explicitement : après \
+                une publication, toute modification fait bouger des plannings déjà envoyés. Fermer \
+                une bande horaire à tous les stands reste possible sous gel, par une consigne (prompt \
                 preparer_un_plan_de_repli) ; fermer un seul stand, non : ajouter_fermeture_stand est \
-                refusé sous gel STANDS.""".formatted(suffixe(edition), editionFrame(edition)));
+                refusé tant que la phase fige les stands.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
     @Prompt(
@@ -440,21 +441,20 @@ public class McpPrompts {
                 %s
 
                 1. etat_edition : la famille STANDS est-elle figée (bloc gel) ? Si oui, aucun horaire \
-                ne s'écrira : dis-le-moi et arrête-toi — lever_gel n'est à proposer que si je le \
-                demande.
+                ne s'écrira : dis-le-moi et arrête-toi — modifier_phase_edition n'est à proposer que \
+                si je le demande.
                 2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
                 que d'une page blanche, et dis-moi ce que le planning retiendrait en l'état.
-                3. Pour chaque stand à régler, ajouter_horaire_stand pose une règle récurrente — la \
-                forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture ». Une \
-                fenêtre peut nommer son propre effectif ; sans effectif, elle reprend le minimum du \
-                stand. Garde ajouter_ouverture_stand et ajouter_fermeture_stand pour les exceptions \
-                datées, qui priment sur les règles du jour qu'elles nomment.
-                4. Si les horaires ont été saisis jour par jour, compacter_horaires_stands les replie \
-                en règles quand le motif se répète. Dis-moi ce qu'il n'a pas su compacter, et pourquoi.
-                5. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
+                3. Pour chaque stand à régler, ajouter_horaire_stand écrit un horaire récurrent — la \
+                forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture » — sous la \
+                forme d'une plage datée par jour d'événement. Une fenêtre peut nommer son propre \
+                effectif ; sans effectif, elle reprend le minimum du stand. Garde \
+                ajouter_ouverture_stand et ajouter_fermeture_stand pour les jours à part : un jour qui \
+                porte déjà une plage n'est pas modifié par ajouter_horaire_stand.
+                4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
-                6. Si la grille de créneaux n'existe pas encore, previsualiser_derivation_creneaux la \
+                5. Si la grille de créneaux n'existe pas encore, previsualiser_derivation_creneaux la \
                 déduit de ces fenêtres — une coupure à chaque heure où un stand ouvre ou ferme. Montre \
                 l'aperçu avant d'écrire quoi que ce soit.
 
@@ -608,9 +608,9 @@ public class McpPrompts {
                 les deux cas après mon accord, en me disant chaque fois ce que le verrou soustrait au \
                 solveur : ces personnes-là sont figées et leurs heures consommées, ce qui réduit \
                 l'espace de recherche mais aussi les échanges possibles.
-                5. Ne confonds pas verrouiller et figer_referentiel : le premier fige des sièges du \
-                planning, le second gèle des fiches du référentiel (stands, créneaux…) et n'empêche \
-                aucune résolution de déplacer qui que ce soit.
+                5. Ne confonds pas verrouiller et la phase de l'édition (modifier_phase_edition) : le \
+                premier fige des sièges du planning, la seconde gèle des fiches du référentiel \
+                (stands, créneaux…) et n'empêche aucune résolution de déplacer qui que ce soit.
                 6. Relance ensuite par le prompt resoudre_sans_perdre_le_planning, et rappelle-moi que \
                 deverrouiller existe : un verrou est une décision, pas un fait acquis.""".formatted(suffixe(edition), editionFrame(edition)));
     }
@@ -710,7 +710,7 @@ public class McpPrompts {
                    - un désistement : modifier_animateur, pour le jour indisponible ;
                    - un seul stand qui ferme à une date à venir : ajouter_fermeture_stand sur ce stand. \
                 Il est refusé quand la famille STANDS est figée (etat_edition dit lesquelles le sont) : \
-                dis-le-moi, lever_gel ne se fait que si je le demande ;
+                dis-le-moi, modifier_phase_edition ne se fait que si je le demande ;
                    - une bande horaire fermée à tous les stands (arrêté, alerte météo) : une consigne — \
                 simuler_consigne puis appliquer_consigne. Elle ferme la bande pour tous les stands et ne \
                 rouvre que ceux qu'elle nomme : ce n'est pas l'outil pour fermer un seul stand. Elle \

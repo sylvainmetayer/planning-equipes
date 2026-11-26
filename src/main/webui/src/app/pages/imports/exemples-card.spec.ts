@@ -162,7 +162,7 @@ describe('ExemplesCard', () => {
     const notice = racine.querySelector('app-gel-edition-notice .gel-edition-notice');
     expect(notice).not.toBeNull();
     expect(notice!.textContent).toContain('« Stands » et « Créneaux »');
-    expect(notice!.textContent).toContain('sera refusé jusqu');
+    expect(notice!.textContent).toContain('sera refusé tant qu');
     expect(bouton().disabled).toBe(false);
 
     await page['onLoadSample']();

@@ -102,4 +102,22 @@ describe('EditionActuelleBar', () => {
     await fixture.whenStable();
     expect(text()).toContain('Action requise');
   });
+
+  it('names the phase of the edition, and bannerises an unblocked structure', async () => {
+    const publiee = { ...edition('A', 'Année 2025', true), phase: 'PUBLIEE' as const };
+    seedStore(store, 'courant', publiee);
+    await fixture.whenStable();
+    expect(text()).toContain('phase Publiée');
+    expect(fixture.nativeElement.querySelector('[data-bandeau="structure-debloquee"]')).toBeNull();
+
+    seedStore(store, 'courant', { ...publiee, structureDebloquee: true });
+    await fixture.whenStable();
+    expect(text()).toContain('Structure débloquée');
+    expect(text()).toContain('Refiger');
+
+    // The flag means nothing outside Publiée.
+    seedStore(store, 'courant', { ...publiee, phase: 'CALCUL', structureDebloquee: true });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('[data-bandeau="structure-debloquee"]')).toBeNull();
+  });
 });

@@ -320,15 +320,18 @@ class CreneauResourceTest {
             {"dateDebut":"2032-05-03","dateFin":"2032-05-04","heureFermeture":"20:00:00","remplacer":false}
             """;
 
-    /** Creates a stand open every day on {@code fenetres}, and returns the id the application gave it. */
+    /** Creates a stand open on {@code fenetres} on each day of {@link #DERIVATION}, and returns the id the application gave it. */
     private String standOuvertSur(String nom, String fenetres) {
+        String ouvertures = java.util.stream.Stream.of("2032-05-03", "2032-05-04")
+                .map(jour -> fenetres.replace("{", "{\"date\":\"" + jour + "\","))
+                .collect(java.util.stream.Collectors.joining(","));
         return given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
                 .body("""
                         {"nom":"%s","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                          "reserveMajeurs":false,
-                         "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[%s]}]}
-                        """.formatted(nom, fenetres))
+                         "ouvertures":[%s]}
+                        """.formatted(nom, ouvertures))
                 .when()
                 .post("/api/stands")
                 .then()

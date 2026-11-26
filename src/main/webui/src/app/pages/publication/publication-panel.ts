@@ -39,8 +39,8 @@ import {
   sortRecipients,
   RecipientSort,
 } from './publication-diff';
-import { GelInvitation } from '../../core/gel-invitation';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { PhaseEditionActions } from '../../shared/phase-edition-actions';
 import { EditionStore } from '../../core/edition.store';
 import { isEditionInactive } from '../../core/edition-inactive';
 
@@ -74,7 +74,7 @@ export class PublicationPanel implements OnInit {
   /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
   protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly planningApi = inject(PlanningApi);
-  private readonly gelInvitation = inject(GelInvitation);
+  private readonly phaseActions = inject(PhaseEditionActions);
   private readonly confirm = inject(ConfirmService);
   private readonly params = currentViewParams();
 
@@ -228,8 +228,8 @@ export class PublicationPanel implements OnInit {
         );
         this.listOpen.set(false);
         this.published.emit();
-        // The second milestone at which freezing is offered (ADR 0052).
-        void this.gelInvitation.offer('publication');
+        // Publishing moved the edition to Publiée, which freezes its structure (ADR 0115).
+        void this.phaseActions.refresh().catch(() => undefined);
       } catch (error) {
         // An inactive edition is told by the interceptor; '' clears « en cours ».
         this.reported.emit(isEditionInactive(error) ? '' : errorPrefix(error));

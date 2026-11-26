@@ -36,12 +36,6 @@ class ConsigneCoucheStructurelleTest {
     private static final Map<String, String> SANS_CONSIGNE_AVEC_MOTIF = Map.of(
             "service/referentiel/StandService.java",
                     "the entry point itself: resolves the rules, then lays the consignes on top",
-            "service/referentiel/HoraireCompaction.java",
-                    "rewrites dated windows into equivalent rules — a rewriting of the stand's own declaration",
-            "service/referentiel/HoraireElagage.java",
-                    "removes closures the rules make mute — the stand's own declaration again",
-            "service/referentiel/GrilleDepuisFenetres.java",
-                    "derives a nominal grid from the stands' hours; a consigne is a departure from that grid",
             "service/referentiel/CoherenceService.java",
                     "warns about what a stand, a créneau or an exception says, against the stand's own hours",
             "service/scenario/ScenarioDomainMapper.java",
