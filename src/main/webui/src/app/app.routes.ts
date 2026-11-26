@@ -725,7 +725,7 @@ const adminRoutes: Routes = [
   // The intendance of the meals and the breaks have no view of the Planning
   // page any more: the Diagnostic's problems are where they are read today. The
   // graph's descent emplacement → stand → timeslot → animateur is the map's.
-  { path: 'intendance', redirectTo: '/diagnostic?onglet=problemes' },
+  { path: 'intendance', redirectTo: () => '/diagnostic?onglet=problemes' },
   { path: 'graphe', redirectTo: redirectToJournee('carte') },
   // The six screens the two grids and the table of the Planning page gathered
   // (issue #713), their view state carried along — the treemap's day under a
@@ -741,14 +741,14 @@ const adminRoutes: Routes = [
     path: 'repartition-heures',
     redirectTo: redirectToPlanning({ axe: 'stand', vue: 'treemap' }, { date: 'jourTreemap' }),
   },
-  { path: 'typologies-planning', redirectTo: '/stands?onglet=typologies' },
+  { path: 'typologies-planning', redirectTo: () => '/stands?onglet=typologies' },
   // The four screens the Journée page gathers, kept for the bookmarks. The
   // rail's `vue` (which lines) and the breaks' `vue` (only those without a
   // relay) are renamed to the keys the views own now.
   { path: 'day-calendar', redirectTo: redirectToJournee('jour', {}, 'tableau') },
   { path: 'rail-jour', redirectTo: redirectToJournee('jour', { vue: 'lignes' }, 'rail') },
   { path: 'carte-jour', redirectTo: redirectToJournee('carte') },
-  { path: 'pauses', redirectTo: '/diagnostic?onglet=problemes' },
+  { path: 'pauses', redirectTo: () => '/diagnostic?onglet=problemes' },
   {
     // What the next solve must respect (issue #720): the hard rules with the
     // thresholds they read, the quality rules with their importance. The solve

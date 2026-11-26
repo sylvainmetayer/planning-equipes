@@ -51,15 +51,6 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   await expect(page.locator('.rail-table')).toBeVisible();
   await expect(page).not.toHaveURL(/vue=/);
 
-  // The four views: Jour, Stand, Personne and Carte.
-  await rendus.getByText('Stand').click();
-  await expect(page.locator('.planning-grille').first()).toBeVisible();
-  await expect(page).toHaveURL(/vue=stand/);
-
-  await rendus.getByText('Personne').click();
-  await expect(page.locator('.planning-grille').first()).toBeVisible();
-  await expect(page).toHaveURL(/vue=personne/);
-
   await rendus.getByText('Carte').click();
   await expect(page.locator('.leaflet-container')).toBeVisible();
   await expect(page).toHaveURL(/vue=carte/);
@@ -73,6 +64,16 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   // re-reads a count of persisted assignments either (issue #712).
   expect(appels.filter((chemin) => chemin.startsWith('/api/planning'))).toEqual([]);
   expect(appels.filter((chemin) => chemin === '/api/pauses')).toEqual([]);
+
+  // Stand and Personne read their own reports: outside the no-refetch count above.
+  await rendus.getByText('Stand').click();
+  await expect(page.locator('.planning-grille').first()).toBeVisible();
+  await expect(page).toHaveURL(/vue=stand/);
+
+  await rendus.getByText('Personne').click();
+  await expect(page.locator('.planning-grille').first()).toBeVisible();
+  await expect(page).toHaveURL(/vue=personne/);
+
   await page.context().close();
 });
 
