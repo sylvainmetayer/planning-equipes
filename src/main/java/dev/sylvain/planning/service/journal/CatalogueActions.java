@@ -654,7 +654,7 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         route("ParametresResource#updateLegal", PARAMETRES_LEGAUX_MODIFIES);
         route("ParametresResource#updateOrganisation", PARAMETRES_QUALITE_MODIFIES);
-        route("ParametresResource#updateInstance", PARAMETRES_SOLVEUR_MODIFIES);
+        route("ParametresResource#updateCalcul", PARAMETRES_SOLVEUR_MODIFIES);
         route("ParametresResource#updateNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         route("WeatherResource#update", PARAMETRES_METEO_MODIFIES);
         route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);

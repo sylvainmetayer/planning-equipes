@@ -144,9 +144,9 @@ class DatabaseResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"dureeResolutionSecondes\":42}")
+                .body("{\"mailFinResolution\":true}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
 
@@ -169,7 +169,6 @@ class DatabaseResourceTest {
                 .contains("INSERT INTO parametres_legaux (")
                 .contains("2760")
                 .contains("INSERT INTO parametres_solveur (")
-                .contains("42")
                 .contains("INSERT INTO constraint_toggle (")
                 .contains("dureeHebdomadaireMax");
 
@@ -189,19 +188,17 @@ class DatabaseResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/parametres-solveur")
+                .get("/api/parametres/calcul")
                 .then()
                 .statusCode(200)
-                .body("dureeResolutionSecondes", equalTo(42));
+                .body("mailFinResolution", equalTo(true));
 
-        // Back to the deployment's budget: the default edition's duration is
-        // now what a job launched without ?seconds= runs, and 42 s would slow
-        // down every solve test that comes after this one.
+        // Back to the default: no mail at the end of the solves that come after this test.
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"dureeResolutionSecondes\":null}")
+                .body("{\"mailFinResolution\":false}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
     }

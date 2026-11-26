@@ -46,14 +46,14 @@ After a late change, "Fix after a change" moves as few already-notified people a
 
 - The live score curve. The three levels of the score (mandatory rules, seats to fill, quality) are plotted during the solve, each on its own scale. You see when the solve plateaus and can stop it at the right moment. Only the solve under way is plotted.
 - Feasible plan since... As soon as the solve holds a feasible schedule (all seats filled, all mandatory rules met), the page says so and counts how long ago. From then on the solve only improves quality. "Stop and keep this plan" saves that schedule without waiting for the end of the budget.
-- The queue. You can schedule a solve behind the one that is running: it starts by itself, so you can prepare the next edition without waiting in front of the screen. The queue survives a server restart; the solve that was running is lost and flagged as interrupted.
+- The queue. You can schedule a solve behind the one that is running: it starts by itself, so you can prepare the next edition without waiting in front of the screen. The queue is **in memory**: a server restart loses the planned solves as it does the one that was running, flagged as interrupted; launch them again.
 - The end e-mail. Enable it per edition (Planning rules, *Solve* tab) to be notified as soon as a solve ends, with the edition, the score and the feasibility.
 
 ![Following a solve in progress](/images/fr/docs/solveur.webp "The Solver screen during a solve")
 
 ## Set the solve duration
 
-Each edition sets how long a solve can last, and when it stops for lack of progress. Stopping for lack of progress only applies once the schedule is feasible, never while seats remain to fill. These settings are capped by a value set by the instance operator, shown in *Planning rules*, *Solve* tab (under "Advanced settings"). "Back to default" returns the edition to the instance values.
+The maximum duration of a solve and the stop for lack of progress are **the instance's**, the same for every edition: the operator sets them on the server, and *Planning rules*, *Solve* tab, shows them without changing them. Stopping for lack of progress only applies once the schedule is feasible, never while seats remain to fill.
 
 ## Read the result
 

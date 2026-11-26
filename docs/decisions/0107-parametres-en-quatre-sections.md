@@ -1,6 +1,6 @@
 # 0107 — Les paramètres de l'édition ont quatre sections, sans fusionner leurs tables
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté — **la section `instance` devient `calcul`** ([0110](0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md)) : le budget de calcul n'est plus un réglage d'édition
 - **Date** : novembre 2026
 - **Portée** : API des paramètres, outils MCP, section `parametres` du scénario YAML
 

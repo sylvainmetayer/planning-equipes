@@ -32,15 +32,16 @@ The application also refuses to start in production, whatever the
 compose file, in the following cases, each detailed on its line further down:
 
 - one of the five required keys of `LEGAL_MENTIONS` is empty (`editeur`,
-  `hebergeur`, `contact`, `base-legale`, `conservation`), unless
-  `LEGAL_DEMO_INSTANCE=true`;
+  `hebergeur`, `contact`, `base-legale`, `conservation`) on a public instance
+  (`PUBLIC_INSTANCE=true`), unless `LEGAL_DEMO_INSTANCE=true`; on any other
+  it is a warning;
 - `ADMIN_PASSWORD` or `DB_PASSWORD` equals the example value or is empty;
 - no door opens the administration (`OIDC_ENABLED=false` and
   `ADMIN_LOCAL_SECOURS=false`), or `OIDC_CLIENT_SECRET` is shorter than 32
   characters when OIDC is on;
 - a webhook exists and `WEBHOOKS_SECRET_KEY` is missing or invalid;
-- `BACKUP_RETENTION` is outside 1 to 30, `SOLVER_SECONDS_LIMIT_MAX` is below 900,
-  `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` below 180;
+- `BACKUP_RETENTION` is outside 1 to 30, `SOLVER_SECONDS_LIMIT_MAX` is below
+  `SOLVER_SECONDS_LIMIT` (900 by default);
 - an entry of `CONNEXION_PROXYS_FIABLES` or of `WEBHOOKS_RESEAUX_AUTORISES`
   is malformed;
 - the remote solve machine is badly described (see *Schedule solve*).
@@ -132,10 +133,12 @@ compose file, in the following cases, each detailed on its line further down:
 | Variable | Default | Role |
 | --- | --- | --- |
 | `SOLVER_ENGINE` | `hand` | `hand`: direct engine, each plan scored again by the constraints; `timefold`: the search from before 3.0.0 |
-| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Cap, in seconds, on the solve time that an edition can set or that a launch can request; below the default of 900 s, startup is refused |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (that of the duration) | Cap on the stop without improvement; below the default of 180 s, startup is refused |
-| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (no limit) | Solves accepted by the instance over the last 60 sliding minutes, all editions and all callers combined; beyond that, a refusal that says when to come back |
-| `SOLVER_MAX_QUEUED_JOBS` | `0` (no limit) | Jobs that can wait behind the solve in progress |
+| `SOLVER_SECONDS_LIMIT` | `900` | The instance's solve budget: maximum duration of a solve, in seconds. The same for every edition |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Stop if the already feasible plan has not improved for this long, in seconds; `0`: never |
+| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Cap, in seconds, on the time a launch may request (`?seconds=`, MCP); below `SOLVER_SECONDS_LIMIT`, startup is refused |
+| `PUBLIC_INSTANCE` | `false` | `true`: public instance. Applies the solve quota below and refuses to start without legal notices. Without it, the quota is ignored (with a warning) and missing notices are a warning |
+| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (no limit) | Public instance only: solves accepted over the last 60 sliding minutes, all editions and all callers combined; beyond that, a refusal that says when to come back |
+| `SOLVER_MAX_QUEUED_JOBS` | `0` (no limit) | Public instance only: jobs that can wait behind the solve in progress |
 | `PASSE_FIGE` | `true` | `false`: the solver can again rewrite the days already worked. To reserve for an acceptance test that replays an old edition |
 | `JOBS_STREAM_HEARTBEAT` | `PT20S` | Heartbeat of the solve tracking stream, which keeps proxies open |
 | `JOBS_STREAM_SCORE` | `PT1S` | Frequency at which the score curve of a solve in progress is sent |
@@ -211,11 +214,11 @@ The eleven old variables (`BRANDING_LOGO_URL`, `BRANDING_ACCENT_COLOR`, `BRANDIN
 
 ## Legal notice
 
-Five keys of `LEGAL_MENTIONS`, marked **required**, refuse startup in production when empty, unless `LEGAL_DEMO_INSTANCE=true`. They are displayed on the public `/mentions-legales` page. The two grouped variables have the form `key=value;key=value` (a literal semicolon in a value is written `\;`).
+Five keys of `LEGAL_MENTIONS`, marked **required**, refuse startup in production of a public instance (`PUBLIC_INSTANCE=true`) when empty, unless `LEGAL_DEMO_INSTANCE=true`; on any other instance, a warning. They are displayed on the public `/mentions-legales` page. The two grouped variables have the form `key=value;key=value` (a literal semicolon in a value is written `\;`).
 
 | Variable | Default | Role |
 | --- | --- | --- |
-| `LEGAL_DEMO_INSTANCE` | `false` | `true`: an instance that is not in service, exempt from the required notices |
+| `LEGAL_DEMO_INSTANCE` | `false` | `true`: an instance that is not in service, exempt from the required notices (no refusal, no warning) |
 | `LEGAL_MENTIONS` | *(empty)* | The notices, by key: `editeur` (**required**: name, legal form, address, registration), `hebergeur` (**required**: name and address), `contact` (**required**: contact address, including for exercising one's rights), `base-legale` (**required**: legal basis for the processing of personal data), `conservation` (**required**: retention period of personal data), `responsable-traitement` (data controller, when it differs from the publisher; empty: the publisher), `directeur-publication` |
 | `LEGAL_ACCESSIBILITE` | *(empty)* | The accessibility statement, by key: `etat` (`totale`, `partielle` or `non`), `date-audit`, `contenus` (content that is not accessible), `signalement` (reporting channel; empty: the legal notice's contact address) |
 

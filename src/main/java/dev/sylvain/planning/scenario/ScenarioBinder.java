@@ -39,7 +39,7 @@ import java.util.Map;
  * published JSON Schema says {@code string} either way.
  *
  * <p><b>An unknown key is refused, by name.</b> The hand-written parser this
- * replaces ignored one silently, so a mistyped {@code parametresSolveur:}
+ * replaces ignored one silently, so a mistyped {@code parametresLegaux:}
  * meant a solve that quietly ran on the database's values rather than the
  * ones the scenario pinned. A file that says something the application does
  * not understand is a file whose author should hear about it.

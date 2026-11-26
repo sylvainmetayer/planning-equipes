@@ -261,6 +261,9 @@ public class DatabaseDumpService {
      *       archived by V142 and dropped in 5.0: an archive nothing reads, not
      *       a dataset, and a text about a person that a file leaving the
      *       instance has no reason to carry.</li>
+     *   <li>{@code solve_budget_avant_4_0} — the solve budgets editions had
+     *       set of their own, archived by V144 and dropped in 5.0: an archive
+     *       nothing reads, the budget being the instance's now.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -288,7 +291,8 @@ public class DatabaseDumpService {
             "machine_calcul",
             "resolution_distante",
             "animateur_contact",
-            "declaration_coequipier_avant_4_0");
+            "declaration_coequipier_avant_4_0",
+            "solve_budget_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

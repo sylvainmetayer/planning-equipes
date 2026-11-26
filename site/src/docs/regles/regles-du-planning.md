@@ -29,7 +29,7 @@ Le même tableau pour les règles de qualité et les préférences. Chaque règl
 
 ## L'onglet Calcul
 
-- la durée du calcul et l'arrêt quand plus rien ne progresse (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)) ;
+- la durée du calcul et l'arrêt quand plus rien ne progresse, affichés sans pouvoir les modifier : ils sont réglés pour toute l'instance (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)) ;
 - l'e-mail de fin de résolution ;
 - le début de la soirée, la seule soirée de l'application ;
 - la typologie polyvalente.

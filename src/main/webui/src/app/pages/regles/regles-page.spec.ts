@@ -168,8 +168,6 @@ describe('ReglesPage', () => {
           useValue: {
             refresh: vi.fn(() => Promise.resolve(undefined)),
             bounds: signal(null),
-            dureeResolutionSecondes: signal(null),
-            plateauSecondes: signal(null),
             mailFinResolution: signal(false),
             secondsLimit: () => 900,
             effectivePlateauSeconds: () => 300,

@@ -37,4 +37,13 @@ class RetiredVariablesTest {
                 .contains("REMOTE_USER_SECRET")
                 .doesNotContain(secret);
     }
+
+    /** The plateau ceiling went with the edition's budget (ADR 0110): said, with what replaces it. */
+    @Test
+    void thePlateauCeilingIsSaidRetiredAndNamesItsReplacement() {
+        assertThat(RetiredVariables.warnings(Map.of("SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX", "3600")::get))
+                .singleElement()
+                .asString()
+                .contains("SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX", "SOLVER_UNIMPROVED_SECONDS_LIMIT ");
+    }
 }

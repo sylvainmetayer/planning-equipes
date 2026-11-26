@@ -6,7 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 
 /**
- * A deployment in service must not publish an empty legal notice page.
+ * A <b>public</b> deployment must not publish an empty legal notice page; any other only
+ * warns (ADR 0110).
  * {@code /api/mentions-legales} is public, the LCEN wants an identified
  * publisher and host, and the GDPR a legal basis, a retention period and an
  * address to exercise one's rights.
@@ -21,14 +22,14 @@ class RequiredMentionsLegalesTest {
 
     @Test
     void aFilledNoticeBoots() {
-        assertThatCode(() ->
-                        RequiredMentionsLegales.check(false, EDITEUR, HEBERGEUR, CONTACT, BASE_LEGALE, CONSERVATION))
+        assertThatCode(() -> RequiredMentionsLegales.check(
+                        false, true, EDITEUR, HEBERGEUR, CONTACT, BASE_LEGALE, CONSERVATION))
                 .doesNotThrowAnyException();
     }
 
     @Test
     void anEmptyNoticeRefusesTheBoot() {
-        assertThatThrownBy(() -> RequiredMentionsLegales.check(false, "", "", "", "", ""))
+        assertThatThrownBy(() -> RequiredMentionsLegales.check(false, true, "", "", "", "", ""))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("editeur");
     }
@@ -39,7 +40,7 @@ class RequiredMentionsLegalesTest {
      */
     @Test
     void theMessageNamesEveryMissingVariableAtOnce() {
-        assertThatThrownBy(() -> RequiredMentionsLegales.check(false, "", "", "", "", ""))
+        assertThatThrownBy(() -> RequiredMentionsLegales.check(false, true, "", "", "", "", ""))
                 .hasMessageContaining("editeur")
                 .hasMessageContaining("hebergeur")
                 .hasMessageContaining("contact")
@@ -50,15 +51,15 @@ class RequiredMentionsLegalesTest {
     /** The message names the way out, or an operator reads it as a dead end. */
     @Test
     void theMessageNamesTheEscapeHatch() {
-        assertThatThrownBy(() -> RequiredMentionsLegales.check(false, "", "", "", "", ""))
+        assertThatThrownBy(() -> RequiredMentionsLegales.check(false, true, "", "", "", "", ""))
                 .hasMessageContaining("LEGAL_DEMO_INSTANCE");
     }
 
     /** Blank is not filled in: the page renders the same "not provided" case. */
     @Test
     void aBlankValueCountsAsMissing() {
-        assertThatThrownBy(
-                        () -> RequiredMentionsLegales.check(false, EDITEUR, "   ", CONTACT, BASE_LEGALE, CONSERVATION))
+        assertThatThrownBy(() ->
+                        RequiredMentionsLegales.check(false, true, EDITEUR, "   ", CONTACT, BASE_LEGALE, CONSERVATION))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("hebergeur")
                 .hasMessageNotContaining("editeur");
@@ -67,7 +68,14 @@ class RequiredMentionsLegalesTest {
     /** A demo instance says so explicitly, and an empty page is then the honest answer. */
     @Test
     void aDemoInstanceBootsWithAnEmptyNotice() {
-        assertThatCode(() -> RequiredMentionsLegales.check(true, "", "", "", "", ""))
+        assertThatCode(() -> RequiredMentionsLegales.check(true, true, "", "", "", "", ""))
+                .doesNotThrowAnyException();
+    }
+
+    /** Only a public instance is refused: elsewhere the operator is warned, and the boot goes on. */
+    @Test
+    void anInstanceThatIsNotPublicBootsWithAnEmptyNotice() {
+        assertThatCode(() -> RequiredMentionsLegales.check(false, false, "", "", "", "", ""))
                 .doesNotThrowAnyException();
     }
 }

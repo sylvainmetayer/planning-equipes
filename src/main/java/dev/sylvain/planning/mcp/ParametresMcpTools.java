@@ -53,7 +53,7 @@ public class ParametresMcpTools {
         this.currentAction = currentAction;
     }
 
-    private static final String SECTIONS = "legal, organisation, notifications, instance";
+    private static final String SECTIONS = "legal, organisation, notifications, calcul";
 
     @Tool(
             name = "consulter_parametres",
@@ -62,9 +62,10 @@ public class ParametresMcpTools {
                     + "moyennes dosables : emplacements et typologies distincts, jours d'affilée, services tardif et "
                     + "matinal, temps de trajet, arrivée groupée), « notifications » (heure du rappel de la veille, "
                     + "délai de relance, ancienneté d'un échange sans réponse ; rien ne part d'une édition qui n'est "
-                    + "pas l'édition active, voir lister_editions) ou « instance » (le budget de calcul : durée "
-                    + "maximale d'une résolution et arrêt sur plateau, null = défaut de l'instance, avec les défauts "
-                    + "et plafonds de l'exploitant).",
+                    + "pas l'édition active, voir lister_editions) ou « calcul » (le mail de fin de "
+                    + "résolution de l'édition, avec le budget de calcul de l'instance : durée maximale d'une "
+                    + "résolution, arrêt sur plateau et plafond, que fixe l'exploitant et que cet outil ne modifie "
+                    + "pas).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -98,10 +99,9 @@ public class ParametresMcpTools {
                     + "× facteurDetour ÷ vitesseMarcheKmH, et un battement entre deux postes peut en manquer "
                     + "toleranceTrajetMinutes avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit. "
                     + "« notifications » : cet outil n'envoie rien, les envois de nuit ne partent que de l'édition "
-                    + "active (activer_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « instance » : une "
-                    + "valeur changée au-dessus du plafond de l'instance est refusée, une valeur gardée telle "
-                    + "quelle ne l'est pas, même au-dessus, et tourne au plafond ; refusé aussi si le plateau "
-                    + "dépasse la durée.",
+                    + "active (activer_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « calcul » : "
+                    + "seul le mail de fin de résolution se règle ici, le budget de calcul est celui de "
+                    + "l'instance.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -165,16 +165,10 @@ public class ParametresMcpTools {
                             required = false)
                     Integer toleranceArriveeGroupeeMinutes,
             @ToolArg(
-                            description = "Durée maximale d'une résolution, en secondes (strictement positive)",
+                            description = "true : une résolution terminée envoie son résultat par mail à l'adresse "
+                                    + "d'administration (inerte tant que MAIL_ADMIN n'est pas configuré)",
                             required = false)
-                    Integer dureeResolutionSecondes,
-            @ToolArg(
-                            description = "Arrêt si le planning, déjà faisable, ne s'améliore plus depuis ce nombre "
-                                    + "de secondes ; 0 = jamais",
-                            required = false)
-                    Integer plateauSecondes,
-            @ToolArg(description = "true : durée et plateau reviennent au défaut de l'instance", required = false)
-                    Boolean revenirAuDefaut,
+                    Boolean mailFinResolution,
             @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
                     String heureRappelVeille,
             @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false)
@@ -206,9 +200,7 @@ public class ParametresMcpTools {
         given.put("facteurDetour", facteurDetour);
         given.put("toleranceTrajetMinutes", toleranceTrajetMinutes);
         given.put("toleranceArriveeGroupeeMinutes", toleranceArriveeGroupeeMinutes);
-        given.put("dureeResolutionSecondes", dureeResolutionSecondes);
-        given.put("plateauSecondes", plateauSecondes);
-        given.put("revenirAuDefaut", revenirAuDefaut);
+        given.put("mailFinResolution", mailFinResolution);
         given.put("heureRappelVeille", heureRappelVeille);
         given.put("delaiRelanceHeures", delaiRelanceHeures);
         given.put("ancienneteEchangeJours", ancienneteEchangeJours);
@@ -261,8 +253,7 @@ public class ParametresMcpTools {
                     case "notifications" ->
                         updateParametresNotifications(
                                 heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, edition);
-                    default ->
-                        updateParametresSolveur(dureeResolutionSecondes, plateauSecondes, revenirAuDefaut, edition);
+                    default -> updateParametresSolveur(mailFinResolution, edition);
                 });
     }
 
@@ -294,7 +285,7 @@ public class ParametresMcpTools {
                             "toleranceTrajetMinutes",
                             "toleranceArriveeGroupeeMinutes"),
             "notifications", Set.of("heureRappelVeille", "delaiRelanceHeures", "ancienneteEchangeJours"),
-            "instance", Set.of("dureeResolutionSecondes", "plateauSecondes", "revenirAuDefaut"));
+            "calcul", Set.of("mailFinResolution"));
 
     private static String section(String section) {
         String chosen = section == null ? "" : section.strip().toLowerCase(java.util.Locale.ROOT);
@@ -472,15 +463,9 @@ public class ParametresMcpTools {
         return toView(referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
-    ParametresSolveurView updateParametresSolveur(
-            Integer dureeResolutionSecondes, Integer plateauSecondes, Boolean revenirAuDefaut, String edition) {
-        // The mail switch is not tunable here; it is kept as is.
+    ParametresSolveurView updateParametresSolveur(Boolean mailFinResolution, String edition) {
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
-        boolean defaut = Boolean.TRUE.equals(revenirAuDefaut);
-        ParametresSolveur voulus = new ParametresSolveur(
-                defaut ? null : givenOr(dureeResolutionSecondes, actuels.dureeResolutionSecondes()),
-                defaut ? null : givenOr(plateauSecondes, actuels.plateauSecondes()),
-                actuels.mailFinResolution());
+        ParametresSolveur voulus = new ParametresSolveur(givenOr(mailFinResolution, actuels.mailFinResolution()));
         return toView(
                 referenceDataService.updateParametresSolveur(voulus), referenceDataService.getSolverBudgetBounds());
     }
@@ -604,7 +589,7 @@ public class ParametresMcpTools {
     }
 
     /** The value the caller gave, or the current one when it gave none. */
-    private static Integer givenOr(Integer given, Integer current) {
+    private static <T> T givenOr(T given, T current) {
         return given != null ? given : current;
     }
 
@@ -637,8 +622,7 @@ public class ParametresMcpTools {
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres, SolverBudgetBounds bounds) {
-        return new ParametresSolveurView(
-                parametres.dureeResolutionSecondes(), parametres.plateauSecondes(), bounds, List.of());
+        return new ParametresSolveurView(parametres.mailFinResolution(), bounds, List.of());
     }
 
     static ContrainteAdHocView toView(ContrainteAdHoc contrainte) {
@@ -716,20 +700,18 @@ public class ParametresMcpTools {
     }
 
     /**
-     * The edition's budget — {@code null} follows the instance — and the
-     * instance's defaults and ceilings.
+     * The edition's end-of-solve mail switch, and the instance's solve budget
+     * the operator set — read-only here.
      */
     public record ParametresSolveurView(
-            Integer dureeResolutionSecondes,
-            Integer plateauSecondes,
+            boolean mailFinResolution,
             SolverBudgetBounds instance,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresSolveurView> {
 
         @Override
         public ParametresSolveurView withWarning(String code) {
-            return new ParametresSolveurView(
-                    dureeResolutionSecondes, plateauSecondes, instance, WarningCodes.with(avertissements, code));
+            return new ParametresSolveurView(mailFinResolution, instance, WarningCodes.with(avertissements, code));
         }
     }
 

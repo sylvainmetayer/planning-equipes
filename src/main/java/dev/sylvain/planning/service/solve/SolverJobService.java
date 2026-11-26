@@ -6,7 +6,6 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.edition.EditionRepository;
-import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.service.referentiel.RefusedWhileFrozen;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
 import io.quarkus.runtime.StartupEvent;
@@ -50,16 +49,17 @@ import org.jboss.logging.Logger;
  * its problem only when it actually starts — the referential it reads is the
  * one in place at that moment, not the one of the click.</p>
  *
- * <p><b>A restart no longer loses the queue.</b> Every status transition is
- * mirrored into {@code solver_job} through {@link SolverJobRepository}, and
- * {@link #restaurer()} replays it at startup: queued jobs go back in the queue,
- * in order, and the first one takes the solver by itself. Only the
- * <em>intention</em> is stored, never a Timefold state — which is exactly what
- * a queued job needs, since it builds its problem when it starts anyway. A job
- * that <b>was</b> holding the solver cannot be resumed that way: its run died
- * with the JVM, so it comes back as {@link JobStatus#INTERROMPU} rather than as
- * a ghost {@code RUNNING} that would hold the lock forever. Resuming the
- * computation itself (warm start from a checkpoint) is issue #174.</p>
+ * <p><b>The queue lives in memory only</b> (ADR 0110): a restart loses the jobs
+ * still waiting, and says so. Every status transition <em>from the moment a
+ * job holds the solver</em> is mirrored into {@code solver_job} through
+ * {@link SolverJobRepository}, so the history survives; a {@link
+ * JobStatus#QUEUED} job is never written. {@link #restaurer()} replays
+ * nothing at startup: a row left {@code QUEUED} (a 3.x queue, or a crash that
+ * the in-memory design cannot see) and a row that <b>was</b> holding the
+ * solver both come back as {@link JobStatus#INTERROMPU} with a message that
+ * says the work was lost, rather than as a ghost {@code RUNNING} that would
+ * hold the lock forever. The one exception is a full solve still running on a
+ * worker (ADR 0086), which is followed again.</p>
  *
  * <p>The "a solver run is in progress" state lives here, not in the browser:
  * only one solve or analyze may run at a time for the whole server, so any
@@ -142,9 +142,6 @@ public class SolverJobService {
     /** Turns a launch's requested duration and the edition's settings into the job's budget. */
     private final SolveBudgetPolicy budgetPolicy;
 
-    /** The edition's solver settings, read on the request thread when a job is submitted. */
-    private final ReferenceData referenceData;
-
     /** Told when a job takes the solver, so a staffing check holding the cores gives way. */
     private final Event<SolveStarting> solveStarting;
 
@@ -164,7 +161,6 @@ public class SolverJobService {
             SolverScoreTrace scoreTrace,
             SolverMetrics metrics,
             SolveBudgetPolicy budgetPolicy,
-            ReferenceData referenceData,
             Event<SolveStarting> solveStarting,
             SolverQuota quota,
             RemoteSolves remoteSolves,
@@ -174,7 +170,6 @@ public class SolverJobService {
         this.solveStarting = solveStarting;
         this.quota = quota;
         this.budgetPolicy = budgetPolicy;
-        this.referenceData = referenceData;
         this.tasks = tasks;
         this.editionContext = editionContext;
         this.editionRepository = editionRepository;
@@ -219,7 +214,7 @@ public class SolverJobService {
         // Not replayable: the problem came in the request body, which is not
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
-        SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceData.getParametresSolveur());
+        SolveBudget budget = budgetPolicy.forSolve(secondsLimit);
         return submit(
                 JobType.SOLVE, budget, false, null, false, tasks.solve(problem, budget, this::isShutdownRequested));
     }
@@ -297,7 +292,7 @@ public class SolverJobService {
     public SolverJob submitSolveFromReferenceData(
             Long secondsLimit, boolean enFile, Reamorcage reamorcage, Boolean remote) {
         boolean onWorker = remoteSolves.resolvePlace(remote);
-        SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceData.getParametresSolveur());
+        SolveBudget budget = budgetPolicy.forSolve(secondsLimit);
         Reamorcage depart = reamorcage == null ? Reamorcage.AUTO : reamorcage;
         return submit(
                 JobType.SOLVE,
@@ -340,7 +335,7 @@ public class SolverJobService {
      * would race with the previous job's persistence.</p>
      */
     public SolverJob submitSolveIncremental(Long secondsLimitDemande, ReplanificationScope scope, boolean enFile) {
-        SolveBudget budget = budgetPolicy.forIncremental(secondsLimitDemande, referenceData.getParametresSolveur());
+        SolveBudget budget = budgetPolicy.forIncremental(secondsLimitDemande);
         return submitReplayable(JobType.SOLVE_INCREMENTAL, budget, scope, null, enFile);
     }
 
@@ -426,16 +421,15 @@ public class SolverJobService {
         }
         // Last, under the monitor: a launch refused above consumes nothing,
         // and two simultaneous requests cannot both take the last run of the
-        // hour. restaurer() never comes through here, so a job replayed
-        // at startup is neither refused nor counted twice.
+        // hour. Only a public instance counts (ADR 0110).
         quota.consume();
         SolverJob job = new SolverJob(type, budget, editionId, nomEdition(editionId), scope, reamorcage, rejouable);
         job.remote = remote;
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
             job.markQueued();
+            // Not written: the queue is in memory only (ADR 0110).
             file.addLast(new QueuedTask(job, task));
-            persistence.store(job);
         } else {
             // Written before the hand-over, never after: the worker may have
             // reached RUNNING (and written that) by the time this method
@@ -663,8 +657,8 @@ public class SolverJobService {
     private void startNext() {
         if (shutdownRequested) {
             // The server is going down: promoting a queued job would start a
-            // fresh solve the shutdown then has to interrupt. It stays QUEUED
-            // in `solver_job` and the next start replays it.
+            // fresh solve the shutdown then has to interrupt. The queue is in
+            // memory only: shutdown() says what is lost.
             return;
         }
         QueuedTask suivante;
@@ -853,9 +847,9 @@ public class SolverJobService {
     }
 
     /**
-     * Replays the persisted queue when the server starts. Failing here never
-     * prevents the application from booting: an empty queue is a degraded
-     * start, a refused start is an outage.
+     * Settles the jobs a previous run left unfinished when the server starts.
+     * Failing here never prevents the application from booting: a ghost job is
+     * a degraded start, a refused start is an outage.
      */
     void reprendreAuDemarrage(@Observes StartupEvent demarrage) {
         if (!replayAtStartup) {
@@ -869,30 +863,30 @@ public class SolverJobService {
     }
 
     /**
-     * Rebuilds the in-memory registry from {@code solver_job}: queued jobs go
-     * back in the queue in submission order and the first one takes the solver,
-     * everything that was <em>holding</em> the solver becomes
-     * {@link JobStatus#INTERROMPU}, and finished jobs come back as history
+     * Rebuilds the in-memory registry from {@code solver_job}: nothing that was
+     * queued comes back (the queue is in memory only, ADR 0110) — a queued or
+     * <em>holding</em> job becomes {@link JobStatus#INTERROMPU} with the reason
+     * said on it and in the log, except a full solve still running on a worker,
+     * which is followed again — and finished jobs come back as history
      * (without their result payload, which is not stored — see
      * {@link SolverJobRepository}).
      *
-     * <p>Package-private rather than private so a test can replay a queue
-     * without restarting a JVM.</p>
+     * <p>Package-private rather than private so a test can run it without
+     * restarting a JVM.</p>
      *
-     * @return how many jobs went back into the queue
+     * @return how many jobs went back to the solver (followed on a worker)
      */
     synchronized int restaurer() {
         purgeExpiredJobs();
         int rejoues = 0;
+        int perdus = 0;
         for (LigneJob ligne : persistence.list()) {
             if (jobs.containsKey(ligne.id())) {
                 continue;
             }
             SolverJob job = new SolverJob(ligne);
             jobs.put(job.getId(), job);
-            SolverJobTasks.JobTask task =
-                    ligne.statut() == JobStatus.QUEUED && ligne.rejouable() ? taskOrNothing(ligne) : null;
-            SolverJobTasks.JobTask resumed = task == null && leftOnAWorker(ligne) ? taskOrNothing(ligne) : null;
+            SolverJobTasks.JobTask resumed = leftOnAWorker(ligne) ? taskOrNothing(ligne) : null;
             if (resumed != null) {
                 // Was solving on a worker when the application stopped (ADR
                 // 0086): the worker never noticed. First in the queue, and
@@ -901,26 +895,25 @@ public class SolverJobService {
                 job.markPending();
                 file.addFirst(new QueuedTask(job, resumed));
                 rejoues++;
-            } else if (task != null) {
-                // Where a replayed job runs is the instance's default: the
-                // choice made at its launch is not stored. Only a full solve
-                // can run on a worker.
-                // shortcut: a queued job asked « sur place » replays on the worker
-                // of an instance that defaults to it; store the choice in
-                // solver_job if that ever matters.
-                job.remote = job.getType() == JobType.SOLVE && remoteSolves.remoteByDefault();
-                file.addLast(new QueuedTask(job, task));
-                rejoues++;
             } else if (!job.isFinished()) {
-                // Was holding the solver (or queued without being replayable):
-                // nothing can finish it now, and leaving it RUNNING would hold
-                // the lock forever.
-                job.markInterrompu();
+                // Was queued (the queue is not persisted any more, ADR 0110:
+                // a row of a 3.x install) or holding the solver: nothing can
+                // finish it now, and leaving it RUNNING would hold the lock
+                // forever. Said, never lost in silence.
+                if (ligne.statut() == JobStatus.QUEUED) {
+                    perdus++;
+                    job.markInterrompu(QUEUE_LOST, null);
+                } else {
+                    job.markInterrompu();
+                }
                 persistence.store(job);
             }
         }
+        if (perdus > 0) {
+            LOG.warnf("%d planned solver job(s) of the previous run were lost: the queue is in memory only", perdus);
+        }
         if (rejoues > 0) {
-            LOG.infof("Solver queue restored from the database: %d job(s) waiting again", rejoues);
+            LOG.infof("%d solver job(s) found again on their worker", rejoues);
             startNext();
         }
         return rejoues;
@@ -949,7 +942,7 @@ public class SolverJobService {
         try {
             return tasks.replayable(
                     ligne.type(),
-                    new SolveBudget(ligne.secondsLimit(), ligne.plateauSeconds(), ligne.cappedFrom()),
+                    new SolveBudget(ligne.secondsLimit(), ligne.plateauSeconds()),
                     ligne.scope(),
                     ligne.reamorcage(),
                     this::isShutdownRequested);
@@ -975,6 +968,11 @@ public class SolverJobService {
     @PreDestroy
     void shutdown() {
         shutdownRequested = true;
+        synchronized (this) {
+            if (!file.isEmpty()) {
+                LOG.warnf("The solver queue is in memory only: %d planned job(s) are lost with this stop", file.size());
+            }
+        }
         jobs.values().stream()
                 .filter(job -> job.getStatus() == JobStatus.RUNNING)
                 .forEach(SolverJob::stopSolver);
@@ -995,6 +993,9 @@ public class SolverJobService {
      * stop stays graceful.
      */
     private static final long SHUTDOWN_GRACE = 8;
+
+    private static final String QUEUE_LOST = "Perdue au redémarrage du serveur : la file d'attente des calculs"
+            + " n'est plus conservée, relancez le calcul.";
 
     /** Raised when a solve or analyze is requested while another one runs. */
     public static final class SolverBusyException extends RuntimeException {
@@ -1097,7 +1098,7 @@ public class SolverJobService {
         private SolverJob(LigneJob ligne) {
             this.id = ligne.id();
             this.type = ligne.type();
-            this.budget = new SolveBudget(ligne.secondsLimit(), ligne.plateauSeconds(), ligne.cappedFrom());
+            this.budget = new SolveBudget(ligne.secondsLimit(), ligne.plateauSeconds());
             this.editionId = ligne.editionId();
             this.editionNom = ligne.editionNom();
             this.scope = ligne.scope();
@@ -1284,16 +1285,6 @@ public class SolverJobService {
             }
             feasibleAtSeconds = seconds;
             return true;
-        }
-
-        /** Why the budget is not what the edition stored — a ceiling lowered since — or {@code null}. */
-        public String getBudgetWarning() {
-            return budget.warning();
-        }
-
-        /** What the edition stored where a ceiling cut it, or {@code null}: the values behind {@link #getBudgetWarning()}. */
-        public SolveBudget.CappedFrom getCappedFrom() {
-            return budget.cappedFrom();
         }
 
         public String getEditionId() {

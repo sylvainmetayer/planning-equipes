@@ -56,9 +56,4 @@ public record ScenarioDto(
     public ParametresQualiteDto parametresQualite() {
         return parametres == null ? null : parametres.organisation();
     }
-
-    @JsonIgnore
-    public ParametresSolveurDto parametresSolveur() {
-        return parametres == null ? null : parametres.instance();
-    }
 }

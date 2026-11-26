@@ -44,7 +44,7 @@ Vous hébergez Planning Équipes pour un organisateur, ou pour vous-même : une 
 ## Je veux mettre l'application en ligne
 
 1. [Installer l'application sur votre serveur](installation.md) : la pile de production, les sept variables obligatoires, le contrôle de fin de déploiement.
-2. [Renseigner les mentions légales](mentions-legales.md) : les cinq informations sans lesquelles l'application refuse de démarrer.
+2. [Renseigner les mentions légales](mentions-legales.md) : les cinq informations sans lesquelles une instance publique refuse de démarrer.
 3. [Faire arriver vos e-mails](courriels.md) : relais SMTP, SPF, DKIM, DMARC, et le suivi des envois.
 4. [Exposer l'instance sur Internet](securite.md) : ce que le reverse proxy doit faire, et le durcissement de la pile.
 

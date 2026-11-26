@@ -141,8 +141,8 @@ MargeResource#tension GET /marge/tension
 OuvertureStandsResource#analyze GET /ouvertures-stands
 OuvertureStandsResource#layers GET /ouvertures-stands/couches
 OuvertureStandsResource#saisir PUT /ouvertures-stands/grille
+ParametresResource#getCalcul GET /parametres/calcul
 ParametresResource#getContactOrganisation GET /parametres-contact
-ParametresResource#getInstance GET /parametres/instance
 ParametresResource#getLegal GET /parametres/legal
 ParametresResource#getNotifications GET /parametres/notifications
 ParametresResource#getOrganisation GET /parametres/organisation
@@ -151,8 +151,8 @@ ParametresResource#getParametresLegaux GET /parametres-legaux
 ParametresResource#getParametresNotifications GET /parametres-notifications
 ParametresResource#getParametresQualite GET /parametres-qualite
 ParametresResource#getParametresSolveur GET /parametres-solveur
+ParametresResource#updateCalcul PUT /parametres/calcul
 ParametresResource#updateContactOrganisation PUT /parametres-contact
-ParametresResource#updateInstance PUT /parametres/instance
 ParametresResource#updateLegal PUT /parametres/legal
 ParametresResource#updateNotifications PUT /parametres/notifications
 ParametresResource#updateOrganisation PUT /parametres/organisation

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.config;
 
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,9 +11,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Refuses to boot a live deployment whose legal notice page would be empty.
+ * Refuses to boot a live <b>public</b> deployment whose legal notice page would be
+ * empty, and warns on any other.
  *
  * <p>{@code /api/mentions-legales} is public and always reachable, and the
  * page renders "Aucune information légale n'a été renseignée sur ce
@@ -32,6 +35,11 @@ import java.util.Optional;
  * demanding it separately would contradict its own fallback; and a directeur
  * de publication is not required of every publisher. Both stay optional.</p>
  *
+ * <p><b>Only a public instance is refused</b> ({@code PUBLIC_INSTANCE}, ADR
+ * 0110): anywhere else the same sentence is logged as a warning and the boot
+ * goes on, because an organiser's own instance, reachable by its team alone,
+ * has no stranger to publish a notice to.</p>
+ *
  * <p>The escape hatch is explicit rather than inferred: a demo or test
  * instance sets {@code LEGAL_DEMO_INSTANCE=true} and boots with an empty page.
  * Guessing that from {@code PUBLIC_URL} or from the launch mode would have
@@ -47,9 +55,14 @@ public class RequiredMentionsLegales {
 
     private final ConfigMentionsLegales mentions;
 
+    private final boolean publicInstance;
+
     @Inject
-    public RequiredMentionsLegales(ConfigMentionsLegales mentions) {
+    public RequiredMentionsLegales(
+            ConfigMentionsLegales mentions,
+            @ConfigProperty(name = "planning.public-instance", defaultValue = "false") boolean publicInstance) {
         this.mentions = mentions;
+        this.publicInstance = publicInstance;
     }
 
     void checkAtStartup(@Observes StartupEvent startup) {
@@ -58,6 +71,7 @@ public class RequiredMentionsLegales {
         if (LaunchMode.current().isProduction()) {
             check(
                     mentions.demoInstance(),
+                    publicInstance,
                     value(mentions.editeur()),
                     value(mentions.hebergeur()),
                     value(mentions.contact()),
@@ -78,6 +92,7 @@ public class RequiredMentionsLegales {
      */
     static void check(
             boolean demoInstance,
+            boolean publicInstance,
             String editeur,
             String hebergeur,
             String contact,
@@ -106,10 +121,17 @@ public class RequiredMentionsLegales {
         }
         // Every one of them at once: an operator who fixes one variable per
         // boot pays five restarts to learn what a single message can say.
-        throw new IllegalStateException("La page /mentions-legales est publique et serait vide : "
+        String message = "La page /mentions-legales est publique et serait vide : "
                 + "LEGAL_MENTIONS ne renseigne pas " + String.join(", ", missing) + ". "
                 + "La LCEN exige un éditeur et un hébergeur identifiés, le RGPD une base légale, "
-                + "une durée de conservation et une adresse pour exercer ses droits. "
-                + "Renseignez-les, ou posez LEGAL_DEMO_INSTANCE=true s'il ne s'agit pas d'une instance en service.");
+                + "une durée de conservation et une adresse pour exercer ses droits. ";
+        if (publicInstance) {
+            throw new IllegalStateException(
+                    message
+                            + "Renseignez-les, ou posez LEGAL_DEMO_INSTANCE=true s'il ne s'agit pas d'une instance en service.");
+        }
+        // Not public: the operator is told, never blocked (ADR 0110).
+        Log.warn(message + "Renseignez-les avant d'ouvrir l'instance au public : avec PUBLIC_INSTANCE=true, "
+                + "le démarrage serait refusé.");
     }
 }

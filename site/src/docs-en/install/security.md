@@ -31,7 +31,8 @@ For an overview of what is expected of a host, before the details, see [self-hos
 - [ ] `LEGAL_MENTIONS` variable set: `/mentions-legales` is public, and an empty
       legal notice page amounts to no legal notice. Five
       of them (publisher, host, contact, legal basis, retention)
-      **make startup fail**, so this box ticks itself;
+      **make startup fail on a public instance** (`PUBLIC_INSTANCE=true`) and
+      warn otherwise: declare your instance public, and this box ticks itself;
       the other two are left to you (see the legal notice in [`exploitation.md`](exploitation.md));
 - [ ] production dataset loaded, never the test fixtures.
 

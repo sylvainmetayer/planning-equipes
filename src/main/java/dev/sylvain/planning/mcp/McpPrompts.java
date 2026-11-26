@@ -520,9 +520,9 @@ public class McpPrompts {
                 à la fois et après mon accord. Le niveau HARD, MEDIUM ou SOFT ne se règle pas ; seul \
                 le poids, à niveau égal. Une règle légale désactivée doit être une décision que je \
                 prends en connaissance de cause : dis-le-moi en toutes lettres avant.
-                4. consulter_parametres (section instance) : la durée d'une résolution et l'arrêt sur plateau. \
-                modifier_parametres (section instance) après mon accord, sous les plafonds de l'instance — un \
-                budget plus long ne corrige pas un manque de monde (analyser_effectifs).
+                4. consulter_parametres (section calcul) : la durée d'une résolution et l'arrêt sur plateau, \
+                que fixe l'exploitant de l'instance et que tu ne modifies pas — un budget plus long ne \
+                corrige pas un manque de monde (analyser_effectifs).
                 5. Rappelle-moi que rien de tout cela ne change le planning en place : le nouveau \
                 dosage vaut pour la prochaine résolution, et diagnostiquer_plan relit dès maintenant \
                 le plan persisté sous ce dosage.""".formatted(suffixe(edition), editionFrame(edition)));

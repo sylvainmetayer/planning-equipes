@@ -4,7 +4,7 @@ festival:
   dateDebut: 2026-07-08
 
 # Fixture for PlanningServiceParametresScenarioTest: exercises the optional
-# parametresLegaux/parametresSolveur sections a scenario can pin, with only a
+# parametresLegaux section a scenario can pin, with only a
 # subset of fields overridden — the rest must fall back to each class's own
 # defaults, not to whatever the (here DB-less) ReferenceDataService returns.
 parametresLegaux:
@@ -19,9 +19,6 @@ parametresLegaux:
   # HH:MM:SS scalar as sexagesimal (a Number), not a string — this exercises
   # that parsing path, not just the quoted "HH:MM" créneaux below.
   coupureRepasMidiDebut: 12:30:00
-
-parametresSolveur:
-  dureeResolutionSecondes: 400
 
 creneaux:
   - id: J1-MATIN

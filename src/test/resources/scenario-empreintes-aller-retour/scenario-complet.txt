@@ -3078,8 +3078,5 @@
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
-.sections.parametresSolveur.dureeResolutionSecondes = 480
-.sections.parametresSolveur.mailFinResolution = false
-.sections.parametresSolveur.plateauSecondes = null
 .sections.prereglagesConsigne = null
 .sections.typologies = (vide)
