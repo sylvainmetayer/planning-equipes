@@ -9,6 +9,8 @@ import { AdminApi } from '../../core/api/admin-api';
 import { ParametresNotifications } from '../../core/models';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { writeOrAskStale } from '../../shared/stale-write';
 
 /**
  * Latest sending time the hourly job can honour — mirrors
@@ -48,6 +50,7 @@ const HEURE_RAPPEL_MAX = '23:00';
 export class ParametresNotificationsPanel implements OnInit {
   private readonly adminApi = inject(AdminApi);
   private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly parametres = signal<ParametresNotifications | null>(null);
   protected readonly enregistrement = signal(false);
@@ -125,7 +128,19 @@ export class ParametresNotificationsPanel implements OnInit {
     }
     this.enregistrement.set(true);
     try {
-      this.parametres.set(await this.adminApi.saveNotificationSettings(parametres));
+      // The stamp loaded travels with the record; a section written since is a 409.
+      const written = await writeOrAskStale(
+        { confirm: this.confirm, notifications: this.notifications },
+        (overwrite) =>
+          this.adminApi.saveNotificationSettings(
+            overwrite ? { ...parametres, modifieLe: null } : parametres,
+          ),
+        () => this.charger(),
+      );
+      if (written === null) {
+        return;
+      }
+      this.parametres.set(written.saved);
       this.notifications.notify({
         title: $localize`:@@parametres.notifications.enregistre:Notifications planifiées enregistrées.`,
         variant: 'success',

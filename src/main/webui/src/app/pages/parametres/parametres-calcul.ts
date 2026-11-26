@@ -18,16 +18,19 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
+import { ParametresLegaux } from '../../core/models';
 import { EditionStore } from '../../core/edition.store';
 import { errorPrefix } from '../../core/error-message';
 import { ModifiedFormsRegistry } from '../../core/formulaires-modifies';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { GelNotice } from '../../shared/gel-notice';
+import { writeOrAskStale } from '../../shared/stale-write';
 import { StatusMessage } from '../../shared/status-message';
 import { formatSeconds } from '../solver/solver-duration';
 
@@ -74,6 +77,7 @@ export class ParametresCalcul implements OnInit {
   private readonly crud = inject(ReferenceCrudService);
   protected readonly store = inject(ReferenceDataStore);
   private readonly gel = injectGelReferentiel();
+  private readonly confirm = inject(ConfirmService);
   private readonly registry = inject(ModifiedFormsRegistry);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -119,6 +123,8 @@ export class ParametresCalcul implements OnInit {
 
   /* -------------------------- Start of the evening -------------------------- */
 
+  /** The legal parameters as loaded: the whole record the server replaces, and the stamp of its write. */
+  private legaux: ParametresLegaux | null = null;
   private readonly soireeStored = signal('');
   protected readonly soireeDraft = signal<string | null>(null);
   protected readonly heureDebutSoiree = computed(() => this.soireeDraft() ?? this.soireeStored());
@@ -194,6 +200,7 @@ export class ParametresCalcul implements OnInit {
           .then((config) => this.adminEmail.set(config.adminEmail))
           .catch(() => this.adminEmail.set(null)),
       ]);
+      this.legaux = legaux;
       this.soireeStored.set((legaux.heureDebutSoiree ?? '').slice(0, 5));
     } catch (error) {
       this.error.set(errorPrefix(error));
@@ -213,8 +220,8 @@ export class ParametresCalcul implements OnInit {
   /**
    * One « Enregistrer » for the tab, each record written only when something
    * of it changed: the mail is a setting of the edition, the evening is a
-   * field of the legal parameters — re-read just before, so a save here never
-   * resets what the « Légal » tab stored meanwhile —, the polyvalent is a flag of
+   * field of the legal parameters — written under the stamp it was loaded with: a
+   * save here never overwrites what the « Légal » tab stored meanwhile unasked —, the polyvalent is a flag of
    * one typologie.
    */
   protected async save(): Promise<void> {
@@ -224,17 +231,42 @@ export class ParametresCalcul implements OnInit {
     this.saving.set(true);
     this.error.set('');
     try {
+      const deps = { confirm: this.confirm, notifications: this.notifications };
+      const reload = () => this.load();
       if (this.mailDirty()) {
-        await this.solverSettings.setMailFinResolution(this.mailFinResolution());
+        const written = await writeOrAskStale(
+          deps,
+          (overwrite) =>
+            this.solverSettings.setMailFinResolution(this.mailFinResolution(), overwrite),
+          reload,
+        );
+        if (written === null) {
+          this.cancel();
+          return;
+        }
         this.mailDraft.set(null);
       }
       if (this.soireeDirty()) {
-        const legaux = await this.constraintsApi.legalParameters();
-        const saved = await this.constraintsApi.saveLegalParameters({
-          ...legaux,
-          heureDebutSoiree: this.heureDebutSoiree(),
-        });
-        this.soireeStored.set((saved.heureDebutSoiree ?? '').slice(0, 5));
+        const written = await writeOrAskStale(
+          deps,
+          async (overwrite) => {
+            // Overwriting re-reads the record, so what the « Légal » tab stored meanwhile is kept.
+            const base =
+              (overwrite ? null : this.legaux) ?? (await this.constraintsApi.legalParameters());
+            return this.constraintsApi.saveLegalParameters({
+              ...base,
+              heureDebutSoiree: this.heureDebutSoiree(),
+              modifieLe: overwrite ? null : (base.modifieLe ?? null),
+            });
+          },
+          reload,
+        );
+        if (written === null) {
+          this.cancel();
+          return;
+        }
+        this.legaux = written.saved;
+        this.soireeStored.set((written.saved.heureDebutSoiree ?? '').slice(0, 5));
         this.soireeDraft.set(null);
       }
       if (this.polyvalentDirty()) {

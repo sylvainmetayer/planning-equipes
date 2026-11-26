@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -61,6 +62,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        arrivals — and the last departures — of an {@code ARRIVEE_GROUPEE}
  *        group may be on a day before {@code arriveeGroupee} counts the
  *        minutes beyond.
+ * @param modifieLe when the stored row was last written: sent back by a write
+ *        as its precondition ({@code null} checks nothing, and so does a
+ *        value that never came from a row)
  */
 @Schema(
         requiredProperties = {
@@ -83,7 +87,49 @@ public record ParametresQualite(
         double vitesseMarcheKmH,
         double facteurDetour,
         int toleranceTrajetMinutes,
-        int toleranceArriveeGroupeeMinutes) {
+        int toleranceArriveeGroupeeMinutes,
+        Instant modifieLe) {
+
+    /** The ten thresholds, as a value that never came from a row: no stamp. */
+    public ParametresQualite(
+            int maxEmplacementsDistinctsParJour,
+            LocalTime heureServiceTardif,
+            LocalTime heureServiceMatinal,
+            int reposSouhaiteApresServiceTardifMinutes,
+            int typologiesDistinctesMax,
+            int joursConsecutifsMax,
+            double vitesseMarcheKmH,
+            double facteurDetour,
+            int toleranceTrajetMinutes,
+            int toleranceArriveeGroupeeMinutes) {
+        this(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes,
+                null);
+    }
+
+    public ParametresQualite withStamp(Instant modifieLe) {
+        return new ParametresQualite(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes,
+                modifieLe);
+    }
 
     /** @see #maxEmplacementsDistinctsParJour() */
     public static final int EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT = 3;
@@ -207,7 +253,8 @@ public record ParametresQualite(
                 vitesseMarcheKmH,
                 facteurDetour,
                 toleranceTrajetMinutes,
-                toleranceArriveeGroupeeMinutes);
+                toleranceArriveeGroupeeMinutes,
+                modifieLe);
     }
 
     /** The same thresholds, with the grouped-arrival tolerance replaced. */
@@ -222,7 +269,8 @@ public record ParametresQualite(
                 vitesseMarcheKmH,
                 facteurDetour,
                 toleranceTrajetMinutes,
-                minutes);
+                minutes,
+                modifieLe);
     }
 
     /**

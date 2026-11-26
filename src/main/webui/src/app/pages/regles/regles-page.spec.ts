@@ -12,7 +12,7 @@ import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@ang
 import { BehaviorSubject } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { ApiError, ApiService, CODE_MODIFICATION_CONCURRENTE } from '../../core/api.service';
 import { AdminApi } from '../../core/api/admin-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionStore } from '../../core/edition.store';
@@ -79,6 +79,7 @@ const CHARGE = rule({
 });
 
 const LEGAUX = {
+  modifieLe: '2026-11-26T10:00:00Z',
   dureeHebdomadaireMaxMinutes: 2880,
   dureeHebdomadaireMaxMineurMinutes: 2100,
   reposQuotidienMinimalMinutes: 660,
@@ -114,6 +115,7 @@ describe('ReglesPage', () => {
   let constraintsApi: Record<string, ReturnType<typeof vi.fn>>;
   let allowsDisabling: ReturnType<typeof vi.fn>;
   let ask: ReturnType<typeof vi.fn>;
+  let askThreeWay: ReturnType<typeof vi.fn>;
 
   // The rule tabs: the adjustments, the default tab, are another page's spec.
   async function rendre(
@@ -133,6 +135,7 @@ describe('ReglesPage', () => {
     };
     allowsDisabling = vi.fn(() => Promise.resolve(false));
     ask = vi.fn(() => Promise.resolve(true));
+    askThreeWay = vi.fn();
     const queryParams = new BehaviorSubject<ParamMap>(convertToParamMap(params));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -142,7 +145,7 @@ describe('ReglesPage', () => {
         { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         { provide: ConstraintsApi, useValue: constraintsApi },
         { provide: LegalDisableConfirmService, useValue: { allowsDisabling } },
-        { provide: ConfirmService, useValue: { ask } },
+        { provide: ConfirmService, useValue: { ask, askThreeWay } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         {
           provide: ProblemesStore,
@@ -218,12 +221,11 @@ describe('ReglesPage', () => {
     expect(racine().querySelector('tbody tr .regles-article')?.textContent).toContain('L3121-20');
   });
 
-  it('edits a threshold on its row and saves it over a fresh read of the record', async () => {
+  it('edits a threshold on its row and saves the record as loaded, under its stamp', async () => {
     const champ = racine().querySelector(
       'input[aria-label^="Durée hebdomadaire maximale, majeurs"]',
     ) as HTMLInputElement;
     expect(champ.value).toBe('48');
-    constraintsApi['legalParameters'].mockResolvedValue({ ...LEGAUX, heureDebutSoiree: '19:00' });
 
     champ.value = '44';
     champ.dispatchEvent(new Event('input'));
@@ -235,8 +237,35 @@ describe('ReglesPage', () => {
 
     expect(constraintsApi['saveLegalParameters']).toHaveBeenCalledExactlyOnceWith({
       ...LEGAUX,
+      dureeHebdomadaireMaxMinutes: 44 * 60,
+    });
+    expect(page()['dirty']()).toBe(false);
+  });
+
+  it('answers a legal record written since with the stale dialog: overwriting re-reads it and sends no stamp', async () => {
+    const champ = racine().querySelector(
+      'input[aria-label^="Durée hebdomadaire maximale, majeurs"]',
+    ) as HTMLInputElement;
+    champ.value = '44';
+    champ.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    constraintsApi['saveLegalParameters'].mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'Modifiée.', CODE_MODIFICATION_CONCURRENTE),
+    );
+    askThreeWay.mockResolvedValue(true);
+    constraintsApi['legalParameters'].mockResolvedValue({
+      ...LEGAUX,
+      heureDebutSoiree: '19:00',
+      modifieLe: '2026-11-26T11:00:00Z',
+    });
+
+    await page()['save']();
+
+    expect(constraintsApi['saveLegalParameters']).toHaveBeenLastCalledWith({
+      ...LEGAUX,
       heureDebutSoiree: '19:00',
       dureeHebdomadaireMaxMinutes: 44 * 60,
+      modifieLe: null,
     });
     expect(page()['dirty']()).toBe(false);
   });

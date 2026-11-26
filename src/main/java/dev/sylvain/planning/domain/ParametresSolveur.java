@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -12,6 +13,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>A record: it is read, written whole, and never mutated field by field.</p>
  *
+ * @param modifieLe when the stored row was last written: sent back by a write as its
+ *                  precondition ({@code null} checks nothing)
  * @param mailFinResolution whether a finished solve mails its outcome to the
  *                          admin address. Off by default — sending mail is
  *                          never something an application should start doing
@@ -19,10 +22,18 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *                          configured
  */
 @Schema(requiredProperties = {"mailFinResolution"})
-public record ParametresSolveur(boolean mailFinResolution) {
+public record ParametresSolveur(boolean mailFinResolution, Instant modifieLe) {
 
     /** Nothing set: no mail. */
     public ParametresSolveur() {
         this(false);
+    }
+
+    public ParametresSolveur(boolean mailFinResolution) {
+        this(mailFinResolution, null);
+    }
+
+    public ParametresSolveur withStamp(Instant modifieLe) {
+        return new ParametresSolveur(mailFinResolution, modifieLe);
     }
 }

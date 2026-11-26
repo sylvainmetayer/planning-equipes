@@ -47,6 +47,8 @@
   "crud.concurrent.reload": "Reload",
   "crud.concurrent.reloaded": "Record reloaded, your changes were not saved.",
   "crud.concurrent.reloadedHint": "Open it again to carry them over onto the current version.",
+  "parametres.concurrent.reloaded": "Settings reloaded, your changes were not saved.",
+  "parametres.concurrent.reloadedHint": "Enter them again on the current version.",
   "crud.error.introuvable": "This data no longer exists",
   "crud.error.invalide": "Entry refused",
   "crud.deleteManyTitle": "Delete {$count} {$label}?",
