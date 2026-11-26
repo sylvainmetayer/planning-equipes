@@ -26,6 +26,18 @@
       "texte": "Un bénévole manque ? On le marque absent depuis l'écran *Aujourd'hui* sur un téléphone : l'application propose des remplaçants qui respectent déjà les règles, avec leur numéro, et prévient les seules personnes concernées. Le PC course peut garder l'**affichage mural** sur une télé. Voir aussi [suivre le jour J](/docs/regles/suivre-le-jour-j/). Même écran pour [un salon ou une foire](/planning-salon-foire/)."
     },
     {
+      "h2": "Un exemple : un trail et son village d'arrivée",
+      "texte": "Un cas imaginé, sans lien avec un client. Un trail le dimanche : des signaleurs aux carrefours, deux ravitaillements, un accueil des coureurs, un vestiaire, un poste de chronométrage. Chaque poste est un stand avec son horaire, souvent de quelques heures seulement, et son effectif d'une ou deux personnes. Le chronométrage demande une compétence que peu de bénévoles ont : le calcul les cherche pour ce poste, et l'onglet *Fragilité* montre si une seule personne le tient. Les premiers départs sont tôt, les derniers arrivants tard : c'est la grille horaire de chaque poste qui le dit."
+    },
+    {
+      "h2": "Dimensionner avant de recruter",
+      "texte": "Une course se prépare des semaines avant, et la première question est de savoir combien de bénévoles trouver. Saisissez les postes, leurs horaires et leurs effectifs : l'écran *Diagnostic* donne le minimum de personnes qui tiennent tous les sièges, et les compétences à chercher en priorité (signaleur, secouriste, chronométreur). Rien n'est à saisir côté bénévoles pour cela. Voir [savoir combien de personnes recruter](/docs/regles/dimensionner-l-equipe/)."
+    },
+    {
+      "h2": "D'une édition à l'autre",
+      "texte": "Les parcours changent peu d'une année à l'autre. L'édition suivante se crée en copiant la précédente, avec ou sans les bénévoles : les postes sont repris, et vous n'avez plus qu'à ajuster les dates et les effectifs. Le guide [enchaîner les éditions](/docs/regles/enchainer-les-editions/) montre la copie."
+    },
+    {
       "h2": "Donner son poste à chacun",
       "texte": "Chaque bénévole reçoit son planning par e-mail ou sur une feuille PDF avec un QR code, et peut proposer un échange à un collègue depuis son espace ; l'organisation arbitre. L'ouverture de la foire aux échanges est décrite dans [laisser les animateurs échanger leurs créneaux](/docs/regles/echanger-creneaux/)."
     }
@@ -65,6 +77,18 @@
       {
         "h2": "On the day of the event",
         "texte": "A volunteer is missing? Mark them absent from the *Today* screen on a phone: the application suggests replacements who already respect the rules, with their phone number, and notifies only the people concerned. The race office can keep the **wall display** on a TV. See also [following the day of the event](/en/docs/rules/follow-the-event-day/). The same screen serves [a trade show or fair](/en/trade-show-staff-rota/)."
+      },
+      {
+        "h2": "An example: a trail run and its finish village",
+        "texte": "A made-up case, unrelated to any customer. A trail on Sunday: marshals at crossroads, two aid stations, a runner reception, a cloakroom, a timing post. Each post is a stand with its hours, often only a few hours, and a headcount of one or two. Timing needs a skill few volunteers have: the solver looks for them for that post, and the *Fragility* tab shows if a single person holds it. The first starts are early and the last finishers late: each post's hours say so."
+      },
+      {
+        "h2": "Size the team before recruiting",
+        "texte": "A race is prepared weeks ahead, and the first question is how many volunteers to find. Enter the posts, their hours and their headcounts: the *Diagnostic* screen gives the minimum number of people that fill every seat, and the skills to look for first (marshal, first aider, timekeeper). Nothing has to be entered on the volunteer side for that. See [know how many people to recruit](/en/docs/rules/size-the-team/)."
+      },
+      {
+        "h2": "From one edition to the next",
+        "texte": "Courses change little from one year to the next. You create the next edition by copying the previous one, with or without the volunteers: the posts carry over, and you only adjust the dates and headcounts. The guide to [chaining editions](/en/docs/rules/chain-editions/) shows the copy."
       },
       {
         "h2": "Giving everyone their post",

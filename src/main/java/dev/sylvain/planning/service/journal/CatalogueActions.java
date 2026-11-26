@@ -940,6 +940,15 @@ public final class CatalogueActions {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    /**
+     * The codes that moved a rule's activation, weight or level, for the
+     * history's « Règles » filter — what the former weight history listed,
+     * minus the values, which the journal never keeps.
+     */
+    public static Set<String> ruleCodes() {
+        return Set.of(CONTRAINTE_ACTIVEE, CONTRAINTE_DESACTIVEE, CONTRAINTE_PONDEREE, CONTRAINTE_NIVEAU);
+    }
+
     /** What {@code cle} does, {@code empty} when it is not a journalled action. */
     public static Optional<ActionJournalisee> forRoute(String cle) {
         return Optional.ofNullable(ROUTES.get(cle)).map(ACTIONS::get);

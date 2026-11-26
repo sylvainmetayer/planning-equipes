@@ -3,13 +3,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import {
-  ConstraintHistory,
-  ConstraintsView,
-  NiveauRegle,
-  ParametresLegaux,
-  ParametresQualite,
-} from '../models';
+import { ConstraintsView, NiveauRegle, ParametresLegaux, ParametresQualite } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ConstraintsApi {
@@ -43,13 +37,6 @@ export class ConstraintsApi {
     return this.api.put<{ niveau: NiveauRegle }>(
       `/api/constraints/${encodeURIComponent(name)}/niveau`,
       { niveau },
-    );
-  }
-
-  /** One rule's weight history, beside the edition's solves and that rule's violations in each. */
-  history(name: string): Promise<ConstraintHistory> {
-    return this.api.get<ConstraintHistory>(
-      `/api/constraints/${encodeURIComponent(name)}/historique`,
     );
   }
 

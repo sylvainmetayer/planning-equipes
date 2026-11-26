@@ -10,6 +10,7 @@ Vous saurez lire le journal des actions et ce qu'il refuse de contenir, régler 
 | --- | --- |
 | `nature=exports` | ne rend que les fichiers sortis de l'application |
 | `nature=donnees` | ne rend que les modifications qu'un calcul recevrait |
+| `nature=regles` | ne rend que les changements d'activation, de poids ou de niveau d'une règle (`entiteId` : la règle), sans la valeur |
 | `depuis`, `jusqua` | bornent une période (deux instants ISO-8601), **`depuis` exclu, `jusqua` inclus** |
 | `avant` | curseur : l'id de la dernière ligne affichée, pour la page suivante |
 

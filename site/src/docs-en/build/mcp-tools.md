@@ -28,7 +28,7 @@ To retouch a seat without starting the solve again, `suggerer_reparations` looks
 
 `modifier_niveau_contrainte` chooses the level of an organisation rule for the edition: `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` or `PREFERENCE_LEGERE` (a preference writes the weight of its position). `lister_contraintes` gives `niveauReglable` and `niveauChoisi`; a legal, assignment, ad hoc or lock rule, or a soft preference, refuses the level. Like `modifier_poids_contrainte`, the tool is accepted during a computation and says so (`RESOLUTION_EN_COURS`).
 
-`consulter_historique_ponderation` returns what `GET /api/constraints/{name}/historique` returns, or the global view without `contrainte`: changes of weight and activation, values before and after, typed origin, then the edition's solves with the weighting of each. A setting made by `modifier_poids_contrainte`, `activer_contrainte` or `desactiver_contrainte` carries the origin `ASSISTANT` there.
+A setting made by `modifier_poids_contrainte`, `modifier_niveau_contrainte`, `activer_contrainte` or `desactiver_contrainte` is read in the application's action journal ("Rules" filter), under the `ASSISTANT` actor and with the rule's name, without the value. The former `consulter_historique_ponderation` tool is removed: the journal keeps no value, and no tool reads it.
 
 ## Reading the plan from different angles
 
@@ -104,6 +104,7 @@ Two **resources**, to attach once to inform all following calls:
 | --- | --- |
 | `capturer_instantane` | `creer_version` |
 | `comparer_instantanes` | `comparer_versions` |
+| `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |

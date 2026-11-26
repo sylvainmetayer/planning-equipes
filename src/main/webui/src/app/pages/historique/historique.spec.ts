@@ -205,6 +205,7 @@ describe('reading the filters off the URL', () => {
     expect(readNatureFilter('exports')).toBe('EXPORTS');
     expect(readNatureFilter('EXPORTS')).toBe('EXPORTS');
     expect(readNatureFilter('donnees')).toBe('DONNEES');
+    expect(readNatureFilter('regles')).toBe('REGLES');
   });
 
   it('keeps a bound of the period verbatim, and drops one it cannot read', () => {
@@ -295,6 +296,7 @@ describe('the nature filter', () => {
   it('is a question put to the server, never a filter over the loaded page', () => {
     expect(natureQuery('EXPORTS')).toBe('exports');
     expect(natureQuery('DONNEES')).toBe('donnees');
+    expect(natureQuery('REGLES')).toBe('regles');
     expect(natureQuery('TOUTES')).toBeNull();
   });
 

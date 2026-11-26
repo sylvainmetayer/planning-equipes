@@ -616,6 +616,10 @@ describe('the screens that became tabs', () => {
       '/parametres?onglet=connexions',
     );
     expect(redirectTarget('historique', {})).toBe('/parametres?onglet=historique');
+    // The weight history was folded into the journal: its filter survives the move.
+    expect(redirectTarget('historique', { nature: 'regles' })).toBe(
+      '/parametres?onglet=historique&nature=regles',
+    );
   });
 
   // A hosted tab's unsaved cells must not leave silently with the route.

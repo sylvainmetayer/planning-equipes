@@ -26,18 +26,13 @@ Deux routes, un corps chacune : `PUT /api/constraints/{name}` allume ou éteint,
 
 Ce que chaque réglage change pour le plan se lit dans [doser et désactiver les règles](doser-et-desactiver-les-regles.md).
 
-## Historique des réglages de pondération
+## Historique des réglages de pondération : le journal des actions
 
-`GET /api/constraints/{name}/historique` (une règle) et `GET /api/constraints/historique` (toutes) répondent `{ changes, resolutions }`.
+Il n'y a plus d'historique des pondérations. Les deux routes `…/historique` de `/api/constraints` sont retirées ; les changements d'activation, de poids et de niveau d'une règle se lisent dans [le journal des actions](api-integrations.md#journal-des-actions), `GET /api/historique?nature=regles`.
 
-- `changes` : chaque changement de poids ou d'activation de l'édition, avec les **valeurs effectives** avant et après, défaut du déploiement compris (`backToDefault` pour « 20 vers défaut (1) »), l'`origin` (`SCREEN`, `ASSISTANT`, `SCENARIO`, `DUPLICATION`, cette dernière avec `sourceEdition`) et l'`actor` du journal qui s'en déduit. Une ligne n'est écrite que si la valeur effective change : un `PUT` qui remet la même valeur n'écrit rien, un import de scénario qui ne bouge rien non plus.
-- `resolutions` : les lignes de l'Autopsie de l'édition, avec leur score, le `dosage` sous lequel chacune a tourné et, pour une règle donnée, `ruleViolations`, son nombre d'écarts.
-
-Trois pièges :
-
-- Ce n'est pas le [journal des actions](api-integrations.md#journal-des-actions). Le journal ne garde que des noms de champs et expire ; cette table garde les valeurs, dure autant que l'édition et ne porte rien de nominatif (l'origine est typée, jamais une personne).
-- Le dosage est celui du **lancement**. Il est pris juste avant le démarrage du solveur et stocké avec la ligne KPI (`kpi.dosage`) et avec le plan (`planning_resolution.dosage`, recopié par chaque instantané) : un poids changé pendant la résolution vaut pour la suivante. Il ne garde que ce qui s'écarte d'un défaut : `weights` (écart au déploiement), `disabled` et `enabled` (écart au catalogue), plus `instanceWeights`, les poids du déploiement, qui disent quand c'est l'instance et non l'édition qui a changé. `null` sur une ligne ancienne veut dire « dosage inconnu », jamais « défaut ».
-- L'écran pose les scores qui ont suivi un réglage sans prétendre isoler son effet : le référentiel a pu bouger entre deux résolutions.
+- Chaque ligne dit **quelle règle** (`entiteId`), **quelle action** (`CONTRAINTE_ACTIVEE`, `CONTRAINTE_DESACTIVEE`, `CONTRAINTE_PONDEREE`, `CONTRAINTE_NIVEAU`), **quand** et **par qui**, et jamais la valeur : le journal ne garde que des noms et expire.
+- Le dosage sous lequel une résolution a tourné reste, lui, stocké avec la ligne KPI (`kpi.dosage`) et avec le plan (`planning_resolution.dosage`, recopié par chaque instantané) : il est pris juste avant le démarrage du solveur, un poids changé pendant la résolution vaut pour la suivante. Il ne garde que ce qui s'écarte d'un défaut : `weights` (écart au déploiement), `disabled` et `enabled` (écart au catalogue), plus `instanceWeights`, les poids du déploiement. `null` sur une ligne ancienne veut dire « dosage inconnu », jamais « défaut ».
+- Les anciennes lignes ne sont pas migrées : la migration `V158` renomme la table en `ponderation_contrainte_historique_avant_4_0`, que la 5.0 supprime ; l'application ne la lit ni ne l'exporte.
 
 Chaque ligne de `GET /api/mesures-edition/indicateurs` porte `kpi.couvertureParJour` : par date ISO, `{ postes, pourvus }`, des sièges et jamais des personnes, ce qui reste compatible avec la conservation illimitée de cet historique. Les sommes des jours valent `postesTotal` et `postesPourvus`. La clé vaut `null` sur une ligne ancienne et sur un instantané recalculé en mode dégradé : le lecteur dit « non mesurée », jamais « journée vide ». La colonne `kpi` est un `jsonb`, et `lister_mesures_edition` (MCP) la rend telle quelle.
 
