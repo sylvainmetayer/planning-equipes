@@ -60,7 +60,6 @@ function rapport(patch: Partial<RapportOuvertures> = {}): RapportOuvertures {
             tranche: 0,
             heureDebut: '10:00',
             heureFin: '20:00',
-            couverturePause: false,
           },
         ],
       },

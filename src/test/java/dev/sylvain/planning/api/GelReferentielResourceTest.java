@@ -265,7 +265,7 @@ class GelReferentielResourceTest {
                 .getMap("[0]");
         Object id = creneau.get("id");
         Map<String, Object> modifie = new HashMap<>(creneau);
-        modifie.put("couverturePause", true);
+        modifie.put("heureFin", "23:00:00");
         refused(edition().body(modifie).when().put("/api/creneaux/" + id).then(), "CRENEAUX");
         refused(edition().when().delete("/api/creneaux/" + id).then(), "CRENEAUX");
         refused(edition().body("""

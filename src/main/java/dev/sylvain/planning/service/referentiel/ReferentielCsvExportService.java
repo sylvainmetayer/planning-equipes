@@ -221,7 +221,7 @@ public class ReferentielCsvExportService {
      */
     private String csvCreneaux() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "date", "heureDebut", "heureFin", "couverturePause");
+        ligne(csv, "date", "heureDebut", "heureFin");
         List<Creneau> tries = new ArrayList<>(creneaux.list());
         tries.sort(Comparator.comparing(Creneau::getDate, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder()))
@@ -231,8 +231,7 @@ public class ReferentielCsvExportService {
                     csv,
                     creneau.getDate() == null ? "" : creneau.getDate().toString(),
                     heure(creneau.getHeureDebut()),
-                    heure(creneau.getHeureFin()),
-                    creneau.isCouverturePause() ? "oui" : "");
+                    heure(creneau.getHeureFin()));
         }
         return csv.toString();
     }

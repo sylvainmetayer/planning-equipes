@@ -22,14 +22,14 @@ const ETAT: EtatJourneesTypes = {
       id: 1,
       nom: 'Jour normal',
       vacations: [
-        { heureDebut: '09:00:00', heureFin: '12:00:00', couverturePause: false },
-        { heureDebut: '12:00:00', heureFin: '13:00:00', couverturePause: true },
+        { heureDebut: '09:00:00', heureFin: '12:00:00' },
+        { heureDebut: '12:00:00', heureFin: '13:00:00' },
       ],
     },
     {
       id: 2,
       nom: 'Nocturne',
-      vacations: [{ heureDebut: '14:00:00', heureFin: '00:00:00', couverturePause: false }],
+      vacations: [{ heureDebut: '14:00:00', heureFin: '00:00:00' }],
     },
   ],
   calendrier: [
@@ -104,7 +104,7 @@ describe('JourneesTypesCard', () => {
     const { racine } = await mount();
 
     expect(racine.querySelectorAll('.journee-type-item')).toHaveLength(2);
-    expect(racine.querySelectorAll('.vacation-chip-relais')).toHaveLength(1);
+    expect(racine.querySelectorAll('.vacation-chip')).toHaveLength(3);
     expect(racine.querySelectorAll('.journees-types-table tbody tr')).toHaveLength(2);
     expect(racine.querySelectorAll('.ligne-en-ecart')).toHaveLength(1);
     expect(racine.querySelector('.journees-types-bornes')!.textContent).toContain('2027-07-12');
@@ -142,7 +142,6 @@ describe('JourneesTypesCard', () => {
       crees: 3,
       supprimes: 0,
       conserves: 1,
-      misAJour: 0,
       aucunChangement: false,
     };
     api.previewApplication.mockResolvedValue(apercu);

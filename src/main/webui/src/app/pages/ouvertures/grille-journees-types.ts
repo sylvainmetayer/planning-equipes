@@ -28,8 +28,6 @@ export interface ColonneJourneeType {
   heureFin: string;
   /** Rank of the vacation inside its template, for the header's own row. */
   rang: number;
-  /** A meal-relay vacation: the seats generated are half the headcount typed, rounded up. */
-  couverturePause: boolean;
   /** The dated grid columns this one writes to — one per date the template governs. */
   colonnes: readonly string[];
   /** Dates the template governs whose grid holds no such column: they cannot be typed here. */
@@ -111,7 +109,6 @@ export function colonnesJourneesTypes(
         heureDebut: vacation.heureDebut,
         heureFin: vacation.heureFin,
         rang,
-        couverturePause: vacation.couverturePause,
         colonnes: couvertes,
         datesSansColonne: manquantes,
       });

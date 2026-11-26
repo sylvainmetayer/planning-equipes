@@ -150,12 +150,8 @@ class ScenarioLadderLargeTest {
     void rung20ThreeWeeksOfAFestival() {
         Loaded loaded = load("gamme-20-21j-50stands-172animateurs-festival-type");
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
-        assertThat(loaded.problem().getPostes()).hasSize(5160);
+        assertThat(loaded.problem().getPostes()).hasSize(6630);
         assertThat(loaded.stands()).filteredOn(Stand::isPremium).hasSize(15);
-        // The single-seat stands close over lunch rather than open half a seat.
-        assertThat(loaded.problem().getPostes())
-                .filteredOn(poste -> standNumber(poste) >= 36)
-                .noneMatch(poste -> poste.getCreneau().isCouverturePause());
 
         assertFeasible(solveUntilFeasible(loaded, CEILING_SECONDS));
     }
@@ -185,11 +181,8 @@ class ScenarioLadderLargeTest {
         assertThat(parType.get(false))
                 .allSatisfy(vacation -> assertThat(vacation.getDureeMinutes()).isEqualTo(300));
         assertThat(parType.get(true).stream().collect(Collectors.groupingBy(Creneau::getDate)))
-                .allSatisfy((jour, vacations) -> assertThat(vacations)
-                        .hasSize(4)
-                        .filteredOn(Creneau::isCouverturePause)
-                        .hasSize(1));
-        assertThat(loaded.problem().getPostes()).hasSize(3736);
+                .allSatisfy((jour, vacations) -> assertThat(vacations).hasSize(4));
+        assertThat(loaded.problem().getPostes()).hasSize(3864);
 
         assertFeasible(solveUntilFeasible(loaded, CEILING_SECONDS));
     }
@@ -222,7 +215,7 @@ class ScenarioLadderLargeTest {
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
         assertThat(loaded.stands()).filteredOn(Stand::isPremium).hasSize(30);
         assertThat(loaded.problem().getContraintesAdHoc()).hasSize(12);
-        assertThat(loaded.problem().getPostes()).hasSize(5013);
+        assertThat(loaded.problem().getPostes()).hasSize(5339);
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> standNumber(poste) >= 41 && standNumber(poste) <= 60)
                 .isNotEmpty()

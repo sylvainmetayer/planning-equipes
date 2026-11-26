@@ -96,7 +96,6 @@ function profile(partial: Partial<AnimateurProfile> = {}): AnimateurProfile {
           heureDebut: '14:00:00',
           heureFin: '18:00:00',
           effectifMin: 2,
-          couverturePause: false,
           siegesRequis: 2,
           siegesPourvus: 2,
           siegesLiberes: 1,

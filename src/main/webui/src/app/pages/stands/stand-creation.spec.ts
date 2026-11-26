@@ -27,7 +27,6 @@ function colonne(
     heureDebut,
     heureFin,
     rang: 0,
-    couverturePause: false,
   };
 }
 

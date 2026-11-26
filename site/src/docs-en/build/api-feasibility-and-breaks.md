@@ -53,7 +53,7 @@ With no staff member in the reference data there are no bounds: the response is 
 
 `GET /api/fragilite` answers a distinct question: who is irreplaceable. `/api/feasibility` says why a schedule does not hold, `/api/staffing` how many to recruit, this one what a withdrawal would take away. It launches no solve: it reads the persisted plan and the skills. Two indicators:
 
-- per staff member, the stand x timeslot pairs that would fall below the minimum headcount if they withdraw. Seats are generated at `max(1, headcount of the open segment)`, half of that on a break-cover shift: the number of seats of a group is its floor. The figure that ranks is `postesIrremplacables`, the groups where nobody else could take over the seat. A group already understaffed is attributed to nobody (`groupesDejaSousEffectif`);
+- per staff member, the stand x timeslot pairs that would fall below the minimum headcount if they withdraw. Seats are generated at `max(1, headcount of the open segment)`: the number of seats of a group is its floor. The figure that ranks is `postesIrremplacables`, the groups where nobody else could take over the seat. A group already understaffed is attributed to nobody (`groupesDejaSousEffectif`);
 - the stand x timeslot pairs held by at most one person skilled for the stand's game categories, with the corresponding severity.
 
 A possible replacement is skilled, not declared unavailable that day, an adult if the stand is reserved for adults, and free of any overlapping seat. Daily rest, weekly ceiling, ad hoc and preferences are not checked: an "irreplaceable" one certainly is, a "replaceable" one may not be after solving. Only one withdrawal is simulated at a time.

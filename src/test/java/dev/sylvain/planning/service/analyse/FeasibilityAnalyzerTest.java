@@ -254,22 +254,6 @@ class FeasibilityAnalyzerTest {
     }
 
     @Test
-    void uneVacationDeCouverturePauseNeDemandeQueLaMoitieDeLaFenetre() {
-        // Seat generation halves the headcount on a break-covering shift, so a
-        // window of 4 asks for 2 seats: two animateurs are enough.
-        Stand stand = stand("stand-1", 1, "STRATEGIE");
-        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        creneau.setCouverturePause(true);
-        stand.setOuvertures(List.of(
-                PlageStand.ouverture(null, creneau.getDate(), LocalTime.of(10, 0), LocalTime.of(12, 0), null, 4)));
-
-        FeasibilityReport report = analyzer.analyze(
-                List.of(animateur("a1", "STRATEGIE"), animateur("a2", "STRATEGIE")), List.of(stand), List.of(creneau));
-
-        assertThat(report.feasible()).isTrue();
-    }
-
-    @Test
     void laDemandeSuitEffectifMinPasEffectifMax() {
         // effectifMin = 2 (two seats generated), effectifMax = 4: two animateurs
         // are enough. Counting effectifMax would announce 2 missing.

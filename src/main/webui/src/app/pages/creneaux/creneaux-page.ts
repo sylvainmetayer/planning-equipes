@@ -397,8 +397,6 @@ export class CreneauxPage implements OnInit {
   /* -------------------------- The grid as a whole -------------------------- */
 
   /** Same wording as the grid's header: the marker means the same thing on both screens. */
-  protected readonly relaisRepasTooltip = $localize`:@@ouvertures.saisie.relaisRepas:Relais repas : les sièges générés valent la moitié de l'effectif saisi, arrondie au supérieur`;
-
   protected readonly diagnostic = signal<DiagnosticGrille | null>(null);
   protected readonly controle = signal<RapportGrille | null>(null);
   protected readonly controleLoading = signal(false);
@@ -634,10 +632,6 @@ export class CreneauxPage implements OnInit {
         value: (creneau) => creneau.heureDebut,
       },
       { title: $localize`:@@creneaux.field.heureFin:Fin`, value: (creneau) => creneau.heureFin },
-      {
-        title: $localize`:@@creneaux.field.couverturePause:Relais repas (effectif divisé par deux)`,
-        value: (creneau) => (creneau.couverturePause ? $localize`:@@common.oui:Oui` : ''),
-      },
       {
         title: $localize`:@@creneaux.column.standsOuverts:Stands ouverts`,
         value: (creneau) => this.ouvertures().get(creneau.id)?.stands ?? 0,

@@ -25,14 +25,11 @@ export interface SpanJournee {
 /** One open stretch of a stand, with what it asks for. */
 export interface BlocStand extends SpanJournee {
   effectif: number;
-  /** Inside a meal-relay créneau: the seats generated are half the headcount, rounded up. */
-  couverturePause: boolean;
 }
 
 /** One créneau of the day, drawn as a band behind every line. */
 export interface BandeCreneau extends SpanJournee {
   id: number;
-  couverturePause: boolean;
 }
 
 export interface LigneJournee {
@@ -131,16 +128,14 @@ export function buildJourneeStands(
       `${formatHeure(colonne.heureDebut)}–${formatHeure(colonne.heureFin)}`,
     ),
     id: colonne.id,
-    couverturePause: colonne.couverturePause,
   }));
-  const relais = relaisParCreneau(jour);
 
   const lignes: LigneJournee[] = rapport.stands
     .filter((ligne) => standIds === null || standIds.has(ligne.standId))
     .map((ligne) => {
       const cellule = ligne.jours.find((candidat) => candidat.date === date);
       const nom = ligne.nom || ligne.standId;
-      const blocs = cellule ? blocsDe(cellule, relais, span) : [];
+      const blocs = cellule ? blocsDe(cellule, span) : [];
       // Built without `span`: the window is placed from the bounds computed
       // when it was read, and an open-ended one has no end to format.
       const dehors = (horsGrille.get(ligne.standId) ?? []).map(([d, f, heureDebut, heureFin]) => {
@@ -172,27 +167,12 @@ export function pasHoraire(vue: JourneeStandsVue): string {
   return `${100 / ((vue.finMinutes - vue.debutMinutes) / 60)}% 100%`;
 }
 
-/** `creneauId@tranche` → is the column a meal relay. */
-function relaisParCreneau(jour: JourAmplitude): Map<string, boolean> {
-  const index = new Map<string, boolean>();
-  for (const colonne of jour.creneaux) {
-    index.set(cleColonne(colonne.id, colonne.tranche), colonne.couverturePause);
-  }
-  return index;
-}
-
-function cleColonne(id: number, tranche: number): string {
-  return `${id}@${tranche}`;
-}
-
 function blocsDe(
   cellule: CelluleJourOuverture,
-  relais: Map<string, boolean>,
   span: (heureDebut: string, heureFin: string, label: string) => SpanJournee,
 ): BlocStand[] {
   const blocs: BlocStand[] = [];
   for (const creneau of cellule.creneaux) {
-    const couverturePause = relais.get(cleColonne(creneau.creneauId, creneau.tranche)) ?? false;
     for (const segment of creneau.segments) {
       blocs.push({
         ...span(
@@ -201,7 +181,6 @@ function blocsDe(
           `${formatHeure(segment.heureDebut)}–${formatHeure(segment.heureFin)} · ${segment.effectif}`,
         ),
         effectif: segment.effectif,
-        couverturePause,
       });
     }
   }

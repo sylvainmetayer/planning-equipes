@@ -1085,8 +1085,6 @@ export class OuverturesPage implements OnInit {
   }
 
   /** Said on the column, not the cell: the organiser types what the stand needs, the seats are derived. */
-  protected readonly relaisRepasTooltip = $localize`:@@ouvertures.saisie.relaisRepas:Relais repas : les sièges générés valent la moitié de l'effectif saisi, arrondie au supérieur`;
-
   protected libelleColonne(colonne: ColonneGrille): string {
     return libelleColonne(colonne);
   }

@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
@@ -95,20 +94,14 @@ public class CreneauGridService {
      * staggered vacations. Now that events declare their opening hours and
      * project them through journées types, that ambiguity is gone — and with
      * it the mode the caller had to supply.</p>
-     *
-     * <p>The meal windows come given rather than derived from the parameters:
-     * the ones a consigne restates on its date (issue #4) count for the relay
-     * check of that date, and an overload deriving them from {@code legaux}
-     * alone would judge that date against the edition's window.</p>
      */
     public RapportGrille validate(
             List<Creneau> creneaux,
             List<Stand> stands,
             List<Animateur> animateurs,
             ParametresLegaux legaux,
-            List<VerrouillagePlanning> verrouillages,
-            List<FenetreRepas> fenetresRepas) {
-        List<GridAnomaly> anomalies = new ArrayList<>(gridAnomalies(creneaux, legaux, verrouillages, fenetresRepas));
+            List<VerrouillagePlanning> verrouillages) {
+        List<GridAnomaly> anomalies = new ArrayList<>(gridAnomalies(creneaux, legaux, verrouillages));
         anomalies.addAll(holidayVacations(creneaux, animateurs));
         anomalies.sort(ORDRE_ANOMALIES);
 
@@ -158,15 +151,12 @@ public class CreneauGridService {
      * elsewhere and must not be paid twice.
      */
     public static List<GridAnomaly> gridAnomalies(
-            List<Creneau> creneaux,
-            ParametresLegaux legaux,
-            List<VerrouillagePlanning> verrouillages,
-            List<FenetreRepas> fenetresRepas) {
+            List<Creneau> creneaux, ParametresLegaux legaux, List<VerrouillagePlanning> verrouillages) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         List<Creneau> dates =
                 creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
 
-        anomalies.addAll(unitAnomalies(creneaux, legaux, fenetresRepas == null ? List.of() : fenetresRepas));
+        anomalies.addAll(unitAnomalies(creneaux, legaux));
         anomalies.addAll(anomaliesByDay(dates));
         anomalies.addAll(datesIsolees(dates));
         anomalies.addAll(verrouillagesWithoutVacation(creneaux, verrouillages));
@@ -268,18 +258,16 @@ public class CreneauGridService {
     }
 
     /** Checks that need one créneau at a time: shape, then duration against the legal ceilings. */
-    private static List<GridAnomaly> unitAnomalies(
-            List<Creneau> creneaux, ParametresLegaux legaux, List<FenetreRepas> fenetresRepas) {
+    private static List<GridAnomaly> unitAnomalies(List<Creneau> creneaux, ParametresLegaux legaux) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         for (Creneau creneau : creneaux) {
-            anomalies.addAll(unitAnomalies(creneau, legaux, fenetresRepas));
+            anomalies.addAll(unitAnomalies(creneau, legaux));
         }
         return anomalies;
     }
 
     /** One créneau's shape, then its duration against the legal ceilings. */
-    private static List<GridAnomaly> unitAnomalies(
-            Creneau creneau, ParametresLegaux legaux, List<FenetreRepas> fenetresRepas) {
+    private static List<GridAnomaly> unitAnomalies(Creneau creneau, ParametresLegaux legaux) {
         if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
             return List.of(new GridAnomaly(
                     SeveriteGrille.ERREUR,
@@ -318,44 +306,7 @@ public class CreneauGridService {
                             + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
                             + " min. Toute affectation sur ce créneau ferait un écart à une règle impérative."));
         }
-        if (creneau.isCouverturePause() && !insideMealWindow(creneau, fenetresRepas)) {
-            anomalies.add(new GridAnomaly(
-                    SeveriteGrille.AVERTISSEMENT,
-                    GridAnomalyType.RELAIS_REPAS_HORS_FENETRE,
-                    creneau.getDate(),
-                    libelle(creneau) + " : relais repas hors de toute fenêtre repas ("
-                            + libelleFenetresRepas(fenetresRepas)
-                            + "). L'effectif y est divisé par deux sans qu'aucune coupure"
-                            + " ne puisse s'y prendre."));
-        }
         return anomalies;
-    }
-
-    /**
-     * A meal-relay vacation halves the seats so that the other half can eat:
-     * it only makes sense inside a window where a meal break may be taken. A
-     * slot running past midnight is never inside one — the windows are
-     * wall-clock, within the day.
-     */
-    private static boolean insideMealWindow(Creneau creneau, List<FenetreRepas> fenetres) {
-        int debut = creneau.getHeureDebut().toSecondOfDay() / 60;
-        int fin = creneau.getHeureFin().toSecondOfDay() / 60;
-        if (fin <= debut) {
-            return false;
-        }
-        return fenetres.stream()
-                .filter(fenetre -> fenetre.appliesTo(creneau.getDate()))
-                .anyMatch(fenetre -> debut >= fenetre.debutMinutes() && fin <= fenetre.finMinutes());
-    }
-
-    private static String libelleFenetresRepas(List<FenetreRepas> fenetres) {
-        if (fenetres.isEmpty()) {
-            return "aucune fenêtre repas déclarée dans les paramètres légaux";
-        }
-        return fenetres.stream()
-                .map(fenetre -> fenetre.libelle() + " " + fenetre.debut() + "-" + fenetre.fin())
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("");
     }
 
     /** Checks that need the whole day: duplicates, overlaps, and holes in the covered span. */
@@ -457,7 +408,7 @@ public class CreneauGridService {
 
     /**
      * Describes the grid currently in place: how many créneaux, over which
-     * dates, with how many meal relays among them. The cheap first call — for
+     * dates. The cheap first call — for
      * an assistant discovering an edition, or a screen opening on it — before
      * {@link #validate} says whether that grid holds up.
      *
@@ -469,7 +420,7 @@ public class CreneauGridService {
     public static DiagnosticGrille diagnose(List<Creneau> creneaux) {
         if (creneaux.isEmpty()) {
             return new DiagnosticGrille(
-                    0, null, null, false, "L'édition n'a aucun créneau : la grille est à créer.", List.of());
+                    0, null, null, "L'édition n'a aucun créneau : la grille est à créer.", List.of());
         }
         List<LocalDate> dates = creneaux.stream()
                 .map(Creneau::getDate)
@@ -477,7 +428,6 @@ public class CreneauGridService {
                 .distinct()
                 .sorted()
                 .toList();
-        long relais = creneaux.stream().filter(Creneau::isCouverturePause).count();
         int dureeMediane =
                 mediane(creneaux.stream().map(Creneau::getDureeMinutes).sorted().toList());
         List<JoursFeries.PublicHoliday> feries = dates.stream()
@@ -488,12 +438,9 @@ public class CreneauGridService {
                 creneaux.size(),
                 first(dates),
                 last(dates),
-                relais > 0,
                 creneaux.size() + " vacations sur " + dates.size() + " date(s), durée médiane de " + dureeMediane
                         + " min"
-                        + (relais > 0
-                                ? ", dont " + relais + " relais repas à effectif réduit."
-                                : ", aucun relais repas.")
+                        + "."
                         + (feries.isEmpty()
                                 ? ""
                                 : " " + feries.size() + " date(s) de la grille tombent un jour férié, où les"
@@ -519,8 +466,6 @@ public class CreneauGridService {
         TROU_DANS_LA_JOURNEE,
         VACATION_TROP_LONGUE,
         DATE_ISOLEE,
-        /** A pause-covering vacation outside every meal window: half the seats, and nobody can eat. */
-        RELAIS_REPAS_HORS_FENETRE,
         /** Locks naming a vacation this grid does not hold — see issue #577. */
         VERROUILLAGE_SANS_VACATION,
         /**
@@ -549,18 +494,15 @@ public class CreneauGridService {
     }
 
     /**
-     * @param contientCouverturePause whether at least one créneau is a meal relay,
-     *                                staffed at half the usual headcount
-     * @param joursFeries             the dates of the grid falling on a public holiday, named — the
-     *                                grid check turns them into {@link GridAnomalyType#VACATION_JOUR_FERIE}
-     *                                when a minor is on the team that day
+     * @param joursFeries the dates of the grid falling on a public holiday, named — the
+     *                    grid check turns them into {@link GridAnomalyType#VACATION_JOUR_FERIE}
+     *                    when a minor is on the team that day
      */
-    @Schema(requiredProperties = {"contientCouverturePause", "joursFeries", "nombreCreneaux"})
+    @Schema(requiredProperties = {"joursFeries", "nombreCreneaux"})
     public record DiagnosticGrille(
             int nombreCreneaux,
             LocalDate premiereDate,
             LocalDate derniereDate,
-            boolean contientCouverturePause,
             String explication,
             List<JoursFeries.PublicHoliday> joursFeries) {}
 

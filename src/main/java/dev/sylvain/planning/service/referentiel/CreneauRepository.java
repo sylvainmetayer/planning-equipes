@@ -55,7 +55,7 @@ public class CreneauRepository {
     }
 
     private static final String SELECT_CRENEAU_SQL = """
-            SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause, c.modifie_le
+            SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.modifie_le
             FROM creneau c
             WHERE c.edition_id = ?""";
 
@@ -97,8 +97,7 @@ public class CreneauRepository {
     public Creneau findCreneau(Long id) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.couverture_pause,
-                        c.modifie_le
+                        SELECT c.id, c.date_creneau, c.heure_debut, c.heure_fin, c.modifie_le
                         FROM creneau c
                         WHERE c.edition_id = ? AND c.id = ?""")) {
             ps.setLong(2, id);
@@ -144,7 +143,6 @@ public class CreneauRepository {
                 rs.getObject("date_creneau", LocalDate.class),
                 rs.getObject("heure_debut", LocalTime.class),
                 rs.getObject("heure_fin", LocalTime.class));
-        creneau.setCouverturePause(rs.getBoolean("couverture_pause"));
         creneau.setModifieLe(rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
         return creneau;
     }
@@ -238,13 +236,12 @@ public class CreneauRepository {
     Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
         Set<LocalDate> newDays = newDays(connection, creneau, -1L);
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, couverture_pause)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin)
+                VALUES (?, ?, ?, ?)
                 RETURNING id, modifie_le""")) {
             ps.setObject(2, creneau.getDate());
             ps.setObject(3, creneau.getHeureDebut());
             ps.setObject(4, creneau.getHeureFin());
-            ps.setBoolean(5, creneau.isCouverturePause());
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 long id = rs.getLong("id");
@@ -294,7 +291,7 @@ public class CreneauRepository {
         Set<LocalDate> newDays = newDays(connection, creneau, creneau.getId());
         try (PreparedStatement ps = connection.prepareStatement("""
                 UPDATE creneau
-                SET date_creneau = ?, heure_debut = ?, heure_fin = ?, couverture_pause = ?,
+                SET date_creneau = ?, heure_debut = ?, heure_fin = ?,
                 modifie_le = now()
                 WHERE edition_id = ? AND id = ?
                 AND (CAST(? AS timestamptz) IS NULL
@@ -304,12 +301,11 @@ public class CreneauRepository {
             ps.setObject(1, creneau.getDate());
             ps.setObject(2, creneau.getHeureDebut());
             ps.setObject(3, creneau.getHeureFin());
-            ps.setBoolean(4, creneau.isCouverturePause());
-            ps.setString(5, scope.editionId());
-            ps.setLong(6, creneau.getId());
+            ps.setString(4, scope.editionId());
+            ps.setLong(5, creneau.getId());
             Timestamp attendu = creneau.getModifieLe() == null ? null : Timestamp.from(creneau.getModifieLe());
+            ps.setTimestamp(6, attendu);
             ps.setTimestamp(7, attendu);
-            ps.setTimestamp(8, attendu);
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 staleWrites.refuseStale("creneau", creneau.getId());

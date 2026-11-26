@@ -50,7 +50,7 @@ public class GabaritRepository {
             ORDER BY j.id""";
 
     private static final String SELECT_VACATIONS_SQL = """
-            SELECT v.gabarit_id, v.heure_debut, v.heure_fin, v.couverture_pause
+            SELECT v.gabarit_id, v.heure_debut, v.heure_fin
             FROM gabarit_vacation v
             WHERE v.edition_id = ?
             ORDER BY v.gabarit_id, v.position, v.id""";
@@ -94,8 +94,7 @@ public class GabaritRepository {
                             .getVacations()
                             .add(new VacationType(
                                     rs.getObject("heure_debut", LocalTime.class),
-                                    rs.getObject("heure_fin", LocalTime.class),
-                                    rs.getBoolean("couverture_pause")));
+                                    rs.getObject("heure_fin", LocalTime.class)));
                 }
             }
         }
@@ -148,15 +147,14 @@ public class GabaritRepository {
     private void insertVacationsTx(Connection connection, Gabarit journeeType) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO gabarit_vacation
-                (edition_id, gabarit_id, position, heure_debut, heure_fin, couverture_pause)
-                VALUES (?, ?, ?, ?, ?, ?)""")) {
+                (edition_id, gabarit_id, position, heure_debut, heure_fin)
+                VALUES (?, ?, ?, ?, ?)""")) {
             int position = 0;
             for (VacationType vacation : journeeType.getVacations()) {
                 ps.setLong(2, journeeType.getId());
                 ps.setInt(3, position++);
                 ps.setObject(4, vacation.heureDebut());
                 ps.setObject(5, vacation.heureFin());
-                ps.setBoolean(6, vacation.couverturePause());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -269,25 +267,12 @@ public class GabaritRepository {
     }
 
     /**
-     * Materialises a plan in one transaction: relay flags flipped in place,
-     * missing créneaux inserted, unnamed ones removed with the seats scheduled
+     * Materialises a plan in one transaction: missing créneaux inserted, unnamed ones removed with the seats scheduled
      * on them — the same rule {@code CreneauRepository#deleteCreneau} applies
      * to one créneau, here to each of a list.
      */
     public void apply(Plan plan) {
         scope.write("Failed to apply the day templates", connection -> {
-            try (PreparedStatement ps = connection.prepareStatement("""
-                    UPDATE creneau
-                    SET couverture_pause = ?, modifie_le = now()
-                    WHERE edition_id = ? AND id = ?""")) {
-                for (Creneau creneau : plan.misAJour()) {
-                    ps.setBoolean(1, creneau.isCouverturePause());
-                    ps.setString(2, scope.editionId());
-                    ps.setLong(3, creneau.getId());
-                    ps.addBatch();
-                }
-                ps.executeBatch();
-            }
             for (Creneau creneau : plan.aCreer()) {
                 creneau.setId(null);
                 creneaux.insertCreneauTx(connection, creneau);

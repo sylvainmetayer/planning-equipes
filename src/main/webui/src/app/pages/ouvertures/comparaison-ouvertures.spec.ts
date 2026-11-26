@@ -33,14 +33,12 @@ function jours(): RapportOuvertures['jours'] {
         tranche: 0,
         heureDebut: '10:00',
         heureFin: '12:00',
-        couverturePause: false,
       },
       {
         id: index * 10 + 2,
         tranche: 0,
         heureDebut: '14:00',
         heureFin: '18:00',
-        couverturePause: false,
       },
     ],
   }));

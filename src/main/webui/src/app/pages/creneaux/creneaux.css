@@ -67,17 +67,6 @@
   line-height: 1.9;
 }
 
-/* A relay chip carries the same marker as the créneau row and the grid header. */
-.vacation-chip-relais {
-  border-style: dashed;
-}
-
-.vacation-chip-relais .mat-icon {
-  font-size: 0.9rem;
-  vertical-align: text-bottom;
-  margin-left: 0.15rem;
-}
-
 .journees-types-ajout {
   display: flex;
   flex-wrap: wrap;

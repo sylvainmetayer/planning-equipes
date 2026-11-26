@@ -29,8 +29,8 @@ export function referentialImportTexts(target: ReferentielImportTarget): Referen
       };
     case 'CRENEAUX':
       return {
-        colonnes: $localize`:@@imports.creneaux.colonnes:Colonnes « date », « heureDebut » et « heureFin », obligatoires ; « couverturePause » facultative.`,
-        aide: $localize`:@@imports.creneaux.aide:Un créneau se reconnaît à sa date et à ses deux heures : rejoué, le même fichier met à jour au lieu de doubler la grille. Une fin avant le début passe minuit.`,
+        colonnes: $localize`:@@imports.creneaux.colonnes:Colonnes « date », « heureDebut » et « heureFin », obligatoires.`,
+        aide: $localize`:@@imports.creneaux.aide:Un créneau se reconnaît à sa date et à ses deux heures : rejoué, le même fichier ne double pas la grille. Une fin avant le début passe minuit.`,
       };
     case 'JOURNEES_TYPES':
       return {

@@ -265,7 +265,6 @@ export interface ColonneCreneau {
   tranche: number;
   heureDebut: string;
   heureFin: string;
-  couverturePause: boolean;
 }
 
 /** One event day, the amplitude its column's cells are measured against, and its créneaux. */
@@ -381,7 +380,6 @@ export interface LayerTimeslot {
   heureFin: string;
   debutMinutes: number;
   finMinutes: number;
-  couverturePause: boolean;
   /** Created by the day's consigne for its reopenings. */
   addedByConsigne: boolean;
 }
@@ -481,8 +479,6 @@ export interface PosteFragile {
   heureFin: string;
   /** The effectif configured for this window (the window's own, or the stand's minimum) — not this group's floor, which `siegesRequis` carries. */
   effectifMin: number;
-  /** Break-covering shift: seats are generated at half the headcount, rounded up. */
-  couverturePause: boolean;
   siegesRequis: number;
   siegesPourvus: number;
   siegesLiberes: number;
@@ -818,15 +814,6 @@ export interface Creneau {
   date: string;
   heureDebut: string;
   heureFin: string;
-  /**
-   * True when this slot is the short vacation relieving a stand over a meal
-   * service: the stands are then deliberately staffed at half their usual
-   * headcount, rounded up, which the calendars flag as an indication rather
-   * than as a shortfall. Set on the créneau itself, or carried by the vacation
-   * of a journée type. Absent on the payloads that predate the flag, hence
-   * optional.
-   */
-  couverturePause?: boolean;
 }
 
 /** Where an edition stands in its cycle, the order of the cycle (ADR 0115). */
@@ -1689,7 +1676,6 @@ export type TypeAnomalieGrille =
   | 'TROU_DANS_LA_JOURNEE'
   | 'VACATION_TROP_LONGUE'
   | 'DATE_ISOLEE'
-  | 'RELAIS_REPAS_HORS_FENETRE'
   | 'VACATION_JOUR_FERIE';
 
 export interface AnomalieGrille {
@@ -1713,7 +1699,6 @@ export interface DiagnosticGrille {
   nombreCreneaux: number;
   premiereDate: string | null;
   derniereDate: string | null;
-  contientCouverturePause: boolean;
   explication: string;
   /** The dates of the grid falling on a public holiday, named. */
   joursFeries: PublicHoliday[];
@@ -1765,11 +1750,10 @@ export interface RapportRecurrence {
 
 /* ------------------------------ Day templates (ADR 0032) ------------------------------ */
 
-/** One vacation of a day template; `couverturePause` means a meal relay, as on a créneau. */
+/** One vacation of a day template: its hours. */
 export interface VacationType {
   heureDebut: string;
   heureFin: string;
-  couverturePause: boolean;
 }
 
 /** A named day template — « Jour normal », « Nocturne » — the vacations of one kind of day. */
@@ -1803,7 +1787,6 @@ export interface EtatJourneesTypes {
 /** What applying the calendar does or would do, and the verdict on the resulting grid. */
 export interface RapportApplicationJourneesTypes {
   conserves: number;
-  misAJour: number;
   crees: number;
   supprimes: number;
   creneauxSupprimes: Creneau[];

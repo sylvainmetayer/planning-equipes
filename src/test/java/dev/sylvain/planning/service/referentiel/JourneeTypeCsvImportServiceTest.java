@@ -72,7 +72,7 @@ class JourneeTypeCsvImportServiceTest {
     void thePreviewWritesNothingAndTheImportWritesTemplatesAndTheirCalendar() {
         String fichier = """
                 nom;vacations;dates
-                Jour normal;"09:00-12:00, 12:00-13:00 R, 13:00-20:00";2026-07-10|2026-07-11
+                Jour normal;"09:00-12:00, 12:00-13:00, 13:00-20:00";2026-07-10|2026-07-11
                 Nocturne;"14:00-20:00, 20:00-00:00";2026-07-12
                 """;
 
@@ -82,7 +82,7 @@ class JourneeTypeCsvImportServiceTest {
                 .body("applied", equalTo(false))
                 .body("cible", equalTo("JOURNEES_TYPES"))
                 .body("created", equalTo(2))
-                .body("rows[0].libelle", equalTo("09:00-12:00, 12:00-13:00 R, 13:00-20:00"))
+                .body("rows[0].libelle", equalTo("09:00-12:00, 12:00-13:00, 13:00-20:00"))
                 .body("rows[0].details[0]", containsString("2 date(s)"));
         assertThat(etat().getList("journeesTypes")).isEmpty();
 
@@ -98,8 +98,6 @@ class JourneeTypeCsvImportServiceTest {
         assertThat(ecrit.getList("find { it.nom == 'Jour normal' }.vacations")).isNull();
         assertThat(ecrit.getList("journeesTypes.find { it.nom == 'Jour normal' }.vacations"))
                 .hasSize(3);
-        assertThat(ecrit.getBoolean("journeesTypes.find { it.nom == 'Jour normal' }.vacations[1].couverturePause"))
-                .isTrue();
     }
 
     /** ADR 0032, held by the import: nothing is materialised until somebody applies it. */

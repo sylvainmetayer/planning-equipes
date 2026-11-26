@@ -48,7 +48,7 @@ The calendar is a **generator**, never the truth. Applying the calendar material
 
 | Case | Effect |
 | --- | --- |
-| Identical timeslot | It keeps its id, its seats and its locks. Only its meal relay flag can change in place |
+| Identical timeslot | It keeps its id, its seats and its locks. |
 | Missing timeslot | It is created |
 | Timeslot that the template does not name, on a governed date | It is deleted with its seats, after a preview with figures |
 | Date that the calendar does not assign | It is never touched |

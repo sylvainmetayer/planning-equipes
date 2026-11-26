@@ -22,12 +22,7 @@
 } @else if (apercu().length > 0) {
   <p class="span-2 journee-type-apercu">
     @for (vacation of apercu(); track $index) {
-      <span class="vacation-chip" [class.vacation-chip-relais]="vacation.couverturePause">
-        {{ libelleVacation(vacation) }}
-        @if (vacation.couverturePause) {
-          <mat-icon inline aria-hidden="true">restaurant</mat-icon>
-        }
-      </span>
+      <span class="vacation-chip">{{ libelleVacation(vacation) }}</span>
     }
   </p>
 }

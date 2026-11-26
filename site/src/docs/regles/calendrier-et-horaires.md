@@ -8,7 +8,7 @@ Le calendrier et les horaires des stands se tiennent sur la même page, *Calendr
 
 ![La grille des horaires des stands](/images/fr/horaires.webp "Les horaires des stands")
 
-La façon la plus courte est de nommer des **journées types** : les vacations d'une sorte de journée (un « R » marque un relais repas), posées sur un calendrier de dates, qui sont celles de l'édition.
+La façon la plus courte est de nommer des **journées types** : les vacations d'une sorte de journée, posées sur un calendrier de dates, qui sont celles de l'édition.
 
 1. Ouvrez *Calendrier* et définissez vos journées types (« semaine », « samedi »…).
 2. Posez-les sur les dates de l'édition.

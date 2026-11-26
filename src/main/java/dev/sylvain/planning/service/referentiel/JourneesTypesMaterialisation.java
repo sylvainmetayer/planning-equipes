@@ -21,8 +21,7 @@ import java.util.stream.Collectors;
  * <p><b>The diff is on the natural key</b> {@code (date, heureDebut, heureFin)}
  * — the same key {@code CreneauGridService} calls a duplicate — so that "the
  * same créneau" means one thing in the whole product. A créneau the template
- * still names keeps its id, its seats and its locks; only its relay flag can be
- * updated in place. A créneau the template does not name, on a date the
+ * still names keeps its id, its seats and its locks. A créneau the template does not name, on a date the
  * template governs, is removed with its seats. A date the calendar does not
  * assign is never touched.</p>
  */
@@ -37,20 +36,15 @@ public final class JourneesTypesMaterialisation {
      * What applying the calendar would do, créneau by créneau.
      *
      * @param conserves   already exactly as the template says: untouched
-     * @param misAJour    same hours, relay flag to flip: updated in place, id kept
      * @param aCreer      named by the template, absent from the grid
      * @param aSupprimer  on a governed date, not named by its template
-     * @param datesEnEcart the governed dates where at least one of the three lists is non-empty
+     * @param datesEnEcart the governed dates where at least one of the two lists is non-empty
      */
     public record Plan(
-            List<Creneau> conserves,
-            List<Creneau> misAJour,
-            List<Creneau> aCreer,
-            List<Creneau> aSupprimer,
-            List<LocalDate> datesEnEcart) {
+            List<Creneau> conserves, List<Creneau> aCreer, List<Creneau> aSupprimer, List<LocalDate> datesEnEcart) {
 
         public boolean isEmpty() {
-            return misAJour.isEmpty() && aCreer.isEmpty() && aSupprimer.isEmpty();
+            return aCreer.isEmpty() && aSupprimer.isEmpty();
         }
     }
 
@@ -75,7 +69,6 @@ public final class JourneesTypesMaterialisation {
         }
 
         List<Creneau> conserves = new ArrayList<>();
-        List<Creneau> misAJour = new ArrayList<>();
         List<Creneau> aCreer = new ArrayList<>();
         List<Creneau> aSupprimer = new ArrayList<>();
         List<LocalDate> datesEnEcart = new ArrayList<>();
@@ -88,24 +81,22 @@ public final class JourneesTypesMaterialisation {
                 throw new BusinessError.Invalid("Le " + affectation.date()
                         + " est affecté à une journée type inconnue : " + affectation.gabaritId());
             }
-            int avant = misAJour.size() + aCreer.size() + aSupprimer.size();
+            int avant = aCreer.size() + aSupprimer.size();
             Plan duJour = planDay(
                     affectation.date(), journeeType, existantsParDate.getOrDefault(affectation.date(), List.of()));
             conserves.addAll(duJour.conserves());
-            misAJour.addAll(duJour.misAJour());
             aCreer.addAll(duJour.aCreer());
             aSupprimer.addAll(duJour.aSupprimer());
-            if (misAJour.size() + aCreer.size() + aSupprimer.size() > avant) {
+            if (aCreer.size() + aSupprimer.size() > avant) {
                 datesEnEcart.add(affectation.date());
             }
         }
-        return new Plan(conserves, misAJour, aCreer, aSupprimer, datesEnEcart);
+        return new Plan(conserves, aCreer, aSupprimer, datesEnEcart);
     }
 
     /** The plan of one calendar date against the créneaux it already has; no drift dates. */
     private static Plan planDay(LocalDate date, Gabarit journeeType, List<Creneau> existantsDuJour) {
         List<Creneau> conserves = new ArrayList<>();
-        List<Creneau> misAJour = new ArrayList<>();
         List<Creneau> aCreer = new ArrayList<>();
         List<Creneau> aSupprimer = new ArrayList<>();
         Map<String, Creneau> duJour = new LinkedHashMap<>();
@@ -120,16 +111,12 @@ public final class JourneesTypesMaterialisation {
             Creneau present = duJour.remove(vacation.key());
             if (present == null) {
                 aCreer.add(vacation.toCreneau(date));
-            } else if (present.isCouverturePause() != vacation.couverturePause()) {
-                Creneau corrige = copie(present);
-                corrige.setCouverturePause(vacation.couverturePause());
-                misAJour.add(corrige);
             } else {
                 conserves.add(present);
             }
         }
         aSupprimer.addAll(duJour.values());
-        return new Plan(conserves, misAJour, aCreer, aSupprimer, List.of());
+        return new Plan(conserves, aCreer, aSupprimer, List.of());
     }
 
     /** The templates a grid implies, and the calendar that maps its dates onto them. */
@@ -137,7 +124,7 @@ public final class JourneesTypesMaterialisation {
 
     /**
      * Reads the day templates back out of a grid: every date whose créneaux
-     * carry the same hours and relay flags is the same kind of day. Templates
+     * carry the same hours is the same kind of day. Templates
      * are numbered in the order their first date comes — « Journée type 1 » is
      * the opening day's shape — and get no id: the caller persists them.
      */
@@ -158,8 +145,7 @@ public final class JourneesTypesMaterialisation {
                     .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getHeureFin))
                     .collect(Collectors.toMap(
                             JourneesTypesMaterialisation::keyOf,
-                            creneau -> new VacationType(
-                                    creneau.getHeureDebut(), creneau.getHeureFin(), creneau.isCouverturePause()),
+                            creneau -> new VacationType(creneau.getHeureDebut(), creneau.getHeureFin()),
                             (first, ignored) -> first,
                             LinkedHashMap::new))
                     .values());
@@ -183,13 +169,5 @@ public final class JourneesTypesMaterialisation {
 
     static String keyOf(Creneau creneau) {
         return creneau.getHeureDebut() + "→" + creneau.getHeureFin();
-    }
-
-    private static Creneau copie(Creneau source) {
-        Creneau creneau = new Creneau(
-                source.getId(), source.getJour(), source.getDate(), source.getHeureDebut(), source.getHeureFin());
-        creneau.setCouverturePause(source.isCouverturePause());
-        creneau.setModifieLe(source.getModifieLe());
-        return creneau;
     }
 }

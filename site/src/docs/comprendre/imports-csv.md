@@ -15,7 +15,7 @@ L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, u
 | Typologies | `code`, `libelle` | `polyvalent` (l'ancien en-tête `ninja` est encore lu en 4.x) |
 | Emplacements | `code`, `nom` | `latitude`, `longitude` |
 | Stands | `code`, `nom`, `typologies` | `effectifMin`, `effectifMax` |
-| Créneaux | `date`, `heureDebut`, `heureFin` | `couverturePause` |
+| Créneaux | `date`, `heureDebut`, `heureFin` | |
 | Journées types | `nom`, `vacations` | `dates` |
 
 Les en-têtes se reconnaissent à la casse et aux accents près, et plusieurs valeurs dans une case se séparent par `|`, `;` ou une virgule. Les imports se rangent dans l'ordre où les données se tiennent, et les dates passent avant les animateurs : un jour d'indisponibilité importé n'est conservé que si l'édition porte déjà le créneau correspondant.
@@ -34,8 +34,8 @@ Un collage depuis un tableur est accepté sur chaque carte : les cellules, sépa
 
 Ces deux référentiels n'ont pas de `code` que le fichier nomme, ce qui décide de leur clé :
 
-- Un créneau est reconnu à son triplet `(date, heureDebut, heureFin)`. Son identifiant est engendré par la base et un import de scénario le réattribue, donc il ne voyage pas. Une ligne déjà présente n'écrit que son `couverturePause`, le reste étant la clé. Une fin antérieure ou égale au début passe minuit, comme dans le formulaire, mais un début égal à la fin est refusé : c'est une vacation sans durée.
-- Une journée type est reconnue à son `nom`, à la casse près. Ses `vacations` tiennent sur une ligne (`09:00-12:00, 12:00-13:00 R, 14:00-20:00`, `R` marquant un relais repas), la même écriture compacte que celle des outils MCP. Ses `dates` sont fusionnées dans le calendrier : une date que le fichier nomme change de journée type, une date qu'il ne nomme pas garde la sienne.
+- Un créneau est reconnu à son triplet `(date, heureDebut, heureFin)`. Son identifiant est engendré par la base et un import de scénario le réattribue, donc il ne voyage pas. Une ligne déjà présente n'écrit rien : le triplet est la clé. Une colonne `couverturePause` d'un ancien fichier est ignorée. Une fin antérieure ou égale au début passe minuit, comme dans le formulaire, mais un début égal à la fin est refusé : c'est une vacation sans durée.
+- Une journée type est reconnue à son `nom`, à la casse près. Ses `vacations` tiennent sur une ligne (`09:00-12:00, 12:00-13:00, 14:00-20:00`), la même écriture compacte que celle des outils MCP. Ses `dates` sont fusionnées dans le calendrier : une date que le fichier nomme change de journée type, une date qu'il ne nomme pas garde la sienne.
 
 L'import des journées types ne déplace aucun créneau. Un modèle est un générateur, jamais la vérité ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)) : matérialiser le calendrier reste le geste explicite « Appliquer » de l'écran Journées types, qui montre d'abord ce qu'il changerait. C'est aussi pourquoi cet import ne marque pas l'édition comme modifiée depuis la dernière résolution : rien de ce que le solveur lit n'a bougé.
 

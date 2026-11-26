@@ -19,20 +19,6 @@ public class Creneau {
     private LocalTime heureDebut;
     private LocalTime heureFin;
     /**
-     * True when this slot is the short vacation relieving a stand over a meal
-     * service. Poste generation then staffs it at half the stand's usual
-     * headcount, rounded up (see {@link #siegesSegment(int)} and
-     * {@code ProblemBuilder#buildPostes}).
-     *
-     * <p>Set by hand on the Créneaux page, or carried by the
-     * {@link VacationType} of a journée type. It is the only way to say
-     * « the stand stays open at reduced staffing while the others eat »: a
-     * closure is simply no créneau there, and a full relief is an ordinary
-     * vacation.</p>
-     */
-    private boolean couverturePause;
-
-    /**
      * When this row was last written (issue #362), read from the referential
      * and echoed back by a form on save: a write carrying a value older than
      * the row's is refused, see {@code ConcurrentModificationGuard}. {@code null}
@@ -124,14 +110,6 @@ public class Creneau {
         this.heureFin = heureFin;
     }
 
-    public boolean isCouverturePause() {
-        return couverturePause;
-    }
-
-    public void setCouverturePause(boolean couverturePause) {
-        this.couverturePause = couverturePause;
-    }
-
     /**
      * Open sub-intervals of this slot for {@code stand}, as
      * {@code [debutMinutes, finMinutes)} pairs measured from this slot's own
@@ -195,18 +173,14 @@ public class Creneau {
      * Seats generated on one open segment of this slot for the given resolved
      * effectif: at least one — a stand nobody declared a headcount for still
      * needs somebody, so closing it stays an explicit decision rather than a
-     * side effect of an unset {@code effectifMin} — and half, rounded up, on a
-     * break-covering shift ({@link #isCouverturePause()}), where the stand runs
-     * at reduced staffing and a stand held by a single person keeps that person
-     * rather than closing.
+     * side effect of an unset {@code effectifMin}.
      *
      * <p>Poste generation, the feasibility analysis and the premium-continuity
      * rule all read this one method, so what the solver must fill and what the
      * screens announce can never be two different numbers.</p>
      */
     public int siegesSegment(int effectifSegment) {
-        int effectif = Math.max(1, effectifSegment);
-        return couverturePause ? (effectif + 1) / 2 : effectif;
+        return Math.max(1, effectifSegment);
     }
 
     /**

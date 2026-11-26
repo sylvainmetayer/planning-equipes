@@ -11,7 +11,7 @@ The calendar and the stand hours are kept on the same page, *Calendar* (*Prepare
 
 ![The stand hours grid](/images/fr/horaires.webp "The stand hours")
 
-The shortest way is to name **day templates**: the shifts of a kind of day (an "R" marks a meal relay), laid onto a calendar of dates, which are those of the edition.
+The shortest way is to name **day templates**: the shifts of a kind of day, laid onto a calendar of dates, which are those of the edition.
 
 1. Open *Calendar* and define your day templates ("weekday", "Saturday"...).
 2. Lay them onto the edition's dates.

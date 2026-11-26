@@ -46,14 +46,12 @@ function rapport(): RapportOuvertures {
         tranche: 0,
         heureDebut: '10:00',
         heureFin: '12:00',
-        couverturePause: false,
       },
       {
         id: ids[1],
         tranche: 0,
         heureDebut: '14:00',
         heureFin: '20:00',
-        couverturePause: false,
       },
     ],
   });
@@ -117,8 +115,8 @@ function etatJourneesTypes(): EtatJourneesTypes {
         id: 4,
         nom: 'Jour normal',
         vacations: [
-          { heureDebut: '10:00:00', heureFin: '12:00:00', couverturePause: false },
-          { heureDebut: '14:00:00', heureFin: '20:00:00', couverturePause: false },
+          { heureDebut: '10:00:00', heureFin: '12:00:00' },
+          { heureDebut: '14:00:00', heureFin: '20:00:00' },
         ],
       },
     ],
@@ -143,7 +141,6 @@ function layersOfReport(): OpeningLayers {
       heureFin: colonne.heureFin,
       debutMinutes: Number(colonne.heureDebut.slice(0, 2)) * 60,
       finMinutes: Number(colonne.heureFin.slice(0, 2)) * 60,
-      couverturePause: false,
       addedByConsigne: false,
     })),
     consigne: null,

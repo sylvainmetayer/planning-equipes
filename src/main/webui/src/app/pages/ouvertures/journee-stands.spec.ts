@@ -14,9 +14,9 @@ function rapport(): RapportOuvertures {
         nombreCreneaux: 3,
         ferie: null,
         creneaux: [
-          { id: 1, tranche: 0, heureDebut: '09:00', heureFin: '12:00', couverturePause: false },
-          { id: 2, tranche: 0, heureDebut: '12:00', heureFin: '13:00', couverturePause: true },
-          { id: 3, tranche: 0, heureDebut: '14:00', heureFin: '20:00', couverturePause: false },
+          { id: 1, tranche: 0, heureDebut: '09:00', heureFin: '12:00' },
+          { id: 2, tranche: 0, heureDebut: '12:00', heureFin: '13:00' },
+          { id: 3, tranche: 0, heureDebut: '14:00', heureFin: '20:00' },
         ],
       },
     ],
@@ -118,17 +118,15 @@ describe('buildJourneeStands', () => {
       '19:00',
       '20:00',
     ]);
-    expect(vue.bandes.map((bande) => [bande.label, bande.couverturePause])).toEqual([
-      ['09:00–12:00', false],
-      ['12:00–13:00', true],
-      ['14:00–20:00', false],
+    expect(vue.bandes.map((bande) => bande.label)).toEqual([
+      '09:00–12:00',
+      '12:00–13:00',
+      '14:00–20:00',
     ]);
     const standA = vue.lignes[0];
-    expect(
-      standA.blocs.map((bloc) => [bloc.heureDebut, bloc.effectif, bloc.couverturePause]),
-    ).toEqual([
-      ['09:00', 2, false],
-      ['12:00', 2, true],
+    expect(standA.blocs.map((bloc) => [bloc.heureDebut, bloc.effectif])).toEqual([
+      ['09:00', 2],
+      ['12:00', 2],
     ]);
     // 13 hours on the scale: the 09:00 block starts two hours in.
     expect(standA.blocs[0].offsetPercent).toBeCloseTo((2 / 13) * 100);

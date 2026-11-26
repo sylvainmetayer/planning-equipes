@@ -71,10 +71,10 @@ class CreneauCsvImportServiceTest {
     @Test
     void thePreviewWritesNothingAndTheImportFillsTheGrid() {
         String fichier = """
-                date;heureDebut;heureFin;couverturePause
-                2026-07-10;09:00;12:00;
-                2026-07-10;12:00;13:00;oui
-                2026-07-10;13:00;20:00;
+                date;heureDebut;heureFin
+                2026-07-10;09:00;12:00
+                2026-07-10;12:00;13:00
+                2026-07-10;13:00;20:00
                 """;
 
         poster("/api/creneaux/import-csv/analyse", fichier)
@@ -83,8 +83,7 @@ class CreneauCsvImportServiceTest {
                 .body("applied", equalTo(false))
                 .body("cible", equalTo("CRENEAUX"))
                 .body("total", equalTo(3))
-                .body("created", equalTo(3))
-                .body("rows[1].details[0]", containsString("Relais repas"));
+                .body("created", equalTo(3));
         assertThat(grille().getList("$")).isEmpty();
 
         poster("/api/creneaux/import-csv", fichier)
@@ -95,10 +94,6 @@ class CreneauCsvImportServiceTest {
 
         JsonPath ecrite = grille();
         assertThat(ecrite.getList("$")).hasSize(3);
-        assertThat(ecrite.getBoolean("find { it.heureDebut == '12:00:00' }.couverturePause"))
-                .isTrue();
-        assertThat(ecrite.getBoolean("find { it.heureDebut == '09:00:00' }.couverturePause"))
-                .isFalse();
     }
 
     /**
@@ -107,19 +102,17 @@ class CreneauCsvImportServiceTest {
      * again — must write over what is there instead of doubling the grid.
      */
     @Test
-    void aReplayedFileUpdatesTheSameTimeslotsInsteadOfDuplicatingThem() {
-        String fichier = "date;heureDebut;heureFin;couverturePause\n2026-07-10;09:00;12:00;\n";
+    void aReplayedFileDoesNotDuplicateTheTimeslots() {
+        String fichier = "date;heureDebut;heureFin\n2026-07-10;09:00;12:00\n";
         poster("/api/creneaux/import-csv", fichier).then().statusCode(200);
 
+        // The column of a 3.x file is ignored: the row is the same timeslot.
         poster("/api/creneaux/import-csv", "date;heureDebut;heureFin;couverturePause\n2026-07-10;09:00;12:00;oui\n")
                 .then()
                 .statusCode(200)
-                .body("created", equalTo(0))
-                .body("updated", equalTo(1));
+                .body("created", equalTo(0));
 
-        JsonPath ecrite = grille();
-        assertThat(ecrite.getList("$")).hasSize(1);
-        assertThat(ecrite.getBoolean("[0].couverturePause")).isTrue();
+        assertThat(grille().getList("$")).hasSize(1);
     }
 
     /** The doctrine of every CSV import here: a file covering one day empties nothing else. */

@@ -175,11 +175,11 @@ public class ReferentielCsvImportService {
                     DECOUVERTE;Stand découverte;AMBIANCE;;
                     """;
             case CRENEAUX -> """
-                    date;heureDebut;heureFin;couverturePause
-                    2026-07-10;09:00;12:00;
-                    2026-07-10;12:00;13:00;oui
-                    2026-07-10;13:00;20:00;
-                    2026-07-11;20:00;00:00;
+                    date;heureDebut;heureFin
+                    2026-07-10;09:00;12:00
+                    2026-07-10;12:00;13:00
+                    2026-07-10;13:00;20:00
+                    2026-07-11;20:00;00:00
                     """;
             case JOURNEES_TYPES -> """
                     nom;vacations;dates
@@ -645,10 +645,9 @@ public class ReferentielCsvImportService {
      * fin)}: a timeslot carries no identifier a file could name, and the one
      * the database generates is reassigned by the next scenario import.
      *
-     * <p>A row already in the grid writes only its {@code couverturePause}
-     * flag over it — everything else in that triple <b>is</b> the key — and a
-     * timeslot the file leaves out is left where it is: a file covering one
-     * weekend must not empty the rest of the edition.</p>
+     * <p>A row already in the grid writes nothing — the whole triple <b>is</b>
+     * the key — and a timeslot the file leaves out is left where it is: a file
+     * covering one weekend must not empty the rest of the edition.</p>
      */
     private Analyse analyseCreneaux(CsvParser.Table table, Colonnes colonnes) {
         Map<String, Creneau> existants = creneaux.list().stream()
@@ -659,16 +658,13 @@ public class ReferentielCsvImportService {
                         LinkedHashMap::new));
         List<LigneImportee> lignes = new ArrayList<>();
         List<Creneau> aCreer = new ArrayList<>();
-        List<Creneau> aMettreAJour = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
-            lignes.add(analyseCreneau(row, colonnes, existants, vus, aCreer, aMettreAJour));
+            lignes.add(analyseCreneau(row, colonnes, existants, vus, aCreer));
         }
         // One write for the whole file, not one per row: the grid marker the
         // toolbar reads would otherwise announce four hundred separate edits.
-        List<Ecriture> ecritures = aCreer.isEmpty() && aMettreAJour.isEmpty()
-                ? List.of()
-                : List.of(service -> service.creneaux.importer(aCreer, aMettreAJour));
+        List<Ecriture> ecritures = aCreer.isEmpty() ? List.of() : List.of(service -> service.creneaux.importer(aCreer));
         return new Analyse(ImportTarget.CRENEAUX, table, lignes, ecritures, List.of());
     }
 
@@ -677,8 +673,7 @@ public class ReferentielCsvImportService {
             Colonnes colonnes,
             Map<String, Creneau> existants,
             Set<String> vus,
-            List<Creneau> aCreer,
-            List<Creneau> aMettreAJour) {
+            List<Creneau> aCreer) {
         String dateLue = colonnes.valeur(row, "date");
         String debutLu = colonnes.valeur(row, "heuredebut");
         String finLue = colonnes.valeur(row, "heurefin");
@@ -705,21 +700,15 @@ public class ReferentielCsvImportService {
         // Claimed only now: a row refused for another reason must not make
         // the next one look like its duplicate.
         vus.add(cle);
-        boolean couverturePause = readFlag(colonnes.valeur(row, "couverturepause"));
         List<String> details = new ArrayList<>();
-        if (couverturePause) {
-            details.add("Relais repas : le stand n'ouvre que la moitié de son effectif, arrondie au supérieur.");
-        }
         if (!fin.isAfter(debut)) {
             details.add("Se termine le lendemain : la vacation passe minuit.");
         }
         Creneau existant = existants.get(cle);
-        Creneau ecrit = new Creneau(existant == null ? null : existant.getId(), 0, date, debut, fin);
-        ecrit.setCouverturePause(couverturePause);
         if (existant == null) {
-            aCreer.add(ecrit);
+            aCreer.add(new Creneau(null, 0, date, debut, fin));
         } else {
-            aMettreAJour.add(ecrit);
+            details.add("Déjà dans la grille : rien à modifier.");
         }
         return new LigneImportee(
                 row.line(),

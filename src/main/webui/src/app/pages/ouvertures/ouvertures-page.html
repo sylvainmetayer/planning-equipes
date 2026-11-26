@@ -277,9 +277,6 @@
                              (keydown.escape)="scissionActive.set(null)" />
                     } @else {
                       <span class="libelle-colonne">{{ libelleColonne(colonne) }}</span>
-                      @if (colonne.couverturePause) {
-                        <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
-                      }
                       <span class="colonne-actions">
                         <button matIconButton type="button" class="scinder-colonne" [disabled]="gridLocked()"
                                 i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
@@ -407,9 +404,6 @@
                 @for (colonne of colonnesJourneesTypes(); track colonne.colonneId) {
                   <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
                     <span class="libelle-colonne">{{ libelleColonneJourneeType(colonne) }}</span>
-                    @if (colonne.couverturePause) {
-                      <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
-                    }
                     <span class="colonne-actions">
                       <button matIconButton type="button" class="appliquer-colonne" [disabled]="gridLocked()"
                               i18n-matTooltip="@@ouvertures.saisie.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"

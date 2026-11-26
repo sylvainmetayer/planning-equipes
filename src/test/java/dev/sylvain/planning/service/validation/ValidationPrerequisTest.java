@@ -272,7 +272,6 @@ class ValidationPrerequisTest {
                 LocalTime.of(9, 0),
                 LocalTime.of(13, 0),
                 1,
-                false,
                 1,
                 1,
                 1,

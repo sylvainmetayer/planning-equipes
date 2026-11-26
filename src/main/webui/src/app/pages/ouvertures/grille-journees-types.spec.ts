@@ -22,7 +22,6 @@ function rapport(): RapportOuvertures {
     tranche: 0,
     heureDebut,
     heureFin,
-    couverturePause: false,
   });
   const jour = (date: string, numero: number, creneaux: ReturnType<typeof creneau>[]) => ({
     date,
@@ -102,17 +101,17 @@ function etat(): EtatJourneesTypes {
         id: 4,
         nom: 'Journée',
         vacations: [
-          { heureDebut: '10:00:00', heureFin: '12:00:00', couverturePause: false },
-          { heureDebut: '14:00:00', heureFin: '20:00:00', couverturePause: false },
+          { heureDebut: '10:00:00', heureFin: '12:00:00' },
+          { heureDebut: '14:00:00', heureFin: '20:00:00' },
         ],
       },
       {
         id: 6,
         nom: 'Nocturne',
         vacations: [
-          { heureDebut: '10:00:00', heureFin: '12:00:00', couverturePause: false },
-          { heureDebut: '14:00:00', heureFin: '20:00:00', couverturePause: false },
-          { heureDebut: '21:00:00', heureFin: '00:00:00', couverturePause: false },
+          { heureDebut: '10:00:00', heureFin: '12:00:00' },
+          { heureDebut: '14:00:00', heureFin: '20:00:00' },
+          { heureDebut: '21:00:00', heureFin: '00:00:00' },
         ],
       },
       { id: 9, nom: 'Montage', vacations: [] },
@@ -163,7 +162,6 @@ describe('les colonnes par journée type', () => {
       tranche: 0,
       heureDebut: '14:00',
       heureFin: '17:00',
-      couverturePause: false,
     };
 
     const colonnesJT = colonnesJourneesTypes(sansColonne, etat());

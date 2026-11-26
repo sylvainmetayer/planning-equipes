@@ -58,7 +58,6 @@ function rapport(): RapportOuvertures {
           tranche: 0,
           heureDebut: '18:00',
           heureFin: '22:00',
-          couverturePause: false,
         },
       ],
     })),

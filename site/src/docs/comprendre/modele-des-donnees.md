@@ -45,7 +45,7 @@ Le calendrier est un **générateur**, jamais la vérité. Appliquer le calendri
 
 | Cas | Effet |
 | --- | --- |
-| Créneau identique | Il garde son id, ses sièges et ses verrous. Seul son drapeau de relais repas peut changer en place |
+| Créneau identique | Il garde son id, ses sièges et ses verrous. |
 | Créneau manquant | Il est créé |
 | Créneau que le gabarit ne nomme pas, sur une date gouvernée | Il est supprimé avec ses sièges, après un aperçu chiffré |
 | Date que le calendrier n'affecte pas | Elle n'est jamais touchée |

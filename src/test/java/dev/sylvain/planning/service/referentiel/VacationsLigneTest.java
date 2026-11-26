@@ -12,23 +12,26 @@ import org.junit.jupiter.api.Test;
 class VacationsLigneTest {
 
     @Test
-    void litLesVacationsEtLeMarqueurDeRelais() {
-        List<VacationType> vacations =
-                VacationsLigne.parse("09:00-12:00, 12:00-13:00 R, 13h-14h r, 14:00-20:00 (R); 20h00-00:00");
+    void litLesVacations() {
+        List<VacationType> vacations = VacationsLigne.parse("09:00-12:00, 12:00-13:00, 13h-14h; 20h00-00:00");
 
         assertThat(vacations)
-                .extracting(VacationType::heureDebut, VacationType::heureFin, VacationType::couverturePause)
+                .extracting(VacationType::heureDebut, VacationType::heureFin)
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(9, 0), LocalTime.of(12, 0), false),
-                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(12, 0), LocalTime.of(13, 0), true),
-                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(13, 0), LocalTime.of(14, 0), true),
-                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(14, 0), LocalTime.of(20, 0), true),
-                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(20, 0), LocalTime.MIDNIGHT, false));
+                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(9, 0), LocalTime.of(12, 0)),
+                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(12, 0), LocalTime.of(13, 0)),
+                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(13, 0), LocalTime.of(14, 0)),
+                        org.assertj.core.groups.Tuple.tuple(LocalTime.of(20, 0), LocalTime.MIDNIGHT));
+    }
+
+    @Test
+    void refuseLAncienMarqueurDeRelais() {
+        assertThatThrownBy(() -> VacationsLigne.parse("12:00-13:00 R")).isInstanceOf(BusinessError.Invalid.class);
     }
 
     @Test
     void formateCeQuElleLit() {
-        String ligne = "09:00-12:00, 12:00-13:00 R, 14:00-20:00";
+        String ligne = "09:00-12:00, 12:00-13:00, 14:00-20:00";
 
         assertThat(VacationsLigne.format(VacationsLigne.parse(ligne))).isEqualTo(ligne);
     }

@@ -64,14 +64,13 @@ public final class LayerCalendar {
      *
      * @param addedByConsigne created by the day's consigne for its reopenings
      */
-    @Schema(requiredProperties = {"debutMinutes", "finMinutes", "couverturePause", "addedByConsigne"})
+    @Schema(requiredProperties = {"debutMinutes", "finMinutes", "addedByConsigne"})
     public record LayerTimeslot(
             Long id,
             LocalTime heureDebut,
             LocalTime heureFin,
             int debutMinutes,
             int finMinutes,
-            boolean couverturePause,
             boolean addedByConsigne) {}
 
     /** The consigne governing a day: the band it closes for every stand, and why. */
@@ -195,7 +194,6 @@ public final class LayerCalendar {
                             creneau.getHeureFin(),
                             bornes[0],
                             bornes[1],
-                            creneau.isCouverturePause(),
                             creneau.getId() != null && ajoutes.contains(creneau.getId()));
                 })
                 .toList();

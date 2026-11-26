@@ -10,9 +10,7 @@ import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -169,61 +167,7 @@ class PlanningServicePosteGenerationTest {
                 .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
-    /**
-     * On a break-covering slot (EFFECTIF_REDUIT) the halving applies to the
-     * <em>segment's</em> effectif, not the stand's: the relay is half of
-     * whoever was actually on duty at that hour.
-     */
-    @Test
-    void laCouverturePauseHalveLEffectifDeLaFenetrePasCeluiDuStand() {
-        LocalDate jour = LocalDate.of(2026, 8, 14);
-        Creneau releve = new Creneau(6L, 1, jour, LocalTime.of(12, 0), LocalTime.of(13, 0));
-        releve.setCouverturePause(true);
-        Stand stand = new Stand("STAND-F", "F", Set.of(), 1, 6, false);
-        stand.setOuvertures(
-                List.of(PlageStand.ouverture(null, jour, LocalTime.of(12, 0), LocalTime.of(13, 0), null, 5)));
-
-        List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(releve));
-
-        // ceil(5 / 2) = 3, not ceil(effectifMin=1 / 2) = 1.
-        assertThat(postes).hasSize(3);
-    }
-
-    /**
-     * EFFECTIF_REDUIT strategy: on the shift covering the meal break, the stand
-     * calls up half of its staffing only, rounded up.
-     */
-    @Test
-    void aBreakCoverShiftGeneratesOnlyHalfTheSeats() {
-        Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);
-        Stand trois = new Stand("STAND-3", "Trois", Set.of(), 3, 3, false);
-        Creneau pause = new Creneau(20L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
-        pause.setCouverturePause(true);
-
-        Map<String, Long> parStand = ProblemBuilder.buildPostes(List.of(quatre, trois), List.of(pause)).stream()
-                .collect(Collectors.groupingBy(p -> p.getStand().getId(), Collectors.counting()));
-
-        assertThat(parStand)
-                .containsEntry("STAND-4", 2L) // 4 / 2
-                .containsEntry("STAND-3", 2L); // ceil(3 / 2)
-    }
-
-    /**
-     * The edge case that motivates rounding up: a stand held by a single person
-     * keeps that person during the break. Rounding down it would close, which
-     * would amount to FERMETURE without anybody having asked for it.
-     */
-    @Test
-    void standAUnSeulSiegeResteOuvertPendantLaPause() {
-        Creneau pause = new Creneau(21L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
-        pause.setCouverturePause(true);
-
-        List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standA), List.of(pause));
-
-        assertThat(postes).hasSize(1);
-    }
-
-    /** Outside the break-covering shift the staffing stays full — no regression. */
+    /** An ordinary shift staffs the stand fully. */
     @Test
     void creneauOrdinaireGardeLEffectifPlein() {
         Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);

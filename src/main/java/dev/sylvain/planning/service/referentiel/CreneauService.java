@@ -185,31 +185,25 @@ public class CreneauService {
 
     /**
      * A CSV import's whole effect on the grid, as one edit: the rows the file
-     * adds, and the ones it writes over — the latter already carrying the id
-     * of the timeslot they match.
+     * adds.
      *
-     * <p>Not a loop over {@link #create} and {@link #update} at the caller's
+     * <p>Not a loop over {@link #create} at the caller's
      * level, for the reason {@link #createInBulk} spells out: one file is one
      * edit, not one edit per row. Nothing is removed — a timeslot the file
      * leaves out stays, which is the doctrine of every CSV import here.</p>
      *
-     * <p>Refused while a solve runs: both halves add or move rows it would
-     * not know about, the same reason the bulk create and the replace
-     * refuse.</p>
+     * <p>Refused while a solve runs: it adds rows the solve would not know
+     * about, the same reason the bulk create and the replace refuse.</p>
      */
     @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     @RefusedWhileSolving
-    public void importer(List<Creneau> aCreer, List<Creneau> aMettreAJour) {
+    public void importer(List<Creneau> aCreer) {
         aCreer.forEach(CreneauValidator::check);
-        aMettreAJour.forEach(CreneauValidator::check);
         for (Creneau creneau : aCreer) {
             creneau.setId(null); // ignore any client-supplied id — the database always generates it
             repository.insertCreneau(creneau);
         }
-        for (Creneau creneau : aMettreAJour) {
-            repository.updateCreneau(creneau);
-        }
-        if (!aCreer.isEmpty() || !aMettreAJour.isEmpty()) {
+        if (!aCreer.isEmpty()) {
             changeTracker.markModified();
         }
     }

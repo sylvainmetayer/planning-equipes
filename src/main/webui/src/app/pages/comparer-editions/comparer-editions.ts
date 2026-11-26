@@ -139,7 +139,6 @@ export function fieldLabel(field: string): string {
     souhaits: $localize`:@@comparerEditions.champ.souhaits:souhaits`,
     vacations: $localize`:@@comparerEditions.champ.vacations:vacations`,
     heureFin: $localize`:@@comparerEditions.champ.heureFin:heure de fin`,
-    couverturePause: $localize`:@@comparerEditions.champ.relais:relais repas`,
   };
   return labels[field] ?? field;
 }

@@ -202,7 +202,7 @@ class McpWarnsWhileSolvingTest {
         try {
             solveHoldsTheEdition();
             // No stand yet: the timeslot raises nothing of its own.
-            WrittenCreneauView matin = creneauTools.createCreneau("2031-08-01", "10:00", "12:00", null, ed);
+            WrittenCreneauView matin = creneauTools.createCreneau("2031-08-01", "10:00", "12:00", ed);
             assertThat(matin.avertissements()).containsExactly(CODE);
             Long creneauId = matin.creneau().id();
 
@@ -231,7 +231,7 @@ class McpWarnsWhileSolvingTest {
             String standComplet = complet.stand().id();
             assertThat(complet.avertissements()).contains(CODE).hasSizeGreaterThan(1);
             assertThat(creneauTools
-                            .createCreneau("2031-08-01", "20:00", "21:00", null, ed)
+                            .createCreneau("2031-08-01", "20:00", "21:00", ed)
                             .avertissements())
                     .contains("CRENEAU_HORS_OUVERTURE_STANDS", CODE);
             var animateur = animateurTools.createAnimateur(

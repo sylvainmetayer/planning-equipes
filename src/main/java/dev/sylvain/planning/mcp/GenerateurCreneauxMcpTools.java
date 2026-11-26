@@ -68,7 +68,7 @@ public class GenerateurCreneauxMcpTools {
     @Tool(
             name = "modifier_gabarit",
             description = "Crée ou remplace un gabarit par son nom, et/ou lui affecte des dates. vacations, sur une "
-                    + "ligne : « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », R marquant un relais repas. "
+                    + "ligne : « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ». "
                     + "Les dates (une plage dateDebut-dateFin et/ou des dates précises) rejoignent le calendrier ; une "
                     + "date déjà affectée change de gabarit. Rien n'est écrit sur la grille avant "
                     + "appliquer_generateur_creneaux avec la source gabarits.",
@@ -354,7 +354,6 @@ public class GenerateurCreneauxMcpTools {
     static ApplicationView toView(RapportApplication rapport) {
         return new ApplicationView(
                 rapport.conserves(),
-                rapport.misAJour(),
                 rapport.crees(),
                 rapport.supprimes(),
                 rapport.creneauxSupprimes().stream()
@@ -393,7 +392,6 @@ public class GenerateurCreneauxMcpTools {
 
     public record ApplicationView(
             int conserves,
-            int misAJour,
             int crees,
             int supprimes,
             List<CreneauMcpTools.CreneauView> creneauxSupprimes,

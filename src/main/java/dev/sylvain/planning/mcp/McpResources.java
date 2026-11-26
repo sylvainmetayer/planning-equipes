@@ -79,7 +79,7 @@ public class McpResources {
                 | **Typologie** | une catégorie de jeu. C'est un référentiel modifiable, pas une liste figée : les compétences des animateurs et les typologies proposées par les stands s'y réfèrent. |
                 | **Emplacement** | l'endroit physique où un stand se trouve, utilisé pour limiter les déplacements. |
                 | **Créneau** | une tranche horaire datée de la grille : **une vacation**, sur laquelle on affecte. Il n'y en a pas d'autre sorte — un évènement connaît ses horaires d'ouverture et les projette en vacations. |
-                | **Vacation** | une tranche de travail d'un animateur. Faux ami : rien à voir avec des vacances. Marquée `couverturePause`, c'est un **relais repas** : le stand reste ouvert à la moitié de son effectif, arrondie au supérieur, pendant que l'autre moitié mange. |
+                | **Vacation** | une tranche de travail d'un animateur. Faux ami : rien à voir avec des vacances. |
                 | **Journée type** | un modèle de journée nommé (« Jour normal », « Nocturne ») et ses vacations, projeté sur les dates d'un calendrier. C'est par là qu'une grille se construit sans saisir chaque jour. |
                 | **Poste** | un siège à pourvoir : un stand, un créneau, une place. C'est l'unité que le solveur affecte, et ce que comptent `volumes` et `synthese_affectations`. |
                 | **Édition** | un événement complet et son référentiel. Chaque outil qui travaille dans une édition exige l'argument `edition` (id ou nom, voir `lister_editions`). Une seule édition est **active** : elle seule publie, envoie des courriels et ouvre l'espace animateur. Un plan de repli est une **consigne datée** dans l'édition vivante, pas une autre édition. |

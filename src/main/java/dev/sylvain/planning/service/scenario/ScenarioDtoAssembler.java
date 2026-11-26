@@ -122,11 +122,7 @@ final class ScenarioDtoAssembler {
                         creneau.getJour(),
                         creneau.getDate(),
                         creneau.getHeureDebut(),
-                        creneau.getHeureFin(),
-                        // Written only when true: a key absent from nine
-                        // créneaux out of ten would be noise in a file people
-                        // read.
-                        creneau.isCouverturePause() ? Boolean.TRUE : null))
+                        creneau.getHeureFin()))
                 .toList();
     }
 
@@ -140,10 +136,7 @@ final class ScenarioDtoAssembler {
                 .map(journeeType -> new GabaritDto(
                         journeeType.getNom(),
                         journeeType.getVacations().stream()
-                                .map(vacation -> new VacationTypeDto(
-                                        vacation.heureDebut(),
-                                        vacation.heureFin(),
-                                        vacation.couverturePause() ? Boolean.TRUE : null))
+                                .map(vacation -> new VacationTypeDto(vacation.heureDebut(), vacation.heureFin()))
                                 .toList(),
                         calendrier == null
                                 ? List.of()
