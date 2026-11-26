@@ -25,7 +25,7 @@ L'écran dit ce que le calcul prendra en compte :
 
 Chaque compteur mène à l'écran qui le liste. La faisabilité et les alertes viennent avant ; la volumétrie du problème est repliée en bas. Un compteur d'écart indique les modifications faites depuis le calcul enregistré. Seules les actions qui changent ce que le calcul reçoit sont comptées : un envoi ou un export ne périme rien.
 
-Si une exception posée à la main ne peut être tenue par aucune place (un mineur forcé sur une nuit, un jour férié ou un stand réservé aux majeurs, quelqu'un dont l'emploi du temps est verrouillé), « Calculer » demande confirmation avant de dépenser du temps de calcul sur un problème qui finira par enfreindre une règle impérative. Le manque de monde ne demande rien : le calcul l'atténue encore.
+Si des exceptions posées à la main se contredisent, ou si un plafond de jours d'affilée ne peut pas tenir, « Calculer » demande confirmation avant de dépenser du temps de calcul sur un problème qui finira par enfreindre une règle impérative. Le manque de monde ne demande rien : le calcul l'atténue encore.
 
 ## Choisir comment lancer
 

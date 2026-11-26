@@ -15,7 +15,6 @@ import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.diagnostic.MatchFacts;
 import dev.sylvain.planning.service.diagnostic.PlanningAnalysis;
-import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintFloorRules;
 import dev.sylvain.planning.solver.ConstraintFloorRules.Denominator;
@@ -207,16 +206,11 @@ public final class PlanningDiagnosticService {
                 // with the rule on stays described with it on.
                 encadrementMineursActif(solved),
                 FeasibilityAnalyzer.ConsecutiveDaysRule.of(solved),
-                // Same doctrine for the locks, the seats, the horizon and the
-                // people each day employs: all four are read off the plan handed
-                // here, never re-read from the database or the clock, so a
-                // diagnostic describes the plan it was given — including the
-                // moment its past was frozen at.
-                new FeasibilityAnalyzer.PlanContext(
-                        solved.getVerrouillages() == null ? List.of() : solved.getVerrouillages(),
-                        () -> placesTenues(solved),
-                        solved.getPastHorizon(),
-                        () -> employedByDay(solved)));
+                // Same doctrine for the horizon and the people each day employs:
+                // both are read off the plan handed here, never re-read from the
+                // database or the clock, so a diagnostic describes the plan it
+                // was given — including the moment its past was frozen at.
+                new FeasibilityAnalyzer.PlanContext(solved.getPastHorizon(), () -> employedByDay(solved)));
         int hardScore = solved.getScore() == null
                 ? 0
                 : Math.toIntExact(solved.getScore().hardScore());
@@ -540,22 +534,6 @@ public final class PlanningDiagnosticService {
                 .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
                 .map(match -> ViolationFormatter.references(match.facts()))
                 .toList();
-    }
-
-    /**
-     * The staffed seats of the plan handed here, as
-     * {@link ForcedAssignmentOnLockedSchedule} reads them. Built from the plan
-     * rather than from the database for the reason the toggles are: a
-     * diagnostic describes the plan it was given.
-     */
-    private static Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> placesTenues(PlanningEvenement solved) {
-        return solved.getPostes().stream()
-                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null && poste.getCreneau() != null)
-                .map(poste -> new ForcedAssignmentOnLockedSchedule.PlaceTenue(
-                        poste.getAnimateur().getId(),
-                        poste.getStand().getId(),
-                        poste.getCreneau().getId()))
-                .collect(Collectors.toSet());
     }
 
     /** Who the plan employs on each day, by the timeslot's date — as the rule on days in a row counts it. */

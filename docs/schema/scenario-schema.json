@@ -721,7 +721,7 @@
     },
     "TypeContrainteAdHoc" : {
       "type" : "string",
-      "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE", "ARRIVEE_GROUPEE" ]
+      "enum" : [ "INCOMPATIBILITE", "AFFINITE", "ARRIVEE_GROUPEE" ]
     },
     "TypeJoursHoraire" : {
       "type" : "string",

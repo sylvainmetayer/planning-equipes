@@ -667,23 +667,11 @@ public final class ConstraintCatalog {
                             + "rotation.",
                     "Placement de la coupure repas"),
             new ConstraintDefinition(
-                    "indisponibiliteForcee",
-                    Niveau.HARD,
-                    CATEGORIE_AD_HOC,
-                    "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé.",
-                    "Indisponibilités posées à la main"),
-            new ConstraintDefinition(
                     "incompatibiliteAdHoc",
                     Niveau.HARD,
                     CATEGORIE_AD_HOC,
                     "Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau.",
                     "Incompatibilités entre animateurs"),
-            new ConstraintDefinition(
-                    "affectationForcee",
-                    Niveau.HARD,
-                    CATEGORIE_AD_HOC,
-                    "Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé.",
-                    "Affectations forcées"),
             new ConstraintDefinition(
                     "affiniteAdHoc",
                     Niveau.SOFT,
@@ -911,6 +899,8 @@ public final class ConstraintCatalog {
      */
     public static final Map<String, String> ANCIENS_NOMS = Map.of(
             "animateurVerrouilleFige", RETIREE,
+            "indisponibiliteForcee", RETIREE,
+            "affectationForcee", RETIREE,
             "dureeQuotidienneMaxMajeur", "dureeQuotidienneMax",
             "dureeQuotidienneMaxMineur", "dureeQuotidienneMax",
             "travailContinuMaxMajeur", "travailContinuMax",

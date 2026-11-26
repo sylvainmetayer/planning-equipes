@@ -140,7 +140,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  42 rules are written **a second time**. The default engine since 3.0.0
+  40 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -790,12 +790,16 @@ i18n rule at the top of this file:
   against the fiche as it stood before; the bulk edit sends the whole merged
   fiche one row at a time, so anything else re-shouts on data nobody touched,
   and a warning that fires on correct data stops being read.
-- `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
-  `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
-  same priority as legal/minor hard constraints — never demote these to
-  medium/soft. `AFFINITE` (issue #80) is the one deliberate exception: a soft
-  *reward* for co-assigning a preferred pair on the same stand — never promote
-  it to hard (that would be a forced assignment in disguise).
+- `ContrainteAdHoc` has three types since 4.0 (ADR 0117): `INCOMPATIBILITE` is
+  evaluated as `HardScore`, at the same priority as legal/minor hard
+  constraints — never demote it to medium/soft. `AFFINITE` (issue #80) is the
+  deliberate exception: a soft *reward* for co-assigning a preferred pair on
+  the same stand — never promote it to hard (that would be a forced assignment
+  in disguise); `ARRIVEE_GROUPEE` is soft too. The forced assignment and the
+  forced unavailability are gone, converted by `V161` and by
+  `ScenarioMigrations` into an animateur + timeslot lock and a day off of the
+  fiche: do not bring them back, and do not add a rule that pins or bars one
+  person on a seat.
 - Two ad hoc exceptions that **cannot both hold** are refused when written —
   `ContrainteAdHocContradictions`, applied by `ContrainteAdHocService` to a
   single entry and by `ReferenceDataService.importFromPlanning` to a whole

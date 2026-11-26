@@ -191,7 +191,7 @@ class ConcurrentModificationGuardTest {
     void staleAdHocConstraintOverwriteIsRefused() {
         Animateur animateur =
                 referenceData.createAnimateur(new Animateur(null, "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, TypeContrainteAdHoc.INCOMPATIBILITE);
         contrainte.getAnimateursConcernes().add(animateur);
         contrainte.setRaison("Première raison");
         String contrainteId = null;
@@ -200,7 +200,7 @@ class ConcurrentModificationGuardTest {
             contrainteId = ecrite.getId();
             assertThat(ecrite.getModifieLe()).isNotNull();
 
-            ContrainteAdHoc perimee = new ContrainteAdHoc(ecrite.getId(), TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+            ContrainteAdHoc perimee = new ContrainteAdHoc(ecrite.getId(), TypeContrainteAdHoc.INCOMPATIBILITE);
             perimee.getAnimateursConcernes().add(animateur);
             perimee.setRaison("Autre raison");
             perimee.setModifieLe(PERIME);

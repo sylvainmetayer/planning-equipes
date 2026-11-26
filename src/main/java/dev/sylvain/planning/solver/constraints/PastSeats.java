@@ -30,9 +30,7 @@ import java.util.Collection;
  * {@code ifExists} on a seat of the group: hung on a group tuple, such a node
  * re-scans the seats of the group at every change of the group, do and undo,
  * whether the freeze is on or not — measured at a quarter of the move
- * evaluation speed on the real fixture when eleven groups carried one. The
- * one {@code ifExists} left, on {@code affectationForcee}, runs per ad hoc
- * fact, and there are almost never any.</p>
+ * evaluation speed on the real fixture when eleven groups carried one.</p>
  */
 final class PastSeats {
 

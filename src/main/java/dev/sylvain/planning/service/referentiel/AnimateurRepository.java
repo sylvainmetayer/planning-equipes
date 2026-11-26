@@ -361,6 +361,31 @@ public class AnimateurRepository {
         }
     }
 
+    /** One more day off on the fiche, on the caller's transaction; a day already there is left as it is. */
+    void addJourIndisponible(Connection connection, String animateurId, LocalDate jour) throws SQLException {
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
+                INSERT INTO animateur_jour_indispo (edition_id, animateur_id, jour) VALUES (?, ?, ?)
+                ON CONFLICT DO NOTHING""")) {
+            ps.setString(2, animateurId);
+            ps.setObject(3, jour);
+            ps.executeUpdate();
+        }
+    }
+
+    /** The day leaves the days off of the fiche. */
+    void removeJourIndisponible(String animateurId, LocalDate jour) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "DELETE FROM animateur_jour_indispo WHERE edition_id = ? AND animateur_id = ? AND jour = ?")) {
+            ps.setString(2, animateurId);
+            ps.setObject(3, jour);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to remove a day off", e);
+        }
+    }
+
     void upsertAnimateur(Connection connection, Animateur animateur) throws SQLException {
         upsertAnimateur(connection, animateur, false);
     }

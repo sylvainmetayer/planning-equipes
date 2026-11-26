@@ -66,26 +66,6 @@ public enum TypeAvertissement {
      */
     STAND_JAMAIS_OUVERT,
 
-    /** A forced assignment falling only on days its animateurs declared off — see {@code ForcedAssignmentOnDayOff}. */
-    AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
-
-    /**
-     * A forced assignment no seat of its scope may hold, for a reason read on
-     * the (seat, animateur) pair alone: a minor on a night slot, on a public
-     * holiday, on an adults-only stand or past their daily cap. The sentence
-     * names the rules of {@code ConstraintCatalog} it breaks — see
-     * {@code ForcedAssignmentOnExcludedSeats}.
-     */
-    AFFECTATION_FORCEE_MOTIF_LEGAL,
-
-    /**
-     * A forced assignment whose every named animateur has a locked schedule
-     * over its whole scope, and none of them already sits in it: the solve can
-     * neither move the lock nor honour the exception — see
-     * {@code ForcedAssignmentOnLockedSchedule}.
-     */
-    AFFECTATION_FORCEE_SIEGE_VERROUILLE,
-
     /**
      * A grouped arrival whose members did not declare the same unavailable
      * days: on those days one of them cannot come while another can, and the

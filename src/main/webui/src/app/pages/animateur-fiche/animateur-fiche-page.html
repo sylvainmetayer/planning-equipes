@@ -79,10 +79,6 @@
           <ng-container i18n="@@fiche.action.verrouiller">Verrouiller tout son planning</ng-container>
         </button>
       }
-      <button matButton="tonal" type="button" [disabled]="busy() !== null || editingLocked()" (click)="addAdjustment()">
-        <mat-icon>tune</mat-icon>
-        <ng-container i18n="@@fiche.suivi.lienAjustements">Poser un ajustement</ng-container>
-      </button>
       <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="edit()">
         <mat-icon>edit</mat-icon>
         <ng-container i18n="@@fiche.edit">Modifier la fiche</ng-container>
@@ -178,15 +174,13 @@
           <ul class="fiche-frise" i18n-aria-label="@@fiche.dispo.frise" aria-label="Jours de l'événement">
             @for (jour of strip(); track jour.date) {
               <li>
-                <button type="button" class="fiche-jour" [class.fiche-jour-off]="jour.declaredOff" [class.fiche-jour-force]="jour.forcedOff"
+                <button type="button" class="fiche-jour" [class.fiche-jour-off]="jour.declaredOff"
                         [class.fiche-jour-choisi]="selectedDay() === jour.date" [attr.aria-expanded]="selectedDay() === jour.date"
                         aria-controls="fiche-jour-panneau" (click)="selectDay(jour.date)">
                   <span class="fiche-jour-date">{{ jour.date | date: 'EEE d/MM' }}</span>
                   <span class="fiche-jour-etat">
                     @if (jour.declaredOff) {
                       <ng-container i18n="@@fiche.dispo.indisponible">indisponible</ng-container>
-                    } @else if (jour.forcedOff) {
-                      <ng-container i18n="@@fiche.dispo.force">écarté par ajustement</ng-container>
                     } @else {
                       <ng-container i18n="@@fiche.dispo.disponible">disponible</ng-container>
                     }
@@ -272,9 +266,6 @@
               @if (jour.started > 0) {
                 <p class="empty-hint" i18n="@@fiche.jour.dejaCommences">{{ jour.started }} poste(s) déjà commencé(s) restent tels quels.</p>
               }
-              @if (jour.forcedOff) {
-                <p class="empty-hint" i18n="@@fiche.jour.force">Un ajustement l'écarte déjà d'un créneau de ce jour.</p>
-              }
               <button matButton="filled" type="button" [disabled]="dayBusy() || editingLocked()" (click)="markDayOff(jour.date)">
                 <mat-icon>event_busy</mat-icon>
                 <ng-container i18n="@@fiche.jour.marquer">Indisponible ce jour</ng-container>
@@ -284,14 +275,6 @@
         </div>
         @if (offOutsideEvent().length > 0) {
           <p class="empty-hint" i18n="@@fiche.dispo.horsEvenement">Hors des jours de l'événement : {{ offOutsideEvent().join(', ') }}</p>
-        }
-        @if (forcedOffAdjustments().length > 0) {
-          <h3 i18n="@@fiche.dispo.forcees">Indisponibilités forcées</h3>
-          <ul class="fiche-liste">
-            @for (ajustement of forcedOffAdjustments(); track ajustement.id) {
-              <li>{{ adjustmentScope(ajustement) }}@if (ajustement.raison) { — {{ ajustement.raison }}}</li>
-            }
-          </ul>
         }
         @if (fiche.declarationEnAttente; as declaration) {
           <p class="fiche-alerte">

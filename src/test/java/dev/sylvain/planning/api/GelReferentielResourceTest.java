@@ -501,7 +501,7 @@ class GelReferentielResourceTest {
         }
         edition()
                 .body("""
-                        {"type":"INDISPONIBILITE_FORCEE","animateursConcernes":[{"id":"%s"}],"raison":"Absent"}""".formatted(id("/api/animateurs", "A3@example.org")))
+                        {"type":"INCOMPATIBILITE","animateursConcernes":[{"id":"%s"}],"raison":"Absent"}""".formatted(id("/api/animateurs", "A3@example.org")))
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()

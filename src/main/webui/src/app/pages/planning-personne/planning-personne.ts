@@ -594,11 +594,7 @@ export function buildTableauPersonnes(
   filtres: FiltresPersonne,
 ): TableauPersonnes {
   const postes = planning?.postes ?? [];
-  const repos = buildTableauRepos(
-    postes,
-    planning?.animateurs ?? [],
-    planning?.contraintesAdHoc ?? [],
-  );
+  const repos = buildTableauRepos(postes, planning?.animateurs ?? []);
   const debutSoiree = equite?.heureDebutSoiree ? minutesOfDay(equite.heureDebutSoiree) : null;
   const details = detailsByDay(postes, debutSoiree);
   const equityById = new Map((equite?.lignes ?? []).map((ligne) => [ligne.animateurId, ligne]));

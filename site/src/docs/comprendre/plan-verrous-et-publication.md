@@ -60,7 +60,7 @@ Le rapprochement est **positionnel**, sur stand × créneau, comme celui des ver
 | Créneau déjà commencé | **Épinglée telle que travaillée**, avant toute autre règle : titulaire gardé même invalidé depuis, vide restée vide, jamais rouverte par le périmètre. Comptée à part (`postesPasses`). Voir [le passé figé](horaires-et-fenetres-des-stands.md#le-passé-est-figé) |
 | Désignée par le périmètre demandé | Libérée quoi qu'il arrive : l'utilisateur dit « refais ça » |
 | Titulaire encore valable | **Épinglée** |
-| Titulaire invalidé par un changement tardif (supprimé, indisponible, couvert par une indisponibilité forcée) | Libérée : l'épingler figerait un écart dur que plus personne ne pourrait corriger. Le test de validité réutilise le prédicat du solveur, pour que les deux ne divergent pas |
+| Titulaire invalidé par un changement tardif (supprimé, indisponible ce jour-là) | Libérée : l'épingler figerait un écart dur que plus personne ne pourrait corriger. Le test de validité réutilise le prédicat du solveur, pour que les deux ne divergent pas |
 | Jamais pourvue, ou nouvelle | Laissée libre |
 
 Deux choix à connaître :
@@ -80,7 +80,7 @@ Le paramètre `reamorcage` prend trois valeurs (`Reamorcage`) : `AUTO` (le défa
 | --- | --- |
 | Titulaire encore valable | Réamorcée avec lui, **mobile** |
 | Couverte par un verrou | Laissée telle que les verrous l'ont mise (épinglée) |
-| Titulaire disparu, indisponible ce jour-là, ou couvert par une indisponibilité forcée | Repart vide, comptée « libérée » |
+| Titulaire disparu, ou indisponible ce jour-là | Repart vide, comptée « libérée » |
 | Jamais pourvue, ou nouvelle | Libre |
 
 Le solveur note la solution de départ en premier et garde la meilleure rencontrée : à données égales, le résultat ne descend jamais sous le plan de départ. Il peut descendre quand le référentiel a changé entre-temps (le plan de départ n'est plus une solution du nouveau problème) ou sur un départ à froid.

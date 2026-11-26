@@ -69,22 +69,24 @@ class ConstraintToggleTest extends ConstraintTestBase {
     }
 
     @Test
-    void indisponibiliteForceePeutEtreDesactivee() {
+    void incompatibiliteAdHocPeutEtreDesactivee() {
         Animateur a1 = referentMajeur("A1");
-        ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        contrainte.setAnimateursConcernes(List.of(a1));
-        contrainte.setCreneau(creneauMatin);
+        Animateur a2 = majeurAutonome("A2");
+        ContrainteAdHoc contrainte = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INCOMPATIBILITE);
+        contrainte.setAnimateursConcernes(List.of(a1, a2));
 
-        verify("indisponibiliteForcee")
-                .given(a1, poste(standStrat, creneauMatin, a1), contrainte)
+        verify("incompatibiliteAdHoc")
+                .given(a1, a2, poste(standStrat, creneauMatin, a1), poste(standStrat, creneauMatin, a2), contrainte)
                 .penalizesBy(1);
 
-        verify("indisponibiliteForcee")
+        verify("incompatibiliteAdHoc")
                 .given(
                         a1,
+                        a2,
                         poste(standStrat, creneauMatin, a1),
+                        poste(standStrat, creneauMatin, a2),
                         contrainte,
-                        new ConstraintToggle("indisponibiliteForcee"))
+                        new ConstraintToggle("incompatibiliteAdHoc"))
                 .penalizesBy(0);
     }
 

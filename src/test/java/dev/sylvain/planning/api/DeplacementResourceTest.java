@@ -173,18 +173,9 @@ class DeplacementResourceTest {
                 .filter(id -> !occupesCeCreneau.contains(id))
                 .findFirst()
                 .orElseThrow();
-        // The ad hoc constraint's id is generated (ADR 0050): the response names it.
-        String indispo = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("contrainte.id");
+        // The day off of the fiche (ADR 0117): the hard rule animateurDisponible refuses the drop.
+        String jour = plan.getString("postes.find { it.id == '" + siege + "' }.creneau.date");
+        List<String> joursAvant = putDaysOff(libre, List.of(jour));
         try {
             given().header("X-Edition-Id", "E1")
                     .contentType("application/json")
@@ -210,7 +201,7 @@ class DeplacementResourceTest {
                             .jsonPath()))
                     .isEqualTo(avant);
         } finally {
-            given().header("X-Edition-Id", "E1").when().delete("/api/contraintes-ad-hoc/" + indispo);
+            putDaysOff(libre, joursAvant);
         }
     }
 
@@ -322,18 +313,9 @@ class DeplacementResourceTest {
                 .filter(id -> !occupesCeCreneau.contains(id))
                 .findFirst()
                 .orElseThrow();
-        // The ad hoc constraint's id is generated (ADR 0050): the response names it.
-        String indispo = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("contrainte.id");
+        // The day off of the fiche (ADR 0117): the hard rule animateurDisponible refuses the drop.
+        String jour = plan.getString("postes.find { it.id == '" + siege + "' }.creneau.date");
+        List<String> joursAvant = putDaysOff(libre, List.of(jour));
         try {
             given().header("X-Edition-Id", "E1")
                     .when()
@@ -346,7 +328,7 @@ class DeplacementResourceTest {
                     .contentType("application/json")
                     .body("{\"actif\":false}")
                     .when()
-                    .put("/api/constraints/indisponibiliteForcee")
+                    .put("/api/constraints/animateurDisponible")
                     .then()
                     .statusCode(200);
             try {
@@ -360,12 +342,12 @@ class DeplacementResourceTest {
                         .contentType("application/json")
                         .body("{\"actif\":true}")
                         .when()
-                        .put("/api/constraints/indisponibiliteForcee")
+                        .put("/api/constraints/animateurDisponible")
                         .then()
                         .statusCode(200);
             }
         } finally {
-            given().header("X-Edition-Id", "E1").when().delete("/api/contraintes-ad-hoc/" + indispo);
+            putDaysOff(libre, joursAvant);
         }
     }
 
@@ -389,5 +371,30 @@ class DeplacementResourceTest {
                 .post("/api/postes/" + siege + "/deplacement")
                 .then()
                 .statusCode(400);
+    }
+
+    /** Replaces the days off of an animateur's fiche, and answers the ones it had. */
+    private static List<String> putDaysOff(String animateurId, List<String> jours) {
+        Map<String, Object> fiche = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getMap("find { it.id == '" + animateurId + "' }");
+        List<String> avant = new java.util.ArrayList<>();
+        if (fiche.get("joursIndisponibles") instanceof List<?> existing) {
+            existing.forEach(jour -> avant.add(String.valueOf(jour)));
+        }
+        fiche.put("joursIndisponibles", jours);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(fiche)
+                .when()
+                .put("/api/animateurs/" + animateurId)
+                .then()
+                .statusCode(200);
+        return avant;
     }
 }
