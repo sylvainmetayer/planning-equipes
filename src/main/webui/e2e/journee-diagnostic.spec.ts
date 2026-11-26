@@ -103,16 +103,16 @@ test('the addresses of former screens lead to the right rendering, parameters in
 
   // The views the page gave up (4.0) land on the screen holding their reading
   // today: no bookmark falls on an empty page.
+  // Problèmes is the default tab of the Diagnostic, so its address drops `onglet`.
   await page.goto('/pauses?vue=sans-relais');
-  await expect(page).toHaveURL(/\/diagnostic\?onglet=problemes/);
+  await expect(page).toHaveURL(/\/diagnostic$/);
   await page.goto('/journee?vue=pauses');
-  await expect(page).toHaveURL(/\/diagnostic\?onglet=problemes/);
+  await expect(page).toHaveURL(/\/diagnostic$/);
   await page.goto('/journee?axe=typologie');
   await expect(page).toHaveURL(/\/stands\?onglet=typologies/);
   await page.goto(`/journee?vue=changements&date=${SEED.jour}`);
-  await expect(page).toHaveURL(
-    new RegExp(String.raw`/publication\?onglet=envoyer&jour=${SEED.jour}`),
-  );
+  // Envoyer is the default tab of Diffuser: its address drops `onglet` too.
+  await expect(page).toHaveURL(new RegExp(String.raw`/publication\?jour=${SEED.jour}$`));
   // A day compared with another: the comparison is gone, the day stays.
   await page.goto(`/journee?date=${SEED.jour}&comparer=${SEED.jourSuivant}`);
   await expect(page.locator('.rail-table')).toBeVisible();
@@ -132,7 +132,7 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await expect(page).toHaveURL(new RegExp(String.raw`/journee\?.*stand=${SEED.standDemandeur}`));
 
   await page.goto('/intendance');
-  await expect(page).toHaveURL(/\/diagnostic\?onglet=problemes/);
+  await expect(page).toHaveURL(/\/diagnostic$/);
 
   await page.goto('/graphe');
   await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
