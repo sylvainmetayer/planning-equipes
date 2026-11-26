@@ -168,6 +168,20 @@ describe('GabaritsCard', () => {
     );
   });
 
+  it('says why nothing opens when the menu applies an empty calendar', async () => {
+    api.etat.mockResolvedValue({ ...ETAT, calendrier: [], datesEnEcart: [] });
+    const { fixture, card } = await mount();
+    await fixture.whenStable();
+
+    await card['appliquer']();
+
+    expect(api.preview).not.toHaveBeenCalled();
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(notifications.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'warning' }),
+    );
+  });
+
   it('greys out applying the calendar under a timeslots freeze, and leaves the calendar open', async () => {
     gel = [
       { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },

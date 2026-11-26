@@ -287,6 +287,15 @@ export class GabaritsCard implements OnInit {
 
   /** Previewed first, always: the dialog shows what the write will do and does it. */
   async appliquer(): Promise<void> {
+    // The page's menu item stays enabled on an empty calendar: say why nothing opens.
+    if (this.calendrier().length === 0 && !this.chargement()) {
+      this.notifications.notify({
+        title: $localize`:@@gabarits.appliquer.vide:Aucune date n'est affectée à un gabarit : posez d'abord des gabarits sur des dates du calendrier.`,
+        variant: 'warning',
+        timeout: 6000,
+      });
+      return;
+    }
     if (!this.peutAppliquer()) {
       return;
     }

@@ -738,7 +738,7 @@ public class ReferentielCsvImportService {
      * <p>The calendar is <b>merged</b>, never replaced: a date the file names
      * changes template, a date it does not is left as it was. And nothing is
      * materialised — the grid moves only when somebody presses « Appliquer »
-     * on the Journées types screen, which previews what it would change first
+     * on the Calendrier screen, which previews what it would change first
      * (ADR 0032).</p>
      */
     private Analyse analyseJourneesTypes(CsvParser.Table table, Colonnes colonnes) {
@@ -866,7 +866,7 @@ public class ReferentielCsvImportService {
                     details.add("Le " + date + " passe de « " + avant + " » à « " + lue.getNom() + " ».");
                 }
             }
-            details.add("Les créneaux ne bougent pas : appliquez le calendrier depuis l'écran Journées types.");
+            details.add("Les créneaux ne bougent pas : appliquez le calendrier depuis l'écran Calendrier.");
             return details;
         }
     }

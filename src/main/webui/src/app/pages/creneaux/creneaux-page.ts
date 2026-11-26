@@ -486,7 +486,8 @@ export class CreneauxPage implements OnInit {
 
   /** « Dériver des horaires des stands » : the grid the stands imply, previewed and written by the dialog. */
   protected openDerivation(): void {
-    if (this.editingLocked()) {
+    // Writes timeslots, refused under a CRENEAUX freeze as a series is.
+    if (this.gridLocked()) {
       return;
     }
     const dates = this.store

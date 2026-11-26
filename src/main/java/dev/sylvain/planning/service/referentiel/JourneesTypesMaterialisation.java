@@ -85,8 +85,8 @@ public final class JourneesTypesMaterialisation {
         for (Affectation affectation : tri) {
             Gabarit journeeType = parId.get(affectation.gabaritId());
             if (journeeType == null) {
-                throw new BusinessError.Invalid("Le " + affectation.date()
-                        + " est affecté à un gabarit inconnu : " + affectation.gabaritId());
+                throw new BusinessError.Invalid(
+                        "Le " + affectation.date() + " est affecté à un gabarit inconnu : " + affectation.gabaritId());
             }
             int avant = misAJour.size() + aCreer.size() + aSupprimer.size();
             Plan duJour = planDay(

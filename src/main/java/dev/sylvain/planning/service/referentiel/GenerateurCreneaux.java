@@ -148,8 +148,8 @@ public class GenerateurCreneaux {
                 throw new BusinessError.Invalid("Vacation de durée nulle : " + vacation.heureDebut());
             }
             if (!cles.add(vacation.key())) {
-                throw new BusinessError.Invalid("Vacation en double dans le gabarit : " + vacation.heureDebut()
-                        + "-" + vacation.heureFin());
+                throw new BusinessError.Invalid(
+                        "Vacation en double dans le gabarit : " + vacation.heureDebut() + "-" + vacation.heureFin());
             }
         }
     }

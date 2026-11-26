@@ -250,6 +250,7 @@
   "gabarits.calendrier.conforme": "Applied",
   "gabarits.calendrier.retirer": "Remove this date from the calendar (its time slots stay)",
   "gabarits.appliquer.action": "Apply the calendar",
+  "gabarits.appliquer.vide": "No date is assigned to a template: lay templates on dates of the calendar first.",
   "gabarits.appliquer.tooltip": "Writes the calendar's time slots: an identical slot keeps its seats, an extra slot on a governed date is removed. Previewed before writing.",
   "gabarits.ecarts": "{$INTERPOLATION} date(s) drifted from their template",
   "gabarits.supprimer.title": "Delete the template “{$nom}”",
