@@ -110,6 +110,12 @@ export interface Stand {
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
   /**
+   * The stand's schedule as the server stores it: every dated window, opening or closure, with its
+   * origin (`depliee`). `indisponibilites` and `ouvertures` are the same plages split by mode,
+   * deprecated and kept until 5.0; when a write sends both, the split lists win for their mode.
+   */
+  plages?: PlageStand[];
+  /**
    * Dated closure exceptions, e.g. "closed 14:00-16:00 on 2026-07-18". Empty =
    * always open (the default), unless `ouvertures` or a `horaires` rule says
    * otherwise for that day.
@@ -128,6 +134,22 @@ export interface Stand {
    * these for the day it names; see `core/horaire-stand.ts` for the resolution.
    */
   horaires: HoraireStand[];
+}
+
+/**
+ * One dated window of a stand's schedule, an opening or a closure (ADR 0104). A `null` `heureFin`
+ * means "until closing time".
+ */
+export interface PlageStand {
+  id: number | null;
+  mode: ModeHoraire;
+  date: string;
+  heureDebut: string;
+  heureFin: string | null;
+  motif: string | null;
+  effectif?: number | null;
+  /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
+  depliee?: boolean;
 }
 
 /**

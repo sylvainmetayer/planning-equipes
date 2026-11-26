@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * What an edit actually changed, field by field.
@@ -66,21 +67,19 @@ public final class ChampsModifies {
         // before-image is re-read from the base while the after-image is the
         // caller's instance, so identity said « unchanged » on a dated
         // closure moved under the same id.
+        // As a multiset: the legacy lists a body carries are re-applied mode by mode, which moves a mode's
+        // plages to the end of the list, so the order says nothing about what changed.
         map.put(
-                "indisponibilites",
-                stand -> stand.getIndisponibilites().stream()
+                "plages",
+                stand -> stand.getPlages().stream()
                         .map(ChampsModifies::valeur)
-                        .toList());
-        map.put(
-                "ouvertures",
-                stand -> stand.getOuvertures().stream()
-                        .map(ChampsModifies::valeur)
-                        .toList());
+                        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
     });
 
     /** What the fiche shows of a dated window; the id is storage, not content. */
     private static List<Object> valeur(PlageStand fenetre) {
         return Arrays.asList(
+                fenetre.getMode(),
                 fenetre.getDate(),
                 fenetre.getHeureDebut(),
                 fenetre.getHeureFin(),

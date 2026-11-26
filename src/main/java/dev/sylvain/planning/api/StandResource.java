@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -23,6 +24,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -72,6 +74,31 @@ public class StandResource {
     @Path("/{id}")
     public WrittenStand updateStand(@PathParam("id") String id, Stand stand) {
         return referenceDataService.writeStand(id, stand);
+    }
+
+    /**
+     * Lays one dated plage on the stand (an opening or a closure, kept as typed by hand) and answers the
+     * stand back with its warnings, like {@link #updateStand}. {@code 409} while a solve runs or the
+     * stands are frozen.
+     */
+    @POST
+    @Path("/{id}/plages")
+    public WrittenStand addPlage(@PathParam("id") String id, PlageStand plage) {
+        return referenceDataService.addStandPlage(id, plage);
+    }
+
+    /** Removes one plage of the stand, by its id. */
+    @DELETE
+    @Path("/{id}/plages/{plageId}")
+    public WrittenStand removePlage(@PathParam("id") String id, @PathParam("plageId") Long plageId) {
+        return referenceDataService.removeStandPlages(id, plageId, null);
+    }
+
+    /** Removes every plage of the stand on {@code date}: the stand is open all day again that day. */
+    @DELETE
+    @Path("/{id}/plages")
+    public WrittenStand removePlagesOfDay(@PathParam("id") String id, @QueryParam("date") LocalDate date) {
+        return referenceDataService.removeStandPlages(id, null, date);
     }
 
     @DELETE

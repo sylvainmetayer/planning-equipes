@@ -272,6 +272,181 @@ class StandPlagesResourceTest {
                 .path("id");
     }
 
+    /** The model and the plages are published as such; the old lists stay readable until 5.0. */
+    @Test
+    void aStandPublishesItsPlagesWithTheirOriginAndStillTheDeprecatedLists() {
+        String edition = createEdition("Plages publiées");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Plages","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "plages":[{"mode":"OUVERTURE","date":"2026-07-10","heureDebut":"10:00","heureFin":"12:00"},
+                                   {"mode":"FERMETURE","date":"2026-07-11","heureDebut":"14:00","heureFin":"16:00"}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+
+        var read =
+                given().header(HEADER, edition).when().get("/api/stands").then().statusCode(200);
+        read.body("find { it.id == '" + stand + "' }.plages.size()", org.hamcrest.Matchers.is(2))
+                .body("find { it.id == '" + stand + "' }.plages[0].depliee", org.hamcrest.Matchers.is(false))
+                .body("find { it.id == '" + stand + "' }.ouvertures.size()", org.hamcrest.Matchers.is(1))
+                .body("find { it.id == '" + stand + "' }.indisponibilites.size()", org.hamcrest.Matchers.is(1));
+    }
+
+    /**
+     * A client of the 3.x edits {@code ouvertures} and echoes {@code plages}; a new client edits
+     * {@code plages} and echoes {@code ouvertures}: the form that differs from the stored stand is the
+     * change, whichever key comes first, and two contradicting changes are a bad request.
+     */
+    @Test
+    void aBodyCarryingBothFormsIsSettledByTheStoredStandWhateverTheKeyOrder() {
+        String edition = createEdition("Plages et anciennes listes");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Mixte","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "plages":[{"mode":"OUVERTURE","date":"2026-07-10","heureDebut":"10:00","heureFin":"12:00"}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+
+        java.util.concurrent.atomic.AtomicInteger bodyNumber = new java.util.concurrent.atomic.AtomicInteger();
+        for (String body : List.of("""
+                {"nom":"Mixte","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                 "ouvertures":[{"date":"2026-07-14","heureDebut":"09:00","heureFin":"11:00"}],
+                 "plages":[{"mode":"OUVERTURE","date":"2026-07-10","heureDebut":"10:00","heureFin":"12:00"}]}""", """
+                {"nom":"Mixte","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                 "plages":[{"mode":"OUVERTURE","date":"2026-07-10","heureDebut":"10:00","heureFin":"12:00"}],
+                 "ouvertures":[{"date":"2026-07-14","heureDebut":"09:00","heureFin":"11:00"}]}""")) {
+            given().header(HEADER, edition)
+                    .contentType("application/json")
+                    .body(body)
+                    .when()
+                    .put("/api/stands/" + stand)
+                    .then()
+                    .statusCode(200);
+            // The first body edits ouvertures (the stored day, 10 July, is only echoed by plages);
+            // the second one, sent against the result, edits plages (ouvertures echoes the 14th).
+            assertThat(readDates(edition, stand))
+                    .containsExactly(bodyNumber.getAndIncrement() == 0 ? "2026-07-14" : "2026-07-10");
+        }
+    }
+
+    @Test
+    void aNewClientEditingPlagesWhileEchoingTheDeprecatedListKeepsItsChange() {
+        String edition = createEdition("Plages éditées");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Écho","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "plages":[{"mode":"OUVERTURE","date":"2026-07-10","heureDebut":"10:00","heureFin":"12:00"}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+        String echoed = "{\"date\":\"2026-07-10\",\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"}";
+        String edited =
+                "{\"mode\":\"OUVERTURE\",\"date\":\"2026-07-16\",\"heureDebut\":\"10:00\",\"heureFin\":\"12:00\"}";
+
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"nom\":\"Écho\",\"typologiesProposees\":[\"TYPO\"],\"effectifMin\":1,\"effectifMax\":2,"
+                        + "\"ouvertures\":[" + echoed + "],\"plages\":[" + edited + "]}")
+                .when()
+                .put("/api/stands/" + stand)
+                .then()
+                .statusCode(200);
+        assertThat(readDates(edition, stand)).containsExactly("2026-07-16");
+
+        // Both forms changed, and they disagree with each other: nothing says which is meant.
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"nom\":\"Écho\",\"typologiesProposees\":[\"TYPO\"],\"effectifMin\":1,\"effectifMax\":2,"
+                        + "\"ouvertures\":[" + echoed + "],\"plages\":["
+                        + edited.replace("07-16", "07-17").replace("OUVERTURE", "FERMETURE") + "]}")
+                .when()
+                .put("/api/stands/" + stand)
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void aPlageIsLaidAndRemovedOneByOneOrByDay() {
+        String edition = createEdition("Plages une à une");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"nom\":\"Une à une\",\"typologiesProposees\":[\"TYPO\"],\"effectifMin\":1,\"effectifMax\":2}")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+
+        List<Integer> ids = new java.util.ArrayList<>();
+        for (String date : List.of("2026-07-10", "2026-07-10", "2026-07-11")) {
+            var ecrit = given().header(HEADER, edition)
+                    .contentType("application/json")
+                    .body("{\"mode\":\"FERMETURE\",\"date\":\"%s\",\"heureDebut\":\"%s\",\"heureFin\":\"%s\"}"
+                            .formatted(date, ids.isEmpty() ? "10:00" : "14:00", ids.isEmpty() ? "11:00" : "15:00"))
+                    .when()
+                    .post("/api/stands/" + stand + "/plages")
+                    .then()
+                    .statusCode(200);
+            ids = ecrit.extract().jsonPath().getList("stand.plages.id", Integer.class);
+        }
+        assertThat(ids).hasSize(3).doesNotContainNull();
+
+        // One by id…
+        given().header(HEADER, edition)
+                .when()
+                .delete("/api/stands/" + stand + "/plages/" + ids.getFirst())
+                .then()
+                .statusCode(200)
+                .body("stand.plages.size()", org.hamcrest.Matchers.is(2));
+        // …unknown: 404, nothing moves…
+        given().header(HEADER, edition)
+                .when()
+                .delete("/api/stands/" + stand + "/plages/999999999")
+                .then()
+                .statusCode(404);
+        // …a day at once…
+        given().header(HEADER, edition)
+                .when()
+                .delete("/api/stands/" + stand + "/plages?date=2026-07-10")
+                .then()
+                .statusCode(200)
+                .body("stand.plages.size()", org.hamcrest.Matchers.is(1))
+                .body("stand.plages[0].date", org.hamcrest.Matchers.is("2026-07-11"));
+        // …and neither id nor date is a bad request.
+        given().header(HEADER, edition)
+                .when()
+                .delete("/api/stands/" + stand + "/plages")
+                .then()
+                .statusCode(400);
+        // A plage of an unknown stand: 404.
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"mode\":\"FERMETURE\",\"date\":\"2026-07-10\",\"heureDebut\":\"10:00\"}")
+                .when()
+                .post("/api/stands/INCONNU/plages")
+                .then()
+                .statusCode(404);
+    }
+
     private static void createTypologie(String edition) {
         given().header(HEADER, edition)
                 .contentType("application/json")

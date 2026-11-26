@@ -213,11 +213,10 @@ export function buildNavGroups(): NavGroup[] {
           tabs: [
             tab(
               'vue',
-              'calendrier',
-              $localize`:@@journee.vue.calendrier:Tableau`,
-              $localize`:@@nav.keywords.journeeTableau:calendrier des affectations`,
+              'jour',
+              $localize`:@@journee.vue.jour:Jour`,
+              $localize`:@@nav.keywords.journeeTableau:tableau rail calendrier des affectations`,
             ),
-            tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
             tab(
               'vue',
               'carte',
