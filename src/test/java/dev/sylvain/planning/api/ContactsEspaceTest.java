@@ -95,7 +95,7 @@ class ContactsEspaceTest {
         try (var connection = dataSource.getConnection();
                 var statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM animateur_contact");
-            statement.executeUpdate("DELETE FROM plan_snapshot");
+            statement.executeUpdate("DELETE FROM version_plan");
         }
     }
 

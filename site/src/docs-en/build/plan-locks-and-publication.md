@@ -97,7 +97,7 @@ The espace link and its authentication (opaque token, code sent by mail) are des
 
 ## The published plan
 
-Two schedules coexist per edition, and they need names. The **working schedule** is the one the solve writes and the administration works on: `poste_affectation`, only one per edition. The **published schedule** is the one staff members have received: the latest snapshot marked as published (`plan_snapshot.publie_le`). It is a snapshot and nothing else, because its denormalised content ([decision 0007](repo:docs/decisions/0007-instantanes-contenu-denormalise.md)) is exactly "a complete schedule, independent of what moves afterwards".
+Two schedules coexist per edition, and they need names. The **working schedule** is the one the solve writes and the administration works on: `poste_affectation`, only one per edition. The **published schedule** is the one staff members have received: the latest version of origin `PUBLIEE` (table `version_plan`). It is a version and nothing else, because its denormalised content ([decision 0007](repo:docs/decisions/0007-instantanes-contenu-denormalise.md)) is exactly "a complete schedule, independent of what moves afterwards".
 
 **The staff espace reads the published schedule.** What a person sees is what they were sent: a validated swap, an applied replacement or a new solve moves their espace only once published. As long as nothing has been published on the edition, the espace is **empty** and says so: falling back to the working schedule would recreate the inconsistency that the distinction removes.
 

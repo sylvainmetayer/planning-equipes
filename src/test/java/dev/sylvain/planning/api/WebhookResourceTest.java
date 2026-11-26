@@ -565,7 +565,7 @@ class WebhookResourceTest {
         receiver.answer("/lent", new Script(200, "", Map.of(), 4_000));
         String id = create("lent", "MATRIX", receiver.url("/lent"), List.of("planning.publie"))
                 .getString("webhook.id");
-        execute("DELETE FROM plan_snapshot");
+        execute("DELETE FROM version_plan");
         persistence.clearDatabase();
         persistPlan();
 

@@ -7124,6 +7124,10 @@
           }
         }
       },
+      "Origine" : {
+        "type" : "string",
+        "enum" : [ "MANUELLE", "AVANT_CALCUL", "PUBLIEE" ]
+      },
       "OutboundSseEvent" : {
         "type" : "object",
         "properties" : {
@@ -9941,7 +9945,7 @@
         }
       },
       "SnapshotMeta" : {
-        "required" : [ "automatique", "id", "nombreAffectations", "perime" ],
+        "required" : [ "automatique", "id", "nombreAffectations", "origine", "perime" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -9953,6 +9957,9 @@
           },
           "automatique" : {
             "type" : "boolean"
+          },
+          "origine" : {
+            "$ref" : "#/components/schemas/Origine"
           },
           "score" : {
             "type" : "string"
@@ -18304,6 +18311,7 @@
     },
     "/api/planning/snapshots" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18323,6 +18331,7 @@
         "tags" : [ "Plan Snapshot Resource" ]
       },
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -18352,6 +18361,7 @@
     },
     "/api/planning/snapshots/comparables" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18373,6 +18383,7 @@
     },
     "/api/planning/snapshots/compare" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "base",
           "in" : "query",
@@ -18404,6 +18415,7 @@
     },
     "/api/planning/snapshots/{id}" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -18429,6 +18441,7 @@
         "tags" : [ "Plan Snapshot Resource" ]
       },
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -18454,6 +18467,7 @@
     },
     "/api/planning/snapshots/{id}/restore" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -18499,6 +18513,187 @@
         },
         "summary" : "Rapport",
         "tags" : [ "Typologie Analyse Resource" ]
+      }
+    },
+    "/api/planning/versions" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SnapshotMeta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Version Plan Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CaptureRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Capture",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/comparables" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SnapshotMeta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Comparables",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/compare" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "base",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "variante",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComparaisonSnapshots"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Compare",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SnapshotDetail"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Version Plan Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/{id}/restore" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "forcer",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Restore",
+        "tags" : [ "Version Plan Resource" ]
       }
     },
     "/api/planning/volumetrie" : {

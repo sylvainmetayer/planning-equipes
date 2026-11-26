@@ -70,10 +70,6 @@ ParametresResource#getParametresQualite GET /parametres-qualite
 ParametresResource#getParametresSolveur GET /parametres-solveur
 PauseResource#analyze GET /pauses
 PauseResource#intendance GET /pauses/intendance
-PlanSnapshotResource#comparables GET /planning/snapshots/comparables
-PlanSnapshotResource#compare GET /planning/snapshots/compare
-PlanSnapshotResource#get GET /planning/snapshots/{id}
-PlanSnapshotResource#list GET /planning/snapshots
 PlanningExportResource#exportAllBundleZip POST /planning/export/bundle/all
 PlanningExportResource#exportAllIcsZip POST /planning/export/ics/all
 PlanningExportResource#exportAllPdfZip POST /planning/export/pdf/all
@@ -90,6 +86,10 @@ PlanningResource#scenarios GET /planning/scenarios
 PlanningResource#volumes GET /planning/volumetrie
 PlanningResource#walks GET /planning/enchainements
 PlanningResource#wipeBackups GET /planning/sauvegardes-avant-vidage
+PlanSnapshotResource#comparables GET /planning/snapshots/comparables
+PlanSnapshotResource#compare GET /planning/snapshots/compare
+PlanSnapshotResource#get GET /planning/snapshots/{id}
+PlanSnapshotResource#list GET /planning/snapshots
 PublicationResource#apercu GET /planning/publication
 PublicationResource#destinataires GET /planning/publication/destinataires
 PublicationResource#etat GET /planning/publication/etat
@@ -119,4 +119,8 @@ ValidationJourneeResource#list GET /validations
 ValidationJourneeResource#prerequis GET /validations/prerequis
 ValidationJourneeResource#progression GET /validations/progression
 VerrouillageResource#list GET /verrouillages
+VersionPlanResource#comparables GET /planning/versions/comparables
+VersionPlanResource#compare GET /planning/versions/compare
+VersionPlanResource#get GET /planning/versions/{id}
+VersionPlanResource#list GET /planning/versions
 WeatherResource#get GET /parametres/meteo

@@ -61,6 +61,7 @@ function snapshot(id: number, creeLe: string, overrides: Partial<PlanSnapshot> =
     id,
     libelle: `Instantané ${id}`,
     automatique: false,
+    origine: 'MANUELLE',
     score: null,
     nombreAffectations: 190,
     creeLe,

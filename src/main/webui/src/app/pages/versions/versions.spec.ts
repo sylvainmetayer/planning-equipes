@@ -48,6 +48,7 @@ function snapshot(id: number, creeLe: string | null, overrides: Partial<PlanSnap
     id,
     libelle: `Instantané ${id}`,
     automatique: false,
+    origine: 'MANUELLE',
     score: null,
     nombreAffectations: 190,
     creeLe,
