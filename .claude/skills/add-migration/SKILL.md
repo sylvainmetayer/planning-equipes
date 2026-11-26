@@ -14,8 +14,12 @@ a migration that has already been applied (checked into `main`).
 ls src/main/resources/db/migration/
 ```
 
-Migrations follow `V<N>__<snake_or_words>.sql`. Take the highest existing
-`N` and use `N+1`. Don't reuse or renumber existing files.
+Migrations follow `V<N>__<snake_or_words>.sql`. Take the highest `N` of
+`origin/main` at the moment you push (`git fetch` first) and use `N+1`. Nobody
+reserves a number: if another pull request takes it before yours merges, the
+coordinator runs `.github/scripts/renumeroter-migration.py` right before the
+merge and it moves your file and its references. Don't renumber by hand, and
+never touch a file that is already on `main`.
 
 ## 2. Name the file
 
@@ -43,7 +47,8 @@ whether `ReferenceDataService` / `ReferenceDataRepository` or the relevant
 `FlywayMigrationsFrozenTest` refuses every migration whose line is missing
 from `src/test/resources/migrations-empreintes.txt`, and every applied one
 whose content changed. Run it once: it prints the line to add, copy it into
-the file.
+the file at its place in version order (another test refuses the file out of
+order: it is merged as a union of lines, see `.gitattributes`).
 
 ```
 ./mvnw test -Dtest=FlywayMigrationsFrozenTest

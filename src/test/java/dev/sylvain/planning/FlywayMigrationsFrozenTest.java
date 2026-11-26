@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
  * migration whose text changed fails the build with the file's name.</p>
  *
  * <p>A new migration fails too, on purpose, until its line is appended to
- * {@code src/test/resources/migrations-empreintes.txt}: adding a migration is
+ * {@code src/test/resources/migrations-empreintes.txt}, in version order: adding a migration is
  * the moment to say it is meant to be frozen from now on. The failure message
  * prints the line to add.</p>
  */
@@ -80,9 +80,31 @@ class FlywayMigrationsFrozenTest {
                 .as("frozen migrations that no longer exist — a migration that ran somewhere cannot be removed")
                 .isEmpty();
         assertThat(nouvelles)
-                .as("new migrations not yet frozen. Append these lines to " + EMPREINTES + ":\n"
+                .as("new migrations not yet frozen. Add these lines, in version order, to " + EMPREINTES + ":\n"
                         + String.join("\n", nouvelles))
                 .isEmpty();
+    }
+
+    /**
+     * The fingerprints are one line per migration in version order, the file ending on one
+     * newline: {@code .gitattributes} merges it as a union of lines, so two branches that each
+     * add a migration never conflict on it, and this is what puts the order back afterwards.
+     */
+    @Test
+    void theFingerprintsAreOneLinePerMigrationInVersionOrder() throws IOException {
+        String text = Files.readString(EMPREINTES, StandardCharsets.UTF_8);
+        assertThat(text)
+                .as(EMPREINTES + " ends on exactly one newline")
+                .endsWith("\n")
+                .doesNotEndWith("\n\n");
+        List<Integer> versions = text.lines()
+                .filter(line -> !line.isBlank() && !line.startsWith("#"))
+                .map(line -> Integer.valueOf(line.substring(1, line.indexOf("__"))))
+                .toList();
+        assertThat(versions)
+                .as("versions in " + EMPREINTES + ", one line each, in increasing order")
+                .isSortedAccordingTo(Integer::compare)
+                .doesNotHaveDuplicates();
     }
 
     private static String sha256(Path file) throws IOException, NoSuchAlgorithmException {

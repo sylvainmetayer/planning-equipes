@@ -78,7 +78,6 @@ import { ScoreCurveCard } from './score-curve-card';
 import { SolveInputsCard } from './solve-inputs';
 import { SolveRecap } from './solve-recap';
 import { SolverQueue } from './solver-queue';
-import { SolverVolumetry } from './solver-volumetry';
 import { errorPrefix } from '../../core/error-message';
 import { SessionStore } from '../../core/session.store';
 import { VoirPlanningButton } from '../../shared/voir-planning-button';
@@ -147,7 +146,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     OutputPanel,
     SolverQueue,
     ScoreCurveCard,
-    SolverVolumetry,
     IncrementalResult,
     SolveRecap,
     SolveInputsCard,

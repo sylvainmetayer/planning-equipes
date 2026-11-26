@@ -1,16 +1,10 @@
-/* Solver page: problem-size stat tiles (reuses .staffing-stat) plus the product formula below them. */
+/* Problem-size stat tiles of the incremental result (reuses .staffing-stat). */
 
 .solver-volumetry {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
-}
-
-.solver-volumetry-formula {
-  font: var(--mat-sys-body-medium);
-  color: var(--mat-sys-on-surface-variant);
-  margin: 0;
 }
 
 /* #461 hosted the queue and the recap in two components. Each host wraps a
@@ -98,28 +92,6 @@ app-solve-recap > .mat-mdc-card-content:last-child {
   flex: 1 1 18rem;
   margin: 0;
   font: var(--mat-sys-body-medium);
-}
-
-/* The volumetry, folded under its title. */
-.solver-volumetry-details {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
-}
-
-.solver-volumetry-details > summary {
-  cursor: pointer;
-  list-style-position: inside;
-}
-
-.solver-volumetry-title {
-  display: inline;
-  font: var(--mat-sys-title-medium);
-  margin: 0;
-}
-
-.solver-volumetry-details[open] > summary {
-  margin-bottom: 1rem;
 }
 
 /* « Sur place / Sur la machine de calcul », under the three ways to launch (ADR 0086). */

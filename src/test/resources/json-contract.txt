@@ -1,427 +1,2416 @@
-#
-# Frozen on purpose, and read by JsonContractTest. A key here is read by
-# Generated shape: <package>.<Type> = key, key, key (keys sorted).
-# If the test fails, DO NOT regenerate this file. Each moved line is a break
-# The JSON keys this API puts on the wire, one line per exposed type.
-# `models.ts`, by the Angular pages and by anything else talking to this API:
-# compiler says nothing at all.
-# for every client already reading the old key. Move it once, deliberately,
-# renaming a record component or an accessor renames the key with it, and the
-# together with the clients that read it.
-api.AnimateurResource$AnimateurToken = token
-api.AnimateurResource$RapportSaisieGrilleCompetences = animateurs
-api.AnimateurResource$RelanceDemande = animateurIds
-api.AnimateurResource$SaisieGrilleCompetences = animateurs
-api.AuthResource$Credentials = email, password
-api.AuthResource$Deconnexion = urlDeconnexion
-api.AuthResource$ForgotRequest = email
-api.AuthResource$PasswordChoice = password, token
-api.AuthResource$StatutSession = authentifie, compteId, nom, roles
-api.BackupResource$ActiveRequest = active
-api.BrandingResource$BrandingView = accentColor, logoUrl, mascotIconUrl, mascotUrl, organisation, productName, supportEmail
-api.CompteResource$NouveauCompte = email, invite, nom
-api.CompteResource$NouvelleHabilitation = editionId, expireLe, role, standIds
-api.ConfigResource$ConfigView = authOidc, authSecours, cloudflareWebAnalyticsToken, devMode, mailMock, sentryDsn, sentryEnvironment, version
-api.ConsigneResource$DemandePreselection = date, fermetureDebut, fermetureFin
-api.ConsigneResource$Levee = dates
-api.ConstraintResource$ConstraintNiveauUpdate = niveau
-api.ConstraintResource$ConstraintPoidsUpdate = poids
-api.ConstraintResource$ConstraintToggleUpdate = actif
-api.ConstraintResource$ConstraintView = actif, actions, activeByDefault, categorie, description, dosable, groupe, hotspots, legale, libelleCourt, matchCount, name, niveau, niveauChoisi, niveauReglable, parametres, plancher, poids, postesEvalues, protegee, references, remediation, score, termeDe, violations
-api.ConstraintResource$ConstraintsView = analysedAt, contraintes, contraintesAdHocEnCause, faisabilite, hardScore, lecture, pivotEcarts, plancherMedium, plancherSoft, postesNonPourvus, scoreGlobal, scoreHorsPlancher
-api.CreneauResource$DerivationRequest = dateDebut, dateFin, dureeMinimaleMinutes, heureFermeture, remplacer
-api.CreneauResource$RapportDerivation = controle, coupures, creneaux, joursSansFenetre, nombreGeneres
-api.CreneauResource$RapportRecurrence = controle, creneaux, nombreGeneres
-api.CreneauResource$RecurrenceRequest = dateDebut, dateFin, dates, exclusions, fenetres, jours, joursSemaine
-api.DatabaseResource$ImportSummary = message, statements
-api.DayStateResource$DayStateChange = commentaire, etat
-api.DebugResource$MailConfigView = adminEmail
-api.DeclarationDisponibiliteResource$ConfigurationCollecte = collecteOuverte, debut, fin, invitation, ouverteAujourdhui, prevenirAnimateurs, relanceAutomatique
-api.DeclarationDisponibiliteResource$Decision = commentaire
-api.DeclarationDisponibiliteResource$InvitationRequest = destinataires
-api.DemandeEchangeResource$ConfigurationFoire = debut, fin, foireOuverte, ouverteAujourdhui
-api.DemandeEchangeResource$DecisionEchange = commentaire
-api.EditionRefusalError = code, message
-api.EditionResource$PhaseChange = phase
-api.EspaceAnimateurResource$AbonnementToken = abonnementToken
-api.EspaceAnimateurResource$CodeSession = code
-api.FrozenReferentialError = code, familles, message
-api.GenerateurCreneauxResource$DemandeGeneration = derivation, recurrence, source
-api.GenerateurCreneauxResource$RetraitDates = dates
-api.HistoriqueResource$ActionView = code, entite, export, libelle
-api.HistoriqueResource$AdminLoginView = adresse, evenement, id, survenuLe
-api.HistoriqueResource$AuteurView = nom, valeur
-api.HistoriqueResource$AuteursView = auteurs, fiableDepuis
-api.HistoriqueResource$ChangementsView = dernieres, parEntite, total
-api.HistoriqueResource$CompteEntiteView = entite, nombre
-api.HistoriqueResource$EntreeHistoriqueView = acteur, acteurId, acteurNom, action, champs, entite, entiteId, entiteNom, id, libelle, resultat, statut, survenuLe, verification
-api.HorlogeResource$DateJourJView = dateDuJour, heureDuJour, modifiable
-api.JourJResource$AnnulationAbsence = supprimees
-api.JourJResource$ConfigurationSignalements = actifs
-api.JourJResource$DemandeAbsence = animateurId, creneauId, raison
-api.JourneeTypeResource$AffectationJourneeType = date, journeeTypeId
-api.JourneeTypeResource$EtatJourneesTypes = calendrier, datesEnEcart, datesSousConsigne, journeesTypes
-api.JourneeTypeResource$ReconnaissanceJourneesTypes = calendrier, journeesTypes
-api.McpResource$DemandeRotation = recouvrementMinutes
-api.McpResource$GeneratedMcpKey = ancienneExpireLe, cle, pangolinAccessToken, pangolinAccessTokenId
-api.McpResource$McpKey = cle, pangolinAccessToken, pangolinAccessTokenId
-api.McpResource$ReauthenticationRequired = code, message, mode
-api.McpResource$StatutMcp = ancienneExpireLe, configuree, genereeLe, header, oauth, origine
-api.MentionsLegalesResource$AccessibiliteView = contenusNonAccessibles, dateAudit, etat, signalement
-api.MentionsLegalesResource$MentionsLegalesView = accessibilite, baseLegale, conservation, contact, demoInstance, directeurPublication, editeur, hebergeur, mesureAudience, responsableTraitement, suiviErreurs
-api.OuvertureStandsResource$RapportSaisieGrille = stands
-api.OuvertureStandsResource$SaisieGrille = stands
-api.ParametresResource$ParametresView = calcul, legal, notifications, organisation
-api.ParametresResource$SolverSettingsView = instance, mailFinResolution, modifieLe
-api.PlanningResource$PersistenceStatus = assignments
-api.PlanningResource$PlanningResolutionView = derniereModificationDonnees, resoluLe, solved
-api.PlanningResource$ResetSummary = animateurs, creneaux, postes, stands
-api.PublicationResource$DemandePublication = cibles, exclusions
-api.ReferenceDataResource$ImportScenarioResult = avertissements, editionCreee, editionId, editionNom
-api.ReferenceDataResource$ImportTargetView = editionId, editionNomExistant, editionNomFichier, existe
-api.ReferenceDataResource$ScenarioValidationResult = erreurs, valide
-api.SolverJobResource$Heartbeat = at
-api.SolverJobResource$JobView = editionId, editionNom, elapsedSeconds, error, feasibleAtSeconds, finishedAt, id, message, plateauSeconds, reamorcage, remote, remoteStage, result, secondsLimit, startedAt, status, submittedAt, type
-api.SolverJobResource$JobsState = active, file, verification
-api.SolverJobResource$ScoreDelta = depuis, dureeMs, editionId, generation, intervalleMs, jobId, points, termine
-api.StaffingResource$VerificationRequest = calcul, dureeSecondes, majeurs, mineurs
-api.StaleWriteError = code, message, modifieLe
-api.ValidationError = message
-api.ValidationJourneeResource$DemandeValidationJournee = commentaire, jour, poserVerrou
-api.ValidationJourneeResource$ResultatValidationJournee = validation, verrouPose
-api.VersionPlanResource$CaptureRequest = libelle
-api.VersionPlanResource$ErreurRestauration = message, perime, referenceModifieLe, referencesManquantes
-domain.Animateur = accessToken, competences, dateNaissance, email, id, joursIndisponibles, manager, modifieLe, nom, polyvalent, prenom, souhaits, telephone
-domain.ConsigneEdition = creeLe, creneauxAjoutes, date, fenetres, fermetureDebut, fermetureFin, modifieLe, motif, ouvertures, prereglage, repas
-domain.ConsigneEdition$Fenetre = debut, fin
-domain.ConsigneEdition$Ouverture = debut, effectif, fin, standId
-domain.ConsigneEdition$RepasConsigne = coupureMinutes, justification, midiDebut, midiFin, soirDebut, soirFin
-domain.ConstraintToggle = actif, nom
-domain.ContactOrganisation = email, telephone
-domain.ContrainteAdHoc = animateursConcernes, creeLe, creeParUtilisateurId, creneau, id, issueDeCovoiturage, modifieLe, raison, stand, type
-domain.Creneau = date, dureeMinutes, heureDebut, heureFin, id, jour, modifieLe
-domain.Edition = active, creeLe, id, nom, phase, phaseDepuis, structureDebloquee
-domain.Emplacement = code, id, latitude, longitude, modifieLe, nom
-domain.FenetreHoraire = effectif, heureDebut, heureFin
-domain.FenetreRepas = auPlusTard, date, datesExclues, debut, dureeMinutes, fin, libelle, sansPlacement
-domain.Gabarit = id, modifieLe, nom, vacations
-domain.HorairesRecurrents$Regle = dateDebut, dateFin, dates, fenetres, id, jours, joursSemaine, mode, motif
-domain.JoursFeries$PublicHoliday = date, label
-domain.ParametresLegaux = coupureRepasMidiDebut, coupureRepasMidiFin, coupureRepasMinutes, coupureRepasSoirDebut, coupureRepasSoirFin, dureeHebdomadaireMaxMineurMinutes, dureeHebdomadaireMaxMinutes, dureePauseMinutes, dureeVacationMaxMinutes, heureDebutSoiree, modifieLe, reposQuotidienMinimalMinutes
-domain.ParametresMeteo = actif, horizonJours, modifieLe, orage, prereglageChaleur, prereglageOrage, prereglageVent, seuilRafales, seuilTemperature
-domain.ParametresNotifications = ancienneteEchangeJours, delaiRelanceHeures, heureRappelVeille, modifieLe
-domain.ParametresQualite = facteurDetour, heureServiceMatinal, heureServiceTardif, joursConsecutifsMax, maxEmplacementsDistinctsParJour, modifieLe, placementRepas, reposSouhaiteApresServiceTardifMinutes, toleranceArriveeGroupeeMinutes, toleranceTrajetMinutes, typologiesDistinctesMax, vitesseMarcheKmH
-domain.ParametresSolveur = mailFinResolution, modifieLe
-domain.PlageStand = consigne, date, depliee, effectif, heureDebut, heureFin, id, mode, motif
-domain.PlanningEvenement = animateurs, constraintsDesactivees, contraintesAdHoc, dateDebutFestival, fenetresRepas, parametresLegaux, parametresQualite, postes, quotasTypologies, score, verrouillages
-domain.PosteAffectation = animateur, creneau, dureeEffectiveMinutes, heureDebutEffective, heureFinEffective, id, stand, suiteDe, verrouille
-domain.PrereglageConsigne = creeLe, fenetres, fermetureDebut, fermetureFin, id, modifieLe, motif, nom, repas
-domain.QuotaTypologie = maxCreneaux, typologie
-domain.Stand = code, effectifMax, effectifMin, emplacement, horaires, id, indisponibilites, modifieLe, niveauEffort, nom, ouvertures, plages, premium, reserveMajeurs, typologiesProposees
-domain.VacationType = heureDebut, heureFin
-domain.ValidationJournee = commentaire, id, jour, valideLe, validePar
-domain.VerrouillagePlanning = animateurId, creeLe, creneauDate, creneauHeureDebut, creneauHeureFin, creneauId, id, jour, raison, standId, type, vacationMissing
-mcp.McpPrompts$PromptExpose = description, nom, texte
-service.analyse.AlerteService$AlerteView = animateurId, cle, declencheLe, libelle, lien, nomAffiche, severite, type
-service.analyse.BreachHotspots$Hotspot = creneauId, date, ecarts, standId
-service.analyse.Dosage = disabled, enabled, instanceWeights, levels, weights
-service.analyse.EquiteService$ColonneSolveur = active, colonne, contrainte
-service.analyse.EquiteService$LigneEquite = animateurId, emplacementsDistinctsParJourMax, heuresJourFerie, heuresParSemaine, heuresSoiree, heuresTotal, heuresWeekEnd, joursRepos, joursTravailles, nom, plusLongueSerie, postes, postesPenibles, standsDistincts, tauxAppreciation, tauxSouhaits, typologiesDistinctes
-service.analyse.EquiteService$RapportEquite = colonnesSolveur, heureDebutSoiree, lignes, semaines, syntheses
-service.analyse.EquiteService$SyntheseColonne = ecartType, max, mediane, min
-service.analyse.FeasibilityAnalyzer$CauseInfaisabilite = actions, capacite, contrainteIds, creneauId, date, demande, heureDebut, heureFin, manque, message, severite, standIds, type
-service.analyse.FeasibilityAnalyzer$FeasibilityReport = causes, causesCritiques, causesElevees, feasible, manqueAnimateurs, message, totalCauses
-service.analyse.FormationAnalyzer$CandidatFormation = animateurId, joursTensionDisponibles, niveau, nom, souhait
-service.analyse.FormationAnalyzer$PlanFormation = aucunAnimateur, aucuneCompetence, planPersiste, typologies
-service.analyse.FormationAnalyzer$TypologieAFormer = candidats, competencesRares, groupesSansSpecialiste, joursTension, label, manque, polyvalent, postesIrremplacables, specialistes, typologie
-service.analyse.FragiliteAnalyzer$AnimateurFragilite = affectations, animateurId, competencesRares, nom, polyvalent, postes, postesEffondres, postesIrremplacables, postesNonDetailles, severite
-service.analyse.FragiliteAnalyzer$CompetenceRare = animateurId, creneauId, date, heureDebut, heureFin, jour, nom, pourvu, renforts, severite, specialistes, standId, standNom, typologies
-service.analyse.FragiliteAnalyzer$PosteFragile = creneauId, date, effectifMin, heureDebut, heureFin, irremplacable, jour, remplacants, siegesLiberes, siegesPourvus, siegesRequis, standId, standNom
-service.analyse.FragiliteAnalyzer$RapportFragilite = animateurs, animateursIrremplacables, aucunAnimateur, competencesRares, groupesAnalyses, groupesDejaSousEffectif, groupesSansSpecialiste, message, polyvalentConfigure, totalCompetencesRares
-service.analyse.GroupedArrivalAnalyzer$GroupDayView = absent, aligned, arrivalSpreadMinutes, date, departureSpreadMinutes, hours, working
-service.analyse.GroupedArrivalAnalyzer$GroupView = animateurIds, contrainteId, days, misalignedDays
-service.analyse.GroupedArrivalAnalyzer$GroupedArrivalReport = groups, toleranceMinutes
-service.analyse.GroupedArrivalAnalyzer$MemberHoursView = animateurId, end, start
-service.analyse.IntendanceRepasAnalyzer$FenetreIntendance = debut, emplacements, fin, libelle, total, totalMineurs, tranches
-service.analyse.IntendanceRepasAnalyzer$JourneeIntendance = date, fenetres
-service.analyse.IntendanceRepasAnalyzer$LigneEmplacement = emplacementId, emplacementNom, mineurs, personnes, total, totalMineurs
-service.analyse.IntendanceRepasAnalyzer$RapportIntendance = journees, message, pasMinutes
-service.analyse.KpiHistoriqueService$KpiHistoriqueEntry = creeLe, editionId, editionNom, id, kpi
-service.analyse.MargeAnalyzer$CelluleMarge = besoin, creneauId, date, debut, disponibles, fin, jour, marge, sieges, siegesPourvus
-service.analyse.MargeAnalyzer$JourMarge = cellules, date, jour, pireCellule
-service.analyse.MargeAnalyzer$RapportMarge = animateursTotal, cellulesDeficitaires, jours, message, mode, pireCellule, referentielsManquants, tranches
-service.analyse.MargeAnalyzer$TrancheMarge = debut, fin
-service.analyse.OuvertureStandsAnalyzer$Anomaly = date, heureDebut, heureFin, horaireId, message, standId, standNom, type
-service.analyse.OuvertureStandsAnalyzer$CelluleCreneau = creneauId, effectif, partiel, segments, tranche
-service.analyse.OuvertureStandsAnalyzer$CelluleJour = creneaux, date, etat, fenetres, minutesAmplitude, minutesOuvertes, postes, source
-service.analyse.OuvertureStandsAnalyzer$ColonneCreneau = heureDebut, heureFin, id, tranche
-service.analyse.OuvertureStandsAnalyzer$FenetreEffective = heureDebut, heureFin
-service.analyse.OuvertureStandsAnalyzer$JourAmplitude = creneaux, date, ferie, heureDebut, heureFin, jour, minutes, nombreCreneaux
-service.analyse.OuvertureStandsAnalyzer$LigneStand = effectifMin, jours, minutesOuvertes, modifieLe, nom, postes, standId
-service.analyse.OuvertureStandsAnalyzer$RapportOuvertures = anomalies, jours, postesTotal, stands, standsJamaisOuverts
-service.analyse.OuvertureStandsAnalyzer$SegmentCellule = effectif, heureDebut, heureFin
-service.analyse.PauseAnalyzer$CoupureRepasView = debut, dureeRequiseMinutes, fenetreDebut, fenetreFin, fin, libelle, plusGrandTrouMinutes, satisfaite
-service.analyse.PauseAnalyzer$JourneeAnimateurView = animateurId, coupuresRepas, date, jour, mineur, nomComplet, pausesPlanifiees, sequences
-service.analyse.PauseAnalyzer$PauseAnimateurView = date, debut, dureeMinutes, emplacementLatitude, emplacementLongitude, emplacementNom, fin, heureLimite, relaisDisponible, standId, standNom
-service.analyse.PauseAnalyzer$PauseDueView = creneauId, debut, dureeMinutes, fin, heureLimite, relais, relaisDisponible, simultanee, standId, standNom
-service.analyse.PauseAnalyzer$PausePlanifieeView = debut, fin, minutes
-service.analyse.PauseAnalyzer$RapportPauses = coupuresRepasDues, coupuresRepasManquantes, journees, journeesAnalysees, message, pausesDues, relaisManquants
-service.analyse.PauseAnalyzer$RelaisView = animateurId, nomComplet
-service.analyse.PauseAnalyzer$SequenceView = debut, fin, minutes, pausesDues
-service.analyse.PivotEcarts$Cellule = axe, cle, contrainte, ecarts
-service.analyse.PlanningDiagnosticService$ConstraintFloor = libelle, lien, motif, ratio
-service.analyse.PlanningDiagnosticService$ContributionAdHoc = contrainteId, contraintes, raison, type, violations
-service.analyse.PlanningHoursReader$HoursReading = planDate, publicationAvailable, report, source
-service.analyse.PlanningHoursService$HeuresAnimateur = amplitudeMaxHeures, animateurId, heuresDimanche, heuresDimancheFerie, heuresJourFerie, heuresNuit, heuresParSemaine, heuresSoiree, joursAmplitudeElevee, nom, total
-service.analyse.PlanningHoursService$HeuresRapport = animateurs, heureDebutSoiree, semaines
-service.analyse.PlanningKpiService$DayCoverage = postes, pourvus
-service.analyse.PlanningKpiService$PlanningKpi = animateursAffectes, couvertureParJour, creneauxDistincts, dosage, dureeSolveSecondes, heuresEcartType, heuresFermeesParConsigne, heuresIncompletes, heuresMax, heuresMin, heuresMoyenne, heuresTotal, journeesSousConsigne, lecture, modificationsManuelles, plancherMedium, postesPourvus, postesTotal, score, scoreHard, scoreMedium, scoreMediumHorsPlancher, scoreSoft, standsDistincts, tauxModificationsManuelles, violationsParContrainte
-service.analyse.RapportConformite = editionId, editionNom, genereLe, mineursSansRepresentant, personnes, plafonds, publieLe, regles, semaines, synthese
-service.analyse.RapportConformite$Breach = libelle, regle, texte
-service.analyse.RapportConformite$MinorWithoutRepresentative = animateurId, nom
-service.analyse.RapportConformite$Personne = animateurId, ecartsDetail, heuresDimanche, heuresFerie, heuresNuit, heuresParSemaine, heuresTotal, mineur, nom, plafondHebdomadaire, reposQuotidienMinHeures, semainesEnDepassement
-service.analyse.RapportConformite$Plafonds = ecartsAuxDefauts, hebdomadaireMajeurHeures, hebdomadaireMineurHeures, reposQuotidienHeures, vacationHeures
-service.analyse.RapportConformite$Regle = ecarts, libelle, mineurs, nom
-service.analyse.RapportConformite$Synthese = ecarts, heuresDimanche, heuresFerie, heuresNuit, heuresTravail, mineurs, personnes, semainesEnDepassement
-service.analyse.RealisedVsPlanned = byDay, byStand, byTypologie, cells, days, event, frozenPast, nature, referenceAvailable, today
-service.analyse.RealisedVsPlanned$CellDetail = counts, date, lateReference, lines, referenceAvailable, referencePublishedAt, standId, standNom
-service.analyse.RealisedVsPlanned$GapCounts = absenceRate, absences, addedSeats, emptySeats, keptSeats, lostMinutes, publishedMinutes, publishedSeats, realisedMinutes, removedSeats, replacementRate, replacements
-service.analyse.RealisedVsPlanned$GapTotal = counts, key, label
-service.analyse.RealisedVsPlanned$PreviousEdition = available, byTypologie, countedDays, editionId, editionNom, event, firstDay, frozenAt, lastDay
-service.analyse.RealisedVsPlanned$RealisedCell = counts, date, standId, standNom
-service.analyse.RealisedVsPlanned$RealisedDay = counted, date, lateReference, referencePublishedAt
-service.analyse.RealisedVsPlanned$RealisedLine = absence, outcome, seat
-service.analyse.ScoreReading$ReadingLink = fragment, parametres, route, texte
-service.analyse.ScoreReading$ScoreSentence = liens, niveau, sujet, texte
-service.analyse.StaffingAnalyzer$CompetenceStaffing = animateursTotal, manquePolyvalents, manqueTotal, parTypologie, planchersCumules, polyvalents, siegesNonAttribues, siegesReservesAuxPolyvalents, typologiePolyvalenteDefinie
-service.analyse.StaffingAnalyzer$JourStaffing = absentsMax, date, disponibles, heures, jour, majeursRequis, minimumJour, picAvecPause, picRepas, picSimultane, sieges, standsOuverts
-service.analyse.StaffingAnalyzer$SemaineStaffing = budgetIndisponibilites, capaciteHeuresParAnimateur, chargeTotal, debut, heures, indisponibilitesAuDela, jours, joursPersonne, joursTravaillables, rotationTotal, semaine
-service.analyse.StaffingAnalyzer$StaffingSummary = borneRetenue, capaciteHeuresParAnimateur, chargeTotal, dureeHebdomadaireMaxMinutes, dureeQuotidienneMaxMinutes, effectifReference, enchainementTotal, indisponibilitesDeclarees, jourCritique, joursConsecutifsMax, joursTravaillesMaxParSemaine, majeursMin, mineursMax, minimumAvecIndisponibilites, minimumTotal, nombreSemaines, parCompetence, parJour, parSemaine, picAvecPause, picRepas, picSimultane, referentielsManquants, rotationTotal, semaineCritique, totalDemandeHeures
-service.analyse.StaffingAnalyzer$TypologieStaffing = borneRetenue, chargeTotal, enchainementTotal, heures, label, manque, minimumPlafond, minimumTotal, nombreSemaines, picAvecPause, picRepas, picSimultane, plafondCreneaux, polyvalent, rotationTotal, sieges, specialistes, typologie
-service.analyse.TensionAnalyzer$CelluleTension = animateursIrremplacables, competencesRaresSansSpecialiste, creneauId, date, debut, fin, gravite, jour, marge, motifs, passee, siegesFragiles, siegesIrremplacables, siegesVides, standsSansSpecialiste, standsSpecialisteUnique
-service.analyse.TensionAnalyzer$JourTension = cellules, date, jour, pireCellule
-service.analyse.TensionAnalyzer$RapportTension = animateursTotal, cellulesCritiques, jours, message, pireCellule, polyvalentConfigure, referentielsManquants, tranches
-service.analyse.TypologieAnalyzer$AnimateurTypologie = animateurId, nom
-service.analyse.TypologieAnalyzer$LigneTypologie = affectesSansCompetence, animateursAffectes, animateursCompetents, competentsJamaisAffectes, description, heures, heuresParJour, label, maxCreneauxParAnimateur, polyvalent, postes, typologie
-service.analyse.TypologieAnalyzer$RapportTypologies = jours, typologies
-service.analyse.ViolationFormatter$ViolationReference = animateurId, creneauId, standId, texte
-service.analyse.WalkSequenceAnalyzer$WalkSequenceReport = detourFactor, geolocated, toleranceMinutes, walkingSpeedKmH, walks
-service.analyse.WalkSequenceAnalyzer$WalkView = animateurId, date, distanceMetres, end, fromCreneauId, fromEmplacementId, fromPosteId, fromStandId, gapMinutes, missingMinutes, start, toCreneauId, toEmplacementId, toPosteId, toStandId, walkMinutes, walkOnBreak
-service.backup.BackupFile = createdAt, name, sizeBytes
-service.backup.BackupRun = attemptedAt, file, message, succeeded
-service.backup.BackupState = active, alertRecipientMissing, configured, cron, directory, directoryError, files, lastRun, nextRun, retention, zone
-service.compte.Compte = creeLe, derniereConnexionLe, desactiveLe, desactivePar, email, habilitations, id, nom, passwordSet
-service.compte.Habilitation = creeLe, creePar, editionId, expireLe, id, retireeLe, retireePar, role, standIds
-service.consigne.ConsigneService$ApercuJour = animateursDansLaBande, contraintesTouchees, creneauxAAjouter, creneauxARetirer, creneauxDuJour, date, dejaSousConsigne, majeursDisponibles, mineursConcernes, minutesApres, minutesAvant, siegesApres, siegesAvant, standsEntrants, standsExceptionCoches, standsOuverts, standsSortants, vacationsSansSiege, validationRetiree, verrousTouches
-service.consigne.ConsigneService$ApercuLevee = animateursLiberes, animateursSansJourLibre, animateursSurLesCreneauxRetires, creneauxARetirer, date, joursADeverrouiller, sousConsigne, validationRetiree
-service.consigne.ConsigneService$Demande = dates, fenetres, fermetureDebut, fermetureFin, modifieLe, motif, ouvertures, prereglage, repas
-service.consigne.ConsigneService$EtatConsignes = aujourdhui, consignes, indicateurs, prereglages
-service.consigne.ConsigneService$Indicateur = animateursConcernes, date, minutesFermees, minutesRouvertes, motif, siegesNominaux, siegesSousConsigne
-service.consigne.ConsigneService$LigneStandConsigne = effectifHerite, exceptionDatee, minutesPerdues, motif, ouvertures, preCoche, standId, standNom
-service.consigne.ConsigneService$Preselection = creneauxDuJour, date, stands
-service.consigne.ConsigneService$VacationRef = date, heureDebut, heureFin
-service.consigne.LayerCalendar$ConsigneLayer = debutMinutes, fermetureDebut, fermetureFin, finMinutes, motif, prereglage
-service.consigne.LayerCalendar$LayerCell = date, effective, horaireIds, motif, nominal, reopenings, source
-service.consigne.LayerCalendar$LayerDay = consigne, date, ferie, jour, vacations
-service.consigne.LayerCalendar$LayerRow = effectifMin, jours, nom, standId
-service.consigne.LayerCalendar$LayerTimeslot = addedByConsigne, debutMinutes, finMinutes, heureDebut, heureFin, id
-service.consigne.LayerCalendar$LayerWindow = debutMinutes, effectif, finMinutes
-service.consigne.LayerCalendar$OpeningLayers = jours, stands
-service.diagnostic.BlockerPlaybook$ActionType = code, explication, libelle, parametres, route
-service.edition.EditionActivationService$ActivationPreview = demandesOuvertes, jobsEnFile, liensAnimateurs, liensMuraux, resolutionEnCours, sortante
-service.edition.EditionActivationService$Situation = dernierJour, edition, premierJour, type
-service.edition.EditionDelta = ajustements, animateurs, creneaux, emplacements, journeesTypes, noAnimateurMatched, parametres, reference, referenceVolumes, stands, summary, target, targetVolumes, typologies
-service.edition.EditionDelta$DeltaFamilyCount = added, family, matchedByName, modified, removed
-service.edition.EditionDelta$DeltaLine = change, code, fields, label, matching, referenceId, targetId
-service.edition.EditionDelta$DeltaSide = id, nom
-service.edition.EditionDelta$DeltaSummary = families, hoursToFillDifference, referenceDays, seatDifference, targetDays
-service.edition.EditionDelta$DeltaTimeslotLine = change, day, fields, matching, referenceDate, referenceId, start, targetDate, targetId
-service.edition.EditionDelta$DeltaValueLine = group, key, label, referenceValue, targetValue
-service.edition.EditionDelta$DeltaVolumes = animateurCount, fillRatio, hoursAvailable, hoursToFill, posteCount
-service.edition.EtatEditionView = aTraiter, besoin, coherence, collecte, confirmations, editionId, editionNom, evenement, foire, gel, ouvertures, problemes, publication, referentiels, relecture, resolution
-service.edition.EtatEditionView$EtatATraiter = aujourdhui, declarationsEnAttente, donneesModifiees, echangesAArbitrer, echangesEnAlerte, envoisEnEchec, horizonJours, journeesNonRelues, personnesAPrevenir, plusAncienEchange, plusAncienneDeclaration, rappelsNonEnvoyes, relancesNonEnvoyees, sauvegardeEchecLe, sauvegardeEnEchec, seuilAncienneteJours, silenceJours, silencieuxARelancer
-service.edition.EtatEditionView$EtatBesoin = animateurs, manque, minimum, statut
-service.edition.EtatEditionView$EtatCoherence = aVerifier, bloquants, informations, statut
-service.edition.EtatEditionView$EtatCollecte = declarationsEnAttente, declarationsTraitees, ouverte, statut
-service.edition.EtatEditionView$EtatConfirmations = confirmes, delaiRelanceHeures, echecsEnvoi, relances, relancesAutomatiques, silencieux, statut
-service.edition.EtatEditionView$EtatEvenement = aujourdhui, dernierJour, jour, phase, premierJour, termine
-service.edition.EtatEditionView$EtatFoire = demandesEnAttente, ouverte, statut
-service.edition.EtatEditionView$EtatGelReferentiel = familles, statut
-service.edition.EtatEditionView$EtatJour = absents, date, echangesAArbitrer, numero, placesVides, standsOuverts
-service.edition.EtatEditionView$EtatOuvertures = anomalies, fenetresSansEffet, informations, standsJamaisOuverts, statut
-service.edition.EtatEditionView$EtatProblemes = avertissements, bloquants, reglesAnalysees, statut
-service.edition.EtatEditionView$EtatPublication = dernierePublicationLe, envoisEnEchec, jamaisPublie, personnesAPrevenir, statut
-service.edition.EtatEditionView$EtatReferentiels = animateurs, creneaux, stands, statut, typologiesOrphelines
-service.edition.EtatEditionView$EtatRelecture = journees, journeesValidees, statut
-service.edition.EtatEditionView$EtatResolution = dataStale, faisable, lecture, resoluLe, resolue, score, scoreHorsPlancher, solveEnCours, statut
-service.espace.DeclarationDisponibiliteService$InvitationReport = echecs, envoyes, sansEmail
-service.espace.DeclarationDisponibiliteService$NouvelleDeclaration = commentaire, joursIndisponibles, souhaits
-service.espace.DemandeEchangeService$NouvelleDemande = cibleId, creneauCibleId, creneauId, motif, standCibleId, standId
-service.espace.EchangeStatistics = aboutissement, acceptationNonPrevalidees, acceptationOrganisation, acceptees, accordCollegues, annulees, au, contraintesViolees, creees, creneauRetire, delaiAnnulation, delaiArbitrage, delaiCommunication, delaiReponseCollegue, dirigees, du, enAttenteCible, enAttenteOrganisation, fenetreFoire, fuseau, parJourCreation, parJourEvenement, parStand, prevalidees, refusees, refuseesCible
-service.espace.EchangeStatistics$EchangeConstraintCount = contrainte, nombre
-service.espace.EchangeStatistics$EchangeDayCount = jour, nombre
-service.espace.EchangeStatistics$EchangeDelay = centile90Secondes, medianeSecondes, mesurees, moyenneSecondes, sansHorodatage
-service.espace.EchangeStatistics$EchangeRate = denominateur, numerateur
-service.espace.EchangeStatistics$EchangeStandCount = nombre, standId, standNom
-service.espace.EspaceAnimateurService$CarpoolDayView = aligned, date
-service.espace.EspaceAnimateurService$CarpoolEspaceView = colleagues, collectionEnd, collectionOpen, collectionStart, decidedAt, status, teammateIds
-service.espace.EspaceAnimateurService$ColleagueView = id, nomComplet
-service.espace.EspaceAnimateurService$ConsigneEspaceView = date, fermetureDebut, fermetureFin, motif
-service.espace.EspaceAnimateurService$DeclarationAdminView = animateurId, animateurNom, commentaire, commentaireAdmin, creeLe, decideLe, id, joursActuels, joursIndisponibles, souhaits, souhaitsActuelsLabels, souhaitsLabels, statut
-service.espace.EspaceAnimateurService$DeclarationEspaceView = collecteDebut, collecteFin, collecteOuverte, enAttente, historique, joursActuels, joursEvenement, souhaitsActuels, typologies
-service.espace.EspaceAnimateurService$DeclarationView = commentaire, commentaireAdmin, creeLe, decideLe, id, joursIndisponibles, souhaits, souhaitsLabels, statut
-service.espace.EspaceAnimateurService$DemandeEchangeView = cibleDecideLe, cibleId, cibleNom, commentaireAdmin, communiqueeLe, contraintesViolees, creeLe, creneauCibleId, creneauId, date, dateCible, decideLe, demandeurId, demandeurNom, heureDebut, heureDebutCible, heureFin, heureFinCible, id, motif, prevalidationOk, standCibleId, standCibleNom, standId, standNom, statut
-service.espace.EspaceAnimateurService$EnvoiEspaceView = le, statut
-service.espace.EspaceAnimateurService$EspaceAnimateurView = abonnementToken, animateurId, changements, changementsLe, collecteFermeLe, collecteOuverte, collegues, confirmeLe, consignes, contact, covoiturage, dateDuJourFigee, dernierEnvoi, editionDebut, editionFin, editionNom, foireFermeLe, foireOuverte, foireOuvreLe, heureDuJourFigee, joursRepos, nom, pauses, postes, prenom, publieLe, signalements, signalementsActifs, statutConfirmation
-service.espace.EspaceAnimateurService$PosteAnimateurView = coequipiers, creneauId, date, emplacementLatitude, emplacementLongitude, emplacementNom, heureDebut, heureFin, standId, standNom, typologieId, typologieLibelle
-service.espace.EspaceAnimateurService$SuggestionEchangeView = animateurId, creneauCibleId, dateCible, heureDebutCible, heureFinCible, nature, nomComplet, standCibleId, standCibleNom
-service.espace.EspaceAnimateurService$SuggestionsEchangeView = creneauId, listeTronquee, optionsEligibles, optionsEvaluees, standId, suggestions
-service.espace.EspaceAnimateurService$TypologieChoixView = id, label
-service.espace.JourJService$AbsenceJourJ = animateurId, entrees, nomAffiche
-service.espace.JourJService$AbsenceMarquee = animateurId, entrees, nomAffiche, postesLiberes
-service.espace.JourJService$AnimateurAffecte = absent, animateurId, nomAffiche, postesRestants
-service.espace.JourJService$AnimateurNomme = animateurId, nomAffiche, telephone
-service.espace.JourJService$ConsigneJourJ = fermetureDebut, fermetureFin, motif
-service.espace.JourJService$CreneauJourJ = date, enCours, heureDebut, heureFin, id
-service.espace.JourJService$EntreeAbsence = annulable, contrainteId, creeLe, creeParNom, creeParUtilisateurId, creneauId, heureDebut, heureFin, raison
-service.espace.JourJService$EtatJourJ = aPrevenir, absences, alertes, animateurs, animateursDeService, consigne, creneauxDuJour, creneauxRestants, date, echangesAArbitrer, jourNumero, maintenant, postesAPourvoir, signalements, standsOuverts
-service.espace.JourJService$PosteAPourvoir = creneauId, heureDebut, heureFin, nouveau, posteId, resteDuCreneau, standId, standNom, verrouille
-service.espace.JourJService$SignalementJourJ = animateurId, creneauId, date, heureDebut, heureFin, id, motif, nomAffiche, portee, signaleLe, standId, standNom
-service.espace.SignalementAbsenceService$NouveauSignalement = creneauId, date, motif, portee, standId
-service.espace.SignalementAbsenceService$SignalementView = creneauId, date, heureDebut, heureFin, id, motif, portee, signaleLe, standId, standNom, statut, traiteLe
-service.espace.TeammateRequestService$MemberView = animateurId, fullName
-service.espace.TeammateRequestService$NewCarpoolRequest = teammateIds
-service.espace.TeammateRequestService$TeammateRequestView = animateurId, confirmedByAll, contrainteId, createdAt, decidedAt, divergentDayCount, divergentDays, id, members, nature, status
-service.espace.TeammateRequestService$ValidatedCarpool = avertissements, request
-service.export.ArchiveEvenementService$ArchiveAvailability = planResolu, publie, resolutionEnCours
-service.journee.ChangementsJournee = animateursConcernes, horairesModifies, jour, nouveaux, parAnimateur, parVacation, reference, referenceDisponible, referenceLe, remplaces, retires
-service.journee.ChangementsJournee$AnimateurChange = libelle, type
-service.journee.ChangementsJournee$AnimateurLine = animateurId, changements, nomAffiche
-service.journee.ChangementsJournee$Holder = animateurId, nomAffiche
-service.journee.ChangementsJournee$SeatLine = apres, avant, date, heureDebut, heureDebutAvant, heureFin, heureFinAvant, standId, standNom, type
-service.mural.AffichageMuralLink = createdAt, emplacements, fullNames, id, lastAccessAt, libelle, restricted
-service.mural.AffichageMuralLinkRequest = emplacements, fullNames, libelle
-service.mural.AffichageMuralView = alerts, consigne, edition, jour, libelle, nextDay, now, stands, unpublishedChanges
-service.mural.AffichageMuralView$MuralAlert = count, end, nom, standNom, start, type
-service.mural.AffichageMuralView$MuralConsigne = closedFrom, closedUntil, motif
-service.mural.AffichageMuralView$MuralShift = emptySeats, end, newEmptySeats, noms, start
-service.mural.AffichageMuralView$MuralStand = emplacementId, emplacementNom, standId, standNom, vacations
-service.mural.CreatedAffichageMuralLink = link, token
-service.mural.QrCodeRequest = link
-service.mural.QrCodeView = rows, size
-service.profile.AnimateurProfile = affectations, ajustements, animateur, competencesRares, confirmation, declarationEnAttente, dernierePublicationLe, echangesEnCours, equite, fragilite, joursEvenement, planCalcule, regimeDebut, regimeFin, verrous
-service.profile.AnimateurProfile$LegalRegime = age, date, regime
-service.profile.AnimateurProfile$ProfileAdjustment = autres, creneauId, date, heureDebut, heureFin, id, raison, standId, standNom, type
-service.profile.AnimateurProfile$ProfileColleague = id, nom
-service.profile.AnimateurProfile$ProfileSeat = creneauId, date, emplacementId, emplacementNom, heureDebut, heureFin, passe, posteId, standId, standNom, verrouille
-service.profile.DayOffService$DayOff = date, freedSeats, lockedSeatsKept, startedSeatsKept, unavailable
-service.profile.DayOffService$DaySeat = creneauId, date, heureDebut, heureFin, posteId, standId, standNom
-service.publication.ConfirmationPlanningService$AccuseReception = confirmeLe, statut
-service.publication.ConfirmationPlanningService$ConfirmationView = affecte, animateurId, confirmeLe, dernierEnvoi, nomAffiche, relanceLe, statut
-service.publication.ConfirmationPlanningService$LastMailDelivery = categorie, enEchec, ficheModifieeDepuis, le, statut, type
-service.publication.ConfirmationPlanningService$SyntheseConfirmations = confirmes, dernierePublicationLe, echecsEnvoi, jamaisPublie, relances, silencieux
-service.publication.EtatEnvoisService$DernierEnvoi = cause, envoyeLe, nature, numero, statut
-service.publication.EtatEnvoisService$EtatEnvois = derniereVersion, nombreConcernes, personnes, relancesAutomatiques
-service.publication.EtatEnvoisService$LigneEnvoi = aPrevenir, affecte, animateurId, confirmation, confirmeLe, differe, email, envoi, joursAPrevenir, nomAffiche, rappelVeilleEchec, rappelVeilleLe, relanceEchec, relanceLe, version
-service.publication.EtatEnvoisService$VersionPubliee = numero, publieLe, snapshotId
-service.publication.PlanPublicationService$ApercuPublication = dernierePublicationLe, destinataires, envoisEnEchec, jamaisPublie, journeesNonValidees, nombreConcernes, planVide, solveEnCours
-service.publication.PlanPublicationService$DestinatairePublication = ajouts, animateurId, changements, confirmation, confirmeLe, demandes, deplacements, email, jours, mineur, nomAffiche, premiereDiffusion, reporte, retraits
-service.publication.PlanPublicationService$RapportPublication = avertissements, differes, echecs, envoyes, publieLe, sansEmail, snapshotId
-service.publication.PublicationTraceRepository$Destinataire = animateurId, changements, demandes, email, envoyeLe, nomAffiche, premiereDiffusion, snapshotId, statut
-service.publication.RelanceManuelleService$RapportRelance = adresseRefusee, dejaConfirmes, dejaRelancesPourCettePublication, echecs, envoyes, sansEmail, sansPoste
-service.referentiel.AnimateurCsvImportReport = accepted, applied, columns, created, deleted, doublonsProbables, mapping, rejected, rows, separator, total, updated, warnings
-service.referentiel.AnimateurCsvImportReport$ImportedRow = action, animateurId, doublonDe, joursIndisponibles, label, line, reasons, warnings
-service.referentiel.AnimateurCsvImportReport$ProbableDuplicate = animateurId, kind, line
-service.referentiel.AnimateurCsvImportRequest = content, fileName, mapping, replaceAnimateurs, replaceJoursIndisponibles
-service.referentiel.AnimateurCsvMapping = competences, dateNaissance, email, joursIndisponibles, manager, nom, prenom, souhaits, telephone
-service.referentiel.Avertissement = message, type
-service.referentiel.CoherenceAnalyzer$EmplacementsManquants = standIds, suggestions
-service.referentiel.CoherenceAnalyzer$SuggestionEmplacement = emplacementId, emplacementNom, raison, standId
-service.referentiel.CoherenceReferentielService$CoherenceIssue = code, date, famille, gravite, message, objet, objetId
-service.referentiel.CoherenceReferentielService$CoherenceReport = aVerifier, anomalies, bloquants, familles, informations
-service.referentiel.CoherenceReferentielService$FamilyCount = aVerifier, bloquants, famille, informations
-service.referentiel.CreneauGridService$DiagnosticGrille = derniereDate, explication, joursFeries, nombreCreneaux, premiereDate
-service.referentiel.CreneauGridService$GridAnomaly = date, message, severite, type
-service.referentiel.CreneauGridService$RapportGrille = anomalies, faisabilite, nombreCreneaux, ouvertures
-service.referentiel.GelReferentielService$EtatGel = famille, fige, figeLe, libelle
-service.referentiel.GenerateurCreneaux$EtatGenerateur = calendrier, datesEnEcart, datesSousConsigne, gabarits
-service.referentiel.GenerateurCreneaux$Generation = application, controle, coupures, creneaux, joursSansFenetre, nombreGeneres, source
-service.referentiel.GenerateurCreneaux$RapportApplication = aucunChangement, conserves, controle, crees, creneauxSupprimes, datesEnEcart, postesSupprimes, supprimes, supprimesAvecPostes
-service.referentiel.GrilleCompetences$LigneCompetences = animateurId, message, modifieLe, resultat
-service.referentiel.GrilleCompetences$SaisieCompetences = animateurId, competences, modifieLe
-service.referentiel.GrilleDepuisFenetres$Coupure = date, heure, nombreStands, standIds
-service.referentiel.GrilleHorairesStands$LigneGrille = compacte, effectifMax, effectifMin, exceptions, raison, regles, standId
-service.referentiel.GrilleHorairesStands$SaisieCellule = creneauId, effectif, heureDebut, heureFin
-service.referentiel.GrilleHorairesStands$SaisieStand = aplatir, cellules, modifieLe, standId
-service.referentiel.ImportImpact = animateurs, demandesEchange, demandesEnAttente, planningResolu, postes, stands, verrous
-service.referentiel.JourneesTypesMaterialisation$Affectation = date, gabaritId
-service.referentiel.JourneesTypesMaterialisation$Reconnaissance = calendrier, gabarits
-service.referentiel.ReferenceUsage = affectations, consignes, contraintesAdHoc, verrouillages
-service.referentiel.ReferentielCsvImportReport = accepted, applied, cible, columns, created, rejected, rows, separator, total, typologiesCreees, updated
-service.referentiel.ReferentielCsvImportReport$LigneImportee = action, details, id, libelle, line, raisons
-service.referentiel.ReferentielCsvImportRequest = content, fileName
-service.referentiel.StandGrilleImportReport = accepted, applied, columns, creneauxAbsents, rejected, rows, separator, total, warnings
-service.referentiel.StandGrilleImportReport$ImportedColumn = creneauId, creneaux, date, heureDebut, heureFin, index, label, reason
-service.referentiel.StandGrilleImportReport$ImportedGrilleRow = action, cellulesOuvertes, effectifMax, effectifMin, exceptions, label, line, reasons, regles, standId
-service.referentiel.StandGrilleImportRequest = content, fileName
-service.referentiel.TypologieItem = code, description, id, label, maxCreneauxParAnimateur, modifieLe, polyvalent
-service.referentiel.WrittenAnimateur = animateur, avertissements
-service.referentiel.WrittenContrainteAdHoc = avertissements, contrainte
-service.referentiel.WrittenCreneau = avertissements, creneau
-service.referentiel.WrittenStand = avertissements, stand
-service.referentiel.WrittenVerrouillage = avertissements, verrouillage
-service.responsable.ReglageNoms = nomsVisibles, ouvertureLe
-service.responsable.ReglagesResponsables = parDefaut, parStand
-service.responsable.ResponsableView = editionNom, publieLe, stands
-service.responsable.ResponsableView$PersonneVacation = nom, prenom
-service.responsable.ResponsableView$StandResponsable = emplacementNom, nominatif, nomsAttendus, standId, standNom, vacations
-service.responsable.ResponsableView$VacationResponsable = debut, fin, personnes, pourvus, vides
-service.rh.ContactsAnimateur = modifieLe, representantNom, representantTelephone, urgenceNom, urgenceTelephone
-service.rh.ContactsService$ContactView = animateurId, contacts, mineur, nom
-service.rh.ContactsService$Saved = avertissements, contacts
-service.rh.RhService$EditionAccessible = id, nom
-service.schema.ApplicationVersion = firstStartedAt, latestMigration, version
-service.solve.PlanSnapshotService$AffectationSnapshot = animateurId, creneauId, date, heureDebut, heureDebutEffective, heureFin, heureFinEffective, posteId, standId, suiteDe
-service.solve.PlanSnapshotService$ConsigneSnapshot = date, fermetureDebut, fermetureFin, motif
-service.solve.PlanSnapshotService$SnapshotDetail = affectations, meta
-service.solve.PlanSnapshotService$SnapshotMeta = automatique, consignes, creeLe, editionId, editionNom, id, kpi, libelle, nombreAffectations, origine, perime, publieLe, referenceModifieLe, score
-service.solve.PlanningWhatIf$AffectationExplanation = animateurId, contraintesRespectees, contraintesViolees, posteId, score
-service.solve.PlanningWhatIf$AnimateurAvailability = animateurId, degradeLePlan, delta, disponible, motifs
-service.solve.PlanningWhatIf$ContrainteImpact = categorie, description, details, matchCount, name, niveau
-service.solve.PlanningWhatIf$CreneauAvailability = animateurCibleId, animateurs, creneauId, creneauxAvecSieges, disponibles, posteCibleId, seatStarted, standCibleId, statut, total
-service.solve.PlanningWhatIf$CreneauSiege = date, heureDebut, heureFin, id, jour
-service.solve.PlanningWhatIf$DeplacementSimulation = animateurCibleId, animateurSourceId, casseContrainteDure, delta, nouvellesViolationsDures, posteCibleId, posteSourceId, scoreApres, scoreAvant
-service.solve.PlanningWhatIf$HardViolation = description, matchesSupplementaires, name
-service.solve.PlanningWhatIf$MotifExclusion = categorie, contrainte, description, niveau
-service.solve.PlanningWhatIf$SuggestionReparation = animateurId, delta, scoreApres, violationsIntroduites, violationsResolues
-service.solve.PlanningWhatIf$SuggestionsReparation = animateurActuelId, candidatsEligibles, candidatsEvalues, contraintesVioleesAvant, depuis, plafond, posteId, scoreAvant, suggestions
-service.solve.ProblemScaleService$ProblemScale = animateurCount, contrainteAdHocCount, hoursAvailable, hoursToFill, posteCount
-service.solve.RemoteSolves$ComputeMachine = configured, remoteByDefault
-service.solve.ReplanificationScope = animateurIds, jours, standIds
-service.solve.SnapshotComparisonService$ComparaisonSnapshots = base, consignesDifferentes, diffViolations, dosagesDifferents, editionsDifferentes, variante, volumetriesDifferentes
-service.solve.SnapshotComparisonService$CoteComparaison = consignes, creeLe, editionId, editionNom, kpi, kpiRecalcule, libelle, snapshotId
-service.solve.SnapshotComparisonService$DiffContrainte = base, contrainte, variante
-service.solve.SolveInputsService$ConsigneInput = date, motif
-service.solve.SolveInputsService$SolveInputs = adjustments, changesSinceSolve, consignes, disabledRules, locks, pendingDeclarations, solvedAt
-service.solve.SolverBudgetBounds = defaultPlateauSeconds, defaultSecondsLimit, maxSecondsLimit
-service.solve.SolverScoreTrace$Point = hard, medium, soft, tempsMs
-service.solve.StaffingVerificationService$RunningCheck = editionId, effectif, id, lanceeLe, plafondSecondes
-service.solve.StaffingVerificationService$StaffingVerification = dureeSecondes, effectif, erreur, etat, id, lanceeLe, majeurs, methode, mineurs, minimum, plafondSecondes, realisable, reglesEnDefaut, scoreDur, sieges, siegesNonPourvus, termineeLe
-service.solve.WipeBackupService$Restoration = affectationsNonRestaurees, affectationsRestaurees, avertissements, referentielNonRestaure, sauvegardeAvant, score, verrouillagesDejaPresents, verrouillagesNonRestaures, verrouillagesRestaures
-service.solve.WipeBackupService$WipeBackup = creeLe, id, origine, restaurationAboutie, restaureId
-service.validation.ValidationJourneeService$DayStateView = commentaire, etat, jour, validationId, valideLe, validePar
-service.validation.ValidationJourneeService$KeptReading = jour, motif
-service.validation.ValidationPrerequisService$Prerequis = code, connu, nombre, satisfait
-service.validation.ValidationPrerequisService$PrerequisJournee = commentaire, etat, jour, prerequis, tousSatisfaits, validationId, validePar, valideParNom, validee, valideeLe
-service.validation.ValidationPrerequisService$ProgressionValidations = journees, journeesValidees, joursValides
-service.weather.WeatherAlertService$WeatherDaySummary = date, exceeded, maxGust, maxTemperature, places, storm
-service.weather.WeatherAlertService$WeatherSettingsView = editionMayEmit, serviceEnabled, settings, state
-service.weather.WeatherAlertService$WeatherTestReport = days, error, noPlace, outOfForecast
-service.weather.WeatherState = error, lastAttemptAt, lastReadAt, outcome, unreachableSince
-service.webhook.WebhookService$WebhookDeliveryView = attempts, createdAt, durationMs, error, event, httpStatus, id, lastAttemptAt, maxAttempts, nextAttemptAt, status
-service.webhook.WebhookService$WebhookRequest = active, chatId, events, format, modifiedAt, name, token, url
-service.webhook.WebhookService$WebhookSaved = secret, webhook
-service.webhook.WebhookService$WebhookSecret = secret
-service.webhook.WebhookService$WebhookTestResult = durationMs, error, httpStatus, status
-service.webhook.WebhookService$WebhookView = active, chatId, createdAt, destination, events, format, id, lastDelivery, modifiedAt, name
-solver.ConstraintParameters$ConstraintParameter = cle, libelle, lien, onglet, valeur
+# The JSON keys this API puts on the wire, one line per key: <package>.<Type>.key,
+# in code-unit order. Frozen on purpose, and read by JsonContractTest. A key here
+# is read by `models.ts`, by the Angular pages and by anything else talking to
+# this API: renaming a record component or an accessor renames the key with it,
+# and the compiler says nothing at all.
+# If the test fails, DO NOT regenerate this file. Each moved line is a break for
+# every client already reading the old key. Move it once, deliberately, together
+# with the clients that read it.
+api.AnimateurResource$AnimateurToken.token
+api.AnimateurResource$RapportSaisieGrilleCompetences.animateurs
+api.AnimateurResource$RelanceDemande.animateurIds
+api.AnimateurResource$SaisieGrilleCompetences.animateurs
+api.AuthResource$Credentials.email
+api.AuthResource$Credentials.password
+api.AuthResource$Deconnexion.urlDeconnexion
+api.AuthResource$ForgotRequest.email
+api.AuthResource$PasswordChoice.password
+api.AuthResource$PasswordChoice.token
+api.AuthResource$StatutSession.authentifie
+api.AuthResource$StatutSession.compteId
+api.AuthResource$StatutSession.nom
+api.AuthResource$StatutSession.roles
+api.BackupResource$ActiveRequest.active
+api.BrandingResource$BrandingView.accentColor
+api.BrandingResource$BrandingView.logoUrl
+api.BrandingResource$BrandingView.mascotIconUrl
+api.BrandingResource$BrandingView.mascotUrl
+api.BrandingResource$BrandingView.organisation
+api.BrandingResource$BrandingView.productName
+api.BrandingResource$BrandingView.supportEmail
+api.CompteResource$NouveauCompte.email
+api.CompteResource$NouveauCompte.invite
+api.CompteResource$NouveauCompte.nom
+api.CompteResource$NouvelleHabilitation.editionId
+api.CompteResource$NouvelleHabilitation.expireLe
+api.CompteResource$NouvelleHabilitation.role
+api.CompteResource$NouvelleHabilitation.standIds
+api.ConfigResource$ConfigView.authOidc
+api.ConfigResource$ConfigView.authSecours
+api.ConfigResource$ConfigView.cloudflareWebAnalyticsToken
+api.ConfigResource$ConfigView.devMode
+api.ConfigResource$ConfigView.mailMock
+api.ConfigResource$ConfigView.sentryDsn
+api.ConfigResource$ConfigView.sentryEnvironment
+api.ConfigResource$ConfigView.version
+api.ConsigneResource$DemandePreselection.date
+api.ConsigneResource$DemandePreselection.fermetureDebut
+api.ConsigneResource$DemandePreselection.fermetureFin
+api.ConsigneResource$Levee.dates
+api.ConstraintResource$ConstraintNiveauUpdate.niveau
+api.ConstraintResource$ConstraintPoidsUpdate.poids
+api.ConstraintResource$ConstraintToggleUpdate.actif
+api.ConstraintResource$ConstraintView.actif
+api.ConstraintResource$ConstraintView.actions
+api.ConstraintResource$ConstraintView.activeByDefault
+api.ConstraintResource$ConstraintView.categorie
+api.ConstraintResource$ConstraintView.description
+api.ConstraintResource$ConstraintView.dosable
+api.ConstraintResource$ConstraintView.groupe
+api.ConstraintResource$ConstraintView.hotspots
+api.ConstraintResource$ConstraintView.legale
+api.ConstraintResource$ConstraintView.libelleCourt
+api.ConstraintResource$ConstraintView.matchCount
+api.ConstraintResource$ConstraintView.name
+api.ConstraintResource$ConstraintView.niveau
+api.ConstraintResource$ConstraintView.niveauChoisi
+api.ConstraintResource$ConstraintView.niveauReglable
+api.ConstraintResource$ConstraintView.parametres
+api.ConstraintResource$ConstraintView.plancher
+api.ConstraintResource$ConstraintView.poids
+api.ConstraintResource$ConstraintView.postesEvalues
+api.ConstraintResource$ConstraintView.protegee
+api.ConstraintResource$ConstraintView.references
+api.ConstraintResource$ConstraintView.remediation
+api.ConstraintResource$ConstraintView.score
+api.ConstraintResource$ConstraintView.termeDe
+api.ConstraintResource$ConstraintView.violations
+api.ConstraintResource$ConstraintsView.analysedAt
+api.ConstraintResource$ConstraintsView.contraintes
+api.ConstraintResource$ConstraintsView.contraintesAdHocEnCause
+api.ConstraintResource$ConstraintsView.faisabilite
+api.ConstraintResource$ConstraintsView.hardScore
+api.ConstraintResource$ConstraintsView.lecture
+api.ConstraintResource$ConstraintsView.pivotEcarts
+api.ConstraintResource$ConstraintsView.plancherMedium
+api.ConstraintResource$ConstraintsView.plancherSoft
+api.ConstraintResource$ConstraintsView.postesNonPourvus
+api.ConstraintResource$ConstraintsView.scoreGlobal
+api.ConstraintResource$ConstraintsView.scoreHorsPlancher
+api.CreneauResource$DerivationRequest.dateDebut
+api.CreneauResource$DerivationRequest.dateFin
+api.CreneauResource$DerivationRequest.dureeMinimaleMinutes
+api.CreneauResource$DerivationRequest.heureFermeture
+api.CreneauResource$DerivationRequest.remplacer
+api.CreneauResource$RapportDerivation.controle
+api.CreneauResource$RapportDerivation.coupures
+api.CreneauResource$RapportDerivation.creneaux
+api.CreneauResource$RapportDerivation.joursSansFenetre
+api.CreneauResource$RapportDerivation.nombreGeneres
+api.CreneauResource$RapportRecurrence.controle
+api.CreneauResource$RapportRecurrence.creneaux
+api.CreneauResource$RapportRecurrence.nombreGeneres
+api.CreneauResource$RecurrenceRequest.dateDebut
+api.CreneauResource$RecurrenceRequest.dateFin
+api.CreneauResource$RecurrenceRequest.dates
+api.CreneauResource$RecurrenceRequest.exclusions
+api.CreneauResource$RecurrenceRequest.fenetres
+api.CreneauResource$RecurrenceRequest.jours
+api.CreneauResource$RecurrenceRequest.joursSemaine
+api.DatabaseResource$ImportSummary.message
+api.DatabaseResource$ImportSummary.statements
+api.DayStateResource$DayStateChange.commentaire
+api.DayStateResource$DayStateChange.etat
+api.DebugResource$MailConfigView.adminEmail
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.collecteOuverte
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.debut
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.fin
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.invitation
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.ouverteAujourdhui
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.prevenirAnimateurs
+api.DeclarationDisponibiliteResource$ConfigurationCollecte.relanceAutomatique
+api.DeclarationDisponibiliteResource$Decision.commentaire
+api.DeclarationDisponibiliteResource$InvitationRequest.destinataires
+api.DemandeEchangeResource$ConfigurationFoire.debut
+api.DemandeEchangeResource$ConfigurationFoire.fin
+api.DemandeEchangeResource$ConfigurationFoire.foireOuverte
+api.DemandeEchangeResource$ConfigurationFoire.ouverteAujourdhui
+api.DemandeEchangeResource$DecisionEchange.commentaire
+api.EditionRefusalError.code
+api.EditionRefusalError.message
+api.EditionResource$PhaseChange.phase
+api.EspaceAnimateurResource$AbonnementToken.abonnementToken
+api.EspaceAnimateurResource$CodeSession.code
+api.FrozenReferentialError.code
+api.FrozenReferentialError.familles
+api.FrozenReferentialError.message
+api.GenerateurCreneauxResource$DemandeGeneration.derivation
+api.GenerateurCreneauxResource$DemandeGeneration.recurrence
+api.GenerateurCreneauxResource$DemandeGeneration.source
+api.GenerateurCreneauxResource$RetraitDates.dates
+api.HistoriqueResource$ActionView.code
+api.HistoriqueResource$ActionView.entite
+api.HistoriqueResource$ActionView.export
+api.HistoriqueResource$ActionView.libelle
+api.HistoriqueResource$AdminLoginView.adresse
+api.HistoriqueResource$AdminLoginView.evenement
+api.HistoriqueResource$AdminLoginView.id
+api.HistoriqueResource$AdminLoginView.survenuLe
+api.HistoriqueResource$AuteurView.nom
+api.HistoriqueResource$AuteurView.valeur
+api.HistoriqueResource$AuteursView.auteurs
+api.HistoriqueResource$AuteursView.fiableDepuis
+api.HistoriqueResource$ChangementsView.dernieres
+api.HistoriqueResource$ChangementsView.parEntite
+api.HistoriqueResource$ChangementsView.total
+api.HistoriqueResource$CompteEntiteView.entite
+api.HistoriqueResource$CompteEntiteView.nombre
+api.HistoriqueResource$EntreeHistoriqueView.acteur
+api.HistoriqueResource$EntreeHistoriqueView.acteurId
+api.HistoriqueResource$EntreeHistoriqueView.acteurNom
+api.HistoriqueResource$EntreeHistoriqueView.action
+api.HistoriqueResource$EntreeHistoriqueView.champs
+api.HistoriqueResource$EntreeHistoriqueView.entite
+api.HistoriqueResource$EntreeHistoriqueView.entiteId
+api.HistoriqueResource$EntreeHistoriqueView.entiteNom
+api.HistoriqueResource$EntreeHistoriqueView.id
+api.HistoriqueResource$EntreeHistoriqueView.libelle
+api.HistoriqueResource$EntreeHistoriqueView.resultat
+api.HistoriqueResource$EntreeHistoriqueView.statut
+api.HistoriqueResource$EntreeHistoriqueView.survenuLe
+api.HistoriqueResource$EntreeHistoriqueView.verification
+api.HorlogeResource$DateJourJView.dateDuJour
+api.HorlogeResource$DateJourJView.heureDuJour
+api.HorlogeResource$DateJourJView.modifiable
+api.JourJResource$AnnulationAbsence.supprimees
+api.JourJResource$ConfigurationSignalements.actifs
+api.JourJResource$DemandeAbsence.animateurId
+api.JourJResource$DemandeAbsence.creneauId
+api.JourJResource$DemandeAbsence.raison
+api.JourneeTypeResource$AffectationJourneeType.date
+api.JourneeTypeResource$AffectationJourneeType.journeeTypeId
+api.JourneeTypeResource$EtatJourneesTypes.calendrier
+api.JourneeTypeResource$EtatJourneesTypes.datesEnEcart
+api.JourneeTypeResource$EtatJourneesTypes.datesSousConsigne
+api.JourneeTypeResource$EtatJourneesTypes.journeesTypes
+api.JourneeTypeResource$ReconnaissanceJourneesTypes.calendrier
+api.JourneeTypeResource$ReconnaissanceJourneesTypes.journeesTypes
+api.McpResource$DemandeRotation.recouvrementMinutes
+api.McpResource$GeneratedMcpKey.ancienneExpireLe
+api.McpResource$GeneratedMcpKey.cle
+api.McpResource$GeneratedMcpKey.pangolinAccessToken
+api.McpResource$GeneratedMcpKey.pangolinAccessTokenId
+api.McpResource$McpKey.cle
+api.McpResource$McpKey.pangolinAccessToken
+api.McpResource$McpKey.pangolinAccessTokenId
+api.McpResource$ReauthenticationRequired.code
+api.McpResource$ReauthenticationRequired.message
+api.McpResource$ReauthenticationRequired.mode
+api.McpResource$StatutMcp.ancienneExpireLe
+api.McpResource$StatutMcp.configuree
+api.McpResource$StatutMcp.genereeLe
+api.McpResource$StatutMcp.header
+api.McpResource$StatutMcp.oauth
+api.McpResource$StatutMcp.origine
+api.MentionsLegalesResource$AccessibiliteView.contenusNonAccessibles
+api.MentionsLegalesResource$AccessibiliteView.dateAudit
+api.MentionsLegalesResource$AccessibiliteView.etat
+api.MentionsLegalesResource$AccessibiliteView.signalement
+api.MentionsLegalesResource$MentionsLegalesView.accessibilite
+api.MentionsLegalesResource$MentionsLegalesView.baseLegale
+api.MentionsLegalesResource$MentionsLegalesView.conservation
+api.MentionsLegalesResource$MentionsLegalesView.contact
+api.MentionsLegalesResource$MentionsLegalesView.demoInstance
+api.MentionsLegalesResource$MentionsLegalesView.directeurPublication
+api.MentionsLegalesResource$MentionsLegalesView.editeur
+api.MentionsLegalesResource$MentionsLegalesView.hebergeur
+api.MentionsLegalesResource$MentionsLegalesView.mesureAudience
+api.MentionsLegalesResource$MentionsLegalesView.responsableTraitement
+api.MentionsLegalesResource$MentionsLegalesView.suiviErreurs
+api.OuvertureStandsResource$RapportSaisieGrille.stands
+api.OuvertureStandsResource$SaisieGrille.stands
+api.ParametresResource$ParametresView.calcul
+api.ParametresResource$ParametresView.legal
+api.ParametresResource$ParametresView.notifications
+api.ParametresResource$ParametresView.organisation
+api.ParametresResource$SolverSettingsView.instance
+api.ParametresResource$SolverSettingsView.mailFinResolution
+api.ParametresResource$SolverSettingsView.modifieLe
+api.PlanningResource$PersistenceStatus.assignments
+api.PlanningResource$PlanningResolutionView.derniereModificationDonnees
+api.PlanningResource$PlanningResolutionView.resoluLe
+api.PlanningResource$PlanningResolutionView.solved
+api.PlanningResource$ResetSummary.animateurs
+api.PlanningResource$ResetSummary.creneaux
+api.PlanningResource$ResetSummary.postes
+api.PlanningResource$ResetSummary.stands
+api.PublicationResource$DemandePublication.cibles
+api.PublicationResource$DemandePublication.exclusions
+api.ReferenceDataResource$ImportScenarioResult.avertissements
+api.ReferenceDataResource$ImportScenarioResult.editionCreee
+api.ReferenceDataResource$ImportScenarioResult.editionId
+api.ReferenceDataResource$ImportScenarioResult.editionNom
+api.ReferenceDataResource$ImportTargetView.editionId
+api.ReferenceDataResource$ImportTargetView.editionNomExistant
+api.ReferenceDataResource$ImportTargetView.editionNomFichier
+api.ReferenceDataResource$ImportTargetView.existe
+api.ReferenceDataResource$ScenarioValidationResult.erreurs
+api.ReferenceDataResource$ScenarioValidationResult.valide
+api.SolverJobResource$Heartbeat.at
+api.SolverJobResource$JobView.editionId
+api.SolverJobResource$JobView.editionNom
+api.SolverJobResource$JobView.elapsedSeconds
+api.SolverJobResource$JobView.error
+api.SolverJobResource$JobView.feasibleAtSeconds
+api.SolverJobResource$JobView.finishedAt
+api.SolverJobResource$JobView.id
+api.SolverJobResource$JobView.message
+api.SolverJobResource$JobView.plateauSeconds
+api.SolverJobResource$JobView.reamorcage
+api.SolverJobResource$JobView.remote
+api.SolverJobResource$JobView.remoteStage
+api.SolverJobResource$JobView.result
+api.SolverJobResource$JobView.secondsLimit
+api.SolverJobResource$JobView.startedAt
+api.SolverJobResource$JobView.status
+api.SolverJobResource$JobView.submittedAt
+api.SolverJobResource$JobView.type
+api.SolverJobResource$JobsState.active
+api.SolverJobResource$JobsState.file
+api.SolverJobResource$JobsState.verification
+api.SolverJobResource$ScoreDelta.depuis
+api.SolverJobResource$ScoreDelta.dureeMs
+api.SolverJobResource$ScoreDelta.editionId
+api.SolverJobResource$ScoreDelta.generation
+api.SolverJobResource$ScoreDelta.intervalleMs
+api.SolverJobResource$ScoreDelta.jobId
+api.SolverJobResource$ScoreDelta.points
+api.SolverJobResource$ScoreDelta.termine
+api.StaffingResource$VerificationRequest.calcul
+api.StaffingResource$VerificationRequest.dureeSecondes
+api.StaffingResource$VerificationRequest.majeurs
+api.StaffingResource$VerificationRequest.mineurs
+api.StaleWriteError.code
+api.StaleWriteError.message
+api.StaleWriteError.modifieLe
+api.ValidationError.message
+api.ValidationJourneeResource$DemandeValidationJournee.commentaire
+api.ValidationJourneeResource$DemandeValidationJournee.jour
+api.ValidationJourneeResource$DemandeValidationJournee.poserVerrou
+api.ValidationJourneeResource$ResultatValidationJournee.validation
+api.ValidationJourneeResource$ResultatValidationJournee.verrouPose
+api.VersionPlanResource$CaptureRequest.libelle
+api.VersionPlanResource$ErreurRestauration.message
+api.VersionPlanResource$ErreurRestauration.perime
+api.VersionPlanResource$ErreurRestauration.referenceModifieLe
+api.VersionPlanResource$ErreurRestauration.referencesManquantes
+domain.Animateur.accessToken
+domain.Animateur.competences
+domain.Animateur.dateNaissance
+domain.Animateur.email
+domain.Animateur.id
+domain.Animateur.joursIndisponibles
+domain.Animateur.manager
+domain.Animateur.modifieLe
+domain.Animateur.nom
+domain.Animateur.polyvalent
+domain.Animateur.prenom
+domain.Animateur.souhaits
+domain.Animateur.telephone
+domain.ConsigneEdition$Fenetre.debut
+domain.ConsigneEdition$Fenetre.fin
+domain.ConsigneEdition$Ouverture.debut
+domain.ConsigneEdition$Ouverture.effectif
+domain.ConsigneEdition$Ouverture.fin
+domain.ConsigneEdition$Ouverture.standId
+domain.ConsigneEdition$RepasConsigne.coupureMinutes
+domain.ConsigneEdition$RepasConsigne.justification
+domain.ConsigneEdition$RepasConsigne.midiDebut
+domain.ConsigneEdition$RepasConsigne.midiFin
+domain.ConsigneEdition$RepasConsigne.soirDebut
+domain.ConsigneEdition$RepasConsigne.soirFin
+domain.ConsigneEdition.creeLe
+domain.ConsigneEdition.creneauxAjoutes
+domain.ConsigneEdition.date
+domain.ConsigneEdition.fenetres
+domain.ConsigneEdition.fermetureDebut
+domain.ConsigneEdition.fermetureFin
+domain.ConsigneEdition.modifieLe
+domain.ConsigneEdition.motif
+domain.ConsigneEdition.ouvertures
+domain.ConsigneEdition.prereglage
+domain.ConsigneEdition.repas
+domain.ConstraintToggle.actif
+domain.ConstraintToggle.nom
+domain.ContactOrganisation.email
+domain.ContactOrganisation.telephone
+domain.ContrainteAdHoc.animateursConcernes
+domain.ContrainteAdHoc.creeLe
+domain.ContrainteAdHoc.creeParUtilisateurId
+domain.ContrainteAdHoc.creneau
+domain.ContrainteAdHoc.id
+domain.ContrainteAdHoc.issueDeCovoiturage
+domain.ContrainteAdHoc.modifieLe
+domain.ContrainteAdHoc.raison
+domain.ContrainteAdHoc.stand
+domain.ContrainteAdHoc.type
+domain.Creneau.date
+domain.Creneau.dureeMinutes
+domain.Creneau.heureDebut
+domain.Creneau.heureFin
+domain.Creneau.id
+domain.Creneau.jour
+domain.Creneau.modifieLe
+domain.Edition.active
+domain.Edition.creeLe
+domain.Edition.id
+domain.Edition.nom
+domain.Edition.phase
+domain.Edition.phaseDepuis
+domain.Edition.structureDebloquee
+domain.Emplacement.code
+domain.Emplacement.id
+domain.Emplacement.latitude
+domain.Emplacement.longitude
+domain.Emplacement.modifieLe
+domain.Emplacement.nom
+domain.FenetreHoraire.effectif
+domain.FenetreHoraire.heureDebut
+domain.FenetreHoraire.heureFin
+domain.FenetreRepas.auPlusTard
+domain.FenetreRepas.date
+domain.FenetreRepas.datesExclues
+domain.FenetreRepas.debut
+domain.FenetreRepas.dureeMinutes
+domain.FenetreRepas.fin
+domain.FenetreRepas.libelle
+domain.FenetreRepas.sansPlacement
+domain.Gabarit.id
+domain.Gabarit.modifieLe
+domain.Gabarit.nom
+domain.Gabarit.vacations
+domain.HorairesRecurrents$Regle.dateDebut
+domain.HorairesRecurrents$Regle.dateFin
+domain.HorairesRecurrents$Regle.dates
+domain.HorairesRecurrents$Regle.fenetres
+domain.HorairesRecurrents$Regle.id
+domain.HorairesRecurrents$Regle.jours
+domain.HorairesRecurrents$Regle.joursSemaine
+domain.HorairesRecurrents$Regle.mode
+domain.HorairesRecurrents$Regle.motif
+domain.JoursFeries$PublicHoliday.date
+domain.JoursFeries$PublicHoliday.label
+domain.ParametresLegaux.coupureRepasMidiDebut
+domain.ParametresLegaux.coupureRepasMidiFin
+domain.ParametresLegaux.coupureRepasMinutes
+domain.ParametresLegaux.coupureRepasSoirDebut
+domain.ParametresLegaux.coupureRepasSoirFin
+domain.ParametresLegaux.dureeHebdomadaireMaxMineurMinutes
+domain.ParametresLegaux.dureeHebdomadaireMaxMinutes
+domain.ParametresLegaux.dureePauseMinutes
+domain.ParametresLegaux.dureeVacationMaxMinutes
+domain.ParametresLegaux.heureDebutSoiree
+domain.ParametresLegaux.modifieLe
+domain.ParametresLegaux.reposQuotidienMinimalMinutes
+domain.ParametresMeteo.actif
+domain.ParametresMeteo.horizonJours
+domain.ParametresMeteo.modifieLe
+domain.ParametresMeteo.orage
+domain.ParametresMeteo.prereglageChaleur
+domain.ParametresMeteo.prereglageOrage
+domain.ParametresMeteo.prereglageVent
+domain.ParametresMeteo.seuilRafales
+domain.ParametresMeteo.seuilTemperature
+domain.ParametresNotifications.ancienneteEchangeJours
+domain.ParametresNotifications.delaiRelanceHeures
+domain.ParametresNotifications.heureRappelVeille
+domain.ParametresNotifications.modifieLe
+domain.ParametresQualite.facteurDetour
+domain.ParametresQualite.heureServiceMatinal
+domain.ParametresQualite.heureServiceTardif
+domain.ParametresQualite.joursConsecutifsMax
+domain.ParametresQualite.maxEmplacementsDistinctsParJour
+domain.ParametresQualite.modifieLe
+domain.ParametresQualite.placementRepas
+domain.ParametresQualite.reposSouhaiteApresServiceTardifMinutes
+domain.ParametresQualite.toleranceArriveeGroupeeMinutes
+domain.ParametresQualite.toleranceTrajetMinutes
+domain.ParametresQualite.typologiesDistinctesMax
+domain.ParametresQualite.vitesseMarcheKmH
+domain.ParametresSolveur.mailFinResolution
+domain.ParametresSolveur.modifieLe
+domain.PlageStand.consigne
+domain.PlageStand.date
+domain.PlageStand.depliee
+domain.PlageStand.effectif
+domain.PlageStand.heureDebut
+domain.PlageStand.heureFin
+domain.PlageStand.id
+domain.PlageStand.mode
+domain.PlageStand.motif
+domain.PlanningEvenement.animateurs
+domain.PlanningEvenement.constraintsDesactivees
+domain.PlanningEvenement.contraintesAdHoc
+domain.PlanningEvenement.dateDebutFestival
+domain.PlanningEvenement.fenetresRepas
+domain.PlanningEvenement.parametresLegaux
+domain.PlanningEvenement.parametresQualite
+domain.PlanningEvenement.postes
+domain.PlanningEvenement.quotasTypologies
+domain.PlanningEvenement.score
+domain.PlanningEvenement.verrouillages
+domain.PosteAffectation.animateur
+domain.PosteAffectation.creneau
+domain.PosteAffectation.dureeEffectiveMinutes
+domain.PosteAffectation.heureDebutEffective
+domain.PosteAffectation.heureFinEffective
+domain.PosteAffectation.id
+domain.PosteAffectation.stand
+domain.PosteAffectation.suiteDe
+domain.PosteAffectation.verrouille
+domain.PrereglageConsigne.creeLe
+domain.PrereglageConsigne.fenetres
+domain.PrereglageConsigne.fermetureDebut
+domain.PrereglageConsigne.fermetureFin
+domain.PrereglageConsigne.id
+domain.PrereglageConsigne.modifieLe
+domain.PrereglageConsigne.motif
+domain.PrereglageConsigne.nom
+domain.PrereglageConsigne.repas
+domain.QuotaTypologie.maxCreneaux
+domain.QuotaTypologie.typologie
+domain.Stand.code
+domain.Stand.effectifMax
+domain.Stand.effectifMin
+domain.Stand.emplacement
+domain.Stand.horaires
+domain.Stand.id
+domain.Stand.indisponibilites
+domain.Stand.modifieLe
+domain.Stand.niveauEffort
+domain.Stand.nom
+domain.Stand.ouvertures
+domain.Stand.plages
+domain.Stand.premium
+domain.Stand.reserveMajeurs
+domain.Stand.typologiesProposees
+domain.VacationType.heureDebut
+domain.VacationType.heureFin
+domain.ValidationJournee.commentaire
+domain.ValidationJournee.id
+domain.ValidationJournee.jour
+domain.ValidationJournee.valideLe
+domain.ValidationJournee.validePar
+domain.VerrouillagePlanning.animateurId
+domain.VerrouillagePlanning.creeLe
+domain.VerrouillagePlanning.creneauDate
+domain.VerrouillagePlanning.creneauHeureDebut
+domain.VerrouillagePlanning.creneauHeureFin
+domain.VerrouillagePlanning.creneauId
+domain.VerrouillagePlanning.id
+domain.VerrouillagePlanning.jour
+domain.VerrouillagePlanning.raison
+domain.VerrouillagePlanning.standId
+domain.VerrouillagePlanning.type
+domain.VerrouillagePlanning.vacationMissing
+mcp.McpPrompts$PromptExpose.description
+mcp.McpPrompts$PromptExpose.nom
+mcp.McpPrompts$PromptExpose.texte
+service.analyse.AlerteService$AlerteView.animateurId
+service.analyse.AlerteService$AlerteView.cle
+service.analyse.AlerteService$AlerteView.declencheLe
+service.analyse.AlerteService$AlerteView.libelle
+service.analyse.AlerteService$AlerteView.lien
+service.analyse.AlerteService$AlerteView.nomAffiche
+service.analyse.AlerteService$AlerteView.severite
+service.analyse.AlerteService$AlerteView.type
+service.analyse.BreachHotspots$Hotspot.creneauId
+service.analyse.BreachHotspots$Hotspot.date
+service.analyse.BreachHotspots$Hotspot.ecarts
+service.analyse.BreachHotspots$Hotspot.standId
+service.analyse.Dosage.disabled
+service.analyse.Dosage.enabled
+service.analyse.Dosage.instanceWeights
+service.analyse.Dosage.levels
+service.analyse.Dosage.weights
+service.analyse.EquiteService$ColonneSolveur.active
+service.analyse.EquiteService$ColonneSolveur.colonne
+service.analyse.EquiteService$ColonneSolveur.contrainte
+service.analyse.EquiteService$LigneEquite.animateurId
+service.analyse.EquiteService$LigneEquite.emplacementsDistinctsParJourMax
+service.analyse.EquiteService$LigneEquite.heuresJourFerie
+service.analyse.EquiteService$LigneEquite.heuresParSemaine
+service.analyse.EquiteService$LigneEquite.heuresSoiree
+service.analyse.EquiteService$LigneEquite.heuresTotal
+service.analyse.EquiteService$LigneEquite.heuresWeekEnd
+service.analyse.EquiteService$LigneEquite.joursRepos
+service.analyse.EquiteService$LigneEquite.joursTravailles
+service.analyse.EquiteService$LigneEquite.nom
+service.analyse.EquiteService$LigneEquite.plusLongueSerie
+service.analyse.EquiteService$LigneEquite.postes
+service.analyse.EquiteService$LigneEquite.postesPenibles
+service.analyse.EquiteService$LigneEquite.standsDistincts
+service.analyse.EquiteService$LigneEquite.tauxAppreciation
+service.analyse.EquiteService$LigneEquite.tauxSouhaits
+service.analyse.EquiteService$LigneEquite.typologiesDistinctes
+service.analyse.EquiteService$RapportEquite.colonnesSolveur
+service.analyse.EquiteService$RapportEquite.heureDebutSoiree
+service.analyse.EquiteService$RapportEquite.lignes
+service.analyse.EquiteService$RapportEquite.semaines
+service.analyse.EquiteService$RapportEquite.syntheses
+service.analyse.EquiteService$SyntheseColonne.ecartType
+service.analyse.EquiteService$SyntheseColonne.max
+service.analyse.EquiteService$SyntheseColonne.mediane
+service.analyse.EquiteService$SyntheseColonne.min
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.actions
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.capacite
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.contrainteIds
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.creneauId
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.date
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.demande
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.heureDebut
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.heureFin
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.manque
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.message
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.severite
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.standIds
+service.analyse.FeasibilityAnalyzer$CauseInfaisabilite.type
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.causes
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.causesCritiques
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.causesElevees
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.feasible
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.manqueAnimateurs
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.message
+service.analyse.FeasibilityAnalyzer$FeasibilityReport.totalCauses
+service.analyse.FormationAnalyzer$CandidatFormation.animateurId
+service.analyse.FormationAnalyzer$CandidatFormation.joursTensionDisponibles
+service.analyse.FormationAnalyzer$CandidatFormation.niveau
+service.analyse.FormationAnalyzer$CandidatFormation.nom
+service.analyse.FormationAnalyzer$CandidatFormation.souhait
+service.analyse.FormationAnalyzer$PlanFormation.aucunAnimateur
+service.analyse.FormationAnalyzer$PlanFormation.aucuneCompetence
+service.analyse.FormationAnalyzer$PlanFormation.planPersiste
+service.analyse.FormationAnalyzer$PlanFormation.typologies
+service.analyse.FormationAnalyzer$TypologieAFormer.candidats
+service.analyse.FormationAnalyzer$TypologieAFormer.competencesRares
+service.analyse.FormationAnalyzer$TypologieAFormer.groupesSansSpecialiste
+service.analyse.FormationAnalyzer$TypologieAFormer.joursTension
+service.analyse.FormationAnalyzer$TypologieAFormer.label
+service.analyse.FormationAnalyzer$TypologieAFormer.manque
+service.analyse.FormationAnalyzer$TypologieAFormer.polyvalent
+service.analyse.FormationAnalyzer$TypologieAFormer.postesIrremplacables
+service.analyse.FormationAnalyzer$TypologieAFormer.specialistes
+service.analyse.FormationAnalyzer$TypologieAFormer.typologie
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.affectations
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.animateurId
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.competencesRares
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.nom
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.polyvalent
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.postes
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.postesEffondres
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.postesIrremplacables
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.postesNonDetailles
+service.analyse.FragiliteAnalyzer$AnimateurFragilite.severite
+service.analyse.FragiliteAnalyzer$CompetenceRare.animateurId
+service.analyse.FragiliteAnalyzer$CompetenceRare.creneauId
+service.analyse.FragiliteAnalyzer$CompetenceRare.date
+service.analyse.FragiliteAnalyzer$CompetenceRare.heureDebut
+service.analyse.FragiliteAnalyzer$CompetenceRare.heureFin
+service.analyse.FragiliteAnalyzer$CompetenceRare.jour
+service.analyse.FragiliteAnalyzer$CompetenceRare.nom
+service.analyse.FragiliteAnalyzer$CompetenceRare.pourvu
+service.analyse.FragiliteAnalyzer$CompetenceRare.renforts
+service.analyse.FragiliteAnalyzer$CompetenceRare.severite
+service.analyse.FragiliteAnalyzer$CompetenceRare.specialistes
+service.analyse.FragiliteAnalyzer$CompetenceRare.standId
+service.analyse.FragiliteAnalyzer$CompetenceRare.standNom
+service.analyse.FragiliteAnalyzer$CompetenceRare.typologies
+service.analyse.FragiliteAnalyzer$PosteFragile.creneauId
+service.analyse.FragiliteAnalyzer$PosteFragile.date
+service.analyse.FragiliteAnalyzer$PosteFragile.effectifMin
+service.analyse.FragiliteAnalyzer$PosteFragile.heureDebut
+service.analyse.FragiliteAnalyzer$PosteFragile.heureFin
+service.analyse.FragiliteAnalyzer$PosteFragile.irremplacable
+service.analyse.FragiliteAnalyzer$PosteFragile.jour
+service.analyse.FragiliteAnalyzer$PosteFragile.remplacants
+service.analyse.FragiliteAnalyzer$PosteFragile.siegesLiberes
+service.analyse.FragiliteAnalyzer$PosteFragile.siegesPourvus
+service.analyse.FragiliteAnalyzer$PosteFragile.siegesRequis
+service.analyse.FragiliteAnalyzer$PosteFragile.standId
+service.analyse.FragiliteAnalyzer$PosteFragile.standNom
+service.analyse.FragiliteAnalyzer$RapportFragilite.animateurs
+service.analyse.FragiliteAnalyzer$RapportFragilite.animateursIrremplacables
+service.analyse.FragiliteAnalyzer$RapportFragilite.aucunAnimateur
+service.analyse.FragiliteAnalyzer$RapportFragilite.competencesRares
+service.analyse.FragiliteAnalyzer$RapportFragilite.groupesAnalyses
+service.analyse.FragiliteAnalyzer$RapportFragilite.groupesDejaSousEffectif
+service.analyse.FragiliteAnalyzer$RapportFragilite.groupesSansSpecialiste
+service.analyse.FragiliteAnalyzer$RapportFragilite.message
+service.analyse.FragiliteAnalyzer$RapportFragilite.polyvalentConfigure
+service.analyse.FragiliteAnalyzer$RapportFragilite.totalCompetencesRares
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.absent
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.aligned
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.arrivalSpreadMinutes
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.date
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.departureSpreadMinutes
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.hours
+service.analyse.GroupedArrivalAnalyzer$GroupDayView.working
+service.analyse.GroupedArrivalAnalyzer$GroupView.animateurIds
+service.analyse.GroupedArrivalAnalyzer$GroupView.contrainteId
+service.analyse.GroupedArrivalAnalyzer$GroupView.days
+service.analyse.GroupedArrivalAnalyzer$GroupView.misalignedDays
+service.analyse.GroupedArrivalAnalyzer$GroupedArrivalReport.groups
+service.analyse.GroupedArrivalAnalyzer$GroupedArrivalReport.toleranceMinutes
+service.analyse.GroupedArrivalAnalyzer$MemberHoursView.animateurId
+service.analyse.GroupedArrivalAnalyzer$MemberHoursView.end
+service.analyse.GroupedArrivalAnalyzer$MemberHoursView.start
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.debut
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.emplacements
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.fin
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.libelle
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.total
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.totalMineurs
+service.analyse.IntendanceRepasAnalyzer$FenetreIntendance.tranches
+service.analyse.IntendanceRepasAnalyzer$JourneeIntendance.date
+service.analyse.IntendanceRepasAnalyzer$JourneeIntendance.fenetres
+service.analyse.IntendanceRepasAnalyzer$LigneEmplacement.emplacementId
+service.analyse.IntendanceRepasAnalyzer$LigneEmplacement.emplacementNom
+service.analyse.IntendanceRepasAnalyzer$LigneEmplacement.mineurs
+service.analyse.IntendanceRepasAnalyzer$LigneEmplacement.personnes
+service.analyse.IntendanceRepasAnalyzer$LigneEmplacement.total
+service.analyse.IntendanceRepasAnalyzer$LigneEmplacement.totalMineurs
+service.analyse.IntendanceRepasAnalyzer$RapportIntendance.journees
+service.analyse.IntendanceRepasAnalyzer$RapportIntendance.message
+service.analyse.IntendanceRepasAnalyzer$RapportIntendance.pasMinutes
+service.analyse.KpiHistoriqueService$KpiHistoriqueEntry.creeLe
+service.analyse.KpiHistoriqueService$KpiHistoriqueEntry.editionId
+service.analyse.KpiHistoriqueService$KpiHistoriqueEntry.editionNom
+service.analyse.KpiHistoriqueService$KpiHistoriqueEntry.id
+service.analyse.KpiHistoriqueService$KpiHistoriqueEntry.kpi
+service.analyse.MargeAnalyzer$CelluleMarge.besoin
+service.analyse.MargeAnalyzer$CelluleMarge.creneauId
+service.analyse.MargeAnalyzer$CelluleMarge.date
+service.analyse.MargeAnalyzer$CelluleMarge.debut
+service.analyse.MargeAnalyzer$CelluleMarge.disponibles
+service.analyse.MargeAnalyzer$CelluleMarge.fin
+service.analyse.MargeAnalyzer$CelluleMarge.jour
+service.analyse.MargeAnalyzer$CelluleMarge.marge
+service.analyse.MargeAnalyzer$CelluleMarge.sieges
+service.analyse.MargeAnalyzer$CelluleMarge.siegesPourvus
+service.analyse.MargeAnalyzer$JourMarge.cellules
+service.analyse.MargeAnalyzer$JourMarge.date
+service.analyse.MargeAnalyzer$JourMarge.jour
+service.analyse.MargeAnalyzer$JourMarge.pireCellule
+service.analyse.MargeAnalyzer$RapportMarge.animateursTotal
+service.analyse.MargeAnalyzer$RapportMarge.cellulesDeficitaires
+service.analyse.MargeAnalyzer$RapportMarge.jours
+service.analyse.MargeAnalyzer$RapportMarge.message
+service.analyse.MargeAnalyzer$RapportMarge.mode
+service.analyse.MargeAnalyzer$RapportMarge.pireCellule
+service.analyse.MargeAnalyzer$RapportMarge.referentielsManquants
+service.analyse.MargeAnalyzer$RapportMarge.tranches
+service.analyse.MargeAnalyzer$TrancheMarge.debut
+service.analyse.MargeAnalyzer$TrancheMarge.fin
+service.analyse.OuvertureStandsAnalyzer$Anomaly.date
+service.analyse.OuvertureStandsAnalyzer$Anomaly.heureDebut
+service.analyse.OuvertureStandsAnalyzer$Anomaly.heureFin
+service.analyse.OuvertureStandsAnalyzer$Anomaly.horaireId
+service.analyse.OuvertureStandsAnalyzer$Anomaly.message
+service.analyse.OuvertureStandsAnalyzer$Anomaly.standId
+service.analyse.OuvertureStandsAnalyzer$Anomaly.standNom
+service.analyse.OuvertureStandsAnalyzer$Anomaly.type
+service.analyse.OuvertureStandsAnalyzer$CelluleCreneau.creneauId
+service.analyse.OuvertureStandsAnalyzer$CelluleCreneau.effectif
+service.analyse.OuvertureStandsAnalyzer$CelluleCreneau.partiel
+service.analyse.OuvertureStandsAnalyzer$CelluleCreneau.segments
+service.analyse.OuvertureStandsAnalyzer$CelluleCreneau.tranche
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.creneaux
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.date
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.etat
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.fenetres
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.minutesAmplitude
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.minutesOuvertes
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.postes
+service.analyse.OuvertureStandsAnalyzer$CelluleJour.source
+service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.heureDebut
+service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.heureFin
+service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.id
+service.analyse.OuvertureStandsAnalyzer$ColonneCreneau.tranche
+service.analyse.OuvertureStandsAnalyzer$FenetreEffective.heureDebut
+service.analyse.OuvertureStandsAnalyzer$FenetreEffective.heureFin
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.creneaux
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.date
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.ferie
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.heureDebut
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.heureFin
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.jour
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.minutes
+service.analyse.OuvertureStandsAnalyzer$JourAmplitude.nombreCreneaux
+service.analyse.OuvertureStandsAnalyzer$LigneStand.effectifMin
+service.analyse.OuvertureStandsAnalyzer$LigneStand.jours
+service.analyse.OuvertureStandsAnalyzer$LigneStand.minutesOuvertes
+service.analyse.OuvertureStandsAnalyzer$LigneStand.modifieLe
+service.analyse.OuvertureStandsAnalyzer$LigneStand.nom
+service.analyse.OuvertureStandsAnalyzer$LigneStand.postes
+service.analyse.OuvertureStandsAnalyzer$LigneStand.standId
+service.analyse.OuvertureStandsAnalyzer$RapportOuvertures.anomalies
+service.analyse.OuvertureStandsAnalyzer$RapportOuvertures.jours
+service.analyse.OuvertureStandsAnalyzer$RapportOuvertures.postesTotal
+service.analyse.OuvertureStandsAnalyzer$RapportOuvertures.stands
+service.analyse.OuvertureStandsAnalyzer$RapportOuvertures.standsJamaisOuverts
+service.analyse.OuvertureStandsAnalyzer$SegmentCellule.effectif
+service.analyse.OuvertureStandsAnalyzer$SegmentCellule.heureDebut
+service.analyse.OuvertureStandsAnalyzer$SegmentCellule.heureFin
+service.analyse.PauseAnalyzer$CoupureRepasView.debut
+service.analyse.PauseAnalyzer$CoupureRepasView.dureeRequiseMinutes
+service.analyse.PauseAnalyzer$CoupureRepasView.fenetreDebut
+service.analyse.PauseAnalyzer$CoupureRepasView.fenetreFin
+service.analyse.PauseAnalyzer$CoupureRepasView.fin
+service.analyse.PauseAnalyzer$CoupureRepasView.libelle
+service.analyse.PauseAnalyzer$CoupureRepasView.plusGrandTrouMinutes
+service.analyse.PauseAnalyzer$CoupureRepasView.satisfaite
+service.analyse.PauseAnalyzer$JourneeAnimateurView.animateurId
+service.analyse.PauseAnalyzer$JourneeAnimateurView.coupuresRepas
+service.analyse.PauseAnalyzer$JourneeAnimateurView.date
+service.analyse.PauseAnalyzer$JourneeAnimateurView.jour
+service.analyse.PauseAnalyzer$JourneeAnimateurView.mineur
+service.analyse.PauseAnalyzer$JourneeAnimateurView.nomComplet
+service.analyse.PauseAnalyzer$JourneeAnimateurView.pausesPlanifiees
+service.analyse.PauseAnalyzer$JourneeAnimateurView.sequences
+service.analyse.PauseAnalyzer$PauseAnimateurView.date
+service.analyse.PauseAnalyzer$PauseAnimateurView.debut
+service.analyse.PauseAnalyzer$PauseAnimateurView.dureeMinutes
+service.analyse.PauseAnalyzer$PauseAnimateurView.emplacementLatitude
+service.analyse.PauseAnalyzer$PauseAnimateurView.emplacementLongitude
+service.analyse.PauseAnalyzer$PauseAnimateurView.emplacementNom
+service.analyse.PauseAnalyzer$PauseAnimateurView.fin
+service.analyse.PauseAnalyzer$PauseAnimateurView.heureLimite
+service.analyse.PauseAnalyzer$PauseAnimateurView.relaisDisponible
+service.analyse.PauseAnalyzer$PauseAnimateurView.standId
+service.analyse.PauseAnalyzer$PauseAnimateurView.standNom
+service.analyse.PauseAnalyzer$PauseDueView.creneauId
+service.analyse.PauseAnalyzer$PauseDueView.debut
+service.analyse.PauseAnalyzer$PauseDueView.dureeMinutes
+service.analyse.PauseAnalyzer$PauseDueView.fin
+service.analyse.PauseAnalyzer$PauseDueView.heureLimite
+service.analyse.PauseAnalyzer$PauseDueView.relais
+service.analyse.PauseAnalyzer$PauseDueView.relaisDisponible
+service.analyse.PauseAnalyzer$PauseDueView.simultanee
+service.analyse.PauseAnalyzer$PauseDueView.standId
+service.analyse.PauseAnalyzer$PauseDueView.standNom
+service.analyse.PauseAnalyzer$PausePlanifieeView.debut
+service.analyse.PauseAnalyzer$PausePlanifieeView.fin
+service.analyse.PauseAnalyzer$PausePlanifieeView.minutes
+service.analyse.PauseAnalyzer$RapportPauses.coupuresRepasDues
+service.analyse.PauseAnalyzer$RapportPauses.coupuresRepasManquantes
+service.analyse.PauseAnalyzer$RapportPauses.journees
+service.analyse.PauseAnalyzer$RapportPauses.journeesAnalysees
+service.analyse.PauseAnalyzer$RapportPauses.message
+service.analyse.PauseAnalyzer$RapportPauses.pausesDues
+service.analyse.PauseAnalyzer$RapportPauses.relaisManquants
+service.analyse.PauseAnalyzer$RelaisView.animateurId
+service.analyse.PauseAnalyzer$RelaisView.nomComplet
+service.analyse.PauseAnalyzer$SequenceView.debut
+service.analyse.PauseAnalyzer$SequenceView.fin
+service.analyse.PauseAnalyzer$SequenceView.minutes
+service.analyse.PauseAnalyzer$SequenceView.pausesDues
+service.analyse.PivotEcarts$Cellule.axe
+service.analyse.PivotEcarts$Cellule.cle
+service.analyse.PivotEcarts$Cellule.contrainte
+service.analyse.PivotEcarts$Cellule.ecarts
+service.analyse.PlanningDiagnosticService$ConstraintFloor.libelle
+service.analyse.PlanningDiagnosticService$ConstraintFloor.lien
+service.analyse.PlanningDiagnosticService$ConstraintFloor.motif
+service.analyse.PlanningDiagnosticService$ConstraintFloor.ratio
+service.analyse.PlanningDiagnosticService$ContributionAdHoc.contrainteId
+service.analyse.PlanningDiagnosticService$ContributionAdHoc.contraintes
+service.analyse.PlanningDiagnosticService$ContributionAdHoc.raison
+service.analyse.PlanningDiagnosticService$ContributionAdHoc.type
+service.analyse.PlanningDiagnosticService$ContributionAdHoc.violations
+service.analyse.PlanningHoursReader$HoursReading.planDate
+service.analyse.PlanningHoursReader$HoursReading.publicationAvailable
+service.analyse.PlanningHoursReader$HoursReading.report
+service.analyse.PlanningHoursReader$HoursReading.source
+service.analyse.PlanningHoursService$HeuresAnimateur.amplitudeMaxHeures
+service.analyse.PlanningHoursService$HeuresAnimateur.animateurId
+service.analyse.PlanningHoursService$HeuresAnimateur.heuresDimanche
+service.analyse.PlanningHoursService$HeuresAnimateur.heuresDimancheFerie
+service.analyse.PlanningHoursService$HeuresAnimateur.heuresJourFerie
+service.analyse.PlanningHoursService$HeuresAnimateur.heuresNuit
+service.analyse.PlanningHoursService$HeuresAnimateur.heuresParSemaine
+service.analyse.PlanningHoursService$HeuresAnimateur.heuresSoiree
+service.analyse.PlanningHoursService$HeuresAnimateur.joursAmplitudeElevee
+service.analyse.PlanningHoursService$HeuresAnimateur.nom
+service.analyse.PlanningHoursService$HeuresAnimateur.total
+service.analyse.PlanningHoursService$HeuresRapport.animateurs
+service.analyse.PlanningHoursService$HeuresRapport.heureDebutSoiree
+service.analyse.PlanningHoursService$HeuresRapport.semaines
+service.analyse.PlanningKpiService$DayCoverage.postes
+service.analyse.PlanningKpiService$DayCoverage.pourvus
+service.analyse.PlanningKpiService$PlanningKpi.animateursAffectes
+service.analyse.PlanningKpiService$PlanningKpi.couvertureParJour
+service.analyse.PlanningKpiService$PlanningKpi.creneauxDistincts
+service.analyse.PlanningKpiService$PlanningKpi.dosage
+service.analyse.PlanningKpiService$PlanningKpi.dureeSolveSecondes
+service.analyse.PlanningKpiService$PlanningKpi.heuresEcartType
+service.analyse.PlanningKpiService$PlanningKpi.heuresFermeesParConsigne
+service.analyse.PlanningKpiService$PlanningKpi.heuresIncompletes
+service.analyse.PlanningKpiService$PlanningKpi.heuresMax
+service.analyse.PlanningKpiService$PlanningKpi.heuresMin
+service.analyse.PlanningKpiService$PlanningKpi.heuresMoyenne
+service.analyse.PlanningKpiService$PlanningKpi.heuresTotal
+service.analyse.PlanningKpiService$PlanningKpi.journeesSousConsigne
+service.analyse.PlanningKpiService$PlanningKpi.lecture
+service.analyse.PlanningKpiService$PlanningKpi.modificationsManuelles
+service.analyse.PlanningKpiService$PlanningKpi.plancherMedium
+service.analyse.PlanningKpiService$PlanningKpi.postesPourvus
+service.analyse.PlanningKpiService$PlanningKpi.postesTotal
+service.analyse.PlanningKpiService$PlanningKpi.score
+service.analyse.PlanningKpiService$PlanningKpi.scoreHard
+service.analyse.PlanningKpiService$PlanningKpi.scoreMedium
+service.analyse.PlanningKpiService$PlanningKpi.scoreMediumHorsPlancher
+service.analyse.PlanningKpiService$PlanningKpi.scoreSoft
+service.analyse.PlanningKpiService$PlanningKpi.standsDistincts
+service.analyse.PlanningKpiService$PlanningKpi.tauxModificationsManuelles
+service.analyse.PlanningKpiService$PlanningKpi.violationsParContrainte
+service.analyse.RapportConformite$Breach.libelle
+service.analyse.RapportConformite$Breach.regle
+service.analyse.RapportConformite$Breach.texte
+service.analyse.RapportConformite$MinorWithoutRepresentative.animateurId
+service.analyse.RapportConformite$MinorWithoutRepresentative.nom
+service.analyse.RapportConformite$Personne.animateurId
+service.analyse.RapportConformite$Personne.ecartsDetail
+service.analyse.RapportConformite$Personne.heuresDimanche
+service.analyse.RapportConformite$Personne.heuresFerie
+service.analyse.RapportConformite$Personne.heuresNuit
+service.analyse.RapportConformite$Personne.heuresParSemaine
+service.analyse.RapportConformite$Personne.heuresTotal
+service.analyse.RapportConformite$Personne.mineur
+service.analyse.RapportConformite$Personne.nom
+service.analyse.RapportConformite$Personne.plafondHebdomadaire
+service.analyse.RapportConformite$Personne.reposQuotidienMinHeures
+service.analyse.RapportConformite$Personne.semainesEnDepassement
+service.analyse.RapportConformite$Plafonds.ecartsAuxDefauts
+service.analyse.RapportConformite$Plafonds.hebdomadaireMajeurHeures
+service.analyse.RapportConformite$Plafonds.hebdomadaireMineurHeures
+service.analyse.RapportConformite$Plafonds.reposQuotidienHeures
+service.analyse.RapportConformite$Plafonds.vacationHeures
+service.analyse.RapportConformite$Regle.ecarts
+service.analyse.RapportConformite$Regle.libelle
+service.analyse.RapportConformite$Regle.mineurs
+service.analyse.RapportConformite$Regle.nom
+service.analyse.RapportConformite$Synthese.ecarts
+service.analyse.RapportConformite$Synthese.heuresDimanche
+service.analyse.RapportConformite$Synthese.heuresFerie
+service.analyse.RapportConformite$Synthese.heuresNuit
+service.analyse.RapportConformite$Synthese.heuresTravail
+service.analyse.RapportConformite$Synthese.mineurs
+service.analyse.RapportConformite$Synthese.personnes
+service.analyse.RapportConformite$Synthese.semainesEnDepassement
+service.analyse.RapportConformite.editionId
+service.analyse.RapportConformite.editionNom
+service.analyse.RapportConformite.genereLe
+service.analyse.RapportConformite.mineursSansRepresentant
+service.analyse.RapportConformite.personnes
+service.analyse.RapportConformite.plafonds
+service.analyse.RapportConformite.publieLe
+service.analyse.RapportConformite.regles
+service.analyse.RapportConformite.semaines
+service.analyse.RapportConformite.synthese
+service.analyse.RealisedVsPlanned$CellDetail.counts
+service.analyse.RealisedVsPlanned$CellDetail.date
+service.analyse.RealisedVsPlanned$CellDetail.lateReference
+service.analyse.RealisedVsPlanned$CellDetail.lines
+service.analyse.RealisedVsPlanned$CellDetail.referenceAvailable
+service.analyse.RealisedVsPlanned$CellDetail.referencePublishedAt
+service.analyse.RealisedVsPlanned$CellDetail.standId
+service.analyse.RealisedVsPlanned$CellDetail.standNom
+service.analyse.RealisedVsPlanned$GapCounts.absenceRate
+service.analyse.RealisedVsPlanned$GapCounts.absences
+service.analyse.RealisedVsPlanned$GapCounts.addedSeats
+service.analyse.RealisedVsPlanned$GapCounts.emptySeats
+service.analyse.RealisedVsPlanned$GapCounts.keptSeats
+service.analyse.RealisedVsPlanned$GapCounts.lostMinutes
+service.analyse.RealisedVsPlanned$GapCounts.publishedMinutes
+service.analyse.RealisedVsPlanned$GapCounts.publishedSeats
+service.analyse.RealisedVsPlanned$GapCounts.realisedMinutes
+service.analyse.RealisedVsPlanned$GapCounts.removedSeats
+service.analyse.RealisedVsPlanned$GapCounts.replacementRate
+service.analyse.RealisedVsPlanned$GapCounts.replacements
+service.analyse.RealisedVsPlanned$GapTotal.counts
+service.analyse.RealisedVsPlanned$GapTotal.key
+service.analyse.RealisedVsPlanned$GapTotal.label
+service.analyse.RealisedVsPlanned$PreviousEdition.available
+service.analyse.RealisedVsPlanned$PreviousEdition.byTypologie
+service.analyse.RealisedVsPlanned$PreviousEdition.countedDays
+service.analyse.RealisedVsPlanned$PreviousEdition.editionId
+service.analyse.RealisedVsPlanned$PreviousEdition.editionNom
+service.analyse.RealisedVsPlanned$PreviousEdition.event
+service.analyse.RealisedVsPlanned$PreviousEdition.firstDay
+service.analyse.RealisedVsPlanned$PreviousEdition.frozenAt
+service.analyse.RealisedVsPlanned$PreviousEdition.lastDay
+service.analyse.RealisedVsPlanned$RealisedCell.counts
+service.analyse.RealisedVsPlanned$RealisedCell.date
+service.analyse.RealisedVsPlanned$RealisedCell.standId
+service.analyse.RealisedVsPlanned$RealisedCell.standNom
+service.analyse.RealisedVsPlanned$RealisedDay.counted
+service.analyse.RealisedVsPlanned$RealisedDay.date
+service.analyse.RealisedVsPlanned$RealisedDay.lateReference
+service.analyse.RealisedVsPlanned$RealisedDay.referencePublishedAt
+service.analyse.RealisedVsPlanned$RealisedLine.absence
+service.analyse.RealisedVsPlanned$RealisedLine.outcome
+service.analyse.RealisedVsPlanned$RealisedLine.seat
+service.analyse.RealisedVsPlanned.byDay
+service.analyse.RealisedVsPlanned.byStand
+service.analyse.RealisedVsPlanned.byTypologie
+service.analyse.RealisedVsPlanned.cells
+service.analyse.RealisedVsPlanned.days
+service.analyse.RealisedVsPlanned.event
+service.analyse.RealisedVsPlanned.frozenPast
+service.analyse.RealisedVsPlanned.nature
+service.analyse.RealisedVsPlanned.referenceAvailable
+service.analyse.RealisedVsPlanned.today
+service.analyse.ScoreReading$ReadingLink.fragment
+service.analyse.ScoreReading$ReadingLink.parametres
+service.analyse.ScoreReading$ReadingLink.route
+service.analyse.ScoreReading$ReadingLink.texte
+service.analyse.ScoreReading$ScoreSentence.liens
+service.analyse.ScoreReading$ScoreSentence.niveau
+service.analyse.ScoreReading$ScoreSentence.sujet
+service.analyse.ScoreReading$ScoreSentence.texte
+service.analyse.StaffingAnalyzer$CompetenceStaffing.animateursTotal
+service.analyse.StaffingAnalyzer$CompetenceStaffing.manquePolyvalents
+service.analyse.StaffingAnalyzer$CompetenceStaffing.manqueTotal
+service.analyse.StaffingAnalyzer$CompetenceStaffing.parTypologie
+service.analyse.StaffingAnalyzer$CompetenceStaffing.planchersCumules
+service.analyse.StaffingAnalyzer$CompetenceStaffing.polyvalents
+service.analyse.StaffingAnalyzer$CompetenceStaffing.siegesNonAttribues
+service.analyse.StaffingAnalyzer$CompetenceStaffing.siegesReservesAuxPolyvalents
+service.analyse.StaffingAnalyzer$CompetenceStaffing.typologiePolyvalenteDefinie
+service.analyse.StaffingAnalyzer$JourStaffing.absentsMax
+service.analyse.StaffingAnalyzer$JourStaffing.date
+service.analyse.StaffingAnalyzer$JourStaffing.disponibles
+service.analyse.StaffingAnalyzer$JourStaffing.heures
+service.analyse.StaffingAnalyzer$JourStaffing.jour
+service.analyse.StaffingAnalyzer$JourStaffing.majeursRequis
+service.analyse.StaffingAnalyzer$JourStaffing.minimumJour
+service.analyse.StaffingAnalyzer$JourStaffing.picAvecPause
+service.analyse.StaffingAnalyzer$JourStaffing.picRepas
+service.analyse.StaffingAnalyzer$JourStaffing.picSimultane
+service.analyse.StaffingAnalyzer$JourStaffing.sieges
+service.analyse.StaffingAnalyzer$JourStaffing.standsOuverts
+service.analyse.StaffingAnalyzer$SemaineStaffing.budgetIndisponibilites
+service.analyse.StaffingAnalyzer$SemaineStaffing.capaciteHeuresParAnimateur
+service.analyse.StaffingAnalyzer$SemaineStaffing.chargeTotal
+service.analyse.StaffingAnalyzer$SemaineStaffing.debut
+service.analyse.StaffingAnalyzer$SemaineStaffing.heures
+service.analyse.StaffingAnalyzer$SemaineStaffing.indisponibilitesAuDela
+service.analyse.StaffingAnalyzer$SemaineStaffing.jours
+service.analyse.StaffingAnalyzer$SemaineStaffing.joursPersonne
+service.analyse.StaffingAnalyzer$SemaineStaffing.joursTravaillables
+service.analyse.StaffingAnalyzer$SemaineStaffing.rotationTotal
+service.analyse.StaffingAnalyzer$SemaineStaffing.semaine
+service.analyse.StaffingAnalyzer$StaffingSummary.borneRetenue
+service.analyse.StaffingAnalyzer$StaffingSummary.capaciteHeuresParAnimateur
+service.analyse.StaffingAnalyzer$StaffingSummary.chargeTotal
+service.analyse.StaffingAnalyzer$StaffingSummary.dureeHebdomadaireMaxMinutes
+service.analyse.StaffingAnalyzer$StaffingSummary.dureeQuotidienneMaxMinutes
+service.analyse.StaffingAnalyzer$StaffingSummary.effectifReference
+service.analyse.StaffingAnalyzer$StaffingSummary.enchainementTotal
+service.analyse.StaffingAnalyzer$StaffingSummary.indisponibilitesDeclarees
+service.analyse.StaffingAnalyzer$StaffingSummary.jourCritique
+service.analyse.StaffingAnalyzer$StaffingSummary.joursConsecutifsMax
+service.analyse.StaffingAnalyzer$StaffingSummary.joursTravaillesMaxParSemaine
+service.analyse.StaffingAnalyzer$StaffingSummary.majeursMin
+service.analyse.StaffingAnalyzer$StaffingSummary.mineursMax
+service.analyse.StaffingAnalyzer$StaffingSummary.minimumAvecIndisponibilites
+service.analyse.StaffingAnalyzer$StaffingSummary.minimumTotal
+service.analyse.StaffingAnalyzer$StaffingSummary.nombreSemaines
+service.analyse.StaffingAnalyzer$StaffingSummary.parCompetence
+service.analyse.StaffingAnalyzer$StaffingSummary.parJour
+service.analyse.StaffingAnalyzer$StaffingSummary.parSemaine
+service.analyse.StaffingAnalyzer$StaffingSummary.picAvecPause
+service.analyse.StaffingAnalyzer$StaffingSummary.picRepas
+service.analyse.StaffingAnalyzer$StaffingSummary.picSimultane
+service.analyse.StaffingAnalyzer$StaffingSummary.referentielsManquants
+service.analyse.StaffingAnalyzer$StaffingSummary.rotationTotal
+service.analyse.StaffingAnalyzer$StaffingSummary.semaineCritique
+service.analyse.StaffingAnalyzer$StaffingSummary.totalDemandeHeures
+service.analyse.StaffingAnalyzer$TypologieStaffing.borneRetenue
+service.analyse.StaffingAnalyzer$TypologieStaffing.chargeTotal
+service.analyse.StaffingAnalyzer$TypologieStaffing.enchainementTotal
+service.analyse.StaffingAnalyzer$TypologieStaffing.heures
+service.analyse.StaffingAnalyzer$TypologieStaffing.label
+service.analyse.StaffingAnalyzer$TypologieStaffing.manque
+service.analyse.StaffingAnalyzer$TypologieStaffing.minimumPlafond
+service.analyse.StaffingAnalyzer$TypologieStaffing.minimumTotal
+service.analyse.StaffingAnalyzer$TypologieStaffing.nombreSemaines
+service.analyse.StaffingAnalyzer$TypologieStaffing.picAvecPause
+service.analyse.StaffingAnalyzer$TypologieStaffing.picRepas
+service.analyse.StaffingAnalyzer$TypologieStaffing.picSimultane
+service.analyse.StaffingAnalyzer$TypologieStaffing.plafondCreneaux
+service.analyse.StaffingAnalyzer$TypologieStaffing.polyvalent
+service.analyse.StaffingAnalyzer$TypologieStaffing.rotationTotal
+service.analyse.StaffingAnalyzer$TypologieStaffing.sieges
+service.analyse.StaffingAnalyzer$TypologieStaffing.specialistes
+service.analyse.StaffingAnalyzer$TypologieStaffing.typologie
+service.analyse.TensionAnalyzer$CelluleTension.animateursIrremplacables
+service.analyse.TensionAnalyzer$CelluleTension.competencesRaresSansSpecialiste
+service.analyse.TensionAnalyzer$CelluleTension.creneauId
+service.analyse.TensionAnalyzer$CelluleTension.date
+service.analyse.TensionAnalyzer$CelluleTension.debut
+service.analyse.TensionAnalyzer$CelluleTension.fin
+service.analyse.TensionAnalyzer$CelluleTension.gravite
+service.analyse.TensionAnalyzer$CelluleTension.jour
+service.analyse.TensionAnalyzer$CelluleTension.marge
+service.analyse.TensionAnalyzer$CelluleTension.motifs
+service.analyse.TensionAnalyzer$CelluleTension.passee
+service.analyse.TensionAnalyzer$CelluleTension.siegesFragiles
+service.analyse.TensionAnalyzer$CelluleTension.siegesIrremplacables
+service.analyse.TensionAnalyzer$CelluleTension.siegesVides
+service.analyse.TensionAnalyzer$CelluleTension.standsSansSpecialiste
+service.analyse.TensionAnalyzer$CelluleTension.standsSpecialisteUnique
+service.analyse.TensionAnalyzer$JourTension.cellules
+service.analyse.TensionAnalyzer$JourTension.date
+service.analyse.TensionAnalyzer$JourTension.jour
+service.analyse.TensionAnalyzer$JourTension.pireCellule
+service.analyse.TensionAnalyzer$RapportTension.animateursTotal
+service.analyse.TensionAnalyzer$RapportTension.cellulesCritiques
+service.analyse.TensionAnalyzer$RapportTension.jours
+service.analyse.TensionAnalyzer$RapportTension.message
+service.analyse.TensionAnalyzer$RapportTension.pireCellule
+service.analyse.TensionAnalyzer$RapportTension.polyvalentConfigure
+service.analyse.TensionAnalyzer$RapportTension.referentielsManquants
+service.analyse.TensionAnalyzer$RapportTension.tranches
+service.analyse.TypologieAnalyzer$AnimateurTypologie.animateurId
+service.analyse.TypologieAnalyzer$AnimateurTypologie.nom
+service.analyse.TypologieAnalyzer$LigneTypologie.affectesSansCompetence
+service.analyse.TypologieAnalyzer$LigneTypologie.animateursAffectes
+service.analyse.TypologieAnalyzer$LigneTypologie.animateursCompetents
+service.analyse.TypologieAnalyzer$LigneTypologie.competentsJamaisAffectes
+service.analyse.TypologieAnalyzer$LigneTypologie.description
+service.analyse.TypologieAnalyzer$LigneTypologie.heures
+service.analyse.TypologieAnalyzer$LigneTypologie.heuresParJour
+service.analyse.TypologieAnalyzer$LigneTypologie.label
+service.analyse.TypologieAnalyzer$LigneTypologie.maxCreneauxParAnimateur
+service.analyse.TypologieAnalyzer$LigneTypologie.polyvalent
+service.analyse.TypologieAnalyzer$LigneTypologie.postes
+service.analyse.TypologieAnalyzer$LigneTypologie.typologie
+service.analyse.TypologieAnalyzer$RapportTypologies.jours
+service.analyse.TypologieAnalyzer$RapportTypologies.typologies
+service.analyse.ViolationFormatter$ViolationReference.animateurId
+service.analyse.ViolationFormatter$ViolationReference.creneauId
+service.analyse.ViolationFormatter$ViolationReference.standId
+service.analyse.ViolationFormatter$ViolationReference.texte
+service.analyse.WalkSequenceAnalyzer$WalkSequenceReport.detourFactor
+service.analyse.WalkSequenceAnalyzer$WalkSequenceReport.geolocated
+service.analyse.WalkSequenceAnalyzer$WalkSequenceReport.toleranceMinutes
+service.analyse.WalkSequenceAnalyzer$WalkSequenceReport.walkingSpeedKmH
+service.analyse.WalkSequenceAnalyzer$WalkSequenceReport.walks
+service.analyse.WalkSequenceAnalyzer$WalkView.animateurId
+service.analyse.WalkSequenceAnalyzer$WalkView.date
+service.analyse.WalkSequenceAnalyzer$WalkView.distanceMetres
+service.analyse.WalkSequenceAnalyzer$WalkView.end
+service.analyse.WalkSequenceAnalyzer$WalkView.fromCreneauId
+service.analyse.WalkSequenceAnalyzer$WalkView.fromEmplacementId
+service.analyse.WalkSequenceAnalyzer$WalkView.fromPosteId
+service.analyse.WalkSequenceAnalyzer$WalkView.fromStandId
+service.analyse.WalkSequenceAnalyzer$WalkView.gapMinutes
+service.analyse.WalkSequenceAnalyzer$WalkView.missingMinutes
+service.analyse.WalkSequenceAnalyzer$WalkView.start
+service.analyse.WalkSequenceAnalyzer$WalkView.toCreneauId
+service.analyse.WalkSequenceAnalyzer$WalkView.toEmplacementId
+service.analyse.WalkSequenceAnalyzer$WalkView.toPosteId
+service.analyse.WalkSequenceAnalyzer$WalkView.toStandId
+service.analyse.WalkSequenceAnalyzer$WalkView.walkMinutes
+service.analyse.WalkSequenceAnalyzer$WalkView.walkOnBreak
+service.backup.BackupFile.createdAt
+service.backup.BackupFile.name
+service.backup.BackupFile.sizeBytes
+service.backup.BackupRun.attemptedAt
+service.backup.BackupRun.file
+service.backup.BackupRun.message
+service.backup.BackupRun.succeeded
+service.backup.BackupState.active
+service.backup.BackupState.alertRecipientMissing
+service.backup.BackupState.configured
+service.backup.BackupState.cron
+service.backup.BackupState.directory
+service.backup.BackupState.directoryError
+service.backup.BackupState.files
+service.backup.BackupState.lastRun
+service.backup.BackupState.nextRun
+service.backup.BackupState.retention
+service.backup.BackupState.zone
+service.compte.Compte.creeLe
+service.compte.Compte.derniereConnexionLe
+service.compte.Compte.desactiveLe
+service.compte.Compte.desactivePar
+service.compte.Compte.email
+service.compte.Compte.habilitations
+service.compte.Compte.id
+service.compte.Compte.nom
+service.compte.Compte.passwordSet
+service.compte.Habilitation.creeLe
+service.compte.Habilitation.creePar
+service.compte.Habilitation.editionId
+service.compte.Habilitation.expireLe
+service.compte.Habilitation.id
+service.compte.Habilitation.retireeLe
+service.compte.Habilitation.retireePar
+service.compte.Habilitation.role
+service.compte.Habilitation.standIds
+service.consigne.ConsigneService$ApercuJour.animateursDansLaBande
+service.consigne.ConsigneService$ApercuJour.contraintesTouchees
+service.consigne.ConsigneService$ApercuJour.creneauxAAjouter
+service.consigne.ConsigneService$ApercuJour.creneauxARetirer
+service.consigne.ConsigneService$ApercuJour.creneauxDuJour
+service.consigne.ConsigneService$ApercuJour.date
+service.consigne.ConsigneService$ApercuJour.dejaSousConsigne
+service.consigne.ConsigneService$ApercuJour.majeursDisponibles
+service.consigne.ConsigneService$ApercuJour.mineursConcernes
+service.consigne.ConsigneService$ApercuJour.minutesApres
+service.consigne.ConsigneService$ApercuJour.minutesAvant
+service.consigne.ConsigneService$ApercuJour.siegesApres
+service.consigne.ConsigneService$ApercuJour.siegesAvant
+service.consigne.ConsigneService$ApercuJour.standsEntrants
+service.consigne.ConsigneService$ApercuJour.standsExceptionCoches
+service.consigne.ConsigneService$ApercuJour.standsOuverts
+service.consigne.ConsigneService$ApercuJour.standsSortants
+service.consigne.ConsigneService$ApercuJour.vacationsSansSiege
+service.consigne.ConsigneService$ApercuJour.validationRetiree
+service.consigne.ConsigneService$ApercuJour.verrousTouches
+service.consigne.ConsigneService$ApercuLevee.animateursLiberes
+service.consigne.ConsigneService$ApercuLevee.animateursSansJourLibre
+service.consigne.ConsigneService$ApercuLevee.animateursSurLesCreneauxRetires
+service.consigne.ConsigneService$ApercuLevee.creneauxARetirer
+service.consigne.ConsigneService$ApercuLevee.date
+service.consigne.ConsigneService$ApercuLevee.joursADeverrouiller
+service.consigne.ConsigneService$ApercuLevee.sousConsigne
+service.consigne.ConsigneService$ApercuLevee.validationRetiree
+service.consigne.ConsigneService$Demande.dates
+service.consigne.ConsigneService$Demande.fenetres
+service.consigne.ConsigneService$Demande.fermetureDebut
+service.consigne.ConsigneService$Demande.fermetureFin
+service.consigne.ConsigneService$Demande.modifieLe
+service.consigne.ConsigneService$Demande.motif
+service.consigne.ConsigneService$Demande.ouvertures
+service.consigne.ConsigneService$Demande.prereglage
+service.consigne.ConsigneService$Demande.repas
+service.consigne.ConsigneService$EtatConsignes.aujourdhui
+service.consigne.ConsigneService$EtatConsignes.consignes
+service.consigne.ConsigneService$EtatConsignes.indicateurs
+service.consigne.ConsigneService$EtatConsignes.prereglages
+service.consigne.ConsigneService$Indicateur.animateursConcernes
+service.consigne.ConsigneService$Indicateur.date
+service.consigne.ConsigneService$Indicateur.minutesFermees
+service.consigne.ConsigneService$Indicateur.minutesRouvertes
+service.consigne.ConsigneService$Indicateur.motif
+service.consigne.ConsigneService$Indicateur.siegesNominaux
+service.consigne.ConsigneService$Indicateur.siegesSousConsigne
+service.consigne.ConsigneService$LigneStandConsigne.effectifHerite
+service.consigne.ConsigneService$LigneStandConsigne.exceptionDatee
+service.consigne.ConsigneService$LigneStandConsigne.minutesPerdues
+service.consigne.ConsigneService$LigneStandConsigne.motif
+service.consigne.ConsigneService$LigneStandConsigne.ouvertures
+service.consigne.ConsigneService$LigneStandConsigne.preCoche
+service.consigne.ConsigneService$LigneStandConsigne.standId
+service.consigne.ConsigneService$LigneStandConsigne.standNom
+service.consigne.ConsigneService$Preselection.creneauxDuJour
+service.consigne.ConsigneService$Preselection.date
+service.consigne.ConsigneService$Preselection.stands
+service.consigne.ConsigneService$VacationRef.date
+service.consigne.ConsigneService$VacationRef.heureDebut
+service.consigne.ConsigneService$VacationRef.heureFin
+service.consigne.LayerCalendar$ConsigneLayer.debutMinutes
+service.consigne.LayerCalendar$ConsigneLayer.fermetureDebut
+service.consigne.LayerCalendar$ConsigneLayer.fermetureFin
+service.consigne.LayerCalendar$ConsigneLayer.finMinutes
+service.consigne.LayerCalendar$ConsigneLayer.motif
+service.consigne.LayerCalendar$ConsigneLayer.prereglage
+service.consigne.LayerCalendar$LayerCell.date
+service.consigne.LayerCalendar$LayerCell.effective
+service.consigne.LayerCalendar$LayerCell.horaireIds
+service.consigne.LayerCalendar$LayerCell.motif
+service.consigne.LayerCalendar$LayerCell.nominal
+service.consigne.LayerCalendar$LayerCell.reopenings
+service.consigne.LayerCalendar$LayerCell.source
+service.consigne.LayerCalendar$LayerDay.consigne
+service.consigne.LayerCalendar$LayerDay.date
+service.consigne.LayerCalendar$LayerDay.ferie
+service.consigne.LayerCalendar$LayerDay.jour
+service.consigne.LayerCalendar$LayerDay.vacations
+service.consigne.LayerCalendar$LayerRow.effectifMin
+service.consigne.LayerCalendar$LayerRow.jours
+service.consigne.LayerCalendar$LayerRow.nom
+service.consigne.LayerCalendar$LayerRow.standId
+service.consigne.LayerCalendar$LayerTimeslot.addedByConsigne
+service.consigne.LayerCalendar$LayerTimeslot.debutMinutes
+service.consigne.LayerCalendar$LayerTimeslot.finMinutes
+service.consigne.LayerCalendar$LayerTimeslot.heureDebut
+service.consigne.LayerCalendar$LayerTimeslot.heureFin
+service.consigne.LayerCalendar$LayerTimeslot.id
+service.consigne.LayerCalendar$LayerWindow.debutMinutes
+service.consigne.LayerCalendar$LayerWindow.effectif
+service.consigne.LayerCalendar$LayerWindow.finMinutes
+service.consigne.LayerCalendar$OpeningLayers.jours
+service.consigne.LayerCalendar$OpeningLayers.stands
+service.diagnostic.BlockerPlaybook$ActionType.code
+service.diagnostic.BlockerPlaybook$ActionType.explication
+service.diagnostic.BlockerPlaybook$ActionType.libelle
+service.diagnostic.BlockerPlaybook$ActionType.parametres
+service.diagnostic.BlockerPlaybook$ActionType.route
+service.edition.EditionActivationService$ActivationPreview.demandesOuvertes
+service.edition.EditionActivationService$ActivationPreview.jobsEnFile
+service.edition.EditionActivationService$ActivationPreview.liensAnimateurs
+service.edition.EditionActivationService$ActivationPreview.liensMuraux
+service.edition.EditionActivationService$ActivationPreview.resolutionEnCours
+service.edition.EditionActivationService$ActivationPreview.sortante
+service.edition.EditionActivationService$Situation.dernierJour
+service.edition.EditionActivationService$Situation.edition
+service.edition.EditionActivationService$Situation.premierJour
+service.edition.EditionActivationService$Situation.type
+service.edition.EditionDelta$DeltaFamilyCount.added
+service.edition.EditionDelta$DeltaFamilyCount.family
+service.edition.EditionDelta$DeltaFamilyCount.matchedByName
+service.edition.EditionDelta$DeltaFamilyCount.modified
+service.edition.EditionDelta$DeltaFamilyCount.removed
+service.edition.EditionDelta$DeltaLine.change
+service.edition.EditionDelta$DeltaLine.code
+service.edition.EditionDelta$DeltaLine.fields
+service.edition.EditionDelta$DeltaLine.label
+service.edition.EditionDelta$DeltaLine.matching
+service.edition.EditionDelta$DeltaLine.referenceId
+service.edition.EditionDelta$DeltaLine.targetId
+service.edition.EditionDelta$DeltaSide.id
+service.edition.EditionDelta$DeltaSide.nom
+service.edition.EditionDelta$DeltaSummary.families
+service.edition.EditionDelta$DeltaSummary.hoursToFillDifference
+service.edition.EditionDelta$DeltaSummary.referenceDays
+service.edition.EditionDelta$DeltaSummary.seatDifference
+service.edition.EditionDelta$DeltaSummary.targetDays
+service.edition.EditionDelta$DeltaTimeslotLine.change
+service.edition.EditionDelta$DeltaTimeslotLine.day
+service.edition.EditionDelta$DeltaTimeslotLine.fields
+service.edition.EditionDelta$DeltaTimeslotLine.matching
+service.edition.EditionDelta$DeltaTimeslotLine.referenceDate
+service.edition.EditionDelta$DeltaTimeslotLine.referenceId
+service.edition.EditionDelta$DeltaTimeslotLine.start
+service.edition.EditionDelta$DeltaTimeslotLine.targetDate
+service.edition.EditionDelta$DeltaTimeslotLine.targetId
+service.edition.EditionDelta$DeltaValueLine.group
+service.edition.EditionDelta$DeltaValueLine.key
+service.edition.EditionDelta$DeltaValueLine.label
+service.edition.EditionDelta$DeltaValueLine.referenceValue
+service.edition.EditionDelta$DeltaValueLine.targetValue
+service.edition.EditionDelta$DeltaVolumes.animateurCount
+service.edition.EditionDelta$DeltaVolumes.fillRatio
+service.edition.EditionDelta$DeltaVolumes.hoursAvailable
+service.edition.EditionDelta$DeltaVolumes.hoursToFill
+service.edition.EditionDelta$DeltaVolumes.posteCount
+service.edition.EditionDelta.ajustements
+service.edition.EditionDelta.animateurs
+service.edition.EditionDelta.creneaux
+service.edition.EditionDelta.emplacements
+service.edition.EditionDelta.journeesTypes
+service.edition.EditionDelta.noAnimateurMatched
+service.edition.EditionDelta.parametres
+service.edition.EditionDelta.reference
+service.edition.EditionDelta.referenceVolumes
+service.edition.EditionDelta.stands
+service.edition.EditionDelta.summary
+service.edition.EditionDelta.target
+service.edition.EditionDelta.targetVolumes
+service.edition.EditionDelta.typologies
+service.edition.EtatEditionView$EtatATraiter.aujourdhui
+service.edition.EtatEditionView$EtatATraiter.declarationsEnAttente
+service.edition.EtatEditionView$EtatATraiter.donneesModifiees
+service.edition.EtatEditionView$EtatATraiter.echangesAArbitrer
+service.edition.EtatEditionView$EtatATraiter.echangesEnAlerte
+service.edition.EtatEditionView$EtatATraiter.envoisEnEchec
+service.edition.EtatEditionView$EtatATraiter.horizonJours
+service.edition.EtatEditionView$EtatATraiter.journeesNonRelues
+service.edition.EtatEditionView$EtatATraiter.personnesAPrevenir
+service.edition.EtatEditionView$EtatATraiter.plusAncienEchange
+service.edition.EtatEditionView$EtatATraiter.plusAncienneDeclaration
+service.edition.EtatEditionView$EtatATraiter.rappelsNonEnvoyes
+service.edition.EtatEditionView$EtatATraiter.relancesNonEnvoyees
+service.edition.EtatEditionView$EtatATraiter.sauvegardeEchecLe
+service.edition.EtatEditionView$EtatATraiter.sauvegardeEnEchec
+service.edition.EtatEditionView$EtatATraiter.seuilAncienneteJours
+service.edition.EtatEditionView$EtatATraiter.silenceJours
+service.edition.EtatEditionView$EtatATraiter.silencieuxARelancer
+service.edition.EtatEditionView$EtatBesoin.animateurs
+service.edition.EtatEditionView$EtatBesoin.manque
+service.edition.EtatEditionView$EtatBesoin.minimum
+service.edition.EtatEditionView$EtatBesoin.statut
+service.edition.EtatEditionView$EtatCoherence.aVerifier
+service.edition.EtatEditionView$EtatCoherence.bloquants
+service.edition.EtatEditionView$EtatCoherence.informations
+service.edition.EtatEditionView$EtatCoherence.statut
+service.edition.EtatEditionView$EtatCollecte.declarationsEnAttente
+service.edition.EtatEditionView$EtatCollecte.declarationsTraitees
+service.edition.EtatEditionView$EtatCollecte.ouverte
+service.edition.EtatEditionView$EtatCollecte.statut
+service.edition.EtatEditionView$EtatConfirmations.confirmes
+service.edition.EtatEditionView$EtatConfirmations.delaiRelanceHeures
+service.edition.EtatEditionView$EtatConfirmations.echecsEnvoi
+service.edition.EtatEditionView$EtatConfirmations.relances
+service.edition.EtatEditionView$EtatConfirmations.relancesAutomatiques
+service.edition.EtatEditionView$EtatConfirmations.silencieux
+service.edition.EtatEditionView$EtatConfirmations.statut
+service.edition.EtatEditionView$EtatEvenement.aujourdhui
+service.edition.EtatEditionView$EtatEvenement.dernierJour
+service.edition.EtatEditionView$EtatEvenement.jour
+service.edition.EtatEditionView$EtatEvenement.phase
+service.edition.EtatEditionView$EtatEvenement.premierJour
+service.edition.EtatEditionView$EtatEvenement.termine
+service.edition.EtatEditionView$EtatFoire.demandesEnAttente
+service.edition.EtatEditionView$EtatFoire.ouverte
+service.edition.EtatEditionView$EtatFoire.statut
+service.edition.EtatEditionView$EtatGelReferentiel.familles
+service.edition.EtatEditionView$EtatGelReferentiel.statut
+service.edition.EtatEditionView$EtatJour.absents
+service.edition.EtatEditionView$EtatJour.date
+service.edition.EtatEditionView$EtatJour.echangesAArbitrer
+service.edition.EtatEditionView$EtatJour.numero
+service.edition.EtatEditionView$EtatJour.placesVides
+service.edition.EtatEditionView$EtatJour.standsOuverts
+service.edition.EtatEditionView$EtatOuvertures.anomalies
+service.edition.EtatEditionView$EtatOuvertures.fenetresSansEffet
+service.edition.EtatEditionView$EtatOuvertures.informations
+service.edition.EtatEditionView$EtatOuvertures.standsJamaisOuverts
+service.edition.EtatEditionView$EtatOuvertures.statut
+service.edition.EtatEditionView$EtatProblemes.avertissements
+service.edition.EtatEditionView$EtatProblemes.bloquants
+service.edition.EtatEditionView$EtatProblemes.reglesAnalysees
+service.edition.EtatEditionView$EtatProblemes.statut
+service.edition.EtatEditionView$EtatPublication.dernierePublicationLe
+service.edition.EtatEditionView$EtatPublication.envoisEnEchec
+service.edition.EtatEditionView$EtatPublication.jamaisPublie
+service.edition.EtatEditionView$EtatPublication.personnesAPrevenir
+service.edition.EtatEditionView$EtatPublication.statut
+service.edition.EtatEditionView$EtatReferentiels.animateurs
+service.edition.EtatEditionView$EtatReferentiels.creneaux
+service.edition.EtatEditionView$EtatReferentiels.stands
+service.edition.EtatEditionView$EtatReferentiels.statut
+service.edition.EtatEditionView$EtatReferentiels.typologiesOrphelines
+service.edition.EtatEditionView$EtatRelecture.journees
+service.edition.EtatEditionView$EtatRelecture.journeesValidees
+service.edition.EtatEditionView$EtatRelecture.statut
+service.edition.EtatEditionView$EtatResolution.dataStale
+service.edition.EtatEditionView$EtatResolution.faisable
+service.edition.EtatEditionView$EtatResolution.lecture
+service.edition.EtatEditionView$EtatResolution.resoluLe
+service.edition.EtatEditionView$EtatResolution.resolue
+service.edition.EtatEditionView$EtatResolution.score
+service.edition.EtatEditionView$EtatResolution.scoreHorsPlancher
+service.edition.EtatEditionView$EtatResolution.solveEnCours
+service.edition.EtatEditionView$EtatResolution.statut
+service.edition.EtatEditionView.aTraiter
+service.edition.EtatEditionView.besoin
+service.edition.EtatEditionView.coherence
+service.edition.EtatEditionView.collecte
+service.edition.EtatEditionView.confirmations
+service.edition.EtatEditionView.editionId
+service.edition.EtatEditionView.editionNom
+service.edition.EtatEditionView.evenement
+service.edition.EtatEditionView.foire
+service.edition.EtatEditionView.gel
+service.edition.EtatEditionView.ouvertures
+service.edition.EtatEditionView.problemes
+service.edition.EtatEditionView.publication
+service.edition.EtatEditionView.referentiels
+service.edition.EtatEditionView.relecture
+service.edition.EtatEditionView.resolution
+service.espace.DeclarationDisponibiliteService$InvitationReport.echecs
+service.espace.DeclarationDisponibiliteService$InvitationReport.envoyes
+service.espace.DeclarationDisponibiliteService$InvitationReport.sansEmail
+service.espace.DeclarationDisponibiliteService$NouvelleDeclaration.commentaire
+service.espace.DeclarationDisponibiliteService$NouvelleDeclaration.joursIndisponibles
+service.espace.DeclarationDisponibiliteService$NouvelleDeclaration.souhaits
+service.espace.DemandeEchangeService$NouvelleDemande.cibleId
+service.espace.DemandeEchangeService$NouvelleDemande.creneauCibleId
+service.espace.DemandeEchangeService$NouvelleDemande.creneauId
+service.espace.DemandeEchangeService$NouvelleDemande.motif
+service.espace.DemandeEchangeService$NouvelleDemande.standCibleId
+service.espace.DemandeEchangeService$NouvelleDemande.standId
+service.espace.EchangeStatistics$EchangeConstraintCount.contrainte
+service.espace.EchangeStatistics$EchangeConstraintCount.nombre
+service.espace.EchangeStatistics$EchangeDayCount.jour
+service.espace.EchangeStatistics$EchangeDayCount.nombre
+service.espace.EchangeStatistics$EchangeDelay.centile90Secondes
+service.espace.EchangeStatistics$EchangeDelay.medianeSecondes
+service.espace.EchangeStatistics$EchangeDelay.mesurees
+service.espace.EchangeStatistics$EchangeDelay.moyenneSecondes
+service.espace.EchangeStatistics$EchangeDelay.sansHorodatage
+service.espace.EchangeStatistics$EchangeRate.denominateur
+service.espace.EchangeStatistics$EchangeRate.numerateur
+service.espace.EchangeStatistics$EchangeStandCount.nombre
+service.espace.EchangeStatistics$EchangeStandCount.standId
+service.espace.EchangeStatistics$EchangeStandCount.standNom
+service.espace.EchangeStatistics.aboutissement
+service.espace.EchangeStatistics.acceptationNonPrevalidees
+service.espace.EchangeStatistics.acceptationOrganisation
+service.espace.EchangeStatistics.acceptees
+service.espace.EchangeStatistics.accordCollegues
+service.espace.EchangeStatistics.annulees
+service.espace.EchangeStatistics.au
+service.espace.EchangeStatistics.contraintesViolees
+service.espace.EchangeStatistics.creees
+service.espace.EchangeStatistics.creneauRetire
+service.espace.EchangeStatistics.delaiAnnulation
+service.espace.EchangeStatistics.delaiArbitrage
+service.espace.EchangeStatistics.delaiCommunication
+service.espace.EchangeStatistics.delaiReponseCollegue
+service.espace.EchangeStatistics.dirigees
+service.espace.EchangeStatistics.du
+service.espace.EchangeStatistics.enAttenteCible
+service.espace.EchangeStatistics.enAttenteOrganisation
+service.espace.EchangeStatistics.fenetreFoire
+service.espace.EchangeStatistics.fuseau
+service.espace.EchangeStatistics.parJourCreation
+service.espace.EchangeStatistics.parJourEvenement
+service.espace.EchangeStatistics.parStand
+service.espace.EchangeStatistics.prevalidees
+service.espace.EchangeStatistics.refusees
+service.espace.EchangeStatistics.refuseesCible
+service.espace.EspaceAnimateurService$CarpoolDayView.aligned
+service.espace.EspaceAnimateurService$CarpoolDayView.date
+service.espace.EspaceAnimateurService$CarpoolEspaceView.colleagues
+service.espace.EspaceAnimateurService$CarpoolEspaceView.collectionEnd
+service.espace.EspaceAnimateurService$CarpoolEspaceView.collectionOpen
+service.espace.EspaceAnimateurService$CarpoolEspaceView.collectionStart
+service.espace.EspaceAnimateurService$CarpoolEspaceView.decidedAt
+service.espace.EspaceAnimateurService$CarpoolEspaceView.status
+service.espace.EspaceAnimateurService$CarpoolEspaceView.teammateIds
+service.espace.EspaceAnimateurService$ColleagueView.id
+service.espace.EspaceAnimateurService$ColleagueView.nomComplet
+service.espace.EspaceAnimateurService$ConsigneEspaceView.date
+service.espace.EspaceAnimateurService$ConsigneEspaceView.fermetureDebut
+service.espace.EspaceAnimateurService$ConsigneEspaceView.fermetureFin
+service.espace.EspaceAnimateurService$ConsigneEspaceView.motif
+service.espace.EspaceAnimateurService$DeclarationAdminView.animateurId
+service.espace.EspaceAnimateurService$DeclarationAdminView.animateurNom
+service.espace.EspaceAnimateurService$DeclarationAdminView.commentaire
+service.espace.EspaceAnimateurService$DeclarationAdminView.commentaireAdmin
+service.espace.EspaceAnimateurService$DeclarationAdminView.creeLe
+service.espace.EspaceAnimateurService$DeclarationAdminView.decideLe
+service.espace.EspaceAnimateurService$DeclarationAdminView.id
+service.espace.EspaceAnimateurService$DeclarationAdminView.joursActuels
+service.espace.EspaceAnimateurService$DeclarationAdminView.joursIndisponibles
+service.espace.EspaceAnimateurService$DeclarationAdminView.souhaits
+service.espace.EspaceAnimateurService$DeclarationAdminView.souhaitsActuelsLabels
+service.espace.EspaceAnimateurService$DeclarationAdminView.souhaitsLabels
+service.espace.EspaceAnimateurService$DeclarationAdminView.statut
+service.espace.EspaceAnimateurService$DeclarationEspaceView.collecteDebut
+service.espace.EspaceAnimateurService$DeclarationEspaceView.collecteFin
+service.espace.EspaceAnimateurService$DeclarationEspaceView.collecteOuverte
+service.espace.EspaceAnimateurService$DeclarationEspaceView.enAttente
+service.espace.EspaceAnimateurService$DeclarationEspaceView.historique
+service.espace.EspaceAnimateurService$DeclarationEspaceView.joursActuels
+service.espace.EspaceAnimateurService$DeclarationEspaceView.joursEvenement
+service.espace.EspaceAnimateurService$DeclarationEspaceView.souhaitsActuels
+service.espace.EspaceAnimateurService$DeclarationEspaceView.typologies
+service.espace.EspaceAnimateurService$DeclarationView.commentaire
+service.espace.EspaceAnimateurService$DeclarationView.commentaireAdmin
+service.espace.EspaceAnimateurService$DeclarationView.creeLe
+service.espace.EspaceAnimateurService$DeclarationView.decideLe
+service.espace.EspaceAnimateurService$DeclarationView.id
+service.espace.EspaceAnimateurService$DeclarationView.joursIndisponibles
+service.espace.EspaceAnimateurService$DeclarationView.souhaits
+service.espace.EspaceAnimateurService$DeclarationView.souhaitsLabels
+service.espace.EspaceAnimateurService$DeclarationView.statut
+service.espace.EspaceAnimateurService$DemandeEchangeView.cibleDecideLe
+service.espace.EspaceAnimateurService$DemandeEchangeView.cibleId
+service.espace.EspaceAnimateurService$DemandeEchangeView.cibleNom
+service.espace.EspaceAnimateurService$DemandeEchangeView.commentaireAdmin
+service.espace.EspaceAnimateurService$DemandeEchangeView.communiqueeLe
+service.espace.EspaceAnimateurService$DemandeEchangeView.contraintesViolees
+service.espace.EspaceAnimateurService$DemandeEchangeView.creeLe
+service.espace.EspaceAnimateurService$DemandeEchangeView.creneauCibleId
+service.espace.EspaceAnimateurService$DemandeEchangeView.creneauId
+service.espace.EspaceAnimateurService$DemandeEchangeView.date
+service.espace.EspaceAnimateurService$DemandeEchangeView.dateCible
+service.espace.EspaceAnimateurService$DemandeEchangeView.decideLe
+service.espace.EspaceAnimateurService$DemandeEchangeView.demandeurId
+service.espace.EspaceAnimateurService$DemandeEchangeView.demandeurNom
+service.espace.EspaceAnimateurService$DemandeEchangeView.heureDebut
+service.espace.EspaceAnimateurService$DemandeEchangeView.heureDebutCible
+service.espace.EspaceAnimateurService$DemandeEchangeView.heureFin
+service.espace.EspaceAnimateurService$DemandeEchangeView.heureFinCible
+service.espace.EspaceAnimateurService$DemandeEchangeView.id
+service.espace.EspaceAnimateurService$DemandeEchangeView.motif
+service.espace.EspaceAnimateurService$DemandeEchangeView.prevalidationOk
+service.espace.EspaceAnimateurService$DemandeEchangeView.standCibleId
+service.espace.EspaceAnimateurService$DemandeEchangeView.standCibleNom
+service.espace.EspaceAnimateurService$DemandeEchangeView.standId
+service.espace.EspaceAnimateurService$DemandeEchangeView.standNom
+service.espace.EspaceAnimateurService$DemandeEchangeView.statut
+service.espace.EspaceAnimateurService$EnvoiEspaceView.le
+service.espace.EspaceAnimateurService$EnvoiEspaceView.statut
+service.espace.EspaceAnimateurService$EspaceAnimateurView.abonnementToken
+service.espace.EspaceAnimateurService$EspaceAnimateurView.animateurId
+service.espace.EspaceAnimateurService$EspaceAnimateurView.changements
+service.espace.EspaceAnimateurService$EspaceAnimateurView.changementsLe
+service.espace.EspaceAnimateurService$EspaceAnimateurView.collecteFermeLe
+service.espace.EspaceAnimateurService$EspaceAnimateurView.collecteOuverte
+service.espace.EspaceAnimateurService$EspaceAnimateurView.collegues
+service.espace.EspaceAnimateurService$EspaceAnimateurView.confirmeLe
+service.espace.EspaceAnimateurService$EspaceAnimateurView.consignes
+service.espace.EspaceAnimateurService$EspaceAnimateurView.contact
+service.espace.EspaceAnimateurService$EspaceAnimateurView.covoiturage
+service.espace.EspaceAnimateurService$EspaceAnimateurView.dateDuJourFigee
+service.espace.EspaceAnimateurService$EspaceAnimateurView.dernierEnvoi
+service.espace.EspaceAnimateurService$EspaceAnimateurView.editionDebut
+service.espace.EspaceAnimateurService$EspaceAnimateurView.editionFin
+service.espace.EspaceAnimateurService$EspaceAnimateurView.editionNom
+service.espace.EspaceAnimateurService$EspaceAnimateurView.foireFermeLe
+service.espace.EspaceAnimateurService$EspaceAnimateurView.foireOuverte
+service.espace.EspaceAnimateurService$EspaceAnimateurView.foireOuvreLe
+service.espace.EspaceAnimateurService$EspaceAnimateurView.heureDuJourFigee
+service.espace.EspaceAnimateurService$EspaceAnimateurView.joursRepos
+service.espace.EspaceAnimateurService$EspaceAnimateurView.nom
+service.espace.EspaceAnimateurService$EspaceAnimateurView.pauses
+service.espace.EspaceAnimateurService$EspaceAnimateurView.postes
+service.espace.EspaceAnimateurService$EspaceAnimateurView.prenom
+service.espace.EspaceAnimateurService$EspaceAnimateurView.publieLe
+service.espace.EspaceAnimateurService$EspaceAnimateurView.signalements
+service.espace.EspaceAnimateurService$EspaceAnimateurView.signalementsActifs
+service.espace.EspaceAnimateurService$EspaceAnimateurView.statutConfirmation
+service.espace.EspaceAnimateurService$PosteAnimateurView.coequipiers
+service.espace.EspaceAnimateurService$PosteAnimateurView.creneauId
+service.espace.EspaceAnimateurService$PosteAnimateurView.date
+service.espace.EspaceAnimateurService$PosteAnimateurView.emplacementLatitude
+service.espace.EspaceAnimateurService$PosteAnimateurView.emplacementLongitude
+service.espace.EspaceAnimateurService$PosteAnimateurView.emplacementNom
+service.espace.EspaceAnimateurService$PosteAnimateurView.heureDebut
+service.espace.EspaceAnimateurService$PosteAnimateurView.heureFin
+service.espace.EspaceAnimateurService$PosteAnimateurView.standId
+service.espace.EspaceAnimateurService$PosteAnimateurView.standNom
+service.espace.EspaceAnimateurService$PosteAnimateurView.typologieId
+service.espace.EspaceAnimateurService$PosteAnimateurView.typologieLibelle
+service.espace.EspaceAnimateurService$SuggestionEchangeView.animateurId
+service.espace.EspaceAnimateurService$SuggestionEchangeView.creneauCibleId
+service.espace.EspaceAnimateurService$SuggestionEchangeView.dateCible
+service.espace.EspaceAnimateurService$SuggestionEchangeView.heureDebutCible
+service.espace.EspaceAnimateurService$SuggestionEchangeView.heureFinCible
+service.espace.EspaceAnimateurService$SuggestionEchangeView.nature
+service.espace.EspaceAnimateurService$SuggestionEchangeView.nomComplet
+service.espace.EspaceAnimateurService$SuggestionEchangeView.standCibleId
+service.espace.EspaceAnimateurService$SuggestionEchangeView.standCibleNom
+service.espace.EspaceAnimateurService$SuggestionsEchangeView.creneauId
+service.espace.EspaceAnimateurService$SuggestionsEchangeView.listeTronquee
+service.espace.EspaceAnimateurService$SuggestionsEchangeView.optionsEligibles
+service.espace.EspaceAnimateurService$SuggestionsEchangeView.optionsEvaluees
+service.espace.EspaceAnimateurService$SuggestionsEchangeView.standId
+service.espace.EspaceAnimateurService$SuggestionsEchangeView.suggestions
+service.espace.EspaceAnimateurService$TypologieChoixView.id
+service.espace.EspaceAnimateurService$TypologieChoixView.label
+service.espace.JourJService$AbsenceJourJ.animateurId
+service.espace.JourJService$AbsenceJourJ.entrees
+service.espace.JourJService$AbsenceJourJ.nomAffiche
+service.espace.JourJService$AbsenceMarquee.animateurId
+service.espace.JourJService$AbsenceMarquee.entrees
+service.espace.JourJService$AbsenceMarquee.nomAffiche
+service.espace.JourJService$AbsenceMarquee.postesLiberes
+service.espace.JourJService$AnimateurAffecte.absent
+service.espace.JourJService$AnimateurAffecte.animateurId
+service.espace.JourJService$AnimateurAffecte.nomAffiche
+service.espace.JourJService$AnimateurAffecte.postesRestants
+service.espace.JourJService$AnimateurNomme.animateurId
+service.espace.JourJService$AnimateurNomme.nomAffiche
+service.espace.JourJService$AnimateurNomme.telephone
+service.espace.JourJService$ConsigneJourJ.fermetureDebut
+service.espace.JourJService$ConsigneJourJ.fermetureFin
+service.espace.JourJService$ConsigneJourJ.motif
+service.espace.JourJService$CreneauJourJ.date
+service.espace.JourJService$CreneauJourJ.enCours
+service.espace.JourJService$CreneauJourJ.heureDebut
+service.espace.JourJService$CreneauJourJ.heureFin
+service.espace.JourJService$CreneauJourJ.id
+service.espace.JourJService$EntreeAbsence.annulable
+service.espace.JourJService$EntreeAbsence.contrainteId
+service.espace.JourJService$EntreeAbsence.creeLe
+service.espace.JourJService$EntreeAbsence.creeParNom
+service.espace.JourJService$EntreeAbsence.creeParUtilisateurId
+service.espace.JourJService$EntreeAbsence.creneauId
+service.espace.JourJService$EntreeAbsence.heureDebut
+service.espace.JourJService$EntreeAbsence.heureFin
+service.espace.JourJService$EntreeAbsence.raison
+service.espace.JourJService$EtatJourJ.aPrevenir
+service.espace.JourJService$EtatJourJ.absences
+service.espace.JourJService$EtatJourJ.alertes
+service.espace.JourJService$EtatJourJ.animateurs
+service.espace.JourJService$EtatJourJ.animateursDeService
+service.espace.JourJService$EtatJourJ.consigne
+service.espace.JourJService$EtatJourJ.creneauxDuJour
+service.espace.JourJService$EtatJourJ.creneauxRestants
+service.espace.JourJService$EtatJourJ.date
+service.espace.JourJService$EtatJourJ.echangesAArbitrer
+service.espace.JourJService$EtatJourJ.jourNumero
+service.espace.JourJService$EtatJourJ.maintenant
+service.espace.JourJService$EtatJourJ.postesAPourvoir
+service.espace.JourJService$EtatJourJ.signalements
+service.espace.JourJService$EtatJourJ.standsOuverts
+service.espace.JourJService$PosteAPourvoir.creneauId
+service.espace.JourJService$PosteAPourvoir.heureDebut
+service.espace.JourJService$PosteAPourvoir.heureFin
+service.espace.JourJService$PosteAPourvoir.nouveau
+service.espace.JourJService$PosteAPourvoir.posteId
+service.espace.JourJService$PosteAPourvoir.resteDuCreneau
+service.espace.JourJService$PosteAPourvoir.standId
+service.espace.JourJService$PosteAPourvoir.standNom
+service.espace.JourJService$PosteAPourvoir.verrouille
+service.espace.JourJService$SignalementJourJ.animateurId
+service.espace.JourJService$SignalementJourJ.creneauId
+service.espace.JourJService$SignalementJourJ.date
+service.espace.JourJService$SignalementJourJ.heureDebut
+service.espace.JourJService$SignalementJourJ.heureFin
+service.espace.JourJService$SignalementJourJ.id
+service.espace.JourJService$SignalementJourJ.motif
+service.espace.JourJService$SignalementJourJ.nomAffiche
+service.espace.JourJService$SignalementJourJ.portee
+service.espace.JourJService$SignalementJourJ.signaleLe
+service.espace.JourJService$SignalementJourJ.standId
+service.espace.JourJService$SignalementJourJ.standNom
+service.espace.SignalementAbsenceService$NouveauSignalement.creneauId
+service.espace.SignalementAbsenceService$NouveauSignalement.date
+service.espace.SignalementAbsenceService$NouveauSignalement.motif
+service.espace.SignalementAbsenceService$NouveauSignalement.portee
+service.espace.SignalementAbsenceService$NouveauSignalement.standId
+service.espace.SignalementAbsenceService$SignalementView.creneauId
+service.espace.SignalementAbsenceService$SignalementView.date
+service.espace.SignalementAbsenceService$SignalementView.heureDebut
+service.espace.SignalementAbsenceService$SignalementView.heureFin
+service.espace.SignalementAbsenceService$SignalementView.id
+service.espace.SignalementAbsenceService$SignalementView.motif
+service.espace.SignalementAbsenceService$SignalementView.portee
+service.espace.SignalementAbsenceService$SignalementView.signaleLe
+service.espace.SignalementAbsenceService$SignalementView.standId
+service.espace.SignalementAbsenceService$SignalementView.standNom
+service.espace.SignalementAbsenceService$SignalementView.statut
+service.espace.SignalementAbsenceService$SignalementView.traiteLe
+service.espace.TeammateRequestService$MemberView.animateurId
+service.espace.TeammateRequestService$MemberView.fullName
+service.espace.TeammateRequestService$NewCarpoolRequest.teammateIds
+service.espace.TeammateRequestService$TeammateRequestView.animateurId
+service.espace.TeammateRequestService$TeammateRequestView.confirmedByAll
+service.espace.TeammateRequestService$TeammateRequestView.contrainteId
+service.espace.TeammateRequestService$TeammateRequestView.createdAt
+service.espace.TeammateRequestService$TeammateRequestView.decidedAt
+service.espace.TeammateRequestService$TeammateRequestView.divergentDayCount
+service.espace.TeammateRequestService$TeammateRequestView.divergentDays
+service.espace.TeammateRequestService$TeammateRequestView.id
+service.espace.TeammateRequestService$TeammateRequestView.members
+service.espace.TeammateRequestService$TeammateRequestView.nature
+service.espace.TeammateRequestService$TeammateRequestView.status
+service.espace.TeammateRequestService$ValidatedCarpool.avertissements
+service.espace.TeammateRequestService$ValidatedCarpool.request
+service.export.ArchiveEvenementService$ArchiveAvailability.planResolu
+service.export.ArchiveEvenementService$ArchiveAvailability.publie
+service.export.ArchiveEvenementService$ArchiveAvailability.resolutionEnCours
+service.journee.ChangementsJournee$AnimateurChange.libelle
+service.journee.ChangementsJournee$AnimateurChange.type
+service.journee.ChangementsJournee$AnimateurLine.animateurId
+service.journee.ChangementsJournee$AnimateurLine.changements
+service.journee.ChangementsJournee$AnimateurLine.nomAffiche
+service.journee.ChangementsJournee$Holder.animateurId
+service.journee.ChangementsJournee$Holder.nomAffiche
+service.journee.ChangementsJournee$SeatLine.apres
+service.journee.ChangementsJournee$SeatLine.avant
+service.journee.ChangementsJournee$SeatLine.date
+service.journee.ChangementsJournee$SeatLine.heureDebut
+service.journee.ChangementsJournee$SeatLine.heureDebutAvant
+service.journee.ChangementsJournee$SeatLine.heureFin
+service.journee.ChangementsJournee$SeatLine.heureFinAvant
+service.journee.ChangementsJournee$SeatLine.standId
+service.journee.ChangementsJournee$SeatLine.standNom
+service.journee.ChangementsJournee$SeatLine.type
+service.journee.ChangementsJournee.animateursConcernes
+service.journee.ChangementsJournee.horairesModifies
+service.journee.ChangementsJournee.jour
+service.journee.ChangementsJournee.nouveaux
+service.journee.ChangementsJournee.parAnimateur
+service.journee.ChangementsJournee.parVacation
+service.journee.ChangementsJournee.reference
+service.journee.ChangementsJournee.referenceDisponible
+service.journee.ChangementsJournee.referenceLe
+service.journee.ChangementsJournee.remplaces
+service.journee.ChangementsJournee.retires
+service.mural.AffichageMuralLink.createdAt
+service.mural.AffichageMuralLink.emplacements
+service.mural.AffichageMuralLink.fullNames
+service.mural.AffichageMuralLink.id
+service.mural.AffichageMuralLink.lastAccessAt
+service.mural.AffichageMuralLink.libelle
+service.mural.AffichageMuralLink.restricted
+service.mural.AffichageMuralLinkRequest.emplacements
+service.mural.AffichageMuralLinkRequest.fullNames
+service.mural.AffichageMuralLinkRequest.libelle
+service.mural.AffichageMuralView$MuralAlert.count
+service.mural.AffichageMuralView$MuralAlert.end
+service.mural.AffichageMuralView$MuralAlert.nom
+service.mural.AffichageMuralView$MuralAlert.standNom
+service.mural.AffichageMuralView$MuralAlert.start
+service.mural.AffichageMuralView$MuralAlert.type
+service.mural.AffichageMuralView$MuralConsigne.closedFrom
+service.mural.AffichageMuralView$MuralConsigne.closedUntil
+service.mural.AffichageMuralView$MuralConsigne.motif
+service.mural.AffichageMuralView$MuralShift.emptySeats
+service.mural.AffichageMuralView$MuralShift.end
+service.mural.AffichageMuralView$MuralShift.newEmptySeats
+service.mural.AffichageMuralView$MuralShift.noms
+service.mural.AffichageMuralView$MuralShift.start
+service.mural.AffichageMuralView$MuralStand.emplacementId
+service.mural.AffichageMuralView$MuralStand.emplacementNom
+service.mural.AffichageMuralView$MuralStand.standId
+service.mural.AffichageMuralView$MuralStand.standNom
+service.mural.AffichageMuralView$MuralStand.vacations
+service.mural.AffichageMuralView.alerts
+service.mural.AffichageMuralView.consigne
+service.mural.AffichageMuralView.edition
+service.mural.AffichageMuralView.jour
+service.mural.AffichageMuralView.libelle
+service.mural.AffichageMuralView.nextDay
+service.mural.AffichageMuralView.now
+service.mural.AffichageMuralView.stands
+service.mural.AffichageMuralView.unpublishedChanges
+service.mural.CreatedAffichageMuralLink.link
+service.mural.CreatedAffichageMuralLink.token
+service.mural.QrCodeRequest.link
+service.mural.QrCodeView.rows
+service.mural.QrCodeView.size
+service.profile.AnimateurProfile$LegalRegime.age
+service.profile.AnimateurProfile$LegalRegime.date
+service.profile.AnimateurProfile$LegalRegime.regime
+service.profile.AnimateurProfile$ProfileAdjustment.autres
+service.profile.AnimateurProfile$ProfileAdjustment.creneauId
+service.profile.AnimateurProfile$ProfileAdjustment.date
+service.profile.AnimateurProfile$ProfileAdjustment.heureDebut
+service.profile.AnimateurProfile$ProfileAdjustment.heureFin
+service.profile.AnimateurProfile$ProfileAdjustment.id
+service.profile.AnimateurProfile$ProfileAdjustment.raison
+service.profile.AnimateurProfile$ProfileAdjustment.standId
+service.profile.AnimateurProfile$ProfileAdjustment.standNom
+service.profile.AnimateurProfile$ProfileAdjustment.type
+service.profile.AnimateurProfile$ProfileColleague.id
+service.profile.AnimateurProfile$ProfileColleague.nom
+service.profile.AnimateurProfile$ProfileSeat.creneauId
+service.profile.AnimateurProfile$ProfileSeat.date
+service.profile.AnimateurProfile$ProfileSeat.emplacementId
+service.profile.AnimateurProfile$ProfileSeat.emplacementNom
+service.profile.AnimateurProfile$ProfileSeat.heureDebut
+service.profile.AnimateurProfile$ProfileSeat.heureFin
+service.profile.AnimateurProfile$ProfileSeat.passe
+service.profile.AnimateurProfile$ProfileSeat.posteId
+service.profile.AnimateurProfile$ProfileSeat.standId
+service.profile.AnimateurProfile$ProfileSeat.standNom
+service.profile.AnimateurProfile$ProfileSeat.verrouille
+service.profile.AnimateurProfile.affectations
+service.profile.AnimateurProfile.ajustements
+service.profile.AnimateurProfile.animateur
+service.profile.AnimateurProfile.competencesRares
+service.profile.AnimateurProfile.confirmation
+service.profile.AnimateurProfile.declarationEnAttente
+service.profile.AnimateurProfile.dernierePublicationLe
+service.profile.AnimateurProfile.echangesEnCours
+service.profile.AnimateurProfile.equite
+service.profile.AnimateurProfile.fragilite
+service.profile.AnimateurProfile.joursEvenement
+service.profile.AnimateurProfile.planCalcule
+service.profile.AnimateurProfile.regimeDebut
+service.profile.AnimateurProfile.regimeFin
+service.profile.AnimateurProfile.verrous
+service.profile.DayOffService$DayOff.date
+service.profile.DayOffService$DayOff.freedSeats
+service.profile.DayOffService$DayOff.lockedSeatsKept
+service.profile.DayOffService$DayOff.startedSeatsKept
+service.profile.DayOffService$DayOff.unavailable
+service.profile.DayOffService$DaySeat.creneauId
+service.profile.DayOffService$DaySeat.date
+service.profile.DayOffService$DaySeat.heureDebut
+service.profile.DayOffService$DaySeat.heureFin
+service.profile.DayOffService$DaySeat.posteId
+service.profile.DayOffService$DaySeat.standId
+service.profile.DayOffService$DaySeat.standNom
+service.publication.ConfirmationPlanningService$AccuseReception.confirmeLe
+service.publication.ConfirmationPlanningService$AccuseReception.statut
+service.publication.ConfirmationPlanningService$ConfirmationView.affecte
+service.publication.ConfirmationPlanningService$ConfirmationView.animateurId
+service.publication.ConfirmationPlanningService$ConfirmationView.confirmeLe
+service.publication.ConfirmationPlanningService$ConfirmationView.dernierEnvoi
+service.publication.ConfirmationPlanningService$ConfirmationView.nomAffiche
+service.publication.ConfirmationPlanningService$ConfirmationView.relanceLe
+service.publication.ConfirmationPlanningService$ConfirmationView.statut
+service.publication.ConfirmationPlanningService$LastMailDelivery.categorie
+service.publication.ConfirmationPlanningService$LastMailDelivery.enEchec
+service.publication.ConfirmationPlanningService$LastMailDelivery.ficheModifieeDepuis
+service.publication.ConfirmationPlanningService$LastMailDelivery.le
+service.publication.ConfirmationPlanningService$LastMailDelivery.statut
+service.publication.ConfirmationPlanningService$LastMailDelivery.type
+service.publication.ConfirmationPlanningService$SyntheseConfirmations.confirmes
+service.publication.ConfirmationPlanningService$SyntheseConfirmations.dernierePublicationLe
+service.publication.ConfirmationPlanningService$SyntheseConfirmations.echecsEnvoi
+service.publication.ConfirmationPlanningService$SyntheseConfirmations.jamaisPublie
+service.publication.ConfirmationPlanningService$SyntheseConfirmations.relances
+service.publication.ConfirmationPlanningService$SyntheseConfirmations.silencieux
+service.publication.EtatEnvoisService$DernierEnvoi.cause
+service.publication.EtatEnvoisService$DernierEnvoi.envoyeLe
+service.publication.EtatEnvoisService$DernierEnvoi.nature
+service.publication.EtatEnvoisService$DernierEnvoi.numero
+service.publication.EtatEnvoisService$DernierEnvoi.statut
+service.publication.EtatEnvoisService$EtatEnvois.derniereVersion
+service.publication.EtatEnvoisService$EtatEnvois.nombreConcernes
+service.publication.EtatEnvoisService$EtatEnvois.personnes
+service.publication.EtatEnvoisService$EtatEnvois.relancesAutomatiques
+service.publication.EtatEnvoisService$LigneEnvoi.aPrevenir
+service.publication.EtatEnvoisService$LigneEnvoi.affecte
+service.publication.EtatEnvoisService$LigneEnvoi.animateurId
+service.publication.EtatEnvoisService$LigneEnvoi.confirmation
+service.publication.EtatEnvoisService$LigneEnvoi.confirmeLe
+service.publication.EtatEnvoisService$LigneEnvoi.differe
+service.publication.EtatEnvoisService$LigneEnvoi.email
+service.publication.EtatEnvoisService$LigneEnvoi.envoi
+service.publication.EtatEnvoisService$LigneEnvoi.joursAPrevenir
+service.publication.EtatEnvoisService$LigneEnvoi.nomAffiche
+service.publication.EtatEnvoisService$LigneEnvoi.rappelVeilleEchec
+service.publication.EtatEnvoisService$LigneEnvoi.rappelVeilleLe
+service.publication.EtatEnvoisService$LigneEnvoi.relanceEchec
+service.publication.EtatEnvoisService$LigneEnvoi.relanceLe
+service.publication.EtatEnvoisService$LigneEnvoi.version
+service.publication.EtatEnvoisService$VersionPubliee.numero
+service.publication.EtatEnvoisService$VersionPubliee.publieLe
+service.publication.EtatEnvoisService$VersionPubliee.snapshotId
+service.publication.PlanPublicationService$ApercuPublication.dernierePublicationLe
+service.publication.PlanPublicationService$ApercuPublication.destinataires
+service.publication.PlanPublicationService$ApercuPublication.envoisEnEchec
+service.publication.PlanPublicationService$ApercuPublication.jamaisPublie
+service.publication.PlanPublicationService$ApercuPublication.journeesNonValidees
+service.publication.PlanPublicationService$ApercuPublication.nombreConcernes
+service.publication.PlanPublicationService$ApercuPublication.planVide
+service.publication.PlanPublicationService$ApercuPublication.solveEnCours
+service.publication.PlanPublicationService$DestinatairePublication.ajouts
+service.publication.PlanPublicationService$DestinatairePublication.animateurId
+service.publication.PlanPublicationService$DestinatairePublication.changements
+service.publication.PlanPublicationService$DestinatairePublication.confirmation
+service.publication.PlanPublicationService$DestinatairePublication.confirmeLe
+service.publication.PlanPublicationService$DestinatairePublication.demandes
+service.publication.PlanPublicationService$DestinatairePublication.deplacements
+service.publication.PlanPublicationService$DestinatairePublication.email
+service.publication.PlanPublicationService$DestinatairePublication.jours
+service.publication.PlanPublicationService$DestinatairePublication.mineur
+service.publication.PlanPublicationService$DestinatairePublication.nomAffiche
+service.publication.PlanPublicationService$DestinatairePublication.premiereDiffusion
+service.publication.PlanPublicationService$DestinatairePublication.reporte
+service.publication.PlanPublicationService$DestinatairePublication.retraits
+service.publication.PlanPublicationService$RapportPublication.avertissements
+service.publication.PlanPublicationService$RapportPublication.differes
+service.publication.PlanPublicationService$RapportPublication.echecs
+service.publication.PlanPublicationService$RapportPublication.envoyes
+service.publication.PlanPublicationService$RapportPublication.publieLe
+service.publication.PlanPublicationService$RapportPublication.sansEmail
+service.publication.PlanPublicationService$RapportPublication.snapshotId
+service.publication.PublicationTraceRepository$Destinataire.animateurId
+service.publication.PublicationTraceRepository$Destinataire.changements
+service.publication.PublicationTraceRepository$Destinataire.demandes
+service.publication.PublicationTraceRepository$Destinataire.email
+service.publication.PublicationTraceRepository$Destinataire.envoyeLe
+service.publication.PublicationTraceRepository$Destinataire.nomAffiche
+service.publication.PublicationTraceRepository$Destinataire.premiereDiffusion
+service.publication.PublicationTraceRepository$Destinataire.snapshotId
+service.publication.PublicationTraceRepository$Destinataire.statut
+service.publication.RelanceManuelleService$RapportRelance.adresseRefusee
+service.publication.RelanceManuelleService$RapportRelance.dejaConfirmes
+service.publication.RelanceManuelleService$RapportRelance.dejaRelancesPourCettePublication
+service.publication.RelanceManuelleService$RapportRelance.echecs
+service.publication.RelanceManuelleService$RapportRelance.envoyes
+service.publication.RelanceManuelleService$RapportRelance.sansEmail
+service.publication.RelanceManuelleService$RapportRelance.sansPoste
+service.referentiel.AnimateurCsvImportReport$ImportedRow.action
+service.referentiel.AnimateurCsvImportReport$ImportedRow.animateurId
+service.referentiel.AnimateurCsvImportReport$ImportedRow.doublonDe
+service.referentiel.AnimateurCsvImportReport$ImportedRow.joursIndisponibles
+service.referentiel.AnimateurCsvImportReport$ImportedRow.label
+service.referentiel.AnimateurCsvImportReport$ImportedRow.line
+service.referentiel.AnimateurCsvImportReport$ImportedRow.reasons
+service.referentiel.AnimateurCsvImportReport$ImportedRow.warnings
+service.referentiel.AnimateurCsvImportReport$ProbableDuplicate.animateurId
+service.referentiel.AnimateurCsvImportReport$ProbableDuplicate.kind
+service.referentiel.AnimateurCsvImportReport$ProbableDuplicate.line
+service.referentiel.AnimateurCsvImportReport.accepted
+service.referentiel.AnimateurCsvImportReport.applied
+service.referentiel.AnimateurCsvImportReport.columns
+service.referentiel.AnimateurCsvImportReport.created
+service.referentiel.AnimateurCsvImportReport.deleted
+service.referentiel.AnimateurCsvImportReport.doublonsProbables
+service.referentiel.AnimateurCsvImportReport.mapping
+service.referentiel.AnimateurCsvImportReport.rejected
+service.referentiel.AnimateurCsvImportReport.rows
+service.referentiel.AnimateurCsvImportReport.separator
+service.referentiel.AnimateurCsvImportReport.total
+service.referentiel.AnimateurCsvImportReport.updated
+service.referentiel.AnimateurCsvImportReport.warnings
+service.referentiel.AnimateurCsvImportRequest.content
+service.referentiel.AnimateurCsvImportRequest.fileName
+service.referentiel.AnimateurCsvImportRequest.mapping
+service.referentiel.AnimateurCsvImportRequest.replaceAnimateurs
+service.referentiel.AnimateurCsvImportRequest.replaceJoursIndisponibles
+service.referentiel.AnimateurCsvMapping.competences
+service.referentiel.AnimateurCsvMapping.dateNaissance
+service.referentiel.AnimateurCsvMapping.email
+service.referentiel.AnimateurCsvMapping.joursIndisponibles
+service.referentiel.AnimateurCsvMapping.manager
+service.referentiel.AnimateurCsvMapping.nom
+service.referentiel.AnimateurCsvMapping.prenom
+service.referentiel.AnimateurCsvMapping.souhaits
+service.referentiel.AnimateurCsvMapping.telephone
+service.referentiel.Avertissement.message
+service.referentiel.Avertissement.type
+service.referentiel.CoherenceAnalyzer$EmplacementsManquants.standIds
+service.referentiel.CoherenceAnalyzer$EmplacementsManquants.suggestions
+service.referentiel.CoherenceAnalyzer$SuggestionEmplacement.emplacementId
+service.referentiel.CoherenceAnalyzer$SuggestionEmplacement.emplacementNom
+service.referentiel.CoherenceAnalyzer$SuggestionEmplacement.raison
+service.referentiel.CoherenceAnalyzer$SuggestionEmplacement.standId
+service.referentiel.CoherenceReferentielService$CoherenceIssue.code
+service.referentiel.CoherenceReferentielService$CoherenceIssue.date
+service.referentiel.CoherenceReferentielService$CoherenceIssue.famille
+service.referentiel.CoherenceReferentielService$CoherenceIssue.gravite
+service.referentiel.CoherenceReferentielService$CoherenceIssue.message
+service.referentiel.CoherenceReferentielService$CoherenceIssue.objet
+service.referentiel.CoherenceReferentielService$CoherenceIssue.objetId
+service.referentiel.CoherenceReferentielService$CoherenceReport.aVerifier
+service.referentiel.CoherenceReferentielService$CoherenceReport.anomalies
+service.referentiel.CoherenceReferentielService$CoherenceReport.bloquants
+service.referentiel.CoherenceReferentielService$CoherenceReport.familles
+service.referentiel.CoherenceReferentielService$CoherenceReport.informations
+service.referentiel.CoherenceReferentielService$FamilyCount.aVerifier
+service.referentiel.CoherenceReferentielService$FamilyCount.bloquants
+service.referentiel.CoherenceReferentielService$FamilyCount.famille
+service.referentiel.CoherenceReferentielService$FamilyCount.informations
+service.referentiel.CreneauGridService$DiagnosticGrille.derniereDate
+service.referentiel.CreneauGridService$DiagnosticGrille.explication
+service.referentiel.CreneauGridService$DiagnosticGrille.joursFeries
+service.referentiel.CreneauGridService$DiagnosticGrille.nombreCreneaux
+service.referentiel.CreneauGridService$DiagnosticGrille.premiereDate
+service.referentiel.CreneauGridService$GridAnomaly.date
+service.referentiel.CreneauGridService$GridAnomaly.message
+service.referentiel.CreneauGridService$GridAnomaly.severite
+service.referentiel.CreneauGridService$GridAnomaly.type
+service.referentiel.CreneauGridService$RapportGrille.anomalies
+service.referentiel.CreneauGridService$RapportGrille.faisabilite
+service.referentiel.CreneauGridService$RapportGrille.nombreCreneaux
+service.referentiel.CreneauGridService$RapportGrille.ouvertures
+service.referentiel.GelReferentielService$EtatGel.famille
+service.referentiel.GelReferentielService$EtatGel.fige
+service.referentiel.GelReferentielService$EtatGel.figeLe
+service.referentiel.GelReferentielService$EtatGel.libelle
+service.referentiel.GenerateurCreneaux$EtatGenerateur.calendrier
+service.referentiel.GenerateurCreneaux$EtatGenerateur.datesEnEcart
+service.referentiel.GenerateurCreneaux$EtatGenerateur.datesSousConsigne
+service.referentiel.GenerateurCreneaux$EtatGenerateur.gabarits
+service.referentiel.GenerateurCreneaux$Generation.application
+service.referentiel.GenerateurCreneaux$Generation.controle
+service.referentiel.GenerateurCreneaux$Generation.coupures
+service.referentiel.GenerateurCreneaux$Generation.creneaux
+service.referentiel.GenerateurCreneaux$Generation.joursSansFenetre
+service.referentiel.GenerateurCreneaux$Generation.nombreGeneres
+service.referentiel.GenerateurCreneaux$Generation.source
+service.referentiel.GenerateurCreneaux$RapportApplication.aucunChangement
+service.referentiel.GenerateurCreneaux$RapportApplication.conserves
+service.referentiel.GenerateurCreneaux$RapportApplication.controle
+service.referentiel.GenerateurCreneaux$RapportApplication.crees
+service.referentiel.GenerateurCreneaux$RapportApplication.creneauxSupprimes
+service.referentiel.GenerateurCreneaux$RapportApplication.datesEnEcart
+service.referentiel.GenerateurCreneaux$RapportApplication.postesSupprimes
+service.referentiel.GenerateurCreneaux$RapportApplication.supprimes
+service.referentiel.GenerateurCreneaux$RapportApplication.supprimesAvecPostes
+service.referentiel.GrilleCompetences$LigneCompetences.animateurId
+service.referentiel.GrilleCompetences$LigneCompetences.message
+service.referentiel.GrilleCompetences$LigneCompetences.modifieLe
+service.referentiel.GrilleCompetences$LigneCompetences.resultat
+service.referentiel.GrilleCompetences$SaisieCompetences.animateurId
+service.referentiel.GrilleCompetences$SaisieCompetences.competences
+service.referentiel.GrilleCompetences$SaisieCompetences.modifieLe
+service.referentiel.GrilleDepuisFenetres$Coupure.date
+service.referentiel.GrilleDepuisFenetres$Coupure.heure
+service.referentiel.GrilleDepuisFenetres$Coupure.nombreStands
+service.referentiel.GrilleDepuisFenetres$Coupure.standIds
+service.referentiel.GrilleHorairesStands$LigneGrille.compacte
+service.referentiel.GrilleHorairesStands$LigneGrille.effectifMax
+service.referentiel.GrilleHorairesStands$LigneGrille.effectifMin
+service.referentiel.GrilleHorairesStands$LigneGrille.exceptions
+service.referentiel.GrilleHorairesStands$LigneGrille.raison
+service.referentiel.GrilleHorairesStands$LigneGrille.regles
+service.referentiel.GrilleHorairesStands$LigneGrille.standId
+service.referentiel.GrilleHorairesStands$SaisieCellule.creneauId
+service.referentiel.GrilleHorairesStands$SaisieCellule.effectif
+service.referentiel.GrilleHorairesStands$SaisieCellule.heureDebut
+service.referentiel.GrilleHorairesStands$SaisieCellule.heureFin
+service.referentiel.GrilleHorairesStands$SaisieStand.aplatir
+service.referentiel.GrilleHorairesStands$SaisieStand.cellules
+service.referentiel.GrilleHorairesStands$SaisieStand.modifieLe
+service.referentiel.GrilleHorairesStands$SaisieStand.standId
+service.referentiel.ImportImpact.animateurs
+service.referentiel.ImportImpact.demandesEchange
+service.referentiel.ImportImpact.demandesEnAttente
+service.referentiel.ImportImpact.planningResolu
+service.referentiel.ImportImpact.postes
+service.referentiel.ImportImpact.stands
+service.referentiel.ImportImpact.verrous
+service.referentiel.JourneesTypesMaterialisation$Affectation.date
+service.referentiel.JourneesTypesMaterialisation$Affectation.gabaritId
+service.referentiel.JourneesTypesMaterialisation$Reconnaissance.calendrier
+service.referentiel.JourneesTypesMaterialisation$Reconnaissance.gabarits
+service.referentiel.ReferenceUsage.affectations
+service.referentiel.ReferenceUsage.consignes
+service.referentiel.ReferenceUsage.contraintesAdHoc
+service.referentiel.ReferenceUsage.verrouillages
+service.referentiel.ReferentielCsvImportReport$LigneImportee.action
+service.referentiel.ReferentielCsvImportReport$LigneImportee.details
+service.referentiel.ReferentielCsvImportReport$LigneImportee.id
+service.referentiel.ReferentielCsvImportReport$LigneImportee.libelle
+service.referentiel.ReferentielCsvImportReport$LigneImportee.line
+service.referentiel.ReferentielCsvImportReport$LigneImportee.raisons
+service.referentiel.ReferentielCsvImportReport.accepted
+service.referentiel.ReferentielCsvImportReport.applied
+service.referentiel.ReferentielCsvImportReport.cible
+service.referentiel.ReferentielCsvImportReport.columns
+service.referentiel.ReferentielCsvImportReport.created
+service.referentiel.ReferentielCsvImportReport.rejected
+service.referentiel.ReferentielCsvImportReport.rows
+service.referentiel.ReferentielCsvImportReport.separator
+service.referentiel.ReferentielCsvImportReport.total
+service.referentiel.ReferentielCsvImportReport.typologiesCreees
+service.referentiel.ReferentielCsvImportReport.updated
+service.referentiel.ReferentielCsvImportRequest.content
+service.referentiel.ReferentielCsvImportRequest.fileName
+service.referentiel.StandGrilleImportReport$ImportedColumn.creneauId
+service.referentiel.StandGrilleImportReport$ImportedColumn.creneaux
+service.referentiel.StandGrilleImportReport$ImportedColumn.date
+service.referentiel.StandGrilleImportReport$ImportedColumn.heureDebut
+service.referentiel.StandGrilleImportReport$ImportedColumn.heureFin
+service.referentiel.StandGrilleImportReport$ImportedColumn.index
+service.referentiel.StandGrilleImportReport$ImportedColumn.label
+service.referentiel.StandGrilleImportReport$ImportedColumn.reason
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.action
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.cellulesOuvertes
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.effectifMax
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.effectifMin
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.exceptions
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.label
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.line
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.reasons
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.regles
+service.referentiel.StandGrilleImportReport$ImportedGrilleRow.standId
+service.referentiel.StandGrilleImportReport.accepted
+service.referentiel.StandGrilleImportReport.applied
+service.referentiel.StandGrilleImportReport.columns
+service.referentiel.StandGrilleImportReport.creneauxAbsents
+service.referentiel.StandGrilleImportReport.rejected
+service.referentiel.StandGrilleImportReport.rows
+service.referentiel.StandGrilleImportReport.separator
+service.referentiel.StandGrilleImportReport.total
+service.referentiel.StandGrilleImportReport.warnings
+service.referentiel.StandGrilleImportRequest.content
+service.referentiel.StandGrilleImportRequest.fileName
+service.referentiel.TypologieItem.code
+service.referentiel.TypologieItem.description
+service.referentiel.TypologieItem.id
+service.referentiel.TypologieItem.label
+service.referentiel.TypologieItem.maxCreneauxParAnimateur
+service.referentiel.TypologieItem.modifieLe
+service.referentiel.TypologieItem.polyvalent
+service.referentiel.WrittenAnimateur.animateur
+service.referentiel.WrittenAnimateur.avertissements
+service.referentiel.WrittenContrainteAdHoc.avertissements
+service.referentiel.WrittenContrainteAdHoc.contrainte
+service.referentiel.WrittenCreneau.avertissements
+service.referentiel.WrittenCreneau.creneau
+service.referentiel.WrittenStand.avertissements
+service.referentiel.WrittenStand.stand
+service.referentiel.WrittenVerrouillage.avertissements
+service.referentiel.WrittenVerrouillage.verrouillage
+service.responsable.ReglageNoms.nomsVisibles
+service.responsable.ReglageNoms.ouvertureLe
+service.responsable.ReglagesResponsables.parDefaut
+service.responsable.ReglagesResponsables.parStand
+service.responsable.ResponsableView$PersonneVacation.nom
+service.responsable.ResponsableView$PersonneVacation.prenom
+service.responsable.ResponsableView$StandResponsable.emplacementNom
+service.responsable.ResponsableView$StandResponsable.nominatif
+service.responsable.ResponsableView$StandResponsable.nomsAttendus
+service.responsable.ResponsableView$StandResponsable.standId
+service.responsable.ResponsableView$StandResponsable.standNom
+service.responsable.ResponsableView$StandResponsable.vacations
+service.responsable.ResponsableView$VacationResponsable.debut
+service.responsable.ResponsableView$VacationResponsable.fin
+service.responsable.ResponsableView$VacationResponsable.personnes
+service.responsable.ResponsableView$VacationResponsable.pourvus
+service.responsable.ResponsableView$VacationResponsable.vides
+service.responsable.ResponsableView.editionNom
+service.responsable.ResponsableView.publieLe
+service.responsable.ResponsableView.stands
+service.rh.ContactsAnimateur.modifieLe
+service.rh.ContactsAnimateur.representantNom
+service.rh.ContactsAnimateur.representantTelephone
+service.rh.ContactsAnimateur.urgenceNom
+service.rh.ContactsAnimateur.urgenceTelephone
+service.rh.ContactsService$ContactView.animateurId
+service.rh.ContactsService$ContactView.contacts
+service.rh.ContactsService$ContactView.mineur
+service.rh.ContactsService$ContactView.nom
+service.rh.ContactsService$Saved.avertissements
+service.rh.ContactsService$Saved.contacts
+service.rh.RhService$EditionAccessible.id
+service.rh.RhService$EditionAccessible.nom
+service.schema.ApplicationVersion.firstStartedAt
+service.schema.ApplicationVersion.latestMigration
+service.schema.ApplicationVersion.version
+service.solve.PlanSnapshotService$AffectationSnapshot.animateurId
+service.solve.PlanSnapshotService$AffectationSnapshot.creneauId
+service.solve.PlanSnapshotService$AffectationSnapshot.date
+service.solve.PlanSnapshotService$AffectationSnapshot.heureDebut
+service.solve.PlanSnapshotService$AffectationSnapshot.heureDebutEffective
+service.solve.PlanSnapshotService$AffectationSnapshot.heureFin
+service.solve.PlanSnapshotService$AffectationSnapshot.heureFinEffective
+service.solve.PlanSnapshotService$AffectationSnapshot.posteId
+service.solve.PlanSnapshotService$AffectationSnapshot.standId
+service.solve.PlanSnapshotService$AffectationSnapshot.suiteDe
+service.solve.PlanSnapshotService$ConsigneSnapshot.date
+service.solve.PlanSnapshotService$ConsigneSnapshot.fermetureDebut
+service.solve.PlanSnapshotService$ConsigneSnapshot.fermetureFin
+service.solve.PlanSnapshotService$ConsigneSnapshot.motif
+service.solve.PlanSnapshotService$SnapshotDetail.affectations
+service.solve.PlanSnapshotService$SnapshotDetail.meta
+service.solve.PlanSnapshotService$SnapshotMeta.automatique
+service.solve.PlanSnapshotService$SnapshotMeta.consignes
+service.solve.PlanSnapshotService$SnapshotMeta.creeLe
+service.solve.PlanSnapshotService$SnapshotMeta.editionId
+service.solve.PlanSnapshotService$SnapshotMeta.editionNom
+service.solve.PlanSnapshotService$SnapshotMeta.id
+service.solve.PlanSnapshotService$SnapshotMeta.kpi
+service.solve.PlanSnapshotService$SnapshotMeta.libelle
+service.solve.PlanSnapshotService$SnapshotMeta.nombreAffectations
+service.solve.PlanSnapshotService$SnapshotMeta.origine
+service.solve.PlanSnapshotService$SnapshotMeta.perime
+service.solve.PlanSnapshotService$SnapshotMeta.publieLe
+service.solve.PlanSnapshotService$SnapshotMeta.referenceModifieLe
+service.solve.PlanSnapshotService$SnapshotMeta.score
+service.solve.PlanningWhatIf$AffectationExplanation.animateurId
+service.solve.PlanningWhatIf$AffectationExplanation.contraintesRespectees
+service.solve.PlanningWhatIf$AffectationExplanation.contraintesViolees
+service.solve.PlanningWhatIf$AffectationExplanation.posteId
+service.solve.PlanningWhatIf$AffectationExplanation.score
+service.solve.PlanningWhatIf$AnimateurAvailability.animateurId
+service.solve.PlanningWhatIf$AnimateurAvailability.degradeLePlan
+service.solve.PlanningWhatIf$AnimateurAvailability.delta
+service.solve.PlanningWhatIf$AnimateurAvailability.disponible
+service.solve.PlanningWhatIf$AnimateurAvailability.motifs
+service.solve.PlanningWhatIf$ContrainteImpact.categorie
+service.solve.PlanningWhatIf$ContrainteImpact.description
+service.solve.PlanningWhatIf$ContrainteImpact.details
+service.solve.PlanningWhatIf$ContrainteImpact.matchCount
+service.solve.PlanningWhatIf$ContrainteImpact.name
+service.solve.PlanningWhatIf$ContrainteImpact.niveau
+service.solve.PlanningWhatIf$CreneauAvailability.animateurCibleId
+service.solve.PlanningWhatIf$CreneauAvailability.animateurs
+service.solve.PlanningWhatIf$CreneauAvailability.creneauId
+service.solve.PlanningWhatIf$CreneauAvailability.creneauxAvecSieges
+service.solve.PlanningWhatIf$CreneauAvailability.disponibles
+service.solve.PlanningWhatIf$CreneauAvailability.posteCibleId
+service.solve.PlanningWhatIf$CreneauAvailability.seatStarted
+service.solve.PlanningWhatIf$CreneauAvailability.standCibleId
+service.solve.PlanningWhatIf$CreneauAvailability.statut
+service.solve.PlanningWhatIf$CreneauAvailability.total
+service.solve.PlanningWhatIf$CreneauSiege.date
+service.solve.PlanningWhatIf$CreneauSiege.heureDebut
+service.solve.PlanningWhatIf$CreneauSiege.heureFin
+service.solve.PlanningWhatIf$CreneauSiege.id
+service.solve.PlanningWhatIf$CreneauSiege.jour
+service.solve.PlanningWhatIf$DeplacementSimulation.animateurCibleId
+service.solve.PlanningWhatIf$DeplacementSimulation.animateurSourceId
+service.solve.PlanningWhatIf$DeplacementSimulation.casseContrainteDure
+service.solve.PlanningWhatIf$DeplacementSimulation.delta
+service.solve.PlanningWhatIf$DeplacementSimulation.nouvellesViolationsDures
+service.solve.PlanningWhatIf$DeplacementSimulation.posteCibleId
+service.solve.PlanningWhatIf$DeplacementSimulation.posteSourceId
+service.solve.PlanningWhatIf$DeplacementSimulation.scoreApres
+service.solve.PlanningWhatIf$DeplacementSimulation.scoreAvant
+service.solve.PlanningWhatIf$HardViolation.description
+service.solve.PlanningWhatIf$HardViolation.matchesSupplementaires
+service.solve.PlanningWhatIf$HardViolation.name
+service.solve.PlanningWhatIf$MotifExclusion.categorie
+service.solve.PlanningWhatIf$MotifExclusion.contrainte
+service.solve.PlanningWhatIf$MotifExclusion.description
+service.solve.PlanningWhatIf$MotifExclusion.niveau
+service.solve.PlanningWhatIf$SuggestionReparation.animateurId
+service.solve.PlanningWhatIf$SuggestionReparation.delta
+service.solve.PlanningWhatIf$SuggestionReparation.scoreApres
+service.solve.PlanningWhatIf$SuggestionReparation.violationsIntroduites
+service.solve.PlanningWhatIf$SuggestionReparation.violationsResolues
+service.solve.PlanningWhatIf$SuggestionsReparation.animateurActuelId
+service.solve.PlanningWhatIf$SuggestionsReparation.candidatsEligibles
+service.solve.PlanningWhatIf$SuggestionsReparation.candidatsEvalues
+service.solve.PlanningWhatIf$SuggestionsReparation.contraintesVioleesAvant
+service.solve.PlanningWhatIf$SuggestionsReparation.depuis
+service.solve.PlanningWhatIf$SuggestionsReparation.plafond
+service.solve.PlanningWhatIf$SuggestionsReparation.posteId
+service.solve.PlanningWhatIf$SuggestionsReparation.scoreAvant
+service.solve.PlanningWhatIf$SuggestionsReparation.suggestions
+service.solve.ProblemScaleService$ProblemScale.animateurCount
+service.solve.ProblemScaleService$ProblemScale.contrainteAdHocCount
+service.solve.ProblemScaleService$ProblemScale.hoursAvailable
+service.solve.ProblemScaleService$ProblemScale.hoursToFill
+service.solve.ProblemScaleService$ProblemScale.posteCount
+service.solve.RemoteSolves$ComputeMachine.configured
+service.solve.RemoteSolves$ComputeMachine.remoteByDefault
+service.solve.ReplanificationScope.animateurIds
+service.solve.ReplanificationScope.jours
+service.solve.ReplanificationScope.standIds
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.base
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.consignesDifferentes
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.diffViolations
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.dosagesDifferents
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.editionsDifferentes
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.variante
+service.solve.SnapshotComparisonService$ComparaisonSnapshots.volumetriesDifferentes
+service.solve.SnapshotComparisonService$CoteComparaison.consignes
+service.solve.SnapshotComparisonService$CoteComparaison.creeLe
+service.solve.SnapshotComparisonService$CoteComparaison.editionId
+service.solve.SnapshotComparisonService$CoteComparaison.editionNom
+service.solve.SnapshotComparisonService$CoteComparaison.kpi
+service.solve.SnapshotComparisonService$CoteComparaison.kpiRecalcule
+service.solve.SnapshotComparisonService$CoteComparaison.libelle
+service.solve.SnapshotComparisonService$CoteComparaison.snapshotId
+service.solve.SnapshotComparisonService$DiffContrainte.base
+service.solve.SnapshotComparisonService$DiffContrainte.contrainte
+service.solve.SnapshotComparisonService$DiffContrainte.variante
+service.solve.SolveInputsService$ConsigneInput.date
+service.solve.SolveInputsService$ConsigneInput.motif
+service.solve.SolveInputsService$SolveInputs.adjustments
+service.solve.SolveInputsService$SolveInputs.changesSinceSolve
+service.solve.SolveInputsService$SolveInputs.consignes
+service.solve.SolveInputsService$SolveInputs.disabledRules
+service.solve.SolveInputsService$SolveInputs.locks
+service.solve.SolveInputsService$SolveInputs.pendingDeclarations
+service.solve.SolveInputsService$SolveInputs.solvedAt
+service.solve.SolverBudgetBounds.defaultPlateauSeconds
+service.solve.SolverBudgetBounds.defaultSecondsLimit
+service.solve.SolverBudgetBounds.maxSecondsLimit
+service.solve.SolverScoreTrace$Point.hard
+service.solve.SolverScoreTrace$Point.medium
+service.solve.SolverScoreTrace$Point.soft
+service.solve.SolverScoreTrace$Point.tempsMs
+service.solve.StaffingVerificationService$RunningCheck.editionId
+service.solve.StaffingVerificationService$RunningCheck.effectif
+service.solve.StaffingVerificationService$RunningCheck.id
+service.solve.StaffingVerificationService$RunningCheck.lanceeLe
+service.solve.StaffingVerificationService$RunningCheck.plafondSecondes
+service.solve.StaffingVerificationService$StaffingVerification.dureeSecondes
+service.solve.StaffingVerificationService$StaffingVerification.effectif
+service.solve.StaffingVerificationService$StaffingVerification.erreur
+service.solve.StaffingVerificationService$StaffingVerification.etat
+service.solve.StaffingVerificationService$StaffingVerification.id
+service.solve.StaffingVerificationService$StaffingVerification.lanceeLe
+service.solve.StaffingVerificationService$StaffingVerification.majeurs
+service.solve.StaffingVerificationService$StaffingVerification.methode
+service.solve.StaffingVerificationService$StaffingVerification.mineurs
+service.solve.StaffingVerificationService$StaffingVerification.minimum
+service.solve.StaffingVerificationService$StaffingVerification.plafondSecondes
+service.solve.StaffingVerificationService$StaffingVerification.realisable
+service.solve.StaffingVerificationService$StaffingVerification.reglesEnDefaut
+service.solve.StaffingVerificationService$StaffingVerification.scoreDur
+service.solve.StaffingVerificationService$StaffingVerification.sieges
+service.solve.StaffingVerificationService$StaffingVerification.siegesNonPourvus
+service.solve.StaffingVerificationService$StaffingVerification.termineeLe
+service.solve.WipeBackupService$Restoration.affectationsNonRestaurees
+service.solve.WipeBackupService$Restoration.affectationsRestaurees
+service.solve.WipeBackupService$Restoration.avertissements
+service.solve.WipeBackupService$Restoration.referentielNonRestaure
+service.solve.WipeBackupService$Restoration.sauvegardeAvant
+service.solve.WipeBackupService$Restoration.score
+service.solve.WipeBackupService$Restoration.verrouillagesDejaPresents
+service.solve.WipeBackupService$Restoration.verrouillagesNonRestaures
+service.solve.WipeBackupService$Restoration.verrouillagesRestaures
+service.solve.WipeBackupService$WipeBackup.creeLe
+service.solve.WipeBackupService$WipeBackup.id
+service.solve.WipeBackupService$WipeBackup.origine
+service.solve.WipeBackupService$WipeBackup.restaurationAboutie
+service.solve.WipeBackupService$WipeBackup.restaureId
+service.validation.ValidationJourneeService$DayStateView.commentaire
+service.validation.ValidationJourneeService$DayStateView.etat
+service.validation.ValidationJourneeService$DayStateView.jour
+service.validation.ValidationJourneeService$DayStateView.validationId
+service.validation.ValidationJourneeService$DayStateView.valideLe
+service.validation.ValidationJourneeService$DayStateView.validePar
+service.validation.ValidationJourneeService$KeptReading.jour
+service.validation.ValidationJourneeService$KeptReading.motif
+service.validation.ValidationPrerequisService$Prerequis.code
+service.validation.ValidationPrerequisService$Prerequis.connu
+service.validation.ValidationPrerequisService$Prerequis.nombre
+service.validation.ValidationPrerequisService$Prerequis.satisfait
+service.validation.ValidationPrerequisService$PrerequisJournee.commentaire
+service.validation.ValidationPrerequisService$PrerequisJournee.etat
+service.validation.ValidationPrerequisService$PrerequisJournee.jour
+service.validation.ValidationPrerequisService$PrerequisJournee.prerequis
+service.validation.ValidationPrerequisService$PrerequisJournee.tousSatisfaits
+service.validation.ValidationPrerequisService$PrerequisJournee.validationId
+service.validation.ValidationPrerequisService$PrerequisJournee.validePar
+service.validation.ValidationPrerequisService$PrerequisJournee.valideParNom
+service.validation.ValidationPrerequisService$PrerequisJournee.validee
+service.validation.ValidationPrerequisService$PrerequisJournee.valideeLe
+service.validation.ValidationPrerequisService$ProgressionValidations.journees
+service.validation.ValidationPrerequisService$ProgressionValidations.journeesValidees
+service.validation.ValidationPrerequisService$ProgressionValidations.joursValides
+service.weather.WeatherAlertService$WeatherDaySummary.date
+service.weather.WeatherAlertService$WeatherDaySummary.exceeded
+service.weather.WeatherAlertService$WeatherDaySummary.maxGust
+service.weather.WeatherAlertService$WeatherDaySummary.maxTemperature
+service.weather.WeatherAlertService$WeatherDaySummary.places
+service.weather.WeatherAlertService$WeatherDaySummary.storm
+service.weather.WeatherAlertService$WeatherSettingsView.editionMayEmit
+service.weather.WeatherAlertService$WeatherSettingsView.serviceEnabled
+service.weather.WeatherAlertService$WeatherSettingsView.settings
+service.weather.WeatherAlertService$WeatherSettingsView.state
+service.weather.WeatherAlertService$WeatherTestReport.days
+service.weather.WeatherAlertService$WeatherTestReport.error
+service.weather.WeatherAlertService$WeatherTestReport.noPlace
+service.weather.WeatherAlertService$WeatherTestReport.outOfForecast
+service.weather.WeatherState.error
+service.weather.WeatherState.lastAttemptAt
+service.weather.WeatherState.lastReadAt
+service.weather.WeatherState.outcome
+service.weather.WeatherState.unreachableSince
+service.webhook.WebhookService$WebhookDeliveryView.attempts
+service.webhook.WebhookService$WebhookDeliveryView.createdAt
+service.webhook.WebhookService$WebhookDeliveryView.durationMs
+service.webhook.WebhookService$WebhookDeliveryView.error
+service.webhook.WebhookService$WebhookDeliveryView.event
+service.webhook.WebhookService$WebhookDeliveryView.httpStatus
+service.webhook.WebhookService$WebhookDeliveryView.id
+service.webhook.WebhookService$WebhookDeliveryView.lastAttemptAt
+service.webhook.WebhookService$WebhookDeliveryView.maxAttempts
+service.webhook.WebhookService$WebhookDeliveryView.nextAttemptAt
+service.webhook.WebhookService$WebhookDeliveryView.status
+service.webhook.WebhookService$WebhookRequest.active
+service.webhook.WebhookService$WebhookRequest.chatId
+service.webhook.WebhookService$WebhookRequest.events
+service.webhook.WebhookService$WebhookRequest.format
+service.webhook.WebhookService$WebhookRequest.modifiedAt
+service.webhook.WebhookService$WebhookRequest.name
+service.webhook.WebhookService$WebhookRequest.token
+service.webhook.WebhookService$WebhookRequest.url
+service.webhook.WebhookService$WebhookSaved.secret
+service.webhook.WebhookService$WebhookSaved.webhook
+service.webhook.WebhookService$WebhookSecret.secret
+service.webhook.WebhookService$WebhookTestResult.durationMs
+service.webhook.WebhookService$WebhookTestResult.error
+service.webhook.WebhookService$WebhookTestResult.httpStatus
+service.webhook.WebhookService$WebhookTestResult.status
+service.webhook.WebhookService$WebhookView.active
+service.webhook.WebhookService$WebhookView.chatId
+service.webhook.WebhookService$WebhookView.createdAt
+service.webhook.WebhookService$WebhookView.destination
+service.webhook.WebhookService$WebhookView.events
+service.webhook.WebhookService$WebhookView.format
+service.webhook.WebhookService$WebhookView.id
+service.webhook.WebhookService$WebhookView.lastDelivery
+service.webhook.WebhookService$WebhookView.modifiedAt
+service.webhook.WebhookService$WebhookView.name
+solver.ConstraintParameters$ConstraintParameter.cle
+solver.ConstraintParameters$ConstraintParameter.libelle
+solver.ConstraintParameters$ConstraintParameter.lien
+solver.ConstraintParameters$ConstraintParameter.onglet
+solver.ConstraintParameters$ConstraintParameter.valeur

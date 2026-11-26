@@ -1,0 +1,9 @@
+---
+ordre: 232
+---
+
+### La page Planning n'offre plus que quatre vues
+
+- **Avant (3.x)** : la page Planning mêlait deux clés d'adresse. `?axe=jour|stand|personne|typologie` choisissait l'axe, et `?vue=` le rendu de cet axe (`calendrier`, `rail`, `carte`, `pauses`, `changements` pour la journée ; `treemap`, `frise`, `synthese` pour les grilles). La page offrait aussi « Comparer avec… », qui posait un second jour à côté du premier.
+- **Après (4.0)** : quatre vues, une seule clé, `?vue=jour|stand|personne|carte`. « Jour » garde ses deux modes (`mode=rail|tableau`). « Stand » et « Personne » sont les deux grilles de l'événement ; leur rendu propre (`treemap` pour la répartition des heures, `frise` et `synthese` pour les personnes) passe dans `?rendu=`. **Quatre lectures quittent la page** : « Comparer deux jours » est retirée ; « Par typologie » est la section *Typologie* de l'onglet *Besoin en animateurs* du Diagnostic ; les pauses sans relais se lisent dans *Diagnostic*, onglet *Problèmes* ; ce qui a bougé depuis la dernière publication se lit dans *Diffuser*, onglet *Envoyer*, et ce que le dernier calcul a réécrit dans le résultat du *Solveur*. L'écran prévu pour les pauses (« Repas et pauses ») viendra dans la 4.x ; en attendant, l'ancienne adresse mène à l'écran qui la porte aujourd'hui.
+- **Ce que vous faites** : rien pour vos liens. Jusqu'en 5.0, `?axe=stand|personne` et le `vue` de la grille (`treemap`, `frise`, `synthese`) sont lus comme avant et réécrits dans la forme 4.0 ; `?axe=typologie` mène à la section *Typologie* du *Besoin* du Diagnostic, `?vue=pauses` aux *Problèmes*, `?vue=changements` à *Diffuser* (le jour de `date` gardé), et `/pauses`, `/intendance` et `/typologies-planning` au même endroit. `?comparer=` et ses clés (`ecarts`) sont ignorées. Un signet ou une page d'aide interne qui nommait l'une de ces vues est à reprendre vers son nouvel écran avant la 5.0, qui retirera les anciennes clés.

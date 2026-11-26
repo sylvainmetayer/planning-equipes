@@ -1,0 +1,11 @@
+# Lists that several branches extend at once, merged as a union of lines: two
+# branches that each add an entry never conflict. Only for files where every
+# entry is one line and keeping both sides is right; a test puts the order back
+# and refuses the double a union leaves when both sides changed one entry
+# (FlywayMigrationsFrozenTest, DocumentationStructuralTest, JsonContractTest,
+# McpRenommageTest). Not for JSON (commas) nor prose; the few paragraphs above
+# the decision index rarely move.
+src/test/resources/migrations-empreintes.txt merge=union
+docs/decisions/README.md merge=union
+src/test/resources/json-contract.txt merge=union
+src/main/resources/mcp-renommages.tsv merge=union

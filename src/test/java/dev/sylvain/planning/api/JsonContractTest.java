@@ -187,14 +187,24 @@ class JsonContractTest {
         return contract;
     }
 
+    /**
+     * One line per key, {@code <Type>.<key>}, in code-unit order: {@code .gitattributes} merges
+     * the file as a union of lines, so two branches that each add a key never conflict on it,
+     * and this order is what the test holds the merged file to.
+     */
     private static List<String> asLines(SortedMap<String, SortedSet<String>> contract) {
         return contract.entrySet().stream()
-                .map(entry -> entry.getKey() + " = " + String.join(", ", entry.getValue()))
+                .flatMap(entry -> entry.getValue().stream().map(key -> entry.getKey() + "." + key))
+                .sorted()
                 .toList();
     }
 
     @Test
     void everyExposedTypeStillPutsTheSameKeysOnTheWire() throws IOException {
+        assertThat(Files.readString(CONTRACT))
+                .as(CONTRACT + " ends on exactly one newline")
+                .endsWith("\n")
+                .doesNotEndWith("\n\n");
         List<String> frozen = Files.readAllLines(CONTRACT).stream()
                 .map(String::strip)
                 .filter(line -> !line.isEmpty() && !line.startsWith("#"))

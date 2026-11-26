@@ -13,7 +13,9 @@
     "src/docs/installer/*.md",
     "src/docs/comprendre/*.md",
     "src/docs-en/index.md",
-    "src/docs-en/*/*.md"
+    "src/docs-en/*/*.md",
+    "src/docs/*/*/*.md",
+    "src/docs-en/*/*/*.md"
   ],
   "ignoreRegExpList": [
     "/\"[A-Za-z0-9_-]+\"\\s*:/g",
@@ -25,7 +27,8 @@
     "/^---\\n[\\s\\S]*?\\n---\\n/",
     "/```[\\s\\S]*?```/g",
     "/`[^`\\n]*`/g",
-    "/\\(\\/images\\/[^)]*\\)/g"
+    "/\\(\\/images\\/[^)]*\\)/g",
+    "/\\{\\{ [\\w.]+ \\}\\}/g"
   ],
   "overrides": [
     {
