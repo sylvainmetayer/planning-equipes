@@ -1,4 +1,11 @@
 <h1 class="page-title" i18n="@@nav.link.aujourdhui">Aujourd'hui</h1>
+<!-- Where the « Réalisé vs planifié » tab stood until 4.0: the measure lives in the Mesures d'édition now. -->
+<p class="jour-j-mesures">
+  <a matButton routerLink="/mesures">
+    <mat-icon>balance</mat-icon>
+    <ng-container i18n="@@aujourdhui.lienMesures">Réalisé vs planifié, dans les Mesures d'édition</ng-container>
+  </a>
+</p>
 <mat-card appearance="outlined" class="page-card jour-j-entete">
   <mat-card-header>
     <mat-card-subtitle>

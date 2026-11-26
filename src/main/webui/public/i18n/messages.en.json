@@ -4685,6 +4685,7 @@
   "aujourdhui.entete.stands": "{$count} stands open",
   "aujourdhui.entete.vacation": "1 shift left",
   "aujourdhui.entete.vacations": "{$count} shifts left",
+  "aujourdhui.lienMesures": "Realised vs planned, in the Edition measures",
   "aujourdhui.compteur.absents.aucun": "Nobody absent",
   "aujourdhui.compteur.absents.un": "1 absent",
   "aujourdhui.compteur.absents": "{$count} absent",

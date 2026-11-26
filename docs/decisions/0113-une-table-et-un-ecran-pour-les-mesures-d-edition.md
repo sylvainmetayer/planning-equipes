@@ -45,7 +45,10 @@ plan*, un onglet d'*Aujourd'hui*) et trois outils MCP, pour une seule question :
    alias `@Deprecated` jusqu'en 5.0.
 6. **Un écran**, *Mesures d'édition* (`/mesures`), avec deux vues dans l'adresse :
    `?vue=realise` (par défaut) et `?vue=indicateurs`. Les anciennes adresses
-   (`/realise`, `/aujourdhui?onglet=realise`) y mènent.
+   (`/realise`, `/aujourdhui?onglet=realise`) y mènent, leurs autres paramètres
+   gardés. Il n'a pas d'entrée de menu (les treize sont les moments du cycle) :
+   un lien en tête d'*Aujourd'hui*, là où était l'onglet, la palette et l'aide
+   y mènent.
 7. **MCP** : les trois outils prennent la convention de l'ADR 0100 :
    `lister_mesures_edition`, `supprimer_mesure_edition`,
    `comparer_realise_planifie`. Ils restent trois : les deux premiers ne sont

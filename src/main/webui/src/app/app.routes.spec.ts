@@ -22,6 +22,7 @@ import {
   parametresOngletsDeplaces,
   redirectConstraintsToRegles,
   redirectEditionComparison,
+  redirectFormerRealiseTab,
   redirectKpiToVersions,
   standEditToFicheUrl,
   routes,
@@ -370,6 +371,29 @@ describe('app.routes', () => {
       );
       expect(guard({ onglet: 'fragilite' })).toBe(true);
       expect(guard({})).toBe(true);
+    });
+
+    // The realised was a tab of Aujourd'hui, and a screen before that: both land on
+    // the Mesures d'édition, whatever else the address carried.
+    it('sends the former realised addresses to the Mesures d’édition, params kept', () => {
+      expect(redirectTarget('realise', {})).toBe('/mesures');
+      expect(redirectTarget('realise', { vue: 'indicateurs' })).toBe('/mesures?vue=indicateurs');
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideRouter([])],
+      });
+      const guard = (queryParams: Record<string, string>): unknown =>
+        TestBed.runInInjectionContext(() =>
+          redirectFormerRealiseTab(
+            snapshotOf(queryParams),
+            TestBed.inject(Router).routerState.snapshot,
+          ),
+        );
+
+      expect(String(guard({ onglet: 'realise', vue: 'indicateurs' }))).toBe(
+        '/mesures?vue=indicateurs',
+      );
+      expect(String(guard({ onglet: 'realise' }))).toBe('/mesures');
+      expect(guard({ date: '2026-08-02' })).toBe(true);
     });
 
     // Marge disponible became two tabs of the Diagnostic: its « avant » reading

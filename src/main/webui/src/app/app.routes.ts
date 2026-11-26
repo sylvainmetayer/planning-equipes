@@ -267,12 +267,18 @@ const FORMER_DEBUG_TABS: Readonly<Record<string, string>> = {
   yaml: 'verifier',
 };
 
-/** `/aujourdhui?onglet=realise`, the tab the realised had until 4.0, lands on the Mesures d'édition. */
-function redirectFormerRealiseTab(route: { queryParamMap: { get(name: string): string | null } }) {
-  return route.queryParamMap.get('onglet') === 'realise'
-    ? inject(Router).createUrlTree(['/mesures'])
-    : true;
-}
+/**
+ * `/aujourdhui?onglet=realise`, the tab the realised had until 4.0, lands on
+ * the Mesures d'édition, its other query params kept.
+ */
+export const redirectFormerRealiseTab: CanActivateFn = (route) => {
+  if (route.queryParamMap.get('onglet') !== 'realise') {
+    return true;
+  }
+  const queryParams = { ...route.queryParams };
+  delete queryParams['onglet'];
+  return inject(Router).createUrlTree(['/mesures'], { queryParams });
+};
 
 function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): string | null } }) {
   if (route.queryParamMap.get('focus') === TODAY_ANCHOR) {
@@ -450,7 +456,7 @@ const adminRoutes: Routes = [
   // The gap between the published plan and the plan held, per stand and per
   // elapsed day, was the « Réalisé vs planifié » tab of Aujourd'hui: it is a
   // view of the Mesures d'édition since 4.0.
-  { path: 'realise', redirectTo: '/mesures' },
+  { path: 'realise', redirectTo: redirectKeepingQuery('mesures') },
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,

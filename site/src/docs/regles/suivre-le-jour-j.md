@@ -55,7 +55,7 @@ Par défaut l'écran montre le prénom et l'initiale ; une lettre de plus, puis 
 
 ## Mesurer le réalisé contre le prévu
 
-La vue *Réalisé vs planifié* de l'écran *Mesures d'édition* (groupe *Aujourd'hui*) donne, après coup ou jour par jour, l'écart entre le planning publié et ce qui a été tenu, stand par stand et journée par journée :
+La vue *Réalisé vs planifié* de l'écran *Mesures d'édition* (un lien en tête d'*Aujourd'hui*) donne, après coup ou jour par jour, l'écart entre le planning publié et ce qui a été tenu, stand par stand et journée par journée :
 
 - sièges publiés, tenus, absences marquées le jour J, remplacements, sièges restés vides ;
 - heures publiées, réalisées et perdues ;

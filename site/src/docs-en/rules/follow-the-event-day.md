@@ -58,7 +58,7 @@ By default the screen shows the first name and the initial; one more letter, the
 
 ## Measure the realised against the planned
 
-The *Realised vs planned* view of the *Edition measures* screen (*Today* group) gives, afterwards or day by day, the gap between the published schedule and what was actually held, stand by stand and day by day:
+The *Realised vs planned* view of the *Edition measures* screen (a link at the top of *Today*) gives, afterwards or day by day, the gap between the published schedule and what was actually held, stand by stand and day by day:
 
 - seats published, held, absences marked on the event day, replacements, seats left empty;
 - hours published, realised and lost;
