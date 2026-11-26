@@ -185,6 +185,49 @@ class PublicationResourceTest {
                 .contains("samedi 11/07 : Stand pub un 14h-16h (nouveau)");
     }
 
+    /* ------------------------- The edition's phase -------------------------- */
+
+    /**
+     * The first publication moves the edition to {@code PUBLIEE} (ADR 0115),
+     * an unblocked structure stays unblocked until the next publication
+     * refreezes it, and a finished edition stays finished.
+     */
+    @Test
+    void aPublicationMovesTheEditionToPublishedAndRefreezesItsStructure() {
+        edition().body("phase", equalTo("PREPARATION"));
+        publier();
+        edition().body("phase", equalTo("PUBLIEE")).body("structureDebloquee", equalTo(false));
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .put("/api/editions/courant/deblocage-structure")
+                .then()
+                .statusCode(200)
+                .body("structureDebloquee", equalTo(true));
+        assertThat(persistence.reaffecterPoste("PUB-P2", "PUB-C")).isTrue();
+        publier();
+        edition().body("phase", equalTo("PUBLIEE")).body("structureDebloquee", equalTo(false));
+
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"phase\":\"TERMINEE\"}")
+                .when()
+                .put("/api/editions/courant/phase")
+                .then()
+                .statusCode(200);
+        assertThat(persistence.reaffecterPoste("PUB-P2", "PUB-B")).isTrue();
+        publier();
+        edition().body("phase", equalTo("TERMINEE"));
+    }
+
+    private static io.restassured.response.ValidatableResponse edition() {
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/editions/courant")
+                .then()
+                .statusCode(200);
+    }
+
     /* -------------------------------- Limites ------------------------------ */
 
     @Test

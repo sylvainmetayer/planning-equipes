@@ -94,9 +94,9 @@ public abstract sealed class BusinessError extends IllegalArgumentException {
     }
 
     /**
-     * The write touches a family of the referential the organiser froze
-     * (ADR 0052) — {@code 409}, told apart from {@link Conflict} by the
-     * {@code REFERENTIEL_FIGE} code of its body: the client answers it by
+     * The write touches a family of the referential the phase of the edition
+     * freezes (ADR 0052, ADR 0115) — {@code 409}, told apart from
+     * {@link Conflict} by the {@code REFERENTIEL_FIGE} code of its body: the client answers it by
      * showing the padlock and the way to lift the freeze, not with a plain
      * banner. Carries the frozen families that refused it, as their wire
      * names.

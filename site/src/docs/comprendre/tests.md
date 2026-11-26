@@ -63,7 +63,7 @@ Un test structurel ne joue aucun scénario : il relit le code (sources, annotati
 | Aucun nom d'animateur ne sort par MCP ; chaque outil nomme son édition, déclare ses quatre indices, traduit les refus métier, dit ce qui se passe pendant un calcul | `McpConfidentialiteStructurelleTest`, `McpEditionStructurelleTest`, `McpAnnotationsStructurelleTest`, `McpRefusMetierStructurelleTest`, `McpWarnsWhileSolvingStructuralTest` ([outils MCP](mcp-outils.md)) |
 | Les trois écritures du nom d'une contrainte : `actif(stream, "X")`, `.asConstraint("X")` et le catalogue | `ConstraintToggleStructurelleTest` et `ConstraintCatalogTest` |
 | Les deux moteurs scorent les mêmes règles | `HandSearchCoverageStructuralTest`, `HandSearchDifferentialTest` ([tests du solveur](tests-de-scenarios.md)) |
-| Un référentiel figé refuse toute écriture ; une écriture qu'un calcul annulerait est refusée | `GelReferentielStructuralTest`, `RefusedWhileSolvingStructuralTest` |
+| Un référentiel figé par la phase de l'édition refuse toute écriture ; une écriture qu'un calcul annulerait est refusée | `GelReferentielStructuralTest`, `RefusedWhileSolvingStructuralTest` |
 | Seule l'édition active publie et envoie des mails | `ActiveEditionEmissionStructuralTest` |
 | Toute route d'écriture et tout outil d'écriture sont au catalogue des actions journalisées | `JournalCoverageStructurelleTest` |
 | Chaque table de référentiel porte `modifie_le` et sa précondition d'écriture | `WriteStampStructurelleTest` |

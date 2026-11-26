@@ -93,6 +93,9 @@ EditionResource#gel GET /editions/courant/gel
 EditionResource#gel GET /editions/courant/gel/{famille}
 EditionResource#lift DELETE /editions/courant/gel/{famille}
 EditionResource#list GET /editions
+EditionResource#refreezeStructure DELETE /editions/courant/deblocage-structure
+EditionResource#setPhase PUT /editions/courant/phase
+EditionResource#unblockStructure PUT /editions/courant/deblocage-structure
 EmplacementResource#analyseCsv POST /emplacements/import-csv/analyse
 EmplacementResource#createEmplacement POST /emplacements
 EmplacementResource#deleteEmplacement DELETE /emplacements/{id}

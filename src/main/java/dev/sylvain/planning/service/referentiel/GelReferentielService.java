@@ -1,29 +1,43 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.EditionPhase;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.edition.EditionPhaseService;
 import dev.sylvain.planning.service.journal.ChampsModifies;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * The freeze of the referential: a family the organiser declared ready, and
- * the refusal every write of it then meets, whatever path it takes — a form,
- * the bulk edit, a CSV or grid import, an MCP tool (ADR 0052).
+ * The freeze of the referential, which the phase of the edition decides
+ * (ADR 0115, replacing the per-family freeze of ADR 0052), and the refusal
+ * every write of a frozen family then meets, whatever path it takes — a form,
+ * the bulk edit, a CSV or grid import, an MCP tool.
+ *
+ * <p>What each phase freezes:</p>
+ * <ul>
+ *   <li>{@link EditionPhase#PREPARATION} — nothing;</li>
+ *   <li>{@link EditionPhase#CALCUL} and {@link EditionPhase#TERMINEE} — the
+ *       four families;</li>
+ *   <li>{@link EditionPhase#PUBLIEE} — the structure ({@link #STRUCTURE}:
+ *       stands, timeslots, game categories and locations), unless the
+ *       organiser unblocked it for a last-minute change; the animateurs'
+ *       competences stay open.</li>
+ * </ul>
  *
  * <p>Most write methods are guarded by {@link RefusedWhileFrozen}: the whole
  * method writes the family, so the interceptor refuses it before it starts.
@@ -34,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * method of a guarded service without one or the other, or an argued
  * reason.</p>
  *
- * <p>What stays open under any freeze is deliberate, not forgotten: the
+ * <p>What stays open in every phase is deliberate, not forgotten: the
  * people's own data (availability, wishes, declarations, e-mail), the ad hoc
  * adjustments, the planning locks, and the consignes — ADR 0043's tool for
  * closing a band late without destroying anything.</p>
@@ -57,22 +71,32 @@ public class GelReferentielService {
             "ouvertures",
             "horaires");
 
-    private final GelReferentielRepository repository;
+    /** The structure of the event: what a published edition keeps frozen unless unblocked. */
+    static final Set<ReferentialFamily> STRUCTURE = Collections.unmodifiableSet(EnumSet.of(
+            ReferentialFamily.STANDS, ReferentialFamily.CRENEAUX, ReferentialFamily.TYPOLOGIES_EMPLACEMENTS));
 
-    /** Where the family frozen or lifted is left for the history line, which names it. */
+    private final EditionPhaseService phases;
+
+    /** Where the family named by a 3.x freeze or lift is left for the history line, which names it. */
     private final CurrentAction currentAction;
 
     @Inject
-    public GelReferentielService(GelReferentielRepository repository, CurrentAction currentAction) {
-        this.repository = repository;
+    public GelReferentielService(EditionPhaseService phases, CurrentAction currentAction) {
+        this.phases = phases;
         this.currentAction = currentAction;
     }
 
-    /** The frozen families of the current edition, in declaration order. */
-    public List<GelReferentiel> list() {
-        return repository.list().stream()
-                .sorted(Comparator.comparing(GelReferentiel::famille))
-                .toList();
+    /** The families {@code phase} freezes — see the class comment. */
+    static Set<ReferentialFamily> frozenFamilies(EditionPhase phase, boolean structureDebloquee) {
+        return switch (phase) {
+            case PREPARATION -> EnumSet.noneOf(ReferentialFamily.class);
+            case CALCUL, TERMINEE -> EnumSet.allOf(ReferentialFamily.class);
+            case PUBLIEE -> structureDebloquee ? EnumSet.noneOf(ReferentialFamily.class) : EnumSet.copyOf(STRUCTURE);
+        };
+    }
+
+    private static Set<ReferentialFamily> frozenFamilies(Edition edition) {
+        return frozenFamilies(edition.getPhase(), edition.isStructureDebloquee());
     }
 
     /**
@@ -80,105 +104,134 @@ public class GelReferentielService {
      * card, the Paramètres switches and {@code etat_edition} all read.
      *
      * @param libelle how the screens name the family
-     * @param figeLe  when it was frozen, {@code null} while it is open
+     * @param figeLe  since when the phase freezing it holds, {@code null} while it is open
      */
     @Schema(requiredProperties = {"famille", "fige", "libelle"})
     public record EtatGel(ReferentialFamily famille, String libelle, boolean fige, Instant figeLe) {
 
-        static EtatGel of(ReferentialFamily famille, Optional<GelReferentiel> gel) {
-            return new EtatGel(
-                    famille,
-                    famille.libelle(),
-                    gel.isPresent(),
-                    gel.map(GelReferentiel::figeLe).orElse(null));
+        static EtatGel of(ReferentialFamily famille, Edition edition) {
+            boolean fige = frozenFamilies(edition).contains(famille);
+            return new EtatGel(famille, famille.libelle(), fige, fige ? edition.getPhaseDepuis() : null);
         }
     }
 
     /** Every family, frozen or not, in declaration order. */
     public List<EtatGel> etat() {
-        List<GelReferentiel> gels = repository.list();
+        Edition edition = phases.current();
         return Arrays.stream(ReferentialFamily.values())
-                .map(famille -> EtatGel.of(
-                        famille,
-                        gels.stream().filter(gel -> gel.famille() == famille).findFirst()))
+                .map(famille -> EtatGel.of(famille, edition))
                 .toList();
     }
 
     /** One family, frozen or not. */
     public EtatGel etat(ReferentialFamily famille) {
-        return EtatGel.of(famille, find(famille));
-    }
-
-    public Optional<GelReferentiel> find(ReferentialFamily famille) {
-        return repository.list().stream()
-                .filter(gel -> gel.famille() == famille)
-                .findFirst();
+        return EtatGel.of(famille, phases.current());
     }
 
     public boolean isFrozen(ReferentialFamily famille) {
-        return find(famille).isPresent();
+        return frozenFamilies(phases.current()).contains(famille);
     }
 
     /**
-     * Freezes the family and returns it as stored — with its original date
-     * when it already was. Accepted while a solve runs: the running solve read
-     * its problem at its start, and the freeze changes no data it reads.
+     * The 3.x « freeze this family », kept until 5.0 (ADR 0115): in
+     * {@link EditionPhase#PREPARATION} it moves the edition to
+     * {@link EditionPhase#CALCUL} — which freezes the four families, not the
+     * one named; in a published edition whose structure was unblocked, it
+     * refreezes the structure. Anywhere else the family is already as frozen
+     * as the phase allows, and nothing moves.
      */
-    public GelReferentiel freeze(ReferentialFamily famille) {
-        repository.freeze(Objects.requireNonNull(famille, "famille"));
+    public void freeze(ReferentialFamily famille) {
+        Objects.requireNonNull(famille, "famille");
+        Edition edition = phases.current();
+        if (edition.getPhase() == EditionPhase.PREPARATION) {
+            phases.setPhase(EditionPhase.CALCUL);
+        } else if (edition.getPhase() == EditionPhase.PUBLIEE
+                && edition.isStructureDebloquee()
+                && STRUCTURE.contains(famille)) {
+            phases.refreezeStructure();
+        }
         currentAction.champsModifies(List.of(famille.name()));
-        return find(famille).orElseThrow();
     }
 
-    /** Lifts the freeze; {@code false} when there was none to lift. */
-    public boolean lift(ReferentialFamily famille) {
-        boolean levee = repository.lift(Objects.requireNonNull(famille, "famille"));
+    /**
+     * The 3.x « lift this family », kept until 5.0 (ADR 0115): in
+     * {@link EditionPhase#CALCUL} it moves the edition back to
+     * {@link EditionPhase#PREPARATION} — which opens the four families; in a
+     * published edition it unblocks the structure. A finished edition refuses
+     * it: its phase is what to change.
+     */
+    public void lift(ReferentialFamily famille) {
+        Objects.requireNonNull(famille, "famille");
+        Edition edition = phases.current();
+        switch (edition.getPhase()) {
+            case CALCUL -> phases.setPhase(EditionPhase.PREPARATION);
+            case PUBLIEE -> {
+                if (!edition.isStructureDebloquee() && STRUCTURE.contains(famille)) {
+                    phases.unblockStructure();
+                }
+            }
+            case TERMINEE ->
+                throw new BusinessError.Conflict(
+                        "L'édition est terminée : changez sa phase pour modifier son" + " référentiel.");
+            case PREPARATION -> {
+                // Nothing is frozen: lifting an open family changes nothing.
+            }
+        }
         currentAction.champsModifies(List.of(famille.name()));
-        return levee;
     }
 
     /**
      * Refuses when any of {@code families} is frozen — every family when none
      * is named, which is what an operation replacing the whole edition asks
-     * (a scenario import, the reset). The refusal names each frozen family, so
-     * the organiser knows which freeze to lift.
+     * (a scenario import, the reset). The refusal names each frozen family
+     * and says how to reopen it.
      */
     public void refuseIfFrozen(ReferentialFamily... families) {
         Set<ReferentialFamily> asked =
                 families.length == 0 ? EnumSet.allOf(ReferentialFamily.class) : EnumSet.copyOf(Arrays.asList(families));
+        Edition edition = phases.current();
         Set<ReferentialFamily> frozen = EnumSet.noneOf(ReferentialFamily.class);
-        for (GelReferentiel gel : repository.list()) {
-            if (asked.contains(gel.famille())) {
-                frozen.add(gel.famille());
-            }
-        }
+        frozen.addAll(frozenFamilies(edition));
+        frozen.retainAll(asked);
         if (!frozen.isEmpty()) {
-            throw refusal(frozen);
+            throw refusal(edition.getPhase(), frozen);
         }
     }
 
     /**
      * Refuses when {@code family} is frozen and the edit moves what it covers:
-     * the partial families' guard. The freeze is read once, and
+     * the partial families' guard. The phase is read once, and
      * {@code movesWhatItCovers} — which may need a before-image — is asked
      * only when the family is frozen, so an open edition pays one small read
      * per write and nothing more.
      */
     public void refuseIfFrozen(ReferentialFamily family, BooleanSupplier movesWhatItCovers) {
-        if (isFrozen(family) && movesWhatItCovers.getAsBoolean()) {
-            throw refusal(EnumSet.of(family));
+        Edition edition = phases.current();
+        if (frozenFamilies(edition).contains(family) && movesWhatItCovers.getAsBoolean()) {
+            throw refusal(edition.getPhase(), EnumSet.of(family));
         }
     }
 
-    private static BusinessError.Frozen refusal(Set<ReferentialFamily> frozen) {
+    private static BusinessError.Frozen refusal(EditionPhase phase, Set<ReferentialFamily> frozen) {
         return new BusinessError.Frozen(
-                message(frozen), frozen.stream().map(Enum::name).toList());
+                message(phase, frozen), frozen.stream().map(Enum::name).toList());
     }
 
-    private static String message(Set<ReferentialFamily> frozen) {
-        return "Le référentiel est figé : " + ReferentialFamily.quote(frozen)
-                + ". Levez le gel (État de l'édition ou Paramètres) avant de modifier ces fiches — les consignes et"
-                + " les disponibilités restent modifiables.";
+    static String message(EditionPhase phase, Set<ReferentialFamily> frozen) {
+        String familles = ReferentialFamily.quote(frozen);
+        return switch (phase) {
+            case PUBLIEE ->
+                "L'édition est publiée : sa structure est figée (" + familles + "). Débloquez la structure pour un"
+                        + " changement de dernière minute — les fiches des animateurs, les consignes et les"
+                        + " disponibilités restent modifiables.";
+            case TERMINEE ->
+                "L'édition est terminée : son référentiel est figé (" + familles + "). Changez sa phase pour"
+                        + " modifier ces fiches.";
+            default ->
+                "L'édition est en phase « " + phase.libelle() + " » : le référentiel est figé (" + familles
+                        + "). Repassez-la en Préparation avant de modifier ces fiches — les consignes et les"
+                        + " disponibilités restent modifiables.";
+        };
     }
 
     /* --------------------------- Partial families --------------------------- */

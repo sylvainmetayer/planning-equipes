@@ -20,7 +20,7 @@ dépôt étant public, cet onglet ne coûte rien.
 | Trivy, image | `docker-ghcr.yml` avant signature ; `securite.yml`, job `image`, chaque semaine | Paquets système de l'image : couche Ubuntu, JRE, `postgresql-client` | `.trivyignore` |
 | CodeQL | configuration « par défaut » des réglages du dépôt | Flux de données d'une classe à l'autre (Java, TypeScript, Python, workflows) | dans l'onglet *Security* |
 | OpenSSF Scorecard | `scorecard.yml` | Pratiques de la chaîne d'approvisionnement du dépôt, note publique (badge du README) | dans l'onglet *Security* |
-| OWASP ZAP *baseline* | `tests.yml`, job `dast` | L'application démarrée vue sans compte : en-têtes, cookies, erreurs | `.github/zap-baseline.tsv` |
+| OWASP ZAP *baseline* | `analyse-dynamique.yml`, chaque nuit sur `main` | L'application démarrée vue sans compte : en-têtes, cookies, erreurs | `.github/zap-baseline.tsv` |
 | GitGuardian | application GitHub | Secrets poussés | `.gitguardian.yaml` |
 
 Le scan de l'image dans `docker-ghcr.yml` **barre la publication** : une image

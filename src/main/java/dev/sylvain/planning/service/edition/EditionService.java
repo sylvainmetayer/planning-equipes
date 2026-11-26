@@ -124,7 +124,8 @@ public class EditionService {
         Edition cree = new Edition(ids.nextEditionId(), nom, false, null);
         repository.save(cree);
         editionContext.invaliderCache();
-        return cree;
+        // Read back, so the answer carries the phase and its date like every other read.
+        return repository.find(cree.getId()).orElse(cree);
     }
 
     /**
