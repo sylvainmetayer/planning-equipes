@@ -47,6 +47,7 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { writeOrAskStale } from '../../shared/stale-write';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { LegalText } from '../../shared/legal-text';
 import { reglagesAvances } from '../../core/reglages-avances';
@@ -560,9 +561,10 @@ export class ReglesPage implements OnInit {
   /**
    * Writes the pending changes, one record after the other, each cleared once
    * stored — a refusal on the third leaves the first two saved and says why.
-   * The two parameter records are re-read just before being written: the
-   * server replaces a whole record, and Paramètres › Calcul writes a field of the legal
-   * one too.
+   * The two parameter records are written under the `modifieLe` they were loaded
+   * with: the server replaces a whole record, and Paramètres › Calcul or ›
+   * Légal write fields of the same one, so a record written since is a 409
+   * answered with the usual dialog.
    */
   protected async save(): Promise<void> {
     if (!this.dirty() || this.saving()) {
@@ -571,20 +573,48 @@ export class ReglesPage implements OnInit {
     this.saving.set(true);
     this.error.set('');
     try {
+      const deps = { confirm: this.confirm, notifications: this.notifications };
+      const reload = () => this.load();
       if (this.legauxDirty()) {
-        const stored = await this.constraintsApi.legalParameters();
-        this.legaux.set(
-          await this.constraintsApi.saveLegalParameters(mergeSettings(stored, this.legauxDraft())),
+        const written = await writeOrAskStale(
+          deps,
+          async (overwrite) => {
+            // Overwriting re-reads the record, so what another tab stored in other fields is kept.
+            const base =
+              (overwrite ? null : this.legaux()) ?? (await this.constraintsApi.legalParameters());
+            return this.constraintsApi.saveLegalParameters({
+              ...mergeSettings(base, this.legauxDraft()),
+              modifieLe: overwrite ? null : (base.modifieLe ?? null),
+            });
+          },
+          reload,
         );
+        if (written === null) {
+          this.cancel();
+          return;
+        }
+        this.legaux.set(written.saved);
         this.legauxDraft.set({});
       }
       if (this.qualiteDirty()) {
-        const stored = await this.constraintsApi.qualityParameters();
-        this.qualite.set(
-          await this.constraintsApi.saveQualityParameters(
-            mergeSettings(stored, this.qualiteDraft()),
-          ),
+        const written = await writeOrAskStale(
+          deps,
+          async (overwrite) => {
+            const base =
+              (overwrite ? null : this.qualite()) ??
+              (await this.constraintsApi.qualityParameters());
+            return this.constraintsApi.saveQualityParameters({
+              ...mergeSettings(base, this.qualiteDraft()),
+              modifieLe: overwrite ? null : (base.modifieLe ?? null),
+            });
+          },
+          reload,
         );
+        if (written === null) {
+          this.cancel();
+          return;
+        }
+        this.qualite.set(written.saved);
         this.qualiteDraft.set({});
       }
       for (const rule of this.actifsChanges()) {

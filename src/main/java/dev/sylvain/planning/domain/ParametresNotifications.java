@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -19,9 +20,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *                                reminder, counted from the publication
  * @param ancienneteEchangeJours  how long a swap request may wait for a
  *                                decision before the admin is alerted
+ * @param modifieLe               when the stored row was last written: sent back by a
+ *                                write as its precondition ({@code null} checks nothing)
  */
 @Schema(requiredProperties = {"ancienneteEchangeJours", "delaiRelanceHeures"})
-public record ParametresNotifications(LocalTime heureRappelVeille, int delaiRelanceHeures, int ancienneteEchangeJours) {
+public record ParametresNotifications(
+        LocalTime heureRappelVeille, int delaiRelanceHeures, int ancienneteEchangeJours, Instant modifieLe) {
+
+    public ParametresNotifications(LocalTime heureRappelVeille, int delaiRelanceHeures, int ancienneteEchangeJours) {
+        this(heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, null);
+    }
+
+    public ParametresNotifications withStamp(Instant modifieLe) {
+        return new ParametresNotifications(heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, modifieLe);
+    }
 
     /** Late enough that the next day's planning is settled, early enough to be read. */
     public static final LocalTime HEURE_RAPPEL_VEILLE_PAR_DEFAUT = LocalTime.of(18, 0);

@@ -96,6 +96,10 @@ public class ConcurrentModificationGuard {
     }
 
     private static String sujet(String table) {
+        // The four single-row tables of the edition's parameters: one wording for the four sections.
+        if (table.startsWith("parametres_")) {
+            return "Cette section des paramètres";
+        }
         return SUJET.getOrDefault(table, "Cette fiche");
     }
 

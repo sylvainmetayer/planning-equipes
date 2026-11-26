@@ -7,7 +7,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiService } from '../../core/api.service';
+import { ApiError, ApiService, CODE_MODIFICATION_CONCURRENTE } from '../../core/api.service';
 import { AdminApi } from '../../core/api/admin-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionStore } from '../../core/edition.store';
@@ -18,6 +18,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { seedStore } from '../../core/testing/seed-store';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { ParametresCalcul } from './parametres-calcul';
 
 const INSTANCE: SolverBudgetBounds = {
@@ -26,7 +27,10 @@ const INSTANCE: SolverBudgetBounds = {
   maxSecondsLimit: 7200,
 };
 
+const STAMP = '2026-11-26T10:00:00Z';
+
 const LEGAUX = {
+  modifieLe: STAMP,
   dureeHebdomadaireMaxMinutes: 2880,
   dureeHebdomadaireMaxMineurMinutes: 2100,
   reposQuotidienMinimalMinutes: 660,
@@ -68,6 +72,7 @@ describe('ParametresCalcul', () => {
     saveLegalParameters: ReturnType<typeof vi.fn>;
   };
   let crud: { save: ReturnType<typeof vi.fn> };
+  let confirm: { askThreeWay: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     mail.set(false);
@@ -81,6 +86,7 @@ describe('ParametresCalcul', () => {
       saveLegalParameters: vi.fn((legaux: typeof LEGAUX) => Promise.resolve(legaux)),
     };
     crud = { save: vi.fn(() => Promise.resolve(true)) };
+    confirm = { askThreeWay: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
@@ -96,6 +102,7 @@ describe('ParametresCalcul', () => {
         },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: ConfirmService, useValue: confirm },
         {
           provide: SolverJobService,
           useValue: { activeJob: signal(null), editingLocked: () => false },
@@ -121,26 +128,61 @@ describe('ParametresCalcul', () => {
     expect(solverSettings.setMailFinResolution).not.toHaveBeenCalled();
     await calcul['save']();
 
-    expect(solverSettings.setMailFinResolution).toHaveBeenCalledExactlyOnceWith(true);
+    expect(solverSettings.setMailFinResolution).toHaveBeenCalledExactlyOnceWith(true, false);
     expect(constraintsApi.saveLegalParameters).not.toHaveBeenCalled();
     expect(crud.save).not.toHaveBeenCalled();
     expect(calcul.dirty()).toBe(false);
   });
 
-  /** The legal record is re-read before the write: « Légal » may have stored a field meanwhile. */
-  it('writes the evening over a fresh read of the legal parameters', async () => {
+  /** The legal record goes back as loaded, under its stamp: « Légal » having stored a field meanwhile is a 409. */
+  it('writes the evening over the legal parameters as loaded, under their stamp', async () => {
     const calcul = await create();
-    constraintsApi.legalParameters.mockResolvedValue({ ...LEGAUX, dureePauseMinutes: 45 });
 
     calcul['soireeDraft'].set('19:30');
     await calcul['save']();
 
     expect(constraintsApi.saveLegalParameters).toHaveBeenCalledExactlyOnceWith({
       ...LEGAUX,
-      dureePauseMinutes: 45,
       heureDebutSoiree: '19:30',
+      modifieLe: STAMP,
     });
     expect(solverSettings.setMailFinResolution).not.toHaveBeenCalled();
+  });
+
+  it('overwrites on request when the legal parameters were written since', async () => {
+    const calcul = await create();
+    constraintsApi.saveLegalParameters.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'Modifiée.', CODE_MODIFICATION_CONCURRENTE),
+    );
+    confirm.askThreeWay.mockResolvedValue(true);
+    constraintsApi.legalParameters.mockResolvedValue({ ...LEGAUX, dureePauseMinutes: 45 });
+
+    calcul['soireeDraft'].set('19:30');
+    await calcul['save']();
+
+    expect(constraintsApi.saveLegalParameters).toHaveBeenLastCalledWith({
+      ...LEGAUX,
+      dureePauseMinutes: 45,
+      heureDebutSoiree: '19:30',
+      modifieLe: null,
+    });
+    expect(calcul.dirty()).toBe(false);
+  });
+
+  it('sends the mail switch over again without a stamp when overwriting', async () => {
+    const calcul = await create();
+    solverSettings.setMailFinResolution.mockRejectedValueOnce(
+      new ApiError(409, 'conflict', 'Modifiée.', CODE_MODIFICATION_CONCURRENTE),
+    );
+    confirm.askThreeWay.mockResolvedValue(true);
+
+    calcul['mailDraft'].set(true);
+    await calcul['save']();
+
+    expect(solverSettings.setMailFinResolution.mock.calls).toEqual([
+      [true, false],
+      [true, true],
+    ]);
   });
 
   it('promotes the chosen polyvalent typologie, letting the server demote the previous one', async () => {

@@ -19,6 +19,8 @@ import { ParametresLegaux, ParametresQualite } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
 import { ModifiedFormsRegistry } from '../../core/formulaires-modifies';
 import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
+import { writeOrAskStale } from '../../shared/stale-write';
 import { StatusMessage } from '../../shared/status-message';
 import {
   hasChanges,
@@ -112,9 +114,9 @@ function acceptable(descriptor: SeuilDescriptor, field: string, draft: SettingsR
  * « Paramètres › Légal » and « Paramètres › Organisation »: every setting of
  * the section on one form, one « Enregistrer ». The same values are edited in
  * context, on the row of the rule that reads them, in « Règles du planning »;
- * both re-read the record just before writing it and send the typed fields
- * over it, so neither resets what the other stored. Nothing is written as it
- * is typed.
+ * both write under the `modifieLe` they loaded, so neither overwrites what the
+ * other stored without being told (« Modifiée entre-temps »). Nothing is written
+ * as it is typed.
  */
 @Component({
   selector: 'app-parametres-section',
@@ -128,6 +130,7 @@ export class ParametresSection implements OnInit {
 
   private readonly constraintsApi = inject(ConstraintsApi);
   private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly stored = signal<SettingsRecord | null>(null);
   protected readonly draft = signal<SettingsRecord>({});
@@ -272,15 +275,32 @@ export class ParametresSection implements OnInit {
     this.saving.set(true);
     this.error.set('');
     try {
-      const current = await this.read();
-      const merged = { ...current, ...this.draft() };
-      this.stored.set(
-        (this.section() === 'legal'
-          ? await this.constraintsApi.saveLegalParameters(merged as unknown as ParametresLegaux)
-          : await this.constraintsApi.saveQualityParameters(
-              merged as unknown as ParametresQualite,
-            )) as SettingsRecord,
+      // Written under the stamp the section was loaded with: a section written since is a 409.
+      // « Écraser » re-reads it and sends the typed fields over it, without a stamp.
+      const written = await writeOrAskStale(
+        { confirm: this.confirm, notifications: this.notifications },
+        async (overwrite) => {
+          const base = (overwrite ? null : this.stored()) ?? (await this.read());
+          const merged = {
+            ...base,
+            ...this.draft(),
+            modifieLe: overwrite ? null : (base['modifieLe'] ?? null),
+          };
+          return (
+            this.section() === 'legal'
+              ? await this.constraintsApi.saveLegalParameters(merged as unknown as ParametresLegaux)
+              : await this.constraintsApi.saveQualityParameters(
+                  merged as unknown as ParametresQualite,
+                )
+          ) as SettingsRecord;
+        },
+        () => this.load(),
       );
+      if (written === null) {
+        this.cancel();
+        return;
+      }
+      this.stored.set(written.saved);
       this.draft.set({});
       this.notifications.notify({
         title: $localize`:@@parametres.section.saved:Paramètres enregistrés : le prochain calcul en tiendra compte.`,

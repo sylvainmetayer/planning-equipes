@@ -56,6 +56,32 @@ class ParametresSolveurMcpToolsTest {
         assertThat(calcul(null).mailFinResolution()).as("kept when not given").isTrue();
     }
 
+    /** One refusal per section: a stamp read before another write is a 409, and no stamp checks nothing. */
+    @Test
+    void aStaleStampIsRefusedOnEachSectionAndAnAbsentOneChecksNothing() {
+        String stale = "2020-01-01T00:00:00Z";
+        for (String section : new String[] {"legal", "organisation", "notifications", "calcul"}) {
+            // The first write creates the row; the stamp it carries is the one a reader would send back.
+            call(section, section.equals("legal") ? 40 : null, section.equals("calcul") ? true : null);
+            assertThatThrownBy(() -> call(
+                            section,
+                            section.equals("legal") ? 41 : null,
+                            section.equals("calcul") ? false : null,
+                            stale))
+                    .as(section)
+                    .isInstanceOf(io.quarkiverse.mcp.server.ToolCallException.class)
+                    .hasMessageContaining("modifiée");
+            // Nothing checked: the write lands.
+            call(section, section.equals("legal") ? 42 : null, section.equals("calcul") ? false : null);
+        }
+        var current = (ParametresMcpTools.ParametresLegauxView)
+                tools.getParametres("legal", edition).parametres();
+        assertThat(current.dureePauseMinutes()).isEqualTo(42);
+        assertThat(current.modifieLe()).isNotNull();
+        // The stamp just read is the precondition that passes.
+        call("legal", 43, null, current.modifieLe().toString());
+    }
+
     @Test
     void theJournalNamesTheSectionAsItsRestRouteDoes() {
         calcul(true);
@@ -91,6 +117,11 @@ class ParametresSolveurMcpToolsTest {
     /** The positional call: {@code dureePauseMinutes} is the 6th argument, the mail switch the 23rd. */
     private ParametresMcpTools.ParametresSectionView call(
             String section, Integer dureePauseMinutes, Boolean mailFinResolution) {
+        return call(section, dureePauseMinutes, mailFinResolution, null);
+    }
+
+    private ParametresMcpTools.ParametresSectionView call(
+            String section, Integer dureePauseMinutes, Boolean mailFinResolution, String modifieLe) {
         return tools.updateParametres(
                 section,
                 null,
@@ -118,6 +149,7 @@ class ParametresSolveurMcpToolsTest {
                 null,
                 null,
                 null,
+                modifieLe,
                 edition);
     }
 }

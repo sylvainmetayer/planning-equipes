@@ -52,6 +52,9 @@ class EditionDuplicationStructurelleTest {
             Map.entry("journee_type.modifie_le", "same"),
             Map.entry("prereglage_consigne.modifie_le", "same"),
             Map.entry("parametres_meteo.modifie_le", "same"),
+            Map.entry("parametres_legaux.modifie_le", "same"),
+            Map.entry("parametres_qualite.modifie_le", "same"),
+            Map.entry("parametres_solveur.modifie_le", "same"),
             Map.entry(
                     "parametres_meteo.actif",
                     "a duplicated edition queries nobody until someone arms it: the copy falls back on FALSE"),
