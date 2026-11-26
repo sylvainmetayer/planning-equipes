@@ -31,9 +31,9 @@ Three conventions:
 The application also refuses to start in production, whatever the
 compose file, in the following cases, each detailed on its line further down:
 
-- one of the five required legal notices is empty (`LEGAL_EDITEUR`,
-  `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_BASE_LEGALE`,
-  `LEGAL_CONSERVATION`), unless `LEGAL_DEMO_INSTANCE=true`;
+- one of the five required keys of `LEGAL_MENTIONS` is empty (`editeur`,
+  `hebergeur`, `contact`, `base-legale`, `conservation`), unless
+  `LEGAL_DEMO_INSTANCE=true`;
 - `ADMIN_PASSWORD` or `DB_PASSWORD` equals the example value or is empty;
 - no door opens the administration (`OIDC_ENABLED=false` and
   `ADMIN_LOCAL_SECOURS=false`), or `OIDC_CLIENT_SECRET` is shorter than 32
@@ -195,41 +195,31 @@ compose file, in the following cases, each detailed on its line further down:
 
 ## Branding and documents
 
+Images and colours are set by two **grouped** variables of the form `key=value;key=value` (a literal semicolon in a value is written `\;`). An unknown key is reported at startup and ignored.
+
 | Variable | Default | Role |
 | --- | --- | --- |
 | `BRANDING_PRODUCT_NAME` | `Planning Équipes` | Product name: tab, titles, mail subjects, PDFs |
 | `BRANDING_ORGANISATION` | *(empty)* | Customer for whom the instance is deployed, printed at the foot of PDFs and mails |
-| `BRANDING_LOGO_URL` | *(empty)* | Logo displayed in the application (URL, or file served at the root) |
-| `BRANDING_ACCENT_COLOR` | *(empty)* | Accent colour of the interface, any CSS colour |
-| `BRANDING_MASCOT_URL` | *(empty)* | Mascot, large, shown by the Konami code |
-| `BRANDING_MASCOT_ICON_URL` | *(empty)* | The same mascot, small |
 | `BRANDING_SUPPORT_EMAIL` | `planning@sylvain.dev` | Support address named by the Help page; empty: the paragraph disappears |
-| `BRANDING_PDF_LOGO` | *(empty)* | Logo of the header of PDFs and HTML mails (embedded, never loaded remotely) |
-| `BRANDING_PDF_STRIP` | *(empty)* | Decorative strip on the first page of the individual schedule |
-| `BRANDING_PDF_HEADLINE` | `#1f2933` | Main ink of the PDFs |
-| `BRANDING_PDF_MUTED` | `#6b7280` | Secondary text of the PDFs |
-| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent of PDFs and HTML mails |
-| `BRANDING_PDF_HIGHLIGHT` | `#e4eaf1` | Background of statistics tiles and table headers |
-| `BRANDING_PDF_PILL` | `#f1f4f8` | Background of time pills and table rules |
+| `BRANDING_IMAGES` | *(empty)* | The images, by key: `logo` (logo displayed in the application: URL, or file served at the root), `mascot` (mascot, large, shown by the Konami code), `mascot-icon` (the same, small), `pdf-logo` (logo of the header of PDFs and HTML mails, embedded, never loaded remotely), `pdf-strip` (decorative strip on the first page of the individual schedule) |
+| `BRANDING_COLORS` | *(empty)* | The colours, by key: `accent` (accent colour of the interface, any CSS colour), `pdf-headline` (main ink of the PDFs, `#1f2933`), `pdf-muted` (secondary text, `#6b7280`), `pdf-accent` (accent of PDFs and HTML mails, `#3a6ea5`), `pdf-highlight` (background of statistics tiles and table headers, `#e4eaf1`), `pdf-pill` (background of time pills and table rules, `#f1f4f8`) |
+
+Example, in quotes (a shell reads the `;` as the end of a command): `BRANDING_IMAGES="logo=logo.png;pdf-logo=classpath:/branding/logo.png"` and `BRANDING_COLORS="accent=#8b1e3f;pdf-accent=#8b1e3f"`.
+
+The eleven old variables (`BRANDING_LOGO_URL`, `BRANDING_ACCENT_COLOR`, `BRANDING_MASCOT_URL`, `BRANDING_MASCOT_ICON_URL`, `BRANDING_PDF_LOGO`, `BRANDING_PDF_STRIP`, `BRANDING_PDF_HEADLINE`, `BRANDING_PDF_MUTED`, `BRANDING_PDF_ACCENT`, `BRANDING_PDF_HIGHLIGHT`, `BRANDING_PDF_PILL`) are **still read** throughout 4.x, with a warning at startup, and removed in 5.0; when both are set, the grouped key wins. See [Moving from 3.x to 4.0](passer-a-la-4-0.md).
 
 ## Legal notice
 
-The five marked **required** refuse startup in production when empty, unless `LEGAL_DEMO_INSTANCE=true`. They are displayed on the public `/mentions-legales` page.
+Five keys of `LEGAL_MENTIONS`, marked **required**, refuse startup in production when empty, unless `LEGAL_DEMO_INSTANCE=true`. They are displayed on the public `/mentions-legales` page. The two grouped variables have the form `key=value;key=value` (a literal semicolon in a value is written `\;`).
 
 | Variable | Default | Role |
 | --- | --- | --- |
 | `LEGAL_DEMO_INSTANCE` | `false` | `true`: an instance that is not in service, exempt from the required notices |
-| `LEGAL_EDITEUR` | *(empty)* | **Required.** Publisher (name, legal form, address, registration) |
-| `LEGAL_DIRECTEUR_PUBLICATION` | *(empty)* | Publication director |
-| `LEGAL_HEBERGEUR` | *(empty)* | **Required.** Host (name and address) |
-| `LEGAL_CONTACT` | *(empty)* | **Required.** Contact address, including for exercising one's rights |
-| `LEGAL_RESPONSABLE_TRAITEMENT` | *(empty)* | Data controller, when it differs from the publisher; empty: the publisher |
-| `LEGAL_BASE_LEGALE` | *(empty)* | **Required.** Legal basis for the processing of personal data |
-| `LEGAL_CONSERVATION` | *(empty)* | **Required.** Retention period of personal data |
-| `LEGAL_ACCESSIBILITE_ETAT` | *(empty)* | Accessibility statement: `totale` (full), `partielle` (partial) or `non` (none) compliance |
-| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | *(empty)* | Date of the accessibility audit |
-| `LEGAL_ACCESSIBILITE_CONTENUS` | *(empty)* | Content that is not accessible |
-| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | *(empty)* | Reporting channel; empty: the legal notice's contact address |
+| `LEGAL_MENTIONS` | *(empty)* | The notices, by key: `editeur` (**required**: name, legal form, address, registration), `hebergeur` (**required**: name and address), `contact` (**required**: contact address, including for exercising one's rights), `base-legale` (**required**: legal basis for the processing of personal data), `conservation` (**required**: retention period of personal data), `responsable-traitement` (data controller, when it differs from the publisher; empty: the publisher), `directeur-publication` |
+| `LEGAL_ACCESSIBILITE` | *(empty)* | The accessibility statement, by key: `etat` (`totale`, `partielle` or `non`), `date-audit`, `contenus` (content that is not accessible), `signalement` (reporting channel; empty: the legal notice's contact address) |
+
+The eleven old variables (`LEGAL_EDITEUR`, `LEGAL_DIRECTEUR_PUBLICATION`, `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_BASE_LEGALE`, `LEGAL_CONSERVATION`, `LEGAL_ACCESSIBILITE_ETAT`, `LEGAL_ACCESSIBILITE_DATE_AUDIT`, `LEGAL_ACCESSIBILITE_CONTENUS`, `LEGAL_ACCESSIBILITE_SIGNALEMENT`) are **still read** throughout 4.x, with a warning at startup, and removed in 5.0.
 
 ## White labelling
 
@@ -247,13 +237,13 @@ Two limits to know:
 
 - the **Angular Material palette** (buttons, bars, fields) is compiled by
   `mat.theme()` in `src/main/webui/src/material-theme.scss`:
-  `BRANDING_ACCENT_COLOR` drives only `--app-accent`, read by the stylesheets
+  the `accent` key of `BRANDING_COLORS` drives only `--app-accent`, read by the stylesheets
   specific to the application. Recolouring the Material components themselves
   requires a recompilation of the frontend;
 - **images** cannot be uploaded from the application. A logo is
-  supplied either by a URL (`BRANDING_LOGO_URL`; the default CSP accepts
+  supplied either by a URL (`logo` key of `BRANDING_IMAGES`; the default CSP accepts
   `https:` and `data:`), or by a file mounted next to the container
-  (`BRANDING_PDF_LOGO`), or by an image embedded in the jar
+  (`pdf-logo` key), or by an image embedded in the jar
   (`classpath:/branding/…`). **No visual is shipped with the repository**: a
   deployment's images belong to its customer, they are mounted next to
   the container or served by URL.

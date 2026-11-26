@@ -121,8 +121,8 @@ contains **no token**: neither the espace token, which the archive's individual
 schedules do not print (no link, no QR code), nor the calendar
 subscription token, which a test verifies; and its manifest
 `LISEZMOI.txt` recalls what it contains, the data controller and the
-retention period declared (`LEGAL_RESPONSABLE_TRAITEMENT`,
-`LEGAL_CONSERVATION`). It is the natural step before the annual purge of a finished
+retention period declared (`responsable-traitement` and
+`conservation` keys of `LEGAL_MENTIONS`). It is the natural step before the annual purge of a finished
 edition; the register mentions it as a **data output**,
 logged like the others.
 

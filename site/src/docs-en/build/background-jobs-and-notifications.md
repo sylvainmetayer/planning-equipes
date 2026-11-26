@@ -54,7 +54,7 @@ The keys of `JournalNotificationsRepository` encode what follows:
 Each mail is a pair of Qute templates under `src/main/resources/templates/mail/`: `<nom>.txt` and `<nom>.html`, the latter built on `layout.html` (logo, palette, deployment name). Java names the template, decides the subject and passes its values; adding a mail means adding the two files. `MailTemplates` renders both parts and assembles the `Mail`:
 
 - the text part is always sent, the HTML is an alternative;
-- the logo travels as an inline `cid:` attachment, never as a remote image, which clients block and spam filters penalise. It comes from `BRANDING_PDF_LOGO` (bytes the application holds), not from `BRANDING_LOGO_URL` (a URL that only a browser can resolve);
+- the logo travels as an inline `cid:` attachment, never as a remote image, which clients block and spam filters penalise. It comes from the `pdf-logo` key of `BRANDING_IMAGES` (bytes the application holds), not from the `logo` key (a URL that only a browser can resolve);
 - the exhaustive `switch` of `NotificationWriter` guarantees that a new notification has its template.
 
 Under Quarkus, it is the `Engine` validated at startup; in unit tests, `MailTemplates.standalone()` builds the same engine from the classpath, with the same settings. Wording assertions thus run without a container.

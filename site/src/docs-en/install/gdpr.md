@@ -63,10 +63,10 @@ fill in `.env.prod`**: the two lists overlap.
 
 | Heading | Where to read it |
 | --- | --- |
-| Data controller and contact | `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_CONTACT` |
-| Declared legal basis | `LEGAL_BASE_LEGALE` |
-| Announced retention period | `LEGAL_CONSERVATION`; see [the retention limit](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
-| Infrastructure host | `LEGAL_HEBERGEUR` |
+| Data controller and contact | `responsable-traitement` and `contact` keys of `LEGAL_MENTIONS` |
+| Declared legal basis | `base-legale` key of `LEGAL_MENTIONS` |
+| Announced retention period | `conservation` key of `LEGAL_MENTIONS`; see [the retention limit](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
+| Infrastructure host | `hebergeur` key of `LEGAL_MENTIONS` |
 | SMTP relay | `MAIL_HOST` |
 | Error tracking | `SENTRY_DSN` set ⇒ Bugsink, EU hosting, **no transfer to declare** |
 | Audience measurement | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` set ⇒ **transfer outside the EU to declare**. The default is empty: setting nothing is enough to turn it off. This was not always so: the `%prod` profile used to carry the publisher's token ([`observabilite.md`](observabilite.md)) |
@@ -91,7 +91,7 @@ in the same document as the register:
 | Check | Staff espace **and subscription address** of a deleted token indeed answering `404` |
 
 A manual purge with nothing in writing proves nothing. Only this log makes
-the period announced by `LEGAL_CONSERVATION` tenable.
+the period announced by the `conservation` key of `LEGAL_MENTIONS` tenable.
 
 ## Maintenance rhythm
 
