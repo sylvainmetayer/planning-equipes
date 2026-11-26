@@ -14,9 +14,6 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import { MatButtonToggle, MatButtonToggleChange } from '@angular/material/button-toggle';
-import { By } from '@angular/platform-browser';
-import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
@@ -307,27 +304,6 @@ describe('CreneauxPage', () => {
     expect(element.querySelector('app-empty-state')).toBeNull();
     expect(element.textContent).toContain('Aucune ligne ne correspond au filtre.');
     await TestBed.inject(Router).navigateByUrl('/');
-  });
-
-  it('leaves freely while the opening grid holds no unsaved cell', async () => {
-    expect(await createPage().canLeave()).toBe(true);
-  });
-
-  it('writes the tab chosen on the toggle to the address', async () => {
-    const replaceState = vi.spyOn(TestBed.inject(Location), 'replaceState');
-    seedStore(referenceData, 'creneaux', []);
-    const fixture = TestBed.createComponent(CreneauxPage);
-    fixture.detectChanges();
-    const toggle = fixture.debugElement
-      .queryAll(By.directive(MatButtonToggle))
-      .find((each) => each.componentInstance.value === 'horaires')!;
-
-    await fixture.componentInstance['changerOnglet'](
-      new MatButtonToggleChange(toggle.componentInstance, 'horaires'),
-    );
-
-    expect(replaceState).toHaveBeenCalledWith(expect.stringContaining('onglet=horaires'));
-    expect(fixture.componentInstance['ongletsPage'].onglet()).toBe('horaires');
   });
 
   it('opens no series under a timeslots freeze: a series writes timeslots', () => {
@@ -628,12 +604,11 @@ describe('CreneauxPage rendering', () => {
     );
   });
 
-  it('counts the stands open on each timeslot and its seats, linking to that day of their hours', async () => {
+  it('counts the stands open on each timeslot and its seats', async () => {
     await renderAndRead([creneau({ id: 1, jour: 1, date: '2026-08-01' })]);
 
-    const lien = racine().querySelector('tbody td a[href^="/creneaux?onglet=horaires"]')!;
-    expect(lien.textContent!.trim()).toBe('2 · 3');
-    expect(lien.getAttribute('href')).toBe('/creneaux?onglet=horaires&du=2026-08-01&au=2026-08-01');
+    const cellule = racine().querySelector('tbody td span[aria-label*="stand(s) ouvert(s)"]')!;
+    expect(cellule.textContent!.trim()).toBe('2 · 3');
   });
 
   it('locks the writing actions, and says why, while a solve is running', async () => {

@@ -47,9 +47,7 @@ Each stand has its fiche, which gathers:
 
 - its **recurring model**, at the top, editable in place: the rule the stand keeps, for instance "every Saturday and Sunday from 10:00 to 18:00, headcount 2". Once saved, it is laid as windows on the days of the event;
 - its **dated windows**, below: one line per opening or closure, with its origin, *model* (laid by the model) or *typed* (added by hand). You filter by day, add a window, remove one or a whole day. A window laid by the model and removed by hand does not come back, until the model's rules change;
-- its opening anomalies, including a window declared at a time that no shift covers;
 - its seats after a solve;
-- the comparison with another stand;
 - the history of its changes.
 
 During a solve, or when the stands are frozen (the *Solve* phase, or *Published* without unblocking), the fiche can be read but not written, and a banner says why. A reader sees everything, with no button. If somebody changed the stand in the meantime, saving the model offers to reload or overwrite knowingly.

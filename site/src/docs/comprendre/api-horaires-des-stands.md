@@ -22,30 +22,9 @@ Les règles récurrentes de la 3.x n'existent plus ([décision 0104](repo:docs/d
 
 ## Visualisation des ouvertures
 
-`GET /api/ouvertures-stands` rend une grille stand par jour construite à partir des postes que le solveur recevrait : l'écran valide la donnée réelle, sans seconde interprétation de la saisie. `source` dit ce qui a décidé : `DEFAUT` (aucune plage, ouvert toute la journée), `REGLE` (seules des plages **dépliées du modèle** parlent de ce jour : le régime normal du stand) ou `EXCEPTION` (une plage saisie à la main). Chaque plage porte `depliee` ; l'origine est dite par le serveur, jamais par le client : une plage renvoyée telle qu'elle était stockée garde sa marque, une plage modifiée ou écrite par un client est une saisie à la main. Aucune anomalie ne bloque un calcul. Trois sont des défauts : `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (aucun créneau du jour recoupé) et `SEGMENT_TROP_COURT`, signature du contournement `23:59`. Trois codes de la 3.x, nés des règles récurrentes, ne sont plus jamais levés :
-
-| Code | Ce qu'il disait |
-| --- | --- |
-| `REGLES_CHEVAUCHANTES` | deux règles de même portée et de même mode décidaient un même jour avec des fenêtres qui se recouvraient |
-| `REGLE_MASQUEE` | une règle couvrait des jours de l'édition et n'en décidait aucun |
-| `FENETRES_CHEVAUCHANTES` | deux fenêtres d'une même règle se recouvraient avec des effectifs différents |
-
-`horaireId` désignait la règle concernée ; il reste sur la réponse, toujours vide.
+`GET /api/ouvertures-stands` rend une grille stand par jour construite à partir des postes que le solveur recevrait : le rapport valide la donnée réelle, sans seconde interprétation de la saisie. `source` dit ce qui a décidé : `DEFAUT` (aucune plage, ouvert toute la journée), `REGLE` (seules des plages **dépliées du modèle** parlent de ce jour : le régime normal du stand) ou `EXCEPTION` (une plage saisie à la main). Chaque plage porte `depliee` ; l'origine est dite par le serveur, jamais par le client : une plage renvoyée telle qu'elle était stockée garde sa marque, une plage modifiée ou écrite par un client est une saisie à la main. Aucune anomalie ne bloque un calcul. Trois sont des défauts : `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (aucun créneau du jour recoupé) et `SEGMENT_TROP_COURT`, signature du contournement `23:59`.
 
 Un jour porte son libellé férié (`jours[].ferie`) et ses colonnes (`jours[].creneaux`) : un créneau entier, ou ses tranches quand une fenêtre commence ou finit à l'intérieur (4 personnes de 14 h à 19 h puis 2 jusqu'à 20 h coupent le créneau 14-20 en 14-19 et 19-20, pour tous les stands). Rien n'est stocké, les bornes se relisent sur les fenêtres. Chaque cellule porte une entrée par colonne (`creneaux[]` : `creneauId`, `tranche`, `effectif`, `partiel`, `segments`), `effectif` valant `null` si le stand y est fermé. `partiel` ne subsiste que pour une borne qu'aucune colonne ne suit ; `effectif` est alors le plus haut et `segments` dit ce que la case porte.
-
-## Couches : d'où vient une ouverture
-
-`GET /api/ouvertures-stands/couches?du=AAAA-MM-JJ&au=AAAA-MM-JJ` dit d'où vient chaque ouverture, là où le rapport dit ce qu'elle devient. Les deux bornes sont facultatives ; `400` sur une date illisible ou une plage inversée. Pour chaque stand et chaque jour de la plage portant un créneau :
-
-| Champ | Couche | Lu sur |
-| --- | --- | --- |
-| `source`, `horaireIds`, `motif`, `nominal` | plage datée ou ouvert par défaut (`horaireIds` est toujours vide) | `HoraireStandResolver` seul |
-| `jours[].consigne`, `reopenings` | la bande fermée par la consigne et les fenêtres où elle rouvre ce stand | la consigne posée |
-| `effective` | ce qui reste une fois la consigne passée, dont les sièges sont découpés | `StandService.resolve`, la même entrée que le solveur |
-| `jours[].vacations` | les créneaux, `addedByConsigne` pour ceux qu'une consigne a créés | la grille |
-
-Les fenêtres sont en minutes depuis minuit du jour : un créneau qui passe minuit finit au-delà de 1440 (convention de `journee-stands.ts`). Un `effectif` absent vaut le minimum du stand ; sur une réouverture, `null` dit que la consigne hérite l'effectif de ce que la bande a retiré. L'endpoint est à part parce que le rapport est lu à chaque visite, alors que les couches ne servent qu'aux barres des cases et à la phrase qui explique une case. Il ne lit ni les sièges ni le plan : l'écran répond sur une édition jamais résolue.
 
 ## Saisie en grille
 

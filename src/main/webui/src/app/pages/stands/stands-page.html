@@ -55,12 +55,6 @@
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
     <mat-menu #plus="matMenu">
-      <a mat-menu-item routerLink="/creneaux" [queryParams]="{ onglet: 'horaires', vue: 'saisie' }"
-         i18n-matTooltip="@@stands.grille.tooltip"
-         matTooltip="Les horaires de tous les stands en une grille stand × jour × créneau, un effectif par case, comme dans un tableur.">
-        <mat-icon>grid_on</mat-icon>
-        <span i18n="@@stands.grille.action">Saisir en grille</span>
-      </a>
       <a mat-menu-item routerLink="/fichiers" [queryParams]="{ cible: 'grille-stands' }"
          i18n-matTooltip="@@stands.importGrille.tooltip"
          matTooltip="Charger un fichier CSV — stands en lignes, jours et créneaux en colonnes — avec un aperçu avant d'écrire.">
@@ -84,12 +78,6 @@
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="standsLocked()"
                             [filtre]="!!filtre()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
-      @if (comparaisonParams(); as params) {
-        <a matButton routerLink="/creneaux" [queryParams]="params" data-test="stands-comparer">
-          <mat-icon>compare</mat-icon>
-          <ng-container i18n="@@stands.comparerOuvertures">Comparer les ouvertures</ng-container>
-        </a>
-      }
     }
     @if (store.stands().length > 0) {
     <p class="referentiel-collage-hint" i18n="@@referentiel.collageHint">Collez un bloc copié d'un tableur sur une ligne (Ctrl+V) : un aperçu montre les cases modifiées avant d'enregistrer.</p>

@@ -16,7 +16,6 @@ import {
   JourSemaine,
   ModeHoraire,
   Stand,
-  TypeAnomalieOuverture,
   TypeJoursHoraire,
 } from './models';
 
@@ -209,66 +208,13 @@ export function resumerHoraires(
   return morceaux.join(' · ');
 }
 
-/* ----------------- how the rules of one stand are written ----------------- */
-//
-// Mirrors `HoraireRuleOverlaps` (backend, `service/analyse`): what the resolver
-// settles in silence between the rules of one stand. The editor runs it on the
-// rules being typed and warns under the card concerned; the Ouvertures screen
-// reads the backend's own. Both sides are held to the same answers by
-// `horaire-stand-anomalies.cas.json`, which the Java test and this file's spec
-// both read — change one side, the other's test fails.
-
 /** One day of the edition: a date carrying a créneau, and the end of its opening span (`HH:MM`, `24:00` at most). */
 export interface JourEdition {
   date: string;
   fin: string;
 }
 
-/** Two rules deciding a same day whose windows overlap. Indexes into the stand's rules. */
-export interface ReglesChevauchantes {
-  regle: number;
-  autreRegle: number;
-  date: string;
-  debut: string;
-  fin: string;
-  effectif: number | null;
-  autreEffectif: number | null;
-}
-
-/** A rule covering days of the edition that decides none of them. */
-export interface RegleMasquee {
-  regle: number;
-  /** The rules that decide its days instead. */
-  masquantes: number[];
-  /** Some of its days are stated by a dated exception. */
-  exceptions: boolean;
-}
-
-/** Two windows of one rule (`regle`), or of one day's dated openings (`date`), overlapping at different headcounts. */
-export interface FenetresChevauchantes {
-  regle: number | null;
-  date: string | null;
-  fenetre: number;
-  autreFenetre: number;
-  debut: string;
-  fin: string;
-  effectif: number | null;
-  autreEffectif: number | null;
-}
-
-export interface AnomaliesHoraires {
-  reglesChevauchantes: ReglesChevauchantes[];
-  reglesMasquees: RegleMasquee[];
-  fenetresChevauchantes: FenetresChevauchantes[];
-}
-
 const MINUTES_PER_DAY = 24 * 60;
-
-interface FenetreLue {
-  heureDebut: string;
-  heureFin: string | null;
-  effectif?: number | null;
-}
 
 function minutesOf(heure: string): number {
   const [h, m] = heure.slice(0, 5).split(':').map(Number);
@@ -278,210 +224,6 @@ function minutesOf(heure: string): number {
 function hourOf(minutes: number): string {
   const heures = String(Math.floor(minutes / 60)).padStart(2, '0');
   return `${heures}:${String(minutes % 60).padStart(2, '0')}`;
-}
-
-/** Overlap of two windows in minutes, an open end running to `finJour`; `null` when they only touch. */
-function recouvrement(a: FenetreLue, b: FenetreLue, finJour: number): [number, number] | null {
-  const cap = Math.min(finJour, MINUTES_PER_DAY);
-  const start = Math.max(minutesOf(a.heureDebut), minutesOf(b.heureDebut));
-  const end = Math.min(
-    a.heureFin ? minutesOf(a.heureFin) : cap,
-    b.heureFin ? minutesOf(b.heureFin) : cap,
-  );
-  return end > start ? [start, end] : null;
-}
-
-function effectifOrDefault(
-  effectif: number | null | undefined,
-  defaut: number | null,
-): number | null {
-  return effectif ?? defaut;
-}
-
-/**
- * The three findings on one stand's schedule, judged on the edition's days
- * (`jours`, sorted). Without a day only the windows of one rule are read —
- * nothing can be masked or merged on a calendar that does not exist yet.
- * `effectifParDefaut` is what a window naming no headcount asks for (the
- * stand's minimum), `null` when unknown.
- */
-export function anomaliesHoraires(
-  stand: Pick<Stand, 'horaires' | 'ouvertures' | 'indisponibilites'>,
-  jours: readonly JourEdition[],
-  effectifParDefaut: number | null,
-): AnomaliesHoraires {
-  const horaires = stand.horaires ?? [];
-  const ouvertures = stand.ouvertures ?? [];
-  const exceptions = new Set(
-    [...(stand.indisponibilites ?? []), ...ouvertures].map((exception) => exception.date),
-  );
-  const decideurs = new Map<string, number[]>();
-  for (const jour of jours) {
-    if (!exceptions.has(jour.date)) {
-      decideurs.set(jour.date, reglesRetenues(horaires, jour.date));
-    }
-  }
-  return {
-    reglesChevauchantes: reglesChevauchantes(horaires, jours, decideurs, effectifParDefaut),
-    reglesMasquees: reglesMasquees(horaires, jours, exceptions, decideurs),
-    fenetresChevauchantes: fenetresChevauchantes(horaires, ouvertures, jours, effectifParDefaut),
-  };
-}
-
-function reglesChevauchantes(
-  horaires: readonly HoraireStand[],
-  jours: readonly JourEdition[],
-  decideurs: ReadonlyMap<string, number[]>,
-  effectifParDefaut: number | null,
-): ReglesChevauchantes[] {
-  const trouvees: ReglesChevauchantes[] = [];
-  const seen = new Set<string>();
-  for (const jour of jours) {
-    const regles = decideurs.get(jour.date) ?? [];
-    for (let a = 0; a < regles.length; a++) {
-      for (let b = a + 1; b < regles.length; b++) {
-        const i = Math.min(regles[a], regles[b]);
-        const j = Math.max(regles[a], regles[b]);
-        if (seen.has(`${i}#${j}`)) {
-          continue;
-        }
-        const trouvee = premierRecouvrement(horaires, i, j, jour, effectifParDefaut);
-        if (trouvee) {
-          seen.add(`${i}#${j}`);
-          trouvees.push(trouvee);
-        }
-      }
-    }
-  }
-  return trouvees;
-}
-
-function premierRecouvrement(
-  horaires: readonly HoraireStand[],
-  i: number,
-  j: number,
-  jour: JourEdition,
-  effectifParDefaut: number | null,
-): ReglesChevauchantes | null {
-  for (const a of horaires[i].fenetres.filter(isValidWindow)) {
-    for (const b of horaires[j].fenetres.filter(isValidWindow)) {
-      const bornes = recouvrement(a, b, minutesOf(jour.fin));
-      if (bornes) {
-        return {
-          regle: i,
-          autreRegle: j,
-          date: jour.date,
-          debut: hourOf(bornes[0]),
-          fin: hourOf(bornes[1]),
-          effectif: effectifOrDefault(a.effectif, effectifParDefaut),
-          autreEffectif: effectifOrDefault(b.effectif, effectifParDefaut),
-        };
-      }
-    }
-  }
-  return null;
-}
-
-function reglesMasquees(
-  horaires: readonly HoraireStand[],
-  jours: readonly JourEdition[],
-  exceptions: ReadonlySet<string>,
-  decideurs: ReadonlyMap<string, number[]>,
-): RegleMasquee[] {
-  const trouvees: RegleMasquee[] = [];
-  horaires.forEach((horaire, index) => {
-    if (!horaire.fenetres.some(isValidWindow)) {
-      // Already ignored by the resolver and refused at write time.
-      return;
-    }
-    const couverts = jours.map((jour) => jour.date).filter((date) => couvreJour(horaire, date));
-    if (couverts.length === 0) {
-      // Outside the edition: the windows without effect say it already.
-      return;
-    }
-    if (couverts.some((date) => (decideurs.get(date) ?? []).includes(index))) {
-      return;
-    }
-    const masquantes = new Set<number>();
-    let byExceptions = false;
-    for (const date of couverts) {
-      if (exceptions.has(date)) {
-        byExceptions = true;
-      } else {
-        (decideurs.get(date) ?? []).forEach((autre) => masquantes.add(autre));
-      }
-    }
-    trouvees.push({
-      regle: index,
-      masquantes: [...masquantes].sort((x, y) => x - y),
-      exceptions: byExceptions,
-    });
-  });
-  return trouvees;
-}
-
-function fenetresChevauchantes(
-  horaires: readonly HoraireStand[],
-  ouvertures: readonly (FenetreLue & { date: string })[],
-  jours: readonly JourEdition[],
-  effectifParDefaut: number | null,
-): FenetresChevauchantes[] {
-  const trouvees: FenetresChevauchantes[] = [];
-  horaires.forEach((horaire, regle) => {
-    if (horaire.mode !== 'OUVERTURE') {
-      // A closure carries no headcount: nothing to decide between its windows.
-      return;
-    }
-    const fins = jours
-      .filter((jour) => couvreJour(horaire, jour.date))
-      .map((jour) => minutesOf(jour.fin));
-    const finJour = fins.length > 0 ? Math.max(...fins) : MINUTES_PER_DAY;
-    const fenetres = horaire.fenetres;
-    for (let a = 0; a < fenetres.length; a++) {
-      for (let b = a + 1; b < fenetres.length; b++) {
-        const trouvee = windowPair(fenetres[a], fenetres[b], finJour, effectifParDefaut);
-        if (trouvee) {
-          trouvees.push({ regle, date: null, fenetre: a, autreFenetre: b, ...trouvee });
-        }
-      }
-    }
-  });
-  for (let a = 0; a < ouvertures.length; a++) {
-    for (let b = a + 1; b < ouvertures.length; b++) {
-      const date = ouvertures[a].date;
-      if (!date || date !== ouvertures[b].date) {
-        continue;
-      }
-      const jour = jours.find((candidat) => candidat.date === date);
-      const finJour = jour ? minutesOf(jour.fin) : MINUTES_PER_DAY;
-      const trouvee = windowPair(ouvertures[a], ouvertures[b], finJour, effectifParDefaut);
-      if (trouvee) {
-        trouvees.push({ regle: null, date, fenetre: a, autreFenetre: b, ...trouvee });
-      }
-    }
-  }
-  return trouvees;
-}
-
-function windowPair(
-  a: FenetreLue,
-  b: FenetreLue,
-  finJour: number,
-  effectifParDefaut: number | null,
-): Pick<FenetresChevauchantes, 'debut' | 'fin' | 'effectif' | 'autreEffectif'> | null {
-  if (!isValidWindow(a) || !isValidWindow(b)) {
-    return null;
-  }
-  const effectif = effectifOrDefault(a.effectif, effectifParDefaut);
-  const autreEffectif = effectifOrDefault(b.effectif, effectifParDefaut);
-  if (effectif === autreEffectif) {
-    // Same headcount: the union is exactly what was meant.
-    return null;
-  }
-  const bornes = recouvrement(a, b, finJour);
-  return bornes
-    ? { debut: hourOf(bornes[0]), fin: hourOf(bornes[1]), effectif, autreEffectif }
-    : null;
 }
 
 /**
@@ -529,17 +271,6 @@ export function priorites(
     });
   });
   return trouvees;
-}
-
-/**
- * The anomalies of the opening report about how a stand's rules are written —
- * the three above, as the backend names them (`AnomalyType.isInformational`):
- * the resolver settles them, so they are shown for information, never as an alert.
- */
-export function isInformationalAnomaly(type: TypeAnomalieOuverture): boolean {
-  return (
-    type === 'REGLES_CHEVAUCHANTES' || type === 'REGLE_MASQUEE' || type === 'FENETRES_CHEVAUCHANTES'
-  );
 }
 
 /**

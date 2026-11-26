@@ -1,5 +1,5 @@
 // The data an organiser enters before anything can be computed: editions,
-// the reference screens, the opening grid and the bulk imports.
+// the reference screens, the stands' hours and the bulk imports.
 //
 // One theme of the organisers' guide; `aide-content.ts` assembles the
 // themes in reading order. Built lazily, never at module scope: `$localize`
@@ -9,7 +9,6 @@ import { HelpSection } from '../help-section';
 import {
   lienConsignes,
   lienDisponibilites,
-  lienHoraires,
   lienStaffing,
   lienTypologies,
   lienVerrouillages,
@@ -256,56 +255,18 @@ export function buildReferenceDataSections(): HelpSection[] {
       id: 'horaires-des-stands',
       icon: 'storefront',
       title: $localize`:@@aide.ouvertures.title:Horaires des stands`,
-      summary: $localize`:@@aide.ouvertures.summary:Saisir l'effectif de chaque stand sur chaque créneau, comme dans un tableur, et voir aussitôt ce que le solveur lira.`,
+      summary: $localize`:@@aide.ouvertures.resume:Le modèle récurrent et les plages datées d'un stand se lisent et se saisissent sur sa fiche.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.intro:Ouvrez cet écran avant toute résolution. On y saisit et on y relit au même endroit : chaque case dit ce que le solveur lira une fois les règles étendues, les exceptions et la consigne du jour appliquées. La synthèse et les anomalies sont au-dessus de la grille : un stand finalement ouvert aucun jour, une fenêtre hors des heures du jour, une plage trop courte pour valoir une vacation. Chaque anomalie mène à la fiche du stand, ou à la grille des créneaux quand c'est elle qui est en cause.`,
-        },
-        {
-          kind: 'definitions',
-          items: [
-            {
-              term: $localize`:@@aide.ouvertures.term.grille:Grille`,
-              text: $localize`:@@aide.ouvertures.def.grille:Une ligne par stand, une colonne par tranche de besoin, l'effectif dans chaque case. Les colonnes suivent les changements d'effectif et non les vacations : un stand qui change d'effectif à 19 h scinde le créneau 14-20 en deux colonnes pour tout le monde. Une case vide est fermée : on la vide, on tape « - » ou 0 pour fermer. Un chiffre en italique n'a pas été saisi : le stand, sans horaire déclaré, suit sa règle et ouvre par défaut. Les gestes d'un tableur fonctionnent : flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres jours affichés, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux derniers ont chacun un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Le nom d'un stand mène à sa fiche ; « Du » et « Au » réduisent la grille à quelques jours.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.couches:Ce que dit une case`,
-              text: $localize`:@@aide.ouvertures.def.couches:Derrière le chiffre, des barres fines : en bas l'ouverture retenue, pleine pour une règle récurrente, rouge pour une exception datée ; en haut les horaires du stand avant la consigne ; sur toute la hauteur, teintée, la bande que la consigne du jour ferme ; en pointillé, un créneau que la consigne a ajouté. « Afficher dans les cases » masque chacune de ces couches, et l'adresse garde le choix. Une case modifiée montre tout de suite l'ouverture qu'elle écrira. Un clic sur une case l'explique en une phrase au-dessus de la grille, par exemple « Ouvert 14:00–18:00 : règle récurrente 14:00–20:00, amputé par la consigne « Plan canicule » 18:00–20:00 », avec les sièges du jour, une fenêtre hors de tout créneau s'il y en a une, et trois liens : la fiche du stand, la journée type du jour et la consigne du jour.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.parJourneeType:Par journée type`,
-              text: $localize`:@@aide.ouvertures.def.parJourneeType:Disponible dès que l'édition a des journées types : une colonne par vacation, une case qui vaut d'un coup pour toutes les dates gouvernées. Soixante colonnes deviennent une quinzaine. Une case « ≠ » signale des dates qui ne disent pas la même chose ; la retaper les aligne. Tant qu'elle diverge, elle ne dit rien à propager : appliquer sa colonne est refusé plutôt que de trancher pour vous.`,
-            },
-            {
-              term: $localize`:@@aide.ouvertures.term.comparer:Comparer`,
-              text: $localize`:@@aide.ouvertures.def.comparer:Deux à huit stands posés sur les mêmes jours et les mêmes colonnes, par exemple les buvettes qui devraient avoir les mêmes horaires. On les choisit un par un ou par typologie ; le premier sert de référence, et un autre peut prendre ce rôle. Chaque case qui s'écarte de la référence est encadrée et dit la nature de l'écart : ouverture, heures ou effectif. La comparaison porte sur ce que le solveur lira : une règle et des exceptions datées qui ouvrent de la même façon ne font aucun écart. La synthèse compte, par stand, les jours en écart et dit le premier ; « Seulement les jours qui diffèrent » masque les autres. Sous la grille, les règles et exceptions de chaque stand côte à côte, une règle absente de la référence ou manquante étant signalée. Un jour sous consigne est marqué. Le comparateur n'écrit rien : « Copier les horaires de la référence vers… » ouvre la modification en masse des stands, réglée sur « Remplacer par ceux d'un stand », qui attend son propre enregistrement. On y arrive aussi depuis la page Stands, par la sélection ou par « Comparer avec… » dans la fiche d'un stand ; l'adresse garde la sélection.`,
-            },
-          ],
+          text: $localize`:@@aide.ouvertures.introFiche:Les horaires d'un stand se règlent sur sa fiche (Stands, puis le nom du stand). Le modèle récurrent, en haut, dit son régime normal, par exemple « chaque samedi et dimanche de 10 h à 18 h, effectif 2 » ; il se déplie en plages datées, listées en dessous, chacune marquée modèle ou saisie. On y ajoute à la main une ouverture ou une fermeture, on retire une plage ou tout un jour. Un jour sans plage, le stand est ouvert toute la journée ; avec une ouverture, il n'est ouvert que pendant ses fenêtres ; avec seulement des fermetures, il est ouvert sauf pendant elles.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.anciennesVues:La journée posée sur l'axe du temps est devenue la page Planning, une fois un planning calculé ; avant, une ancienne adresse de cette vue ouvre la grille sur ce seul jour. Le calendrier combiné est devenu le rendu des cases : son adresse ouvre la grille avec les mêmes couches.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.enregistrement:À l'enregistrement, chaque stand modifié voit tout son horaire réécrit depuis ses cases, ramené en règles quand un motif se répète ; ses effectifs minimum et maximum suivent la plus petite et la plus grande case. Une case en pointillés porte une borne qu'aucune colonne ne suit : enregistrée telle quelle elle garde ses fenêtres, retapée elle vaut pour toute la colonne. « Aligner les fenêtres partielles » les étend toutes, en disant d'abord combien d'heures cela ajoute.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.chevauchements:Trois autres points sont signalés pour information, sans jamais bloquer l'enregistrement : deux règles d'un même stand qui se recouvrent (c'est alors l'effectif le plus haut qui compte), une règle qu'aucun jour n'applique parce qu'une règle plus précise ou une exception datée la remplace partout, deux fenêtres d'une même règle qui se recouvrent à des effectifs différents. L'éditeur de règles de la fiche stand les dit en direct sous la règle concernée, et indique quand une règle plus précise prime sur une autre, par exemple une fermeture le week-end sur une ouverture de tous les jours.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.feries:Un jour férié porte la pastille « Férié » en tête de colonne, et sa colonne est teintée. Son nom et ce qu'il change (les mineurs n'y travaillent pas, les heures y sont comptées fériées) se lisent au survol ou au clavier. Rien n'empêche pour autant d'ouvrir ce jour-là.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.ouvertures.fermetures:Un stand n'a pas à déclarer ses fermetures : tout jour non déclaré est fermé.`,
+          text: $localize`:@@aide.ouvertures.lecture:Le nombre de jours ouverts et de postes d'un stand s'affiche en tête de sa fiche, avant toute résolution. Un stand jamais ouvert, une fenêtre hors de tout créneau ou un segment trop court pour valoir une vacation sont comptés sur l'accueil (ligne « Horaires des stands ») et dans le contrôle du Calendrier. Un stand dont personne ne doit s'occuper à une heure donnée se déclare fermé, jamais à effectif zéro.`,
         },
       ],
       links: [
-        lienHoraires(),
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
@@ -444,7 +405,6 @@ export function buildReferenceDataSections(): HelpSection[] {
           label: $localize`:@@aide.lien.importGrille.fichiers:Fichiers — Grille des stands`,
         },
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
-        lienHoraires(),
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],
     },

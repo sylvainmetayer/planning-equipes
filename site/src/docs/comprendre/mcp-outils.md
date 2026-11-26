@@ -108,6 +108,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
+| `analyser_ouvertures_stands` | retiré |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |

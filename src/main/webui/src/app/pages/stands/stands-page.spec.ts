@@ -766,8 +766,8 @@ describe('StandsPage table', () => {
       .filter((texte) => texte !== '');
     expect(header.some((texte) => texte.endsWith('Compacter les horaires'))).toBe(false);
     expect(header.some((texte) => texte.endsWith('Saisir en grille'))).toBe(false);
-    expect((await moreMenuItem('Saisir en grille')).getAttribute('href')).toBe(
-      '/creneaux?onglet=horaires&vue=saisie',
+    expect((await moreMenuItem('Importer la grille')).getAttribute('href')).toBe(
+      '/fichiers?cible=grille-stands',
     );
 
     // Nothing ticked: the bulk edit takes every stand the table shows.

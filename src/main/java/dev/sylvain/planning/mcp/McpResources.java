@@ -95,7 +95,7 @@ public class McpResources {
                 1. le référentiel : emplacements, typologies, stands, animateurs ;
                 2. la grille de créneaux : les journées types et leur calendrier, ou une règle récurrente,
                    ou la dérivation depuis les horaires des stands ;
-                3. la vérification : `valider_creneaux`, `analyser_ouvertures_stands`,
+                3. la vérification : `valider_creneaux`,
                    `analyser_effectifs`, `analyser_faisabilite` ;
                 4. la résolution : `lancer_solveur`, puis le diagnostic
                    `expliquer_echec_contraintes_dures`, et `analyser_pauses` pour les relais à organiser ;

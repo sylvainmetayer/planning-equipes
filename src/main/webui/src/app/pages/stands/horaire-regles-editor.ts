@@ -25,7 +25,7 @@ import {
   libelleJourSemaine,
   parseFenetres,
 } from '../../core/horaire-stand';
-import { FenetreHoraire, JourSemaine, Stand } from '../../core/models';
+import { FenetreHoraire, JourSemaine } from '../../core/models';
 import {
   HoraireDraft,
   ajouterA,
@@ -36,12 +36,7 @@ import {
   patchDansListe,
   retirerDe,
 } from './stand-draft';
-import {
-  erreurRegle,
-  messageConflitDeMode,
-  notesRegles,
-  notesReglesForStands,
-} from './stand-horaires';
+import { erreurRegle, messageConflitDeMode, notesRegles } from './stand-horaires';
 
 /**
  * The editor of a stand's recurring rules, shared by the stand form and the
@@ -85,24 +80,10 @@ export class HoraireReglesEditor {
    */
   readonly effectifMin = input<number | undefined>(undefined);
   /**
-   * The edition's days (`joursEdition`), so the warnings judge the rules on
-   * the calendar they will run on; empty leaves only the windows of one rule
-   * to judge.
+   * The edition's days (`joursEdition`), so the priorities between rules are
+   * judged on the calendar they will run on; empty says none.
    */
   readonly jours = input<readonly JourEdition[]>([]);
-  /** The stand's dated exceptions, which win over every rule on their day. */
-  readonly exceptions = input<Pick<Stand, 'ouvertures' | 'indisponibilites'>>({
-    ouvertures: [],
-    indisponibilites: [],
-  });
-  /**
-   * The bulk edit's: the dated exceptions of every selected stand, in place of
-   * {@link exceptions}. A warning is then shown when any of those stands would
-   * report it once the rules are written to it.
-   */
-  readonly exceptionsByStand = input<
-    readonly Pick<Stand, 'ouvertures' | 'indisponibilites'>[] | null
-  >(null);
   readonly disabled = input(false);
   /** Prefix of the control names, so two editors in one form never share a name. */
   readonly prefixe = input('');
@@ -132,24 +113,8 @@ export class HoraireReglesEditor {
     this.horaires().map((horaire) => erreurRegle(horaire, this.effectifMax())),
   );
 
-  /**
-   * What the Ouvertures analysis will report on each rule once saved, and the
-   * priority a more specific rule takes: shown under the card, never blocking.
-   * A rule whose entry is in error carries its error alone: a warning computed
-   * on what it currently holds would talk about something the user is rewriting.
-   */
-  protected readonly notes = computed(() => {
-    const minimum = this.effectifMin();
-    const errors = this.erreursRegles();
-    const effectif =
-      minimum !== undefined && Number.isFinite(minimum) && minimum > 0 ? minimum : null;
-    const byStand = this.exceptionsByStand();
-    return (
-      byStand === null
-        ? notesRegles(this.horaires(), this.exceptions(), this.jours(), effectif)
-        : notesReglesForStands(this.horaires(), byStand, this.jours(), effectif)
-    ).map((note, index) => (errors[index] !== null ? { ...note, avertissements: [] } : note));
-  });
+  /** The priority a more specific rule takes, shown under the card, never blocking. */
+  protected readonly notes = computed(() => notesRegles(this.horaires(), this.jours()));
 
   /** The one check that spans several rules: two rules of one scope disagreeing on the mode. */
   protected readonly conflitDeMode = computed(() => messageConflitDeMode(this.horaires()));

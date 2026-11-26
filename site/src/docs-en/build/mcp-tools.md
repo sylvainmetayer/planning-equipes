@@ -111,6 +111,7 @@ Two **resources**, to attach once to inform all following calls:
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
 | `ajouter_validation_journee` | `modifier_etat_journee` |
+| `analyser_ouvertures_stands` | removed |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |

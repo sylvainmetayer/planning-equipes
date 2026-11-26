@@ -17,12 +17,9 @@ import java.util.List;
  * the assistant is allowed to read.</p>
  *
  * <p>The anomalies of the opening report are not warnings of a write and do
- * not cross through here: {@code analyser_ouvertures_stands} returns them
- * whole, since they name stands and hours, never a person. Their codes are
- * the {@code OuvertureStandsAnalyzer.AnomalyType} names, the last three of
- * which — {@code REGLES_CHEVAUCHANTES}, {@code REGLE_MASQUEE},
- * {@code FENETRES_CHEVAUCHANTES} — are for information only: the resolver
- * settles them, the tool says so.</p>
+ * not cross through here: {@code lister_anomalies_referentiel} lists them with
+ * their {@code OuvertureStandsAnalyzer.AnomalyType} name, since they name
+ * stands and hours, never a person.</p>
  */
 final class WarningCodes {
 

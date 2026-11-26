@@ -148,7 +148,7 @@ async function ecrans(browser, etat, lang) {
     ['planning', '/journee'],
     ['rail', '/journee?vue=rail'],
     ['personne', '/journee?axe=personne'],
-    ['horaires', '/ouvertures'],
+    ['horaires', '/stands'],
     ['regles', '/regles'],
     ['diagnostic', '/diagnostic'],
     ['diffuser', '/publication'],

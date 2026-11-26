@@ -14,7 +14,6 @@ import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer;
 import dev.sylvain.planning.service.analyse.MarginReading;
-import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.ReferentielManquant;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
@@ -153,30 +152,6 @@ class DiagnosticMcpToolsTest {
         assertThat(effectifs.referentielsManquants())
                 .containsExactly(
                         ReferentielManquant.STANDS, ReferentielManquant.CRENEAUX, ReferentielManquant.ANIMATEURS);
-    }
-
-    @Test
-    void openingsFilterOnAStandWithoutSkewingTheTotals() {
-        loadScenario();
-        RapportOuvertures complet = diagnosticTools.analyzeStandOpenings(null, "E1");
-        assertThat(complet.stands()).hasSizeGreaterThan(1);
-        String standId = complet.stands().get(0).standId();
-
-        RapportOuvertures filtre = diagnosticTools.analyzeStandOpenings(standId, "E1");
-
-        assertThat(filtre.stands())
-                .singleElement()
-                .satisfies(ligne -> assertThat(ligne.standId()).isEqualTo(standId));
-        assertThat(filtre.postesTotal()).isEqualTo(complet.postesTotal());
-        assertThat(filtre.jours()).isEqualTo(complet.jours());
-    }
-
-    @Test
-    void anUnknownStandReturnsNoRowWithoutFailing() {
-        loadScenario();
-
-        assertThat(diagnosticTools.analyzeStandOpenings("STAND-INCONNU", "E1").stands())
-                .isEmpty();
     }
 
     @Test

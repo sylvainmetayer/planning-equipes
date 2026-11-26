@@ -25,30 +25,9 @@ The recurring rules of 3.x no longer exist ([decision 0104](repo:docs/decisions/
 
 ## Openings view
 
-`GET /api/ouvertures-stands` returns a stand-by-day grid built from the seats the solver would receive: the screen validates the real data, with no second interpretation of the entry. `source` says what decided: `DEFAUT` (no plage, open all day), `REGLE` (only plages **unfolded from the model** speak of that day: the stand's normal regime) or `EXCEPTION` (a plage typed by hand). Each plage carries `depliee`; the server states the origin, never the client: a plage sent back as it was stored keeps its mark, a plage that was changed or written by a client is a hand-typed one. No anomaly blocks a solve. Three are defects: `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (no timeslot of the day overlapped) and `SEGMENT_TROP_COURT`, the signature of the `23:59` workaround. Three codes of 3.x, born of the recurring rules, are never raised any more:
-
-| Code | What it said |
-| --- | --- |
-| `REGLES_CHEVAUCHANTES` | two rules of the same scope and the same mode decided the same day with overlapping windows |
-| `REGLE_MASQUEE` | a rule covered days of the edition and decided none of them |
-| `FENETRES_CHEVAUCHANTES` | two windows of the same rule overlapped with different headcounts |
-
-`horaireId` designated the rule concerned; it stays on the response, always empty.
+`GET /api/ouvertures-stands` returns a stand-by-day grid built from the seats the solver would receive: the report validates the real data, with no second interpretation of the entry. `source` says what decided: `DEFAUT` (no plage, open all day), `REGLE` (only plages **unfolded from the model** speak of that day: the stand's normal regime) or `EXCEPTION` (a plage typed by hand). Each plage carries `depliee`; the server states the origin, never the client: a plage sent back as it was stored keeps its mark, a plage that was changed or written by a client is a hand-typed one. No anomaly blocks a solve. Three are defects: `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (no timeslot of the day overlapped) and `SEGMENT_TROP_COURT`, the signature of the `23:59` workaround.
 
 A day carries its public holiday label (`jours[].ferie`) and its columns (`jours[].creneaux`): a whole timeslot, or its slices when a window starts or ends inside it (4 people from 14:00 to 19:00 then 2 until 20:00 split the 14-20 timeslot into 14-19 and 19-20, for all stands). Nothing is stored; the bounds are read back from the windows. Each cell carries one entry per column (`creneaux[]`: `creneauId`, `tranche`, `effectif`, `partiel`, `segments`), with `effectif` set to `null` if the stand is closed there. `partiel` remains only for a bound that no column follows; `effectif` is then the highest one and `segments` says what the cell holds.
-
-## Layers: where an opening comes from
-
-`GET /api/ouvertures-stands/couches?du=AAAA-MM-JJ&au=AAAA-MM-JJ` says where each opening comes from, where the report says what it becomes. Both bounds are optional; `400` on an unreadable date or a reversed range. For each stand and each day of the range that carries a timeslot:
-
-| Field | Layer | Read from |
-| --- | --- | --- |
-| `source`, `horaireIds`, `motif`, `nominal` | dated plage or open by default (`horaireIds` is always empty) | `HoraireStandResolver` alone |
-| `jours[].consigne`, `reopenings` | the band the consigne closes and the windows where it reopens this stand | the consigne in place |
-| `effective` | what remains once the consigne has been applied, with its seats split | `StandService.resolve`, the same entry point as the solver |
-| `jours[].vacations` | the timeslots, `addedByConsigne` for those a consigne created | the grid |
-
-Windows are in minutes since midnight of the day: a timeslot that runs past midnight ends beyond 1440 (the convention of `journee-stands.ts`). A missing `effectif` means the stand's minimum; on a reopening, `null` says the consigne inherits the headcount of what the band removed. The endpoint is separate because the report is read on every visit, whereas the layers only serve the cell bars and the sentence that explains a cell. It reads neither the seats nor the plan: the screen answers on an edition that was never solved.
 
 ## Grid entry
 

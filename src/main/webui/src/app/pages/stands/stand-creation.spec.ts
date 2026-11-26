@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { JourAmplitude } from '../../core/models';
-import { ColonneGrille, colonneId } from '../ouvertures/grille-horaires';
+import { ColonneGrille, colonneId } from './grille-horaires';
 import {
   creationBounds,
   creationCells,

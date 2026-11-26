@@ -25,7 +25,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Stand } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
-import { colonnes, saisie } from '../ouvertures/grille-horaires';
+import { colonnes, saisie } from './grille-horaires';
 import {
   CreationWeekday,
   CreationWindow,
@@ -43,8 +43,8 @@ import { NEW_LOCATION, createLocation } from './new-location';
  * hours. The last one lists the windows of the edition's timeslots, each open
  * at a headcount — untick what the stand does not open, type how many people
  * it holds — and the weekdays of the event, to untick a day it is closed on.
- * No rule and no syntax: the choices are saved as the stand's row of
- * the Horaires des stands grid, that grid's own save, which compacts them into rules.
+ * No rule and no syntax: the choices are saved as the stand's row of a
+ * grid, through `PUT /api/ouvertures-stands/grille`, which writes them as plages.
  *
  * Closes with the new stand's id, for the page to open its fiche — cancelled
  * too, once the stand is written: only its hours failed then, and its fiche is
@@ -263,7 +263,7 @@ export class StandCreationDialog {
     );
   }
 
-  /** The stand's row of the Horaires des stands grid, that grid's own save. */
+  /** The stand's row of a grid, saved through `PUT /api/ouvertures-stands/grille`. */
   private async saveHours(id: string): Promise<void> {
     const cells = creationCells(id, this.colonnes(), this.windows(), this.weekdays());
     const stamp = this.store.stands().find((each) => each.id === id)?.modifieLe ?? null;
