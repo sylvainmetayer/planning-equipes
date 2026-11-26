@@ -18,13 +18,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The referentials written out, and — the promise the screen makes — read back
- * in without a single correction.
+ * The referentials written out, and — where a CSV is still read back, the
+ * animateurs file — read back in without a single correction.
  *
- * <p>The round trip is the test that matters: a column the export renames, or
- * a multi-value cell it joins with the wrong character, would still produce a
- * plausible file and a broken import. So every export goes back through its
- * own tab here, and every row must be accepted.</p>
+ * <p>A column the export renames, or a multi-value cell it joins with the wrong
+ * character, would still produce a plausible file and a broken import: that
+ * file goes back through its import, and every row must be accepted.</p>
  */
 @QuarkusTest
 class ReferentielCsvExportServiceTest {
