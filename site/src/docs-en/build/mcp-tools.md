@@ -104,6 +104,7 @@ Two **resources**, to attach once to inform all following calls:
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
@@ -117,12 +118,14 @@ Two **resources**, to attach once to inform all following calls:
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->

@@ -185,7 +185,9 @@ describe('JourneePage', () => {
             // Lists for the referentials the treemap reads, a volumetry for the rest.
             get: vi.fn((url: string) =>
               Promise.resolve(
-                url === '/api/typologies' || url === '/api/stands' ? [] : { assignments: 2 },
+                url === '/api/typologies' || url === '/api/stands' || url === '/api/etats-journee'
+                  ? []
+                  : { assignments: 2 },
               ),
             ),
           },

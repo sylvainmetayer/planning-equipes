@@ -5035,11 +5035,6 @@ export interface CoherenceReport {
   anomalies: CoherenceIssue[];
 }
 
-/**
- * One day marked « relu et accepté ». A review
- * mark, not a lock: it freezes nothing, and the panel offers the lock beside it
- * without ever implying it.
- */
 /** Why a reading outlives a solve (ADR 0069). */
 export type KeepReason = 'PASSE' | 'VERROU' | 'INCHANGEE';
 
@@ -5050,28 +5045,16 @@ export interface KeptReading {
   motif: KeepReason;
 }
 
-export interface ValidationJournee {
-  id: string;
+/** One day of the grid and where it stands (ADR 0121); a frozen day may carry no reading. */
+export interface DayStateView {
   /** `AAAA-MM-JJ`. */
   jour: string;
-  valideLe: string;
-  /** The admin account the reading was written under; `null` when there was none. */
-  validePar: string | null;
-  commentaire: string | null;
-}
-
-/** What the panel posts to accept a day. */
-export interface DemandeValidationJournee {
-  jour: string;
+  etat: DayState;
+  validationId?: string | null;
+  valideLe?: string | null;
+  /** The admin account the reading was written under. */
+  validePar?: string | null;
   commentaire?: string | null;
-  /** Lay a day lock down at the same time. Never implied by the acceptance. */
-  poserVerrou?: boolean;
-}
-
-/** A reading, and whether the lock it asked for was actually laid down. */
-export interface ResultatValidationJournee {
-  validation: ValidationJournee;
-  verrouPose: boolean;
 }
 
 /** The codes of the four prerequisites, as the server names them. */
@@ -5107,11 +5090,11 @@ export interface PrerequisJournee {
 /** The state of a day: to be read, read, frozen (ADR 0121). */
 export type DayState = 'A_RELIRE' | 'RELUE' | 'FIGEE';
 
-/** How far the reading has got — « 3 journées sur 12 validées ». */
+/** How far the reading has got — « 3 journées sur 12 relues ou figées ». */
 export interface ProgressionValidations {
   journees: number;
   journeesValidees: number;
-  /** The accepted days themselves, `AAAA-MM-JJ`, ascending. */
+  /** The days read or frozen, `AAAA-MM-JJ`, ascending. */
   joursValides: string[];
 }
 

@@ -13,10 +13,9 @@ export interface RelectureDialogData {
 }
 
 /**
- * « Relu et accepté… » of the relecture bar's menu: the prerequisites of the
- * day, the comment, the lock offered beside the acceptance — the panel that
- * used to sit on the page, in a dialog that closes on the reading it records
- * and hands the page its sentence.
+ * The state of the day, from the relecture bar: the prerequisites, the
+ * three-valued control and the comment, in a dialog that closes on the state
+ * it records and hands the page its sentence.
  */
 @Component({
   selector: 'app-relecture-dialog',
