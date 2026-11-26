@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  * and a reset does not forget a publication, so "nothing published yet" is
  * only true where nobody else has been. Its own publications have to be
  * forgotten too, and explicitly: {@code /api/planning/reset} empties the
- * planning tables but not {@code plan_snapshot}, so the plan one test
+ * planning tables but not {@code version_plan}, so the plan one test
  * publishes is still the published plan of the next — which then has nothing
  * to announce and is refused (409).</p>
  */
@@ -98,7 +98,7 @@ class ImpactPublicationTest {
     private void forgetPublications() {
         edition()
                 .contentType("text/plain")
-                .body("DELETE FROM plan_snapshot WHERE edition_id = '" + edition + "';")
+                .body("DELETE FROM version_plan WHERE edition_id = '" + edition + "';")
                 .when()
                 .post("/api/database/import")
                 .then()

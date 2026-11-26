@@ -72,9 +72,9 @@ class OrganisateurCanariTest {
         try {
             try (var connection = dataSource.getConnection();
                     var ps = connection.prepareStatement("""
-                            INSERT INTO plan_snapshot (edition_id, libelle, automatique, nombre_affectations,
+                            INSERT INTO version_plan (edition_id, libelle, origine, nombre_affectations,
                                 cree_le, contenu, consignes)
-                            VALUES (?, ?, false, 0, now(), '[]'::jsonb, '[]'::jsonb)""")) {
+                            VALUES (?, ?, 'MANUELLE', 0, now(), '[]'::jsonb, '[]'::jsonb)""")) {
                 ps.setString(1, editionId);
                 ps.setString(2, canari);
                 ps.executeUpdate();

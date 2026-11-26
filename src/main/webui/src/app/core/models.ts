@@ -2538,7 +2538,10 @@ export interface AppConfig {
 export interface PlanSnapshot {
   id: number;
   libelle: string;
+  /** Same as `origine === 'AVANT_CALCUL'`; kept for the 3.x screen, removed in 5.0. */
   automatique: boolean;
+  /** Where the version comes from: asked by a person, taken before a solve, or published (ADR 0108). */
+  origine: 'MANUELLE' | 'AVANT_CALCUL' | 'PUBLIEE';
   score: string | null;
   nombreAffectations: number;
   creeLe: string | null;

@@ -104,9 +104,9 @@ The first feasible plan (zero hard) often arrives well before the end, and it is
 
 `POST /api/solve/incremental/async` starts from the persisted plan, pins what a late change has not invalidated and recomputes only the rest. The body is optional and **widens** the scope: `animateurIds`, `jours` and `standIds` form a union. With no body, the scope is what the changes invalidated plus the empty seats. The job fails if there is no plan to resume. Seats already started are settled before the scope: pinned, never reopened (`jours` naming a past day reopens nothing), counted in `statistiques.postesPasses` and `postesPassesVides`, and a replanning whose seats are all past is refused like the full solve. The mechanism is in [locks, freeze and replanning](plan-verrous-et-publication.md).
 
-## Snapshots and A/B comparison
+## Versions and A/B comparison
 
-Only one plan is persisted per edition; snapshots are the only persistence able to keep several. A snapshot is **taken automatically before each solve**: it is the anti-overwrite safety net for whoever did not think to save. The automatic ones are purged beyond the last N (`planning.snapshots.automatiques-conservees`, 5), those created by hand never.
+Only one plan is persisted per edition; **versions** are the only persistence able to keep several ([ADR 0108](repo:docs/decisions/0108-un-seul-type-version-a-trois-origines.md)). A version has three origins, given by `origine`: `MANUELLE` (asked for by a person), `AVANT_CALCUL` (taken automatically) and `PUBLIEE` (what the staff members were sent). The routes are `/api/planning/versions`; the 3.x roots `/api/planning/snapshots` are deprecated aliases of them, removed in 5.0, and `automatique` is still served (true for `AVANT_CALCUL`) for as long. A version is **taken automatically before each solve**: it is the anti-overwrite safety net for whoever did not think to save. The automatic ones are purged beyond the last N (`planning.snapshots.automatiques-conservees`, 5), those created by hand never.
 
 A solve's result names this snapshot and its score: `previousPlan : { snapshotId, score, degraded }`. `degraded` compares the two scores in Timefold's order (hard, medium, soft) and is `false` as soon as one of them is missing or unreadable, because it is better to claim nothing than to raise a false alarm. `previousPlan` is `null` at an edition's first solve. A snapshot's score is copied at capture from the last analysis, which lives in memory: after a restart, the first read recomputes it from the saved plan, and the next solve restores this score before replacing the plan if it is still missing.
 
@@ -114,11 +114,11 @@ A solve's result names this snapshot and its score: `previousPlan : { snapshotId
 
 A snapshot says whether it is still up to date (`perime`, `referenceModifieLe`). The reference data carries the date of its last mutation (`edition.reference_modifie_le`, written by [`ReferenceDataChangeTracker`](repo:src/main/java/dev/sylvain/planning/service/ReferenceDataChangeTracker.java)); a snapshot captured before it is stale. This date is persisted: after a restart, an in-memory value would read as "never modified", hence "up to date", and it is in front of the *Restore* button that a false "up to date" costs the most ([ADR 0038](repo:docs/decisions/0038-fraicheur-du-referentiel-persistee.md)).
 
-`POST /api/planning/snapshots/{id}/restore` answers `409` **without writing anything** in three cases:
+`POST /api/planning/versions/{id}/restore` answers `409` **without writing anything** in three cases:
 
 - a **reference has disappeared**: the body lists which. This refusal is checked first, a snapshot being most often stale because ids have disappeared;
 - the snapshot is **stale**: the body carries `perime: true` and the date. The action is replayed with `?forcer=true`, since the plan remains restorable, it just no longer describes today's reference data. `forcer` lifts only this refusal;
-- a solve holds **this edition's** solver: it would overwrite the plan put back in place. The body is that of the reference data writes, with the job named. The guard is in the service, which the API and the MCP tool `restaurer_instantane` share; a solve of another edition refuses nothing.
+- a solve holds **this edition's** solver: it would overwrite the plan put back in place. The body is that of the reference data writes, with the job named. The guard is in the service, which the API and the MCP tool `restaurer_version` share; a solve of another edition refuses nothing.
 
 A restoration puts the plan back with the weighting under which it had been computed.
 
@@ -127,12 +127,12 @@ A restoration puts the plan back with the weighting under which it had been comp
 A snapshot can carry the "published" state (`publieLe`): it is the plan the staff received, and it is exempt from the purge. Two `409` refusals on deletion:
 
 - **the last publication**: the espace reads it, and deleting it would silently take back what was announced. Replaced publications are deleted like any snapshot;
-- **a publication that measures an elapsed day**: Realised vs planned compares each finished day with the published plan in force at its first timeslot, and deleting that publication would rewrite the gap after the fact. The refusal names the day's date, never a person, and applies to the MCP tool `supprimer_instantane`. It is evaluated before the deletion, because the answer depends on the clock and the timeslots.
+- **a publication that measures an elapsed day**: Realised vs planned compares each finished day with the published plan in force at its first timeslot, and deleting that publication would rewrite the gap after the fact. The refusal names the day's date, never a person, and applies to the MCP tool `supprimer_version`. It is evaluated before the deletion, because the answer depends on the clock and the timeslots.
 
 The comparison reference of a deferred person (`animateur.plan_notifie_id`) can designate one of these publications. Deleting it makes them read as "never notified": their next publication will announce their whole schedule rather than the differences.
 
 ### Comparing two plans
 
-`GET /api/planning/snapshots/compare` triggers **no solve**: it reads KPIs measured at capture. `GET /api/planning/snapshots/comparables` crosses editions, hence `editionsDifferentes`, which is not an anomaly (a variant is another edition) but which the interface must state. In `diffViolations`, `null` means **not measured**, never zero, and `kpiRecalcule` marks the degraded mode of a snapshot with no stored KPIs (coverage and volumetry exact, breaches not measured).
+`GET /api/planning/versions/compare` triggers **no solve**: it reads KPIs measured at capture. `GET /api/planning/versions/comparables` crosses editions, hence `editionsDifferentes`, which is not an anomaly (a variant is another edition) but which the interface must state. In `diffViolations`, `null` means **not measured**, never zero, and `kpiRecalcule` marks the degraded mode of a snapshot with no stored KPIs (coverage and volumetry exact, breaches not measured).
 
 **Two plans computed under different weightings cannot be compared at equal weights**: `dosagesDifferents` says so when both `kpi.dosage` are known and differ. A snapshot also carries the consignes (official orders, such as an arrêté, relayed to the whole event) in force at its capture (`consignes`, by date): `null` on an earlier snapshot means **unknown**, an empty array "there were none". `consignesDifferentes` stays `false` as soon as one side does not know, and signals when a difference in seats or hours comes from a band that an arrêté closed rather than from a solver setting ([consignes](api-planning-et-publication.md#consignes)).

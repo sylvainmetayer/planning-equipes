@@ -42,7 +42,7 @@ class RealiseMcpToolsTest {
     RealiseMcpTools tools;
 
     @Inject
-    InstantaneMcpTools instantanes;
+    VersionMcpTools instantanes;
 
     @Inject
     EditionContext editionContext;
@@ -65,7 +65,7 @@ class RealiseMcpToolsTest {
     @Test
     void theToolCountsAReplacedSeatAndNamesNobody() throws Exception {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("DELETE FROM plan_snapshot")) {
+                PreparedStatement ps = connection.prepareStatement("DELETE FROM version_plan")) {
             ps.executeUpdate();
         }
         persistence.clearDatabase();
@@ -95,14 +95,14 @@ class RealiseMcpToolsTest {
     }
 
     /**
-     * {@code supprimer_instantane} refuses, as the REST route does, the
+     * {@code supprimer_version} refuses, as the REST route does, the
      * publication still measuring an elapsed day — with its sentence, not an
      * internal error.
      */
     @Test
     void theDeletionToolRefusesAPublicationThatMeasuresAnElapsedDay() throws Exception {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("DELETE FROM plan_snapshot WHERE edition_id = ?")) {
+                PreparedStatement ps = connection.prepareStatement("DELETE FROM version_plan WHERE edition_id = ?")) {
             ps.setString(1, editionContext.editionIdCourant());
             ps.executeUpdate();
         }
@@ -132,7 +132,7 @@ class RealiseMcpToolsTest {
     private void backdateLastPublication(Instant instant) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps =
-                        connection.prepareStatement("UPDATE plan_snapshot SET publie_le = ? WHERE id = ?")) {
+                        connection.prepareStatement("UPDATE version_plan SET publie_le = ? WHERE id = ?")) {
             ps.setTimestamp(1, Timestamp.from(instant));
             ps.setLong(2, snapshots.lastPublication().id());
             ps.executeUpdate();

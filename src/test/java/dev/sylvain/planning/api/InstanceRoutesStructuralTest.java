@@ -48,6 +48,7 @@ class InstanceRoutesStructuralTest {
             "JoursFeriesResource",
             "MargeResource",
             "PlanningResource",
+            "VersionPlanResource",
             "PlanSnapshotResource",
             "PlanningExportResource",
             "StaffingResource",

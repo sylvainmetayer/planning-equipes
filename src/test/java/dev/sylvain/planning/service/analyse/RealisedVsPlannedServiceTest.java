@@ -105,7 +105,7 @@ class RealisedVsPlannedServiceTest {
     @BeforeEach
     void seed() {
         String edition = editionContext.editionIdCourant();
-        execute("DELETE FROM plan_snapshot WHERE edition_id = ?", edition);
+        execute("DELETE FROM version_plan WHERE edition_id = ?", edition);
         execute("DELETE FROM kpi_realise WHERE edition_id = ?", edition);
         persistence.clearDatabase();
         persistence.persist(plan("RV-", Set.of("STRATEGIE"), 970_300_000L));
@@ -336,8 +336,8 @@ class RealisedVsPlannedServiceTest {
         // others were already given by hand.
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
-                        UPDATE plan_snapshot SET publie_le = ?
-                        WHERE id = (SELECT max(id) FROM plan_snapshot
+                        UPDATE version_plan SET publie_le = ?
+                        WHERE id = (SELECT max(id) FROM version_plan
                                     WHERE edition_id = ? AND publie_le IS NOT NULL)
                         RETURNING id""")) {
             ps.setTimestamp(1, Timestamp.from(instant));
