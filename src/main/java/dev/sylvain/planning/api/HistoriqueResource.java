@@ -58,6 +58,9 @@ public class HistoriqueResource {
      */
     static final String NATURE_DONNEES = "donnees";
 
+    /** The value of {@code nature} keeping the changes of a rule's activation, weight or level. */
+    static final String NATURE_REGLES = "regles";
+
     private final JournalActionService journal;
 
     private final ReferenceDataService referenceData;
@@ -98,7 +101,8 @@ public class HistoriqueResource {
      * @param nature {@code exports} keeps only the files that left the
      *               application, {@code donnees} only the changes a solve
      *               would be given (successes, as the solver screen counts
-     *               them) — selected in the database, so the whole retention
+     *               them), {@code regles} only the changes of a rule's
+     *               activation, weight or level — selected in the database, so the whole retention
      *               is searched, not the last page of every kind; absent,
      *               every action. Anything else is refused rather than read
      *               as « all »: a filter silently dropped would answer a
@@ -118,7 +122,7 @@ public class HistoriqueResource {
     @GET
     public List<EntreeHistoriqueView> list(
             @QueryParam("limite") Integer limite,
-            @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS, NATURE_DONNEES}) String nature,
+            @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS, NATURE_DONNEES, NATURE_REGLES}) String nature,
             @QueryParam("auteur") String auteur,
             @QueryParam("depuis") String depuis,
             @QueryParam("jusqua") String jusqua,
@@ -188,9 +192,10 @@ public class HistoriqueResource {
         return switch (nature) {
             case NATURE_EXPORTS -> HistoryNature.EXPORTS;
             case NATURE_DONNEES -> HistoryNature.DATA_CHANGES;
+            case NATURE_REGLES -> HistoryNature.RULES;
             default ->
                 throw new BusinessError.Invalid("Nature d'action inconnue : « " + nature + " » (attendu « "
-                        + NATURE_EXPORTS + " » ou « " + NATURE_DONNEES + " »).");
+                        + NATURE_EXPORTS + " », « " + NATURE_DONNEES + " » ou « " + NATURE_REGLES + " »).");
         };
     }
 

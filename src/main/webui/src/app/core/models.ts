@@ -4153,47 +4153,6 @@ export interface Dosage {
 export type NiveauRegle =
   'OBLIGATOIRE' | 'PREFERENCE_FORTE' | 'PREFERENCE_NORMALE' | 'PREFERENCE_LEGERE';
 
-/** Where a change of weight or activation came from — never who. */
-export type WeightChangeOrigin = 'SCREEN' | 'ASSISTANT' | 'SCENARIO' | 'DUPLICATION';
-
-/** One change of a rule's effective weight or activation in the edition, values included. */
-export interface WeightChange {
-  id: number;
-  name: string;
-  weightBefore: number | null;
-  weightAfter: number | null;
-  /** The edition dropped its own weight: « 20 → défaut (1) ». */
-  backToDefault: boolean;
-  activeBefore: boolean | null;
-  activeAfter: boolean | null;
-  origin: WeightChangeOrigin;
-  actor: string;
-  /** For a DUPLICATION, the edition the dosage was inherited from. */
-  sourceEdition: string | null;
-  createdAt: string;
-}
-
-/** One finished solve of the edition, as the weight history reads it. */
-export interface ResolutionUnderDosage {
-  id: number;
-  createdAt: string;
-  score: string | null;
-  scoreHard: number | null;
-  scoreMedium: number | null;
-  scoreSoft: number | null;
-  scoreMediumHorsPlancher: number | null;
-  /** Violations of the rule asked about; null on the global history or when unmeasured. */
-  ruleViolations: number | null;
-  dosage: Dosage | null;
-}
-
-/** `GET /api/constraints/{name}/historique` — changes and solves, each oldest first. */
-export interface ConstraintHistory {
-  name: string | null;
-  changes: WeightChange[];
-  resolutions: ResolutionUnderDosage[];
-}
-
 /** One row of `GET /api/mesures-edition/indicateurs` (issue #89) — survives its edition's deletion. */
 export interface KpiHistoriqueEntry {
   id: number;

@@ -67,10 +67,14 @@ public class JournalOutilInterceptor {
         String entiteId = entiteId(context);
         // Only what this call states counts, not a previous call's in the same context.
         currentAction.action(null);
+        currentAction.entiteId(null);
         try {
             Object resultat = context.proceed();
             // A creation names nothing in its arguments — the id is drawn by
             // the application (ADR 0050) — so it is read off the answer.
+            if (entiteId == null) {
+                entiteId = currentAction.entiteId();
+            }
             if (entiteId == null) {
                 entiteId = PayloadIds.of(resultat);
             }
@@ -85,7 +89,14 @@ public class JournalOutilInterceptor {
             // A refused tool call is a fact worth keeping: an assistant that
             // tried to delete an edition and was told no belongs in the
             // history quite as much as one that succeeded.
-            journal.recordAction(stated(action.get()), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 400);
+            // The tool may have named its subject before refusing (a known rule, an invalid weight).
+            journal.recordAction(
+                    stated(action.get()),
+                    Acteur.ASSISTANT,
+                    PRINCIPAL,
+                    entiteId != null ? entiteId : currentAction.entiteId(),
+                    List.of(),
+                    400);
             throw e;
         }
     }

@@ -224,20 +224,17 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#updateContactOrganisation(ContactOrganisation)",
                     "ParametresService#updateContactOrganisation(ContactOrganisation)"),
             Map.entry(
-                    "ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)",
-                    "ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)"),
+                    "ReferenceDataService#setContrainteActive(String,boolean)",
+                    "ParametresService#setContrainteActive(String,boolean)"),
             Map.entry(
-                    "ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)",
-                    "ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)"),
+                    "ReferenceDataService#setConstraintWeight(String,Integer)",
+                    "ParametresService#setConstraintWeight(String,Integer)"),
             Map.entry(
-                    "ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)",
-                    "ParametresService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)"),
+                    "ReferenceDataService#setNiveauObligatoire(String,Boolean)",
+                    "ParametresService#setNiveauObligatoire(String,Boolean)"),
             Map.entry(
-                    "ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)",
-                    "ParametresService#setNiveau(String,NiveauRegle,WeightChangeOrigin)"),
-            Map.entry(
-                    "ReferenceDataService#recordInheritedDosage(String)",
-                    "ParametresService#recordInheritedDosage(String)"));
+                    "ReferenceDataService#setNiveau(String,NiveauRegle)",
+                    "ParametresService#setNiveau(String,NiveauRegle)"));
 
     /** The landing rewrites none of these: a reason shared by several entries below. */
     private static final String NEW_ROW =
@@ -280,11 +277,10 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("ParametresService#updateNotifications(ParametresNotifications)", NOT_LANDED),
             Map.entry("ParametresService#updateQualite(ParametresQualite)", NOT_LANDED),
             Map.entry("ParametresService#updateContactOrganisation(ContactOrganisation)", NOT_LANDED),
-            Map.entry("ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)", NOT_LANDED),
-            Map.entry("ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)", NOT_LANDED),
-            Map.entry("ParametresService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", NOT_LANDED),
-            Map.entry("ParametresService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", NOT_LANDED),
-            Map.entry("ParametresService#recordInheritedDosage(String)", NOT_LANDED),
+            Map.entry("ParametresService#setContrainteActive(String,boolean)", NOT_LANDED),
+            Map.entry("ParametresService#setConstraintWeight(String,Integer)", NOT_LANDED),
+            Map.entry("ParametresService#setNiveauObligatoire(String,Boolean)", NOT_LANDED),
+            Map.entry("ParametresService#setNiveau(String,NiveauRegle)", NOT_LANDED),
             Map.entry(
                     "GelReferentielService#freeze(ReferentialFamily)",
                     "the freeze refuses the writes to come, it changes no data a solve reads"),

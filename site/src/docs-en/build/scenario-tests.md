@@ -211,6 +211,192 @@ What stands out:
 - **Timefold**: the calendar order is worth 6 to 8% of medium on the heatwave and `scenario-complet`, 35% on `gamme-20` and `gamme-25`, and 10 to 15% of time to feasibility. The rule merged by weight (`hard-par-poids`) falls back to `hard-sans-calendrier`, since nothing tells the comparator that the rule is mandatory.
 - `gamme-28` (infeasible by construction) is so in every variant, on both engines.
 
+## The place-rules bench
+
+`PlaceRulesBenchTest` measures what merging the place rules into two would cost: `trajet impossible` (`trajetInsuffisantEntrePostes`: speed, detour, tolerance) and `dispersion sur la journée`, which would absorb `eviterChangementEmplacementEloigne` (two consecutive seats more than 300 m apart) and `limiterEmplacementsParJour` (more than N distinct locations in a day). It leaves production untouched: the variants are rule toggles and the location cap of the quality parameters.
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=PlaceRulesBenchTest \
+    -Dbench.scenario=gamme-20-21j-50stands-172animateurs-festival-type.yaml -Dbench.engine=hand \
+    -Dbench.seconds=60 -Dbench.seeds=3
+```
+
+The class also launches as a plain `main` on the test classpath. Each solve lasts its whole budget, with no plateau bailout, seeds 0 to 2. The variants are `actuel` (the three rules, what ships), `dispersion-plafond` (the 300 m rule removed, the daily cap alone), `dispersion-plafond-serre` (the same with a cap of 2), `dispersion-distance` (the daily cap removed, the 300 m rule alone), `sans-dispersion` (both removed, the impossible trip alone) and `sans-trajet` (the impossible trip removed, both dispersion rules kept). Every final plan is read again under the rules and cap of `actuel`: that is the « Medium under the `actuel` rules » column, the only one comparable from one variant to the next. The gap is measured on it, median of the three seeds: a minus sign is a loss of medium.
+
+Measured on 26 November 2026, one machine with 8 cores and 24 GB (eight JVMs in parallel), 60 s per solve (30 s for `scenario-complet`), medians of three seeds:
+
+| Scenario | Engine | Variant | Feasible | Time to feasibility | Hard (med.) | Medium (med.) | Soft (med.) | Medium under the `actuel` rules | Medium gap |
+|---|---|---|---|---|---|---|---|---|---|
+| `festival-realiste-canicule` | direct | `actuel` | 3/3 | 0.4 s | 0 | -16460 | -69125 | -16460 | +0.0 % |
+| `festival-realiste-canicule` | direct | `dispersion-plafond` | 3/3 | 0.3 s | 0 | -16430 | -69145 | -16430 | +0.2 % |
+| `festival-realiste-canicule` | direct | `dispersion-plafond-serre` | 3/3 | 0.3 s | 0 | -16435 | -69350 | -16435 | +0.2 % |
+| `festival-realiste-canicule` | direct | `dispersion-distance` | 3/3 | 0.3 s | 0 | -16445 | -68825 | -16445 | +0.1 % |
+| `festival-realiste-canicule` | direct | `sans-dispersion` | 3/3 | 0.3 s | 0 | -16430 | -69375 | -16430 | +0.2 % |
+| `festival-realiste-canicule` | direct | `sans-trajet` | 3/3 | 0.3 s | 0 | -16435 | -69145 | -16435 | +0.2 % |
+| `festival-realiste-canicule` | Timefold | `actuel` | 3/3 | 7.3 s | 0 | -18755 | -51875 | -18755 | +0.0 % |
+| `festival-realiste-canicule` | Timefold | `dispersion-plafond` | 3/3 | 6.0 s | 0 | -18650 | -52255 | -18650 | +0.6 % |
+| `festival-realiste-canicule` | Timefold | `dispersion-plafond-serre` | 3/3 | 6.3 s | 0 | -18680 | -51935 | -18680 | +0.4 % |
+| `festival-realiste-canicule` | Timefold | `dispersion-distance` | 3/3 | 6.9 s | 0 | -18745 | -51875 | -18745 | +0.1 % |
+| `festival-realiste-canicule` | Timefold | `sans-dispersion` | 3/3 | 6.3 s | 0 | -18670 | -51935 | -18670 | +0.5 % |
+| `festival-realiste-canicule` | Timefold | `sans-trajet` | 3/3 | 6.1 s | 0 | -18665 | -51945 | -18665 | +0.5 % |
+| `festival-hivernal` | direct | `actuel` | 3/3 | 1.9 s | 0 | -24105 | -96435 | -24105 | +0.0 % |
+| `festival-hivernal` | direct | `dispersion-plafond` | 3/3 | 1.6 s | 0 | -23940 | -96985 | -24130 | -0.1 % |
+| `festival-hivernal` | direct | `dispersion-plafond-serre` | 3/3 | 1.6 s | 0 | -23915 | -95765 | -24100 | +0.0 % |
+| `festival-hivernal` | direct | `dispersion-distance` | 3/3 | 1.5 s | 0 | -23985 | -95480 | -23985 | +0.5 % |
+| `festival-hivernal` | direct | `sans-dispersion` | 3/3 | 1.6 s | 0 | -23960 | -94635 | -24190 | -0.4 % |
+| `festival-hivernal` | direct | `sans-trajet` | 3/3 | 1.4 s | 0 | -24045 | -97035 | -24045 | +0.2 % |
+| `festival-hivernal` | Timefold | `actuel` | 3/3 | 17.8 s | 0 | -31720 | -91335 | -31720 | +0.0 % |
+| `festival-hivernal` | Timefold | `dispersion-plafond` | 3/3 | 17.0 s | 0 | -31385 | -91885 | -31660 | +0.2 % |
+| `festival-hivernal` | Timefold | `dispersion-plafond-serre` | 3/3 | 18.8 s | 0 | -31365 | -89440 | -31605 | +0.4 % |
+| `festival-hivernal` | Timefold | `dispersion-distance` | 3/3 | 18.2 s | 0 | -31720 | -91315 | -31720 | +0.0 % |
+| `festival-hivernal` | Timefold | `sans-dispersion` | 3/3 | 17.2 s | 0 | -31440 | -90300 | -31785 | -0.2 % |
+| `festival-hivernal` | Timefold | `sans-trajet` | 3/3 | 16.4 s | 0 | -31535 | -90675 | -31535 | +0.6 % |
+| `scenario-complet` | direct | `actuel` | 3/3 | 0.7 s | 0 | -18200 | -111315 | -18200 | +0.0 % |
+| `scenario-complet` | direct | `dispersion-plafond` | 3/3 | 0.5 s | 0 | -18340 | -105325 | -19765 | -8.6 % |
+| `scenario-complet` | direct | `dispersion-plafond-serre` | 3/3 | 0.4 s | 0 | -18185 | -107705 | -19280 | -5.9 % |
+| `scenario-complet` | direct | `dispersion-distance` | 3/3 | 0.4 s | 0 | -18170 | -113145 | -18175 | +0.1 % |
+| `scenario-complet` | direct | `sans-dispersion` | 3/3 | 0.4 s | 0 | -18325 | -103455 | -19720 | -8.4 % |
+| `scenario-complet` | direct | `sans-trajet` | 3/3 | 0.4 s | 0 | -18190 | -110715 | -18190 | +0.1 % |
+| `scenario-complet` | Timefold | `actuel` | 3/3 | 7.7 s | 0 | -25365 | -160975 | -25365 | +0.0 % |
+| `scenario-complet` | Timefold | `dispersion-plafond` | 3/3 | 7.4 s | 0 | -24690 | -158115 | -25395 | -0.1 % |
+| `scenario-complet` | Timefold | `dispersion-plafond-serre` | 3/3 | 7.1 s | 0 | -25110 | -156575 | -25455 | -0.4 % |
+| `scenario-complet` | Timefold | `dispersion-distance` | 3/3 | 7.2 s | 0 | -25385 | -160995 | -25395 | -0.1 % |
+| `scenario-complet` | Timefold | `sans-dispersion` | 3/3 | 7.1 s | 0 | -24805 | -158395 | -25510 | -0.6 % |
+| `scenario-complet` | Timefold | `sans-trajet` | 3/3 | 7.3 s | 0 | -25310 | -160970 | -25310 | +0.2 % |
+| `gamme-20` | direct | `actuel` | 3/3 | 1.7 s | 0 | -17950 | -21185 | -17950 | +0.0 % |
+| `gamme-20` | direct | `dispersion-plafond` | 3/3 | 1.3 s | 0 | -17235 | -19195 | -20130 | -12.1 % |
+| `gamme-20` | direct | `dispersion-plafond-serre` | 3/3 | 1.3 s | 0 | -17515 | -18480 | -20385 | -13.6 % |
+| `gamme-20` | direct | `dispersion-distance` | 3/3 | 1.3 s | 0 | -17880 | -21410 | -17880 | +0.4 % |
+| `gamme-20` | direct | `sans-dispersion` | 3/3 | 1.3 s | 0 | -17100 | -19055 | -20005 | -11.4 % |
+| `gamme-20` | direct | `sans-trajet` | 3/3 | 1.3 s | 0 | -17845 | -18645 | -17845 | +0.6 % |
+| `gamme-20` | Timefold | `actuel` | 3/3 | 22.4 s | 0 | -33800 | -118260 | -33800 | +0.0 % |
+| `gamme-20` | Timefold | `dispersion-plafond` | 3/3 | 22.5 s | 0 | -34140 | -121615 | -36930 | -9.3 % |
+| `gamme-20` | Timefold | `dispersion-plafond-serre` | 3/3 | 21.0 s | 0 | -35025 | -122710 | -37610 | -11.3 % |
+| `gamme-20` | Timefold | `dispersion-distance` | 3/3 | 22.1 s | 0 | -33975 | -118590 | -33975 | -0.5 % |
+| `gamme-20` | Timefold | `sans-dispersion` | 3/3 | 21.1 s | 0 | -33975 | -121535 | -36765 | -8.8 % |
+| `gamme-20` | Timefold | `sans-trajet` | 3/3 | 20.4 s | 0 | -33455 | -118560 | -33455 | +1.0 % |
+| `gamme-24` | direct | `actuel` | 3/3 | 1.7 s | 0 | -32625 | -12035 | -32625 | +0.0 % |
+| `gamme-24` | direct | `dispersion-plafond` | 3/3 | 1.7 s | 0 | -32515 | -12120 | -32515 | +0.3 % |
+| `gamme-24` | direct | `dispersion-plafond-serre` | 3/3 | 1.6 s | 0 | -32435 | -12165 | -32435 | +0.6 % |
+| `gamme-24` | direct | `dispersion-distance` | 3/3 | 1.6 s | 0 | -32330 | -12250 | -32330 | +0.9 % |
+| `gamme-24` | direct | `sans-dispersion` | 3/3 | 1.6 s | 0 | -32315 | -12195 | -32315 | +1.0 % |
+| `gamme-24` | direct | `sans-trajet` | 3/3 | 1.6 s | 0 | -32375 | -12105 | -40980 | -25.6 % |
+| `gamme-24` | Timefold | `actuel` | 3/3 | 34.9 s | 0 | -43450 | -7560 | -43450 | +0.0 % |
+| `gamme-24` | Timefold | `dispersion-plafond` | 3/3 | 33.3 s | 0 | -43270 | -7665 | -43270 | +0.4 % |
+| `gamme-24` | Timefold | `dispersion-plafond-serre` | 3/3 | 32.3 s | 0 | -42945 | -7730 | -42945 | +1.2 % |
+| `gamme-24` | Timefold | `dispersion-distance` | 3/3 | 30.1 s | 0 | -42880 | -7745 | -42880 | +1.3 % |
+| `gamme-24` | Timefold | `sans-dispersion` | 3/3 | 32.0 s | 0 | -42850 | -7760 | -42850 | +1.4 % |
+| `gamme-24` | Timefold | `sans-trajet` | 3/3 | 31.3 s | 0 | -42675 | -7620 | -50965 | -17.3 % |
+
+What to take from it:
+
+- **Feasibility** does not move in any variant: three seeds out of three, on both engines, and the time to feasibility stays within noise (a few seconds at most under Timefold).
+- **The daily cap melts into the distance.** `dispersion-distance` (the 300 m rule alone) stays between -0.5% and +1.3% of medium on the five scenarios, on both engines: seed noise.
+- **The distance cannot be replaced by the cap.** `dispersion-plafond` loses 12.1% (direct) and 9.3% (Timefold) of medium on `gamme-20`, 8.6% (direct) on `scenario-complet`; tightening it to 2 makes `gamme-20` worse (-13.6% and -11.3%). `sans-dispersion` gives the same losses: the 300 m rule carries the measure, the cap adds almost nothing.
+- **The impossible trip cannot be removed**: `sans-trajet` loses 25.6% (direct) and 17.3% (Timefold) on `gamme-24`, the scenario with distant locations.
+- Both festivals and `gamme-24` stay within 1.5% in every dispersion variant.
+
+The 5% rule decided for these measures: a medium loss beyond 5%, or a default score that moves, and the rules are not merged. A merge that keeps only the cap (`dispersion-plafond`, `dispersion-plafond-serre`) exceeds it on `gamme-20` and `scenario-complet`: it is rejected. The `dispersion-distance` form respects it, but it drops a penalty that exists today (beyond three locations in a day): the score of a default plan can therefore move, and that is to be read again before the merge is written.
+
+## The meal-rules bench
+
+`MealRulesBenchTest` measures what merging the two meal rules, `coupureRepasObligatoire` (the break owed, hard) and `coupureRepasPlacementPrefere` (where in the window it is taken, soft), into one rule whose preferred placement is a parameter would cost, before anybody writes it. It changes no behaviour and needs no seam in production code: the variants are toggles, weights that carry a rule to another level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) and a rewrite of the problem's `FenetreRepas` facts, whose `auPlusTard` flag is the placement the merged rule would read as a parameter.
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=MealRulesBenchTest \
+    -Dbench.scenario=festival-hivernal.yaml -Dbench.engine=hand \
+    -Dbench.seconds=60 -Dbench.seeds=3
+```
+
+The class also launches as a plain `main` on the test classpath. Each solve lasts its whole budget, with no plateau bailout, seeds 0 to 2. The variants are `actuel` (what ships: break hard, placement soft), `fusion-dur` (one rule at the mandatory level: the placement gap counts one hard point per minute, like the missing break), `fusion-preference` (one rule at the preference level: break and placement each weigh one medium point of weight 5 per minute), `sans-placement` (parameter set to "no preference": the break alone), `placement-debut` and `placement-fin` (parameter set to the start, or the end, of every window; the shipped one is the end at midday and the start in the evening, placement soft).
+
+The last three columns read every final plan again under the shipped rules: the number of seeds in which every hard rule holds, break included, then the medium and soft under those rules. It is the only common ruler: the variants' own scores cannot be compared with each other, since the weight of `fusion-preference` multiplies the minutes by five.
+
+Measured on 26 November 2026, one machine with 8 cores and 30 GB (eight JVMs in parallel), 60 s per solve (30 s for `gamme-14`), medians of three seeds. "never" means no feasible plan in any seed:
+
+| Scenario | Engine | Variant | Feasible (the variant's rules) | Time to feasibility | Hard (med.) | Medium (med.) | Soft (med.) | Hard held (shipped rules) | Medium (shipped rules) | Soft (shipped rules) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `festival-hivernal` | direct | `actuel` | 3/3 | 4.0 s | 0 | -25490 | -96235 | 3/3 | -25490 | -96235 |
+| `festival-hivernal` | direct | `fusion-dur` | 0/3 | never | -234 | -27095 | -4230 | 0/3 | -27095 | -4230 |
+| `festival-hivernal` | direct | `fusion-preference` | 3/3 | 4.5 s | 0 | -96890 | -4265 | 0/3 | -26690 | -73565 |
+| `festival-hivernal` | direct | `sans-placement` | 3/3 | 2.8 s | 0 | -26015 | -4560 | 3/3 | -26015 | -121260 |
+| `festival-hivernal` | direct | `placement-debut` | 3/3 | 3.1 s | 0 | -26020 | -11560 | 3/3 | -26020 | -122560 |
+| `festival-hivernal` | direct | `placement-fin` | 3/3 | 3.1 s | 0 | -25810 | -99175 | 3/3 | -25810 | -99175 |
+| `festival-hivernal` | Timefold | `actuel` | 3/3 | 36.0 s | 0 | -34800 | -91755 | 3/3 | -34800 | -91755 |
+| `festival-hivernal` | Timefold | `fusion-dur` | 0/3 | never | -246 | -37105 | -1385 | 0/3 | -37105 | -1385 |
+| `festival-hivernal` | Timefold | `fusion-preference` | 3/3 | 38.2 s | 0 | -109540 | -2045 | 1/3 | -35140 | -75825 |
+| `festival-hivernal` | Timefold | `sans-placement` | 3/3 | 50.4 s | 0 | -36625 | -1645 | 3/3 | -36625 | -110150 |
+| `festival-hivernal` | Timefold | `placement-debut` | 3/3 | 35.4 s | 0 | -35475 | -9750 | 3/3 | -35475 | -109975 |
+| `festival-hivernal` | Timefold | `placement-fin` | 3/3 | 43.3 s | 0 | -35615 | -92520 | 3/3 | -35615 | -92520 |
+| `festival-realiste-canicule` | direct | `actuel` | 3/3 | 1.3 s | 0 | -16620 | -66730 | 3/3 | -16620 | -66730 |
+| `festival-realiste-canicule` | direct | `fusion-dur` | 0/3 | never | -100 | -15490 | -2715 | 0/3 | -15490 | -2715 |
+| `festival-realiste-canicule` | direct | `fusion-preference` | 3/3 | 0.5 s | 0 | -47415 | -2690 | 3/3 | -17415 | -32690 |
+| `festival-realiste-canicule` | direct | `sans-placement` | 3/3 | 0.6 s | 0 | -16665 | -2865 | 3/3 | -16665 | -81465 |
+| `festival-realiste-canicule` | direct | `placement-debut` | 3/3 | 0.6 s | 0 | -16665 | -2895 | 3/3 | -16665 | -80595 |
+| `festival-realiste-canicule` | direct | `placement-fin` | 3/3 | 0.5 s | 0 | -16620 | -65995 | 3/3 | -16620 | -65995 |
+| `festival-realiste-canicule` | Timefold | `actuel` | 3/3 | 17.3 s | 0 | -19400 | -55090 | 3/3 | -19400 | -55090 |
+| `festival-realiste-canicule` | Timefold | `fusion-dur` | 0/3 | never | -100 | -24220 | -2025 | 0/3 | -24220 | -2025 |
+| `festival-realiste-canicule` | Timefold | `fusion-preference` | 3/3 | 14.2 s | 0 | -49760 | -2215 | 3/3 | -19600 | -32245 |
+| `festival-realiste-canicule` | Timefold | `sans-placement` | 3/3 | 17.1 s | 0 | -19500 | -2180 | 3/3 | -19500 | -72355 |
+| `festival-realiste-canicule` | Timefold | `placement-debut` | 3/3 | 17.4 s | 0 | -19555 | -2185 | 3/3 | -19555 | -72360 |
+| `festival-realiste-canicule` | Timefold | `placement-fin` | 3/3 | 17.5 s | 0 | -19400 | -54760 | 3/3 | -19400 | -54760 |
+| `gamme-14` | direct | `actuel` | 3/3 | 0.1 s | 0 | -4600 | 0 | 3/3 | -4600 | 0 |
+| `gamme-14` | direct | `fusion-dur` | 3/3 | 0.0 s | 0 | -5140 | 0 | 3/3 | -5140 | 0 |
+| `gamme-14` | direct | `fusion-preference` | 3/3 | 0.0 s | 0 | -5145 | 0 | 3/3 | -5145 | 0 |
+| `gamme-14` | direct | `sans-placement` | 3/3 | 0.0 s | 0 | -5200 | 0 | 3/3 | -5200 | -3075 |
+| `gamme-14` | direct | `placement-debut` | 3/3 | 0.0 s | 0 | -4600 | 0 | 3/3 | -4600 | -3525 |
+| `gamme-14` | direct | `placement-fin` | 3/3 | 0.0 s | 0 | -4600 | 0 | 3/3 | -4600 | 0 |
+| `gamme-14` | Timefold | `actuel` | 3/3 | 0.6 s | 0 | -4655 | -150 | 3/3 | -4655 | -150 |
+| `gamme-14` | Timefold | `fusion-dur` | 3/3 | 0.8 s | 0 | -4670 | 0 | 3/3 | -4670 | 0 |
+| `gamme-14` | Timefold | `fusion-preference` | 3/3 | 0.5 s | 0 | -4680 | 0 | 3/3 | -4680 | 0 |
+| `gamme-14` | Timefold | `sans-placement` | 3/3 | 0.5 s | 0 | -4640 | 0 | 3/3 | -4640 | -3450 |
+| `gamme-14` | Timefold | `placement-debut` | 3/3 | 0.5 s | 0 | -4675 | 0 | 3/3 | -4675 | -3375 |
+| `gamme-14` | Timefold | `placement-fin` | 3/3 | 0.5 s | 0 | -4660 | -150 | 3/3 | -4660 | -150 |
+| `gamme-20` | direct | `actuel` | 3/3 | 1.7 s | 0 | -18355 | -26815 | 3/3 | -18355 | -26815 |
+| `gamme-20` | direct | `fusion-dur` | 3/3 | 1.6 s | 0 | -22680 | -11700 | 3/3 | -22680 | -11700 |
+| `gamme-20` | direct | `fusion-preference` | 3/3 | 1.6 s | 0 | -22455 | -11725 | 3/3 | -22455 | -11725 |
+| `gamme-20` | direct | `sans-placement` | 3/3 | 1.6 s | 0 | -19545 | -11795 | 3/3 | -19545 | -76820 |
+| `gamme-20` | direct | `placement-debut` | 3/3 | 1.5 s | 0 | -18205 | -33560 | 3/3 | -18205 | -86165 |
+| `gamme-20` | direct | `placement-fin` | 3/3 | 1.5 s | 0 | -18205 | -63290 | 3/3 | -18205 | -33890 |
+| `gamme-20` | Timefold | `actuel` | 3/3 | 27.1 s | 0 | -35100 | -118770 | 3/3 | -35100 | -118770 |
+| `gamme-20` | Timefold | `fusion-dur` | 3/3 | 32.3 s | 0 | -38260 | -10880 | 3/3 | -38260 | -10880 |
+| `gamme-20` | Timefold | `fusion-preference` | 3/3 | 33.1 s | 0 | -99960 | -10985 | 0/3 | -46025 | -39185 |
+| `gamme-20` | Timefold | `sans-placement` | 3/3 | 31.8 s | 0 | -38165 | -11845 | 3/3 | -38165 | -132015 |
+| `gamme-20` | Timefold | `placement-debut` | 3/3 | 29.6 s | 0 | -37450 | -119385 | 3/3 | -37450 | -131970 |
+| `gamme-20` | Timefold | `placement-fin` | 3/3 | 29.5 s | 0 | -37260 | -153670 | 3/3 | -37260 | -118270 |
+| `scenario-complet` | direct | `actuel` | 3/3 | 2.1 s | 0 | -18205 | -111355 | 3/3 | -18205 | -111355 |
+| `scenario-complet` | direct | `fusion-dur` | 0/3 | never | -71 | -21355 | -1070 | 0/3 | -21355 | -1070 |
+| `scenario-complet` | direct | `fusion-preference` | 3/3 | 0.7 s | 0 | -41020 | -305 | 3/3 | -19720 | -21745 |
+| `scenario-complet` | direct | `sans-placement` | 3/3 | 0.9 s | 0 | -18200 | -545 | 3/3 | -18200 | -179345 |
+| `scenario-complet` | direct | `placement-debut` | 3/3 | 0.8 s | 0 | -18170 | -108035 | 3/3 | -18170 | -182435 |
+| `scenario-complet` | direct | `placement-fin` | 3/3 | 0.8 s | 0 | -18170 | -2055 | 3/3 | -18170 | -146655 |
+| `scenario-complet` | Timefold | `actuel` | 3/3 | 19.0 s | 0 | -25340 | -160975 | 3/3 | -25340 | -160975 |
+| `scenario-complet` | Timefold | `fusion-dur` | 0/3 | never | -100 | -27795 | -1135 | 0/3 | -27795 | -1135 |
+| `scenario-complet` | Timefold | `fusion-preference` | 3/3 | 14.1 s | 0 | -55395 | -715 | 3/3 | -24795 | -31315 |
+| `scenario-complet` | Timefold | `sans-placement` | 3/3 | 18.7 s | 0 | -24275 | -855 | 3/3 | -24275 | -176575 |
+| `scenario-complet` | Timefold | `placement-debut` | 3/3 | 19.4 s | 0 | -25510 | -155090 | 3/3 | -25510 | -180835 |
+| `scenario-complet` | Timefold | `placement-fin` | 3/3 | 19.7 s | 0 | -24885 | -35335 | 3/3 | -24885 | -171815 |
+| `scenario-continu-avec-coupure` | direct | `actuel` | 3/3 | 3.6 s | 0 | -24745 | -51165 | 3/3 | -24745 | -51165 |
+| `scenario-continu-avec-coupure` | direct | `fusion-dur` | 0/3 | never | -224 | -29980 | -1090 | 0/3 | -29980 | -1090 |
+| `scenario-continu-avec-coupure` | direct | `fusion-preference` | 3/3 | 2.0 s | 0 | -52215 | -1120 | 1/3 | -29815 | -23410 |
+| `scenario-continu-avec-coupure` | direct | `sans-placement` | 3/3 | 2.2 s | 0 | -24805 | -805 | 3/3 | -24805 | -106015 |
+| `scenario-continu-avec-coupure` | direct | `placement-debut` | 3/3 | 1.8 s | 0 | -24610 | -12415 | 3/3 | -24610 | -83075 |
+| `scenario-continu-avec-coupure` | direct | `placement-fin` | 3/3 | 2.2 s | 0 | -24805 | -56360 | 3/3 | -24805 | -56360 |
+| `scenario-continu-avec-coupure` | Timefold | `actuel` | 3/3 | 34.0 s | 0 | -29125 | -73740 | 3/3 | -29125 | -73740 |
+| `scenario-continu-avec-coupure` | Timefold | `fusion-dur` | 0/3 | never | -241 | -32490 | -585 | 0/3 | -32490 | -585 |
+| `scenario-continu-avec-coupure` | Timefold | `fusion-preference` | 3/3 | 30.5 s | 0 | -65220 | -600 | 0/3 | -34665 | -24915 |
+| `scenario-continu-avec-coupure` | Timefold | `sans-placement` | 3/3 | 43.4 s | 0 | -29270 | -580 | 3/3 | -29270 | -108585 |
+| `scenario-continu-avec-coupure` | Timefold | `placement-debut` | 3/3 | 44.7 s | 0 | -29735 | -13765 | 3/3 | -29735 | -91540 |
+| `scenario-continu-avec-coupure` | Timefold | `placement-fin` | 3/3 | 44.7 s | 0 | -29670 | -73725 | 3/3 | -29670 | -73725 |
+
+What to take from it:
+
+- **One level for both terms is ruled out.** `fusion-dur` finds no feasible plan on `festival-hivernal`, `festival-realiste-canicule`, `scenario-complet` and `scenario-continu-avec-coupure`, with either engine: 24 solves out of 24 are never feasible, and each row's median of hard points of violation runs from 71 to 246. Where it stays feasible it costs medium: 24% on `gamme-20` with the direct engine, 9% under Timefold.
+- **The preference level loosens the break.** Under `fusion-preference`, the final plans hold every shipped hard rule in 3 seeds out of 3 on the heatwave scenario, `scenario-complet` and `gamme-14`, but not on `festival-hivernal` (0/3 with the direct engine, 1/3 under Timefold), `scenario-continu-avec-coupure` (1/3 and 0/3) or `gamme-20` under Timefold (0/3): a break turned into a preference is given up when the grid is tight.
+- **The placement as a parameter costs nothing measurable.** In `sans-placement`, `placement-debut` and `placement-fin`, feasibility stays 3/3 everywhere and the medium under the shipped rules stays within 3% of `actuel` with the direct engine, `gamme-14` (13% for `sans-placement`, on small numbers) and `gamme-20` (6% for `sans-placement`) aside; under Timefold it moves by up to 9% depending on the scenario, in both directions, with nothing in the variant to explain it. The time to feasibility does not change with the direct engine; under Timefold it moves on three scenarios: `scenario-continu-avec-coupure` (34 s against 43 to 45 s), `festival-hivernal` (36 s against 43 to 50 s, `placement-debut` aside) and `gamme-20` (27 s against 29 to 33 s).
+- **The direction of the placement weighs on the soft level, not on the rest.** The own soft of `placement-debut` is about eight times lower than `actuel`'s on `festival-hivernal` (-11,560 against -96,235) and `placement-fin`'s equals it: on that scenario, nearly all of the shipped gap is the "late at midday" preference. The direction that costs depends on the scenario: on `scenario-complet` it is `placement-debut` that equals `actuel` (-108,035 against -111,355) and `placement-fin` that falls to -2,055. `sans-placement` lets the shipped soft degrade (for instance -76,820 against -26,815 on `gamme-20`): the preference does act.
+- `gamme-14` (few meals to arbitrate) barely tells the variants apart: feasibility and time are the same, the medium only moves from 4,600 to 5,200 on small numbers, and only the shipped soft shows the preference acting (0 for `actuel`, -3,075 for `sans-placement`).
+
 ## The direct engine: two tests that keep the rules in duplicate
 
 `solver/handsearch` writes the 42 rules a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.

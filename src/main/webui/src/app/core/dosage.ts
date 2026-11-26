@@ -1,50 +1,8 @@
-// Reading a Dosage — the weighting a solve ran under — the same way wherever
-// one is shown: the comparison of « Versions du plan » and the weight history
-// of « Règles du planning ». Pure, so it is unit tested without rendering.
+// Reading a Dosage — the weighting a solve ran under — in the comparison of
+// « Versions du plan ». Pure, so it is unit tested without rendering.
 
 import { Dosage } from './models';
 import { compareCodeUnits } from './string-order';
-
-/** How many rules the edition moved away from a default: reweighted, switched off, switched on. */
-function dosageCount(dosage: Dosage): number {
-  return (
-    Object.keys(dosage.weights ?? {}).length +
-    (dosage.disabled ?? []).length +
-    (dosage.enabled ?? []).length
-  );
-}
-
-/** « défaut », « 3 règles repondérées », « inconnu » — the Autopsie's column. */
-export function dosageSummary(dosage: Dosage | null | undefined): string {
-  if (!dosage) {
-    return $localize`:@@dosage.unknown:inconnu`;
-  }
-  const count = dosageCount(dosage);
-  return count === 0
-    ? $localize`:@@dosage.default:défaut`
-    : $localize`:@@dosage.count:${count}:count: règle(s) repondérée(s)`;
-}
-
-/** One line per rule the dosage moves: « souhaitsIncompatibles : 5 (défaut 1) », « x : désactivée ». */
-export function dosageLines(dosage: Dosage | null | undefined): string[] {
-  if (!dosage) {
-    return [];
-  }
-  const lines: string[] = [];
-  for (const [name, weight] of sortedEntries(dosage.weights)) {
-    const instance = dosage.instanceWeights?.[name] ?? 1;
-    lines.push(
-      $localize`:@@dosage.line.weight:${name}:name: : ${weight}:weight: (défaut ${instance}:instance:)`,
-    );
-  }
-  for (const name of [...(dosage.disabled ?? [])].sort(compareCodeUnits)) {
-    lines.push($localize`:@@dosage.line.disabled:${name}:name: : désactivée`);
-  }
-  for (const name of [...(dosage.enabled ?? [])].sort(compareCodeUnits)) {
-    lines.push($localize`:@@dosage.line.enabled:${name}:name: : activée`);
-  }
-  return lines;
-}
 
 /** What two dosages disagree on, rule by rule — the Comparateur's list. */
 export interface DosageDifference {
@@ -85,8 +43,4 @@ function ruleState(dosage: Dosage, name: string): string {
     return $localize`:@@dosage.state.enabled:${weight}:weight:, activée`;
   }
   return String(weight);
-}
-
-function sortedEntries(record: Record<string, number> | undefined): [string, number][] {
-  return Object.entries(record ?? {}).sort(([a], [b]) => compareCodeUnits(a, b));
 }
