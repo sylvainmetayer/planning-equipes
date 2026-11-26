@@ -52,7 +52,7 @@ public final class EligibleAnimateurMoveFilter {
         /** The créneau overlaps this minor's legal night window. */
         TRAVAIL_DE_NUIT_MINEUR("travailDeNuitInterditPourMineur"),
         /** This single créneau already exceeds the minor's daily cap. */
-        DUREE_QUOTIDIENNE_MINEUR("dureeQuotidienneMaxMineur");
+        DUREE_QUOTIDIENNE_MINEUR("dureeQuotidienneMax");
 
         static final Motif[] VALUES = values();
 
@@ -113,7 +113,7 @@ public final class EligibleAnimateurMoveFilter {
         }
         int duree = creneau.getDureeMinutes();
         // The breaks a stretch owes are rest, not work: the same deduction
-        // dureeQuotidienneMaxMineur applies, on this single créneau, and with
+        // dureeQuotidienneMax applies, on this single créneau, and with
         // the very duration the edition grants — read through
         // ParametresLegaux.dureePauseMinutes so the filter can never be
         // stricter than the rule (ADR 0048). It used to read the default 30,
@@ -160,7 +160,7 @@ public final class EligibleAnimateurMoveFilter {
      * <p>Mirrors, in order: {@code animateurDisponible},
      * {@code standReserveAuxMajeurs}, {@code travailInterditJourFerieMineur},
      * {@code travailDeNuitInterditPourMineur} and
-     * {@code dureeQuotidienneMaxMineur} (the last one only in its
+     * {@code dureeQuotidienneMax} (the last one only in its
      * single-créneau form, breaks deducted exactly as the constraint deducts
      * them) — the list {@link Motif} now holds, each entry naming its
      * constraint. A filter stricter than the constraints would hide feasible
@@ -169,7 +169,7 @@ public final class EligibleAnimateurMoveFilter {
      * in sync by hand; keep {@link Motif} in step with {@code LegalConstraints}
      * the same way.</p>
      *
-     * <p>{@code travailContinuMaxMineur} used to be mirrored here too, on a
+     * <p>{@code travailContinuMax} used to be mirrored here too, on a
      * créneau longer than 4 h 30. It no longer can be: a long seat is
      * compliant as soon as a colleague of the stand relays the break it owes
      * (ADR 0048), which is a fact about the rest of the plan, not about the

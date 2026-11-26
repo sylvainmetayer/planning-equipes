@@ -13,7 +13,9 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { rowMenuItem } from '../../core/testing/row-menu';
-import { ApiService } from '../../core/api.service';
+import { ApiError, ApiService } from '../../core/api.service';
+import { CODE_EDITION_INACTIVE } from '../../core/edition-inactive';
+import { EditionStore } from '../../core/edition.store';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -540,6 +542,46 @@ describe('AnimateursPage table', () => {
     // The answers are reloaded so the column shows « Relancé » at once.
     expect(animateursApi.confirmations).toHaveBeenCalledTimes(2);
     expect(racine().querySelector('app-bulk-actions-bar')).toBeNull();
+  });
+
+  it('greys out « Relancer maintenant » on an inactive edition, the sentence next to the bar', async () => {
+    await rendre([person('alice'), person('bob')]);
+    (racine().querySelector('thead mat-checkbox input') as HTMLInputElement).click();
+    seedStore(TestBed.inject(EditionStore), 'courant', {
+      id: 'E1',
+      nom: 'Année 2025',
+      active: false,
+      creeLe: null,
+    });
+    await fixture.whenStable();
+
+    const relancer = Array.from(racine().querySelectorAll('app-bulk-actions-bar button')).find(
+      (each) => each.textContent!.includes('Relancer maintenant'),
+    ) as HTMLButtonElement;
+    expect(relancer.disabled).toBe(true);
+    expect(relancer.getAttribute('aria-describedby')).toBe('animateurs-edition-inactive');
+    expect(racine().querySelector('#animateurs-edition-inactive')!.textContent).toContain(
+      "Cette édition n'est pas active",
+    );
+  });
+
+  it('leaves an inactive-edition refusal to the interceptor: no second message', async () => {
+    confirm.ask.mockResolvedValue(true);
+    animateursApi.remind.mockRejectedValue(
+      new ApiError(409, 'conflict', 'inactive', CODE_EDITION_INACTIVE),
+    );
+    await rendre([person('alice')]);
+    (racine().querySelector('thead mat-checkbox input') as HTMLInputElement).click();
+    await fixture.whenStable();
+    notify.mockClear();
+
+    const relancer = Array.from(racine().querySelectorAll('app-bulk-actions-bar button')).find(
+      (each) => each.textContent!.includes('Relancer maintenant'),
+    ) as HTMLButtonElement;
+    relancer.click();
+    await vi.waitFor(() => expect(animateursApi.remind).toHaveBeenCalled());
+    await fixture.whenStable();
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('heads the page with the three counts and the last publication', async () => {

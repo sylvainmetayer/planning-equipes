@@ -76,14 +76,12 @@ public final class LegalConstraints {
             standReserveAuxMajeurs(seats),
             mineurNecessiteEncadrementMajeur(seats),
             travailDeNuitInterditPourMineur(seats),
-            dureeQuotidienneMaxMineur(seats),
+            dureeQuotidienneMax(seats),
             dureeHebdomadaireMax(seats),
             dureeHebdomadaireMaxDeuxSemaines(seats),
             dureeHebdomadaireMaxMineur(seats),
-            dureeQuotidienneMaxMajeur(seats),
             reposQuotidienMinimal(seats),
-            travailContinuMaxMajeur(seats),
-            travailContinuMaxMineur(seats),
+            travailContinuMax(seats),
             maxJoursTravaillesParSemaine(seats),
             reposHebdomadaireMinimal(seats),
             reposHebdomadaireMineur(seats),
@@ -198,95 +196,92 @@ public final class LegalConstraints {
     }
 
     /**
-     * Daily working-time cap for minors: 8 h, lowered to 7 h under 16.
+     * Daily working-time cap, one rule for every age: 10 h for an adult, 8 h
+     * for a minor, lowered to 7 h under 16. The cap is read on the animateur's
+     * age at the date of the day measured (ADR 0114), from
+     * {@link PlafondsLegauxMajeurs} and {@link PlafondsLegauxMineurs}.
      *
-     * <p>Code du travail art. <b>L3162-1</b>: <i>« Les jeunes travailleurs ne
-     * peuvent être employés à un travail effectif excédant huit heures par
-     * jour […] »</i>. Art. <b>D4153-3</b>, for a minor aged 14 to under 16
-     * employed during school holidays: <i>« La durée du travail du mineur ne
-     * peut excéder trente-cinq heures par semaine ni sept heures par
-     * jour. »</i></p>
+     * <p>Adults — Code du travail art. <b>L3121-18</b>: <i>« La durée
+     * quotidienne de travail effectif par salarié ne peut excéder dix heures,
+     * sauf : »</i> (derogations by the labour inspectorate, emergency, art.
+     * L3121-19). None of those derogations is data the application holds, so
+     * the cap is applied unconditionally.</p>
      *
-     * <p>The 7 h cap is applied to every under-16 rather than only during
-     * school holidays: employing an under-16 is forbidden outside school
-     * holidays anyway (art. L4153-1), so the holiday regime is the only one
-     * that can legitimately occur here, and applying it unconditionally is the
-     * protective default. The application has no school-calendar data.</p>
+     * <p>Minors — art. <b>L3162-1</b>: <i>« Les jeunes travailleurs ne peuvent
+     * être employés à un travail effectif excédant huit heures par jour
+     * […] »</i>. Art. <b>D4153-3</b>, for a minor aged 14 to under 16 employed
+     * during school holidays: <i>« La durée du travail du mineur ne peut
+     * excéder trente-cinq heures par semaine ni sept heures par jour. »</i>
+     * The 7 h cap is applied to every under-16 rather than only during school
+     * holidays: employing an under-16 is forbidden outside school holidays
+     * anyway (art. L4153-1, holiday exception art. L4153-3; a 15-year-old apprentice falls under L4153-1 1°, where 7 h stays the more protective figure), so the holiday regime is the only one that can
+     * legitimately occur here, and applying it unconditionally is the
+     * protective default. The application has no school-calendar data. A
+     * minor's breach also carries {@link ExclusionEligibilite#FORFAIT}: the
+     * minors' rules are the ones a plan short of people must never buy its way
+     * out of.</p>
      *
-     * <p>Note that {@code Creneau.getDureeMinutes()} measures amplitude, which
-     * equals travail effectif only because no break is modelled inside a
-     * créneau — see {@code site/src/docs/comprendre/modele-des-donnees.md}.</p>
+     * <p>The measure is the day's effective work, the breaks due deducted
+     * ({@link #effectiveWorkMinutes(Animateur, LocalDate, List, ParametresLegaux)}):
+     * a minor's break is the longer one. The measure is computed twice per
+     * group, in the filter and in the weight: deliberately kept so, because the
+     * match keeps the same four facts — animateur, date, postes, parametres —
+     * and the diagnostic reads them off the justification to name the seats in
+     * default. Folding the measure into the group would halve that work and
+     * lose the postes.</p>
+     *
+     * <p>A day entirely worked is not charged (ADR 0044); a day still under
+     * way is, its started seats counted in the measure. Before this rule was
+     * one, the adult and the minor caps were two rules with the same shape
+     * (issue #392, A7), now written once.</p>
      */
-    private Constraint dureeQuotidienneMaxMineur(SeatStreams seats) {
-        return dailyCapPenalty(
-                        ConstraintToggleSupport.actif(
-                                dailyCap(
-                                        seats,
-                                        Animateur::isMineurOn,
-                                        LegalConstraints::effectiveWorkMineurMinutes,
-                                        LegalConstraints::dailyCapForMineur),
-                                "dureeQuotidienneMaxMineur"),
-                        LegalConstraints::effectiveWorkMineurMinutes,
-                        LegalConstraints::dailyCapForMineur,
-                        ExclusionEligibilite.FORFAIT)
-                .asConstraint("dureeQuotidienneMaxMineur");
+    private Constraint dureeQuotidienneMax(SeatStreams seats) {
+        return ConstraintToggleSupport.actif(
+                        joursAvecParametres(seats, LegalConstraints::ofAge)
+                                .filter((animateur, date, jour, parametres) -> PastSeats.reproachable(jour)
+                                        && effectiveWorkMinutes(animateur, date, jour, parametres)
+                                                > dailyCap(animateur, date)),
+                        "dureeQuotidienneMax")
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, date, jour, parametres) -> dailyForfait(animateur, date)
+                                + effectiveWorkMinutes(animateur, date, jour, parametres)
+                                - dailyCap(animateur, date))
+                .asConstraint("dureeQuotidienneMax");
     }
 
     /**
-     * A day's measure against its cap, per animateur of one age bracket, plus
-     * {@code forfait} per breach — {@link ExclusionEligibilite#FORFAIT} for the
-     * minors, whose cap the eligibility filter already names, 0 for adults —
-     * the shape {@link #dureeQuotidienneMaxMajeur} and
-     * {@link #dureeQuotidienneMaxMineur} share, written once (issue #392, A7).
-     *
-     * <p>The measure is computed twice per group, in the filter and in the
-     * weight: deliberately kept so, because the match keeps the same four
-     * facts — animateur, date, postes, parametres — and the diagnostic reads
-     * them off the justification to name the seats in default. Folding the
-     * measure into the group would halve that work and lose the postes.</p>
-     *
-     * <p>A day entirely worked is not charged (ADR 0044); a day still under
-     * way is, its started seats counted in the measure.</p>
+     * The animateurs an age regime applies to on a date: a minor or an adult,
+     * which is everybody whose birth date is known — one with none has neither
+     * regime, as before the two rules were one.
      */
-    private static QuadConstraintStream<Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux> dailyCap(
-            SeatStreams seats,
-            BiPredicate<Animateur, LocalDate> bracket,
-            ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
-            ToIntBiFunction<Animateur, LocalDate> cap) {
-        return joursAvecParametres(seats, bracket)
-                .filter((animateur, date, jour, parametres) -> PastSeats.reproachable(jour)
-                        && measure.applyAsInt(jour, parametres) > cap.applyAsInt(animateur, date));
+    private static boolean ofAge(Animateur animateur, LocalDate date) {
+        return animateur.isMineurOn(date) || animateur.isMajeurOn(date);
     }
 
-    /** The breaches of {@link #dailyCap}, weighed: {@code forfait} plus the minutes over the cap. */
-    private static QuadConstraintBuilder<
-                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, HardMediumSoftScore>
-            dailyCapPenalty(
-                    QuadConstraintStream<Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux> breaches,
-                    ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
-                    ToIntBiFunction<Animateur, LocalDate> cap,
-                    int forfait) {
-        return breaches.penalize(
-                HardMediumSoftScore.ONE_HARD,
-                (animateur, date, jour, parametres) ->
-                        forfait + measure.applyAsInt(jour, parametres) - cap.applyAsInt(animateur, date));
+    /** Daily cap on the age of the animateur at {@code date}: a minor's, lowered under 16, or an adult's. */
+    private static int dailyCap(Animateur animateur, LocalDate date) {
+        return animateur.isMineurOn(date)
+                ? PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(animateur.isUnder16On(date))
+                : PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES;
     }
 
-    /** Daily working-time cap of an adult, the same whatever the date (art. L3121-18). */
-    private static int dailyCapForMajeur(Animateur animateur, LocalDate date) {
-        return PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES;
+    /** What a breach of the daily cap carries on top of the minutes over it: the minors' forfait, nothing for an adult. */
+    private static int dailyForfait(Animateur animateur, LocalDate date) {
+        return animateur.isMineurOn(date) ? ExclusionEligibilite.FORFAIT : 0;
+    }
+
+    /** Effective working minutes of the day of an animateur, on the age they have at {@code date}. */
+    private static int effectiveWorkMinutes(
+            Animateur animateur, LocalDate date, List<PosteAffectation> postes, ParametresLegaux parametres) {
+        return animateur.isMineurOn(date)
+                ? effectiveWorkMineurMinutes(postes, parametres)
+                : effectiveWorkMajeurMinutes(postes, parametres);
     }
 
     /** Night window start applicable to this minor on this date (art. L3163-1). */
     private static LocalTime debutNuit(Animateur animateur, LocalDate date) {
         return animateur.isUnder16On(date) ? Creneau.DEBUT_NUIT_MOINS_DE_16_ANS : Creneau.DEBUT_NUIT_16_A_18_ANS;
-    }
-
-    /** Daily working-time cap applicable to this minor on this date (art. L3162-1 / D4153-3). */
-    private static int dailyCapForMineur(Animateur animateur, LocalDate date) {
-        return animateur.isUnder16On(date)
-                ? PlafondsLegauxMineurs.DUREE_QUOTIDIENNE_MAX_MOINS_DE_16_ANS_MINUTES
-                : PlafondsLegauxMineurs.DUREE_QUOTIDIENNE_MAX_MINUTES;
     }
 
     /**
@@ -350,41 +345,27 @@ public final class LegalConstraints {
     }
 
     /**
-     * Daily working-time cap for adult animateurs: 10 h.
+     * An uninterrupted working stretch may not exceed its cap — 6 h for an
+     * adult, 4 h 30 for a minor — without the legal break: a hole in the grid,
+     * or a colleague relaying. One rule for every age, the cap and the break
+     * read on the animateur's age at the date of the day (ADR 0114).
      *
-     * <p>Code du travail art. <b>L3121-18</b>: <i>« La durée quotidienne de
-     * travail effectif par salarié ne peut excéder dix heures, sauf : »</i>
-     * (derogations by the labour inspectorate, emergency, art. L3121-19). None
-     * of those derogations is data the application holds, so the cap is applied
-     * unconditionally. Ten hours is also what the organisation set for its own
-     * editions, so the Code's ceiling and the house rule coincide.</p>
-     *
-     * <p>Until this constraint existed, the only daily cap in the referential
-     * was the minors' one: on {@code scenario-complet.yaml} an adult could hold
-     * the three slots of a same day, i.e. 14 hours.</p>
-     */
-    private Constraint dureeQuotidienneMaxMajeur(SeatStreams seats) {
-        return dailyCapPenalty(
-                        ConstraintToggleSupport.actif(
-                                dailyCap(
-                                        seats,
-                                        Animateur::isMajeurOn,
-                                        LegalConstraints::effectiveWorkMajeurMinutes,
-                                        LegalConstraints::dailyCapForMajeur),
-                                "dureeQuotidienneMaxMajeur"),
-                        LegalConstraints::effectiveWorkMajeurMinutes,
-                        LegalConstraints::dailyCapForMajeur,
-                        0)
-                .asConstraint("dureeQuotidienneMaxMajeur");
-    }
-
-    /**
-     * An adult's uninterrupted working stretch may not exceed 6 h without the
-     * break of art. L3121-16 — a hole in the grid, or a colleague relaying.
-     *
-     * <p>Code du travail art. <b>L3121-16</b>: <i>« Dès que le temps de travail
+     * <p>Adults — code du travail art. <b>L3121-16</b>: <i>« Dès que le temps de travail
      * quotidien atteint six heures, le salarié bénéficie d'un temps de pause
      * d'une durée minimale de vingt minutes consécutives. »</i></p>
+     *
+     * <p>Minors — art. <b>L3162-3</b>: <i>« Aucune période de travail effectif
+     * ininterrompue ne peut excéder, pour les jeunes travailleurs, une durée
+     * maximale de quatre heures et demie. Lorsque le temps de travail
+     * quotidien est supérieur à quatre heures et demie, les jeunes travailleurs
+     * bénéficient d'un temps de pause d'au moins trente minutes
+     * consécutives. »</i> The break is at least thirty minutes whatever the
+     * edition sets — the floor of this article is d'ordre public, so
+     * {@link ParametresLegaux#dureePauseMinutes(boolean)} raises a shorter
+     * edition value for a minor rather than apply it. Each unrelayed break of
+     * a minor carries {@link ExclusionEligibilite#FORFAIT} on top of its
+     * point: the minors' rules are the ones a plan short of people must never
+     * buy its way out of.</p>
      *
      * <p><b>Interpretation choice</b>: the break is due <i>at the latest</i> at
      * the sixth hour, so a stretch may <i>reach</i> 6 h but not exceed it. A
@@ -415,42 +396,17 @@ public final class LegalConstraints {
      * {@link #reposQuotidienMinimal} instead, which sees a near-zero gap
      * between day J and day J+1.</p>
      */
-    private Constraint travailContinuMaxMajeur(SeatStreams seats) {
-        return ConstraintToggleSupport.actif(unrelayedBreaks(seats, Animateur::isMajeurOn), "travailContinuMaxMajeur")
-                .penalize(HardMediumSoftScore.ONE_HARD, due -> 1)
-                .asConstraint("travailContinuMaxMajeur");
+    private Constraint travailContinuMax(SeatStreams seats) {
+        return ConstraintToggleSupport.actif(unrelayedBreaks(seats, LegalConstraints::ofAge), "travailContinuMax")
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        due -> due.animateur().isMineurOn(due.date()) ? ExclusionEligibilite.FORFAIT + 1 : 1)
+                .asConstraint("travailContinuMax");
     }
 
     /**
-     * A young worker's uninterrupted working stretch may not exceed 4 h 30
-     * without a 30-minute break, hole or relay.
-     *
-     * <p>Code du travail art. <b>L3162-3</b>: <i>« Aucune période de travail
-     * effectif ininterrompue ne peut excéder, pour les jeunes travailleurs, une
-     * durée maximale de quatre heures et demie. Lorsque le temps de travail
-     * quotidien est supérieur à quatre heures et demie, les jeunes travailleurs
-     * bénéficient d'un temps de pause d'au moins trente minutes
-     * consécutives. »</i></p>
-     *
-     * <p>Same rule as {@link #travailContinuMaxMajeur}, at 4 h 30 and with a
-     * break of at least thirty minutes whatever the edition sets — the floor of
-     * this article is d'ordre public, so
-     * {@link ParametresLegaux#dureePauseMinutes(boolean)} raises a shorter
-     * edition value for a minor rather than apply it. Each unrelayed break
-     * carries {@link ExclusionEligibilite#FORFAIT} on top of its point: the
-     * minors' rules are the ones a plan short of people must never buy its way
-     * out of.</p>
-     */
-    private Constraint travailContinuMaxMineur(SeatStreams seats) {
-        return ConstraintToggleSupport.actif(unrelayedBreaks(seats, Animateur::isMineurOn), "travailContinuMaxMineur")
-                .penalize(HardMediumSoftScore.ONE_HARD, due -> ExclusionEligibilite.FORFAIT + 1)
-                .asConstraint("travailContinuMaxMineur");
-    }
-
-    /**
-     * The breaks one age bracket owes over a day with nobody to relay them —
-     * the shape {@link #travailContinuMaxMajeur} and
-     * {@link #travailContinuMaxMineur} share, written once.
+     * The breaks the animateurs of an age regime owe over a day with nobody to
+     * relay them — what {@link #travailContinuMax} weighs.
      *
      * <p>The breaks come from {@link PauseSurPoste#dues(List, ParametresLegaux)},
      * which the Pauses screen, the animateur's PDF and the ICS feed read too,
@@ -913,8 +869,7 @@ public final class LegalConstraints {
      *
      * <p><b>Deducted unconditionally</b>, with no declaration to make (ADR
      * 0048). A break due is either relayed — and then really taken — or it is
-     * already a hard breach of {@link #travailContinuMaxMajeur} /
-     * {@link #travailContinuMaxMineur}, so deducting it hides nothing: a plan
+     * already a hard breach of {@link #travailContinuMax}, so deducting it hides nothing: a plan
      * at zero hard has taken every break it deducts. The organiser used to
      * carry that decision on a checkbox, which meant a day of the same shape
      * was 10 h of work for one edition and 9 h 40 for another.</p>
@@ -1011,7 +966,7 @@ public final class LegalConstraints {
      * figure (<i>« La durée du travail du mineur ne peut excéder trente-cinq
      * heures par semaine ni sept heures par jour »</i>).</p>
      *
-     * <p>The daily half of L3162-1 lives in {@link #dureeQuotidienneMaxMineur}.
+     * <p>The daily half of L3162-1 lives in {@link #dureeQuotidienneMax}.
      * The 8 h/day cap alone does not bound the week: 8 h × 6 days = 48 h, which
      * this application used to allow.</p>
      */

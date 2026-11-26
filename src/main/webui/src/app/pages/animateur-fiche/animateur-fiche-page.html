@@ -50,11 +50,11 @@
         <mat-icon>link</mat-icon>
         <ng-container i18n="@@fiche.action.lien">Copier le lien d'espace</ng-container>
       </button>
-      <button matButton="tonal" type="button" [disabled]="busy() !== null || !fiche.animateur.email || !fiche.planCalcule" (click)="sendPlanning()">
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || editionInactive() || !fiche.animateur.email || !fiche.planCalcule" aria-describedby="fiche-edition-inactive" (click)="sendPlanning()">
         <mat-icon>outgoing_mail</mat-icon>
         <ng-container i18n="@@fiche.action.envoyer">Envoyer son planning</ng-container>
       </button>
-      <button matButton="tonal" type="button" [disabled]="busy() !== null || !fiche.dernierePublicationLe" (click)="remind()">
+      <button matButton="tonal" type="button" [disabled]="busy() !== null || editionInactive() || !fiche.dernierePublicationLe" aria-describedby="fiche-edition-inactive" (click)="remind()">
         <mat-icon>notifications_active</mat-icon>
         <ng-container i18n="@@fiche.action.relancer">Relancer</ng-container>
       </button>
@@ -88,6 +88,7 @@
         <ng-container i18n="@@fiche.edit">Modifier la fiche</ng-container>
       </button>
     </mat-card-actions>
+    <app-edition-inactive-note id="fiche-edition-inactive" />
   }
   <mat-card-content>
     @if (loading() && !profile()) {

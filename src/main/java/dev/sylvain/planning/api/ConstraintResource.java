@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jboss.logging.Logger;
 
 /**
  * Business view of the active constraints: what each rule means, at which
@@ -49,6 +50,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Path("/constraints")
 @Produces(MediaType.APPLICATION_JSON)
 public class ConstraintResource {
+
+    private static final Logger LOG = Logger.getLogger(ConstraintResource.class);
 
     private final ConstraintAnalysisStore analysisStore;
 
@@ -141,8 +144,8 @@ public class ConstraintResource {
     @Path("/{name}")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
-        requireKnown(name);
-        referenceDataService.setContrainteActive(name, update.actif(), WeightChangeOrigin.SCREEN);
+        String rule = requireKnown(name);
+        referenceDataService.setContrainteActive(rule, update.actif(), WeightChangeOrigin.SCREEN);
         // One method, two actions: the history keys on the route, so without
         // this it would record « Contrainte activée » for a deactivation —
         // the one thing a journal must never do (issue #406).
@@ -162,10 +165,10 @@ public class ConstraintResource {
     @Path("/{name}/poids")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
-        requireKnown(name);
-        referenceDataService.setConstraintWeight(name, update.poids(), WeightChangeOrigin.SCREEN);
+        String rule = requireKnown(name);
+        referenceDataService.setConstraintWeight(rule, update.poids(), WeightChangeOrigin.SCREEN);
         return new ConstraintPoidsUpdate(
-                planningService.effectiveConstraintWeights().getOrDefault(name, 1));
+                planningService.effectiveConstraintWeights().getOrDefault(rule, 1));
     }
 
     /**
@@ -180,16 +183,16 @@ public class ConstraintResource {
     @Path("/{name}/niveau")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintNiveauUpdate setNiveau(@PathParam("name") String name, ConstraintNiveauUpdate update) {
-        requireKnown(name);
+        String rule = requireKnown(name);
         if (update == null || update.niveau() == null) {
             throw new BusinessError.Invalid(
                     "niveau : attendu OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE " + "ou PREFERENCE_LEGERE");
         }
-        referenceDataService.setNiveau(name, update.niveau(), WeightChangeOrigin.SCREEN);
+        referenceDataService.setNiveau(rule, update.niveau(), WeightChangeOrigin.SCREEN);
         return new ConstraintNiveauUpdate(chosenLevel(
-                ConstraintCatalog.PAR_NOM.get(name),
+                ConstraintCatalog.PAR_NOM.get(rule),
                 planningService.effectiveLevels(),
-                planningService.effectiveConstraintWeights().getOrDefault(name, 1)));
+                planningService.effectiveConstraintWeights().getOrDefault(rule, 1)));
     }
 
     /**
@@ -229,13 +232,21 @@ public class ConstraintResource {
         return weightHistory.forConstraint(name);
     }
 
-    /** 404 rather than a silently stored row when the name matches no constraint of the catalogue. */
-    private static void requireKnown(String name) {
-        boolean known = ConstraintCatalog.definitions().stream()
-                .anyMatch(definition -> definition.name().equals(name));
-        if (!known) {
+    /**
+     * 404 rather than a silently stored row when the name matches no constraint
+     * of the catalogue. A name merged into another in 4.0 is read as the rule
+     * that replaced it, with a warning in the log; the rule's current name is
+     * returned.
+     */
+    private static String requireKnown(String name) {
+        String current = ConstraintCatalog.currentName(name);
+        if (!ConstraintCatalog.PAR_NOM.containsKey(current)) {
             throw new NotFoundException("Unknown constraint: " + name);
         }
+        if (!current.equals(name)) {
+            LOG.warnf("The rule %s was merged into %s in 4.0: the request is read as %s", name, current, current);
+        }
+        return current;
     }
 
     private ConstraintView toView(

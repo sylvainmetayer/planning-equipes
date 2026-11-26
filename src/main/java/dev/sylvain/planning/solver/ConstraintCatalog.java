@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -118,7 +119,7 @@ public final class ConstraintCatalog {
     /**
      * The meal break, and the first « organisation rule » held hard. No article
      * of the Code du travail requires lunch — L3121-16 covers only the twenty
-     * minutes owed at the sixth hour, which {@code travailContinuMaxMajeur}
+     * minutes owed at the sixth hour, which {@code travailContinuMax}
      * already carries. This is the rule of the staffing workbook, kept hard by
      * choice and protected all the same: without it the solver returns a
      * ten-hour unbroken day scoring zero hard (issue #438).
@@ -226,34 +227,34 @@ public final class ConstraintCatalog {
             Map.entry(
                     COUPURE_REPAS_OBLIGATOIRE,
                     "La journée ne laisse pas la place au repas : coupez la journée en deux vacations, "
-                            + "élargissez la fenêtre repas sur sa ligne de Règles du planning, ou raccourcissez le "
+                            + "élargissez la fenêtre repas dans Paramètres › Légal, ou raccourcissez le "
                             + "créneau."),
             Map.entry(
                     LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR,
-                    "Trop de typologies différentes pour une même personne : relevez le plafond sur la ligne "
-                            + "de la règle, dans Règles du planning, ou baissez son importance."),
+                    "Trop de typologies différentes pour une même personne : relevez le plafond dans "
+                            + "Paramètres › Organisation, ou baissez son importance."),
             Map.entry(
                     STABILITE_DU_PLAN_PUBLIE,
                     "Le plan s'écarte de ce qui a été publié : chaque écart est une vacation à "
                             + "re-annoncer. Verrouillez ce qui doit tenir, ou montez l'importance de la règle."),
             Map.entry(
                     LIMITER_EMPLACEMENTS_PAR_JOUR,
-                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond sur la "
-                            + "ligne de la règle, dans Règles du planning, ou baissez son importance."),
+                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond dans "
+                            + "Paramètres › Organisation, ou baissez son importance."),
             Map.entry(
                     ARRIVEE_GROUPEE,
                     "Un groupe de covoiturage n'arrive ou ne repart pas ensemble : vérifiez que ses membres ont "
-                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance sur la ligne de la "
-                            + "règle, dans Règles du planning, ou montez son importance."),
+                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance dans "
+                            + "Paramètres › Organisation, ou montez son importance."),
             Map.entry(
                     TRAJET_INSUFFISANT_ENTRE_POSTES,
                     "Le battement ne laisse pas le temps de marcher d'un emplacement à l'autre : élargissez "
                             + "le battement ou rapprochez les stands — ou ajustez la vitesse de marche, le facteur "
-                            + "de détour et la tolérance sur la ligne de la règle, dans Règles du planning."),
+                            + "de détour et la tolérance dans Paramètres › Organisation."),
             Map.entry(
                     MAX_JOURS_CONSECUTIFS_TRAVAILLES,
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
-                            + "couvrir ces journées, relevez le plafond sur la ligne de la règle, ou baissez son "
+                            + "couvrir ces journées, relevez le plafond dans Paramètres › Organisation, ou baissez son "
                             + "importance si la série vous convient."),
             Map.entry(
                     MAX_JOURS_CONSECUTIFS_DUR,
@@ -275,8 +276,7 @@ public final class ConstraintCatalog {
             "Règle de sécurité posée par l'organisateur : ajoutez un majeur sur ces créneaux, ou "
                     + "assumez l'encadrement hors planning et laissez la règle éteinte.",
             CATEGORIE_ORGANISATION_REPAS,
-            "Réglez la fenêtre repas et sa durée sur la ligne de la coupure repas, dans Règles du "
-                    + "planning, ou découpez les "
+            "Réglez la fenêtre repas et sa durée dans Paramètres › Légal, ou découpez les "
                     + "journées trop longues en deux vacations.",
             CATEGORIE_AFFECTATION,
             "Le plan ne peut pas tenir en l'état : ajoutez des animateurs disponibles, ou "
@@ -529,14 +529,16 @@ public final class ConstraintCatalog {
                             + "(Code du travail art. L3163-1).",
                     "Pas de travail de nuit pour les mineurs"),
             new ConstraintDefinition(
-                    "dureeQuotidienneMaxMineur",
+                    "dureeQuotidienneMax",
                     Niveau.HARD,
-                    CATEGORIE_LEGAL_MINEURS,
-                    "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
-                            + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
-                            + "(art. D4153-3). Les pauses dues sont déduites : une pause, relayée ou prise "
-                            + "comme un trou, est du repos et non du travail effectif.",
-                    "Durée quotidienne maximale des mineurs"),
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
+                    "Un animateur ne peut pas dépasser le plafond de travail effectif d'une même journée, "
+                            + "lu selon son âge à la date du créneau : 10 heures pour un majeur "
+                            + "(Code du travail art. L3121-18), 8 heures pour un mineur (art. L3162-1), "
+                            + "ramenées à 7 heures avant 16 ans (art. D4153-3). Les pauses dues sont déduites : "
+                            + "une pause, relayée ou prise comme un trou, est du repos et non du travail "
+                            + "effectif (art. L3121-1).",
+                    "Durée quotidienne maximale"),
             new ConstraintDefinition(
                     "travailInterditJourFerieMineur",
                     Niveau.HARD,
@@ -556,17 +558,6 @@ public final class ConstraintCatalog {
                             + "dérogations conventionnelles supposent un accord étendu ou une autorisation de "
                             + "l'inspection du travail : elles ne sont pas présumées.",
                     "Repos hebdomadaire des mineurs"),
-            new ConstraintDefinition(
-                    "travailContinuMaxMineur",
-                    Niveau.HARD,
-                    CATEGORIE_LEGAL_MINEURS,
-                    "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, chaque "
-                            + "pause due doit être prise, soit comme un trou dans la grille, soit relayée par un "
-                            + "collègue du même stand tenant une place pendant toute la pause. Une pause que "
-                            + "personne ne peut prendre est un écart dur (Code du travail art. L3162-3). La durée "
-                            + "est celle paramétrée, portée à 30 minutes au minimum pour un mineur : ce plancher "
-                            + "est d'ordre public.",
-                    "Pause des mineurs après 4 h 30"),
             new ConstraintDefinition(
                     "dureeHebdomadaireMax",
                     Niveau.HARD,
@@ -597,14 +588,6 @@ public final class ConstraintCatalog {
                             + "plafond quotidien.",
                     "Durée hebdomadaire maximale des mineurs"),
             new ConstraintDefinition(
-                    "dureeQuotidienneMaxMajeur",
-                    Niveau.HARD,
-                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
-                    "Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée "
-                            + "(Code du travail art. L3121-18). Les pauses dues sont déduites : une pause "
-                            + "relayée est du repos, pas du travail effectif (art. L3121-1).",
-                    "Durée quotidienne maximale des majeurs"),
-            new ConstraintDefinition(
                     "reposQuotidienMinimal",
                     Niveau.HARD,
                     CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
@@ -629,17 +612,20 @@ public final class ConstraintCatalog {
                             + "pour la semaine où il tombe.",
                     "Repos hebdomadaire minimal"),
             new ConstraintDefinition(
-                    "travailContinuMaxMajeur",
+                    "travailContinuMax",
                     Niveau.HARD,
                     CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
-                    "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, chaque "
-                            + "pause due doit être prise, soit comme un trou dans la grille d'au moins la durée "
-                            + "paramétrée, soit relayée par un collègue du même stand tenant une place pendant "
-                            + "toute la pause. Une pause que personne ne peut prendre est un écart dur (Code du "
-                            + "travail art. L3121-16, au minimum 20 minutes). C'est aussi ce qui autorise la "
-                            + "déduction de la pause des plafonds quotidien et hebdomadaire : dans un plan sans "
-                            + "écart dur, toute pause déduite a bien été prise.",
-                    "Pause des majeurs après 6 h"),
+                    "Aucune période de travail ininterrompue au-delà du plafond de l'âge de l'animateur à la "
+                            + "date du créneau : 6 heures pour un majeur (art. L3121-16), 4 h 30 pour un mineur "
+                            + "(art. L3162-3). Au-delà, chaque pause due doit être prise, soit comme un trou dans "
+                            + "la grille d'au moins la durée paramétrée, soit relayée par un collègue du même "
+                            + "stand tenant une place pendant toute la pause. Une pause que personne ne peut "
+                            + "prendre est un écart dur. La durée est celle paramétrée, au minimum 20 minutes "
+                            + "pour un majeur et portée à 30 minutes pour un mineur : ce plancher est d'ordre "
+                            + "public. C'est aussi ce qui autorise la déduction de la pause des plafonds "
+                            + "quotidien et hebdomadaire : dans un plan sans écart dur, toute pause déduite a "
+                            + "bien été prise.",
+                    "Pause après un travail continu"),
             new ConstraintDefinition(
                     COUPURE_REPAS_OBLIGATOIRE,
                     Niveau.HARD,
@@ -650,7 +636,7 @@ public final class ConstraintCatalog {
                             + "la terminer à sa fermeture, ne doit rien : on a mangé avant, ou on mangera après. "
                             + "Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une "
                             + "obligation du Code du travail — la seule pause qu'il impose est celle de 20 minutes "
-                            + "à la sixième heure (art. L3121-16), portée par travailContinuMaxMajeur — mais la "
+                            + "à la sixième heure (art. L3121-16), portée par travailContinuMax — mais la "
                             + "règle d'organisation de l'événement, tenue en dur par choix. La pause légale et "
                             + "la coupure repas restent deux choses distinctes : la coupure d'une heure ne tient "
                             + "pas lieu de relais, et un relais ne tient pas lieu de repas — même si un trou "
@@ -697,8 +683,8 @@ public final class ConstraintCatalog {
                     Niveau.SOFT,
                     CATEGORIE_AD_HOC,
                     "Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, "
-                            + "arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur "
-                            + "la ligne de la règle). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
+                            + "arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable dans "
+                            + "Paramètres › Organisation). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
                             + "au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures "
                             + "quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent "
                             + "tenir des stands différents. Contrainte souple : elle cède devant les règles légales "
@@ -822,7 +808,7 @@ public final class ConstraintCatalog {
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
-                            + "sur la ligne de la règle (huit par défaut) sans au moins un jour de repos : moins "
+                            + "dans Paramètres › Organisation (huit par défaut) sans au moins un jour de repos : moins "
                             + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
                             + "article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la "
                             + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733).",
@@ -833,7 +819,7 @@ public final class ConstraintCatalog {
                     CATEGORIE_QUALITE,
                     "Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le "
                             + "plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, "
-                            + "réglable sur la ligne de la règle : les deux formes le lisent au même endroit. "
+                            + "réglable dans Paramètres › Organisation : les deux formes le lisent au même endroit. "
                             + "Un poids ne change jamais le niveau "
                             + "d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran "
                             + "Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. "
@@ -903,11 +889,54 @@ public final class ConstraintCatalog {
     /**
      * Every constraint name dropped in 4.0, mapped to the name that replaces it
      * or to {@link #RETIREE}: a stored toggle, weight or scenario key naming a
-     * rule that no longer exists is then never « unknown ». Empty until a 4.0
-     * rule merge or rename fills it; the API, the YAML reader and the import
-     * will read it then.
+     * rule that no longer exists is then never « unknown ». Two rules
+     * merged into one (a majeur / mineur pair) both name the one that replaces
+     * them: what a stored setting of either said is then read as the most
+     * protective of the two ({@link #formerNamesOf}, {@code ScenarioMigrations}
+     * and migration V152).
      */
-    public static final Map<String, String> ANCIENS_NOMS = Map.of("animateurVerrouilleFige", RETIREE);
+    public static final Map<String, String> ANCIENS_NOMS = Map.of(
+            "animateurVerrouilleFige", RETIREE,
+            "dureeQuotidienneMaxMajeur", "dureeQuotidienneMax",
+            "dureeQuotidienneMaxMineur", "dureeQuotidienneMax",
+            "travailContinuMaxMajeur", "travailContinuMax",
+            "travailContinuMaxMineur", "travailContinuMax");
+
+    /**
+     * The name a stored setting, a scenario key or a path segment written under
+     * {@code nom} applies to today: {@code nom} itself when the catalogue holds
+     * it, the rule that absorbed it when it was merged in 4.0. A rule dropped
+     * with no successor ({@link #RETIREE}) keeps its own name, which the caller
+     * then reports as it always did.
+     */
+    public static String currentName(String nom) {
+        String successor = ANCIENS_NOMS.get(nom);
+        return successor == null || RETIREE.equals(successor) ? nom : successor;
+    }
+
+    /**
+     * The weight a deployment configures for {@code nom}: its own property, else
+     * the strongest one set under a name it absorbed in 4.0 (the most protective
+     * of two merged settings), else {@link #defaultWeight}. {@code property}
+     * reads {@code planning.constraint-weights.<rule>}.
+     */
+    public static int configuredWeight(Function<String, Optional<Integer>> property, String nom) {
+        return property.apply(nom)
+                .or(() -> formerNamesOf(nom).stream()
+                        .map(property)
+                        .flatMap(Optional::stream)
+                        .max(Integer::compare))
+                .orElseGet(() -> defaultWeight(nom));
+    }
+
+    /** The retired names a rule absorbed in 4.0, sorted — empty for a rule that absorbed none. */
+    public static List<String> formerNamesOf(String nom) {
+        return ANCIENS_NOMS.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(nom))
+                .map(Map.Entry::getKey)
+                .sorted()
+                .toList();
+    }
 
     /**
      * Whether {@code nom} is enforced when nothing says otherwise. Read by

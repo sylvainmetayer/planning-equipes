@@ -315,9 +315,9 @@ class ScenarioYamlWriterTest {
         assertThat(parPosition.planning().getNiveauxScenario()).containsEntry("stabiliteDuPlanPublie", false);
         assertThat(parPosition.planning().getPonderationsScenario()).containsEntry("stabiliteDuPlanPublie", 25);
 
-        String sansChoix = yaml.replace("stabiliteDuPlanPublie: OBLIGATOIRE", "dureeQuotidienneMaxMajeur: PREFERENCE");
+        String sansChoix = yaml.replace("stabiliteDuPlanPublie: OBLIGATOIRE", "dureeQuotidienneMax: PREFERENCE");
         assertThatThrownBy(() -> ScenarioYamlReader.buildFromScenarioText(sansChoix, ParametresLegaux::new))
-                .hasMessageContaining("dureeQuotidienneMaxMajeur")
+                .hasMessageContaining("dureeQuotidienneMax")
                 .hasMessageContaining("pas de niveau");
     }
 

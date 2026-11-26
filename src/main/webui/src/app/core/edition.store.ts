@@ -41,6 +41,17 @@ export class EditionStore {
   /** The one edition allowed to reach outside, `null` between two events. */
   readonly active = computed(() => this.editions().find((edition) => edition.active) ?? null);
 
+  /**
+   * The edition this browser works in is known and is not the active one: the
+   * server then refuses everything that reaches outside (publication, mails —
+   * ADR 0072, `EDITION_INACTIVE`). Unknown (not loaded yet) is not inactive:
+   * a button must not flicker off while the shell is still reading.
+   */
+  readonly inactive = computed(() => {
+    const courant = this._courant();
+    return courant !== null && !courant.active;
+  });
+
   private readonly editionsApi = inject(EditionsApi);
   private readonly session = inject(SessionStore);
 

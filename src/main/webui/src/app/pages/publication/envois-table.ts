@@ -39,6 +39,9 @@ import {
   versionLabel,
 } from './envois';
 import { PublicationSelection } from './publication-selection';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /**
  * « Qui a reçu quelle version »: the permanent table of every person of the
@@ -55,6 +58,7 @@ import { PublicationSelection } from './publication-selection';
 @Component({
   selector: 'app-envois-table',
   imports: [
+    EditionInactiveNote,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
@@ -68,6 +72,8 @@ import { PublicationSelection } from './publication-selection';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EnvoisTable {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly planningApi = inject(PlanningApi);
   private readonly animateursApi = inject(AnimateursApi);
   protected readonly selection = inject(PublicationSelection);
@@ -227,7 +233,8 @@ export class EnvoisTable {
     try {
       this.reported.emit(await action());
     } catch (error) {
-      this.reported.emit(errorPrefix(error));
+      // An inactive edition is told by the interceptor, once.
+      this.reported.emit(isEditionInactive(error) ? '' : errorPrefix(error));
     } finally {
       this.busy.set(null);
       this.reload.update((n) => n + 1);

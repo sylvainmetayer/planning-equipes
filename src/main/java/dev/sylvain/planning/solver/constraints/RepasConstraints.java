@@ -13,7 +13,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
  *
  * <p><b>This is not a rule of the Code du travail.</b> The only break the Code
  * imposes is art. L3121-16 — twenty consecutive minutes once an adult's working
- * time reaches six hours — and {@code travailContinuMaxMajeur} carries it. The
+ * time reaches six hours — and {@code travailContinuMax} carries it. The
  * meal break is the organiser's own rule, the one the staffing workbook's midday
  * and evening rotations are cut for. It is catalogued under
  * « Organisation (repas) », protected all the same: the solver can otherwise

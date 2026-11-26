@@ -31,7 +31,7 @@
     },
     {
       "h2": "Ce qui tourne dessous",
-      "texte": "Depuis la version 3.0.0, un moteur de recherche écrit pour ce planning cherche le plan. Il n'est pas cru sur parole : chaque plan est noté à nouveau par [Timefold Solver](https://timefold.ai/) (en anglais), et un écart fait échouer le calcul. Le code des règles est ouvert et [documenté](/docs/comprendre/pourquoi-ces-regles/). Le logiciel est libre : vous pouvez [l'héberger vous-même](/heberger/). Pour confier les gros calculs à une machine plus rapide, voir [résoudre sur une autre machine](/docs/installer/calcul-sur-une-autre-machine/). Le même logiciel peut [s'héberger chez vous](/heberger/)."
+      "texte": "Depuis la version 3.0.0, un moteur de recherche écrit pour ce planning cherche le plan. Il n'est pas cru sur parole : chaque plan est noté à nouveau par [Timefold Solver](https://timefold.ai/) (en anglais), et un écart fait échouer le calcul. Le code des règles est ouvert et [documenté](/docs/comprendre/pourquoi-ces-regles/). Le logiciel est libre : vous pouvez [l'héberger vous-même](/heberger/). Pour confier les gros calculs à une machine plus rapide, voir [résoudre sur une autre machine](/docs/installer/calcul-sur-une-autre-machine/)."
     }
   ],
   "cta": "Vous voulez le voir sur vos données ?",
@@ -75,7 +75,7 @@
       },
       {
         "h2": "What runs underneath",
-        "texte": "Since version 3.0.0, a search engine written for this rota looks for the plan. It is not taken at its word: every plan is scored again by [Timefold Solver](https://timefold.ai/), and a difference fails the run. The rules' code is open and [documented](/en/docs/build/why-these-rules/). The software is free: you can [host it yourself](/en/self-hosting/). To hand the big runs to a faster machine, see [solving on another machine](/en/docs/install/solve-on-another-machine/). The same software can be [hosted at your place](/en/self-hosting/)."
+        "texte": "Since version 3.0.0, a search engine written for this rota looks for the plan. It is not taken at its word: every plan is scored again by [Timefold Solver](https://timefold.ai/), and a difference fails the run. The rules' code is open and [documented](/en/docs/build/why-these-rules/). The software is free: you can [host it yourself](/en/self-hosting/). To hand the big runs to a faster machine, see [solving on another machine](/en/docs/install/solve-on-another-machine/)."
       }
     ],
     "cta": "Want to see it on your own data?",

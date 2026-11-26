@@ -123,6 +123,97 @@ class ScenarioMigrationsTest {
                 .isEmpty();
     }
 
+    private static Map<String, Object> withRules(Map<String, Object> contraintes) {
+        Map<String, Object> document = document();
+        document.put("contraintes", contraintes);
+        return document;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> rulesOf(Map<String, Object> document) {
+        return (Map<String, Object>) document.get("contraintes");
+    }
+
+    @Test
+    void anOldRuleNameIsReadAsTheRuleThatMergedItAndSaidSo() {
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.renameRetiredRules(
+                withRules(Map.of(
+                        "desactivees",
+                                List.of(
+                                        "dureeQuotidienneMaxMajeur",
+                                        "dureeQuotidienneMaxMineur",
+                                        "reposQuotidienMinimal"),
+                        "poids", Map.of("travailContinuMaxMineur", 3))),
+                warnings);
+
+        assertThat(rulesOf(converted).get("desactivees"))
+                .isEqualTo(List.of("reposQuotidienMinimal", "dureeQuotidienneMax"));
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(Map.of("travailContinuMax", 3));
+        assertThat(warnings)
+                .hasSize(3)
+                .anySatisfy(warning -> assertThat(warning)
+                        .contains("dureeQuotidienneMaxMajeur")
+                        .contains("dureeQuotidienneMax"));
+    }
+
+    @Test
+    void twoOldRulesFoldedOnTheMostProtectiveReading() {
+        Map<String, Object> converted = ScenarioMigrations.renameRetiredRules(
+                withRules(Map.of(
+                        // only one of the pair off: the folded rule stays on
+                        "desactivees", List.of("travailContinuMaxMajeur"),
+                        "poids", Map.of("dureeQuotidienneMaxMajeur", 3, "dureeQuotidienneMaxMineur", 25),
+                        "niveaux",
+                                Map.of(
+                                        "dureeQuotidienneMaxMajeur",
+                                        "PREFERENCE",
+                                        "dureeQuotidienneMaxMineur",
+                                        "OBLIGATOIRE"))),
+                new java.util.ArrayList<>());
+
+        assertThat(rulesOf(converted).get("desactivees")).isEqualTo(List.of());
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(Map.of("dureeQuotidienneMax", 25));
+        assertThat(rulesOf(converted).get("niveaux")).isEqualTo(Map.of("dureeQuotidienneMax", "OBLIGATOIRE"));
+    }
+
+    @Test
+    void aBareWeightKeyDoesNotBreakTheFold() {
+        java.util.HashMap<String, Object> poids = new java.util.HashMap<>();
+        poids.put("dureeQuotidienneMaxMajeur", null);
+        poids.put("dureeQuotidienneMaxMineur", 25);
+        poids.put("equilibrerCharge", null);
+
+        Map<String, Object> converted =
+                ScenarioMigrations.renameRetiredRules(withRules(Map.of("poids", poids)), new java.util.ArrayList<>());
+
+        Map<String, Object> expected = new java.util.HashMap<>();
+        expected.put("dureeQuotidienneMax", 25);
+        expected.put("equilibrerCharge", null);
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(expected);
+    }
+
+    @Test
+    void aDocumentWithoutOldNamesIsLeftAloneAndSilent() {
+        List<String> warnings = new java.util.ArrayList<>();
+        Map<String, Object> document = withRules(Map.of("desactivees", List.of("dureeQuotidienneMax")));
+
+        assertThat(ScenarioMigrations.renameRetiredRules(document, warnings)).isSameAs(document);
+        assertThat(ScenarioMigrations.renameRetiredRules(document(), warnings)).isEqualTo(document());
+        assertThat(warnings).isEmpty();
+    }
+
+    @Test
+    void theWholeChainAppliesTheRenameWhateverTheVersion() {
+        ScenarioMigrations.Migrated migrated = ScenarioMigrations.migrate(
+                withRules(Map.of("desactivees", List.of("travailContinuMaxMajeur", "travailContinuMaxMineur"))),
+                ScenarioBinder.SCHEMA_VERSION);
+
+        assertThat(rulesOf(migrated.document()).get("desactivees")).isEqualTo(List.of("travailContinuMax"));
+        assertThat(migrated.warnings()).hasSize(2);
+    }
+
     /**
      * The {@code plan:} section of a file written before ADR 0109 — a copy
      * taken before a wipe by an earlier 4.0 build — names locks of a retired

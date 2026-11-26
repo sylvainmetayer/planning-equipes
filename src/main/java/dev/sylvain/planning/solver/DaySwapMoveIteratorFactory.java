@@ -48,7 +48,7 @@ import java.util.random.RandomGenerator;
  * <li>no seat overlaps a pinned seat its receiver keeps that day — the frozen
  * past and the locks are never handed over, but they occupy their hour;</li>
  * <li>a minor's day, with the seats received, stays under the daily cap
- * {@code dureeQuotidienneMaxMineur} applies, measured as it measures it.</li>
+ * {@code dureeQuotidienneMax} applies to a minor, measured as it measures it.</li>
  * </ul>
  *
  * <p>Two blocks of the same seats (stand, timeslot, hours) are swapped all the
@@ -76,7 +76,7 @@ public final class DaySwapMoveIteratorFactory
      */
     private static final int DRAWS = 40;
     /** The rule whose daily measure the move checks a minor's day against. */
-    private static final String MINOR_DAILY_CAP_RULE = "dureeQuotidienneMaxMineur";
+    private static final String MINOR_DAILY_CAP_RULE = "dureeQuotidienneMax";
 
     /** What does not change during a phase; rebuilt at its start. */
     private Layout layout;

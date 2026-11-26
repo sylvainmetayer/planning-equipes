@@ -37,6 +37,9 @@ import {
   readDisponibilitesTab,
   readPendingOnly,
 } from './declarations-filter';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /**
  * Admin review of the self-service declarations (issue #291): one line of the
@@ -55,6 +58,7 @@ import {
 @Component({
   selector: 'app-disponibilites-page',
   imports: [
+    EditionInactiveNote,
     DatePipe,
     GuichetEtat,
     MatButtonModule,
@@ -71,6 +75,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DisponibilitesPage implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly disponibilitesApi = inject(DisponibilitesApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
@@ -417,6 +423,10 @@ export class DisponibilitesPage implements OnInit {
   }
 
   private report(error: unknown): void {
+    // An inactive edition is told by the interceptor, once.
+    if (isEditionInactive(error)) {
+      return;
+    }
     this.notifications.notify({
       title: $localize`:@@crud.error:Erreur`,
       message: errorMessage(error),

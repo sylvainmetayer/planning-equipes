@@ -41,6 +41,9 @@ import {
 } from './publication-diff';
 import { GelInvitation } from '../../core/gel-invitation';
 import { PublicationSelection } from './publication-selection';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /**
  * « Publier — N personnes concernées »: the publication (issue #245) that mails
@@ -57,6 +60,7 @@ import { PublicationSelection } from './publication-selection';
 @Component({
   selector: 'app-publication-panel',
   imports: [
+    EditionInactiveNote,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
@@ -69,6 +73,8 @@ import { PublicationSelection } from './publication-selection';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublicationPanel implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly planningApi = inject(PlanningApi);
   private readonly gelInvitation = inject(GelInvitation);
   private readonly confirm = inject(ConfirmService);
@@ -246,7 +252,8 @@ export class PublicationPanel implements OnInit {
         // The second milestone at which freezing is offered (ADR 0052).
         void this.gelInvitation.offer('publication');
       } catch (error) {
-        this.reported.emit(errorPrefix(error));
+        // An inactive edition is told by the interceptor; '' clears « en cours ».
+        this.reported.emit(isEditionInactive(error) ? '' : errorPrefix(error));
       } finally {
         await this.reloadPreview();
       }

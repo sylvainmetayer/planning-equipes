@@ -77,7 +77,7 @@ The pair is chosen, not drawn then filtered: a uniform (staff member, date) bloc
 | --- | --- |
 | Each seat goes to an eligible staff member (`EligibleAnimateurMoveFilter.isEligible`) | unavailability, minors' rules specific to the seat-staff member pair |
 | No received seat overlaps a frozen seat that its receiver keeps that day | the past and the locks do not change hands, but they occupy their hour |
-| A minor's day, received seats included, stays under `dureeQuotidienneMaxMineur` | measured as the rule measures it, and only when it is active |
+| A minor's day, received seats included, stays under the `dureeQuotidienneMax` cap for their age | measured as the rule measures it, and only when it is active |
 
 Two days made of the same seats are swapped all the same: refusing them costs medium (-30,852 against -30,293 on `festival-hivernal`). This is what distinguishes this move from Timefold's *pillar moves*, set aside after measurement: the `pillarSwapMoveSelector` drew two blocks at random and its filter rejected 99.97% of them, which divided the speed by nine, and the `pillarChangeMoveSelector` lost medium on seven scenarios out of nine ([ADR 0078](repo:docs/decisions/0078-echange-de-journees-plutot-que-mouvements-pillar.md)).
 

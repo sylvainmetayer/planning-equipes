@@ -166,12 +166,13 @@ public class ContrainteMcpTools {
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
                     Integer poids,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        requireConnue(nom);
+        String rule = requireConnue(nom);
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
         }
-        referenceDataService.setConstraintWeight(nom, poids, WeightChangeOrigin.ASSISTANT);
-        return new PoidsResult(nom, planningService.effectiveConstraintWeights().getOrDefault(nom, 1), poids == null);
+        referenceDataService.setConstraintWeight(rule, poids, WeightChangeOrigin.ASSISTANT);
+        return new PoidsResult(
+                rule, planningService.effectiveConstraintWeights().getOrDefault(rule, 1), poids == null);
     }
 
     @Tool(
@@ -195,7 +196,7 @@ public class ContrainteMcpTools {
             @ToolArg(description = "OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE")
                     String niveau,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        requireConnue(nom);
+        String rule = requireConnue(nom);
         ConstraintCatalog.NiveauRegle choisi;
         try {
             choisi = ConstraintCatalog.NiveauRegle.valueOf(niveau == null ? "" : niveau.trim());
@@ -204,23 +205,27 @@ public class ContrainteMcpTools {
                     "niveau : attendu OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE, reçu "
                             + niveau);
         }
-        referenceDataService.setNiveau(nom, choisi, WeightChangeOrigin.ASSISTANT);
-        return new NiveauResult(nom, choisi.name());
+        referenceDataService.setNiveau(rule, choisi, WeightChangeOrigin.ASSISTANT);
+        return new NiveauResult(rule, choisi.name());
     }
 
     private ToggleResult setActive(String nom, boolean actif) {
-        requireConnue(nom);
-        referenceDataService.setContrainteActive(nom, actif, WeightChangeOrigin.ASSISTANT);
-        return new ToggleResult(nom, actif);
+        String rule = requireConnue(nom);
+        referenceDataService.setContrainteActive(rule, actif, WeightChangeOrigin.ASSISTANT);
+        return new ToggleResult(rule, actif);
     }
 
-    /** 404 rather than a silently stored row on a name the catalogue does not hold. */
-    private void requireConnue(String nom) {
-        boolean known = ConstraintCatalog.definitions().stream()
-                .anyMatch(definition -> definition.name().equals(nom));
-        if (!known) {
+    /**
+     * 404 rather than a silently stored row on a name the catalogue does not
+     * hold. A rule merged into another in 4.0 is read as its successor, whose
+     * name is returned and answered.
+     */
+    private String requireConnue(String nom) {
+        String current = ConstraintCatalog.currentName(nom);
+        if (!ConstraintCatalog.PAR_NOM.containsKey(current)) {
             throw new BusinessError.NotFound("Contrainte inconnue : " + nom);
         }
+        return current;
     }
 
     public record ToggleResult(

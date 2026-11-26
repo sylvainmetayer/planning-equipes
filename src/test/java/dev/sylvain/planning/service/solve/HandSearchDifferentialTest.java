@@ -185,7 +185,6 @@ class HandSearchDifferentialTest {
         HandSearchFixtures.search(loaded.problem(), 2, 0);
         agree(null, loaded, "break of 90 minutes, solved");
         long relayed = 0;
-        long minors = 0;
         for (int i = 0; i < 6; i++) {
             if (i < 3) {
                 HandSearchFixtures.randomPlan(loaded.problem(), random);
@@ -193,16 +192,12 @@ class HandSearchDifferentialTest {
                 HandSearchFixtures.sparsePlan(loaded.problem(), random);
             }
             agree(null, loaded, "break of 90 minutes " + i);
-            relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
-            minors += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMineur", 0L);
+            relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMax", 0L);
         }
         HandSearchFixtures.overloadedPlan(loaded.problem());
         agree(null, loaded, "break of 90 minutes, overloaded");
-        relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
+        relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMax", 0L);
         assertThat(relayed).as("unrelayed breaks compared").isPositive();
-        if (scenario.contains("mineurs")) {
-            assertThat(minors).as("unrelayed breaks of minors compared").isPositive();
-        }
     }
 
     /**
@@ -243,12 +238,12 @@ class HandSearchDifferentialTest {
 
         afterMidnight.setAnimateur(adults.get(1));
         agree(null, loaded, "break after midnight, relayed");
-        assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L))
+        assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMax", 0L))
                 .isZero();
 
         afterMidnight.setAnimateur(null);
         agree(null, loaded, "break after midnight, nobody to relay it");
-        assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L))
+        assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMax", 0L))
                 .isPositive();
     }
 

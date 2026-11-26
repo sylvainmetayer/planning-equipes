@@ -17,8 +17,7 @@ import java.util.List;
  * which splits the stretch, so no break is owed here at all — or by relay, a
  * colleague of the same stand holding a place while the person steps out. A
  * break this class says is due and {@link #relayableBy} finds no relay for is
- * a hard breach of {@code travailContinuMaxMajeur} /
- * {@code travailContinuMaxMineur} (ADR 0048). The Pauses screen, the
+ * a hard breach of {@code travailContinuMax} (ADR 0048). The Pauses screen, the
  * animateur's PDF and the ICS feed read the same arithmetic, here, so that no
  * screen describes a break the solver did not owe.</p>
  *

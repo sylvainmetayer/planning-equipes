@@ -81,7 +81,7 @@ public class StaffingService {
                 referenceDataService.getContraintesDesactivees().contains("reposQuotidienMinimal")
                         ? 0
                         : parametres.getReposQuotidienMinimalMinutes(),
-                referenceDataService.getContraintesDesactivees().contains("travailContinuMaxMajeur")
+                referenceDataService.getContraintesDesactivees().contains("travailContinuMax")
                         ? 0
                         : parametres.getDureeVacationMaxMinutes());
     }

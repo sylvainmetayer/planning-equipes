@@ -136,7 +136,7 @@
     </div>
     <div class="asks__list">
       {% for i in copy[lang].faq.items %}{% if i.accueil %}
-      <details><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | typo(lang) }}</p></details>
+      <details><summary>{{ i.q | typo(lang) }}</summary><p>{{ i.a | mdi(lang) | safe }}</p></details>
       {% endif %}{% endfor %}
     </div>
   </div>

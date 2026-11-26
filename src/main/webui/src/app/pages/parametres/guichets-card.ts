@@ -19,6 +19,9 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
+import { EditionInactiveNote } from '../../shared/edition-inactive-note';
+import { EditionStore } from '../../core/edition.store';
+import { isEditionInactive } from '../../core/edition-inactive';
 
 /**
  * « Guichets » — what the animateurs can do from their espace, and when: the
@@ -39,6 +42,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-guichets-card',
   imports: [
+    EditionInactiveNote,
     FormsModule,
     MatButtonModule,
     MatCardModule,
@@ -54,6 +58,8 @@ import { StatusMessage } from '../../shared/status-message';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuichetsCard implements OnInit {
+  /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
+  protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly disponibilitesApi = inject(DisponibilitesApi);
   private readonly echangesApi = inject(EchangesApi);
   private readonly jourJ = inject(JourJService);
@@ -154,7 +160,7 @@ export class GuichetsCard implements OnInit {
         debut: this.collecteDebut() || null,
         fin: this.collecteFin() || null,
         relanceAutomatique: this.collectionReminder(),
-        prevenirAnimateurs: open && this.prevenir(),
+        prevenirAnimateurs: open && this.prevenir() && !this.editionInactive(),
       });
       this.applyCollecte(reponse);
       this.prevenir.set(false);
@@ -176,7 +182,8 @@ export class GuichetsCard implements OnInit {
         });
       }
     } catch (error) {
-      this.error.set(errorPrefix(error));
+      // An inactive edition is told by the interceptor, once.
+      this.error.set(isEditionInactive(error) ? '' : errorPrefix(error));
       void this.load();
     } finally {
       this.collectionSaving.set(false);
