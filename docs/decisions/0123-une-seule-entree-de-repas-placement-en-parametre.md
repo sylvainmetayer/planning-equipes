@@ -59,3 +59,10 @@ deux moteurs :
   `placementRepas` garde le défaut.
 - Une édition qui veut « pas de préférence » le dit par `AUCUN` au lieu de désactiver la
   règle ; désactiver le terme reste possible et équivaut.
+- La migration reprend en `AUCUN` le placement d'une édition qui avait désactivé le terme,
+  et retire l'interrupteur devenu muet, pour que l'écran dise ce que fait le plan. Une
+  édition qui n'a jamais enregistré ses paramètres d'organisation garde son interrupteur :
+  ses valeurs viennent de la configuration de l'instance, qu'une migration ne lit pas.
+- Un poids propre à l'édition sur le terme continue de s'appliquer, mais l'écran ne le
+  montre plus : le terme est de poids 1 par décision, et le poids ne se règle que par l'API
+  ou un fichier.

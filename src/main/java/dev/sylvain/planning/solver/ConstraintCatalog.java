@@ -634,7 +634,7 @@ public final class ConstraintCatalog {
                             + "la coupure repas restent deux choses distinctes : la coupure d'une heure ne tient "
                             + "pas lieu de relais, et un relais ne tient pas lieu de repas — même si un trou "
                             + "d'une heure coupe bien la séquence de six heures au passage. Entre deux coupures "
-                            + "possibles, un terme souple (coupureRepasPlacementPrefere, poids 1, sans niveau) "
+                            + "possibles, un terme souple de placement (poids 1, sans niveau) "
                             + "préfère celle que règle le paramètre « placement de la coupure repas » : fin du "
                             + "midi et début du soir par défaut, début ou fin de chaque fenêtre, ou aucune "
                             + "préférence.",

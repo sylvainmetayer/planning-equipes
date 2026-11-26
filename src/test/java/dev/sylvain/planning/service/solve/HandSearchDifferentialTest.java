@@ -211,8 +211,7 @@ class HandSearchDifferentialTest {
     @ParameterizedTest(name = "{0}")
     @EnumSource(PlacementRepas.class)
     void scoresTheMealPlacementLikeTheConstraintProviderForEachValue(PlacementRepas placement) {
-        HandSearchFixtures.Loaded loaded =
-                HandSearchFixtures.load("gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml");
+        HandSearchFixtures.Loaded loaded = HandSearchFixtures.load("festival-hivernal.yaml");
         loaded.problem()
                 .setFenetresRepas(FenetreRepas.withPlacement(loaded.problem().getFenetresRepas(), placement));
         assertThat(loaded.problem().getFenetresRepas())
@@ -220,14 +219,14 @@ class HandSearchDifferentialTest {
                 .isNotEmpty();
         SplittableRandom random = new SplittableRandom(placement.ordinal());
         long placementPoints = 0;
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
+            HandSearchFixtures.randomPlan(loaded.problem(), random);
+            agree(null, loaded, "placement " + placement + ", random " + i);
+            placementPoints += loaded.refereeBreakdown().getOrDefault("coupureRepasPlacementPrefere", 0L);
             HandSearchFixtures.sparsePlan(loaded.problem(), random);
             agree(null, loaded, "placement " + placement + ", without double booking " + i);
             placementPoints += loaded.refereeBreakdown().getOrDefault("coupureRepasPlacementPrefere", 0L);
         }
-        HandSearchFixtures.search(loaded.problem(), 1, 0);
-        agree(null, loaded, "placement " + placement + ", searched");
-        placementPoints += loaded.refereeBreakdown().getOrDefault("coupureRepasPlacementPrefere", 0L);
         if (placement == PlacementRepas.AUCUN) {
             assertThat(placementPoints).as("no placement, no preference").isZero();
         } else {

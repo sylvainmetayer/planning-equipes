@@ -2293,6 +2293,9 @@
           "niveauReglable" : {
             "type" : "boolean"
           },
+          "termeDe" : {
+            "type" : "string"
+          },
           "niveauChoisi" : {
             "$ref" : "#/components/schemas/NiveauRegle"
           },
@@ -5103,6 +5106,9 @@
           "auPlusTard" : {
             "type" : "boolean"
           },
+          "sansPlacement" : {
+            "type" : "boolean"
+          },
           "date" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
@@ -7317,7 +7323,7 @@
       },
       "ParametresQualite" : {
         "type" : "object",
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes", "placementRepas" ],
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
             "type" : "integer",
@@ -7356,6 +7362,9 @@
           "toleranceArriveeGroupeeMinutes" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "placementRepas" : {
+            "$ref" : "#/components/schemas/PlacementRepas"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -7592,6 +7601,10 @@
             "$ref" : "#/components/schemas/EditionPhase"
           }
         }
+      },
+      "PlacementRepas" : {
+        "type" : "string",
+        "enum" : [ "FIN_MIDI_DEBUT_SOIR", "DEBUT", "FIN", "AUCUN" ]
       },
       "PlafondsConformite" : {
         "type" : "object",
