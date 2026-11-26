@@ -7,6 +7,7 @@ import {
   input,
   resource,
   signal,
+  viewChild,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -45,6 +46,8 @@ import { consumeQueryParam } from '../../core/view-query-params';
 import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { StatusMessage } from '../../shared/status-message';
 import { FormationPage } from '../formation/formation-page';
+import { SolverVolumetry } from '../solver/solver-volumetry';
+import { BesoinTypologie } from './besoin-typologie';
 import { libelleTranche, NiveauMarge, niveauMarge, signe } from '../marge/marge';
 import { MarginBeforeGrid } from '../marge/margin-before-grid';
 import { teamLabel } from './verification';
@@ -67,6 +70,13 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
       }
     : null;
 }
+
+/** The `section` values of a landing, and the element each one scrolls to. */
+const SECTION_IDS = {
+  former: 'a-former',
+  typologie: 'besoin-par-typologie',
+  volumetrie: 'besoin-volumetrie',
+} as const;
 
 /**
  * Staffing-need calculator: how many animateurs the stands and créneaux
@@ -95,13 +105,17 @@ export function margeJour(cellule: CelluleMarge | null | undefined): MargeJour |
  * hours or the legal settings it is proved on, a day to its stands' hours. The
  * « avant » margin — who has not declared the date unavailable, minus the seats
  * — is a column of the per-day table, its grid one fold below; « À former »,
- * once a tab of its own, is the foot of this one (`section=former` scrolls to
- * it once the figures above it are on screen, then leaves the address).
+ * once a tab of its own, is the foot of this one, after the plan read by
+ * typologie (the « Par typologie » of the Planning page) and the problem's
+ * volumetry (`section=former|typologie|volumetrie` scrolls to one once the
+ * figures above it are on screen, then leaves the address).
  */
 @Component({
   selector: 'app-staffing-page',
   imports: [
     StatusMessage,
+    BesoinTypologie,
+    SolverVolumetry,
     ReglagesAvancesToggle,
     RouterLink,
     FormsModule,
@@ -194,6 +208,8 @@ export class StaffingPage implements OnInit {
   protected readonly jourCourt = jourCourt;
 
   private readonly injector = inject(Injector);
+  /** The plan by typologie sits above « À former » and the volumetry: its rows push them down while it loads. */
+  private readonly typologieSection = viewChild(BesoinTypologie);
   private readonly locale = inject(LOCALE_ID);
 
   /** The last check of the floor by a solve, running or finished; `null` before any. */
@@ -218,11 +234,14 @@ export class StaffingPage implements OnInit {
       this.destroyed = true;
       clearTimeout(this.pollTimer);
     });
-    // `?onglet=former` lands here with `section=former`: « À former » is at the
-    // foot. A landing, not a view: obeyed once, then dropped from the address,
-    // so coming back to the tab does not scroll again.
+    // `?onglet=besoin&section=…` lands on a section below the figures:
+    // « À former », the plan by typologie or the volumetry. A landing, not a
+    // view: obeyed once, then dropped from the address, so coming back to the
+    // tab does not scroll again.
     consumeQueryParam('section', (section) =>
-      section === 'former' ? this.scrollToTrainingOnceLoaded() : undefined,
+      section === 'former' || section === 'typologie' || section === 'volumetrie'
+        ? this.scrollToSectionOnceLoaded(SECTION_IDS[section])
+        : undefined,
     );
   }
 
@@ -232,21 +251,27 @@ export class StaffingPage implements OnInit {
   }
 
   /**
-   * Scrolls to « À former » once both tables above it have their figures: the
+   * Scrolls to a section once the three tables above it have their figures: the
    * section starts where they end, and scrolling while they still load lands
    * on what they push down a moment later.
    */
-  private scrollToTrainingOnceLoaded(): Promise<void> {
+  private scrollToSectionOnceLoaded(id: string): Promise<void> {
     return new Promise((resolve) => {
       const loaded = effect(
         () => {
-          if (this.staffing.isLoading() || this.margin.isLoading()) {
+          const typologie = this.typologieSection();
+          if (
+            this.staffing.isLoading() ||
+            this.margin.isLoading() ||
+            !typologie ||
+            typologie.loading()
+          ) {
             return;
           }
           loaded.destroy();
           afterNextRender(
             () => {
-              document.getElementById('a-former')?.scrollIntoView({ block: 'start' });
+              document.getElementById(id)?.scrollIntoView({ block: 'start' });
               resolve();
             },
             { injector: this.injector },

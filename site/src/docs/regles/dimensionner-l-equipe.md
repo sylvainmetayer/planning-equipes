@@ -36,9 +36,13 @@ La section « À former » ferme l'onglet. Elle liste, typologie par typologie, 
 
 Une typologie sans candidat relève du recrutement. Aucun calcul n'est lancé, rien n'est écrit, et la section s'exporte en CSV.
 
+## Lire le planning par typologie
+
+Sous les chiffres du besoin, la section « Le planning, typologie par typologie » lit le planning enregistré par typologie de jeu : postes, heures, compétents, compétents jamais affectés, affectés sans la compétence. Chaque chiffre mène à l'écran où l'on agit. Un stand qui propose plusieurs typologies compte un poste dans chacune.
+
 ## Mesurer la taille du problème avant de calculer
 
-Avant de lancer, le Solveur affiche la volumétrie : animateurs, postes à pourvoir, créneaux, ajustements manuels et, surtout, les **heures à pourvoir face au plafond légal** de ce que l'équipe peut travailler, jours d'indisponibilité déduits. Un taux de remplissage proche de 1 annonce un planning infaisable avant qu'une minute de calcul soit dépensée.
+Avant de lancer, l'onglet Besoin affiche, dans sa section « Volumétrie du problème », la volumétrie : animateurs, postes à pourvoir, créneaux, ajustements manuels et, surtout, les **heures à pourvoir face au plafond légal** de ce que l'équipe peut travailler, jours d'indisponibilité déduits. Un taux de remplissage proche de 1 annonce un planning infaisable avant qu'une minute de calcul soit dépensée.
 
 ## L'an dernier, pour information
 

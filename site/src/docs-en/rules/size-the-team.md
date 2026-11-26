@@ -39,9 +39,13 @@ The "To train" section closes the tab. It lists, game category by game category,
 
 A game category with no candidate is a recruitment matter. No solve is started, nothing is written, and the section can be exported as CSV.
 
+## Read the schedule by game category
+
+Below the need figures, the "The schedule, typologie by typologie" section reads the saved schedule by game category: seats, hours, vetted staff, vetted but never assigned, assigned without the skill. Every figure leads to the screen where it is acted on. A stand offering several categories counts one seat in each.
+
 ## Measure the size of the problem before solving
 
-Before starting, the Solver shows the volumes: staff, seats to fill, timeslots, manual adjustments and, above all, the **hours to fill against the legal ceiling** of what the team can work, unavailability days deducted. A fill rate close to 1 announces an infeasible schedule before a minute of solve time is spent.
+Before starting, the Need tab shows, in its "Problem volumetry" section, the volumes: staff, seats to fill, timeslots, manual adjustments and, above all, the **hours to fill against the legal ceiling** of what the team can work, unavailability days deducted. A fill rate close to 1 announces an infeasible schedule before a minute of solve time is spent.
 
 ## Last year, for information
 
