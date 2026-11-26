@@ -112,7 +112,7 @@ export function rulesOfBloc(
   contraintes: readonly ConstraintView[],
   bloc: BlocRegle,
 ): ConstraintView[] {
-  return contraintes
+  const rows = contraintes
     .filter((rule) => blocOfRule(rule) === bloc)
     .map((rule, index) => ({ rule, index }))
     .sort(
@@ -120,6 +120,32 @@ export function rulesOfBloc(
         rangCategorie(a.rule.categorie) - rangCategorie(b.rule.categorie) || a.index - b.index,
     )
     .map(({ rule }) => rule);
+  // A group sits where its first member does, so its rows are contiguous under one title.
+  return rows.flatMap((rule, index) => {
+    if (!rule.groupe) {
+      return [rule];
+    }
+    const first = rows.findIndex((each) => each.groupe === rule.groupe);
+    return first === index ? rows.filter((each) => each.groupe === rule.groupe) : [];
+  });
+}
+
+/** True when `rows[index]` opens a group: it has one and the row above is not in it. */
+export function opensGroup(rows: readonly ConstraintView[], index: number): boolean {
+  const groupe = rows[index]?.groupe;
+  return !!groupe && rows[index - 1]?.groupe !== groupe;
+}
+
+/** The title of a display group — the catalogue sends an id, the screen words it. */
+export function groupeLabel(groupe: string): string {
+  switch (groupe) {
+    case 'dispersionJournee':
+      return $localize`:@@regles.groupe.dispersionJournee:Dispersion sur la journée`;
+    case 'equilibreCharge':
+      return $localize`:@@regles.groupe.equilibreCharge:Équilibre de la charge`;
+    default:
+      return groupe;
+  }
 }
 
 /**

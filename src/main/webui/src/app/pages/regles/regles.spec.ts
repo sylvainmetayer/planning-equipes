@@ -7,6 +7,7 @@ import {
   mergeSettings,
   blocOfRule,
   niveauEffectif,
+  opensGroup,
   readOngletRegles,
   rulesOfBloc,
   shownValue,
@@ -36,6 +37,17 @@ function rule(overrides: Partial<ConstraintView>): ConstraintView {
 }
 
 describe('regles', () => {
+  it('lists the rules of a catalogue group together, under one title', () => {
+    const rules = [
+      rule({ name: 'a', groupe: 'g' }),
+      rule({ name: 'b' }),
+      rule({ name: 'c', groupe: 'g' }),
+    ];
+    const rows = rulesOfBloc(rules, 'avance');
+    expect(rows.map((each) => each.name)).toEqual(['a', 'c', 'b']);
+    expect(rows.map((_, index) => opensGroup(rows, index))).toEqual([true, false, false]);
+  });
+
   it('reads the rules tab, and the two it replaced', () => {
     expect(readOngletRegles('regles')).toBe('regles');
     expect(readOngletRegles('legal')).toBe('regles');

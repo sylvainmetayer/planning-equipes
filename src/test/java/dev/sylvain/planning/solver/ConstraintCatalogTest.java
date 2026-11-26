@@ -274,4 +274,18 @@ class ConstraintCatalogTest {
         assertThat(ConstraintCatalog.configuredWeight(property, "reposQuotidienMinimal"))
                 .isEqualTo(ConstraintCatalog.defaultWeight("reposQuotidienMinimal"));
     }
+
+    @Test
+    void groupsTwoPairsForDisplayAndLeavesTheTripAlone() {
+        var grouped = ConstraintCatalog.PAR_NOM.values().stream()
+                .filter(definition -> definition.groupe() != null)
+                .collect(java.util.stream.Collectors.toMap(
+                        ConstraintCatalog.ConstraintDefinition::name, ConstraintCatalog.ConstraintDefinition::groupe));
+        assertThat(grouped)
+                .containsExactlyInAnyOrderEntriesOf(java.util.Map.of(
+                        "eviterChangementEmplacementEloigne", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE,
+                        "limiterEmplacementsParJour", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE,
+                        "equilibrerCharge", ConstraintCatalog.GROUPE_EQUILIBRE_CHARGE,
+                        "equilibrerCreneauxPenibles", ConstraintCatalog.GROUPE_EQUILIBRE_CHARGE));
+    }
 }

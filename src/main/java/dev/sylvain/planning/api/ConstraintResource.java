@@ -237,6 +237,7 @@ public class ConstraintResource {
                 definition.categorie(),
                 definition.description(),
                 definition.libelleCourt(),
+                definition.groupe(),
                 definition.remediation(),
                 !desactivees.contains(definition.name()),
                 definition.protegee(),
@@ -266,6 +267,10 @@ public class ConstraintResource {
     /**
      * @param libelleCourt the rule in a few words, for a sentence or a title
      *                    read by somebody who does not know its technical name
+     * @param groupe       the display group the rules screen lists the rule under
+     *                     with its siblings (an id the screen words), {@code null}
+     *                     when it stands alone; a presentation only, each rule
+     *                     keeps its own level and switch
      * @param actif       whether the constraint is applied on the next solve
      * @param protegee    whether this rule founds the plan in law, in the
      *                    minors' safety policy, or in the meal rule the event
@@ -352,6 +357,7 @@ public class ConstraintResource {
             String categorie,
             String description,
             String libelleCourt,
+            String groupe,
             String remediation,
             boolean actif,
             boolean protegee,
