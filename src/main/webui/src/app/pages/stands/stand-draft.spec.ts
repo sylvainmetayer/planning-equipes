@@ -263,16 +263,16 @@ describe('horairesCopiedFrom and the consigne', () => {
       indisponibilites: [],
       ouvertures: [plage({ date: '2026-07-10' }), plage({ date: '2026-07-11', consigne: true })],
     };
-    const cible = {
-      ouvertures: [plage({ date: '2026-07-11', consigne: true, motif: 'cible' })],
+    const target = {
+      ouvertures: [plage({ date: '2026-07-11', consigne: true, motif: 'target' })],
       indisponibilites: [],
     };
 
-    const copie = horairesCopiedFrom(source, cible);
+    const copied = horairesCopiedFrom(source, target);
 
-    expect(copie.ouvertures.map((o) => [o.date, o.consigne ?? false, o.motif])).toEqual([
+    expect(copied.ouvertures.map((o) => [o.date, o.consigne ?? false, o.motif])).toEqual([
       ['2026-07-10', false, null],
-      ['2026-07-11', true, 'cible'],
+      ['2026-07-11', true, 'target'],
     ]);
   });
 });
