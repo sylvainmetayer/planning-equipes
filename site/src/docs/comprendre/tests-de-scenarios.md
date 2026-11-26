@@ -131,76 +131,76 @@ Mesures du 26 novembre 2026, une machine de 12 cœurs et 24 Go (neuf JVM en para
 
 | Scénario | Moteur | Variante | Faisable (règles de la variante) | Temps jusqu'à la faisabilité | Hard (méd.) | Medium (méd.) | Soft (méd.) | Plafond tenu (règle obligatoire) |
 |---|---|---|---|---|---|---|---|---|
-| festival-realiste-canicule | direct | preference | 3/3 | 0.4 s | 0 | -16400 | -69935 | 3/3 |
-| festival-realiste-canicule | direct | both | 3/3 | 0.4 s | 0 | -16395 | -70470 | 3/3 |
-| festival-realiste-canicule | direct | hard | 3/3 | 0.3 s | 0 | -16395 | -70170 | 3/3 |
-| festival-realiste-canicule | direct | hard-par-poids | 3/3 | 0.3 s | 0 | -16395 | -70180 | 3/3 |
-| festival-realiste-canicule | Timefold | preference | 3/3 | 9.7 s | 0 | -18520 | -52480 | 3/3 |
-| festival-realiste-canicule | Timefold | both | 3/3 | 7.6 s | 0 | -17405 | -48375 | 3/3 |
-| festival-realiste-canicule | Timefold | both-sans-calendrier | 3/3 | 9.1 s | 0 | -18415 | -52615 | 3/3 |
-| festival-realiste-canicule | Timefold | hard | 3/3 | 7.5 s | 0 | -17395 | -47975 | 3/3 |
-| festival-realiste-canicule | Timefold | hard-sans-calendrier | 3/3 | 8.3 s | 0 | -18405 | -52310 | 3/3 |
-| festival-realiste-canicule | Timefold | hard-par-poids | 3/3 | 8.3 s | 0 | -18400 | -52525 | 3/3 |
-| festival-hivernal | direct | preference | 3/3 | 2.5 s | 0 | -23700 | -98785 | 0/3 |
-| festival-hivernal | direct | both | 0/3 | jamais | -2 | -24285 | -98865 | 0/3 |
-| festival-hivernal | direct | hard | 1/3 | 12.3 s | -1 | -24205 | -98715 | 1/3 |
-| festival-hivernal | direct | hard-par-poids | 1/3 | 11.9 s | -1 | -24180 | -98785 | 1/3 |
-| festival-hivernal | Timefold | preference | 3/3 | 27.5 s | 0 | -31105 | -95875 | 0/3 |
-| festival-hivernal | Timefold | both | 0/3 | jamais | -16 | -30035 | -97215 | 0/3 |
-| festival-hivernal | Timefold | both-sans-calendrier | 0/3 | jamais | -13 | -34715 | -103785 | 0/3 |
-| festival-hivernal | Timefold | hard | 0/3 | jamais | -16 | -29890 | -97565 | 0/3 |
-| festival-hivernal | Timefold | hard-sans-calendrier | 0/3 | jamais | -13 | -34655 | -103350 | 0/3 |
-| festival-hivernal | Timefold | hard-par-poids | 0/3 | jamais | -20 | -34620 | -100345 | 0/3 |
-| scenario-complet | direct | preference | 3/3 | 0.8 s | 0 | -18255 | -113000 | 0/3 |
-| scenario-complet | direct | both | 3/3 | 0.9 s | 0 | -18360 | -43330 | 3/3 |
-| scenario-complet | direct | hard | 3/3 | 0.9 s | 0 | -18350 | -42085 | 3/3 |
-| scenario-complet | direct | hard-par-poids | 3/3 | 0.9 s | 0 | -18350 | -42085 | 3/3 |
-| scenario-complet | Timefold | preference | 3/3 | 11.7 s | 0 | -22235 | -156930 | 0/3 |
-| scenario-complet | Timefold | both | 3/3 | 10.8 s | 0 | -19495 | -121160 | 3/3 |
-| scenario-complet | Timefold | both-sans-calendrier | 3/3 | 11.8 s | 0 | -20985 | -144835 | 3/3 |
-| scenario-complet | Timefold | hard | 3/3 | 9.6 s | 0 | -19415 | -118720 | 3/3 |
-| scenario-complet | Timefold | hard-sans-calendrier | 3/3 | 10.3 s | 0 | -20915 | -144525 | 3/3 |
-| scenario-complet | Timefold | hard-par-poids | 3/3 | 11.0 s | 0 | -20865 | -145135 | 3/3 |
-| gamme-16 | direct | preference | 3/3 | 0.1 s | 0 | -5010 | -1735 | 3/3 |
-| gamme-16 | direct | both | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
-| gamme-16 | direct | hard | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
-| gamme-16 | direct | hard-par-poids | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
-| gamme-16 | Timefold | preference | 3/3 | 1.7 s | 0 | -6990 | -1300 | 3/3 |
-| gamme-16 | Timefold | both | 3/3 | 1.6 s | 0 | -6835 | -1395 | 3/3 |
-| gamme-16 | Timefold | both-sans-calendrier | 3/3 | 1.6 s | 0 | -6960 | -1310 | 3/3 |
-| gamme-16 | Timefold | hard | 3/3 | 1.7 s | 0 | -6865 | -1375 | 3/3 |
-| gamme-16 | Timefold | hard-sans-calendrier | 3/3 | 1.6 s | 0 | -6970 | -1300 | 3/3 |
-| gamme-16 | Timefold | hard-par-poids | 3/3 | 1.6 s | 0 | -6980 | -1310 | 3/3 |
-| gamme-20 | direct | preference | 3/3 | 2.3 s | 0 | -17100 | -21665 | 2/3 |
-| gamme-20 | direct | both | 3/3 | 1.9 s | 0 | -17710 | -15335 | 3/3 |
-| gamme-20 | direct | hard | 3/3 | 1.7 s | 0 | -17685 | -14235 | 3/3 |
-| gamme-20 | direct | hard-par-poids | 3/3 | 1.6 s | 0 | -17670 | -13910 | 3/3 |
-| gamme-20 | Timefold | preference | 3/3 | 33.8 s | 0 | -34615 | -122915 | 0/3 |
-| gamme-20 | Timefold | both | 3/3 | 26.9 s | 0 | -24385 | -67850 | 3/3 |
-| gamme-20 | Timefold | both-sans-calendrier | 3/3 | 29.2 s | 0 | -32910 | -122295 | 3/3 |
-| gamme-20 | Timefold | hard | 3/3 | 25.7 s | 0 | -24340 | -67585 | 3/3 |
-| gamme-20 | Timefold | hard-sans-calendrier | 3/3 | 29.0 s | 0 | -32925 | -122265 | 3/3 |
-| gamme-20 | Timefold | hard-par-poids | 3/3 | 27.7 s | 0 | -32580 | -122235 | 3/3 |
-| gamme-25 | direct | preference | 3/3 | 2.1 s | 0 | -13250 | -46440 | 3/3 |
-| gamme-25 | direct | both | 3/3 | 1.9 s | 0 | -13230 | -46465 | 3/3 |
-| gamme-25 | direct | hard | 3/3 | 1.9 s | 0 | -13240 | -46755 | 3/3 |
-| gamme-25 | direct | hard-par-poids | 3/3 | 1.9 s | 0 | -13230 | -46425 | 3/3 |
-| gamme-25 | Timefold | preference | 3/3 | 57.4 s | 0 | -26095 | -48100 | 3/3 |
-| gamme-25 | Timefold | both | 3/3 | 51.1 s | 0 | -18605 | -19250 | 3/3 |
-| gamme-25 | Timefold | both-sans-calendrier | 3/3 | 51.3 s | 0 | -25030 | -47250 | 3/3 |
-| gamme-25 | Timefold | hard | 3/3 | 44.1 s | 0 | -18475 | -19010 | 3/3 |
-| gamme-25 | Timefold | hard-sans-calendrier | 3/3 | 49.3 s | 0 | -25030 | -47260 | 3/3 |
-| gamme-25 | Timefold | hard-par-poids | 3/3 | 51.4 s | 0 | -25080 | -47240 | 3/3 |
-| gamme-28 | direct | preference | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | direct | both | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | direct | hard | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | direct | hard-par-poids | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | Timefold | preference | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | Timefold | both | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | Timefold | both-sans-calendrier | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | Timefold | hard | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | Timefold | hard-sans-calendrier | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
-| gamme-28 | Timefold | hard-par-poids | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `festival-realiste-canicule` | direct | `preference` | 3/3 | 0.4 s | 0 | -16400 | -69935 | 3/3 |
+| `festival-realiste-canicule` | direct | `both` | 3/3 | 0.4 s | 0 | -16395 | -70470 | 3/3 |
+| `festival-realiste-canicule` | direct | `hard` | 3/3 | 0.3 s | 0 | -16395 | -70170 | 3/3 |
+| `festival-realiste-canicule` | direct | `hard-par-poids` | 3/3 | 0.3 s | 0 | -16395 | -70180 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `preference` | 3/3 | 9.7 s | 0 | -18520 | -52480 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `both` | 3/3 | 7.6 s | 0 | -17405 | -48375 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `both-sans-calendrier` | 3/3 | 9.1 s | 0 | -18415 | -52615 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `hard` | 3/3 | 7.5 s | 0 | -17395 | -47975 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `hard-sans-calendrier` | 3/3 | 8.3 s | 0 | -18405 | -52310 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `hard-par-poids` | 3/3 | 8.3 s | 0 | -18400 | -52525 | 3/3 |
+| `festival-hivernal` | direct | `preference` | 3/3 | 2.5 s | 0 | -23700 | -98785 | 0/3 |
+| `festival-hivernal` | direct | `both` | 0/3 | jamais | -2 | -24285 | -98865 | 0/3 |
+| `festival-hivernal` | direct | `hard` | 1/3 | 12.3 s | -1 | -24205 | -98715 | 1/3 |
+| `festival-hivernal` | direct | `hard-par-poids` | 1/3 | 11.9 s | -1 | -24180 | -98785 | 1/3 |
+| `festival-hivernal` | Timefold | `preference` | 3/3 | 27.5 s | 0 | -31105 | -95875 | 0/3 |
+| `festival-hivernal` | Timefold | `both` | 0/3 | jamais | -16 | -30035 | -97215 | 0/3 |
+| `festival-hivernal` | Timefold | `both-sans-calendrier` | 0/3 | jamais | -13 | -34715 | -103785 | 0/3 |
+| `festival-hivernal` | Timefold | `hard` | 0/3 | jamais | -16 | -29890 | -97565 | 0/3 |
+| `festival-hivernal` | Timefold | `hard-sans-calendrier` | 0/3 | jamais | -13 | -34655 | -103350 | 0/3 |
+| `festival-hivernal` | Timefold | `hard-par-poids` | 0/3 | jamais | -20 | -34620 | -100345 | 0/3 |
+| `scenario-complet` | direct | `preference` | 3/3 | 0.8 s | 0 | -18255 | -113000 | 0/3 |
+| `scenario-complet` | direct | `both` | 3/3 | 0.9 s | 0 | -18360 | -43330 | 3/3 |
+| `scenario-complet` | direct | `hard` | 3/3 | 0.9 s | 0 | -18350 | -42085 | 3/3 |
+| `scenario-complet` | direct | `hard-par-poids` | 3/3 | 0.9 s | 0 | -18350 | -42085 | 3/3 |
+| `scenario-complet` | Timefold | `preference` | 3/3 | 11.7 s | 0 | -22235 | -156930 | 0/3 |
+| `scenario-complet` | Timefold | `both` | 3/3 | 10.8 s | 0 | -19495 | -121160 | 3/3 |
+| `scenario-complet` | Timefold | `both-sans-calendrier` | 3/3 | 11.8 s | 0 | -20985 | -144835 | 3/3 |
+| `scenario-complet` | Timefold | `hard` | 3/3 | 9.6 s | 0 | -19415 | -118720 | 3/3 |
+| `scenario-complet` | Timefold | `hard-sans-calendrier` | 3/3 | 10.3 s | 0 | -20915 | -144525 | 3/3 |
+| `scenario-complet` | Timefold | `hard-par-poids` | 3/3 | 11.0 s | 0 | -20865 | -145135 | 3/3 |
+| `gamme-16` | direct | `preference` | 3/3 | 0.1 s | 0 | -5010 | -1735 | 3/3 |
+| `gamme-16` | direct | `both` | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
+| `gamme-16` | direct | `hard` | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
+| `gamme-16` | direct | `hard-par-poids` | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
+| `gamme-16` | Timefold | `preference` | 3/3 | 1.7 s | 0 | -6990 | -1300 | 3/3 |
+| `gamme-16` | Timefold | `both` | 3/3 | 1.6 s | 0 | -6835 | -1395 | 3/3 |
+| `gamme-16` | Timefold | `both-sans-calendrier` | 3/3 | 1.6 s | 0 | -6960 | -1310 | 3/3 |
+| `gamme-16` | Timefold | `hard` | 3/3 | 1.7 s | 0 | -6865 | -1375 | 3/3 |
+| `gamme-16` | Timefold | `hard-sans-calendrier` | 3/3 | 1.6 s | 0 | -6970 | -1300 | 3/3 |
+| `gamme-16` | Timefold | `hard-par-poids` | 3/3 | 1.6 s | 0 | -6980 | -1310 | 3/3 |
+| `gamme-20` | direct | `preference` | 3/3 | 2.3 s | 0 | -17100 | -21665 | 2/3 |
+| `gamme-20` | direct | `both` | 3/3 | 1.9 s | 0 | -17710 | -15335 | 3/3 |
+| `gamme-20` | direct | `hard` | 3/3 | 1.7 s | 0 | -17685 | -14235 | 3/3 |
+| `gamme-20` | direct | `hard-par-poids` | 3/3 | 1.6 s | 0 | -17670 | -13910 | 3/3 |
+| `gamme-20` | Timefold | `preference` | 3/3 | 33.8 s | 0 | -34615 | -122915 | 0/3 |
+| `gamme-20` | Timefold | `both` | 3/3 | 26.9 s | 0 | -24385 | -67850 | 3/3 |
+| `gamme-20` | Timefold | `both-sans-calendrier` | 3/3 | 29.2 s | 0 | -32910 | -122295 | 3/3 |
+| `gamme-20` | Timefold | `hard` | 3/3 | 25.7 s | 0 | -24340 | -67585 | 3/3 |
+| `gamme-20` | Timefold | `hard-sans-calendrier` | 3/3 | 29.0 s | 0 | -32925 | -122265 | 3/3 |
+| `gamme-20` | Timefold | `hard-par-poids` | 3/3 | 27.7 s | 0 | -32580 | -122235 | 3/3 |
+| `gamme-25` | direct | `preference` | 3/3 | 2.1 s | 0 | -13250 | -46440 | 3/3 |
+| `gamme-25` | direct | `both` | 3/3 | 1.9 s | 0 | -13230 | -46465 | 3/3 |
+| `gamme-25` | direct | `hard` | 3/3 | 1.9 s | 0 | -13240 | -46755 | 3/3 |
+| `gamme-25` | direct | `hard-par-poids` | 3/3 | 1.9 s | 0 | -13230 | -46425 | 3/3 |
+| `gamme-25` | Timefold | `preference` | 3/3 | 57.4 s | 0 | -26095 | -48100 | 3/3 |
+| `gamme-25` | Timefold | `both` | 3/3 | 51.1 s | 0 | -18605 | -19250 | 3/3 |
+| `gamme-25` | Timefold | `both-sans-calendrier` | 3/3 | 51.3 s | 0 | -25030 | -47250 | 3/3 |
+| `gamme-25` | Timefold | `hard` | 3/3 | 44.1 s | 0 | -18475 | -19010 | 3/3 |
+| `gamme-25` | Timefold | `hard-sans-calendrier` | 3/3 | 49.3 s | 0 | -25030 | -47260 | 3/3 |
+| `gamme-25` | Timefold | `hard-par-poids` | 3/3 | 51.4 s | 0 | -25080 | -47240 | 3/3 |
+| `gamme-28` | direct | `preference` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | direct | `both` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | direct | `hard` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | direct | `hard-par-poids` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `preference` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `both` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `both-sans-calendrier` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `hard` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `hard-sans-calendrier` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `hard-par-poids` | 0/3 | jamais | -3 | -180 | 0 | 0/3 |
 
 Ce qu'on en retient :
 
