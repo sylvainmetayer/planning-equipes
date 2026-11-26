@@ -411,7 +411,7 @@ public final class ScenarioMigrations {
     /**
      * The {@code contraintesAdHoc:} section's forced unavailabilities and forced
      * assignments (ADR 0117) rewritten as what replaces them, the conversion
-     * migration V156 makes in the database. Not a link of the chain, for the
+     * migration V161 makes in the database. Not a link of the chain, for the
      * reason {@link #withRetiredLockTypesConverted} gives: no version marks the
      * change, so it applies to every document.
      * <ul>

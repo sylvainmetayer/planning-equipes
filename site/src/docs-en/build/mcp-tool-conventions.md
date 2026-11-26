@@ -62,11 +62,11 @@ The landing of a solve rewrites the seats and takes back the stands, timeslots a
 
 Never turn a refusal into a warning: it protects against the resurrection of data by the landing. The screens lock these inputs for the duration of the solve; an assistant with no screen has only the warning.
 
-## Respecting the reference data freeze
+## Respecting the phase of the edition
 
-`figer_referentiel` and `lever_gel` set and lift the freeze of a family of reference data (`STANDS`, `CRENEAUX`, `TYPOLOGIES_EMPLACEMENTS`, `COMPETENCES`, [ADR 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)), and `etat_edition` says which ones are frozen in its `gel` block. Both are journalled like their REST routes and classed "unrelated" to a solve: a freeze refuses future writes, it changes no data that a solve reads.
+The phase of the edition decides which reference data families are frozen (`STANDS`, `CRENEAUX`, `TYPOLOGIES_EMPLACEMENTS`, `COMPETENCES`, [ADR 0115](repo:docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md)), and `etat_edition` says which ones are frozen in its `gel` block. `figer_referentiel` and `lever_gel` remain until 5.0 as aliases of the phase: in Preparation, freezing a family moves the edition to Solving, which freezes them all; in Solving, lifting goes back to Preparation; in a published edition, lifting unblocks the structure and freezing refreezes it. Both are journalled like their REST routes and classed "unrelated" to a solve: a phase refuses future writes, it changes no data that a solve reads.
 
-The refusal of a frozen write is placed on the services, which the tools call like the screens: `modifier_stand` that changes a headcount, `supprimer_creneau`, `creer_typologie` or `modifier_animateur` that changes skills come back as a business refusal, with the sentence that names the families to unfreeze; `modifier_stand` that touches only the name, or `appliquer_consigne`, go through. Lift a freeze only on explicit request: after a publication, any retouch moves schedules that were already sent.
+The refusal of a frozen write is placed on the services, which the tools call like the screens: `modifier_stand` that changes a headcount, `supprimer_creneau`, `creer_typologie` or `modifier_animateur` that changes skills come back as a business refusal, with the sentence that names the frozen families and says how to reopen them; `modifier_stand` that touches only the name, or `appliquer_consigne`, go through. Reopen the reference data only on explicit request: after a publication, any retouch moves schedules that were already sent.
 
 ## Flagging an outgoing e-mail
 

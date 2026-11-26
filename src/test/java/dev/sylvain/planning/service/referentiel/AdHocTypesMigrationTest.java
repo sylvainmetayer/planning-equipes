@@ -20,9 +20,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V156 retires the forced unavailability and the forced assignment (ADR 0117).
+ * V161 retires the forced unavailability and the forced assignment (ADR 0117).
  * Played on a database filled the way 3.x filled it — the migrations up to V152
- * in a schema of their own, then the rows and the V156 file itself in a
+ * in a schema of their own, then the rows and the V161 file itself in a
  * transaction rolled back afterwards: the exceptions go to the archive, become
  * days off and locks where they can, and the plan is not touched.
  */
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 class AdHocTypesMigrationTest {
 
     private static final String SCHEMA = "migration_v156";
-    private static final String V156 = "db/migration/V156__deux_types_d_exception_ad_hoc.sql";
+    private static final String V161 = "db/migration/V161__deux_types_d_exception_ad_hoc.sql";
 
     @BeforeAll
     static void migrateUpToV152() throws SQLException {
@@ -148,8 +148,8 @@ class AdHocTypesMigrationTest {
     }
 
     private static void migrate(Statement sql) throws Exception {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V156)) {
-            assertThat(file).as(V156).isNotNull();
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V161)) {
+            assertThat(file).as(V161).isNotNull();
             sql.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

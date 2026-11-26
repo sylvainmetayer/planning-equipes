@@ -137,6 +137,12 @@ class ChangementsJourneeResourceTest {
         String absent = aSeatedAnimateur();
         publish();
         markUnavailable(absent);
+        // The sample problem lands over the structure, which the publication froze (ADR 0115).
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .put("/api/editions/courant/deblocage-structure")
+                .then()
+                .statusCode(200);
         solve();
 
         JsonPath depuisPublication = changements("");

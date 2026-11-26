@@ -30,7 +30,7 @@ They no longer exist since 4.0 ([decision 0117](repo:docs/decisions/0117-deux-ty
 | `INDISPONIBILITE_FORCEE` with no timeslot | Every day carrying a timeslot, added to the unavailable days of the fiche |
 | `INDISPONIBILITE_FORCEE` on a stand | Nothing: "not on this stand" is not an unavailable day |
 
-The migration (V156) and the reading of a 3.x file or copy (`ScenarioMigrations.withRetiredAdHocTypesConverted`) make the same conversion and say so. The saved plan does not change. What cannot be converted (an unavailability aimed at a stand, an assignment nobody holds, an assignment with no timeslot) is reported and kept in the `contrainte_ad_hoc_avant_4_0` archive, which 5.0 drops. The event-day mode marks an absence the same way: the whole day on the fiche (see [the event-day API](api-jour-j-et-animateurs.md)).
+The migration (V161) and the reading of a 3.x file or copy (`ScenarioMigrations.withRetiredAdHocTypesConverted`) make the same conversion and say so. The saved plan does not change. What cannot be converted (an unavailability aimed at a stand, an assignment nobody holds, an assignment with no timeslot) is reported and kept in the `contrainte_ad_hoc_avant_4_0` archive, which 5.0 drops. The event-day mode marks an absence the same way: the whole day on the fiche (see [the event-day API](api-jour-j-et-animateurs.md)).
 
 ## Grouped arrival and carpool requests
 

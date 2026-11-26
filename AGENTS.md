@@ -330,16 +330,27 @@ Single Quarkus service, no separate solver microservice. Package root:
     PDF); and the ones that predate the split — `service/diagnostic/`,
     `service/journal/`, `service/mail/`, `service/notification/`,
     `service/backup/` (nightly `pg_dump` — see below).
-- **A frozen family of the referential refuses every write, by annotation.**
-  `service/referentiel/GelReferentielService` holds the freeze (ADR 0052); a
-  service method writing stands, timeslots, game categories/locations or
-  competences carries `@RefusedWhileFrozen(ReferentialFamily.X)` (interceptor,
+- **The phase of the edition freezes the referential, and a frozen family
+  refuses every write, by annotation** (ADR 0115, replacing the per-family
+  freeze of ADR 0052). `edition.phase` is `PREPARATION` (all open), `CALCUL`
+  and `TERMINEE` (the four families frozen) or `PUBLIEE` (the structure —
+  stands, timeslots, game categories/locations — frozen unless
+  `structure_debloquee`, the animateurs' competences open); the first
+  publication moves the edition to `PUBLIEE` and every publication refreezes
+  an unblocked structure (`EditionPhaseService`, the one writer of the phase).
+  `service/referentiel/GelReferentielService` reads the phase; a service method
+  writing stands, timeslots, game categories/locations or competences carries
+  `@RefusedWhileFrozen(ReferentialFamily.X)` (interceptor,
   `409 REFERENTIEL_FIGE`), or compares with its before-image and calls
   `gel.refuseIfFrozen` itself when only some fields are frozen.
   `GelReferentielStructuralTest` fails on a method of those services in neither
   case nor argued as open — and on an annotated method called on `this`, which
   bypasses the interceptor. Consignes stay open: their grid write goes through
-  the in-transaction timeslot methods, which only `ConsigneService` calls.
+  the in-transaction timeslot methods, which only `ConsigneService` calls. The
+  3.x freeze routes and the `figer_referentiel` / `lever_gel` tools are aliases
+  of the phase until 5.0, and the table `gel_referentiel` is read by nothing.
+  A test that publishes leaves its edition `PUBLIEE`: the `PhaseReset` test
+  callback puts every edition back in preparation before each `@QuarkusTest`.
 - **A write a running solve would undo is refused, by annotation too.** A
   solve's landing re-upserts the stands, timeslots and animateurs its problem
   names and rewrites every seat, so a service method writing them carries
@@ -761,7 +772,7 @@ i18n rule at the top of this file:
   deliberate exception: a soft *reward* for co-assigning a preferred pair on
   the same stand — never promote it to hard (that would be a forced assignment
   in disguise); `ARRIVEE_GROUPEE` is soft too. The forced assignment and the
-  forced unavailability are gone, converted by `V156` and by
+  forced unavailability are gone, converted by `V161` and by
   `ScenarioMigrations` into an animateur + timeslot lock and a day off of the
   fiche: do not bring them back, and do not add a rule that pins or bars one
   person on a seat.

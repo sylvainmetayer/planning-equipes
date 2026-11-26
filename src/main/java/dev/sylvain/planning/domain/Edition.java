@@ -19,6 +19,9 @@ import java.util.Objects;
  * the one edition allowed to reach outside: publish, send mail, open the
  * animateur espace, the ICS feed and the wall display. At most one edition is
  * active; none is a valid state between two events.</p>
+ *
+ * <p>{@code phase} is where the edition stands in its cycle, and what freezes
+ * its referential ({@code docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md}).</p>
  */
 public class Edition {
 
@@ -26,6 +29,9 @@ public class Edition {
     private String nom;
     private boolean active;
     private Instant creeLe;
+    private EditionPhase phase = EditionPhase.PREPARATION;
+    private Instant phaseDepuis;
+    private boolean structureDebloquee;
 
     public Edition() {}
 
@@ -66,6 +72,33 @@ public class Edition {
 
     public void setCreeLe(Instant creeLe) {
         this.creeLe = creeLe;
+    }
+
+    /** The phase of the edition (ADR 0115); read-only on the wire, changed through its own route. */
+    public EditionPhase getPhase() {
+        return phase;
+    }
+
+    public void setPhase(EditionPhase phase) {
+        this.phase = phase;
+    }
+
+    /** When the edition entered its phase. */
+    public Instant getPhaseDepuis() {
+        return phaseDepuis;
+    }
+
+    public void setPhaseDepuis(Instant phaseDepuis) {
+        this.phaseDepuis = phaseDepuis;
+    }
+
+    /** In {@link EditionPhase#PUBLIEE} only: the structure was reopened for a last-minute change. */
+    public boolean isStructureDebloquee() {
+        return structureDebloquee;
+    }
+
+    public void setStructureDebloquee(boolean structureDebloquee) {
+        this.structureDebloquee = structureDebloquee;
     }
 
     @Override

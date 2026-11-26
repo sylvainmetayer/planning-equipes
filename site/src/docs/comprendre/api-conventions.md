@@ -30,14 +30,14 @@ Un refus voulu est un `BusinessError` (une hiérarchie scellée) que [`BusinessE
 | `404` | segment de chemin qui ne nomme rien | `message` |
 | `409` | état qui refuse la requête (ex. un solveur occupé, une publication sans destinataire) | `message` |
 | `409` | écriture fondée sur une lecture périmée : `code: "MODIFICATION_CONCURRENTE"` | `message`, `code`, `modifieLe` (la date réelle de la dernière écriture, à renvoyer pour écraser en connaissance de cause) |
-| `409` | famille du référentiel figée : `code: "REFERENTIEL_FIGE"` | `message`, `code`, `familles` |
+| `409` | famille du référentiel figée par la phase de l'édition : `code: "REFERENTIEL_FIGE"` | `message`, `code`, `familles` |
 | `400` / `409` | refus d'édition, voir plus haut | `message`, `code` |
 | `409` | session trop ancienne pour une action sensible : `RECONNEXION_REQUISE_<mode>` | `code`, `mode`, `message` |
 | `429` | trop d'essais (connexion, codes d'accès) | en-tête `Retry-After` |
 
 Trois conséquences pour un client :
 
-- **le statut ne suffit pas pour un `409`**. Il faut lire `code` (`MODIFICATION_CONCURRENTE` appelle « recharger ou écraser », `REFERENTIEL_FIGE` appelle « lever le gel »), et, pour un refus de lancement de calcul, la forme du corps ([le calcul](api-calcul.md#un-seul-calcul-à-la-fois)) ;
+- **le statut ne suffit pas pour un `409`**. Il faut lire `code` (`MODIFICATION_CONCURRENTE` appelle « recharger ou écraser », `REFERENTIEL_FIGE` appelle « changer de phase ou débloquer la structure »), et, pour un refus de lancement de calcul, la forme du corps ([le calcul](api-calcul.md#un-seul-calcul-à-la-fois)) ;
 - **la variante se choisit d'après l'origine de l'identifiant** : un segment de chemin qui ne désigne rien est un `404`, un champ du corps qui ne désigne rien est un `400` ;
 - **une écriture qu'un calcul en cours défairait est refusée en `409`** avec le job en cause dans le corps, par le service lui-même : une route REST et un outil MCP rencontrent le même refus.
 

@@ -2,7 +2,7 @@
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
-- **Portée** : domaine (`TypeContrainteAdHoc`), solveur (catalogue, contraintes, moteur direct), schéma (migration `V156`), lecture des scénarios, mode jour J, MCP, écran Ajustements manuels, guide de migration 4.0
+- **Portée** : domaine (`TypeContrainteAdHoc`), solveur (catalogue, contraintes, moteur direct), schéma (migration `V161`), lecture des scénarios, mode jour J, MCP, écran Ajustements manuels, guide de migration 4.0
 - **Révise** : [0010](0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md) (la liste des types dont on détecte les contradictions)
 - **Prolonge** : [0091](0091-refonte-fonctionnelle-4-0.md) (une seule façon de dire une chose), [0109](0109-trois-types-de-verrou.md) (le verrou animateur + créneau)
 
@@ -31,7 +31,7 @@ règles (`affectationForcee`, `indisponibiliteForcee`, nommées dans
 `ConstraintCatalog.ANCIENS_NOMS` comme retirées : le décompte passe de 42 à 40),
 leurs trois lectures d'intenabilité et leurs contradictions.
 
-**Elles sont converties, pas perdues** — à la migration `V156`, et à la lecture
+**Elles sont converties, pas perdues** — à la migration `V161`, et à la lecture
 d'un fichier ou d'une copie de la 3.x (`ScenarioMigrations`), avec le même
 résultat et un avertissement par cas :
 

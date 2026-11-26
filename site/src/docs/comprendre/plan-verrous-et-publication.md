@@ -1,6 +1,6 @@
 # Verrous, gel, replanification, échanges et plan publié
 
-Vous savez ce que le solveur garde ou rouvre quand on relance un calcul sur un plan existant, ce qui distingue un verrou d'un gel du référentiel et d'une exception ad hoc, comment un échange d'animateurs s'applique, et pourquoi l'espace animateur lit un autre plan que celui que l'administration manipule.
+Vous savez ce que le solveur garde ou rouvre quand on relance un calcul sur un plan existant, ce qui distingue un verrou de la phase de l'édition et d'une exception ad hoc, comment un échange d'animateurs s'applique, et pourquoi l'espace animateur lit un autre plan que celui que l'administration manipule.
 
 ## Le verrou fige des sièges
 
@@ -23,9 +23,18 @@ Deux règles :
 
 La relecture d'une journée (« relu et accepté ») est un autre état que le verrou ([décision 0039](repo:docs/decisions/0039-validation-de-relecture-distincte-du-verrou.md)) : valider ne pose jamais un verrou sans qu'on le demande.
 
-## Le gel du référentiel fige les fiches
+## La phase de l'édition fige les fiches
 
-Le verrou fige des **sièges** d'un plan calculé ; le gel fige les **fiches** dont ce plan est calculé, une fois leur préparation terminée ([décision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)). L'organisateur le pose et le lève par famille (`ReferentialFamily`), dans une édition :
+Le verrou fige des **sièges** d'un plan calculé ; la phase de l'édition fige les **fiches** dont ce plan est calculé ([décision 0115](repo:docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md), qui remplace le gel par famille de la [décision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)). Une édition est dans l'une de quatre phases, et chacune fige des familles (`ReferentialFamily`) :
+
+| Phase | Stands, créneaux, typologies et emplacements | Compétences des animateurs |
+| --- | --- | --- |
+| Préparation | modifiables | modifiables |
+| Calcul | figés | figées |
+| Publiée | figés, sauf structure débloquée | modifiables |
+| Terminée | figés | figées |
+
+Ce qu'une famille figée ne laisse plus écrire :
 
 | Famille | Ce qui ne s'écrit plus |
 | --- | --- |
@@ -34,9 +43,11 @@ Le verrou fige des **sièges** d'un plan calculé ; le gel fige les **fiches** d
 | Typologies et emplacements | Création, suppression, plafond par typologie, typologie polyvalente |
 | Compétences | Niveaux de compétence des animateurs déjà inscrits (fiche, grille, import) |
 
-Une famille figée refuse l'écriture **par tous les chemins** (formulaire, édition en lot, import CSV, import de grille, MCP) en `409` avec le code `REFERENTIEL_FIGE`. Restent libres : le nom, le lieu et le niveau d'effort d'un stand, le libellé et la description d'une typologie, le nom et la position d'un emplacement, les données des personnes hors compétences (disponibilités, souhaits, déclarations, e-mail), la **création** d'un animateur avec ses compétences, les ajustements, les verrous et les **consignes**, l'outil prévu pour fermer une bande tard sans rien détruire. L'import de scénario et la remise à zéro, qui remplacent tout, sont refusés tant qu'une famille est figée.
+Une famille figée refuse l'écriture **par tous les chemins** (formulaire, édition en lot, import CSV, import de grille, MCP) en `409` avec le code `REFERENTIEL_FIGE`, et le message dit comment rouvrir. Restent libres dans toutes les phases : le nom, le lieu et le niveau d'effort d'un stand, le libellé et la description d'une typologie, le nom et la position d'un emplacement, les données des personnes hors compétences (disponibilités, souhaits, déclarations, e-mail), la **création** d'un animateur avec ses compétences, les ajustements, les verrous et les **consignes**, l'outil prévu pour fermer une bande tard sans rien détruire. L'import de scénario, la restauration d'une copie avant vidage et la remise à zéro, qui remplacent tout, sont refusés dès qu'une famille est figée.
 
-Un gel n'est pas recopié par la duplication d'une édition : la nouvelle repart en préparation. Il ne touche pas un calcul en cours. Côté code, la garde est une annotation (`@RefusedWhileFrozen`) sur les méthodes de service, portée par `GelReferentielService` ; les routes sont `GET /api/editions/courant/gel` et `PUT`, `GET` et `DELETE /api/editions/courant/gel/{famille}`.
+**La première publication fait passer l'édition en Publiée**, de Préparation comme de Calcul ; une publication suivante l'y laisse, et une édition terminée le reste. Les autres changements de phase sont des gestes explicites, retour en arrière compris (`PUT /api/editions/courant/phase`). En Publiée, la structure se **débloque** pour un changement de dernière minute, sans quitter la phase (`PUT /api/editions/courant/deblocage-structure`), et se refige par `DELETE` sur la même route ou, d'office, à la publication suivante. Ces gestes sont journalisés.
+
+La duplication d'une édition repart en Préparation. Une phase ne touche pas un calcul en cours. Côté code, la garde est une annotation (`@RefusedWhileFrozen`) sur les méthodes de service, portée par `GelReferentielService`, qui lit la phase. Les routes de la 3.x (`PUT` et `DELETE /api/editions/courant/gel/{famille}`) restent jusqu'en 5.0 comme alias de la phase : figer une famille en Préparation fait passer en Calcul, lever en Calcul ramène en Préparation, et dans une édition publiée elles débloquent et refigent la structure. `GET /api/editions/courant/gel` dit l'état de chaque famille d'après la phase.
 
 ## Replanification incrémentale
 

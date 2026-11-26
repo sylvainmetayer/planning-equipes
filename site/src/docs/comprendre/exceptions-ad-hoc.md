@@ -27,7 +27,7 @@ Elles n'existent plus depuis la 4.0 ([décision 0117](repo:docs/decisions/0117-d
 | `INDISPONIBILITE_FORCEE` sans créneau | Tous les jours qui portent un créneau, ajoutés aux jours indisponibles de la fiche |
 | `INDISPONIBILITE_FORCEE` sur un stand | Rien : « pas sur ce stand » n'est pas un jour d'indisponibilité |
 
-La migration (V156) et la lecture d'un fichier ou d'une copie de la 3.x (`ScenarioMigrations.withRetiredAdHocTypesConverted`) font la même conversion et la disent. Le plan enregistré ne change pas. Ce qui ne se convertit pas (une indisponibilité visant un stand, une affectation que personne ne tient, une affectation sans créneau) est signalé et gardé dans l'archive `contrainte_ad_hoc_avant_4_0`, que la 5.0 supprimera. Le mode jour J marque une absence de la même façon : le jour entier sur la fiche (voir [l'API du jour J](api-jour-j-et-animateurs.md)).
+La migration (V161) et la lecture d'un fichier ou d'une copie de la 3.x (`ScenarioMigrations.withRetiredAdHocTypesConverted`) font la même conversion et la disent. Le plan enregistré ne change pas. Ce qui ne se convertit pas (une indisponibilité visant un stand, une affectation que personne ne tient, une affectation sans créneau) est signalé et gardé dans l'archive `contrainte_ad_hoc_avant_4_0`, que la 5.0 supprimera. Le mode jour J marque une absence de la même façon : le jour entier sur la fiche (voir [l'API du jour J](api-jour-j-et-animateurs.md)).
 
 ## L'arrivée groupée et les demandes de covoiturage
 

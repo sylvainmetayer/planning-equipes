@@ -295,7 +295,7 @@ class ScenarioMigrationsTest {
 
     /**
      * A 3.x file carrying the two retired ad hoc types (ADR 0117) reads as what
-     * replaces them, as migration V156 converts the database: a forced
+     * replaces them, as migration V161 converts the database: a forced
      * unavailability is a day off on the fiche, a forced assignment a lock on
      * the seat the plan of the file holds, and everything that converts to
      * nothing is said by exception id.
