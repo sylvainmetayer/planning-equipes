@@ -61,7 +61,7 @@ Le détail et un exemple sont dans [les variables d'environnement](variables-env
 ### Format du scénario YAML
 
 - **Avant** : l'application écrit `schemaVersion: 1`.
-- **Après** : elle écrit `schemaVersion: 6`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le maillon 1 → 2 renomme déjà la clé `ninja` des typologies en `polyvalent`, sans rien perdre ; le maillon 4 → 5 convertit les horaires des stands en plages (voir [Horaires des stands](#horaires-des-stands)) ; le maillon 5 → 6 renomme la section `journeesTypes` en `gabarits` (voir [Le générateur de créneaux](#un-seul-generateur-de-creneaux)).
+- **Après** : elle écrit `schemaVersion: 6`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le maillon 1 → 2 renomme déjà la clé `ninja` des typologies en `polyvalent`, sans rien perdre ; le maillon 4 → 5 convertit les horaires des stands en plages (voir [Horaires des stands](#horaires-des-stands)) ; le maillon 5 → 6 renomme la section `journeesTypes` en `gabarits` (voir [Le générateur de créneaux](#un-seul-générateur-de-créneaux)).
 - **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 à v6 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
 
 ### Le niveau d'une règle d'organisation se choisit par édition
@@ -236,4 +236,4 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 
 ### Données et migrations
 
-Les migrations qui convertissent des données sont décrites ci-dessus, une par changement, au fil de leur fusion : pour l'instant, [les horaires des stands](#horaires-des-stands), la consigne, écrite en plages datées, et [les journées types devenues gabarits](#un-seul-generateur-de-creneaux).
+Les migrations qui convertissent des données sont décrites ci-dessus, une par changement, au fil de leur fusion : pour l'instant, [les horaires des stands](#horaires-des-stands), la consigne, écrite en plages datées, et [les journées types devenues gabarits](#un-seul-générateur-de-créneaux).
