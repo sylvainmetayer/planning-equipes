@@ -12,7 +12,7 @@ La page *Historique* la lit ; personne ne l'écrit à la main et rien ne l'effac
 
 ## Ce qui reste jusqu'à ce que vous le supprimiez
 
-Pour tout le reste, la durée annoncée par `LEGAL_CONSERVATION` s'affiche dans la politique de confidentialité et **rien dans le code ne l'applique** : aucune purge automatique n'existe aujourd'hui. Un engagement écrit qui n'est pas tenu expose plus qu'une absence d'engagement, donc la purge se fait à la main, à date fixe. C'est voulu, et ce que l'automatisation devra porter le jour venu est écrit dans la [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
+Pour tout le reste, la durée annoncée par la clé `conservation` de `LEGAL_MENTIONS` s'affiche dans la politique de confidentialité et **rien dans le code ne l'applique** : aucune purge automatique n'existe aujourd'hui. Un engagement écrit qui n'est pas tenu expose plus qu'une absence d'engagement, donc la purge se fait à la main, à date fixe. C'est voulu, et ce que l'automatisation devra porter le jour venu est écrit dans la [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
 
 ### La purge annuelle
 

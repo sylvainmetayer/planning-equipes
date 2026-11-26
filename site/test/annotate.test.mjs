@@ -22,18 +22,19 @@ test('a link leaving the site says so to screen readers, an internal one does no
   assert.equal(out, '<body><a href="https://github.com/x">Code<span class="visually-hidden"> (site externe)</span></a><a href="https://planning.sylvain.dev/">Accueil</a><a href="/contact/">Contact</a></body>');
 });
 
-test('palette: every word must appear, accents ignored; guides, then sections, then pages of the language', () => {
+test('palette: every word must appear, accents ignored; guides, then sections, then pages, all of the language', () => {
   const index = [
     { k: 'doc', l: 'fr', u: '/docs/api/', t: 'API REST', d: 'Les invariants.', h: [['jobs-de-résolution', 'Jobs de résolution']] },
     { k: 'doc', l: 'fr', u: '/docs/solveur/', t: 'Le solveur', d: 'Résolution du planning.', h: [] },
     { k: 'page', l: 'fr', u: '/le-calcul/', t: 'Le calcul', d: 'La résolution, expliquée.' },
+    { k: 'doc', l: 'en', u: '/en/docs/solver/', t: 'The solver', d: 'Resolution of the schedule.', h: [] },
     { k: 'page', l: 'en', u: '/en/the-calculation/', t: 'The calculation', d: 'Resolution, explained.' },
   ];
   assert.deepEqual(
     search(index, 'resolution', 'fr').map((r) => [r.kind, r.href]),
     [['guide', '/docs/solveur/'], ['section', '/docs/api/#jobs-de-résolution'], ['page', '/le-calcul/']],
   );
-  assert.deepEqual(search(index, 'resolution', 'en').map((r) => r.href), ['/docs/solveur/', '/docs/api/#jobs-de-résolution', '/en/the-calculation/']);
+  assert.deepEqual(search(index, 'resolution', 'en').map((r) => r.href), ['/en/docs/solver/', '/en/the-calculation/']);
   assert.deepEqual(search(index, 'api invariants', 'fr').map((r) => r.href), ['/docs/api/']);
   assert.deepEqual(search(index, 'periode', 'fr'), []);
   assert.deepEqual(search(index, '  ', 'fr'), []);

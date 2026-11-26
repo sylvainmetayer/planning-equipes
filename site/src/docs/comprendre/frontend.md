@@ -29,7 +29,7 @@ Pour diagnostiquer, retenez ce détail. Le routage SPA étant actif (`quarkus.qu
 
 **Traduction à l'exécution.** Le français s'écrit en dur dans les modèles, `loadTranslations()` charge `messages.en.json`. Il n'y a qu'un build, sans bundle par langue, donc aucune configuration Quinoa supplémentaire. Les règles d'écriture (les deux moitiés d'une chaîne, `$localize` jamais au niveau d'un module) sont dans [les conventions du dépôt](conventions-du-depot.md).
 
-**Marque.** Un `logoUrl` vide veut dire « n'affiche rien », jamais « affiche le logo par défaut » : une instance sert un client, et aucun n'hérite de la marque d'un autre. Une limite à connaître : `mat.theme()` compile toute la palette tonale dans le bundle, et la couleur d'accent configurable (`BRANDING_ACCENT_COLOR`) n'alimente que `--app-accent`. Recolorer les composants Material demande une recompilation, pas une variable d'environnement.
+**Marque.** Un `logoUrl` vide veut dire « n'affiche rien », jamais « affiche le logo par défaut » : une instance sert un client, et aucun n'hérite de la marque d'un autre. Une limite à connaître : `mat.theme()` compile toute la palette tonale dans le bundle, et la couleur d'accent configurable (clé `accent` de `BRANDING_COLORS`) n'alimente que `--app-accent`. Recolorer les composants Material demande une recompilation, pas une variable d'environnement.
 
 ## Thème clair ou sombre
 
@@ -38,7 +38,7 @@ Pour diagnostiquer, retenez ce détail. Le routage SPA étant actif (`quarkus.qu
 Deux couleurs échappent à `mat.theme()` et portent leurs propres paires `light-dark()` :
 
 - la palette catégorielle des typologies, `styles/typologie-colors.css` : huit teintes qu'aucun `--mat-sys-*` ne fournit ;
-- `--app-accent`, quand `BRANDING_ACCENT_COLOR` la renseigne (sinon elle vaut `--mat-sys-primary`, déjà une paire). Elle sert de couleur de texte sur `--mat-sys-surface` et d'anneau de focus ; [`core/branding.ts`](repo:src/main/webui/src/app/core/branding.ts) la pose donc en paire, chaque moitié bornée en OKLCH à teinte constante : clarté plafonnée en clair, bornée par le bas en sombre (avec un plafond de chroma). Les deux bornes, parce qu'un exploitant choisit sa couleur en regardant une surface et que l'autre est alors celle que personne n'a vérifiée : un accent pastel tombait sous 4,5:1 en clair. Un navigateur qui ne sait pas parser la paire garde la couleur brute.
+- `--app-accent`, quand la clé `accent` de `BRANDING_COLORS` la renseigne (sinon elle vaut `--mat-sys-primary`, déjà une paire). Elle sert de couleur de texte sur `--mat-sys-surface` et d'anneau de focus ; [`core/branding.ts`](repo:src/main/webui/src/app/core/branding.ts) la pose donc en paire, chaque moitié bornée en OKLCH à teinte constante : clarté plafonnée en clair, bornée par le bas en sombre (avec un plafond de chroma). Les deux bornes, parce qu'un exploitant choisit sa couleur en regardant une surface et que l'autre est alors celle que personne n'a vérifiée : un accent pastel tombait sous 4,5:1 en clair. Un navigateur qui ne sait pas parser la paire garde la couleur brute.
 
 Trois surfaces restent volontairement hors du thème :
 

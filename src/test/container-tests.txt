@@ -63,6 +63,7 @@ dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
 dev/sylvain/planning/api/FormationResourceTest.java
 dev/sylvain/planning/api/FrozenPastAcceptanceTest.java
 dev/sylvain/planning/api/GelReferentielResourceTest.java
+dev/sylvain/planning/api/GroupedVariablesResourceTest.java
 dev/sylvain/planning/api/HistoriqueResourceTest.java
 dev/sylvain/planning/api/HorlogeSimuleeRecetteTest.java
 dev/sylvain/planning/api/ImpactPublicationTest.java

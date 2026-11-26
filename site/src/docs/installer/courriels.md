@@ -29,7 +29,7 @@ Côté domaine, l'application n'y peut rien, et c'est pourtant ce qui décide si
 
 Envoyez un planning de test vers **trois boîtes différentes**, dont Gmail et Outlook, qui sont les plus stricts. Vérifiez que le message arrive en boîte de réception, pas seulement qu'il part. La page *Débogage* (Ctrl+K, ou l'adresse `/debug`, onglet *Vérifications*) propose « Envoyer un mail de test ».
 
-Chaque mail part en **deux parties** : un texte brut, et une version HTML habillée aux couleurs du déploiement (`BRANDING_PDF_*`, `BRANDING_ORGANISATION` au pied de page). Le logo `BRANDING_PDF_LOGO` est embarqué dans le message lui-même : aucune image n'est chargée depuis un serveur à l'ouverture, ce que les clients de messagerie bloquent et que les filtres antispam pénalisent. Un client qui refuse le HTML affiche le texte, identique mot pour mot.
+Chaque mail part en **deux parties** : un texte brut, et une version HTML habillée aux couleurs du déploiement (clés `pdf-*` de `BRANDING_COLORS`, `BRANDING_ORGANISATION` au pied de page). Le logo (clé `pdf-logo` de `BRANDING_IMAGES`) est embarqué dans le message lui-même : aucune image n'est chargée depuis un serveur à l'ouverture, ce que les clients de messagerie bloquent et que les filtres antispam pénalisent. Un client qui refuse le HTML affiche le texte, identique mot pour mot.
 
 Avec `MAIL_MOCK=true`, rien ne part : les mails sont journalisés, et l'écran dit « simulé » pour qu'une recette ne passe pas pour une diffusion.
 

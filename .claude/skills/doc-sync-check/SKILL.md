@@ -40,10 +40,10 @@ Match what changed to the doc that owns it:
    directly.
 3. **Don't create planning/notes/tracking Markdown files** in the repo at
    all (scratch notes belong outside the repo).
-4. Docs are written in **French**, code/comments in **English**; domain
+4. Docs are written in **French and English** (`site/src/docs/` and its twin `site/src/docs-en/`, changed together), code/comments in **English**; domain
    identifiers (`Animateur`, `Creneau`, `TypologieJeu`, …) stay in French
    business vocabulary everywhere.
-5. `README.md` must stay an introduction, the *Démarrage rapide* (« Essayer »,
+5. `README.md` (English) and `README.fr.md` must stay an introduction, the *Démarrage rapide* (« Essayer »,
    « Développer ») and the documentation pointer — nothing else; the functional
    inventory and the configuration live in `docs/`.
 

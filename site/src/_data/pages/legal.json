@@ -55,11 +55,11 @@
     "sections": [
       {
         "h2": "The law that applies at each person's real age",
-        "texte": "Everyone gets the law of their real age, worked out **on the date of each shift**: under 16, 16 to 18, or adult. Someone who turns 16 mid-event changes regime that day.\n\n- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours.\n\nThe date of birth is used for that calculation alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it.\n\nThese rules hold for any event, [a festival staff rota](/en/festival-staff-rota/) for instance. The thresholds are set in [the planning rules guide](/docs/regles/regles-du-planning/) (in French). The common cases, question by question, are in [under-18 staff](/en/under-18-staff/)."
+        "texte": "Everyone gets the law of their real age, worked out **on the date of each shift**: under 16, 16 to 18, or adult. Someone who turns 16 mid-event changes regime that day.\n\n- **Under 16**: 7 hours a day, no shift between 20:00 and 06:00, 14 hours' rest between two days.\n- **16 to 18**: 8 hours a day and 35 a week, no shift between 22:00 and 06:00, 12 hours' rest.\n- **Every under-18**: a 30-minute break after 4 hours 30, two consecutive rest days a week, no public holiday.\n- **An adult**: 10 hours a day, 48 a week (adjustable), 11 hours' rest, a break after 6 hours.\n\nThe date of birth is used for that calculation alone: neither the control-room TV, nor the team chat, nor the AI assistant sees it.\n\nThese rules hold for any event, [a festival staff rota](/en/festival-staff-rota/) for instance. The thresholds are set in [the planning rules guide](/en/docs/rules/tune-the-rules/). The common cases, question by question, are in [under-18 staff](/en/under-18-staff/)."
       },
       {
         "h2": "A break is a gap or a relief",
-        "texte": "A break that is due fits in two ways only: a gap in the grid, or a colleague on the same stand holding the seat for the whole break. Otherwise the plan is refused. The reasoning behind the break lengths is in [legal rules, breaks and meals](/docs/comprendre/regles-legales-et-pauses/) (in French)."
+        "texte": "A break that is due fits in two ways only: a gap in the grid, or a colleague on the same stand holding the seat for the whole break. Otherwise the plan is refused. The reasoning behind the break lengths is in [legal rules, breaks and meals](/en/docs/build/legal-rules-and-breaks/)."
       },
       {
         "h2": "What the software does not decide",
@@ -67,7 +67,7 @@
       },
       {
         "h2": "Where to read the exact rules",
-        "texte": "In the application, on the “Schedule rules” screen. Why each rule exists is in [the code documentation](/docs/comprendre/pourquoi-ces-regles/) (in French), the articles on [Légifrance](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/) (in French). As the code is open, the software [can also run on your own server](/en/self-hosting/)."
+        "texte": "In the application, on the “Schedule rules” screen. Why each rule exists is in [the code documentation](/en/docs/build/why-these-rules/), the articles on [Légifrance](https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072050/). As the code is open, the software [can also run on your own server](/en/self-hosting/)."
       },
       {
         "h2": "Rules of your own event",

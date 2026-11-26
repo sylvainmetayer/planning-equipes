@@ -84,7 +84,7 @@
       {
         "id": "repos-quotidien",
         "q": "How much rest between two working days?",
-        "a": "12 hours for an under-18 from 16 to 18, 14 hours before 16 (article L3164-1). For an adult, it is 11 hours (article L3131-1). Rest between two days is explained in [rest and consecutive days](/docs/comprendre/repos-et-jours-d-affilee/) (in French)."
+        "a": "12 hours for an under-18 from 16 to 18, 14 hours before 16 (article L3164-1). For an adult, it is 11 hours (article L3131-1). Rest between two days is explained in [rest and consecutive days](/en/docs/build/rest-and-consecutive-days/)."
       },
       {
         "id": "repos-hebdomadaire",
@@ -99,7 +99,7 @@
       {
         "id": "age",
         "q": "Which age counts, the first day's or the shift's?",
-        "a": "The age on the day of each shift. Someone who turns 16 mid-event changes regime that day. The date of birth is used for that calculation alone. The date of birth is entered in [the animateur's record](/docs/regles/animateurs-et-competences/) (in French)."
+        "a": "The age on the day of each shift. Someone who turns 16 mid-event changes regime that day. The date of birth is used for that calculation alone. The date of birth is entered in [the staff member's record](/en/docs/rules/staff-and-skills/)."
       },
       {
         "id": "convention",
@@ -109,7 +109,7 @@
       {
         "id": "benevoles",
         "q": "Do these rules apply to volunteers under 18 too?",
-        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. For an example, see [a sports event volunteer rota](/en/sports-event-volunteer-rota/). The setting is in [adjusting the planning rules](/docs/regles/regles-du-planning/) (in French). For a race or a tournament, see [the sports event](/en/sports-event-volunteer-rota/)."
+        "a": "By default, the tool applies the same rules to the whole team. A volunteer has no employment contract, so your organisation may disable a rule, and the tool asks it to confirm that choice. Volunteer status remains your call. For an example, see [a sports event volunteer rota](/en/sports-event-volunteer-rota/). The setting is in [adjusting the planning rules](/en/docs/rules/tune-the-rules/). For a race or a tournament, see [the sports event](/en/sports-event-volunteer-rota/)."
       }
     ],
     "cta": "A rule to check for your event?",

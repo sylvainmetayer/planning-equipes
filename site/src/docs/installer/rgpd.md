@@ -59,10 +59,10 @@ renseigne le `.env.prod`** : les deux listes se recouvrent.
 
 | Rubrique | Où le lire |
 | --- | --- |
-| Responsable de traitement et contact | `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_CONTACT` |
-| Base légale déclarée | `LEGAL_BASE_LEGALE` |
-| Durée de conservation annoncée | `LEGAL_CONSERVATION` ; voir [la limite de conservation](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
-| Hébergeur d'infrastructure | `LEGAL_HEBERGEUR` |
+| Responsable de traitement et contact | clés `responsable-traitement` et `contact` de `LEGAL_MENTIONS` |
+| Base légale déclarée | clé `base-legale` de `LEGAL_MENTIONS` |
+| Durée de conservation annoncée | clé `conservation` de `LEGAL_MENTIONS` ; voir [la limite de conservation](rgpd-limites-a-consigner.md#aucune-purge-automatique) |
+| Hébergeur d'infrastructure | clé `hebergeur` de `LEGAL_MENTIONS` |
 | Relais SMTP | `MAIL_HOST` |
 | Suivi d'erreurs | `SENTRY_DSN` renseigné ⇒ Bugsink, hébergement UE, **pas de transfert à déclarer** |
 | Mesure d'audience | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` renseigné ⇒ **transfert hors UE à déclarer**. Le défaut est vide : ne rien poser suffit à l'éteindre. Ce ne fut pas toujours le cas : le profil `%prod` portait le token de l'éditeur ([`observabilite.md`](observabilite.md)) |
@@ -87,7 +87,7 @@ dans le même document que le registre :
 | Vérification | Espace animateur **et adresse d'abonnement** d'un jeton supprimé répondant bien `404` |
 
 Une purge manuelle sans écrit ne prouve rien. Seul ce journal rend tenable
-la durée annoncée par `LEGAL_CONSERVATION`.
+la durée annoncée par la clé `conservation` de `LEGAL_MENTIONS`.
 
 ## Le rythme de tenue
 
