@@ -3493,12 +3493,6 @@
       "DemandePublication" : {
         "type" : "object",
         "properties" : {
-          "exclusions" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
           "cibles" : {
             "type" : "array",
             "items" : {

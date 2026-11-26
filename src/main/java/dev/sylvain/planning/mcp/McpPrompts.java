@@ -367,9 +367,7 @@ public class McpPrompts {
                 changements_journee avec reference=publication montre, siège par siège, ce que la \
                 publication va annoncer.
                 5. Signale-moi les personnes dont adresseConnue est faux : elles ne recevront rien et \
-                devront être prévenues autrement. Si je veux prévenir quelqu'un de vive voix d'abord, \
-                l'argument exclusions diffère son message : il restera à prévenir à la publication \
-                suivante.
+                devront être prévenues autrement.
                 6. publier_planning seulement après mon accord.
                 7. lister_destinataires_publication pour contrôler le résultat. Le suivi des \
                 accusés de réception est le prompt suivre_les_confirmations : synthese_confirmations, \

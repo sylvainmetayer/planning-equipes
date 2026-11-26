@@ -139,6 +139,8 @@ class IsolationEditionStructurelleTest {
             "declaration_coequipier_avant_4_0",
             // V145's archive of the budgets editions had set: partitioned like its source.
             "solve_budget_avant_4_0",
+            // V160's archive of the people a publication had been told to leave out: partitioned like its source.
+            "exclusion_publication_avant_4_0",
             // V158's archive of the weight history the action journal replaced: partitioned like its source.
             "ponderation_contrainte_historique_avant_4_0");
 
