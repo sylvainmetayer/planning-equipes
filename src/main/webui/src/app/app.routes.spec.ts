@@ -304,7 +304,9 @@ describe('app.routes', () => {
       expect(
         redirectTarget('repartition-heures', { date: '2026-09-05', regroupement: 'typologie' }),
       ).toBe('/journee?axe=stand&vue=treemap&jourTreemap=2026-09-05&regroupement=typologie');
-      expect(redirectTarget('typologies-planning', {})).toBe('/stands?onglet=typologies');
+      expect(redirectTarget('typologies-planning', {})).toBe(
+        '/diagnostic?onglet=besoin&section=typologie',
+      );
     });
 
     // 4.0: the Planning page keeps Jour, Stand, Personne and Carte. The views
@@ -314,10 +316,12 @@ describe('app.routes', () => {
       const formerView = (queryParams: Record<string, string>): string | null =>
         planningFormerViewUrl(queryParams);
 
-      it('mène « Par typologie » à l’onglet Typologies des stands', () => {
-        expect(formerView({ axe: 'typologie' })).toBe('/stands?onglet=typologies');
+      it('mène « Par typologie » à la section Typologie du Besoin', () => {
+        expect(formerView({ axe: 'typologie' })).toBe(
+          '/diagnostic?onglet=besoin&section=typologie',
+        );
         expect(formerView({ axe: 'typologie', typologie: 'T1', q: 'x' })).toBe(
-          '/stands?onglet=typologies',
+          '/diagnostic?onglet=besoin&section=typologie',
         );
       });
 

@@ -215,7 +215,7 @@ export function equityFicheUrl(queryParams: Params): string | null {
 /**
  * The views the Planning page gave up in 4.0 (it keeps Jour, Stand, Personne
  * and Carte): their addresses land on the screen that holds their reading
- * today — the table by game category on the Stands' typologies tab, the
+ * today — the table by game category in the Diagnostic's Besoin, the
  * breaks among the Diagnostic's problems, what changed since the publication
  * on the day's row of Diffuser — until the screens built for them exist
  * (Besoin, « Repas et pauses »). A day named by `date` (or an ISO `jour`) goes
@@ -227,7 +227,7 @@ export function planningFormerViewUrl(queryParams: Params): string | null {
     return typeof value === 'string' ? value : '';
   };
   if (text('axe') === 'typologie') {
-    return '/stands?onglet=typologies';
+    return '/diagnostic?onglet=besoin&section=typologie';
   }
   switch (text('vue')) {
     case 'pauses':
@@ -749,7 +749,8 @@ const adminRoutes: Routes = [
     path: 'repartition-heures',
     redirectTo: redirectToPlanning({ axe: 'stand', vue: 'treemap' }, { date: 'jourTreemap' }),
   },
-  { path: 'typologies-planning', redirectTo: () => '/stands?onglet=typologies' },
+  // The plan read by game category is a section of the Diagnostic's Besoin.
+  { path: 'typologies-planning', redirectTo: () => '/diagnostic?onglet=besoin&section=typologie' },
   // The four screens the Journée page gathers, kept for the bookmarks. The
   // rail's `vue` (which lines) and the breaks' `vue` (only those without a
   // relay) are renamed to the keys the views own now.

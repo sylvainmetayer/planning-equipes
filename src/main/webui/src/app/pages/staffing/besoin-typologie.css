@@ -1,0 +1,63 @@
+/* The plan by game category at the foot of Besoin: one table, every figure
+   a link to where it is acted on. */
+
+.besoin-typologie-table {
+  border-collapse: collapse;
+  width: 100%;
+  font: var(--mat-sys-body-medium);
+}
+
+.besoin-typologie-table th,
+.besoin-typologie-table td {
+  padding: 0.375rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+}
+
+.besoin-typologie-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--mat-sys-surface-container);
+  font: var(--mat-sys-title-small);
+}
+
+.besoin-typologie-table .besoin-typologie-nombre {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.besoin-typologie-table tbody th {
+  font-weight: 500;
+}
+
+.besoin-typologie-polyvalent {
+  margin-left: 0.5rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-small);
+}
+
+.besoin-typologie-alerte a {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+.besoin-typologie-description {
+  display: block;
+  font: var(--mat-sys-body-small);
+  font-weight: normal;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Who the two counts that call for a look are: the names under the figure,
+   each a link to the fiche. */
+.besoin-typologie-noms {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 0.5rem;
+  font: var(--mat-sys-body-small);
+  font-weight: normal;
+}

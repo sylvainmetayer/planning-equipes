@@ -541,13 +541,14 @@ class DocumentationStructuralTest {
         Pattern twin = Pattern.compile("\\A---\\n(?:.*\\n)*?twin: *(\\S+)\\n(?:.*\\n)*?---\\n");
         Set<String> french = new TreeSet<>();
         try (Stream<Path> files = Files.walk(SITE_DOCS)) {
-            files.filter(f -> f.toString().endsWith(".md"))
+            files.filter(f -> f.toString().endsWith(".md") && !isSection(f))
                     .forEach(f -> french.add(SITE_DOCS.relativize(f).toString().replaceAll("\\.md$", "")));
         }
         Set<String> twinned = new TreeSet<>();
         Set<String> problems = new TreeSet<>();
         try (Stream<Path> files = Files.walk(Path.of("site/src/docs-en"))) {
-            for (Path f : files.filter(p -> p.toString().endsWith(".md")).toList()) {
+            for (Path f : files.filter(p -> p.toString().endsWith(".md") && !isSection(p))
+                    .toList()) {
                 Matcher m = twin.matcher(Files.readString(f, StandardCharsets.UTF_8));
                 if (!m.find()) {
                     problems.add(f + " has no `twin:` in its front matter");
@@ -564,6 +565,90 @@ class DocumentationStructuralTest {
             }
         }
         assertThat(problems).as("French pages and their English twins").isEmpty();
+    }
+
+    /**
+     * A section of a page rather than a page: a file of the folder {@code x/} that sits next to
+     * {@code x.md}, which the site appends to that page (in the order of its {@code ordre:}).
+     */
+    private static boolean isSection(Path file) {
+        Path folder = file.getParent();
+        return Files.exists(folder.resolveSibling(folder.getFileName() + ".md"));
+    }
+
+    /** « 42 règles », « 39 rules »: a count of the catalogue written out, across a line break too. */
+    private static final Pattern RULE_COUNT = Pattern.compile("\\b\\d+\\s+(?:\\*\\s+)?(?:règles|rules)\\b(?! a11y)");
+
+    /**
+     * No page, memory file or javadoc writes the number of rules of the catalogue out: it was
+     * 39 in one place, 40 in another and 46 in a third, each true the day it was written. A page
+     * writes {@code {{ regles.total }}}, which the site counts from the catalogue table; the code
+     * and {@code AGENTS.md} say « every rule of the catalogue ». The rules of {@code angular-eslint}
+     * are not the catalogue's.
+     */
+    @Test
+    void noRuleCountIsWrittenOut() throws IOException {
+        List<Path> roots = List.of(
+                SITE_DOCS, Path.of("site/src/docs-en"), Path.of("AGENTS.md"), AGENTS_MD, Path.of("src/main/java"));
+        List<String> found = new ArrayList<>();
+        for (Path root : roots) {
+            try (Stream<Path> files = Files.walk(root)) {
+                for (Path file : files.filter(f -> f.toString().matches(".*\\.(md|java)$"))
+                        .sorted()
+                        .toList()) {
+                    Matcher m = RULE_COUNT.matcher(Files.readString(file, StandardCharsets.UTF_8));
+                    while (m.find()) {
+                        found.add(file + ": « " + m.group().replaceAll("\\s+", " ") + " »");
+                    }
+                }
+            }
+        }
+        assertThat(found)
+                .as("a number of rules written out — for the catalogue, write {{ regles.total }} in a page "
+                        + "of the site, or « every rule of the catalogue »; any other count, in words "
+                        + "(« deux règles »)")
+                .isEmpty();
+    }
+
+    @Test
+    void aRuleCountIsFoundAcrossALineBreakAndTheLintRulesAreNot() {
+        assertThat(RULE_COUNT.matcher("les 39 règles sont").find()).isTrue();
+        assertThat(RULE_COUNT.matcher("the 46\n * rules as").find()).isTrue();
+        assertThat(RULE_COUNT.matcher("les {{ regles.total }} règles").find()).isFalse();
+        assertThat(RULE_COUNT.matcher("12 règles a11y d'angular-eslint").find()).isFalse();
+    }
+
+    /**
+     * The index of {@code docs/decisions/README.md} is one row per record, in the order of the
+     * numbers, and ends the file: a new record adds its row at the end, {@code .gitattributes}
+     * merges the file as a union of lines, and this puts the order back after one — two branches
+     * that both change a row leave two rows of one number, refused here.
+     */
+    @Test
+    void theDecisionIndexIsOneRowPerRecordInNumberOrder() throws IOException {
+        String readme = Files.readString(DECISIONS.resolve("README.md"), StandardCharsets.UTF_8);
+        List<String> lines = readme.lines().toList();
+        int header = lines.indexOf("| --- | --- | --- |");
+        assertThat(header).as("the header of the index table").isPositive();
+        List<String> rows = lines.subList(header + 1, lines.size());
+        assertThat(rows).as("the index table ends the file, one row per line").allMatch(l -> l.startsWith("| ["));
+        assertThat(readme).endsWith("\n").doesNotEndWith("\n\n");
+        List<Integer> numbers =
+                rows.stream().map(l -> Integer.valueOf(l.substring(3, 7))).toList();
+        assertThat(numbers)
+                .as("numbers of the index rows")
+                .isSortedAccordingTo(Integer::compare)
+                .doesNotHaveDuplicates();
+        Set<Integer> records;
+        try (Stream<Path> files = Files.list(DECISIONS)) {
+            records = files.map(f -> f.getFileName().toString())
+                    .filter(name -> name.matches("\\d{4}-.*\\.md"))
+                    .map(name -> Integer.valueOf(name.substring(0, 4)))
+                    .collect(Collectors.toCollection(TreeSet::new));
+        }
+        assertThat(new TreeSet<>(numbers))
+                .as("every record has its row, every row its record")
+                .isEqualTo(records);
     }
 
     /**

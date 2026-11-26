@@ -1,11 +1,12 @@
 # Deux PR ouvertes qui prennent le même numéro de migration Flyway ou d'ADR.
 #
 # Aucune des deux n'a tort tant qu'aucune n'est fusionnée : la seconde à
-# fusionner devra renuméroter, et `check-reserved-numbers.sh` (job `frontend`
-# de Tests) la refusera dès que la première aura atterri. Ce workflow le dit
-# plus tôt, par un avertissement posé sur le fichier, et n'échoue jamais pour
-# une collision : il n'échoue que si l'API est illisible, pour ne pas conclure
-# « aucune collision » sans avoir rien lu.
+# fusionner renumérote, `renumeroter-migration.py` pour une migration (le
+# coordinateur le lance juste avant de fusionner), à la main pour un ADR, que
+# `check-reserved-numbers.sh` (job `frontend` de Tests) refusera dès que la
+# première aura atterri. Ce workflow le dit plus tôt, par un avertissement posé
+# sur le fichier, et n'échoue jamais pour une collision : il n'échoue que si
+# l'API est illisible, pour ne pas conclure « aucune collision » sans avoir rien lu.
 name: Numéros réservés
 
 on:

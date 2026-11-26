@@ -227,17 +227,25 @@ test.describe('typologies', () => {
     await page.context().close();
   });
 
-  // « Par typologie » left the Planning page in 4.0: its addresses land on the
-  // table of the Stands' typologies tab, which reads the same plan.
-  test('les anciennes adresses de « Par typologie » mènent à l’onglet Typologies', async ({
-    browser,
-  }) => {
+  // « Par typologie », read at the foot of the Diagnostic's Besoin: one table,
+  // every figure a way to where it is acted on.
+  test('le besoin par typologie renvoie chaque chiffre là où on agit', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
-    for (const ancienne of ['/typologies-planning', '/journee?axe=typologie']) {
-      await page.goto(ancienne);
-      await expect(page).toHaveURL(/\/stands\?onglet=typologies/);
-      await expect(page.locator('#contenu')).toContainText('Typologies');
-    }
+    // The former address lands on the section, which draws the table (the
+    // landing's `section` leaves the address once obeyed).
+    await page.goto('/typologies-planning');
+    await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
+    const table = page.locator('.besoin-typologie-table');
+    await expect(table).toBeVisible();
+
+    // The vetted go to the Animateurs list filtered on the category.
+    const row = table.locator('tbody tr').first();
+    await expect(row.locator('a[href^="/animateurs?typologie="]').first()).toBeVisible();
+
+    // The seats open the Planning by stand, narrowed to the category.
+    await row.locator('td a').first().click();
+    await expect(page).toHaveURL(/vue=stand/);
+    await expect(page).toHaveURL(/typologie=/);
     await page.context().close();
   });
 });

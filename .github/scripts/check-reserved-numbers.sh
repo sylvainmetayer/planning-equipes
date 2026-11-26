@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
-# Refuses a branch that adds a Flyway migration or a decision record under a
-# number its base already holds:
-#   - a migration V<n> added by the branch must be strictly above the highest
-#     version of the base — Flyway refuses an out-of-order version once the
-#     higher one is applied, so « free » is not enough;
+# Checks the numbers a branch adds against those its base already holds:
 #   - a decision record NNNN added by the branch must carry a number no record
-#     of the base carries.
+#     of the base carries, or the check fails;
+#   - a migration V<n> added by the branch must end up strictly above the
+#     highest version of the base — Flyway refuses an out-of-order version once
+#     the higher one is applied, so « free » is not enough. Nobody reserves a
+#     number: a branch takes the next one when it pushes, and the coordinator
+#     runs renumeroter-migration.py right before merging it, which moves the
+#     migration and its references above the base. A migration that is no
+#     longer above is therefore a warning here, never a failure: failing would
+#     cost every open pull request a push and a CI run each time another merges.
+#     STRICT_MIGRATIONS=1 makes it a failure again: the push to main runs it so
+#     against the tip main had before, the net under a forgotten renumbering,
+#     before the image ships a migration a database cannot apply.
 #
 #   scripts/check-reserved-numbers.sh origin/main
+#   STRICT_MIGRATIONS=1 scripts/check-reserved-numbers.sh <main before the push>
 #
 # Compared with the tip of the base, not with the fork point: two pull
 # requests that both took the next number are told apart the moment the first
@@ -63,9 +71,11 @@ checked=0
 while IFS= read -r file; do
   if v="$(migration_version "$file")"; then
     checked=$((checked + 1))
-    if (( v <= highest )); then
-      echo "$file: version $v is not above the highest of $base, $highest_file — take V$((highest + 1)) or above"
+    if (( v <= highest )) && [[ "${STRICT_MIGRATIONS:-}" == 1 ]]; then
+      echo "$file: version $v is not above the highest of $base, $highest_file — renumeroter-migration.py was not run before the merge"
       status=1
+    elif (( v <= highest )); then
+      echo "::warning file=$file::version $v is not above the highest of $base, $highest_file — renumeroter-migration.py moves it at merge"
     fi
   elif n="$(decision_number "$file")"; then
     checked=$((checked + 1))
@@ -77,6 +87,6 @@ while IFS= read -r file; do
 done <<< "$added"
 
 if [[ "$status" -eq 0 ]]; then
-  echo "check-reserved-numbers: $checked added migration(s) or decision record(s), none takes a number of $base"
+  echo "check-reserved-numbers: $checked added migration(s) or decision record(s), no decision record takes a number of $base"
 fi
 exit "$status"

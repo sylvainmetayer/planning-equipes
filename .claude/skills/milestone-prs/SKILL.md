@@ -106,8 +106,14 @@ Do not start writing code before the answers are in.
 - Shell variables do not survive from one Bash call to the next. Write rebases
   with explicit SHAs: an empty variable turns `git rebase --onto A $old B` into
   a reset of the branch. Recover through `git reflog show <branch>`.
-- Resolve a conflict in an append-only file (`json-contract.txt`,
-  `messages.en.json`) by taking the union of both sides, never one side.
+- The sorted lists (`json-contract.txt`, `migrations-empreintes.txt`, the
+  decision index, `mcp-renommages.tsv`) merge as a union of lines
+  (`.gitattributes`); their tests put the order back. A conflict in the sorted
+  `messages.en.json` takes both sides, never one:
+  `jq -S -s '.[0] * .[1]' <(git show MERGE_HEAD:<file>) <(git show HEAD:<file>)`.
+- Run `.github/scripts/renumeroter-migration.py` on a branch right before
+  merging it: it moves its migrations above `main` if another merge took the
+  number.
 - A fixup that also touches code introduced by a *later* commit conflicts when
   autosquashed. Keep each fixup's diff within its target commit.
 - A host blocked by the network policy (SonarCloud, a job log store) stays

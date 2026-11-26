@@ -109,7 +109,7 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await page.goto('/journee?vue=pauses');
   await expect(page).toHaveURL(/\/diagnostic$/);
   await page.goto('/journee?axe=typologie');
-  await expect(page).toHaveURL(/\/stands\?onglet=typologies/);
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
   await page.goto(`/journee?vue=changements&date=${SEED.jour}`);
   // Envoyer is the default tab of Diffuser: its address drops `onglet` too.
   await expect(page).toHaveURL(new RegExp(String.raw`/publication\?jour=${SEED.jour}$`));
@@ -163,6 +163,10 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await page.goto('/diagnostic?onglet=former');
   await expect(page).toHaveURL(/onglet=besoin/);
   await expect(page.locator('#a-former')).toContainText('À former');
+
+  // The volumetry and the plan by typologie are sections of Besoin too.
+  await expect(page.locator('#besoin-volumetrie')).toContainText('Volumétrie du problème');
+  await expect(page.locator('#besoin-par-typologie')).toContainText('typologie par typologie');
   await page.context().close();
 });
 
