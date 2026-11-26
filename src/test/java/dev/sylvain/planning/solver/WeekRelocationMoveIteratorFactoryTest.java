@@ -3,9 +3,10 @@ package dev.sylvain.planning.solver;
 import static dev.sylvain.planning.solver.MoveFactoryTestSupport.director;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.preview.api.move.Move;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -16,6 +17,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -245,7 +247,9 @@ class WeekRelocationMoveIteratorFactoryTest {
                 defaults.reposSouhaiteApresServiceTardifMinutes(),
                 defaults.typologiesDistinctesMax(),
                 joursConsecutifsMax)));
-        plan.setConstraintsDesactivees(List.of(new ConstraintToggle("maxJoursConsecutifsTravaillesDur", true)));
+        // The run of days made obligatoire: its weight is one hard point (ADR 0111, 0118).
+        plan.setPonderationsContraintes(
+                ConstraintWeightOverrides.of(Map.of("maxJoursConsecutifsTravailles", HardMediumSoftScore.ofHard(1))));
     }
 
     private static PosteAffectation seat(String id, Stand stand, Creneau creneau, Animateur animateur) {

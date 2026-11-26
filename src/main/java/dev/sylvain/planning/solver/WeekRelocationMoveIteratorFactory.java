@@ -3,6 +3,7 @@ package dev.sylvain.planning.solver;
 import static dev.sylvain.planning.solver.MoveFactorySupport.ANIMATEUR;
 import static dev.sylvain.planning.solver.MoveFactorySupport.overlapsAny;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.impl.heuristic.selector.move.factory.MoveIteratorFactory;
 import ai.timefold.solver.core.impl.score.director.ScoreDirector;
 import ai.timefold.solver.core.preview.api.move.Move;
@@ -57,7 +58,7 @@ import java.util.stream.Collectors;
  * always gets a move.</p>
  *
  * <p><b>The run of days, when the edition holds it hard.</b> With
- * {@code maxJoursConsecutifsTravaillesDur} on, the day that has to go is not
+ * {@code maxJoursConsecutifsTravailles} obligatoire, the day that has to go is not
  * only one of the same ISO week: a Monday hole taken by someone who worked
  * Wednesday to Sunday makes a seventh day in a row, and only a day of that run
  * breaks it — a day the ISO week does not reach. The chain then releases a day
@@ -86,8 +87,8 @@ public final class WeekRelocationMoveIteratorFactory
     private static final int CANDIDATE_TRIES_UNDER_RUN_CAP = 3 * CANDIDATE_TRIES;
     /** Days drawn before giving up on a regrouping: most full days have nobody free to absorb them. */
     private static final int CONSOLIDATION_TRIES = 50;
-    /** The hard form of the run rule, the only one the move reads (ADR 0045). */
-    private static final String HARD_RUN_RULE = "maxJoursConsecutifsTravaillesDur";
+    /** The run rule, which the move reads only when the edition made it obligatoire (ADR 0118). */
+    private static final String RUN_RULE = "maxJoursConsecutifsTravailles";
 
     @Override
     public long getSize(ScoreDirector<PlanningEvenement> scoreDirector) {
@@ -124,15 +125,24 @@ public final class WeekRelocationMoveIteratorFactory
 
     /**
      * The run cap the move works towards: the edition's
-     * {@code joursConsecutifsMax} when {@code maxJoursConsecutifsTravaillesDur}
-     * is active — read as the score reads it, toggle first, catalogue default
-     * otherwise — and {@code 0} when it is not: the rule ships off (ADR 0045), and
-     * an edition that leaves it off keeps the move it had.
+     * {@code joursConsecutifsMax} when {@code maxJoursConsecutifsTravailles}
+     * is active and scores on the hard level — read as the score reads it, the
+     * toggle and the weight the solution carries (ADR 0111) — and {@code 0}
+     * otherwise: the rule ships as a preference (ADR 0118), and an edition that
+     * leaves it there keeps the move it had.
      */
     public static int hardRunCap(PlanningEvenement solution) {
-        boolean on = ConstraintCatalog.isActive(solution.getConstraintsDesactivees(), HARD_RUN_RULE);
+        boolean on = ConstraintCatalog.isActive(solution.getConstraintsDesactivees(), RUN_RULE);
+        HardMediumSoftScore weight = solution.getPonderationsContraintes() == null
+                ? null
+                : solution.getPonderationsContraintes().getConstraintWeight(RUN_RULE);
         List<ParametresQualite> qualite = solution.getParametresQualite();
-        if (!on || qualite == null || qualite.isEmpty() || qualite.get(0) == null) {
+        if (!on
+                || weight == null
+                || weight.hardScore() <= 0
+                || qualite == null
+                || qualite.isEmpty()
+                || qualite.get(0) == null) {
             return 0;
         }
         return qualite.get(0).joursConsecutifsMax();
@@ -157,7 +167,7 @@ public final class WeekRelocationMoveIteratorFactory
         private final Map<LocalDate, List<Animateur>> workingOn = new HashMap<>();
 
         private final ParametresLegaux parametresLegaux;
-        /** The run cap when the hard form of the rule is on, else {@code 0}: runs are then not the move's business. */
+        /** The run cap when the run rule is obligatoire, else {@code 0}: runs are then not the move's business. */
         private final int runCap;
         /** Animateurs whose longest run exceeds {@link #runCap}. */
         private final List<Animateur> overlongRuns = new ArrayList<>();

@@ -142,6 +142,9 @@ public class ContrainteMcpTools {
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
                     Integer poids,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom)) {
+            throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
+        }
         String rule = requireConnue(nom);
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
@@ -187,7 +190,9 @@ public class ContrainteMcpTools {
 
     private ToggleResult setActive(String nom, boolean actif) {
         String rule = requireConnue(nom);
-        referenceDataService.setContrainteActive(rule, actif);
+        // The 3.x hard run form is a level, not a rule: the service reads it under its own name.
+        referenceDataService.setContrainteActive(
+                ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom) ? nom : rule, actif);
         return new ToggleResult(rule, actif);
     }
 

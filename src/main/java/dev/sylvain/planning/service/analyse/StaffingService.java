@@ -70,7 +70,9 @@ public class StaffingService {
     StaffingRules rules() {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
         FeasibilityAnalyzer.ConsecutiveDaysRule jours = FeasibilityAnalyzer.ConsecutiveDaysRule.of(
-                referenceDataService.getContraintesDesactivees(), referenceDataService.getParametresQualite());
+                referenceDataService.getContraintesDesactivees(),
+                referenceDataService.getNiveauxObligatoires(),
+                referenceDataService.getParametresQualite());
         return new StaffingRules(
                 parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.dureePauseMinutes(false),

@@ -467,6 +467,7 @@ public class EtatEditionService {
                         FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
                         FeasibilityAnalyzer.ConsecutiveDaysRule.of(
                                 referenceDataService.getContraintesDesactivees(),
+                                referenceDataService.getNiveauxObligatoires(),
                                 referenceDataService.getParametresQualite()),
                         new FeasibilityAnalyzer.PlanContext(
                                 planningService.pastHorizon(), persistenceService::loadEmployedByDay)),

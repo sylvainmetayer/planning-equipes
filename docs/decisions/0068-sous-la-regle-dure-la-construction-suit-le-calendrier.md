@@ -1,6 +1,6 @@
 # 0068 — Sous la règle dure des jours d'affilée, la construction suit le calendrier
 
-- **Statut** : accepté, implémenté ; `HardRunCapSearch`, qu'il cite comme condition, est retiré par [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) — la condition reste `WeekRelocationMoveIteratorFactory.hardRunCap`
+- **Statut** : révisée par [0118](0118-une-seule-regle-de-jours-d-affilee-a-niveau-reglable.md), qui retire l'ordre par calendrier ; accepté, implémenté ; `HardRunCapSearch`, qu'il cite comme condition, est retiré par [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) — la condition reste `WeekRelocationMoveIteratorFactory.hardRunCap`
 - **Date** : septembre 2026
 - **Portée** : solveur (ordre de l'heuristique de construction)
 - **Prolonge** : [0049](0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)

@@ -22,7 +22,7 @@ import org.jboss.logging.Logger;
  * The direct engine behind the face of a {@link Solver} (ADR 0087):
  * {@link HandSearch} searches, and <b>Timefold referees</b>.
  *
- * <p>The search keeps its own score, the 40 rules written a second time. That
+ * <p>The search keeps its own score, the 39 rules written a second time. That
  * score is never believed: once the best plan is laid on the problem, the
  * constraint provider scores it again, and a plan the two do not score alike
  * fails the solve — {@link Failed}, the job in error, the persisted plan

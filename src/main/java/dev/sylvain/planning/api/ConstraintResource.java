@@ -139,7 +139,9 @@ public class ConstraintResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
         String rule = requireKnown(name);
-        referenceDataService.setContrainteActive(rule, update.actif());
+        // The 3.x hard run form is a level, not a rule: the service reads it under its own name.
+        referenceDataService.setContrainteActive(
+                ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(name) ? name : rule, update.actif());
         // One method, two actions: the history keys on the route, so without
         // this it would record « Contrainte activée » for a deactivation —
         // the one thing a journal must never do (issue #406).
@@ -159,6 +161,9 @@ public class ConstraintResource {
     @Path("/{name}/poids")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(name)) {
+            throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
+        }
         String rule = requireKnown(name);
         referenceDataService.setConstraintWeight(rule, update.poids());
         return new ConstraintPoidsUpdate(
