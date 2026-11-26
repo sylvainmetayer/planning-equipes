@@ -70,7 +70,9 @@ régression ne touche que `SOLVER_ENGINE=timefold` à l'obligatoire.
    - **routes et outils MCP** : allumer la forme dure (`PUT
      /api/constraints/maxJoursConsecutifsTravaillesDur`, `activer_contrainte`)
      rend la règle obligatoire et active, l'éteindre la repasse en préférence
-     sans toucher à son poids ;
+     sans toucher à son poids ; un poids envoyé sous l'ancien nom est refusé :
+     c'était un poids dur, et lu comme celui de la règle fusionnée il la
+     doserait en silence ;
    - **`planning.constraint-weights.maxJoursConsecutifsTravaillesDur`** n'est
      plus lu : un poids dur ne dose rien.
 3. **L'ordre de construction par calendrier est retiré**, et sa couture de

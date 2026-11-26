@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.analyse;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
@@ -18,7 +19,6 @@ import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnExcludedSeats;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
-import dev.sylvain.planning.solver.WeekRelocationMoveIteratorFactory;
 import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
@@ -863,8 +863,15 @@ public class FeasibilityAnalyzer {
             }
             List<ParametresQualite> qualite = plan.getParametresQualite();
             return new ConsecutiveDaysRule(
-                    cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()),
-                    WeekRelocationMoveIteratorFactory.hardRunCap(plan) > 0);
+                    cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()), scoresHard(plan));
+        }
+
+        /** Whether the plan's own weight puts the rule on the hard level (ADR 0118), whatever its parameters hold. */
+        private static boolean scoresHard(PlanningEvenement plan) {
+            HardMediumSoftScore weight = plan.getPonderationsContraintes() == null
+                    ? null
+                    : plan.getPonderationsContraintes().getConstraintWeight(RULE);
+            return weight != null && weight.hardScore() > 0;
         }
 
         private static boolean active(Set<String> contraintesDesactivees, String nom) {

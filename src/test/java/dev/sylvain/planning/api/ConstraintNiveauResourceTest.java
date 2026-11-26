@@ -186,6 +186,15 @@ class ConstraintNiveauResourceTest {
                 .then()
                 .body(rule(JOURS) + ".niveauChoisi", equalTo("PREFERENCE_NORMALE"))
                 .body(rule(JOURS) + ".actif", equalTo(true));
+
+        // A hard weight under the old name would dose the preference down: refused, never read.
+        given().header(HEADER, defaut)
+                .contentType("application/json")
+                .body("{\"poids\":1}")
+                .when()
+                .put("/api/constraints/" + JOURS_FORME_DURE + "/poids")
+                .then()
+                .statusCode(400);
     }
 
     private void toggle(String nom, boolean actif) {

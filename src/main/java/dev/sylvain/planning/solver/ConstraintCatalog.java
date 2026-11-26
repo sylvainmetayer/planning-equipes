@@ -103,6 +103,15 @@ public final class ConstraintCatalog {
      */
     public static final String FORME_DURE_JOURS_CONSECUTIFS = "maxJoursConsecutifsTravaillesDur";
 
+    /**
+     * Why a weight sent under {@link #FORME_DURE_JOURS_CONSECUTIFS} is refused:
+     * it was a hard weight, and read as the merged rule's it would silently
+     * dose the preference down.
+     */
+    public static final String POIDS_FORME_DURE_REFUSE = "La forme dure « maxJoursConsecutifsTravaillesDur » n'existe "
+            + "plus : c'est le niveau obligatoire de « maxJoursConsecutifsTravailles ». Choisissez ce niveau, ou "
+            + "réglez le poids de « maxJoursConsecutifsTravailles ».";
+
     /* Names of the rules several tables of this class key on. */
     private static final String POSTE_DOIT_ETRE_POURVU = "posteDoitEtrePourvu";
     private static final String ANIMATEUR_DISPONIBLE = "animateurDisponible";
@@ -254,7 +263,7 @@ public final class ConstraintCatalog {
                     MAX_JOURS_CONSECUTIFS_TRAVAILLES,
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
                             + "couvrir ces journées, relevez le plafond dans Paramètres › Organisation, ou, si la "
-                            + "série doit rester possible, laissez la règle en préférence et baissez son "
+                            + "série doit rester possible, mettez la règle en préférence et baissez son "
                             + "importance."));
 
     /** Read by the Contraintes screen when a rule has no lever of its own. */

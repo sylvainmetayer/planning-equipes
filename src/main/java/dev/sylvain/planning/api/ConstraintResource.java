@@ -169,6 +169,9 @@ public class ConstraintResource {
     @Path("/{name}/poids")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(name)) {
+            throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
+        }
         String rule = requireKnown(name);
         referenceDataService.setConstraintWeight(rule, update.poids(), WeightChangeOrigin.SCREEN);
         return new ConstraintPoidsUpdate(

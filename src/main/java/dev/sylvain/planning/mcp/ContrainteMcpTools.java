@@ -166,6 +166,9 @@ public class ContrainteMcpTools {
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
                     Integer poids,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom)) {
+            throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
+        }
         String rule = requireConnue(nom);
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
