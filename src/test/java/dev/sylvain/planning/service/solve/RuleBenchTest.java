@@ -160,7 +160,7 @@ class RuleBenchTest {
         Solver<PlanningEvenement> solver;
         if ("timefold".equals(System.getProperty("bench.engine"))) {
             // The seed solverConfig.xml pins would otherwise ignore bench.seed.
-            SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(seconds, plateau, null), problem);
+            SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(seconds, plateau), problem);
             solverConfig.setRandomSeed(seed);
             SolverConfiguration.adaptToProblem(solverConfig, problem);
             solver = SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();

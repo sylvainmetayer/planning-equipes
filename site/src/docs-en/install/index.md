@@ -44,7 +44,7 @@ You host Planning Équipes for an organiser, or for yourself: an application and
 ## I want to put the application online
 
 1. [Install the application on your server](installation.md): the production stack, the seven mandatory variables, the end-of-deployment check.
-2. [Fill in the legal notice](mentions-legales.md): the five items without which the application refuses to start.
+2. [Fill in the legal notice](mentions-legales.md): the five items without which a public instance refuses to start.
 3. [Get your e-mails delivered](courriels.md): SMTP relay, SPF, DKIM, DMARC, and tracking of sends.
 4. [Expose the instance on the Internet](securite.md): what the reverse proxy must do, and hardening the stack.
 

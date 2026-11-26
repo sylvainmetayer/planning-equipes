@@ -197,7 +197,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   one dense row per hard rule — short label, article, on/off, the thresholds
   it reads edited on the row —, the same table for the medium and soft rules
   with their importance in three positions (faible 1 / normale 5 / forte 25,
-  `core/importance.ts`, ADR 0057), and the solve budget, the start of the
+  `core/importance.ts`, ADR 0057), and the instance's solve budget (shown,
+  never edited: ADR 0110), the end-of-solve mail, the start of the
   evening and the polyvalent typologie; nothing is written before the tab's
   « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
   exact weight, history of its settings — on its own tab, the stable address

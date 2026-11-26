@@ -14,12 +14,6 @@ edition:
 festival:
   dateDebut: 2027-08-09
 
-# Le calcul filmé dure moins d'une minute : le plan est faisable en quelques secondes,
-# la suite n'améliore que la qualité.
-parametresSolveur:
-  dureeResolutionSecondes: 40
-  plateauSecondes: 0
-
 contraintes:
   poids:
     appreciationIncompatible: 15

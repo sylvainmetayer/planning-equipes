@@ -6,8 +6,6 @@ schemaVersion: 2
 # PlanningServiceScenarioFestivalHivernalTest, qui exige zéro écart dur.
 festival:
   dateDebut: '2027-02-01'
-parametresSolveur:
-  dureeResolutionSecondes: 1800
 parametresLegaux:
   dureeHebdomadaireMaxMinutes: 2880
   reposQuotidienMinimalMinutes: 660

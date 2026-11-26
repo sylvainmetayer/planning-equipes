@@ -63,7 +63,7 @@ A restore with `scripts/restaurer.sh` of a `pg_dump` dump taken before the upgra
 
 ### The legal notice and the active edition
 
-A live instance that has never set the legal notice does not restart ([setting it](mentions-legales.md#monter-de-version-avec-une-instance-déjà-en-service)). On upgrading to `V118`, the active edition is chosen automatically ([the automatic sends](envois-automatiques.md#2-activer-lédition-qui-doit-écrire)).
+A live public instance (`PUBLIC_INSTANCE=true`) that has never set the legal notice does not restart, and any other warns at startup ([setting it](mentions-legales.md#monter-de-version-avec-une-instance-déjà-en-service)). On upgrading to `V118`, the active edition is chosen automatically ([the automatic sends](envois-automatiques.md#2-activer-lédition-qui-doit-écrire)).
 
 ## The PostgreSQL version
 

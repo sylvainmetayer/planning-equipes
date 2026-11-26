@@ -25,7 +25,12 @@ public class RetiredVariables {
     private static final String LAUNCHER = "Le lanceur de machine à la demande est retiré en 4.0 : déclarez votre "
             + "machine comme worker permanent avec SOLVER_WORKER_URL (site/src/docs/installer/passer-a-la-4-0.md).";
 
+    private static final String PLATEAU_CEILING = "Le plafond de l'arrêt sur plateau est retiré en 4.0 : le budget de "
+            + "calcul est celui de l'instance, que SOLVER_UNIMPROVED_SECONDS_LIMIT règle, et plus aucune édition ne "
+            + "le règle (site/src/docs/installer/passer-a-la-4-0.md).";
+
     static final List<Retired> RETIRED = List.of(
+            new Retired("SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX", PLATEAU_CEILING),
             new Retired("REMOTE_USER_ENABLED", HEADER_MODE),
             new Retired("REMOTE_USER_HEADER", HEADER_MODE),
             new Retired("REMOTE_USER_SECRET_HEADER", HEADER_MODE),

@@ -8,7 +8,6 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
@@ -71,7 +70,6 @@ public final class ScenarioYamlWriter {
             List<Emplacement> emplacements,
             ParametresLegaux parametresLegaux,
             ParametresQualite parametresQualite,
-            ParametresSolveur parametresSolveur,
             Map<String, Boolean> etatsContraintes,
             Map<String, Integer> poidsContraintes,
             List<ContrainteAdHoc> contraintesAdHoc,
@@ -90,7 +88,6 @@ public final class ScenarioYamlWriter {
                 List<Emplacement> emplacements,
                 ParametresLegaux parametresLegaux,
                 ParametresQualite parametresQualite,
-                ParametresSolveur parametresSolveur,
                 Map<String, Boolean> etatsContraintes,
                 Map<String, Integer> poidsContraintes,
                 List<ContrainteAdHoc> contraintesAdHoc,
@@ -105,7 +102,6 @@ public final class ScenarioYamlWriter {
                     emplacements,
                     parametresLegaux,
                     parametresQualite,
-                    parametresSolveur,
                     etatsContraintes,
                     poidsContraintes,
                     contraintesAdHoc,
@@ -125,7 +121,6 @@ public final class ScenarioYamlWriter {
                 List<Emplacement> emplacements,
                 ParametresLegaux parametresLegaux,
                 ParametresQualite parametresQualite,
-                ParametresSolveur parametresSolveur,
                 Map<String, Boolean> etatsContraintes,
                 Map<String, Integer> poidsContraintes,
                 List<ContrainteAdHoc> contraintesAdHoc) {
@@ -138,7 +133,6 @@ public final class ScenarioYamlWriter {
                     emplacements,
                     parametresLegaux,
                     parametresQualite,
-                    parametresSolveur,
                     etatsContraintes,
                     poidsContraintes,
                     contraintesAdHoc,
@@ -152,7 +146,7 @@ public final class ScenarioYamlWriter {
      * appear.
      *
      * <p>It writes the four entity sections and <em>nothing else</em>: no
-     * {@code parametresLegaux} or {@code parametresSolveur}, no typologies, no emplacements. That is exactly
+     * {@code parametresLegaux}, no typologies, no emplacements. That is exactly
      * the amputated file {@link PlanningService#exportScenarioYaml()} documents
      * as a fixed bug — one that silently fell back on the importing instance's
      * own settings. Real exports go through {@link #buildScenarioYaml(ScenarioExport)}.</p>
@@ -163,18 +157,7 @@ public final class ScenarioYamlWriter {
     public static String buildScenarioYaml(
             List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, List<PosteAffectation> postes) {
         return buildScenarioYaml(new ScenarioExport(
-                animateurs,
-                stands,
-                creneaux,
-                postes,
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null,
-                Map.of(),
-                Map.of(),
-                List.of()));
+                animateurs, stands, creneaux, postes, List.of(), List.of(), null, null, Map.of(), Map.of(), List.of()));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */

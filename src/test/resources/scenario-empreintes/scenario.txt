@@ -28,6 +28,5 @@
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
-.sections.parametresSolveur = null
 .sections.prereglagesConsigne = null
 .sections.typologies = (vide)

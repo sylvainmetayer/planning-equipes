@@ -4,6 +4,7 @@
 - **Date** : novembre 2026
 - **Portée** : configuration, déploiement
 - **Précise** : [0040](0040-mentions-legales-exigees-au-demarrage.md) (le refus de démarrer sans mentions reste ; seuls les noms changent)
+- **Limité par** : [0110](0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md) (le refus ne vaut plus que sur une instance publique)
 
 ## Contexte
 

@@ -118,15 +118,12 @@ public class ReferenceDataResource {
      * the (potentially large) planning never travels to the browser and back —
      * the client only sends the desired scenario name.
      *
-     * <p>A scenario may optionally pin {@code parametresLegaux:} and/or
-     * {@code parametresSolveur:} — when
-     * present, they are persisted too, so the parameters a scenario was
+     * <p>A scenario may optionally pin {@code parametresLegaux:} — when
+     * present, it is persisted too, so the parameters a scenario was
      * authored/verified against travel with it instead of silently depending
-     * on whatever is already configured. {@code parametresSolveur} in
-     * particular lets a large scenario auto-configure the termination
-     * duration it actually needs (Données tab), instead of leaving the
-     * caller to guess or under-time a solve. Absent, the current database
-     * values are left untouched.
+     * on whatever is already configured. Absent, the current database
+     * values are left untouched. The solve budget is not one of them: it is
+     * the instance's (ADR 0110).
      *
      * <p>Returns 200 with an {@link ImportScenarioResult} carrying the target
      * edition's name, so the frontend can tell the operator where the data

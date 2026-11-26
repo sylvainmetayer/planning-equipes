@@ -4,7 +4,7 @@ twin: installer/mentions-legales
 
 # Fill in the legal notice
 
-Before you open the instance to its staff, you set the organiser's legal information in the environment: without five of them (the five required keys of `LEGAL_MENTIONS`), the application refuses to start in production. This page lists them, explains why, and shows how to run a demonstration instance that has none.
+Before you open the instance to its staff, you set the organiser's legal information in the environment: without five of them (the five required keys of `LEGAL_MENTIONS`), the application refuses to start on a **public** instance (`PUBLIC_INSTANCE=true`) and says so in a warning everywhere else. This page lists them, explains why, and shows how to run a demonstration instance that has none.
 
 ## Why they cannot stay empty
 
@@ -32,7 +32,7 @@ Example, in the compose `.env`:
 LEGAL_MENTIONS="editeur=Association Exemple, 1 rue des Pions, 79000 Niort;hebergeur=Hébergeur Fictif SAS, Paris;contact=planning@exemple.invalid;base-legale=Intérêt légitime de l'organisateur;conservation=Jusqu'au 31 décembre de l'année suivant l'édition"
 ```
 
-The five required ones make startup fail in production when they are empty, like an `ADMIN_PASSWORD` left on its sample value. The message names **all of them at once**: fixing them one by one would cost five restarts. This refusal stays in place in 4.0.
+The five required ones make startup fail in production **on a public instance** when they are empty, like an `ADMIN_PASSWORD` left on its sample value. On an instance not declared public (`PUBLIC_INSTANCE` absent or `false`), the same sentence is written as a **warning** in the startup log and the application starts: an instance that only your team reaches has nobody to publish a page to. In both cases the message names **all of them at once**: fixing them one by one would cost five restarts.
 
 The other two are deliberately optional. An empty `responsable-traitement` falls back to the publisher, and requiring it would contradict that fallback. Not every publisher is required to have a publication director.
 
@@ -46,13 +46,13 @@ A second variable, `LEGAL_ACCESSIBILITE`, fills in the `/declaration-accessibili
 
 ## An instance that is not live
 
-A demonstration or acceptance-test instance sets `LEGAL_DEMO_INSTANCE=true` and starts with an empty page. The flag is explicit rather than inferred from `PUBLIC_URL` or from the launch mode: what an instance is *meant for* appears nowhere in its configuration ([decision 0040](repo:docs/decisions/0040-mentions-legales-exigees-au-demarrage.md)). Do not set it on an instance open to its staff.
+A demonstration or acceptance-test instance sets `LEGAL_DEMO_INSTANCE=true` and starts with an empty page, with neither refusal nor warning. The flag is explicit rather than inferred from `PUBLIC_URL` or from the launch mode: what an instance is *meant for* appears nowhere in its configuration ([decision 0040](repo:docs/decisions/0040-mentions-legales-exigees-au-demarrage.md)). Do not set it on an instance open to its staff.
 
 A demonstration or acceptance-test server can also show the event-day mode and the staff espace out of season. Started with `HORLOGE_SIMULEE_AUTORISEE=true`, it shows in *Settings*, *Instance* tab (behind the "Advanced settings" button), the "Simulated date and time" card: a date, an optional time, and "Back to the machine's clock". As long as a date is set, a red hourglass in the top bar reminds you and takes you back to this card. Without the variable, the card does not appear and the API refuses the write (`400`). Never enable it in production: it would make the event-day screen lie during a real event. The details are in [the API note](../comprendre/api-jour-j-et-animateurs.md#figer-la-date-du-jour).
 
 ## Upgrading an instance that is already live
 
-If your live instance has never set these variables, it **will not restart** until they are set. This is intended: the obligation already existed, and nothing enforced it. Prepare them before the upgrade window, not during it.
+If your live instance is public (`PUBLIC_INSTANCE=true`) and has never set these variables, it **will not restart** until they are set. This is intended: the obligation already existed, and nothing enforced it. Prepare them before the upgrade window, not during it. An instance not declared public starts and writes a warning: in 3.x the refusal applied to every instance, without that distinction, so **declare `PUBLIC_INSTANCE=true` if the instance is open to strangers**, or nothing stops you from publishing it without notices any more.
 
 ## Check
 

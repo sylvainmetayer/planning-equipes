@@ -3,29 +3,33 @@ twin: installer/calcul-du-planning
 ---
 # Tune the schedule solve
 
-You decide how far an edition may push a solve, you protect a shared instance against back-to-back solves, you size the memory and you choose the search engine. The solver is **one for the whole instance**: one solve at a time, all editions together, queue included.
+You set the instance's solve budget, you protect a shared instance against back-to-back solves, you size the memory and you choose the search engine. The solver is **one for the whole instance**: one solve at a time, all editions together, queue included.
 
-## Cap an edition's solve time
+## Set the instance's solve budget
 
 What the solve does with that time is explained in [how long it takes](/comment-marche-le-calcul/).
 
-Each edition sets its own budget on the *Solver* screen (maximum duration, stop without improvement), but you decide how far it can go.
+The budget is **an instance setting**, the same for every edition: the solver is shared, one solve at a time, and how long a solve holds it is not one edition's decision. The *Planning rules › Solve* screen shows it without changing it.
 
 | Variable | Default | Role |
 | --- | --- | --- |
-| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Maximum duration an edition may set, or a launch may request (`?seconds=`, MCP), in seconds |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | that of `SOLVER_SECONDS_LIMIT_MAX` | Ceiling of the stop without improvement, in seconds |
+| `SOLVER_SECONDS_LIMIT` | `900` | Maximum duration of a solve, in seconds |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Stop if the already feasible plan has not improved for this long, in seconds; `0`: never |
+| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Maximum duration a launch may request (`?seconds=`, MCP), in seconds |
 
-Above the cap, the value is **refused**, with a message that names the cap. It is not silently trimmed: an organiser who sets three hours would get two while believing the budget was used up. Lowering a cap below a value an edition has already saved breaks nothing: its solves run at the cap, and the solver monitor says so.
+A duration requested above `SOLVER_SECONDS_LIMIT_MAX` is **refused**, with a message that names the cap. It is not silently trimmed: whoever asks for three hours would get two while believing the budget was used up.
 
-**Startup is refused** if a cap is below the corresponding default (`planning.solver.seconds-limit`, 900 s; `planning.solver.unimproved-seconds-limit`, 180 s): every edition left on the default would otherwise have its own solves refused.
+**Startup is refused** if `SOLVER_SECONDS_LIMIT_MAX` is below `SOLVER_SECONDS_LIMIT`: every launch would otherwise be refused.
 
-## Limit the number of solves on a shared instance
+`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` is retired in 4.0: no edition sets its plateau any more, so there is nothing left to cap. Setting it does not prevent startup, and the application says so at boot.
 
-The caps above limit **one** solve. An instance that shares its machine with another, typically a public demo with a shared password next to a production, must also limit how many can be chained. Two guards, off by default, apply to the whole instance, all editions and all callers together:
+## Limit the number of solves on a public instance
+
+The budget above limits **one** solve. An instance open to strangers, or that shares its machine with another (typically a public demo with a shared password next to a production), must also limit how many can be chained. Two guards, off by default, apply to the whole instance, all editions and all callers together, **and only if the instance declares itself public**:
 
 | Variable | Default | Role |
 | --- | --- | --- |
+| `PUBLIC_INSTANCE` | `false` | `true`: the instance is public. It applies the two guards below and refuses to start without [legal notices](mentions-legales.md) |
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (no limit) | Solves accepted over the last 60 rolling minutes |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (no limit) | Jobs that may wait behind the one running ("Plan the calculation"), the running one not included |
 
@@ -35,7 +39,13 @@ The quota counts every solve **accepted at launch**, whatever the path: full or 
 
 The time is given in the `NOTIFICATIONS_TIMEZONE` time zone, that of the event. A full queue is refused the same way ("Cette instance limite la file d'attente du solveur à 2 résolutions planifiées…", this instance limits the solver queue to 2 planned solves).
 
-The counter lives **in memory**: a restart resets it to zero, which is enough against the abuse in view. The queue replayed at startup is neither refused nor counted a second time. For a demo, an order of magnitude: a quota of a dozen per hour and a queue of two, with `SOLVER_SECONDS_LIMIT_MAX` lowered to what a visitor is patient enough to wait for. The choice to limit here rather than at the reverse proxy is [ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
+On an instance that is **not** public, both guards do nothing, and the application says at boot that they are ignored if you set them: your team's own instance has no reason to refuse its organiser.
+
+The counter lives **in memory**: a restart resets it to zero, which is enough against the abuse in view. So does the queue: see below. For a demo, an order of magnitude: a quota of a dozen per hour and a queue of two, with `SOLVER_SECONDS_LIMIT_MAX` lowered to what a visitor is patient enough to wait for. The choice to limit here rather than at the reverse proxy is [ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md), limited to public instances by [ADR 0110](repo:docs/decisions/0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md).
+
+## The queue is in memory
+
+Planned solves wait their turn **in memory**: a restart of the application loses them. At startup, the jobs a previous version left queued or running are marked **interrupted** in the solve history, with the reason written on the job, and the application log gives their number. Nothing restarts by itself: launch the solve again. A solve that went to a remote compute machine is followed again ([Solve on another machine](calcul-sur-une-autre-machine.md)).
 
 ## The application's memory
 

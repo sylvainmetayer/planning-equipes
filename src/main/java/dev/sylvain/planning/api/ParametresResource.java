@@ -26,7 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 
 /**
  * The edition's parameters, in four sections — {@code legal}, {@code organisation},
- * {@code notifications}, {@code instance} — under {@code /parametres}. The
+ * {@code notifications}, {@code calcul} — under {@code /parametres}. The
  * former roots ({@code /parametres-legaux}, {@code -qualite}, {@code -solveur},
  * {@code -notifications}) stay as deprecated aliases that answer the same thing,
  * for the screens and clients of the 3.x; they are removed in 5.0.
@@ -72,19 +72,19 @@ public class ParametresResource {
     @GET
     @Path("/parametres")
     public ParametresView getParametres() {
-        return new ParametresView(getLegal(), getOrganisation(), getNotifications(), getInstance());
+        return new ParametresView(getLegal(), getOrganisation(), getNotifications(), getCalcul());
     }
 
     /**
-     * The sections as one answer; {@code instance} is the solve budget with
-     * the instance's bounds, as {@link #getInstance()} gives it.
+     * The sections as one answer; {@code calcul} is the end-of-solve mail with
+     * the instance's solve budget, as {@link #getCalcul()} gives it.
      */
-    @Schema(requiredProperties = {"legal", "organisation", "notifications", "instance"})
+    @Schema(requiredProperties = {"legal", "organisation", "notifications", "calcul"})
     public record ParametresView(
             ParametresLegaux legal,
             ParametresQualite organisation,
             ParametresNotifications notifications,
-            SolverSettingsView instance) {}
+            SolverSettingsView calcul) {}
 
     @GET
     @Path("/parametres/legal")
@@ -167,27 +167,27 @@ public class ParametresResource {
                 .build();
     }
 
-    /** The edition's solve budget, with the instance's defaults and ceilings it is read against. */
+    /**
+     * What an edition decides about its solves — the end-of-solve mail — beside
+     * the instance's solve budget, which the operator sets and nothing here
+     * writes (ADR 0110).
+     */
     @GET
-    @Path("/parametres/instance")
-    public SolverSettingsView getInstance() {
+    @Path("/parametres/calcul")
+    public SolverSettingsView getCalcul() {
         return SolverSettingsView.of(
                 referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
-    /**
-     * Saves the edition's solve budget. Returns 400 — citing the ceiling — when
-     * a duration or a plateau exceeds what the operator allows, or when the
-     * plateau exceeds the duration.
-     */
+    /** Saves the edition's end-of-solve mail switch. */
     @PUT
-    @Path("/parametres/instance")
-    public SolverSettingsView updateInstance(
+    @Path("/parametres/calcul")
+    public SolverSettingsView updateCalcul(
             @RequestBody(
                             required = true,
                             content = @Content(schema = @Schema(implementation = ParametresSolveur.class)))
                     JsonNode body) {
-        return writeSolveur(section(body, ParametresSolveur.class, "instance"));
+        return writeSolveur(section(body, ParametresSolveur.class, "calcul"));
     }
 
     private SolverSettingsView writeSolveur(ParametresSolveur parametres) {
@@ -196,25 +196,16 @@ public class ParametresResource {
     }
 
     /**
-     * {@link ParametresSolveur} as stored — a {@code null} half follows the
-     * deployment — plus {@code instance}, what the operator decided: the
-     * defaults a {@code null} resolves to and the ceilings nothing may exceed.
+     * {@link ParametresSolveur} as stored plus {@code instance}, what the
+     * operator decided: the solve budget and the ceiling nothing may exceed.
      * Read-only: a {@code PUT} sends {@link ParametresSolveur} and nothing of
      * {@code instance}.
      */
     @Schema(requiredProperties = {"mailFinResolution", "instance"})
-    public record SolverSettingsView(
-            Integer dureeResolutionSecondes,
-            Integer plateauSecondes,
-            boolean mailFinResolution,
-            SolverBudgetBounds instance) {
+    public record SolverSettingsView(boolean mailFinResolution, SolverBudgetBounds instance) {
 
         static SolverSettingsView of(ParametresSolveur parametres, SolverBudgetBounds bounds) {
-            return new SolverSettingsView(
-                    parametres.dureeResolutionSecondes(),
-                    parametres.plateauSecondes(),
-                    parametres.mailFinResolution(),
-                    bounds);
+            return new SolverSettingsView(parametres.mailFinResolution(), bounds);
         }
     }
 
@@ -252,15 +243,15 @@ public class ParametresResource {
         return writeQualite(parametres);
     }
 
-    /** @deprecated alias of {@code /parametres/instance}, removed in 5.0 */
+    /** @deprecated alias of {@code /parametres/calcul}, removed in 5.0 */
     @Deprecated
     @GET
     @Path("/parametres-solveur")
     public SolverSettingsView getParametresSolveur() {
-        return getInstance();
+        return getCalcul();
     }
 
-    /** @deprecated alias of {@code /parametres/instance}, removed in 5.0 */
+    /** @deprecated alias of {@code /parametres/calcul}, removed in 5.0 */
     @Deprecated
     @PUT
     @Path("/parametres-solveur")

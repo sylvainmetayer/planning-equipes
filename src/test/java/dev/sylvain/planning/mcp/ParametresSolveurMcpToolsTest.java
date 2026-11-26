@@ -4,12 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.EntreeJournal;
 import dev.sylvain.planning.service.journal.JournalActionService;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
@@ -17,18 +15,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@code modifier_parametres_solveur} keeps the half it is not given — and a
- * kept duration above a ceiling lowered since must not refuse the half it is
- * given (ADR 0051: such a value runs capped, it is not the organiser's doing).
+ * The {@code calcul} section of {@code modifier_parametres}: the edition's
+ * end-of-solve mail is the only thing it writes, and it answers with the
+ * instance's solve budget the operator set (ADR 0110), which no argument changes.
  */
 @QuarkusTest
 class ParametresSolveurMcpToolsTest {
 
     @Inject
     ParametresMcpTools tools;
-
-    @Inject
-    ReferenceDataService referenceData;
 
     @Inject
     EditionService editions;
@@ -42,12 +37,9 @@ class ParametresSolveurMcpToolsTest {
     private String edition;
 
     @BeforeEach
-    void storeADurationAboveTheCeiling() {
-        edition = editions.create(new Edition(null, "Budget au-dessus du plafond", false, null))
+    void createAnEdition() {
+        edition = editions.create(new Edition(null, "Section calcul", false, null))
                 .getId();
-        // The scenario import path: the one write that stores above the ceiling.
-        editionContext.executeIn(
-                edition, () -> referenceData.importParametresSolveur(new ParametresSolveur(7200, null, false)));
     }
 
     @AfterEach
@@ -56,22 +48,17 @@ class ParametresSolveurMcpToolsTest {
     }
 
     @Test
-    void aPlateauAloneSavesOverAKeptDurationAboveTheCeiling() {
-        var view = instance(null, 600);
+    void theMailSwitchIsWrittenAndTheInstanceBudgetAnswered() {
+        var view = calcul(true);
 
-        assertThat(view.dureeResolutionSecondes()).isEqualTo(7200);
-        assertThat(view.plateauSecondes()).isEqualTo(600);
-    }
-
-    @Test
-    void aDurationChangedAboveTheCeilingIsStillRefused() {
-        // A refusal comes back as a tool error carrying its sentence (@RefusMetier).
-        assertThatThrownBy(() -> instance(5400, null)).hasMessageContaining("au plus 1 h");
+        assertThat(view.mailFinResolution()).isTrue();
+        assertThat(view.instance().defaultSecondsLimit()).isPositive();
+        assertThat(calcul(null).mailFinResolution()).as("kept when not given").isTrue();
     }
 
     @Test
     void theJournalNamesTheSectionAsItsRestRouteDoes() {
-        instance(null, 600);
+        calcul(true);
 
         EntreeJournal ligne =
                 editionContext.executeIn(edition, () -> journal.list(5)).getFirst();
@@ -81,81 +68,56 @@ class ParametresSolveurMcpToolsTest {
 
     @Test
     void aSectionIsReadByItsName() {
-        var view = tools.getParametres("instance", edition);
+        var view = tools.getParametres("calcul", edition);
 
-        assertThat(view.section()).isEqualTo("instance");
+        assertThat(view.section()).isEqualTo("calcul");
         assertThat(view.parametres()).isInstanceOf(ParametresMcpTools.ParametresSolveurView.class);
     }
 
     @Test
     void anUnknownSectionAndAnArgumentOfAnotherSectionAreRefused() {
         assertThatThrownBy(() -> tools.getParametres("solveur", edition)).hasMessageContaining("Section inconnue");
-        // dureePauseMinutes is a legal field, not an instance one.
-        assertThatThrownBy(() -> tools.updateParametres(
-                        "instance",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        25,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        600,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        edition))
-                .hasMessageContaining("n'est pas de la section");
+        assertThatThrownBy(() -> tools.getParametres("instance", edition)).hasMessageContaining("Section inconnue");
+        // dureePauseMinutes is a legal field, not a calcul one.
+        assertThatThrownBy(() -> call("calcul", 25, null)).hasMessageContaining("n'est pas de la section");
     }
 
-    /** {@code modifier_parametres} on the instance section, as the tool is called. */
-    private ParametresMcpTools.ParametresSolveurView instance(Integer duree, Integer plateau) {
-        return (ParametresMcpTools.ParametresSolveurView) tools.updateParametres(
-                        "instance",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        duree,
-                        plateau,
-                        null,
-                        null,
-                        null,
-                        null,
-                        edition)
-                .parametres();
+    /** {@code modifier_parametres} on the calcul section, as the tool is called. */
+    private ParametresMcpTools.ParametresSolveurView calcul(Boolean mailFinResolution) {
+        return (ParametresMcpTools.ParametresSolveurView)
+                call("calcul", null, mailFinResolution).parametres();
+    }
+
+    /** The positional call: {@code dureePauseMinutes} is the 6th argument, the mail switch the 23rd. */
+    private ParametresMcpTools.ParametresSectionView call(
+            String section, Integer dureePauseMinutes, Boolean mailFinResolution) {
+        return tools.updateParametres(
+                section,
+                null,
+                null,
+                null,
+                null,
+                dureePauseMinutes,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                mailFinResolution,
+                null,
+                null,
+                null,
+                edition);
     }
 }

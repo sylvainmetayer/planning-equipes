@@ -220,21 +220,6 @@
   margin-top: 1rem;
 }
 
-/* Solve budget fields, moved here from the Solveur page. */
-.solver-duration {
-  display: block;
-  width: 14rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
-}
-
-.solver-duration-unit {
-  display: block;
-  width: 9rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
-}
-
 .constraint-protegee-icon {
   color: var(--mat-sys-error);
   font-size: 1.125rem;

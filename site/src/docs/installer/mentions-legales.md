@@ -1,6 +1,6 @@
 # Renseigner les mentions légales
 
-Avant d'ouvrir l'instance à ses animateurs, vous renseignez dans l'environnement les informations légales de l'organisateur : sans cinq d'entre elles (les cinq clés exigées de `LEGAL_MENTIONS`), l'application refuse de démarrer en production. Voici lesquelles, pourquoi, et comment tenir une instance de démonstration qui n'en a pas.
+Avant d'ouvrir l'instance à ses animateurs, vous renseignez dans l'environnement les informations légales de l'organisateur : sans cinq d'entre elles (les cinq clés exigées de `LEGAL_MENTIONS`), l'application refuse de démarrer sur une instance **publique** (`PUBLIC_INSTANCE=true`) et le dit par un avertissement partout ailleurs. Voici lesquelles, pourquoi, et comment tenir une instance de démonstration qui n'en a pas.
 
 ## Pourquoi elles ne restent pas vides
 
@@ -28,7 +28,7 @@ Exemple, dans le `.env` du compose :
 LEGAL_MENTIONS="editeur=Association Exemple, 1 rue des Pions, 79000 Niort;hebergeur=Hébergeur Fictif SAS, Paris;contact=planning@exemple.invalid;base-legale=Intérêt légitime de l'organisateur;conservation=Jusqu'au 31 décembre de l'année suivant l'édition"
 ```
 
-Les cinq exigées font échouer le démarrage en production quand elles sont vides, comme `ADMIN_PASSWORD` resté sur sa valeur d'exemple. Le message les nomme **toutes en une fois** : les corriger une par une coûterait cinq redémarrages. Ce refus reste en place en 4.0.
+Les cinq exigées font échouer le démarrage en production **sur une instance publique** quand elles sont vides, comme `ADMIN_PASSWORD` resté sur sa valeur d'exemple. Sur une instance qui n'est pas déclarée publique (`PUBLIC_INSTANCE` absente ou `false`), la même phrase est écrite en **avertissement** dans le journal de démarrage et l'application démarre : une instance que seule votre équipe atteint n'a personne à qui publier une page. Dans les deux cas, le message les nomme **toutes en une fois** : les corriger une par une coûterait cinq redémarrages.
 
 Les deux autres restent facultatives volontairement. `responsable-traitement` vide retombe sur l'éditeur, et l'exiger contredirait ce repli. Un directeur de publication n'est pas exigé de tout éditeur.
 
@@ -42,13 +42,13 @@ Une seconde variable, `LEGAL_ACCESSIBILITE`, remplit la page `/declaration-acces
 
 ## Une instance qui n'est pas en service
 
-Une démonstration ou une recette pose `LEGAL_DEMO_INSTANCE=true` et démarre avec une page vide. Le drapeau est explicite plutôt que déduit de `PUBLIC_URL` ou du mode de lancement : ce qu'une instance est *faite pour* ne se lit nulle part dans sa configuration ([décision 0040](repo:docs/decisions/0040-mentions-legales-exigees-au-demarrage.md)). Ne le posez pas sur une instance ouverte à ses animateurs.
+Une démonstration ou une recette pose `LEGAL_DEMO_INSTANCE=true` et démarre avec une page vide, sans refus ni avertissement. Le drapeau est explicite plutôt que déduit de `PUBLIC_URL` ou du mode de lancement : ce qu'une instance est *faite pour* ne se lit nulle part dans sa configuration ([décision 0040](repo:docs/decisions/0040-mentions-legales-exigees-au-demarrage.md)). Ne le posez pas sur une instance ouverte à ses animateurs.
 
 Un serveur de démonstration ou de recette peut aussi montrer le mode jour J et l'espace animateur hors saison. Lancé avec `HORLOGE_SIMULEE_AUTORISEE=true`, il affiche dans *Paramètres*, onglet *Instance* (derrière le bouton « Réglages avancés »), la carte « Date et heure simulées » : une date, une heure facultative, et « Revenir à l'horloge de la machine ». Tant qu'une date est posée, un sablier rouge dans la barre du haut le rappelle et ramène à cette carte. Sans la variable, la carte n'apparaît pas et l'API refuse l'écriture (`400`). Ne l'activez jamais en production : elle ferait mentir l'écran jour J sur un vrai événement. Le détail est dans [la note de l'API](../comprendre/api-jour-j-et-animateurs.md#figer-la-date-du-jour).
 
 ## Monter de version avec une instance déjà en service
 
-Si votre instance en service n'a jamais renseigné ces variables, elle **ne redémarrera pas** tant qu'elles ne le sont pas. C'est voulu : l'obligation existait déjà, rien ne la tenait. Préparez-les avant la fenêtre de mise à jour, pas pendant.
+Si votre instance en service est publique (`PUBLIC_INSTANCE=true`) et n'a jamais renseigné ces variables, elle **ne redémarrera pas** tant qu'elles ne le sont pas. C'est voulu : l'obligation existait déjà, rien ne la tenait. Préparez-les avant la fenêtre de mise à jour, pas pendant. Une instance non déclarée publique démarre et écrit un avertissement : en 3.x, le refus valait pour toute instance, sans cette distinction ; **déclarez `PUBLIC_INSTANCE=true` si l'instance est ouverte à des inconnus**, sans quoi plus rien ne vous empêche de la publier sans mentions.
 
 ## Vérifier
 

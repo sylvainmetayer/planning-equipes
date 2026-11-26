@@ -32,7 +32,7 @@ The same table for the quality rules and the preferences. Each rule has an impor
 
 ## The Solve tab
 
-- the length of the solve and the stop when nothing progresses any more (see [Solve the schedule](calculer-planning.md#régler-la-durée-du-calcul));
+- the length of the solve and the stop when nothing progresses any more, shown without being editable: they are set for the whole instance (see [Solve the schedule](calculer-planning.md#régler-la-durée-du-calcul));
 - the end-of-solve e-mail;
 - the start of the evening, the application's only evening;
 - the all-rounder game category.

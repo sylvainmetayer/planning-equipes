@@ -14,15 +14,15 @@ The synchronous solve, the asynchronous one from a submitted problem, the asynch
 
 ### One solve at a time
 
-A single solve job runs for the whole application, with a lock held by the server. Other sessions see the active job through `GET /api/jobs/active` and receive `409` on a second start, the body carrying the job in progress. This is the only start `409` whose body is a job: the operator's hourly quota and capped queue (`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, see [tuning the solve](../installer/calcul-du-planning.md)) and the frozen reference data answer `409` with a plain `{ message }`. A client tells them apart by the shape of the body (an `id` and a `status`), not by the status.
+A single solve job runs for the whole application, with a lock held by the server. Other sessions see the active job through `GET /api/jobs/active` and receive `409` on a second start, the body carrying the job in progress. This is the only start `409` whose body is a job: a public instance's hourly quota and capped queue (`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, see [tuning the solve](../installer/calcul-du-planning.md)) and the frozen reference data answer `409` with a plain `{ message }`. A client tells them apart by the shape of the body (an `id` and a `status`), not by the status.
 
 ## The budget
 
-The server decides the duration and the plateau stop **at start**, from the edition's `GET /api/parametres/instance`: a `null` follows the deployment's default (`planning.solver.seconds-limit`, `planning.solver.unimproved-seconds-limit`), which the response exposes under `instance` with the operator's ceilings (`SOLVER_SECONDS_LIMIT_MAX`, `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`). Screen, script and MCP therefore get the same budget. Three traps:
+The budget is the **instance's** (ADR 0110), the same for every edition: `planning.solver.seconds-limit` and `planning.solver.unimproved-seconds-limit`, which `GET /api/parametres/calcul` exposes under `instance` with the ceiling of a launch (`maxSecondsLimit`, `SOLVER_SECONDS_LIMIT_MAX`). No write changes it: `PUT /api/parametres/calcul` only sets the edition's end-of-solve mail. Screen, script and MCP therefore get the same budget. Three traps:
 
-- **a ceiling refuses, it does not truncate.** A value above the ceiling is refused with a `400` that cites the ceiling, at save time as on a `?seconds=` or an MCP `secondes`. The one exception: a value already saved when the operator lowers the ceiling runs at the ceiling, and the job says so (`cappedFromSecondsLimit`, `cappedFromPlateauSeconds`). The ceiling therefore controls only what the write changes: a `PUT` that sends back the saved duration unchanged passes, even above it. An imported scenario is saved as written and runs capped in the same way;
-- **the plateau stays conditional on feasibility**: the stop is "feasible AND N seconds without improvement", it never cuts a solve that still has seats to fill. An explicit `?seconds=` on an edition with no plateau set means "exactly this duration";
-- **a job keeps the budget of its start.** It is resolved at submission, persisted with the queue (`plateau_seconds` next to `seconds_limit`) and replayed as is after a restart. Incremental replanning has its own duration (60 s without `?seconds=`), under the same ceiling.
+- **a ceiling refuses, it does not truncate.** A duration above the ceiling is refused with a `400` that cites the ceiling, on a `?seconds=` as on an MCP `secondes`;
+- **the plateau stays conditional on feasibility**: the stop is "feasible AND N seconds without improvement", it never cuts a solve that still has seats to fill. An explicit `?seconds=` different from the instance's duration means "exactly this duration": no plateau;
+- **a job keeps the budget of its start.** It is resolved at submission. Incremental replanning has its own duration (60 s without `?seconds=`) and no plateau, under the same ceiling.
 
 ## Predicting what the solve will receive
 
