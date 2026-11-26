@@ -280,7 +280,8 @@ class DeplacementResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"id\":\"DEPL-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + libre + "\"}")
+                .body("{\"id\":\"DEPL-VERROU\",\"type\":\"ANIMATEUR_CRENEAU\",\"animateurId\":\"" + libre
+                        + "\",\"creneauId\":" + creneau + "}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

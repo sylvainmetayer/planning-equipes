@@ -347,13 +347,21 @@ class CoherenceReferentielServiceTest {
         incompatibles.setAnimateursConcernes(List.of(adulte("A4"), adulte("A5")));
         ContrainteAdHoc affines = new ContrainteAdHoc("C05", TypeContrainteAdHoc.AFFINITE);
         affines.setAnimateursConcernes(List.of(adulte("A4"), adulte("A5")));
-        VerrouillagePlanning verrou = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
-        verrou.setAnimateurId("A3");
+        // A whole schedule frozen is one lock per timeslot of the grid.
+        List<VerrouillagePlanning> verrous = creneaux.stream()
+                .map(creneau -> {
+                    VerrouillagePlanning verrou =
+                            new VerrouillagePlanning("V" + creneau.getId(), TypeVerrouillage.ANIMATEUR_CRENEAU);
+                    verrou.setAnimateurId("A3");
+                    verrou.setCreneauId(creneau.getId());
+                    return verrou;
+                })
+                .toList();
         List<Animateur> animateurs = List.of(absent, jeune, fige, adulte("A4"), adulte("A5"));
         List<Stand> stands = List.of(plateau, bar);
         List<ContrainteAdHoc> contraintes = List.of(surAbsent, surJeune, surFige, incompatibles, affines);
 
-        CoherenceReport rapport = build(animateurs, stands, creneaux, contraintes, List.of(verrou), List.of(), false);
+        CoherenceReport rapport = build(animateurs, stands, creneaux, contraintes, verrous, List.of(), false);
 
         List<CoherenceIssue> ajustements = rapport.anomalies().stream()
                 .filter(ligne -> ligne.famille() == CoherenceFamily.AJUSTEMENTS)
@@ -380,7 +388,7 @@ class CoherenceReferentielServiceTest {
                                 creneaux,
                                 contraintes,
                                 true,
-                                new FeasibilityAnalyzer.PlanContext(List.of(verrou), Set::of, null))
+                                new FeasibilityAnalyzer.PlanContext(verrous, Set::of, null))
                         .causes()
                         .stream()
                         .filter(cause -> cause.type() != TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF)
@@ -416,8 +424,9 @@ class CoherenceReferentielServiceTest {
 
     @Test
     void aLockOverAHardViolationOfTheLatestAnalysisIsListed() {
-        VerrouillagePlanning verrou = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning verrou = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR_CRENEAU);
         verrou.setAnimateurId("A1");
+        verrou.setCreneauId(1L);
         ConstraintDiagnostic violation = new ConstraintDiagnostic(
                 "reposQuotidienMinimal",
                 "-1hard",

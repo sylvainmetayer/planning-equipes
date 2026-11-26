@@ -52,10 +52,11 @@ class AnimateurDayOffResourceTest {
         Map<String, Object> poste = held(persisted()).get(0);
         String animateurId = (String) ((Map<?, ?>) poste.get("animateur")).get("id");
         String date = (String) ((Map<?, ?>) poste.get("creneau")).get("date");
-        return new Held(animateurId, date);
+        Object creneauId = ((Map<?, ?>) poste.get("creneau")).get("id");
+        return new Held(animateurId, date, creneauId);
     }
 
-    private record Held(String animateurId, String date) {}
+    private record Held(String animateurId, String date, Object creneauId) {}
 
     private static JsonPath persisted() {
         return given().header("X-Edition-Id", "E1")
@@ -146,7 +147,8 @@ class AnimateurDayOffResourceTest {
         List<String> avant = seatsOf(held.animateurId(), held.date());
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"id\":\"OFF-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + held.animateurId() + "\"}")
+                .body("{\"id\":\"OFF-VERROU\",\"type\":\"ANIMATEUR_CRENEAU\",\"animateurId\":\"" + held.animateurId()
+                        + "\",\"creneauId\":" + held.creneauId() + "}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

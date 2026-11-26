@@ -26,11 +26,13 @@ Si l'ajustement place quelqu'un là où aucune place ne peut le tenir (un mineur
 
 ## Verrouillages : geler une partie du plan
 
-Un verrou gèle une personne, un stand, une journée ou un créneau. La prochaine résolution n'y touche plus et optimise le reste. Un verrou est un geste sur un plan déjà calculé : il conserve ce qu'une résolution a produit, sans rien dire de ce qui devrait s'y trouver.
+Un verrou gèle une personne sur un créneau, un stand sur une journée, ou une journée entière. La prochaine résolution n'y touche plus et optimise le reste. Pour figer tout le planning d'une personne, utilisez le bouton de sa fiche : il pose un verrou par créneau. Un verrou est un geste sur un plan déjà calculé : il conserve ce qu'une résolution a produit, sans rien dire de ce qui devrait s'y trouver.
 
 1. Ouvrez *Règles du planning*, onglet *Verrouillages* (ou verrouillez depuis la fiche d'une personne, le panneau d'un siège, ou l'onglet *Fragilité* du Diagnostic).
 2. Avant de poser un verrou, l'écran compte les affectations qu'il figera et mène à la journée qui les montre.
 3. Confirmez.
+
+Le verrou animateur + créneau sert aussi à tenir quelqu'un sur un créneau précis : placez-le sur le siège (depuis la journée), puis verrouillez-le sur ce créneau ; le calcul le garde là et ne lui donne pas d'autre siège à ce moment.
 
 ## Agir sur plusieurs lignes d'un coup
 

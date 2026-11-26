@@ -315,9 +315,9 @@ class CreneauGridServiceTest {
 
     @Test
     void unVerrouillageQuiNeViseAucuneVacationNEstPasSignale() {
-        // ANIMATEUR and STAND locks carry no day: they never fall with the grid.
-        VerrouillagePlanning surAnimateur = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
-        surAnimateur.setAnimateurId("A1");
+        // JOUR and STAND_JOUR locks name a day, not a vacation: they never fall with the grid.
+        VerrouillagePlanning surAnimateur = new VerrouillagePlanning("V1", TypeVerrouillage.JOUR);
+        surAnimateur.setJour(LocalDate.of(2026, 7, 7));
 
         assertThat(validate(List.of(), List.of(), List.of(), LEGAUX, List.of(surAnimateur))
                         .anomalies())
@@ -325,7 +325,9 @@ class CreneauGridServiceTest {
     }
 
     private static VerrouillagePlanning verrouillage(LocalDate date, String debut, String fin) {
-        VerrouillagePlanning verrouillage = new VerrouillagePlanning("V-" + date + debut, TypeVerrouillage.CRENEAU);
+        VerrouillagePlanning verrouillage =
+                new VerrouillagePlanning("V-" + date + debut, TypeVerrouillage.ANIMATEUR_CRENEAU);
+        verrouillage.setAnimateurId("A1");
         verrouillage.setCreneauDate(date);
         verrouillage.setCreneauHeureDebut(LocalTime.parse(debut));
         verrouillage.setCreneauHeureFin(LocalTime.parse(fin));

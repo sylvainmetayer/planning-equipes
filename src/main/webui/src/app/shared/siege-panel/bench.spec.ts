@@ -161,7 +161,7 @@ describe('benchLines', () => {
 describe('placementBlock', () => {
   const lock = (partial: Partial<VerrouillagePlanning>): VerrouillagePlanning => ({
     id: 'L',
-    type: 'ANIMATEUR',
+    type: 'ANIMATEUR_CRENEAU',
     animateurId: null,
     standId: null,
     creneauId: null,
@@ -191,8 +191,7 @@ describe('placementBlock', () => {
     ...partial,
   });
 
-  it('blocks a person whose schedule, or this very timeslot, is locked — not another one', () => {
-    expect(placementBlock(lea, context({ locks: [lock({ animateurId: 'A1' })] }))).toBe('locked');
+  it('blocks a person locked on this very timeslot — not on another one', () => {
     expect(
       placementBlock(
         lea,
@@ -205,7 +204,9 @@ describe('placementBlock', () => {
         context({ locks: [lock({ type: 'ANIMATEUR_CRENEAU', animateurId: 'A1', creneauId: 2 })] }),
       ),
     ).toBeNull();
-    expect(placementBlock(lea, context({ locks: [lock({ animateurId: 'A2' })] }))).toBeNull();
+    expect(
+      placementBlock(lea, context({ locks: [lock({ animateurId: 'A2', creneauId: 1 })] })),
+    ).toBeNull();
     expect(placeable(lea, context({}))).toBe(true);
   });
 

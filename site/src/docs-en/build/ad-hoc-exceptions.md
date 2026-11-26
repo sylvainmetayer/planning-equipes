@@ -82,12 +82,12 @@ An `AFFECTATION_FORCEE` can be untenable without contradicting any other excepti
 | --- | --- | --- |
 | `ForcedAssignmentOnDayOff` | **All** the named staff members declared themselves unavailable on **every** date of the scope | `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` |
 | `ForcedAssignmentOnExcludedSeats` | No seat of the scope accepts one of the named staff members under a hard rule of the seat × staff member pair, the reasons of `EligibleAnimateurMoveFilter`: minor at night, public holiday, stand reserved for adults, daily cap exceeded | `AFFECTATION_FORCEE_MOTIF_LEGAL`; the message names the catalogue rules |
-| `ForcedAssignmentOnLockedSchedule` | The schedule of each of the named staff members is locked (`ANIMATEUR` or `ANIMATEUR_CRENEAU`) over the whole scope, and none holds a seat there already: the solver can neither move the lock nor ignore the exception | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` |
+| `ForcedAssignmentOnLockedSchedule` | The schedule of each of the named staff members is locked (`ANIMATEUR_CRENEAU`, on every timeslot) over the whole scope, and none holds a seat there already: the solver can neither move the lock nor ignore the exception | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` |
 
 The first two are never doubled: the day declared unavailable is *also* a hard exclusion reason, so the second stays silent on a case the first reports, because the reading in terms of declaration is the one the organiser knows how to handle, by talking to the person. The third can add to the other two, and that is intended: a lock and a legal rule are two independent blockages, lifted by two different actions.
 
 Two precautions avoid inventing a conflict. The seats of the scope are built as `ProblemBuilder` generates them, one per (stand open on the timeslot, timeslot): a scope that opens nowhere, or that names a stand unknown to the reference data, carries no seat and says nothing. And the duration caps are read with the most permissive reading of the break, so that a reported conflict is a conflict the solver would meet whatever the edition says.
 
-Only the `ANIMATEUR` and `ANIMATEUR_CRENEAU` locks enter the third reading. A stand, timeslot or day lock pins the seats that **hold someone** and leaves empty seats fillable: it never opposes the assignment the exception demands.
+Only the `ANIMATEUR_CRENEAU` locks enter the third reading. A stand-day or day lock pins the seats that **hold someone** and leaves empty seats fillable: it never opposes the assignment the exception demands.
 
 Finally, the solve keeps the day of unavailability, the lock and the legal rule: it is the exception that is not honoured. It is then counted as a breach and named by `contraintesAdHocEnCause`.

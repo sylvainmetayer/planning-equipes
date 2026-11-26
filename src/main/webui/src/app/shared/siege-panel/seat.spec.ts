@@ -41,7 +41,7 @@ const poste = (
 
 const lock = (partial: Partial<VerrouillagePlanning>): VerrouillagePlanning => ({
   id: 'v',
-  type: 'STAND',
+  type: 'JOUR',
   animateurId: null,
   standId: null,
   creneauId: null,
@@ -105,18 +105,17 @@ describe('seatLocks', () => {
   it('reads every lock reaching the seat, the one on the seat itself first and alone removable', () => {
     const locks = seatLocks(
       [
-        lock({ id: 'stand', type: 'STAND', standId: 'tir' }),
-        lock({ id: 'autre', type: 'STAND', standId: 'quilles' }),
+        lock({ id: 'stand', type: 'STAND_JOUR', standId: 'tir', jour: '2026-07-18' }),
+        lock({ id: 'autre', type: 'STAND_JOUR', standId: 'quilles', jour: '2026-07-18' }),
+        lock({ id: 'autreJour', type: 'STAND_JOUR', standId: 'tir', jour: '2026-07-19' }),
         lock({ id: 'siege', type: 'ANIMATEUR_CRENEAU', animateurId: 'alice', creneauId: 1 }),
         lock({ id: 'jour', type: 'JOUR', jour: '2026-07-18' }),
-        lock({ id: 'personne', type: 'ANIMATEUR', animateurId: 'alice' }),
-        lock({ id: 'creneau', type: 'CRENEAU', creneauId: 2 }),
       ],
       held,
     );
 
-    expect(locks.map((each) => each.lock.id)).toEqual(['siege', 'stand', 'jour', 'personne']);
-    expect(locks.map((each) => each.removable)).toEqual([true, false, false, false]);
+    expect(locks.map((each) => each.lock.id)).toEqual(['siege', 'stand', 'jour']);
+    expect(locks.map((each) => each.removable)).toEqual([true, false, false]);
     expect(lockLabel(locks[0])).toContain('reste sur ce créneau');
   });
 

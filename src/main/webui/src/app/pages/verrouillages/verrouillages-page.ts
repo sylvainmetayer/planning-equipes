@@ -52,9 +52,8 @@ import { locksPluralLabel } from '../../core/entity-labels';
 import { TableSelection } from '../../core/table-selection';
 import { TableNavigation, trackRowById } from '../../core/table-navigation';
 
-/** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
-type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
-const TYPE_VALUES: TypeVerrouillageManuel[] = ['ANIMATEUR', 'STAND', 'JOUR', 'CRENEAU'];
+/** The three types of lock (ADR 0109), all creatable by hand: an accepted échange also lays ANIMATEUR_CRENEAU ones. */
+const TYPE_VALUES: TypeVerrouillage[] = ['ANIMATEUR_CRENEAU', 'STAND_JOUR', 'JOUR'];
 
 /**
  * The vacation a lock names, read off the lock itself rather than looked up in
@@ -72,14 +71,10 @@ function vacationLabel(verrouillage: VerrouillagePlanning): string {
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function typeLabel(value: TypeVerrouillage): string {
   switch (value) {
-    case 'ANIMATEUR':
-      return $localize`:@@verrouillages.type.animateur:Animateur`;
-    case 'STAND':
-      return $localize`:@@verrouillages.type.stand:Stand`;
+    case 'STAND_JOUR':
+      return $localize`:@@verrouillages.type.standJour:Stand sur une journée`;
     case 'JOUR':
       return $localize`:@@verrouillages.type.jour:Journée`;
-    case 'CRENEAU':
-      return $localize`:@@verrouillages.type.creneau:Créneau`;
     case 'ANIMATEUR_CRENEAU':
       return $localize`:@@verrouillages.type.animateurCreneau:Animateur sur un créneau`;
   }
@@ -140,7 +135,7 @@ export class VerrouillagesPage implements OnInit {
   /** Locking is disabled while a solve runs: it would not be taken into account by the run in progress. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
-  protected readonly type = signal<TypeVerrouillageManuel>('ANIMATEUR');
+  protected readonly type = signal<TypeVerrouillage>('ANIMATEUR_CRENEAU');
   protected readonly animateurId = signal('');
   protected readonly standId = signal('');
   protected readonly creneauId = signal<number | ''>('');
@@ -276,12 +271,10 @@ export class VerrouillagesPage implements OnInit {
   /** True when the form holds a target matching the selected type. */
   protected readonly cibleRenseignee = computed(() => {
     switch (this.type()) {
-      case 'ANIMATEUR':
-        return !!this.animateurId();
-      case 'STAND':
-        return !!this.standId();
-      case 'CRENEAU':
-        return this.creneauId() !== '';
+      case 'ANIMATEUR_CRENEAU':
+        return !!this.animateurId() && this.creneauId() !== '';
+      case 'STAND_JOUR':
+        return !!this.standId() && !!this.jour();
       case 'JOUR':
         return !!this.jour();
     }
@@ -302,12 +295,16 @@ export class VerrouillagesPage implements OnInit {
     // A seat split on the day (ADR 0066) is one seat, counted on its continuation.
     const pourvus = placesOf(postes).filter((poste) => poste.animateur);
     switch (this.type()) {
-      case 'ANIMATEUR':
-        return pourvus.filter((poste) => poste.animateur?.id === this.animateurId()).length;
-      case 'STAND':
-        return pourvus.filter((poste) => poste.stand?.id === this.standId()).length;
-      case 'CRENEAU':
-        return pourvus.filter((poste) => poste.creneau?.id === Number(this.creneauId())).length;
+      case 'ANIMATEUR_CRENEAU':
+        return pourvus.filter(
+          (poste) =>
+            poste.animateur?.id === this.animateurId() &&
+            poste.creneau?.id === Number(this.creneauId()),
+        ).length;
+      case 'STAND_JOUR':
+        return pourvus.filter(
+          (poste) => poste.stand?.id === this.standId() && poste.creneau?.date === this.jour(),
+        ).length;
       case 'JOUR':
         return pourvus.filter((poste) => poste.creneau?.date === this.jour()).length;
     }
@@ -315,7 +312,7 @@ export class VerrouillagesPage implements OnInit {
 
   /**
    * Where the Journée page shows what the target covers: the person or the
-   * stand across the days, the day itself, or the day of the vacation. The
+   * stand on that day, the day itself, or the day of the vacation. The
    * preview counts; this is where the reader sees who and when.
    */
   protected readonly journeeParams = computed<Record<string, string> | null>(() => {
@@ -324,16 +321,14 @@ export class VerrouillagesPage implements OnInit {
     }
     const param = (key: string, value: string): Record<string, string> => ({ [key]: value });
     switch (this.type()) {
-      case 'ANIMATEUR':
-        return param('animateur', this.animateurId());
-      case 'STAND':
-        return param('stand', this.standId());
+      case 'ANIMATEUR_CRENEAU': {
+        const creneau = this.store.creneaux().find((c) => c.id === Number(this.creneauId()));
+        return creneau ? { ...param('animateur', this.animateurId()), date: creneau.date } : null;
+      }
+      case 'STAND_JOUR':
+        return { ...param('stand', this.standId()), date: this.jour() };
       case 'JOUR':
         return param('date', this.jour());
-      case 'CRENEAU': {
-        const creneau = this.store.creneaux().find((c) => c.id === Number(this.creneauId()));
-        return creneau ? param('date', creneau.date) : null;
-      }
     }
   });
 
@@ -355,10 +350,10 @@ export class VerrouillagesPage implements OnInit {
     try {
       const avertissements = await this.verrous.create({
         type,
-        animateurId: type === 'ANIMATEUR' ? this.animateurId() : null,
-        standId: type === 'STAND' ? this.standId() : null,
-        creneauId: type === 'CRENEAU' ? Number(this.creneauId()) : null,
-        jour: type === 'JOUR' ? this.jour() : null,
+        animateurId: type === 'ANIMATEUR_CRENEAU' ? this.animateurId() : null,
+        standId: type === 'STAND_JOUR' ? this.standId() : null,
+        creneauId: type === 'ANIMATEUR_CRENEAU' ? Number(this.creneauId()) : null,
+        jour: type === 'STAND_JOUR' || type === 'JOUR' ? this.jour() : null,
         raison: this.raison() || null,
       });
       this.raison.set('');
@@ -483,8 +478,6 @@ export class VerrouillagesPage implements OnInit {
       return id;
     }
     switch (row.type) {
-      case 'ANIMATEUR':
-        return `${row.typeLabel} ${row.animateurId ?? id}`;
       case 'ANIMATEUR_CRENEAU':
         return `${row.typeLabel} ${row.animateurId ?? id} · ${vacationLabel(row)}`;
       default:
@@ -495,24 +488,14 @@ export class VerrouillagesPage implements OnInit {
   /** Human-readable target: names rather than the raw ids the backend stores. */
   private cibleLabel(verrouillage: VerrouillagePlanning): string {
     switch (verrouillage.type) {
-      case 'ANIMATEUR': {
-        const animateur = this.store
-          .animateurs()
-          .find((candidate) => candidate.id === verrouillage.animateurId);
-        return animateur
-          ? `${animateur.prenom} ${animateur.nom}`.trim()
-          : (verrouillage.animateurId ?? '—');
-      }
-      case 'STAND': {
+      case 'STAND_JOUR': {
         const stand = this.store
           .stands()
           .find((candidate) => candidate.id === verrouillage.standId);
-        return stand?.nom || (verrouillage.standId ?? '—');
+        return `${stand?.nom || (verrouillage.standId ?? '—')} · ${verrouillage.jour ?? '—'}`;
       }
       case 'JOUR':
         return verrouillage.jour ?? '—';
-      case 'CRENEAU':
-        return vacationLabel(verrouillage);
       case 'ANIMATEUR_CRENEAU': {
         const animateur = this.store
           .animateurs()

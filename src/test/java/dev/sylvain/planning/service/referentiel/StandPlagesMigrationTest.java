@@ -34,10 +34,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V152 turns the recurring rules of a stand into dated plages. It runs once on
+ * V153 turns the recurring rules of a stand into dated plages. It runs once on
  * every database in service, so it is played here on a database filled the way
  * 3.x filled it: the migrations up to V148 once, in a schema of their own, then
- * for each case the rows and the V152 file itself — not a copy — in a transaction
+ * for each case the rows and the V153 file itself — not a copy — in a transaction
  * rolled back afterwards.
  *
  * <p>The central rule: the windows a stand opens and closes on, <b>day by day</b>,
@@ -53,7 +53,7 @@ import org.junit.jupiter.api.Test;
 class StandPlagesMigrationTest {
 
     private static final String SCHEMA = "migration_v152";
-    private static final String V152 = "db/migration/V152__plages_de_stand.sql";
+    private static final String V153 = "db/migration/V153__plages_de_stand.sql";
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
@@ -495,9 +495,9 @@ class StandPlagesMigrationTest {
     }
 
     private static void migrate(Connection connection) throws IOException, SQLException {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V152);
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V153);
                 Statement statement = connection.createStatement()) {
-            assertThat(file).as(V152).isNotNull();
+            assertThat(file).as(V153).isNotNull();
             statement.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

@@ -1,6 +1,6 @@
 # 0003 — Figer les affectations validées par le mécanisme natif du solveur
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté · remplacé en partie par [0109](0109-trois-types-de-verrou.md) (les types de verrou)
 - **Date** : août 2026
 - **Portée** : domaine, solveur, persistance, API, frontend
 

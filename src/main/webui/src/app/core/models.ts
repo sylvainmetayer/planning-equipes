@@ -1009,7 +1009,7 @@ export interface RapportIntendance {
 }
 
 /** What a {@link VerrouillagePlanning} freezes (issue #87; ANIMATEUR_CRENEAU: issue #165). */
-export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU' | 'ANIMATEUR_CRENEAU';
+export type TypeVerrouillage = 'ANIMATEUR_CRENEAU' | 'STAND_JOUR' | 'JOUR';
 
 /**
  * A validated part of the planning the solver must not touch again
@@ -1027,7 +1027,7 @@ export interface VerrouillagePlanning {
    * while the grid holds no such vacation.
    */
   creneauId: number | null;
-  /** ISO date of the vacation a `CRENEAU`/`ANIMATEUR_CRENEAU` lock names. */
+  /** ISO date of the vacation an `ANIMATEUR_CRENEAU` lock names. */
   creneauDate?: string | null;
   creneauHeureDebut?: string | null;
   creneauHeureFin?: string | null;

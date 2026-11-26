@@ -363,7 +363,11 @@ describe('AnimateurFichePage', () => {
 
     button('Verrouiller tout son planning').click();
     await vi.waitFor(() =>
-      expect(verrous.create).toHaveBeenCalledWith({ type: 'ANIMATEUR', animateurId: 'a1' }),
+      expect(verrous.create).toHaveBeenCalledWith({
+        type: 'ANIMATEUR_CRENEAU',
+        animateurId: 'a1',
+        creneauId: profile().affectations[0].creneauId,
+      }),
     );
   });
 

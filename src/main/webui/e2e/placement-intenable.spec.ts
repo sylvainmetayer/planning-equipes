@@ -230,8 +230,9 @@ async function verrouiller(
 test.describe('piste 2 — l’emploi du temps verrouillé', () => {
   test('une affectation forcée sur un emploi du temps gelé est un blocage dit', async () => {
     const { verrouillage, avertissements } = await verrouiller({
-      type: 'ANIMATEUR',
+      type: 'ANIMATEUR_CRENEAU',
       animateurId: MAJEUR,
+      creneauId: JOURNEE,
       raison: 'E2E : Marc validé',
     });
     // La rupture de contrat de cette PR : le verrou n'est plus rendu nu.
@@ -254,10 +255,15 @@ test.describe('piste 2 — l’emploi du temps verrouillé', () => {
     expect(bloquante?.severite, 'la faisabilité doit reprendre le blocage').toBe('CRITIQUE');
   });
 
-  test('un verrou de stand n’a jamais bloqué personne', async () => {
-    // STAND, JOUR et CRENEAU n'épinglent que les places occupées : la place
+  test('un verrou de stand sur une journée n’a jamais bloqué personne', async () => {
+    // STAND_JOUR et JOUR n'épinglent que les places occupées : la place
     // vide que l'exception vise reste prenable.
-    await verrouiller({ type: 'STAND', standId: STAND_TOUS, raison: 'E2E : stand figé' });
+    await verrouiller({
+      type: 'STAND_JOUR',
+      standId: STAND_TOUS,
+      jour: JOUR_JOURNEE,
+      raison: 'E2E : stand figé',
+    });
 
     const avertissements = await ecrire(
       affectationForcee({ animateurs: [MAJEUR], stand: STAND_TOUS, creneau: JOURNEE }),

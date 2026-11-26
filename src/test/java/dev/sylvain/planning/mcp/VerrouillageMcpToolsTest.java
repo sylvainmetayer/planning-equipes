@@ -67,8 +67,8 @@ class VerrouillageMcpToolsTest {
     }
 
     @Test
-    void unVerrouillageSurAnimateurNeDesigneQueSonIdentifiant() {
-        VerrouillagePlanning surAnimateur = verrouillage("V2", TypeVerrouillage.ANIMATEUR);
+    void unVerrouillageAnimateurCreneauNeDesigneQueSesIdentifiants() {
+        VerrouillagePlanning surAnimateur = verrouillage("V2", TypeVerrouillage.ANIMATEUR_CRENEAU);
         surAnimateur.setAnimateurId("A-42");
 
         VerrouillageView view = VerrouillageMcpTools.toView(surAnimateur);

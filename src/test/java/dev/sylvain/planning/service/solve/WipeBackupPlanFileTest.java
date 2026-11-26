@@ -23,15 +23,23 @@ class WipeBackupPlanFileTest {
                             "P1", "S1", null, "2026-07-04", "09:00", "13:00", "A1", "10:00", "12:30", null),
                     new AffectationSnapshot("P2", "S1", null, "2026-07-04", "13:00", "17:00", null, null, null, "P1")),
             List.of(
-                    new LockBackup(TypeVerrouillage.ANIMATEUR, "A1", null, null, null, null, null, "à garder"),
                     new LockBackup(
-                            TypeVerrouillage.CRENEAU,
-                            null,
+                            TypeVerrouillage.ANIMATEUR_CRENEAU,
+                            "A1",
                             null,
                             LocalDate.of(2026, 7, 4),
                             LocalTime.of(9, 0),
                             LocalTime.of(13, 0),
                             null,
+                            "à garder"),
+                    new LockBackup(
+                            TypeVerrouillage.STAND_JOUR,
+                            null,
+                            "S1",
+                            null,
+                            null,
+                            null,
+                            LocalDate.of(2026, 7, 4),
                             null)));
 
     @Test

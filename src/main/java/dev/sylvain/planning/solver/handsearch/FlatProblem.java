@@ -860,13 +860,11 @@ final class FlatProblem {
         return c;
     }
 
-    /** A seat that is not itself locked, taken by somebody a lock freezes: for the event, or on this timeslot. */
+    /** A seat that is not itself locked, taken by somebody a lock freezes on this timeslot. */
     private long lockTerms(int a, Creneau creneau, long[] breakdown) {
         long c = 0;
         for (VerrouillagePlanning lock : locksOf.get(a)) {
-            if (lock.getType() == TypeVerrouillage.ANIMATEUR) {
-                c += cost(Rule.ANIMATEUR_VERROUILLE_FIGE, 1, breakdown);
-            } else if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
+            if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
                     && lock.getCreneauId() != null
                     && lock.getCreneauId().equals(creneau.getId())) {
                 c += cost(Rule.ANIMATEUR_VERROUILLE_CRENEAU_FIGE, 1, breakdown);

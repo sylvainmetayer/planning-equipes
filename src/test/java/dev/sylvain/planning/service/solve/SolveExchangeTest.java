@@ -142,8 +142,9 @@ class SolveExchangeTest {
         PosteAffectation locked =
                 held.stream().filter(poste -> !poste.isVerrouille()).findFirst().orElseThrow();
         locked.setVerrouille(true);
-        VerrouillagePlanning lock = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning lock = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR_CRENEAU);
         lock.setAnimateurId(locked.getAnimateur().getId());
+        lock.setCreneauId(locked.getCreneau().getId());
         lock.setRaison(LOCK_REASON);
         prepared.setVerrouillages(new ArrayList<>(List.of(lock)));
 

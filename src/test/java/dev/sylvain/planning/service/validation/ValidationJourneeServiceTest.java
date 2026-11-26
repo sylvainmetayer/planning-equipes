@@ -107,8 +107,9 @@ class ValidationJourneeServiceTest {
     @Test
     void aLockOnSomethingSmallerThanTheDayDoesNotSaveTheReading() {
         VerrouillagePlanning surLeStand = new VerrouillagePlanning();
-        surLeStand.setType(TypeVerrouillage.STAND);
+        surLeStand.setType(TypeVerrouillage.STAND_JOUR);
         surLeStand.setStandId("STAND-STRAT");
+        surLeStand.setJour(JOUR);
         referenceDataService.createVerrouillage(surLeStand);
         validationService.accept(new DemandeValidation(JOUR, null, false));
 

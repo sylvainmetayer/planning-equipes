@@ -37,7 +37,7 @@ l'application s'en souvenait.
    `stand_ouverture` et `stand_indisponibilite`, qui portaient déjà exactement
    cela, et le modèle dans les deux tables de règles de la 3.x,
    `stand_horaire` et `stand_horaire_fenetre`, inchangées et non renommées (leurs
-   identifiants sont ceux que l'éditeur actuel relit). La migration `V152` ne
+   identifiants sont ceux que l'éditeur actuel relit). La migration `V153` ne
    copie aucune plage existante, ne supprime aucune règle : elle **convertit en
    plages les règles des éditions qui ont des créneaux** et laisse les règles
    en place, modèle de leur stand.

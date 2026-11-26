@@ -741,13 +741,13 @@ final class ScenarioDomainMapper {
         Set<String> desactivees = new LinkedHashSet<>();
         if (dto.desactivees() != null) {
             for (String nom : dto.desactivees()) {
-                desactivees.add(requireKnownConstraint(String.valueOf(nom)));
+                currentConstraint(String.valueOf(nom)).ifPresent(desactivees::add);
             }
         }
         Set<String> activees = new LinkedHashSet<>();
         if (dto.activees() != null) {
             for (String nom : dto.activees()) {
-                activees.add(requireKnownConstraint(String.valueOf(nom)));
+                currentConstraint(String.valueOf(nom)).ifPresent(activees::add);
             }
         }
         Set<String> contradictoires = new LinkedHashSet<>(desactivees);
@@ -762,7 +762,7 @@ final class ScenarioDomainMapper {
         if (dto.poids() != null) {
             for (Map.Entry<String, Integer> entry : dto.poids().entrySet()) {
                 if (entry.getValue() != null) {
-                    poids.put(requireKnownConstraint(entry.getKey()), entry.getValue());
+                    currentConstraint(entry.getKey()).ifPresent(nom -> poids.put(nom, entry.getValue()));
                 }
             }
         }
@@ -806,6 +806,21 @@ final class ScenarioDomainMapper {
                 poids.putIfAbsent(nom, position.poids());
             }
         }
+    }
+
+    /**
+     * The catalogue name a file's constraint name stands for: itself, its
+     * replacement when 4.0 renamed it, nothing when 4.0 retired it — a 3.x
+     * export (or a wipe backup) naming a retired rule must still import.
+     */
+    private static Optional<String> currentConstraint(String nom) {
+        String ancien = ConstraintCatalog.ANCIENS_NOMS.get(nom);
+        if (ancien != null) {
+            return ConstraintCatalog.RETIREE.equals(ancien)
+                    ? Optional.empty()
+                    : Optional.of(requireKnownConstraint(ancien));
+        }
+        return Optional.of(requireKnownConstraint(nom));
     }
 
     private static String requireKnownConstraint(String nom) {
