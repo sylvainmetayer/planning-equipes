@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   resource,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -62,6 +64,12 @@ export class ComparerVersionsView {
     const [a, b] = [this.first(), this.second()];
     return a && b && a !== b ? comparisonSides([a, b], this.versions() ?? []) : null;
   });
+  /** The older side, named: the table reads from it, whichever list it was picked in. */
+  protected readonly reference = computed(() => {
+    const base = this.sides()?.base;
+    const version = (this.versions() ?? []).find((each) => String(each.id) === base);
+    return version ? this.label(version) : null;
+  });
   protected readonly sameTwice = computed(() => !!this.first() && this.first() === this.second());
 
   constructor() {
@@ -76,9 +84,13 @@ export class ComparerVersionsView {
     (side === 'first' ? this.first : this.second).set(optionalParam(value));
   }
 
+  private readonly firstList = viewChild<ElementRef<HTMLSelectElement>>('firstList');
+
+  /** The panel and its « Fermer » go away: focus returns to where a new pair starts. */
   protected close(): void {
     this.first.set(null);
     this.second.set(null);
+    this.firstList()?.nativeElement.focus();
   }
 
   /** « Name — date (edition) »: the edition is said because the lists span all of them. */

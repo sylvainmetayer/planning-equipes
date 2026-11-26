@@ -65,7 +65,10 @@ test('deux lignes cochées ouvrent « Comparer deux versions », et l’adresse 
   await expect(page).not.toHaveURL(/comparer=/);
 
   // The editions are the other view of the same screen.
-  await page.getByRole('radio', { name: 'Éditions' }).click();
+  await page
+    .getByRole('radiogroup', { name: "Ce que l'on compare" })
+    .getByRole('radio', { name: 'Éditions' })
+    .click();
   await expect(page).toHaveURL(/vue=editions/);
   await expect(page.locator('.delta-choix')).toBeVisible();
   await page.context().close();
