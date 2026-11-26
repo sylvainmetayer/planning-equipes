@@ -9,26 +9,27 @@
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = (vide)
 .planning.parametresLegaux[0]  545f1d29fd3c1a49
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 15
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
-.planning.postes[0]  c4e4c1e567f0afb5
+.planning.postes[0]  a97a47c976a0f795
 .planning.postes[1]  8f3436e5c5b2fa22
 .planning.postes[2]  0a20c11248a7db8b
 .planning.postes[3]  871d31674efd5060
 .planning.postes[4]  f79aa43b0b9b4e83
 .planning.postes[5]  f34769772b1d3c0a
-.planning.postes[6]  f6367bf4559cf50d
+.planning.postes[6]  0de0aafb6e50c7e3
 .planning.postes[7]  62c9a587802f972a
 .planning.postes[8]  7b40f4e85bca48a3
 .planning.postes[9]  888598fd0cf5e9fc
 .planning.postes[10]  7222e6aa0b39f8a9
 .planning.postes[11]  c5d6ab06c04fd086
 .planning.postes[12]  d2edcade960cb148
-.planning.postes[13]  9deb0d2fd0209447
+.planning.postes[13]  4543116f9cf79f94
 .planning.postes[14]  21469cb6e33ce4e0
 .planning.postes[15]  d0613b00d17f5094
 .planning.postes[16]  8ac5c8a208395fd2
@@ -38,7 +39,7 @@
 .planning.postes[20]  9aba6e25414e7d39
 .planning.postes[21]  33da6d953897b274
 .planning.postes[22]  add61e93c066a3c8
-.planning.postes[23]  665310714904bd81
+.planning.postes[23]  7340ad8c4273e451
 .planning.postes[24]  afcbaef94b319c6e
 .planning.postes[25]  b01abfd8a44d7a86
 .planning.postes[26]  acf24d0c4497160d
@@ -48,7 +49,7 @@
 .planning.postes[30]  6fabbe9df8592430
 .planning.postes[31]  0d2113f7f8b12465
 .planning.postes[32]  026211424073c4c4
-.planning.postes[33]  adee3ef941a81baa
+.planning.postes[33]  a4298d4fd7145d17
 .planning.postes[34]  9039f8f31b13ab3c
 .planning.postes[35]  126291aaa5b99c2a
 .planning.postes[36]  af1357f4854e8be7
@@ -60,6 +61,7 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
+.sections.contraintes.obligatoires = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 15
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null

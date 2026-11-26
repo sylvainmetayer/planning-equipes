@@ -46,6 +46,61 @@ class ConstraintCatalogTest {
     }
 
     @Test
+    void onlyOrganisationRulesHaveALevelToChoose() {
+        List<String> reglables = ConstraintCatalog.definitions().stream()
+                .filter(ConstraintCatalog.ConstraintDefinition::niveauReglable)
+                .map(ConstraintCatalog.ConstraintDefinition::name)
+                .toList();
+
+        assertThat(reglables)
+                .contains("coupureRepasObligatoire", "mineurNecessiteEncadrementMajeur", "equilibrerCharge")
+                // The day-run cap keeps its two forms until they merge into one adjustable rule (ADR 0045).
+                .doesNotContain("maxJoursConsecutifsTravailles", "maxJoursConsecutifsTravaillesDur");
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            if (definition.legale()
+                    || definition.categorie().equals("Affectation")
+                    || definition.categorie().equals("Contraintes ad hoc")
+                    || definition.categorie().equals("Verrouillage du planning")
+                    || definition.niveau() == ConstraintCatalog.Niveau.SOFT) {
+                assertThat(definition.niveauReglable())
+                        .as(definition.name() + " has no level to choose")
+                        .isFalse();
+            }
+        }
+    }
+
+    @Test
+    void aRuleWithNoChoiceKeepsItsLevelWhateverIsAskedAndAChoosableOneFollowsIt() {
+        ConstraintCatalog.ConstraintDefinition legal = ConstraintCatalog.PAR_NOM.get("dureeQuotidienneMaxMajeur");
+        ConstraintCatalog.ConstraintDefinition quality = ConstraintCatalog.PAR_NOM.get("equilibrerCharge");
+        ConstraintCatalog.ConstraintDefinition meal = ConstraintCatalog.PAR_NOM.get("coupureRepasObligatoire");
+
+        assertThat(legal.niveauEffectif(false)).isEqualTo(ConstraintCatalog.Niveau.HARD);
+        assertThat(quality.niveauEffectif(null)).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
+        assertThat(quality.niveauEffectif(true)).isEqualTo(ConstraintCatalog.Niveau.HARD);
+        assertThat(meal.niveauEffectif(false)).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
+        assertThat(ConstraintCatalog.hardRulesOf(
+                        java.util.Map.of("equilibrerCharge", true, "coupureRepasObligatoire", false)))
+                .contains("equilibrerCharge", "dureeQuotidienneMaxMajeur")
+                .doesNotContain("coupureRepasObligatoire");
+        assertThat(ConstraintCatalog.defaultWeight("coupureRepasObligatoire", false))
+                .isEqualTo(ConstraintCatalog.POIDS_NORMAL);
+        assertThat(ConstraintCatalog.defaultWeight("equilibrerCharge", true)).isEqualTo(ConstraintCatalog.POIDS_DUR);
+    }
+
+    @Test
+    void aPreferenceWeightReadsAsItsPosition() {
+        assertThat(ConstraintCatalog.NiveauRegle.ofPoids(ConstraintCatalog.POIDS_FAIBLE))
+                .isEqualTo(ConstraintCatalog.NiveauRegle.PREFERENCE_LEGERE);
+        assertThat(ConstraintCatalog.NiveauRegle.ofPoids(ConstraintCatalog.POIDS_NORMAL))
+                .isEqualTo(ConstraintCatalog.NiveauRegle.PREFERENCE_NORMALE);
+        assertThat(ConstraintCatalog.NiveauRegle.ofPoids(ConstraintCatalog.POIDS_FORT))
+                .isEqualTo(ConstraintCatalog.NiveauRegle.PREFERENCE_FORTE);
+        assertThat(ConstraintCatalog.NiveauRegle.ofPoids(7))
+                .isEqualTo(ConstraintCatalog.NiveauRegle.PREFERENCE_NORMALE);
+    }
+
+    @Test
     void chaqueContrainteDefinieEstDecriteDansLeCatalogue() {
         List<String> catalogue = ConstraintCatalog.definitions().stream()
                 .map(ConstraintCatalog.ConstraintDefinition::name)

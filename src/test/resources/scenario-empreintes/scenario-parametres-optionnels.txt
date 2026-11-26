@@ -5,12 +5,13 @@
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  de3fa0956f71d4cb
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = null
 .planning.parametresLegaux[0]  2963437a7edf7cb9
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario = null
-.planning.postes[0]  58205be50d8a4791
+.planning.postes[0]  fc5109953d35e140
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)

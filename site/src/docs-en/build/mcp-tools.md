@@ -15,7 +15,7 @@ Everywhere, a tool that reads a plan reads the **saved plan**, and a person come
 - The `aTraiter` block answers "what must I do this morning?": declarations and swaps pending, unreviewed days of the next seven days, silent staff to remind. "Today" is that of `JourJClock`, simulated date included.
 - `etat_planning` says when the solver last ran, `etat_publication` when the staff were notified. Only the second describes what people have under their eyes: a plan computed this morning and published last week is, for them, last week's. `etat_publication` also says who would be concerned by the next publication, without sending anything.
 - `changements_journee` says what moved on a date, since the last publication (`reference=publication`) or since the plan before the last solve (`reference=resolution`), by seat and by staff member. A seat kept by the same person at other hours is a `HORAIRES` line. `referenceDisponible` false means "nothing to compare", never "no change".
-- `realise_vs_planifie` returns the screen of the same name for each stand and each **elapsed** day: seats published, held, absences, replacements, empty, removed (consigne, deleted timeslot: never an absence) or added, minutes published, done and lost. Each day is compared with the publication in force at its first timeslot; a day begun before any publication (`lateReference`) enters no total. `nature` is `DECLARED`: what was recorded, not a clock-in.
+- `comparer_realise_planifie` returns the screen of the same name for each stand and each **elapsed** day: seats published, held, absences, replacements, empty, removed (consigne, deleted timeslot: never an absence) or added, minutes published, done and lost. Each day is compared with the publication in force at its first timeslot; a day begun before any publication (`lateReference`) enters no total. `nature` is `DECLARED`: what was recorded, not a clock-in.
 - `synthese_affectations` answers in a few dozen lines (seats filled in total, per stand and per day), where `lister_affectations` would spend the assistant's context before it sees that a stand is understaffed on Saturday.
 
 ## Solving and correcting the plan
@@ -25,6 +25,8 @@ Everywhere, a tool that reads a plan reads the **saved plan**, and a person come
 `diagnostiquer_plan` solves nothing: it recomputes the score of the saved plan, the one `etat_planning` and `lister_affectations` talk about. It returns the **score reading** (`lecture`), the same sentences as the Solver page, written from templates: they name only rules, days and numbers, never a person. Each rule at fault carries its typical `actions` (code, gesture, explanation), as in `expliquer_echec_contraintes_dures`.
 
 To retouch a seat without starting the solve again, `suggerer_reparations` looks for who could hold it and prices each candidate, `affecter_poste` applies the choice. Two tools and not one: an assistant that evaluates and applies in the same call leaves no step where a human can say no. `affecter_poste` refuses a **locked** seat, the lock being what it is asked to respect, and a seat whose timeslot has begun. `accepter_demande_echange` is, with it, one of the only two tools that write into the plan without a solver: it applies the swap then freezes it with `ANIMATEUR_CRENEAU` locks. Hence `analyser_impact_echange` alongside, because the prevalidation stored with the request describes the plan of the day it was sent.
+
+`modifier_niveau_contrainte` chooses the level of an organisation rule for the edition: `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` or `PREFERENCE_LEGERE` (a preference writes the weight of its position). `lister_contraintes` gives `niveauReglable` and `niveauChoisi`; a legal, assignment, ad hoc or lock rule, or a soft preference, refuses the level. Like `modifier_poids_contrainte`, the tool is accepted during a computation and says so (`RESOLUTION_EN_COURS`).
 
 `consulter_historique_ponderation` returns what `GET /api/constraints/{name}/historique` returns, or the global view without `contrainte`: changes of weight and activation, values before and after, typed origin, then the edition's solves with the weighting of each. A setting made by `modifier_poids_contrainte`, `activer_contrainte` or `desactiver_contrainte` carries the origin `ASSISTANT` there.
 
@@ -110,12 +112,15 @@ Two **resources**, to attach once to inform all following calls:
 | `consulter_parametres_solveur` | `consulter_parametres` |
 | `effacer_horaires_stand` | removed |
 | `lister_instantanes` | `lister_versions` |
+| `lister_kpi_historique` | `lister_mesures_edition` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `realise_vs_planifie` | `comparer_realise_planifie` |
 | `restaurer_instantane` | `restaurer_version` |
 | `supprimer_instantane` | `supprimer_version` |
+| `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool

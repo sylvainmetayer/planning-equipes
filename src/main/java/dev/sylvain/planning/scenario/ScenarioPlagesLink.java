@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Link 3 → 4 of {@link ScenarioMigrations} (ADR 0104): a stand's schedule is a
+ * Link 4 → 5 of {@link ScenarioMigrations} (ADR 0104): a stand's schedule is a
  * list of dated {@code plages}. The three keys that used to say it —
  * {@code horaires} (recurring rules), {@code ouvertures} and
  * {@code indisponibilites} (dated windows) — become one {@code plages:} list,

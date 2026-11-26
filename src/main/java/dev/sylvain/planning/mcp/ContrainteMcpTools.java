@@ -96,9 +96,10 @@ public class ContrainteMcpTools {
                                 ConstraintDiagnostic::name, Function.identity(), (first, second) -> first));
         Set<String> desactivees = referenceDataService.getContraintesDesactivees();
         Map<String, Integer> poids = planningService.effectiveConstraintWeights();
+        Map<String, Boolean> niveaux = planningService.effectiveLevels();
 
         return ConstraintCatalog.definitions().stream()
-                .map(definition -> toView(definition, byName.get(definition.name()), desactivees, poids))
+                .map(definition -> toView(definition, byName.get(definition.name()), desactivees, poids, niveaux))
                 .toList();
     }
 
@@ -152,7 +153,7 @@ public class ContrainteMcpTools {
                     + "L'écran propose trois positions (faible 1, normale 5 — le défaut d'une règle moyenne ou "
                     + "souple —, forte 25), tout entier de 1 à 500 est accepté. "
                     + "Sans poids, l'édition revient au poids configuré par défaut. Ne touche pas au niveau "
-                    + "HARD/MEDIUM/SOFT, qui n'est pas réglable.",
+                    + "(obligatoire ou préférence) : c'est modifier_niveau_contrainte.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -171,6 +172,40 @@ public class ContrainteMcpTools {
         }
         referenceDataService.setConstraintWeight(nom, poids, WeightChangeOrigin.ASSISTANT);
         return new PoidsResult(nom, planningService.effectiveConstraintWeights().getOrDefault(nom, 1), poids == null);
+    }
+
+    @Tool(
+            name = "modifier_niveau_contrainte",
+            description = "Choisit le niveau d'une règle d'organisation dans cette édition : OBLIGATOIRE (le plan "
+                    + "qui la viole n'est pas livrable, comme une règle légale), ou une préférence "
+                    + "(PREFERENCE_FORTE, PREFERENCE_NORMALE, PREFERENCE_LEGERE : la règle pèse sur le score, avec "
+                    + "le poids de cette position, 25, 5 ou 1). Le niveau se règle sur les règles dont "
+                    + "lister_contraintes donne niveauReglable : jamais sur une règle légale, d'affectation, "
+                    + "ad hoc ou de verrou. Une règle rendue obligatoire sur une édition qui ne peut pas la "
+                    + "tenir donne un plan infaisable : lancer analyser_faisabilite avant le calcul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    @WarnsWhileSolving
+    NiveauResult updateContrainteNiveau(
+            @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
+            @ToolArg(description = "OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE")
+                    String niveau,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        requireConnue(nom);
+        ConstraintCatalog.NiveauRegle choisi;
+        try {
+            choisi = ConstraintCatalog.NiveauRegle.valueOf(niveau == null ? "" : niveau.trim());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessError.Invalid(
+                    "niveau : attendu OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE, reçu "
+                            + niveau);
+        }
+        referenceDataService.setNiveau(nom, choisi, WeightChangeOrigin.ASSISTANT);
+        return new NiveauResult(nom, choisi.name());
     }
 
     private ToggleResult setActive(String nom, boolean actif) {
@@ -204,6 +239,22 @@ public class ContrainteMcpTools {
         }
     }
 
+    public record NiveauResult(
+            String nom,
+            String niveau,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<NiveauResult> {
+
+        NiveauResult(String nom, String niveau) {
+            this(nom, niveau, List.of());
+        }
+
+        @Override
+        public NiveauResult withWarning(String code) {
+            return new NiveauResult(nom, niveau, WarningCodes.with(avertissements, code));
+        }
+    }
+
     /** @param parDefaut true when the edition carries no override any more */
     public record PoidsResult(
             String nom,
@@ -227,6 +278,17 @@ public class ContrainteMcpTools {
             ConstraintDiagnostic diagnostic,
             Set<String> desactivees,
             Map<String, Integer> poids) {
+        return toView(definition, diagnostic, desactivees, poids, Map.of());
+    }
+
+    static ContrainteView toView(
+            ConstraintDefinition definition,
+            ConstraintDiagnostic diagnostic,
+            Set<String> desactivees,
+            Map<String, Integer> poids,
+            Map<String, Boolean> niveaux) {
+        boolean obligatoire =
+                definition.niveauEffectif(niveaux.get(definition.name())) == ConstraintCatalog.Niveau.HARD;
         return new ContrainteView(
                 definition.name(),
                 definition.niveau().name(),
@@ -241,7 +303,14 @@ public class ContrainteMcpTools {
                         : diagnostic.plancher().ratio(),
                 diagnostic == null || diagnostic.plancher() == null
                         ? null
-                        : diagnostic.plancher().libelle());
+                        : diagnostic.plancher().libelle(),
+                definition.niveauReglable(),
+                !definition.niveauReglable()
+                        ? null
+                        : obligatoire
+                                ? ConstraintCatalog.NiveauRegle.OBLIGATOIRE.name()
+                                : ConstraintCatalog.NiveauRegle.ofPoids(poids.getOrDefault(definition.name(), 1))
+                                        .name());
     }
 
     /**
@@ -252,6 +321,10 @@ public class ContrainteMcpTools {
      * @param motifPlancher  the sentence naming the missing referential data behind
      *                       that floor, or saying none was identified; {@code null}
      *                       with {@code ratioPlancher}
+     * @param niveauReglable that the edition chooses this rule's level (ADR 0106);
+     *                       {@code niveau} stays the catalogue's own
+     * @param niveauChoisi   the level it has on this edition — OBLIGATOIRE or a
+     *                       preference position — or {@code null} when not choosable
      */
     public record ContrainteView(
             String nom,
@@ -263,5 +336,7 @@ public class ContrainteMcpTools {
             String score,
             Integer nombreCorrespondances,
             Double ratioPlancher,
-            String motifPlancher) {}
+            String motifPlancher,
+            boolean niveauReglable,
+            String niveauChoisi) {}
 }

@@ -24,12 +24,14 @@ import {
   redirectCalculToParametres,
   redirectConstraintsToRegles,
   redirectEditionComparison,
+  redirectFormerRealiseTab,
   redirectKpiToVersions,
   standEditToFicheUrl,
   routes,
   trainingTabToNeed,
 } from './app.routes';
 import { BRANDING } from './core/branding';
+import { MesuresPage } from './pages/mesures/mesures-page';
 import { ResponsablePage } from './pages/responsable/responsable-page';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -177,11 +179,11 @@ describe('app.routes', () => {
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic;
-    // `/realise` (Réalisé vs planifié) brought one, `/comparer` another;
+    // `/mesures` (Mesures d'édition, the realised and the indicators) brought one, `/comparer` another;
     // the nine screens that became tabs of another page gave theirs up;
     // `/mot-de-passe`, the page of a mailed link, and `/responsable` (« Mon stand »)
     // brought one each, and `/rh` (« Conformité RH ») and `/animateur/:jeton/contacts` one more each.
-    expect(titrees).toHaveLength(36);
+    expect(titrees).toHaveLength(37);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
@@ -200,6 +202,12 @@ describe('app.routes', () => {
     const route = routes.find((r) => r.path === 'responsable');
     const component = await (route?.loadComponent as () => Promise<unknown>)();
     expect(component).toBe(ResponsablePage);
+  });
+
+  it("lazy-loads « Mesures d'édition » from the mesures route", async () => {
+    const route = allRoutes(routes).find((r) => r.path === 'mesures');
+    const component = await (route?.loadComponent as () => Promise<unknown>)();
+    expect(component).toBe(MesuresPage);
   });
 
   it("résout un titre fonction jusqu'au titre du document", async () => {
@@ -376,6 +384,29 @@ describe('app.routes', () => {
       );
       expect(guard({ onglet: 'fragilite' })).toBe(true);
       expect(guard({})).toBe(true);
+    });
+
+    // The realised was a tab of Aujourd'hui, and a screen before that: both land on
+    // the Mesures d'édition, whatever else the address carried.
+    it('sends the former realised addresses to the Mesures d’édition, params kept', () => {
+      expect(redirectTarget('realise', {})).toBe('/mesures');
+      expect(redirectTarget('realise', { vue: 'indicateurs' })).toBe('/mesures?vue=indicateurs');
+      TestBed.configureTestingModule({
+        providers: [provideZonelessChangeDetection(), provideRouter([])],
+      });
+      const guard = (queryParams: Record<string, string>): unknown =>
+        TestBed.runInInjectionContext(() =>
+          redirectFormerRealiseTab(
+            snapshotOf(queryParams),
+            TestBed.inject(Router).routerState.snapshot,
+          ),
+        );
+
+      expect(String(guard({ onglet: 'realise', vue: 'indicateurs' }))).toBe(
+        '/mesures?vue=indicateurs',
+      );
+      expect(String(guard({ onglet: 'realise' }))).toBe('/mesures');
+      expect(guard({ date: '2026-08-02' })).toBe(true);
     });
 
     // Marge disponible became two tabs of the Diagnostic: its « avant » reading

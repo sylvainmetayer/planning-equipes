@@ -13,7 +13,6 @@ import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.analyse.ViolationFormatter;
-import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -658,7 +657,7 @@ public final class CoherenceAnalyzer {
         TreeSet<String> regles = new TreeSet<>();
         int places = 0;
         for (PlanningDiagnosticService.ConstraintDiagnostic diagnostic : diagnostics) {
-            if (!ConstraintCatalog.NOMS_DURS.contains(diagnostic.name())) {
+            if (!diagnostic.hard()) {
                 continue;
             }
             long touchees = diagnostic.references().stream()

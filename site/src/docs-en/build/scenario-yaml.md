@@ -59,7 +59,18 @@ Timeslots always come out as they are, with `couverturePause: true` when they co
 
 ## `schemaVersion`
 
-A file written by the application starts with `schemaVersion: 4` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+A file written by the application starts with `schemaVersion: 5` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+
+## `contraintes.niveaux`: the level chosen per rule
+
+From format version 4, the `contraintes` section also carries `niveaux`, the level the edition chose for an organisation rule: `OBLIGATOIRE` (mandatory), `PREFERENCE`, or a position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) which also gives the weight of that position (25, 5, 1) when `poids` does not name the rule. A rule the file does not name goes back to the catalogue's level. A rule with no level to choose (legal, assignment, ad hoc, lock, soft preference) is **refused by name**. A 3.x or v3 file carries none and reads as before: the 3 → 4 link changes nothing ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+
+```yaml
+contraintes:
+  niveaux:
+    stabiliteDuPlanPublie: OBLIGATOIRE
+    equilibrerCharge: PREFERENCE_FORTE
+```
 
 ## `postes`: absent and empty do not say the same thing
 
@@ -69,7 +80,7 @@ When present, it is taken as is, even if empty, which allows off-rule staffing; 
 
 ## `plan`: the schedule of a copy before a wipe
 
-Last section, optional: the seats filled (`affectations`) and the locks (`verrous`) of the edition, with the file's identifiers; a timeslot is named there by its date and hours. Only the copy stored before a wipe writes it ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)): the Files export does not carry one, and a file without this section is read as before (the format stays at version 4). Only the restore of that copy applies the section: it puts the seats and locks back on the reference data it has just written, found by code then name for a stand, address then first and last name for a staff member, day and hours for a timeslot, and lists what is not found. An ordinary import (Files, `importer_scenario_yaml`) ignores it, with a warning in the report. Restore details: [Restore an edition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
+Last section, optional: the seats filled (`affectations`) and the locks (`verrous`) of the edition, with the file's identifiers; a timeslot is named there by its date and hours. Only the copy stored before a wipe writes it ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)): the Files export does not carry one, and a file without this section is read as before (the format stays at version 5). Only the restore of that copy applies the section: it puts the seats and locks back on the reference data it has just written, found by code then name for a stand, address then first and last name for a staff member, day and hours for a timeslot, and lists what is not found. An ordinary import (Files, `importer_scenario_yaml`) ignores it, with a warning in the report. Restore details: [Restore an edition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
 
 ## `contraintes`: as a block, never merged
 
@@ -102,7 +113,7 @@ stands:
 - An omitted `effectif` means "inherit from `effectifMin`", the most common case. Filling it in on an opening lets a stand whose load varies during the day (4 people in the morning, 5 in the evening) remain a single stand. A closure carries none.
 - A day with no plage is open all day; a day never carries both an opening and a closure. The full arbitration is in [Hours, consignes and effective windows](horaires-et-fenetres-des-stands.md).
 
-A version 1 to 3 file still carries `horaires` (recurring rules), `ouvertures` and `indisponibilites`: link 3 → 4 converts them into plages over the days of the file's `creneaux`, with the reading the application gave them. A stand whose rules have no day to land on (the file has no timeslot) keeps them under `horaires`, as its model: nothing is lost, nothing is said. A file that has timeslots keeps its rules under `horaires` too, with the plages they gave.
+A version 1 to 4 file still carries `horaires` (recurring rules), `ouvertures` and `indisponibilites`: link 4 → 5 converts them into plages over the days of the file's `creneaux`, with the reading the application gave them. A stand whose rules have no day to land on (the file has no timeslot) keeps them under `horaires`, as its model: nothing is lost, nothing is said. A file that has timeslots keeps its rules under `horaires` too, with the plages they gave.
 
 ## Game categories, typical days and removed keys
 

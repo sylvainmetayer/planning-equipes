@@ -272,9 +272,8 @@ export function buildOperationsSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/aujourdhui',
-          queryParams: { onglet: 'realise' },
-          label: $localize`:@@nav.link.realise:Réalisé vs planifié`,
+          route: '/mesures',
+          label: $localize`:@@nav.link.mesures:Mesures d'édition`,
         },
         { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
         lienVersions(),

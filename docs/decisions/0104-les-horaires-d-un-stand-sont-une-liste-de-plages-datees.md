@@ -2,7 +2,7 @@
 
 - **Statut** : accepté, implémenté (modèle, migration, format YAML) · l'API, les outils MCP et l'écran suivent dans leurs propres changements
 - **Date** : novembre 2026 · révisé le 26 novembre : « modèle gardé, déplié ensuite » (§ 1, 3, 5, 6, 7)
-- **Portée** : modèle du stand, résolution des horaires, migration de la base, format du scénario YAML (version 4), sauvegardes avant vidage
+- **Portée** : modèle du stand, résolution des horaires, migration de la base, format du scénario YAML (version 5), sauvegardes avant vidage
 
 ## Contexte
 
@@ -37,7 +37,7 @@ l'application s'en souvenait.
    `stand_ouverture` et `stand_indisponibilite`, qui portaient déjà exactement
    cela, et le modèle dans les deux tables de règles de la 3.x,
    `stand_horaire` et `stand_horaire_fenetre`, inchangées et non renommées (leurs
-   identifiants sont ceux que l'éditeur actuel relit). La migration `V149` ne
+   identifiants sont ceux que l'éditeur actuel relit). La migration `V152` ne
    copie aucune plage existante, ne supprime aucune règle : elle **convertit en
    plages les règles des éditions qui ont des créneaux** et laisse les règles
    en place, modèle de leur stand.
@@ -70,13 +70,13 @@ l'application s'en souvenait.
    dépliée aussitôt sur ses jours (les plages que l'ancien modèle avait
    dépliées sont retirées d'abord, une plage saisie à la main reste) ;
    renvoyer le modèle stocké tel quel ne déplie rien.
-6. **Le format YAML passe en version 4** : la clé `plages` remplace
+6. **Le format YAML passe en version 5** : la clé `plages` remplace
    `ouvertures` et `indisponibilites` d'un stand, et `horaires` devient le
-   modèle. Le maillon 3 → 4 convertit un fichier plus ancien sur les jours des
+   modèle. Le maillon 4 → 5 convertit un fichier plus ancien sur les jours des
    créneaux du fichier ; sans créneau dans le fichier, les règles restent sous
    `horaires`, sans rien dire ([0101](0101-schema-yaml-2-et-chaine-de-conversions.md)).
-   La version 3 est celle des paramètres, prise entre-temps par un autre
-   changement.
+   Les versions 3 et 4 sont celles des paramètres et des niveaux de règle,
+   prises entre-temps par d'autres changements.
 
 7. **Pont temporaire pour l'écran de la 3.x**, retiré avec l'éditeur de
    plages : l'éditeur d'horaires actuel envoie et relit les règles dans la

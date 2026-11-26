@@ -168,6 +168,9 @@
             "type" : "string"
           }
         },
+        "niveaux" : {
+          "$ref" : "#/$defs/Map(String,String)"
+        },
         "poids" : {
           "$ref" : "#/$defs/Map(String,Integer)",
           "additionalProperties" : {
@@ -380,6 +383,12 @@
       "type" : "object",
       "additionalProperties" : {
         "$ref" : "#/$defs/NiveauCompetence"
+      }
+    },
+    "Map(String,String)" : {
+      "type" : "object",
+      "additionalProperties" : {
+        "type" : "string"
       }
     },
     "ModeHoraire" : {
@@ -862,7 +871,7 @@
       "type" : "integer",
       "format" : "int32",
       "minimum" : 1,
-      "maximum" : 4
+      "maximum" : 5
     },
     "stands" : {
       "type" : "array",

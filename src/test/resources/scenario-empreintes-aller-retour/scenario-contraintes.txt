@@ -3,10 +3,11 @@
 .planning.animateurs[1]  3641c156515b15fe
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc[0]  2cb7b1986dd969e4
-.planning.contraintesAdHoc[1]  89c8626af9a2650c
+.planning.contraintesAdHoc[1]  c6882ec69db332d1
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = (vide)
 .planning.parametresLegaux[0]  545f1d29fd3c1a49
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
@@ -20,6 +21,7 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees[0]  15b84849b6fc8f86
+.sections.contraintes.obligatoires = (vide)
 .sections.contraintes.poids{equilibrerCharge} = 35
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 15
 .sections.edition = null

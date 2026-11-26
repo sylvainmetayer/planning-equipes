@@ -49,6 +49,7 @@ ConstraintResource#history GET /constraints/historique
 ConstraintResource#history GET /constraints/{name}/historique
 ConstraintResource#list GET /constraints
 ConstraintResource#setActif PUT /constraints/{name}
+ConstraintResource#setNiveau PUT /constraints/{name}/niveau
 ConstraintResource#setPoids PUT /constraints/{name}/poids
 ContrainteAdHocResource#createContrainteAdHoc POST /contraintes-ad-hoc
 ContrainteAdHocResource#deleteContrainteAdHoc DELETE /contraintes-ad-hoc/{id}
@@ -138,6 +139,12 @@ KpiResource#delete DELETE /kpi/historique/{id}
 KpiResource#list GET /kpi/historique
 MargeResource#analyze GET /marge
 MargeResource#tension GET /marge/tension
+MesuresEditionResource#deleteIndicator DELETE /mesures-edition/indicateurs/{id}
+MesuresEditionResource#detail GET /mesures-edition/realise/detail
+MesuresEditionResource#exportCsv GET /mesures-edition/realise/export
+MesuresEditionResource#listIndicators GET /mesures-edition/indicateurs
+MesuresEditionResource#previousEdition GET /mesures-edition/realise/precedente
+MesuresEditionResource#report GET /mesures-edition/realise
 OuvertureStandsResource#analyze GET /ouvertures-stands
 OuvertureStandsResource#layers GET /ouvertures-stands/couches
 OuvertureStandsResource#saisir PUT /ouvertures-stands/grille

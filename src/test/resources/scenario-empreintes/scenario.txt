@@ -7,21 +7,23 @@
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = (vide)
 .planning.parametresLegaux[0]  545f1d29fd3c1a49
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 15
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
-.planning.postes[0]  58205be50d8a4791
+.planning.postes[0]  fc5109953d35e140
 .planning.postes[1]  1302b243c55b2b15
-.planning.postes[2]  6130d42cb10e7243
+.planning.postes[2]  b9f6affb2b118dfc
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
+.sections.contraintes.obligatoires = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 15
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null

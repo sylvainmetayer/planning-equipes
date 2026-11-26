@@ -42,7 +42,7 @@ Three traps:
 - The dosage is the one of the **launch**. It is taken just before the solver starts and stored with the KPI row (`kpi.dosage`) and with the plan (`planning_resolution.dosage`, copied by every snapshot): a weight changed during the solve applies to the next one. It keeps only what departs from a default: `weights` (departure from the deployment), `disabled` and `enabled` (departure from the catalogue), plus `instanceWeights`, the deployment's weights, which tell when it is the instance and not the edition that changed. `null` on an old row means "dosage unknown", never "default".
 - The screen lays out the scores that followed a setting without claiming to isolate its effect: the reference data may have moved between two solves.
 
-Each row of `GET /api/kpi/historique` carries `kpi.couvertureParJour`: by ISO date, `{ postes, pourvus }`, seats and never people, which stays compatible with the unlimited retention of this history. The sums of the days equal `postesTotal` and `postesPourvus`. The key is `null` on an old row and on a snapshot recomputed in degraded mode: the reader says "not measured", never "empty day". The `kpi` column is a `jsonb`, and `lister_kpi_historique` (MCP) returns it as is.
+Each row of `GET /api/mesures-edition/indicateurs` carries `kpi.couvertureParJour`: by ISO date, `{ postes, pourvus }`, seats and never people, which stays compatible with the unlimited retention of this history. The sums of the days equal `postesTotal` and `postesPourvus`. The key is `null` on an old row and on a snapshot recomputed in degraded mode: the reader says "not measured", never "empty day". The `kpi` column is a `jsonb`, and `lister_mesures_edition` (MCP) returns it as is.
 
 ## The floor: flagged per rule, never enforced
 

@@ -156,13 +156,14 @@
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = (vide)
 .planning.parametresLegaux[0]  545f1d29fd3c1a49
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 15
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
-.planning.postes[0]  f0998ff615d95120
+.planning.postes[0]  9710dfa2d3af9ec3
 .planning.postes[1]  7706231f8d69cbca
 .planning.postes[2]  1d91b1cba1ef8e81
 .planning.postes[3]  49bd11c0302a6f9d
@@ -354,7 +355,7 @@
 .planning.postes[189]  890dffcf1ffbb9bf
 .planning.postes[190]  46901b0c7d2a1b08
 .planning.postes[191]  19a045073bb20c63
-.planning.postes[192]  0f4cfcea60835211
+.planning.postes[192]  b17e8a3404ae8436
 .planning.postes[193]  9b0542d04b7b12b1
 .planning.postes[194]  c826fdc2b7f9ad3b
 .planning.postes[195]  83422793fb86e4c6
@@ -378,7 +379,7 @@
 .planning.postes[213]  81fa30db5712aee7
 .planning.postes[214]  76d0bb63ce6d1392
 .planning.postes[215]  a4af677d3923e3a4
-.planning.postes[216]  de409c138542865f
+.planning.postes[216]  9b21817006c04f99
 .planning.postes[217]  93fed9bce266e275
 .planning.postes[218]  c4a0b9baf1e1579d
 .planning.postes[219]  3f3ce9c323fc6859
@@ -534,7 +535,7 @@
 .planning.postes[369]  a90e8287e5ff3b5a
 .planning.postes[370]  bf08c0908115366a
 .planning.postes[371]  08e6a2be3c2547f4
-.planning.postes[372]  ba7fc67dcb6d1ee5
+.planning.postes[372]  efc4c9ef6d99e452
 .planning.postes[373]  51ee30571d7c6db4
 .planning.postes[374]  022c2b8891565acd
 .planning.postes[375]  8f82cc5fdec34c35
@@ -726,7 +727,7 @@
 .planning.postes[561]  d66d1cc5fc435319
 .planning.postes[562]  2e362cb0b4dcee10
 .planning.postes[563]  8162e213aa845991
-.planning.postes[564]  f5f563bdf1dfdd70
+.planning.postes[564]  ae87ecf97df057f7
 .planning.postes[565]  8f0a870318dc1ff7
 .planning.postes[566]  c614ef0616458c67
 .planning.postes[567]  cc2ab6595712f53e
@@ -882,7 +883,7 @@
 .planning.postes[717]  a47f6440aa96e333
 .planning.postes[718]  a3f124966eb8ca36
 .planning.postes[719]  ff144c5eb8c10c9a
-.planning.postes[720]  ccb1d8b4472ca922
+.planning.postes[720]  23f6fea142d0cd6a
 .planning.postes[721]  3f492e085b872e62
 .planning.postes[722]  0b495611db9613aa
 .planning.postes[723]  9bd751f75e0b5628
@@ -978,7 +979,7 @@
 .planning.postes[813]  a0be9b84bb276853
 .planning.postes[814]  8d4f43588751d1fd
 .planning.postes[815]  7711814a03321353
-.planning.postes[816]  1461cfdfaad63dc9
+.planning.postes[816]  3402db00b62fccd3
 .planning.postes[817]  9d670b85ad8f7366
 .planning.postes[818]  a3f55301944032e2
 .planning.postes[819]  287d2afb96741074
@@ -1074,7 +1075,7 @@
 .planning.postes[909]  3c69cca13782f054
 .planning.postes[910]  432869c5b4a629ee
 .planning.postes[911]  056458e8e48324dc
-.planning.postes[912]  690dbc5a97ef4c82
+.planning.postes[912]  c3fda9c093ff1647
 .planning.postes[913]  eeec636983a83086
 .planning.postes[914]  8ca4fd6922a4895c
 .planning.postes[915]  3ed3df6f24203614
@@ -1170,7 +1171,7 @@
 .planning.postes[1005]  8d083a3352c45e29
 .planning.postes[1006]  697d9873cf7e9024
 .planning.postes[1007]  ccb26627ffd94232
-.planning.postes[1008]  85c62ec48e665279
+.planning.postes[1008]  686c1c81b727d85b
 .planning.postes[1009]  b60cba70f45d198a
 .planning.postes[1010]  f02b1ada977f193e
 .planning.postes[1011]  749b19e8f6f021e5
@@ -1266,7 +1267,7 @@
 .planning.postes[1101]  87cf35342f7f1a22
 .planning.postes[1102]  081da5e8d3899c52
 .planning.postes[1103]  5c546f3c25b8bff3
-.planning.postes[1104]  abab586b08a2a24e
+.planning.postes[1104]  7968b88f45c88c93
 .planning.postes[1105]  2f0eab6a631af229
 .planning.postes[1106]  8d210cbee90f696a
 .planning.postes[1107]  fdb590252874264e
@@ -1422,7 +1423,7 @@
 .planning.postes[1257]  206bef575f635066
 .planning.postes[1258]  6dad8da55971f270
 .planning.postes[1259]  e22b283943a33a64
-.planning.postes[1260]  ac8198bf36ac62fb
+.planning.postes[1260]  11160d731f1f427d
 .planning.postes[1261]  87b2149773e85a6a
 .planning.postes[1262]  7b24409e53f09fe8
 .planning.postes[1263]  9868904ce461678f
@@ -1614,7 +1615,7 @@
 .planning.postes[1449]  7536fdbb2887796d
 .planning.postes[1450]  6baa4fcaf6c2a8f2
 .planning.postes[1451]  aabbf229b01f4365
-.planning.postes[1452]  3b4e8fb6c9f5f70d
+.planning.postes[1452]  42ea870aafb808be
 .planning.postes[1453]  330e49d19847ea60
 .planning.postes[1454]  6d0a1112a7b1784c
 .planning.postes[1455]  2da941d08abbba9d
@@ -1770,7 +1771,7 @@
 .planning.postes[1605]  2be32e44269193dc
 .planning.postes[1606]  3519fcbf64b4f950
 .planning.postes[1607]  ef5b3c0a8a13f066
-.planning.postes[1608]  3e338263bad04cfc
+.planning.postes[1608]  6c5cab88812bed67
 .planning.postes[1609]  1a6875e3d0db9dec
 .planning.postes[1610]  a437e9228fbc3fb3
 .planning.postes[1611]  57a720b8bf9db3fa
@@ -1962,7 +1963,7 @@
 .planning.postes[1797]  4cfd8da5f4f910ec
 .planning.postes[1798]  427890ba5821b9bf
 .planning.postes[1799]  57226f8f1b074dea
-.planning.postes[1800]  8d3c84d6899957c6
+.planning.postes[1800]  a8d2af09458d5c41
 .planning.postes[1801]  185649e529fe5f11
 .planning.postes[1802]  e5b9a03c447582d3
 .planning.postes[1803]  99502e19d76d551c
@@ -2154,7 +2155,7 @@
 .planning.postes[1989]  2cb6f2035310d035
 .planning.postes[1990]  9f3aa881625e2e67
 .planning.postes[1991]  0715a43c8cce30d0
-.planning.postes[1992]  c54032b194273363
+.planning.postes[1992]  420e7d12490d88ea
 .planning.postes[1993]  e52d7e1cd6202c3f
 .planning.postes[1994]  01ad55b2c7c3c7dc
 .planning.postes[1995]  a7e05e424cef9b93
@@ -2310,7 +2311,7 @@
 .planning.postes[2145]  706da839918a3c22
 .planning.postes[2146]  bca73db4db8527e7
 .planning.postes[2147]  a8240928a3ed1378
-.planning.postes[2148]  2997268fc2a5630b
+.planning.postes[2148]  3b00a2e52d0dfce4
 .planning.postes[2149]  3d1386337047de6f
 .planning.postes[2150]  b7157568541d2e5e
 .planning.postes[2151]  a08168d304c482da
@@ -2406,7 +2407,7 @@
 .planning.postes[2241]  6a9ac10c96efcb8b
 .planning.postes[2242]  4eb2c0f946332c0e
 .planning.postes[2243]  9095e554cd7c4cdc
-.planning.postes[2244]  2239ad90cfa32203
+.planning.postes[2244]  7766c36d770e5564
 .planning.postes[2245]  3213d5ae39ff6288
 .planning.postes[2246]  0ef65dc077ecd92d
 .planning.postes[2247]  a2dad81fafbd9f15
@@ -2562,7 +2563,7 @@
 .planning.postes[2397]  c80d09fab199fb4d
 .planning.postes[2398]  fc258ef160afdd2d
 .planning.postes[2399]  6a1eaf2813feb3a7
-.planning.postes[2400]  474777f26b73b435
+.planning.postes[2400]  75c851368092644b
 .planning.postes[2401]  20dcf58eae091b91
 .planning.postes[2402]  5b2b18738c35050f
 .planning.postes[2403]  f63f23d08ee09198
@@ -2718,7 +2719,7 @@
 .planning.postes[2553]  64d6b2afa42fd063
 .planning.postes[2554]  349273b2d7111dc2
 .planning.postes[2555]  c011b07bf2f271a8
-.planning.postes[2556]  54985a35ab37c700
+.planning.postes[2556]  2bf0cc20fca2ac67
 .planning.postes[2557]  a678ff94a96b05f4
 .planning.postes[2558]  78a5b920013e8382
 .planning.postes[2559]  58485b9a610631f3
@@ -2814,7 +2815,7 @@
 .planning.postes[2649]  9571e363750ebdab
 .planning.postes[2650]  e1d63f049c0ffdac
 .planning.postes[2651]  5821b8d6448bdfb7
-.planning.postes[2652]  0bcd7b943c9eb31d
+.planning.postes[2652]  1003314e5bde5f64
 .planning.postes[2653]  c88bd06e1f37b702
 .planning.postes[2654]  b530b0deb536dab2
 .planning.postes[2655]  3e44ba50b6f51e6c
@@ -2970,7 +2971,7 @@
 .planning.postes[2805]  2dfcc9ab20b48469
 .planning.postes[2806]  183986fc16795035
 .planning.postes[2807]  3efb8140a2181c61
-.planning.postes[2808]  341bb7ae0692709c
+.planning.postes[2808]  080ae286f224bded
 .planning.postes[2809]  83676f7b8b94a81c
 .planning.postes[2810]  d7768278d170d370
 .planning.postes[2811]  8c2aeeb06adc1fcc
@@ -3072,6 +3073,7 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
+.sections.contraintes.obligatoires = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 15
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null

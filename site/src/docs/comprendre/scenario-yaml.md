@@ -55,7 +55,18 @@ Les créneaux sortent toujours tels quels, avec `couverturePause: true` quand il
 
 ## `schemaVersion`
 
-Un fichier écrit par l'application commence par `schemaVersion: 4` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
+Un fichier écrit par l'application commence par `schemaVersion: 5` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
+
+## `contraintes.niveaux` : le niveau choisi par règle
+
+Depuis la version 4 du format, la section `contraintes` porte aussi `niveaux`, le niveau que l'édition a choisi pour une règle d'organisation : `OBLIGATOIRE`, `PREFERENCE`, ou une position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) qui donne en plus le poids de cette position (25, 5, 1) quand `poids` ne nomme pas la règle. Une règle que le fichier ne nomme pas revient au niveau du catalogue. Une règle qui n'a pas de niveau à choisir (légale, d'affectation, ad hoc, verrou, préférence souple) est **refusée par son nom**. Un fichier 3.x ou v3 n'en porte pas, et se lit comme avant : le maillon 3 → 4 ne change rien ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+
+```yaml
+contraintes:
+  niveaux:
+    stabiliteDuPlanPublie: OBLIGATOIRE
+    equilibrerCharge: PREFERENCE_FORTE
+```
 
 ## `postes` : absente et vide ne disent pas la même chose
 
@@ -65,7 +76,7 @@ Présente, elle est reprise telle quelle, y compris vide, ce qui permet un staff
 
 ## `plan` : le planning d'une copie avant vidage
 
-Dernière section, facultative : les sièges pourvus (`affectations`) et les verrous (`verrous`) de l'édition, avec les identifiants du fichier ; un créneau s'y nomme par sa date et ses heures. Seule la copie rangée avant un vidage l'écrit ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)) : l'export de Fichiers n'en porte pas, et un fichier sans cette section se lit comme avant (le format reste en version 4). Seule la restauration de cette copie applique la section : elle remet les sièges et les verrous sur le référentiel qu'elle vient d'écrire, retrouvés par code puis nom pour un stand, adresse puis prénom et nom pour un animateur, jour et heures pour un créneau, et liste ce qui n'est pas retrouvé. Un import ordinaire (Fichiers, `importer_scenario_yaml`) l'ignore, avec un avertissement dans le rapport. Détail de la restauration : [Restaurer une édition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
+Dernière section, facultative : les sièges pourvus (`affectations`) et les verrous (`verrous`) de l'édition, avec les identifiants du fichier ; un créneau s'y nomme par sa date et ses heures. Seule la copie rangée avant un vidage l'écrit ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)) : l'export de Fichiers n'en porte pas, et un fichier sans cette section se lit comme avant (le format reste en version 5). Seule la restauration de cette copie applique la section : elle remet les sièges et les verrous sur le référentiel qu'elle vient d'écrire, retrouvés par code puis nom pour un stand, adresse puis prénom et nom pour un animateur, jour et heures pour un créneau, et liste ce qui n'est pas retrouvé. Un import ordinaire (Fichiers, `importer_scenario_yaml`) l'ignore, avec un avertissement dans le rapport. Détail de la restauration : [Restaurer une édition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
 
 ## `contraintes` : en bloc, jamais en fusion
 
@@ -98,7 +109,7 @@ stands:
 - `effectif` omis signifie « hériter de `effectifMin` », le cas le plus courant. Le renseigner sur une ouverture permet à un stand dont la charge varie dans la journée (4 personnes le matin, 5 le soir) de rester un seul stand. Une fermeture n'en porte pas.
 - Un jour sans plage est ouvert toute la journée ; un jour ne porte pas à la fois une ouverture et une fermeture. L'arbitrage complet est dans [Horaires, consignes et fenêtres effectives](horaires-et-fenetres-des-stands.md).
 
-Un fichier de version 1 à 3 porte encore `horaires` (règles récurrentes), `ouvertures` et `indisponibilites` : le maillon 3 → 4 les convertit en plages sur les jours des `creneaux` du fichier, avec la lecture que l'application leur donnait. Un stand dont les règles n'ont aucun jour où se poser (le fichier ne compte aucun créneau) les garde sous `horaires`, comme modèle : rien n'est perdu, rien n'est dit. Un fichier qui a des créneaux garde aussi ses règles sous `horaires`, avec les plages qu'elles ont données.
+Un fichier de version 1 à 4 porte encore `horaires` (règles récurrentes), `ouvertures` et `indisponibilites` : le maillon 4 → 5 les convertit en plages sur les jours des `creneaux` du fichier, avec la lecture que l'application leur donnait. Un stand dont les règles n'ont aucun jour où se poser (le fichier ne compte aucun créneau) les garde sous `horaires`, comme modèle : rien n'est perdu, rien n'est dit. Un fichier qui a des créneaux garde aussi ses règles sous `horaires`, avec les plages qu'elles ont données.
 
 ## Typologies, journées types et clés retirées
 

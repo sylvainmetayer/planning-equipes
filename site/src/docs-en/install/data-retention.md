@@ -42,7 +42,7 @@ Once 4.0 is in place and going back to 3.x is ruled out, nothing forces you to w
 
 ## Measuring the realised
 
-No scheduled task computes it: the "Realised vs planned" screen computes it on demand ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). The first read made once the edition's last timeslot has ended, when something has been published, writes the measure into `kpi_realise`: absences, replacements, empty seats and lost hours, by game category, with no person at all.
+No scheduled task computes it: the "Edition measures" screen computes it on demand ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). The first read made once the edition's last timeslot has ended, when something has been published, writes the measure into `mesure_edition` (nature `REALISE`): absences, replacements, empty seats and lost hours, by game category, with no person at all.
 
 This is what the next edition reads on its Versions screen and on the Need tab: that read first computes the measure of every finished and published edition that has none, and deleting an edition writes its own before erasing it. There is therefore nothing to open by hand. A simulated clock writes nothing.
 
@@ -53,7 +53,7 @@ The measure **is written only once** per edition: a correction made afterwards (
 To **re-freeze** an edition after a correction that must count, there is no button: delete its rows, and the next read rewrites them from the plan of the moment.
 
 ```sql
-DELETE FROM kpi_realise WHERE edition_id = '<id de l''édition>';
+DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = '<id de l''édition>';
 ```
 
 The identifier is read on the Editions screen. The deleted measure also disappears from the next edition's Versions screen until the read that rewrites it; an edition deleted in the meantime will never be re-frozen.

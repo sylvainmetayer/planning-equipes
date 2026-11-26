@@ -10,7 +10,7 @@ import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Link 3 → 4 of the scenario chain: a stand's schedule becomes a list of dated plages (ADR 0104). */
+/** Link 4 → 5 of the scenario chain: a stand's schedule becomes a list of dated plages (ADR 0104). */
 class ScenarioPlagesLinkTest {
 
     private static final String HEAD = """
@@ -155,8 +155,8 @@ class ScenarioPlagesLinkTest {
     }
 
     @Test
-    void aVersionFourDocumentIsLeftAlone() {
-        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings("schemaVersion: 4\n" + HEAD + """
+    void aVersionFiveDocumentIsLeftAlone() {
+        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings("schemaVersion: 5\n" + HEAD + """
                   - id: S
                     nom: S
                     typologiesProposees: [T]

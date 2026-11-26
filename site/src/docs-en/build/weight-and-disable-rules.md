@@ -85,6 +85,12 @@ The screen does not ask for a number: the Quality tab offers each medium or soft
 
 A weight that is not one of the three values is still allowed, the rule's panel carries the numeric field, and it is displayed as "custom". A weighting stored by a past solve and its score say under which weights that plan was solved: two plans solved under different weightings cannot be compared at equal weights, and the Plan versions comparison says so.
 
+### The level: mandatory or preference
+
+An organisation rule has a **level chosen per edition** ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md), which applies [0106](repo:docs/decisions/0106-obligatoire-est-un-niveau-reglable-par-edition.md)). **Mandatory** (`OBLIGATOIRE`): the rule counts at the hard level of the score, on a par with the legal rules; a plan that breaks it is infeasible and the diagnostic names it. **Preference**: the rule counts at the medium level, at the weight of its position (light 1, normal 5, strong 25). It is the **same rule** in both cases, written once: only the place in the score its breach goes to changes, and the numeric weight stays adjustable in the advanced settings.
+
+The level can be chosen for the medium rules of the organisation quality category, the meal break and the adult beside a minor (`niveauReglable` in `GET /api/constraints`). **Legal, assignment, ad hoc and lock rules stay mandatory, and soft preferences stay preferences**: a level asked for them is refused. A mandatory rule counts one hard point per breach; the weight stored for it is kept, not applied, for the day it becomes a preference again. Making mandatory a rule an edition cannot hold gives an infeasible plan: the feasibility analysis says so before the computation. The dosage stored by each solve keeps the moved levels, and a plan computed under other levels is not comparable at equal weights.
+
 ### What is weighted, what is not
 
 The rules that really vary from one organiser to another are the **medium rules of "Qualité d'organisation"** (organisation quality) (`dosable()`): they arbitrate comfort against comfort, continuity on a premium stand against load balancing, wishes against experience. The rule you do not care about goes to low importance and gets beaten, the one that matters goes to high.

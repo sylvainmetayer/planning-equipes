@@ -26,6 +26,7 @@ import dev.sylvain.planning.service.journal.ChampsModifies;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
@@ -878,6 +879,21 @@ public class ReferenceDataService implements ReferenceData {
     @Override
     public Map<String, Integer> getConstraintWeights() {
         return parametres.constraintWeights();
+    }
+
+    @Override
+    public Map<String, Boolean> getNiveauxObligatoires() {
+        return parametres.niveauxObligatoires();
+    }
+
+    /** @see ParametresService#setNiveauObligatoire */
+    public void setNiveauObligatoire(String nom, Boolean obligatoire, WeightChangeOrigin origin) {
+        parametres.setNiveauObligatoire(nom, obligatoire, origin);
+    }
+
+    /** @see ParametresService#setNiveau */
+    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau, WeightChangeOrigin origin) {
+        parametres.setNiveau(nom, niveau, origin);
     }
 
     /** @see ParametresService#setConstraintWeight */

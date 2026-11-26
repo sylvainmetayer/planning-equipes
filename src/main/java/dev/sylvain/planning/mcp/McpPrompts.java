@@ -776,11 +776,11 @@ public class McpPrompts {
 
                 %s
 
-                1. realise_vs_planifie : par stand et par journée écoulée, les sièges publiés, tenus, \
+                1. comparer_realise_planifie : par stand et par journée écoulée, les sièges publiés, tenus, \
                 vides, les absences et les remplacements, et les minutes perdues. Une journée \
                 commencée avant toute publication est montrée mais exclue des totaux : dis-le si c'est \
                 le cas.
-                2. lister_kpi_historique : score, couverture des postes, heures et écarts par \
+                2. lister_mesures_edition : score, couverture des postes, heures et écarts par \
                 contrainte, résolution par résolution et toutes éditions confondues — compare la \
                 dernière résolution de cette édition à celle de l'édition précédente.
                 3. consulter_historique_ponderation : quels réglages ont changé en cours de route, et \
