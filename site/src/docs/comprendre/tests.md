@@ -71,7 +71,7 @@ Un test structurel ne joue aucun scénario : il relit le code (sources, annotati
 | Les clés JSON exposées ne bougent pas en silence | `JsonContractTest` (`json-contract.txt`) |
 | Les couches (un outil MCP appelle un service, jamais une ressource) | `LayeringStructuralTest` |
 | Le dépôt n'importe `ai.timefold.solver.core.impl` qu'aux endroits recensés | `TimefoldInternalApiStructuralTest` |
-| La couche consigne n'est appliquée que par `StandService.resolve` | `ConsigneCoucheStructurelleTest` |
+| Toute lecture des plages d'un stand passe par `StandService.resolve` (les plages d'une consigne y sont lues au-dessus des siennes) | `ConsigneCoucheStructurelleTest` |
 | Le responsable de stand ne voit que des projections, jamais un type de domaine | `ResponsableProjectionStructurelleTest` |
 | Les routes ouvertes à l'organisateur et au responsable, une à une | `InstanceRoutesStructuralTest`, `RoutesOuvertesStructuralTest` |
 | La liste des tests qui démarrent l'application | `ContainerTestsInventoryTest` |

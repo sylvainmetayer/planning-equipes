@@ -255,6 +255,28 @@ describe('window effectif', () => {
   });
 });
 
+describe('horairesCopiedFrom and the consigne', () => {
+  it("never copies a consigne's plages and keeps the target's own", () => {
+    const source: Stand = {
+      ...modelStand(),
+      horaires: [],
+      indisponibilites: [],
+      ouvertures: [plage({ date: '2026-07-10' }), plage({ date: '2026-07-11', consigne: true })],
+    };
+    const target = {
+      ouvertures: [plage({ date: '2026-07-11', consigne: true, motif: 'target' })],
+      indisponibilites: [],
+    };
+
+    const copied = horairesCopiedFrom(source, target);
+
+    expect(copied.ouvertures.map((o) => [o.date, o.consigne ?? false, o.motif])).toEqual([
+      ['2026-07-10', false, null],
+      ['2026-07-11', true, 'target'],
+    ]);
+  });
+});
+
 describe('conflitOuvertureFermeture', () => {
   it('refuses the same day being both closed and opened', () => {
     const invalide = draft({
@@ -263,6 +285,15 @@ describe('conflitOuvertureFermeture', () => {
     });
 
     expect(conflitOuvertureFermeture(invalide)).toBe(true);
+  });
+
+  it("leaves out the plages a consigne wrote: its band lies above the stand's own openings", () => {
+    const sousConsigne = draft({
+      indisponibilites: [plage({ date: '2026-07-10', consigne: true })],
+      ouvertures: [plage({ date: '2026-07-10' })],
+    });
+
+    expect(conflitOuvertureFermeture(sousConsigne)).toBe(false);
   });
 
   it('accepts a closure and an opening on two different days', () => {

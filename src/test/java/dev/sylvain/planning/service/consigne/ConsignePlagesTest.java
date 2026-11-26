@@ -21,13 +21,13 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@link ConsigneResolver}: the band closes every stand and nothing else, an
+ * {@link ConsignePlages}: the band closes every stand and nothing else, an
  * opening is an extension chosen stand by stand, and the créneaux the consigne
  * added belong to nobody's usual hours. Everything is read through the seats
  * {@code ProblemBuilder} would give the solver, since that is what a consigne
- * changes.
+ * changes — and the plages it writes, marked, are what lifting it removes.
  */
-class ConsigneResolverTest {
+class ConsignePlagesTest {
 
     private static final LocalDate LUNDI = LocalDate.of(2027, 2, 1);
     private static final LocalDate MARDI = LUNDI.plusDays(1);
@@ -161,7 +161,7 @@ class ConsigneResolverTest {
         grille.add(tot);
 
         HoraireStandResolver.apply(List.of(bourse), grille);
-        ConsigneResolver.apply(List.of(bourse), List.of(consigne), grille);
+        ConsignePlages.apply(List.of(bourse), List.of(consigne), grille);
 
         assertThat(segments(tot, bourse)).containsExactly(new SegmentOuvert(0, 120, 2));
         assertThat(segments(SOIR_AJOUTE, bourse)).containsExactly(new SegmentOuvert(0, 120, 2));
@@ -203,7 +203,7 @@ class ConsigneResolverTest {
         assertThat(bourse.getIndisponibilitesEffectives())
                 .filteredOn(fermeture -> LUNDI.equals(fermeture.getDate()))
                 .extracting(PlageStand::getMotif)
-                .containsExactly(ConsigneResolver.MOTIF_CONSIGNE);
+                .containsExactly(ConsignePlages.MOTIF_CONSIGNE);
     }
 
     @Test
@@ -230,16 +230,46 @@ class ConsigneResolverTest {
         HoraireStandResolver.apply(List.of(bourse), GRILLE);
         List<PlageStand> avant = List.copyOf(bourse.getOuverturesEffectives());
 
-        ConsigneResolver.apply(List.of(bourse), List.of(), GRILLE);
+        ConsignePlages.apply(List.of(bourse), List.of(), GRILLE);
 
         assertThat(bourse.getOuverturesEffectives()).containsExactlyElementsOf(avant);
+    }
+
+    /** Written on the stand, then lifted: the seats are the consigne's, then the stand's own again. */
+    @Test
+    void thePlagesWrittenAreMarkedAndRemovingThemGivesTheDayBack() {
+        Stand bourse = standWithRule("BOURSE", 3);
+        HoraireStandResolver.apply(List.of(bourse), GRILLE);
+        List<SegmentOuvert> avant = segments(APRES_MIDI, bourse);
+        ConsigneEdition consigne = consigne(
+                        LocalTime.of(12, 0),
+                        LocalTime.of(18, 0),
+                        List.of(ouverture("BOURSE", LocalTime.of(16, 0), LocalTime.of(22, 0), null)))
+                .withCreneauxAjoutes(List.of(SOIR_AJOUTE.getId()));
+
+        List<PlageStand> ecrites =
+                ConsignePlages.of(List.of(bourse), consigne, GRILLE).get("BOURSE");
+
+        assertThat(ecrites).allMatch(PlageStand::isConsigne);
+        assertThat(ecrites)
+                .extracting(p -> p.getMode() + " " + p.getHeureDebut() + "-" + p.getHeureFin() + "@" + p.getEffectif())
+                .containsExactly("FERMETURE 12:00-18:00@null", "FERMETURE 20:00-22:00@null", "OUVERTURE 18:00-22:00@3");
+
+        bourse.getPlages().addAll(ecrites);
+        HoraireStandResolver.apply(List.of(bourse), GRILLE);
+        assertThat(segments(APRES_MIDI, bourse)).containsExactly(new SegmentOuvert(240, 360, 3));
+        assertThat(segments(SOIR_AJOUTE, bourse)).containsExactly(new SegmentOuvert(0, 120, 3));
+
+        bourse.getPlages().removeIf(PlageStand::isConsigne);
+        HoraireStandResolver.apply(List.of(bourse), GRILLE);
+        assertThat(segments(APRES_MIDI, bourse)).isEqualTo(avant);
     }
 
     /* ------------------------------ fixtures ------------------------------ */
 
     private static void resolve(List<Stand> stands, ConsigneEdition consigne) {
         HoraireStandResolver.apply(stands, GRILLE);
-        ConsigneResolver.apply(stands, List.of(consigne), GRILLE);
+        ConsignePlages.apply(stands, List.of(consigne), GRILLE);
     }
 
     private static List<SegmentOuvert> segments(Creneau creneau, Stand stand) {

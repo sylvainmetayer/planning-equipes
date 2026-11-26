@@ -98,6 +98,13 @@ describe('StandPlagesEditor', () => {
     );
   });
 
+  it("badges a consigne's plage as the consigne's, not as typed by hand", () => {
+    fixture.componentRef.setInput('plages', [{ ...PLAGES[1], consigne: true }]);
+    fixture.detectChanges();
+    expect(root().querySelector('.stand-plage-saisie')).toBeNull();
+    expect(rows()[0].textContent).toContain('consigne');
+  });
+
   it('narrows to the chosen day, and offers « Retirer ce jour » there only', () => {
     expect(root().textContent).not.toContain('Retirer ce jour');
     mount({ jour: '2026-07-12' });

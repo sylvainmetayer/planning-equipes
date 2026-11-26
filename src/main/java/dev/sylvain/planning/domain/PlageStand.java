@@ -15,18 +15,19 @@ import java.util.Set;
  * stored recurrence: "every Monday from 10:00 to 12:00" is a generator that
  * writes one plage per matching day.
  *
- * <p>A stand's day is in exactly one of three states, decided per calendar
- * day (see {@code Creneau#segmentsOuvertsMinutes(Stand)}):</p>
+ * <p>A stand's day is read per calendar day (see
+ * {@code Creneau#segmentsOuvertsMinutes(Stand)}):</p>
  * <ul>
  * <li>No plage that day: open all day (the default).</li>
  * <li>At least one {@code OUVERTURE} that day: closed by default, open only
  * during the listed windows.</li>
- * <li>At least one {@code FERMETURE} that day (and no {@code OUVERTURE}): open
- * by default, closed only during the listed windows.</li>
+ * <li>Only {@code FERMETURE}s that day: open by default, closed only during
+ * the listed windows.</li>
+ * <li>Both modes that day (ADR 0125): the openings, minus every closure — what
+ * a consigne writes when its band falls on a stand that states its openings.
+ * {@code HoraireStandResolver} restates such a day as openings alone, so every
+ * reader of the effective plages still meets one mode per day.</li>
  * </ul>
- *
- * <p>A stand can never carry both modes on the same calendar day — mixing the
- * two is ambiguous, so {@code StandValidator} rejects it at write time.</p>
  *
  * <p>A window may not itself cross midnight ({@code heureFin} must be strictly
  * after {@code heureDebut}); a window spanning midnight is entered as two
@@ -55,6 +56,11 @@ public class PlageStand {
      * (the stand's normal regime), {@code false} when somebody typed it (an exception).
      */
     private boolean depliee;
+    /**
+     * Written by the consigne of its date (ADR 0125): lifting the consigne removes exactly the plages that
+     * still carry the mark. Never set together with {@link #depliee}.
+     */
+    private boolean consigne;
 
     public PlageStand() {}
 
@@ -156,19 +162,38 @@ public class PlageStand {
         this.depliee = depliee;
     }
 
+    public boolean isConsigne() {
+        return consigne;
+    }
+
+    public void setConsigne(boolean consigne) {
+        this.consigne = consigne;
+    }
+
     /** What makes two plages the same one: everything but the row id and the origin. */
     public String contentKey() {
         return mode + "|" + date + "|" + heureDebut + "|" + heureFin + "|" + effectif + "|" + motif;
     }
 
     /**
-     * Marks each plage of {@code after} as unfolded when {@code before} holds an unfolded plage of the
-     * same content, and as typed otherwise: the origin follows the content, never what a caller says.
+     * Marks each plage of {@code after} as unfolded, or as the consigne's, when {@code before} holds a
+     * plage of the same content carrying that mark, and as typed otherwise: the origin follows the
+     * content, never what a caller says — a consigne's plage edited by hand loses the mark and stays.
      */
     public static void carryOrigins(Collection<PlageStand> before, Collection<PlageStand> after) {
         Set<String> unfolded = new HashSet<>();
-        before.stream().filter(PlageStand::isDepliee).forEach(plage -> unfolded.add(plage.contentKey()));
-        after.forEach(plage -> plage.setDepliee(unfolded.contains(plage.contentKey())));
+        Set<String> laidByConsigne = new HashSet<>();
+        before.forEach(plage -> {
+            if (plage.isDepliee()) {
+                unfolded.add(plage.contentKey());
+            } else if (plage.isConsigne()) {
+                laidByConsigne.add(plage.contentKey());
+            }
+        });
+        after.forEach(plage -> {
+            plage.setDepliee(unfolded.contains(plage.contentKey()));
+            plage.setConsigne(!plage.isDepliee() && laidByConsigne.contains(plage.contentKey()));
+        });
     }
 
     /** True when {@code heureDebut}/{@code heureFin} form a non-empty, same-day window (an open end counts as valid). */

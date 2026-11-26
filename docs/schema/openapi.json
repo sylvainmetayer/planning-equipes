@@ -7626,6 +7626,9 @@
           },
           "depliee" : {
             "type" : "boolean"
+          },
+          "consigne" : {
+            "type" : "boolean"
           }
         }
       },
