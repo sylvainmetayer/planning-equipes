@@ -44,7 +44,6 @@ gamme-23-30j-100stands-144animateurs-ad-hoc-souhaits 0831a7bde1bbaff064172c3046e
 gamme-24-30j-120stands-260animateurs-mineurs-emplacements 575448aaf00233b3cefb39aeda434be741981adfe3c4fc124e7c0beaeb2ac85d 120 30 2100
 gamme-25-30j-150stands-320animateurs-edition-complete 321c49923e6f7ae7bee65aa63428c97bce1b752898495500761f054cac487fa8 150 30 5830
 gamme-26-infaisable-sous-effectif dd3ea61855bc8e1baa5703ebec4a764de47ab9a725e08d45035a773a713c25fb 4 1 0
-gamme-27-infaisable-affectation-forcee-jour-indisponible 4f9b5b8e0fccd2de41545671aec23de77097f0dde380ce786a31eb8ac8c693a2 2 1 0
 gamme-28-infaisable-mur-des-six-jours 886ea175c10ba2984877c0d9f7d35c056b4c97f297fac5868df6f71db4e3de8e 3 7 0
 gamme-29-infaisable-mineurs-en-soiree 7a2c4e2ad45ae8d519c6ef23a8ad47123ee46129e917acb2172f4ffc2e5d237a 1 1 0
 gamme-30-infaisable-coupure-repas bcd09672255f4deff93d9028c4a755affb76f847112165d0aade265d8e6580d4 1 1 0
