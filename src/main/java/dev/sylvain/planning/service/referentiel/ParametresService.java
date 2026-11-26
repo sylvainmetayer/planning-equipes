@@ -216,6 +216,16 @@ public class ParametresService {
      * columns of V16. The history keeps an origin, never a person.</p>
      */
     public void setContrainteActive(String nom, boolean actif, WeightChangeOrigin origin) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom)) {
+            // The 3.x hard form names a level of the merged rule (ADR 0118): on is
+            // obligatoire, and the rule enforced; off is back to a preference.
+            String merged = ConstraintCatalog.currentName(nom);
+            setNiveauObligatoire(merged, actif, origin);
+            if (actif) {
+                setContrainteActive(merged, true, origin);
+            }
+            return;
+        }
         ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
         // Asking for exactly what the catalogue already says drops the row
         // rather than pinning it: the table then holds the decisions somebody

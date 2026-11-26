@@ -33,24 +33,6 @@ class ConstraintParametersTest {
     }
 
     @Test
-    void bothFormsOfTheCeilingPointAtTheSameField() {
-        ParametresLegaux legaux = new ParametresLegaux();
-        ParametresQualite qualite = new ParametresQualite();
-
-        List<ConstraintParameter> dur = ConstraintParameters.of("maxJoursConsecutifsTravaillesDur", legaux, qualite);
-        List<ConstraintParameter> medium = ConstraintParameters.of("maxJoursConsecutifsTravailles", legaux, qualite);
-        assertThat(dur)
-                .extracting(ConstraintParameter::cle)
-                .isEqualTo(medium.stream().map(ConstraintParameter::cle).toList());
-        assertThat(dur)
-                .extracting(ConstraintParameter::valeur)
-                .isEqualTo(medium.stream().map(ConstraintParameter::valeur).toList());
-        // Each on the row of its own rule: the hard form on the legal tab, the dosed one on quality.
-        assertThat(dur).extracting(ConstraintParameter::onglet).containsOnly("legal");
-        assertThat(medium).extracting(ConstraintParameter::onglet).containsOnly("qualite");
-    }
-
-    @Test
     void aWeeklyCapCarriesWhatMeasuresTheWeekAndNotOnlyItsCeiling() {
         List<ConstraintParameter> parametres =
                 ConstraintParameters.of("dureeHebdomadaireMax", new ParametresLegaux(), new ParametresQualite());

@@ -28,9 +28,9 @@ import java.util.Set;
 /**
  * Organisational quality rules: referent coverage on complex stands, balanced
  * workload, avoiding a majority of minors on a single slot, and capping
- * consecutive worked days. Medium — strongly penalised but non-blocking — with
- * one exception that is hard and says why in its own javadoc: the default-off
- * {@code maxJoursConsecutifsTravaillesDur}.
+ * consecutive worked days. Medium — strongly penalised but non-blocking — unless
+ * an edition chose a rule obligatoire, which then scores on the hard level
+ * (ADR 0106, 0111).
  */
 public final class QualiteConstraints {
 
@@ -47,10 +47,6 @@ public final class QualiteConstraints {
 
     /** The same rules over the seat streams shared with the other families (see {@link SeatStreams}). */
     public Constraint[] define(ConstraintFactory constraintFactory, SeatStreams seats) {
-        // The two forms of the run of days read one and the same stream object:
-        // one group node for both, whichever is on.
-        TriConstraintStream<Animateur, Map<Integer, Boolean>, ParametresQualite> sequences =
-                sequencesTropLongues(seats);
         return new Constraint[] {
             standComplexeAvecReferent(seats),
             equilibrerCharge(seats),
@@ -65,8 +61,7 @@ public final class QualiteConstraints {
             appreciationIncompatible(seats),
             souhaitsIncompatibles(seats),
             limiterTypologiesDistinctesParAnimateur(seats),
-            maxJoursConsecutifsTravailles(sequences),
-            maxJoursConsecutifsTravaillesDur(sequences),
+            maxJoursConsecutifsTravailles(seats),
             stabiliteDuPlanPublie(constraintFactory)
         };
     }
@@ -797,9 +792,13 @@ public final class QualiteConstraints {
      * run straddle a week boundary (e.g. Thu-Fri-Sat-Sun-Mon-Tue-Wed = 6 days
      * in each of two different ISO weeks, but 7 in a row). This constraint
      * catches that straddling run directly, uncoupled from the week grid, but
-     * is kept as an organisational-quality medium rather than a legal hard
-     * rule since the underlying legal basis for a rolling (non-weekly) count
-     * is not established.</p>
+     * is kept as an organisational-quality rule rather than a legal one since
+     * the underlying legal basis for a rolling (non-weekly) count is not
+     * established (Cass. soc. 13 nov. 2025, n° 24-10.733). Its level is the
+     * edition's choice (ADR 0118): a preference, medium, by default; made
+     * obligatoire, its weight becomes one hard point and the same stream
+     * scores on the hard level — one rule, where 3.x wrote a second, hard one
+     * shipped off.</p>
      *
      * <p>Grouped on {@code getJour()} rather than the calendar date: adjacent
      * calendar days always get adjacent {@code jour} numbers (see
@@ -807,9 +806,8 @@ public final class QualiteConstraints {
      * set of distinct worked {@code jour} values is exactly a longest run of
      * consecutive calendar days, without any date arithmetic.</p>
      */
-    private Constraint maxJoursConsecutifsTravailles(
-            TriConstraintStream<Animateur, Map<Integer, Boolean>, ParametresQualite> sequences) {
-        return ConstraintToggleSupport.actif(sequences, "maxJoursConsecutifsTravailles")
+    private Constraint maxJoursConsecutifsTravailles(SeatStreams seats) {
+        return ConstraintToggleSupport.actif(sequencesTropLongues(seats), "maxJoursConsecutifsTravailles")
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
                         (animateur, jours, parametres) ->
@@ -818,51 +816,9 @@ public final class QualiteConstraints {
     }
 
     /**
-     * The same six-day ceiling, held <b>hard</b> — off unless an edition asks
-     * for it.
-     *
-     * <p>Two rules rather than a weight, because a weight never changes a
-     * level: {@code SolverConfiguration.constraintWeightOverrides} maps onto
-     * the level the catalogue declares, and {@code ConstraintToggle} carries
-     * only {@code actif}. So « the six days, but blocking » can only be a
-     * second constraint, switched on from the Contraintes screen, from
-     * {@code activer_contrainte}, or from a scenario's
-     * {@code contraintes.activees}.</p>
-     *
-     * <p>Why it is not in « Légal (temps de travail) »: no article of the Code
-     * du travail founds a rolling six-day count. L3132-1 is read over the civil
-     * week (L3121-35), and the Cour de cassation has held that the weekly rest
-     * need not fall at the latest after six consecutive days (Cass. soc.
-     * 13 nov. 2025, n° 24-10.733; same reading CJUE C-306/16). Filing it as a
-     * legal rule would make the disabling confirmation claim a plan breaks the
-     * law when it does not. It is the organiser's policy, held at whatever
-     * level the organiser chose — see {@code site/src/docs/comprendre/repos-et-jours-d-affilee.md}.</p>
-     *
-     * <p>Both forms may be on at once: the hard one then blocks past six days
-     * and the medium one keeps costing on top, which is a legitimate way of
-     * saying « never more than six, and prefer fewer ». The comparison bench
-     * ran them the other way round — one at a time.</p>
-     */
-    private Constraint maxJoursConsecutifsTravaillesDur(
-            TriConstraintStream<Animateur, Map<Integer, Boolean>, ParametresQualite> sequences) {
-        return ConstraintToggleSupport.actif(sequences, "maxJoursConsecutifsTravaillesDur")
-                .penalize(
-                        HardMediumSoftScore.ONE_HARD,
-                        (animateur, jours, parametres) ->
-                                longestReproachableRun(jours) - parametres.joursConsecutifsMax())
-                .asConstraint("maxJoursConsecutifsTravaillesDur");
-    }
-
-    /**
      * Animateurs whose longest run of consecutive worked days exceeds the
-     * edition's {@code joursConsecutifsMax}, with the run's length
-     * and the threshold to hand — the body {@link #maxJoursConsecutifsTravailles}
-     * and {@link #maxJoursConsecutifsTravaillesDur} share, so the two forms can
-     * never disagree on what « days in a row » counts, nor on how many are
-     * allowed. The toggle stays at each caller, with its own name spelled out,
-     * as every other rule of this package does: absent, the hard one is off (it
-     * is in {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}) and the medium
-     * one on.
+     * edition's {@code joursConsecutifsMax}, with the run's length and the
+     * threshold to hand.
      */
     private static TriConstraintStream<Animateur, Map<Integer, Boolean>, ParametresQualite> sequencesTropLongues(
             SeatStreams seats) {

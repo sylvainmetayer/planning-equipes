@@ -33,6 +33,11 @@ class ConstraintNiveauResourceTest {
     /** HARD as the catalogue ships it, and choosable. */
     private static final String REPAS = "coupureRepasObligatoire";
 
+    /** The run of days, one rule since 4.0, and the name its hard form had in 3.x (ADR 0118). */
+    private static final String JOURS = "maxJoursConsecutifsTravailles";
+
+    private static final String JOURS_FORME_DURE = "maxJoursConsecutifsTravaillesDur";
+
     private String defaut;
 
     @BeforeEach
@@ -57,6 +62,7 @@ class ConstraintNiveauResourceTest {
     void restore() {
         setNiveau(ORGANISATION, "PREFERENCE_NORMALE", 200);
         setNiveau(REPAS, "OBLIGATOIRE", 200);
+        setNiveau(JOURS, "PREFERENCE_NORMALE", 200);
     }
 
     private void setNiveau(String nom, String niveau, int expectedStatus) {
@@ -160,5 +166,35 @@ class ConstraintNiveauResourceTest {
                 .put("/api/constraints/" + ORGANISATION + "/niveau")
                 .then()
                 .statusCode(400);
+    }
+
+    @Test
+    void theOldHardRunFormSwitchesTheLevelOfTheMergedRule() {
+        toggle(JOURS_FORME_DURE, true);
+        given().header(HEADER, defaut)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .body(rule(JOURS) + ".niveauChoisi", equalTo("OBLIGATOIRE"))
+                .body(rule(JOURS) + ".actif", equalTo(true))
+                .body(rule(JOURS_FORME_DURE), nullValue());
+
+        toggle(JOURS_FORME_DURE, false);
+        given().header(HEADER, defaut)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .body(rule(JOURS) + ".niveauChoisi", equalTo("PREFERENCE_NORMALE"))
+                .body(rule(JOURS) + ".actif", equalTo(true));
+    }
+
+    private void toggle(String nom, boolean actif) {
+        given().header(HEADER, defaut)
+                .contentType("application/json")
+                .body("{\"actif\":" + actif + "}")
+                .when()
+                .put("/api/constraints/" + nom)
+                .then()
+                .statusCode(200);
     }
 }

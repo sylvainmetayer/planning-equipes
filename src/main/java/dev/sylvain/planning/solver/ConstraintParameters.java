@@ -207,7 +207,6 @@ public final class ConstraintParameters {
                     List.of("vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes")),
             Map.entry("limiterTypologiesDistinctesParAnimateur", List.of("typologiesDistinctesMax")),
             Map.entry("maxJoursConsecutifsTravailles", List.of(JOURS_CONSECUTIFS_MAX)),
-            Map.entry("maxJoursConsecutifsTravaillesDur", List.of(JOURS_CONSECUTIFS_MAX)),
             Map.entry(
                     "eviterFermeturePuisOuverture",
                     List.of("heureServiceTardif", "heureServiceMatinal", "reposSouhaiteApresServiceTardifMinutes")));

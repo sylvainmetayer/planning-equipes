@@ -18,6 +18,7 @@ import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnExcludedSeats;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
+import dev.sylvain.planning.solver.WeekRelocationMoveIteratorFactory;
 import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
@@ -830,38 +831,40 @@ public class FeasibilityAnalyzer {
     /**
      * The cap on days worked in a row an edition holds, as the analysis reads
      * it: {@code joursConsecutifsMax}, and whether it is held hard. {@code null}
-     * stands for neither rule being on — there is then no cap to judge.
+     * stands for the rule being off — there is then no cap to judge.
      *
      * @param cap  the most days in a row anybody may work
-     * @param hard whether {@code maxJoursConsecutifsTravaillesDur} is on: a
-     *             proven shortfall then blocks; with only
-     *             {@code maxJoursConsecutifsTravailles} on, it warns
+     * @param hard whether {@code maxJoursConsecutifsTravailles} is obligatoire
+     *             (ADR 0118): a proven shortfall then blocks; as a preference,
+     *             it warns
      */
     public record ConsecutiveDaysRule(int cap, boolean hard) {
 
-        static final String HARD_RULE = "maxJoursConsecutifsTravaillesDur";
-        static final String MEDIUM_RULE = "maxJoursConsecutifsTravailles";
+        static final String RULE = "maxJoursConsecutifsTravailles";
 
         /**
          * From an edition's settings: its disabled rules — the catalogue's
          * defaults included, as {@code ParametresService.disabledContraintes}
-         * hands them — and its quality parameters.
+         * hands them —, the levels it chose (name → {@code true} for
+         * obligatoire) and its quality parameters.
          */
-        public static ConsecutiveDaysRule of(Set<String> contraintesDesactivees, ParametresQualite qualite) {
-            boolean hard = active(contraintesDesactivees, HARD_RULE);
-            boolean medium = active(contraintesDesactivees, MEDIUM_RULE);
-            return hard || medium ? new ConsecutiveDaysRule(cap(qualite), hard) : null;
+        public static ConsecutiveDaysRule of(
+                Set<String> contraintesDesactivees, Map<String, Boolean> niveaux, ParametresQualite qualite) {
+            if (!active(contraintesDesactivees, RULE)) {
+                return null;
+            }
+            return new ConsecutiveDaysRule(cap(qualite), niveaux != null && Boolean.TRUE.equals(niveaux.get(RULE)));
         }
 
-        /** From a plan's own toggles and parameters: a diagnostic describes the problem that was solved. */
+        /** From a plan's own toggles, weights and parameters: a diagnostic describes the problem that was solved. */
         public static ConsecutiveDaysRule of(PlanningEvenement plan) {
-            boolean hard = ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), HARD_RULE);
-            boolean medium = ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), MEDIUM_RULE);
-            if (!hard && !medium) {
+            if (!ConstraintCatalog.isActive(plan.getConstraintsDesactivees(), RULE)) {
                 return null;
             }
             List<ParametresQualite> qualite = plan.getParametresQualite();
-            return new ConsecutiveDaysRule(cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()), hard);
+            return new ConsecutiveDaysRule(
+                    cap(qualite == null || qualite.isEmpty() ? null : qualite.getFirst()),
+                    WeekRelocationMoveIteratorFactory.hardRunCap(plan) > 0);
         }
 
         private static boolean active(Set<String> contraintesDesactivees, String nom) {

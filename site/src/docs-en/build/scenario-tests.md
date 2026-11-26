@@ -118,7 +118,7 @@ Since the seeds are fixed, two runs of the same configuration trace the same cur
 
 ## The consecutive-days bench
 
-`ConsecutiveRunsBenchTest` measures what merging the two forms of the consecutive-days rule (`maxJoursConsecutifsTravailles`, medium, and `maxJoursConsecutifsTravaillesDur`, hard) into one rule of adjustable level would cost, and what removing the calendar construction order ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)) would cost. It changes no behaviour: the variants are toggles, a weight that carries the medium rule to the hard level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) and a test seam on the construction comparator.
+`ConsecutiveRunsBenchTest` measures the consecutive-days rule at its two levels: `preference`, what ships, and `obligatoire`, its weight carried to one hard point ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)). Written before the merge of the two 3.x forms, it priced that merge, and the removal of the calendar construction order ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md), withdrawn by [ADR 0118](repo:docs/decisions/0118-une-seule-regle-de-jours-d-affilee-a-niveau-reglable.md)): these are the measurements below.
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=ConsecutiveRunsBenchTest \
@@ -126,7 +126,9 @@ Since the seeds are fixed, two runs of the same configuration trace the same cur
     -Dbench.seconds=120 -Dbench.seeds=3 -Dbench.cap=6
 ```
 
-The class also launches as a plain `main` on the test classpath, to run several scenarios in parallel JVMs. Each solve lasts its whole budget, with no plateau bailout, seeds 0 to 2. The variants are `preference` (the medium form alone: what ships, and the merged rule at the preference level), `both` (both forms, as an organiser who wants a hard cap turns them on today), `hard` (the hard form alone: the merged rule at the mandatory level), `hard-par-poids` (the medium form whose weight is one hard point: the merged rule as ADR 0111 would write it) and, under Timefold only, `both-sans-calendrier` and `hard-sans-calendrier`. The direct engine always builds by scarcity: the calendar order does not exist there, removing it changes nothing. The cap is set to six days (`bench.cap`).
+The class also launches as a plain `main` on the test classpath, to run several scenarios in parallel JVMs. Each solve lasts its whole budget, with no plateau bailout, seeds 0 to 2. The cap is set to six days (`bench.cap`).
+
+The measurements below were taken before the merge, on the variants of the time: `preference` (the medium form alone), `both` (both forms on), `hard` (the hard form alone, with the calendar order under Timefold), `hard-par-poids` (the medium form whose weight is one hard point: the merged rule, `obligatoire` today) and, under Timefold only, `both-sans-calendrier` and `hard-sans-calendrier`. The direct engine always builds by scarcity: the calendar order did not exist there. Since the merge, the whole-day search ([ADR 0049](repo:docs/decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)) follows the mandatory rule: `obligatoire` is `hard-sans-calendrier`.
 
 The last column reads every final plan again under the mandatory rule: the number of seeds in which no animateur exceeds the cap.
 
@@ -208,12 +210,12 @@ Measured on 26 November 2026, one machine with 12 cores and 24 GB (nine JVMs in 
 What stands out:
 
 - **The direct engine**: the mandatory form costs at most 3.4% of medium on `gamme-20`, 0.5% on `scenario-complet`, nothing on `gamme-25` and the heatwave, and does better on `gamme-16`. It holds the cap wherever the grid allows, which the preference does not on `scenario-complet`, on `festival-hivernal`, nor always on `gamme-20`. Feasibility comes in under 2 s, 12 s on `festival-hivernal`, whose grid holds at six days in only one seed out of three. `hard-par-poids` and `hard` give the same plans, seed for seed.
-- **Timefold**: the calendar order is worth 6 to 8% of medium on the heatwave and `scenario-complet`, 35% on `gamme-20` and `gamme-25`, and 10 to 15% of time to feasibility. The rule merged by weight (`hard-par-poids`) falls back to `hard-sans-calendrier`, since nothing tells the comparator that the rule is mandatory.
+- **Timefold**: the calendar order is worth 6 to 8% of medium on the heatwave and `scenario-complet`, 35% on `gamme-20` and `gamme-25`, and 10 to 15% of time to feasibility. The rule merged by weight (`hard-par-poids`) fell back to `hard-sans-calendrier`, since nothing told the comparator that the rule was mandatory. The calendar order is withdrawn in 4.0: the regression is announced in the [Moving to 4.0](../installer/passer-a-la-4-0.md) guide.
 - `gamme-28` (infeasible by construction) is so in every variant, on both engines.
 
 ## The direct engine: two tests that keep the rules in duplicate
 
-`solver/handsearch` writes the 44 rules a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.
+`solver/handsearch` writes the 43 rules a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.
 
 `HandSearchCoverageStructuralTest` requires that every constraint of `ConstraintCatalog` have its constant in `Rule` and that every constant be counted in the engine's score. It fails first, by name, when a constraint is added on one side only.
 

@@ -211,7 +211,11 @@ public class ContrainteMcpTools {
 
     private ToggleResult setActive(String nom, boolean actif) {
         String rule = requireConnue(nom);
-        referenceDataService.setContrainteActive(rule, actif, WeightChangeOrigin.ASSISTANT);
+        // The 3.x hard run form is a level, not a rule: the service reads it under its own name.
+        referenceDataService.setContrainteActive(
+                ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom) ? nom : rule,
+                actif,
+                WeightChangeOrigin.ASSISTANT);
         return new ToggleResult(rule, actif);
     }
 

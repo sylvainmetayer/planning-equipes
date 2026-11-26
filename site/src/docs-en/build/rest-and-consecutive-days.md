@@ -4,7 +4,7 @@ twin: comprendre/repos-et-jours-d-affilee
 
 # Rest and consecutive days
 
-You will know how the solver reads a rest that straddles two weeks, why two full weeks in a row are forbidden, why the cap on consecutive days exists in two forms and is set at eight days, and what a late closing followed by an early opening costs. The articles cited are those of the Labour Code, the only framework applied; breaks and the meal break are in [Legal rules, breaks and meals](regles-legales-et-pauses.md).
+You will know how the solver reads a rest that straddles two weeks, why two full weeks in a row are forbidden, why the cap on consecutive days is a preference an edition can make mandatory, and why it is set at eight days, and what a late closing followed by an early opening costs. The articles cited are those of the Labour Code, the only framework applied; breaks and the meal break are in [Legal rules, breaks and meals](regles-legales-et-pauses.md).
 
 The rests of minors are also summarised, article by article, in [the questions on minor staff members](/animateurs-mineurs/).
 
@@ -28,37 +28,37 @@ This is the short form of art. [L3121-22] (44 h on average over twelve consecuti
 
 `maxJoursTravaillesParSemaine` (L3132-1) and `reposHebdomadaireMinimal` (L3132-2, 35 h) guarantee one free day per calendar week. They still let through Tuesday-Sunday then Monday-Saturday: twelve days in a row at zero hard breaches. A cap on **rolling** days is therefore a rule of its own, and an **organiser's policy**, not an obligation. L3132-1 is read on the calendar week (L3121-35), and the Court of Cassation holds that the weekly rest need not fall at the latest after six consecutive days (Cass. soc. 13 Nov. 2025, no. 24-10.733; same reading CJEU C-306/16).
 
-It exists in two forms, because a weight never changes the level of a rule (`SolverConfiguration.constraintWeightOverrides` maps onto the catalogue's level):
+It is a single rule, `maxJoursConsecutifsTravailles`, whose level the edition chooses as for the other organisation rules ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)):
 
-| Rule | Level | Default |
+| Level | What it says | Default |
 |---|---|---|
-| `maxJoursConsecutifsTravailles` | medium, weighted | on, normal importance (weight 5) |
-| `maxJoursConsecutifsTravaillesDur` | hard | off |
+| preference (strong, normal, light) | every day beyond the threshold costs medium points, according to the weight | yes, at the configured weight (5 shipped) |
+| mandatory | every day beyond the threshold is a hard breach: the plan cannot be delivered | no |
 
-The two share their body and their threshold, so they never diverge on what they count or on the number of days they let through. They can be on together, which says "never more than N, and preferably fewer". The hard form is switched on from the Planning rules screen, through `activer_contrainte` or through the `contraintes.activees` of a scenario, with no migration, like [ADR 0041](repo:docs/decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md).
+Up to 3.x, the mandatory level was a second rule, `maxJoursConsecutifsTravaillesDur`, off by default. Its name is still read until 5.0, as a level: switching it on makes the rule mandatory, switching it off makes it a preference again ([ADR 0118](repo:docs/decisions/0118-une-seule-regle-de-jours-d-affilee-a-niveau-reglable.md)).
 
 ### Why the threshold is eight days
 
-The threshold (`joursConsecutifsMax`, **eight by default**) is set per edition, on the rule's row. It leaves the code constant because it decides **feasibility**, not comfort: the rule demands a rest day in every window of (threshold + 1) days, so one day more or less changes the number of rest days to find. On the versioned winter grid (`festival-hivernal`), six days is a cap that nothing satisfies with the hard form on, whereas eight reaches zero hard breaches. An unreachable cap is worth less than a wider cap that holds, and the weight cannot help: it does not make reachable what arithmetic forbids. Tightening towards six is solved by the grid or by the workforce, not by the solver. The comparison protocol is in [ADR 0045](repo:docs/decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md).
+The threshold (`joursConsecutifsMax`, **eight by default**) is set per edition, on the rule's row. It leaves the code constant because it decides **feasibility**, not comfort: the rule demands a rest day in every window of (threshold + 1) days, so one day more or less changes the number of rest days to find. On the versioned winter grid (`festival-hivernal`), six days is a cap that nothing satisfies with the rule mandatory, whereas eight reaches zero hard breaches. An unreachable cap is worth less than a wider cap that holds, and the weight cannot help: it does not make reachable what arithmetic forbids. Tightening towards six is solved by the grid or by the workforce, not by the solver. The comparison protocol is in [ADR 0045](repo:docs/decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md).
 
-At the shipped weighting, the medium form leaves some people beyond the threshold: that is what the event demands with a constant workforce. The Fairness screen shows it, in the "Longest run" column, before publication.
+As a preference, at the shipped weighting, the rule leaves some people beyond the threshold: that is what the event demands with a constant workforce. The Fairness screen shows it, in the "Longest run" column, before publication.
 
 ### Checking that a threshold holds, then getting it found
 
-These are two questions. The first is arithmetic, and the feasibility analysis asks it before any solve as soon as one of the two forms is on. Each day demands at least its **floor** (its peak of simultaneous seats, read in the same segments from which the seats arise). Each staff member offers, over a window of (threshold + 1) days, only the smaller of two numbers: the threshold, or their available days in the window. On the tightest window, the Problems screen says what the situation is, with the dates named and never a person:
+These are two questions. The first is arithmetic, and the feasibility analysis asks it before any solve as soon as the rule is on. Each day demands at least its **floor** (its peak of simultaneous seats, read in the same segments from which the seats arise). Each staff member offers, over a window of (threshold + 1) days, only the smaller of two numbers: the threshold, or their available days in the window. On the tightest window, the Problems screen says what the situation is, with the dates named and never a person:
 
 | Margin (supply minus demand) | What the analysis says |
 |---|---|
-| negative, hard form on | **blocking**: no plan holds the rule, N person-days are missing, that is at least ⌈N / threshold⌉ staff members |
-| negative, medium form alone | warning: the plan will necessarily exceed the cap for some |
+| negative, rule mandatory | **blocking**: no plan holds the rule, N person-days are missing, that is at least ⌈N / threshold⌉ staff members |
+| negative, rule as a preference | warning: the plan will necessarily exceed the cap for some |
 | positive but under 10% of the demand | warning: the rule will hold only if each day employs almost the minimum number of people |
 | wider | nothing |
 
-The condition is *necessary*, not sufficient: skills, hours, legal rules and a day held by more than its floor consume the margin. Inflating the floor to catch these cases would cry impossible on grids that the solver fills without difficulty. Nor does it couple by skill. Under the hard form, when the grid leaves room, the analysis rereads the plan in place with the same arithmetic and warns if even there the count does not work out. A window entirely in the past is never judged; in a window that straddles the past, a day already worked counts whoever actually held it, not its floor.
+The condition is *necessary*, not sufficient: skills, hours, legal rules and a day held by more than its floor consume the margin. Inflating the floor to catch these cases would cry impossible on grids that the solver fills without difficulty. Nor does it couple by skill. With the rule mandatory, when the grid leaves room, the analysis rereads the plan in place with the same arithmetic and warns if even there the count does not work out. A window entirely in the past is never judged; in a window that straddles the past, a day already worked counts whoever actually held it, not its floor.
 
-The Staffing need screen counts the hard form exactly: it looks for the smallest workforce whose rest calendars together hold the six days per week and the consecutive-days threshold, by a maximum flow over the rest days ([ADR 0071](repo:docs/decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md)). The medium form alone never raises this figure: a rule the solver may break must not make anyone recruit.
+The Staffing need screen counts the mandatory rule exactly: it looks for the smallest workforce whose rest calendars together hold the six days per week and the consecutive-days threshold, by a maximum flow over the rest days ([ADR 0071](repo:docs/decisions/0071-le-besoin-en-animateurs-un-minimum-exact-verifie-par-une-equipe-fictive.md)). As a preference, it never raises this figure: a rule the solver may break must not make anyone recruit.
 
-What decides remains a **plan**: built separately and imported, the Problems screen judges it, and zero hard breaches proves that the need is achievable. The second question is the solver's. Under the hard form, its feasibility phase searches by **whole days**: the chain that fills a hole frees a day of the *streak* and not only of the ISO week, a day given back goes only to colleagues already present that day, and a day held in pieces is regrouped on fewer people ([ADR 0049](repo:docs/decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)). Construction also places seats by date rather than by scarcity, because in scarcity order the setup everybody knows how to hold came last, when the streaks that follow it were already long ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)).
+What decides remains a **plan**: built separately and imported, the Problems screen judges it, and zero hard breaches proves that the need is achievable. The second question is the solver's. With the rule mandatory, its feasibility phase searches by **whole days**: the chain that fills a hole frees a day of the *streak* and not only of the ISO week, a day given back goes only to colleagues already present that day, and a day held in pieces is regrouped on fewer people ([ADR 0049](repo:docs/decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)). Construction places seats by scarcity, as for any edition: the date order 3.x applied under Timefold ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)) is withdrawn ([ADR 0118](repo:docs/decisions/0118-une-seule-regle-de-jours-d-affilee-a-niveau-reglable.md)).
 
 ## Closing late then opening early
 

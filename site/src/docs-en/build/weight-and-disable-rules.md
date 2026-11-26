@@ -53,7 +53,7 @@ The "where" comes from the same analysis. The pivot says on which days, stands a
 
 Disabling applies to the next solve: it stops the stream from producing matches, and touches neither the weight nor the logic.
 
-A `constraint_toggle` row carries a rule's **explicit state** (`nom`, `actif`); its absence means what the catalogue says. Almost all rules are active by default, so the table then carries only the deactivations. Those the catalogue ships **switched off** are in `ConstraintCatalog.DESACTIVEES_PAR_DEFAUT`: `mineurNecessiteEncadrementMajeur` ([ADR 0041](repo:docs/decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md)) and `maxJoursConsecutifsTravaillesDur`. For those, it is switching on that writes a row. Asking for the state the catalogue already gives **deletes the row**: the table carries only decisions somebody made, like a weighting put back to its default.
+A `constraint_toggle` row carries a rule's **explicit state** (`nom`, `actif`); its absence means what the catalogue says. Almost all rules are active by default, so the table then carries only the deactivations. Those the catalogue ships **switched off** are in `ConstraintCatalog.DESACTIVEES_PAR_DEFAUT`: `mineurNecessiteEncadrementMajeur` ([ADR 0041](repo:docs/decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md)). For that one, it is switching on that writes a row. Asking for the state the catalogue already gives **deletes the row**: the table carries only decisions somebody made, like a weighting put back to its default.
 
 A scenario says both directions: `contraintes.desactivees` for what it switches off, `contraintes.activees` for what it switches on when the catalogue ships it off. A rule it does not mention goes back to the catalogue default.
 

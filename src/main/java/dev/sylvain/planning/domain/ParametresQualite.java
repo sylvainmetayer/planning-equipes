@@ -43,12 +43,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        count the same. Polyvalents are exempt, versatility being what they are
  *        there for.
  * @param joursConsecutifsMax how many days in a row an animateur may
- *        work before {@code maxJoursConsecutifsTravailles} — and its hard twin
- *        {@code maxJoursConsecutifsTravaillesDur}, which the catalogue ships
- *        off — start counting the excess. Both read this one value, so the
- *        dosed form and the blocking form can never disagree on what « days in
- *        a row » means. Counted on the grid's own day numbers, not on
- *        calendar dates: a day the event does not cover breaks no run.
+ *        work before {@code maxJoursConsecutifsTravailles} starts counting
+ *        the excess, at whichever level the edition chose for it (ADR 0118).
+ *        Counted on the grid's own day numbers, not on calendar dates: a day the event does not cover breaks no run.
  * @param vitesseMarcheKmH walking speed, in km/h, that turns a distance between
  *        two emplacements into a walking time ({@code solver/TempsDeTrajet}).
  *        The default is a crowd's pace, not a hiker's.

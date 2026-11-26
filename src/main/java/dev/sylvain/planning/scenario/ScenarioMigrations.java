@@ -60,6 +60,7 @@ public final class ScenarioMigrations {
             }
         }
         current = withRetiredLockTypesConverted(current, warnings);
+        current = foldHardRunForm(current, warnings);
         current = renameRetiredRules(current, warnings);
         current.put("schemaVersion", ScenarioBinder.SCHEMA_VERSION);
         return new Migrated(current, List.copyOf(warnings));
@@ -147,6 +148,67 @@ public final class ScenarioMigrations {
             });
             contraintes.put("niveaux", merged);
         }
+        Map<String, Object> result = new LinkedHashMap<>(document);
+        result.put("contraintes", contraintes);
+        return result;
+    }
+
+    /**
+     * The 3.x hard form of the run of days ({@link
+     * ConstraintCatalog#FORME_DURE_JOURS_CONSECUTIFS}) names a level, not a
+     * rule (ADR 0118), so it is folded here rather than renamed: listed in
+     * {@code activees}, the merged rule becomes {@code OBLIGATOIRE} in {@code
+     * niveaux} and is switched on; anywhere else — {@code desactivees}, its
+     * shipped state, or a hard weight — it is dropped, and the merged rule keeps
+     * what the file said of the preference form. Applied to every document,
+     * like {@link #renameRetiredRules}.
+     */
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> foldHardRunForm(Map<String, Object> document, List<String> warnings) {
+        String hard = ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS;
+        String merged = ConstraintCatalog.currentName(hard);
+        if (!(document.get("contraintes") instanceof Map<?, ?> raw)) {
+            return document;
+        }
+        Map<String, Object> contraintes = new LinkedHashMap<>((Map<String, Object>) raw);
+        boolean mentioned = false;
+        boolean on = false;
+        for (String key : List.of("desactivees", "activees")) {
+            List<String> names = listOf(contraintes.get(key));
+            if (names.contains(hard)) {
+                mentioned = true;
+                on |= "activees".equals(key);
+                contraintes.put(
+                        key, names.stream().filter(name -> !hard.equals(name)).toList());
+            }
+        }
+        for (String key : List.of("poids", "niveaux")) {
+            if (contraintes.get(key) instanceof Map<?, ?> byName && byName.containsKey(hard)) {
+                mentioned = true;
+                Map<String, Object> copy = new LinkedHashMap<>((Map<String, Object>) byName);
+                copy.remove(hard);
+                contraintes.put(key, copy);
+            }
+        }
+        if (!mentioned) {
+            return document;
+        }
+        if (on) {
+            List<String> disabled = new ArrayList<>(listOf(contraintes.get("desactivees")));
+            disabled.remove(merged);
+            putIfPresent(contraintes, "desactivees", disabled);
+            Map<String, Object> niveaux = contraintes.get("niveaux") instanceof Map<?, ?> byName
+                    ? new LinkedHashMap<>((Map<String, Object>) byName)
+                    : new LinkedHashMap<>();
+            niveaux.put(merged, ConstraintCatalog.NiveauRegle.OBLIGATOIRE.name());
+            contraintes.put("niveaux", niveaux);
+        }
+        warnings.add("La forme dure « " + hard + " » a été fusionnée dans « " + merged + " », dont le niveau se "
+                + "choisit désormais : "
+                + (on
+                        ? "allumée dans le fichier, elle est lue comme « " + merged + " » obligatoire."
+                        : "éteinte dans le fichier, elle ne change rien à « " + merged + " ».")
+                + " Retirez la clé « " + hard + " » pour ne plus voir cet avertissement.");
         Map<String, Object> result = new LinkedHashMap<>(document);
         result.put("contraintes", contraintes);
         return result;

@@ -77,7 +77,9 @@ public class FeasibilityResource {
                 referenceDataService.listContraintesAdHoc(),
                 FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
                 FeasibilityAnalyzer.ConsecutiveDaysRule.of(
-                        referenceDataService.getContraintesDesactivees(), referenceDataService.getParametresQualite()),
+                        referenceDataService.getContraintesDesactivees(),
+                        referenceDataService.getNiveauxObligatoires(),
+                        referenceDataService.getParametresQualite()),
                 new FeasibilityAnalyzer.PlanContext(
                         referenceDataService.listVerrouillages(),
                         persistence::loadPlacesTenues,

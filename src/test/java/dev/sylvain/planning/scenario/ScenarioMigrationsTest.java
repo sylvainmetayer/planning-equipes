@@ -266,4 +266,50 @@ class ScenarioMigrationsTest {
                 .isSameAs(document);
         assertThat(warnings).isEmpty();
     }
+
+    @Test
+    void theHardRunFormSwitchedOnIsReadAsTheRuleMadeObligatoire() {
+        ScenarioMigrations.Migrated migrated = ScenarioMigrations.migrate(
+                withRules(Map.of(
+                        "activees", List.of("maxJoursConsecutifsTravaillesDur"),
+                        "desactivees", List.of("maxJoursConsecutifsTravailles", "reposQuotidienMinimal"),
+                        "poids", Map.of("maxJoursConsecutifsTravailles", 25, "maxJoursConsecutifsTravaillesDur", 1))),
+                ScenarioBinder.SCHEMA_VERSION);
+        Map<String, Object> converted = migrated.document();
+
+        assertThat(rulesOf(converted).get("activees")).isEqualTo(List.of());
+        assertThat(rulesOf(converted).get("desactivees")).isEqualTo(List.of("reposQuotidienMinimal"));
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(Map.of("maxJoursConsecutifsTravailles", 25));
+        assertThat(rulesOf(converted).get("niveaux")).isEqualTo(Map.of("maxJoursConsecutifsTravailles", "OBLIGATOIRE"));
+        assertThat(migrated.warnings())
+                .singleElement()
+                .asString()
+                .contains("maxJoursConsecutifsTravaillesDur")
+                .contains("obligatoire");
+    }
+
+    @Test
+    void theHardRunFormSwitchedOffChangesNothingButIsSaid() {
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.foldHardRunForm(
+                withRules(Map.of(
+                        "desactivees", List.of("maxJoursConsecutifsTravaillesDur"),
+                        "poids", Map.of("maxJoursConsecutifsTravailles", 5))),
+                warnings);
+
+        assertThat(rulesOf(converted).get("desactivees")).isEqualTo(List.of());
+        assertThat(rulesOf(converted)).doesNotContainKey("niveaux");
+        assertThat(rulesOf(converted).get("poids")).isEqualTo(Map.of("maxJoursConsecutifsTravailles", 5));
+        assertThat(warnings).singleElement().asString().contains("maxJoursConsecutifsTravaillesDur");
+    }
+
+    @Test
+    void aDocumentWithoutTheHardRunFormIsLeftAlone() {
+        List<String> warnings = new java.util.ArrayList<>();
+        Map<String, Object> document = withRules(Map.of("desactivees", List.of("maxJoursConsecutifsTravailles")));
+
+        assertThat(ScenarioMigrations.foldHardRunForm(document, warnings)).isSameAs(document);
+        assertThat(warnings).isEmpty();
+    }
 }

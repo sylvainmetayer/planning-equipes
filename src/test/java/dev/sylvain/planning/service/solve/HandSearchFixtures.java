@@ -371,9 +371,9 @@ final class HandSearchFixtures {
                             new Emplacement("fixture-place-" + place, "Place " + place, 48.0 + place * 0.01, 2.0));
         }
 
-        // the supervision of minors and the hard run of consecutive days, both off unless asked for
+        // the supervision of minors, off unless asked for
         List<ConstraintToggle> toggles = new ArrayList<>(problem.getConstraintsDesactivees());
-        for (String rule : List.of(ExclusionEligibilite.ENCADREMENT_DES_MINEURS, "maxJoursConsecutifsTravaillesDur")) {
+        for (String rule : List.of(ExclusionEligibilite.ENCADREMENT_DES_MINEURS)) {
             toggles.removeIf(toggle -> toggle.getNom().equals(rule));
             toggles.add(new ConstraintToggle(rule, true));
         }

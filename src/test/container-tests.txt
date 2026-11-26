@@ -193,6 +193,7 @@ dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java
 dev/sylvain/planning/service/solve/PlanningPersistenceServiceTest.java
 dev/sylvain/planning/service/solve/PolyvalentMigrationTest.java
 dev/sylvain/planning/service/solve/RemoteSolvesTest.java
+dev/sylvain/planning/service/solve/RunCapMergeMigrationTest.java
 dev/sylvain/planning/service/solve/SolverJobArretTest.java
 dev/sylvain/planning/service/solve/SolverJobHandEngineTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
