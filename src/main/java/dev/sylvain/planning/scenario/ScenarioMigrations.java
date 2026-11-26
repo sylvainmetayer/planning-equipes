@@ -80,7 +80,9 @@ public final class ScenarioMigrations {
      * said once. Two old rules that became one are folded on the <b>most
      * protective</b> reading — the rule stays switched on if either was, takes
      * the strongest weight, and the hardest level — the same decision as
-     * migration V152 for an edition already stored.
+     * migrations V152 and V154 for an edition already stored. A rule that kept
+     * its name ({@link ConstraintCatalog#NOMS_CONSERVES}) votes with the retired
+     * one even when the file does not write it: it is then on.
      */
     @SuppressWarnings("unchecked")
     static Map<String, Object> renameRetiredRules(Map<String, Object> document, List<String> warnings) {
@@ -107,7 +109,11 @@ public final class ScenarioMigrations {
         for (String successor : successors) {
             // An old name not written is the rule's default, on: only the names the file gives vote.
             Set<String> group = new LinkedHashSet<>(ConstraintCatalog.formerNamesOf(successor));
-            if (disabled.contains(successor) || enabled.contains(successor)) {
+            // A rule that kept its name (ConstraintCatalog.NOMS_CONSERVES) was one of the pair: not written,
+            // it is on, and votes as such. A new name was nobody's, it votes only when the file writes it.
+            if (ConstraintCatalog.NOMS_CONSERVES.contains(successor)
+                    || disabled.contains(successor)
+                    || enabled.contains(successor)) {
                 group.add(successor);
             }
             boolean anyEnabled = group.stream().anyMatch(enabled::contains);
@@ -158,8 +164,8 @@ public final class ScenarioMigrations {
             return;
         }
         successors.add(current);
-        String warning = "La règle « " + name + " » a été fusionnée dans « " + current + " » (une seule règle par"
-                + " plafond, le plafond étant lu selon l'âge) : le fichier est lu avec la règle « " + current
+        String warning = "La règle « " + name + " » a été fusionnée dans « " + current + " » (une seule règle"
+                + " pour les deux âges, la limite étant lue selon l'âge) : le fichier est lu avec la règle « " + current
                 + " », selon la lecture la plus protectrice des anciens réglages. Renommez la clé pour ne plus"
                 + " voir cet avertissement.";
         if (!warnings.contains(warning)) {

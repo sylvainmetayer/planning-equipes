@@ -61,8 +61,8 @@ still current before citing them — see "How you review"):
 - Durée quotidienne maximale, lue selon l'âge à la date du créneau : 10h majeur, 8h mineur, 7h avant 16 ans (`dureeQuotidienneMax`).
 - Repos quotidien d'un mineur après un créneau de nuit
   (`reposQuotidienMineur`).
-- Durée hebdomadaire maximale absolue, 48h, pour tout animateur majeur
-  (`dureeHebdomadaireMax`), déjà motivée dans `ParametresLegaux` par l'art.
+- Durée hebdomadaire maximale absolue, lue selon l'âge à la date du créneau :
+  48h majeur, 35h mineur (`dureeHebdomadaireMax`), déjà motivée dans `ParametresLegaux` par l'art.
   L3121-20 du Code du travail — **et par lui seul**. La Convention collective
   de l'Animation était citée à côté, à son art. 5.2 : cette mention a été
   retirée, elle était fausse deux fois (l'art. 5.2 traite des jours de repos,
@@ -76,7 +76,7 @@ without verifying against the current law:
   travail) — there is currently a minor-only daily-rest constraint; check
   whether adults need one too. No convention collective is in play to carry a
   derogation here, so the *Code du travail* default stands on its own.
-- Repos hebdomadaire (35h consécutives, un jour de repos par semaine).
+- Repos hebdomadaire (35h consécutives pour tous, deux jours consécutifs pour un mineur : `reposHebdomadaireMinimal`).
 - Pause obligatoire après 6h de travail continu.
 - Durée hebdomadaire moyenne sur 12 semaines (distincte du plafond absolu déjà
   couvert).
