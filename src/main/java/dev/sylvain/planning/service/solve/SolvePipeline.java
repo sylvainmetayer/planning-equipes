@@ -223,7 +223,7 @@ public class SolvePipeline {
      */
     @RefusedWhileFrozen
     public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
-        SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceDataService.getParametresSolveur());
+        SolveBudget budget = budgetPolicy.forSolve(secondsLimit);
         quota.consume();
         return execute(
                 editionService.editionCourante().getNom(),

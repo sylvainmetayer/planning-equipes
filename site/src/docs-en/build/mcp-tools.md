@@ -41,7 +41,7 @@ To retouch a seat without starting the solve again, `suggerer_reparations` looks
 | `analyser_pauses` | per staff member and per day, where the due break falls, on which stand, who can relay (`relaisAnimateurIds`); a break that nobody can relay is a hard breach, the `sansRelais` filter returns only those |
 | `analyser_enchainements` | two consecutive seats of a staff member on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break (`walkOnBreak`); `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well". Speed, detour and tolerance are set by `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | for each group, day by day, who works, who is missing, the gap in arrivals and departures |
-| `comparer_editions` | the delta of the Compare two editions screen, with no name at all: a staff row carries its ids in each edition and the names of the fields that differ, never their values. Nothing is matched by id; `matching` says on what two rows were matched (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
+| `comparer_editions` | the delta of the Editions view of the Compare two versions screen, with no name at all: a staff row carries its ids in each edition and the names of the fields that differ, never their values. Nothing is matched by id; `matching` says on what two rows were matched (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
 The break is set by `consulter_parametres` and `modifier_parametres` (section `legal`): a single duration, `dureePauseMinutes` (30 by default), refused below its public-policy floor of 20 minutes and capped by nothing. The 30 minutes due to a minor apply at reading time, not at setting time: an edition at 25 gives 25 to adults and 30 to minors. The ceilings, the hours report, fairness and the indicators deduct this same duration ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). The same section carries `heureDebutSoiree` and `dureeVacationMaxMinutes`.
 
@@ -100,14 +100,20 @@ Two **resources**, to attach once to inform all following calls:
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
+| `capturer_instantane` | `creer_version` |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `lister_instantanes` | `lister_versions` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool

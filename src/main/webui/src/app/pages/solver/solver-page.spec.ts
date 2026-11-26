@@ -223,8 +223,6 @@ describe('SolverPage', () => {
     secondsLimit: () => 600,
     effectivePlateauSeconds: () => 0,
     bounds: () => null,
-    dureeResolutionSecondes: () => null,
-    plateauSecondes: () => null,
   };
   const notifications = { notify: vi.fn() };
   const confirm = { ask: vi.fn() };

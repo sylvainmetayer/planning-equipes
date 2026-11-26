@@ -30,8 +30,5 @@
 .sections.parametresLegaux.heureDebutSoiree = 22:00
 .sections.parametresLegaux.reposQuotidienMinimalMinutes = 500
 .sections.parametresQualite = null
-.sections.parametresSolveur.dureeResolutionSecondes = 400
-.sections.parametresSolveur.mailFinResolution = false
-.sections.parametresSolveur.plateauSecondes = null
 .sections.prereglagesConsigne = null
 .sections.typologies = (vide)

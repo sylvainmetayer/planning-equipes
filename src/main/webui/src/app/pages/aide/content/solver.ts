@@ -48,7 +48,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis, en bas de page, « Réglages avancés » : le lieu du calcul et la machine distante, la courbe de score et la volumétrie du problème (la machine reste affichée tant qu'elle est allumée). Les versions du plan sont dans l'onglet « Versions du plan » ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
+          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis, en bas de page, « Réglages avancés » : le lieu du calcul et la machine distante, la courbe de score et la volumétrie du problème (la machine reste affichée tant qu'elle est allumée). Les versions du plan sont dans l'onglet « Versions du plan » ; le budget de calcul se consulte dans Paramètres, onglet Calcul.`,
         },
         {
           kind: 'paragraph',
@@ -104,11 +104,11 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.config.term.duree:Budget de calcul`,
-              text: $localize`:@@aide.config.def.duree:Réglé par édition sur la page Règles du planning, onglet Calcul, partagé par tous les navigateurs et appliqué par le serveur à tout calcul lancé sur l'édition, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Les deux sont bornés par un plafond que fixe l'exploitant de l'instance, affiché au-dessus des champs : une valeur au-dessus est refusée. Si l'exploitant abaisse ce plafond sous une valeur déjà enregistrée, le calcul tourne au plafond et le dit. « Revenir au défaut » rend l'édition aux valeurs de l'instance, à l'enregistrement.`,
+              text: $localize`:@@aide.config.def.budget:Réglé par l'exploitant de l'instance et le même pour toutes les éditions : la page Paramètres, onglet Calcul, l'affiche sans le modifier, et le serveur l'applique à tout calcul, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Pour les changer, l'exploitant modifie SOLVER_SECONDS_LIMIT et SOLVER_UNIMPROVED_SECONDS_LIMIT et redémarre ; un script ou l'assistant peut demander une durée plus courte à un lancement, jusqu'à un plafond que fixe l'exploitant.`,
             },
             {
               term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,
-              text: $localize`:@@aide.config.def.mailFin:Un interrupteur de Règles du planning, onglet Calcul, fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score, et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur.`,
+              text: $localize`:@@aide.config.def.mailFin:Un interrupteur de Paramètres, onglet Calcul, fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score, et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur.`,
             },
             {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
@@ -152,7 +152,11 @@ export function buildSolverSections(): HelpSection[] {
       links: [
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'calcul' },
+          label: $localize`:@@nav.link.parametres:Paramètres`,
+        },
         lienVerrouillages(),
       ],
     },
@@ -271,15 +275,15 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seuls les cinq derniers instantanés automatiques sont conservés par édition.`,
+          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seules les cinq dernières versions prises avant un calcul sont conservés par édition.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : ce sont les instantanés, sur la page Versions du plan, qui gardent les autres. Une capture est prise automatiquement avant chaque résolution. Un plan que vous voulez garder se met de côté explicitement, avec « Enregistrer cet état » et un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison. Restaurer pendant une résolution est refusé par le serveur : la résolution écraserait le plan qu'on vient de remettre en place.`,
+          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : ce sont les versions, sur la page Versions du plan, qui gardent les autres. Une version est prise automatiquement avant chaque résolution. Un plan que vous voulez garder se met de côté explicitement, avec « Enregistrer cet état » et un libellé : celle-là n'est jamais purgée, et sert de terme de comparaison. Restaurer pendant une résolution est refusé par le serveur : la résolution écraserait le plan qu'on vient de remettre en place.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.fraicheur:Chaque instantané indique s'il est encore à jour. « Périmé » veut dire que les données (stands, animateurs, créneaux, paramètres, règles) ont été modifiées après la capture, et l'infobulle donne la date. Le restaurer reste possible, avec une confirmation à part : remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis. Le plus souvent, mieux vaut relancer une résolution.`,
+          text: $localize`:@@aide.results.fraicheur:Chaque version indique s'il est encore à jour. « Périmé » veut dire que les données (stands, animateurs, créneaux, paramètres, règles) ont été modifiées après la capture, et l'infobulle donne la date. Le restaurer reste possible, avec une confirmation à part : remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis. Le plus souvent, mieux vaut relancer une résolution.`,
         },
         {
           kind: 'definitions',

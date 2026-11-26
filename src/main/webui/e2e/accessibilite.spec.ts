@@ -105,6 +105,8 @@ test.describe('accessibilité — administration', () => {
     '/regles?onglet=qualite',
     '/journee',
     '/parametres',
+    '/parametres?onglet=legal',
+    '/parametres?onglet=calcul',
   ];
   for (const ecran of ECRANS_ADMIN) {
     test(`${ecran} ne porte aucune violation grave hors ligne de base`, async ({ browser }) => {

@@ -174,14 +174,14 @@ class SchemaIntegrityTest {
                 .isNull();
         assertThat(count("declaration_coequipier", a)).isEqualTo(1);
 
-        long snapshot = Long.parseLong(scalar("INSERT INTO plan_snapshot (edition_id, libelle, contenu) VALUES ('" + a
+        long snapshot = Long.parseLong(scalar("INSERT INTO version_plan (edition_id, libelle, contenu) VALUES ('" + a
                 + "', 'l', '[]'::jsonb) RETURNING id::text"));
         update("UPDATE animateur SET plan_notifie_id = ? WHERE edition_id = ? AND id = 'A1'", snapshot, a);
         update(
                 "INSERT INTO planning_resolution (edition_id, resolu_le, snapshot_avant_solve_id) VALUES (?, now(), ?)",
                 a,
                 snapshot);
-        update("DELETE FROM plan_snapshot WHERE id = ?", snapshot);
+        update("DELETE FROM version_plan WHERE id = ?", snapshot);
         assertThat(scalar("SELECT plan_notifie_id FROM animateur WHERE id = 'A1' AND edition_id = '" + a + "'"))
                 .isNull();
         assertThat(scalar("SELECT snapshot_avant_solve_id FROM planning_resolution WHERE edition_id = '" + a + "'"))

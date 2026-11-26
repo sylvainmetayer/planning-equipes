@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import {
   ActivatedRouteSnapshot,
+  CanActivateFn,
   convertToParamMap,
   RedirectFunction,
   RouterStateSnapshot,
@@ -20,7 +21,9 @@ import {
   benchTabToJournee,
   equityFicheUrl,
   parametresOngletsDeplaces,
+  redirectCalculToParametres,
   redirectConstraintsToRegles,
+  redirectEditionComparison,
   redirectKpiToVersions,
   standEditToFicheUrl,
   routes,
@@ -114,14 +117,18 @@ function kpiTarget(queryParams: Record<string, string>): string {
   return redirectKpiToVersions(snapshotOf(queryParams)) as string;
 }
 
-function garde(queryParams: Record<string, string>): string | boolean {
+function garde(
+  queryParams: Record<string, string>,
+  fragment: string | null = null,
+  guard: CanActivateFn = parametresOngletsDeplaces,
+): string | boolean {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [provideZonelessChangeDetection(), provideRouter([])],
   });
   const resultat = TestBed.runInInjectionContext(() =>
-    parametresOngletsDeplaces(
-      { queryParamMap: convertToParamMap(queryParams) } as ActivatedRouteSnapshot,
+    guard(
+      { queryParamMap: convertToParamMap(queryParams), fragment } as ActivatedRouteSnapshot,
       {} as RouterStateSnapshot,
     ),
   );
@@ -170,7 +177,7 @@ describe('app.routes', () => {
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic;
-    // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another;
+    // `/realise` (Réalisé vs planifié) brought one, `/comparer` another;
     // the nine screens that became tabs of another page gave theirs up;
     // `/mot-de-passe`, the page of a mailed link, and `/responsable` (« Mon stand »)
     // brought one each, and `/rh` (« Conformité RH ») and `/animateur/:jeton/contacts` one more each.
@@ -500,6 +507,14 @@ describe('app.routes', () => {
     );
   });
 
+  /** The editions' comparison became the « Éditions » view of `/comparer` (4.0). */
+  it('mène l’ancienne comparaison d’éditions à sa vue, la paire gardée', () => {
+    expect(redirectEditionComparison(snapshotOf({ a: 'E1', b: 'E2', x: 'y' }))).toBe(
+      '/comparer?vue=editions&a=E1&b=E2',
+    );
+    expect(redirectEditionComparison(snapshotOf({}))).toBe('/comparer?vue=editions');
+  });
+
   /** `/constraints` became « Règles du planning » (issue #720). */
   describe("l'ancienne adresse des contraintes", () => {
     it('keeps the requested rule, which the page opens on its tab', () => {
@@ -525,14 +540,23 @@ describe('app.routes', () => {
     });
   });
 
-  /** Two tabs of Paramètres left the page (issue #720): the guard sends their bookmarks on. */
+  /** Paramètres became four sections: the guard sends the bookmarks of what moved on. */
   describe('les onglets déplacés des paramètres', () => {
-    it('envoie les paramètres légaux vers l’onglet Légal des règles', () => {
-      expect(garde({ onglet: 'legaux', x: '1' })).toBe('/regles?x=1&onglet=legal');
+    it('envoie les paramètres légaux vers la section Légal des paramètres', () => {
+      expect(garde({ onglet: 'legaux', x: '1' })).toBe('/parametres?x=1&onglet=legal');
     });
 
-    it('envoie les e-mails automatiques vers leur section de l’onglet Édition', () => {
-      expect(garde({ onglet: 'emails' })).toBe('/parametres?onglet=edition#emails');
+    it('envoie les e-mails automatiques vers la section Notifications', () => {
+      expect(garde({ onglet: 'emails' })).toBe('/parametres?onglet=notifications');
+      expect(garde({ onglet: 'edition' }, 'emails')).toBe('/parametres?onglet=notifications');
+      expect(garde({}, 'emails')).toBe('/parametres?onglet=notifications');
+    });
+
+    it('envoie l’onglet Calcul des règles vers la section Calcul des paramètres', () => {
+      expect(garde({ onglet: 'calcul', avance: '1' }, null, redirectCalculToParametres)).toBe(
+        '/parametres?onglet=calcul&avance=1',
+      );
+      expect(garde({ onglet: 'legal' }, null, redirectCalculToParametres)).toBe(true);
     });
 
     it('laisse passer les onglets qui existent', () => {

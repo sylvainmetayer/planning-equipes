@@ -20,19 +20,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V144 reduces the five lock types to three, each converted into what it froze
+ * V149 reduces the five lock types to three, each converted into what it froze
  * on the persisted plan. Played on a database filled the way 3.x filled it —
- * the migrations up to V142 in a schema of their own, then the rows and the
- * V144 file itself in a transaction rolled back afterwards.
+ * the migrations up to V148 in a schema of their own, then the rows and the
+ * V149 file itself in a transaction rolled back afterwards.
  */
 @QuarkusTest
 class LockTypesMigrationTest {
 
-    private static final String SCHEMA = "migration_v144";
-    private static final String V144 = "db/migration/V144__trois_types_de_verrou.sql";
+    private static final String SCHEMA = "migration_v149";
+    private static final String V149 = "db/migration/V149__trois_types_de_verrou.sql";
 
     @BeforeAll
-    static void migrateUpToV142() throws SQLException {
+    static void migrateUpToV148() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -43,7 +43,7 @@ class LockTypesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("142")
+                .target("148")
                 .load()
                 .migrate();
     }
@@ -95,7 +95,13 @@ class LockTypesMigrationTest {
                 sql.execute("INSERT INTO verrouillage_planning (edition_id, id, type, jour) VALUES"
                         + " ('EMIG', 'V4', 'JOUR', DATE '2026-07-02')");
 
+                String seats = "SELECT id || '|' || stand_id || '|' || creneau_id || '|' || coalesce(animateur_id, '-')"
+                        + " FROM poste_affectation ORDER BY id";
+                List<String> planBefore = rows(sql, seats);
+
                 migrate(sql);
+
+                assertThat(rows(sql, seats)).as("the persisted plan").containsExactlyElementsOf(planBefore);
 
                 assertThat(rows(
                                 sql,
@@ -118,8 +124,8 @@ class LockTypesMigrationTest {
     }
 
     private static void migrate(Statement sql) throws Exception {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V144)) {
-            assertThat(file).as(V144).isNotNull();
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V149)) {
+            assertThat(file).as(V149).isNotNull();
             sql.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

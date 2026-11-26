@@ -68,7 +68,7 @@ class RhResourceTest {
 
     @BeforeEach
     void seed() {
-        sql("DELETE FROM plan_snapshot");
+        sql("DELETE FROM version_plan");
         persistence.clearDatabase();
         Animateur ada = new Animateur("RH-A", "Ada", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bob = new Animateur("RH-B", "Bob", "Petit", LocalDate.of(2011, 2, 2), false);
@@ -93,7 +93,7 @@ class RhResourceTest {
 
     @AfterEach
     void clean() {
-        sql("DELETE FROM plan_snapshot");
+        sql("DELETE FROM version_plan");
         sql("DELETE FROM animateur_contact");
         sql("DELETE FROM journal_action WHERE action LIKE '%CONFORMITE%' OR action LIKE 'CONTACTS%'");
     }

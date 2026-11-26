@@ -21,8 +21,6 @@ edition:
   nom: Festival réaliste — canicule
 festival:
   dateDebut: 2026-09-01
-parametresSolveur:
-  dureeResolutionSecondes: 1800
 parametresLegaux:
   coupureRepasMinutes: 60
   coupureRepasSoirDebut: '17:00'

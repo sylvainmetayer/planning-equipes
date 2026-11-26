@@ -92,7 +92,7 @@ class ResponsableResourceTest {
 
     @BeforeEach
     void seed() {
-        sql("DELETE FROM plan_snapshot");
+        sql("DELETE FROM version_plan");
         persistence.clearDatabase();
         sql("DELETE FROM reglage_noms_responsable");
         persistWorkingPlan(false);
@@ -126,7 +126,7 @@ class ResponsableResourceTest {
 
     @AfterEach
     void clean() {
-        sql("DELETE FROM plan_snapshot");
+        sql("DELETE FROM version_plan");
         sql("DELETE FROM reglage_noms_responsable");
     }
 

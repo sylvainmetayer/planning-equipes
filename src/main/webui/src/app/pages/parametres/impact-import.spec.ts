@@ -22,7 +22,7 @@ describe('messageImpactImport', () => {
     expect(message).toContain('12 animateur(s) et 5 stand(s)');
     expect(message).toContain('(40 affectation(s))');
     expect(message).toContain('4 verrouillage(s)');
-    expect(message).toContain('instantané sera enregistré automatiquement');
+    expect(message).toContain('version sera enregistrée automatiquement');
     expect(message).toContain("3 demande(s) d'échange (dont 2 en attente)");
     // What a deleted animateur takes away with them.
     expect(message).toContain("demandes d'échange, sessions et codes d'accès");
@@ -36,7 +36,7 @@ describe('messageImpactImport', () => {
     expect(message).toContain('12 animateur(s)');
     expect(message).not.toContain('affectation');
     expect(message).not.toContain('demande(s)');
-    expect(message).not.toContain('instantané');
+    expect(message).not.toContain('version');
   });
 
   it("garde l'avertissement générique quand le comptage a échoué", () => {

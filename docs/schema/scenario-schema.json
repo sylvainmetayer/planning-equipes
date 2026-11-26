@@ -1,6 +1,41 @@
 {
   "$schema" : "https://json-schema.org/draft/2020-12/schema",
   "$defs" : {
+    "AffectationPlanDto" : {
+      "type" : "object",
+      "properties" : {
+        "animateurId" : {
+          "type" : "string"
+        },
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureDebutEffective" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFinEffective" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "posteId" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "standId" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "suiteDe" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "date", "heureDebut", "heureFin", "posteId", "standId" ]
+    },
     "AnimateurDto" : {
       "type" : "object",
       "properties" : {
@@ -424,9 +459,6 @@
     "ParametresDto" : {
       "type" : "object",
       "properties" : {
-        "instance" : {
-          "$ref" : "#/$defs/ParametresSolveurDto"
-        },
         "legal" : {
           "$ref" : "#/$defs/ParametresLegauxDto"
         },
@@ -535,18 +567,20 @@
         }
       }
     },
-    "ParametresSolveurDto" : {
+    "PlanDto" : {
       "type" : "object",
       "properties" : {
-        "dureeResolutionSecondes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
+        "affectations" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/AffectationPlanDto"
+          }
         },
-        "plateauSecondes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
+        "verrous" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/VerrouPlanDto"
+          }
         }
       }
     },
@@ -702,6 +736,10 @@
       "type" : "string",
       "enum" : [ "TOUS", "JOURS_SEMAINE", "PLAGE", "DATES" ]
     },
+    "TypeVerrouillage" : {
+      "type" : "string",
+      "enum" : [ "ANIMATEUR_CRENEAU", "STAND_JOUR", "JOUR" ]
+    },
     "TypologieDto" : {
       "type" : "object",
       "properties" : {
@@ -744,6 +782,36 @@
         }
       },
       "required" : [ "heureDebut", "heureFin" ]
+    },
+    "VerrouPlanDto" : {
+      "type" : "object",
+      "properties" : {
+        "animateurId" : {
+          "type" : "string"
+        },
+        "creneauDate" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "creneauHeureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "creneauHeureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "jour" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "raison" : {
+          "type" : "string"
+        },
+        "standId" : {
+          "type" : "string"
+        },
+        "type" : {
+          "$ref" : "#/$defs/TypeVerrouillage"
+        }
+      },
+      "required" : [ "type" ]
     }
   },
   "type" : "object",
@@ -795,6 +863,9 @@
     },
     "parametres" : {
       "$ref" : "#/$defs/ParametresDto"
+    },
+    "plan" : {
+      "$ref" : "#/$defs/PlanDto"
     },
     "postes" : {
       "type" : "array",

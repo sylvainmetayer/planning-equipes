@@ -503,9 +503,9 @@ class EditionResourceTest {
                 .statusCode(200);
         given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"dureeResolutionSecondes\":123,\"mailFinResolution\":true}")
+                .body("{\"mailFinResolution\":true}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
         String polyvalent = createTypologie(source, "POLYVALENT", true);
@@ -523,11 +523,10 @@ class EditionResourceTest {
                 .body("coupureRepasMinutes", org.hamcrest.Matchers.equalTo(50));
         given().header(HEADER, copie)
                 .when()
-                .get("/api/parametres-solveur")
+                .get("/api/parametres/calcul")
                 .then()
                 .statusCode(200)
-                .body("mailFinResolution", org.hamcrest.Matchers.equalTo(true))
-                .body("dureeResolutionSecondes", org.hamcrest.Matchers.equalTo(123));
+                .body("mailFinResolution", org.hamcrest.Matchers.equalTo(true));
         given().header(HEADER, copie)
                 .when()
                 .get("/api/typologies")

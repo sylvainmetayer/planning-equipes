@@ -23,7 +23,7 @@ class ParametresSectionsResourceTest {
                 .body("legal.dureePauseMinutes", notNullValue())
                 .body("organisation.joursConsecutifsMax", notNullValue())
                 .body("notifications.delaiRelanceHeures", notNullValue())
-                .body("instance.instance", notNullValue());
+                .body("calcul.instance", notNullValue());
     }
 
     @Test
@@ -32,7 +32,7 @@ class ParametresSectionsResourceTest {
             {"/api/parametres-legaux", "/api/parametres/legal"},
             {"/api/parametres-qualite", "/api/parametres/organisation"},
             {"/api/parametres-notifications", "/api/parametres/notifications"},
-            {"/api/parametres-solveur", "/api/parametres/instance"},
+            {"/api/parametres-solveur", "/api/parametres/calcul"},
         };
         for (String[] pair : roots) {
             String old = given().header("X-Edition-Id", "E1")

@@ -4182,6 +4182,5 @@
 .sections.parametresLegaux.heureDebutSoiree = 20:00
 .sections.parametresLegaux.reposQuotidienMinimalMinutes = 660
 .sections.parametresQualite = null
-.sections.parametresSolveur = null
 .sections.prereglagesConsigne = null
 .sections.typologies = (vide)

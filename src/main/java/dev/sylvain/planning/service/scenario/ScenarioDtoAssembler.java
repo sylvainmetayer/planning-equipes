@@ -12,7 +12,6 @@ import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
@@ -35,7 +34,6 @@ import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
-import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
 import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
@@ -101,7 +99,8 @@ final class ScenarioDtoAssembler {
                 export.postes() == null ? null : postes(export.postes()),
                 nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)),
                 nullWhenEmpty(prereglagesConsigne(export.prereglagesConsigne())),
-                nullWhenEmpty(consignes(export.consignes(), creneaux)));
+                nullWhenEmpty(consignes(export.consignes(), creneaux)),
+                null);
     }
 
     private static <T> List<T> nullWhenEmpty(List<T> liste) {
@@ -379,12 +378,8 @@ final class ScenarioDtoAssembler {
     /** {@code null} when the file pins nothing, so no empty {@code parametres:} is written. */
     private static ParametresDto parametres(ScenarioYamlWriter.ScenarioExport export) {
         ParametresDto parametres = new ParametresDto(
-                parametresLegaux(export.parametresLegaux()),
-                parametresQualite(export.parametresQualite()),
-                parametresSolveur(export.parametresSolveur()));
-        return parametres.legal() == null && parametres.organisation() == null && parametres.instance() == null
-                ? null
-                : parametres;
+                parametresLegaux(export.parametresLegaux()), parametresQualite(export.parametresQualite()));
+        return parametres.legal() == null && parametres.organisation() == null ? null : parametres;
     }
 
     private static ParametresQualiteDto parametresQualite(ParametresQualite parametres) {
@@ -401,14 +396,6 @@ final class ScenarioDtoAssembler {
                         parametres.facteurDetour(),
                         parametres.toleranceTrajetMinutes(),
                         parametres.toleranceArriveeGroupeeMinutes());
-    }
-
-    private static ParametresSolveurDto parametresSolveur(ParametresSolveur parametres) {
-        if (parametres == null
-                || (parametres.dureeResolutionSecondes() == null && parametres.plateauSecondes() == null)) {
-            return null;
-        }
-        return new ParametresSolveurDto(parametres.dureeResolutionSecondes(), parametres.plateauSecondes());
     }
 
     /** Only the fields a scenario file is read back with. */

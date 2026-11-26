@@ -118,7 +118,6 @@ class McpWarnsWhileSolvingTest {
 
     @Test
     void settingsAndWeightsWarnDuringASolve() {
-        Integer duree = referenceData.getParametresSolveur().dureeResolutionSecondes();
         String contrainte = ConstraintCatalog.PAR_NOM.keySet().stream()
                 .filter(nom -> !ConstraintCatalog.NOMS_DURS.contains(nom))
                 .sorted()
@@ -128,43 +127,14 @@ class McpWarnsWhileSolvingTest {
         try {
             assertWarned(() -> ((ParametresMcpTools.ParametresSolveurView) parametresTools
                             .updateParametres(
-                                    "instance",
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    duree,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    "E1")
+                                    "calcul", null, null, null, null, null, null, null, null, null, null, null, null,
+                                    null, null, null, null, null, null, null, null, null, null, null, null, null, "E1")
                             .parametres())
                     .avertissements());
             // Notifications are read by the night sends, never by a solve: nothing to warn about.
             assertThat(parametresTools
                             .updateParametres(
                                     "notifications",
-                                    null,
-                                    null,
                                     null,
                                     null,
                                     null,
@@ -275,8 +245,7 @@ class McpWarnsWhileSolvingTest {
             assertWarned(() -> ((ParametresMcpTools.ParametresLegauxView) parametresTools
                             .updateParametres(
                                     "legal", null, null, null, null, null, null, null, null, null, null, null, null,
-                                    null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                                    null, ed)
+                                    null, null, null, null, null, null, null, null, null, null, null, null, null, ed)
                             .parametres())
                     .avertissements());
             WrittenVerrouillageView verrou = verrouillageTools.lock("JOUR", null, null, null, "2031-08-01", null, ed);

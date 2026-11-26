@@ -183,11 +183,12 @@ public class PlanSnapshotService {
      *                   view and the restore guard must not disagree on what
      *                   "périmé" means
      */
-    @Schema(requiredProperties = {"automatique", "id", "nombreAffectations", "perime"})
+    @Schema(requiredProperties = {"automatique", "id", "nombreAffectations", "origine", "perime"})
     public record SnapshotMeta(
             long id,
             String libelle,
             boolean automatique,
+            Origine origine,
             String score,
             int nombreAffectations,
             Instant creeLe,
@@ -207,6 +208,18 @@ public class PlanSnapshotService {
         static boolean perime(Instant creeLe, Instant referenceModifieLe) {
             return creeLe != null && referenceModifieLe != null && referenceModifieLe.isAfter(creeLe);
         }
+    }
+
+    /**
+     * Where a version comes from: asked by a person, taken before a solve, or
+     * the plan the animateurs were sent. The one column that tells the three
+     * apart (ADR 0108); {@code automatique} on the wire is kept for the 3.x
+     * screen and is {@code origine == AVANT_CALCUL}.
+     */
+    public enum Origine {
+        MANUELLE,
+        AVANT_CALCUL,
+        PUBLIEE
     }
 
     /**
@@ -273,7 +286,7 @@ public class PlanSnapshotService {
         }
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         String score = analysis == null ? null : analysis.diagnostic().score();
-        return inserer(libelle, automatique, score, affectations, null);
+        return inserer(libelle, automatique ? Origine.AVANT_CALCUL : Origine.MANUELLE, score, affectations, null);
     }
 
     /**
@@ -293,27 +306,23 @@ public class PlanSnapshotService {
         }
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         String score = analysis == null ? null : analysis.diagnostic().score();
-        return inserer(libelle, false, score, affectations, Instant.now());
+        return inserer(libelle, Origine.PUBLIEE, score, affectations, Instant.now());
     }
 
     private SnapshotMeta inserer(
-            String libelle,
-            boolean automatique,
-            String score,
-            List<AffectationSnapshot> affectations,
-            Instant publieLe) {
+            String libelle, Origine origine, String score, List<AffectationSnapshot> affectations, Instant publieLe) {
         String contenu = writeContent(affectations);
         PlanningKpiService.PlanningKpi kpi = kpiCourant();
         List<ConsigneSnapshot> consignes = consignesCourantes();
         String sql = """
- INSERT INTO plan_snapshot (edition_id, libelle, automatique, score, nombre_affectations, cree_le, contenu, kpi,
+ INSERT INTO version_plan (edition_id, libelle, origine, score, nombre_affectations, cree_le, contenu, kpi,
  publie_le, consignes)
  VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb)
  RETURNING id, cree_le""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, libelle);
-            ps.setBoolean(3, automatique);
+            ps.setString(3, origine.name());
             ps.setString(4, score);
             ps.setInt(5, affectations.size());
             ps.setTimestamp(6, Timestamp.from(Instant.now()));
@@ -328,7 +337,8 @@ public class PlanSnapshotService {
                 SnapshotMeta meta = new SnapshotMeta(
                         rs.getLong("id"),
                         libelle,
-                        automatique,
+                        origine == Origine.AVANT_CALCUL,
+                        origine,
                         score,
                         affectations.size(),
                         creeLe,
@@ -339,7 +349,7 @@ public class PlanSnapshotService {
                         edition.referenceModifieLe(),
                         SnapshotMeta.perime(creeLe, edition.referenceModifieLe()),
                         consignes);
-                if (automatique) {
+                if (origine == Origine.AVANT_CALCUL) {
                     purgeAutomatic(connection);
                 }
                 return meta;
@@ -383,7 +393,7 @@ public class PlanSnapshotService {
     public void recordScore(long id, String score) {
         // Not prepareScoped: the SET clause claims placeholder 1, so the
         // edition_id predicate is bound explicitly.
-        String sql = "UPDATE plan_snapshot SET score = ? WHERE edition_id = ? AND id = ? AND score IS NULL";
+        String sql = "UPDATE version_plan SET score = ? WHERE edition_id = ? AND id = ? AND score IS NULL";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, score);
@@ -396,12 +406,12 @@ public class PlanSnapshotService {
     }
 
     /** Columns every read below projects, so {@link #readMeta} always finds them. */
-    private static final String COLONNES_META = "s.id, s.libelle, s.automatique, s.score, "
+    private static final String COLONNES_META = "s.id, s.libelle, s.origine, s.score, "
             + "s.nombre_affectations, s.cree_le, s.edition_id, s.publie_le, e.nom AS edition_nom, "
             + "e.reference_modifie_le, s.consignes";
 
     private static final String DEPUIS_SNAPSHOT =
-            " FROM plan_snapshot s " + "LEFT JOIN edition e ON e.id = s.edition_id";
+            " FROM version_plan s " + "LEFT JOIN edition e ON e.id = s.edition_id";
 
     /** A snapshot's metadata and KPIs, without its content: what a listing reads. */
     private static final String SELECT_META = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT;
@@ -499,10 +509,10 @@ public class PlanSnapshotService {
      * replaced and leave the edition with no published plan at all.</p>
      */
     private static final String SUPPRIMER_SAUF_PUBLICATION_COURANTE = """
- DELETE FROM plan_snapshot s
+ DELETE FROM version_plan s
  WHERE s.edition_id = ? AND s.id = ?
    AND (s.publie_le IS NULL
-        OR EXISTS (SELECT 1 FROM plan_snapshot p
+        OR EXISTS (SELECT 1 FROM version_plan p
                     WHERE p.edition_id = s.edition_id
                       AND p.publie_le IS NOT NULL
                       AND (p.publie_le, p.id) > (s.publie_le, s.id)))""";
@@ -607,7 +617,7 @@ public class PlanSnapshotService {
     public SnapshotDetail loadLastBeforeSolve() {
         String sql = SELECT_DETAIL
                 + " JOIN planning_resolution r ON r.edition_id = s.edition_id AND r.snapshot_avant_solve_id = s.id"
-                + " WHERE s.edition_id = ? AND s.automatique";
+                + " WHERE s.edition_id = ? AND s.origine = 'AVANT_CALCUL'";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             return readDetail(ps);
@@ -876,12 +886,11 @@ public class PlanSnapshotService {
      */
     private void purgeAutomatic(Connection connection) throws SQLException {
         String sql = """
- DELETE FROM plan_snapshot
+ DELETE FROM version_plan
  WHERE edition_id = ?
- AND automatique
- AND publie_le IS NULL
- AND id NOT IN (SELECT id FROM plan_snapshot WHERE edition_id = ?
- AND automatique ORDER BY cree_le DESC, id DESC LIMIT ?)
+ AND origine = 'AVANT_CALCUL'
+ AND id NOT IN (SELECT id FROM version_plan WHERE edition_id = ?
+ AND origine = 'AVANT_CALCUL' ORDER BY cree_le DESC, id DESC LIMIT ?)
  AND id NOT IN (SELECT snapshot_avant_solve_id FROM planning_resolution
  WHERE edition_id = ? AND snapshot_avant_solve_id IS NOT NULL)""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
@@ -895,10 +904,12 @@ public class PlanSnapshotService {
     private SnapshotMeta readMeta(ResultSet rs) throws SQLException {
         Instant creeLe = instant(rs.getTimestamp("cree_le"));
         Instant referenceModifieLe = instant(rs.getTimestamp("reference_modifie_le"));
+        Origine origine = Origine.valueOf(rs.getString("origine"));
         return new SnapshotMeta(
                 rs.getLong("id"),
                 rs.getString("libelle"),
-                rs.getBoolean("automatique"),
+                origine == Origine.AVANT_CALCUL,
+                origine,
                 rs.getString("score"),
                 rs.getInt("nombre_affectations"),
                 creeLe,

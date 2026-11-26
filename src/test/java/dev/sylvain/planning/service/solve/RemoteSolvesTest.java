@@ -187,7 +187,6 @@ class RemoteSolvesTest {
                 0L,
                 null,
                 null,
-                null,
                 true,
                 null,
                 now,

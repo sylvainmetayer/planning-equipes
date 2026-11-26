@@ -283,7 +283,7 @@ class SolveEnginesPerimetersTest {
         SolverConfiguration ofSettings =
                 SolverConfiguration.ofSettings(new SolverConfiguration.SearchSettings(seconds, 0, 0, engine));
         return new SolveRunner(ofSettings, null, null)
-                .solvePrepared(loaded.problem(), new SolveBudget(seconds, 0L, null), solver -> {
+                .solvePrepared(loaded.problem(), new SolveBudget(seconds, 0L), solver -> {
                     // Without this every assertion here would hold with the setting ignored.
                     assertThat(solver instanceof HandSearchSolver).isEqualTo(engine == SolverEngine.HAND);
                     solver.addEventListener(event -> {

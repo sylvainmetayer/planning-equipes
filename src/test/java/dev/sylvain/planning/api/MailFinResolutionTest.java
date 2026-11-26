@@ -75,20 +75,11 @@ class MailFinResolutionTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     private void reglerNotification(boolean actif) {
-        io.restassured.path.json.JsonPath actuels = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/parametres-solveur")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"dureeResolutionSecondes\":" + actuels.get("dureeResolutionSecondes")
-                        + ",\"plateauSecondes\":" + actuels.get("plateauSecondes") + ",\"mailFinResolution\":" + actif
-                        + "}")
+                .body("{\"mailFinResolution\":" + actif + "}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
     }

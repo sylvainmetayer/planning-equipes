@@ -57,4 +57,4 @@ Le récapitulatif dit combien de relectures sont retirées et combien sont gard�
 
 ## Revenir en arrière
 
-Une capture du plan est prise automatiquement avant chaque résolution, et vous pouvez en créer d'autres : voir [Calculer le planning](calculer-planning.md#garder-des-versions-du-plan).
+Une version du plan est prise automatiquement avant chaque résolution, et vous pouvez en enregistrer d'autres : voir [Calculer le planning](calculer-planning.md#garder-des-versions-du-plan).

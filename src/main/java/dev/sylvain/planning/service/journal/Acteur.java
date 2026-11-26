@@ -25,6 +25,6 @@ public enum Acteur {
     ANONYME,
     /** A tool call over MCP: an assistant, driven by whoever holds the API key. */
     ASSISTANT,
-    /** The application itself: the nightly sends, the backup, a queue replayed at startup. */
+    /** The application itself: the nightly sends, the backup, a solve followed again on its worker at startup. */
     SYSTEME
 }

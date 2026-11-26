@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.dto.PlanDto;
 import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
@@ -228,11 +229,11 @@ public class PlanningService {
      * {@link ScenarioYamlReader#SCENARIOS_DIR} folder and reloaded as-is.
      *
      * <p>Everything that shapes a solve is written, not only the entities:
-     * {@code typologies}, {@code emplacements}, {@code parametresLegaux} and
-     * {@code parametresSolveur} — re-importing the file therefore reproduces
-     * the very same problem, which is the whole point of exporting it. A file
-     * missing those sections silently fell back to the importing instance's own
-     * settings (its solve duration, its legal ceilings), so the "same" scenario
+     * {@code typologies}, {@code emplacements} and {@code parametresLegaux} —
+     * re-importing the file therefore reproduces the very same problem, which
+     * is the whole point of exporting it. A file missing those sections
+     * silently fell back to the importing instance's own settings (its legal
+     * ceilings), so the "same" scenario
      * replayed elsewhere solved a different problem.</p>
      *
      * <p><b>The créneaux are always written as they are, and the seat list is
@@ -246,7 +247,7 @@ public class PlanningService {
      * case the section exists for.</p>
      */
     public String exportScenarioYaml() {
-        return scenarioYaml(true);
+        return scenarioYaml(true, null);
     }
 
     /**
@@ -254,13 +255,13 @@ public class PlanningService {
      * its animateurs, stands or timeslots is written all the same, the format
      * reads such a file back. What the backup taken before a wipe
      * ({@link WipeBackupService}) needs — an edition half built is still
-     * something to lose.
+     * something to lose — and, with it, the plan as a last section.
      */
-    String scenarioYaml() {
-        return scenarioYaml(false);
+    String scenarioYaml(PlanDto plan) {
+        return scenarioYaml(false, plan);
     }
 
-    private String scenarioYaml(boolean refuseIncomplete) {
+    private String scenarioYaml(boolean refuseIncomplete, PlanDto plan) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         // Raw stands, so the file gets the recurring horaires as rules rather
         // than the few hundred dated windows they expand to — the resolution
@@ -278,7 +279,7 @@ public class PlanningService {
         // absent, the import rebuilds it from the stands and créneaux with the
         // same builder a solve uses, so writing it only repeated the stands and
         // pinned the grid against their next change.
-        return ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+        ScenarioYamlWriter.ScenarioExport export = new ScenarioYamlWriter.ScenarioExport(
                 animateurs,
                 stands,
                 creneaux,
@@ -287,14 +288,16 @@ public class PlanningService {
                 referenceDataService.listEmplacements(),
                 referenceDataService.getParametresLegaux(),
                 referenceDataService.getParametresQualite(),
-                referenceDataService.getParametresSolveur(),
                 referenceDataService.getEtatsContraintes(),
                 referenceDataService.getConstraintWeights(),
                 referenceDataService.snapshotContraintes(),
                 referenceDataService.listJourneesTypes(),
                 referenceDataService.calendrierJourneesTypes(),
                 referenceDataService.listConsignes(),
-                referenceDataService.listPrereglagesConsigne()));
+                referenceDataService.listPrereglagesConsigne());
+        return plan == null
+                ? ScenarioYamlWriter.buildScenarioYaml(export)
+                : ScenarioYamlWriter.buildScenarioYaml(export, plan);
     }
 
     // --- Scenario reading: façade over ScenarioYamlReader -------------------

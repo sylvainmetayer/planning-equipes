@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.solve;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -21,7 +22,7 @@ class SolverQuotaTest {
 
     @Test
     void theQuotaIsOffByDefault() {
-        SolverQuota quota = new SolverQuota(0, 0, PARIS, new MovableClock(NOON_UTC));
+        SolverQuota quota = new SolverQuota(0, 0, PARIS, new MovableClock(NOON_UTC), true);
 
         assertThatCode(() -> {
                     for (int i = 0; i < 1000; i++) {
@@ -34,7 +35,7 @@ class SolverQuotaTest {
 
     @Test
     void aNegativeSettingMeansNoLimitEither() {
-        SolverQuota quota = new SolverQuota(-1, -1, PARIS, new MovableClock(NOON_UTC));
+        SolverQuota quota = new SolverQuota(-1, -1, PARIS, new MovableClock(NOON_UTC), true);
 
         assertThatCode(() -> {
                     quota.consume();
@@ -46,7 +47,7 @@ class SolverQuotaTest {
     @Test
     void pastTheQuotaARunIsRefusedNamingTheMinuteInTheInstanceZone() {
         MovableClock clock = new MovableClock(NOON_UTC);
-        SolverQuota quota = new SolverQuota(3, 0, PARIS, clock);
+        SolverQuota quota = new SolverQuota(3, 0, PARIS, clock, true);
 
         quota.consume();
         clock.advance(Duration.ofMinutes(10));
@@ -64,7 +65,7 @@ class SolverQuotaTest {
     @Test
     void theWindowSlidesRunByRunRatherThanResettingOnTheHour() {
         MovableClock clock = new MovableClock(NOON_UTC);
-        SolverQuota quota = new SolverQuota(2, 0, PARIS, clock);
+        SolverQuota quota = new SolverQuota(2, 0, PARIS, clock, true);
         quota.consume();
         clock.advance(Duration.ofMinutes(40));
         quota.consume();
@@ -79,7 +80,7 @@ class SolverQuotaTest {
     @Test
     void aRefusedLaunchConsumesNothing() {
         MovableClock clock = new MovableClock(NOON_UTC);
-        SolverQuota quota = new SolverQuota(1, 0, PARIS, clock);
+        SolverQuota quota = new SolverQuota(1, 0, PARIS, clock, true);
         quota.consume();
         clock.advance(Duration.ofMinutes(30));
         for (int i = 0; i < 5; i++) {
@@ -94,7 +95,7 @@ class SolverQuotaTest {
     @Test
     void theNextMinuteIsRoundedUpSoTheReaderIsNotSentBackTooEarly() {
         MovableClock clock = new MovableClock(NOON_UTC.plusSeconds(20));
-        SolverQuota quota = new SolverQuota(1, 0, PARIS, clock);
+        SolverQuota quota = new SolverQuota(1, 0, PARIS, clock, true);
         quota.consume();
 
         // Free at 15:00:20: « 15:00 » would earn a second refusal.
@@ -103,7 +104,7 @@ class SolverQuotaTest {
 
     @Test
     void aQuotaOfOneSaysItInTheSingular() {
-        SolverQuota quota = new SolverQuota(1, 1, ZoneOffset.UTC, new MovableClock(NOON_UTC));
+        SolverQuota quota = new SolverQuota(1, 1, ZoneOffset.UTC, new MovableClock(NOON_UTC), true);
         quota.consume();
 
         assertThatThrownBy(quota::consume)
@@ -116,7 +117,7 @@ class SolverQuotaTest {
 
     @Test
     void theQueueCapCountsTheJobsWaitingNotTheRunningOne() {
-        SolverQuota quota = new SolverQuota(0, 2, PARIS, new MovableClock(NOON_UTC));
+        SolverQuota quota = new SolverQuota(0, 2, PARIS, new MovableClock(NOON_UTC), true);
 
         assertThatCode(() -> quota.checkQueue(0)).doesNotThrowAnyException();
         assertThatCode(() -> quota.checkQueue(1)).doesNotThrowAnyException();
@@ -124,6 +125,19 @@ class SolverQuotaTest {
                 .isInstanceOf(BusinessError.Conflict.class)
                 .hasMessageStartingWith(
                         "Cette instance limite la file d'attente du solveur à 2 résolutions planifiées.");
+    }
+
+    /** Only a public instance has a quota: elsewhere both limits do nothing, whatever they say. */
+    @Test
+    void anInstanceThatIsNotPublicIgnoresBothLimits() {
+        SolverQuota quota = new SolverQuota(1, 1, PARIS, new MovableClock(NOON_UTC), false);
+
+        assertThatCode(() -> {
+                    quota.consume();
+                    quota.consume();
+                    quota.checkQueue(5);
+                })
+                .doesNotThrowAnyException();
     }
 
     /** A clock the test moves by hand. */
@@ -153,5 +167,28 @@ class SolverQuotaTest {
         public Instant instant() {
             return now;
         }
+    }
+
+    /**
+     * Limits set on an instance without {@code PUBLIC_INSTANCE}: a 3.x
+     * instance applied them, a 4.0 one ignores them, and the boot says so.
+     */
+    @Test
+    void limitsOnAnUndeclaredInstanceSayThe40Break() {
+        assertThat(SolverQuota.ignoredWarning(false, false, 5, 0))
+                .contains("n'est plus traitée comme publique")
+                .contains("PUBLIC_INSTANCE=true")
+                .contains("SOLVER_MAX_SOLVES_PER_HOUR");
+        assertThat(SolverQuota.ignoredWarning(false, false, 0, 2)).contains("PUBLIC_INSTANCE=true");
+    }
+
+    /** Declared either way, or without limits, nothing about the 4.0 break. */
+    @Test
+    void limitsOnADeclaredInstanceDoNotRepeatThe40Break() {
+        assertThat(SolverQuota.ignoredWarning(false, true, 5, 0))
+                .contains("PUBLIC_INSTANCE=true")
+                .doesNotContain("n'est plus traitée comme publique");
+        assertThat(SolverQuota.ignoredWarning(true, true, 5, 2)).isNull();
+        assertThat(SolverQuota.ignoredWarning(false, false, 0, 0)).isNull();
     }
 }

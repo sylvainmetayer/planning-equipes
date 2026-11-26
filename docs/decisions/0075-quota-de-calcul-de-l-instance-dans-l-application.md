@@ -1,6 +1,6 @@
 # 0075 — Le nombre de calculs se borne dans l'application, pour toute l'instance, et pas au reverse proxy
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté — **limité aux instances publiques par [0110](0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md)** : sans `PUBLIC_INSTANCE=true`, le quota et la file plafonnée ne font rien ; la file n'est plus rejouée
 - **Date** : octobre 2026
 - **Portée** : solveur (file des jobs, solve synchrone, vérification du besoin), API, MCP, IHM (écrans qui lancent un calcul)
 - **S'appuie sur** : [0051](0051-budget-de-calcul-par-edition-sous-plafond-d-exploitant.md), les plafonds d'exploitant sur la durée d'un calcul

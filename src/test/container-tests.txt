@@ -180,6 +180,7 @@ dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
+dev/sylvain/planning/service/solve/ComputeBudgetArchiveMigrationTest.java
 dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
@@ -192,6 +193,7 @@ dev/sylvain/planning/service/solve/SolverJobHandEngineTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
 dev/sylvain/planning/service/solve/SolverJobRepriseTest.java
 dev/sylvain/planning/service/solve/SolverMetricsTest.java
+dev/sylvain/planning/service/solve/VersionPlanMigrationTest.java
 dev/sylvain/planning/service/solve/WipeBackupServiceTest.java
 dev/sylvain/planning/service/validation/ValidationJourneeServiceTest.java
 dev/sylvain/planning/service/weather/WeatherAlertJobTest.java

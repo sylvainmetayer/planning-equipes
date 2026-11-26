@@ -834,11 +834,6 @@ public class ReferenceDataService implements ReferenceData {
         return parametres.updateSolveur(valeurs);
     }
 
-    /** @see ParametresService#importSolveur(ParametresSolveur) */
-    public ParametresSolveur importParametresSolveur(ParametresSolveur valeurs) {
-        return parametres.importSolveur(valeurs);
-    }
-
     /** @see ParametresService#solverBudgetBounds() */
     public SolverBudgetBounds getSolverBudgetBounds() {
         return parametres.solverBudgetBounds();

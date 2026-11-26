@@ -70,10 +70,6 @@ test.afterAll(async () => {
 /** Wipes the plan too, so the next solve is genuinely the first of the edition. */
 async function reseed(): Promise<void> {
   await seedReferentielSolveur(admin, ANIMATEURS, STANDS, CRENEAUX);
-  const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: DUREE_SOLVE_SECONDES },
-  });
-  expect(parametres.ok(), await parametres.text()).toBe(true);
 }
 
 /** Seats of this spec's stands that the persisted plan currently holds. */

@@ -106,7 +106,7 @@ class IsolationEditionStructurelleTest {
             "parametres_signalement",
             "espace_session",
             "espace_acces",
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             "envoi_planning",
             "envoi_mail",
@@ -137,7 +137,9 @@ class IsolationEditionStructurelleTest {
             "sauvegarde_avant_vidage",
             // V142's archive of the 3.x set-aside and cancelled covoiturages: no
             // statement names it today, but it is partitioned like its source.
-            "declaration_coequipier_avant_4_0");
+            "declaration_coequipier_avant_4_0",
+            // V145's archive of the budgets editions had set: partitioned like its source.
+            "solve_budget_avant_4_0");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An
@@ -277,12 +279,12 @@ class IsolationEditionStructurelleTest {
             "SELECT l.edition_id, e.nom AS edition_nom, l.id, l.libelle, l.noms_complets, l.restreint"
                     + " FROM lien_affichage_mural l JOIN edition e ON e.id = l.edition_id"
                     + " WHERE l.token_hash = ? AND l.revoque_le IS NULL",
-            "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
-                    + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.kpi FROM plan_snapshot s"
+            "SELECT s.id, s.libelle, s.origine, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
+                    + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.kpi FROM version_plan s"
                     + " LEFT JOIN edition e ON e.id = s.edition_id ORDER BY s.cree_le DESC, s.id DESC",
-            "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
+            "SELECT s.id, s.libelle, s.origine, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.contenu, s.kpi"
-                    + " FROM plan_snapshot s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
+                    + " FROM version_plan s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
             "DELETE FROM journal_action WHERE survenu_le < ?",
             "DELETE FROM envoi_mail WHERE envoye_le < ?",
             "UPDATE verification_besoin SET etat = 'ECHEC', terminee_le = now(), erreur = ? WHERE etat = 'EN_COURS'");

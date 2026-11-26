@@ -1,7 +1,7 @@
-// « Règles › Calcul »: one form, one « Enregistrer ». `solver/solver-duration.spec.ts`
-// covers the budget arithmetic; what is pinned here is that nothing is written
-// before the button, that each record is written only when something of it
-// changed, and that a unit switch never resets what the operator typed.
+// « Paramètres › Calcul »: one form, one « Enregistrer ». The instance's solve
+// budget is shown and never written; what is pinned here is that nothing is
+// written before the button, and that each record is written only when
+// something of it changed.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -18,13 +18,12 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { seedStore } from '../../core/testing/seed-store';
-import { ReglesCalcul } from './regles-calcul';
+import { ParametresCalcul } from './parametres-calcul';
 
 const INSTANCE: SolverBudgetBounds = {
   defaultSecondsLimit: 900,
   defaultPlateauSeconds: 300,
   maxSecondsLimit: 7200,
-  maxPlateauSeconds: 7200,
 };
 
 const LEGAUX = {
@@ -45,26 +44,24 @@ function typologie(id: string, polyvalent = false): TypologieItem {
   return { id, label: id, polyvalent } as TypologieItem;
 }
 
-async function create(typologies: TypologieItem[] = []): Promise<ReglesCalcul> {
+/** What `/api/typologies` answers: the page re-reads them when it opens. */
+let served: TypologieItem[] = [];
+
+async function create(typologies: TypologieItem[] = []): Promise<ParametresCalcul> {
+  served = typologies;
   seedStore(TestBed.inject(ReferenceDataStore), 'typologies', typologies);
-  const fixture = TestBed.createComponent(ReglesCalcul);
+  const fixture = TestBed.createComponent(ParametresCalcul);
   await fixture.whenStable();
   return fixture.componentInstance;
 }
 
-describe('ReglesCalcul', () => {
-  const duree = signal<number | null>(180);
-  const plateau = signal<number | null>(null);
+describe('ParametresCalcul', () => {
   const mail = signal(false);
   const solverSettings = {
     refresh: vi.fn(() => Promise.resolve(undefined)),
-    setSettings: vi.fn(),
+    setMailFinResolution: vi.fn(),
     bounds: signal<SolverBudgetBounds | null>(INSTANCE),
-    dureeResolutionSecondes: duree,
-    plateauSecondes: plateau,
     mailFinResolution: mail,
-    secondsLimit: () => duree() ?? INSTANCE.defaultSecondsLimit,
-    effectivePlateauSeconds: () => plateau() ?? INSTANCE.defaultPlateauSeconds,
   };
   let constraintsApi: {
     legalParameters: ReturnType<typeof vi.fn>;
@@ -73,18 +70,12 @@ describe('ReglesCalcul', () => {
   let crud: { save: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
-    duree.set(180);
-    plateau.set(null);
     mail.set(false);
-    solverSettings.setSettings.mockReset();
-    solverSettings.setSettings.mockImplementation(
-      (seconds: number | null, plateauSeconds: number | null, mailFin: boolean) => {
-        duree.set(seconds);
-        plateau.set(plateauSeconds);
-        mail.set(mailFin);
-        return Promise.resolve();
-      },
-    );
+    solverSettings.setMailFinResolution.mockReset();
+    solverSettings.setMailFinResolution.mockImplementation((mailFin: boolean) => {
+      mail.set(mailFin);
+      return Promise.resolve();
+    });
     constraintsApi = {
       legalParameters: vi.fn(() => Promise.resolve({ ...LEGAUX })),
       saveLegalParameters: vi.fn((legaux: typeof LEGAUX) => Promise.resolve(legaux)),
@@ -94,7 +85,7 @@ describe('ReglesCalcul', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(served)) } },
         { provide: SolverSettingsService, useValue: solverSettings },
         { provide: ConstraintsApi, useValue: constraintsApi },
         {
@@ -114,68 +105,26 @@ describe('ReglesCalcul', () => {
     });
   });
 
-  it('reads the budget in the largest unit that keeps it whole, and writes nothing', async () => {
+  it('shows the instance budget and writes nothing', async () => {
     const calcul = await create();
 
-    expect(calcul['unit']()).toBe('MINUTES');
-    expect(calcul['valueDraft']()).toBe(3);
-    expect(calcul['plateauDraft']()).toBe(5);
-    expect(calcul.dirty()).toBe(false);
-    expect(calcul['ceilingText']()).toContain('2 h');
-  });
-
-  it('re-expresses the draft when the unit changes, rather than resetting it', async () => {
-    const calcul = await create();
-
-    calcul['onUnitChange']('SECONDES');
-
-    expect(calcul['valueDraft']()).toBe(180);
+    expect(calcul['budgetText']()).toContain('15 min');
+    expect(calcul['budgetText']()).toContain('5 min');
     expect(calcul.dirty()).toBe(false);
   });
 
-  it('writes the budget on « Enregistrer » only, the untouched plateau left to the instance', async () => {
-    const calcul = await create();
-
-    calcul['onValueDraftChange'](5);
-    expect(calcul.dirty()).toBe(true);
-    expect(solverSettings.setSettings).not.toHaveBeenCalled();
-
-    await calcul['save']();
-
-    expect(solverSettings.setSettings).toHaveBeenCalledExactlyOnceWith(300, null, false);
-    expect(constraintsApi.saveLegalParameters).not.toHaveBeenCalled();
-    expect(crud.save).not.toHaveBeenCalled();
-    expect(calcul.dirty()).toBe(false);
-  });
-
-  it('says the ceiling before the server does', async () => {
-    const calcul = await create();
-
-    calcul['onUnitChange']('HEURES');
-    calcul['onValueDraftChange'](3);
-
-    expect(calcul['draftError']()).toContain('2 h');
-  });
-
-  it('« Revenir au défaut » saves nothing by itself, then sends both halves back to the instance', async () => {
-    const calcul = await create();
-
-    calcul['resetToDefault']();
-    expect(solverSettings.setSettings).not.toHaveBeenCalled();
-    expect(calcul.dirty()).toBe(true);
-
-    await calcul['save']();
-
-    expect(solverSettings.setSettings).toHaveBeenCalledExactlyOnceWith(null, null, false);
-  });
-
-  it('writes the end-of-solve mail with the budget it shares a payload with', async () => {
+  it('writes the end-of-solve mail on « Enregistrer » only', async () => {
     const calcul = await create();
 
     calcul['mailDraft'].set(true);
+    expect(calcul.dirty()).toBe(true);
+    expect(solverSettings.setMailFinResolution).not.toHaveBeenCalled();
     await calcul['save']();
 
-    expect(solverSettings.setSettings).toHaveBeenCalledExactlyOnceWith(180, null, true);
+    expect(solverSettings.setMailFinResolution).toHaveBeenCalledExactlyOnceWith(true);
+    expect(constraintsApi.saveLegalParameters).not.toHaveBeenCalled();
+    expect(crud.save).not.toHaveBeenCalled();
+    expect(calcul.dirty()).toBe(false);
   });
 
   /** The legal record is re-read before the write: « Légal » may have stored a field meanwhile. */
@@ -191,7 +140,7 @@ describe('ReglesCalcul', () => {
       dureePauseMinutes: 45,
       heureDebutSoiree: '19:30',
     });
-    expect(solverSettings.setSettings).not.toHaveBeenCalled();
+    expect(solverSettings.setMailFinResolution).not.toHaveBeenCalled();
   });
 
   it('promotes the chosen polyvalent typologie, letting the server demote the previous one', async () => {
@@ -217,13 +166,13 @@ describe('ReglesCalcul', () => {
 
   it('puts every field back on « Annuler les modifications »', async () => {
     const calcul = await create([typologie('JEUX', true)]);
-    calcul['onValueDraftChange'](10);
+    calcul['mailDraft'].set(true);
     calcul['soireeDraft'].set('18:00');
     calcul['polyvalentDraft'].set(null);
 
     calcul.cancel();
 
     expect(calcul.dirty()).toBe(false);
-    expect(calcul['valueDraft']()).toBe(3);
+    expect(calcul['mailFinResolution']()).toBe(false);
   });
 });
