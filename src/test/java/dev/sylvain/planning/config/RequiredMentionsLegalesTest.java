@@ -30,7 +30,7 @@ class RequiredMentionsLegalesTest {
     void anEmptyNoticeRefusesTheBoot() {
         assertThatThrownBy(() -> RequiredMentionsLegales.check(false, "", "", "", "", ""))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("LEGAL_EDITEUR");
+                .hasMessageContaining("editeur");
     }
 
     /**
@@ -40,11 +40,11 @@ class RequiredMentionsLegalesTest {
     @Test
     void theMessageNamesEveryMissingVariableAtOnce() {
         assertThatThrownBy(() -> RequiredMentionsLegales.check(false, "", "", "", "", ""))
-                .hasMessageContaining("LEGAL_EDITEUR")
-                .hasMessageContaining("LEGAL_HEBERGEUR")
-                .hasMessageContaining("LEGAL_CONTACT")
-                .hasMessageContaining("LEGAL_BASE_LEGALE")
-                .hasMessageContaining("LEGAL_CONSERVATION");
+                .hasMessageContaining("editeur")
+                .hasMessageContaining("hebergeur")
+                .hasMessageContaining("contact")
+                .hasMessageContaining("base-legale")
+                .hasMessageContaining("conservation");
     }
 
     /** The message names the way out, or an operator reads it as a dead end. */
@@ -60,8 +60,8 @@ class RequiredMentionsLegalesTest {
         assertThatThrownBy(
                         () -> RequiredMentionsLegales.check(false, EDITEUR, "   ", CONTACT, BASE_LEGALE, CONSERVATION))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("LEGAL_HEBERGEUR")
-                .hasMessageNotContaining("LEGAL_EDITEUR");
+                .hasMessageContaining("hebergeur")
+                .hasMessageNotContaining("editeur");
     }
 
     /** A demo instance says so explicitly, and an empty page is then the honest answer. */

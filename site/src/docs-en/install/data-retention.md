@@ -15,7 +15,7 @@ The *History* page reads it; nobody writes it by hand and nothing erases it at t
 
 ## What stays until you delete it
 
-For everything else, the period announced by `LEGAL_CONSERVATION` is displayed in the privacy policy and **nothing in the code enforces it**: no automatic purge exists today. A written commitment that is not kept exposes you more than no commitment, so the purge is done by hand, on a fixed date. This is deliberate, and what automation will have to carry when the day comes is written in [decision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
+For everything else, the period announced by the `conservation` key of `LEGAL_MENTIONS` is displayed in the privacy policy and **nothing in the code enforces it**: no automatic purge exists today. A written commitment that is not kept exposes you more than no commitment, so the purge is done by hand, on a fixed date. This is deliberate, and what automation will have to carry when the day comes is written in [decision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
 
 ### The annual purge
 

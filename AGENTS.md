@@ -382,8 +382,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   assembles the `Mail`: the text part is **always** sent, the HTML one is an
   alternative, and the logo travels as an inline `cid:` attachment — never a
   remote `<img src>`, which mail clients block and spam filters penalise. It
-  comes from `BRANDING_PDF_LOGO` (bytes the application holds), not
-  `BRANDING_LOGO_URL` (a URL only a browser can resolve). Java names the
+  comes from the `pdf-logo` key of `BRANDING_IMAGES` (bytes the application holds), not
+  its `logo` key (a URL only a browser can resolve). Java names the
   template, decides the subject and passes values; adding a mail means adding
   the two files. Unit tests keep asserting on the wording without a container
   through `MailTemplates.standalone()`, which builds the same engine over the

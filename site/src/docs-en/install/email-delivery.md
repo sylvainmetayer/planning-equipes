@@ -32,7 +32,7 @@ On the domain side, the application can do nothing, yet it is what decides wheth
 
 Send a test schedule to **three different mailboxes**, including Gmail and Outlook, which are the strictest. Check that the message arrives in the inbox, not only that it leaves. The *Debug* page (Ctrl+K, or the `/debug` address, *Checks* tab) offers "Send a test mail".
 
-Each mail goes out in **two parts**: plain text, and an HTML version dressed in the deployment's colours (`BRANDING_PDF_*`, `BRANDING_ORGANISATION` in the footer). The `BRANDING_PDF_LOGO` logo is embedded in the message itself: no image is loaded from a server on opening, which mail clients block and spam filters penalise. A client that refuses HTML displays the text, identical word for word.
+Each mail goes out in **two parts**: plain text, and an HTML version dressed in the deployment's colours (`pdf-*` keys of `BRANDING_COLORS`, `BRANDING_ORGANISATION` in the footer). The logo (`pdf-logo` key of `BRANDING_IMAGES`) is embedded in the message itself: no image is loaded from a server on opening, which mail clients block and spam filters penalise. A client that refuses HTML displays the text, identical word for word.
 
 With `MAIL_MOCK=true`, nothing leaves: the mails are logged, and the screen says "simulated" so that a trial run is not mistaken for a real send.
 

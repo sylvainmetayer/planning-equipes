@@ -70,7 +70,7 @@ The deployment files are taken from the [project repository](repo:docker-compose
    | Availability | `/q/health/ready` answers `UP`: database reachable, no migration pending or failed. The wait is bounded (120 s, `--attente`) to let the migrations of a first start go through |
    | Version | the version exposed by `/api/config` is the expected one (`--version-libre` while `APP_VERSION=main`) |
    | Branding and legal notice | `/api/branding` and `/api/mentions-legales` answer |
-   | Mandatory notices | none of the five required fields is empty; skipped if the instance declares itself a demo (`demoInstance` of `/api/mentions-legales`, that is `LEGAL_DEMO_INSTANCE=true` as the application read it), or with `--instance-demo` |
+   | Mandatory notices | none of the five required keys of `LEGAL_MENTIONS` is empty; skipped if the instance declares itself a demo (`demoInstance` of `/api/mentions-legales`, that is `LEGAL_DEMO_INSTANCE=true` as the application read it), or with `--instance-demo` |
 
    The application footer (administration as well as staff espace) and the *Debug* page (outside the menu: Ctrl+K, or the `/debug` address, *Solve* tab) display the deployed version: the `vX.Y.Z` tag for a release image, the commit identifier for a trial image. That is what a vulnerability report must cite ([report a vulnerability](repo:.github/SECURITY.md)).
 

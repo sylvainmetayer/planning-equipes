@@ -28,7 +28,7 @@ For an overview of what is expected of a host, before the details, see [self-hos
 - [ ] no `REMOTE_USER_*` variable in your environment: the proxy header
       mode is removed in 4.0, startup flags them and
       ignores them;
-- [ ] `LEGAL_*` variables set: `/mentions-legales` is public, and an empty
+- [ ] `LEGAL_MENTIONS` variable set: `/mentions-legales` is public, and an empty
       legal notice page amounts to no legal notice. Five
       of them (publisher, host, contact, legal basis, retention)
       **make startup fail**, so this box ticks itself;
