@@ -881,14 +881,22 @@ public final class ConstraintCatalog {
      * obligatoire (migration V157, ADR 0118).
      */
     public static final Map<String, String> ANCIENS_NOMS = Map.of(
-            "animateurVerrouilleFige", RETIREE,
-            FORME_DURE_JOURS_CONSECUTIFS, MAX_JOURS_CONSECUTIFS_TRAVAILLES,
-            "dureeQuotidienneMaxMajeur", "dureeQuotidienneMax",
-            "dureeQuotidienneMaxMineur", "dureeQuotidienneMax",
-            "travailContinuMaxMajeur", "travailContinuMax",
-            "travailContinuMaxMineur", "travailContinuMax",
-            "dureeHebdomadaireMaxMineur", "dureeHebdomadaireMax",
-            "reposHebdomadaireMineur", "reposHebdomadaireMinimal");
+            "animateurVerrouilleFige",
+            RETIREE,
+            FORME_DURE_JOURS_CONSECUTIFS,
+            MAX_JOURS_CONSECUTIFS_TRAVAILLES,
+            "dureeQuotidienneMaxMajeur",
+            "dureeQuotidienneMax",
+            "dureeQuotidienneMaxMineur",
+            "dureeQuotidienneMax",
+            "travailContinuMaxMajeur",
+            "travailContinuMax",
+            "travailContinuMaxMineur",
+            "travailContinuMax",
+            "dureeHebdomadaireMaxMineur",
+            "dureeHebdomadaireMax",
+            "reposHebdomadaireMineur",
+            "reposHebdomadaireMinimal");
 
     /**
      * The rules that absorbed a retired one and kept their own name
