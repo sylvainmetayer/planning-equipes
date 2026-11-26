@@ -38,6 +38,13 @@ import java.util.Map;
 public final class PosteAffectationDifficultyComparatorFactory
         implements ComparatorFactory<PlanningEvenement, PosteAffectation> {
 
+    /**
+     * Seam of the consecutive-days bench ({@code ConsecutiveRunsBenchTest}) and
+     * of nothing else: {@code false} drops the calendar order above, to measure
+     * what removing it costs. Left {@code true} everywhere else.
+     */
+    public static volatile boolean calendarOrderUnderHardRunCap = true;
+
     @Override
     public Comparator<PosteAffectation> createComparator(PlanningEvenement solution) {
         // Confined to the comparator returned here, which Timefold uses from a
@@ -46,7 +53,7 @@ public final class PosteAffectationDifficultyComparatorFactory
         Comparator<PosteAffectation> scarcity = Comparator.comparingLong((PosteAffectation poste) ->
                         cache.computeIfAbsent(EligibilityKey.of(poste), key -> eligibleAnimateurCount(solution, poste)))
                 .reversed();
-        if (WeekRelocationMoveIteratorFactory.hardRunCap(solution) <= 0) {
+        if (!calendarOrderUnderHardRunCap || WeekRelocationMoveIteratorFactory.hardRunCap(solution) <= 0) {
             return scarcity;
         }
         // The heuristic places the greatest first: an earlier date is the

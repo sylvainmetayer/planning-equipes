@@ -116,6 +116,101 @@ To measure as on the production host, bound the bench's JVM with `-DargLine` (he
 
 Since the seeds are fixed, two runs of the same configuration trace the same curve, to within a few seconds. The measurements that justify a `solverConfig.xml` setting come from this bench.
 
+## The consecutive-days bench
+
+`ConsecutiveRunsBenchTest` measures what merging the two forms of the consecutive-days rule (`maxJoursConsecutifsTravailles`, medium, and `maxJoursConsecutifsTravaillesDur`, hard) into one rule of adjustable level would cost, and what removing the calendar construction order ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)) would cost. It changes no behaviour: the variants are toggles, a weight that carries the medium rule to the hard level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) and a test seam on the construction comparator.
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=ConsecutiveRunsBenchTest \
+    -Dbench.scenario=festival-realiste-canicule.yaml -Dbench.engine=timefold \
+    -Dbench.seconds=120 -Dbench.seeds=3 -Dbench.cap=6
+```
+
+The class also launches as a plain `main` on the test classpath, to run several scenarios in parallel JVMs. Each solve lasts its whole budget, with no plateau bailout, seeds 0 to 2. The variants are `preference` (the medium form alone: what ships, and the merged rule at the preference level), `both` (both forms, as an organiser who wants a hard cap turns them on today), `hard` (the hard form alone: the merged rule at the mandatory level), `hard-par-poids` (the medium form whose weight is one hard point: the merged rule as ADR 0111 would write it) and, under Timefold only, `both-sans-calendrier` and `hard-sans-calendrier`. The direct engine always builds by scarcity: the calendar order does not exist there, removing it changes nothing. The cap is set to six days (`bench.cap`).
+
+The last column reads every final plan again under the mandatory rule: the number of seeds in which no animateur exceeds the cap.
+
+Measured on 26 November 2026, one machine with 12 cores and 24 GB (nine JVMs in parallel, one core each), 120 s per solve (15 to 30 s for `gamme-28` and `gamme-16`), medians of three seeds:
+
+| Scenario | Engine | Variant | Feasible (the variant's rules) | Time to feasibility | Hard (med.) | Medium (med.) | Soft (med.) | Cap held (mandatory rule) |
+|---|---|---|---|---|---|---|---|---|
+| `festival-realiste-canicule` | direct | `preference` | 3/3 | 0.4 s | 0 | -16400 | -69935 | 3/3 |
+| `festival-realiste-canicule` | direct | `both` | 3/3 | 0.4 s | 0 | -16395 | -70470 | 3/3 |
+| `festival-realiste-canicule` | direct | `hard` | 3/3 | 0.3 s | 0 | -16395 | -70170 | 3/3 |
+| `festival-realiste-canicule` | direct | `hard-par-poids` | 3/3 | 0.3 s | 0 | -16395 | -70180 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `preference` | 3/3 | 9.7 s | 0 | -18520 | -52480 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `both` | 3/3 | 7.6 s | 0 | -17405 | -48375 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `both-sans-calendrier` | 3/3 | 9.1 s | 0 | -18415 | -52615 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `hard` | 3/3 | 7.5 s | 0 | -17395 | -47975 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `hard-sans-calendrier` | 3/3 | 8.3 s | 0 | -18405 | -52310 | 3/3 |
+| `festival-realiste-canicule` | Timefold | `hard-par-poids` | 3/3 | 8.3 s | 0 | -18400 | -52525 | 3/3 |
+| `festival-hivernal` | direct | `preference` | 3/3 | 2.5 s | 0 | -23700 | -98785 | 0/3 |
+| `festival-hivernal` | direct | `both` | 0/3 | never | -2 | -24285 | -98865 | 0/3 |
+| `festival-hivernal` | direct | `hard` | 1/3 | 12.3 s | -1 | -24205 | -98715 | 1/3 |
+| `festival-hivernal` | direct | `hard-par-poids` | 1/3 | 11.9 s | -1 | -24180 | -98785 | 1/3 |
+| `festival-hivernal` | Timefold | `preference` | 3/3 | 27.5 s | 0 | -31105 | -95875 | 0/3 |
+| `festival-hivernal` | Timefold | `both` | 0/3 | never | -16 | -30035 | -97215 | 0/3 |
+| `festival-hivernal` | Timefold | `both-sans-calendrier` | 0/3 | never | -13 | -34715 | -103785 | 0/3 |
+| `festival-hivernal` | Timefold | `hard` | 0/3 | never | -16 | -29890 | -97565 | 0/3 |
+| `festival-hivernal` | Timefold | `hard-sans-calendrier` | 0/3 | never | -13 | -34655 | -103350 | 0/3 |
+| `festival-hivernal` | Timefold | `hard-par-poids` | 0/3 | never | -20 | -34620 | -100345 | 0/3 |
+| `scenario-complet` | direct | `preference` | 3/3 | 0.8 s | 0 | -18255 | -113000 | 0/3 |
+| `scenario-complet` | direct | `both` | 3/3 | 0.9 s | 0 | -18360 | -43330 | 3/3 |
+| `scenario-complet` | direct | `hard` | 3/3 | 0.9 s | 0 | -18350 | -42085 | 3/3 |
+| `scenario-complet` | direct | `hard-par-poids` | 3/3 | 0.9 s | 0 | -18350 | -42085 | 3/3 |
+| `scenario-complet` | Timefold | `preference` | 3/3 | 11.7 s | 0 | -22235 | -156930 | 0/3 |
+| `scenario-complet` | Timefold | `both` | 3/3 | 10.8 s | 0 | -19495 | -121160 | 3/3 |
+| `scenario-complet` | Timefold | `both-sans-calendrier` | 3/3 | 11.8 s | 0 | -20985 | -144835 | 3/3 |
+| `scenario-complet` | Timefold | `hard` | 3/3 | 9.6 s | 0 | -19415 | -118720 | 3/3 |
+| `scenario-complet` | Timefold | `hard-sans-calendrier` | 3/3 | 10.3 s | 0 | -20915 | -144525 | 3/3 |
+| `scenario-complet` | Timefold | `hard-par-poids` | 3/3 | 11.0 s | 0 | -20865 | -145135 | 3/3 |
+| `gamme-16` | direct | `preference` | 3/3 | 0.1 s | 0 | -5010 | -1735 | 3/3 |
+| `gamme-16` | direct | `both` | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
+| `gamme-16` | direct | `hard` | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
+| `gamme-16` | direct | `hard-par-poids` | 3/3 | 0.1 s | 0 | -4825 | -1720 | 3/3 |
+| `gamme-16` | Timefold | `preference` | 3/3 | 1.7 s | 0 | -6990 | -1300 | 3/3 |
+| `gamme-16` | Timefold | `both` | 3/3 | 1.6 s | 0 | -6835 | -1395 | 3/3 |
+| `gamme-16` | Timefold | `both-sans-calendrier` | 3/3 | 1.6 s | 0 | -6960 | -1310 | 3/3 |
+| `gamme-16` | Timefold | `hard` | 3/3 | 1.7 s | 0 | -6865 | -1375 | 3/3 |
+| `gamme-16` | Timefold | `hard-sans-calendrier` | 3/3 | 1.6 s | 0 | -6970 | -1300 | 3/3 |
+| `gamme-16` | Timefold | `hard-par-poids` | 3/3 | 1.6 s | 0 | -6980 | -1310 | 3/3 |
+| `gamme-20` | direct | `preference` | 3/3 | 2.3 s | 0 | -17100 | -21665 | 2/3 |
+| `gamme-20` | direct | `both` | 3/3 | 1.9 s | 0 | -17710 | -15335 | 3/3 |
+| `gamme-20` | direct | `hard` | 3/3 | 1.7 s | 0 | -17685 | -14235 | 3/3 |
+| `gamme-20` | direct | `hard-par-poids` | 3/3 | 1.6 s | 0 | -17670 | -13910 | 3/3 |
+| `gamme-20` | Timefold | `preference` | 3/3 | 33.8 s | 0 | -34615 | -122915 | 0/3 |
+| `gamme-20` | Timefold | `both` | 3/3 | 26.9 s | 0 | -24385 | -67850 | 3/3 |
+| `gamme-20` | Timefold | `both-sans-calendrier` | 3/3 | 29.2 s | 0 | -32910 | -122295 | 3/3 |
+| `gamme-20` | Timefold | `hard` | 3/3 | 25.7 s | 0 | -24340 | -67585 | 3/3 |
+| `gamme-20` | Timefold | `hard-sans-calendrier` | 3/3 | 29.0 s | 0 | -32925 | -122265 | 3/3 |
+| `gamme-20` | Timefold | `hard-par-poids` | 3/3 | 27.7 s | 0 | -32580 | -122235 | 3/3 |
+| `gamme-25` | direct | `preference` | 3/3 | 2.1 s | 0 | -13250 | -46440 | 3/3 |
+| `gamme-25` | direct | `both` | 3/3 | 1.9 s | 0 | -13230 | -46465 | 3/3 |
+| `gamme-25` | direct | `hard` | 3/3 | 1.9 s | 0 | -13240 | -46755 | 3/3 |
+| `gamme-25` | direct | `hard-par-poids` | 3/3 | 1.9 s | 0 | -13230 | -46425 | 3/3 |
+| `gamme-25` | Timefold | `preference` | 3/3 | 57.4 s | 0 | -26095 | -48100 | 3/3 |
+| `gamme-25` | Timefold | `both` | 3/3 | 51.1 s | 0 | -18605 | -19250 | 3/3 |
+| `gamme-25` | Timefold | `both-sans-calendrier` | 3/3 | 51.3 s | 0 | -25030 | -47250 | 3/3 |
+| `gamme-25` | Timefold | `hard` | 3/3 | 44.1 s | 0 | -18475 | -19010 | 3/3 |
+| `gamme-25` | Timefold | `hard-sans-calendrier` | 3/3 | 49.3 s | 0 | -25030 | -47260 | 3/3 |
+| `gamme-25` | Timefold | `hard-par-poids` | 3/3 | 51.4 s | 0 | -25080 | -47240 | 3/3 |
+| `gamme-28` | direct | `preference` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | direct | `both` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | direct | `hard` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | direct | `hard-par-poids` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `preference` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `both` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `both-sans-calendrier` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `hard` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `hard-sans-calendrier` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+| `gamme-28` | Timefold | `hard-par-poids` | 0/3 | never | -3 | -180 | 0 | 0/3 |
+
+What stands out:
+
+- **The direct engine**: the mandatory form costs at most 3.4% of medium on `gamme-20`, 0.5% on `scenario-complet`, nothing on `gamme-25` and the heatwave, and does better on `gamme-16`. It holds the cap wherever the grid allows, which the preference does not on `scenario-complet`, on `festival-hivernal`, nor always on `gamme-20`. Feasibility comes in under 2 s, 12 s on `festival-hivernal`, whose grid holds at six days in only one seed out of three. `hard-par-poids` and `hard` give the same plans, seed for seed.
+- **Timefold**: the calendar order is worth 6 to 8% of medium on the heatwave and `scenario-complet`, 35% on `gamme-20` and `gamme-25`, and 10 to 15% of time to feasibility. The rule merged by weight (`hard-par-poids`) falls back to `hard-sans-calendrier`, since nothing tells the comparator that the rule is mandatory.
+- `gamme-28` (infeasible by construction) is so in every variant, on both engines.
+
 ## The direct engine: two tests that keep the rules in duplicate
 
 `solver/handsearch` writes the 46 rules a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.
