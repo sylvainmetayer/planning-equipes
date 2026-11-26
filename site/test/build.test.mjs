@@ -152,6 +152,7 @@ test('"À lire aussi" never lists the home page, and the hosting page leads to t
   for (const page of pages) {
     const related = read(page).match(/<aside class="container related"[\s\S]*?<\/aside>/)?.[0] ?? '';
     assert.ok(!/href="(\/|\/en\/)"/.test(related), `${page} : lien vers l'accueil dans « À lire aussi »`);
+    assert.ok(!/<p>[^<]*\]\(\/[^<]*<\/p>/.test(read(page)), `${page} : lien Markdown affiché tel quel`);
   }
   assert.match(read(join(dist, 'heberger/index.html')), /<a class="btn" href="\/docs\/installer\/">Installer chez vous<\/a>/);
   assert.match(read(join(dist, 'en/self-hosting/index.html')), /<a class="btn" href="\/en\/docs\/install\/">Install it yourself<\/a>/);
