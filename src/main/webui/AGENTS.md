@@ -199,17 +199,24 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `?onglet=legal` and `?onglet=emails` (or the `#emails` anchor) to
   `?onglet=notifications`; `/regles?onglet=calcul` is redirected to
   `/parametres?onglet=calcul`), `/regles`
-  (« Règles du planning » — five tabs chosen by
-  `?onglet=ajustements|verrouillages|consignes|legal|qualite`: first
-  the three of the former `/consignes-solveur` (described there), the
-  adjustments the default; then
-  one dense row per hard rule — short label, article, on/off, the thresholds
-  it reads edited on the row —, the same table for the medium and soft rules
-  with their importance in three positions (faible 1 / normale 5 / forte 25,
-  `core/importance.ts`, ADR 0057); nothing is written before the tab's
-  « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
-  exact weight, history of its settings — on its own tab, the stable address
-  the Diagnostic and the reading of the score link to),
+  (« Règles du planning » — four tabs chosen by
+  `?onglet=ajustements|verrouillages|consignes|regles`: first the three of
+  the former `/consignes-solveur` (described there), the adjustments the
+  default; then « Règles » (`legal` and `qualite`, its two former tabs, still
+  read as it), in three blocks the catalogue files — `blocOfRule`, from
+  `legale` and `niveauReglable`, never from a rule's name, since rules merge:
+  « Obligations légales », read only, each row linking to Paramètres › Légal
+  where the thresholds are written (they are edited nowhere else, here or in
+  Organisation); « Politique de l'organisation », each rule with its level —
+  obligatoire, forte, normale or légère, written by `PUT
+  /api/constraints/{name}/niveau` (ADR 0106, 0111; the screen keeps the four,
+  « normale » being every rule's default) — and its exact weight in the panel,
+  offered to a preference only; and « Avancé », the rest, folded by
+  `?avance=1` (ADR 0090) and opened by a `?regle=` it holds. The switches,
+  levels and weights are written on the tab's « Enregistrer »; `?regle=<name>`
+  opens that rule's panel — long text, exact weight, history of its
+  settings —, the stable address the Diagnostic and the reading of the score
+  link to),
   `/stands` (« Stands » — three tabs chosen by `?onglet=`, the third
   `?onglet=typologies`, the former `/typologies` (described there): the table, filtered
   by `q` and by the `?typologie=` and `?emplacement=` chips, every column

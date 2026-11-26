@@ -1,40 +1,47 @@
 # Régler les règles du planning
 
-Vous ajustez ce qui décide du plan : les seuils légaux, l'importance de chaque préférence, la durée du calcul, et vous savez quand une règle est bloquée par une donnée absente.
+Vous ajustez ce qui décide du plan : les seuils, le niveau de chaque règle d'organisation, et vous savez quand une règle est bloquée par une donnée absente.
 
 ![La page Règles du planning](/images/fr/regles.webp "Règles du planning")
 
-Tout se règle dans *Règles du planning* (groupe *Planifier*), en deux onglets de réglage : *Légal* et *Qualité*. Ce sont des réglages d'expert : ils n'apparaissent qu'après un clic sur « Réglages avancés », sous la rangée d'onglets. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
+Tout se règle dans *Règles du planning* (groupe *Planifier*), dans l'onglet *Règles*, en trois blocs. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
 
-Ces seuils viennent du droit du travail : [ce que le Code du travail impose à un planning](/code-du-travail/) dit ce que le logiciel applique de lui-même et ce qu'il laisse à votre jugement.
+Ces règles viennent du droit du travail : [ce que le Code du travail impose à un planning](/code-du-travail/) dit ce que le logiciel applique de lui-même et ce qu'il laisse à votre jugement.
 
-## L'onglet Légal
+## Obligations légales
 
-Une ligne par règle obligatoire :
+Une ligne par règle imposée par la loi, en lecture seule :
 
 - son nom en clair et l'article qui la fonde ;
-- son état ;
-- les seuils qui la règlent (durées hebdomadaires, pause, fenêtre repas…), modifiables sur la ligne même ;
-- les écarts de la dernière analyse.
+- les seuils qu'elle lit, tels qu'ils sont enregistrés (durées hebdomadaires, pause, fenêtre repas…) ;
+- les écarts de la dernière analyse ;
+- un lien « Régler dans Paramètres », qui mène à *Paramètres › Légal*.
 
-Le texte complet de la règle et l'historique de ses réglages s'ouvrent dans un panneau.
+Les seuils ne se modifient qu'à cet endroit : une seule place pour les écrire, aucune double saisie. Le texte complet de la règle et l'historique de ses réglages s'ouvrent dans un panneau, au clic sur son nom.
 
-Désactiver une règle légale (mineurs, temps de travail, sécurité des mineurs) demande une confirmation, qui rappelle que vous restez l'employeur et le responsable du planning diffusé. L'écran montre en permanence ce qui est désactivé. Rien n'est désactivé à votre place.
+## Politique de l'organisation
 
-## L'onglet Qualité
+Les règles que votre organisation se donne : l'équilibre de la charge, la continuité sur un stand, la coupure repas, l'encadrement des mineurs par un majeur. Chacune a un **niveau**, que vous choisissez pour l'édition :
 
-Le même tableau pour les règles de qualité et les préférences. Chaque règle a une importance en trois positions : faible, normale, forte. Le poids exact est dans le panneau, pour qui le veut.
+- **Obligatoire** : un plan qui l'enfreint n'est pas livrable, comme pour une règle légale. Une règle obligatoire est comptée, pas pesée : l'écran n'offre alors aucun poids ;
+- **Forte**, **Normale** ou **Légère** : une préférence, que le calcul fait peser en conséquence. Le poids exact (de 1 à 500) est dans le panneau de la règle, pour qui le veut ; « Normale » est le niveau livré.
 
-« Baisser l'importance » n'est jamais le premier geste proposé pour une règle de qualité : le Diagnostic le met toujours en dernier, et il disparaît quand l'importance est déjà au plus bas.
+Rendre obligatoire une règle que l'édition ne peut pas tenir donne un plan impossible : le diagnostic des échecs durs la nomme. Désactiver une règle protégée (la coupure repas, l'encadrement des mineurs) demande une confirmation, qui rappelle que vous restez l'employeur et le responsable du planning diffusé. L'écran montre en permanence ce qui est désactivé. Rien n'est désactivé à votre place.
 
-## Les mêmes réglages, par section, dans Paramètres
+« Baisser l'importance » n'est jamais le premier geste proposé pour une règle d'organisation : le Diagnostic le met toujours en dernier, et il disparaît quand le poids est déjà au plus bas.
+
+## Avancé
+
+Le reste, replié par défaut : l'affectation, les ajustements, les verrouillages, les préférences d'agrément. Ouvrez-le par « Réglages avancés ». Une règle y est dosée en trois positions (faible, normale, forte) et peut être éteinte. Un lien vers une règle de ce bloc l'ouvre tout seul.
+
+## Les seuils, dans Paramètres
 
 *Paramètres* range les réglages de l'édition en quatre sections, chacune un onglet : *Notifications* (les rappels et relances automatiques), *Légal*, *Organisation* et *Calcul*. Les trois dernières sont des réglages d'expert, derrière « Réglages avancés ».
 
-- *Légal* et *Organisation* listent, sur un seul formulaire, tous les seuils que les onglets *Légal* et *Qualité* de *Règles du planning* éditent ligne à ligne : plafonds hebdomadaires, pause, coupure repas, jours d'affilée, trajets, services tardifs. Les deux endroits écrivent les mêmes valeurs ; rien ne s'écrit avant « Enregistrer ».
+- *Légal* et *Organisation* listent, sur un seul formulaire, tous les seuils que les règles lisent : plafonds hebdomadaires, pause, coupure repas, jours d'affilée, trajets, services tardifs. Ce sont les seuls endroits où ils s'écrivent ; chaque ligne de *Règles du planning* y renvoie. Rien ne s'écrit avant « Enregistrer ».
 - *Calcul* affiche la durée du calcul et l'arrêt quand plus rien ne progresse, sans pouvoir les modifier : ils sont réglés pour toute l'instance (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)). Il porte aussi l'e-mail de fin de résolution, le début de la soirée, la seule soirée de l'application, et la typologie polyvalente.
 
-L'ancien onglet *Calcul* de *Règles du planning* et son adresse (`/regles?onglet=calcul`) mènent à cette section.
+Les anciens onglets *Légal* et *Qualité* de *Règles du planning* mènent à l'onglet *Règles*, l'ancien onglet *Calcul* (`/regles?onglet=calcul`) à *Paramètres › Calcul*.
 
 ## Quand une règle ne peut pas s'améliorer : le plancher
 
@@ -48,7 +55,7 @@ Chaque changement de poids ou d'activation d'une règle est gardé avec ses vale
 
 ## Pauses, jours d'affilée et trajets
 
-Trois règles du calcul se règlent directement sur leur ligne.
+Trois règles du calcul ont leurs seuils dans *Paramètres › Organisation*.
 
 ### La pause : un trou ou un relais
 
@@ -63,13 +70,13 @@ En contrepartie, la pause est du repos, donc **déduite partout** : plafonds quo
 
 ### Les jours d'affilée
 
-La règle limite les jours travaillés consécutifs : **huit par défaut, et le nombre se règle** sur la ligne de la règle. Le calcul pénalise les jours en trop sans bloquer, aucun texte n'imposant un décompte glissant. Une organisation qui veut un plafond bloquant l'allume pour son édition depuis la même page.
+La règle limite les jours travaillés consécutifs : **huit par défaut, et le nombre se règle** dans *Paramètres › Organisation*. Le calcul pénalise les jours en trop sans bloquer, aucun texte n'imposant un décompte glissant. Une organisation qui veut un plafond bloquant l'allume pour son édition depuis la même page.
 
 Le seuil vaut mieux que le dosage : sur une grille qui réclame presque tout le monde tous les jours, un jour de plus ou de moins décide si un planning sans écart existe, là où aucun poids ne le peut.
 
 ### Le temps de trajet entre deux postes
 
-Deux postes d'une même personne sur deux emplacements éloignés doivent laisser le temps d'aller de l'un à l'autre à pied. Le temps de marche se calcule à partir de la distance, d'un facteur de détour et d'une vitesse de marche, **réglables sur la ligne de la règle**, avec une tolérance. Le calcul pénalise chaque minute qui manque au battement.
+Deux postes d'une même personne sur deux emplacements éloignés doivent laisser le temps d'aller de l'un à l'autre à pied. Le temps de marche se calcule à partir de la distance, d'un facteur de détour et d'une vitesse de marche, **réglables dans *Paramètres › Organisation***, avec une tolérance. Le calcul pénalise chaque minute qui manque au battement.
 
 Le Rail et la timeline marquent d'un chevron rouge un enchaînement trop serré (« 20 min à pied, 10 min de battement »), ou un trajet pris sur la pause. La page Problèmes les liste, avec le lien vers le Rail du jour. La fiche d'un emplacement donne le temps de marche vers chacun des autres.
 

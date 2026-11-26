@@ -43,6 +43,19 @@ score hors calcul et la volumétrie du Solveur ; les onglets Instance,
 Historique et MCP de Paramètres ; les couches et la légende des Horaires des
 stands ; les filtres Emplacement et Typologie du Planning.
 
+## Complément : un bloc replié dans un onglet (Règles du planning)
+
+Les onglets Légal et Qualité de Règles du planning ont fusionné en un onglet
+« Règles » à trois blocs : les obligations légales (lecture seule, leurs seuils
+se règlent dans Paramètres), la politique de l'organisation (les règles dont
+l'édition choisit le niveau) et « Avancé », le reste, **replié** derrière le même
+bouton. Le repli n'est plus un onglet mais un bloc du premier onglet de règles ;
+le principe est inchangé : fermé par défaut, ouvert par `?avance=1`, et une règle
+que l'adresse nomme (`?regle=`) ouvre le bloc qui la tient — une règle demandée
+n'est jamais cachée. Le bloc d'une règle vient du catalogue (`legale`,
+`niveauReglable`), jamais d'une liste de noms : une fusion de règles ne déplace
+rien à l'écran.
+
 ## Conséquences
 
 - La règle « un écran rare n'est jamais caché » est abandonnée au profit de
