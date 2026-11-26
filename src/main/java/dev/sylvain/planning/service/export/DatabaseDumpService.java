@@ -120,9 +120,6 @@ public class DatabaseDumpService {
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",
-            // The history of those two tables, values included: the reason a
-            // dosage is what it is outlives the ninety days of the journal.
-            "ponderation_contrainte_historique",
             // Settings, alongside the three already above: an edition's
             // collection window, exchange fair and notification schedule shape
             // what it does as surely as its legal parameters do.
@@ -267,6 +264,10 @@ public class DatabaseDumpService {
      *       the two tables {@code mesure_edition} replaced, kept by V148 and
      *       dropped in 5.0: archives nothing reads, the measures being dumped
      *       from {@code mesure_edition} now.</li>
+     *   <li>{@code ponderation_contrainte_historique_avant_4_0} — the weight
+     *       history the action journal replaced, renamed by V158 and dropped
+     *       in 5.0: an archive nothing reads, and not migrated, since the
+     *       journal keeps no value.</li>
      *   <li>{@code gel_referentiel} — the 3.x per-family freeze, replaced by
      *       the phase of the edition (ADR 0115) and dropped in 5.0: an archive
      *       nothing reads. The phase travels with the {@code edition} row, so a
@@ -302,6 +303,7 @@ public class DatabaseDumpService {
             "solve_budget_avant_4_0",
             "kpi_historique_avant_4_0",
             "kpi_realise_avant_4_0",
+            "ponderation_contrainte_historique_avant_4_0",
             "gel_referentiel");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
@@ -333,9 +335,7 @@ public class DatabaseDumpService {
             // BIGSERIAL since V119.
             "envoi_mail",
             // BIGSERIAL since V111.
-            "signalement_absence",
-            // BIGSERIAL since V103.
-            "ponderation_contrainte_historique");
+            "signalement_absence");
 
     /**
      * Advances each identity/serial sequence past the highest id now in its
