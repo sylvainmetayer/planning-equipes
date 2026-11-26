@@ -319,6 +319,12 @@ public class ConsigneRepository {
     public void replacePlages(Connection connection, LocalDate date, Map<String, List<PlageStand>> plagesParStand)
             throws SQLException {
         removePlages(connection, date);
+        insertPlages(connection, date, plagesParStand);
+    }
+
+    /** Adds the consigne's marked plages of {@code date}, nothing removed: a stand created under a consigne. */
+    public void insertPlages(Connection connection, LocalDate date, Map<String, List<PlageStand>> plagesParStand)
+            throws SQLException {
         try (PreparedStatement fermeture = scope.prepareScoped(connection, """
                         INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
                         heure_debut, heure_fin, motif, consigne)

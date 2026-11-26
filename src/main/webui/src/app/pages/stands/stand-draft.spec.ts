@@ -255,6 +255,28 @@ describe('window effectif', () => {
   });
 });
 
+describe('horairesCopiedFrom and the consigne', () => {
+  it("never copies a consigne's plages and keeps the target's own", () => {
+    const source: Stand = {
+      ...modelStand(),
+      horaires: [],
+      indisponibilites: [],
+      ouvertures: [plage({ date: '2026-07-10' }), plage({ date: '2026-07-11', consigne: true })],
+    };
+    const cible = {
+      ouvertures: [plage({ date: '2026-07-11', consigne: true, motif: 'cible' })],
+      indisponibilites: [],
+    };
+
+    const copie = horairesCopiedFrom(source, cible);
+
+    expect(copie.ouvertures.map((o) => [o.date, o.consigne ?? false, o.motif])).toEqual([
+      ['2026-07-10', false, null],
+      ['2026-07-11', true, 'cible'],
+    ]);
+  });
+});
+
 describe('conflitOuvertureFermeture', () => {
   it('refuses the same day being both closed and opened', () => {
     const invalide = draft({

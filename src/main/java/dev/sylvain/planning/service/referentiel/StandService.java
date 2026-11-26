@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HorairesRecurrents;
@@ -9,6 +10,8 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.consigne.ConsignePlages;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -41,6 +44,8 @@ public class StandService {
 
     private final SolverJobService solverJobs;
 
+    private final ConsigneRepository consignes;
+
     private final IdGenerator ids;
 
     private final JdbcEditionScope scope;
@@ -54,6 +59,7 @@ public class StandService {
             TypologieService typologies,
             ReferenceDataChangeTracker changeTracker,
             SolverJobService solverJobs,
+            ConsigneRepository consignes,
             IdGenerator ids,
             JdbcEditionScope scope,
             GelReferentielService gel) {
@@ -62,6 +68,7 @@ public class StandService {
         this.typologies = typologies;
         this.changeTracker = changeTracker;
         this.solverJobs = solverJobs;
+        this.consignes = consignes;
         this.ids = ids;
         this.scope = scope;
         this.gel = gel;
@@ -142,6 +149,7 @@ public class StandService {
             Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, THE_STAND);
             stand.setId(ids.next(connection, IdGenerator.Kind.STAND));
             repository.saveStand(connection, stand, true);
+            layConsignes(connection, stand);
         });
         changeTracker.markModified();
         return stand;
@@ -163,8 +171,24 @@ public class StandService {
             typologies.validateIds(connection, stand.getTypologiesProposees());
         }
         repository.saveStand(connection, stand, true);
+        layConsignes(connection, stand);
         // Marked by the caller once committed, see TypologieService.create.
         return stand;
+    }
+
+    /**
+     * A stand created under a consigne gets its plages, as the stands present when it was laid did
+     * (ADR 0125): the band closes every stand, the new one included.
+     */
+    private void layConsignes(Connection connection, Stand stand) throws SQLException {
+        List<ConsigneEdition> posees = consignes.list();
+        if (posees.isEmpty()) {
+            return;
+        }
+        List<Creneau> grille = creneaux.list();
+        for (ConsigneEdition consigne : posees) {
+            consignes.insertPlages(connection, consigne.date(), ConsignePlages.of(List.of(stand), consigne, grille));
+        }
     }
 
     /**

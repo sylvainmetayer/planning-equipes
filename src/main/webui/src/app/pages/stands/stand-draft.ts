@@ -207,12 +207,28 @@ export type HorairesDraft = Pick<StandDraft, 'horaires' | 'ouvertures' | 'indisp
  * these are new rows of the stand being edited. Deep-copied, like `toDraft`,
  * so editing the draft never writes through to the store's objects.
  */
-export function horairesCopiedFrom(source: Stand): HorairesDraft {
+export function horairesCopiedFrom(
+  source: Stand,
+  cible?: Pick<Stand, 'ouvertures' | 'indisponibilites'>,
+): HorairesDraft {
   const copie = toDraft(source);
+  // A consigne's plages belong to the stand it laid them on: never copied, and the target keeps its own.
+  const siennes = <T extends { consigne?: boolean }>(plages: readonly T[] | undefined): T[] =>
+    (plages ?? []).filter((plage) => plage.consigne);
   return {
     horaires: copie.horaires.map((horaire) => ({ ...horaire, id: null })),
-    ouvertures: copie.ouvertures.map((ouverture) => ({ ...ouverture, id: null })),
-    indisponibilites: copie.indisponibilites.map((indispo) => ({ ...indispo, id: null })),
+    ouvertures: [
+      ...copie.ouvertures
+        .filter((o) => !o.consigne)
+        .map((ouverture) => ({ ...ouverture, id: null })),
+      ...siennes(cible?.ouvertures),
+    ],
+    indisponibilites: [
+      ...copie.indisponibilites
+        .filter((i) => !i.consigne)
+        .map((indispo) => ({ ...indispo, id: null })),
+      ...siennes(cible?.indisponibilites),
+    ],
   };
 }
 
@@ -232,8 +248,8 @@ export function horairesCopiedFrom(source: Stand): HorairesDraft {
 export function hasHorairesToCopy(stand: Stand): boolean {
   return (
     (stand.horaires ?? []).length > 0 ||
-    (stand.ouvertures ?? []).length > 0 ||
-    (stand.indisponibilites ?? []).length > 0
+    (stand.ouvertures ?? []).some((plage) => !plage.consigne) ||
+    (stand.indisponibilites ?? []).some((plage) => !plage.consigne)
   );
 }
 

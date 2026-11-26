@@ -112,7 +112,10 @@ final class StandValidator {
                                 + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
                                 + "entrez-en deux");
             }
-            checkEffectifFenetre(ouverture.getEffectif(), "une ouverture", stand);
+            // A consigne's opening carries the headcount it inherited when laid: laying it again is its own check.
+            if (!ouverture.isConsigne()) {
+                checkEffectifFenetre(ouverture.getEffectif(), "une ouverture", stand);
+            }
         }
     }
 

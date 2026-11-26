@@ -543,6 +543,35 @@ class ConsigneResourceTest {
         assertThat(plages(stand(hommeJeu), "indisponibilites")).isEmpty();
     }
 
+    /** The band closes every stand, a stand created after the consigne was laid included. */
+    @Test
+    void aStandCreatedUnderAConsigneGetsItsBand() {
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(demande(List.of(ouverture(standStrat))))
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+        Map<String, Object> nouveau = new HashMap<>();
+        nouveau.put("nom", "Stand tardif");
+        nouveau.put("typologiesProposees", stand(standStrat).get("typologiesProposees"));
+        nouveau.put("effectifMin", 1);
+        nouveau.put("effectifMax", 1);
+        String id = given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(nouveau)
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+
+        assertThat(plages(stand(id), "indisponibilites"))
+                .containsExactlyInAnyOrder(JOUR + " 12:00:00-16:00:00 true", JOUR + " 18:00:00-20:00:00 true");
+    }
+
     /** A form opened before the consigne is laid would write the day back without it: its stamp is refused. */
     @Test
     void aStandFormOpenedBeforeTheConsigneIsRefused() {

@@ -27,9 +27,6 @@ ALTER TABLE stand_indisponibilite ADD CONSTRAINT stand_indisponibilite_une_origi
 -- Chaque stand de chaque date sous consigne, lu sur ses propres plages avant toute écriture.
 CREATE TEMP TABLE consigne_stand ON COMMIT DROP AS
 SELECT c.edition_id, c.date_jour, s.id AS stand_id, s.effectif_min, c.fermeture_debut, c.fermeture_fin,
-       EXISTS (SELECT 1 FROM stand_ouverture o
-               WHERE o.edition_id = c.edition_id AND o.stand_id = s.id AND o.date_ouverture = c.date_jour)
-           AS declare_ouvertures,
        (SELECT max(COALESCE(o.effectif, s.effectif_min)) FROM stand_ouverture o
         WHERE o.edition_id = c.edition_id AND o.stand_id = s.id AND o.date_ouverture = c.date_jour
           AND o.heure_debut < COALESCE(c.fermeture_fin, TIME '24:00')

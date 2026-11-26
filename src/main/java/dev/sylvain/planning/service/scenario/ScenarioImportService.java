@@ -429,6 +429,7 @@ public class ScenarioImportService {
             }
             ConsigneEdition posee = entree.consigne().withCreneauxAjoutes(ids);
             // A file carries the consigne, never its plages: they are laid again on the stands it imported.
+            // Read after the créneaux above are created: the closures over them need their hours.
             consigneRepository.save(posee, ConsignePlages.of(stands, posee, referenceDataService.listCreneaux()));
         }
     }

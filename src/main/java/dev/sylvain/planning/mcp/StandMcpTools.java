@@ -537,7 +537,8 @@ public class StandMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Stand stand = findStand(standId);
         LocalDate jour = McpArgs.date(date, "date");
-        stand.getPlages().removeIf(plage -> jour.equals(plage.getDate()));
+        // A consigne's plages are not the stand's own hours: lifting the consigne removes them, never this tool.
+        stand.getPlages().removeIf(plage -> jour.equals(plage.getDate()) && !plage.isConsigne());
         return written(referenceDataService.writeStand(standId, stand));
     }
 
