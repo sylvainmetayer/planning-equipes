@@ -39,11 +39,18 @@ import { SessionStore } from '../../core/session.store';
 import { ContactOrganisationCard } from './contact-organisation-card';
 import { ReglageResponsablesCard } from './reglage-responsables-card';
 import { GuichetsCard } from './guichets-card';
+import { ParametresCalcul } from './parametres-calcul';
 import { ParametresNotificationsPanel } from './parametres-notifications';
+import { ParametresSection } from './parametres-section';
 import { ParametresMeteoPanel } from './parametres-meteo';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { ONGLETS_ADMIN, OngletParametres, readOngletParametres } from './parametres';
+import {
+  ONGLETS_ADMIN,
+  ONGLETS_AVANCES,
+  OngletParametres,
+  readOngletParametres,
+} from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
 import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
@@ -51,18 +58,19 @@ import { WebhooksCard } from './webhooks-card';
 import { TODAY_ANCHOR } from '../../core/date-mock.service';
 
 /**
- * The settings page, three tabs carried by `?onglet=` (issue #720), the same
+ * The settings page, tabs carried by `?onglet=` (issue #720), the same
  * mechanics as Diagnostic and Imports — a toggle group, the default tab
- * writing nothing:
+ * writing nothing. Four of them are the edition's parameter sections, one per
+ * `/api/parametres/{section}`: « Notifications », and, under « Réglages
+ * avancés », « Légal », « Organisation » and « Calcul ». The others:
  *
  * - « Édition » (default) — what the `X-Edition-Id` partition scopes and no
  *   rule reads: the edition's name, the freeze of its referential (the only
  *   place it is edited), its guichets — the collection, the foire, the
- *   covoiturage, each opened and closed here with its dates —, the e-mails it
- *   sends of itself (`#emails`), and the organisation's contact shown in the
- *   espace animateur. What decides the plan — legal parameters, quality
- *   thresholds, weights, the solve budget, the polyvalent typologie — is « Règles
- *   du planning ».
+ *   covoiturage, each opened and closed here with its dates —, the weather
+ *   alert, and the organisation's contact shown in the
+ *   espace animateur. How much a rule weighs, and the adjustments, locks and
+ *   consignes the next solve respects, are « Règles du planning ».
  * - « Affichage mural » — the links that open the control room's television
  *   without an admin session (ADR 0053): per edition, created and revoked here.
  * - « Instance » — what the operator configured and what holds for the whole
@@ -98,7 +106,9 @@ import { TODAY_ANCHOR } from '../../core/date-mock.service';
     RouterLink,
     FeasibilityBanner,
     OutputPanel,
+    ParametresCalcul,
     ParametresNotificationsPanel,
+    ParametresSection,
     ParametresMeteoPanel,
     GelReferentielCard,
     HorlogeSimuleeCard,
@@ -130,6 +140,13 @@ export class ParametresPage implements OnInit {
   protected readonly session = inject(SessionStore);
 
   protected readonly onglet = signal<OngletParametres>('edition');
+
+  /** The tab on screen is one of the expert's (or of the instance's): it stays offered while open, whatever the toggle says. */
+  protected readonly isAdvancedTab = computed(
+    () =>
+      ONGLETS_AVANCES.includes(this.onglet()) ||
+      ['instance', 'historique', 'mcp'].includes(this.onglet()),
+  );
 
   /* ---------------------------- The edition's name --------------------------- */
 
@@ -182,8 +199,7 @@ export class ParametresPage implements OnInit {
         : { onglet: this.onglet() === 'edition' ? null : this.onglet() },
     );
     void this.problemes.reloadFeasibility();
-    // `#guichets`, `#emails`, `#contact`: the card a link named — the former
-    // `?onglet=emails` lands on its section. Programmatic, like the help's
+    // `#guichets`, `#contact`, `#meteo`: the card a link named. Programmatic, like the help's
     // summary: what scrolls in this shell is the sidenav content, and the
     // `<base href>` would resolve a bare fragment against the root.
     const ancre = this.route.snapshot.fragment;

@@ -74,6 +74,10 @@ Absente, la section est générée à partir des stands et des créneaux import�
 
 Présente, elle est reprise telle quelle, y compris vide, ce qui permet un staffing hors règle ; aucun scénario livré ne s'en sert. Une liste écrite répète ce que `effectifMin` dit déjà et fige la grille contre toute modification ultérieure d'un stand. L'export ne l'écrit donc jamais.
 
+## `plan` : le planning d'une copie avant vidage
+
+Dernière section, facultative : les sièges pourvus (`affectations`) et les verrous (`verrous`) de l'édition, avec les identifiants du fichier ; un créneau s'y nomme par sa date et ses heures. Seule la copie rangée avant un vidage l'écrit ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)) : l'export de Fichiers n'en porte pas, et un fichier sans cette section se lit comme avant (le format reste en version 3). Seule la restauration de cette copie applique la section : elle remet les sièges et les verrous sur le référentiel qu'elle vient d'écrire, retrouvés par code puis nom pour un stand, adresse puis prénom et nom pour un animateur, jour et heures pour un créneau, et liste ce qui n'est pas retrouvé. Un import ordinaire (Fichiers, `importer_scenario_yaml`) l'ignore, avec un avertissement dans le rapport. Détail de la restauration : [Restaurer une édition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
+
 ## `contraintes` : en bloc, jamais en fusion
 
 Une règle que la section ne cite pas redevient active, à son poids par défaut. Un scénario qui épingle son réglage décrit le problème contre lequel il a été vérifié. Une fusion laisserait en place les restes de l'édition qui importe, et le même fichier résoudrait un problème différent selon l'endroit où il atterrit. Absente, la section ne touche à rien.

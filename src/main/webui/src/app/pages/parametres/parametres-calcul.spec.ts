@@ -1,4 +1,4 @@
-// « Règles › Calcul »: one form, one « Enregistrer ». The instance's solve
+// « Paramètres › Calcul »: one form, one « Enregistrer ». The instance's solve
 // budget is shown and never written; what is pinned here is that nothing is
 // written before the button, and that each record is written only when
 // something of it changed.
@@ -18,7 +18,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { seedStore } from '../../core/testing/seed-store';
-import { ReglesCalcul } from './regles-calcul';
+import { ParametresCalcul } from './parametres-calcul';
 
 const INSTANCE: SolverBudgetBounds = {
   defaultSecondsLimit: 900,
@@ -44,14 +44,18 @@ function typologie(id: string, polyvalent = false): TypologieItem {
   return { id, label: id, polyvalent } as TypologieItem;
 }
 
-async function create(typologies: TypologieItem[] = []): Promise<ReglesCalcul> {
+/** What `/api/typologies` answers: the page re-reads them when it opens. */
+let served: TypologieItem[] = [];
+
+async function create(typologies: TypologieItem[] = []): Promise<ParametresCalcul> {
+  served = typologies;
   seedStore(TestBed.inject(ReferenceDataStore), 'typologies', typologies);
-  const fixture = TestBed.createComponent(ReglesCalcul);
+  const fixture = TestBed.createComponent(ParametresCalcul);
   await fixture.whenStable();
   return fixture.componentInstance;
 }
 
-describe('ReglesCalcul', () => {
+describe('ParametresCalcul', () => {
   const mail = signal(false);
   const solverSettings = {
     refresh: vi.fn(() => Promise.resolve(undefined)),
@@ -81,7 +85,7 @@ describe('ReglesCalcul', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
+        { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve(served)) } },
         { provide: SolverSettingsService, useValue: solverSettings },
         { provide: ConstraintsApi, useValue: constraintsApi },
         {

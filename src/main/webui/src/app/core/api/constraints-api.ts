@@ -1,4 +1,4 @@
-// The `/api/constraints/*`, `/api/parametres-legaux` and `/api/parametres-qualite` endpoints — see
+// The `/api/constraints/*`, `/api/parametres/legal` and `/api/parametres/organisation` endpoints — see
 // planning-api.ts for why the paths live here and not in the pages.
 
 import { Injectable, inject } from '@angular/core';
@@ -40,18 +40,18 @@ export class ConstraintsApi {
   }
 
   legalParameters(): Promise<ParametresLegaux> {
-    return this.api.get<ParametresLegaux>('/api/parametres-legaux');
+    return this.api.get<ParametresLegaux>('/api/parametres/legal');
   }
 
   saveLegalParameters(parametres: ParametresLegaux): Promise<ParametresLegaux> {
-    return this.api.put<ParametresLegaux>('/api/parametres-legaux', parametres);
+    return this.api.put<ParametresLegaux>('/api/parametres/legal', parametres);
   }
 
   qualityParameters(): Promise<ParametresQualite> {
-    return this.api.get<ParametresQualite>('/api/parametres-qualite');
+    return this.api.get<ParametresQualite>('/api/parametres/organisation');
   }
 
   saveQualityParameters(parametres: ParametresQualite): Promise<ParametresQualite> {
-    return this.api.put<ParametresQualite>('/api/parametres-qualite', parametres);
+    return this.api.put<ParametresQualite>('/api/parametres/organisation', parametres);
   }
 }

@@ -1064,7 +1064,7 @@ export interface ConstraintToggle {
 }
 
 /**
- * `/api/parametres-qualite`: the quality ceilings of the edition. Stored per
+ * `/api/parametres/organisation`: the quality ceilings of the edition. Stored per
  * edition since issue #591; what the server's own configuration carries is the
  * default an edition starts from.
  */
@@ -1609,7 +1609,7 @@ export interface CellulePivot {
 }
 
 /**
- * `/api/parametres-legaux`: admin-configurable legal parameters, consumed by
+ * `/api/parametres/legal`: admin-configurable legal parameters, consumed by
  * the `dureeHebdomadaireMax` and `dureeHebdomadaireMaxMineur` hard constraints.
  *
  * Both are ordre public ceilings, refused above their legal maximum by the
@@ -4781,7 +4781,7 @@ export interface ContactOrganisation {
 }
 
 /**
- * Per-edition delays of the scheduled notifications (`/api/parametres-notifications`).
+ * Per-edition delays of the scheduled notifications (`/api/parametres/notifications`).
  * Whether anything leaves is not decided here: only the active edition sends.
  */
 export interface ParametresNotifications {

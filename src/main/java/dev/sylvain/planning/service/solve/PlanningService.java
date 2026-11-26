@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.scenario.dto.PlanDto;
 import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
@@ -251,7 +252,7 @@ public class PlanningService {
      * case the section exists for.</p>
      */
     public String exportScenarioYaml() {
-        return scenarioYaml(true);
+        return scenarioYaml(true, null);
     }
 
     /**
@@ -259,13 +260,13 @@ public class PlanningService {
      * its animateurs, stands or timeslots is written all the same, the format
      * reads such a file back. What the backup taken before a wipe
      * ({@link WipeBackupService}) needs — an edition half built is still
-     * something to lose.
+     * something to lose — and, with it, the plan as a last section.
      */
-    String scenarioYaml() {
-        return scenarioYaml(false);
+    String scenarioYaml(PlanDto plan) {
+        return scenarioYaml(false, plan);
     }
 
-    private String scenarioYaml(boolean refuseIncomplete) {
+    private String scenarioYaml(boolean refuseIncomplete, PlanDto plan) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         // Raw stands, so the file gets the recurring horaires as rules rather
         // than the few hundred dated windows they expand to — the resolution
@@ -283,7 +284,7 @@ public class PlanningService {
         // absent, the import rebuilds it from the stands and créneaux with the
         // same builder a solve uses, so writing it only repeated the stands and
         // pinned the grid against their next change.
-        return ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+        ScenarioYamlWriter.ScenarioExport export = new ScenarioYamlWriter.ScenarioExport(
                 animateurs,
                 stands,
                 creneaux,
@@ -299,7 +300,10 @@ public class PlanningService {
                 referenceDataService.calendrierJourneesTypes(),
                 referenceDataService.listConsignes(),
                 referenceDataService.listPrereglagesConsigne(),
-                referenceDataService.getNiveauxObligatoires()));
+                referenceDataService.getNiveauxObligatoires());
+        return plan == null
+                ? ScenarioYamlWriter.buildScenarioYaml(export)
+                : ScenarioYamlWriter.buildScenarioYaml(export, plan);
     }
 
     // --- Scenario reading: façade over ScenarioYamlReader -------------------

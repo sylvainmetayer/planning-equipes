@@ -34,10 +34,10 @@ function rule(overrides: Partial<ConstraintView>): ConstraintView {
 }
 
 describe('regles', () => {
-  it('reads the three tabs, and nothing else', () => {
+  it('reads the two rule tabs, and nothing else', () => {
     expect(readOngletRegles('legal')).toBe('legal');
     expect(readOngletRegles('qualite')).toBe('qualite');
-    expect(readOngletRegles('calcul')).toBe('calcul');
+    expect(readOngletRegles('calcul')).toBeNull();
     expect(readOngletRegles('legaux')).toBeNull();
     expect(readOngletRegles(null)).toBeNull();
   });

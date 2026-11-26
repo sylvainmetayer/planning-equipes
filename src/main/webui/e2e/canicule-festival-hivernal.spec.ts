@@ -221,7 +221,7 @@ async function creneaux(): Promise<Creneau[]> {
 }
 
 async function legalParameters(): Promise<Record<string, unknown>> {
-  const response = await admin.get('/api/parametres-legaux');
+  const response = await admin.get('/api/parametres/legal');
   expect(response.ok()).toBe(true);
   return (await response.json()) as Record<string, unknown>;
 }

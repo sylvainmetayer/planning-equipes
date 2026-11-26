@@ -78,6 +78,10 @@ When absent, the section is generated from the imported stands and timeslots, by
 
 When present, it is taken as is, even if empty, which allows off-rule staffing; no shipped scenario uses it. A written list repeats what `effectifMin` already says and freezes the grid against any later change of a stand. The export therefore never writes it.
 
+## `plan`: the schedule of a copy before a wipe
+
+Last section, optional: the seats filled (`affectations`) and the locks (`verrous`) of the edition, with the file's identifiers; a timeslot is named there by its date and hours. Only the copy stored before a wipe writes it ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)): the Files export does not carry one, and a file without this section is read as before (the format stays at version 3). Only the restore of that copy applies the section: it puts the seats and locks back on the reference data it has just written, found by code then name for a stand, address then first and last name for a staff member, day and hours for a timeslot, and lists what is not found. An ordinary import (Files, `importer_scenario_yaml`) ignores it, with a warning in the report. Restore details: [Restore an edition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
+
 ## `contraintes`: as a block, never merged
 
 A rule the section does not cite becomes active again, at its default weight. A scenario that pins its setting describes the problem against which it was verified. A merge would leave in place the remains of the importing edition, and the same file would solve a different problem depending on where it lands. When absent, the section touches nothing.
