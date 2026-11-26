@@ -279,12 +279,15 @@ public class ParametresService {
      */
     public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau, WeightChangeOrigin origin) {
         setNiveauObligatoire(nom, niveau.obligatoire(), origin);
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        boolean shippedHard = definition.niveau() == ConstraintCatalog.Niveau.HARD;
         if (!niveau.obligatoire()) {
-            ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
-            int defaut = definition.niveau() == ConstraintCatalog.Niveau.HARD
-                    ? ConstraintCatalog.POIDS_NORMAL
-                    : configuredWeight(nom);
+            int defaut = shippedHard ? ConstraintCatalog.POIDS_NORMAL : configuredWeight(nom);
             setConstraintWeight(nom, niveau.poids() == defaut ? null : niveau.poids(), origin);
+        } else if (shippedHard) {
+            // Back on its own hard level, a stored weight applies again as a hard one: the preference
+            // weight the way out wrote would make one breach weigh 25 legal ones. Obligatoire is hard 1.
+            setConstraintWeight(nom, null, origin);
         }
     }
 

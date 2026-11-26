@@ -59,7 +59,7 @@ Un fichier écrit par l'application commence par `schemaVersion: 4` (`ScenarioBi
 
 ## `contraintes.niveaux` : le niveau choisi par règle
 
-Depuis la version 4 du format, la section `contraintes` porte aussi `niveaux`, le niveau que l'édition a choisi pour une règle d'organisation : `OBLIGATOIRE`, `PREFERENCE`, ou une position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) qui donne en plus le poids de cette position (25, 5, 1) quand `poids` ne nomme pas la règle. Une règle que le fichier ne nomme pas revient au niveau du catalogue. Une règle qui n'a pas de niveau à choisir (légale, d'affectation, ad hoc, verrou, préférence souple) est **refusée par son nom**. Un fichier 3.x ou v3 n'en porte pas, et se lit comme avant : le maillon 3 → 4 ne change rien ([ADR 0108](repo:docs/decisions/0108-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+Depuis la version 4 du format, la section `contraintes` porte aussi `niveaux`, le niveau que l'édition a choisi pour une règle d'organisation : `OBLIGATOIRE`, `PREFERENCE`, ou une position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) qui donne en plus le poids de cette position (25, 5, 1) quand `poids` ne nomme pas la règle. Une règle que le fichier ne nomme pas revient au niveau du catalogue. Une règle qui n'a pas de niveau à choisir (légale, d'affectation, ad hoc, verrou, préférence souple) est **refusée par son nom**. Un fichier 3.x ou v3 n'en porte pas, et se lit comme avant : le maillon 3 → 4 ne change rien ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
 
 ```yaml
 contraintes:

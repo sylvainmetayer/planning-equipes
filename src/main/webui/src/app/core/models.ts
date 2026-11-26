@@ -1477,7 +1477,7 @@ export interface ConstraintView {
    */
   dosable: boolean;
   /**
-   * The edition chooses this rule's level (ADR 0106, 0108): an organisation
+   * The edition chooses this rule's level (ADR 0106, 0111): an organisation
    * rule — never a legal, assignment, ad hoc or lock rule, nor a soft
    * preference. `niveau` stays the catalogue's own.
    */

@@ -1,8 +1,8 @@
-# 0108 — Le niveau d'une règle d'organisation est le niveau de son poids, stocké avec le poids
+# 0111 — Le niveau d'une règle d'organisation est le niveau de son poids, stocké avec le poids
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
-- **Portée** : catalogue des règles, calcul des poids, moteur direct, schéma (migration `V145`), scénario YAML (`schemaVersion: 4`), API et outils MCP
+- **Portée** : catalogue des règles, calcul des poids, moteur direct, schéma (migration `V146`), scénario YAML (`schemaVersion: 4`), API et outils MCP
 - **Applique** : [0106](0106-obligatoire-est-un-niveau-reglable-par-edition.md) (option A, la vérification qu'elle laissait)
 - **Prolonge** : [0057](0057-importance-d-une-regle-en-trois-positions.md)
 
@@ -38,15 +38,22 @@ déclarations partageant un corps.
 4. **Le poids suit le niveau.** Obligatoire compte un point dur par écart (le poids
    dur, 1) : le poids que l'édition avait stocké reste stocké pour le retour, sans
    s'appliquer. Une préférence pèse son poids stocké, ou la position « normale »
-   (5) pour une règle que le catalogue livre dure. Les trois positions de [0057](0057-importance-d-une-regle-en-trois-positions.md)
+   (5) pour une règle que le catalogue livre dure. Pour ces deux règles livrées
+   dures (coupure repas, encadrement des mineurs), un poids dur stocké avant la
+   4.0 continue de s'appliquer tant que le niveau n'est pas touché, pour qu'aucun
+   score ne change ; le geste « obligatoire » le retire, sans quoi le poids de
+   préférence écrit à l'aller ferait peser un écart comme vingt-cinq écarts légaux. Les trois positions de [0057](0057-importance-d-une-regle-en-trois-positions.md)
    (forte 25, normale 5, légère 1) sont la lecture d'un poids de préférence : l'API
    écrit un poids en choisissant une position, et lit un poids quelconque comme
-   la position la plus proche.
+   la position la plus proche. L'API a donc quatre valeurs (`OBLIGATOIRE`,
+   `PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) : « normale »
+   est le poids par défaut de chaque règle, et la retirer reclasserait toutes
+   les éditions ; l'écran peut n'en montrer que trois.
 5. **Rien ne change à la migration.** La colonne naît `NULL` partout : chaque
    édition garde son niveau et son poids, donc ses scores. Aucune donnée n'est
    réécrite ni supprimée, il n'y a rien à archiver.
 6. **Les lectures suivent le niveau appliqué.** Une règle est « dure » dans un
-   diagnostic quand ses points sont au niveau dur (`ConstraintCatalog.estDur`),
+   diagnostic quand ses points sont au niveau dur (`ConstraintCatalog.isHardIn`),
    pas quand le catalogue la range là : le détail des écarts, la lecture du score
    et les listes de blocages suivent donc le choix de l'édition. Le dosage de
    chaque résolution garde les niveaux déplacés (`Dosage.levels`).

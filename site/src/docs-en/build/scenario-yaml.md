@@ -63,7 +63,7 @@ A file written by the application starts with `schemaVersion: 4` (`ScenarioBinde
 
 ## `contraintes.niveaux`: the level chosen per rule
 
-From format version 4, the `contraintes` section also carries `niveaux`, the level the edition chose for an organisation rule: `OBLIGATOIRE` (mandatory), `PREFERENCE`, or a position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) which also gives the weight of that position (25, 5, 1) when `poids` does not name the rule. A rule the file does not name goes back to the catalogue's level. A rule with no level to choose (legal, assignment, ad hoc, lock, soft preference) is **refused by name**. A 3.x or v3 file carries none and reads as before: the 3 → 4 link changes nothing ([ADR 0108](repo:docs/decisions/0108-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+From format version 4, the `contraintes` section also carries `niveaux`, the level the edition chose for an organisation rule: `OBLIGATOIRE` (mandatory), `PREFERENCE`, or a position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) which also gives the weight of that position (25, 5, 1) when `poids` does not name the rule. A rule the file does not name goes back to the catalogue's level. A rule with no level to choose (legal, assignment, ad hoc, lock, soft preference) is **refused by name**. A 3.x or v3 file carries none and reads as before: the 3 → 4 link changes nothing ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
 
 ```yaml
 contraintes:

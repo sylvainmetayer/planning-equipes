@@ -219,6 +219,16 @@ class PlanningServiceConstraintWeightOverridesTest {
 
         assertThat(solved.getScore().hardScore()).isEqualTo(-1);
         assertThat(solved.getScore().mediumScore()).isZero();
+
+        // The diagnostic of hard failures (expliquer_echec_contraintes_dures, the blockers) names it,
+        // with its per-match line, though the catalogue ships it medium.
+        assertThat(planningService.diagnose(solved).contraintes())
+                .filteredOn(diagnostic -> diagnostic.hard() && diagnostic.matchCount() > 0)
+                .singleElement()
+                .satisfies(diagnostic -> {
+                    assertThat(diagnostic.name()).isEqualTo("standComplexeAvecReferent");
+                    assertThat(diagnostic.violations()).isNotEmpty();
+                });
     }
 
     @Test

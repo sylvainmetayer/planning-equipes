@@ -27,6 +27,12 @@ class ConstraintNiveauResourceTest {
     /** HARD, « Légal (temps de travail) » : never an edition's choice. */
     private static final String LEGALE = "dureeQuotidienneMaxMajeur";
 
+    /** HARD, « Affectation » : one of the fixed rules, never an edition's choice either. */
+    private static final String BASE = "posteDoitEtrePourvu";
+
+    /** HARD as the catalogue ships it, and choosable. */
+    private static final String REPAS = "coupureRepasObligatoire";
+
     private String defaut;
 
     @BeforeEach
@@ -50,6 +56,7 @@ class ConstraintNiveauResourceTest {
     @AfterEach
     void restore() {
         setNiveau(ORGANISATION, "PREFERENCE_NORMALE", 200);
+        setNiveau(REPAS, "OBLIGATOIRE", 200);
     }
 
     private void setNiveau(String nom, String niveau, int expectedStatus) {
@@ -115,7 +122,33 @@ class ConstraintNiveauResourceTest {
     void aLegalRuleHasNoLevelToChoose() {
         setNiveau(LEGALE, "PREFERENCE_LEGERE", 400);
         setNiveau(LEGALE, "OBLIGATOIRE", 400);
+        setNiveau(BASE, "PREFERENCE_FORTE", 400);
+        setNiveau(BASE, "OBLIGATOIRE", 400);
         setNiveau("nomInconnu", "OBLIGATOIRE", 404);
+    }
+
+    /**
+     * A rule the catalogue ships hard, made a strong preference and then
+     * obligatoire again, scores hard 1: the weight of the preference does not
+     * come back as a hard weight of 25.
+     */
+    @Test
+    void aShippedHardRuleBroughtBackToObligatoireWeighsOneHardPoint() {
+        setNiveau(REPAS, "PREFERENCE_FORTE", 200);
+        given().header(HEADER, defaut)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .body(rule(REPAS) + ".niveauChoisi", equalTo("PREFERENCE_FORTE"))
+                .body(rule(REPAS) + ".poids", equalTo(25));
+
+        setNiveau(REPAS, "OBLIGATOIRE", 200);
+        given().header(HEADER, defaut)
+                .when()
+                .get("/api/constraints")
+                .then()
+                .body(rule(REPAS) + ".niveauChoisi", equalTo("OBLIGATOIRE"))
+                .body(rule(REPAS) + ".poids", equalTo(1));
     }
 
     @Test
