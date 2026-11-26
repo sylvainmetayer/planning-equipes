@@ -31,6 +31,7 @@ import {
   trainingTabToNeed,
 } from './app.routes';
 import { BRANDING } from './core/branding';
+import { MesuresPage } from './pages/mesures/mesures-page';
 import { ResponsablePage } from './pages/responsable/responsable-page';
 import { BrandingTitleStrategy } from './core/branding-title.strategy';
 
@@ -201,6 +202,12 @@ describe('app.routes', () => {
     const route = routes.find((r) => r.path === 'responsable');
     const component = await (route?.loadComponent as () => Promise<unknown>)();
     expect(component).toBe(ResponsablePage);
+  });
+
+  it("lazy-loads « Mesures d'édition » from the mesures route", async () => {
+    const route = allRoutes(routes).find((r) => r.path === 'mesures');
+    const component = await (route?.loadComponent as () => Promise<unknown>)();
+    expect(component).toBe(MesuresPage);
   });
 
   it("résout un titre fonction jusqu'au titre du document", async () => {
