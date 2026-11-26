@@ -518,7 +518,7 @@ public final class PlanningDiagnosticService {
 
     /**
      * One line per match, human-readable (see {@link ViolationFormatter}) —
-     * e.g. "Sarah Rousseau (A45)" for a {@code reposHebdomadaireMineur} hit, or
+     * e.g. "Sarah Rousseau (A45)" for a {@code reposHebdomadaireMinimal} hit, or
      * "Stand tir à l'arc — 2026-07-16 12:30-15:30" for an unfilled
      * {@code posteDoitEtrePourvu} seat. Capped at {@link #MAX_VIOLATIONS_PAR_CONTRAINTE}:
      * this feeds a UI detail popup, not an export.

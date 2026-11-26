@@ -184,6 +184,7 @@ dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
 dev/sylvain/planning/service/solve/AgeCapMergeMigrationTest.java
+dev/sylvain/planning/service/solve/AgeWeeklyCapMergeMigrationTest.java
 dev/sylvain/planning/service/solve/ComputeBudgetArchiveMigrationTest.java
 dev/sylvain/planning/service/solve/ConstraintLevelMigrationTest.java
 dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java

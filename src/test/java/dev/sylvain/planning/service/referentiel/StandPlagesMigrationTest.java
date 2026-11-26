@@ -34,10 +34,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V153 turns the recurring rules of a stand into dated plages. It runs once on
+ * V159 turns the recurring rules of a stand into dated plages. It runs once on
  * every database in service, so it is played here on a database filled the way
- * 3.x filled it: the migrations up to V152 once, in a schema of their own, then
- * for each case the rows and the V153 file itself — not a copy — in a transaction
+ * 3.x filled it: the migrations up to V158 once, in a schema of their own, then
+ * for each case the rows and the V159 file itself — not a copy — in a transaction
  * rolled back afterwards.
  *
  * <p>The central rule: the windows a stand opens and closes on, <b>day by day</b>,
@@ -52,12 +52,12 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class StandPlagesMigrationTest {
 
-    private static final String SCHEMA = "migration_v153";
-    private static final String V153 = "db/migration/V153__plages_de_stand.sql";
+    private static final String SCHEMA = "migration_v159";
+    private static final String V159 = "db/migration/V159__plages_de_stand.sql";
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
-    static void migrateUpToV152() throws SQLException {
+    static void migrateUpToV158() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -68,7 +68,7 @@ class StandPlagesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("152")
+                .target("158")
                 .load()
                 .migrate();
     }
@@ -527,9 +527,9 @@ class StandPlagesMigrationTest {
     }
 
     private static void migrate(Connection connection) throws IOException, SQLException {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V153);
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V159);
                 Statement statement = connection.createStatement()) {
-            assertThat(file).as(V153).isNotNull();
+            assertThat(file).as(V159).isNotNull();
             statement.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

@@ -139,7 +139,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  44 rules are written **a second time**. The default engine since 3.0.0
+  42 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -737,7 +737,7 @@ i18n rule at the top of this file:
   `getIndisponibilites()` are read-only views of the one list). No recurring
   rule is stored: a recurrence is a generator that writes plages, and
   `HorairesRecurrents` is the one frozen reading of the 3.x rules (migration
-  `V153`, the scenario-file link 4 → 5, the `ajouter_horaire_stand` tool). A
+  `V159`, the scenario-file link 4 → 5, the `ajouter_horaire_stand` tool). A
   day carries one mode, never both; no plage means open all day.
   `ShippedSchedulesDigestTest` holds the windows of every shipped scenario to
   what 3.x resolved, day by day.

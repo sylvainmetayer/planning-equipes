@@ -109,7 +109,6 @@ class ConstraintParametersStructuralTest {
             "travailContinuMax", LECTURE_PAR_PAUSE_SUR_POSTE,
             "dureeQuotidienneMax", LECTURE_PAR_PAUSE_SUR_POSTE,
             "dureeHebdomadaireMax", LECTURE_PAR_PAUSE_SUR_POSTE,
-            "dureeHebdomadaireMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
             "dureeHebdomadaireMaxDeuxSemaines", LECTURE_PAR_PAUSE_SUR_POSTE);
 
     /**
