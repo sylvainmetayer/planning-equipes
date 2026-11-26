@@ -96,6 +96,22 @@ class ChampsModifiesTest {
         assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("plages");
     }
 
+    /** A body's deprecated lists are re-applied mode by mode: the same plages in another order are no change. */
+    @Test
+    void theOrderOfThePlagesIsNotAChange() {
+        PlageStand ouverture =
+                PlageStand.ouverture(1L, LocalDate.of(2030, 7, 18), LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        PlageStand closure = fermeture(2L, LocalDate.of(2030, 7, 19), 10, 12);
+        PlageStand otherOpening =
+                PlageStand.ouverture(3L, LocalDate.of(2030, 7, 20), LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        avant.setPlages(new java.util.ArrayList<>(List.of(ouverture, closure, otherOpening)));
+        Stand apres = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        apres.setPlages(new java.util.ArrayList<>(List.of(ouverture, otherOpening, closure)));
+
+        assertThat(ChampsModifies.surStand(avant, apres)).isEmpty();
+    }
+
     @Test
     void theModelIsNamedOnlyWhenTheWriteSentADifferentOne() {
         Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);

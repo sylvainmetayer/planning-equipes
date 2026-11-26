@@ -21,10 +21,13 @@ trois outils (`ajouter_ouverture_stand`, `ajouter_fermeture_stand`,
    identifiant, son mode et `depliee`. Le modèle reste sous `horaires`.
 2. **`ouvertures` et `indisponibilites` restent lues et rendues jusqu'en 5.0**,
    marquées dépréciées dans l'OpenAPI : un client de la 3.x peut les envoyer.
-   Quand un corps porte `plages` et une liste dépréciée, **la liste dépréciée
-   l'emporte pour son mode**, quel que soit l'ordre des clés : un éditeur de la 3.x
-   renvoie les `plages` qu'il a lues à côté de la liste qu'il a changée, et c'est
-   la liste qu'il a changée qui dit sa volonté. Un client nouveau n'envoie que `plages`.
+   Quand un corps porte `plages` et une liste dépréciée, **la fiche enregistrée
+   départage** : la forme qui en diffère est celle que le client a changée, l'autre
+   est la copie périmée de ce qu'il avait lu. Un client de la 3.x qui modifie
+   `ouvertures` en renvoyant les `plages` qu'il ne connaît pas, un client nouveau qui
+   modifie `plages` en renvoyant les listes qu'il a lues, ont tous deux raison. Si les
+   deux formes ont changé et se contredisent, l'écriture répond `400`. Un client nouveau
+   n'envoie que `plages`.
 3. **Trois routes écrivent une plage** : `POST /api/stands/{id}/plages`,
    `DELETE /api/stands/{id}/plages/{plageId}` et `DELETE /api/stands/{id}/plages?date=`.
    Chacune est refusée pendant un calcul et sous gel des stands **en entier**
@@ -40,8 +43,9 @@ trois outils (`ajouter_ouverture_stand`, `ajouter_fermeture_stand`,
 
 - **Retirer `ouvertures` et `indisponibilites` dès la 4.0** : l'éditeur de la 3.x
   les lit encore et un script les envoie ; le retrait attend la 5.0 et l'éditeur de plages.
-- **La clé `plages` l'emporte sur les listes dépréciées** : un éditeur de la 3.x
-  renvoie toute la fiche, `plages` périmées comprises, et perdrait sa modification
+- **Une forme l'emporte toujours** (la liste dépréciée, ou `plages`) : un éditeur de la
+  3.x renvoie toute la fiche, `plages` périmées comprises, et un client nouveau renvoie les
+  listes qu'il a lues ; quelle que soit la forme choisie, l'autre client perd sa modification
   sans un mot.
 - **Garder `ajouter_ouverture_stand` et `ajouter_fermeture_stand` en deux outils** :
   un seul outil à `mode` dit la même chose, comme `creer_horaire_stand`.

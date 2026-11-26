@@ -9,7 +9,7 @@ A stand's hours are read and written at three levels: the stand record (its plag
 
 The stand record returns its dated plages under `plages`, with no expansion: each carries its `id`, its `mode` (`OUVERTURE` or `FERMETURE`), its day, its hours, a `motif`, an `effectif` (for an opening) and `depliee`, which says where it comes from (unfolded from the model, or typed by hand; the server states the origin). A null `heureFin` means "until closing". A write answers `400` if a plage is inconsistent or if one day carries both an opening and a closure.
 
-`ouvertures` and `indisponibilites` (the same plages, split by mode) are **deprecated**: the record still returns them and accepts them, for 3.x clients, until 5.0. When a body carries `plages` **and** one of these lists, the deprecated list wins for its mode, whatever the key order: that lets a 3.x editor send back the `plages` it read next to the list it changed. A new client sends only `plages`.
+`ouvertures` and `indisponibilites` (the same plages, split by mode) are **deprecated**: the record still returns them and accepts them, for 3.x clients, until 5.0. A body that carries `plages` **and** one of these lists is settled by the stored record: the form that differs from it is the one the client changed, the other is the stale copy of what it read (a 3.x client that edits `ouvertures` while echoing the `plages` it does not know, a new client that edits `plages` while echoing the lists it read). If both changed and disagree, the write answers `400`. A new client sends only `plages`.
 
 Three routes write a plage without sending the whole record back, and answer the record and its warnings like `PUT /api/stands/{id}`:
 

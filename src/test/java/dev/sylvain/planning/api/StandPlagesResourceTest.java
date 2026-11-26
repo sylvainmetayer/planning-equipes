@@ -299,11 +299,12 @@ class StandPlagesResourceTest {
     }
 
     /**
-     * An editor of the 3.x sends back the {@code plages} it read next to the list it changed:
-     * the deprecated list wins for its mode, whichever key comes first.
+     * A client of the 3.x edits {@code ouvertures} and echoes {@code plages}; a new client edits
+     * {@code plages} and echoes {@code ouvertures}: the form that differs from the stored stand is the
+     * change, whichever key comes first, and two contradicting changes are a bad request.
      */
     @Test
-    void aDeprecatedListInTheBodyWinsOverTheStalePlagesWhateverTheKeyOrder() {
+    void aBodyCarryingBothFormsIsSettledByTheStoredStandWhateverTheKeyOrder() {
         String edition = createEdition("Plages et anciennes listes");
         createTypologie(edition);
         String stand = given().header(HEADER, edition)
@@ -318,6 +319,7 @@ class StandPlagesResourceTest {
                 .extract()
                 .path("stand.id");
 
+        java.util.concurrent.atomic.AtomicInteger bodyNumber = new java.util.concurrent.atomic.AtomicInteger();
         for (String body : List.of("""
                 {"nom":"Mixte","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
                  "ouvertures":[{"date":"2026-07-14","heureDebut":"09:00","heureFin":"11:00"}],
@@ -332,8 +334,52 @@ class StandPlagesResourceTest {
                     .put("/api/stands/" + stand)
                     .then()
                     .statusCode(200);
-            assertThat(readDates(edition, stand)).containsExactly("2026-07-14");
+            // The first body edits ouvertures (the stored day, 10 July, is only echoed by plages);
+            // the second one, sent against the result, edits plages (ouvertures echoes the 14th).
+            assertThat(readDates(edition, stand))
+                    .containsExactly(bodyNumber.getAndIncrement() == 0 ? "2026-07-14" : "2026-07-10");
         }
+    }
+
+    @Test
+    void aNewClientEditingPlagesWhileEchoingTheDeprecatedListKeepsItsChange() {
+        String edition = createEdition("Plages éditées");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Écho","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "plages":[{"mode":"OUVERTURE","date":"2026-07-10","heureDebut":"10:00","heureFin":"12:00"}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+        String echoed = "{\"date\":\"2026-07-10\",\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"}";
+        String edited =
+                "{\"mode\":\"OUVERTURE\",\"date\":\"2026-07-16\",\"heureDebut\":\"10:00\",\"heureFin\":\"12:00\"}";
+
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"nom\":\"Écho\",\"typologiesProposees\":[\"TYPO\"],\"effectifMin\":1,\"effectifMax\":2,"
+                        + "\"ouvertures\":[" + echoed + "],\"plages\":[" + edited + "]}")
+                .when()
+                .put("/api/stands/" + stand)
+                .then()
+                .statusCode(200);
+        assertThat(readDates(edition, stand)).containsExactly("2026-07-16");
+
+        // Both forms changed, and they disagree with each other: nothing says which is meant.
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("{\"nom\":\"Écho\",\"typologiesProposees\":[\"TYPO\"],\"effectifMin\":1,\"effectifMax\":2,"
+                        + "\"ouvertures\":[" + echoed + "],\"plages\":["
+                        + edited.replace("07-16", "07-17").replace("OUVERTURE", "FERMETURE") + "]}")
+                .when()
+                .put("/api/stands/" + stand)
+                .then()
+                .statusCode(400);
     }
 
     @Test

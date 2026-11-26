@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
@@ -127,6 +128,9 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public Stand create(Stand stand) {
+        if (stand.carriesBothScheduleForms()) {
+            settleScheduleForms(stand, List.of());
+        }
         // A new stand has nothing stored to be unfolded from: whatever a client marked is a typed plage.
         stand.getPlages().forEach(plage -> plage.setDepliee(false));
         validate(stand);
@@ -194,6 +198,9 @@ public class StandService {
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     @RefusedWhileSolving
     public Stand addPlage(String id, PlageStand plage) {
+        if (plage == null) {
+            throw new BusinessError.Invalid("Une plage est attendue dans le corps de la requête");
+        }
         Stand stand = existing(id);
         plage.setId(null);
         plage.setDepliee(false);
@@ -223,6 +230,18 @@ public class StandService {
         return repository.findStand(id);
     }
 
+    private static void settleScheduleForms(Stand stand, List<PlageStand> stored) {
+        Set<ModeHoraire> contradictory = stand.settleDeprecatedLists(stored);
+        if (!contradictory.isEmpty()) {
+            throw new BusinessError.Invalid("La fiche porte \"plages\" et "
+                    + (contradictory.size() > 1
+                            ? "\"ouvertures\" et \"indisponibilites\""
+                            : contradictory.contains(ModeHoraire.OUVERTURE) ? "\"ouvertures\"" : "\"indisponibilites\"")
+                    + " qui ne disent pas la même chose, et aucune ne reprend ce qui est enregistré : "
+                    + "n'en envoyer qu'une (plages), ou la modifier seule");
+        }
+    }
+
     private Stand existing(String id) {
         if (!repository.standExists(id)) {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
@@ -235,8 +254,13 @@ public class StandService {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
+        Stand stored =
+                stand.carriesBothScheduleForms() || !stand.getPlages().isEmpty() ? repository.findStand(id) : null;
+        if (stand.carriesBothScheduleForms()) {
+            settleScheduleForms(stand, stored.getPlages());
+        }
         if (!stand.getPlages().isEmpty()) {
-            markOrigins(stand, repository.findStand(id));
+            markOrigins(stand, stored);
         }
         // Before the freeze compares: the game categories may be named by
         // their code, and a code is not the id the stored stand holds.

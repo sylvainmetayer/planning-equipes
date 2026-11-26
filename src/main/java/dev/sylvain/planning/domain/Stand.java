@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 public class Stand {
@@ -45,7 +47,10 @@ public class Stand {
     private List<PlageStand> plages = new ArrayList<>();
     /** The deprecated per-mode lists a body carried, re-applied over {@code plages} whichever key came first. */
     @JsonIgnore
-    private final Map<ModeHoraire, List<PlageStand>> legacy = new EnumMap<>(ModeHoraire.class);
+    private final transient Map<ModeHoraire, List<PlageStand>> legacy = new EnumMap<>(ModeHoraire.class);
+    /** The {@code plages} a body carried, {@code null} when it carried none. */
+    @JsonIgnore
+    private transient List<PlageStand> sentPlages;
     /**
      * The plages to actually reason about, once something laid on top of them
      * (a consigne) has been resolved — {@code null} until
@@ -208,13 +213,66 @@ public class Stand {
 
     /**
      * The {@code plages} key of a body. A deprecated {@code ouvertures} / {@code indisponibilites} key
-     * in the same body still wins for its mode, whatever the order of the keys: an editor of the 3.x
-     * sends back the {@code plages} it read next to the lists it changed.
+     * in the same body is applied over it, whatever the order of the keys, until
+     * {@link #settleDeprecatedLists} decides which of the two forms carries the change.
      */
     @JsonProperty("plages")
     public void receivePlages(List<PlageStand> plages) {
         setPlages(plages);
+        sentPlages = plages == null ? List.of() : List.copyOf(plages);
         legacy.forEach(this::replace);
+    }
+
+    /** Whether a body carried {@code plages} next to a deprecated list: the one case that needs settling. */
+    public boolean carriesBothScheduleForms() {
+        return sentPlages != null && !legacy.isEmpty();
+    }
+
+    /**
+     * Settles a body that carries {@code plages} <b>and</b> a deprecated list, by what the stored stand
+     * says: the form that differs from {@code stored} is the one the client changed, the other is the
+     * stale copy of what it read. A client of the 3.x that edits {@code ouvertures} while echoing the
+     * {@code plages} it never knew, and a new client that edits {@code plages} while echoing the lists it
+     * read, are both right. Both forms changed, and disagree: nothing says which is meant.
+     *
+     * @return the modes on which the two forms disagree with each other and with {@code stored}
+     */
+    public Set<ModeHoraire> settleDeprecatedLists(List<PlageStand> stored) {
+        Set<ModeHoraire> contradictory = new HashSet<>();
+        for (Map.Entry<ModeHoraire, List<PlageStand>> sent : legacy.entrySet()) {
+            ModeHoraire mode = sent.getKey();
+            List<PlageStand> typed = filter(sentPlages, mode);
+            List<PlageStand> old = sent.getValue() == null ? List.of() : sent.getValue();
+            if (sameWindows(typed, old)) {
+                continue;
+            }
+            List<PlageStand> before = filter(stored, mode);
+            if (sameWindows(old, before)) {
+                replace(mode, typed);
+            } else if (!sameWindows(typed, before)) {
+                contradictory.add(mode);
+            }
+        }
+        legacy.clear();
+        sentPlages = null;
+        return contradictory;
+    }
+
+    /** By content, as a multiset: the id is storage and the order says nothing. */
+    private static boolean sameWindows(List<PlageStand> a, List<PlageStand> b) {
+        return windows(a).equals(windows(b));
+    }
+
+    private static Map<List<Object>, Long> windows(List<PlageStand> plages) {
+        return plages.stream()
+                .collect(Collectors.groupingBy(
+                        plage -> Arrays.<Object>asList(
+                                plage.getDate(),
+                                plage.getHeureDebut(),
+                                plage.getHeureFin(),
+                                plage.getMotif(),
+                                plage.getEffectif()),
+                        Collectors.counting()));
     }
 
     /**
