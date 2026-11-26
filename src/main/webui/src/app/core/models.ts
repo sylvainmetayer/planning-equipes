@@ -1618,7 +1618,7 @@ export interface CellulePivot {
 
 /**
  * `/api/parametres/legal`: admin-configurable legal parameters, consumed by
- * the `dureeHebdomadaireMax` and `dureeHebdomadaireMaxMineur` hard constraints.
+ * the `dureeHebdomadaireMax` hard constraint (adults' ceiling and minors').
  *
  * Both are ordre public ceilings, refused above their legal maximum by the
  * server (`ReferenceDataService.updateParametresLegaux`); a lower, more
