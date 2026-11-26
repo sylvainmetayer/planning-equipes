@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.ConsecutiveDaysRule;
@@ -114,8 +114,7 @@ class ConsecutiveDaysCapTest {
     /** A run the rule never charges — every day of the window already worked — is not judged either. */
     @Test
     void aWindowEntirelyInTheFrozenPastIsSkipped() {
-        PlanContext apresLEvenement =
-                new PlanContext(List.of(), Set::of, new PastHorizon(J1.plusDays(5), LocalTime.NOON));
+        PlanContext apresLEvenement = new PlanContext(new PastHorizon(J1.plusDays(5), LocalTime.NOON));
 
         assertThat(analyze(animateurs(2), new ConsecutiveDaysRule(2, true), apresLEvenement)
                         .causes())
@@ -139,8 +138,7 @@ class ConsecutiveDaysCapTest {
     void aPlanEmployingMoreThanItsRestDaysAllowIsReported() {
         List<Animateur> animateurs = animateurs(4);
         Set<String> tous = Set.of("a1", "a2", "a3", "a4");
-        PlanContext plan = new PlanContext(
-                List.of(), Set::of, null, () -> Map.of(J1, tous, J1.plusDays(1), tous, J1.plusDays(2), tous));
+        PlanContext plan = new PlanContext(null, () -> Map.of(J1, tous, J1.plusDays(1), tous, J1.plusDays(2), tous));
 
         CauseInfaisabilite cause = onlyCapCause(analyze(animateurs, new ConsecutiveDaysRule(2, true), plan));
 
@@ -153,8 +151,6 @@ class ConsecutiveDaysCapTest {
     @Test
     void aPlanWithinItsRestDaysSaysNothing() {
         PlanContext plan = new PlanContext(
-                List.of(),
-                Set::of,
                 null,
                 () -> Map.of(
                         J1,
@@ -229,7 +225,7 @@ class ConsecutiveDaysCapTest {
     /** Under the medium rule the score already charges a plan's overruns: the plan in place is not read. */
     @Test
     void thePlanInPlaceIsNotReadUnderTheMediumRuleAlone() {
-        PlanContext plan = new PlanContext(List.of(), Set::of, null, () -> {
+        PlanContext plan = new PlanContext(null, () -> {
             throw new AssertionError("the plan must not be read");
         });
 
@@ -246,8 +242,8 @@ class ConsecutiveDaysCapTest {
     @Test
     void aPastDayCountsWhoWorkedItNotItsFloor() {
         PastHorizon troisiemeMatin = new PastHorizon(J1.plusDays(2), LocalTime.of(9, 0));
-        PlanContext enCours = new PlanContext(
-                List.of(), Set::of, troisiemeMatin, () -> Map.of(J1, Set.of("a1"), J1.plusDays(1), Set.of("a2")));
+        PlanContext enCours =
+                new PlanContext(troisiemeMatin, () -> Map.of(J1, Set.of("a1"), J1.plusDays(1), Set.of("a2")));
 
         CauseInfaisabilite cause = onlyCapCause(analyze(animateurs(2), new ConsecutiveDaysRule(2, true), enCours));
 
@@ -260,8 +256,7 @@ class ConsecutiveDaysCapTest {
     void aPastWorkedInFullStillProvesTheShortfall() {
         PastHorizon troisiemeMatin = new PastHorizon(J1.plusDays(2), LocalTime.of(9, 0));
         Set<String> tous = Set.of("a1", "a2");
-        PlanContext enCours =
-                new PlanContext(List.of(), Set::of, troisiemeMatin, () -> Map.of(J1, tous, J1.plusDays(1), tous));
+        PlanContext enCours = new PlanContext(troisiemeMatin, () -> Map.of(J1, tous, J1.plusDays(1), tous));
 
         CauseInfaisabilite cause = onlyCapCause(analyze(animateurs(2), new ConsecutiveDaysRule(2, true), enCours));
 
@@ -274,8 +269,8 @@ class ConsecutiveDaysCapTest {
     void aTimeslotNoStandOpensFreezesNothing() {
         Creneau soir = creneau(8, J1, 18, 20);
         Stand fermeLeSoir = new Stand("stand-3", "Stand 3", Set.of("STRATEGIE"), 1, 1, false);
-        fermeLeSoir.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, soir.getDate(), soir.getHeureDebut(), soir.getHeureFin(), null)));
+        fermeLeSoir.setIndisponibilites(
+                List.of(PlageStand.fermeture(null, soir.getDate(), soir.getHeureDebut(), soir.getHeureFin(), null)));
         PastHorizon quinzeHeures = new PastHorizon(J1, LocalTime.of(15, 0));
 
         assertThat(FeasibilityAnalyzer.frozenDays(

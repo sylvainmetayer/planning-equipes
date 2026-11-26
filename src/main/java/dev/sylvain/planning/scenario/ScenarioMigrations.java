@@ -43,7 +43,8 @@ public final class ScenarioMigrations {
     static final List<Link> CHAIN = List.of(
             new Link(1, ScenarioMigrations::v1ToV2),
             new Link(2, ScenarioParametresLink::convert),
-            new Link(3, ScenarioMigrations::v3ToV4));
+            new Link(3, ScenarioMigrations::v3ToV4),
+            new Link(4, ScenarioPlagesLink::convert));
 
     private ScenarioMigrations() {}
 
@@ -60,6 +61,7 @@ public final class ScenarioMigrations {
             }
         }
         current = withRetiredLockTypesConverted(current, warnings);
+        current = withRetiredAdHocTypesConverted(current, warnings);
         current = foldHardRunForm(current, warnings);
         current = renameRetiredRules(current, warnings);
         current.put("schemaVersion", ScenarioBinder.SCHEMA_VERSION);
@@ -465,5 +467,162 @@ public final class ScenarioMigrations {
         lock.put("jour", jour);
         lock.put("raison", raison);
         return lock;
+    }
+
+    private static final Set<String> RETIRED_AD_HOC_TYPES = Set.of("INDISPONIBILITE_FORCEE", "AFFECTATION_FORCEE");
+
+    /**
+     * The {@code contraintesAdHoc:} section's forced unavailabilities and forced
+     * assignments (ADR 0117) rewritten as what replaces them, the conversion
+     * migration V161 makes in the database. Not a link of the chain, for the
+     * reason {@link #withRetiredLockTypesConverted} gives: no version marks the
+     * change, so it applies to every document.
+     * <ul>
+     *   <li>INDISPONIBILITE_FORCEE without a stand → the day of its timeslot (every day
+     *       carrying a timeslot when it names none) added to {@code joursIndisponibles} of
+     *       each animateur it names. A timeslot becomes the <b>whole day</b>: said.</li>
+     *   <li>AFFECTATION_FORCEE on a timeslot → one ANIMATEUR_CRENEAU lock per named
+     *       animateur holding a seat of its scope in the {@code plan:} section. A file with
+     *       no plan, or with nobody on the seat, has nothing to lock.</li>
+     * </ul>
+     * What converts to nothing (a forced unavailability on a stand, a forced assignment
+     * with no seat held) is dropped <b>and said</b>, naming the exception's id.
+     */
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> withRetiredAdHocTypesConverted(Map<String, Object> document, List<String> warnings) {
+        if (!(document.get("contraintesAdHoc") instanceof List<?> exceptions)
+                || exceptions.stream().noneMatch(ScenarioMigrations::isRetiredAdHoc)) {
+            return document;
+        }
+        Map<String, String> datesByCreneau = new LinkedHashMap<>();
+        Set<String> eventDays = new java.util.TreeSet<>();
+        if (document.get("creneaux") instanceof List<?> creneaux) {
+            for (Object item : creneaux) {
+                if (item instanceof Map<?, ?> creneau && creneau.get("date") != null) {
+                    String date = String.valueOf(ScenarioYaml.normaliseDates(creneau.get("date")));
+                    datesByCreneau.put(String.valueOf(creneau.get("id")), date);
+                    eventDays.add(date);
+                }
+            }
+        }
+        Map<String, Set<String>> daysOff = new LinkedHashMap<>();
+        List<Object> locks = new ArrayList<>();
+        List<Object> kept = new ArrayList<>();
+        List<Map<?, ?>> seats =
+                document.get("plan") instanceof Map<?, ?> plan && plan.get("affectations") instanceof List<?> list
+                        ? list.stream()
+                                .filter(Map.class::isInstance)
+                                .<Map<?, ?>>map(Map.class::cast)
+                                .toList()
+                        : List.of();
+        for (Object item : exceptions) {
+            if (!isRetiredAdHoc(item)) {
+                kept.add(item);
+                continue;
+            }
+            Map<?, ?> exception = (Map<?, ?>) item;
+            String id = String.valueOf(exception.get("id"));
+            List<?> named = exception.get("animateurs") instanceof List<?> ids ? ids : List.of();
+            String creneauId = exception.get("creneauId") == null ? null : String.valueOf(exception.get("creneauId"));
+            Object standId = exception.get("standId");
+            if ("INDISPONIBILITE_FORCEE".equals(String.valueOf(exception.get("type")))) {
+                if (standId != null || named.isEmpty()) {
+                    warnings.add("Exception " + id + " (indisponibilité forcée sur un stand) : type retiré en 4.0,"
+                            + " rien à convertir sur la fiche, elle n'est pas reprise.");
+                    continue;
+                }
+                Set<String> days = creneauId == null
+                        ? eventDays
+                        : datesByCreneau.get(creneauId) == null
+                                ? Set.<String>of()
+                                : Set.of(datesByCreneau.get(creneauId));
+                named.forEach(animateur -> daysOff.computeIfAbsent(
+                                String.valueOf(animateur), key -> new java.util.TreeSet<>())
+                        .addAll(days));
+                warnings.add("Exception " + id + " (indisponibilité forcée) : type retiré en 4.0, convertie en"
+                        + (creneauId == null
+                                ? " jours indisponibles de la fiche (tous les jours du fichier)."
+                                : " JOUR ENTIER indisponible sur la fiche : la fiche ne connaît pas le créneau."));
+                continue;
+            }
+            Map<?, ?> creneau = creneauId == null ? null : creneauWindow(document, creneauId);
+            Set<Map<String, Object>> replacements = new LinkedHashSet<>();
+            if (creneau != null) {
+                for (Object animateur : named) {
+                    boolean holds = seats.stream()
+                            .anyMatch(seat -> animateur.equals(seat.get("animateurId"))
+                                    && Objects.equals(comparable(seat.get("date")), comparable(creneau.get("date")))
+                                    && Objects.equals(
+                                            comparable(seat.get("heureDebut")), comparable(creneau.get("heureDebut")))
+                                    && Objects.equals(
+                                            comparable(seat.get("heureFin")), comparable(creneau.get("heureFin")))
+                                    && (standId == null || standId.equals(seat.get("standId"))));
+                    if (holds) {
+                        replacements.add(lock(
+                                "ANIMATEUR_CRENEAU",
+                                animateur,
+                                null,
+                                ScenarioYaml.normaliseDates(creneau.get("date")),
+                                ScenarioYaml.normaliseDates(creneau.get("heureDebut")),
+                                ScenarioYaml.normaliseDates(creneau.get("heureFin")),
+                                null,
+                                exception.get("raison")));
+                    }
+                }
+            }
+            if (replacements.isEmpty()) {
+                warnings.add("Exception " + id + " (affectation forcée) : type retiré en 4.0, aucune place tenue dans"
+                        + " le planning du fichier à verrouiller, elle n'est pas reprise.");
+            } else {
+                locks.addAll(replacements);
+                warnings.add("Exception " + id + " (affectation forcée) : type retiré en 4.0, convertie en "
+                        + replacements.size() + " verrou(s) animateur + créneau, les places tenues.");
+            }
+        }
+        Map<String, Object> result = new LinkedHashMap<>(document);
+        result.put("contraintesAdHoc", kept);
+        if (!daysOff.isEmpty() && document.get("animateurs") instanceof List<?> animateurs) {
+            List<Object> converted = new ArrayList<>();
+            for (Object item : animateurs) {
+                if (item instanceof Map<?, ?> fiche && daysOff.containsKey(String.valueOf(fiche.get("id")))) {
+                    Map<String, Object> copy = new LinkedHashMap<>();
+                    fiche.forEach((key, value) -> copy.put(String.valueOf(key), value));
+                    Set<String> days = new java.util.TreeSet<>(daysOff.get(String.valueOf(fiche.get("id"))));
+                    if (fiche.get("joursIndisponibles") instanceof List<?> existing) {
+                        existing.forEach(day -> days.add(String.valueOf(ScenarioYaml.normaliseDates(day))));
+                    }
+                    copy.put("joursIndisponibles", new ArrayList<>(days));
+                    converted.add(copy);
+                } else {
+                    converted.add(item);
+                }
+            }
+            result.put("animateurs", converted);
+        }
+        if (!locks.isEmpty() && document.get("plan") instanceof Map<?, ?> plan) {
+            Map<String, Object> converted = new LinkedHashMap<>();
+            plan.forEach((key, value) -> converted.put(String.valueOf(key), value));
+            List<Object> verrous =
+                    new ArrayList<>(plan.get("verrous") instanceof List<?> existing ? existing : List.of());
+            verrous.addAll(locks);
+            converted.put("verrous", verrous);
+            result.put("plan", converted);
+        }
+        return result;
+    }
+
+    private static boolean isRetiredAdHoc(Object exception) {
+        return exception instanceof Map<?, ?> map && RETIRED_AD_HOC_TYPES.contains(String.valueOf(map.get("type")));
+    }
+
+    private static Map<?, ?> creneauWindow(Map<String, Object> document, String creneauId) {
+        return document.get("creneaux") instanceof List<?> creneaux
+                ? creneaux.stream()
+                        .filter(Map.class::isInstance)
+                        .<Map<?, ?>>map(Map.class::cast)
+                        .filter(creneau -> creneauId.equals(String.valueOf(creneau.get("id"))))
+                        .findFirst()
+                        .orElse(null)
+                : null;
     }
 }

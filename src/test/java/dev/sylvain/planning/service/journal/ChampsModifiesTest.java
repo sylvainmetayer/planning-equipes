@@ -5,11 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -73,16 +72,14 @@ class ChampsModifiesTest {
 
     /**
      * The before-image is re-read from the base, the after-image is the
-     * caller's: two instances of every rule and window. A rename of a stand
-     * carrying one recurring rule used to be journaled « nom, horaires ».
+     * caller's: two instances of every window, so a rename of a stand carrying
+     * one must not be journaled « nom, indisponibilites ».
      */
     @Test
     void aStandsScheduleIsComparedByValueNotByInstance() {
         Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
-        avant.setHoraires(List.of(regle(null)));
         avant.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 18), 10, 12)));
         Stand apres = new Stand("S1", "Village (grand)", Set.of("STRATEGIE"), 2, 4, false);
-        apres.setHoraires(List.of(regle(3L)));
         apres.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 18), 10, 12)));
 
         assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("nom");
@@ -96,19 +93,40 @@ class ChampsModifiesTest {
         Stand apres = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
         apres.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 19), 14, 20)));
 
-        assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("indisponibilites");
+        assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("plages");
     }
 
-    private static HoraireStand regle(Long id) {
-        return new HoraireStand(
-                id,
-                ModeHoraire.OUVERTURE,
-                TypeJoursHoraire.TOUS,
-                List.of(new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0), 2)));
+    /** A body's deprecated lists are re-applied mode by mode: the same plages in another order are no change. */
+    @Test
+    void theOrderOfThePlagesIsNotAChange() {
+        PlageStand ouverture =
+                PlageStand.ouverture(1L, LocalDate.of(2030, 7, 18), LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        PlageStand closure = fermeture(2L, LocalDate.of(2030, 7, 19), 10, 12);
+        PlageStand otherOpening =
+                PlageStand.ouverture(3L, LocalDate.of(2030, 7, 20), LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        avant.setPlages(new java.util.ArrayList<>(List.of(ouverture, closure, otherOpening)));
+        Stand apres = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        apres.setPlages(new java.util.ArrayList<>(List.of(ouverture, otherOpening, closure)));
+
+        assertThat(ChampsModifies.surStand(avant, apres)).isEmpty();
     }
 
-    private static IndisponibiliteStand fermeture(Long id, LocalDate date, int debut, int fin) {
-        return new IndisponibiliteStand(id, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0), "Pause");
+    @Test
+    void theModelIsNamedOnlyWhenTheWriteSentADifferentOne() {
+        Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        avant.setHoraires(List.of(HorairesRecurrents.Regle.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null, null))));
+        Stand notSent = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        Stand changed = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        changed.setHoraires(List.of());
+
+        assertThat(ChampsModifies.surStand(avant, notSent)).isEmpty();
+        assertThat(ChampsModifies.surStand(avant, changed)).containsExactly("horaires");
+    }
+
+    private static PlageStand fermeture(Long id, LocalDate date, int debut, int fin) {
+        return PlageStand.fermeture(id, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0), "Pause");
     }
 
     @Test

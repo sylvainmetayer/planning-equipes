@@ -198,6 +198,21 @@ class GelReferentielResourceTest {
         edition().body(renomme).when().put("/api/stands/" + strat).then().statusCode(200);
 
         refused(edition().when().delete("/api/stands/" + hommeJeu).then(), "STANDS");
+        // A plage is the schedule the solve is given: laid or removed one by one, refused as a whole.
+        refused(
+                edition()
+                        .body(Map.of("mode", "FERMETURE", "date", "2026-07-10", "heureDebut", "10:00:00"))
+                        .when()
+                        .post("/api/stands/" + strat + "/plages")
+                        .then(),
+                "STANDS");
+        refused(
+                edition()
+                        .when()
+                        .delete("/api/stands/" + strat + "/plages?date=2026-07-10")
+                        .then(),
+                "STANDS");
+        refused(edition().when().delete("/api/stands/" + strat + "/plages/1").then(), "STANDS");
         refused(
                 edition()
                         .body(Map.of("fileName", "stands.csv", "content", "nom\nX"))
@@ -217,12 +232,6 @@ class GelReferentielResourceTest {
                         .body(Map.of("stands", List.of(Map.of("standId", strat, "cellules", List.of()))))
                         .when()
                         .put("/api/ouvertures-stands/grille")
-                        .then(),
-                "STANDS");
-        refused(
-                edition()
-                        .when()
-                        .post("/api/stands/compactage-horaires?appliquer=true")
                         .then(),
                 "STANDS");
 
@@ -492,7 +501,7 @@ class GelReferentielResourceTest {
         }
         edition()
                 .body("""
-                        {"type":"INDISPONIBILITE_FORCEE","animateursConcernes":[{"id":"%s"}],"raison":"Absent"}""".formatted(id("/api/animateurs", "A3@example.org")))
+                        {"type":"INCOMPATIBILITE","animateursConcernes":[{"id":"%s"}],"raison":"Absent"}""".formatted(id("/api/animateurs", "A3@example.org")))
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()

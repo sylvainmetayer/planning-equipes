@@ -11,6 +11,7 @@ import {
   inject,
   resource,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -20,6 +21,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EditionsApi } from '../../core/api/editions-api';
+import { EditionStore } from '../../core/edition.store';
 import { ConsignesStore } from '../../core/consignes.store';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -36,6 +38,7 @@ import {
 import { coherenceGroups } from './coherence';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 import { ScoreReadingPanel } from '../../shared/lecture-score';
+import { PhaseEditionControl } from '../../shared/phase-edition-control';
 import { VoirPlanningButton } from '../../shared/voir-planning-button';
 import { MessagesRecents } from './messages-recents';
 
@@ -67,6 +70,7 @@ const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
     VoirPlanningButton,
     ScoreReadingPanel,
     MessagesRecents,
+    PhaseEditionControl,
     MatButtonModule,
     MatCardModule,
     MatIconModule,
@@ -81,6 +85,7 @@ const ANCHORS = new Set(['a-traiter', 'alertes-nuit']);
 })
 export class AccueilPage {
   private readonly editionsApi = inject(EditionsApi);
+  private readonly editions = inject(EditionStore);
   private readonly jobs = inject(SolverJobService);
   private readonly consignes = inject(ConsignesStore);
 
@@ -107,7 +112,7 @@ export class AccueilPage {
 
   protected readonly lignes = computed(() => {
     const etat = this.etatEdition();
-    return etat ? buildLignes(etat, this.coherenceReport()) : [];
+    return etat ? buildLignes(etat, this.coherenceReport(), this.editions.phase()) : [];
   });
   protected readonly phase = computed(() => this.etatEdition()?.evenement.phase ?? 'PREPARATION');
   /** « Aujourd'hui — J5 · … », during the event only. */
@@ -171,6 +176,21 @@ export class AccueilPage {
       if (anchor && ANCHORS.has(anchor)) {
         afterNextRender(() => this.scrollTo(anchor), { injector: this.injector });
       }
+    });
+    // A phase gesture moves the freeze the checklist reads (its state and the
+    // families it names): read the checklist again, not on the first known
+    // value — the edition store landing after the page is not a gesture.
+    let phaseSeen: string | undefined;
+    effect(() => {
+      const phase = this.editions.phase();
+      if (phase === null) {
+        return;
+      }
+      const seen = `${phase}|${this.editions.structureDebloquee()}`;
+      if (phaseSeen !== undefined && phaseSeen !== seen) {
+        untracked(() => this.etat.reload());
+      }
+      phaseSeen = seen;
     });
     // A solve started from anywhere (this browser or another) moves three
     // lines at once: refresh once it lands. Unregistered with the page.

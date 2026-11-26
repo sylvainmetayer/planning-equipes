@@ -110,23 +110,16 @@ public class PublicationMcpTools {
                     + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé hors de "
                     + "l'édition active (voir lister_editions), si une résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
                     + "consulter etat_publication d'abord. Les personnes sans adresse et les échecs d'envoi sont "
-                    + "comptés ici et détaillés par id par lister_destinataires_publication. L'argument exclusions "
-                    + "diffère le message des ids qu'il nomme : ces personnes ne reçoivent rien et restent à "
-                    + "prévenir à la publication suivante, avec l'écart accumulé depuis leur dernier message.",
+                    + "comptés ici et détaillés par id par lister_destinataires_publication. Tout le monde de la liste "
+                    + "est prévenu : on ne peut plus en exclure.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = true))
-    RapportPublicationView publishPlanning(
-            @ToolArg(
-                            description = "Ids des animateurs dont le message est différé ; absent = prévenir tout le "
-                                    + "monde",
-                            required = false)
-                    List<String> exclusions,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        RapportPublication rapport = publicationService.publier(exclusions == null ? List.of() : exclusions);
+    RapportPublicationView publishPlanning(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        RapportPublication rapport = publicationService.publier();
         return new RapportPublicationView(
                 rapport.snapshotId(),
                 rapport.publieLe(),

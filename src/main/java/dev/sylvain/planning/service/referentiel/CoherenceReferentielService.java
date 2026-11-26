@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
@@ -172,8 +171,6 @@ public class CoherenceReferentielService {
      *                     them, as {@link CoherenceService} raises them. Against the
      *                     consigne layer, every timeslot inside a band would read as
      *                     outside every opening, which is the consigne, not a mistake
-     * @param placesTenues the seats of the persisted plan, read only when a lock and a
-     *                     forced assignment both exist
      * @param horizon      the frozen past (ADR 0044), {@code null} when off
      * @param missingEmplacements the stands without an emplacement, empty on an
      *                     edition that has no emplacement at all
@@ -190,7 +187,6 @@ public class CoherenceReferentielService {
             List<Stand> ownHoursStands,
             List<ContrainteAdHoc> contraintesAdHoc,
             List<VerrouillagePlanning> verrouillages,
-            Supplier<Set<ForcedAssignmentOnLockedSchedule.PlaceTenue>> placesTenues,
             PastHorizon horizon,
             List<ConstraintDiagnostic> diagnostics,
             List<CreneauGridService.GridAnomaly> grille,
@@ -225,9 +221,6 @@ public class CoherenceReferentielService {
                 coherence.standsOnOwnHours(creneaux),
                 referenceDataService.listContraintesAdHoc(),
                 verrouillages,
-                () -> verrouillages.isEmpty() || !plan.isResolvable()
-                        ? Set.of()
-                        : plan.get().loadPlacesTenues(),
                 planning.isResolvable() ? planning.get().pastHorizon() : null,
                 latestDiagnostics(),
                 referenceDataService.gridAnomalies(creneaux, verrouillages),
@@ -410,10 +403,8 @@ public class CoherenceReferentielService {
     }
 
     /**
-     * The same four readings Diagnostic → Problèmes makes of the exceptions,
-     * with the same sentences: critical there, blocking here. A forced
-     * assignment whose whole scope lies in the frozen past is history and
-     * says nothing — the detectors take the horizon.
+     * The readings Diagnostic → Problèmes makes of the exceptions, with the
+     * same sentences: critical there, blocking here.
      */
     private static void adHoc(Sources sources, List<CoherenceIssue> issues) {
         List<ContrainteAdHoc> contraintes = sources.contraintesAdHoc();
@@ -421,7 +412,7 @@ public class CoherenceReferentielService {
             return;
         }
         for (ContrainteAdHocContradictions.Contradiction contradiction :
-                ContrainteAdHocContradictions.detectAll(contraintes, sources.creneaux())) {
+                ContrainteAdHocContradictions.detectAll(contraintes)) {
             issues.add(new CoherenceIssue(
                     CoherenceFamily.AJUSTEMENTS,
                     CoherenceSeverity.BLOQUANT,
@@ -433,22 +424,6 @@ public class CoherenceReferentielService {
                             : contradiction.contrainteIds().getFirst(),
                     null));
         }
-        for (ForcedAssignmentOnDayOff.Conflit conflit : ForcedAssignmentOnDayOff.detectAll(
-                contraintes, sources.animateurs(), sources.stands(), sources.creneaux(), sources.horizon())) {
-            issues.add(forced(
-                    TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
-                    conflit.contrainte(),
-                    conflit.message(),
-                    conflit.dates()));
-        }
-        for (ForcedAssignmentOnExcludedSeats.Conflit conflit : ForcedAssignmentOnExcludedSeats.detectAll(
-                contraintes, sources.animateurs(), sources.stands(), sources.creneaux(), sources.horizon())) {
-            issues.add(forced(
-                    TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL,
-                    conflit.contrainte(),
-                    conflit.message(),
-                    conflit.dates()));
-        }
         // A car whose members declared different days off: the write warned,
         // the checklist keeps saying so while it stands.
         for (ContrainteAdHoc contrainte : contraintes) {
@@ -458,24 +433,6 @@ public class CoherenceReferentielService {
                             avertissement,
                             CoherenceSubject.CONTRAINTE_AD_HOC,
                             contrainte.getId())));
-        }
-        boolean forcees = contraintes.stream()
-                .anyMatch(contrainte ->
-                        contrainte != null && contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        if (!sources.verrouillages().isEmpty() && forcees) {
-            for (ForcedAssignmentOnLockedSchedule.Conflit conflit : ForcedAssignmentOnLockedSchedule.detectAll(
-                    contraintes,
-                    sources.verrouillages(),
-                    sources.stands(),
-                    sources.creneaux(),
-                    sources.placesTenues().get(),
-                    sources.horizon())) {
-                issues.add(forced(
-                        TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
-                        conflit.contrainte(),
-                        conflit.message(),
-                        conflit.dates()));
-            }
         }
     }
 
@@ -522,18 +479,6 @@ public class CoherenceReferentielService {
                     typologie.typologie(),
                     null));
         }
-    }
-
-    private static CoherenceIssue forced(
-            TypeAvertissement type, ContrainteAdHoc contrainte, String message, List<LocalDate> dates) {
-        return new CoherenceIssue(
-                CoherenceFamily.AJUSTEMENTS,
-                CoherenceSeverity.BLOQUANT,
-                type.name(),
-                message,
-                CoherenceSubject.CONTRAINTE_AD_HOC,
-                contrainte.getId(),
-                dates.size() == 1 ? dates.getFirst() : null);
     }
 
     /**

@@ -32,11 +32,11 @@ public record StandDto(
         Boolean reserveMajeurs,
         Boolean premium,
         NiveauEffort niveauEffort,
-        List<@Valid IndisponibiliteStandDto> indisponibilites,
-        List<@Valid OuvertureStandDto> ouvertures,
+        /** The stand's schedule: dated opening and closing windows. Absent or empty = open on every créneau. */
+        List<@Valid PlageStandDto> plages,
         /**
-         * Recurring opening/closing rules — what a stable pattern is written as,
-         * instead of one dated entry per event day in the two lists above,
-         * which stay for the per-date exceptions that override them.
+         * The stand's model: recurring rules kept while the edition has no timeslot, and
+         * unfolded into plages as it gains days (ADR 0104). A file that has timeslots carries
+         * plages instead: the conversion of a 3.x file unfolds them.
          */
         List<@Valid HoraireStandDto> horaires) {}

@@ -3,12 +3,10 @@ package dev.sylvain.planning.service.edition;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.edition.EditionDelta.DeltaChange;
@@ -515,16 +513,14 @@ public final class EditionDeltaComparator {
         }
         copie.setIndisponibilites(stand.getIndisponibilites());
         copie.setOuvertures(stand.getOuvertures());
-        copie.setHoraires(stand.getHoraires());
         return copie;
     }
 
     /**
-     * The stand with every date its windows and rules name replaced by its
-     * position in its own edition (see {@link #dayPosition}) — compared, never
-     * stored. A stand shut on the second opening day of both editions is then
-     * unchanged, whatever the calendar says; a weekday rule is left as is, the
-     * weekday being what it names.
+     * The stand with every date its plages name replaced by its position in
+     * its own edition (see {@link #dayPosition}) — compared, never stored. A
+     * stand shut on the second opening day of both editions is then unchanged,
+     * whatever the calendar says.
      */
     private static Stand positioned(Stand stand, UnaryOperator<LocalDate> position) {
         Stand copie = new Stand();
@@ -539,7 +535,7 @@ public final class EditionDeltaComparator {
         copie.setNiveauEffort(stand.getNiveauEffort());
         copie.setEmplacement(stand.getEmplacement());
         copie.setIndisponibilites(stand.getIndisponibilites().stream()
-                .map(fenetre -> new IndisponibiliteStand(
+                .map(fenetre -> PlageStand.fermeture(
                         fenetre.getId(),
                         position.apply(fenetre.getDate()),
                         fenetre.getHeureDebut(),
@@ -547,7 +543,7 @@ public final class EditionDeltaComparator {
                         fenetre.getMotif()))
                 .collect(Collectors.toCollection(ArrayList::new)));
         copie.setOuvertures(stand.getOuvertures().stream()
-                .map(fenetre -> new OuvertureStand(
+                .map(fenetre -> PlageStand.ouverture(
                         fenetre.getId(),
                         position.apply(fenetre.getDate()),
                         fenetre.getHeureDebut(),
@@ -555,20 +551,6 @@ public final class EditionDeltaComparator {
                         fenetre.getMotif(),
                         fenetre.getEffectif()))
                 .collect(Collectors.toCollection(ArrayList::new)));
-        copie.setHoraires(stand.getHoraires().stream()
-                .map(horaire -> positioned(horaire, position))
-                .collect(Collectors.toCollection(ArrayList::new)));
-        return copie;
-    }
-
-    private static HoraireStand positioned(HoraireStand horaire, UnaryOperator<LocalDate> position) {
-        HoraireStand copie =
-                new HoraireStand(horaire.getId(), horaire.getMode(), horaire.getJours(), horaire.getFenetres());
-        copie.setJoursSemaine(horaire.getJoursSemaine());
-        copie.setDateDebut(position.apply(horaire.getDateDebut()));
-        copie.setDateFin(position.apply(horaire.getDateFin()));
-        copie.setDates(horaire.getDates().stream().map(position).collect(Collectors.toSet()));
-        copie.setMotif(horaire.getMotif());
         return copie;
     }
 

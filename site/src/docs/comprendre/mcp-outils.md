@@ -50,7 +50,11 @@ Une grille est faite de vacations et ne se demande plus en mode : un créneau es
 
 Quand les stands ont leurs horaires, `previsualiser_derivation_creneaux` montre la grille qu'ils impliquent (une coupure à chaque heure où un stand ouvre ou ferme) et `generer_creneaux_depuis_stands` l'écrit, en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
 
-Une fenêtre d'ouverture (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
+Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `creer_horaire_stand` d'une règle identique à une règle existante ne change rien ; `supprimer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`creer_plage_stand`).
+
+Les plages datées d'un stand figurent dans `consulter_stand` et `lister_stands` sous `plages` (identifiant, mode, jour, heures, effectif, et `depliee` : dépliée du modèle ou saisie à la main). `creer_plage_stand` en pose une, ouverture ou fermeture (`mode`) ; `supprimer_plage_stand` en retire une (`plageId`) ou toutes celles d'un jour (`date`). Les trois écritures de plages sont refusées pendant un calcul et quand la phase de l'édition fige les stands.
+
+Une fenêtre d'ouverture (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
 
 `definir_journee_type` crée ou remplace une journée type par son nom et ses vacations sur une ligne (« 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux), `affecter_journee_type` la pose sur une plage ou des dates. Rien de cela n'écrit un créneau : `previsualiser_application_journees_types` dit ce qu'appliquer changerait et `materialiser_journees_types` l'écrit. `reconnaitre_journees_types` fait le chemin inverse depuis les créneaux, et `lister_journees_types` rend les dates en écart ou sous consigne, que la matérialisation ne touche pas ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
@@ -99,7 +103,12 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
+| `ajouter_fermeture_stand` | `creer_plage_stand` |
+| `ajouter_horaire_stand` | `creer_horaire_stand` |
+| `ajouter_ouverture_stand` | `creer_plage_stand` |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
+| `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
 | `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
@@ -107,14 +116,20 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `effacer_horaires_stand` | `supprimer_horaires_stand` |
+| `effacer_plages_stand` | `supprimer_plage_stand` |
+| `figer_referentiel` | `modifier_phase_edition` |
+| `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->

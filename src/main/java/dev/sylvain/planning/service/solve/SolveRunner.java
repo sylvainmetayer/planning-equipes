@@ -299,7 +299,7 @@ final class SolveRunner {
      * about it — a made-up team staffing the edition's seats, under the
      * edition's rules. Everything {@link #prepareProblem} reads from the
      * edition, except what names the edition's real animateurs: the ad hoc
-     * exceptions (a forced assignment would name somebody absent from the
+     * exceptions (an incompatibility would name somebody absent from the
      * team, and break the plan for a reason that is not the question) and
      * the published plan the stability rule compares to.
      */

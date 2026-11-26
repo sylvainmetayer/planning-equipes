@@ -1,6 +1,6 @@
 # 0010 — Contraintes ad hoc : détecter la contradiction, pas plafonner le nombre
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté · révisé en partie par [0117](0117-deux-types-d-exception-les-forcees-sont-converties.md) (les types forcés n'existent plus)
 - **Date** : août 2026
 - **Portée** : référentiel, diagnostic
 

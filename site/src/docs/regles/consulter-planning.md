@@ -17,13 +17,13 @@ Tout passe par une seule page, *Planning* (groupe *Planifier*). Tout est porté 
 
 ## Par jour
 
-La même journée se lit de cinq façons.
+La vue **Jour** se lit en deux modes, que l'on choisit à côté du bouton « Jour » : le **rail**, ouvert par défaut, et le **tableau**. Le tableau s'écrit dans l'adresse (`vue=jour&mode=tableau`) ; le rail, mode par défaut, n'y écrit rien. La carte, les pauses et repas et les changements sont les autres vues de la journée. La barre de relecture et l'état de la journée (à relire, relue, figée) restent là dans les deux modes.
 
-### Tableau
+### Mode tableau
 
 La journée en tableau sur toute la largeur de l'écran : un stand par ligne avec son emplacement, un créneau par colonne, un nom par étiquette. Les sièges vides sont en rouge, un stand fermé en gris. Chaque nom et chaque siège vide ouvre le panneau du siège pour corriger à la main (voir [Relire et retoucher le planning](relire-et-retoucher.md)).
 
-### Rail
+### Mode rail
 
 La même journée vue par personne : une ligne par animateur, ses vacations placées dans le temps, les pauses légales posées dessus (en rouge sans relais), et des lignes vides pour qui reste mobilisable. Chaque vacation ouvre le panneau du siège, d'où « Déplacer vers… » la confie à une autre personne ou l'échange avec la sienne.
 

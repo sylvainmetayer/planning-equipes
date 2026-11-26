@@ -7,12 +7,10 @@ import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
-import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -291,8 +289,7 @@ public final class ProblemBuilder {
         if (affectationsPrecedentes.isEmpty()) {
             return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0, postesPasses, postesPassesVides);
         }
-        int[] bilan = reamorcerDepuisAffectations(
-                planning.getPostes(), animateurs, affectationsPrecedentes, planning.getContraintesAdHoc());
+        int[] bilan = reamorcerDepuisAffectations(planning.getPostes(), animateurs, affectationsPrecedentes);
         return new ProblemeReamorce(
                 planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1], postesPasses, postesPassesVides);
     }
@@ -303,8 +300,7 @@ public final class ProblemBuilder {
      * stays movable. A seat the locks already pinned is left exactly as they
      * left it — the positional walk still counts it, so the seats after it
      * keep their tenant. A tenant the referential no longer knows, or who has
-     * since declared the seat's day off, or whom a forced unavailability now
-     * covers, leaves the seat empty: seeding a violation the solver would have
+     * since declared the seat's day off, leaves the seat empty: seeding a violation the solver would have
      * to undo first is a worse start than a hole, and it is the incremental
      * re-solve's own rule. Package-private and static so it can be unit-tested
      * without a database, like {@link #figerPostesIncremental}.
@@ -312,16 +308,8 @@ public final class ProblemBuilder {
      * @return {@code {seeded, freed}}
      */
     static int[] reamorcerDepuisAffectations(
-            List<PosteAffectation> postes,
-            List<Animateur> animateurs,
-            Map<String, List<String>> animateursPersistes,
-            List<ContrainteAdHoc> contraintesAdHoc) {
+            List<PosteAffectation> postes, List<Animateur> animateurs, Map<String, List<String>> animateursPersistes) {
         Map<String, Animateur> animateursById = SeatHolders.byId(animateurs);
-        List<ContrainteAdHoc> indisponibilitesForcees = contraintesAdHoc == null
-                ? List.of()
-                : contraintesAdHoc.stream()
-                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                        .toList();
         int reamorces = 0;
         int liberes = 0;
         for (SeatHolders.Place seat : SeatHolders.places(postes, animateursPersistes)) {
@@ -329,9 +317,7 @@ public final class ProblemBuilder {
             if (!poste.isVerrouille() && seat.held()) {
                 Animateur tenant = animateursById.get(seat.holderId());
                 poste.setAnimateur(tenant);
-                if (tenant == null
-                        || indisponible(tenant, poste)
-                        || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
+                if (tenant == null || indisponible(tenant, poste)) {
                     poste.setAnimateur(null);
                     liberes++;
                 } else {
@@ -390,7 +376,6 @@ public final class ProblemBuilder {
                 animateurs,
                 affectationsPrecedentes,
                 scope == null ? ReplanificationScope.automatic() : scope,
-                contraintesAdHoc,
                 moment);
         // The splits of the day (ADR 0066), replayed over the generated seats:
         // the incremental re-solve re-opens the future only, never the rest of
@@ -421,8 +406,7 @@ public final class ProblemBuilder {
      * <li>still valid (the animateur exists and is not unavailable on the
      * seat's day) → pinned, the solver may not touch it;</li>
      * <li>invalidated by a late change (animateur deleted, freshly declared
-     * unavailable that day, or covered by a fresh forced-unavailability ad hoc
-     * constraint) → cleared and left free: exactly what the incremental solve
+     * unavailable that day) → cleared and left free: exactly what the incremental solve
      * has to re-fill. Pinning such a seat would freeze a hard violation nobody
      * could then fix;</li>
      * <li>never staffed, or newly created (added stand or créneau) → left
@@ -434,9 +418,8 @@ public final class ProblemBuilder {
             List<PosteAffectation> postes,
             List<Animateur> animateurs,
             Map<String, List<String>> animateursPersistes,
-            ReplanificationScope scope,
-            List<ContrainteAdHoc> contraintesAdHoc) {
-        return figerPostesIncremental(postes, animateurs, animateursPersistes, scope, contraintesAdHoc, null);
+            ReplanificationScope scope) {
+        return figerPostesIncremental(postes, animateurs, animateursPersistes, scope, null);
     }
 
     /**
@@ -453,16 +436,8 @@ public final class ProblemBuilder {
             List<Animateur> animateurs,
             Map<String, List<String>> animateursPersistes,
             ReplanificationScope scope,
-            List<ContrainteAdHoc> contraintesAdHoc,
             PastHorizon horizon) {
         Map<String, Animateur> animateursById = SeatHolders.byId(animateurs);
-        // Filtered once: the loop below runs on thousands of seats, and this
-        // list is normally empty.
-        List<ContrainteAdHoc> indisponibilitesForcees = contraintesAdHoc == null
-                ? List.of()
-                : contraintesAdHoc.stream()
-                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                        .toList();
         int figes = 0;
         int liberes = 0;
         int liberesManuellement = 0;
@@ -472,7 +447,7 @@ public final class ProblemBuilder {
             PosteAffectation poste = seat.poste();
             String tenantId = seat.holderId();
             Animateur tenant = tenantId == null ? null : animateursById.get(tenantId);
-            switch (freezeOrRelease(poste, tenantId, tenant, scope, indisponibilitesForcees, horizon)) {
+            switch (freezeOrRelease(poste, tenantId, tenant, scope, horizon)) {
                 case PAST -> passes++;
                 case NEW -> nouveaux++;
                 case RELEASED_BY_SCOPE -> liberesManuellement++;
@@ -509,7 +484,6 @@ public final class ProblemBuilder {
             String tenantId,
             Animateur tenant,
             ReplanificationScope scope,
-            List<ContrainteAdHoc> indisponibilitesForcees,
             PastHorizon horizon) {
         if (FrozenPast.isPast(poste, horizon)) {
             // History: whoever sat there sat there, and nobody can be
@@ -525,12 +499,8 @@ public final class ProblemBuilder {
         if (scope.release(poste, tenantId)) {
             return SeatOutcome.RELEASED_BY_SCOPE;
         }
-        // Seeded first: the ad hoc check below reads the seat as staffed,
-        // exactly like the constraint it shares its implementation with.
         poste.setAnimateur(tenant);
-        if (tenant == null
-                || indisponible(tenant, poste)
-                || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
+        if (tenant == null || indisponible(tenant, poste)) {
             poste.setAnimateur(null);
             return SeatOutcome.FREED;
         }
@@ -541,23 +511,6 @@ public final class ProblemBuilder {
     private static boolean indisponible(Animateur animateur, PosteAffectation poste) {
         return animateur.getJoursIndisponibles() != null
                 && animateur.getJoursIndisponibles().contains(poste.getCreneau().getDate());
-    }
-
-    /**
-     * Whether a forced-unavailability ad hoc constraint forbids this seat as
-     * staffed — the other way a late change lands, alongside a day off. The
-     * predicate is the solver's own
-     * ({@link AdHocConstraints#violatesForcedIndisponibilite}), so the two can
-     * never disagree about what is allowed.
-     */
-    private static boolean forbiddenByContrainteAdHoc(
-            List<ContrainteAdHoc> indisponibilitesForcees, PosteAffectation poste) {
-        for (ContrainteAdHoc contrainte : indisponibilitesForcees) {
-            if (AdHocConstraints.violatesForcedIndisponibilite(contrainte, poste)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -663,7 +616,7 @@ public final class ProblemBuilder {
      * effectif.</p>
      *
      * <p>A stand closed for only part of a créneau (see
-     * {@link dev.sylvain.planning.domain.IndisponibiliteStand})
+     * {@link dev.sylvain.planning.domain.PlageStand})
      * still generates a poste for the créneau's open remainder(s), each one
      * carrying an effective time-window override
      * ({@link PosteAffectation#getHeureDebutEffective()}) narrower than the

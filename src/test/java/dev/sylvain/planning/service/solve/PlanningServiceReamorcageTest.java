@@ -3,11 +3,9 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -45,10 +43,7 @@ class PlanningServiceReamorcageTest {
                 List.of(poste("p0", standA, matin), poste("p1", standA, matin), poste("p2", standB, matin));
 
         int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(
-                postes,
-                animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1", "A2"), key("STAND-B", 1L), List.of("A1")),
-                List.of());
+                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1", "A2"), key("STAND-B", 1L), List.of("A1")));
 
         assertThat(postes).extracting(PosteAffectation::getAnimateur).containsExactly(alice, bob, alice);
         assertThat(postes).noneMatch(PosteAffectation::isVerrouille);
@@ -65,7 +60,7 @@ class PlanningServiceReamorcageTest {
         postes.get(0).setVerrouille(true);
 
         int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(
-                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1", "A2")), List.of());
+                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1", "A2")));
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(bob);
         assertThat(postes.get(0).isVerrouille()).isTrue();
@@ -83,8 +78,7 @@ class PlanningServiceReamorcageTest {
         int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(
                 postes,
                 animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1", "DISPARU"), key("STAND-B", 1L), List.of("A2")),
-                List.of());
+                Map.of(key("STAND-A", 1L), List.of("A1", "DISPARU"), key("STAND-B", 1L), List.of("A2")));
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(1).getAnimateur()).isNull();
@@ -94,25 +88,11 @@ class PlanningServiceReamorcageTest {
     }
 
     @Test
-    void startsEmptyWhereAForcedUnavailabilityNowCoversTheSeat() {
-        ContrainteAdHoc indisponibilite = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        indisponibilite.getAnimateursConcernes().add(alice);
-        indisponibilite.setCreneau(matin);
-        List<PosteAffectation> postes = List.of(poste("p0", standB, matin));
-
-        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(
-                postes, animateurs, Map.of(key("STAND-B", 1L), List.of("A1")), List.of(indisponibilite));
-
-        assertThat(postes.get(0).getAnimateur()).isNull();
-        assertThat(bilan).containsExactly(0, 1);
-    }
-
-    @Test
     void aSeatThePlanNeverStaffedStaysFree() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matin), poste("p1", standA, matin));
 
         int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(
-                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1")), List.of());
+                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1")));
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
         assertThat(postes.get(1).getAnimateur()).isNull();

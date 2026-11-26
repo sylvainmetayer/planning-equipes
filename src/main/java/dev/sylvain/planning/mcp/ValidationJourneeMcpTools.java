@@ -1,9 +1,9 @@
 package dev.sylvain.planning.mcp;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import dev.sylvain.planning.domain.ValidationJournee;
+import dev.sylvain.planning.domain.DayState;
 import dev.sylvain.planning.service.validation.ValidationJourneeService;
-import dev.sylvain.planning.service.validation.ValidationJourneeService.DemandeValidation;
+import dev.sylvain.planning.service.validation.ValidationJourneeService.DayStateView;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.PrerequisJournee;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.ProgressionValidations;
@@ -16,16 +16,20 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * MCP tools mirroring {@code ValidationJourneeResource}: where the relecture of
- * an edition has got to, and what remains to read.
+ * MCP tools for the state of a day — à relire, relue, figée (ADR 0121) — and
+ * what to check before reading one: where the relecture of an edition has
+ * got to, and what remains to read.
  *
  * <p>An assistant walking an organiser through twelve days of relecture is the
  * very use these tools exist for — « qu'est-ce qu'il reste à relire », « cette
  * journée-là, qu'est-ce qui cloche » — and none of it was reachable without
- * them.</p>
+ * them. The 3.x tools that listed, added and withdrew readings are gone (the
+ * table of renamed tools says where they went); the REST routes behind them
+ * stay as aliases until 5.0.</p>
  *
- * <p>Nothing here names a person: a validation carries the admin account it was
- * written under, which the views drop, and the prerequisites are counts.</p>
+ * <p>Nothing here names a person: the account a reading was written under is
+ * dropped, the comment reduced to whether there is one, and the prerequisites
+ * are counts.</p>
  */
 @EditionCiblee
 @RefusMetier
@@ -44,23 +48,23 @@ public class ValidationJourneeMcpTools {
     }
 
     @Tool(
-            name = "lister_validations_journee",
-            description = "Liste les journées relues et acceptées, et l'avancement de la relecture "
-                    + "(« 3 journées sur 12 »). Une validation dit qu'un humain a relu la journée ; elle ne fige "
-                    + "rien — figer, c'est verrouiller (verrouiller).",
+            name = "consulter_etats_journee",
+            description = "Liste l'état de chaque journée de l'édition (à relire, relue, figée) et l'avancement de "
+                    + "la relecture (« 3 journées sur 12 ») : une journée compte quand elle est relue ou figée. "
+                    + "Figée, c'est le verrou de journée : le calcul n'y touche plus. Relue, c'est une relecture "
+                    + "sans verrou, que le calcul retire s'il recalcule la journée.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    AvancementValidations listJourneeValidations(
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    EtatsJourneeView getJourneeStates(@ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         ProgressionValidations progression = prerequisService.progression();
-        return new AvancementValidations(
+        return new EtatsJourneeView(
                 progression.journees(),
                 progression.journeesValidees(),
-                validationService.list().stream()
+                validationService.states().stream()
                         .map(ValidationJourneeMcpTools::toView)
                         .toList());
     }
@@ -91,13 +95,14 @@ public class ValidationJourneeMcpTools {
     }
 
     @Tool(
-            name = "ajouter_validation_journee",
-            description = "Marque une journée entière « relue et acceptée ». poserVerrou fige en plus la journée "
-                    + "pour les prochaines résolutions — facultatif, et faux par défaut. Relire une journée déjà "
-                    + "acceptée remplace la validation précédente. Pendant une résolution de l'édition, la "
-                    + "validation est enregistrée mais la réponse porte RESOLUTION_EN_COURS : la résolution en "
-                    + "cours ne la voit pas, et à son atterrissage elle la retirera si elle déplace un poste de "
-                    + "cette journée.",
+            name = "modifier_etat_journee",
+            description = "Change l'état d'une journée entière : A_RELIRE, RELUE ou FIGEE. Seul FIGEE pose le "
+                    + "verrou de journée (le calcul n'y touchera plus) ; RELUE et A_RELIRE le retirent. "
+                    + "Le commentaire de relecture est facultatif ; figer sans commentaire garde celui de la "
+                    + "relecture existante, A_RELIRE retire la relecture. Idempotent. Pendant une résolution de "
+                    + "l'édition, l'état est enregistré mais la réponse porte RESOLUTION_EN_COURS : la résolution "
+                    + "en cours ne le voit pas, et à son atterrissage elle retirera la relecture d'une journée "
+                    + "non figée qu'elle déplace.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -105,46 +110,40 @@ public class ValidationJourneeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ResultatValidationView addJourneeValidation(
-            @ToolArg(description = "Journée relue (AAAA-MM-JJ)") String jour,
+    EtatJourneeView updateJourneeState(
+            @ToolArg(description = "Journée (AAAA-MM-JJ)") String jour,
+            @ToolArg(description = "A_RELIRE, RELUE ou FIGEE") String etat,
             @ToolArg(description = "Commentaire de relecture, libre", required = false) String commentaire,
-            @ToolArg(description = "Poser aussi un verrouillage de journée", required = false) Boolean poserVerrou,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        ValidationJourneeService.ResultatValidation resultat = validationService.accept(
-                new DemandeValidation(McpArgs.date(jour, "jour"), commentaire, Boolean.TRUE.equals(poserVerrou)));
-        return new ResultatValidationView(toView(resultat.validation()), resultat.verrouPose(), List.of());
+        return toView(validationService.setState(
+                McpArgs.date(jour, "jour"), McpArgs.enumeration(DayState.class, etat, "etat"), commentaire));
     }
 
-    @Tool(
-            name = "retirer_validation_journee",
-            description = "Retire une validation : la journée redevient à relire. Le verrouillage éventuellement posé "
-                    + "avec elle reste en place — c'est un mécanisme distinct (deverrouiller).",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    SuppressionResult removeJourneeValidation(
-            @ToolArg(description = "Id de la validation") String id,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        validationService.withdraw(id);
-        return new SuppressionResult(id, true);
-    }
-
-    static ValidationView toView(ValidationJournee validation) {
-        return new ValidationView(
-                validation.id(),
-                validation.jour(),
-                validation.valideLe(),
-                TextesLibres.renseigne(validation.commentaire()));
+    static EtatJourneeView toView(DayStateView state) {
+        return new EtatJourneeView(
+                state.jour(), state.etat(), state.valideLe(), TextesLibres.renseigne(state.commentaire()), List.of());
     }
 
     /**
-     * One reading. Whether a comment was left, never what it says, and never
-     * who left it: see {@link TextesLibres}.
+     * One day and where it stands. Whether a comment was left, never what it
+     * says, and never who left it: see {@link TextesLibres}. Carries
+     * {@code RESOLUTION_EN_COURS} alone, when a solve holds the edition and the
+     * answer is a write's; left out when empty.
      */
-    public record ValidationView(String id, LocalDate jour, Instant valideLe, boolean commentaireRenseigne) {}
+    public record EtatJourneeView(
+            LocalDate jour,
+            DayState etat,
+            Instant valideLe,
+            boolean commentaireRenseigne,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<EtatJourneeView> {
+
+        @Override
+        public EtatJourneeView withWarning(String code) {
+            return new EtatJourneeView(
+                    jour, etat, valideLe, commentaireRenseigne, WarningCodes.with(avertissements, code));
+        }
+    }
 
     /**
      * What to check before accepting a day. Same figures as the screen's, with
@@ -160,25 +159,6 @@ public class ValidationJourneeMcpTools {
             List<ValidationPrerequisService.Prerequis> prerequis,
             boolean tousSatisfaits) {}
 
-    /** Where the relecture stands, and every reading behind it. */
-    public record AvancementValidations(int journees, int journeesValidees, List<ValidationView> validations) {}
-
-    /**
-     * A reading, whether the lock it was asked for was actually laid down, and
-     * the warning codes — {@code RESOLUTION_EN_COURS} alone, when a solve holds
-     * the edition: its landing withdraws the readings of the days it
-     * recomputed ({@code ValidationJourneeService.withdrawAfterSolve}), this
-     * one included. Left out when empty.
-     */
-    public record ResultatValidationView(
-            ValidationView validation,
-            boolean verrouPose,
-            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
-            implements WarningCarrier<ResultatValidationView> {
-
-        @Override
-        public ResultatValidationView withWarning(String code) {
-            return new ResultatValidationView(validation, verrouPose, WarningCodes.with(avertissements, code));
-        }
-    }
+    /** Where the relecture stands, and the state of every day of the grid. */
+    public record EtatsJourneeView(int journees, int journeesValidees, List<EtatJourneeView> etats) {}
 }

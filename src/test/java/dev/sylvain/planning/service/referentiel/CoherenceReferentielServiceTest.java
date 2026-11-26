@@ -7,11 +7,11 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlageStand;
+import dev.sylvain.planning.domain.RecurringRules;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
@@ -62,7 +62,6 @@ class CoherenceReferentielServiceTest {
         Stand stand = new Stand(id, id, Set.of("JEUX"), 1, 2, reserveMajeurs);
         stand.setIndisponibilites(new ArrayList<>());
         stand.setOuvertures(new ArrayList<>());
-        stand.setHoraires(new ArrayList<>());
         return stand;
     }
 
@@ -77,12 +76,6 @@ class CoherenceReferentielServiceTest {
         Animateur animateur = new Animateur(id, "Prénom", "Nom", SAMEDI.minusYears(15), false);
         animateur.setTelephone("0600000000");
         return animateur;
-    }
-
-    private static ContrainteAdHoc forced(String id, Animateur... animateurs) {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        contrainte.setAnimateursConcernes(List.of(animateurs));
-        return contrainte;
     }
 
     /** What a line of the checklist reads as in an assertion. */
@@ -128,7 +121,6 @@ class CoherenceReferentielServiceTest {
                 ownHoursStands,
                 contraintes,
                 verrouillages,
-                Set::of,
                 null,
                 diagnostics,
                 CreneauGridService.gridAnomalies(creneaux, new ParametresLegaux(), verrouillages, List.of()),
@@ -200,7 +192,7 @@ class CoherenceReferentielServiceTest {
         List<Creneau> creneaux = grille();
         Stand avant = stand("PLATEAU", false);
         Stand apres = stand("PLATEAU", false);
-        apres.getIndisponibilites().add(new IndisponibiliteStand(null, SAMEDI, LocalTime.MIDNIGHT, null, null));
+        apres.getPlages().add(PlageStand.fermeture(null, SAMEDI, LocalTime.MIDNIGHT, null, null));
         HoraireStandResolver.apply(List.of(apres), creneaux);
 
         assertThat(CoherenceAnalyzer.onStand(avant, apres, creneaux))
@@ -243,10 +235,10 @@ class CoherenceReferentielServiceTest {
     @Test
     void aTimeslotStartingBeforeEveryStandOpensIsListed() {
         Stand stand = stand("PLATEAU", false);
-        stand.setHoraires(
-                List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null))));
         List<Creneau> creneaux =
                 new ArrayList<>(List.of(new Creneau(7L, 1, SAMEDI, LocalTime.of(8, 0), LocalTime.of(13, 0))));
+        RecurringRules.poser(
+                stand, creneaux, Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null)));
 
         assertThat(lines(build(List.of(adulte("A1")), List.of(stand), creneaux)))
                 .contains(new Line(
@@ -265,13 +257,13 @@ class CoherenceReferentielServiceTest {
     void theStandWarningsAreListedOnceEach() {
         Stand horsEvenement = stand("HORS", false);
         horsEvenement
-                .getIndisponibilites()
-                .add(new IndisponibiliteStand(null, LocalDate.of(2027, 12, 25), LocalTime.of(10, 0), null, null));
+                .getPlages()
+                .add(PlageStand.fermeture(null, LocalDate.of(2027, 12, 25), LocalTime.of(10, 0), null, null));
         Stand sansEffet = stand("SANS-EFFET", false);
-        sansEffet.getOuvertures().add(new OuvertureStand(null, SAMEDI, LocalTime.of(20, 0), LocalTime.of(22, 0), null));
+        sansEffet.getPlages().add(PlageStand.ouverture(null, SAMEDI, LocalTime.of(20, 0), LocalTime.of(22, 0), null));
         Stand ferme = stand("FERME", false);
-        ferme.setHoraires(
-                List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.MIDNIGHT, null))));
+        RecurringRules.poser(
+                ferme, grille(), Regle.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.MIDNIGHT, null)));
 
         CoherenceReport rapport = build(List.of(adulte("A1")), List.of(horsEvenement, sansEffet, ferme), grille());
 
@@ -303,13 +295,11 @@ class CoherenceReferentielServiceTest {
     /** The opening anomalies are the Ouvertures screen's, the very same report. */
     @Test
     void theOpeningAnomaliesAreTheOnesOfTheOpeningsScreen() {
-        Stand chevauchant = stand("DOUBLE", false);
-        chevauchant.setHoraires(List.of(
-                HoraireStand.everyDay(
-                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(13, 0), 2)),
-                HoraireStand.everyDay(
-                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(13, 0), 1))));
-        List<Stand> stands = List.of(chevauchant, stand("PLATEAU", false));
+        Stand horsAmplitude = stand("TARD", false);
+        horsAmplitude
+                .getPlages()
+                .add(PlageStand.ouverture(null, SAMEDI, LocalTime.of(20, 0), LocalTime.of(22, 0), null));
+        List<Stand> stands = List.of(horsAmplitude, stand("PLATEAU", false));
         List<Creneau> creneaux = grille();
 
         CoherenceReport rapport = build(List.of(adulte("A1")), stands, creneaux);
@@ -323,48 +313,29 @@ class CoherenceReferentielServiceTest {
                 .toList();
         assertThat(checklist).containsExactlyInAnyOrderElementsOf(ecran).isNotEmpty();
         assertThat(rapport.anomalies())
-                .filteredOn(ligne -> ligne.code().equals("REGLES_CHEVAUCHANTES"))
+                .filteredOn(ligne -> ligne.code().equals("FENETRE_SANS_EFFET"))
                 .singleElement()
                 .extracting(CoherenceIssue::gravite)
-                .isEqualTo(CoherenceSeverity.INFORMATION);
+                .isEqualTo(CoherenceSeverity.A_VERIFIER);
     }
 
     /**
-     * The four readings of the exceptions, with the sentences Diagnostic →
+     * The readings of the exceptions, with the sentences Diagnostic →
      * Problèmes shows — blocking, since a critical cause guarantees a failed
      * solve.
      */
     @Test
     void theExceptionsAreTheOnesOfTheProblemsScreenWithTheSameSentences() {
         List<Creneau> creneaux = grille();
-        Animateur absent = adulte("A1", SAMEDI, LUNDI);
-        Animateur jeune = mineur("A2");
-        Animateur fige = adulte("A3");
-        Stand plateau = stand("PLATEAU", false);
-        Stand bar = stand("BAR", true);
-        ContrainteAdHoc surAbsent = forced("C01", absent);
-        ContrainteAdHoc surJeune = forced("C02", jeune);
-        surJeune.setStand(bar);
-        ContrainteAdHoc surFige = forced("C03", fige);
         ContrainteAdHoc incompatibles = new ContrainteAdHoc("C04", TypeContrainteAdHoc.INCOMPATIBILITE);
         incompatibles.setAnimateursConcernes(List.of(adulte("A4"), adulte("A5")));
         ContrainteAdHoc affines = new ContrainteAdHoc("C05", TypeContrainteAdHoc.AFFINITE);
         affines.setAnimateursConcernes(List.of(adulte("A4"), adulte("A5")));
-        // A whole schedule frozen is one lock per timeslot of the grid.
-        List<VerrouillagePlanning> verrous = creneaux.stream()
-                .map(creneau -> {
-                    VerrouillagePlanning verrou =
-                            new VerrouillagePlanning("V" + creneau.getId(), TypeVerrouillage.ANIMATEUR_CRENEAU);
-                    verrou.setAnimateurId("A3");
-                    verrou.setCreneauId(creneau.getId());
-                    return verrou;
-                })
-                .toList();
-        List<Animateur> animateurs = List.of(absent, jeune, fige, adulte("A4"), adulte("A5"));
-        List<Stand> stands = List.of(plateau, bar);
-        List<ContrainteAdHoc> contraintes = List.of(surAbsent, surJeune, surFige, incompatibles, affines);
+        List<Animateur> animateurs = List.of(adulte("A4"), adulte("A5"));
+        List<Stand> stands = List.of(stand("PLATEAU", false));
+        List<ContrainteAdHoc> contraintes = List.of(incompatibles, affines);
 
-        CoherenceReport rapport = build(animateurs, stands, creneaux, contraintes, verrous, List.of(), false);
+        CoherenceReport rapport = build(animateurs, stands, creneaux, contraintes, List.of(), List.of(), false);
 
         List<CoherenceIssue> ajustements = rapport.anomalies().stream()
                 .filter(ligne -> ligne.famille() == CoherenceFamily.AJUSTEMENTS)
@@ -372,13 +343,7 @@ class CoherenceReferentielServiceTest {
         assertThat(ajustements)
                 .extracting(CoherenceIssue::code, CoherenceIssue::objetId)
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("CONTRAINTES_AD_HOC_CONTRADICTOIRES", "C04"),
-                        org.assertj.core.groups.Tuple.tuple(
-                                TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE.name(), "C01"),
-                        org.assertj.core.groups.Tuple.tuple(
-                                TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL.name(), "C02"),
-                        org.assertj.core.groups.Tuple.tuple(
-                                TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE.name(), "C03"));
+                        org.assertj.core.groups.Tuple.tuple("CONTRAINTES_AD_HOC_CONTRADICTOIRES", "C04"));
         assertThat(ajustements).allSatisfy(ligne -> {
             assertThat(ligne.gravite()).isEqualTo(CoherenceSeverity.BLOQUANT);
             assertThat(ligne.objet()).isEqualTo(CoherenceSubject.CONTRAINTE_AD_HOC);
@@ -391,7 +356,7 @@ class CoherenceReferentielServiceTest {
                                 creneaux,
                                 contraintes,
                                 true,
-                                new FeasibilityAnalyzer.PlanContext(verrous, Set::of, null))
+                                new FeasibilityAnalyzer.PlanContext(null))
                         .causes()
                         .stream()
                         .filter(cause -> cause.type() != TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF)
@@ -471,9 +436,6 @@ class CoherenceReferentielServiceTest {
                 // As the opening report's FENETRE_SANS_EFFET and STAND_JAMAIS_OUVERT.
                 TypeAvertissement.STAND_FENETRE_SANS_EFFET,
                 TypeAvertissement.STAND_JAMAIS_OUVERT,
-                TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
-                TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL,
-                TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
                 // aCarWhoseMembersDeclaredDifferentDaysOffIsListed below.
                 TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
                 TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE,

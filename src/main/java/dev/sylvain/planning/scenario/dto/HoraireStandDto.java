@@ -10,8 +10,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * A recurring opening/closing rule of a stand — the scenario-file form of
- * {@code fr...domain.HoraireStand}.
+ * A recurring opening/closing rule of a stand — what the file calls the stand's
+ * <b>model</b> (ADR 0104): the rules a dateless edition keeps until it has days
+ * to lay them on, the scenario-file form of {@code domain.HorairesRecurrents.Regle}.
  *
  * <p>The day selector is <b>flattened onto the rule</b> rather than nested in a
  * sub-object: {@code jours} names which of the sibling fields applies, and only
@@ -23,9 +24,8 @@ import java.util.List;
  * <p>Which sibling a selector requires ({@code joursSemaine} for
  * {@code JOURS_SEMAINE}, {@code dateDebut}/{@code dateFin} for {@code PLAGE},
  * {@code dates} for {@code DATES}) can't be expressed as a Bean Validation
- * annotation, so it is checked in {@code ReferenceDataService#validateHoraires}
- * — the same place that rejects two rules of equal scope disagreeing on the
- * mode.</p>
+ * annotation; the reading of the rules ({@code HorairesRecurrents}) takes what
+ * the selector names and ignores the others.</p>
  */
 public record HoraireStandDto(
         @NotNull ModeHoraire mode,

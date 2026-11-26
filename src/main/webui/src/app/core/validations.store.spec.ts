@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ValidationsApi } from './api/validations-api';
-import { ProgressionValidations, ValidationJournee } from './models';
+import { DayStateView, ProgressionValidations } from './models';
 import { ValidationsStore } from './validations.store';
 
 function injectStore(): ValidationsStore {
@@ -22,17 +22,15 @@ describe('ValidationsStore', () => {
 
   let api: {
     progression: ReturnType<typeof vi.fn>;
-    list: ReturnType<typeof vi.fn>;
-    accept: ReturnType<typeof vi.fn>;
-    withdraw: ReturnType<typeof vi.fn>;
+    etats: ReturnType<typeof vi.fn>;
+    setEtat: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     api = {
       progression: vi.fn().mockResolvedValue(progression({})),
-      list: vi.fn().mockResolvedValue([]),
-      accept: vi.fn(),
-      withdraw: vi.fn(),
+      etats: vi.fn().mockResolvedValue([]),
+      setEtat: vi.fn(),
     };
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), { provide: ValidationsApi, useValue: api }],
@@ -67,30 +65,22 @@ describe('ValidationsStore', () => {
     expect(instance.acceptedDays().has('2026-07-08')).toBe(true);
   });
 
-  it('relit après avoir accepté une journée : la bannière ne doit pas retarder', async () => {
-    const validation: ValidationJournee = {
-      id: 'V1',
-      jour: '2026-07-08',
-      valideLe: '2026-07-01T10:00:00Z',
-      validePar: 'admin',
-      commentaire: null,
-    };
-    api.accept.mockResolvedValue({ validation, verrouPose: false });
+  it('relit après un changement d’état : la bannière ne doit pas retarder', async () => {
+    const dayState: DayStateView = { jour: '2026-07-08', etat: 'FIGEE' };
+    api.setEtat.mockResolvedValue(dayState);
     const instance = injectStore();
 
-    await instance.accept({ jour: '2026-07-08' });
+    await instance.setEtat('2026-07-08', 'FIGEE', null);
 
-    expect(api.accept).toHaveBeenCalledWith({ jour: '2026-07-08' });
+    expect(api.setEtat).toHaveBeenCalledWith('2026-07-08', 'FIGEE', null);
     expect(api.progression).toHaveBeenCalled();
+    expect(api.etats).toHaveBeenCalled();
   });
 
-  it('relit après un retrait, et garde le message d’erreur quand la lecture échoue', async () => {
-    api.withdraw.mockResolvedValue(undefined);
+  it('garde le message d’erreur quand la lecture échoue', async () => {
     const instance = injectStore();
-    await instance.withdraw('V1');
-    expect(api.progression).toHaveBeenCalled();
-
     api.progression.mockRejectedValue(new Error('serveur indisponible'));
+
     await instance.reload();
 
     expect(instance.error()).toContain('serveur indisponible');

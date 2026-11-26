@@ -5,16 +5,15 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ConsigneDto;
@@ -27,13 +26,12 @@ import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.FestivalDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
-import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
-import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
+import dev.sylvain.planning.scenario.dto.PlageStandDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
 import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
@@ -173,8 +171,7 @@ final class ScenarioDtoAssembler {
                         stand.isReserveMajeurs(),
                         stand.isPremium(),
                         stand.getNiveauEffort(),
-                        indisponibilites(stand.getIndisponibilites()),
-                        ouvertures(stand.getOuvertures()),
+                        plages(stand.getPlages()),
                         horaires(stand.getHoraires())))
                 .toList();
     }
@@ -223,59 +220,46 @@ final class ScenarioDtoAssembler {
                 .toList();
     }
 
-    private static List<IndisponibiliteStandDto> indisponibilites(List<IndisponibiliteStand> indisponibilites) {
-        return indisponibilites.stream()
-                .map(indispo -> new IndisponibiliteStandDto(
-                        indispo.getDate(), indispo.getHeureDebut(), indispo.getHeureFin(), indispo.getMotif()))
-                .toList();
-    }
-
-    private static List<OuvertureStandDto> ouvertures(List<OuvertureStand> ouvertures) {
-        return ouvertures.stream()
-                .map(ouverture -> new OuvertureStandDto(
-                        ouverture.getDate(),
-                        ouverture.getHeureDebut(),
-                        ouverture.getHeureFin(),
-                        ouverture.getMotif(),
-                        ouverture.getEffectif()))
+    /** {@code null} for a stand with no plage: an absent key reads as an empty schedule. */
+    private static List<PlageStandDto> plages(List<PlageStand> plages) {
+        if (plages.isEmpty()) {
+            return null;
+        }
+        return plages.stream()
+                .map(plage -> new PlageStandDto(
+                        plage.getDate(),
+                        plage.getMode(),
+                        plage.getHeureDebut(),
+                        plage.getHeureFin(),
+                        plage.getMotif(),
+                        plage.getEffectif(),
+                        plage.isDepliee() ? Boolean.TRUE : null))
                 .toList();
     }
 
     /**
-     * The day selector is flattened onto the rule, and only the fields the
-     * selector actually uses are carried: a {@code TOUS} rule has no dates, and
-     * a component left null is a key the file does not carry.
+     * The stand's model. The day selector is flattened onto the rule, and only the fields the
+     * selector actually uses are carried; {@code null} for a stand with none.
      */
-    private static List<HoraireStandDto> horaires(List<HoraireStand> horaires) {
-        return horaires.stream()
-                .map(horaire -> new HoraireStandDto(
-                        horaire.getMode(),
-                        horaire.getJours(),
-                        horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE
-                                ? List.copyOf(horaire.getJoursSemaine())
-                                : null,
-                        horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.PLAGE
-                                ? horaire.getDateDebut()
-                                : null,
-                        horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.PLAGE
-                                ? horaire.getDateFin()
-                                : null,
-                        horaire.getJours() == dev.sylvain.planning.domain.TypeJoursHoraire.DATES
-                                ? List.copyOf(horaire.getDates())
-                                : null,
-                        fenetres(horaire.getFenetres()),
-                        horaire.getMotif()))
-                .toList();
-    }
-
-    private static List<FenetreHoraireDto> fenetres(List<FenetreHoraire> fenetres) {
-        return fenetres.stream()
-                // heureFin absent rather than null: "jusqu'à la fermeture" reads
-                // better as a missing end. Same for effectif: absent means
-                // "inherit effectifMin", and writing it out would freeze
-                // today's value into the file as if it had been chosen.
-                .map(fenetre ->
-                        new FenetreHoraireDto(fenetre.getHeureDebut(), fenetre.getHeureFin(), fenetre.getEffectif()))
+    private static List<HoraireStandDto> horaires(List<HorairesRecurrents.Regle> regles) {
+        if (regles.isEmpty()) {
+            return null;
+        }
+        return regles.stream()
+                .map(regle -> new HoraireStandDto(
+                        regle.mode(),
+                        regle.jours(),
+                        regle.jours() == TypeJoursHoraire.JOURS_SEMAINE ? List.copyOf(regle.joursSemaine()) : null,
+                        regle.jours() == TypeJoursHoraire.PLAGE ? regle.dateDebut() : null,
+                        regle.jours() == TypeJoursHoraire.PLAGE ? regle.dateFin() : null,
+                        regle.jours() == TypeJoursHoraire.DATES ? List.copyOf(regle.dates()) : null,
+                        // heureFin and effectif absent rather than null: « until closing » reads better as a
+                        // missing end, and writing the effectif out would freeze today's minimum in the file.
+                        regle.fenetres().stream()
+                                .map(fenetre -> new FenetreHoraireDto(
+                                        fenetre.getHeureDebut(), fenetre.getHeureFin(), fenetre.getEffectif()))
+                                .toList(),
+                        regle.motif()))
                 .toList();
     }
 

@@ -1,5 +1,5 @@
-// How the screens name the four families of the referential freeze
-// (ADR 0052). Functions rather than constants: `$localize` must run after
+// How the screens name the four families the phase of the edition freezes
+// (ADR 0052, 0115). Functions rather than constants: `$localize` must run after
 // `main.ts` loaded the translations, never at module scope.
 
 import { FreezeFamily } from './models';
@@ -15,20 +15,6 @@ export function familyLabel(family: FreezeFamily): string {
       return $localize`:@@gel.famille.typologiesEmplacements:Typologies et emplacements`;
     case 'COMPETENCES':
       return $localize`:@@gel.famille.competences:Compétences des animateurs`;
-  }
-}
-
-/** What the freeze of the family covers, in one line under its switch. */
-export function familyScope(family: FreezeFamily): string {
-  switch (family) {
-    case 'STANDS':
-      return $localize`:@@gel.perimetre.stands:Création, suppression, effectifs, réserve majeurs, typologies proposées, horaires.`;
-    case 'CRENEAUX':
-      return $localize`:@@gel.perimetre.creneaux:Création, suppression, date, heures, couverture de pause, journées types, séries, dérivation.`;
-    case 'TYPOLOGIES_EMPLACEMENTS':
-      return $localize`:@@gel.perimetre.typologiesEmplacements:Création, suppression, quota par typologie, typologie polyvalente.`;
-    case 'COMPETENCES':
-      return $localize`:@@gel.perimetre.competences:Niveaux des animateurs déjà inscrits (fiche, grille, import).`;
   }
 }
 

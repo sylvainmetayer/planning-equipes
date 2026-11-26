@@ -1,6 +1,6 @@
 # Relire et retoucher le planning
 
-Vous relisez le planning journée par journée, vous corrigez un siège à la main sans casser une règle, et vous marquez ce qui est relu.
+Vous relisez le planning journée par journée, vous corrigez un siège à la main sans casser une règle, et vous dites où en est chaque journée.
 
 Le calcul est une proposition : vous relisez, retouchez et décidez. Toutes les retouches passent par la page *Planning*.
 
@@ -35,15 +35,29 @@ Le panneau propose de prévenir les personnes concernées (le changement n'est p
 
 Dans la vue *Tableau*, chaque nom et chaque siège vide ouvrent le panneau du siège. « Déplacer vers… » déplace sur un siège libre, ou échange avec une personne ; l'action est refusée si une règle impérative serait cassée. Le *Rail* offre le même geste depuis une vacation, pour la confier à une autre personne ou l'échanger avec la sienne.
 
-## Marquer une journée « relue et acceptée »
+## Changer l'état d'une journée
 
 1. Sur la page Planning, repérez le compteur de ce qu'il reste à regarder (sièges vides et pauses sans relais) : il mène aux problèmes du Diagnostic.
-2. Dans le menu de la journée, choisissez « Relu et accepté… ». Les prérequis de ce jour s'affichent : écarts durs, sièges vides, pauses sans relais, postes irremplaçables.
-3. Acceptez, éventuellement quand même : l'application le dit alors.
+2. Cliquez sur le bouton d'état de la journée (« À relire », « Relue le… » ou « Figée »). Un contrôle à trois valeurs s'ouvre, avec les prérequis de ce jour : écarts durs, sièges vides, pauses sans relais, postes irremplaçables.
+3. Choisissez « Relue », éventuellement quand même, avec un commentaire, puis « Enregistrer l'état ». Choisir « Figée » demande une confirmation : le calcul ne touchera plus à cette journée, et le commentaire de relecture est gardé.
 
-L'avancement se lit dans le Solveur (« 3 journées sur 12 ») et par une coche sur chaque journée relue du mini-mois de la page Planning. La validation porte toujours sur la journée entière, quel que soit le filtre affiché.
+Un lecteur voit l'état de la journée, sans bouton pour le changer.
 
-Accepter ne fige rien : le verrouillage est proposé à côté, jamais imposé (voir [Poser des exceptions et des verrous](ajustements-et-verrous.md)).
+L'avancement se lit dans le Solveur (« 3 journées sur 12 ») et par une coche sur chaque journée relue du mini-mois de la page Planning. L'état porte toujours sur la journée entière, quel que soit le filtre affiché.
+
+Relire ne fige rien : seule la valeur « Figée » pose le verrouillage de journée (voir [Poser des exceptions et des verrous](ajustements-et-verrous.md)).
+
+### Les trois états d'une journée
+
+Chaque journée est **à relire**, **relue** ou **figée**.
+
+| État | Ce que cela veut dire | Ce qu'un nouveau calcul en fait |
+| --- | --- | --- |
+| À relire | Personne ne l'a relue | Il la recalcule librement |
+| Relue | Quelqu'un l'a relue, rien n'est figé | Il peut la recalculer, et elle redevient alors à relire |
+| Figée | Elle porte un verrouillage de journée entière | Il n'y touche plus |
+
+Seul votre geste fige une journée : la relire ne la fige jamais. Retirer le verrouillage de journée entière la rend relue si elle avait été relue, à relire sinon. Une journée figée compte comme relue dans l'avancement, même verrouillée depuis l'écran des verrous sans avoir été relue. La phase de l'édition ne change pas l'état des journées : vous pouvez relire ou figer une journée en préparation, en calcul comme après publication.
 
 ### Quand un nouveau calcul retire une relecture
 

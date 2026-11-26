@@ -58,13 +58,11 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("supprimer_animateur", "AnimateurService.delete"),
             Map.entry("appliquer_declaration_disponibilite", "AnimateurService.update"),
             Map.entry("modifier_stand", "StandService.update"),
-            Map.entry("ajouter_fermeture_stand", "StandService.update"),
-            Map.entry("ajouter_ouverture_stand", "StandService.update"),
-            Map.entry("effacer_plages_stand", "StandService.update"),
-            Map.entry("ajouter_horaire_stand", "StandService.update"),
-            Map.entry("effacer_horaires_stand", "StandService.update"),
+            Map.entry("creer_plage_stand", "StandService.addPlage"),
+            Map.entry("supprimer_plage_stand", "StandService.removePlages"),
+            Map.entry("creer_horaire_stand", "StandService.update"),
+            Map.entry("supprimer_horaires_stand", "StandService.update"),
             Map.entry("supprimer_stand", "StandService.delete"),
-            Map.entry("compacter_horaires_stands", "StandService.compactHoraires"),
             Map.entry("supprimer_creneau", "CreneauService.delete"),
             Map.entry("supprimer_creneaux", "CreneauService.deleteInBulk"),
             Map.entry("creer_creneaux_recurrents", "CreneauService.createInBulk"),
@@ -93,10 +91,6 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("supprimer_job", "retire une résolution de la file ou de l'historique"),
             Map.entry("definir_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
             Map.entry("supprimer_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
-            Map.entry(
-                    "retirer_validation_journee",
-                    "l'atterrissage ne fait que retirer des validations : il ne peut ni défaire ce retrait, ni"
-                            + " rendre la journée moins à relire"),
             Map.entry(
                     "definir_journee_type",
                     "une journée type n'atteint la grille que par materialiser_journees_types, refusé pendant un calcul"),
@@ -135,8 +129,9 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("envoyer_planning_animateur", "envoie le plan enregistré, n'écrit rien que le calcul lise"),
             Map.entry("relancer_animateurs", "envoie des relances, n'écrit rien que le calcul lise"),
             Map.entry("modifier_sauvegardes", "réglage de la base entière, jamais lu par le calcul"),
-            Map.entry("figer_referentiel", "le gel refuse les écritures à venir, il ne change aucune donnée lue"),
-            Map.entry("lever_gel", "le gel refuse les écritures à venir, il ne change aucune donnée lue"));
+            Map.entry(
+                    "modifier_phase_edition",
+                    "la phase refuse les écritures à venir, elle ne change aucune donnée lue (ADR 0115)"));
 
     @Test
     void everyWriteToolSaysWhatHappensDuringASolve() throws Exception {

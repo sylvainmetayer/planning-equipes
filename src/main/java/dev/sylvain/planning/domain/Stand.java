@@ -1,12 +1,18 @@
 package dev.sylvain.planning.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 public class Stand {
 
@@ -33,44 +39,37 @@ public class Stand {
     /** Physical location the stand is set up at; nullable (not every stand is geocoded). */
     private Emplacement emplacement;
     /**
-     * Dated closure <b>exceptions</b> for this stand, e.g. "closed 14:00-16:00
-     * on 2026-07-18" — possibly only part of a créneau. Empty = the stand is
-     * open on every créneau (the default), unless {@link #ouvertures} or a
-     * {@link #horaires} rule says otherwise for that day. See
-     * {@link Creneau#segmentsOuvertsMinutes(Stand)}.
+     * The stand's schedule: dated opening and closing windows, nothing else
+     * (ADR 0104). Empty = the stand is open on every créneau, the default. See
+     * {@link PlageStand} for the per-day three-state rule and
+     * {@link Creneau#segmentsOuvertsMinutes(Stand)} for how the solver reads it.
      */
-    private List<IndisponibiliteStand> indisponibilites = new ArrayList<>();
+    private List<PlageStand> plages = new ArrayList<>();
+    /** The deprecated per-mode lists a body carried, re-applied over {@code plages} whichever key came first. */
+    @JsonIgnore
+    private final transient Map<ModeHoraire, List<PlageStand>> legacy = new EnumMap<>(ModeHoraire.class);
+    /** The {@code plages} a body carried, {@code null} when it carried none. */
+    @JsonIgnore
+    private transient List<PlageStand> sentPlages;
     /**
-     * Dated opening <b>exceptions</b> for this stand — the inverse of
-     * {@link #indisponibilites}, for a stand normally closed and only staffed
-     * during specific windows. Empty = no day is opening-only (the default). A
-     * day can never carry both an entry here and one in
-     * {@link #indisponibilites}; see {@link OuvertureStand}'s javadoc for the
-     * three-state rule this implies.
-     */
-    private List<OuvertureStand> ouvertures = new ArrayList<>();
-    /**
-     * Recurring opening/closing rules — what a stable opening pattern is
-     * entered as, instead of one dated row per event day. A dated entry
-     * above always wins over these for the day it names; see
-     * {@link HoraireStand} for the full layering.
-     */
-    private List<HoraireStand> horaires = new ArrayList<>();
-    /**
-     * The dated windows {@link #horaires} expands to for the event's days,
-     * merged with the dated exceptions above — {@code null} until
-     * {@code HoraireStandResolver} has run against a known set of dates.
+     * The plages to actually reason about, once something laid on top of them
+     * (a consigne) has been resolved — {@code null} until
+     * {@code StandService.resolve} has run, in which case {@link #plages} are.
      *
-     * <p>Kept <b>beside</b> the persisted lists rather than substituted into
-     * them on purpose: {@code upsertStand} writes {@link #indisponibilites} /
-     * {@link #ouvertures}, so a resolved stand travelling back through a save
-     * (which a stand reached through a {@code PlanningEvenement} does) can never
-     * silently freeze the expansion into the database as a few hundred dated
-     * rows.</p>
+     * <p>Kept <b>beside</b> the persisted list rather than substituted into it
+     * on purpose: {@code upsertStand} writes {@link #plages}, so a resolved
+     * stand travelling back through a save can never freeze a consigne into
+     * the database.</p>
      */
-    private List<IndisponibiliteStand> indisponibilitesEffectives;
+    private List<PlageStand> plagesEffectives;
 
-    private List<OuvertureStand> ouverturesEffectives;
+    /**
+     * The stand's <b>model</b> (ADR 0104): recurring rules such as « Saturday and Sunday 10:00-18:00 »,
+     * kept while the edition has no day to lay them on and unfolded into {@link #plages} as days
+     * appear. {@code null} means « not sent »: a write carrying no {@code horaires} leaves the stored
+     * rules alone, where an empty list clears them. Resolution never reads it, only plages.
+     */
+    private List<HorairesRecurrents.Regle> horaires;
 
     /**
      * When this row was last written (issue #362), read from the referential
@@ -200,60 +199,198 @@ public class Stand {
         this.emplacement = emplacement;
     }
 
-    public List<IndisponibiliteStand> getIndisponibilites() {
-        return indisponibilites;
+    /** The stored schedule — what a write changes, and the only list a save persists. */
+    @JsonProperty("plages")
+    @Schema(readOnly = false)
+    public List<PlageStand> getPlages() {
+        return plages;
     }
 
-    public void setIndisponibilites(List<IndisponibiliteStand> indisponibilites) {
-        this.indisponibilites = indisponibilites != null ? indisponibilites : new ArrayList<>();
+    @JsonIgnore
+    public void setPlages(List<PlageStand> plages) {
+        this.plages = plages != null ? plages : new ArrayList<>();
     }
 
-    public List<OuvertureStand> getOuvertures() {
-        return ouvertures;
+    /**
+     * The {@code plages} key of a body. A deprecated {@code ouvertures} / {@code indisponibilites} key
+     * in the same body is applied over it, whatever the order of the keys, until
+     * {@link #settleDeprecatedLists} decides which of the two forms carries the change.
+     */
+    @JsonProperty("plages")
+    public void receivePlages(List<PlageStand> plages) {
+        setPlages(plages);
+        sentPlages = plages == null ? List.of() : List.copyOf(plages);
+        legacy.forEach(this::replace);
     }
 
-    public void setOuvertures(List<OuvertureStand> ouvertures) {
-        this.ouvertures = ouvertures != null ? ouvertures : new ArrayList<>();
+    /** Whether a body carried {@code plages} next to a deprecated list: the one case that needs settling. */
+    public boolean carriesBothScheduleForms() {
+        return sentPlages != null && !legacy.isEmpty();
     }
 
-    public List<HoraireStand> getHoraires() {
+    /**
+     * Settles a body that carries {@code plages} <b>and</b> a deprecated list, by what the stored stand
+     * says: the form that differs from {@code stored} is the one the client changed, the other is the
+     * stale copy of what it read. A client of the 3.x that edits {@code ouvertures} while echoing the
+     * {@code plages} it never knew, and a new client that edits {@code plages} while echoing the lists it
+     * read, are both right. Both forms changed, and disagree: nothing says which is meant.
+     *
+     * @return the modes on which the two forms disagree with each other and with {@code stored}
+     */
+    public Set<ModeHoraire> settleDeprecatedLists(List<PlageStand> stored) {
+        Set<ModeHoraire> contradictory = new HashSet<>();
+        for (Map.Entry<ModeHoraire, List<PlageStand>> sent : legacy.entrySet()) {
+            ModeHoraire mode = sent.getKey();
+            List<PlageStand> typed = filter(sentPlages, mode);
+            List<PlageStand> old = sent.getValue() == null ? List.of() : sent.getValue();
+            if (sameWindows(typed, old)) {
+                continue;
+            }
+            List<PlageStand> before = filter(stored, mode);
+            if (sameWindows(old, before)) {
+                replace(mode, typed);
+            } else if (!sameWindows(typed, before)) {
+                contradictory.add(mode);
+            }
+        }
+        legacy.clear();
+        sentPlages = null;
+        return contradictory;
+    }
+
+    /** By content, as a multiset: the id is storage and the order says nothing. */
+    private static boolean sameWindows(List<PlageStand> a, List<PlageStand> b) {
+        return windows(a).equals(windows(b));
+    }
+
+    private static Map<List<Object>, Long> windows(List<PlageStand> plages) {
+        return plages.stream()
+                .collect(Collectors.groupingBy(
+                        plage -> Arrays.<Object>asList(
+                                plage.getDate(),
+                                plage.getHeureDebut(),
+                                plage.getHeureFin(),
+                                plage.getMotif(),
+                                plage.getEffectif()),
+                        Collectors.counting()));
+    }
+
+    /**
+     * The closures, as a read-only view of {@link #getPlages()}.
+     *
+     * @deprecated read {@code plages} (mode {@code FERMETURE}); kept on the wire until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
+    @JsonProperty("indisponibilites")
+    public List<PlageStand> getIndisponibilites() {
+        return filter(plages, ModeHoraire.FERMETURE);
+    }
+
+    /**
+     * Replaces every closure of the stand by {@code fermetures}, whatever their own mode says.
+     *
+     * @deprecated write {@code plages}; accepted until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
+    @JsonProperty("indisponibilites")
+    public void setIndisponibilites(List<PlageStand> fermetures) {
+        legacy.put(ModeHoraire.FERMETURE, fermetures);
+        replace(ModeHoraire.FERMETURE, fermetures);
+    }
+
+    /**
+     * The openings, as a read-only view of {@link #getPlages()}.
+     *
+     * @deprecated read {@code plages} (mode {@code OUVERTURE}); kept on the wire until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
+    @JsonProperty("ouvertures")
+    public List<PlageStand> getOuvertures() {
+        return filter(plages, ModeHoraire.OUVERTURE);
+    }
+
+    /**
+     * Replaces every opening of the stand by {@code ouvertures}, whatever their own mode says.
+     *
+     * @deprecated write {@code plages}; accepted until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
+    @JsonProperty("ouvertures")
+    public void setOuvertures(List<PlageStand> ouvertures) {
+        legacy.put(ModeHoraire.OUVERTURE, ouvertures);
+        replace(ModeHoraire.OUVERTURE, ouvertures);
+    }
+
+    /** The stand's model: the rules it declares, never the plages they produced. */
+    @JsonProperty("horaires")
+    public List<HorairesRecurrents.Regle> getHoraires() {
+        return horaires != null ? horaires : List.of();
+    }
+
+    /**
+     * Sets the model. The server stores it as it is while the edition has no day, and unfolds it
+     * into plages over the days it has otherwise (see {@code StandService}).
+     */
+    @JsonProperty("horaires")
+    public void setHoraires(List<HorairesRecurrents.Regle> horaires) {
+        this.horaires = horaires != null ? List.copyOf(horaires) : null;
+    }
+
+    /** The rules a write sent, {@code null} when it sent none — the difference between « keep » and « clear ». */
+    @JsonIgnore
+    public List<HorairesRecurrents.Regle> horairesEnvoyes() {
         return horaires;
     }
 
-    public void setHoraires(List<HoraireStand> horaires) {
-        this.horaires = horaires != null ? horaires : new ArrayList<>();
+    private void replace(ModeHoraire mode, List<PlageStand> remplacantes) {
+        List<PlageStand> autres =
+                new ArrayList<>(plages.stream().filter(p -> p.getMode() != mode).toList());
+        if (remplacantes != null) {
+            for (PlageStand plage : remplacantes) {
+                plage.setMode(mode);
+                autres.add(plage);
+            }
+        }
+        plages = autres;
+    }
+
+    private static List<PlageStand> filter(List<PlageStand> source, ModeHoraire mode) {
+        return source.stream().filter(p -> p.getMode() == mode).toList();
     }
 
     /**
-     * Records what {@code HoraireStandResolver} resolved this stand's rules and
-     * exceptions to, for the event's days. Both lists replace each other
-     * wholesale; passing {@code null} for either reverts to the dated lists.
+     * Records what a consigne made of this stand's plages, for the event's
+     * days; passing {@code null} reverts to the stored plages.
      */
-    public void setFenetresEffectives(List<IndisponibiliteStand> fermetures, List<OuvertureStand> ouvertures) {
-        this.indisponibilitesEffectives = fermetures;
-        this.ouverturesEffectives = ouvertures;
+    @JsonIgnore
+    public void setPlagesEffectives(List<PlageStand> plagesEffectives) {
+        this.plagesEffectives = plagesEffectives;
     }
 
     /**
-     * Closure windows to actually reason about: the resolved ones when
-     * {@link #setFenetresEffectives} has run, the dated ones otherwise. Falling
+     * The plages to actually reason about: the resolved ones when
+     * {@link #setPlagesEffectives} has run, the stored ones otherwise. Falling
      * back keeps every caller — and every test — that never resolves anything
-     * behaving exactly as it did before rules existed.
+     * behaving as it did before consignes existed.
      *
      * <p>{@code @JsonIgnore} because this is a derived view: the REST payload
-     * carries the rules and the dated exceptions, which is what the UI edits,
-     * and the frontend recomputes the resolution itself for its preview (see
-     * {@code core/horaire-stand.ts}).</p>
+     * carries the stored plages, which is what the UI edits.</p>
      */
     @JsonIgnore
-    public List<IndisponibiliteStand> getIndisponibilitesEffectives() {
-        return indisponibilitesEffectives != null ? indisponibilitesEffectives : indisponibilites;
+    public List<PlageStand> getPlagesEffectives() {
+        return plagesEffectives != null ? plagesEffectives : plages;
     }
 
-    /** Opening windows to actually reason about — see {@link #getIndisponibilitesEffectives()}. */
+    /** Closure windows to actually reason about — a view of {@link #getPlagesEffectives()}. */
     @JsonIgnore
-    public List<OuvertureStand> getOuverturesEffectives() {
-        return ouverturesEffectives != null ? ouverturesEffectives : ouvertures;
+    public List<PlageStand> getIndisponibilitesEffectives() {
+        return filter(getPlagesEffectives(), ModeHoraire.FERMETURE);
+    }
+
+    /** Opening windows to actually reason about — a view of {@link #getPlagesEffectives()}. */
+    @JsonIgnore
+    public List<PlageStand> getOuverturesEffectives() {
+        return filter(getPlagesEffectives(), ModeHoraire.OUVERTURE);
     }
 
     @Override

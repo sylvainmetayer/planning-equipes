@@ -140,7 +140,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  41 rules are written **a second time**. The default engine since 3.0.0
+  39 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -239,13 +239,21 @@ Single Quarkus service, no separate solver microservice. Package root:
     and writing without a database; `PlanningServiceScenarioAllerRetourTest`
     keeps them in step), `ScenarioDomainMapper`, `ScenarioDtoAssembler`,
     `ScenarioImportService`. The DTO itself is `scenario/` at the package root.
-  - `service/validation/` — « relu et accepté » on a day: the review state that
-    the lock mechanism never carried (ADR 0039). `ValidationJourneeService`
-    owns the two rules that keep the two apart — validating never lays a lock
-    down unasked, and a reading survives a solve only when its day was not
-    recomputed: in the frozen past, under a `JOUR` lock, or given back
+  - `service/validation/` — the state of a day: à relire, relue, figée
+    (`domain/DayState`, ADR 0121). The state is **derived, never stored**:
+    figée *is* the `JOUR` lock, relue a reading (`validation_journee`) without
+    one — so the solver, the `plan:` section and the Verrouillages screen read
+    a frozen day as they always did, and no migration was needed.
+    `ValidationJourneeService` owns the rules — nothing but an explicit
+    `FIGEE` (`PUT /api/etats-journee/{jour}`) lays a lock down (ADR 0039),
+    only leaving that state lifts it, and a reading survives a solve only when
+    its day was not recomputed: in the frozen past, frozen, or given back
     unchanged by a solve started from the plan in place — « Recommencer de
-    zéro » withdraws every other one (ADR 0069);
+    zéro » withdraws every other one (ADR 0069); freezing without a comment keeps
+    the reading's. The MCP tools are `consulter_etats_journee` and
+    `modifier_etat_journee`; the `/api/validations` writes are `@Deprecated`
+    aliases until 5.0, which never lift a lock. The state is open in every
+    phase and during a solve, like a lock;
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
@@ -303,10 +311,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     contract with such an account and refuses any other stand's or person's name.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
-    chosen stand by stand. `ConsigneResolver` is the **fourth layer** of a
-    stand's schedule, pure and static, applied by `StandService.resolve` on
-    top of `HoraireStandResolver` (rules, then dated exceptions) and on the
-    effective windows only; `ConsigneService` proposes, previews, lays down,
+    chosen stand by stand. `ConsigneResolver` is laid on top of a stand's
+    plages (ADR 0104; it was the fourth layer of the schedule while recurring
+    rules still existed), pure and static, applied by `StandService.resolve`
+    after `HoraireStandResolver` has set the stored plages as the effective
+    ones, and on the effective windows only; `ConsigneService` proposes, previews, lays down,
     changes and lifts consignes and their presets — the only grid write it
     makes is adding the timeslots an opening needs, and lifting removes those
     alone; `ConsigneRepository` owns the six tables. Every reader of
@@ -348,8 +357,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   case nor argued as open — and on an annotated method called on `this`, which
   bypasses the interceptor. Consignes stay open: their grid write goes through
   the in-transaction timeslot methods, which only `ConsigneService` calls. The
-  3.x freeze routes and the `figer_referentiel` / `lever_gel` tools are aliases
-  of the phase until 5.0, and the table `gel_referentiel` is read by nothing.
+  3.x freeze routes are aliases of the phase until 5.0 (the MCP tools
+  `figer_referentiel` / `lever_gel` are replaced by `modifier_phase_edition`),
+  and the table `gel_referentiel` is read by nothing. The screen side is one
+  component, `shared/phase-edition-control`, unfolded by the home checklist and
+  Administrer › Éditions, over `PhaseEditionActions`; the padlocks read the
+  server's per-family state (`GET /api/editions/courant/gel`, from the phase).
   A test that publishes leaves its edition `PUBLIEE`: the `PhaseReset` test
   callback puts every edition back in preparation before each `@QuarkusTest`.
 - **A write a running solve would undo is refused, by annotation too.** A
@@ -742,6 +755,16 @@ i18n rule at the top of this file:
   `Stand.effectifMin/Max`) at scenario/seed time; effectif min/max is enforced by
   counting non-null `animateur` assignments grouped by stand+créneau, not by a
   dedicated constraint class.
+- **A stand's schedule is a list of dated plages, nothing else** (ADR 0104):
+  `Stand.plages`, each an opening or a closure on one day (the two live in the
+  `stand_ouverture` and `stand_indisponibilite` tables; `getOuvertures()` and
+  `getIndisponibilites()` are read-only views of the one list). No recurring
+  rule is stored: a recurrence is a generator that writes plages, and
+  `HorairesRecurrents` is the one frozen reading of the 3.x rules (migration
+  `V159`, the scenario-file link 4 → 5, the `creer_horaire_stand` tool). A
+  day carries one mode, never both; no plage means open all day.
+  `ShippedSchedulesDigestTest` holds the windows of every shipped scenario to
+  what 3.x resolved, day by day.
 - Minor/adult status (`isMineurOn(LocalDate)` / `isMajeurOn(LocalDate)`) is
   always derived from `dateNaissance` at the créneau's date — never stored as a
   boolean flag.
@@ -767,12 +790,16 @@ i18n rule at the top of this file:
   against the fiche as it stood before; the bulk edit sends the whole merged
   fiche one row at a time, so anything else re-shouts on data nobody touched,
   and a warning that fires on correct data stops being read.
-- `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
-  `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
-  same priority as legal/minor hard constraints — never demote these to
-  medium/soft. `AFFINITE` (issue #80) is the one deliberate exception: a soft
-  *reward* for co-assigning a preferred pair on the same stand — never promote
-  it to hard (that would be a forced assignment in disguise).
+- `ContrainteAdHoc` has three types since 4.0 (ADR 0117): `INCOMPATIBILITE` is
+  evaluated as `HardScore`, at the same priority as legal/minor hard
+  constraints — never demote it to medium/soft. `AFFINITE` (issue #80) is the
+  deliberate exception: a soft *reward* for co-assigning a preferred pair on
+  the same stand — never promote it to hard (that would be a forced assignment
+  in disguise); `ARRIVEE_GROUPEE` is soft too. The forced assignment and the
+  forced unavailability are gone, converted by `V161` and by
+  `ScenarioMigrations` into an animateur + timeslot lock and a day off of the
+  fiche: do not bring them back, and do not add a rule that pins or bars one
+  person on a seat.
 - Two ad hoc exceptions that **cannot both hold** are refused when written —
   `ContrainteAdHocContradictions`, applied by `ContrainteAdHocService` to a
   single entry and by `ReferenceDataService.importFromPlanning` to a whole

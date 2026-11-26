@@ -7,7 +7,6 @@ import {
   OpeningLayers,
   ImportGrilleDemande,
   ImportGrilleRapport,
-  RapportCompactage,
   EmplacementsManquants,
   RapportOuvertures,
   RapportSaisieGrille,
@@ -17,14 +16,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class StandsApi {
   private readonly api = inject(ApiService);
-
-  /** Rewrites hand-entered dated windows as the recurring rules they repeat; a preview writes nothing. */
-  compactSchedules(apply: boolean): Promise<RapportCompactage> {
-    return this.api.post<RapportCompactage>(
-      `/api/stands/compactage-horaires?appliquer=${apply}`,
-      {},
-    );
-  }
 
   downloadGridExample(): Promise<string> {
     return this.api.downloadGet(

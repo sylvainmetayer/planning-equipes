@@ -92,19 +92,19 @@ class AnonymisationViolationsTest {
     /** The reason is free text: « Marie garde ses enfants » is exactly what must not travel. */
     @Test
     void dropsTheReasonOfAKnownAdHocConstraint() {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc("AH1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+        ContrainteAdHoc contrainte = new ContrainteAdHoc("AH1", TypeContrainteAdHoc.INCOMPATIBILITE);
         contrainte.setRaison("Marie garde ses enfants (mercredi)");
         AnonymisationViolations anonymisation = AnonymisationViolations.of(List.of(), List.of(contrainte), List.of());
 
         assertThat(anonymisation.anonymiser(
-                        "INDISPONIBILITE_FORCEE AH1 (Marie garde ses enfants (mercredi)) — 2026-07-16 10:00-12:00"))
-                .isEqualTo("INDISPONIBILITE_FORCEE AH1 — 2026-07-16 10:00-12:00");
+                        "INCOMPATIBILITE AH1 (Marie garde ses enfants (mercredi)) — 2026-07-16 10:00-12:00"))
+                .isEqualTo("INCOMPATIBILITE AH1 — 2026-07-16 10:00-12:00");
     }
 
     @Test
     void dropsTheReasonOfADeletedAdHocConstraint() {
-        assertThat(SANS_REFERENTIEL.anonymiser("AFFECTATION_FORCEE AH9 (rendez-vous médical)"))
-                .isEqualTo("AFFECTATION_FORCEE AH9");
+        assertThat(SANS_REFERENTIEL.anonymiser("AFFINITE AH9 (rendez-vous médical)"))
+                .isEqualTo("AFFINITE AH9");
     }
 
     @Test

@@ -143,8 +143,6 @@ public final class BlockerPlaybook {
     public static final String CODE_LOWER_STAFFING = "BAISSER_EFFECTIF";
     public static final String CODE_REVIEW_DAYS_OFF = "REVOIR_INDISPONIBILITES";
     public static final String CODE_COMPARE_ADJUSTMENTS = "COMPARER_AJUSTEMENTS";
-    public static final String CODE_EDIT_ADJUSTMENT = "MODIFIER_AJUSTEMENT";
-    public static final String CODE_REMOVE_DAY_OFF = "RETIRER_INDISPONIBILITE";
     public static final String CODE_LIFT_LOCK = "LEVER_VERROU";
     public static final String CODE_REPAIR = "PROPOSER_REPARATION";
     public static final String CODE_LOWER_WEIGHT = "BAISSER_POIDS";
@@ -181,25 +179,6 @@ public final class BlockerPlaybook {
                             + " compte.",
                     ROUTE_ADJUSTMENTS,
                     idsParam(context.contrainteIds()))),
-            "AFFECTATION_FORCEE_JOUR_INDISPONIBLE",
-            List.of(
-                    context -> editAdjustmentAction(
-                            context,
-                            "L'affectation forcée tombe sur un jour d'indisponibilité : déplacez-la vers un jour où"
-                                    + " la personne est là."),
-                    BlockerPlaybook::removeDayOffAction),
-            "AFFECTATION_FORCEE_MOTIF_LEGAL",
-            List.of(context -> editAdjustmentAction(
-                    context,
-                    "Une règle légale ne se règle pas : modifiez l'ajustement pour une place que la personne peut"
-                            + " tenir, ou supprimez-le.")),
-            "AFFECTATION_FORCEE_SIEGE_VERROUILLE",
-            List.of(
-                    BlockerPlaybook::liftLockAction,
-                    context -> editAdjustmentAction(
-                            context,
-                            "Si le verrou doit rester, c'est l'affectation forcée qui cède : modifiez-la ou"
-                                    + " supprimez-la.")),
             "PLAFOND_JOURS_CONSECUTIFS",
             List.of(
                     context -> consecutiveDaysCapAction(),
@@ -492,29 +471,6 @@ public final class BlockerPlaybook {
                 context.date() == null
                         ? Map.of("axe", AXE_PERSONNE)
                         : Map.of("axe", AXE_PERSONNE, "date", context.date().toString()));
-    }
-
-    private static ActionType editAdjustmentAction(Context context, String explanation) {
-        return new ActionType(
-                CODE_EDIT_ADJUSTMENT,
-                "Modifier l'ajustement",
-                explanation,
-                ROUTE_ADJUSTMENTS,
-                context.contrainteIds().size() == 1
-                        ? Map.of("edit", context.contrainteIds().getFirst())
-                        : idsParam(context.contrainteIds()));
-    }
-
-    private static ActionType removeDayOffAction(Context context) {
-        return new ActionType(
-                CODE_REMOVE_DAY_OFF,
-                "Retirer l'indisponibilité",
-                "Si la personne est finalement là ce jour-là, corrigez sa fiche : l'affectation forcée redevient"
-                        + " tenable.",
-                ROUTE_ANIMATEURS,
-                context.animateurIds().size() == 1
-                        ? Map.of("edit", context.animateurIds().getFirst())
-                        : Map.of());
     }
 
     /**

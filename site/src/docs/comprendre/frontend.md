@@ -82,7 +82,7 @@ Deux endroits affichent une carte : l'onglet « Lieux » de `/stands` (tous les 
 
 ## Le seul endroit où le frontend réimplémente du domaine
 
-`app/core/horaire-stand.ts` résout les règles d'horaire d'un stand en fenêtres jour par jour, en miroir de `HoraireStandResolver` côté serveur, pour prévisualiser une règle sans aller-retour. Il se fait évoluer dans le même commit que son pendant Java ([horaires et fenêtres des stands](horaires-et-fenetres-des-stands.md)).
+`app/core/horaire-stand.ts` résout les règles d'horaire d'un stand en fenêtres jour par jour, pour prévisualiser une règle sans aller-retour. Le serveur ne stocke plus de règle depuis la 4.0 ([décision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)) : les règles que cet éditeur enregistre sont converties en plages par le serveur, sur les jours de l'événement, jusqu'à ce que l'écran de plages le remplace. Son pendant Java est `HorairesRecurrents`, pour la migration et les anciens fichiers ([horaires et fenêtres des stands](horaires-et-fenetres-des-stands.md)).
 
 ## CSS
 

@@ -3,12 +3,8 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
-import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
@@ -342,12 +338,12 @@ public final class CoherenceAnalyzer {
         Set<LocalDate> lues = HoraireStandResolver.datesConcernees(creneaux);
         List<LocalDate> horsEvenement = new ArrayList<>();
         apres.getIndisponibilites().stream()
-                .map(IndisponibiliteStand::getDate)
+                .map(PlageStand::getDate)
                 .filter(Objects::nonNull)
                 .filter(date -> !jours.covers(date) && !lues.contains(date))
                 .forEach(horsEvenement::add);
         apres.getOuvertures().stream()
-                .map(OuvertureStand::getDate)
+                .map(PlageStand::getDate)
                 .filter(Objects::nonNull)
                 .filter(date -> !jours.covers(date) && !lues.contains(date))
                 .forEach(horsEvenement::add);
@@ -530,39 +526,13 @@ public final class CoherenceAnalyzer {
 
     /**
      * The schedule as typed, flattened to one string so two writes can be told
-     * apart. Deliberately not {@code equals} on the rules, which have none
-     * (see {@link HoraireStand}); the dated lists are read, never the
-     * resolved ones.
+     * apart. Deliberately not {@code equals} on the plages, which compare ids
+     * only; the stored lists are read, never the resolved ones.
      */
     private static String scheduleSignature(Stand stand) {
         StringBuilder signature = new StringBuilder();
-        for (HoraireStand horaire : stand.getHoraires()) {
-            signature
-                    .append(horaire.getMode())
-                    .append('|')
-                    .append(horaire.getJours())
-                    .append('|')
-                    .append(horaire.getJoursSemaine())
-                    .append('|')
-                    .append(horaire.getDateDebut())
-                    .append('|')
-                    .append(horaire.getDateFin())
-                    .append('|')
-                    .append(horaire.getDates())
-                    .append('|');
-            for (FenetreHoraire fenetre : horaire.getFenetres()) {
-                signature
-                        .append(fenetre.getHeureDebut())
-                        .append('-')
-                        .append(fenetre.getHeureFin())
-                        .append('@')
-                        .append(fenetre.getEffectif())
-                        .append(',');
-            }
-            signature.append(';');
-        }
         signature.append('#');
-        for (IndisponibiliteStand fermeture : stand.getIndisponibilites()) {
+        for (PlageStand fermeture : stand.getIndisponibilites()) {
             signature
                     .append(fermeture.getDate())
                     .append(' ')
@@ -572,7 +542,7 @@ public final class CoherenceAnalyzer {
                     .append(';');
         }
         signature.append('#');
-        for (OuvertureStand ouverture : stand.getOuvertures()) {
+        for (PlageStand ouverture : stand.getOuvertures()) {
             signature
                     .append(ouverture.getDate())
                     .append(' ')
@@ -738,47 +708,16 @@ public final class CoherenceAnalyzer {
     /* ------------------------------ Ad hoc -------------------------------- */
 
     /**
-     * The three ways a forced assignment can be written today and be
-     * unsatisfiable tomorrow morning: its animateurs declared the days off
-     * ({@link ForcedAssignmentOnDayOff}), no seat of its scope may hold them
-     * ({@link ForcedAssignmentOnExcludedSeats}), or their schedules are locked
-     * over the whole scope ({@link ForcedAssignmentOnLockedSchedule}).
-     *
-     * <p>Written all the same, all three: a day off may be withdrawn, a birth
-     * date corrected, a lock lifted, and the pre-solve analysis keeps reporting
-     * whichever still stands. Every sentence names the exception by its id and
-     * the dates, never an animateur — {@link Avertissement} says why.</p>
-     *
-     * @param verrouillages the locks recorded for this edition, empty when the
-     *                      caller has none to offer: the lock check is then
-     *                      simply not run, never guessed at
-     * @param placesTenues  the seats of the persisted plan, same doctrine
-     * @param horizon       the moment the past is judged against (ADR 0044),
-     *                      {@code null} when the freeze is off: an exception
-     *                      whose whole scope is behind us is history, and
-     *                      {@code affectationForcee} does not charge it either
+     * What a hand-entered exception says that is worth knowing at once: a
+     * grouped arrival whose members declared different days off. The sentence
+     * names the exception by its id and the dates, never an animateur —
+     * {@link Avertissement} says why.
      */
     public static List<Avertissement> onContrainteAdHoc(
-            ContrainteAdHoc contrainte,
-            List<Animateur> animateurs,
-            List<Stand> stands,
-            List<Creneau> creneaux,
-            List<VerrouillagePlanning> verrouillages,
-            Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> placesTenues,
-            PastHorizon horizon) {
-        List<ContrainteAdHoc> une = contrainte == null ? List.of() : List.of(contrainte);
-        List<Avertissement> avertissements = new ArrayList<>();
-        ForcedAssignmentOnDayOff.detectAll(une, animateurs, stands, creneaux, horizon)
-                .forEach(conflit -> avertissements.add(
-                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE, conflit.message())));
-        ForcedAssignmentOnExcludedSeats.detectAll(une, animateurs, stands, creneaux, horizon)
-                .forEach(conflit -> avertissements.add(
-                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL, conflit.message())));
-        ForcedAssignmentOnLockedSchedule.detectAll(une, verrouillages, stands, creneaux, placesTenues, horizon)
-                .forEach(conflit -> avertissements.add(
-                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE, conflit.message())));
-        divergentGroupedArrival(contrainte, animateurs, creneaux).ifPresent(avertissements::add);
-        return List.copyOf(avertissements);
+            ContrainteAdHoc contrainte, List<Animateur> animateurs, List<Creneau> creneaux) {
+        return divergentGroupedArrival(contrainte, animateurs, creneaux)
+                .map(List::of)
+                .orElse(List.of());
     }
 
     /**

@@ -34,7 +34,6 @@ import { PostesApi } from '../../core/api/postes-api';
 import { errorPrefix } from '../../core/error-message';
 import { JourJService } from '../../core/jour-j.service';
 import {
-  ContrainteAdHoc,
   ContrainteImpact,
   PlanningEvenement,
   PosteAffectation,
@@ -45,10 +44,6 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import {
-  AdHocConstraintFormData,
-  AdHocConstraintFormDialog,
-} from '../../pages/ad-hoc-constraints/ad-hoc-constraint-form-dialog';
 import {
   animateurName,
   meilleuresSuggestions,
@@ -533,37 +528,6 @@ export class SeatPanel {
       }
       return done;
     });
-  }
-
-  /**
-   * « Poser un ajustement » : the adjustment form, pre-filled with this stand
-   * and this timeslot as a forced assignment — the person is the reader's to
-   * choose. The form, not the network view of the adjustments screen.
-   */
-  protected async addAdjustment(): Promise<void> {
-    const seat = this.seat();
-    if (!seat?.creneau || !seat.stand) {
-      return;
-    }
-    this.gestureError.set('');
-    try {
-      await this.store.reload(['creneaux', 'stands', 'animateurs']);
-    } catch (error) {
-      this.gestureError.set(errorPrefix(error));
-      return;
-    }
-    const contrainte: ContrainteAdHoc = {
-      id: '',
-      type: 'AFFECTATION_FORCEE',
-      animateursConcernes: [],
-      creneau: { id: seat.creneau.id },
-      stand: { id: seat.stand.id },
-      raison: '',
-    };
-    this.dialog.open<AdHocConstraintFormDialog, AdHocConstraintFormData, boolean>(
-      AdHocConstraintFormDialog,
-      { data: { contrainte }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
-    );
   }
 
   /** « Corriger le reste » : an incremental solve, which refills the holes and keeps the rest. */

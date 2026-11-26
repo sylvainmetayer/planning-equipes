@@ -38,15 +38,13 @@ interface Genere {
   creneaux: CreneauSeed[];
   adultes: string[];
   mineurs: string[];
-  indispoForcee: { animateurId: string; creneauId: number };
   incompatibles: [string, string];
-  affectationForcee: { animateurId: string; standId: string; creneauId: number };
 }
 
 /**
  * A random, feasible-by-construction problem: plenty of adults for the seats,
- * daytime créneaux only, and the three random ad hoc constraints picked so
- * they can never contradict each other or an unavailability.
+ * daytime créneaux only, and a random incompatibility picked so it can never
+ * contradict an unavailability.
  */
 function genererProbleme(alea: () => number, iteration: number): Genere {
   const entier = (max: number) => Math.floor(alea() * max);
@@ -88,25 +86,14 @@ function genererProbleme(alea: () => number, iteration: number): Genere {
     })),
   ];
 
-  // Constraint targets: three DISTINCT adults with no personal off day, so
-  // the forced assignment can never collide with an unavailability, and the
+  // Constraint targets: two DISTINCT adults with no personal off day, so the
   // pair stays satisfiable.
   const candidats = animateurs
     .filter(
       (animateur) => adultes.includes(animateur.id) && animateur.joursIndisponibles!.length === 0,
     )
     .map((animateur) => animateur.id);
-  const indispoCible = candidats[entier(candidats.length)];
-  let force = candidats[entier(candidats.length)];
-  while (force === indispoCible) {
-    force = candidats[entier(candidats.length)];
-  }
-  const restants = candidats.filter((id) => id !== indispoCible && id !== force);
-  const incompatibles: [string, string] = [restants[0], restants[1]];
-
-  const indispoCreneau = creneaux[entier(creneaux.length)].id;
-  const forceCreneau = creneaux[entier(creneaux.length)].id;
-  const forceStand = stands[entier(stands.length)].id;
+  const incompatibles: [string, string] = [candidats[0], candidats[1]];
 
   return {
     animateurs,
@@ -114,9 +101,7 @@ function genererProbleme(alea: () => number, iteration: number): Genere {
     creneaux,
     adultes,
     mineurs,
-    indispoForcee: { animateurId: indispoCible, creneauId: indispoCreneau },
     incompatibles,
-    affectationForcee: { animateurId: force, standId: forceStand, creneauId: forceCreneau },
   };
 }
 
@@ -161,26 +146,13 @@ function verifierInvariants(planning: PlanningPersiste, probleme: Genere): void 
     expect(new Set(occupants).size, `chevauchement sur le créneau ${creneauId}`).toBe(
       occupants.length,
     );
-    // Ad hoc: forced unavailability and incompatibility.
-    if (creneauId === probleme.indispoForcee.creneauId) {
-      expect(occupants, 'indisponibilité forcée violée').not.toContain(
-        probleme.indispoForcee.animateurId,
-      );
-    }
+    // Ad hoc: incompatibility.
     const [gauche, droite] = probleme.incompatibles;
     expect(
       occupants.includes(gauche) && occupants.includes(droite),
       `incompatibles réunis sur le créneau ${creneauId}`,
     ).toBe(false);
   }
-  // Ad hoc: forced assignment honoured on the exact seat.
-  const siegeForce = postesFuzz.find(
-    (poste) =>
-      poste.stand!.id === probleme.affectationForcee.standId &&
-      poste.creneau!.id === probleme.affectationForcee.creneauId &&
-      poste.animateur!.id === probleme.affectationForcee.animateurId,
-  );
-  expect(siegeForce, 'affectation forcée absente du planning').toBeTruthy();
 }
 
 const graine = process.env['E2E_FUZZ_SEED']
@@ -211,20 +183,6 @@ for (const iteration of [0, 1]) {
     await seedReferentielSolveur(admin, probleme.animateurs, probleme.stands, probleme.creneaux);
 
     for (const contrainte of [
-      {
-        type: 'INDISPONIBILITE_FORCEE',
-        animateursConcernes: [{ id: probleme.indispoForcee.animateurId }],
-        creneau: { id: probleme.indispoForcee.creneauId },
-        stand: null,
-        raison: `Fuzz ${graine}/${iteration} : indisponibilité forcée`,
-      },
-      {
-        type: 'AFFECTATION_FORCEE',
-        animateursConcernes: [{ id: probleme.affectationForcee.animateurId }],
-        creneau: { id: probleme.affectationForcee.creneauId },
-        stand: { id: probleme.affectationForcee.standId },
-        raison: `Fuzz ${graine}/${iteration} : affectation forcée`,
-      },
       {
         type: 'INCOMPATIBILITE',
         animateursConcernes: probleme.incompatibles.map((id) => ({ id })),

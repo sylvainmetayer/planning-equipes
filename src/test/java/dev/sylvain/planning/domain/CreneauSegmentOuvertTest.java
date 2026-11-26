@@ -146,7 +146,7 @@ class CreneauSegmentOuvertTest {
     void enModeFermetureLesSegmentsPortentLEffectifMinDuStand() {
         Stand stand = stand(2);
         stand.setIndisponibilites(
-                List.of(new IndisponibiliteStand(null, JOUR, LocalTime.of(16, 0), LocalTime.of(17, 0), null)));
+                List.of(PlageStand.fermeture(null, JOUR, LocalTime.of(16, 0), LocalTime.of(17, 0), null)));
 
         assertThat(apresMidi.segmentsOuverts(stand))
                 .extracting(SegmentOuvert::debutMinutes, SegmentOuvert::finMinutes, SegmentOuvert::effectif)
@@ -205,7 +205,7 @@ class CreneauSegmentOuvertTest {
     void unStandFermeSurLeCreneauNAAucunSiegeSimultane() {
         Stand stand = stand(3);
         stand.setIndisponibilites(
-                List.of(new IndisponibiliteStand(null, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
+                List.of(PlageStand.fermeture(null, JOUR, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
 
         assertThat(apresMidi.siegesSimultanes(stand)).isZero();
     }
@@ -223,13 +223,13 @@ class CreneauSegmentOuvertTest {
         return new Stand("S", "S", Set.of(), effectifMin, 10, false);
     }
 
-    private static Stand standOuvert(int effectifMin, OuvertureStand... ouvertures) {
+    private static Stand standOuvert(int effectifMin, PlageStand... ouvertures) {
         Stand stand = stand(effectifMin);
         stand.setOuvertures(List.of(ouvertures));
         return stand;
     }
 
-    private static OuvertureStand ouverture(LocalTime debut, LocalTime fin, Integer effectif) {
-        return new OuvertureStand(null, JOUR, debut, fin, null, effectif);
+    private static PlageStand ouverture(LocalTime debut, LocalTime fin, Integer effectif) {
+        return PlageStand.ouverture(null, JOUR, debut, fin, null, effectif);
     }
 }

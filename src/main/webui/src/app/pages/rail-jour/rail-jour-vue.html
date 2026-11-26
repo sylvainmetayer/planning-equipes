@@ -20,8 +20,6 @@
           <span i18n="@@railJour.legend.free">Ligne vide : aucune vacation ce jour-là, animateur mobilisable</span></li>
         <li><span class="rail-swatch rail-swatch-indisponible"></span>
           <span i18n="@@railJour.legend.unavailable">Ligne vide mais indisponibilité déclarée : à ne pas solliciter</span></li>
-        <li><span class="rail-swatch rail-swatch-blocage"></span>
-          <span i18n="@@railJour.legend.blocage">Plage hachurée : indisponibilité saisie sur ces heures, à ne pas solliciter</span></li>
         <li><mat-icon inline class="rail-chevauchement-icon" aria-hidden="true">warning</mat-icon>
           <span i18n="@@railJour.legend.overlap">Vacations qui se chevauchent</span></li>
         <li><span class="rail-swatch rail-swatch-pause"></span>
@@ -100,14 +98,6 @@
                   [attr.aria-label]="ligne.resume"
                 >
                   <span class="rail-track" aria-hidden="true" [style.background-size]="fondPiste(ligne)">
-                    @for (blocage of ligne.blocages; track blocage.heureDebut) {
-                      <span
-                        class="rail-blocage"
-                        [style.left.%]="blocage.offsetPercent"
-                        [style.width.%]="blocage.widthPercent"
-                        [title]="blocage.label"
-                      ></span>
-                    }
                     @for (bloc of ligne.blocs; track bloc.posteId) {
                       <span
                         class="rail-bloc"

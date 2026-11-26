@@ -2,10 +2,8 @@ package dev.sylvain.planning.service.journal;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreDateeStand;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * What an edit actually changed, field by field.
@@ -64,49 +63,28 @@ public final class ChampsModifies {
                 stand -> stand.getEmplacement() == null
                         ? null
                         : stand.getEmplacement().getId());
-        // By value, not by Objects.equals: HoraireStand has no equals (on
-        // purpose, see the class) and FenetreDateeStand compares ids only. The
+        // By value, not by Objects.equals: PlageStand compares ids only. The
         // before-image is re-read from the base while the after-image is the
-        // caller's instance, so identity said « changed » on every rename of a
-        // stand carrying a rule, and « unchanged » on a dated closure moved
-        // under the same id.
+        // caller's instance, so identity said « unchanged » on a dated
+        // closure moved under the same id.
+        // As a multiset: the legacy lists a body carries are re-applied mode by mode, which moves a mode's
+        // plages to the end of the list, so the order says nothing about what changed.
         map.put(
-                "indisponibilites",
-                stand -> stand.getIndisponibilites().stream()
+                "plages",
+                stand -> stand.getPlages().stream()
                         .map(ChampsModifies::valeur)
-                        .toList());
-        map.put(
-                "ouvertures",
-                stand -> stand.getOuvertures().stream()
-                        .map(ChampsModifies::valeur)
-                        .toList());
-        map.put(
-                "horaires",
-                stand ->
-                        stand.getHoraires().stream().map(ChampsModifies::valeur).toList());
+                        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
     });
 
     /** What the fiche shows of a dated window; the id is storage, not content. */
-    private static List<Object> valeur(FenetreDateeStand fenetre) {
+    private static List<Object> valeur(PlageStand fenetre) {
         return Arrays.asList(
+                fenetre.getMode(),
                 fenetre.getDate(),
                 fenetre.getHeureDebut(),
                 fenetre.getHeureFin(),
                 fenetre.getMotif(),
-                fenetre instanceof OuvertureStand ouverture ? ouverture.getEffectif() : null);
-    }
-
-    /** A rule as typed; {@link FenetreHoraire} compares by value already. */
-    private static List<Object> valeur(HoraireStand horaire) {
-        return Arrays.asList(
-                horaire.getMode(),
-                horaire.getJours(),
-                horaire.getJoursSemaine(),
-                horaire.getDateDebut(),
-                horaire.getDateFin(),
-                horaire.getDates(),
-                horaire.getFenetres(),
-                horaire.getMotif());
+                fenetre.getEffectif());
     }
 
     /**
@@ -128,7 +106,21 @@ public final class ChampsModifies {
     }
 
     public static List<String> surStand(Stand avant, Stand apres) {
-        return comparer(STAND, avant, apres);
+        List<String> modifies = new ArrayList<>(comparer(STAND, avant, apres));
+        // The model (ADR 0104) is compared only when the write sent one: « not sent » keeps it.
+        if (avant != null
+                && apres != null
+                && apres.horairesEnvoyes() != null
+                && !rulesWithoutId(avant).equals(rulesWithoutId(apres))) {
+            modifies.add("horaires");
+        }
+        return modifies;
+    }
+
+    private static List<HorairesRecurrents.Regle> rulesWithoutId(Stand stand) {
+        return stand.getHoraires().stream()
+                .map(HorairesRecurrents.Regle::withoutId)
+                .toList();
     }
 
     public static List<String> surCreneau(Creneau avant, Creneau apres) {

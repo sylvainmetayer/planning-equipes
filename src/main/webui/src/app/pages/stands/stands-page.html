@@ -67,13 +67,6 @@
         <mat-icon>upload_file</mat-icon>
         <span i18n="@@stands.importGrille.action">Importer la grille</span>
       </a>
-      <button mat-menu-item type="button" [disabled]="standsLocked() || compactageEnCours()"
-              i18n-matTooltip="@@stands.compactage.tooltip"
-              matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes, avec un aperçu avant d'écrire."
-              (click)="compacterHoraires()">
-        <mat-icon>compress</mat-icon>
-        <span i18n="@@stands.compactage.action">Compacter les horaires</span>
-      </button>
     </mat-menu>
     <button matButton type="button" [disabled]="standsFiltres().length === 0" (click)="exportList()">
       <mat-icon>download</mat-icon>

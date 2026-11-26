@@ -21,7 +21,7 @@ Deux règles :
 
 **Un verrou qui vise un créneau nomme sa vacation** (jour, heure de début, heure de fin), pas son identifiant. `creneau.id` est une identité `BIGINT` : supprimer les créneaux d'une journée puis les recréer à l'identique (régénération de la grille, journée type réappliquée) en donne de nouveaux. Avec un `ON DELETE CASCADE`, toute suppression emportait le verrou sans bruit, alors que valider un échange pose deux verrous précisément pour que la régénération suivante ne défasse pas l'échange. L'identifiant reste stocké comme un cache, réécrit à chaque lecture par une jointure sur la clé naturelle, et vaut `NULL` tant que la grille ne porte pas cette vacation. Un verrou dans cet état **attend** : l'écran Verrouillages le dit, et le contrôle de la grille le signale, y compris sur l'aperçu d'une dérivation, c'est-à-dire avant que « remplacer la grille » soit écrit. La portée d'une exception ad hoc suit la même règle, avec une conséquence de plus : une règle écrite pour un créneau disparu ne vaut **rien** au lieu de valoir pour toute l'édition.
 
-La relecture d'une journée (« relu et accepté ») est un autre état que le verrou ([décision 0039](repo:docs/decisions/0039-validation-de-relecture-distincte-du-verrou.md)) : valider ne pose jamais un verrou sans qu'on le demande.
+Une journée a un état : à relire, relue ou figée ([décision 0121](repo:docs/decisions/0121-l-etat-de-la-journee-se-lit-sur-la-relecture-et-le-verrou.md)). Cet état n'est pas stocké : **figée est le verrou `JOUR` lui-même**, relue est une relecture (`validation_journee`) sans ce verrou. Le solveur, la section `plan:` d'un fichier et l'écran Verrouillages lisent donc une journée figée comme avant, et la mise à jour vers la 4.0 n'a réécrit aucune ligne. Relire ne pose jamais de verrou sans qu'on le demande ([décision 0039](repo:docs/decisions/0039-validation-de-relecture-distincte-du-verrou.md)) : par l'état, seul `PUT /api/etats-journee/{jour}` avec `FIGEE` en pose un, et seuls `RELUE` et `A_RELIRE` le retirent ; l'écran Verrouillages pose et retire le même verrou, et l'état suit. Les routes `/api/validations` (liste, création, retrait) restent jusqu'en 5.0 : elles écrivent la même relecture et le même verrou, et ne retirent jamais un verrou. L'état est indépendant de la phase de l'édition et de l'édition active.
 
 ## La phase de l'édition fige les fiches
 
@@ -60,7 +60,7 @@ Le rapprochement est **positionnel**, sur stand × créneau, comme celui des ver
 | Créneau déjà commencé | **Épinglée telle que travaillée**, avant toute autre règle : titulaire gardé même invalidé depuis, vide restée vide, jamais rouverte par le périmètre. Comptée à part (`postesPasses`). Voir [le passé figé](horaires-et-fenetres-des-stands.md#le-passé-est-figé) |
 | Désignée par le périmètre demandé | Libérée quoi qu'il arrive : l'utilisateur dit « refais ça » |
 | Titulaire encore valable | **Épinglée** |
-| Titulaire invalidé par un changement tardif (supprimé, indisponible, couvert par une indisponibilité forcée) | Libérée : l'épingler figerait un écart dur que plus personne ne pourrait corriger. Le test de validité réutilise le prédicat du solveur, pour que les deux ne divergent pas |
+| Titulaire invalidé par un changement tardif (supprimé, indisponible ce jour-là) | Libérée : l'épingler figerait un écart dur que plus personne ne pourrait corriger. Le test de validité réutilise le prédicat du solveur, pour que les deux ne divergent pas |
 | Jamais pourvue, ou nouvelle | Laissée libre |
 
 Deux choix à connaître :
@@ -80,7 +80,7 @@ Le paramètre `reamorcage` prend trois valeurs (`Reamorcage`) : `AUTO` (le défa
 | --- | --- |
 | Titulaire encore valable | Réamorcée avec lui, **mobile** |
 | Couverte par un verrou | Laissée telle que les verrous l'ont mise (épinglée) |
-| Titulaire disparu, indisponible ce jour-là, ou couvert par une indisponibilité forcée | Repart vide, comptée « libérée » |
+| Titulaire disparu, ou indisponible ce jour-là | Repart vide, comptée « libérée » |
 | Jamais pourvue, ou nouvelle | Libre |
 
 Le solveur note la solution de départ en premier et garde la meilleure rencontrée : à données égales, le résultat ne descend jamais sous le plan de départ. Il peut descendre quand le référentiel a changé entre-temps (le plan de départ n'est plus une solution du nouveau problème) ou sur un départ à froid.

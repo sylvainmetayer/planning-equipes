@@ -420,7 +420,7 @@ public class SolvePipeline {
      * The plan in place, seat by cell — the before-image the days that moved
      * are read from, or empty when there is nothing to compare.
      *
-     * <p>Empty on an edition carrying no reading at all: the image is
+     * <p>Empty on an edition with no day read or frozen: the image is
      * the whole persisted plan seat by seat, and an edition nobody reviews must
      * not pay for it on every solve. Distinct from an <b>empty</b> image, which
      * says the plan held nothing — every day then genuinely moved, and the

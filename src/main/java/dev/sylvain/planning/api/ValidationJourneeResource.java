@@ -26,11 +26,13 @@ import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * « Relu et accepté » on a day of the planning — the review state the lock
- * mechanism never carried.
+ * « Relu et accepté » on a day of the planning, and what to check before.
  *
- * <p>Shaped like {@code /api/verrouillages}: list, create, delete. A validation
- * is state, so it is never updated — re-reading a day replaces its row.</p>
+ * <p>Since 4.0 a day has a state — à relire, relue, figée — set through
+ * {@code /etats-journee} (ADR 0121). The list, the creation and the deletion
+ * here are the 3.x gestures, kept as aliases until 5.0: they write the same
+ * reading and the same lock, so the state follows. The prerequisites, the
+ * progression and the cold-start readings stay.</p>
  */
 @Path("/validations")
 @Produces(MediaType.APPLICATION_JSON)
@@ -68,8 +70,9 @@ public class ValidationJourneeResource {
     @Schema(requiredProperties = {"validation", "verrouPose"})
     public record ResultatValidationJournee(ValidationJournee validation, boolean verrouPose) {}
 
-    /** Every validation of the edition, most recently read first. */
+    /** Every reading of the edition, most recently read first. Alias until 5.0: {@code GET /etats-journee}. */
     @GET
+    @Deprecated
     public List<ValidationJournee> list() {
         return validationService.list();
     }
@@ -104,8 +107,13 @@ public class ValidationJourneeResource {
         return prerequisService.prerequis(jourDemande(jour));
     }
 
-    /** Records a reading of one day, and lays its lock down when asked to. */
+    /**
+     * Records a reading of one day, and lays its lock down when asked to:
+     * the day becomes read, or frozen. Alias until 5.0 of
+     * {@code PUT /etats-journee/{jour}}, except that it never lifts a lock.
+     */
     @POST
+    @Deprecated
     public ResultatValidationJournee accept(DemandeValidationJournee demande) {
         if (demande == null) {
             throw new BusinessError.Invalid("Journée à valider manquante");
@@ -115,8 +123,14 @@ public class ValidationJourneeResource {
         return new ResultatValidationJournee(resultat.validation(), resultat.verrouPose());
     }
 
-    /** Withdraws a reading. The lock it may have laid down is left alone. */
+    /**
+     * Withdraws a reading. The lock it may have laid down is left alone: a
+     * frozen day stays frozen. Alias until 5.0; the new gesture is
+     * {@code PUT /etats-journee/{jour}}, whose {@code A_RELIRE} lifts the lock
+     * too.
+     */
     @DELETE
+    @Deprecated
     @Path("/{id}")
     public Response withdraw(@PathParam("id") String id) {
         validationService.withdraw(id);

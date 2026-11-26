@@ -80,15 +80,15 @@ A modification only flags what it changes: data you have not touched triggers no
 
 If two tabs or two people open the same fiche, the second to save is warned that the fiche has changed since they opened it. They choose to reload or to overwrite knowingly: nothing is overwritten silently.
 
-## Freeze the reference data when preparation is finished
+## Change phase when preparation is finished
 
 An edition moves through phases: Preparation, Solving, Published, Finished. While it is in Preparation, everything can be edited. As soon as it moves to Solving, the reference data is frozen: stands, timeslots, game categories and locations, staff skills. No path (form, bulk edit, import, wizard) then modifies these fiches, and the frozen fields are displayed read-only with a padlock.
 
-To move to Solving, freeze a family in Settings, *Edition* tab: the four freeze together. Lift one to go back to Preparation, and the four reopen.
+To change phase, open the home page ("Phase of the edition" line) or Administer › Editions: the four phases sit side by side, the current one is marked, and each change asks for a confirmation saying what the new phase freezes or opens. Going back is always allowed: returning to Preparation reopens the reference data. A read-only account sees the phase and has no button.
 
-The first publication moves the edition to Published. The structure (stands, timeslots, game categories and locations) stays frozen there, but the staff fiches can be edited again. For a last-minute change, such as adding a stand the day before, lift the stand freeze: the structure is unblocked without leaving the Published phase, and the next publication freezes it again by itself.
+The first publication moves the edition to Published. The structure (stands, timeslots, game categories and locations) stays frozen there, but the staff fiches can be edited again. For a last-minute change, such as adding a stand the day before, click "Unblock the structure": it reopens without leaving the Published phase, a banner at the top of the screen says so as long as it is unblocked, and the next publication freezes it again by itself ("Freeze again" does it by hand).
 
-In every phase, availability, adjustments, locks and consignes (official orders relayed to the whole event) remain free. When the freeze is lifted, the application recalls whether the schedule is already published.
+In every phase, availability, adjustments, locks and consignes (official orders relayed to the whole event) remain free. When a phase reopens the reference data, the application recalls whether the schedule is already published.
 
 ## What next
 

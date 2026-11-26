@@ -8,6 +8,9 @@ import {
   planningDays,
   readAxe,
   readView,
+  JOURNEE_VIEWS,
+  viewParams,
+  tabOf,
 } from './journee';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
@@ -41,13 +44,28 @@ describe('planningDays', () => {
 });
 
 describe('readView', () => {
-  it('names one of the five renderings, the calendar otherwise', () => {
+  it('names one of the renderings, the rail otherwise', () => {
     expect(readView('rail')).toBe('rail');
+    expect(readView('jour')).toBe('rail');
+    expect(readView('jour', 'tableau')).toBe('calendrier');
+    expect(readView('jour', 'rail')).toBe('rail');
+    expect(readView('calendrier')).toBe('calendrier');
     expect(readView('carte')).toBe('carte');
     expect(readView('pauses')).toBe('pauses');
     expect(readView('changements')).toBe('changements');
-    expect(readView('libres')).toBe('calendrier');
-    expect(readView(null)).toBe('calendrier');
+    expect(readView('libres')).toBe('rail');
+    expect(readView(null)).toBe('rail');
+    expect(readView(null, 'tableau')).toBe('calendrier');
+  });
+
+  it('reads back every rendering from the params it writes, the rail from none', () => {
+    for (const view of JOURNEE_VIEWS) {
+      const { vue, mode } = viewParams(view);
+      expect(readView(vue, mode)).toBe(view);
+    }
+    expect(viewParams('rail')).toEqual({ vue: null, mode: null });
+    expect(viewParams('calendrier')).toEqual({ vue: 'jour', mode: 'tableau' });
+    expect(JOURNEE_VIEWS.map(tabOf)).toEqual(['jour', 'jour', 'carte', 'pauses', 'changements']);
   });
 });
 

@@ -44,11 +44,11 @@ describe('PlanningApi', () => {
     expect(api.get).toHaveBeenCalledWith('/api/planning/versions/compare?base=courant&variante=8');
   });
 
-  it('posts the exclusions of a publication, and an empty body for a reset', async () => {
+  it('posts an empty body to publish and to reset', async () => {
     await planning.publish();
     await planning.reset();
 
-    expect(api.post).toHaveBeenNthCalledWith(1, '/api/planning/publication', { exclusions: [] });
+    expect(api.post).toHaveBeenNthCalledWith(1, '/api/planning/publication', {});
     expect(api.post).toHaveBeenNthCalledWith(2, '/api/planning/reset', {});
   });
 
@@ -70,12 +70,12 @@ describe('PlanningApi', () => {
     );
   });
 
-  /** Deferring somebody is what the body carries, and the only thing (issue #503). */
-  it('names the deferred people in the publication body', async () => {
-    await planning.publish(['a1', 'a2']);
+  /** Aiming at a few people is what the body carries, and the only thing (issue #503). */
+  it('names the targeted people in the publication body', async () => {
+    await planning.publishTo(['a1', 'a2']);
 
     expect(api.post).toHaveBeenCalledWith('/api/planning/publication', {
-      exclusions: ['a1', 'a2'],
+      cibles: ['a1', 'a2'],
     });
   });
 

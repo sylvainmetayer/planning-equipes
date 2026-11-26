@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.DayState;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -52,7 +53,7 @@ class ValidationPrerequisTest {
     @Test
     void progressionCountsWholeDaysAgainstTheDaysTheGridHolds() {
         ProgressionValidations progression = ValidationPrerequisService.progression(
-                jours(JOUR, LENDEMAIN, JOUR.plusDays(2)), List.of(validation(JOUR), validation(LENDEMAIN)));
+                jours(JOUR, LENDEMAIN, JOUR.plusDays(2)), List.of(JOUR, LENDEMAIN));
 
         assertThat(progression.journees()).isEqualTo(3);
         assertThat(progression.journeesValidees()).isEqualTo(2);
@@ -66,11 +67,38 @@ class ValidationPrerequisTest {
     @Test
     void aValidationOnADayTheGridNoLongerHoldsIsNotCounted() {
         ProgressionValidations progression =
-                ValidationPrerequisService.progression(jours(JOUR), List.of(validation(JOUR), validation(LENDEMAIN)));
+                ValidationPrerequisService.progression(jours(JOUR), List.of(JOUR, LENDEMAIN));
 
         assertThat(progression.journees()).isEqualTo(1);
         assertThat(progression.journeesValidees()).isEqualTo(1);
         assertThat(progression.joursValides()).containsExactly(JOUR);
+    }
+
+    /**
+     * A frozen day is no longer to be read, reading or not: it counts like a
+     * read one (ADR 0121).
+     */
+    @Test
+    void aFrozenDayWithoutAReadingCountsAsReviewed() {
+        ProgressionValidations progression = ValidationPrerequisService.progression(
+                jours(JOUR, LENDEMAIN, JOUR.plusDays(2)),
+                ValidationJourneeService.reviewedDays(List.of(JOUR), List.of(LENDEMAIN, JOUR)));
+
+        assertThat(progression.journeesValidees()).isEqualTo(2);
+        assertThat(progression.joursValides()).containsExactly(JOUR, LENDEMAIN);
+    }
+
+    /**
+     * The three conversions 4.0 owes the days of a 3.x edition, which the
+     * derived state makes without rewriting a row: a read day is read, a day
+     * under a day lock is frozen, and a day carrying both is frozen too.
+     */
+    @Test
+    void aDayStateIsReadOffItsReadingAndItsDayLock() {
+        assertThat(DayState.of(true, false)).isEqualTo(DayState.RELUE);
+        assertThat(DayState.of(false, true)).isEqualTo(DayState.FIGEE);
+        assertThat(DayState.of(true, true)).isEqualTo(DayState.FIGEE);
+        assertThat(DayState.of(false, false)).isEqualTo(DayState.A_RELIRE);
     }
 
     @Test
@@ -186,10 +214,6 @@ class ValidationPrerequisTest {
 
     private static Set<LocalDate> jours(LocalDate... dates) {
         return new LinkedHashSet<>(List.of(dates));
-    }
-
-    private static ValidationJournee validation(LocalDate jour) {
-        return new ValidationJournee("V-" + jour, jour, Instant.EPOCH, "admin", null);
     }
 
     /** One stand on one timeslot of {@link #JOUR}, its single seat held or not. */

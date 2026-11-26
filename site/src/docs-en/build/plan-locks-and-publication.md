@@ -24,7 +24,7 @@ Two rules:
 
 **A lock that aims at a timeslot names its shift** (day, start time, end time), not its identifier. `creneau.id` is a `BIGINT` identity: deleting the timeslots of a day and then recreating them identically (grid regeneration, typical day reapplied) gives new ones. With an `ON DELETE CASCADE`, any deletion silently took the lock with it, whereas validating a swap lays two locks precisely so that the next regeneration does not undo the swap. The identifier remains stored as a cache, rewritten at every read by a join on the natural key, and is `NULL` as long as the grid does not carry that shift. A lock in that state **waits**: the Locks screen says so, and the grid check reports it, including on the preview of a derivation, that is, before "replace the grid" is written. The scope of an ad hoc exception follows the same rule, with one more consequence: a rule written for a timeslot that has disappeared is worth **nothing** instead of being worth the whole edition.
 
-Reviewing a day ("reviewed and accepted") is a different state from the lock ([decision 0039](repo:docs/decisions/0039-validation-de-relecture-distincte-du-verrou.md)): validating never lays a lock unless asked.
+A day has a state: to review, reviewed or frozen ([decision 0121](repo:docs/decisions/0121-l-etat-de-la-journee-se-lit-sur-la-relecture-et-le-verrou.md)). That state is not stored: **frozen is the `JOUR` lock itself**, reviewed is a reading (`validation_journee`) without that lock. The solver, the `plan:` section of a file and the Locks screen therefore read a frozen day as before, and the upgrade to 4.0 rewrote no row. Reviewing never lays a lock unless asked ([decision 0039](repo:docs/decisions/0039-validation-de-relecture-distincte-du-verrou.md)): through the state, only `PUT /api/etats-journee/{jour}` with `FIGEE` lays one, and only `RELUE` and `A_RELIRE` remove it; the Locks screen lays and removes the same lock, and the state follows. The `/api/validations` routes (list, creation, withdrawal) stay until 5.0: they write the same reading and the same lock, and never remove a lock. The state is independent of the edition's phase and of the active edition.
 
 ## The phase of the edition freezes records
 
@@ -63,7 +63,7 @@ Matching is **positional**, on stand × timeslot, like that of locks: seats of t
 | Timeslot already started | **Pinned as worked**, before any other rule: holder kept even if invalidated since, empty seat left empty, never reopened by the scope. Counted separately (`postesPasses`). See [the frozen past](horaires-et-fenetres-des-stands.md#le-passé-est-figé) |
 | Designated by the requested scope | Released no matter what: the user says "redo this" |
 | Holder still valid | **Pinned** |
-| Holder invalidated by a late change (deleted, unavailable, covered by a forced unavailability) | Released: pinning would freeze a hard breach that nobody could correct any more. The validity test reuses the solver's predicate, so the two cannot diverge |
+| Holder invalidated by a late change (deleted, unavailable that day) | Released: pinning would freeze a hard breach that nobody could correct any more. The validity test reuses the solver's predicate, so the two cannot diverge |
 | Never filled, or new | Left free |
 
 Two choices to know about:
@@ -83,7 +83,7 @@ The `reamorcage` parameter takes three values (`Reamorcage`): `AUTO` (the defaul
 | --- | --- |
 | Holder still valid | Re-seeded with them, **movable** |
 | Covered by a lock | Left as the locks have put it (pinned) |
-| Holder gone, unavailable that day, or covered by a forced unavailability | Starts empty, counted as "released" |
+| Holder gone, or unavailable that day | Starts empty, counted as "released" |
 | Never filled, or new | Free |
 
 The solver scores the starting solution first and keeps the best one it meets: with equal data, the result never falls below the starting plan. It can fall when the reference data has changed in the meantime (the starting plan is no longer a solution of the new problem) or on a cold start.

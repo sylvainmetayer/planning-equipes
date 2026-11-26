@@ -6,14 +6,11 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
-import dev.sylvain.planning.service.solve.PlanningPersistenceService;
-import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Feeds {@link CoherenceAnalyzer} the referential it needs, and nothing else:
@@ -44,29 +41,13 @@ public class CoherenceService {
 
     private final AnimateurService animateurs;
 
-    private final VerrouillageService verrouillages;
-
-    /**
-     * Read for one thing only: which seats of the persisted plan the animateurs
-     * of an exception already hold. {@code Instance} rather than a plain
-     * injection because this bean is also built by hand in the plain-Java
-     * harnesses, which have no database — the lock check is then simply not
-     * run, never guessed at.
-     */
-    private final Instance<PlanningPersistenceService> plan;
-
     /**
      * The latest score analysis, read for the lock warning alone and behind the
-     * same indirection as {@link #plan}, for the same reason.
+     * an {@code Instance} rather than a plain injection because this bean is also
+     * built by hand in the plain-Java harnesses, which have no database — the
+     * lock warning is then simply not run, never guessed at.
      */
     private final Instance<ConstraintAnalysisStore> analyses;
-
-    /**
-     * The moment the past is judged against (ADR 0044), behind the same
-     * indirection: a rule left on a day already worked is history, and the
-     * warnings say nothing about it.
-     */
-    private final Instance<PlanningService> planning;
 
     @Inject
     public CoherenceService(
@@ -74,18 +55,12 @@ public class CoherenceService {
             StandService stands,
             EmplacementService emplacements,
             AnimateurService animateurs,
-            VerrouillageService verrouillages,
-            Instance<PlanningPersistenceService> plan,
-            Instance<ConstraintAnalysisStore> analyses,
-            Instance<PlanningService> planning) {
+            Instance<ConstraintAnalysisStore> analyses) {
         this.creneaux = creneaux;
         this.stands = stands;
         this.emplacements = emplacements;
         this.animateurs = animateurs;
-        this.verrouillages = verrouillages;
-        this.plan = plan;
         this.analyses = analyses;
-        this.planning = planning;
     }
 
     /** The event's span, derived from the créneaux — an {@code Edition} stores none. */
@@ -141,37 +116,12 @@ public class CoherenceService {
     }
 
     /**
-     * Warnings about a hand-entered exception just written: the three readings
-     * of « this forced assignment cannot be honoured » that
-     * {@link CoherenceAnalyzer#onContrainteAdHoc} collects. The stands'
-     * recurring rules are resolved on the edition's grid first, so a
-     * stand-scoped exception reads the days that stand really opens.
-     *
-     * <p>The locks are read here too, and the seats of the persisted plan with
-     * them when there is any lock to cross: an exception naming somebody whose
-     * schedule is frozen over its whole scope is unsatisfiable. With no lock
-     * recorded — the usual case — the assignments are not read at all, and the
-     * cost is one read of an empty table.</p>
+     * Warnings about a hand-entered exception just written: a grouped arrival
+     * whose members declared different days off — see
+     * {@link CoherenceAnalyzer#onContrainteAdHoc}.
      */
     public List<Avertissement> onContrainteAdHoc(ContrainteAdHoc contrainte) {
-        List<Creneau> edition = creneaux.list();
-        List<Stand> resolus = stands.list();
-        HoraireStandResolver.apply(resolus, edition);
-        List<VerrouillagePlanning> verrous = verrouillages.list();
-        // The seats of the plan are a full scan of the assignments, and only
-        // the lock check reads them: with no lock recorded — the usual case —
-        // nothing needs them.
-        Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> tenues = verrous.isEmpty() || !plan.isResolvable()
-                ? Set.of()
-                : plan.get().loadPlacesTenues();
-        return CoherenceAnalyzer.onContrainteAdHoc(
-                contrainte,
-                animateurs.list(),
-                resolus,
-                edition,
-                verrous,
-                tenues,
-                planning.isResolvable() ? planning.get().pastHorizon() : null);
+        return CoherenceAnalyzer.onContrainteAdHoc(contrainte, animateurs.list(), creneaux.list());
     }
 
     /**
@@ -221,7 +171,7 @@ public class CoherenceService {
             }
             return List.copyOf(avertissements);
         } finally {
-            apres.setFenetresEffectives(null, null);
+            apres.setPlagesEffectives(null);
         }
     }
 

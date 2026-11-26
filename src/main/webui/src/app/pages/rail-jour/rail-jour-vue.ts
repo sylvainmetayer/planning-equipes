@@ -103,12 +103,9 @@ export class RailJourView {
     if (!planning) {
       return [];
     }
-    // The ad hoc exceptions travel with the plan already: no second request to
-    // know which hours someone was recorded as unavailable on.
     return buildRailJours(
       planning.postes ?? [],
       planning.animateurs ?? [],
-      planning.contraintesAdHoc ?? [],
       this.pauses(),
       this.walks(),
       this.groupedArrivals(),

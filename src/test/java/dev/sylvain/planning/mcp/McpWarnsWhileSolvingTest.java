@@ -237,10 +237,10 @@ class McpWarnsWhileSolvingTest {
                     "2020-01-01", "Prénom", "Nom", null, null, null, List.of("2031-08-01"), ed);
             assertThat(animateur.avertissements()).contains("MINEUR_PENDANT_EVENEMENT", CODE);
             String animateurId = animateur.animateur().id();
-            // Forced onto a day the animateur is off: a warning, not a refusal.
+            // An ad hoc exception is written while the solve runs: accepted, with the warning.
             var contrainte = parametresTools.createContrainteAdHoc(
-                    "AFFECTATION_FORCEE", List.of(animateurId), creneauId, standComplet, null, ed);
-            assertThat(contrainte.avertissements()).contains("AFFECTATION_FORCEE_JOUR_INDISPONIBLE", CODE);
+                    "INCOMPATIBILITE", List.of(animateurId), creneauId, standComplet, null, ed);
+            assertThat(contrainte.avertissements()).contains(CODE);
             String contrainteId = contrainte.contrainte().id();
             assertWarned(() ->
                     parametresTools.deleteContrainteAdHoc(contrainteId, ed).avertissements());
@@ -256,7 +256,7 @@ class McpWarnsWhileSolvingTest {
             assertWarned(() ->
                     verrouillageTools.unlock(verrou.verrouillage().id(), ed).avertissements());
             assertWarned(() -> validationTools
-                    .addJourneeValidation("2031-08-01", null, false, ed)
+                    .updateJourneeState("2031-08-01", "RELUE", null, ed)
                     .avertissements());
         } finally {
             editions.delete(ed);

@@ -15,7 +15,7 @@
 
 import { parseDateKey } from '../../core/date-utils';
 import { intlLocale } from '../../core/locale';
-import { Animateur, ContrainteAdHoc, PosteAffectation } from '../../core/models';
+import { Animateur, PosteAffectation } from '../../core/models';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 
 /**
@@ -163,24 +163,6 @@ function tousLesAnimateurs(postes: PosteAffectation[], animateurs: Animateur[]):
   return Array.from(connus.values());
 }
 
-/**
- * Animateurs a recorded ad hoc exception keeps off the **whole** event: an
- * `INDISPONIBILITE_FORCEE` carrying neither stand nor créneau. Narrower ones
- * are left out on purpose — an exception on one créneau or one stand still
- * leaves the day workable, and reading it as a day off would invent rest days
- * nobody granted.
- */
-function indisponiblesSurToutLEvenement(contraintes: ContrainteAdHoc[]): Set<string> {
-  const cibles = new Set<string>();
-  contraintes.forEach((contrainte) => {
-    if (contrainte.type !== 'INDISPONIBILITE_FORCEE' || contrainte.stand || contrainte.creneau) {
-      return;
-    }
-    (contrainte.animateursConcernes ?? []).forEach((target) => cibles.add(target.id));
-  });
-  return cibles;
-}
-
 /** Minutes one poste occupies: its own narrowed window when it has one, its créneau's otherwise. */
 function minutesDuPoste(poste: PosteAffectation): number {
   const creneau = poste.creneau!;
@@ -229,7 +211,7 @@ function colonnes(dates: Map<number, string | null>): ColonneJour[] {
 
 /**
  * The whole grid, built from the plan alone. `animateurs` is the edition's
- * referential and `contraintes` its recorded exceptions, both read-only.
+ * referential, read-only.
  *
  * The days are the ones the plan actually holds créneaux for: a day nothing is
  * scheduled on is not a rest day, it is a day outside the event.
@@ -237,7 +219,6 @@ function colonnes(dates: Map<number, string | null>): ColonneJour[] {
 export function buildTableauRepos(
   postes: PosteAffectation[],
   animateurs: Animateur[],
-  contraintes: ContrainteAdHoc[] = [],
 ): TableauRepos {
   const dates = new Map<number, string | null>();
   const charges = new Map<string, Map<number, ChargeJour>>();
@@ -268,7 +249,6 @@ export function buildTableauRepos(
 
   const effectif = tousLesAnimateurs(postes, animateurs);
   const noms = libelles(effectif);
-  const ecartes = indisponiblesSurToutLEvenement(contraintes);
 
   const lignes = effectif
     .map((animateur) =>
@@ -277,7 +257,6 @@ export function buildTableauRepos(
         noms.get(animateur.id) ?? animateur.id,
         jours,
         charges.get(animateur.id) ?? new Map(),
-        ecartes.has(animateur.id),
       ),
     )
     // Longest run of consecutive worked days first, then the busiest: the top
@@ -298,7 +277,6 @@ function buildLigne(
   nom: string,
   jours: ColonneJour[],
   charges: Map<number, ChargeJour>,
-  ecarteDeToutLEvenement: boolean,
 ): LigneRepos {
   let joursTravailles = 0;
   let joursRepos = 0;
@@ -310,7 +288,7 @@ function buildLigne(
   const cellules = jours.map((jour) => {
     const charge = charges.get(jour.jour);
     const declare = jour.date !== null && declarees.has(jour.date);
-    const indisponible = declare || ecarteDeToutLEvenement;
+    const indisponible = declare;
     if (charge && charge.postes > 0) {
       joursTravailles += 1;
       serie += 1;

@@ -105,6 +105,8 @@ test.describe('accessibilité — administration', () => {
     '/regles?onglet=regles',
     '/regles?onglet=regles&avance=1',
     '/journee',
+    // The rail is the page's default; the table, its other mode, is scanned on its own.
+    '/journee?vue=jour&mode=tableau',
     '/parametres',
     '/parametres?onglet=legal',
     '/parametres?onglet=calcul',

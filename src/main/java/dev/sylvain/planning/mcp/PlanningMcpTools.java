@@ -157,10 +157,7 @@ public class PlanningMcpTools {
                         referenceDataService.getNiveauxObligatoires(),
                         referenceDataService.getParametresQualite()),
                 new FeasibilityAnalyzer.PlanContext(
-                        referenceDataService.listVerrouillages(),
-                        persistenceService::loadPlacesTenues,
-                        planningService.pastHorizon(),
-                        persistenceService::loadEmployedByDay));
+                        planningService.pastHorizon(), persistenceService::loadEmployedByDay));
     }
 
     @Tool(

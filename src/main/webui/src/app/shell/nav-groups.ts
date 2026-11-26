@@ -213,11 +213,10 @@ export function buildNavGroups(): NavGroup[] {
           tabs: [
             tab(
               'vue',
-              'calendrier',
-              $localize`:@@journee.vue.calendrier:Tableau`,
-              $localize`:@@nav.keywords.journeeTableau:calendrier des affectations`,
+              'jour',
+              $localize`:@@journee.vue.jour:Jour`,
+              $localize`:@@nav.keywords.journeeTableau:tableau rail calendrier des affectations`,
             ),
-            tab('vue', 'rail', $localize`:@@journee.vue.rail:Rail`),
             tab(
               'vue',
               'carte',
@@ -297,7 +296,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'ajustements',
               $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
-              $localize`:@@nav.keywords.ajustements:affinités incompatibilités affectation forcée`,
+              $localize`:@@nav.keywords.ajustements:affinités incompatibilités arrivée groupée`,
             ),
             tab(
               'onglet',
@@ -374,7 +373,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'edition',
               $localize`:@@parametres.onglet.edition:Édition`,
-              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage météo contact`,
+              $localize`:@@nav.keywords.parametresEdition:guichets collecte foire covoiturage météo contact`,
             ),
             tab(
               'onglet',
@@ -466,7 +465,12 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
       ],
     },
     // Reached by « Gérer » of the edition bar, above every page.
-    { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
+    {
+      path: '/editions',
+      label: $localize`:@@nav.link.editions:Éditions`,
+      icon: 'layers',
+      keywords: $localize`:@@nav.keywords.editions:phase préparation calcul publiée terminée gel figer débloquer structure`,
+    },
     // The toolbar's « ? » icon, on every admin page.
     { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
     // Opened from Versions and from the Éditions page with the pair to compare;

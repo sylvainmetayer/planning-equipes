@@ -9,7 +9,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { AnimateursApi } from '../../core/api/animateurs-api';
@@ -331,7 +331,7 @@ describe('AnimateurFichePage', () => {
     expect(root().querySelector('app-equite-radar')).not.toBeNull();
   });
 
-  it('carries the head of actions, the adjustment form pre-filled on the person', async () => {
+  it('carries the head of actions', async () => {
     api.profile.mockResolvedValue(profile());
     await render();
 
@@ -342,16 +342,10 @@ describe('AnimateurFichePage', () => {
       'PDF',
       'ICS',
       'Verrouiller tout son planning',
-      'Poser un ajustement',
       'Modifier la fiche',
     ]) {
       expect(button(label)).toBeDefined();
     }
-    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
-    button('Poser un ajustement').click();
-    await fixture.whenStable();
-    const data = dialog.open.mock.calls[0][1].data;
-    expect(data.contrainte.animateursConcernes).toEqual([{ id: 'a1' }]);
   });
 
   it('sends the planning after asking, and locks the whole planning in one gesture', async () => {

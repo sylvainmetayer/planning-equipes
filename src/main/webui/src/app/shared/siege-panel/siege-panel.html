@@ -113,10 +113,6 @@
           <mat-icon>group_add</mat-icon>
           <ng-container i18n="@@siege.quiPeut">Qui peut tenir ce siège ?</ng-container>
         </button>
-        <button matButton type="button" [disabled]="busy() || editingLocked()" (click)="addAdjustment()">
-          <mat-icon>rule</mat-icon>
-          <ng-container i18n="@@siege.ajustement">Poser un ajustement</ng-container>
-        </button>
       }
     </div>
     @if (frozen()) {

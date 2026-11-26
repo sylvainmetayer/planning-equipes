@@ -68,6 +68,8 @@ CreneauResource#previewDerivation POST /creneaux/derivation/apercu
 CreneauResource#previewRecurrence POST /creneaux/recurrence/apercu
 CreneauResource#updateCreneau PUT /creneaux/{id}
 CreneauResource#validateGrid GET /creneaux/controle
+DayStateResource#list GET /etats-journee
+DayStateResource#set PUT /etats-journee/{jour}
 DeclarationDisponibiliteResource#apply POST /disponibilites/{id}/application
 DeclarationDisponibiliteResource#cancelCarpool POST /disponibilites/coequipiers/{id}/annulation
 DeclarationDisponibiliteResource#carpools GET /disponibilites/coequipiers
@@ -234,9 +236,9 @@ SolverJobResource#streamJobs GET /jobs/stream
 StaffingResource#analyze GET /staffing
 StaffingResource#verification GET /staffing/verification
 StaffingResource#verify POST /staffing/verification
+StandResource#addPlage POST /stands/{id}/plages
 StandResource#analyseCsv POST /stands/import-csv/analyse
 StandResource#analyseGrille POST /stands/import-grille/analyse
-StandResource#compactHoraires POST /stands/compactage-horaires
 StandResource#countStandUsages GET /stands/usages
 StandResource#createStand POST /stands
 StandResource#deleteStand DELETE /stands/{id}
@@ -245,6 +247,8 @@ StandResource#exempleGrille GET /stands/import-grille/exemple
 StandResource#importCsv POST /stands/import-csv
 StandResource#importGrille POST /stands/import-grille
 StandResource#listStands GET /stands
+StandResource#removePlage DELETE /stands/{id}/plages/{plageId}
+StandResource#removePlagesOfDay DELETE /stands/{id}/plages
 StandResource#suggestEmplacements GET /stands/suggestions-emplacement
 StandResource#updateStand PUT /stands/{id}
 TypologieAnalyseResource#rapport GET /planning/typologies

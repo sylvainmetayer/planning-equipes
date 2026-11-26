@@ -5,17 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
-import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.edition.EditionDelta.DeltaChange;
 import dev.sylvain.planning.service.edition.EditionDelta.DeltaFamily;
@@ -486,7 +481,7 @@ class EditionDeltaComparatorTest {
 
     /**
      * A stand shut on the second opening day of both editions — the 13 July
-     * here, the 11 July there — has not changed: its dated windows and rules
+     * here, the 11 July there — has not changed: its dated windows
      * compare by position, as the grid does. Shut on another day, it has.
      */
     @Test
@@ -495,12 +490,12 @@ class EditionDeltaComparatorTest {
         a.creneaux.add(creneau(1, "2025-07-12", 10, 14));
         a.creneaux.add(creneau(2, "2025-07-13", 10, 14));
         a.creneaux.add(creneau(3, "2025-07-19", 10, 14));
-        a.stands.add(windowed("S1", "2025-07-13", "2025-07-19", "2025-07-14"));
+        a.stands.add(windowed("S1", "2025-07-13", "2025-07-19"));
         Edition b = new Edition("E2");
         b.creneaux.add(creneau(11, "2026-07-10", 10, 14));
         b.creneaux.add(creneau(12, "2026-07-11", 10, 14));
         b.creneaux.add(creneau(13, "2026-07-17", 10, 14));
-        b.stands.add(windowed("S7", "2026-07-11", "2026-07-17", "2026-07-12"));
+        b.stands.add(windowed("S7", "2026-07-11", "2026-07-17"));
 
         assertThat(EditionDeltaComparator.compare(a.side(), b.side()).stands()).isEmpty();
 
@@ -509,30 +504,16 @@ class EditionDeltaComparatorTest {
         assertThat(EditionDeltaComparator.compare(a.side(), b.side()).stands())
                 .singleElement()
                 .extracting(DeltaLine::fields)
-                .isEqualTo(List.of("indisponibilites"));
+                .isEqualTo(List.of("plages"));
     }
 
-    /** A stand shut on {@code fermeture}, open on {@code ouverture}, and a rule naming both and {@code horsGrille}. */
-    private static Stand windowed(String id, String fermeture, String ouverture, String horsGrille) {
+    /** A stand shut on {@code fermeture} and open on {@code ouverture}. */
+    private static Stand windowed(String id, String fermeture, String ouverture) {
         Stand stand = stand(id, "BUV", "Buvette", 2);
-        stand.setIndisponibilites(new ArrayList<>(List.of(new IndisponibiliteStand(
+        stand.setIndisponibilites(new ArrayList<>(List.of(PlageStand.fermeture(
                 null, LocalDate.parse(fermeture), LocalTime.of(10, 0), LocalTime.of(12, 0), null))));
-        stand.setOuvertures(new ArrayList<>(List.of(new OuvertureStand(
+        stand.setOuvertures(new ArrayList<>(List.of(PlageStand.ouverture(
                 null, LocalDate.parse(ouverture), LocalTime.of(18, 0), LocalTime.of(22, 0), null, 3))));
-        HoraireStand dates = new HoraireStand(
-                null,
-                ModeHoraire.FERMETURE,
-                TypeJoursHoraire.DATES,
-                List.of(new FenetreHoraire(LocalTime.of(12, 0), LocalTime.of(13, 0))));
-        dates.setDates(Set.of(LocalDate.parse(fermeture), LocalDate.parse(horsGrille)));
-        HoraireStand plage = new HoraireStand(
-                null,
-                ModeHoraire.OUVERTURE,
-                TypeJoursHoraire.PLAGE,
-                List.of(new FenetreHoraire(LocalTime.of(9, 0), LocalTime.of(20, 0))));
-        plage.setDateDebut(LocalDate.parse(fermeture));
-        plage.setDateFin(LocalDate.parse(ouverture));
-        stand.setHoraires(new ArrayList<>(List.of(dates, plage)));
         return stand;
     }
 

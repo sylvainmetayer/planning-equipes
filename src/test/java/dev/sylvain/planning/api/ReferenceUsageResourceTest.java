@@ -60,7 +60,7 @@ class ReferenceUsageResourceTest {
 
     /**
      * One stand, one animateur and one timeslot, referenced once each way:
-     * a filled seat, an {@code AFFECTATION_FORCEE} naming all three at once,
+     * a filled seat, an {@code INCOMPATIBILITE} naming all three at once,
      * and one lock per referential. A second seat is left empty on the same
      * stand — it must not count.
      */
@@ -79,7 +79,7 @@ class ReferenceUsageResourceTest {
 
         persistence.persist(new PlanningEvenement(JOUR, List.of(animateur), List.of(pourvu, vacant, autreStand)));
 
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, TypeContrainteAdHoc.AFFECTATION_FORCEE);
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, TypeContrainteAdHoc.INCOMPATIBILITE);
         contrainte.setStand(stand);
         contrainte.setCreneau(creneau);
         contrainte.getAnimateursConcernes().add(animateur);

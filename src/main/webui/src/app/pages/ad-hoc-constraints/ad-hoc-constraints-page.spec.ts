@@ -17,7 +17,7 @@ import { AdHocConstraintsPage } from './ad-hoc-constraints-page';
 function contrainte(id: string): ContrainteAdHoc {
   return {
     id,
-    type: 'AFFECTATION_FORCEE',
+    type: 'INCOMPATIBILITE',
     animateursConcernes: [{ id: 'A1' }],
     creneau: null,
     stand: { id: 'S1' },

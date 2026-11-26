@@ -8,7 +8,7 @@ import static dev.sylvain.planning.service.scenario.ScenarioLadder.solveUntilFea
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -115,7 +115,7 @@ class ScenarioLadderLargeTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(fermeParfois.getIndisponibilites()).hasSize(3);
-        for (IndisponibiliteStand fermeture : fermeParfois.getIndisponibilites()) {
+        for (PlageStand fermeture : fermeParfois.getIndisponibilites()) {
             assertThat(seatsOnStand(loaded.problem().getPostes(), "STAND-04"))
                     .filteredOn(poste -> poste.getCreneau().getDate().equals(fermeture.getDate())
                             && poste.getCreneau().getHeureDebut().equals(LocalTime.of(14, 0)))
@@ -197,7 +197,7 @@ class ScenarioLadderLargeTest {
     @Test
     void rung23AMonthOfWishesAndHandEnteredExceptions() {
         Loaded loaded = load("gamme-23-30j-100stands-144animateurs-ad-hoc-souhaits");
-        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(54);
+        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(20);
         assertThat(loaded.feasibility().causes()).isEmpty();
         assertThat(loaded.problem().getPostes()).hasSize(3360);
 
@@ -221,7 +221,7 @@ class ScenarioLadderLargeTest {
         assertThat(loaded.sections().edition().orElseThrow().id()).isEqualTo("GAMME-25");
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
         assertThat(loaded.stands()).filteredOn(Stand::isPremium).hasSize(30);
-        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(32);
+        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(12);
         assertThat(loaded.problem().getPostes()).hasSize(5013);
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> standNumber(poste) >= 41 && standNumber(poste) <= 60)

@@ -25,10 +25,10 @@ L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. 
 
 L'accueil prend la forme du moment.
 
-**En préparation**, c'est une liste d'étapes : référentiels, gel, cohérence du référentiel, collecte des disponibilités, ouvertures, besoin, résolution, problèmes, relecture, publication, accusés de réception, foire. Chaque ligne dit si l'étape est faite, à vérifier, pour information ou à faire, avec le chiffre qui compte et le lien vers l'écran concerné. Quelques lignes en détail :
+**En préparation**, c'est une liste d'étapes : référentiels, phase de l'édition, cohérence du référentiel, collecte des disponibilités, ouvertures, besoin, résolution, problèmes, relecture, publication, accusés de réception, foire. Chaque ligne dit si l'étape est faite, à vérifier, pour information ou à faire, avec le chiffre qui compte et le lien vers l'écran concerné. Quelques lignes en détail :
 
 - la dernière résolution se lit en phrases, jamais en score brut ;
-- le gel du référentiel, que décide la phase de l'édition, y est rappelé, et se règle dans les Paramètres ;
+- la phase de l'édition (Préparation, Calcul, Publiée, Terminée), qui décide ce que le référentiel laisse modifier, s'y lit et s'y change, avec ses boutons « Débloquer la structure » et « Refiger » en Publiée ;
 - les accusés de réception disent si les relances automatiques sont actives et n'alertent qu'au-delà du délai de relance ;
 - la ligne « Cohérence du référentiel » rassemble toutes les anomalies détectées ailleurs. Les anomalies identiques sont réunies en une ligne avec leur compte (« 16 jours : rien entre 12:00 et 13:00 ») et chaque ligne mène à la fiche qui la corrige ;
 - deux lignes comptent sans lister : les fiches sans téléphone (dont celles affectées à une date à venir) et, sur une édition qui saisit des emplacements, les stands sans emplacement. Pour ces derniers, l'application indique ceux pour lesquels les stands voisins suggèrent un emplacement, avec sa raison. Chaque ligne ouvre la liste filtrée ; la suggestion apparaît aussi dans la colonne Lieu des stands et à l'enregistrement d'un stand laissé sans emplacement.
@@ -79,7 +79,7 @@ L'application ne publie rien vers l'extérieur, n'envoie aucun message et n'ouvr
 | Plancher | La part d'une règle qu'aucun calcul ne peut améliorer, parce qu'une donnée manque (personne n'a déclaré de souhait, par exemple) |
 | Recalcul partiel | Un calcul qui garde le planning en place et ne refait que ce qu'un changement a cassé |
 | Verrou | Le planning d'une personne, d'un stand ou d'une journée, qu'aucun calcul ne touchera plus |
-| Ajustement manuel | Une exception posée à la main : une personne indisponible tel jour, deux personnes à ne pas mettre ensemble, une affectation imposée |
+| Ajustement manuel | Une exception posée à la main : deux personnes à ne pas mettre ensemble, une paire à privilégier, un covoiturage |
 | Consigne | Une fermeture imposée de l'extérieur (un arrêté préfectoral, une canicule) appliquée à tous les stands pour quelques dates |
 | Version | Une copie du planning mise de côté (à la main, avant un calcul ou à la publication), qu'on peut remettre en place plus tard |
 | CSV, ICS, PDF | Les formats de fichier : CSV s'ouvre dans un tableur, ICS s'ajoute à un agenda (téléphone, Outlook, Google), PDF s'imprime |

@@ -357,9 +357,9 @@ class EditionResourceTest {
         String stand = given().header(HEADER, source)
                 .contentType("application/json")
                 .body(
-                        "{\"code\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
-                                + "\"horaires\":[{\"mode\":\"FERMETURE\",\"typeJours\":\"TOUS\","
-                                + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
+                        "{\"code\":\"STAND-HORAIRE\",\"nom\":\"Stand à plages\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
+                                + "\"indisponibilites\":[{\"date\":\"2026-07-08\","
+                                + "\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}")
                 .when()
                 .post("/api/stands")
                 .then()
@@ -393,9 +393,9 @@ class EditionResourceTest {
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + stand + "' }.code", org.hamcrest.Matchers.equalTo("STAND-HORAIRE"))
-                .body("find { it.id == '" + stand + "' }.horaires.size()", org.hamcrest.Matchers.equalTo(1))
+                .body("find { it.id == '" + stand + "' }.indisponibilites.size()", org.hamcrest.Matchers.equalTo(1))
                 .body(
-                        "find { it.id == '" + stand + "' }.horaires[0].fenetres[0].heureDebut",
+                        "find { it.id == '" + stand + "' }.indisponibilites[0].heureDebut",
                         org.hamcrest.Matchers.equalTo("09:00:00"));
     }
 
@@ -425,7 +425,7 @@ class EditionResourceTest {
                 .path("animateur.id");
         given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"type\":\"INDISPONIBILITE_FORCEE\"," + "\"animateursConcernes\":[{\"id\":\"" + animateur
+                .body("{\"type\":\"INCOMPATIBILITE\"," + "\"animateursConcernes\":[{\"id\":\"" + animateur
                         + "\"}],\"raison\":\"Absent\"}")
                 .when()
                 .post("/api/contraintes-ad-hoc")

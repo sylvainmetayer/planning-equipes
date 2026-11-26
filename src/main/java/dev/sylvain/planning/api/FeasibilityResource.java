@@ -80,10 +80,6 @@ public class FeasibilityResource {
                         referenceDataService.getContraintesDesactivees(),
                         referenceDataService.getNiveauxObligatoires(),
                         referenceDataService.getParametresQualite()),
-                new FeasibilityAnalyzer.PlanContext(
-                        referenceDataService.listVerrouillages(),
-                        persistence::loadPlacesTenues,
-                        planningService.pastHorizon(),
-                        persistence::loadEmployedByDay));
+                new FeasibilityAnalyzer.PlanContext(planningService.pastHorizon(), persistence::loadEmployedByDay));
     }
 }

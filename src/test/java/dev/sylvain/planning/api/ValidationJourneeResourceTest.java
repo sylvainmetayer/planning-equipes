@@ -28,6 +28,7 @@ class ValidationJourneeResourceTest {
 
     @AfterEach
     void resetDatabase() {
+        UNAVAILABLE.clear();
         given().header("X-Edition-Id", "E1")
                 .when()
                 .post("/api/planning/reset")
@@ -46,7 +47,7 @@ class ValidationJourneeResourceTest {
                 .asString();
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body(sample)
+                .body(problemWithDaysOff(sample))
                 .when()
                 .post("/api/solve?seconds=3")
                 .then()
@@ -281,17 +282,29 @@ class ValidationJourneeResourceTest {
         return id;
     }
 
-    /** A late change the next solve has to work around: this person is out that day. */
+    /** A late change the next solve has to work around: this person is out that day, on their fiche. */
     private static void markUnavailable(String animateurId) {
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"jour":"%s"}""".formatted(animateurId, JOUR))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200);
+        UNAVAILABLE.add(animateurId);
+    }
+
+    /** Animateurs declared out on {@code JOUR}: the solve reads the days off of the problem it is posted. */
+    private static final java.util.Set<String> UNAVAILABLE = new java.util.HashSet<>();
+
+    /** The sample problem, with the days off of the fiches declared since. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> problemWithDaysOff(String sample) {
+        Map<String, Object> problem = JsonPath.from(sample).getMap("$");
+        for (Map<String, Object> animateur : (List<Map<String, Object>>) problem.get("animateurs")) {
+            if (UNAVAILABLE.contains(animateur.get("id"))) {
+                List<Object> jours = new java.util.ArrayList<>();
+                if (animateur.get("joursIndisponibles") instanceof List<?> existing) {
+                    jours.addAll(existing);
+                }
+                jours.add(JOUR);
+                animateur.put("joursIndisponibles", jours);
+            }
+        }
+        return problem;
     }
 
     /** The publication panel says how many days would go out unread. */
@@ -314,5 +327,109 @@ class ValidationJourneeResourceTest {
                 .then()
                 .statusCode(200)
                 .body("journeesNonValidees", is(0));
+    }
+
+    /* ------------------- The state of a day (ADR 0121) ------------------- */
+
+    private static JsonPath setState(String etat) {
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("etat", etat))
+                .when()
+                .put("/api/etats-journee/" + JOUR)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+    }
+
+    private static int dayLocks() {
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/verrouillages")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("findAll { it.type == 'JOUR' }")
+                .size();
+    }
+
+    @Test
+    void aDayGoesThroughItsThreeStatesAndOnlyFrozenHoldsALock() {
+        aPersistedPlan();
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/etats-journee")
+                .then()
+                .statusCode(200)
+                .body("size()", is(1))
+                .body("[0].jour", equalTo(JOUR))
+                .body("[0].etat", equalTo("A_RELIRE"));
+
+        assertThat(setState("RELUE").getString("etat")).isEqualTo("RELUE");
+        assertThat(dayLocks()).isZero();
+
+        assertThat(setState("FIGEE").getString("etat")).isEqualTo("FIGEE");
+        assertThat(dayLocks()).isEqualTo(1);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations/progression")
+                .then()
+                .statusCode(200)
+                .body("journeesValidees", is(1));
+
+        assertThat(setState("A_RELIRE").getString("etat")).isEqualTo("A_RELIRE");
+        assertThat(dayLocks()).isZero();
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations/progression")
+                .then()
+                .statusCode(200)
+                .body("journeesValidees", is(0));
+    }
+
+    @Test
+    void aFrozenDayStaysFrozenAcrossASolve() {
+        aPersistedPlan();
+        setState("FIGEE");
+        markUnavailable(aSeatedAnimateur());
+
+        aPersistedPlan();
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/etats-journee")
+                .then()
+                .statusCode(200)
+                .body("[0].etat", equalTo("FIGEE"));
+    }
+
+    @Test
+    void aStateTheDayCannotTakeIsRefused() {
+        aPersistedPlan();
+
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("etat", "VALIDEE"))
+                .when()
+                .put("/api/etats-journee/" + JOUR)
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of())
+                .when()
+                .put("/api/etats-journee/" + JOUR)
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("etat", "FIGEE"))
+                .when()
+                .put("/api/etats-journee/2000-01-01")
+                .then()
+                .statusCode(400);
+        assertThat(dayLocks()).isZero();
     }
 }

@@ -93,11 +93,11 @@ class CreneauAvailabilityCoherenceTest {
 
     /**
      * The case that made the equality claim false, and the one the assistant's
-     * second filter exists for: an ad hoc {@code INDISPONIBILITE_FORCEE} is a
+     * second filter exists for: an ad hoc {@code INCOMPATIBILITE} is a
      * hard rule of weight 1 that {@code EligibleAnimateurMoveFilter} does not
      * know about. Filling an empty seat with that animateur settles
      * {@code posteDoitEtrePourvu} (+1) and spends it on
-     * {@code indisponibiliteForcee} (−1): the plan-wide hard score comes out
+     * {@code incompatibiliteAdHoc} (−1): the plan-wide hard score comes out
      * flat, so a screen reading only that score would announce « disponible ».
      *
      * <p>Reading per-constraint totals instead is what catches it, and it must
@@ -110,7 +110,7 @@ class CreneauAvailabilityCoherenceTest {
         CreneauAvailability banc = planningService.creneauAvailability(planning, CRENEAU_CIBLE, null, null);
 
         AnimateurAvailability interdit = row(banc, "A-INTERDIT");
-        assertThat(constraintNames(banc, "A-INTERDIT")).contains("indisponibiliteForcee");
+        assertThat(constraintNames(banc, "A-INTERDIT")).contains("incompatibiliteAdHoc");
         assertThat(interdit.disponible()).isFalse();
         // The very reason the screen cannot lean on this verdict alone.
         assertThat(interdit.delta().hardScore()).isZero();
@@ -363,8 +363,8 @@ class CreneauAvailabilityCoherenceTest {
     }
 
     /**
-     * An empty seat, one animateur banned from it by an ad hoc rule, and one
-     * with nothing against them. Nothing else, so the arithmetic stays legible:
+     * An empty seat, one animateur incompatible with the one already sitting
+     * beside it by an ad hoc rule, and that colleague. Nothing else, so the arithmetic stays legible:
      * the ban costs exactly the hard point filling the seat earns back.
      */
     private static PlanningEvenement planningWithAdHocBan() {
@@ -374,12 +374,14 @@ class CreneauAvailabilityCoherenceTest {
         Animateur libre = new Animateur("A-LIBRE", "Léa", "Martin", LocalDate.of(1990, 1, 1), false);
 
         PosteAffectation vide = new PosteAffectation("P-LIBRE", stand, matin);
-        ContrainteAdHoc interdiction = new ContrainteAdHoc("C-BAN", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        interdiction.setAnimateursConcernes(List.of(interdit));
+        PosteAffectation occupe = new PosteAffectation("P-OCCUPE", stand, matin);
+        occupe.setAnimateur(libre);
+        ContrainteAdHoc interdiction = new ContrainteAdHoc("C-BAN", TypeContrainteAdHoc.INCOMPATIBILITE);
+        interdiction.setAnimateursConcernes(List.of(interdit, libre));
         interdiction.setCreneau(matin);
-        interdiction.setRaison("Écarté de ce créneau par l'organisateur");
+        interdiction.setRaison("Ne doivent pas travailler ensemble");
 
-        return new PlanningEvenement(JOUR, List.of(interdit, libre), List.of(vide), List.of(interdiction));
+        return new PlanningEvenement(JOUR, List.of(interdit, libre), List.of(vide, occupe), List.of(interdiction));
     }
 
     /**

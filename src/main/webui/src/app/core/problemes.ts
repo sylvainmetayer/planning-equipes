@@ -449,12 +449,6 @@ export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
   switch (type) {
     case 'CONTRAINTES_AD_HOC_CONTRADICTOIRES':
       return $localize`:@@problemes.cause.contraintesAdHocContradictoires:Ajustements manuels contradictoires`;
-    case 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE':
-      return $localize`:@@problemes.cause.affectationForceeJourIndisponible:Affectation forcée un jour d'indisponibilité`;
-    case 'AFFECTATION_FORCEE_MOTIF_LEGAL':
-      return $localize`:@@problemes.cause.affectationForceeMotifLegal:Affectation forcée contre une règle dure`;
-    case 'AFFECTATION_FORCEE_SIEGE_VERROUILLE':
-      return $localize`:@@problemes.cause.affectationForceeSiegeVerrouille:Affectation forcée sur un emploi du temps verrouillé`;
     case 'PLAFOND_JOURS_CONSECUTIFS':
       return $localize`:@@problemes.cause.plafondJoursConsecutifs:Plafond de jours d'affilée`;
     default:
@@ -535,15 +529,6 @@ export function causeLinks(
       route: '/regles',
       queryParams: { onglet: 'ajustements' },
       libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
-    });
-  }
-  // The deadlock has two halves and the cause only names one: the exception is
-  // on the Ajustements screen, the lock that blocks it on the other.
-  if (cause.type === 'AFFECTATION_FORCEE_SIEGE_VERROUILLE') {
-    liens.push({
-      route: '/regles',
-      queryParams: { onglet: 'verrouillages' },
-      libelle: $localize`:@@problemes.lien.verrouillages:Voir les verrouillages`,
     });
   }
   return liens;
@@ -702,7 +687,7 @@ export function construireProblemes(
         },
         ...days.map((date) => ({
           route: '/journee',
-          queryParams: { vue: 'rail', date },
+          queryParams: { vue: 'jour', mode: 'rail', date },
           libelle: $localize`:@@problemes.lien.railDuJour:Voir le rail du ${date}:date:`,
         })),
       ],
@@ -746,7 +731,7 @@ export function construireProblemes(
       actions: [],
       liens: days.map((date) => ({
         route: '/journee',
-        queryParams: { vue: 'rail', date },
+        queryParams: { vue: 'jour', mode: 'rail', date },
         libelle: $localize`:@@problemes.lien.railDuJour:Voir le rail du ${date}:date:`,
       })),
     });
