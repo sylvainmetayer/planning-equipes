@@ -249,7 +249,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'besoin',
               $localize`:@@diagnostic.onglet.besoin:Besoin en animateurs`,
-              $localize`:@@nav.keywords.besoin:staffing marge avant à former formation faisabilité volumétrie typologie borne exacte`,
+              $localize`:@@nav.keywords.besoin:staffing marge avant à former formation volumétrie typologie borne exacte`,
             ),
             tab(
               'onglet',

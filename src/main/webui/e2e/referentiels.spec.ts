@@ -231,9 +231,10 @@ test.describe('typologies', () => {
   // every figure a way to where it is acted on.
   test('le besoin par typologie renvoie chaque chiffre là où on agit', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
-    // The former address lands on the section, which draws the table.
+    // The former address lands on the section, which draws the table (the
+    // landing's `section` leaves the address once obeyed).
     await page.goto('/typologies-planning');
-    await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin&section=typologie/);
+    await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
     const table = page.locator('.besoin-typologie-table');
     await expect(table).toBeVisible();
 

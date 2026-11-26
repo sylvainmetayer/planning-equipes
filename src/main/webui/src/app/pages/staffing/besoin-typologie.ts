@@ -118,6 +118,8 @@ export class BesoinTypologie {
   private readonly planningApi = inject(PlanningApi);
 
   protected readonly lecture = resource({ loader: () => this.planningApi.typologiesReport() });
+  /** True while the report is read, so a host can wait before scrolling past this table. */
+  readonly loading = computed(() => this.lecture.isLoading());
   protected readonly erreur = errorText(this.lecture);
 
   protected readonly lignes = computed<LigneTypologie[]>(() =>

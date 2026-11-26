@@ -23,7 +23,7 @@ L'écran dit ce que le calcul prendra en compte :
 - les modifications faites depuis la dernière résolution ;
 - les déclarations de disponibilité encore en attente, que le calcul **ne verra pas** tant qu'elles ne sont pas appliquées.
 
-Chaque compteur mène à l'écran qui le liste. La faisabilité et les alertes viennent avant ; la volumétrie du problème est repliée en bas. Un compteur d'écart indique les modifications faites depuis le calcul enregistré. Seules les actions qui changent ce que le calcul reçoit sont comptées : un envoi ou un export ne périme rien.
+Chaque compteur mène à l'écran qui le liste. La faisabilité et les alertes viennent avant. Un compteur d'écart indique les modifications faites depuis le calcul enregistré. Seules les actions qui changent ce que le calcul reçoit sont comptées : un envoi ou un export ne périme rien.
 
 Si des exceptions posées à la main se contredisent, ou si un plafond de jours d'affilée ne peut pas tenir, « Calculer » demande confirmation avant de dépenser du temps de calcul sur un problème qui finira par enfreindre une règle impérative. Le manque de monde ne demande rien : le calcul l'atténue encore.
 

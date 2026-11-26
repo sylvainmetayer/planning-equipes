@@ -220,7 +220,7 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 
 - **Avant (3.x)** : le besoin en animateurs, la volumétrie du problème (dans le Solveur) et le planning lu par typologie (dans le Planning, « Par typologie », ou `/typologies-planning`) étaient trois lectures dans trois écrans.
 - **Après (4.0)** : l'onglet **Besoin en animateurs** du Diagnostic les réunit : la borne exacte et la marge par jour, le besoin typologie par typologie, la section « Le planning, typologie par typologie », la volumétrie du problème (en bas, plus dans le Solveur) et « À former ». La faisabilité reste dans l'onglet Problèmes, où sont ses causes.
-- **Ce que vous faites** : rien pour vos liens. `/typologies-planning` ouvre la section `?onglet=besoin&section=typologie` ; `section=volumetrie` ouvre la volumétrie.
+- **Ce que vous faites** : rien pour vos liens. `/typologies-planning` ouvre la section `?onglet=besoin&section=typologie` ; `section=volumetrie` mène à la volumétrie.
 
 ### La page Planning n'offre plus que quatre vues
 

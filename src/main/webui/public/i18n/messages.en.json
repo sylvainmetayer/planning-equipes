@@ -4292,7 +4292,7 @@
   "staffing.marge.detail": "Available − seats, time band by time band",
   "staffing.lien.competences": "Enter the competence",
   "staffing.former.description": " The game categories short on need or on fragility, and whom to train on each: a click opens the competences grid filtered on the category. ",
-  "nav.keywords.besoin": "staffing margin before to train training feasibility volumetry typologie exact bound",
+  "nav.keywords.besoin": "staffing margin before to train training volumetry typologie exact bound",
   "nav.keywords.tension": "margin available after solve",
   "accueil.detail.publication.echecs": "{$count} failed send(s)",
   "accueil.lien.publication.echecs": "See the failed sends",

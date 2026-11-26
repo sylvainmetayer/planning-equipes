@@ -7,6 +7,7 @@ import {
   input,
   resource,
   signal,
+  viewChild,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -207,6 +208,8 @@ export class StaffingPage implements OnInit {
   protected readonly jourCourt = jourCourt;
 
   private readonly injector = inject(Injector);
+  /** The plan by typologie sits above « À former » and the volumetry: its rows push them down while it loads. */
+  private readonly typologieSection = viewChild(BesoinTypologie);
   private readonly locale = inject(LOCALE_ID);
 
   /** The last check of the floor by a solve, running or finished; `null` before any. */
@@ -248,7 +251,7 @@ export class StaffingPage implements OnInit {
   }
 
   /**
-   * Scrolls to « À former » once both tables above it have their figures: the
+   * Scrolls to a section once the three tables above it have their figures: the
    * section starts where they end, and scrolling while they still load lands
    * on what they push down a moment later.
    */
@@ -256,7 +259,13 @@ export class StaffingPage implements OnInit {
     return new Promise((resolve) => {
       const loaded = effect(
         () => {
-          if (this.staffing.isLoading() || this.margin.isLoading()) {
+          const typologie = this.typologieSection();
+          if (
+            this.staffing.isLoading() ||
+            this.margin.isLoading() ||
+            !typologie ||
+            typologie.loading()
+          ) {
             return;
           }
           loaded.destroy();
