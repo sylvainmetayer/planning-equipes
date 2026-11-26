@@ -85,7 +85,7 @@ The MCP tool `consulter_alertes_meteo` reads the same alerts. The choice of thes
 
 | Event code | When | `donnees` |
 | --- | --- | --- |
-| `planning.publie` | a publication went out | `instantaneId`, `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
+| `planning.publie` | a publication went out | `instantaneId` (the id of the published version: the key keeps its 3.x name, which outside integrations read), `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
 | `echange.soumis` | a swap request reaches the desk | `nombre` |
 | `echanges.en_attente` | the overnight task flags requests that are sleeping | `nombre`, `ancienneteMaxJours` |
 | `disponibilites.declaree` | a declaration is waiting to be applied | `joursIndisponibles`, `souhaits` |

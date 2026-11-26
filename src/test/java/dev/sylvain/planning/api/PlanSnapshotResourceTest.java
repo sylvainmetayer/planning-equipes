@@ -148,6 +148,44 @@ class PlanSnapshotResourceTest {
                 .then()
                 .statusCode(200)
                 .body("origine", org.hamcrest.Matchers.hasItem("MANUELLE"));
+
+        // Every verb of the 3.x screen, not only the reads: create, compare, restore, delete.
+        long viaAlias = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"libelle\":\"Par l'alias\"}")
+                .when()
+                .post("/api/planning/snapshots")
+                .then()
+                .statusCode(201)
+                .body("origine", equalTo("MANUELLE"))
+                .extract()
+                .jsonPath()
+                .getLong("id");
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/snapshots/compare?base=" + viaAlias + "&variante=courant")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/snapshots/comparables")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .post("/api/planning/snapshots/" + viaAlias + "/restore")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/planning/snapshots/" + viaAlias)
+                .then()
+                .statusCode(204);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/versions/" + viaAlias)
+                .then()
+                .statusCode(404);
     }
 
     @Test

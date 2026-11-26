@@ -82,7 +82,7 @@ L'outil MCP `consulter_alertes_meteo` lit les mêmes alertes. Le choix de ces de
 
 | Code d'événement | Quand | `donnees` |
 | --- | --- | --- |
-| `planning.publie` | une publication est partie | `instantaneId`, `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
+| `planning.publie` | une publication est partie | `instantaneId` (l'id de la version publiée : la clé garde son nom de la 3.x, que lisent des intégrations extérieures), `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
 | `echange.soumis` | une demande d'échange arrive sur le bureau | `nombre` |
 | `echanges.en_attente` | la tâche de nuit signale des demandes qui dorment | `nombre`, `ancienneteMaxJours` |
 | `disponibilites.declaree` | une déclaration attend d'être appliquée | `joursIndisponibles`, `souhaits` |

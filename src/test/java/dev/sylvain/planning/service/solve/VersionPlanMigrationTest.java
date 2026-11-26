@@ -102,6 +102,15 @@ class VersionPlanMigrationTest {
                 assertThat(text(sql, "SELECT to_regclass('plan_snapshot')")).isNull();
                 assertThat(text(
                                 sql,
+                                "SELECT (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace"
+                                        + " WHERE n.nspname = '" + SCHEMA + "' AND c.relname LIKE 'plan\\_snapshot%')"
+                                        + " + (SELECT count(*) FROM pg_constraint k JOIN pg_namespace n"
+                                        + " ON n.oid = k.connamespace WHERE n.nspname = '" + SCHEMA + "'"
+                                        + " AND k.conname LIKE 'plan\\_snapshot%')"))
+                        .as("no index, sequence or constraint still named after the old table")
+                        .isEqualTo("0");
+                assertThat(text(
+                                sql,
                                 "SELECT count(*) FROM information_schema.columns WHERE table_schema = '" + SCHEMA
                                         + "' AND table_name = 'version_plan' AND column_name = 'automatique'"))
                         .isEqualTo("0");

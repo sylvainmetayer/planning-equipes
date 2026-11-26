@@ -18,6 +18,21 @@ ALTER INDEX idx_plan_snapshot_edition_date RENAME TO idx_version_plan_edition_da
 ALTER INDEX idx_plan_snapshot_publie RENAME TO idx_version_plan_publie;
 ALTER SEQUENCE plan_snapshot_id_seq RENAME TO version_plan_id_seq;
 
+-- Les autres contraintes de la table portent encore l'ancien nom (la clé vers
+-- `edition`, nommée par défaut en V40 et recréée telle quelle en V100) : elles
+-- le perdent aussi, pour qu'aucun objet du schéma ne dise plus `plan_snapshot`.
+DO $$
+DECLARE
+    c RECORD;
+BEGIN
+    FOR c IN SELECT conname FROM pg_constraint
+             WHERE conrelid = 'version_plan'::regclass AND conname LIKE 'plan\_snapshot%'
+    LOOP
+        EXECUTE format('ALTER TABLE version_plan RENAME CONSTRAINT %I TO %I',
+                       c.conname, 'version_plan' || substr(c.conname, length('plan_snapshot') + 1));
+    END LOOP;
+END $$;
+
 ALTER TABLE version_plan ADD COLUMN origine VARCHAR(16) NOT NULL DEFAULT 'MANUELLE';
 
 UPDATE version_plan

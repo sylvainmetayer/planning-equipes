@@ -117,7 +117,7 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("configurer_foire_echanges", "la fenêtre de la foire n'est pas lue par le calcul"),
             Map.entry("refuser_demande_echange", "un refus ne modifie ni le plan ni le référentiel"),
             Map.entry("creer_version", "copie le plan enregistré, que le calcul ne lit pas en retour"),
-            Map.entry("supprimer_version", "un instantané n'est pas lu par le calcul"),
+            Map.entry("supprimer_version", "une version n'est pas lue par le calcul"),
             Map.entry("supprimer_kpi_historique", "l'historique des indicateurs n'est pas lu par le calcul"),
             Map.entry("creer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),
             Map.entry("dupliquer_edition", "agit sur les éditions entières, pas dans celle qu'un calcul tient"),

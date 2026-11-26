@@ -196,6 +196,7 @@ public class WebhookEmitter {
 
     static Occurrence occurrence(PlanningPublished published, ApplicationLinks links) {
         Map<String, Object> data = new LinkedHashMap<>();
+        // The id of the published version (ADR 0108): an outgoing contract, so the 3.x key stays.
         data.put("instantaneId", published.snapshotId());
         data.put("destinataires", published.recipients());
         data.put("envoyes", published.sent());
