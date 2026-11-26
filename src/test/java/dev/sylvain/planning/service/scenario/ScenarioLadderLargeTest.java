@@ -197,7 +197,7 @@ class ScenarioLadderLargeTest {
     @Test
     void rung23AMonthOfWishesAndHandEnteredExceptions() {
         Loaded loaded = load("gamme-23-30j-100stands-144animateurs-ad-hoc-souhaits");
-        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(54);
+        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(20);
         assertThat(loaded.feasibility().causes()).isEmpty();
         assertThat(loaded.problem().getPostes()).hasSize(3360);
 
@@ -221,7 +221,7 @@ class ScenarioLadderLargeTest {
         assertThat(loaded.sections().edition().orElseThrow().id()).isEqualTo("GAMME-25");
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
         assertThat(loaded.stands()).filteredOn(Stand::isPremium).hasSize(30);
-        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(32);
+        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(12);
         assertThat(loaded.problem().getPostes()).hasSize(5013);
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> standNumber(poste) >= 41 && standNumber(poste) <= 60)

@@ -147,13 +147,13 @@ test('flags a contradiction already in the database before any solve', async ({ 
   // `new RegExp(AFFINITE)` therefore matches the INCOMPAT row too, and would match
   // `E2E-ADHOC-AFFINITE-2` as well; `(?!\S)` closes both. The cell, not the row:
   // the row's name now opens on its selection checkbox.
-  const ligneAffinite = page.getByRole('row').filter({
-    has: page.getByRole('cell', { name: new RegExp(String.raw`^${AFFINITE}(?!\S)`) }),
+  const ligneIncompat = page.getByRole('row').filter({
+    has: page.getByRole('cell', { name: new RegExp(String.raw`^${INCOMPAT}(?!\S)`) }),
   });
-  await expect(ligneAffinite).toHaveCount(1);
-  await expect(ligneAffinite.getByText('warning')).toBeVisible();
+  await expect(ligneIncompat).toHaveCount(1);
+  await expect(ligneIncompat.getByText('warning')).toBeVisible();
   // The badge says what it means, rather than only showing a tooltip on hover.
-  await expect(ligneAffinite.getByRole('img', { name: new RegExp(INCOMPAT) })).toBeVisible();
+  await expect(ligneIncompat.getByRole('img', { name: new RegExp(AFFINITE) })).toBeVisible();
   await page.context().close();
 });
 
