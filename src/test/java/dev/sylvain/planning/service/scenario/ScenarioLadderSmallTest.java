@@ -161,28 +161,21 @@ class ScenarioLadderSmallTest {
     }
 
     @Test
-    void rung06EveryKindOfAdHocRuleHolds() {
+    void rung06EveryKindOfAdHocRuleAndTheDayOffHold() {
         Loaded loaded = load("gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc");
-        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(6);
+        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(2);
         assertThat(loaded.feasibility().causes()).isEmpty();
 
         PlanningEvenement solved = solveFor(loaded, 10L);
 
         assertFeasible(solved);
-        assertThat(seatsOf(solved, "A027"))
-                .noneMatch(poste -> poste.getStand().getId().equals("CONTES"));
+        // The forced unavailability of 4.0's predecessor is the day off of the fiche now.
         assertThat(seatsOf(solved, "A028"))
-                .noneMatch(poste -> poste.getCreneau().getDate().equals(LocalDate.of(2027, 7, 24))
-                        && poste.getCreneau().getHeureDebut().equals(LocalTime.of(14, 0)));
+                .noneMatch(poste -> poste.getCreneau().getDate().equals(LocalDate.of(2027, 7, 24)));
         Set<Object> creneauxA029 = seatsOf(solved, "A029").stream()
                 .map(PosteAffectation::getCreneau)
                 .collect(Collectors.toSet());
         assertThat(seatsOf(solved, "A030")).noneMatch(poste -> creneauxA029.contains(poste.getCreneau()));
-        assertThat(seatsOf(solved, "A031"))
-                .anyMatch(poste -> poste.getCreneau().getDate().equals(LocalDate.of(2027, 7, 25))
-                        && poste.getCreneau().getHeureDebut().equals(LocalTime.of(10, 0)));
-        assertThat(seatsOf(solved, "A032"))
-                .anyMatch(poste -> poste.getStand().getId().equals("GRAND-JEU"));
         // The affinity reaches the solver, and that is all this file can pin: a
         // soft reward never outweighs the medium level, so whether the pair ends
         // up together depends on what the load balancing leaves free.

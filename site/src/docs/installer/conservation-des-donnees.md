@@ -37,6 +37,10 @@ La migration de la 4.0 range les demandes de covoiturage que la 3.x avait écart
 
 Une fois la 4.0 en place et le retour à la 3.x exclu, rien ne vous oblige à attendre : `DROP TABLE declaration_coequipier_avant_4_0;` la supprime, sans effet sur l'application. Notez-le au registre comme une purge.
 
+### L'archive des exclusions de publication 3.x
+
+La migration de la 4.0 range, dans la table `exclusion_publication_avant_4_0`, les personnes dont le dernier envoi de publication était un report : l'identifiant de la personne, de l'édition et de la version publiée, et la date. Aucun nom, aucun texte libre. L'application ne la lit plus et ne l'exporte pas. Elle est **gardée jusqu'à la 5.0**, qui la supprime ; d'ici là, elle part avec son édition (la purge annuelle la couvre) ou avec la fiche de la personne. Une fois la 4.0 en place et le retour à la 3.x exclu, `DROP TABLE exclusion_publication_avant_4_0;` la supprime, sans effet sur l'application. Notez-le au registre comme une purge.
+
 ## La mesure du réalisé
 
 Aucune tâche planifiée ne la calcule : l'écran « Mesures d'édition » la calcule à la demande ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). La première lecture faite une fois le dernier créneau de l'édition terminé, quand quelque chose a été publié, écrit la mesure dans `mesure_edition` (nature `REALISE`) : absences, remplacements, sièges vides et heures perdues, par typologie, sans aucune personne.

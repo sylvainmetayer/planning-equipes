@@ -72,10 +72,10 @@ function contrainte(overrides: Partial<ConstraintView> = {}): ConstraintView {
 function contribution(overrides: Partial<ContributionAdHoc> = {}): ContributionAdHoc {
   return {
     contrainteId: 'C1',
-    type: 'AFFECTATION_FORCEE',
+    type: 'INCOMPATIBILITE',
     raison: 'Formation',
     violations: 1,
-    contraintes: ['affectationForcee'],
+    contraintes: ['incompatibiliteAdHoc'],
     ...overrides,
   };
 }
@@ -251,26 +251,6 @@ describe('construireProblemes', () => {
     ]);
   });
 
-  // The deadlock has two halves and the cause only names the exception.
-  it('sends a locked-schedule cause to the locks as well as to the adjustments', () => {
-    const liens = causeLinks(
-      cause({
-        type: 'AFFECTATION_FORCEE_SIEGE_VERROUILLE',
-        severite: 'CRITIQUE',
-        creneauId: null,
-        standIds: [],
-        contrainteIds: ['C01'],
-        demande: 0,
-        capacite: 0,
-        manque: 0,
-      }),
-    );
-    expect(liens.map((lien) => lien.queryParams?.['onglet'])).toEqual([
-      'ajustements',
-      'verrouillages',
-    ]);
-  });
-
   // A window's deficit is in person-days: read as « il manque N animateur(s) »
   // it would announce a headcount the cause never computed.
   it('details a cap on days in a row in person-days, never as missing animateurs', () => {
@@ -299,11 +279,11 @@ describe('construireProblemes', () => {
     ]);
   });
 
-  // Every other cause keeps the adjustments link alone.
-  it('does not offer the locks on a day-off cause', () => {
+  // A contradiction between adjustments keeps the adjustments link alone.
+  it('offers the adjustments link alone on a contradiction', () => {
     const liens = causeLinks(
       cause({
-        type: 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE',
+        type: 'CONTRAINTES_AD_HOC_CONTRADICTOIRES',
         severite: 'CRITIQUE',
         creneauId: null,
         standIds: [],
@@ -378,7 +358,7 @@ describe('construireProblemes', () => {
   it('attributes an ad hoc rule violations to the exceptions that caused them', () => {
     const [probleme] = construireProblemes(
       null,
-      [contrainte({ name: 'affectationForcee', violations: ['P1'] })],
+      [contrainte({ name: 'incompatibiliteAdHoc', violations: ['P1'] })],
       {
         contraintesAdHocEnCause: [
           contribution({ contrainteId: 'C1', violations: 3 }),
@@ -397,7 +377,7 @@ describe('construireProblemes', () => {
   it('leaves a rule no ad hoc exception contributed to untouched', () => {
     const [probleme] = construireProblemes(null, [contrainte({ name: 'dureeHebdomadaireMax' })], {
       contraintesAdHocEnCause: [
-        contribution({ contrainteId: 'C1', contraintes: ['affectationForcee'] }),
+        contribution({ contrainteId: 'C1', contraintes: ['incompatibiliteAdHoc'] }),
       ],
     });
 
@@ -684,7 +664,7 @@ describe('construireProblemes — tight walks', () => {
     expect(problemes[0].liens).toEqual([
       {
         route: '/journee',
-        queryParams: { vue: 'rail', date: '2026-08-01' },
+        queryParams: { vue: 'jour', mode: 'rail', date: '2026-08-01' },
         libelle: 'Voir le rail du 2026-08-01',
       },
     ]);
@@ -790,7 +770,7 @@ describe('construireProblemes — covoiturages', () => {
     ]);
     expect(problemes[0].liens.map((lien) => lien.queryParams)).toEqual([
       { onglet: 'ajustements', ids: 'G1' },
-      { vue: 'rail', date: '2026-08-01' },
+      { vue: 'jour', mode: 'rail', date: '2026-08-01' },
     ]);
   });
 });

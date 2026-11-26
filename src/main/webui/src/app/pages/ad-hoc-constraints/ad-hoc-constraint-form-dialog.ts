@@ -14,9 +14,7 @@ import { animateurNames, labelsOf } from '../../core/reference-labels';
 import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = [
-  'INDISPONIBILITE_FORCEE',
   'INCOMPATIBILITE',
-  'AFFECTATION_FORCEE',
   'AFFINITE',
   'ARRIVEE_GROUPEE',
 ];
@@ -24,12 +22,8 @@ const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = [
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
   switch (value) {
-    case 'INDISPONIBILITE_FORCEE':
-      return $localize`:@@adHoc.type.indisponibiliteForcee:Indisponibilité forcée`;
     case 'INCOMPATIBILITE':
       return $localize`:@@adHoc.type.incompatibilite:Incompatibilité`;
-    case 'AFFECTATION_FORCEE':
-      return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
     case 'AFFINITE':
       return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
     case 'ARRIVEE_GROUPEE':

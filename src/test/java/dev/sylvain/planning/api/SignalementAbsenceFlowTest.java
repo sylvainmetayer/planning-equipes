@@ -9,7 +9,6 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -208,11 +207,11 @@ class SignalementAbsenceFlowTest {
     }
 
     /**
-     * « Marquer absent et remplacer » on a seat: the absence is marked on that
-     * timeslot only, the seat is freed, and the report settles.
+     * « Marquer absent et remplacer » on a seat: the whole day goes on the
+     * fiche's days off, the day's seats are freed, and the report settles.
      */
     @Test
-    void observingASeatReportMarksTheAbsenceOnThatTimeslotAndFreesTheSeat() {
+    void observingASeatReportMarksTheDayOffOnTheFicheAndFreesTheDaysSeats() {
         long id = signaler(
                         Map.of("portee", "POSTE", "date", JOUR.toString(), "creneauId", creneauId, "standId", "SIG-S1"))
                 .statusCode(200)
@@ -229,15 +228,12 @@ class SignalementAbsenceFlowTest {
                 .extract()
                 .jsonPath();
 
-        assertThat(marquee.getList("postesLiberes.creneauId", Long.class)).containsExactly(creneauId);
-        assertThat(referenceData.listContraintesAdHoc().stream()
-                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                        .filter(contrainte -> contrainte.getCreneau().getId() == creneauId))
-                .hasSize(1);
+        assertThat(marquee.getList("postesLiberes.creneauId", Long.class)).containsExactlyInAnyOrder(9501L, 9502L);
+        // The absence is the whole day off on the fiche.
+        assertThat(fiche("SIG-A").getJoursIndisponibles()).contains(JOUR);
         assertThat(persistence.loadPersistedPlanning().getPostes().stream()
-                        .filter(poste -> poste.getAnimateur() != null)
-                        .map(poste -> poste.getCreneau().getId()))
-                .containsExactly(9502L);
+                        .filter(poste -> poste.getAnimateur() != null))
+                .isEmpty();
         given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/jour-j?date=" + JOUR)
@@ -251,18 +247,13 @@ class SignalementAbsenceFlowTest {
         assertThat(aAlice.get(0).getText())
                 .contains("Stand signalé 09:00-12:00")
                 .contains("plus attendu");
-        referenceData.listContraintesAdHoc().stream()
-                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .forEach(contrainte -> referenceData.deleteContrainteAdHoc(contrainte.getId()));
     }
 
     /**
      * The report is claimed in the transaction that records the absence. A
-     * refusal met before anything is written — a lock on Alice — and one met
-     * inside that transaction, after the claim — her own forced assignment on
-     * the timeslot, which the absence would contradict — both answer 400 and
-     * leave the report open, her seat hers and no exception written: the
-     * claim is rolled back with the rest. Decided once the obstacle is gone,
+     * refusal met before anything is written — a lock on Alice — answers 400
+     * and leaves the report open, her seat hers and no day off written. Decided
+     * once the obstacle is gone,
      * it settles; a second decision is refused in 409 and records nothing
      * twice.
      */
@@ -294,28 +285,6 @@ class SignalementAbsenceFlowTest {
             given().header("X-Edition-Id", "E1").when().delete("/api/verrouillages/SIG-VERROU");
         }
 
-        String affectationForcee = given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body("""
-                        {"type":"AFFECTATION_FORCEE",
-                         "animateursConcernes":[{"id":"SIG-A"}],"creneau":{"id":%d}}""".formatted(creneauId))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("contrainte.id");
-        try {
-            given().header("X-Edition-Id", "E1")
-                    .when()
-                    .post("/api/jour-j/signalements/" + id + "/traitement")
-                    .then()
-                    .statusCode(400);
-            assertReportOpenAndPlanUntouched();
-        } finally {
-            referenceData.deleteContrainteAdHoc(affectationForcee);
-        }
-
         given().header("X-Edition-Id", "E1")
                 .when()
                 .post("/api/jour-j/signalements/" + id + "/traitement")
@@ -326,12 +295,7 @@ class SignalementAbsenceFlowTest {
                 .post("/api/jour-j/signalements/" + id + "/traitement")
                 .then()
                 .statusCode(409);
-        assertThat(referenceData.listContraintesAdHoc().stream()
-                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE))
-                .hasSize(1);
-        referenceData.listContraintesAdHoc().stream()
-                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .forEach(contrainte -> referenceData.deleteContrainteAdHoc(contrainte.getId()));
+        assertThat(fiche("SIG-A").getJoursIndisponibles()).containsExactly(JOUR);
     }
 
     /** « Classer »: the report settles, the plan stays, and the one who reported it is told so. */
@@ -456,7 +420,7 @@ class SignalementAbsenceFlowTest {
                 .header("Retry-After", org.hamcrest.Matchers.notNullValue());
     }
 
-    /** The report still open on the day's screen, Alice on both her seats, and no exception written. */
+    /** The report still open on the day's screen, Alice on both her seats, and no day off written. */
     private void assertReportOpenAndPlanUntouched() {
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -468,9 +432,7 @@ class SignalementAbsenceFlowTest {
                         .filter(poste -> poste.getAnimateur() != null)
                         .map(poste -> poste.getAnimateur().getId()))
                 .containsExactly("SIG-A", "SIG-A");
-        assertThat(referenceData.listContraintesAdHoc().stream()
-                        .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE))
-                .isEmpty();
+        assertThat(fiche("SIG-A").getJoursIndisponibles()).isEmpty();
     }
 
     private io.restassured.response.ValidatableResponse signaler(Map<String, Object> corps) {

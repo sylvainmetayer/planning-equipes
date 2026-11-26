@@ -89,7 +89,15 @@ public class JournalNotificationsRepository {
         METEO_ALERTE,
 
         /** The weather service has stopped answering. Key: {@code injoignable|first day of the streak}. */
-        METEO_INJOIGNABLE
+        METEO_INJOIGNABLE,
+
+        /**
+         * A person whose 3.x « exclure à la publication » was set aside by the
+         * 4.0 migration (V160): they will be written to by the next
+         * publication. One row per person, key: the animateur id — written by
+         * the migration only, no job raises it.
+         */
+        EXCLUSION_PUBLICATION_RETIREE
     }
 
     /**

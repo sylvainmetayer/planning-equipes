@@ -340,7 +340,7 @@ public class McpPrompts {
                 PUBLIEE, avec structure DEBLOQUER) seulement si je le demande explicitement : après \
                 une publication, toute modification fait bouger des plannings déjà envoyés. Fermer \
                 une bande horaire à tous les stands reste possible sous gel, par une consigne (prompt \
-                preparer_un_plan_de_repli) ; fermer un seul stand, non : ajouter_fermeture_stand est \
+                preparer_un_plan_de_repli) ; fermer un seul stand, non : creer_plage_stand est \
                 refusé tant que la phase fige les stands.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
@@ -362,14 +362,12 @@ public class McpPrompts {
                 refusée : dis-le-moi plutôt que de réessayer.
                 3. diagnostiquer_plan avant d'envoyer : publier un planning qui a encore des écarts aux \
                 règles impératives, c'est faire lire à quelqu'un un horaire qu'on va lui reprendre.
-                4. lister_validations_journee : quelles journées n'ont été relues par personne ? Ce \
+                4. consulter_etats_journee : quelles journées sont encore à relire ? Ce \
                 n'est pas bloquant, mais dis-le-moi. Pour les journées qui bougent le plus, \
                 changements_journee avec reference=publication montre, siège par siège, ce que la \
                 publication va annoncer.
                 5. Signale-moi les personnes dont adresseConnue est faux : elles ne recevront rien et \
-                devront être prévenues autrement. Si je veux prévenir quelqu'un de vive voix d'abord, \
-                l'argument exclusions diffère son message : il restera à prévenir à la publication \
-                suivante.
+                devront être prévenues autrement.
                 6. publier_planning seulement après mon accord.
                 7. lister_destinataires_publication pour contrôler le résultat. Le suivi des \
                 accusés de réception est le prompt suivre_les_confirmations : synthese_confirmations, \
@@ -447,12 +445,12 @@ public class McpPrompts {
                 si je le demande.
                 2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
                 que d'une page blanche, et dis-moi ce que le planning retiendrait en l'état.
-                3. Pour chaque stand à régler, ajouter_horaire_stand écrit un horaire récurrent — la \
+                3. Pour chaque stand à régler, creer_horaire_stand écrit un horaire récurrent — la \
                 forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture » — sous la \
                 forme d'une plage datée par jour d'événement. Une fenêtre peut nommer son propre \
                 effectif ; sans effectif, elle reprend le minimum du stand. Garde \
-                ajouter_ouverture_stand et ajouter_fermeture_stand pour les jours à part : un jour qui \
-                porte déjà une plage n'est pas modifié par ajouter_horaire_stand.
+                creer_plage_stand (mode OUVERTURE ou FERMETURE) pour les jours à part : un jour qui \
+                porte déjà une plage n'est pas modifié par creer_horaire_stand.
                 4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
@@ -559,15 +557,15 @@ public class McpPrompts {
 
     @Prompt(
             name = "relire_et_valider_les_journees",
-            description = "Relire le planning journée par journée et marquer chacune « relue et acceptée », "
-                    + "avec ou sans verrou.")
+            description =
+                    "Relire le planning journée par journée et dire où en est chacune : à relire, " + "relue ou figée.")
     PromptMessage reviewAndValidateDays(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Aide-moi à relire le planning%s journée par journée.
 
                 %s
 
-                1. lister_validations_journee : où en est la relecture (« 3 journées sur 12 »), et \
+                1. consulter_etats_journee : où en est la relecture (« 3 journées sur 12 »), et \
                 quelles journées restent à relire. etat_edition signale celles des sept jours à venir.
                 2. Pour chaque journée à relire, consulter_prerequis_validation : écarts durs, sièges \
                 vides, pauses sans relais, postes irremplaçables, comptés sur cette seule journée.
@@ -575,14 +573,14 @@ public class McpPrompts {
                 publication (reference=publication), ou depuis la dernière résolution \
                 (reference=resolution). referenceDisponible faux veut dire « rien à comparer », pas \
                 « aucun changement ».
-                4. ajouter_validation_journee après mon accord, une journée à la fois. poserVerrou est \
-                une décision de plus : il fige la journée pour les prochaines résolutions — ne le pose \
+                4. modifier_etat_journee avec RELUE après mon accord, une journée à la fois. FIGEE est \
+                une décision de plus : elle fige la journée, le calcul n'y touchera plus — ne la pose \
                 que si je le demande.
-                5. retirer_validation_journee si je reviens sur une relecture : le verrou éventuel \
-                reste en place, il se lève à part (deverrouiller).
+                5. modifier_etat_journee avec A_RELIRE si je reviens sur une relecture ; RELUE sur une \
+                journée figée la défige.
 
-                Rappelle-moi qu'une validation n'est pas un verrou : une résolution qui recalcule la \
-                journée la retire, une consigne posée sur la date aussi.""".formatted(suffixe(edition), editionFrame(edition)));
+                Rappelle-moi qu'une journée relue n'est pas figée : une résolution qui recalcule la \
+                journée retire sa relecture, une consigne posée sur la date aussi.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
     @Prompt(
@@ -604,9 +602,8 @@ public class McpPrompts {
                 3. synthese_affectations et lister_affectations pour repérer ce qui est manifestement \
                 bon : une journée entière pourvue, un stand tenu par les bonnes personnes, un \
                 animateur dont la semaine est équilibrée.
-                4. Pour une journée entière relue, ajouter_validation_journee avec poserVerrou la \
-                marque « relue et acceptée » et la fige d'un même geste (lister_validations_journee \
-                dit lesquelles le sont déjà). Pour le reste, verrouiller, une cible à la fois. Dans \
+                4. Pour une journée entière relue, modifier_etat_journee avec FIGEE la \
+                marque figée d'un geste (consulter_etats_journee dit lesquelles le sont déjà). Pour le reste, verrouiller, une cible à la fois. Dans \
                 les deux cas après mon accord, en me disant chaque fois ce que le verrou soustrait au \
                 solveur : ces personnes-là sont figées et leurs heures consommées, ce qui réduit \
                 l'espace de recherche mais aussi les échanges possibles.
@@ -684,7 +681,7 @@ public class McpPrompts {
                 planning sépare.
                 7. lister_consignes : une consigne posée change les horaires de toute une journée — \
                 le planning doit avoir été résolu depuis.
-                8. lister_validations_journee : quelles journées n'ont été relues par personne ?
+                8. consulter_etats_journee : quelles journées sont encore à relire ?
                 9. lister_destinataires_publication : qui a reçu quoi la dernière fois. Signale les \
                 personnes sans adresse connue — elles devront être prévenues autrement — et rappelle \
                 que le courriel porte le planning individuel, donc des données personnelles.
@@ -710,7 +707,7 @@ public class McpPrompts {
                 ont peut-être déjà lu.
                 2. Applique le changement, après mon accord :
                    - un désistement : modifier_animateur, pour le jour indisponible ;
-                   - un seul stand qui ferme à une date à venir : ajouter_fermeture_stand sur ce stand. \
+                   - un seul stand qui ferme à une date à venir : creer_plage_stand sur ce stand. \
                 Il est refusé quand la famille STANDS est figée (etat_edition dit lesquelles le sont) : \
                 dis-le-moi, modifier_phase_edition ne se fait que si je le demande ;
                    - une bande horaire fermée à tous les stands (arrêté, alerte météo) : une consigne — \

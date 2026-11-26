@@ -99,7 +99,7 @@ dev/sylvain/planning/api/PlacementResourceTest.java
 dev/sylvain/planning/api/PlanSnapshotResourceTest.java
 dev/sylvain/planning/api/PlanningHoursResourceTest.java
 dev/sylvain/planning/api/PlanningResourceTest.java
-dev/sylvain/planning/api/PublicationExclusionTest.java
+dev/sylvain/planning/api/PublicationCibleeTest.java
 dev/sylvain/planning/api/PublicationResourceTest.java
 dev/sylvain/planning/api/ReferenceDataResourceTest.java
 dev/sylvain/planning/api/ReferenceDataResourceTypologiesTest.java
@@ -172,6 +172,7 @@ dev/sylvain/planning/service/mcp/McpKeyServiceTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java
 dev/sylvain/planning/service/notification/NotificationsPlanifieesTest.java
 dev/sylvain/planning/service/notification/RelanceCollecteJobTest.java
+dev/sylvain/planning/service/publication/ExclusionArchiveMigrationTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvExempleTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/CreneauCsvImportServiceTest.java
@@ -197,6 +198,7 @@ dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java
 dev/sylvain/planning/service/solve/PlanningPersistenceServiceTest.java
 dev/sylvain/planning/service/solve/PolyvalentMigrationTest.java
 dev/sylvain/planning/service/solve/RemoteSolvesTest.java
+dev/sylvain/planning/service/solve/RunCapMergeMigrationTest.java
 dev/sylvain/planning/service/solve/SolverJobArretTest.java
 dev/sylvain/planning/service/solve/SolverJobHandEngineTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
@@ -217,5 +219,6 @@ dev/sylvain/planning/api/LocalSignInLockoutTest.java
 dev/sylvain/planning/api/LocalSignInSprayTest.java
 dev/sylvain/planning/api/LecteurCanariTest.java
 dev/sylvain/planning/mcp/OidcMcpLecteurTest.java
+dev/sylvain/planning/service/referentiel/AdHocTypesMigrationTest.java
 dev/sylvain/planning/service/referentiel/LockTypesMigrationTest.java
 dev/sylvain/planning/service/referentiel/StandPlagesMigrationTest.java

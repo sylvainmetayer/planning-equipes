@@ -20,13 +20,13 @@ Everything goes through a single page, *Planning* (*Plan* group). Everything is 
 
 ## By day
 
-The same day is read in five ways.
+The **Day** view has two modes, chosen next to the "Day" button: the **rail**, open by default, and the **table**. The table is written in the address (`vue=jour&mode=tableau`); the rail, the default mode, writes nothing there. The map, the breaks and meals and the changes are the day's other views. The review bar and the state of the day (to review, reviewed, frozen) stay there in both modes.
 
-### Table
+### Table mode
 
 The day as a table across the full width of the screen: one stand per row with its location, one timeslot per column, one name per label. Empty seats are in red, a closed stand in grey. Each name and each empty seat opens the seat panel for manual correction (see [Review and adjust the schedule](relire-et-retoucher.md)).
 
-### Rail
+### Rail mode
 
 The same day seen by person: one row per staff member, their shifts placed in time, the legal breaks laid on top (in red without relay), and empty rows for those who remain available. Each shift opens the seat panel, from which "Move to..." hands it to another person or swaps it with theirs.
 

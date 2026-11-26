@@ -81,6 +81,12 @@
   font-weight: normal;
 }
 
+.regles-table .regles-groupe th {
+  background: var(--mat-sys-surface-container);
+  font: var(--mat-sys-title-small);
+  text-align: left;
+}
+
 .regles-row-inactive {
   opacity: 0.6;
 }

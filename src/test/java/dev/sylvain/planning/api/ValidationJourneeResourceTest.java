@@ -28,6 +28,7 @@ class ValidationJourneeResourceTest {
 
     @AfterEach
     void resetDatabase() {
+        UNAVAILABLE.clear();
         given().header("X-Edition-Id", "E1")
                 .when()
                 .post("/api/planning/reset")
@@ -46,7 +47,7 @@ class ValidationJourneeResourceTest {
                 .asString();
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body(sample)
+                .body(problemWithDaysOff(sample))
                 .when()
                 .post("/api/solve?seconds=3")
                 .then()
@@ -281,17 +282,29 @@ class ValidationJourneeResourceTest {
         return id;
     }
 
-    /** A late change the next solve has to work around: this person is out that day. */
+    /** A late change the next solve has to work around: this person is out that day, on their fiche. */
     private static void markUnavailable(String animateurId) {
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"jour":"%s"}""".formatted(animateurId, JOUR))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200);
+        UNAVAILABLE.add(animateurId);
+    }
+
+    /** Animateurs declared out on {@code JOUR}: the solve reads the days off of the problem it is posted. */
+    private static final java.util.Set<String> UNAVAILABLE = new java.util.HashSet<>();
+
+    /** The sample problem, with the days off of the fiches declared since. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> problemWithDaysOff(String sample) {
+        Map<String, Object> problem = JsonPath.from(sample).getMap("$");
+        for (Map<String, Object> animateur : (List<Map<String, Object>>) problem.get("animateurs")) {
+            if (UNAVAILABLE.contains(animateur.get("id"))) {
+                List<Object> jours = new java.util.ArrayList<>();
+                if (animateur.get("joursIndisponibles") instanceof List<?> existing) {
+                    jours.addAll(existing);
+                }
+                jours.add(JOUR);
+                animateur.put("joursIndisponibles", jours);
+            }
+        }
+        return problem;
     }
 
     /** The publication panel says how many days would go out unread. */

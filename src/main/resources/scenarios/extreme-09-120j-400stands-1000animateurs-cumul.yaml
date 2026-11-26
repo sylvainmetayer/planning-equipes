@@ -9972,7 +9972,8 @@ animateurs:
       JEU_DE_ROLE: DEBUTANT
       ROBOTIQUE: REFERENT
       JEUX_DE_SOCIETE: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2028-05-15
     souhaits:
       - CREATIF
       - JEUX_DE_SOCIETE
@@ -14421,6 +14422,7 @@ animateurs:
       - 2028-07-05
       - 2028-07-06
       - 2028-07-07
+      - 2028-07-08
       - 2028-07-10
       - 2028-07-11
       - 2028-07-12
@@ -17327,7 +17329,8 @@ animateurs:
       JEUX_DE_SOCIETE: AUTONOME
       CONSTRUCTION: AUTONOME
       ADRESSE: AUTONOME
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2028-06-20
     souhaits:
       - CONSTRUCTION
       - JEUX_VIDEO
@@ -25736,7 +25739,8 @@ animateurs:
       JEUX_EN_BOIS: AUTONOME
       CREATIF: AUTONOME
       CONSTRUCTION: REFERENT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2028-05-12
   - id: A90342
     prenom: "Maëlle"
     nom: Philippe
@@ -53046,6 +53050,7 @@ animateurs:
       CREATIF: AUTONOME
       CONTES: AUTONOME
     joursIndisponibles:
+      - 2028-04-25
       - 2028-05-20
       - 2028-05-21
       - 2028-05-22
@@ -54729,6 +54734,7 @@ animateurs:
       - 2028-05-03
       - 2028-05-08
       - 2028-06-09
+      - 2028-06-29
   - id: A90881
     prenom: "Théo"
     nom: Fabre
@@ -55345,6 +55351,7 @@ animateurs:
       - 2028-05-19
       - 2028-05-20
       - 2028-05-21
+      - 2028-06-27
   - id: A90891
     prenom: Liam
     nom: Bourgeois
@@ -60912,246 +60919,6 @@ animateurs:
       - 2028-07-31
 
 contraintesAdHoc:
-  - id: C01
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90797
-    standId: STAND-037
-    raison: "Ne tient plus ce stand"
-  - id: C02
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90292
-    standId: STAND-339
-    raison: "Ne tient plus ce stand"
-  - id: C03
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90402
-    standId: STAND-150
-    raison: "Ne tient plus ce stand"
-  - id: C04
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90984
-    standId: STAND-189
-    raison: "Ne tient plus ce stand"
-  - id: C05
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90623
-    standId: STAND-149
-    raison: "Ne tient plus ce stand"
-  - id: C06
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90235
-    standId: STAND-144
-    raison: "Ne tient plus ce stand"
-  - id: C07
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90170
-    standId: STAND-190
-    raison: "Ne tient plus ce stand"
-  - id: C08
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90940
-    standId: STAND-100
-    raison: "Ne tient plus ce stand"
-  - id: C09
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90548
-    standId: STAND-233
-    raison: "Ne tient plus ce stand"
-  - id: C10
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90671
-    standId: STAND-037
-    raison: "Ne tient plus ce stand"
-  - id: C11
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90023
-    standId: STAND-151
-    raison: "Ne tient plus ce stand"
-  - id: C12
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90925
-    standId: STAND-013
-    raison: "Ne tient plus ce stand"
-  - id: C13
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90921
-    standId: STAND-269
-    raison: "Ne tient plus ce stand"
-  - id: C14
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90781
-    standId: STAND-039
-    raison: "Ne tient plus ce stand"
-  - id: C15
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90607
-    standId: STAND-375
-    raison: "Ne tient plus ce stand"
-  - id: C16
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90829
-    standId: STAND-266
-    raison: "Ne tient plus ce stand"
-  - id: C17
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90574
-    standId: STAND-339
-    raison: "Ne tient plus ce stand"
-  - id: C18
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90050
-    standId: STAND-082
-    raison: "Ne tient plus ce stand"
-  - id: C19
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90683
-    standId: STAND-166
-    raison: "Ne tient plus ce stand"
-  - id: C20
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90964
-    standId: STAND-066
-    raison: "Ne tient plus ce stand"
-  - id: C21
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90760
-    standId: STAND-179
-    raison: "Ne tient plus ce stand"
-  - id: C22
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90306
-    standId: STAND-110
-    raison: "Ne tient plus ce stand"
-  - id: C23
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90312
-    standId: STAND-027
-    raison: "Ne tient plus ce stand"
-  - id: C24
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90197
-    standId: STAND-043
-    raison: "Ne tient plus ce stand"
-  - id: C25
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90869
-    standId: STAND-042
-    raison: "Ne tient plus ce stand"
-  - id: C26
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90929
-    standId: STAND-197
-    raison: "Ne tient plus ce stand"
-  - id: C27
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90855
-    standId: STAND-024
-    raison: "Ne tient plus ce stand"
-  - id: C28
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90621
-    standId: STAND-145
-    raison: "Ne tient plus ce stand"
-  - id: C29
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90141
-    standId: STAND-288
-    raison: "Ne tient plus ce stand"
-  - id: C30
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90818
-    standId: STAND-089
-    raison: "Ne tient plus ce stand"
-  - id: C31
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90880
-    creneauId: J88-APREM
-    raison: "Rendez-vous personnel"
-  - id: C32
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90994
-    creneauId: J47-APREM
-    raison: "Rendez-vous personnel"
-  - id: C33
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90852
-    creneauId: J23-APREM
-    raison: "Rendez-vous personnel"
-  - id: C34
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90115
-    creneauId: J97-APREM
-    raison: "Rendez-vous personnel"
-  - id: C35
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90175
-    creneauId: J79-APREM
-    raison: "Rendez-vous personnel"
-  - id: C36
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90890
-    creneauId: J86-APREM
-    raison: "Rendez-vous personnel"
-  - id: C37
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90404
-    creneauId: J8-APREM
-    raison: "Rendez-vous personnel"
-  - id: C38
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90341
-    creneauId: J40-APREM
-    raison: "Rendez-vous personnel"
-  - id: C39
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90009
-    creneauId: J110-APREM
-    raison: "Rendez-vous personnel"
-  - id: C40
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A90029
-    creneauId: J43-APREM
-    raison: "Rendez-vous personnel"
   - id: C41
     type: INCOMPATIBILITE
     animateurs:
@@ -61272,126 +61039,6 @@ contraintesAdHoc:
       - A90127
       - A90378
     raison: "À ne pas faire travailler ensemble"
-  - id: C61
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90411
-    standId: STAND-014
-    raison: "Référent du stand"
-  - id: C62
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90001
-    standId: STAND-017
-    raison: "Référent du stand"
-  - id: C63
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90431
-    standId: STAND-017
-    raison: "Référent du stand"
-  - id: C64
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90225
-    standId: STAND-001
-    raison: "Référent du stand"
-  - id: C65
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90867
-    standId: STAND-007
-    raison: "Référent du stand"
-  - id: C66
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90468
-    standId: STAND-005
-    raison: "Référent du stand"
-  - id: C67
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90822
-    standId: STAND-019
-    raison: "Référent du stand"
-  - id: C68
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90615
-    standId: STAND-015
-    raison: "Référent du stand"
-  - id: C69
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90260
-    standId: STAND-016
-    raison: "Référent du stand"
-  - id: C70
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90165
-    standId: STAND-004
-    raison: "Référent du stand"
-  - id: C71
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90893
-    creneauId: J81-APREM
-    raison: "Accueil d'un groupe"
-  - id: C72
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90276
-    creneauId: J51-APREM
-    raison: "Accueil d'un groupe"
-  - id: C73
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90174
-    creneauId: J22-APREM
-    raison: "Accueil d'un groupe"
-  - id: C74
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90928
-    creneauId: J89-APREM
-    raison: "Accueil d'un groupe"
-  - id: C75
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90988
-    creneauId: J88-APREM
-    raison: "Accueil d'un groupe"
-  - id: C76
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90291
-    creneauId: J89-APREM
-    raison: "Accueil d'un groupe"
-  - id: C77
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90687
-    creneauId: J72-APREM
-    raison: "Accueil d'un groupe"
-  - id: C78
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90559
-    creneauId: J72-APREM
-    raison: "Accueil d'un groupe"
-  - id: C79
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90655
-    creneauId: J17-APREM
-    raison: "Accueil d'un groupe"
-  - id: C80
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A90282
-    creneauId: J71-APREM
-    raison: "Accueil d'un groupe"
   - id: C81
     type: AFFINITE
     animateurs:

@@ -260,6 +260,10 @@ public class DatabaseDumpService {
      *   <li>{@code solve_budget_avant_4_0} — the solve budgets editions had
      *       set of their own, archived by V145 and dropped in 5.0: an archive
      *       nothing reads, the budget being the instance's now.</li>
+     *   <li>{@code exclusion_publication_avant_4_0} — the people a 3.x
+     *       publication had been told to leave out, archived by V160 and
+     *       dropped in 5.0: an archive nothing reads, the exclusion no longer
+     *       existing.</li>
      *   <li>{@code kpi_historique_avant_4_0}, {@code kpi_realise_avant_4_0} —
      *       the two tables {@code mesure_edition} replaced, kept by V148 and
      *       dropped in 5.0: archives nothing reads, the measures being dumped
@@ -272,6 +276,10 @@ public class DatabaseDumpService {
      *       the phase of the edition (ADR 0115) and dropped in 5.0: an archive
      *       nothing reads. The phase travels with the {@code edition} row, so a
      *       restore does not reopen what the organiser had frozen.</li>
+     *   <li>{@code contrainte_ad_hoc_avant_4_0} — the forced assignments and
+     *       unavailabilities the 4.0 withdrew, kept by V161 and dropped in 5.0:
+     *       an archive nothing reads, a free-text reason that may name a person
+     *       included.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -301,10 +309,12 @@ public class DatabaseDumpService {
             "animateur_contact",
             "declaration_coequipier_avant_4_0",
             "solve_budget_avant_4_0",
+            "exclusion_publication_avant_4_0",
             "kpi_historique_avant_4_0",
             "kpi_realise_avant_4_0",
             "ponderation_contrainte_historique_avant_4_0",
-            "gel_referentiel");
+            "gel_referentiel",
+            "contrainte_ad_hoc_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

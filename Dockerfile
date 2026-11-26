@@ -11,7 +11,8 @@ WORKDIR /workspace
 COPY pom.xml .
 # .mvn/maven.config : la même résolution que la CI et le poste de développement
 # (découverte des préfixes de dépôts coupée — un dépôt tiers en panne ne
-# fait plus attendre chaque session Maven), et .mvn/jvm.config.
+# fait plus attendre chaque session Maven, un 429 de Maven Central est retenté
+# plus patiemment), et .mvn/jvm.config.
 COPY .mvn ./.mvn
 RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests dependency:go-offline
 COPY src ./src

@@ -753,21 +753,33 @@ final class ScenarioDomainMapper {
      * version of the catalogue, and silently dropping it would leave the
      * operator convinced a rule was switched off — or dosed — when it never was.
      */
-    private static Optional<ContraintesScenario> contraintes(ContraintesDto dto) {
+    static Optional<ContraintesScenario> contraintes(ContraintesDto dto) {
         if (dto == null) {
             return Optional.empty();
         }
+        // The 3.x hard run form is a level, not a rule (ADR 0118): switched on, it makes the merged rule
+        // obligatoire; anywhere else it says nothing. ScenarioMigrations folds it out of a YAML file; a DTO
+        // that never went through it is read the same way here.
+        String formeDure = ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS;
+        boolean formeDureAllumee = dto.activees() != null && dto.activees().contains(formeDure);
         Set<String> desactivees = new LinkedHashSet<>();
         if (dto.desactivees() != null) {
             for (String nom : dto.desactivees()) {
-                currentConstraint(String.valueOf(nom)).ifPresent(desactivees::add);
+                if (!formeDure.equals(nom)) {
+                    currentConstraint(String.valueOf(nom)).ifPresent(desactivees::add);
+                }
             }
         }
         Set<String> activees = new LinkedHashSet<>();
         if (dto.activees() != null) {
             for (String nom : dto.activees()) {
-                currentConstraint(String.valueOf(nom)).ifPresent(activees::add);
+                if (!formeDure.equals(nom)) {
+                    currentConstraint(String.valueOf(nom)).ifPresent(activees::add);
+                }
             }
+        }
+        if (formeDureAllumee) {
+            desactivees.remove(ConstraintCatalog.currentName(formeDure));
         }
         Set<String> contradictoires = new LinkedHashSet<>(desactivees);
         contradictoires.retainAll(activees);
@@ -780,7 +792,7 @@ final class ScenarioDomainMapper {
         Map<String, Integer> poids = new LinkedHashMap<>();
         if (dto.poids() != null) {
             for (Map.Entry<String, Integer> entry : dto.poids().entrySet()) {
-                if (entry.getValue() != null) {
+                if (entry.getValue() != null && !formeDure.equals(entry.getKey())) {
                     currentConstraint(entry.getKey()).ifPresent(nom -> poids.put(nom, entry.getValue()));
                 }
             }
@@ -789,6 +801,9 @@ final class ScenarioDomainMapper {
         if (dto.niveaux() != null) {
             dto.niveaux()
                     .forEach((nom, niveau) -> readNiveau(requireKnownConstraint(nom), niveau, obligatoires, poids));
+        }
+        if (formeDureAllumee) {
+            obligatoires.put(ConstraintCatalog.currentName(formeDure), true);
         }
         return Optional.of(new ContraintesScenario(desactivees, activees, poids, obligatoires));
     }

@@ -46,9 +46,7 @@ class ContrainteAdHocContradictionsIndexTest {
         for (int i = 0; i < count; i++) {
             TypeContrainteAdHoc type = types[rng.nextInt(types.length)];
             ContrainteAdHoc contrainte = new ContrainteAdHoc("C" + i, type);
-            int nombre = type == TypeContrainteAdHoc.INCOMPATIBILITE || type == TypeContrainteAdHoc.AFFINITE
-                    ? 2
-                    : 1 + (rng.nextInt(5) == 0 ? 1 : 0);
+            int nombre = type == TypeContrainteAdHoc.ARRIVEE_GROUPEE ? 2 + rng.nextInt(2) : 2;
             List<Animateur> vises = new ArrayList<>(animateurs);
             java.util.Collections.shuffle(vises, rng);
             contrainte.setAnimateursConcernes(new ArrayList<>(vises.subList(0, nombre)));
@@ -70,9 +68,9 @@ class ContrainteAdHocContradictionsIndexTest {
             List<ContrainteAdHoc> contraintes = draw(new Random(graine), 5 + graine % 40);
 
             List<ContrainteAdHocContradictions.Contradiction> naif =
-                    ContrainteAdHocContradictions.detectAllNaively(contraintes, creneaux);
+                    ContrainteAdHocContradictions.detectAllNaively(contraintes);
 
-            assertThat(ContrainteAdHocContradictions.detectAll(contraintes, creneaux))
+            assertThat(ContrainteAdHocContradictions.detectAll(contraintes))
                     .as("seed %d", graine)
                     .containsExactlyElementsOf(naif);
             avecContradictions += naif.isEmpty() ? 0 : 1;
@@ -81,7 +79,7 @@ class ContrainteAdHocContradictionsIndexTest {
         assertThat(avecContradictions).isGreaterThan(200);
         assertThat(java.util.stream.IntStream.range(0, 300)
                         .mapToObj(graine -> ContrainteAdHocContradictions.detectAllNaively(
-                                draw(new Random(graine), 5 + graine % 40), creneaux))
+                                draw(new Random(graine), 5 + graine % 40)))
                         .flatMap(List::stream)
                         .map(ContrainteAdHocContradictions.Contradiction::type)
                         .distinct())
@@ -97,21 +95,14 @@ class ContrainteAdHocContradictionsIndexTest {
         }
         List<ContrainteAdHoc> contraintes = new ArrayList<>();
         for (int i = 0; i < 2000; i++) {
-            ContrainteAdHoc contrainte = new ContrainteAdHoc(
-                    "C" + i, i < 200 ? TypeContrainteAdHoc.AFFECTATION_FORCEE : TypeContrainteAdHoc.INCOMPATIBILITE);
+            ContrainteAdHoc contrainte = new ContrainteAdHoc("C" + i, TypeContrainteAdHoc.INCOMPATIBILITE);
             contrainte.setAnimateursConcernes(
-                    i < 200
-                            ? List.of(animateurs.get(i))
-                            : List.of(animateurs.get(200 + i % 50), animateurs.get(250 + (i / 50) % 50)));
-            if (i < 200) {
-                contrainte.setCreneau(creneaux.get(i % creneaux.size()));
-            }
+                    List.of(animateurs.get(200 + i % 50), animateurs.get(250 + (i / 50) % 50)));
             contraintes.add(contrainte);
         }
 
         Instant debut = Instant.now();
-        assertThat(ContrainteAdHocContradictions.detectAll(contraintes, creneaux))
-                .isEmpty();
+        assertThat(ContrainteAdHocContradictions.detectAll(contraintes)).isEmpty();
         assertThat(Duration.between(debut, Instant.now())).isLessThan(Duration.ofSeconds(1));
     }
 }

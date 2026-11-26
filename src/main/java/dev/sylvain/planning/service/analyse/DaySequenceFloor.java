@@ -14,8 +14,8 @@ import java.util.TreeMap;
 /**
  * The least number of people who can cover a sequence of days, each day
  * needing a given number of distinct people, when nobody works more than six
- * days in an ISO week (art. L3132-1, {@code PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE}) nor — when the edition holds that rule
- * hard — more than {@code joursConsecutifsMax} days in a row.
+ * days in an ISO week (art. L3132-1, {@code PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE}) nor — when the edition made
+ * {@code maxJoursConsecutifsTravailles} obligatoire — more than {@code joursConsecutifsMax} days in a row.
  *
  * <p>The answer is <b>exact</b> for that relaxation, not a bound on a bound.
  * A person's calendar is described by their rest days. Those rest days must

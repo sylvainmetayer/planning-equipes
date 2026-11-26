@@ -667,7 +667,7 @@ describe('StaffingPage', () => {
       );
       expect(hrefs).toContain('/creneaux?onglet=horaires&du=2026-09-01&au=2026-09-01');
       expect(hrefs).toContain('/regles?onglet=regles&regle=coupureRepasObligatoire');
-      expect(hrefs).toContain('/regles?onglet=regles&regle=maxJoursConsecutifsTravaillesDur');
+      expect(hrefs).toContain('/regles?onglet=regles&regle=maxJoursConsecutifsTravailles');
       expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
       expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
       expect(root.textContent).toContain('Horaires des stands du 01/09');

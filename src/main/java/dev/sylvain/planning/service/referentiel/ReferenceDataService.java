@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
@@ -31,9 +32,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -201,6 +202,20 @@ public class ReferenceDataService implements ReferenceData {
         return new WrittenAnimateur(ecrit, coherence.onAnimateur(avant, ecrit));
     }
 
+    /**
+     * One more day off on the fiche, on the caller's transaction — what the
+     * mode jour J writes when somebody does not show up. Left to its caller to
+     * refuse while a solve runs ({@code @RefusedWhileSolving} on the gesture).
+     */
+    public void addJourIndisponible(Connection connection, String animateurId, LocalDate jour) throws SQLException {
+        animateurs.addJourIndisponible(connection, animateurId, jour);
+    }
+
+    /** The day leaves the days off of the fiche: an absence typed by mistake, undone. */
+    public void removeJourIndisponible(String animateurId, LocalDate jour) {
+        animateurs.removeJourIndisponible(animateurId, jour);
+    }
+
     public void deleteAnimateur(String id) {
         animateurs.delete(id);
     }
@@ -301,6 +316,23 @@ public class ReferenceDataService implements ReferenceData {
     public WrittenStand writeStand(String id, Stand stand) {
         Stand avant = stands.find(id);
         Stand ecrit = updateStand(id, stand);
+        currentAction.champsModifies(ChampsModifies.surStand(avant, ecrit));
+        return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
+    }
+
+    /** Lays one plage on a stand and reports what its schedule leaves unread, like {@link #writeStand(String, Stand)}. */
+    public WrittenStand addStandPlage(String id, PlageStand plage) {
+        Stand avant = stands.find(id);
+        return written(avant, stands.addPlage(id, plage));
+    }
+
+    /** Removes a plage by id, or a day's plages by date; see {@link StandService#removePlages}. */
+    public WrittenStand removeStandPlages(String id, Long plageId, LocalDate date) {
+        Stand avant = stands.find(id);
+        return written(avant, stands.removePlages(id, plageId, date));
+    }
+
+    private WrittenStand written(Stand avant, Stand ecrit) {
         currentAction.champsModifies(ChampsModifies.surStand(avant, ecrit));
         return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
     }
@@ -663,12 +695,6 @@ public class ReferenceDataService implements ReferenceData {
         return new WrittenContrainteAdHoc(ecrite, coherence.onContrainteAdHoc(ecrite));
     }
 
-    /** See {@link ContrainteAdHocService#createAll} — all or none, on the caller's transaction. */
-    public List<ContrainteAdHoc> createContraintesAdHoc(Connection connection, List<ContrainteAdHoc> contraintes)
-            throws SQLException {
-        return contraintesAdHoc.createAll(connection, contraintes);
-    }
-
     public void deleteContrainteAdHoc(String id) {
         contraintesAdHoc.delete(id);
     }
@@ -795,22 +821,8 @@ public class ReferenceDataService implements ReferenceData {
             // form itself refuses (issue #84). The créneaux come from the
             // planning's own seats — the ones already persisted are about to
             // be replaced.
-            contraintesAdHoc.checkNoContradiction(planning.getContraintesAdHoc(), creneauxOf(planning));
+            contraintesAdHoc.checkNoContradiction(planning.getContraintesAdHoc());
         }
-    }
-
-    /** The distinct créneaux a planning's seats stand on, in encounter order. */
-    private static List<Creneau> creneauxOf(PlanningEvenement planning) {
-        if (planning.getPostes() == null) {
-            return List.of();
-        }
-        Map<Long, Creneau> byId = new LinkedHashMap<>();
-        for (PosteAffectation poste : planning.getPostes()) {
-            if (poste.getCreneau() != null && poste.getCreneau().getId() != null) {
-                byId.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
-            }
-        }
-        return List.copyOf(byId.values());
     }
 
     /* ------------------------------ Parameters ------------------------------ */

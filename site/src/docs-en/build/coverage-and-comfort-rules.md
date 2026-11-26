@@ -66,7 +66,7 @@ The "Qualité d'organisation" (organisation quality) rules read their thresholds
 | Hour of a late shift | 22:00 | `eviterFermeturePuisOuverture` |
 | Hour of an early shift | 10:00 | `eviterFermeturePuisOuverture` |
 | Desired rest after a late shift | 12 h | `eviterFermeturePuisOuverture` |
-| Days worked in a row | 8 | `maxJoursConsecutifsTravailles` and its hard form |
+| Days worked in a row | 8 | `maxJoursConsecutifsTravailles`, at every level |
 | Walking speed | 4 km/h | `trajetInsuffisantEntrePostes`, check of the sequences |
 | Detour factor | 1.3 | same |
 | Trip tolerance | 5 min | same |

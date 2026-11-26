@@ -126,7 +126,7 @@ export function libelleCase(cellule: CaseMois): string {
     parties.push($localize`:@@journee.mois.vides:${cellule.vides}:count: siège(s) vide(s)`);
   }
   if (cellule.relu) {
-    parties.push($localize`:@@journee.mois.relu:relue et acceptée`);
+    parties.push($localize`:@@journee.mois.relu:relue ou figée`);
   }
   if (cellule.verrou) {
     parties.push($localize`:@@journee.mois.verrou:verrouillée`);

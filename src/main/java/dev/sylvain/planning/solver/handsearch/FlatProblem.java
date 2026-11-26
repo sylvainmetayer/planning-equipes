@@ -154,7 +154,6 @@ final class FlatProblem {
 
     int[][] statHard;
 
-    private final List<List<ContrainteAdHoc>> forcedOffOf = new ArrayList<>();
     private final List<List<VerrouillagePlanning>> locksOf = new ArrayList<>();
 
     boolean[][] isRef;
@@ -195,11 +194,7 @@ final class FlatProblem {
     int walkTolerance;
     boolean closingThenOpening;
 
-    // ad hoc exceptions: forced assignments by seat and animateur, and the rules between two people
-    int[][] forcedScope;
-    boolean[][] fScope;
-    boolean[][] fConc;
-    boolean[] fExempt;
+    // ad hoc exceptions: the rules between two people
     PairTerm[][] pairTerms;
     int[][] deps;
 
@@ -293,13 +288,6 @@ final class FlatProblem {
         return creneauOk && standOk;
     }
 
-    static boolean concerns(ContrainteAdHoc c, Animateur animateur) {
-        return c.getAnimateursConcernes() != null
-                && c.getAnimateursConcernes().stream()
-                        .anyMatch(
-                                t -> t != null && t.getId() != null && t.getId().equals(animateur.getId()));
-    }
-
     FlatProblem(PlanningEvenement problem) {
         this.problem = problem;
         postes = problem.getPostes();
@@ -339,8 +327,7 @@ final class FlatProblem {
         distances(numbering.standsInOrder, numbering.placeList);
         parameters(first);
         pairs(byId);
-        forcedAssignments();
-        locksAndForcedUnavailabilities();
+        locks();
         staticTable();
     }
 
@@ -734,50 +721,9 @@ final class FlatProblem {
         }
     }
 
-    /** The forced assignments: the seats each covers, the people each names, and those the past already settled. */
-    private void forcedAssignments() {
-        List<ContrainteAdHoc> forced = problem.getContraintesAdHoc().stream()
-                .filter(c -> c.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
-                .toList();
-        int nF = forced.size();
-        fScope = new boolean[nF][nS];
-        fConc = new boolean[nF][nA];
-        fExempt = new boolean[nF];
-        List<List<Integer>> forcedOfSeat = new ArrayList<>();
-        for (int s = 0; s < nS; s++) {
-            forcedOfSeat.add(new ArrayList<>());
-        }
-        for (int f = 0; f < nF; f++) {
-            ContrainteAdHoc c = forced.get(f);
-            boolean anyPast = false;
-            boolean anyAhead = false;
-            for (int s = 0; s < nS; s++) {
-                fScope[f][s] = scope(c, postes.get(s));
-                if (fScope[f][s]) {
-                    forcedOfSeat.get(s).add(f);
-                    anyPast |= sPast[s];
-                    anyAhead |= !sPast[s];
-                }
-            }
-            fExempt[f] = anyPast && !anyAhead;
-            for (int a = 0; a < nA; a++) {
-                fConc[f][a] = concerns(c, animateurs.get(a));
-            }
-        }
-        forcedScope = new int[nS][];
-        for (int s = 0; s < nS; s++) {
-            forcedScope[s] =
-                    forcedOfSeat.get(s).stream().mapToInt(Integer::intValue).toArray();
-        }
-    }
-
-    /** The forced unavailabilities and the locks that name each animateur: read for every seat of the table. */
-    private void locksAndForcedUnavailabilities() {
+    /** The locks that name each animateur: read for every seat of the table. */
+    private void locks() {
         for (Animateur animateur : animateurs) {
-            forcedOffOf.add(problem.getContraintesAdHoc().stream()
-                    .filter(adHoc ->
-                            adHoc.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE && concerns(adHoc, animateur))
-                    .toList());
             locksOf.add(problem.getVerrouillages().stream()
                     .filter(lock -> animateur.getId().equals(lock.getAnimateurId()))
                     .toList());
@@ -833,11 +779,6 @@ final class FlatProblem {
         }
         if (!animateur.hasSouhaitFor(stand)) {
             c += cost(Rule.SOUHAITS_INCOMPATIBLES, 1, breakdown);
-        }
-        for (ContrainteAdHoc adHoc : forcedOffOf.get(a)) {
-            if (scope(adHoc, poste)) {
-                c += cost(Rule.INDISPONIBILITE_FORCEE, 1, breakdown);
-            }
         }
         if (!sLocked[s]) {
             c += lockTerms(a, creneau, breakdown);

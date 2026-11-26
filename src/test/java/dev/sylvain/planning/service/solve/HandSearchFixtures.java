@@ -336,28 +336,31 @@ final class HandSearchFixtures {
         adHoc.add(adHoc("fixture-affinite", TypeContrainteAdHoc.AFFINITE, null, null, animateurs, order, 5, 6));
         adHoc.add(adHoc("fixture-incompat", TypeContrainteAdHoc.INCOMPATIBILITE, null, null, animateurs, order, 7, 8));
         adHoc.add(adHoc(
-                "fixture-indispo",
-                TypeContrainteAdHoc.INDISPONIBILITE_FORCEE,
+                "fixture-incompat-creneau",
+                TypeContrainteAdHoc.INCOMPATIBILITE,
                 lastSeat.getCreneau(),
                 null,
                 animateurs,
                 order,
-                9));
+                9,
+                10));
         adHoc.add(adHoc(
-                "fixture-forcee",
-                TypeContrainteAdHoc.AFFECTATION_FORCEE,
+                "fixture-affinite-stand",
+                TypeContrainteAdHoc.AFFINITE,
                 null,
                 lastSeat.getStand(),
                 animateurs,
                 order,
-                10));
+                10,
+                11));
         adHoc.add(adHoc(
-                "fixture-forcee-passee",
-                TypeContrainteAdHoc.AFFECTATION_FORCEE,
+                "fixture-incompat-passee",
+                TypeContrainteAdHoc.INCOMPATIBILITE,
                 pastSeat.getCreneau(),
                 pastSeat.getStand(),
                 animateurs,
                 order,
+                9,
                 11));
         problem.setContraintesAdHoc(adHoc);
 
@@ -371,9 +374,9 @@ final class HandSearchFixtures {
                             new Emplacement("fixture-place-" + place, "Place " + place, 48.0 + place * 0.01, 2.0));
         }
 
-        // the supervision of minors and the hard run of consecutive days, both off unless asked for
+        // the supervision of minors, off unless asked for
         List<ConstraintToggle> toggles = new ArrayList<>(problem.getConstraintsDesactivees());
-        for (String rule : List.of(ExclusionEligibilite.ENCADREMENT_DES_MINEURS, "maxJoursConsecutifsTravaillesDur")) {
+        for (String rule : List.of(ExclusionEligibilite.ENCADREMENT_DES_MINEURS)) {
             toggles.removeIf(toggle -> toggle.getNom().equals(rule));
             toggles.add(new ConstraintToggle(rule, true));
         }

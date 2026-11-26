@@ -77,7 +77,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre (deux ajustements manuels qui se contredisent, une affectation forcée que personne ne peut tenir), les trois boutons demandent confirmation avant de partir et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Vous pouvez lancer quand même, et le reste du planning s'améliore. Un manque d'animateurs ne demande aucune confirmation : le solveur remplit encore ce qu'il peut.`,
+          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre (deux ajustements manuels qui se contredisent, un plafond de jours d'affilée intenable), les trois boutons demandent confirmation avant de partir et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Vous pouvez lancer quand même, et le reste du planning s'améliore. Un manque d'animateurs ne demande aucune confirmation : le solveur remplit encore ce qu'il peut.`,
         },
         {
           kind: 'paragraph',
@@ -120,7 +120,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.importance:Importance d'une règle`,
-              text: $localize`:@@aide.config.def.importance:Dans le bloc « Politique de l'organisation », chaque règle a un niveau : obligatoire (un plan qui l'enfreint n'est pas livrable, aucun poids n'est alors offert) ou une préférence forte, normale (son défaut) ou légère, qui écrivent un poids de 25, 5 ou 1. Les préférences du bloc « Avancé » ont trois positions : faible, normale et forte. À niveau égal, un écart d'une règle forte pèse cinq fois celui d'une règle normale, qui en pèse cinq d'une faible. Un autre poids, de 1 à 500, se saisit dans le panneau de la règle et s'affiche « personnalisée ». Une règle dure ne se dose pas : elle s'active ou non ; un poids qu'elle aurait gardé d'avant s'affiche « poids personnalisé » sous son nom, et son panneau la fait « Revenir à 1 ». Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul », en pied de tableau, fait prendre en compte ce qui vient d'être enregistré.`,
+              text: $localize`:@@aide.config.def.importance:Dans le bloc « Politique de l'organisation », chaque règle a un niveau : obligatoire (un plan qui l'enfreint n'est pas livrable, aucun poids n'est alors offert) ou une préférence forte, normale (son défaut) ou légère, qui écrivent un poids de 25, 5 ou 1. Les préférences du bloc « Avancé » ont trois positions : faible, normale et forte. À niveau égal, un écart d'une règle forte pèse cinq fois celui d'une règle normale, qui en pèse cinq d'une faible. Deux règles sont rangées ensemble sous un même titre (« Dispersion sur la journée »), chacune gardant sa ligne, son niveau et son interrupteur. Un autre poids, de 1 à 500, se saisit dans le panneau de la règle et s'affiche « personnalisée ». Une règle dure ne se dose pas : elle s'active ou non ; un poids qu'elle aurait gardé d'avant s'affiche « poids personnalisé » sous son nom, et son panneau la fait « Revenir à 1 ». Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul », en pied de tableau, fait prendre en compte ce qui vient d'être enregistré.`,
             },
             {
               term: $localize`:@@aide.config.term.historique:Historique des réglages`,
@@ -128,7 +128,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.adhoc:Ajustements manuels`,
-              text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : indisponibilité forcée, incompatibilité, affectation forcée. Elles sont traitées au même niveau que les contraintes dures, donc jamais contournées, et chacune retire des possibilités au solveur : un ajustement mal posé bloque un planning aussi sûrement qu'un manque d'effectif.`,
+              text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : incompatibilité, affinité, arrivée groupée. L'incompatibilité est traitée au même niveau que les contraintes dures, donc jamais contournée, et retire des possibilités au solveur : un ajustement mal posé bloque un planning aussi sûrement qu'un manque d'effectif.`,
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
@@ -393,28 +393,20 @@ export function buildSolverSections(): HelpSection[] {
       id: 'ajustements-manuels',
       icon: 'rule',
       title: $localize`:@@aide.adHoc.title:Ajustements manuels`,
-      summary: $localize`:@@aide.adHoc.summary:Forcer, interdire, rapprocher : ce que chaque type recouvre, et les cas limites qui surprennent.`,
+      summary: $localize`:@@aide.adHoc.summary:Interdire, rapprocher, faire venir ensemble : ce que chaque type recouvre, et les cas limites qui surprennent.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Il se saisit sur le premier onglet de la page Règles du planning, qui porte aussi les verrouillages et les consignes. Trois des quatre types sont appliqués au même niveau que le cadre légal : le solveur ne les contournera jamais, quitte à rendre un planning en défaut. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité.`,
+          text: $localize`:@@aide.adHoc.intro:Un ajustement manuel est une exception que vous saisissez sur vos propres données, à côté des règles du catalogue. Il se saisit sur le premier onglet de la page Règles du planning, qui porte aussi les verrouillages et les consignes. Il n'en reste que trois types : l'incompatibilité est appliquée au même niveau que le cadre légal, le solveur ne la contournera jamais, quitte à rendre un planning en défaut ; l'affinité et l'arrivée groupée sont des préférences. Chacun se saisit avec une raison, lisible partout où l'ajustement est cité. L'affectation forcée et l'indisponibilité forcée n'existent plus depuis la 4.0 : voir « Comment faire sans affectation forcée ».`,
         },
         {
           kind: 'callout',
           title: $localize`:@@aide.adHoc.callout.title:Ajustement manuel ou verrouillage ?`,
-          text: $localize`:@@aide.adHoc.callout.text:Les deux retirent de la liberté au solveur, mais pas au même moment. Un ajustement manuel est une règle sur mesure, posée avant le calcul, qui dit où placer ou ne pas placer quelqu'un : « elle ne peut pas venir dimanche », « ces deux-là ne travaillent pas ensemble ». Le solveur en tient compte à chaque résolution, y compris en repartant de zéro. Un verrouillage est un geste sur un plan déjà calculé : il fige ce qu'une résolution a produit pour que la suivante n'y touche plus ; il ne dit rien de ce qui devrait s'y trouver, et ne gèle jamais une place vide. En pratique : pour imposer ou interdire une affectation, un ajustement ; pour protéger une partie validée, un verrouillage.`,
+          text: $localize`:@@aide.adHoc.callout.text:Les deux retirent de la liberté au solveur, mais pas au même moment. Un ajustement manuel est une règle sur mesure, posée avant le calcul, qui dit qui ne doit pas travailler avec qui : « ces deux-là ne travaillent pas ensemble ». Le solveur en tient compte à chaque résolution, y compris en repartant de zéro. Un verrouillage est un geste sur un plan déjà calculé : il fige ce qu'une résolution a produit pour que la suivante n'y touche plus ; il ne dit rien de ce qui devrait s'y trouver, et ne gèle jamais une place vide. En pratique : pour interdire que deux personnes travaillent ensemble, un ajustement ; pour garder quelqu'un sur un créneau ou protéger une partie validée, un verrouillage ; pour écarter quelqu'un d'un jour, les indisponibilités de sa fiche.`,
         },
         {
           kind: 'definitions',
           items: [
-            {
-              term: $localize`:@@aide.adHoc.term.indisponibilite:Indisponibilité forcée`,
-              text: $localize`:@@aide.adHoc.def.indisponibilite:Interdit à la personne d'occuper un poste dans le périmètre choisi. À distinguer des jours d'indisponibilité de la fiche, qui portent sur une journée entière : ici, vous visez un créneau précis, un stand précis, ou les deux.`,
-            },
-            {
-              term: $localize`:@@aide.adHoc.term.affectation:Affectation forcée`,
-              text: $localize`:@@aide.adHoc.def.affectation:Exige qu'au moins un poste du périmètre soit tenu par la personne. Attention : si vous nommez plusieurs animateurs, l'ajustement est satisfait dès que l'un d'eux tient le poste : c'est un « l'un de ces animateurs », jamais un « tous ». Pour imposer deux personnes, saisissez deux ajustements.`,
-            },
             {
               term: $localize`:@@aide.adHoc.term.incompatibilite:Incompatibilité`,
               text: $localize`:@@aide.adHoc.def.incompatibilite:Interdit à deux personnes de travailler sur le même créneau. Elle porte sur le créneau, pas sur le stand : deux stands différents à la même heure sont tout autant interdits. Seuls les deux premiers animateurs de la liste sont pris en compte ; pour trois personnes, saisissez les trois paires.`,
@@ -431,33 +423,18 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.perimetre:Le créneau et le stand sont facultatifs, et les laisser vides veut dire « partout » : une indisponibilité forcée sans périmètre écarte la personne de tout l'événement. Un ajustement conserve l'identifiant du créneau visé : si ce créneau disparaît, la colonne Périmètre affiche « créneau supprimé » et l'ajustement ne s'applique plus à rien. Après un découpage ou l'application d'un calendrier, revérifiez ceux qui visaient un créneau.`,
+          text: $localize`:@@aide.adHoc.perimetre:Pour l'incompatibilité et l'affinité, le créneau et le stand sont facultatifs, et les laisser vides veut dire « partout ». Un ajustement conserve l'identifiant du créneau visé : si ce créneau disparaît, la colonne Périmètre affiche « créneau supprimé » et l'ajustement ne s'applique plus à rien. Après un découpage ou l'application d'un calendrier, revérifiez ceux qui visaient un créneau.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux, au lieu d'un planning déclaré infaisable plusieurs minutes plus tard. Cinq situations sont refusées :`,
+          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux, au lieu d'un planning déclaré infaisable plusieurs minutes plus tard. Deux situations sont refusées :`,
         },
         {
           kind: 'list',
           items: [
             $localize`:@@aide.adHoc.refus1:la même paire déclarée à la fois incompatible et en affinité ;`,
-            $localize`:@@aide.adHoc.refus2:une affectation forcée dont tout le périmètre est couvert par une indisponibilité forcée visant chacun des animateurs qu'elle nomme ;`,
-            $localize`:@@aide.adHoc.refus3:deux affectations forcées qui fixent la même personne sur des périmètres se chevauchant dans le temps ;`,
-            $localize`:@@aide.adHoc.refus4:deux affectations forcées qui placent sur un même créneau deux personnes déclarées incompatibles ;`,
             $localize`:@@aide.adHoc.refus5:une arrivée groupée dont deux membres sont déclarés incompatibles.`,
           ],
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.limites:Le contrôle ne refuse que ce qui est certainement impossible, pour ne jamais vous coûter une saisie légitime. Passent donc délibérément une affectation forcée nommant deux animateurs dont un seul est indisponible, une indisponibilité plus étroite que le périmètre forcé, et deux affectations forcées sur le même créneau dont une seule précise un stand. Ces combinaisons peuvent quand même mener à un planning en défaut : c'est la résolution qui tranchera.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.chevauchement:Le chevauchement se calcule sur les horaires du créneau tels qu'ils sont saisis, pas sur ce qu'une fermeture de stand en laisse réellement. Deux affectations forcées sur des créneaux qui se recouvrent, mais sur deux stands fermés à des heures complémentaires, seront donc refusées. Dans ce cas, visez des créneaux qui ne se recouvrent pas.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.intenable:Trois autres situations sont signalées sans être refusées, parce que ce qui casse l'affectation forcée arrive le plus souvent après elle : tous les animateurs nommés se sont déclarés indisponibles sur tout le périmètre ; aucune place du périmètre ne peut les accueillir au regard d'une règle dure (un mineur la nuit, un jour férié, un stand réservé aux majeurs, un plafond quotidien dépassé) ; leur emploi du temps est verrouillé sur tout le périmètre sans qu'ils y tiennent déjà de place. Un message le dit à l'enregistrement, la page Problèmes le reprend comme cause bloquante tant que ça tient, et « Calculer » demande confirmation avant de partir.`,
         },
         {
           kind: 'paragraph',
@@ -481,7 +458,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets (un ajustement, un verrou, une consigne), la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et l'affectation imposée ou le verrou levé n'y changerait rien. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
+          text: $localize`:@@aide.consignesSolveur.relancer:Après toute saisie sur l'un des trois onglets (un ajustement, un verrou, une consigne), la page propose « Relancer le calcul » sur place. Après une consigne, c'est une correction quand un plan existe : elle ne rouvre que les places que la bande a ôtées ou ajoutées. Après un ajustement ou un verrou, c'est un calcul complet qui repart du plan : une correction figerait toutes les places encore valides, et le verrou levé n'y changerait rien. Le Solveur compte ces saisies dans « Ce calcul tiendra compte de ».`,
         },
       ],
       links: [
@@ -493,19 +470,19 @@ export function buildSolverSections(): HelpSection[] {
     {
       id: 'sans-affectation-forcee',
       icon: 'push_pin',
-      title: $localize`:@@aide.sansForcee.title:Placer ou écarter quelqu'un sans affectation forcée`,
-      summary: $localize`:@@aide.sansForcee.summary:Deux gestes plus simples qu'un ajustement manuel, qui se défont d'un clic.`,
+      title: $localize`:@@aide.sansForcee.title:Comment faire sans affectation forcée`,
+      summary: $localize`:@@aide.sansForcee.summary:Depuis la 4.0, deux gestes qui se défont d'un clic remplacent l'affectation et l'indisponibilité forcées.`,
       blocks: [
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.sansForcee.verrou:Garder quelqu'un sur un créneau : placez-le sur le siège depuis la page Planning (« Placer », case « La garder au prochain calcul » cochée), ou verrouillez son siège. Le verrou lie cette personne à ce créneau ; le prochain calcul le respecte, et le reste de sa journée reste libre pour le calcul.`,
-            $localize`:@@aide.sansForcee.indisponibilite:Écarter quelqu'un d'un jour : ajoutez ce jour à ses indisponibilités, sur sa fiche (« Indisponible ce jour »). Elle ou il n'est plus proposé ce jour-là, et ses sièges du jour sont libérés dans le même geste.`,
+            $localize`:@@aide.sansForcee.verrou:Garder quelqu'un sur un créneau : placez-le sur le siège depuis la page Planning (« Placer », case « La garder au prochain calcul » cochée), ou verrouillez son siège. Le verrou lie cette personne à ce créneau ; le prochain calcul le respecte, et le reste de sa journée reste libre pour le calcul. C'est ce que devient une affectation forcée.`,
+            $localize`:@@aide.sansForcee.indisponibilite:Écarter quelqu'un d'un jour : ajoutez ce jour à ses indisponibilités, sur sa fiche (« Indisponible ce jour »). Elle ou il n'est plus proposé ce jour-là, et ses sièges du jour sont libérés dans le même geste. C'est ce que devient une indisponibilité forcée, mais le jour est toujours entier : la fiche ne connaît pas le créneau.`,
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.sansForcee.quand:Réservez l'ajustement manuel aux exceptions qui doivent valoir même sans plan enregistré (réinitialisation, import, nouvelle édition) : un verrou fige ce que porte le plan enregistré, rien de plus.`,
+          text: $localize`:@@aide.sansForcee.quand:Les affectations et indisponibilités forcées d'avant la 4.0 ont été converties à la migration : un verrou animateur + créneau sur la place tenue, un jour indisponible sur la fiche. Ce qui ne se convertissait pas (une indisponibilité visant un stand, une affectation que personne ne tenait) est gardé dans une archive jusqu'en 5.0 et signalé au démarrage. Un verrou fige ce que porte le plan enregistré, rien de plus : après une réinitialisation ou un import, posez-le de nouveau.`,
         },
       ],
       links: [lienVerrouillages(), lienAjustements()],

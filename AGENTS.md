@@ -140,7 +140,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  42 rules are written **a second time**. The default engine since 3.0.0
+  39 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -249,10 +249,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     only leaving that state lifts it, and a reading survives a solve only when
     its day was not recomputed: in the frozen past, frozen, or given back
     unchanged by a solve started from the plan in place — « Recommencer de
-    zéro » withdraws every other one (ADR 0069). The `/api/validations` writes
-    and the three `*_validation_journee` tools are `@Deprecated` aliases until
-    5.0, which never lift a lock; the state is open in every phase and during
-    a solve, like a lock;
+    zéro » withdraws every other one (ADR 0069); freezing without a comment keeps
+    the reading's. The MCP tools are `consulter_etats_journee` and
+    `modifier_etat_journee`; the `/api/validations` writes are `@Deprecated`
+    aliases until 5.0, which never lift a lock. The state is open in every
+    phase and during a solve, like a lock;
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
@@ -760,7 +761,7 @@ i18n rule at the top of this file:
   `getIndisponibilites()` are read-only views of the one list). No recurring
   rule is stored: a recurrence is a generator that writes plages, and
   `HorairesRecurrents` is the one frozen reading of the 3.x rules (migration
-  `V159`, the scenario-file link 4 → 5, the `ajouter_horaire_stand` tool). A
+  `V159`, the scenario-file link 4 → 5, the `creer_horaire_stand` tool). A
   day carries one mode, never both; no plage means open all day.
   `ShippedSchedulesDigestTest` holds the windows of every shipped scenario to
   what 3.x resolved, day by day.
@@ -789,12 +790,16 @@ i18n rule at the top of this file:
   against the fiche as it stood before; the bulk edit sends the whole merged
   fiche one row at a time, so anything else re-shouts on data nobody touched,
   and a warning that fires on correct data stops being read.
-- `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
-  `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
-  same priority as legal/minor hard constraints — never demote these to
-  medium/soft. `AFFINITE` (issue #80) is the one deliberate exception: a soft
-  *reward* for co-assigning a preferred pair on the same stand — never promote
-  it to hard (that would be a forced assignment in disguise).
+- `ContrainteAdHoc` has three types since 4.0 (ADR 0117): `INCOMPATIBILITE` is
+  evaluated as `HardScore`, at the same priority as legal/minor hard
+  constraints — never demote it to medium/soft. `AFFINITE` (issue #80) is the
+  deliberate exception: a soft *reward* for co-assigning a preferred pair on
+  the same stand — never promote it to hard (that would be a forced assignment
+  in disguise); `ARRIVEE_GROUPEE` is soft too. The forced assignment and the
+  forced unavailability are gone, converted by `V161` and by
+  `ScenarioMigrations` into an animateur + timeslot lock and a day off of the
+  fiche: do not bring them back, and do not add a rule that pins or bars one
+  person on a seat.
 - Two ad hoc exceptions that **cannot both hold** are refused when written —
   `ContrainteAdHocContradictions`, applied by `ContrainteAdHocService` to a
   single entry and by `ReferenceDataService.importFromPlanning` to a whole

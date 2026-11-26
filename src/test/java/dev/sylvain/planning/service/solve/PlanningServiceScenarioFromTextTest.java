@@ -143,13 +143,13 @@ class PlanningServiceScenarioFromTextTest {
      * the problem it describes instead of merging somebody else's.
      */
     @Test
-    void chargeLesContraintesAdHocDuFichier() {
+    void loadsTheAdHocConstraintsOfTheFile() {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-contraintes.yaml");
 
         PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
 
-        assertThat(planning.getContraintesAdHoc()).hasSize(2);
+        assertThat(planning.getContraintesAdHoc()).hasSize(1);
         ContrainteAdHoc incompatibilite = planning.getContraintesAdHoc().get(0);
         assertThat(incompatibilite.getId()).isEqualTo("INCOMPAT-1");
         assertThat(incompatibilite.getType()).isEqualTo(TypeContrainteAdHoc.INCOMPATIBILITE);
@@ -157,13 +157,6 @@ class PlanningServiceScenarioFromTextTest {
                 .extracting(Animateur::getId)
                 .containsExactly("A1", "A2");
         assertThat(incompatibilite.getCreneau()).isNull();
-
-        ContrainteAdHoc indisponibilite = planning.getContraintesAdHoc().get(1);
-        assertThat(indisponibilite.getStand().getId()).isEqualTo("STAND-STRAT");
-        // Resolved against the file's own créneau id, so the import can remap
-        // it to the database id the créneau gets on the way in.
-        assertThat(indisponibilite.getCreneau()).isNotNull();
-        assertThat(indisponibilite.getRaison()).isEqualTo("Formation");
     }
 
     @Test

@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
  * constraints, whose match counts can run into the thousands.
  *
  * <p>It must also say <em>which hand-entered exception</em> a violated ad hoc
- * rule is about (issue #84): "affectationForcee: 12" is where a reader stops,
+ * rule is about (issue #84): "incompatibiliteAdHoc: 12" is where a reader stops,
  * and the exceptions are the only thing anyone can act on.</p>
  *
  * <p>And it must read a rule that penalises everything for lack of data as a
@@ -47,33 +47,37 @@ class PlanningServiceDiagnosticViolationsTest {
         Stand stand = new Stand("STAND-1", "Stand tir à l'arc", Set.of(), 1, 1, false);
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 16), LocalTime.of(12, 30), LocalTime.of(15, 30));
         Animateur animateur = new Animateur("A1", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
-        // The seat is staffed by somebody else, so the forced assignment of A1
-        // has nowhere to land: affectationForcee matches, on C1.
+        // Both sit on the same timeslot, so the incompatibility of A1 and A2
+        // matches: incompatibiliteAdHoc, on C1.
         Animateur occupant = new Animateur("A2", "Bob", "Durand", LocalDate.of(1990, 1, 1), false);
         PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
         poste.setAnimateur(occupant);
-        ContrainteAdHoc forcee = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        forcee.setAnimateursConcernes(List.of(animateur));
+        PosteAffectation posteAlice = new PosteAffectation("P2", stand, creneau);
+        posteAlice.setAnimateur(animateur);
+        ContrainteAdHoc forcee = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INCOMPATIBILITE);
+        forcee.setAnimateursConcernes(List.of(animateur, occupant));
         forcee.setCreneau(creneau);
         forcee.setRaison("Promesse faite en juin");
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(new PlanningEvenement(
-                creneau.getDate(), List.of(animateur, occupant), List.of(poste), List.of(forcee)));
+                creneau.getDate(), List.of(animateur, occupant), List.of(poste, posteAlice), List.of(forcee)));
 
         assertThat(diagnostic.contraintesAdHocEnCause()).singleElement().satisfies(contribution -> {
             assertThat(contribution.contrainteId()).isEqualTo("C1");
-            assertThat(contribution.type()).isEqualTo("AFFECTATION_FORCEE");
+            assertThat(contribution.type()).isEqualTo("INCOMPATIBILITE");
             assertThat(contribution.raison()).isEqualTo("Promesse faite en juin");
             assertThat(contribution.violations()).isEqualTo(1);
-            assertThat(contribution.contraintes()).containsExactly("affectationForcee");
+            assertThat(contribution.contraintes()).containsExactly("incompatibiliteAdHoc");
         });
 
         // The per-match line names it too: the id is what the ad hoc screen shows.
         assertThat(diagnostic.contraintes())
-                .filteredOn(c -> c.name().equals("affectationForcee"))
+                .filteredOn(c -> c.name().equals("incompatibiliteAdHoc"))
                 .singleElement()
-                .satisfies(c ->
-                        assertThat(c.violations()).containsExactly("AFFECTATION_FORCEE C1 (Promesse faite en juin)"));
+                .satisfies(c -> assertThat(c.violations())
+                        .singleElement()
+                        .asString()
+                        .startsWith("INCOMPATIBILITE C1 (Promesse faite en juin)"));
     }
 
     @Test
@@ -83,14 +87,15 @@ class PlanningServiceDiagnosticViolationsTest {
         Stand stand = new Stand("STAND-1", "Stand tir à l'arc", Set.of(), 1, 1, false);
         Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 7, 16), LocalTime.of(12, 30), LocalTime.of(15, 30));
         Animateur animateur = new Animateur("A1", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        Animateur autre = new Animateur("A2", "Bob", "Durand", LocalDate.of(1990, 1, 1), false);
         PosteAffectation poste = new PosteAffectation("P1", stand, creneau);
         poste.setAnimateur(animateur);
-        ContrainteAdHoc forcee = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        forcee.setAnimateursConcernes(List.of(animateur));
+        ContrainteAdHoc forcee = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INCOMPATIBILITE);
+        forcee.setAnimateursConcernes(List.of(animateur, autre));
         forcee.setCreneau(creneau);
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(
-                new PlanningEvenement(creneau.getDate(), List.of(animateur), List.of(poste), List.of(forcee)));
+                new PlanningEvenement(creneau.getDate(), List.of(animateur, autre), List.of(poste), List.of(forcee)));
 
         assertThat(diagnostic.contraintesAdHocEnCause()).isEmpty();
     }

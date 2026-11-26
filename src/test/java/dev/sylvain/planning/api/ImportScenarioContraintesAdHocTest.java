@@ -78,25 +78,40 @@ class ImportScenarioContraintesAdHocTest {
                 competences:
                   STRATEGIE: DEBUTANT
                 joursIndisponibles: []
+              - id: A3
+                prenom: Carole
+                nom: Confirmee
+                dateNaissance: 2000-01-02
+                manager: false
+                competences:
+                  STRATEGIE: REFERENT
+                joursIndisponibles: []
+              - id: A4
+                prenom: David
+                nom: Confirme
+                dateNaissance: 1999-05-06
+                manager: false
+                competences:
+                  STRATEGIE: REFERENT
+                joursIndisponibles: []
             """;
 
-    /** A1 is forced onto the very créneau another exception declares them unavailable on. */
+    /** The pair A1 / A2 is declared incompatible by one exception and affine by the other. */
     private static final String CONTRADICTOIRE = ENTETE + """
 
             contraintesAdHoc:
-              - id: INDISPO-1
-                type: INDISPONIBILITE_FORCEE
+              - id: INCOMPAT-1
+                type: INCOMPATIBILITE
                 animateurs:
                   - A1
-                creneauId: J1-MATIN
-                raison: Formation
-              - id: FORCE-1
-                type: AFFECTATION_FORCEE
+                  - A2
+                raison: Conflit à apaiser
+              - id: AFFINITE-1
+                type: AFFINITE
                 animateurs:
                   - A1
-                creneauId: J1-MATIN
-                standId: STAND-STRAT
-                raison: Promesse faite en juin
+                  - A2
+                raison: Binôme habituel
             """;
 
     /** No {@code contraintesAdHoc:} section, and a target edition of its own. */
@@ -106,23 +121,22 @@ class ImportScenarioContraintesAdHocTest {
 
             """ + ENTETE;
 
-    /** The same two exceptions, on two créneaux that do not overlap. */
+    /** The same two kinds of exception, on two different pairs. */
     private static final String COHERENT = ENTETE + """
 
             contraintesAdHoc:
-              - id: INDISPO-1
-                type: INDISPONIBILITE_FORCEE
+              - id: INCOMPAT-1
+                type: INCOMPATIBILITE
                 animateurs:
                   - A1
-                creneauId: J1-MATIN
-                raison: Formation
-              - id: FORCE-1
-                type: AFFECTATION_FORCEE
-                animateurs:
                   - A2
-                creneauId: J1-MIDI
-                standId: STAND-STRAT
-                raison: Promesse faite en juin
+                raison: Conflit à apaiser
+              - id: AFFINITE-1
+                type: AFFINITE
+                animateurs:
+                  - A3
+                  - A4
+                raison: Binôme habituel
             """;
 
     /**
@@ -170,7 +184,7 @@ class ImportScenarioContraintesAdHocTest {
         String message = importer(CONTRADICTOIRE, 400).extract().asString();
 
         // The exceptions are named by the ids the edition gave them, not by the file's.
-        assertThat(message).containsPattern("contrainte C\\d+").contains("indisponible");
+        assertThat(message).containsPattern("contrainte C\\d+").contains("incompatible");
     }
 
     @Test
@@ -213,8 +227,7 @@ class ImportScenarioContraintesAdHocTest {
         assertThat(contraintesAdHoc())
                 .extracting(contrainte -> contrainte.get("type"), contrainte -> contrainte.get("raison"))
                 .containsExactlyInAnyOrder(
-                        tuple("INDISPONIBILITE_FORCEE", "Formation"),
-                        tuple("AFFECTATION_FORCEE", "Promesse faite en juin"));
+                        tuple("INCOMPATIBILITE", "Conflit à apaiser"), tuple("AFFINITE", "Binôme habituel"));
         assertThat(contraintesAdHoc())
                 .extracting(contrainte -> (String) contrainte.get("id"))
                 .allMatch(id -> id.matches("C\\d+"));

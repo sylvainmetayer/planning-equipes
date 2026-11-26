@@ -9,6 +9,9 @@ import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +128,19 @@ public class AnimateurService {
     @RefusedWhileSolving
     public void delete(String id) {
         repository.deleteAnimateur(id);
+        changeTracker.markModified();
+    }
+
+    /** See {@link AnimateurRepository#addJourIndisponible}; the caller's transaction, the caller's refusal. */
+    public void addJourIndisponible(Connection connection, String animateurId, LocalDate jour) throws SQLException {
+        repository.addJourIndisponible(connection, animateurId, jour);
+        changeTracker.markModified();
+    }
+
+    /** The day leaves the days off of the fiche. */
+    @RefusedWhileSolving
+    public void removeJourIndisponible(String animateurId, LocalDate jour) {
+        repository.removeJourIndisponible(animateurId, jour);
         changeTracker.markModified();
     }
 

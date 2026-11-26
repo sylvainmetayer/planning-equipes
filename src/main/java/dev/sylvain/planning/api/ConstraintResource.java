@@ -139,7 +139,9 @@ public class ConstraintResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
         String rule = requireKnown(name);
-        referenceDataService.setContrainteActive(rule, update.actif());
+        // The 3.x hard run form is a level, not a rule: the service reads it under its own name.
+        referenceDataService.setContrainteActive(
+                ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(name) ? name : rule, update.actif());
         // One method, two actions: the history keys on the route, so without
         // this it would record « Contrainte activée » for a deactivation —
         // the one thing a journal must never do (issue #406).
@@ -159,6 +161,9 @@ public class ConstraintResource {
     @Path("/{name}/poids")
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(name)) {
+            throw new BusinessError.Invalid(ConstraintCatalog.POIDS_FORME_DURE_REFUSE);
+        }
         String rule = requireKnown(name);
         referenceDataService.setConstraintWeight(rule, update.poids());
         return new ConstraintPoidsUpdate(
@@ -237,6 +242,7 @@ public class ConstraintResource {
                 definition.categorie(),
                 definition.description(),
                 definition.libelleCourt(),
+                definition.groupe(),
                 definition.remediation(),
                 !desactivees.contains(definition.name()),
                 definition.protegee(),
@@ -267,6 +273,10 @@ public class ConstraintResource {
     /**
      * @param libelleCourt the rule in a few words, for a sentence or a title
      *                    read by somebody who does not know its technical name
+     * @param groupe       the display group the rules screen lists the rule under
+     *                     with its siblings (an id the screen words), {@code null}
+     *                     when it stands alone; a presentation only, each rule
+     *                     keeps its own level and switch
      * @param actif       whether the constraint is applied on the next solve
      * @param protegee    whether this rule founds the plan in law, in the
      *                    minors' safety policy, or in the meal rule the event
@@ -357,6 +367,7 @@ public class ConstraintResource {
             String categorie,
             String description,
             String libelleCourt,
+            String groupe,
             String remediation,
             boolean actif,
             boolean protegee,

@@ -40,6 +40,10 @@ The 4.0 migration moves the carpool requests that 3.x had rejected or cancelled,
 
 Once 4.0 is in place and going back to 3.x is ruled out, nothing forces you to wait: `DROP TABLE declaration_coequipier_avant_4_0;` drops it, with no effect on the application. Record it in the register as a purge.
 
+### The 3.x publication exclusions archive
+
+The 4.0 migration stores, in the `exclusion_publication_avant_4_0` table, the people whose last publication line was a deferral: the identifier of the person, of the edition and of the published version, and the date. No name, no free text. The application no longer reads it and does not export it. It is **kept until 5.0**, which drops it; until then it leaves with its edition (the annual purge covers it) or with the person's record. Once 4.0 is in place and going back to 3.x is ruled out, `DROP TABLE exclusion_publication_avant_4_0;` removes it, with no effect on the application. Note it in the register as a purge.
+
 ## Measuring the realised
 
 No scheduled task computes it: the "Edition measures" screen computes it on demand ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). The first read made once the edition's last timeslot has ended, when something has been published, writes the measure into `mesure_edition` (nature `REALISE`): absences, replacements, empty seats and lost hours, by game category, with no person at all.

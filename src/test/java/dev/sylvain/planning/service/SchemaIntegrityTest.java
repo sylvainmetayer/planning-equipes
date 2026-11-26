@@ -118,7 +118,7 @@ class SchemaIntegrityTest {
                 a,
                 creneauA);
         update(
-                "INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id) VALUES (?, 'C1', 'INDISPONIBILITE_FORCEE', ?)",
+                "INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id) VALUES (?, 'C1', 'INCOMPATIBILITE', ?)",
                 a,
                 creneauA);
 
@@ -163,7 +163,7 @@ class SchemaIntegrityTest {
                 .isNull();
         assertThat(count("poste_affectation", a)).isEqualTo(1);
 
-        update("INSERT INTO contrainte_ad_hoc (edition_id, id, type) VALUES (?, 'C1', 'INDISPONIBILITE_FORCEE')", a);
+        update("INSERT INTO contrainte_ad_hoc (edition_id, id, type) VALUES (?, 'C1', 'INCOMPATIBILITE')", a);
         update(
                 "INSERT INTO declaration_coequipier (edition_id, id, animateur_id, nature, coequipiers, contrainte_id)"
                         + " VALUES (?, 'DC1', 'A1', 'COVOITURAGE', 'x', 'C1')",

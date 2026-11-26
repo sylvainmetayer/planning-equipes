@@ -554,11 +554,12 @@ public class ParametresMcpTools {
 
     @Tool(
             name = "creer_contrainte_ad_hoc",
-            description = "Crée une contrainte ad hoc. INDISPONIBILITE_FORCEE, INCOMPATIBILITE et "
-                    + "AFFECTATION_FORCEE sont évaluées par le solveur au même niveau HARD que les contraintes légales ; "
-                    + "AFFINITE est une récompense SOFT. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté "
-                    + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
-                    + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
+            description = "Crée une contrainte ad hoc. INCOMPATIBILITE est évaluée par le solveur au même niveau "
+                    + "HARD que les contraintes légales : les animateurs listés ne peuvent pas être affectés au même "
+                    + "stand sur le même créneau ; AFFINITE et ARRIVEE_GROUPEE sont SOFT. L'affectation forcée et "
+                    + "l'indisponibilité forcée n'existent plus : pour imposer une affectation, verrouiller le créneau "
+                    + "de l'animateur (verrouiller) ; pour l'écarter d'un jour, ajouter ce jour aux jours "
+                    + "indisponibles de sa fiche (modifier_animateur). "
                     + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
                     + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement). "
                     + "ARRIVEE_GROUPEE (SOFT) : 2 à 4 animateurs qui arrivent et repartent ensemble (covoiturage), "
@@ -572,10 +573,7 @@ public class ParametresMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenContrainteAdHocView createContrainteAdHoc(
-            @ToolArg(
-                            description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE, "
-                                    + "AFFINITE ou ARRIVEE_GROUPEE")
-                    String type,
+            @ToolArg(description = "Type : INCOMPATIBILITE, AFFINITE ou ARRIVEE_GROUPEE") String type,
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
             @ToolArg(description = "Id du stand concerné", required = false) String standId,

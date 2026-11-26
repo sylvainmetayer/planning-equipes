@@ -135,21 +135,15 @@ class PlacementResourceTest {
                 .body("message", containsString("n'est plus libre"));
     }
 
-    /** A forced unavailability is a hard rule: the placement is refused, named, and writes nothing. */
+    /** A day off on the fiche is a hard rule: the placement is refused, named, and writes nothing. */
     @Test
     void aPlacementThatBreaksAHardRuleIsRefusedAndWritesNothing() {
         FreeSeat siege = freeSeat();
-        String indispo = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(siege.libre(), siege.creneauId()))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("contrainte.id");
+        String jour = persisted().getString("postes.find { it.creneau.id == " + siege.creneauId() + " }.creneau.date");
+        Map<String, Object> fiche = ficheOf(siege.libre());
+        Object joursAvant = fiche.get("joursIndisponibles");
+        fiche.put("joursIndisponibles", List.of(jour));
+        putFiche(siege.libre(), fiche);
         try {
             given().header("X-Edition-Id", "E1")
                     .when()
@@ -159,8 +153,31 @@ class PlacementResourceTest {
                     .body("message", containsString("Affectation refusée"));
             assertThat(occupants(persisted())).isEqualTo(siege.occupants());
         } finally {
-            given().header("X-Edition-Id", "E1").when().delete("/api/contraintes-ad-hoc/" + indispo);
+            Map<String, Object> courante = ficheOf(siege.libre());
+            courante.put("joursIndisponibles", joursAvant);
+            putFiche(siege.libre(), courante);
         }
+    }
+
+    private static Map<String, Object> ficheOf(String animateurId) {
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getMap("find { it.id == '" + animateurId + "' }");
+    }
+
+    private static void putFiche(String animateurId, Map<String, Object> fiche) {
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(fiche)
+                .when()
+                .put("/api/animateurs/" + animateurId)
+                .then()
+                .statusCode(200);
     }
 
     /** A lock on the person receiving the seat forbids them a new one, as it does for a move. */

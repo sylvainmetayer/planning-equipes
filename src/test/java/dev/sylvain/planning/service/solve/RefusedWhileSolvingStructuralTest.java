@@ -133,6 +133,12 @@ class RefusedWhileSolvingStructuralTest {
                     "AnimateurService#update(String,Animateur,Animateur)"),
             Map.entry("ReferenceDataService#deleteAnimateur(String)", "AnimateurService#delete(String)"),
             Map.entry(
+                    "ReferenceDataService#addJourIndisponible(Connection,String,LocalDate)",
+                    "AnimateurService#addJourIndisponible(Connection,String,LocalDate)"),
+            Map.entry(
+                    "ReferenceDataService#removeJourIndisponible(String,LocalDate)",
+                    "AnimateurService#removeJourIndisponible(String,LocalDate)"),
+            Map.entry(
                     "ReferenceDataService#regenerateAnimateurToken(String)",
                     "AnimateurService#regenerateToken(String)"),
             Map.entry(
@@ -145,6 +151,12 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#writeStand(Stand,List,Emplacement)", "StandService#create(Connection,Stand)"),
             Map.entry(
                     "ReferenceDataService#writeStand(String,Stand)", "ReferenceDataService#updateStand(String,Stand)"),
+            Map.entry(
+                    "ReferenceDataService#addStandPlage(String,PlageStand)",
+                    "StandService#addPlage(String,PlageStand)"),
+            Map.entry(
+                    "ReferenceDataService#removeStandPlages(String,Long,LocalDate)",
+                    "StandService#removePlages(String,Long,LocalDate)"),
             Map.entry("ReferenceDataService#deleteStand(String)", "StandService#delete(String)"),
             Map.entry("ReferenceDataService#saisirGrilleHoraires(List)", "StandService#saisirGrille(List)"),
             Map.entry("ReferenceDataService#createEmplacement(Emplacement)", "EmplacementService#create(Emplacement)"),
@@ -197,9 +209,6 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry(
                     "ReferenceDataService#writeContrainteAdHoc(ContrainteAdHoc)",
                     "ContrainteAdHocService#create(ContrainteAdHoc)"),
-            Map.entry(
-                    "ReferenceDataService#createContraintesAdHoc(Connection,List)",
-                    "ContrainteAdHocService#createAll(Connection,List)"),
             Map.entry("ReferenceDataService#deleteContrainteAdHoc(String)", "ContrainteAdHocService#delete(String)"),
             Map.entry(
                     "ReferenceDataService#createVerrouillage(VerrouillagePlanning)",
@@ -250,6 +259,10 @@ class RefusedWhileSolvingStructuralTest {
                     "AnimateurService#regenerateToken(String)",
                     "a credential: the landing writes an animateur's identity, never a token"),
             Map.entry("AnimateurService#regenerateAbonnementToken(String)", "same"),
+            Map.entry(
+                    "AnimateurService#addJourIndisponible(Connection,String,LocalDate)",
+                    "the caller's transaction, the caller's refusal: its only caller, JourJService#recordAbsence,"
+                            + " is @RefusedWhileSolving"),
             Map.entry("StandService#create(Stand)", NEW_ROW),
             Map.entry("StandService#create(Connection,Stand)", NEW_ROW),
             Map.entry("CreneauService#create(Creneau)", NEW_ROW + "; no seat stands on it yet"),
@@ -268,7 +281,6 @@ class RefusedWhileSolvingStructuralTest {
                     "TypologieService#delete(String)",
                     NOT_LANDED + "; refused while a stand or an animateur uses it, so the landing never names one"),
             Map.entry("ContrainteAdHocService#create(ContrainteAdHoc)", NOT_LANDED),
-            Map.entry("ContrainteAdHocService#createAll(Connection,List)", NOT_LANDED),
             Map.entry("ContrainteAdHocService#delete(String)", NOT_LANDED),
             Map.entry("VerrouillageService#create(VerrouillagePlanning)", NOT_LANDED),
             Map.entry("VerrouillageService#delete(String)", NOT_LANDED),

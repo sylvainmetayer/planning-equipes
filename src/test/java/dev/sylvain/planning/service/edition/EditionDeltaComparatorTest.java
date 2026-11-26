@@ -504,7 +504,7 @@ class EditionDeltaComparatorTest {
         assertThat(EditionDeltaComparator.compare(a.side(), b.side()).stands())
                 .singleElement()
                 .extracting(DeltaLine::fields)
-                .isEqualTo(List.of("indisponibilites"));
+                .isEqualTo(List.of("plages"));
     }
 
     /** A stand shut on {@code fermeture} and open on {@code ouverture}. */

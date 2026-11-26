@@ -115,7 +115,7 @@ Les graines étant fixées, deux runs d'une même configuration tracent la même
 
 ## Le banc des jours d'affilée
 
-`ConsecutiveRunsBenchTest` mesure ce que coûterait la fusion des deux formes de la règle des jours d'affilée (`maxJoursConsecutifsTravailles`, medium, et `maxJoursConsecutifsTravaillesDur`, dure) en une règle à niveau réglable, et le retrait de l'ordre de construction par calendrier ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)). Il ne change aucun comportement : les variantes sont des interrupteurs, un poids qui porte la règle medium au niveau dur ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) et une couture de test sur le comparateur de construction.
+`ConsecutiveRunsBenchTest` mesure la règle des jours d'affilée à ses deux niveaux : `preference`, ce qui est livré, et `obligatoire`, son poids porté à un point dur ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)). Écrit avant la fusion des deux formes de la 3.x, il en a donné le prix, et celui du retrait de l'ordre de construction par calendrier ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md), retiré par l'[ADR 0118](repo:docs/decisions/0118-une-seule-regle-de-jours-d-affilee-a-niveau-reglable.md)) : ce sont les mesures plus bas.
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=ConsecutiveRunsBenchTest \
@@ -123,7 +123,9 @@ Les graines étant fixées, deux runs d'une même configuration tracent la même
     -Dbench.seconds=120 -Dbench.seeds=3 -Dbench.cap=6
 ```
 
-La classe se lance aussi comme un `main` sur le classpath de test, pour faire tourner plusieurs scénarios dans des JVM parallèles. Chaque résolution dure tout son budget, sans arrêt sur plateau, graines 0 à 2. Les variantes sont `preference` (la forme medium seule : ce qui est livré, et la règle fusionnée au niveau préférence), `both` (les deux formes, comme un organisateur qui veut un plafond dur les allume aujourd'hui), `hard` (la forme dure seule : la règle fusionnée au niveau obligatoire), `hard-par-poids` (la forme medium dont le poids vaut un point dur : la règle fusionnée telle que l'ADR 0111 l'écrirait) et, sous Timefold seulement, `both-sans-calendrier` et `hard-sans-calendrier`. Le moteur direct construit toujours par rareté : l'ordre par calendrier n'existe pas chez lui, le retirer n'y change rien. Le plafond est fixé à six jours (`bench.cap`).
+La classe se lance aussi comme un `main` sur le classpath de test, pour faire tourner plusieurs scénarios dans des JVM parallèles. Chaque résolution dure tout son budget, sans arrêt sur plateau, graines 0 à 2. Le plafond est fixé à six jours (`bench.cap`).
+
+Les mesures ci-dessous ont été prises avant la fusion, sur les variantes d'alors : `preference` (la forme medium seule), `both` (les deux formes allumées), `hard` (la forme dure seule, avec l'ordre par calendrier sous Timefold), `hard-par-poids` (la forme medium dont le poids vaut un point dur : la règle fusionnée, `obligatoire` aujourd'hui) et, sous Timefold seulement, `both-sans-calendrier` et `hard-sans-calendrier`. Le moteur direct construit toujours par rareté : l'ordre par calendrier n'existait pas chez lui. Depuis la fusion, la recherche par jours entiers ([ADR 0049](repo:docs/decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)) suit la règle obligatoire : `obligatoire` vaut `hard-sans-calendrier`.
 
 La dernière colonne relit chaque plan final sous la règle obligatoire : le nombre de graines dont aucun animateur ne dépasse le plafond.
 
@@ -205,7 +207,7 @@ Mesures du 26 novembre 2026, une machine de 12 cœurs et 24 Go (neuf JVM en para
 Ce qu'on en retient :
 
 - **Le moteur direct** : la forme obligatoire coûte au plus 3,4 % de medium sur `gamme-20`, 0,5 % sur `scenario-complet`, rien sur `gamme-25` et la canicule, et fait mieux sur `gamme-16`. Elle tient le plafond partout où la grille le permet, ce que la préférence ne fait ni sur `scenario-complet`, ni sur `festival-hivernal`, ni toujours sur `gamme-20`. La faisabilité arrive en moins de 2 s, 12 s sur `festival-hivernal` dont la grille ne tient à six jours que dans une graine sur trois. `hard-par-poids` et `hard` donnent les mêmes plans à la graine près.
-- **Timefold** : l'ordre par calendrier vaut 6 à 8 % de medium sur la canicule et `scenario-complet`, 35 % sur `gamme-20` et `gamme-25`, et 10 à 15 % de temps jusqu'à la faisabilité. La règle fusionnée par le poids (`hard-par-poids`) retombe sur `hard-sans-calendrier`, puisque rien n'indique au comparateur que la règle est obligatoire.
+- **Timefold** : l'ordre par calendrier vaut 6 à 8 % de medium sur la canicule et `scenario-complet`, 35 % sur `gamme-20` et `gamme-25`, et 10 à 15 % de temps jusqu'à la faisabilité. La règle fusionnée par le poids (`hard-par-poids`) retombait sur `hard-sans-calendrier`, puisque rien n'indiquait au comparateur que la règle était obligatoire. L'ordre par calendrier est retiré en 4.0 : la régression est annoncée dans le guide [Passer à la 4.0](../installer/passer-a-la-4-0.md). Rejoué après la fusion, sur la même machine et sous Timefold, `obligatoire` atteint la faisabilité dans les trois graines et tient le plafond partout, au medium de `hard-sans-calendrier` à 0,3 % près ; `hard` en 3.x faisait 6 % (canicule), 8 % (`scenario-complet`) et 35 % (`gamme-20`, `gamme-25`) de medium en moins.
 - `gamme-28` (infaisable par construction) l'est dans toutes les variantes, aux deux moteurs.
 
 ## Le banc des règles de lieu
@@ -394,9 +396,122 @@ Ce qu'on en retient :
 - **Le sens du placement pèse sur le soft, pas sur le reste.** Le soft propre de `placement-debut` est environ huit fois plus bas que celui de `actuel` sur `festival-hivernal` (-11 560 contre -96 235), celui de `placement-fin` lui est égal : sur ce scénario, presque tout l'écart livré est la préférence « tard à midi ». Le sens qui coûte dépend du scénario : sur `scenario-complet` c'est `placement-debut` qui égale `actuel` (-108 035 contre -111 355) et `placement-fin` qui tombe à -2 055. `sans-placement` laisse le soft livré se dégrader (par exemple -76 820 contre -26 815 sur `gamme-20`) : la préférence agit bien.
 - `gamme-14` (peu de repas à arbitrer) sépare à peine les variantes : faisabilité et temps sont les mêmes, le medium ne bouge que de 4 600 à 5 200 sur de petits nombres, et seul le soft livré montre que la préférence agit (0 pour `actuel`, -3 075 pour `sans-placement`).
 
+## Le banc des règles de confort
+
+`ComfortRulesBenchTest` mesure ce que coûterait la fusion de règles de confort voisines, avant que personne ne l'écrive (la cible est d'environ 36 règles pour 40 aujourd'hui). Trois paires sont regardées : les deux équilibrages (`equilibrerCharge`, medium, et `equilibrerCreneauxPenibles`, soft), les deux règles des stands premium et épuisants (`eviterRoulementStandsPremium` et `eviterEnchainementStandsEpuisants`), et les deux écarts d'un siège (`appreciationIncompatible` et `experienceRequisePourStandsPremium`, cette dernière mesurée seule). `souhaitsIncompatibles`, `standComplexeAvecReferent`, `mineurNecessiteEncadrementMajeur` et la répartition des mineurs ne sont pas candidats. Il ne touche pas la production : les variantes sont des interrupteurs de règles et un poids qui porte une règle à un autre niveau ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=ComfortRulesBenchTest \
+    -Dbench.scenario=festival-hivernal.yaml -Dbench.engine=hand \
+    -Dbench.seconds=60 -Dbench.seeds=3
+```
+
+La classe se lance aussi comme un `main` sur le classpath de test. Chaque résolution dure tout son budget, sans arrêt sur plateau, graines 0 à 2. Les variantes sont `actuel` (ce qui est livré), `sans-penibles` et `sans-charge` (un équilibrage fait le travail des deux), `penibles-medium` (l'équilibrage des postes pénibles porté au niveau medium, poids 1, comme le ferait une règle d'équilibrage unique), `sans-roulement`, `sans-enchainement` et `sans-experience-premium` (la règle qu'une fusion absorberait, éteinte). Chaque plan final est relu sous les règles livrées, et les cinq règles ci-dessus y sont lues une à une : la dernière colonne est ce que chacune coûte dans le plan, à son niveau (soft pour `equilibrerCreneauxPenibles`, medium pour les autres). Une règle à zéro n'a rien à fusionner sur ce scénario : `scenario-complet` et `gamme-24` n'ont ni stand premium ni stand épuisant qui se touche.
+
+**Une fusion ne passe que si elle garde exactement les pénalités actuelles.** Cela se juge avant tout banc, sur le papier : le même ensemble de tuples, le même poids, donc le même score par défaut.
+
+- `equilibrerCharge` et `equilibrerCreneauxPenibles` : même forme (`loadBalance` par animateur) mais pas la même population (tous les sièges tenus, contre les seuls sièges pénibles), pas le même niveau (medium, poids 5 ; soft, poids 1) et pas le même réglage par édition. Une règle n'a qu'un niveau : la pénalité soft disparaît ou change de niveau. Le score par défaut bouge.
+- `eviterRoulementStandsPremium` et `eviterEnchainementStandsEpuisants` : l'une compte, par stand premium, les visages au-delà de l'équipe ; l'autre, les paires de sièges enchaînés d'une même personne sur des stands épuisants. Ni les tuples, ni la clé de regroupement ne se recoupent : aucune forme commune qui garde les deux pénalités.
+- `appreciationIncompatible` et `experienceRequisePourStandsPremium` : un point medium par siège, poids 5 des deux côtés, sur le même flux de sièges. Une règle à deux motifs garderait le score par défaut à l'identique. Ce qui se perd n'est pas dans le score : le poids et l'interrupteur propres à chaque règle, que l'organisateur règle séparément (l'appréciation de l'administrateur est celle que l'on pèse plus fort).
+
+Ce que le banc ajoute à l'analyse est le prix d'une fusion qui retirerait une pénalité (une variante `sans-…`) ou la changerait de niveau (`penibles-medium`). Plan relu sous les règles de `actuel` ; l'écart est celui du medium sous ces règles, médiane de trois graines ; un signe moins est une perte de medium. Le bruit entre graines est de l'ordre de 5 % : `gamme-24` donne `actuel` à -37 750 et toutes les autres variantes à -32 500 environ, sans qu'aucune ne s'explique.
+
+Mesures du 26 novembre 2026, une machine de 8 cœurs et 32 Go (huit JVM en parallèle), 60 s par résolution (30 s pour `scenario-complet`), médianes de trois graines :
+
+| Scénario | Moteur | Variante | Faisable | Temps jusqu'à la faisabilité | Medium sous les règles de `actuel` | Écart de medium | Soft sous les règles de `actuel` | Coût dans le plan (`equilibrerCharge` / `equilibrerCreneauxPenibles` / `eviterRoulementStandsPremium` / `eviterEnchainementStandsEpuisants` / `experienceRequisePourStandsPremium`) |
+|---|---|---|---|---|---|---|---|---|
+| `festival-realiste-canicule` | direct | `actuel` | 3/3 | 1.8 s | -16590 | +0.0 % | -68000 | 110 / 1325 / 630 / 0 / 30 |
+| `festival-realiste-canicule` | direct | `sans-penibles` | 3/3 | 0.6 s | -16535 | +0.3 % | -66730 | 110 / 1750 / 620 / 0 / 45 |
+| `festival-realiste-canicule` | direct | `sans-charge` | 3/3 | 0.5 s | -18005 | -8.5 % | -35385 | 1780 / 2030 / 460 / 0 / 20 |
+| `festival-realiste-canicule` | direct | `penibles-medium` | 3/3 | 0.5 s | -16630 | -0.2 % | -73570 | 110 / 1045 / 650 / 0 / 40 |
+| `festival-realiste-canicule` | direct | `sans-roulement` | 3/3 | 0.4 s | -18645 | -12.4 % | -70450 | 110 / 1320 / 2755 / 0 / 20 |
+| `festival-realiste-canicule` | direct | `sans-enchainement` | 3/3 | 0.4 s | -16565 | +0.2 % | -67550 | 110 / 1340 / 610 / 0 / 30 |
+| `festival-realiste-canicule` | direct | `sans-experience-premium` | 3/3 | 0.4 s | -16955 | -2.2 % | -63400 | 110 / 1295 / 605 / 0 / 445 |
+| `festival-realiste-canicule` | Timefold | `actuel` | 3/3 | 15.6 s | -19360 | +0.0 % | -54545 | 130 / 1105 / 1440 / 0 / 90 |
+| `festival-realiste-canicule` | Timefold | `sans-penibles` | 3/3 | 14.6 s | -19050 | +1.6 % | -51370 | 165 / 1360 / 1095 / 0 / 120 |
+| `festival-realiste-canicule` | Timefold | `sans-charge` | 3/3 | 13.9 s | -18750 | +3.2 % | -46180 | 2235 / 2145 / 555 / 0 / 15 |
+| `festival-realiste-canicule` | Timefold | `penibles-medium` | 3/3 | 14.4 s | -19245 | +0.6 % | -58590 | 110 / 995 / 1415 / 0 / 80 |
+| `festival-realiste-canicule` | Timefold | `sans-roulement` | 3/3 | 14.1 s | -20770 | -7.3 % | -55955 | 180 / 980 / 3125 / 0 / 90 |
+| `festival-realiste-canicule` | Timefold | `sans-enchainement` | 3/3 | 13.8 s | -19175 | +1.0 % | -53590 | 110 / 1105 / 1425 / 0 / 85 |
+| `festival-realiste-canicule` | Timefold | `sans-experience-premium` | 3/3 | 14.1 s | -19785 | -2.2 % | -54150 | 150 / 930 / 1400 / 0 / 500 |
+| `festival-hivernal` | direct | `actuel` | 3/3 | 3.7 s | -25270 | +0.0 % | -100475 | 315 / 2570 / 2325 / 0 / 15 |
+| `festival-hivernal` | direct | `sans-penibles` | 3/3 | 2.9 s | -25235 | +0.1 % | -99870 | 315 / 2965 / 2315 / 0 / 10 |
+| `festival-hivernal` | direct | `sans-charge` | 3/3 | 1.8 s | -26605 | -5.3 % | -93600 | 3800 / 3860 / 1965 / 0 / 0 |
+| `festival-hivernal` | direct | `penibles-medium` | 3/3 | 2.3 s | -24915 | +1.4 % | -109980 | 315 / 2155 / 2165 / 0 / 10 |
+| `festival-hivernal` | direct | `sans-roulement` | 3/3 | 2.8 s | -27490 | -8.8 % | -96040 | 315 / 2730 / 4910 / 0 / 35 |
+| `festival-hivernal` | direct | `sans-enchainement` | 3/3 | 2.5 s | -24980 | +1.1 % | -96855 | 315 / 2565 / 2150 / 0 / 15 |
+| `festival-hivernal` | direct | `sans-experience-premium` | 3/3 | 2.7 s | -26345 | -4.3 % | -88715 | 315 / 2400 / 2165 / 0 / 1605 |
+| `festival-hivernal` | Timefold | `actuel` | 3/3 | 39.6 s | -35110 | +0.0 % | -91980 | 315 / 1065 / 5240 / 0 / 725 |
+| `festival-hivernal` | Timefold | `sans-penibles` | 3/3 | 36.2 s | -34020 | +3.1 % | -97540 | 315 / 1520 / 4310 / 0 / 670 |
+| `festival-hivernal` | Timefold | `sans-charge` | 0/3 | jamais | -27000 | +23.1 % | -110660 | 3820 / 4335 / 1390 / 0 / 110 |
+| `festival-hivernal` | Timefold | `penibles-medium` | 3/3 | 36.4 s | -34990 | +0.3 % | -97365 | 330 / 905 / 5295 / 0 / 740 |
+| `festival-hivernal` | Timefold | `sans-roulement` | 3/3 | 41.4 s | -36350 | -3.5 % | -88950 | 310 / 1105 / 7205 / 0 / 690 |
+| `festival-hivernal` | Timefold | `sans-enchainement` | 3/3 | 38.1 s | -34815 | +0.8 % | -91975 | 315 / 1100 / 5205 / 0 / 715 |
+| `festival-hivernal` | Timefold | `sans-experience-premium` | 3/3 | 39.4 s | -35785 | -1.9 % | -94660 | 330 / 1040 / 5295 / 0 / 1645 |
+| `scenario-complet` | direct | `actuel` | 3/3 | 1.0 s | -18275 | +0.0 % | -122610 | 200 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-penibles` | 3/3 | 0.7 s | -18265 | +0.1 % | -122865 | 235 / 500 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-charge` | 3/3 | 0.6 s | -19945 | -9.1 % | -61550 | 3290 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `penibles-medium` | 3/3 | 0.7 s | -18280 | -0.0 % | -123185 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-roulement` | 3/3 | 0.7 s | -18240 | +0.2 % | -119815 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-enchainement` | 3/3 | 0.7 s | -18235 | +0.2 % | -119810 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-experience-premium` | 3/3 | 0.6 s | -18235 | +0.2 % | -121415 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `actuel` | 3/3 | 18.0 s | -29520 | +0.0 % | -161290 | 1770 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-penibles` | 3/3 | 16.3 s | -28560 | +3.3 % | -161310 | 1780 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-charge` | 3/3 | 16.5 s | -21405 | +27.5 % | -70190 | 4055 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `penibles-medium` | 3/3 | 16.1 s | -28495 | +3.5 % | -161315 | 1760 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-roulement` | 3/3 | 16.3 s | -28485 | +3.5 % | -161310 | 1780 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-enchainement` | 3/3 | 16.3 s | -28275 | +4.2 % | -161300 | 1770 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-experience-premium` | 3/3 | 15.6 s | -28515 | +3.4 % | -161305 | 1770 / 0 / 0 / 0 / 0 |
+| `gamme-20` | direct | `actuel` | 3/3 | 3.0 s | -20075 | +0.0 % | -43855 | 435 / 2775 / 2000 / 30 / 0 |
+| `gamme-20` | direct | `sans-penibles` | 3/3 | 2.4 s | -20060 | +0.1 % | -43700 | 430 / 3485 / 1920 / 15 / 0 |
+| `gamme-20` | direct | `sans-charge` | 3/3 | 2.3 s | -20065 | +0.0 % | -63080 | 10130 / 6045 / 830 / 0 / 0 |
+| `gamme-20` | direct | `penibles-medium` | 3/3 | 2.3 s | -19630 | +2.2 % | -53655 | 440 / 1605 / 1840 / 20 / 0 |
+| `gamme-20` | direct | `sans-roulement` | 3/3 | 2.3 s | -21835 | -8.8 % | -47650 | 350 / 2430 / 3530 / 20 / 10 |
+| `gamme-20` | direct | `sans-enchainement` | 3/3 | 2.2 s | -20030 | +0.2 % | -37260 | 435 / 2610 / 1920 / 265 / 0 |
+| `gamme-20` | direct | `sans-experience-premium` | 3/3 | 2.1 s | -21800 | -8.6 % | -39275 | 435 / 2435 / 2090 / 20 / 2430 |
+| `gamme-20` | Timefold | `actuel` | 3/3 | 43.8 s | -38530 | +0.0 % | -118705 | 3250 / 4695 / 2290 / 425 / 1010 |
+| `gamme-20` | Timefold | `sans-penibles` | 3/3 | 42.6 s | -38600 | -0.2 % | -119915 | 3560 / 4980 / 2250 / 410 / 870 |
+| `gamme-20` | Timefold | `sans-charge` | 3/3 | 44.2 s | -22830 | +40.7 % | -86910 | 9250 / 6440 / 950 / 15 / 0 |
+| `gamme-20` | Timefold | `penibles-medium` | 3/3 | 46.2 s | -43635 | -13.2 % | -124395 | 3885 / 5040 / 2590 / 435 / 600 |
+| `gamme-20` | Timefold | `sans-roulement` | 3/3 | 46.4 s | -45330 | -17.6 % | -123810 | 4615 / 3945 / 3470 / 425 / 940 |
+| `gamme-20` | Timefold | `sans-enchainement` | 3/3 | 45.2 s | -40790 | -5.9 % | -109150 | 3890 / 4280 / 2290 / 750 / 760 |
+| `gamme-20` | Timefold | `sans-experience-premium` | 3/3 | 44.5 s | -42700 | -10.8 % | -122410 | 4505 / 4545 / 2380 / 315 / 3130 |
+| `gamme-24` | direct | `actuel` | 3/3 | 3.3 s | -37750 | +0.0 % | -11165 | 5090 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-penibles` | 3/3 | 3.3 s | -37720 | +0.1 % | -11220 | 5135 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-charge` | 3/3 | 2.9 s | -31465 | +16.6 % | -12350 | 11735 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `penibles-medium` | 3/3 | 3.0 s | -33095 | +12.3 % | -11850 | 5030 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-roulement` | 3/3 | 1.6 s | -32515 | +13.9 % | -12140 | 5055 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-enchainement` | 3/3 | 1.6 s | -32495 | +13.9 % | -12125 | 4990 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-experience-premium` | 3/3 | 1.6 s | -32625 | +13.6 % | -12090 | 4975 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `actuel` | 0/3 | jamais | -38545 | +0.0 % | -6135 | 1690 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-penibles` | 0/3 | jamais | -39410 | -2.2 % | -6250 | 1845 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-charge` | 0/3 | jamais | -35045 | +9.1 % | -8545 | 12995 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `penibles-medium` | 2/3 | 42.6 s | -43090 | -11.8 % | -7410 | 3525 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-roulement` | 3/3 | 34.9 s | -43250 | -12.2 % | -7655 | 3510 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-enchainement` | 3/3 | 33.0 s | -43115 | -11.9 % | -7680 | 3495 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-experience-premium` | 3/3 | 34.8 s | -43420 | -12.6 % | -7615 | 3525 / 0 / 0 / 0 / 0 |
+
+Ce qu'on en retient :
+
+- **`eviterRoulementStandsPremium` ne se retire pas.** `sans-roulement` perd 12,4 % (direct) et 7,3 % (Timefold) sur la canicule, 8,8 % (direct) sur `festival-hivernal`, 8,8 % (direct) et 17,6 % (Timefold) sur `gamme-20`. C'est la règle qui coûte le plus quand on l'enlève.
+- **`eviterEnchainementStandsEpuisants` pèse peu, mais pas rien.** Elle ne coûte rien dans le plan des deux festivals ni de `scenario-complet` : le solveur évite déjà l'enchaînement. Sur `gamme-20` elle coûte 30 (direct) et 425 (Timefold) dans le plan de `actuel`, et la retirer perd 5,9 % de medium sous Timefold. Une pénalité qui existe disparaîtrait : le score par défaut bougerait.
+- **Les équilibrages ne se remplacent pas l'un par l'autre.** `sans-charge` perd 8,5 % et 9,1 % (direct) sur la canicule et `scenario-complet`, et `festival-hivernal` ne trouve plus de plan faisable sous Timefold ; `penibles-medium` perd 13,2 % sous Timefold sur `gamme-20`. À l'inverse, `sans-penibles` reste à moins de 3,5 % partout, mais sa pénalité soft existe (2 570 sur `festival-hivernal`, direct) : le score par défaut bougerait.
+- **`sans-experience-premium` perd 8,6 % (direct) et 10,8 % (Timefold) sur `gamme-20`**, 4,3 % sur `festival-hivernal` (direct) : la règle n'est pas inerte, mais une fusion à deux motifs ne la retirerait pas.
+- Les pertes mesurées sur `gamme-24` et le gain de `sans-charge` sous Timefold (+27,5 % sur `scenario-complet`, +40,7 % sur `gamme-20`) sont du bruit ou de la dynamique de recherche : un plan qui, sans une règle, se stabilise ailleurs. Aucune conclusion ne s'appuie dessus. Sous Timefold, `gamme-24` n'atteint pas la faisabilité en 60 s dans `actuel` ni dans `sans-penibles` ou `sans-charge` (huit JVM sur la même machine) ; le moteur direct la tient partout.
+
+La règle des 5 % décidée pour ces mesures : une perte de medium au-delà de 5 %, ou un score par défaut qui bouge, et l'on ne fusionne pas. Recommandation pour la fusion des règles de confort :
+
+| Paire | Fusion à score inchangé ? | Pire perte de medium mesurée | Recommandation |
+|---|---|---|---|
+| `equilibrerCharge` + `equilibrerCreneauxPenibles` | non (deux niveaux, deux populations) | -13,2 % (`penibles-medium`, Timefold, `gamme-20`) | regrouper à l'écran seulement : un même groupe « équilibre de la charge », deux règles |
+| `eviterRoulementStandsPremium` + `eviterEnchainementStandsEpuisants` | non (aucun tuple commun) | -17,6 % (`sans-roulement`, Timefold, `gamme-20`) | garder |
+| `appreciationIncompatible` + `experienceRequisePourStandsPremium` | oui, par construction (deux motifs, un point medium chacun) | -10,8 % (`sans-experience-premium`, Timefold, `gamme-20`), qui ne s'applique pas à une fusion à score égal | garder : le score tiendrait, mais deux réglages de l'organisateur disparaîtraient |
+
+Aucune paire ne se fond donc en respectant les deux critères : la fusion des règles de confort ne retire aucune des 39 règles. Le test différentiel et un test « avant/après » sur les scénarios suffiraient, si l'on choisissait la troisième paire malgré la perte de réglage.
+
 ## Le moteur direct : deux tests qui tiennent les règles en double
 
-`solver/handsearch` écrit les 42 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
+`solver/handsearch` écrit les 39 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
 
 `HandSearchCoverageStructuralTest` exige que toute contrainte de `ConstraintCatalog` ait sa constante dans `Rule` et que toute constante soit comptée dans le score du moteur. Il échoue le premier, par son nom, quand une contrainte n'est ajoutée que d'un côté.
 

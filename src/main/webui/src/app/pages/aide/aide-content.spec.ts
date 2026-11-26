@@ -269,21 +269,14 @@ describe('buildHelpSections', () => {
     const text = textOf(section as HelpSection);
 
     // The four types, each with what it actually covers.
-    for (const type of [
-      'Indisponibilité forcée',
-      'Affectation forcée',
-      'Incompatibilité',
-      'Affinité',
-    ]) {
+    for (const type of ['Incompatibilité', 'Affinité', 'Arrivée groupée']) {
       expect(text).toContain(type);
     }
     // The traps: any-one-of semantics, slot-not-stand, the empty scope, the
     // deleted slot, what is refused and what deliberately is not.
-    expect(text).toContain('jamais un « tous »');
     expect(text).toContain('Elle porte sur le créneau, pas sur le stand');
     expect(text).toContain('créneau supprimé');
     expect(text).toContain("refusés à l'enregistrement");
-    expect(text).toContain('Passent donc délibérément');
     expect(text).toContain('réenregistrer sous son propre identifiant');
   });
 

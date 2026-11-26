@@ -3,12 +3,10 @@ package dev.sylvain.planning.service.solve;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.solve.ProblemBuilder.StatistiquesIncremental;
 import dev.sylvain.planning.service.solve.ReplanificationDiff.ChangementAffectation;
 import java.time.LocalDate;
@@ -56,11 +54,7 @@ class PlanningServiceIncrementalTest {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1));
 
         StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
-                postes,
-                animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1", "A2")),
-                ReplanificationScope.automatic(),
-                List.of());
+                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1", "A2")), ReplanificationScope.automatic());
 
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
         assertThat(postes.get(0).isVerrouille()).isTrue();
@@ -80,8 +74,7 @@ class PlanningServiceIncrementalTest {
                 postes,
                 animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")),
-                ReplanificationScope.automatic(),
-                List.of());
+                ReplanificationScope.automatic());
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(0).isVerrouille()).isFalse();
@@ -96,11 +89,7 @@ class PlanningServiceIncrementalTest {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1));
 
         StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
-                postes,
-                animateurs,
-                Map.of(key("STAND-A", 1L), List.of("DISPARU")),
-                ReplanificationScope.automatic(),
-                List.of());
+                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("DISPARU")), ReplanificationScope.automatic());
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(stats.postesLiberes()).isEqualTo(1);
@@ -114,11 +103,7 @@ class PlanningServiceIncrementalTest {
                 List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ1), poste("p2", standB, matinJ1));
 
         StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
-                postes,
-                animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1")),
-                ReplanificationScope.automatic(),
-                List.of());
+                postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1")), ReplanificationScope.automatic());
 
         assertThat(postes.get(1).getAnimateur()).isNull();
         assertThat(postes.get(2).getAnimateur()).isNull();
@@ -131,11 +116,7 @@ class PlanningServiceIncrementalTest {
         Map<String, List<String>> persiste = Map.of(key("STAND-A", 1L), List.of("A1", "A2"));
 
         StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
-                byAnimateur,
-                animateurs,
-                persiste,
-                new ReplanificationScope(Set.of("A1"), Set.of(), Set.of()),
-                List.of());
+                byAnimateur, animateurs, persiste, new ReplanificationScope(Set.of("A1"), Set.of(), Set.of()));
 
         // Alice's seat is re-opened even though nothing invalidated it — that is
         // the operator saying "elle se désiste, refais-le".
@@ -148,8 +129,7 @@ class PlanningServiceIncrementalTest {
                 parJour,
                 animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A2")),
-                new ReplanificationScope(Set.of(), Set.of(J1), Set.of()),
-                List.of());
+                new ReplanificationScope(Set.of(), Set.of(J1), Set.of()));
         assertThat(parJour.get(0).getAnimateur()).isNull();
         assertThat(parJour.get(1).getAnimateur()).isEqualTo(bob);
 
@@ -158,32 +138,9 @@ class PlanningServiceIncrementalTest {
                 parStand,
                 animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-B", 1L), List.of("A2")),
-                new ReplanificationScope(Set.of(), Set.of(), Set.of("STAND-B")),
-                List.of());
+                new ReplanificationScope(Set.of(), Set.of(), Set.of("STAND-B")));
         assertThat(parStand.get(0).getAnimateur()).isEqualTo(alice);
         assertThat(parStand.get(1).getAnimateur()).isNull();
-    }
-
-    @Test
-    void uneIndisponibiliteForceeAdHocLibereLeSiegeQuElleInterdit() {
-        // The other shape a late change takes: a forced unavailability on one
-        // créneau. Pinning that seat would freeze a hard violation the solver
-        // is then powerless to fix.
-        ContrainteAdHoc indisponibilite = new ContrainteAdHoc("AH1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        indisponibilite.setAnimateursConcernes(List.of(alice));
-        indisponibilite.setCreneau(matinJ1);
-        List<PosteAffectation> postes = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
-
-        StatistiquesIncremental stats = ProblemBuilder.figerPostesIncremental(
-                postes,
-                animateurs,
-                Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")),
-                ReplanificationScope.automatic(),
-                List.of(indisponibilite));
-
-        assertThat(postes.get(0).getAnimateur()).isNull();
-        assertThat(postes.get(1).getAnimateur()).isEqualTo(alice);
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 1, 0, 0, 0, 0));
     }
 
     @Test
@@ -312,6 +269,6 @@ class PlanningServiceIncrementalTest {
     }
 
     private PlanningEvenement planningWith(PosteAffectation... postes) {
-        return new PlanningEvenement(J1, animateurs, new ArrayList<>(List.of(postes)), List.of());
+        return new PlanningEvenement(J1, animateurs, new ArrayList<>(List.of(postes)));
     }
 }

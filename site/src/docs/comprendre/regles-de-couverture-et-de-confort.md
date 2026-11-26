@@ -63,7 +63,7 @@ Les règles de « Qualité d'organisation » lisent leurs seuils dans `Parametre
 | Heure d'un service tardif | 22:00 | `eviterFermeturePuisOuverture` |
 | Heure d'un service matinal | 10:00 | `eviterFermeturePuisOuverture` |
 | Repos souhaité après un service tardif | 12 h | `eviterFermeturePuisOuverture` |
-| Jours travaillés d'affilée | 8 | `maxJoursConsecutifsTravailles` et sa forme dure |
+| Jours travaillés d'affilée | 8 | `maxJoursConsecutifsTravailles`, à tous ses niveaux |
 | Vitesse de marche | 4 km/h | `trajetInsuffisantEntrePostes`, vérification des enchaînements |
 | Facteur de détour | 1,3 | idem |
 | Tolérance de trajet | 5 min | idem |

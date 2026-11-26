@@ -245,6 +245,17 @@ class ValidationJourneeServiceTest {
     /* ------------------------- The state of a day ------------------------- */
 
     @Test
+    void freezingWithoutCommentKeepsTheReadingComment() {
+        validationService.setState(JOUR, DayState.RELUE, "vu avec la régie");
+
+        DayStateView figee = validationService.setState(JOUR, DayState.FIGEE, null);
+
+        assertThat(figee.commentaire()).isEqualTo("vu avec la régie");
+        assertThat(validationService.setState(JOUR, DayState.FIGEE, "autre").commentaire())
+                .isEqualTo("autre");
+    }
+
+    @Test
     void freezingADayLaysItsLockAndReadingOrUnreadingLiftsIt() {
         assertThat(validationService.stateOf(JOUR)).isEqualTo(DayState.A_RELIRE);
 
