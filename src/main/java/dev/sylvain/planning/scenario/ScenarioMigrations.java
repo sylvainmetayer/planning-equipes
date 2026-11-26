@@ -44,7 +44,8 @@ public final class ScenarioMigrations {
             new Link(1, ScenarioMigrations::v1ToV2),
             new Link(2, ScenarioParametresLink::convert),
             new Link(3, ScenarioMigrations::v3ToV4),
-            new Link(4, ScenarioPlagesLink::convert));
+            new Link(4, ScenarioPlagesLink::convert),
+            new Link(5, ScenarioMigrations::v5ToV6));
 
     private ScenarioMigrations() {}
 
@@ -269,6 +270,30 @@ public final class ScenarioMigrations {
      */
     static Map<String, Object> v3ToV4(Map<String, Object> document, List<String> warnings) {
         return document;
+    }
+
+    /**
+     * 5 → 6: the day templates are the templates of the one timeslot generator
+     * (ADR 0126), so the {@code journeesTypes:} section is now {@code gabarits:},
+     * entry for entry — name, vacations and dates unchanged. A file carrying
+     * both keeps {@code gabarits}, and says the other one was dropped.
+     */
+    static Map<String, Object> v5ToV6(Map<String, Object> document, List<String> warnings) {
+        if (!document.containsKey("journeesTypes")) {
+            return document;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        document.forEach((key, value) -> {
+            if (!"journeesTypes".equals(key)) {
+                result.put(key, value);
+            } else if (!document.containsKey("gabarits")) {
+                result.put("gabarits", value);
+            } else {
+                warnings.add("La section « journeesTypes » est ignorée : le fichier porte déjà « gabarits », qui la"
+                        + " remplace depuis la 4.0.");
+            }
+        });
+        return result;
     }
 
     /**

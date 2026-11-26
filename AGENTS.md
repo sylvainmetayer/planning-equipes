@@ -231,9 +231,13 @@ Single Quarkus service, no separate solver microservice. Package root:
     per referential family — `StandService`, `AnimateurService`,
     `CreneauService`, … — over one repository per family, plus
     `ReferenceDataImportRepository` for the one write that spans all of them),
-    the validators, the grids (`CreneauGridService`, `GrilleHorairesStands`,
-    `GrilleDepuisFenetres`), coherence, reference usage, and the CSV and grid
-    imports.
+    the validators, the one timeslot generator (`GenerateurCreneaux` over
+    `GabaritRepository`, ADR 0126: preview, apply and withdraw, from the
+    stands' hours, the templates — the 3.x day templates — or a recurrence;
+    every timeslot it creates goes through `CreneauRepository`, which unfolds
+    the stands' model), the grid check (`CreneauGridService`), the stand-hours
+    entry grid (`GrilleHorairesStands`), coherence, reference usage, and the
+    CSV and grid imports.
   - `service/scenario/` — `ScenarioYamlReader` / `ScenarioYamlWriter` (the
     scenario file format, both pure and static, so their tests exercise reading
     and writing without a database; `PlanningServiceScenarioAllerRetourTest`

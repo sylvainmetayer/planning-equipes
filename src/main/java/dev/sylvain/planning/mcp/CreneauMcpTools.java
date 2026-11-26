@@ -5,7 +5,8 @@ import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.DiagnosticGrille;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RapportGrille;
-import dev.sylvain.planning.service.referentiel.CreneauGridService.RegleRecurrence;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux.RegleRecurrence;
 import dev.sylvain.planning.service.referentiel.GrilleDepuisFenetres;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WrittenCreneau;
@@ -45,9 +46,12 @@ public class CreneauMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
+    private final GenerateurCreneaux generateur;
+
     @Inject
-    CreneauMcpTools(ReferenceDataService referenceDataService) {
+    CreneauMcpTools(ReferenceDataService referenceDataService, GenerateurCreneaux generateur) {
         this.referenceDataService = referenceDataService;
+        this.generateur = generateur;
     }
 
     @Tool(
@@ -193,21 +197,24 @@ public class CreneauMcpTools {
     @Computes
     @Tool(
             name = "previsualiser_creneaux_recurrents",
-            description = "Prévisualise les créneaux qu'une règle récurrente produirait, et contrôle la grille qui "
-                    + "en résulterait — sans RIEN écrire. À utiliser systématiquement avant creer_creneaux_recurrents : "
-                    + "une règle qui se trompe d'une heure crée des dizaines de lignes d'un coup. "
-                    + "Les fenêtres se saisissent « HH:MM-HH:MM », séparées par des virgules pour une journée en "
-                    + "plusieurs morceaux (ex. « 09:00-12:00,14:00-18:00 » pour une coupure méridienne) ; contrairement "
-                    + "aux horaires de stand, l'heure de fin est obligatoire. La portée vaut TOUS (toutes les dates de "
-                    + "la plage), JOURS_SEMAINE (avec joursSemaine, ex. MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY pour "
-                    + "« sauf le week-end »), PLAGE (identique à TOUS) ou DATES (avec dates). Les exclusions retirent "
-                    + "des dates précises quel que soit le sélecteur.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser previsualiser_generateur_creneaux (source recurrence). "
+                            + "Prévisualise les créneaux qu'une règle récurrente produirait, et contrôle la grille qui "
+                            + "en résulterait — sans RIEN écrire. À utiliser systématiquement avant creer_creneaux_recurrents : "
+                            + "une règle qui se trompe d'une heure crée des dizaines de lignes d'un coup. "
+                            + "Les fenêtres se saisissent « HH:MM-HH:MM », séparées par des virgules pour une journée en "
+                            + "plusieurs morceaux (ex. « 09:00-12:00,14:00-18:00 » pour une coupure méridienne) ; contrairement "
+                            + "aux horaires de stand, l'heure de fin est obligatoire. La portée vaut TOUS (toutes les dates de "
+                            + "la plage), JOURS_SEMAINE (avec joursSemaine, ex. MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY pour "
+                            + "« sauf le week-end »), PLAGE (identique à TOUS) ou DATES (avec dates). Les exclusions retirent "
+                            + "des dates précises quel que soit le sélecteur.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     PrevisualisationRecurrence previewRecurringCreneaux(
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
@@ -220,26 +227,25 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false)
                     List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        ReferenceDataService.RecurrenceGrille apercu = referenceDataService.previewRecurrence(
-                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
-        return new PrevisualisationRecurrence(
-                apercu.creneaux().size(),
-                apercu.creneaux().stream().map(CreneauMcpTools::toView).toList(),
-                apercu.controle());
+        return toRecurrenceView(generateur.preview(GenerateurCreneaux.Demande.recurrence(
+                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres))));
     }
 
     @Tool(
             name = "creer_creneaux_recurrents",
-            description = "Crée les créneaux d'une règle récurrente et renvoie le contrôle de cohérence de la "
-                    + "grille obtenue. Mêmes arguments que previsualiser_creneaux_recurrents, qu'il faut avoir appelé "
-                    + "d'abord. Les créneaux existants ne sont pas touchés : la règle AJOUTE. Pour repartir de zéro, "
-                    + "appeler supprimer_creneaux avant.",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser appliquer_generateur_creneaux (source recurrence). "
+                            + "Crée les créneaux d'une règle récurrente et renvoie le contrôle de cohérence de la "
+                            + "grille obtenue. Mêmes arguments que previsualiser_creneaux_recurrents, qu'il faut avoir appelé "
+                            + "d'abord. Les créneaux existants ne sont pas touchés : la règle AJOUTE. Pour repartir de zéro, "
+                            + "appeler supprimer_creneaux avant.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @Deprecated
     PrevisualisationRecurrence createRecurringCreneaux(
             @ToolArg(description = "Fenêtres, ex. « 09:00-12:00,14:00-18:00 »") String fenetres,
             @ToolArg(description = "Portée : TOUS, JOURS_SEMAINE, PLAGE ou DATES", required = false) String jours,
@@ -252,12 +258,8 @@ public class CreneauMcpTools {
             @ToolArg(description = "Dates (AAAA-MM-JJ) à exclure quel que soit le sélecteur", required = false)
                     List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        ReferenceDataService.RecurrenceGrille ecrit = referenceDataService.createRecurrence(
-                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres));
-        return new PrevisualisationRecurrence(
-                ecrit.creneaux().size(),
-                ecrit.creneaux().stream().map(CreneauMcpTools::toView).toList(),
-                ecrit.controle());
+        return toRecurrenceView(generateur.apply(GenerateurCreneaux.Demande.recurrence(
+                regle(jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres))));
     }
 
     /* ------------------------ Grid: derived from the stands ------------------------ */
@@ -265,18 +267,21 @@ public class CreneauMcpTools {
     @Computes
     @Tool(
             name = "previsualiser_derivation_creneaux",
-            description = "Prévisualise la grille de créneaux que les horaires des stands impliquent : chaque heure "
-                    + "où un stand ouvre ou ferme est une coupure, chaque tranche entre deux coupures où au moins un stand "
-                    + "est ouvert devient un créneau — sans RIEN écrire. À utiliser quand les horaires des stands existent "
-                    + "déjà (règles saisies ou importées) et que la grille n'est pas encore faite. Seuls les jours qu'un "
-                    + "stand déclare « ouvert sur ces fenêtres » comptent ; une fenêtre « jusqu'à la fermeture » finit à "
-                    + "heureFermeture (00:00 pour minuit).",
+            description =
+                    "Ancien nom, gardé jusqu'en 5.0 : utiliser previsualiser_generateur_creneaux (source stands). "
+                            + "Prévisualise la grille de créneaux que les horaires des stands impliquent : chaque heure "
+                            + "où un stand ouvre ou ferme est une coupure, chaque tranche entre deux coupures où au moins un stand "
+                            + "est ouvert devient un créneau — sans RIEN écrire. À utiliser quand les horaires des stands existent "
+                            + "déjà (règles saisies ou importées) et que la grille n'est pas encore faite. Seuls les jours qu'un "
+                            + "stand déclare « ouvert sur ces fenêtres » comptent ; une fenêtre « jusqu'à la fermeture » finit à "
+                            + "heureFermeture (00:00 pour minuit).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @Deprecated
     RapportDerivationMcp previewCreneauDerivation(
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
@@ -293,14 +298,15 @@ public class CreneauMcpTools {
                             required = false)
                     Boolean remplacer,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.previewDerivation(
+        return toView(generateur.preview(GenerateurCreneaux.Demande.stands(
                 parametresDerivation(dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes),
-                Boolean.TRUE.equals(remplacer)));
+                Boolean.TRUE.equals(remplacer))));
     }
 
     @Tool(
             name = "generer_creneaux_depuis_stands",
-            description = "Écrit la grille de créneaux dérivée des horaires des stands — mêmes arguments que "
+            description = "Ancien nom, gardé jusqu'en 5.0 : utiliser appliquer_generateur_creneaux (source stands). "
+                    + "Écrit la grille de créneaux dérivée des horaires des stands — mêmes arguments que "
                     + "previsualiser_derivation_creneaux, qu'il faut avoir appelé d'abord. Par défaut les créneaux "
                     + "s'AJOUTENT à la grille ; remplacer=true remplace toute la grille et EFFACE le planning "
                     + "résolu.",
@@ -310,6 +316,7 @@ public class CreneauMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
+    @Deprecated
     RapportDerivationMcp generateCreneauxFromStands(
             @ToolArg(description = "Première date (AAAA-MM-JJ)") String dateDebut,
             @ToolArg(description = "Dernière date (AAAA-MM-JJ), incluse") String dateFin,
@@ -323,12 +330,12 @@ public class CreneauMcpTools {
             @ToolArg(description = "true pour remplacer toute la grille (efface le planning résolu)", required = false)
                     Boolean remplacer,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.applyDerivation(
+        return toView(generateur.apply(GenerateurCreneaux.Demande.stands(
                 parametresDerivation(dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes),
-                Boolean.TRUE.equals(remplacer)));
+                Boolean.TRUE.equals(remplacer))));
     }
 
-    private static GrilleDepuisFenetres.Parametres parametresDerivation(
+    static GrilleDepuisFenetres.Parametres parametresDerivation(
             String dateDebut, String dateFin, String heureFermeture, Integer dureeMinimaleMinutes) {
         return new GrilleDepuisFenetres.Parametres(
                 McpArgs.date(dateDebut, ARG_DATE_DEBUT),
@@ -337,20 +344,26 @@ public class CreneauMcpTools {
                 dureeMinimaleMinutes == null ? GrilleDepuisFenetres.DUREE_MINIMALE_PAR_DEFAUT : dureeMinimaleMinutes);
     }
 
-    private static RapportDerivationMcp toView(ReferenceDataService.DerivationGrille resultat) {
-        GrilleDepuisFenetres.Derivation derivation = resultat.derivation();
+    private static RapportDerivationMcp toView(GenerateurCreneaux.Generation resultat) {
         return new RapportDerivationMcp(
-                derivation.creneaux().size(),
-                derivation.creneaux().stream().map(CreneauMcpTools::toView).toList(),
-                derivation.coupures(),
-                derivation.joursSansFenetre(),
+                resultat.nombreGeneres(),
+                resultat.creneaux().stream().map(CreneauMcpTools::toView).toList(),
+                resultat.coupures(),
+                resultat.joursSansFenetre(),
+                resultat.controle());
+    }
+
+    private static PrevisualisationRecurrence toRecurrenceView(GenerateurCreneaux.Generation resultat) {
+        return new PrevisualisationRecurrence(
+                resultat.nombreGeneres(),
+                resultat.creneaux().stream().map(CreneauMcpTools::toView).toList(),
                 resultat.controle());
     }
 
     @Tool(
             name = "supprimer_creneaux",
             description = "Supprime en une fois les créneaux que les filtres désignent — l'inverse de "
-                    + "creer_creneaux_recurrents, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
+                    + "appliquer_generateur_creneaux, pour reprendre une règle qui s'est trompée. DESTRUCTIF. Au moins un "
                     + "filtre est exigé ; pour vider toute la grille, passer explicitement tous=true.",
             annotations =
                     @Tool.Annotations(
@@ -399,7 +412,7 @@ public class CreneauMcpTools {
 
     /* -------------------------------- Outils -------------------------------- */
 
-    private static RegleRecurrence regle(
+    static RegleRecurrence regle(
             String jours,
             String dateDebut,
             String dateFin,

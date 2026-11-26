@@ -66,7 +66,7 @@
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition.id = event-avec-erreur-planning
 .sections.edition.nom = event-avec-erreur-planning
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.prereglagesConsigne = null

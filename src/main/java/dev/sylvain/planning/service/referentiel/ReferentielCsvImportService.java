@@ -2,7 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.BusinessError;
@@ -86,7 +86,7 @@ public class ReferentielCsvImportService {
 
     private final CreneauService creneaux;
 
-    private final JourneeTypeService journeesTypes;
+    private final GenerateurCreneaux journeesTypes;
 
     private final ReferenceDataChangeTracker changeTracker;
 
@@ -98,7 +98,7 @@ public class ReferentielCsvImportService {
             EmplacementService emplacements,
             StandService stands,
             CreneauService creneaux,
-            JourneeTypeService journeesTypes,
+            GenerateurCreneaux journeesTypes,
             ReferenceDataChangeTracker changeTracker,
             GelReferentielService gel) {
         this.typologies = typologies;
@@ -608,7 +608,7 @@ public class ReferentielCsvImportService {
     }
 
     /** The headcount the file gives, else the stand's own, else the provisional default of a new stand. */
-    private static Ecriture dayTemplateWrite(JourneeType journeeType) {
+    private static Ecriture dayTemplateWrite(Gabarit journeeType) {
         return service -> {
             if (journeeType.getId() == null) {
                 service.journeesTypes.create(journeeType);
@@ -751,7 +751,7 @@ public class ReferentielCsvImportService {
         journeesTypes
                 .calendrier()
                 .forEach(affectation ->
-                        lecture.calendrierActuel.put(affectation.date(), nomsParId.get(affectation.journeeTypeId())));
+                        lecture.calendrierActuel.put(affectation.date(), nomsParId.get(affectation.gabaritId())));
 
         List<LigneImportee> lignes = new ArrayList<>();
         for (CsvParser.Row row : table.rows()) {
@@ -775,9 +775,9 @@ public class ReferentielCsvImportService {
     /** The day-template rows read so far: what the next row is checked against. */
     private static final class DayTemplateReader {
 
-        private final Map<String, JourneeType> existants = new LinkedHashMap<>();
+        private final Map<String, Gabarit> existants = new LinkedHashMap<>();
         private final Map<LocalDate, String> calendrierActuel = new TreeMap<>();
-        private final List<JourneeType> valides = new ArrayList<>();
+        private final List<Gabarit> valides = new ArrayList<>();
         private final Map<String, List<LocalDate>> datesParNom = new LinkedHashMap<>();
         private final Map<LocalDate, String> revendiquees = new LinkedHashMap<>();
         private final Set<String> vus = new LinkedHashSet<>();
@@ -795,8 +795,8 @@ public class ReferentielCsvImportService {
             } catch (BusinessError.Invalid e) {
                 raisons.add(e.getMessage());
             }
-            JourneeType existant = existants.get(nomNormalise(nom));
-            JourneeType lue = new JourneeType(existant == null ? null : existant.getId(), nom, vacations);
+            Gabarit existant = existants.get(nomNormalise(nom));
+            Gabarit lue = new Gabarit(existant == null ? null : existant.getId(), nom, vacations);
             if (raisons.isEmpty()) {
                 validate(lue, raisons);
             }
@@ -826,9 +826,9 @@ public class ReferentielCsvImportService {
          * rows already accepted rather than against the database, so a file
          * naming one template twice is caught even when neither exists yet.
          */
-        private void validate(JourneeType lue, List<String> raisons) {
+        private void validate(Gabarit lue, List<String> raisons) {
             try {
-                JourneeTypeService.validate(lue, valides);
+                GenerateurCreneaux.validate(lue, valides);
             } catch (BusinessError.Invalid e) {
                 raisons.add(e.getMessage());
             }
@@ -851,7 +851,7 @@ public class ReferentielCsvImportService {
             return dates;
         }
 
-        private List<String> details(JourneeType lue, List<LocalDate> dates) {
+        private List<String> details(Gabarit lue, List<LocalDate> dates) {
             List<String> details = new ArrayList<>();
             if (dates.isEmpty()) {
                 details.add("Aucune date : la journée type existe, elle ne gouverne encore aucun jour.");
@@ -909,7 +909,7 @@ public class ReferentielCsvImportService {
      *
      * <p>The names are resolved here rather than during the analysis because a
      * template the file creates has no id before it is written — and names are
-     * unique, {@link JourneeTypeService#validate} having just enforced it.</p>
+     * unique, {@link GenerateurCreneaux#validate} having just enforced it.</p>
      */
     private void mergeCalendrier(Map<String, List<LocalDate>> datesParNom) {
         Map<String, Long> idsParNom = new LinkedHashMap<>();
@@ -917,9 +917,7 @@ public class ReferentielCsvImportService {
                 .list()
                 .forEach(journeeType -> idsParNom.put(nomNormalise(journeeType.getNom()), journeeType.getId()));
         Map<LocalDate, Long> calendrier = new TreeMap<>();
-        journeesTypes
-                .calendrier()
-                .forEach(affectation -> calendrier.put(affectation.date(), affectation.journeeTypeId()));
+        journeesTypes.calendrier().forEach(affectation -> calendrier.put(affectation.date(), affectation.gabaritId()));
         datesParNom.forEach((nom, dates) -> {
             Long id = idsParNom.get(nom);
             if (id != null) {

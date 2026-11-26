@@ -3,7 +3,7 @@ package dev.sylvain.planning.service.edition;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlageStand;
@@ -111,7 +111,7 @@ public final class EditionDeltaComparator {
             List<Stand> stands,
             List<Animateur> animateurs,
             List<Creneau> creneaux,
-            List<JourneeType> journeesTypes,
+            List<Gabarit> journeesTypes,
             ParametresLegaux parametresLegaux,
             Map<String, Boolean> etatsContraintes,
             Map<String, Integer> poidsContraintes,
@@ -158,7 +158,7 @@ public final class EditionDeltaComparator {
                                 animateur -> normalise(animateur.getEmail()),
                                 EditionDeltaComparator::sameBirthDateIfBothKnown),
                         new Criterion<>(DeltaMatch.IDENTITE, EditionDeltaComparator::identity, null)));
-        Matching<JourneeType> journeesTypes = match(
+        Matching<Gabarit> journeesTypes = match(
                 reference.journeesTypes(),
                 target.journeesTypes(),
                 List.of(new Criterion<>(DeltaMatch.NOM, journee -> normalise(journee.getNom()), null)));
@@ -200,7 +200,7 @@ public final class EditionDeltaComparator {
                 journeesTypes,
                 journee -> journee.getId() == null ? null : String.valueOf(journee.getId()),
                 journee -> null,
-                JourneeType::getNom,
+                Gabarit::getNom,
                 EditionDeltaComparator::journeeTypeFields);
         List<DeltaTimeslotLine> creneauLines = creneaux(reference.creneaux(), target.creneaux());
         List<DeltaValueLine> parametreLines = parametres(reference, target, defaultWeight);
@@ -478,7 +478,7 @@ public final class EditionDeltaComparator {
         return fields;
     }
 
-    private static List<String> journeeTypeFields(JourneeType a, JourneeType b) {
+    private static List<String> journeeTypeFields(Gabarit a, Gabarit b) {
         List<String> fields = new ArrayList<>();
         if (!Objects.equals(a.getNom(), b.getNom())) {
             fields.add("nom");

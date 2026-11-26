@@ -119,7 +119,7 @@ final class ScenarioIdRemap {
                 scenario.contraintes(),
                 typologiesSection(scenario),
                 scenario.creneaux(),
-                scenario.journeesTypes(),
+                scenario.gabarits(),
                 emplacementsSection(scenario),
                 standsSection(scenario),
                 animateursSection(scenario),

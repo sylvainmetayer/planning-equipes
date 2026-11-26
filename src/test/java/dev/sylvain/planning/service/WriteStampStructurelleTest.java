@@ -83,6 +83,15 @@ class WriteStampStructurelleTest {
                 tables.add(table);
             }
         }
+        // A table renamed later (V169: journee_type → gabarit) is read under its current name.
+        Matcher renommees =
+                Pattern.compile("ALTER TABLE (\\w+) RENAME TO (\\w+)").matcher(migrations);
+        while (renommees.find()) {
+            int index = tables.indexOf(renommees.group(1));
+            if (index >= 0) {
+                tables.set(index, renommees.group(2));
+            }
+        }
         return tables;
     }
 
@@ -90,7 +99,7 @@ class WriteStampStructurelleTest {
     @Test
     void aTableCreatedWithTheStampIsSeenToo() throws IOException {
         assertThat(tablesEstampillees())
-                .contains("animateur_contact", "journee_type", "webhook", "consigne_edition", "prereglage_consigne");
+                .contains("animateur_contact", "gabarit", "webhook", "consigne_edition", "prereglage_consigne");
     }
 
     /**

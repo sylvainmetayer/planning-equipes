@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlageStand;
@@ -55,7 +55,7 @@ class EditionDeltaComparatorTest {
         final List<Stand> stands = new ArrayList<>();
         final List<Animateur> animateurs = new ArrayList<>();
         final List<Creneau> creneaux = new ArrayList<>();
-        final List<JourneeType> journeesTypes = new ArrayList<>();
+        final List<Gabarit> journeesTypes = new ArrayList<>();
         ParametresLegaux legaux = new ParametresLegaux();
         final Map<String, Boolean> etats = new HashMap<>();
         final Map<String, Integer> poids = new HashMap<>();
@@ -117,7 +117,7 @@ class EditionDeltaComparatorTest {
         edition.creneaux.add(creneau(1, "2025-07-12", 10, 14));
         edition.creneaux.add(creneau(2, "2025-07-12", 14, 18));
         edition.creneaux.add(creneau(3, "2025-07-13", 10, 14));
-        edition.journeesTypes.add(new JourneeType(
+        edition.journeesTypes.add(new Gabarit(
                 1L, "Jour normal", List.of(new VacationType(LocalTime.of(10, 0), LocalTime.of(14, 0), false))));
         edition.ajustements.put(TypeContrainteAdHoc.AFFINITE, 2);
         return edition;
@@ -587,7 +587,7 @@ class EditionDeltaComparatorTest {
         Edition b = base("E2");
         b.journeesTypes.set(
                 0,
-                new JourneeType(
+                new Gabarit(
                         7L,
                         "jour normal",
                         List.of(

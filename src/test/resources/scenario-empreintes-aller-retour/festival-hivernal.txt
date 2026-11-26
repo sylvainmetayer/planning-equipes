@@ -3607,7 +3607,7 @@
 .sections.consignes = null
 .sections.contraintes = null
 .sections.edition = null
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux.coupureRepasMidiDebut = 12:00
 .sections.parametresLegaux.coupureRepasMidiFin = 14:00
 .sections.parametresLegaux.coupureRepasMinutes = 60

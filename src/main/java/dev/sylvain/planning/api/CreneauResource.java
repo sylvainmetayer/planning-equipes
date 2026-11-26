@@ -3,9 +3,9 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.referentiel.CreneauGridService;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.DiagnosticGrille;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RapportGrille;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux;
 import dev.sylvain.planning.service.referentiel.GrilleDepuisFenetres;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
@@ -33,10 +33,11 @@ import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * CRUD of the timeslot grid, plus the grid read as a whole: a recurrence
- * rule that adds a series at once, the verdict on what is there, and the
- * diagnostic of what it looks like — the same operations the MCP tools
- * offer an assistant, reachable from the Créneaux screen.
+ * CRUD of the timeslot grid, plus the grid read as a whole: the verdict on
+ * what is there and the diagnostic of what it looks like — the same
+ * operations the MCP tools offer an assistant, reachable from the Créneaux
+ * screen. The recurrence and derivation routes are the 3.x paths of the
+ * generator ({@link GenerateurCreneauxResource}, ADR 0126), kept until 5.0.
  */
 @Path("/creneaux")
 @Produces(MediaType.APPLICATION_JSON)
@@ -45,9 +46,12 @@ public class CreneauResource {
 
     private final ReferenceDataService referenceDataService;
 
+    private final GenerateurCreneaux generateur;
+
     @Inject
-    public CreneauResource(ReferenceDataService referenceDataService) {
+    public CreneauResource(ReferenceDataService referenceDataService, GenerateurCreneaux generateur) {
         this.referenceDataService = referenceDataService;
+        this.generateur = generateur;
     }
 
     @GET
@@ -70,8 +74,8 @@ public class CreneauResource {
             Set<LocalDate> exclusions,
             List<FenetreHoraire> fenetres) {
 
-        CreneauGridService.RegleRecurrence regle() {
-            return new CreneauGridService.RegleRecurrence(
+        GenerateurCreneaux.RegleRecurrence regle() {
+            return new GenerateurCreneaux.RegleRecurrence(
                     jours, dateDebut, dateFin, joursSemaine, dates, exclusions, fenetres);
         }
     }
@@ -80,8 +84,8 @@ public class CreneauResource {
     @Schema(requiredProperties = {"nombreGeneres"})
     public record RapportRecurrence(int nombreGeneres, List<Creneau> creneaux, RapportGrille controle) {
 
-        static RapportRecurrence of(ReferenceDataService.RecurrenceGrille resultat) {
-            return new RapportRecurrence(resultat.creneaux().size(), resultat.creneaux(), resultat.controle());
+        static RapportRecurrence of(GenerateurCreneaux.Generation resultat) {
+            return new RapportRecurrence(resultat.nombreGeneres(), resultat.creneaux(), resultat.controle());
         }
     }
 
@@ -91,8 +95,9 @@ public class CreneauResource {
      */
     @POST
     @Path("/recurrence/apercu")
+    @Deprecated
     public RapportRecurrence previewRecurrence(RecurrenceRequest requete) {
-        return RapportRecurrence.of(referenceDataService.previewRecurrence(requete.regle()));
+        return RapportRecurrence.of(generateur.preview(GenerateurCreneaux.Demande.recurrence(requete.regle())));
     }
 
     /**
@@ -102,8 +107,9 @@ public class CreneauResource {
      */
     @POST
     @Path("/recurrence")
+    @Deprecated
     public RapportRecurrence createRecurrence(RecurrenceRequest requete) {
-        return RapportRecurrence.of(referenceDataService.createRecurrence(requete.regle()));
+        return RapportRecurrence.of(generateur.apply(GenerateurCreneaux.Demande.recurrence(requete.regle())));
     }
 
     /**
@@ -140,13 +146,12 @@ public class CreneauResource {
             List<LocalDate> joursSansFenetre,
             RapportGrille controle) {
 
-        static RapportDerivation of(ReferenceDataService.DerivationGrille resultat) {
-            GrilleDepuisFenetres.Derivation derivation = resultat.derivation();
+        static RapportDerivation of(GenerateurCreneaux.Generation resultat) {
             return new RapportDerivation(
-                    derivation.creneaux().size(),
-                    derivation.creneaux(),
-                    derivation.coupures(),
-                    derivation.joursSansFenetre(),
+                    resultat.nombreGeneres(),
+                    resultat.creneaux(),
+                    resultat.coupures(),
+                    resultat.joursSansFenetre(),
                     resultat.controle());
         }
     }
@@ -154,8 +159,10 @@ public class CreneauResource {
     /** The derivation, judged — nothing written. */
     @POST
     @Path("/derivation/apercu")
+    @Deprecated
     public RapportDerivation previewDerivation(DerivationRequest requete) {
-        return RapportDerivation.of(referenceDataService.previewDerivation(requete.parametres(), requete.remplacer()));
+        return RapportDerivation.of(
+                generateur.preview(GenerateurCreneaux.Demande.stands(requete.parametres(), requete.remplacer())));
     }
 
     /**
@@ -166,8 +173,10 @@ public class CreneauResource {
      */
     @POST
     @Path("/derivation")
+    @Deprecated
     public RapportDerivation applyDerivation(DerivationRequest requete) {
-        return RapportDerivation.of(referenceDataService.applyDerivation(requete.parametres(), requete.remplacer()));
+        return RapportDerivation.of(
+                generateur.apply(GenerateurCreneaux.Demande.stands(requete.parametres(), requete.remplacer())));
     }
 
     /** The grid's verdict — its own anomalies, the stand openings, the staffing. */

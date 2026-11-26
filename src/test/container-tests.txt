@@ -65,6 +65,7 @@ dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
 dev/sylvain/planning/api/FormationResourceTest.java
 dev/sylvain/planning/api/FrozenPastAcceptanceTest.java
 dev/sylvain/planning/api/GelReferentielResourceTest.java
+dev/sylvain/planning/api/GenerateurCreneauxResourceTest.java
 dev/sylvain/planning/api/GroupedVariablesResourceTest.java
 dev/sylvain/planning/api/HistoriqueResourceTest.java
 dev/sylvain/planning/api/HorlogeSimuleeRecetteTest.java
@@ -77,7 +78,6 @@ dev/sylvain/planning/api/ImportScenarioJourneesTypesTest.java
 dev/sylvain/planning/api/ImportScenarioPreservationTest.java
 dev/sylvain/planning/api/ImportScenarioTargetEditionTest.java
 dev/sylvain/planning/api/JourJResourceTest.java
-dev/sylvain/planning/api/JourneeTypeResourceTest.java
 dev/sylvain/planning/api/JoursFeriesResourceTest.java
 dev/sylvain/planning/api/KpiHistoriqueResourceTest.java
 dev/sylvain/planning/api/MailFinResolutionTest.java
@@ -132,6 +132,7 @@ dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
+dev/sylvain/planning/mcp/GenerateurCreneauxMcpToolsTest.java
 dev/sylvain/planning/mcp/PhaseEditionMcpToolsTest.java
 dev/sylvain/planning/mcp/McpApiKeyAuthenticationMechanismTest.java
 dev/sylvain/planning/mcp/McpKeyLockoutTest.java
@@ -177,6 +178,7 @@ dev/sylvain/planning/service/publication/ExclusionArchiveMigrationTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvExempleTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/CreneauCsvImportServiceTest.java
+dev/sylvain/planning/service/referentiel/GabaritsMigrationTest.java
 dev/sylvain/planning/service/referentiel/JourneeTypeCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/ReferenceDataServiceContrainteAdHocTest.java
 dev/sylvain/planning/service/referentiel/ReferenceDataServiceStandTest.java
