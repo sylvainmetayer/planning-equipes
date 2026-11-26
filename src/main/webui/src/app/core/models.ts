@@ -2612,7 +2612,7 @@ export interface DiffContrainte {
   variante: number | null;
 }
 
-/** `GET /api/planning/snapshots/compare` — a read of measured metrics, never a solve. */
+/** `GET /api/planning/versions/compare` — a read of measured metrics, never a solve. */
 export interface ComparaisonSnapshots {
   base: CoteComparaison;
   variante: CoteComparaison;
@@ -2789,7 +2789,7 @@ export interface Interruption {
   persistedScore: string | null;
 }
 
-/** `POST /api/planning/snapshots/{id}/restore` on success. */
+/** `POST /api/planning/versions/{id}/restore` on success. */
 export interface RestaurationSnapshot {
   restaure: boolean;
   affectations: number;

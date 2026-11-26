@@ -1,0 +1,18 @@
+<h1 class="page-title" i18n="@@nav.link.comparer">Comparer deux versions</h1>
+<mat-button-toggle-group class="page-onglets" [value]="views.onglet()" (change)="views.changer($event.value)"
+                         aria-label="Ce que l'on compare" i18n-aria-label="@@comparer.vue.label">
+  <mat-button-toggle value="versions">
+    <mat-icon>history</mat-icon>
+    <ng-container i18n="@@comparer.vue.versions">Versions du plan</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="editions">
+    <mat-icon>difference</mat-icon>
+    <ng-container i18n="@@comparer.vue.editions">Éditions</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (views.onglet() === 'editions') {
+  <app-comparer-editions-page />
+} @else {
+  <app-comparer-versions-view />
+}

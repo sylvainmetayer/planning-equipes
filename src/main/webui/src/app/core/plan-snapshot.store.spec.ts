@@ -93,7 +93,7 @@ describe('PlanSnapshotStore', () => {
     });
     // The plain restore never carries the override: forcing has to be asked for.
     expect(api.postPreservingHttpError).toHaveBeenCalledWith(
-      '/api/planning/snapshots/7/restore',
+      '/api/planning/versions/7/restore',
       {},
     );
   });
@@ -104,7 +104,7 @@ describe('PlanSnapshotStore', () => {
     await store.restaurer(7, true);
 
     expect(api.postPreservingHttpError).toHaveBeenCalledWith(
-      '/api/planning/snapshots/7/restore?forcer=true',
+      '/api/planning/versions/7/restore?forcer=true',
       {},
     );
   });
@@ -113,12 +113,12 @@ describe('PlanSnapshotStore', () => {
     api.get.mockResolvedValue([snapshot(1)]);
 
     await store.capturer('Essai');
-    expect(api.post).toHaveBeenCalledWith('/api/planning/snapshots', { libelle: 'Essai' });
+    expect(api.post).toHaveBeenCalledWith('/api/planning/versions', { libelle: 'Essai' });
     expect(store.snapshots()).toHaveLength(1);
 
     api.get.mockResolvedValue([]);
     await store.supprimer(1);
-    expect(api.delete).toHaveBeenCalledWith('/api/planning/snapshots/1');
+    expect(api.delete).toHaveBeenCalledWith('/api/planning/versions/1');
     expect(store.snapshots()).toHaveLength(0);
   });
 });

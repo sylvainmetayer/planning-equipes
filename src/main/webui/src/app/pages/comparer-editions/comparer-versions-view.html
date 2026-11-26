@@ -1,0 +1,46 @@
+<p class="comparer-sous-titre" i18n="@@comparerVersions.subtitle">
+  Deux versions du plan, ou une version et le plan en place : score, couverture, équité et écarts aux règles, mesurés
+  à la capture. Aucun calcul n'est lancé. La plus ancienne des deux sert de référence.
+</p>
+
+<div class="comparer-choix">
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@comparerVersions.field.premiere">Première version</mat-label>
+    <select matNativeControl [value]="first() ?? ''" (change)="choose('first', $any($event.target).value)">
+      <option value="" i18n="@@comparerVersions.choisir">Choisir…</option>
+      <option [value]="current" [selected]="first() === current" i18n="@@versions.courant">Plan en place</option>
+      @for (version of versions() ?? []; track version.id) {
+        <option [value]="version.id" [selected]="first() === '' + version.id">{{ label(version) }}</option>
+      }
+    </select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label i18n="@@comparerVersions.field.seconde">Seconde version</mat-label>
+    <select matNativeControl [value]="second() ?? ''" (change)="choose('second', $any($event.target).value)">
+      <option value="" i18n="@@comparerVersions.choisir">Choisir…</option>
+      <option [value]="current" [selected]="second() === current" i18n="@@versions.courant">Plan en place</option>
+      @for (version of versions() ?? []; track version.id) {
+        <option [value]="version.id" [selected]="second() === '' + version.id">{{ label(version) }}</option>
+      }
+    </select>
+  </mat-form-field>
+</div>
+
+@if (chargement() && !versions()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="erreur()" tone="error" />
+@if (sameTwice()) {
+  <p class="locked-hint" role="status" i18n="@@comparerVersions.memeVersion">
+    Choisissez deux versions différentes.
+  </p>
+}
+
+@if (sides(); as pair) {
+  <app-comparaison-panel [base]="pair.base" [variante]="pair.variante" [snapshots]="versions() ?? []"
+                         (closed)="close()" />
+} @else if (!sameTwice() && !chargement()) {
+  <p class="empty-hint" i18n="@@comparerVersions.vide">
+    Choisissez deux versions pour les comparer. Les versions s'enregistrent depuis le Solveur, onglet « Versions du plan ».
+  </p>
+}

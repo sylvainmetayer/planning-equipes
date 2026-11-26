@@ -271,15 +271,15 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seuls les cinq derniers instantanés automatiques sont conservés par édition.`,
+          text: $localize`:@@aide.results.previousPlan:Un calcul relancé repart du plan enregistré et ne peut pas finir en dessous de lui à données égales. Il peut quand même le dégrader si le référentiel a changé entre-temps, ou si vous avez recommencé de zéro. La page Solveur affiche donc le score d'avant à côté de celui d'après et signale une résolution moins bonne. Un dur toujours à zéro ne veut pas dire que rien n'a été perdu : l'écart se lit sur le medium. « Revenir au plan d'avant » remet le planning précédent ; ne tardez pas, seules les cinq dernières versions prises avant un calcul sont conservés par édition.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : ce sont les instantanés, sur la page Versions du plan, qui gardent les autres. Une capture est prise automatiquement avant chaque résolution. Un plan que vous voulez garder se met de côté explicitement, avec « Enregistrer cet état » et un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison. Restaurer pendant une résolution est refusé par le serveur : la résolution écraserait le plan qu'on vient de remettre en place.`,
+          text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : ce sont les versions, sur la page Versions du plan, qui gardent les autres. Une version est prise automatiquement avant chaque résolution. Un plan que vous voulez garder se met de côté explicitement, avec « Enregistrer cet état » et un libellé : celle-là n'est jamais purgée, et sert de terme de comparaison. Restaurer pendant une résolution est refusé par le serveur : la résolution écraserait le plan qu'on vient de remettre en place.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.results.fraicheur:Chaque instantané indique s'il est encore à jour. « Périmé » veut dire que les données (stands, animateurs, créneaux, paramètres, règles) ont été modifiées après la capture, et l'infobulle donne la date. Le restaurer reste possible, avec une confirmation à part : remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis. Le plus souvent, mieux vaut relancer une résolution.`,
+          text: $localize`:@@aide.results.fraicheur:Chaque version indique s'il est encore à jour. « Périmé » veut dire que les données (stands, animateurs, créneaux, paramètres, règles) ont été modifiées après la capture, et l'infobulle donne la date. Le restaurer reste possible, avec une confirmation à part : remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis. Le plus souvent, mieux vaut relancer une résolution.`,
         },
         {
           kind: 'definitions',

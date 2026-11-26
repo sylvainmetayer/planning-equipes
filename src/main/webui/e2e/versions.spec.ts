@@ -1,7 +1,7 @@
-// « Versions du plan » (issue #702): the snapshots and the finished solves in
-// one table, the comparator as a panel beside it. What only a browser proves:
-// two ticked rows open the panel, the address keeps the pair, and the three
-// former screens land here.
+// « Versions du plan » (issue #702) and « Comparer deux versions » (issue #272):
+// the versions and the finished solves in one table, the comparator on its own
+// screen. What only a browser proves: two ticked rows open that screen, the
+// address keeps the pair, and the former screens land on their successor.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedPlanning } from './support';
@@ -15,7 +15,7 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   await repartirDeLaReference(admin);
   await seedPlanning(admin);
   for (const libelle of LIBELLES) {
-    const capture = await admin.post('/api/planning/snapshots', { data: { libelle } });
+    const capture = await admin.post('/api/planning/versions', { data: { libelle } });
     expect(capture.ok(), await capture.text()).toBe(true);
   }
 });
@@ -24,7 +24,7 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
-test('deux lignes cochées ouvrent la comparaison à côté du tableau, et l’adresse la garde', async ({
+test('deux lignes cochées ouvrent « Comparer deux versions », et l’adresse garde la paire', async ({
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
@@ -43,11 +43,15 @@ test('deux lignes cochées ouvrent la comparaison à côté du tableau, et l’a
   await ligne(LIBELLES[1]).getByRole('checkbox').check();
   await comparer.click();
 
+  // « Comparer deux versions » is a screen of its own, the pair in its address.
+  await expect(page).toHaveURL(/\/comparer\?vue=versions&comparer=\d+(%2C|,)\d+/);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Comparer deux versions' }),
+  ).toBeVisible();
   const panneau = page.getByRole('complementary', { name: 'Comparaison' });
   await expect(panneau).toBeVisible();
   await expect(panneau).toContainText(LIBELLES[0]);
   await expect(panneau).toContainText(LIBELLES[1]);
-  await expect(page).toHaveURL(/comparer=\d+%2C\d+|comparer=\d+,\d+/);
 
   // A reload reopens the same comparison.
   await page.reload();
@@ -59,6 +63,11 @@ test('deux lignes cochées ouvrent la comparaison à côté du tableau, et l’a
     .click();
   await expect(page.getByRole('complementary', { name: 'Comparaison' })).toHaveCount(0);
   await expect(page).not.toHaveURL(/comparer=/);
+
+  // The editions are the other view of the same screen.
+  await page.getByRole('radio', { name: 'Éditions' }).click();
+  await expect(page).toHaveURL(/vue=editions/);
+  await expect(page.locator('.delta-choix')).toBeVisible();
   await page.context().close();
 });
 
@@ -69,5 +78,8 @@ test('les anciennes adresses des versions mènent à la nouvelle page', async ({
     await expect(page, ancienne).toHaveURL(/\/solveur\?onglet=versions$/);
     await expect(page.getByRole('heading', { level: 2, name: 'Versions du plan' })).toBeVisible();
   }
+  // The editions' comparison, now a view of « Comparer deux versions », keeps its pair.
+  await page.goto('/editions/comparer?a=E1&b=E2');
+  await expect(page).toHaveURL(/\/comparer\?vue=editions&a=E1&b=E2/);
   await page.context().close();
 });

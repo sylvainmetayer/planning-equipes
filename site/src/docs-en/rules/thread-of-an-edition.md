@@ -84,7 +84,7 @@ The application publishes nothing outside, sends no message and opens no espace 
 | Lock | The schedule of a person, a stand or a day, which no solve will touch any more |
 | Manual adjustment | An exception set by hand: a person unavailable on a given day, two people not to be put together, an imposed assignment |
 | Consigne | A closure imposed from outside (a prefectoral order, a heatwave) applied to all stands for a few dates |
-| Snapshot | A copy of the schedule set aside, which you can put back in place later |
+| Version | A copy of the schedule set aside (by hand, before a solve or at publication), which you can put back in place later |
 | CSV, ICS, PDF | The file formats: CSV opens in a spreadsheet, ICS is added to a calendar (phone, Outlook, Google), PDF is printed |
 | Scenario file | A file that holds a whole edition, to copy or share it |
 | Webhook | A message the application sends by itself to another tool of the team (Slack, Discord...) |

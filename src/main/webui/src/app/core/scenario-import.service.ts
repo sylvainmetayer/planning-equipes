@@ -210,12 +210,12 @@ export class ScenarioImportService {
         $localize`:@@dataSetup.snapshotBefore.libelle:Avant ${intitule}:action:`,
       );
       this.notifications.notify({
-        title: $localize`:@@dataSetup.impact.instantane:Instantané du plan enregistré avant l'import.`,
+        title: $localize`:@@dataSetup.impact.instantane:Version du plan enregistrée avant l'import.`,
         variant: 'info',
       });
     } catch (error) {
       this.notifications.notify({
-        title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
+        title: $localize`:@@dataSetup.snapshotBefore.failed:Version non enregistrée`,
         message: errorMessage(error),
         variant: 'error',
       });

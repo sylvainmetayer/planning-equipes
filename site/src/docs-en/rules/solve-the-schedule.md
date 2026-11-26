@@ -65,10 +65,10 @@ To understand why a seat stays empty or a rule gives way, see [Understand a stuc
 
 ## Keep versions of the plan
 
-*Solver*, *Plan versions* tab, gathers in a single table the finished solves and the snapshots of the edition, newest first, with the result of each in sentences (nothing nominative).
+*Solver*, *Plan versions* tab, gathers in a single table the finished solves and the versions of the edition, newest first, with the result of each in sentences (nothing nominative).
 
-- A **snapshot** sets a schedule aside and puts it back later. One is taken automatically before each solve; putting back an outdated one asks for a confirmation that names the cause.
-- Two ticked versions, or one version and the plan in place, are compared side by side: score, coverage, fairness and rule breaches, across all editions on request.
+- A **version** sets a schedule aside and puts it back later. It has an origin, written on its row: *manual* ("Save this state"), *before a solve* (taken automatically before each solve) or *published* (the plan the staff received). Putting back an outdated one asks for a confirmation that names the cause.
+- Two ticked versions, or one version and the plan in place, open in *Compare two versions*: score, coverage, fairness and rule breaches, across all editions on request. The address keeps the pair, to share it.
 - Each solve keeps the weighting of the rules under which it was started, and the comparator warns when two plans were solved under different weights.
 - The solve measurements survive the deletion of the edition.
 

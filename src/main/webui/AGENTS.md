@@ -81,8 +81,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `buildOffMenuLinks()` the **routes served but listed in no group** —
   `/debug` (raw technical information, reached by Ctrl+K or its address),
   `/editions` (« Gérer »), `/aide` (the toolbar's icon),
-  `/nouveautes` (the foot of the menu), `/editions/comparer` (opened from the
-  Éditions page) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
+  `/nouveautes` (the foot of the menu), `/comparer` (opened from the
+  Versions and Éditions pages) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
   three knows. The standalone routes `/login`, `/mot-de-passe` (the page of the mailed single-use link,
   ADR 0094: the token rides in the URL fragment, the page makes the one call that
@@ -465,10 +465,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `?jour=&stand=`, the totals per game category, and the CSV without any
   person), `/versions` (a redirect to `/solveur?onglet=versions`, the
   Solveur's second tab: « Versions du
-  plan » — the finished solves and the snapshots of the edition in one
+  plan » — the finished solves and the versions of the edition (each saying
+  its `origine`: manual, before a solve, published; ADR 0108, read from
+  `/api/planning/versions`, no longer the `/snapshots` alias) in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
-  edition's; two ticked rows, or one and « Plan en place », open the A/B
-  comparator as a panel beside the table, `?comparer=a,b` keeping the pair;
+  edition's; two ticked rows, or one and « Plan en place », open
+  `/comparer?vue=versions&comparer=a,b` (a 3.x `?comparer=` on this tab is
+  sent there);
   `/kpi`, `/instantanes` and `/comparateur` redirect there — `/kpi?edition=*`
   to `?editions=toutes` —, the replay of the former Autopsie is gone;
   under the table, `pages/versions/edition-precedente.ts` says the Réalisé vs
@@ -488,9 +491,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a plan is computed or to the grid narrowed to the day, and to the grid with
   its layers),
   `/disponibilites` (a redirect to `/animateurs?onglet=disponibilites`: what the animateurs
-  declared), `/editions`, `/editions/comparer` (« Comparer deux éditions » — the
+  declared), `/editions`, `/comparer` (« Comparer deux versions » — one screen,
+  `pages/comparer-editions/comparer-page.ts`, two views chosen by `?vue=`
+  through `ongletHote`'s `vue` key: `versions` (default,
+  `comparer-versions-view.ts`, two lists over `GET /api/planning/versions/comparables`
+  and the A/B comparator of `pages/versions/comparaison-panel.ts`, the pair in
+  `?comparer=a,b`, the older side the reference) and `editions` — the former
+  `/editions/comparer`, which redirects there with its `?a=&b=` — the
   referential delta of `GET /api/editions/{a}/delta/{b}`, the pair in `?a=&b=`,
-  served without a menu entry and opened from the Éditions page: a summary
+  served without a menu entry and opened from the Versions and Éditions pages: a summary
   sentence, the banner of a duplication without the people, the two Volumétries
   side by side, one foldable panel per family, each line saying what matched it
   and opening its fiche in the edition holding it through `EditionStore.openIn`,

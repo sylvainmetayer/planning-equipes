@@ -62,10 +62,10 @@ Pour comprendre pourquoi une place reste vide ou une règle cède, voir [Compren
 
 ## Garder des versions du plan
 
-*Solveur*, onglet *Versions du plan*, réunit dans un seul tableau les résolutions terminées et les instantanés de l'édition, du plus récent au plus ancien, avec le résultat de chacun en phrases (rien de nominatif).
+*Solveur*, onglet *Versions du plan*, réunit dans un seul tableau les résolutions terminées et les versions de l'édition, du plus récent au plus ancien, avec le résultat de chacun en phrases (rien de nominatif).
 
-- Un **instantané** met un planning de côté et le remet en place plus tard. Une capture est prise automatiquement avant chaque résolution ; en remettre un périmé demande une confirmation qui nomme la cause.
-- Deux versions cochées, ou une version et le plan en place, se comparent côte à côte : score, couverture, équité et écarts aux règles, toutes éditions confondues sur demande.
+- Une **version** met un planning de côté et le remet en place plus tard. Elle a une origine, écrite sur sa ligne : *manuelle* (« Enregistrer cet état »), *avant calcul* (prise automatiquement avant chaque résolution) ou *publiée* (le plan que les animateurs ont reçu). En remettre une périmée demande une confirmation qui nomme la cause.
+- Deux versions cochées, ou une version et le plan en place, s'ouvrent dans *Comparer deux versions* : score, couverture, équité et écarts aux règles, toutes éditions confondues sur demande. L'adresse garde la paire, pour la partager.
 - Chaque résolution garde le dosage des règles sous lequel elle a été lancée, et le comparateur prévient quand deux plans ont été calculés sous des poids différents.
 - Les mesures des résolutions survivent à la suppression de l'édition.
 

@@ -23,8 +23,8 @@ export class InstantaneAvantAction {
   async proposer(intitule: string): Promise<void> {
     const veut = await this.confirm.ask({
       title: $localize`:@@dataSetup.snapshotBefore.title:Enregistrer le plan actuel d'abord ?`,
-      message: $localize`:@@dataSetup.snapshotBefore.message:${intitule}:action: va remplacer les données, et avec elles le planning résolu. Un instantané permet de le retrouver ensuite.`,
-      confirmLabel: $localize`:@@dataSetup.snapshotBefore.confirm:Enregistrer un instantané`,
+      message: $localize`:@@dataSetup.snapshotBefore.message:${intitule}:action: va remplacer les données, et avec elles le planning résolu. Une version permet de le retrouver ensuite.`,
+      confirmLabel: $localize`:@@dataSetup.snapshotBefore.confirm:Enregistrer une version`,
     });
     if (!veut) {
       return;
@@ -35,7 +35,7 @@ export class InstantaneAvantAction {
       );
     } catch (error) {
       this.notifications.notify({
-        title: $localize`:@@dataSetup.snapshotBefore.failed:Instantané non enregistré`,
+        title: $localize`:@@dataSetup.snapshotBefore.failed:Version non enregistrée`,
         message: errorMessage(error),
         variant: 'error',
       });
