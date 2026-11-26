@@ -40,7 +40,9 @@ import org.junit.jupiter.api.Test;
  *
  * <p>{@code consignes-resolues-avant-4-0.txt} holds one line per shipped file,
  * written by running this class with the 3.x resolver on the last commit that
- * had it ({@code -Dconsignes.resolues.generer=...}). It is never regenerated.</p>
+ * had it ({@code -Dconsignes.resolues.generer=...}). It is never regenerated
+ * from the plages: a shipped scenario that changes on main is read again with
+ * the layer, on main, and only then compared.</p>
  */
 class ConsigneAsPlagesEquivalenceTest {
 

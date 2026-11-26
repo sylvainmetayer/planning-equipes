@@ -1,6 +1,7 @@
 # One line per shipped scenario under the two consignes of ConsigneAsPlagesEquivalenceTest: name, SHA-256
-# of the open segments and seats the 3.x consigne layer gave (origin/main 22d6a4ff), seat count.
-# Written once by that test with -Dconsignes.resolues.generer; never regenerated.
+# of the open segments and seats the 3.x consigne layer gave (origin/main 22d6a4ff, re-read on a094e0dc
+# once gamme-27 was removed: every other line unchanged), seat count.
+# Written by that test with -Dconsignes.resolues.generer, the layer put back in lay(); never from the plages.
 extreme-01-3j-30stands-1000animateurs-surdotation 7e6b3cfc4faeb638f729e2273b41385832fe5f7ce9d6ab544e688ace6be6aa71 211
 extreme-02-30j-150stands-1000animateurs-mois bca3590408afa48c6190e050d641e19e24de5dd6c4aee8be7967b3b8944fe301 6362
 extreme-03-120j-40stands-84animateurs-saison f7b19920ce784d63f7da09af59e5bb13834c5ca996aa9823aa040aa4972e435e 5064
@@ -44,7 +45,6 @@ gamme-23-30j-100stands-144animateurs-ad-hoc-souhaits 688d8d426faf07571b087ccb3d3
 gamme-24-30j-120stands-260animateurs-mineurs-emplacements 9d8d8a9fdc110f8a62de271a12032d567aa7afa7e2d63bfced49a8a23de6b177 6064
 gamme-25-30j-150stands-320animateurs-edition-complete 462f502efce5c82365b5a4b9f3b7c584e579f9a72cc332279d0acdd551bcb304 5116
 gamme-26-infaisable-sous-effectif SANS-OBJET
-gamme-27-infaisable-affectation-forcee-jour-indisponible SANS-OBJET
 gamme-28-infaisable-mur-des-six-jours 146c57e93b55c6db273f8ddcdaeb1f25d6bf4e5e335bc3ad28dab6219adfac8e 18
 gamme-29-infaisable-mineurs-en-soiree SANS-OBJET
 gamme-30-infaisable-coupure-repas SANS-OBJET
