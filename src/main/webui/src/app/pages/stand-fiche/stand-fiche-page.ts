@@ -17,7 +17,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { StandsApi } from '../../core/api/stands-api';
 import { isInformationalAnomaly } from '../../core/horaire-stand';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
@@ -32,11 +31,13 @@ import { formatHeure } from '../../core/time-of-day';
 import { typologieLabels } from '../../core/typologie-colors';
 import { consumeQueryParam, readSort, sortQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { GelNotice } from '../../shared/gel-notice';
 import { StatusMessage } from '../../shared/status-message';
-import { anomalyLabel, scheduleRows } from '../stands/stand-detail';
+import { anomalyLabel } from '../stands/stand-detail';
 import { StandFormData, StandFormDialog } from '../stands/stand-form-dialog';
 import { sortStands, standCoverage, standOpenings } from '../stands/stand-order';
-import { StandGridEditor } from './stand-grid-editor';
+import { StandModeleEditor } from './stand-modele-editor';
+import { StandPlagesEditor } from './stand-plages-editor';
 import { HhmmPipe } from '../../shared/hhmm-pipe';
 
 /** One seat of this stand nobody holds, as the fiche links it to the Siège panel. */
@@ -51,12 +52,11 @@ interface EmptySeat {
  * « Fiche stand » (`/stands/:id`), the symmetric of the fiche animateur: one
  * stand on one page. The head says what it is — its game categories, its
  * location, its headcounts, its levels — and « Modifier l'identité » opens the
- * stand form cut down to those fields. Below, its grid day × timeslot, edited
- * in place and saved as the Horaires des stands grid saves it; the anomalies of its
- * openings; once a plan is computed, its seats, the empty ones opened in the
+ * stand form cut down to those fields. Below, its recurring model, edited in
+ * place, and the dated plages it unfolds into, beside the ones typed by hand
+ * (ADR 0104); the anomalies of its openings; once a plan is computed, its seats, the empty ones opened in the
  * Siège panel of the Journée; « Comparer avec… » and the history of its
- * changes; and, folded, the « Règles » its grid compacts into, for whoever
- * reads or writes the condensed form.
+ * changes.
  *
  * `?modifier=1` opens the identity form on arrival: the `?edit=` links of the
  * application land here.
@@ -72,8 +72,10 @@ interface EmptySeat {
     MatProgressBarModule,
     MatSelectModule,
     RouterLink,
+    GelNotice,
     StatusMessage,
-    StandGridEditor,
+    StandModeleEditor,
+    StandPlagesEditor,
   ],
   templateUrl: './stand-fiche-page.html',
   // The stand form's schedule sections draw with the stands' stylesheet.
@@ -91,7 +93,6 @@ export class StandFichePage {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly standsApi = inject(StandsApi);
-  private readonly journeesTypesApi = inject(JourneesTypesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly confirm = inject(ConfirmService);
   protected readonly store = inject(ReferenceDataStore);
@@ -99,7 +100,7 @@ export class StandFichePage {
   private readonly gel = injectGelReferentiel();
 
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
-  /** A solve, or a STANDS freeze: the grid reads, it does not write (ADR 0052). */
+  /** A solve, or a STANDS freeze: the model and the plages read, they do not write (ADR 0052). */
   protected readonly gridLocked = computed(
     () => this.editingLocked() || this.gel.isFrozen('STANDS'),
   );
@@ -138,21 +139,6 @@ export class StandFichePage {
   protected readonly anomalies = computed(
     () => this.rapport()?.anomalies.filter((anomalie) => anomalie.standId === this.standId()) ?? [],
   );
-
-  /** Date → the day template's name, for the grid's rows; nothing when it cannot be read. */
-  private readonly templatesData = resource({
-    loader: () => this.journeesTypesApi.etat().catch(() => null),
-  });
-  protected readonly templates = computed<ReadonlyMap<string, string>>(() => {
-    const etat = this.templatesData.hasValue() ? this.templatesData.value() : null;
-    if (!etat) {
-      return new Map();
-    }
-    const names = new Map(etat.journeesTypes.map((type) => [type.id, type.nom]));
-    return new Map(
-      etat.calendrier.map((entry) => [entry.date, names.get(entry.journeeTypeId) ?? '']),
-    );
-  });
 
   /** The persisted plan, for the seats of this stand; nothing before a solve, or when unreadable. */
   private readonly plan = resource({
@@ -201,11 +187,6 @@ export class StandFichePage {
       label: labels.get(id) ?? id,
     }));
   });
-  protected readonly rules = computed(() => {
-    const stand = this.stand();
-    return stand ? scheduleRows(stand) : [];
-  });
-
   /** The Stands table's sort, carried in this page's URL: what « précédent / suivant » walks. */
   private readonly listSort = readSort(this.route.snapshot.queryParamMap);
   protected readonly listParams = Object.fromEntries(
@@ -231,7 +212,13 @@ export class StandFichePage {
     this.ordered().filter((stand) => stand.id !== this.standId()),
   );
 
-  private readonly grid = viewChild(StandGridEditor);
+  private readonly modele = viewChild(StandModeleEditor);
+
+  /** The day the plages are narrowed to, carried in the address (`?jour=`). */
+  protected readonly jour = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('jour') ?? '')),
+    { initialValue: this.route.snapshot.queryParamMap.get('jour') ?? '' },
+  );
 
   protected readonly anomalyLabel = anomalyLabel;
   protected readonly isInformationalAnomaly = isInformationalAnomaly;
@@ -248,14 +235,14 @@ export class StandFichePage {
     });
   }
 
-  /** Unsaved cells in the grid would vanish with the page: asked first. */
+  /** Unsaved rules of the model would vanish with the page: asked first. */
   canLeave(): Promise<boolean> {
-    if (!this.grid()?.modified()) {
+    if (!this.modele()?.modified()) {
       return Promise.resolve(true);
     }
     return this.confirm.ask({
-      title: $localize`:@@standFiche.quitter.titre:Abandonner les cases modifiées ?`,
-      message: $localize`:@@standFiche.quitter.message:La grille de ce stand a des cases modifiées non enregistrées.`,
+      title: $localize`:@@standFiche.quitter.titre:Abandonner les règles modifiées ?`,
+      message: $localize`:@@standFiche.quitter.message:Le modèle récurrent de ce stand a des règles modifiées non enregistrées.`,
       confirmLabel: $localize`:@@competences.quitter.label:Abandonner`,
       danger: true,
     });
@@ -264,11 +251,6 @@ export class StandFichePage {
   /** « Modifier l'identité » : the stand form, cut down to the fields of its identity. */
   protected async editIdentity(): Promise<void> {
     await this.openForm(true);
-  }
-
-  /** « Modifier les règles » : the whole form, for whoever writes the condensed form. */
-  protected async editRules(): Promise<void> {
-    await this.openForm(false);
   }
 
   private async openForm(identityOnly: boolean): Promise<void> {
@@ -298,14 +280,22 @@ export class StandFichePage {
   }
 
   /**
-   * The grid was saved: the server rewrote the stand's rules, its headcounts
-   * and its stamp. The head and the « Règles » read the stand again, and so
-   * does the next « Modifier l'identité », whose save is refused on the
-   * former stamp.
+   * The model or a plage was written: the server rewrote the stand's plages
+   * and its stamp. The sections read the stand again, and so does the next
+   * « Modifier l'identité », whose save is refused on the former stamp.
    */
-  protected onGridSaved(): void {
+  protected onScheduleChanged(): void {
     this.reloadOpenings();
     void this.store.reload(['stands']).catch(() => undefined);
+  }
+
+  /** The day filter of the plages, written to the address without a history entry. */
+  protected chooseDay(jour: string): void {
+    void this.router.navigate([], {
+      queryParams: { jour: jour || null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   /** « Comparer avec… » : the comparator, this stand as the reference. */

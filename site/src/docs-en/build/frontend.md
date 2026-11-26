@@ -85,7 +85,7 @@ Two places display a map: the "Locations" tab of `/stands` (all the locations, a
 
 ## The only place where the frontend reimplements domain logic
 
-`app/core/horaire-stand.ts` resolves a stand's hours rules into day-by-day windows, to preview a rule without a round trip. The server no longer stores any rule since 4.0 ([decision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)): the rules this editor saves are converted into plages by the server, over the days of the event, until the plages screen replaces it. Its Java counterpart is `HorairesRecurrents`, for the migration and the old files ([stand hours and windows](horaires-et-fenetres-des-stands.md)).
+`app/core/horaire-stand.ts` resolves a stand's hours rules into day-by-day windows, to preview a rule without a round trip. The server no longer stores any rule since 4.0 ([decision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)): the rules this editor saves (the recurring model of the stand fiche) are kept as the model and converted into plages by the server, over the days of the event; the plage list of the same fiche writes the plages typed by hand through their routes. Its Java counterpart is `HorairesRecurrents`, for the migration and the old files ([stand hours and windows](horaires-et-fenetres-des-stands.md)).
 
 ## CSS
 

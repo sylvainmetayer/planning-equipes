@@ -58,7 +58,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/editions/comparer', marker: 'Comparer deux éditions', sheet: 'delta-choix' },
   { path: '/stands', marker: 'Stands (' },
   { path: '/stands?onglet=lieux', marker: 'Lieux (', sheet: 'lieux-map-host' },
-  { path: '/stands/E2E-S1', marker: 'Horaires et effectifs', sheet: 'stand-grille' },
+  { path: '/stands/E2E-S1', marker: 'Plages datées', sheet: 'stand-plages' },
   { path: '/animateurs', marker: 'Animateurs (', sheet: 'competence-row' },
   { path: '/animateurs/E2E-A', marker: 'Identité et contact', sheet: 'fiche-section' },
   { path: '/animateurs?onglet=competences', marker: 'Compétences', sheet: 'competences-legende' },

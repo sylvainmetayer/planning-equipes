@@ -80,8 +80,7 @@ test('les indications du formulaire de stand ne débordent sur aucun champ', asy
   await page.setViewportSize(VIEWPORT);
   await page.goto(`/stands/${SEED.standDemandeur}`);
 
-  await page.getByRole('heading', { name: 'Règles', exact: true }).click();
-  await page.getByRole('button', { name: 'Modifier les règles' }).click();
+  await page.getByRole('button', { name: "Modifier l'identité" }).click();
   const dialog = await dialogueOuvert(page);
 
   await expectNoHintOverAField(page, dialog);

@@ -80,21 +80,26 @@
     }
 
     @if (stand(); as current) {
-      <!-- 1. The grid, edited in place: its row of the Horaires des stands grid, day by day -->
-      <details class="fiche-section" id="stand-section-horaires" open>
-        <summary><h2 i18n="@@standFiche.section.horaires">Horaires et effectifs</h2></summary>
-        <app-status-message [text]="openingsError()" tone="error" />
-        @if (rapport(); as report) {
-          <app-stand-grid-editor [standId]="current.id" [rapport]="report" [templates]="templates()"
-                                 [locked]="gridLocked()" (saved)="onGridSaved()" />
-        } @else if (!openingsError()) {
-          <mat-progress-bar mode="indeterminate" />
-        }
+      <app-gel-notice family="STANDS" />
+
+      <!-- 1. The recurring model, edited in place: the rule the stand keeps -->
+      <details class="fiche-section" id="stand-section-modele" open>
+        <summary><h2 i18n="@@standFiche.section.modele">Modèle récurrent</h2></summary>
+        <app-stand-modele-editor [stand]="current" [locked]="gridLocked()" (saved)="onScheduleChanged()" />
       </details>
 
-      <!-- 2. What the openings analysis says of this stand -->
+      <!-- 2. The dated plages: the model's, and the ones typed by hand -->
+      <details class="fiche-section" id="stand-section-plages" open>
+        <summary><h2 i18n="@@standFiche.section.plages">Plages datées</h2></summary>
+        <app-stand-plages-editor [standId]="current.id" [plages]="current.plages ?? []" [effectifMax]="current.effectifMax"
+                                 [jour]="jour()" [locked]="gridLocked()" (jourChange)="chooseDay($event)"
+                                 (changed)="onScheduleChanged()" />
+      </details>
+
+      <!-- 3. What the openings analysis says of this stand -->
       <details class="fiche-section" id="stand-section-anomalies" open>
         <summary><h2 i18n="@@standFiche.section.anomalies">Anomalies d'ouverture</h2></summary>
+        <app-status-message [text]="openingsError()" tone="error" />
         @if (anomalies().length === 0) {
           <p class="empty-hint" i18n="@@detail.stand.aucuneAnomalie">Aucune : les fenêtres tombent toutes dans une vacation</p>
         } @else {
@@ -108,7 +113,7 @@
         }
       </details>
 
-      <!-- 3. Once a plan is computed: its seats, the empty ones in the Siège panel -->
+      <!-- 4. Once a plan is computed: its seats, the empty ones in the Siège panel -->
       <details class="fiche-section" id="stand-section-plan" open>
         <summary><h2 i18n="@@standFiche.section.plan">Après calcul</h2></summary>
         @if (cause(); as probleme) {
@@ -132,22 +137,6 @@
             </ul>
           }
         }
-      </details>
-
-      <!-- 4. The condensed form of the grid, for whoever reads or writes it -->
-      <details class="fiche-section" id="stand-section-regles">
-        <summary><h2 i18n="@@standFiche.section.regles">Règles</h2></summary>
-        <p class="empty-hint" i18n="@@standFiche.regles.aide">La forme condensée de la grille : les règles et exceptions qu'elle enregistre.</p>
-        <dl class="detail-rows">
-          @for (row of rules(); track $index) {
-            <dt>{{ row.label }}</dt>
-            <dd>{{ row.value }}</dd>
-          }
-        </dl>
-        <button matButton="tonal" type="button" [disabled]="editingLocked()" (click)="editRules()">
-          <mat-icon>rule</mat-icon>
-          <ng-container i18n="@@standFiche.regles.modifier">Modifier les règles</ng-container>
-        </button>
       </details>
     }
   </mat-card-content>
