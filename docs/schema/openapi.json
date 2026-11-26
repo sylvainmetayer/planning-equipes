@@ -6307,41 +6307,6 @@
           }
         }
       },
-      "LigneCompactage" : {
-        "required" : [ "compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres", "reglesElaguees" ],
-        "type" : "object",
-        "properties" : {
-          "standId" : {
-            "type" : "string"
-          },
-          "fenetresAvant" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "reglesApres" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "exceptionsApres" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "ecartMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "compacte" : {
-            "type" : "boolean"
-          },
-          "reglesElaguees" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "raison" : {
-            "type" : "string"
-          }
-        }
-      },
       "LigneCompetences" : {
         "required" : [ "animateurId", "resultat" ],
         "type" : "object",
@@ -8433,33 +8398,6 @@
           },
           "controle" : {
             "$ref" : "#/components/schemas/RapportGrille"
-          }
-        }
-      },
-      "RapportCompactage" : {
-        "required" : [ "applique", "fenetresApres", "fenetresAvant", "standsCompactes" ],
-        "type" : "object",
-        "properties" : {
-          "applique" : {
-            "type" : "boolean"
-          },
-          "standsCompactes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "fenetresAvant" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "fenetresApres" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "stands" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/LigneCompactage"
-            }
           }
         }
       },
@@ -19928,32 +19866,6 @@
           }
         },
         "summary" : "Create Stand",
-        "tags" : [ "Stand Resource" ]
-      }
-    },
-    "/api/stands/compactage-horaires" : {
-      "post" : {
-        "parameters" : [ {
-          "name" : "appliquer",
-          "in" : "query",
-          "schema" : {
-            "type" : "boolean",
-            "default" : false
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/RapportCompactage"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Compact Horaires",
         "tags" : [ "Stand Resource" ]
       }
     },

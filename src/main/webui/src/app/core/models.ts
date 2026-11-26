@@ -210,39 +210,6 @@ export interface FenetreHoraire {
   effectif?: number | null;
 }
 
-/**
- * What `POST /api/stands/compactage-horaires` reports, per stand: dated windows
- * before, rules and exceptions after, plus why a stand was left alone. A call
- * with `appliquer=false` returns the same shape without writing anything.
- */
-export interface LigneCompactage {
-  standId: string;
-  fenetresAvant: number;
-  reglesApres: number;
-  exceptionsApres: number;
-  /**
-   * Difference in minutes between the open segments before and after — non-zero
-   * only where a `23:59` window becomes a genuine "until closing time" one.
-   */
-  ecartMinutes: number;
-  compacte: boolean;
-  /**
-   * Closures the pruning took away: the rule that only shut the days the
-   * openings did not name, and the "shut, all day" markers the rules already
-   * imply. Openings are never pruned.
-   */
-  reglesElaguees: number;
-  raison: string;
-}
-
-export interface RapportCompactage {
-  applique: boolean;
-  standsCompactes: number;
-  fenetresAvant: number;
-  fenetresApres: number;
-  stands: LigneCompactage[];
-}
-
 /* ------------------ Ouvertures des stands (`/api/ouvertures-stands`) ------------------ */
 
 /** How much of a day's amplitude a stand covers. */

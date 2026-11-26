@@ -71,7 +71,7 @@ public class StandMcpTools {
             name = "lister_stands",
             description = "Liste les stands, avec leurs typologies proposées, effectifs requis, "
                     + "réserve majeurs/premium, niveau d'effort, emplacement et plages datées "
-                    + "(fermetures/ouvertures). Sans limite, renvoie tous les stands ; total dit "
+                    + "(fermetures/ouvertures) et modèle d'horaires récurrents. Sans limite, renvoie tous les stands ; total dit "
                     + "toujours combien il y en a.",
             annotations =
                     @Tool.Annotations(
@@ -343,7 +343,10 @@ public class StandMcpTools {
      */
     private static void writeRule(Stand stand, HorairesRecurrents.Regle regle) {
         List<HorairesRecurrents.Regle> regles = new ArrayList<>(stand.getHoraires());
-        regles.add(regle);
+        // A rule identical to one already there changes nothing: the write then sends the model back as it is.
+        if (regles.stream().noneMatch(existante -> existante.withoutId().equals(regle.withoutId()))) {
+            regles.add(regle);
+        }
         stand.setHoraires(regles);
     }
 
@@ -595,6 +598,26 @@ public class StandMcpTools {
         return written(referenceDataService.writeStand(standId, stand));
     }
 
+    @Tool(
+            name = "effacer_horaires_stand",
+            description = "Efface le modèle d'horaires d'un stand (ses règles récurrentes) et les plages datées que "
+                    + "ce modèle a posées sur les jours de l'édition. Les plages saisies à la main (fermetures, "
+                    + "ouvertures) restent en place.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = true,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    WrittenStandView clearStandHoraires(
+            @ToolArg(description = "Id du stand") String standId,
+            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        Stand stand = findStand(standId);
+        // An empty list clears the model; StandService withdraws the plages it had unfolded.
+        stand.setHoraires(List.of());
+        return written(referenceDataService.writeStand(standId, stand));
+    }
+
     /* ----------------------------- Emplacements ---------------------------- */
 
     @Tool(
@@ -817,8 +840,12 @@ public class StandMcpTools {
                 .orElseThrow(() -> new NoSuchElementException("Emplacement introuvable : " + id));
     }
 
-    private static WrittenStandView written(WrittenStand ecrit) {
-        return new WrittenStandView(toView(ecrit.stand()), WarningCodes.of(ecrit.avertissements()));
+    private WrittenStandView written(WrittenStand ecrit) {
+        // A write that sent no model, or sent the stored one back, answers without it: read it again.
+        Stand ecrite = ecrit.stand().horairesEnvoyes() == null
+                ? findStand(ecrit.stand().getId())
+                : ecrit.stand();
+        return new WrittenStandView(toView(ecrite), WarningCodes.of(ecrit.avertissements()));
     }
 
     static StandView toView(Stand stand) {
@@ -847,7 +874,24 @@ public class StandMcpTools {
                 stand.getEmplacement() == null ? null : stand.getEmplacement().getId(),
                 fermetures,
                 ouvertures,
+                stand.getHoraires().stream().map(StandMcpTools::toView).toList(),
                 stand.getModifieLe());
+    }
+
+    private static RegleView toView(HorairesRecurrents.Regle regle) {
+        return new RegleView(
+                regle.mode(),
+                regle.jours(),
+                regle.joursSemaine(),
+                regle.dateDebut(),
+                regle.dateFin(),
+                regle.dates(),
+                regle.fenetres().stream()
+                        .map(fenetre -> fenetre.getHeureDebut() + "-"
+                                + (fenetre.getHeureFin() == null ? "" : fenetre.getHeureFin())
+                                + (fenetre.getEffectif() == null ? "" : "@" + fenetre.getEffectif()))
+                        .toList(),
+                regle.motif());
     }
 
     static EmplacementView toView(Emplacement emplacement) {
@@ -886,7 +930,22 @@ public class StandMcpTools {
             String emplacementId,
             List<PlageView> fermetures,
             List<PlageView> ouvertures,
+            List<RegleView> horaires,
             Instant modifieLe) {}
+
+    /**
+     * A rule of the stand's model (ADR 0104), its windows in the syntax {@code ajouter_horaire_stand} reads:
+     * {@code « 10:00-12:00@2,14:00- »} comes back as {@code ["10:00-12:00@2", "14:00-"]}.
+     */
+    public record RegleView(
+            ModeHoraire mode,
+            TypeJoursHoraire jours,
+            Set<DayOfWeek> joursSemaine,
+            LocalDate dateDebut,
+            LocalDate dateFin,
+            Set<LocalDate> dates,
+            List<String> fenetres,
+            String motif) {}
 
     /**
      * A dated exception window; a {@code null} {@code heureFin} means "until

@@ -73,7 +73,6 @@ describe('StandsPage', () => {
   };
   const api = { get: vi.fn() };
   const standsApi = {
-    compactSchedules: vi.fn(),
     openings: vi.fn(() =>
       Promise.resolve({
         jours: [],
@@ -93,7 +92,6 @@ describe('StandsPage', () => {
       stub.mockClear();
     }
     api.get.mockReset();
-    standsApi.compactSchedules.mockReset();
     confirm.ask.mockReset();
     notifications.notify.mockReset();
     dialog.open.mockClear();
@@ -414,72 +412,6 @@ describe('StandsPage', () => {
     });
   });
 
-  describe('compacting the opening hours', () => {
-    it('runs a dry run first and writes nothing when there is nothing to compact', async () => {
-      const page = createPage();
-      standsApi.compactSchedules.mockResolvedValue({
-        standsCompactes: 0,
-        fenetresAvant: 0,
-        fenetresApres: 0,
-      });
-
-      await page['compacterHoraires']();
-
-      expect(standsApi.compactSchedules).toHaveBeenCalledExactlyOnceWith(false);
-      expect(confirm.ask).not.toHaveBeenCalled();
-      expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'info' }),
-      );
-    });
-
-    it('shows the trade before writing, and writes nothing when it is refused', async () => {
-      const page = createPage();
-      standsApi.compactSchedules.mockResolvedValue({
-        standsCompactes: 3,
-        fenetresAvant: 24,
-        fenetresApres: 6,
-      });
-      confirm.ask.mockResolvedValue(false);
-
-      await page['compacterHoraires']();
-
-      expect(confirm.ask).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('24') }),
-      );
-      expect(standsApi.compactSchedules).toHaveBeenCalledOnce();
-      expect(crud.reload).toHaveBeenCalledOnce();
-    });
-
-    it('applies the compaction once confirmed, then reloads and reports', async () => {
-      const page = createPage();
-      standsApi.compactSchedules.mockResolvedValue({
-        standsCompactes: 3,
-        fenetresAvant: 24,
-        fenetresApres: 6,
-      });
-      crud.reload.mockClear();
-
-      await page['compacterHoraires']();
-
-      expect(standsApi.compactSchedules).toHaveBeenLastCalledWith(true);
-      expect(crud.reload).toHaveBeenCalledOnce();
-      expect(notifications.notify).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'success' }),
-      );
-    });
-
-    it('lowers the in-flight flag whether the round-trip succeeds or fails', async () => {
-      const page = createPage();
-      standsApi.compactSchedules.mockRejectedValue(new Error('Compactage refusé.'));
-
-      await page['compacterHoraires']();
-
-      expect(page['compactageEnCours']()).toBe(false);
-      expect(crud.reportError).toHaveBeenCalledOnce();
-      expect(notifications.notify).not.toHaveBeenCalled();
-    });
-  });
-
   it('exposes the editing lock as the job service sees it, not as its own copy', () => {
     const page = createPage();
 
@@ -589,13 +521,6 @@ describe('StandsPage table', () => {
         {
           provide: StandsApi,
           useValue: {
-            compactSchedules: vi.fn(() =>
-              Promise.resolve({
-                standsCompactes: 0,
-                fenetresAvant: 0,
-                fenetresApres: 0,
-              }),
-            ),
             openings: vi.fn(() =>
               Promise.resolve({
                 jours: [],
@@ -726,15 +651,13 @@ describe('StandsPage table', () => {
     );
   });
 
-  it('greys out the writing actions while a solve is running, the horaires compaction included', async () => {
+  it('greys out the writing actions while a solve is running', async () => {
     await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
     editingLocked.set(true);
     await fixture.whenStable();
 
     expect((await action(0, 'Modifier')).disabled).toBe(true);
     expect((await action(0, 'Supprimer')).disabled).toBe(true);
-    // The compaction rewrites every stand's horaires: it is a write like any other.
-    expect((await moreMenuItem('Compacter les horaires')).disabled).toBe(true);
     expect(boutonCarte('Ajouter').disabled).toBe(true);
   });
 
@@ -748,7 +671,6 @@ describe('StandsPage table', () => {
     expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
     expect(boutonCarte('Ajouter').disabled).toBe(true);
     expect(boutonCarte('Édition groupée').disabled).toBe(true);
-    expect((await moreMenuItem('Compacter les horaires')).disabled).toBe(true);
     expect((await action(0, 'Supprimer')).disabled).toBe(true);
     // A rename or a new location stays open: the form shows the frozen fields read-only.
     expect((await action(0, 'Modifier')).disabled).toBe(false);

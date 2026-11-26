@@ -57,7 +57,7 @@ class StandPlagesMigrationTest {
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
-    static void migrateUpToV152() throws SQLException {
+    static void migrateUpToV153() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -68,7 +68,7 @@ class StandPlagesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("152")
+                .target("153")
                 .load()
                 .migrate();
     }

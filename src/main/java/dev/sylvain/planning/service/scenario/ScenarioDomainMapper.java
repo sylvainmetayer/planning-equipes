@@ -283,14 +283,10 @@ final class ScenarioDomainMapper {
                             plage.mode() == ModeHoraire.OUVERTURE ? plage.effectif() : null))
                     .collect(Collectors.toCollection(ArrayList::new)));
         }
-        // Always set, even empty: the import replaces the stand, so a file carrying no model must clear
-        // the one an existing stand of the same id holds (null would mean « keep the stored rules »).
-        stand.setHoraires(
-                dto.horaires() == null
-                        ? List.of()
-                        : dto.horaires().stream()
-                                .map(ScenarioDomainMapper::regle)
-                                .toList());
+        if (dto.horaires() != null) {
+            stand.setHoraires(
+                    dto.horaires().stream().map(ScenarioDomainMapper::regle).toList());
+        }
         return stand;
     }
 

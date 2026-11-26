@@ -30,6 +30,7 @@ class ScenarioModelUnfoldTest {
                       - { heureDebut: "10:00", heureFin: "12:00" }
                 plages:
                   - { date: 2026-07-08, mode: OUVERTURE, heureDebut: "14:00", heureFin: "16:00" }
+            animateurs: []
             """;
 
     @Test

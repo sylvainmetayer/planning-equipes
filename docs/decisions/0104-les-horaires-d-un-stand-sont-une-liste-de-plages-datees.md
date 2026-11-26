@@ -1,7 +1,7 @@
 # 0104 — Les horaires d'un stand sont une liste de plages datées
 
-- **Statut** : accepté, implémenté (modèle, migration, format YAML) · l'API, les outils MCP et l'écran suivent dans leurs propres changements
-- **Date** : novembre 2026 · révisé le 26 novembre : « modèle gardé, déplié ensuite » (§ 1, 3, 5, 6, 7)
+- **Statut** : accepté, implémenté (modèle, migration, format YAML) · l'écran suivra dans son propre changement
+- **Date** : novembre 2026 · révisé le 26 novembre : « modèle gardé, déplié ensuite » (§ 1, 3, 5, 6, 7, 8)
 - **Portée** : modèle du stand, résolution des horaires, migration de la base, format du scénario YAML (version 5), sauvegardes avant vidage
 
 ## Contexte
@@ -85,6 +85,16 @@ l'application s'en souvenait.
    comme le fait déjà l'outil d'assistant `ajouter_horaire_stand`. Une écriture
    sans `horaires` laisse le modèle tel quel, `horaires: []` l'efface. Jamais
    de refus, jamais de règle perdue en silence.
+
+8. **L'assistant voit et efface le modèle ; le compactage disparaît.** Les
+   vues MCP d'un stand (`lister_stands`, `consulter_stand`) portent le modèle
+   (`horaires`). `ajouter_horaire_stand` d'une règle identique à une règle
+   existante ne change rien. `effacer_horaires_stand` revient : il efface le
+   modèle **et** les plages que ce modèle a dépliées (recalculées comme au § 5,
+   sur les jours des créneaux et ceux que portent les plages), et garde les
+   plages saisies à la main. Le compactage des horaires (la route
+   `POST /api/stands/compactage-horaires`, l'outil `compacter_horaires_stands`)
+   est retiré dès la 4.0 : une plage datée n'a plus de règle à rejoindre.
 
 ## Ce que ça coûte
 

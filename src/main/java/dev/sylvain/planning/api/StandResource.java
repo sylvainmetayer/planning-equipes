@@ -2,7 +2,6 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
-import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
 import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
@@ -15,7 +14,6 @@ import dev.sylvain.planning.service.referentiel.WrittenStand;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -28,7 +26,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
- * CRUD of the stands, plus the compaction of their opening hours.
+ * CRUD of the stands, and the import of their opening hours as a matrix.
  */
 @Path("/stands")
 @Produces(MediaType.APPLICATION_JSON)
@@ -93,19 +91,6 @@ public class StandResource {
     @Path("/usages")
     public ReferenceUsage countStandUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countStandUsages(ids);
-    }
-
-    /**
-     * Nothing to compact since 4.0: a stand's schedule is a list of dated
-     * plages and there is no recurring rule left to fold them into (ADR 0104),
-     * so the answer is always the empty report. The route stays until the
-     * screen stops offering the action.
-     */
-    @POST
-    @Path("/compactage-horaires")
-    public HoraireCompaction.RapportCompactage compactHoraires(
-            @QueryParam("appliquer") @DefaultValue("false") boolean apply) {
-        return HoraireCompaction.nothing(apply);
     }
 
     /* ----------------------------- Matrix import ----------------------------- */

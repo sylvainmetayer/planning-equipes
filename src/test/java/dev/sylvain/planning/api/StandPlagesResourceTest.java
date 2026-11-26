@@ -261,20 +261,6 @@ class StandPlagesResourceTest {
         assertThat(readWindows(edition, stand, "ouvertures")).isEmpty();
     }
 
-    @Test
-    void theCompactionOfTheHorairesHasNothingLeftToDo() {
-        String edition = createEdition("Compactage vide");
-
-        given().header(HEADER, edition)
-                .contentType("application/json")
-                .when()
-                .post("/api/stands/compactage-horaires")
-                .then()
-                .statusCode(200)
-                .body("standsCompactes", org.hamcrest.Matchers.is(0))
-                .body("stands", org.hamcrest.Matchers.empty());
-    }
-
     private static String createEdition(String name) {
         return given().contentType("application/json")
                 .body("{\"nom\":\"" + name + "\"}")

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /** CRUD of the stand referential, plus the two views the rest of the app reads it through. */
@@ -311,10 +312,16 @@ public class StandService {
             return;
         }
         Set<LocalDate> jours = HorairesRecurrents.datesConcernees(creneaux.list());
-        if (jours.isEmpty()) {
+        if (jours.isEmpty() && !regles.isEmpty()) {
             return;
         }
-        Set<String> unfoldedBefore = HorairesRecurrents.expand(stored, List.of(), jours).stream()
+        // Clearing the model also withdraws what it unfolded, on days a deleted timeslot may have left behind.
+        Set<LocalDate> joursDepliables = new TreeSet<>(jours);
+        stand.getPlages().stream()
+                .map(PlageStand::getDate)
+                .filter(Objects::nonNull)
+                .forEach(joursDepliables::add);
+        Set<String> unfoldedBefore = HorairesRecurrents.expand(stored, List.of(), joursDepliables).stream()
                 .map(StandService::key)
                 .collect(Collectors.toSet());
         List<PlageStand> handMade = stand.getPlages().stream()

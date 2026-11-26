@@ -526,6 +526,45 @@ class ReferentielMcpToolsTest {
     }
 
     @Test
+    void theModelIsShownAddedOnceAndClearedWithWhatItUnfoldedButNotTheHandMadePlages() {
+        dev.sylvain.planning.domain.Creneau jour =
+                referenceDataService.createCreneau(new dev.sylvain.planning.domain.Creneau(
+                        null,
+                        1,
+                        LocalDate.of(2026, 7, 19),
+                        java.time.LocalTime.of(9, 0),
+                        java.time.LocalTime.of(20, 0)));
+        String stand = standTools
+                .createStand("Modèle", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
+                .stand()
+                .id();
+        try {
+            standTools.addStandOpening(stand, "2026-07-20", "14:00", "16:00", "Main", null, "E1");
+            standTools.addStandHoraire(stand, "OUVERTURE", "10:00-12:00@2", null, null, null, null, null, null, "E1");
+            // The same rule again: the model keeps one rule, nothing else moves.
+            StandView deux = standTools
+                    .addStandHoraire(stand, "OUVERTURE", "10:00-12:00@2", null, null, null, null, null, null, "E1")
+                    .stand();
+            assertThat(deux.horaires()).hasSize(1);
+            assertThat(deux.horaires().getFirst().fenetres()).containsExactly("10:00-12:00@2");
+            assertThat(standTools.getStand(stand, "E1").horaires()).hasSize(1);
+            assertThat(deux.ouvertures()).hasSize(2);
+
+            StandView efface = standTools.clearStandHoraires(stand, "E1").stand();
+            assertThat(efface.horaires()).isEmpty();
+            assertThat(efface.ouvertures())
+                    .extracting(StandMcpTools.PlageView::motif)
+                    .containsExactly("Main");
+            // Idempotent.
+            assertThat(standTools.clearStandHoraires(stand, "E1").stand().ouvertures())
+                    .hasSize(1);
+        } finally {
+            referenceDataService.deleteCreneau(jour.getId());
+            standTools.deleteStand(stand, "E1");
+        }
+    }
+
+    @Test
     void aZeroOrMalformedWindowHeadcountIsRefused() {
         String stand = standTools
                 .createStand("Village", null, List.of("STRATEGIE"), 1, 4, false, false, null, null, "E1")
