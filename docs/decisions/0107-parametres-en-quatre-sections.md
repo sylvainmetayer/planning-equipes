@@ -25,15 +25,20 @@ nouveau réglage hésite sur la sienne.
    elles sont retirées en 5.0.
 3. **Deux outils MCP**, `consulter_parametres` et `modifier_parametres`, avec
    un argument `section` (ADR 0100). Un champ qui n'est pas de la section
-   demandée est refusé plutôt qu'ignoré. Le journal écrit une action unique,
-   `PARAMETRES_MODIFIES` ; les routes REST gardent une action par section.
+   demandée est refusé (400) plutôt qu'ignoré, par l'outil comme par
+   `PUT /api/parametres/<section>` ; les anciennes racines gardent la lecture
+   tolérante de la 3.x. Le journal écrit une action par section, la même
+   qu'il s'agisse de la route REST ou de l'outil ; `PARAMETRES_MODIFIES` ne
+   nomme qu'un appel refusé sur une section inconnue.
 4. **Le scénario YAML** range `parametresLegaux`, `parametresQualite` et
    `parametresSolveur` sous `parametres` (`legal`, `organisation`,
    `instance`) : maillon 2 → 3 de la chaîne (ADR 0101). Les notifications n'y
    étaient pas et n'y entrent pas.
-5. **Les tables ne changent pas.** Chaque section garde sa table typée, son
-   `modifie_le` et sa précondition d'écriture ; il n'y a donc pas de migration
-   SQL.
+5. **Les tables ne changent pas.** Chaque section garde sa table typée et
+   s'écrit entière, comme en 3.x ; il n'y a donc pas de migration SQL. Ces
+   tables n'ont pas de `modifie_le` : la dernière écriture d'une section
+   l'emporte, comme avant. Une précondition d'écriture par section reste
+   possible plus tard, une colonne par table, sans toucher aux autres.
 
 ## Alternatives écartées
 

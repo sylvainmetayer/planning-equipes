@@ -70,6 +70,21 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v2ToV3KeepsASectionTheFileAlreadyCarriesAndSaysWhatItDropped() {
+        Map<String, Object> document = document();
+        document.put("parametres", Map.of("legal", Map.of("dureePauseMinutes", 20)));
+        document.put("parametresLegaux", Map.of("dureePauseMinutes", 30));
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioParametresLink.convert(document, warnings);
+
+        assertThat(converted)
+                .doesNotContainKey("parametresLegaux")
+                .containsEntry("parametres", Map.of("legal", Map.of("dureePauseMinutes", 20)));
+        assertThat(warnings).singleElement().asString().contains("parametresLegaux", "parametres.legal");
+    }
+
+    @Test
     void v2ToV3LeavesADocumentWithoutParameterSectionsAlone() {
         assertThat(ScenarioParametresLink.convert(document(), new java.util.ArrayList<>()))
                 .isEqualTo(document());

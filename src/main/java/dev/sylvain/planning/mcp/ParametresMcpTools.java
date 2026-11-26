@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WrittenContrainteAdHoc;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
@@ -44,9 +45,12 @@ public class ParametresMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
+    private final CurrentAction currentAction;
+
     @Inject
-    ParametresMcpTools(ReferenceDataService referenceDataService) {
+    ParametresMcpTools(ReferenceDataService referenceDataService, CurrentAction currentAction) {
         this.referenceDataService = referenceDataService;
+        this.currentAction = currentAction;
     }
 
     private static final String SECTIONS = "legal, organisation, notifications, instance";
@@ -209,6 +213,13 @@ public class ParametresMcpTools {
         given.put("delaiRelanceHeures", delaiRelanceHeures);
         given.put("ancienneteEchangeJours", ancienneteEchangeJours);
         String chosen = section(section);
+        // The journal line names the section, as the REST route of that section does.
+        switch (chosen) {
+            case "legal" -> currentAction.action("PARAMETRES_LEGAUX_MODIFIES");
+            case "organisation" -> currentAction.action("PARAMETRES_QUALITE_MODIFIES");
+            case "notifications" -> currentAction.action("PARAMETRES_NOTIFICATIONS_MODIFIES");
+            default -> currentAction.action("PARAMETRES_SOLVEUR_MODIFIES");
+        }
         given.values().removeIf(Objects::isNull);
         given.keySet().stream()
                 .filter(name -> !OWN_ARGUMENTS.get(chosen).contains(name))

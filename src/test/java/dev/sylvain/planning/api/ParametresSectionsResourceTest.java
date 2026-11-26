@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -69,5 +70,29 @@ class ParametresSectionsResourceTest {
                 .then()
                 .statusCode(200)
                 .body("ancienneteEchangeJours", equalTo(4));
+    }
+
+    @Test
+    void aFieldOfAnotherSectionIsRefusedBySectionButStillIgnoredByTheFormerRoot() {
+        String courant = given().header("X-Edition-Id", "E1")
+                .get("/api/parametres/notifications")
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString();
+        String avecIntrus = courant.replaceFirst("\\{", "{\"dureePauseMinutes\":25,");
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body(avecIntrus)
+                .put("/api/parametres/notifications")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("dureePauseMinutes"));
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body(avecIntrus)
+                .put("/api/parametres-notifications")
+                .then()
+                .statusCode(200);
     }
 }

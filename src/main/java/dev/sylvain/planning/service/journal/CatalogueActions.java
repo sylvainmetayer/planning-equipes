@@ -808,6 +808,9 @@ public final class CatalogueActions {
         outil("importer_scenario", SCENARIO_IMPORTE);
         outil("importer_scenario_yaml", SCENARIO_IMPORTE);
 
+        // The tool states its section's action (CurrentAction), as each REST
+        // section route has its own; this one only names a call refused on an
+        // unknown section.
         outil("modifier_parametres", PARAMETRES_MODIFIES);
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);
         outil("desactiver_contrainte", CONTRAINTE_DESACTIVEE);

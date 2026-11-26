@@ -9,7 +9,8 @@ import java.util.Map;
  * {@code parametres:} key, as the application's own settings are now laid out
  * ({@code parametresLegaux} → {@code parametres.legal}, {@code parametresQualite}
  * → {@code parametres.organisation}, {@code parametresSolveur} →
- * {@code parametres.instance}). Nothing is dropped.
+ * {@code parametres.instance}). Nothing is dropped, except an old key whose
+ * section the file already carries, which is said.
  */
 final class ScenarioParametresLink {
 
@@ -31,7 +32,10 @@ final class ScenarioParametresLink {
         }
         RENAMED.forEach((old, section) -> {
             if (result.containsKey(old)) {
-                parametres.putIfAbsent(section, result.remove(old));
+                Object value = result.remove(old);
+                if (parametres.putIfAbsent(section, value) != null) {
+                    warnings.add("« " + old + " » ignoré : le fichier porte déjà « parametres." + section + " ».");
+                }
             }
         });
         result.put("parametres", parametres);

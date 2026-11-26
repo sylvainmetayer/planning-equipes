@@ -1,10 +1,15 @@
 package dev.sylvain.planning.api;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import dev.sylvain.planning.domain.ContactOrganisation;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import jakarta.inject.Inject;
@@ -15,7 +20,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 
 /**
  * The edition's parameters, in four sections — {@code legal}, {@code organisation},
@@ -33,9 +40,32 @@ public class ParametresResource {
 
     private final ReferenceDataService referenceDataService;
 
+    private final ObjectMapper objectMapper;
+
     @Inject
-    public ParametresResource(ReferenceDataService referenceDataService) {
+    public ParametresResource(ReferenceDataService referenceDataService, ObjectMapper objectMapper) {
         this.referenceDataService = referenceDataService;
+        this.objectMapper = objectMapper;
+    }
+
+    /**
+     * A section's body, read strictly: a field that is not of {@code section}
+     * is a 400 naming it, as {@code modifier_parametres} refuses it over MCP,
+     * rather than a write that silently ignores it. The 3.x aliases keep the
+     * lenient reading their clients were written against.
+     */
+    private <T> T section(JsonNode body, Class<T> type, String section) {
+        try {
+            return objectMapper
+                    .readerFor(type)
+                    .with(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .readValue(body == null ? objectMapper.nullNode() : body);
+        } catch (UnrecognizedPropertyException e) {
+            throw new BusinessError.Invalid("Le champ « " + e.getPropertyName() + " » n'est pas de la section « "
+                    + section + " » : passez par la section qui le porte.");
+        } catch (java.io.IOException e) {
+            throw new BusinessError.Invalid("Corps illisible pour la section « " + section + " ».");
+        }
     }
 
     /** The four sections at once. */
@@ -70,7 +100,13 @@ public class ParametresResource {
      */
     @PUT
     @Path("/parametres/legal")
-    public Response updateLegal(ParametresLegaux parametres) {
+    public Response updateLegal(
+            @RequestBody(required = true, content = @Content(schema = @Schema(implementation = ParametresLegaux.class)))
+                    JsonNode body) {
+        return writeLegaux(section(body, ParametresLegaux.class, "legal"));
+    }
+
+    private Response writeLegaux(ParametresLegaux parametres) {
         return Response.ok(referenceDataService.updateParametresLegaux(parametres))
                 .build();
     }
@@ -91,7 +127,15 @@ public class ParametresResource {
     /** Saves them. Returns 400 with an explanation when a threshold could not mean anything. */
     @PUT
     @Path("/parametres/organisation")
-    public Response updateOrganisation(ParametresQualite parametres) {
+    public Response updateOrganisation(
+            @RequestBody(
+                            required = true,
+                            content = @Content(schema = @Schema(implementation = ParametresQualite.class)))
+                    JsonNode body) {
+        return writeQualite(section(body, ParametresQualite.class, "organisation"));
+    }
+
+    private Response writeQualite(ParametresQualite parametres) {
         return Response.ok(referenceDataService.updateParametresQualite(parametres))
                 .build();
     }
@@ -110,7 +154,15 @@ public class ParametresResource {
 
     @PUT
     @Path("/parametres/notifications")
-    public Response updateNotifications(ParametresNotifications parametres) {
+    public Response updateNotifications(
+            @RequestBody(
+                            required = true,
+                            content = @Content(schema = @Schema(implementation = ParametresNotifications.class)))
+                    JsonNode body) {
+        return writeNotifications(section(body, ParametresNotifications.class, "notifications"));
+    }
+
+    private Response writeNotifications(ParametresNotifications parametres) {
         return Response.ok(referenceDataService.updateParametresNotifications(parametres))
                 .build();
     }
@@ -130,7 +182,15 @@ public class ParametresResource {
      */
     @PUT
     @Path("/parametres/instance")
-    public SolverSettingsView updateInstance(ParametresSolveur parametres) {
+    public SolverSettingsView updateInstance(
+            @RequestBody(
+                            required = true,
+                            content = @Content(schema = @Schema(implementation = ParametresSolveur.class)))
+                    JsonNode body) {
+        return writeSolveur(section(body, ParametresSolveur.class, "instance"));
+    }
+
+    private SolverSettingsView writeSolveur(ParametresSolveur parametres) {
         return SolverSettingsView.of(
                 referenceDataService.updateParametresSolveur(parametres), referenceDataService.getSolverBudgetBounds());
     }
@@ -173,7 +233,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-legaux")
     public Response updateParametresLegaux(ParametresLegaux parametres) {
-        return updateLegal(parametres);
+        return writeLegaux(parametres);
     }
 
     /** @deprecated alias of {@code /parametres/organisation}, removed in 5.0 */
@@ -189,7 +249,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-qualite")
     public Response updateParametresQualite(ParametresQualite parametres) {
-        return updateOrganisation(parametres);
+        return writeQualite(parametres);
     }
 
     /** @deprecated alias of {@code /parametres/instance}, removed in 5.0 */
@@ -205,7 +265,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-solveur")
     public SolverSettingsView updateParametresSolveur(ParametresSolveur parametres) {
-        return updateInstance(parametres);
+        return writeSolveur(parametres);
     }
 
     /** @deprecated alias of {@code /parametres/notifications}, removed in 5.0 */
@@ -221,7 +281,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-notifications")
     public Response updateParametresNotifications(ParametresNotifications parametres) {
-        return updateNotifications(parametres);
+        return writeNotifications(parametres);
     }
 
     /**
