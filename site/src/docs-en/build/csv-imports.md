@@ -5,50 +5,24 @@ twin: comprendre/imports-csv
 
 You know what each CSV import writes, how a row recognises an existing record, which checks run before anything is written, and why some choices (absent columns, two-digit years, a full replacement that is refused) protect an edition's data.
 
-The YAML scenario describes a whole event and replaces the edition's reference data ([The YAML scenario file](scenario-yaml.md)). CSV imports do the opposite: they touch a single set of reference data, row by row, and delete nothing by default. They are what you use when an organiser turns up with a spreadsheet of volunteers. Everything is read and written in the edition named by `X-Edition-Id`.
+The YAML scenario describes a whole event and replaces the edition's reference data ([The YAML scenario file](scenario-yaml.md)). The only CSV import left does the opposite: it touches only the staff, row by row, and deletes nothing by default. It is what you use when an organiser turns up with a spreadsheet of volunteers. Everything is read and written in the edition named by `X-Edition-Id`.
 
 A volunteer spreadsheet is the typical case; to decide whether to leave the spreadsheet behind, see [spreadsheet or scheduling software](/tableur-ou-logiciel-de-planning/).
 
-The Import tab of the Files screen (`/fichiers`) gathers seven CSV imports, one card each, the open card being carried by `?cible=`. Five are short reference sets (game categories, locations, stands, timeslots, day templates), two are richer imports (staff, stand grid). Each reference screen opens the same card in a dialog through its "Import" button. The routes are `/api/<référentiel>/import-csv/analyse` (preview, nothing written), `/api/<référentiel>/import-csv` (write) and `/api/<référentiel>/import-csv/exemple`; the exact list is in the OpenAPI contract ([The reference data on the API side](api-referentiels.md)).
+The Import tab of the Files screen (`/fichiers`) gathers the YAML scenario, the staff CSV, the examples and the validator, one card each, the open card being carried by `?cible=`. The "Import" button of the Staff screen opens the CSV card in a dialog. The routes are `/api/animateurs/import-csv/analyse` (preview, nothing written), `/api/animateurs/import-csv` (write) and `/api/animateurs/import-csv/exemple`; the exact list is in the OpenAPI contract ([The reference data on the API side](api-referentiels.md)).
 
-## What the five short reference sets share
+## What 4.0 removed
 
-| Reference set | Required columns | Optional |
-| --- | --- | --- |
-| Game categories | `code`, `libelle` | `polyvalent` (the old `ninja` header is still read in 4.x) |
-| Locations | `code`, `nom` | `latitude`, `longitude` |
-| Stands | `code`, `nom`, `typologies` | `effectifMin`, `effectifMax` |
-| Timeslots | `date`, `heureDebut`, `heureFin` | `couverturePause` |
-| Day templates | `nom`, `vacations` | `dates` |
+Six imports are gone: the CSV of game categories, locations, stands, timeslots and day templates, and the stand grid matrix ([decision 0127](repo:docs/decisions/0127-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md)). The YAML file describes the whole edition; writing it once writes every reference set, in the order the application applies it, with a coherence check that six separate formats could not offer. The staff CSV stays, because a volunteer spreadsheet is the one file organisers already keep that carries people.
 
-Headers are recognised regardless of case and accents, and several values in one cell are separated by `|`, `;` or a comma. Imports go in the order the data depends on, and dates come before staff: an unavailability day that is imported is kept only if the edition already has the matching timeslot.
+Their eighteen routes (`/api/<référentiel>/import-csv`, `/analyse` and `/exemple`, for the five reference sets, and `/api/stands/import-grille` with its two siblings) answer `410 Gone`, whatever body is sent, with a message pointing at the YAML import: a script written for 3.x learns where to go instead of running into a `404`. They read and write nothing and no longer have a line in the action journal. On screen, a bookmark to one of their cards (`/fichiers?cible=stands`) lands on the Scenario card. The CSV exports are untouched: they serve a spreadsheet, and only the staff one reads back in.
 
-- An absent column, or an empty cell, erases nothing. A three-column file that renames stands touches neither their hours, nor their location, nor their flags. This is the additive-import doctrine of the skills grid ([ADR 0030](repo:docs/decisions/0030-grille-competences-import-additif.md)) applied to a record.
-- A row is recognised by its `code`, otherwise by its name, and a known row is updated instead of refused: re-importing a corrected file is the normal gesture. The `code` column is required but a cell may stay empty: the row then designates the only row of the edition that carries that name (that label, for a game category), regardless of case and accents, and keeps its code. Two homonyms refuse the row and ask for a code; an unknown name creates a row.
-- No `id` column is read and the export no longer writes one: identifiers are numbered within each edition ([ADR 0050](repo:docs/decisions/0050-identifiants-generes-par-edition.md)) and `S4` designates a different stand in the neighbouring edition. A file with an `id` column and no `code` column (an old export) is refused, with the instruction to rename the header.
-- A code is unique within the edition, contains no comma, semicolon or vertical bar, and does not have the shape of an identifier of its reference set (`S4` for a stand), so that it is never confused with the identifier the screens display.
-- A game category that a stand cites without it existing is created, with label and code equal to the cited value, and the preview names it before anything is written. The `typologies` column cites a game category by its code, or by its label when it has no code (which is what the export writes). A stand with no headcount is staffed by one person, which the preview also says.
-
-The preview writes nothing. The write re-reads the file and redoes every check. Each faulty row is refused on its own, with its reason, without blocking the others, and a refused row leaves nothing behind, not even the game category it cited.
-
-A paste from a spreadsheet is accepted on every card: the cells, separated by tabs, are rewritten as CSV with `;` and each cell in quotes, then sent as a `collage.csv` file. The quotes are necessary, because the server detects the separator by counting `,`, `;` and the tab outside quotes and must not mistake the commas of `09:00-12:00, 12:00-13:00 R` for it. Once an import is written, "See the N imported rows" opens the reference screen filtered by `?ids=`; "Show all" removes the filter.
-
-### Timeslots and day templates
-
-These two reference sets have no `code` that the file names, which decides their key:
-
-- A timeslot is recognised by its triplet `(date, heureDebut, heureFin)`. Its identifier is generated by the database and a scenario import reassigns it, so it does not travel. A row already present writes only its `couverturePause`, the rest being the key. An end earlier than or equal to the start runs past midnight, as in the form, but a start equal to the end is refused: it is a shift with no duration.
-- A day template is recognised by its `nom`, regardless of case. Its `vacations` fit on one line (`09:00-12:00, 12:00-13:00 R, 14:00-20:00`, `R` marking a meal relay), the same compact notation as the MCP tools. Its `dates` are merged into the calendar: a date the file names changes day template, a date it does not name keeps its own.
-
-The day template import moves no timeslot. A template is a generator, never the truth ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)): materialising the calendar remains the explicit "Apply" gesture of the Day templates screen, which first shows what it would change. That is also why this import does not mark the edition as modified since the last solve: nothing the solver reads has moved.
-
-### Dates and times
-
-Dates are read in the dialects a spreadsheet writes (`2026-07-10`, `10/07/2026`, `10-07-2026`, `10.07.2026`), and so are times (`09:00`, `9:00`, `9h`, `9h30`, `9`, `09:00:00`). A two-digit year is resolved towards the future (the last ten years and the next eighty-nine): on an edition date, `27` is next season, not 1927. This is the opposite of a date of birth, detailed below.
 
 ## The staff CSV import
 
 A partial import: it touches only staff, one row at a time, and deletes nothing unless asked to. Staff card of Files (`/fichiers?cible=animateurs`), "Import" button of the Staff page, routes `POST /api/animateurs/import-csv/analyse` (pure read-only preview) and `POST /api/animateurs/import-csv` (write).
+
+A paste from a spreadsheet is accepted on the card: the cells, separated by tabs, are rewritten as CSV with `;` and each cell in quotes, then sent as a `collage.csv` file. The quotes are needed because the server recognises the separator by counting `,`, `;` and the tab outside quotes and must not take a comma inside a cell for it. Once the import is written, "See the N imported rows" opens the staff screen filtered by `?ids=`; "Show all" removes the filter.
 
 ![Staff CSV import: preview, then write](repo:docs/diagrammes/import-csv.svg)
 
@@ -71,6 +45,10 @@ The file must be UTF-8. Excel in French still saves in Windows-1252: the browser
 The screen proposes a mapping from the headers, in French as in English, then lets you change everything, including clearing everything (an empty mapping sent explicitly is respected). It designates columns by their position, never by their name: a file can carry the same header twice, or none. A column already taken by another field is moved, never shared. An unmapped column is not an empty column: the field is not touched on existing records, which makes a three-column catch-up file harmless.
 
 `competences`, `souhaits` and `joursIndisponibles` accept several values per cell, separated by `|`, `;`, `,` or a line break, never `/`, which dates such as `18/07/2030` use. A skill is written `typologie` or `typologie:REFERENT`.
+
+### Dates and times
+
+Dates are read in the dialects a spreadsheet writes (`2026-07-10`, `10/07/2026`, `10-07-2026`, `10.07.2026`), and so are times (`09:00`, `9:00`, `9h`, `9h30`, `9`, `09:00:00`). A two-digit year is resolved towards the future (the last ten years and the next eighty-nine): on an edition date, `27` is next season, not 1927. This is the opposite of a date of birth, detailed below.
 
 ### The two-digit year is read, and reported
 
@@ -131,18 +109,6 @@ The preview counts what the deletion carries away (seats released, locks removed
 ### Two calls, one transaction
 
 Analysis and write are two endpoints, and the second receives the file rather than the report: it re-reads everything and replays every check, so a page reload, a replay or a hand-forged body lets no row past a check. The write is atomic (a single transaction), and the report never announces 148 rows written after a rollback. The file is processed in memory and never written to disk, because it carries names, dates of birth and sometimes minors. Two ceilings bound it: 1,000,000 characters and 5,000 data rows.
-
-## The stand grid import
-
-The Stand grid card (`/fichiers?cible=grille-stands`, `POST /api/stands/import-grille/analyse` then `POST /api/stands/import-grille`) imports the matrix that the organiser keeps in a workbook: stands in rows, days and timeslots in columns, one headcount per cell. It transposes the rules of the staff import (two calls, replayed, in memory, no deletion) and differs on three points ([ADR 0022](repo:docs/decisions/0022-import-de-la-grille-des-stands.md)):
-
-- the identity of a row is the stand's code, otherwise its exact name, never its identifier;
-- a column with no timeslot is ignored and listed, not refused;
-- a timeslot with no column keeps the stand's current cell, segments included: a stand that opens there only from 14:00 to 15:00, or at two successive headcounts, comes out as it was.
-
-A column narrower than its timeslot (seven workbook slices under four or five timeslots) writes a window at its own bounds and leaves the rest of the timeslot as it is: the workbook is imported column for column and the entry grid then shows the same columns. A band whose minute has only one digit (`9:5`) is refused rather than completed. The "Download the current grid as a template" button gives the edition as it stands, re-importable as is; the sample file is served by `GET /api/stands/import-grille/exemple`. The ceiling is 2,000 rows.
-
-The template writes its bands as `10h00-12h00` and not `10:00-12:00`, deliberately: Excel retypes `13:00-16:00` as the date `30/11/1999 13:16:00`, the band is lost and the file comes back with headers that no longer name any timeslot. Both forms are read on import, only the `h` form survives a round trip through a spreadsheet, and a test locks in the absence of `:` in the line of bands.
 
 ## The skills grid no longer goes through a file
 

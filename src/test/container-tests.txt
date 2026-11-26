@@ -77,6 +77,7 @@ dev/sylvain/planning/api/ImportScenarioContraintesTest.java
 dev/sylvain/planning/api/ImportScenarioJourneesTypesTest.java
 dev/sylvain/planning/api/ImportScenarioPreservationTest.java
 dev/sylvain/planning/api/ImportScenarioTargetEditionTest.java
+dev/sylvain/planning/api/ImportsRetiresResourceTest.java
 dev/sylvain/planning/api/JourJResourceTest.java
 dev/sylvain/planning/api/JoursFeriesResourceTest.java
 dev/sylvain/planning/api/KpiHistoriqueResourceTest.java
@@ -122,7 +123,6 @@ dev/sylvain/planning/api/SolverJobStreamResourceTest.java
 dev/sylvain/planning/api/SpaCacheControlTest.java
 dev/sylvain/planning/api/StaffingResourceTest.java
 dev/sylvain/planning/api/StaleWriteResourceTest.java
-dev/sylvain/planning/api/StandGrilleImportResourceTest.java
 dev/sylvain/planning/api/StandPlagesResourceTest.java
 dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
@@ -177,14 +177,11 @@ dev/sylvain/planning/service/notification/RelanceCollecteJobTest.java
 dev/sylvain/planning/service/publication/ExclusionArchiveMigrationTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvExempleTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvImportServiceTest.java
-dev/sylvain/planning/service/referentiel/CreneauCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/GabaritsMigrationTest.java
-dev/sylvain/planning/service/referentiel/JourneeTypeCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/ReferenceDataServiceContrainteAdHocTest.java
 dev/sylvain/planning/service/referentiel/ReferenceDataServiceStandTest.java
 dev/sylvain/planning/service/referentiel/ReferenceDataServiceSuppressionTest.java
 dev/sylvain/planning/service/referentiel/ReferentielCsvExportServiceTest.java
-dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/referentiel/WeightHistoryArchiveMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java

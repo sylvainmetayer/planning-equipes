@@ -6,7 +6,7 @@ Un scénario décrit un événement entier : référentiel, grille, équipe, ré
 
 ## Où se fait chaque geste
 
-Tout passe par l'écran Fichiers (`/fichiers`), qui réunit exporter, corriger et réimporter, ainsi que l'archive de fin d'événement. Ses trois onglets sont portés par `?onglet=importer|exporter|archive`, la carte ouverte de l'onglet Importer par `?cible=`. Les anciennes adresses `/imports`, `/exports`, `/export-csv` et `/validateur-yaml` y redirigent.
+Tout passe par l'écran Fichiers (`/fichiers`), qui réunit exporter, corriger et réimporter (le YAML est le classeur complet d'une édition, [ADR 0127](repo:docs/decisions/0127-le-yaml-est-le-classeur-complet-le-csv-ne-sert-qu-aux-animateurs.md)), ainsi que l'archive de fin d'événement. Ses trois onglets sont portés par `?onglet=importer|exporter|archive`, la carte ouverte de l'onglet Importer par `?cible=`. Les anciennes adresses `/imports`, `/exports`, `/export-csv` et `/validateur-yaml` y redirigent.
 
 | Geste | Adresse |
 | --- | --- |

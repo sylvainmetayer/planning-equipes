@@ -64,15 +64,11 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/animateurs?onglet=competences', marker: 'Compétences', sheet: 'competences-legende' },
   { path: '/creneaux', marker: 'Créneaux (', sheet: 'creneau-probleme' },
   { path: '/stands?onglet=typologies', marker: 'Typologies (' },
-  // Fichiers: three tabs, and under Importer one card per file (the
-  // referentials share a card, the two older imports are rendered as they are).
+  // Fichiers: three tabs, and under Importer one card per file (the scenario,
+  // the animateurs, the examples and the validator).
   { path: '/fichiers', marker: 'Fichiers', sheet: 'fichiers-onglets' },
-  { path: '/fichiers?cible=typologies', sheet: 'imports-onglets' },
-  { path: '/fichiers?cible=stands' },
-  // Les deux cartes du calendrier partagent la carte des référentiels, et
-  // leur marqueur vise ce que seule la carte visée dit.
-  { path: '/fichiers?cible=creneaux', marker: 'heureDebut' },
-  { path: '/fichiers?cible=journees-types', marker: 'relais repas' },
+  // A card withdrawn in 4.0 lands on the scenario card.
+  { path: '/fichiers?cible=stands', marker: 'Un fichier scénario', sheet: 'imports-onglets' },
   {
     // Le titre de l'écran est celui des onglets : le marqueur vise ce que
     // seule cette carte-ci dit.
@@ -80,7 +76,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     marker: 'date de naissance est obligatoire',
     sheet: 'import-compteurs',
   },
-  { path: '/fichiers?cible=grille-stands', sheet: 'import-compteurs' },
   { path: '/fichiers?cible=scenario', marker: 'Un fichier scénario' },
   { path: '/fichiers?cible=exemples', marker: 'Charger cet exemple', sheet: 'exemples-select' },
   {

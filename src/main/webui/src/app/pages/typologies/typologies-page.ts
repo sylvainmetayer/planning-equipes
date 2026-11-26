@@ -46,7 +46,6 @@ import {
 } from './usage-typologies';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { GelNotice } from '../../shared/gel-notice';
-import { ImportButton } from '../../shared/import-button';
 
 /**
  * Who references a typologie, counted before it can be deleted. Removing one
@@ -115,7 +114,6 @@ function usageVide(typologieId: string): UsageTypologie {
   selector: 'app-typologies-page',
   imports: [
     ImportedRowsFilter,
-    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatCheckboxModule,

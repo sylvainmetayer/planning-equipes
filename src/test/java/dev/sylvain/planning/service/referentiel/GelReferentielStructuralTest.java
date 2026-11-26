@@ -66,8 +66,6 @@ class GelReferentielStructuralTest {
             EmplacementService.class,
             AnimateurService.class,
             CompetencesGrilleService.class,
-            ReferentielCsvImportService.class,
-            StandGrilleImportService.class,
             AnimateurCsvImportService.class,
             ReferenceDataService.class,
             ScenarioImportService.class);
@@ -83,7 +81,6 @@ class GelReferentielStructuralTest {
             Map.entry("TypologieService#update(String,TypologieItem)", "update"),
             Map.entry("AnimateurService#update(String,Animateur)", "update"),
             Map.entry("AnimateurService#update(String,Animateur,Animateur)", "update"),
-            Map.entry("ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)", "apply"),
             Map.entry("AnimateurCsvImportService#apply(AnimateurCsvImportRequest)", "apply"),
             Map.entry("ScenarioImportService#importBundled(String)", "importScenario"),
             Map.entry("ScenarioImportService#importYaml(String)", "importScenario"),
@@ -149,9 +146,6 @@ class GelReferentielStructuralTest {
             Map.entry(
                     "ReferenceDataService#deleteCreneaux(Connection,Collection)",
                     "CreneauService#deleteInBulk(Connection,Collection)"),
-            Map.entry(
-                    "ReferenceDataService#importCsvReferentiel(ImportTarget,ReferentielCsvImportRequest)",
-                    "ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)"),
             Map.entry(
                     "ReferenceDataService#importTypologie(TypologieItem)", "TypologieService#importer(TypologieItem)"),
             Map.entry("ReferenceDataService#createTypologie(TypologieItem)", "TypologieService#create(TypologieItem)"),

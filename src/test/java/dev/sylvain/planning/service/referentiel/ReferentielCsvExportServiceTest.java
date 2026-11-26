@@ -39,6 +39,76 @@ class ReferentielCsvExportServiceTest {
     private static final String TOUT =
             "typologies=true&emplacements=true&stands=true" + "&creneaux=true&journeesTypes=true&animateurs=true";
 
+    /**
+     * A complete referential, carrying what breaks a naive CSV: a semicolon
+     * inside a name, accents, several values per cell — and names a
+     * spreadsheet would run as formulas. The grid holds a meal relay and a
+     * night vacation ending past midnight.
+     */
+    private static final String REFERENTIEL_YAML = """
+            schemaVersion: 6
+            festival:
+              dateDebut: 2026-09-01
+            typologies:
+              - id: EXP-A
+                label: "Jeux d'ambiance"
+              - id: EXP-B
+                label: "Stratégie"
+                polyvalent: true
+            emplacements:
+              - id: EXP-P
+                nom: Pavillon
+                latitude: 46.65
+                longitude: -0.24
+              - id: EXP-E
+                nom: "-Esplanade"
+            creneaux:
+              - id: C1
+                jour: 1
+                date: 2026-09-01
+                heureDebut: "09:00"
+                heureFin: "12:00"
+              - id: C2
+                jour: 1
+                date: 2026-09-01
+                heureDebut: "12:00"
+                heureFin: "13:00"
+                couverturePause: true
+              - id: C3
+                jour: 1
+                date: 2026-09-01
+                heureDebut: "13:00"
+                heureFin: "20:00"
+              - id: C4
+                jour: 2
+                date: 2026-09-02
+                heureDebut: "20:00"
+                heureFin: "00:00"
+            stands:
+              - id: EXP-S1
+                nom: "Stand un; et demi"
+                typologiesProposees: [EXP-A, EXP-B]
+                effectifMin: 2
+                effectifMax: 3
+              - id: EXP-S2
+                nom: "=1+1"
+                typologiesProposees: [EXP-B]
+                effectifMin: 1
+                effectifMax: 1
+            animateurs: []
+            gabarits:
+              - nom: Jour normal
+                vacations:
+                  - { heureDebut: "09:00", heureFin: "12:00" }
+                  - { heureDebut: "12:00", heureFin: "13:00", couverturePause: true }
+                  - { heureDebut: "13:00", heureFin: "20:00" }
+                dates: [2026-09-01]
+              - nom: Nocturne
+                vacations:
+                  - { heureDebut: "20:00", heureFin: "00:00" }
+                dates: [2026-09-02]
+            """;
+
     @BeforeEach
     void createTheEditions() {
         SOURCE = createEdition("Export CSV source");
@@ -46,34 +116,7 @@ class ReferentielCsvExportServiceTest {
         // A complete referential, carrying what breaks a naive CSV: a
         // semicolon inside a name, accents, several values per cell — and
         // names a spreadsheet would run as formulas.
-        importer(
-                SOURCE,
-                "/api/typologies/import-csv",
-                "code;libelle;polyvalent\nEXP-A;Jeux d'ambiance;\nEXP-B;Stratégie;oui\n");
-        importer(
-                SOURCE,
-                "/api/emplacements/import-csv",
-                "code;nom;latitude;longitude\nEXP-P;Pavillon;46.65;-0.24\nEXP-E;-Esplanade;;\n");
-        importer(SOURCE, "/api/stands/import-csv", """
-                code;nom;typologies;effectifMin;effectifMax
-                EXP-S1;"Stand un; et demi";EXP-A|EXP-B;2;3
-                EXP-S2;=1+1;EXP-B;1;1
-                """);
-        // The grid and the day templates the two new files carry: a meal
-        // relay, a night vacation ending past midnight, and a template whose
-        // shift line is full of the commas that break a naive reader.
-        importer(SOURCE, "/api/creneaux/import-csv", """
-                date;heureDebut;heureFin;couverturePause
-                2026-09-01;09:00;12:00;
-                2026-09-01;12:00;13:00;oui
-                2026-09-01;13:00;20:00;
-                2026-09-02;20:00;00:00;
-                """);
-        importer(SOURCE, "/api/journees-types/import-csv", """
-                nom;vacations;dates
-                Jour normal;"09:00-12:00, 12:00-13:00 R, 13:00-20:00";2026-09-01
-                Nocturne;"20:00-00:00";2026-09-02
-                """);
+        importer(SOURCE, REFERENTIEL_YAML);
         given().header(HEADER, SOURCE)
                 .contentType("application/json")
                 .body("""
@@ -106,12 +149,13 @@ class ReferentielCsvExportServiceTest {
         given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + CIBLE);
     }
 
-    private static void importer(String edition, String chemin, String contenu) {
+    /** The workbook of an edition: the YAML file is the one way left to fill every referential at once. */
+    private static void importer(String edition, String yaml) {
         given().header(HEADER, edition)
-                .contentType("application/json")
-                .body("{\"fileName\":\"f.csv\",\"content\":" + quote(contenu) + "}")
+                .contentType("text/plain")
+                .body(yaml)
                 .when()
-                .post(chemin)
+                .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200);
     }
@@ -161,8 +205,10 @@ class ReferentielCsvExportServiceTest {
     }
 
     /**
-     * The promise of the screen, held end to end: the archive of one edition
-     * refills another, and not a single row is refused.
+     * The promise of the screen, held where a CSV is still read back: the
+     * archive of one edition says what the workbook holds, and its animateurs
+     * file refills another edition without a row refused. The other files are
+     * read by a spreadsheet, not by the application: the YAML is their way in.
      */
     @Test
     void whatComesOutIsReimportedWithoutASingleCorrection() {
@@ -177,17 +223,9 @@ class ReferentielCsvExportServiceTest {
                 .contains("EXP-E;'-Esplanade;")
                 .contains(";-0.24\n");
 
-        reimporter(entrees.get("typologies.csv"), "/api/typologies/import-csv", 2);
-        reimporter(entrees.get("emplacements.csv"), "/api/emplacements/import-csv", 2);
-        reimporter(entrees.get("stands.csv"), "/api/stands/import-csv", 2);
-
-        // The animateur import demands an edition that has dates: without a
-        // créneau, an imported off day would be neither shown nor kept, and the
-        // import refuses it. That is why the créneaux are entered first, and why
-        // the export screen says so — and the grid file is now what puts them
-        // there, instead of two hand-written calls.
-        reimporter(entrees.get("creneaux.csv"), "/api/creneaux/import-csv", 4);
-        reimporter(entrees.get("journees-types.csv"), "/api/journees-types/import-csv", 2);
+        // The target gets the same workbook: the animateurs file names typologies
+        // by code and demands an edition that has dates, so the off days are kept.
+        importer(CIBLE, REFERENTIEL_YAML);
 
         given().header(HEADER, CIBLE)
                 .contentType("application/json")
@@ -273,18 +311,6 @@ class ReferentielCsvExportServiceTest {
                 .then()
                 .statusCode(200)
                 .body("aucunChangement", equalTo(true));
-    }
-
-    private static void reimporter(String contenu, String chemin, int attendus) {
-        given().header(HEADER, CIBLE)
-                .contentType("application/json")
-                .body("{\"fileName\":\"f.csv\",\"content\":" + quote(contenu) + "}")
-                .when()
-                .post(chemin)
-                .then()
-                .statusCode(200)
-                .body("rejected", equalTo(0))
-                .body("created", equalTo(attendus));
     }
 
     @Test

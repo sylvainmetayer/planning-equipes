@@ -2,12 +2,12 @@
   <mat-card-header>
     <h2 mat-card-title i18n="@@exportCsv.title">Export CSV</h2>
     <mat-card-subtitle i18n="@@exportCsv.subtitle">
-      Les référentiels de l'édition courante dans une archive ZIP, un fichier par référentiel, dans la forme exacte que les onglets d'import relisent.
+      Les référentiels de l'édition courante dans une archive ZIP, un fichier par référentiel, à ouvrir dans un tableur. Seul le fichier des animateurs se réimporte.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
     <p class="empty-hint" i18n="@@exportCsv.aide">
-      Chaque fichier se réimporte tel quel, ou après correction dans un tableur : une ligne déjà connue, par son code ou à défaut son nom, est mise à jour, et une colonne retirée du fichier n'efface rien.
+      Le fichier des animateurs se réimporte, après correction dans un tableur si besoin. Pour reprendre ou corriger le reste, exportez l'édition en YAML, plus bas, puis réimportez-la.
     </p>
     @if (chargement()) {
       <mat-progress-bar mode="indeterminate" />
@@ -28,9 +28,6 @@
         Coché mais vide : l'archive portera un fichier sans aucune ligne, en-tête seul.
       </p>
     }
-    <p class="empty-hint" i18n="@@exportCsv.journeesTypes">
-      Le fichier des journées types emporte le calendrier avec lui ; réimporté, il n'écrit que les modèles et leurs dates : la grille ne bouge qu'à l'application.
-    </p>
     <p class="empty-hint" i18n="@@exportCsv.animateurs">
       Le fichier des animateurs ne se réimporte que dans une édition qui a déjà ses créneaux : sans dates, un jour d'indisponibilité ne serait ni affiché ni conservé, et l'import le refuse.
     </p>

@@ -119,7 +119,7 @@ class JournalCoverageStructurelleTest {
                         "EquiteResource#exportCsv",
                         "EspaceAnimateurResource#planningPdf",
                         "AbonnementIcsResource#planningIcs",
-                        "TypologieResource#exempleCsv")
+                        "AnimateurResource#exempleCsvAnimateurs")
                 .doesNotContain("ReferenceDataResource#volumesExportCsv", "HistoriqueResource#list");
     }
 

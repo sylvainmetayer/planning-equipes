@@ -56,7 +56,6 @@ describe('ImportButton', () => {
   });
 
   it('titles the dialog in the words of the screen', () => {
-    expect(importTitle('stands')).toBe('Importer des stands');
     expect(importTitle('animateurs')).toBe('Importer des animateurs');
   });
 });

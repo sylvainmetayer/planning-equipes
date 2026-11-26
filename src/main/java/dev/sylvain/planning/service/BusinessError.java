@@ -72,6 +72,14 @@ public abstract sealed class BusinessError extends IllegalArgumentException {
         }
     }
 
+    /** The request names a route the application has withdrawn on purpose — {@code 410}. */
+    public static final class Gone extends BusinessError {
+
+        public Gone(String message) {
+            super(message);
+        }
+    }
+
     /**
      * The write was based on a read that is out of date (issue #362): another
      * session wrote the row since the caller loaded it — {@code 409} too, but

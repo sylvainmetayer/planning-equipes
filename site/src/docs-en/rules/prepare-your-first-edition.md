@@ -13,7 +13,7 @@ The type of event changes the priorities: see [a festival schedule](/planning-fe
 
 - Choose the working edition in the edition bar, above every page. Two browser tabs can work on two editions at once; they never mix. To create one, see [Chain editions](enchainer-les-editions.md).
 - On an empty edition, the home screen offers a "Get started" block: import a file, start from a previous edition or load an example. Each empty reference data list says what it will contain, leads to the previous step when it is missing, and also offers an example.
-- If you already have a spreadsheet, [Import and export files](importer-exporter.md) saves you typing by hand.
+- If you already have a volunteers' spreadsheet or an edition to take back, [Import and export files](importer-exporter.md) saves you typing by hand: the CSV for staff, the YAML file for everything else.
 
 ## Create your game categories
 

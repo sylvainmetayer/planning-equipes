@@ -56,7 +56,6 @@ import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog
 import { MAX_STANDS_COMPARES, MIN_STANDS_COMPARES } from '../ouvertures/comparaison-ouvertures';
 import { StandCreationDialog } from './stand-creation-dialog';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
-import { ImportButton } from '../../shared/import-button';
 import {
   StandSortContext,
   coverageRate,
@@ -101,7 +100,6 @@ const SORTED_COLUMNS = [
   selector: 'app-stands-page',
   imports: [
     ImportedRowsFilter,
-    ImportButton,
     MatCardModule,
     MatButtonModule,
     MatButtonToggleModule,

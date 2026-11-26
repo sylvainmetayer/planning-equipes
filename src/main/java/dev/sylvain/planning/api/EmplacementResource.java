@@ -2,9 +2,6 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportRequest;
-import dev.sylvain.planning.service.referentiel.ReferentielCsvImportService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -33,9 +30,6 @@ public class EmplacementResource {
         this.referenceDataService = referenceDataService;
     }
 
-    private static final ReferentielCsvImportReport.ImportTarget CIBLE =
-            ReferentielCsvImportReport.ImportTarget.EMPLACEMENTS;
-
     @GET
     public List<Emplacement> listEmplacements() {
         return referenceDataService.listEmplacements();
@@ -59,31 +53,29 @@ public class EmplacementResource {
         return Response.noContent().build();
     }
 
-    /* ------------------------------ Import CSV ------------------------------ */
+    /* ------------------------ Import CSV (withdrawn in 4.0) ------------------------ */
 
-    /** The shape the import expects, shown rather than described. */
+    /** Retired: answers {@code 410} and points at the YAML import. */
     @GET
     @Path("/import-csv/exemple")
     @NotForLecteur
-    @Produces("text/csv")
     public Response exempleCsv() {
-        return CsvDownload.attachment(
-                referenceDataService.exempleCsvReferentiel(CIBLE), ReferentielCsvImportService.exampleFileName(CIBLE));
+        throw ImportRetire.gone("CSV des emplacements");
     }
 
-    /** What the file would do, line by line, without writing any of it. */
+    /** Retired: answers {@code 410} and points at the YAML import. */
     @POST
     @Path("/import-csv/analyse")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ReferentielCsvImportReport analyseCsv(ReferentielCsvImportRequest request) {
-        return referenceDataService.previewCsvReferentiel(CIBLE, request);
+    @Consumes(MediaType.WILDCARD)
+    public Response analyseCsv() {
+        throw ImportRetire.gone("CSV des emplacements");
     }
 
-    /** Applies the same file the preview was computed from; the server reads it again before writing. */
+    /** Retired: answers {@code 410} and points at the YAML import. */
     @POST
     @Path("/import-csv")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public ReferentielCsvImportReport importCsv(ReferentielCsvImportRequest request) {
-        return referenceDataService.importCsvReferentiel(CIBLE, request);
+    @Consumes(MediaType.WILDCARD)
+    public Response importCsv() {
+        throw ImportRetire.gone("CSV des emplacements");
     }
 }

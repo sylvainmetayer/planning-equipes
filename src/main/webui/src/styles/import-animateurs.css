@@ -41,10 +41,6 @@ table.import-rapport td mat-icon {
   font-variant-numeric: tabular-nums;
 }
 
-.import-identifiant {
-  color: var(--mat-sys-on-surface-variant);
-}
-
 .import-motif,
 .import-avertissement,
 .import-jours {
@@ -92,14 +88,6 @@ table.import-rapport td .import-badge-doublon mat-icon {
   flex-wrap: wrap;
   gap: 0.25rem;
   margin: 0 0 0.25rem;
-}
-
-/* Stand grid import: the columns the file could not place, listed by name. */
-.import-colonnes-ignorees {
-  margin: 0.5rem 0 0.75rem;
-  padding-left: 1.25rem;
-  font-size: 0.9rem;
-  color: var(--mat-sys-on-surface-variant);
 }
 
 /* Les onglets de la page Imports : même bande que le diagnostic et la journée,
