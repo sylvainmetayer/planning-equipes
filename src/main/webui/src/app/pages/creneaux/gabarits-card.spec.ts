@@ -4,7 +4,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditionsApi } from '../../core/api/editions-api';
 import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
@@ -65,7 +65,9 @@ describe('GabaritsCard', () => {
     previewReconnaissance: vi.fn(),
     reconnaitre: vi.fn(),
   };
-  const dialog = { open: vi.fn(() => ({ afterClosed: () => of(null) })) };
+  const dialog = {
+    open: vi.fn((..._args: unknown[]) => ({ afterClosed: (): Observable<unknown> => of(null) })),
+  };
   const notifications = { notify: vi.fn() };
   const confirm = { ask: vi.fn(() => Promise.resolve(true)) };
   /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
@@ -77,6 +79,7 @@ describe('GabaritsCard', () => {
     }
     dialog.open.mockClear();
     notifications.notify.mockClear();
+    confirm.ask.mockClear();
     gel = [];
     api.etat.mockResolvedValue(ETAT);
     api.setCalendrier.mockImplementation((calendrier) =>
@@ -211,5 +214,139 @@ describe('GabaritsCard', () => {
       (each) => each.textContent?.includes('Appliquer le calendrier'),
     )!;
     expect(applyButton.disabled).toBe(false);
+  });
+
+  it('opens the template dialog and reloads once something was written', async () => {
+    dialog.open.mockReturnValueOnce({ afterClosed: () => of({ id: 5, nom: 'N', vacations: [] }) });
+    const { card } = await mount();
+    api.etat.mockClear();
+
+    card['open'](null);
+    await Promise.resolve();
+
+    expect(dialog.open).toHaveBeenCalledOnce();
+    expect(api.etat).toHaveBeenCalledOnce();
+  });
+
+  it('hands a one-off series to the page instead of reloading', async () => {
+    dialog.open.mockReturnValueOnce({ afterClosed: () => of({ fenetres: '9h-12h' }) });
+    const { card } = await mount();
+    const serie = vi.fn();
+    card.serie.subscribe(serie);
+    api.etat.mockClear();
+
+    card['open'](ETAT.gabarits[0]);
+
+    expect(serie).toHaveBeenCalledExactlyOnceWith('9h-12h');
+    expect(api.etat).not.toHaveBeenCalled();
+  });
+
+  it('does not open the template dialog while a solve locks editing', async () => {
+    const { fixture, card } = await mount();
+    fixture.componentRef.setInput('verrouille', true);
+
+    card['open'](null);
+
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('deletes a template after confirmation and forgets it as the chosen one', async () => {
+    api.delete.mockResolvedValue(undefined);
+    const { card } = await mount();
+    expect(card['gabaritChoisie']()).toBe(1);
+
+    await card['remove'](ETAT.gabarits[0]);
+
+    expect(api.delete).toHaveBeenCalledExactlyOnceWith(1);
+    expect(api.etat).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the template when the deletion is declined', async () => {
+    confirm.ask.mockResolvedValueOnce(false);
+    const { card } = await mount();
+
+    await card['remove'](ETAT.gabarits[0]);
+
+    expect(api.delete).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed deletion', async () => {
+    api.delete.mockRejectedValue(new Error('boom'));
+    const { card } = await mount();
+
+    await card['remove'](ETAT.gabarits[0]);
+
+    expect(card['ecriture']()).toBe(false);
+  });
+
+  it('moves one date onto another template', async () => {
+    const { card } = await mount();
+
+    await card['changerGabarit']('2027-07-12', 2);
+
+    expect(api.setCalendrier.mock.calls[0][0]).toContainEqual({ date: '2027-07-12', gabaritId: 2 });
+  });
+
+  it('notifies and reloads when the application dialog returns a report', async () => {
+    const apercu = { crees: 1, supprimes: 0, conserves: 0, misAJour: 0, aucunChangement: false };
+    const rapport = { crees: 1, supprimes: 0, conserves: 2 };
+    api.preview.mockResolvedValue({ source: 'GABARITS', application: apercu });
+    dialog.open.mockReturnValueOnce({ afterClosed: () => of(rapport) });
+    const { card } = await mount();
+    const applique = vi.fn();
+    card.applique.subscribe(applique);
+
+    await card['apply']();
+
+    expect(notifications.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'success' }),
+    );
+    expect(applique).toHaveBeenCalledExactlyOnceWith(rapport);
+  });
+
+  it('opens no dialog when the preview carries no application', async () => {
+    api.preview.mockResolvedValue({ source: 'GABARITS' });
+    const { card } = await mount();
+
+    await card['apply']();
+
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('recognises the templates from the grid once confirmed', async () => {
+    api.previewReconnaissance.mockResolvedValue({
+      gabarits: ETAT.gabarits,
+      calendrier: ETAT.calendrier,
+    });
+    api.reconnaitre.mockResolvedValue(undefined);
+    const { card } = await mount();
+
+    await card['reconnaitre']();
+
+    expect(confirm.ask).toHaveBeenCalledOnce();
+    expect(api.reconnaitre).toHaveBeenCalledOnce();
+    expect(card['gabaritChoisie']()).toBe(1);
+  });
+
+  it('leaves everything alone when recognising is declined', async () => {
+    api.previewReconnaissance.mockResolvedValue({ gabarits: [], calendrier: [] });
+    confirm.ask.mockResolvedValueOnce(false);
+    const { card } = await mount();
+
+    await card['reconnaitre']();
+
+    expect(api.reconnaitre).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed recognition preview and a failed write', async () => {
+    api.previewReconnaissance.mockRejectedValueOnce(new Error('boom'));
+    const { card } = await mount();
+    await card['reconnaitre']();
+    expect(confirm.ask).not.toHaveBeenCalled();
+
+    api.previewReconnaissance.mockResolvedValue({ gabarits: [], calendrier: [] });
+    api.reconnaitre.mockRejectedValue(new Error('boom'));
+    await card['reconnaitre']();
+    expect(card['ecriture']()).toBe(false);
   });
 });
