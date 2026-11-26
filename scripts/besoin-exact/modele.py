@@ -138,7 +138,7 @@ def build(N, minimize):
                 m.add_bool_or(rs)
     overs = collections.defaultdict(list)
     if "continu" in RULES:
-        # travailContinuMaxMajeur: a stretch (holes shorter than the break do not split it) past `shiftMax`
+        # travailContinuMax (adult reading): a stretch (holes shorter than the break do not split it) past `shiftMax`
         # owes a break at its sixth hour, which must be relayed.
         L = P["shiftMax"] // CELL
         assert pause == CELL

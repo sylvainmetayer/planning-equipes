@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>These cases used to belong to {@code pauseSurPosteSansRelais}, a rule of
  * its own that only spoke when the organiser had ticked « pause prise sur le
- * poste ». There is no tick and no second rule: {@code travailContinuMaxMajeur}
+ * poste ». There is no tick and no second rule: {@code travailContinuMax}
  * asks for a hole <b>or</b> a relay, and charges one hard point per break that
  * gets neither.</p>
  */
@@ -35,14 +35,14 @@ class PauseRelayeeTest extends ConstraintTestBase {
 
     @Test
     void septHeuresSeulSurSonStandCoutentLaPauseSansRelais() {
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(parametres(), poste(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
                 .penalizesBy(1);
     }
 
     @Test
     void unCollegueSurLeStandALaSixiemeHeureRelaie() {
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(
                         parametres(),
                         poste(releve, treizeQuatorze, a1),
@@ -60,7 +60,7 @@ class PauseRelayeeTest extends ConstraintTestBase {
     void unTrouDeLaDureeDeLaPauseDispenseDeToutRelais() {
         Creneau apresLeTrou = creneau("1430-2030", 1, D1, LocalTime.of(14, 30), LocalTime.of(20, 30));
 
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(parametres(), poste(releve, treizeQuatorze, a1), poste(seul, apresLeTrou, a1))
                 .penalizesBy(0);
     }
@@ -85,7 +85,7 @@ class PauseRelayeeTest extends ConstraintTestBase {
     void unePauseDueDansUneSequencePasseeNEstReprocheeAPersonne() {
         Creneau soiree = creneau("21-23", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
 
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(
                         parametres(),
                         passe(poste(releve, treizeQuatorze, a1)),
@@ -99,7 +99,7 @@ class PauseRelayeeTest extends ConstraintTestBase {
     void laMemeJourneeEntierementAVenirCouteSaPauseSansRelais() {
         Creneau soiree = creneau("21-23", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
 
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(
                         parametres(),
                         poste(releve, treizeQuatorze, a1),
@@ -110,7 +110,7 @@ class PauseRelayeeTest extends ConstraintTestBase {
 
     @Test
     void unCollegueSurUnAutreStandNeRelaiePas() {
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(
                         parametres(),
                         poste(releve, treizeQuatorze, a1),
@@ -121,7 +121,7 @@ class PauseRelayeeTest extends ConstraintTestBase {
 
     @Test
     void sixHeuresExactementNeDoiventRien() {
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(parametres(), poste(seul, apresMidi, a1))
                 .penalizesBy(0);
     }
@@ -129,7 +129,7 @@ class PauseRelayeeTest extends ConstraintTestBase {
     @Test
     void deuxPersonnesSeulesCoutentDeuxFois() {
         Stand autreSeul = standWithStrategy("STAND-SEUL-2");
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(
                         parametres(),
                         poste(releve, treizeQuatorze, a1),
@@ -142,10 +142,10 @@ class PauseRelayeeTest extends ConstraintTestBase {
     /** Counted, never reproached (ADR 0044): a day entirely worked owes nobody a relay any more. */
     @Test
     void aBreakWithoutRelayOnADayAlreadyWorkedIsHistory() {
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(parametres(), postePasse(releve, treizeQuatorze, a1), postePasse(seul, apresMidi, a1))
                 .penalizesBy(0);
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(parametres(), postePasse(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
                 .penalizesBy(1);
     }

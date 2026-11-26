@@ -539,7 +539,7 @@ public class PauseAnalyzer {
         int pauseMinimale = parametres.dureePauseMinutes(mineur);
 
         // The stretches and the breaks they owe come from the domain: the
-        // solver's travailContinuMax* read the very same ones, so the
+        // solver's travailContinuMax read the very same ones, so the
         // screen and the score never disagree on what is due.
         List<SequenceDemandes> sequences = PauseSurPoste.sequences(postesDuJour, pauseMinimale).stream()
                 .map(sequence -> new SequenceDemandes(

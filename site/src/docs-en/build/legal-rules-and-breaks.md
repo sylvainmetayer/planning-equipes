@@ -10,7 +10,7 @@ The framework as explained to an organiser is in [the Labour Code and schedules]
 
 ## Break length
 
-A single break length applies to the edition: `dureePauseMinutes`, set on the Planning rules page, Legal tab, on the row of each rule that reads it ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). It is read by `travailContinuMaxMajeur`, `travailContinuMaxMineur`, `PauseSurPoste`, the eligibility filter, all the hour counters and the break analysis, and so by the Breaks and meals screen and by the "Break from 18:20 to 18:40" card of the staff PDF. All of them go through `ParametresLegaux.dureePauseMinutes(mineur)`, the only way to guarantee that none is stricter than another.
+A single break length applies to the edition: `dureePauseMinutes`, set on the Planning rules page, Legal tab, on the row of each rule that reads it ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). It is read by `travailContinuMax`, `PauseSurPoste`, the eligibility filter, all the hour counters and the break analysis, and so by the Breaks and meals screen and by the "Break from 18:20 to 18:40" card of the staff PDF. All of them go through `ParametresLegaux.dureePauseMinutes(mineur)`, the only way to guarantee that none is stricter than another.
 
 It is a **floor**, unlike the two weekly durations, which are ceilings: 20 minutes (art. [L3121-16]), refused below that by the service, free above it. The default is 30 minutes. Giving more than the Code requires is an organisational choice (a 30-minute relief is easier to organise than a 20-minute one); the only direction an application must not allow is the other one. An assistant also sets it, with the same floor, through the MCP tool `modifier_parametres_legaux`.
 
@@ -22,7 +22,7 @@ The break is rest, not actual work (art. L3121-1): it is **deducted**, paid or n
 
 | Where | What is measured |
 |---|---|
-| `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur` | actual work: opening span minus the breaks due |
+| `dureeQuotidienneMax` | actual work: opening span minus the breaks due |
 | `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`, `dureeHebdomadaireMaxDeuxSemaines` | same, summed over the ISO week |
 | Planning by person page, "Hours for the payroll" CSV (`PlanningHoursService`), `heures_travaillees` tool | same: total and weekly columns |
 | fairness table (`EquiteService`) | same: this is the quantity being shared out |
@@ -48,7 +48,7 @@ A break that is due is taken in one of two ways, and the tool knows no third:
 - **a gap** of at least `dureePauseMinutes` in the grid. It breaks the sequence, and nothing is due on either side;
 - **a relay**: a colleague of the **same stand** holding a seat during the whole break.
 
-With neither, it is a **hard breach**, one point per break that cannot be relayed, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility exclusion flat penalty for a minor ([the eligibility exclusions](pourquoi-ces-regles.md)). The breaks due come from `PauseSurPoste`, which the Breaks and meals screen, the staff PDF and the ICS feed also read: none of the four diverges on what is due or when.
+With neither, it is a **hard breach**, one point per break that cannot be relayed, carried by `travailContinuMax`, plus the eligibility exclusion flat penalty for a minor ([the eligibility exclusions](pourquoi-ces-regles.md)). The breaks due come from `PauseSurPoste`, which the Breaks and meals screen, the staff PDF and the ICS feed also read: none of the four diverges on what is due or when.
 
 **Why hard and not weighted.** A relay that does not exist is not a lost comfort. With nobody to hold the stand, the person cannot leave it, their "break" remains actual work (art. L3121-1 and L3121-2; paying the break does not change its legal characterisation, Cass. soc. 22 May 2019, no. 17-26.914), and the twenty minutes of art. L3121-16 are not given. That is also what justifies the deduction above: the two decisions only hold together. A "break taken on the post" checkbox that switched off `travailContinuMax*` once existed; it left two readings of the same schedule and switched off the minors' rule although the 4 h 30 of art. L3162-3 are a matter of public policy.
 
@@ -60,7 +60,7 @@ Where the rule bites: a **single-seat stand held for more than six hours in a ro
 
 `coupureRepasObligatoire` (hard) and `coupureRepasPlacementPrefere` (soft) carry the meal break. Without them, a ten-hour day with no break came out at zero hard with nothing to flag it.
 
-**This is not the Labour Code.** The only break it imposes is the one in art. L3121-16, which `travailContinuMaxMajeur` already carries. The meal break is the event's own organisational rule, the one for which the grid of the source workbook cuts its midday shifts. It is held hard by choice, under the protected category "Organisation (repas)" (organisation, meals).
+**This is not the Labour Code.** The only break it imposes is the one in art. L3121-16, which `travailContinuMax` already carries. The meal break is the event's own organisational rule, the one for which the grid of the source workbook cuts its midday shifts. It is held hard by choice, under the protected category "Organisation (repas)" (organisation, meals).
 
 ### The rule, exactly
 

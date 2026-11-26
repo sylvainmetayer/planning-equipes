@@ -147,7 +147,7 @@ class DaySwapMoveIteratorFactoryTest {
         assertThat(iterator(plan, 1).hasNext()).isFalse();
 
         // Measured only while the rule bites: switched off, the swap is offered.
-        plan.setConstraintsDesactivees(List.of(new ConstraintToggle("dureeQuotidienneMaxMineur")));
+        plan.setConstraintsDesactivees(List.of(new ConstraintToggle("dureeQuotidienneMax")));
         assertThat(draws(plan, 10))
                 .isNotEmpty()
                 .allSatisfy(move -> assertThat(assignments(move))

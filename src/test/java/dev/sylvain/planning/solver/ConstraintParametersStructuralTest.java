@@ -106,10 +106,8 @@ class ConstraintParametersStructuralTest {
             "coupureRepasPlacementPrefere",
                     "même chose : FenetreRepas est un fait du problème, la contrainte n'ouvre jamais "
                             + "ParametresLegaux",
-            "travailContinuMaxMajeur", LECTURE_PAR_PAUSE_SUR_POSTE,
-            "travailContinuMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
-            "dureeQuotidienneMaxMajeur", LECTURE_PAR_PAUSE_SUR_POSTE,
-            "dureeQuotidienneMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "travailContinuMax", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "dureeQuotidienneMax", LECTURE_PAR_PAUSE_SUR_POSTE,
             "dureeHebdomadaireMax", LECTURE_PAR_PAUSE_SUR_POSTE,
             "dureeHebdomadaireMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
             "dureeHebdomadaireMaxDeuxSemaines", LECTURE_PAR_PAUSE_SUR_POSTE);

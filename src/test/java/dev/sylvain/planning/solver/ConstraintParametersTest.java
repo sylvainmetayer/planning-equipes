@@ -80,7 +80,7 @@ class ConstraintParametersTest {
 
         assertThat(valeur(ConstraintParameters.of("dureeHebdomadaireMax", legaux, new ParametresQualite()), 0))
                 .isEqualTo("44 h 30");
-        assertThat(valeur(ConstraintParameters.of("travailContinuMaxMajeur", legaux, new ParametresQualite()), 0))
+        assertThat(valeur(ConstraintParameters.of("travailContinuMax", legaux, new ParametresQualite()), 0))
                 .isEqualTo("45 min");
     }
 
@@ -94,7 +94,7 @@ class ConstraintParametersTest {
     void theDailyCapShowsTheBreakItDeducts() {
         ParametresLegaux legaux = new ParametresLegaux();
         legaux.setDureePauseMinutes(30);
-        assertThat(valeur(ConstraintParameters.of("dureeQuotidienneMaxMajeur", legaux, new ParametresQualite()), 0))
+        assertThat(valeur(ConstraintParameters.of("dureeQuotidienneMax", legaux, new ParametresQualite()), 0))
                 .isEqualTo("30 min");
     }
 

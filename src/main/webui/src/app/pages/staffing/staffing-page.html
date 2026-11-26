@@ -105,7 +105,7 @@
             <strong i18n="@@staffing.continuousBound.label">Travail continu : {{ resume.minimumTotal }}</strong>
             <ng-container i18n="@@staffing.continuousBound.description"> — plus de six heures d'affilée exigent une pause
             relayée par un collègue du même stand : sans relais possible, deux sièges qui s'enchaînent ne vont pas à la même personne.</ng-container>
-            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'travailContinuMaxMajeur' }"
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'travailContinuMax' }"
                i18n="@@staffing.lien.travailContinu">Travail continu</a>
           </p>
         }

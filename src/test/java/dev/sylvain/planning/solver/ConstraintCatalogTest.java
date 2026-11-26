@@ -71,7 +71,7 @@ class ConstraintCatalogTest {
 
     @Test
     void aRuleWithNoChoiceKeepsItsLevelWhateverIsAskedAndAChoosableOneFollowsIt() {
-        ConstraintCatalog.ConstraintDefinition legal = ConstraintCatalog.PAR_NOM.get("dureeQuotidienneMaxMajeur");
+        ConstraintCatalog.ConstraintDefinition legal = ConstraintCatalog.PAR_NOM.get("dureeQuotidienneMax");
         ConstraintCatalog.ConstraintDefinition quality = ConstraintCatalog.PAR_NOM.get("equilibrerCharge");
         ConstraintCatalog.ConstraintDefinition meal = ConstraintCatalog.PAR_NOM.get("coupureRepasObligatoire");
 
@@ -81,7 +81,7 @@ class ConstraintCatalogTest {
         assertThat(meal.niveauEffectif(false)).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
         assertThat(ConstraintCatalog.hardRulesOf(
                         java.util.Map.of("equilibrerCharge", true, "coupureRepasObligatoire", false)))
-                .contains("equilibrerCharge", "dureeQuotidienneMaxMajeur")
+                .contains("equilibrerCharge", "dureeQuotidienneMax")
                 .doesNotContain("coupureRepasObligatoire");
         assertThat(ConstraintCatalog.defaultWeight("coupureRepasObligatoire", false))
                 .isEqualTo(ConstraintCatalog.POIDS_NORMAL);
@@ -135,19 +135,17 @@ class ConstraintCatalogTest {
                 .containsExactlyInAnyOrder(
                         "standReserveAuxMajeurs",
                         "travailDeNuitInterditPourMineur",
-                        "dureeQuotidienneMaxMineur",
+                        "dureeQuotidienneMax",
                         "travailInterditJourFerieMineur",
                         "reposHebdomadaireMineur",
-                        "travailContinuMaxMineur",
+                        "travailContinuMax",
                         "dureeHebdomadaireMaxMineur",
                         "mineurNecessiteEncadrementMajeur",
                         "dureeHebdomadaireMax",
                         "dureeHebdomadaireMaxDeuxSemaines",
-                        "dureeQuotidienneMaxMajeur",
                         "reposQuotidienMinimal",
                         "maxJoursTravaillesParSemaine",
                         "reposHebdomadaireMinimal",
-                        "travailContinuMaxMajeur",
                         "coupureRepasObligatoire");
     }
 
@@ -166,7 +164,7 @@ class ConstraintCatalogTest {
 
         assertThat(fondees)
                 .doesNotContain("mineurNecessiteEncadrementMajeur", "coupureRepasObligatoire")
-                .contains("dureeQuotidienneMaxMajeur", "travailDeNuitInterditPourMineur");
+                .contains("dureeQuotidienneMax", "travailDeNuitInterditPourMineur");
         assertThat(ConstraintCatalog.definitions())
                 .filteredOn(ConstraintCatalog.ConstraintDefinition::legale)
                 .allMatch(ConstraintCatalog.ConstraintDefinition::protegee);
@@ -224,5 +222,42 @@ class ConstraintCatalogTest {
                     .doesNotContain("baissez son poids")
                     .doesNotContain("baissez son importance");
         }
+    }
+
+    @Test
+    void aMergedRuleIsReadUnderItsOldNamesButNeverExistsUnderThem() {
+        assertThat(ConstraintCatalog.PAR_NOM)
+                .doesNotContainKeys(ConstraintCatalog.ANCIENS_NOMS.keySet().toArray(String[]::new));
+        assertThat(ConstraintCatalog.ANCIENS_NOMS.values())
+                .allSatisfy(successor -> assertThat(successor)
+                        .satisfiesAnyOf(
+                                name -> assertThat(ConstraintCatalog.PAR_NOM).containsKey(name),
+                                name -> assertThat(name).isEqualTo(ConstraintCatalog.RETIREE)));
+        assertThat(ConstraintCatalog.currentName("dureeQuotidienneMaxMineur")).isEqualTo("dureeQuotidienneMax");
+        assertThat(ConstraintCatalog.currentName("travailContinuMaxMajeur")).isEqualTo("travailContinuMax");
+        assertThat(ConstraintCatalog.currentName("travailContinuMax")).isEqualTo("travailContinuMax");
+        assertThat(ConstraintCatalog.currentName("nimporteQuoi")).isEqualTo("nimporteQuoi");
+        assertThat(ConstraintCatalog.formerNamesOf("dureeQuotidienneMax"))
+                .containsExactly("dureeQuotidienneMaxMajeur", "dureeQuotidienneMaxMineur");
+        assertThat(ConstraintCatalog.formerNamesOf("reposQuotidienMinimal")).isEmpty();
+    }
+
+    @Test
+    void aDeploymentWeightSetUnderAnOldNameIsReadAsTheStrongestOfThem() {
+        java.util.Map<String, Integer> properties = java.util.Map.of(
+                "dureeQuotidienneMaxMajeur", 3,
+                "dureeQuotidienneMaxMineur", 25,
+                "travailContinuMax", 4,
+                "travailContinuMaxMajeur", 50);
+
+        java.util.function.Function<String, java.util.Optional<Integer>> property =
+                name -> java.util.Optional.ofNullable(properties.get(name));
+        assertThat(ConstraintCatalog.configuredWeight(property, "dureeQuotidienneMax"))
+                .isEqualTo(25);
+        // its own property wins over a former one
+        assertThat(ConstraintCatalog.configuredWeight(property, "travailContinuMax"))
+                .isEqualTo(4);
+        assertThat(ConstraintCatalog.configuredWeight(property, "reposQuotidienMinimal"))
+                .isEqualTo(ConstraintCatalog.defaultWeight("reposQuotidienMinimal"));
     }
 }

@@ -326,8 +326,8 @@ public class ParametresService {
      * which the solve applies.
      */
     public int configuredWeight(String nom) {
-        return config.getOptionalValue("planning.constraint-weights." + nom, Integer.class)
-                .orElse(ConstraintCatalog.defaultWeight(nom));
+        return ConstraintCatalog.configuredWeight(
+                rule -> config.getOptionalValue("planning.constraint-weights." + rule, Integer.class), nom);
     }
 
     private static boolean defaultActive(String nom) {

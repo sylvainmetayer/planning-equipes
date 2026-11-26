@@ -25,7 +25,7 @@ class ConstraintNiveauResourceTest {
     private static final String ORGANISATION = "equilibrerCharge";
 
     /** HARD, « Légal (temps de travail) » : never an edition's choice. */
-    private static final String LEGALE = "dureeQuotidienneMaxMajeur";
+    private static final String LEGALE = "dureeQuotidienneMax";
 
     /** HARD, « Affectation » : one of the fixed rules, never an edition's choice either. */
     private static final String BASE = "posteDoitEtrePourvu";

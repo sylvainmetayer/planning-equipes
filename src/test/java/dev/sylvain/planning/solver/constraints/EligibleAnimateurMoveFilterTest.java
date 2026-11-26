@@ -32,7 +32,7 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
 
     /**
      * The five constraints the filter claims to mirror, in the order of its
-     * javadoc. {@code travailContinuMaxMineur} left the list with ADR 0048: a
+     * javadoc. {@code travailContinuMax} left the list with ADR 0048: a
      * long seat is compliant as soon as a colleague relays the break it owes,
      * which the pair alone cannot tell.
      */
@@ -41,7 +41,7 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
             "standReserveAuxMajeurs",
             "travailInterditJourFerieMineur",
             "travailDeNuitInterditPourMineur",
-            "dureeQuotidienneMaxMineur");
+            "dureeQuotidienneMax");
 
     /** 14 July 2026 — a public holiday, and in the same ISO week as D1..D5. */
     private static final LocalDate FERIE = LocalDate.of(2026, 7, 14);

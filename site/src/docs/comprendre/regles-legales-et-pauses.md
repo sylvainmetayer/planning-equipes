@@ -6,7 +6,7 @@ Le cadre expliqué à un organisateur est dans [le Code du travail et les planni
 
 ## La durée des pauses
 
-Une seule durée de pause vaut pour l'édition : `dureePauseMinutes`, réglée sur la page Règles du planning, onglet Légal, sur la ligne de chaque règle qui la lit (ou dans Paramètres, onglet Légal) ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). Elle est lue par `travailContinuMaxMajeur`, `travailContinuMaxMineur`, `PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et l'analyse des pauses, donc par l'écran Pauses et par la carte « Pause de 18:20 à 18:40 » du PDF animateur. Tous passent par `ParametresLegaux.dureePauseMinutes(mineur)`, seule façon de garantir qu'aucun ne soit plus strict qu'un autre.
+Une seule durée de pause vaut pour l'édition : `dureePauseMinutes`, réglée sur la page Règles du planning, onglet Légal, sur la ligne de chaque règle qui la lit (ou dans Paramètres, onglet Légal) ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). Elle est lue par `travailContinuMax`, `PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et l'analyse des pauses, donc par l'écran Pauses et par la carte « Pause de 18:20 à 18:40 » du PDF animateur. Tous passent par `ParametresLegaux.dureePauseMinutes(mineur)`, seule façon de garantir qu'aucun ne soit plus strict qu'un autre.
 
 C'est un **plancher**, à l'inverse des deux durées hebdomadaires qui sont des plafonds : 20 minutes (art. [L3121-16]), refusées en dessous par le service, libres au-dessus. Le défaut est de 30 minutes. Donner plus que le Code est un choix d'organisation (une relève de 30 minutes s'organise plus simplement qu'une de 20) ; la seule direction qu'une application ne doit pas laisser prendre est l'autre. Un assistant la règle aussi, avec le même plancher, par l'outil MCP `modifier_parametres_legaux`.
 
@@ -14,11 +14,11 @@ C'est un **plancher**, à l'inverse des deux durées hebdomadaires qui sont des 
 
 ### Ce que la pause déduit, ce que l'amplitude compte
 
-La pause est du repos, pas du travail effectif (art. L3121-1) : elle est **déduite**, payée ou non, sans rien à déclarer. Dans un plan sans écart dur, toute pause déduite a bien été prise, c'est ce que `travailContinuMax*` garantit. La déduction vaut partout :
+La pause est du repos, pas du travail effectif (art. L3121-1) : elle est **déduite**, payée ou non, sans rien à déclarer. Dans un plan sans écart dur, toute pause déduite a bien été prise, c'est ce que `travailContinuMax` garantit. La déduction vaut partout :
 
 | Où | Ce qui est mesuré |
 |---|---|
-| `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur` | travail effectif : amplitude moins les pauses dues |
+| `dureeQuotidienneMax` | travail effectif : amplitude moins les pauses dues |
 | `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`, `dureeHebdomadaireMaxDeuxSemaines` | idem, sommé sur la semaine ISO |
 | page Planning par personne, CSV « Heures pour la paie » (`PlanningHoursService`), outil `heures_travaillees` | idem : total et colonnes hebdomadaires |
 | tableau d'équité (`EquiteService`) | idem : c'est cette grandeur qu'on répartit |
@@ -44,7 +44,7 @@ Une pause due se prend de deux manières, et l'outil n'en connaît pas de troisi
 - **un trou** d'au moins `dureePauseMinutes` dans la grille. Il rompt la séquence, plus rien n'est dû de part et d'autre ;
 - **un relais** : un collègue du **même stand** tenant une place pendant toute la pause.
 
-Sans l'un ni l'autre, c'est un **écart dur**, un point par pause non relayable, porté par `travailContinuMaxMajeur` et `travailContinuMaxMineur`, plus le forfait d'exclusion d'éligibilité pour un mineur ([les exclusions d'éligibilité](pourquoi-ces-regles.md)). Les pauses dues sortent de `PauseSurPoste`, que l'écran Pauses, le PDF animateur et le flux ICS lisent aussi : aucun des quatre ne diverge sur ce qui est dû ni sur quand.
+Sans l'un ni l'autre, c'est un **écart dur**, un point par pause non relayable, porté par `travailContinuMax`, plus le forfait d'exclusion d'éligibilité pour un mineur ([les exclusions d'éligibilité](pourquoi-ces-regles.md)). Les pauses dues sortent de `PauseSurPoste`, que l'écran Pauses, le PDF animateur et le flux ICS lisent aussi : aucun des quatre ne diverge sur ce qui est dû ni sur quand.
 
 **Pourquoi dur et non dosé.** Un relais qui n'existe pas n'est pas un confort perdu. Sans personne pour tenir le stand, la personne ne peut pas le quitter, sa « pause » reste du travail effectif (art. L3121-1 et L3121-2 ; rémunérer la pause n'en change pas la qualification, Cass. soc. 22 mai 2019, n° 17-26.914), et les vingt minutes de l'art. L3121-16 ne sont pas données. C'est aussi ce qui autorise la déduction ci-dessus : les deux décisions ne tiennent qu'ensemble. Une case « pause prise sur le poste » qui éteignait `travailContinuMax*` a existé ; elle laissait deux lectures du même planning et éteignait la règle des mineurs alors que les 4 h 30 de l'art. L3162-3 sont d'ordre public.
 
@@ -56,7 +56,7 @@ Là où la règle mord : un **stand à une seule place tenu plus de six heures d
 
 `coupureRepasObligatoire` (dure) et `coupureRepasPlacementPrefere` (soft) portent la coupure repas. Sans elles, une journée de dix heures d'affilée sortait à zéro dur sans que rien le signale.
 
-**Ce n'est pas le Code du travail.** La seule pause qu'il impose est celle de l'art. L3121-16, que `travailContinuMaxMajeur` porte déjà. La coupure repas est la règle d'organisation de l'événement, celle pour laquelle la grille du classeur source taille ses vacations de midi. Elle est tenue en dur par choix, sous la catégorie protégée « Organisation (repas) ».
+**Ce n'est pas le Code du travail.** La seule pause qu'il impose est celle de l'art. L3121-16, que `travailContinuMax` porte déjà. La coupure repas est la règle d'organisation de l'événement, celle pour laquelle la grille du classeur source taille ses vacations de midi. Elle est tenue en dur par choix, sous la catégorie protégée « Organisation (repas) ».
 
 ### La règle, exactement
 

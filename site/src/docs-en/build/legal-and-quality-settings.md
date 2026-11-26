@@ -77,7 +77,7 @@ The Code requires the break to be **real**, not to be scheduled: an organiser wh
 - **a gap** of at least `dureePauseMinutes` between two shifts. It breaks the sequence (`PauseSurPoste.sequences`), so nothing more is due on either side;
 - **a relay**: another staff member at the **same stand** holding a seat for the whole break (`PauseSurPoste.relayableBy`).
 
-A break that is due and has neither is a **hard breach**, one point per break, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility-exclusion flat penalty for a minor. There is nothing to declare: a `pauseSurPoste` parameter used to exist and switched these two rules off, and it has been removed.
+A break that is due and has neither is a **hard breach**, one point per break, carried by `travailContinuMax`, plus the eligibility-exclusion flat penalty for a minor. There is nothing to declare: a `pauseSurPoste` parameter used to exist and switched these two rules off, and it has been removed.
 
 The duration is **a single setting**, `dureePauseMinutes` (section `parametres.legal` of a scenario): 30 minutes by default, floor of 20 (art. L3121-16), raised to at least 30 for a minor (art. L3162-3) by `ParametresLegaux.dureePauseMinutes(mineur)`.
 

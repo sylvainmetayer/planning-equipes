@@ -99,7 +99,7 @@ class ScenarioLadderInfeasibleTest {
      * it through the meal, so either of the first two rules may be the one left
      * broken.
      *
-     * <p>{@code travailContinuMaxMajeur} is the second rule, and it is there
+     * <p>{@code travailContinuMax} is the second rule, and it is there
      * for the same reason as the first: a single-seat stand held from 10:00 to
      * 20:00 owes a break at the sixth hour with nobody on the stand to take
      * over, and no hole in the grid either. The relay used to be a rule of its
@@ -126,14 +126,13 @@ class ScenarioLadderInfeasibleTest {
         assertThat(solved.getScore().hardScore()).isNegative();
         assertThat(brokenHardConstraints(solved))
                 .isNotEmpty()
-                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire", "travailContinuMaxMajeur");
+                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire", "travailContinuMax");
 
         Loaded sansCoupure = load("gamme-30-infaisable-coupure-repas");
         sansCoupure
                 .problem()
                 .setConstraintsDesactivees(List.of(
-                        new ConstraintToggle("coupureRepasObligatoire"),
-                        new ConstraintToggle("travailContinuMaxMajeur")));
+                        new ConstraintToggle("coupureRepasObligatoire"), new ConstraintToggle("travailContinuMax")));
         assertThat(solveUntilFeasible(sansCoupure, 30L).getScore().hardScore()).isZero();
     }
 }

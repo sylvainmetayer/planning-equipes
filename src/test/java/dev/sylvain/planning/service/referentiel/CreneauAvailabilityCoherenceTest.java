@@ -187,7 +187,7 @@ class CreneauAvailabilityCoherenceTest {
 
         assertThat(constraintNames(banc, "A-INDISPONIBLE")).contains("animateurDisponible");
         assertThat(constraintNames(banc, "A-CHEVAUCHE")).contains("pasDeChevauchementHoraire");
-        assertThat(constraintNames(banc, "A-PLAFOND")).contains("dureeQuotidienneMaxMajeur");
+        assertThat(constraintNames(banc, "A-PLAFOND")).contains("dureeQuotidienneMax");
         assertThat(row(banc, "A-DISPO").disponible()).isTrue();
         assertThat(row(banc, "A-DISPO").motifs()).noneMatch(motif -> "HARD".equals(motif.niveau()));
 

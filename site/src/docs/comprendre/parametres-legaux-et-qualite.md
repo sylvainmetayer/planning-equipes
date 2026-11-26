@@ -74,7 +74,7 @@ Le Code exige que la pause soit **réelle**, pas qu'elle soit planifiée : un or
 - **un trou** d'au moins `dureePauseMinutes` entre deux vacations. Il rompt la séquence (`PauseSurPoste.sequences`), donc plus rien n'est dû de part et d'autre ;
 - **un relais** : un autre animateur du **même stand** tenant une place pendant toute la pause (`PauseSurPoste.relayableBy`).
 
-Une pause due qui n'a ni l'un ni l'autre est un **écart dur**, un point par pause, porté par `travailContinuMaxMajeur` et `travailContinuMaxMineur`, plus le forfait d'exclusion d'éligibilité pour un mineur. Il n'y a rien à déclarer : un paramètre `pauseSurPoste` a existé et éteignait ces deux règles, il est retiré.
+Une pause due qui n'a ni l'un ni l'autre est un **écart dur**, un point par pause, porté par `travailContinuMax`, plus le forfait d'exclusion d'éligibilité pour un mineur. Il n'y a rien à déclarer : un paramètre `pauseSurPoste` a existé et éteignait cette règle, il est retiré.
 
 La durée est **un seul paramètre**, `dureePauseMinutes` (section `parametres.legal` d'un scénario) : 30 minutes par défaut, plancher de 20 (art. L3121-16), relevée à 30 au minimum pour un mineur (art. L3162-3) par `ParametresLegaux.dureePauseMinutes(mineur)`.
 
