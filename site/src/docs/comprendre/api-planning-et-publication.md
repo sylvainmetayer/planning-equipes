@@ -68,13 +68,13 @@ Chaque envoi, d'une publication ou d'un renvoi, laisse son état dans `envoi_pla
 
 ### Publier pour quelques personnes
 
-`{"cibles": ["id", …]}` restreint une publication aux personnes nommées (« Prévenir les 2 personnes » après un échange accepté, ou un remplacement le jour J). Tous les autres concernés sont **différés**, exactement comme par `exclusions` : la capture reste globale, leur repère ne bouge pas, ils reviennent au décompte suivant. Des cibles qui ne nomment aucun concerné laissent la publication sans destinataire : `409`.
+`{"cibles": ["id", …]}` restreint une publication aux personnes nommées (« Prévenir les 2 personnes » après un échange accepté, ou un remplacement le jour J). Tous les autres concernés sont **différés** ([ADR 0047](repo:docs/decisions/0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md)) : la capture reste globale, leur repère ne bouge pas, ils reviennent au décompte suivant. Des cibles qui ne nomment aucun concerné laissent la publication sans destinataire : `409`.
 
-### Différer le message de quelqu'un
+### Le corps du POST
 
-Le `POST` prend un corps JSON `{"exclusions": ["id", …]}` et exige `Content-Type: application/json` : la liste est de longueur libre et un id d'animateur vient du client, donc ni un séparateur ni une URL n'est un endroit sûr pour la porter. Un corps vide suffit à dire « je n'exclus personne ».
+Le `POST` prend un corps JSON `{"cibles": ["id", …]}` et exige `Content-Type: application/json` : la liste est de longueur libre et un id d'animateur vient du client, donc ni un séparateur ni une URL n'est un endroit sûr pour la porter. Un corps vide, ou sans `cibles`, publie pour toutes les personnes concernées. Le champ `exclusions` de la 3.x a disparu ; un client qui l'envoie encore est lu sans erreur et **ignoré** : personne n'est écarté d'une publication générale.
 
-L'exclusion **diffère** le message sans le supprimer ([ADR 0047](repo:docs/decisions/0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md)). La capture a lieu pour tout le monde (l'espace suit le plan publié), mais le repère de comparaison de la personne (`animateur.plan_notifie_id`) ne bouge pas. La publication suivante la nomme à nouveau, avec l'écart cumulé depuis ce qu'elle a réellement reçu, et `reporte` vaut `true` sur sa ligne d'aperçu. Exclure tous les destinataires est un `409` : publier sans prévenir personne n'a pas de sens.
+Une personne différée garde son repère de comparaison (`animateur.plan_notifie_id`) : la publication suivante la nomme à nouveau, avec l'écart cumulé depuis ce qu'elle a réellement reçu, et `reporte` vaut `true` sur sa ligne d'aperçu.
 
 Chaque ligne d'aperçu porte de quoi trier et filtrer sans lire de français : `ajouts`, `retraits`, `deplacements`, et `mineur`. Ce dernier signale la même vacation, sur le même stand, glissée d'un quart d'heure au plus, sans décision d'échange en attente. C'est un critère de lecture, jamais une exclusion automatique : décider de ne pas prévenir quelqu'un est un acte. Chaque ligne porte aussi `jours`, les dates de ses changements (`ChangementVacation.touches`), qui sont la même règle que l'onglet « Changements » de la Journée applique pour garder une personne sur un jour. L'écran Diffuser et la Journée comptent donc les mêmes personnes pour un même jour, ce que tient le test `ChangementsJourneeServiceTest#theDiffuserDayFilterAndTheChangesOfTheDayCountTheSamePeople`.
 

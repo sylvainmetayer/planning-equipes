@@ -15,7 +15,6 @@ import { DocumentsPanel } from './documents-panel';
 import { EnvoisTable } from './envois-table';
 import { OngletDiffuser, readOngletDiffuser } from './onglet';
 import { PublicationPanel } from './publication-panel';
-import { PublicationSelection } from './publication-selection';
 
 /**
  * « Diffuser »: what leaves the tool for real people, as two tabs chosen by
@@ -40,7 +39,6 @@ import { PublicationSelection } from './publication-selection';
     OutputPanel,
     PublicationPanel,
   ],
-  providers: [PublicationSelection],
   template: `
     <h1 class="page-title" i18n="@@nav.link.diffuser">Diffuser</h1>
     <mat-button-toggle-group

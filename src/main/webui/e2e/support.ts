@@ -354,7 +354,7 @@ export async function publierPlanning(admin: APIRequestContext): Promise<void> {
   // An explicit body, like every other caller: the endpoint takes the
   // deferral list (issue #503), and leaving the server to guess a missing
   // Content-Type is a dependency on a default nothing pins down.
-  const reponse = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
+  const reponse = await admin.post('/api/planning/publication', { data: {} });
   expect(reponse.ok() || reponse.status() === 409, await reponse.text()).toBe(true);
 }
 

@@ -18,8 +18,9 @@ Publication sends their schedule and the link to their espace only to the people
 Before publishing, you see one line per person to notify: what changes for them, their last confirmation. You can:
 
 - sort by size and collapse the minor changes;
-- export the detail as CSV;
-- defer the message of someone you would rather call first. That person receives nothing and remains to be notified at the next publication.
+- export the detail as CSV.
+
+Everybody on the list receives their planning: a person can no longer be taken out of a publication. To call somebody first, use "Notify only a few people" below.
 
 The publication panel also says how many unreviewed days would go out.
 
@@ -35,7 +36,7 @@ On the Share screen, a permanent table covers the whole edition. It shows, for e
 - the sending state: sent, failure with its cause, no e-mail, deferred;
 - the day-before reminder, the reminder and the acknowledgement.
 
-Each row offers "Resend their planning", "Remind" and "Defer". Filters exist by state and by day ("what changes on 06/09", counted as in the day view). A failed sending is visible and prevents the home screen from saying "up to date". Each printable document says who it is for.
+Each row offers "Resend their planning" and "Remind". Filters exist by state and by day ("what changes on 06/09", counted as in the day view). A failed sending is visible and prevents the home screen from saying "up to date". Each printable document says who it is for.
 
 ### When a sending fails
 

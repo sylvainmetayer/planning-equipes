@@ -13,7 +13,6 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PublicationPanel } from './publication-panel';
 import { GelInvitation } from '../../core/gel-invitation';
-import { PublicationSelection } from './publication-selection';
 
 const gelOffer = vi.fn().mockResolvedValue(undefined);
 
@@ -74,7 +73,6 @@ describe('PublicationPanel', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: PlanningApi, useValue: planningApi },
-        PublicationSelection,
         { provide: EditionStore, useValue: { inactive: editionInactive } },
         { provide: ConfirmService, useValue: confirm },
         { provide: SolverJobService, useValue: { editingLocked: () => editingLocked() } },
@@ -245,54 +243,27 @@ describe('PublicationPanel', () => {
   }
 
   describe('review table', () => {
-    it('names the deferred people to the server, and nobody else', async () => {
+    it('publishes to everybody, with no one left out', async () => {
       confirm.ask.mockResolvedValue(true);
       planningApi.publish.mockResolvedValue({
-        envoyes: 1,
+        envoyes: 2,
         sansEmail: [],
         echecs: [],
-        differes: ['Bruno Petit'],
+        differes: [],
       });
       const panel = await panelWith([
         recipient({}),
         recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
 
-      panel['toggleExclusion']('a2', false);
-      expect(panel['isExcluded']('a2')).toBe(true);
-      expect(panel['notifiedCount']()).toBe(1);
+      expect(panel['notifiedCount']()).toBe(2);
+      expect(panel['publishSentence']()).toContain('met à jour leur espace');
 
       await panel['publish']();
 
-      expect(planningApi.publish).toHaveBeenCalledExactlyOnceWith(['a2']);
-      expect(messages.at(-1)).toContain('Bruno Petit');
+      expect(planningApi.publish).toHaveBeenCalledExactlyOnceWith();
       // The table under the panel is told to read the new states.
       expect(published).toBe(1);
-    });
-
-    it('says both effects of the button in one sentence, counting the people kept', async () => {
-      const panel = await panelWith([
-        recipient({}),
-        recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
-      ]);
-
-      expect(panel['publishSentence']()).toContain('2');
-      expect(panel['publishSentence']()).toContain('met à jour leur espace');
-      panel['toggleExclusion']('a2', false);
-      expect(panel['publishSentence']()).toContain('1');
-    });
-
-    /**
-     * The last tick is the one that would publish to nobody: the button has to
-     * be inert before the click, not refused by the server after it.
-     */
-    it('goes inert when every single person has been unticked', async () => {
-      const panel = await panelWith([recipient({})]);
-
-      panel['toggleExclusion']('a1', false);
-
-      expect(panel['notifiedCount']()).toBe(0);
-      expect(panel['publishable']()).toBe(false);
     });
 
     it('folds the minor changes away without excluding them', async () => {
@@ -318,29 +289,6 @@ describe('PublicationPanel', () => {
       panel['chooseSort']('ampleur');
 
       expect(panel['rows']().map((ligne) => ligne.animateurId)).toEqual(['a2', 'a1']);
-    });
-
-    /**
-     * An exclusion only means something about somebody the list still names:
-     * a change undone between two reads must not leave them silently ticked
-     * off for the next publication.
-     */
-    it('drops an exclusion once its person leaves the list', async () => {
-      const panel = await panelWith([
-        recipient({}),
-        recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
-      ]);
-      panel['toggleExclusion']('a2', false);
-
-      planningApi.publicationPreview.mockResolvedValue({
-        ...apercuPret,
-        nombreConcernes: 1,
-        destinataires: [recipient({})],
-      });
-      await panel['reloadPreview']();
-
-      expect(panel['isExcluded']('a2')).toBe(false);
-      expect(panel['notifiedCount']()).toBe(1);
     });
   });
 });

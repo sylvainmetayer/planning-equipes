@@ -88,15 +88,6 @@
                 <button matButton [disabled]="busy() !== null || editingLocked() || editionInactive()" aria-describedby="envois-edition-inactive" (click)="remind(ligne)"
                         i18n="@@diffuser.action.relancer">Relancer</button>
               }
-              @if (ligne.aPrevenir) {
-                <button matButton (click)="toggleDefer(ligne)">
-                  @if (selection.isExcluded(ligne.animateurId)) {
-                    <ng-container i18n="@@diffuser.action.reintegrer">Réintégrer</ng-container>
-                  } @else {
-                    <ng-container i18n="@@diffuser.action.differer">Différer</ng-container>
-                  }
-                </button>
-              }
             </td>
           </tr>
         }
