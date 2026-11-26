@@ -40,7 +40,6 @@ function rule(overrides: Partial<ConstraintView>): ConstraintView {
 describe('regles', () => {
   it('words a group title, and falls back to its id for an unknown one', () => {
     expect(groupeLabel('dispersionJournee')).toBe('Dispersion sur la journée');
-    expect(groupeLabel('equilibreCharge')).toBe('Équilibre de la charge');
     expect(groupeLabel('autre')).toBe('autre');
   });
 

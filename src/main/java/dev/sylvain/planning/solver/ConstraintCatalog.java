@@ -120,20 +120,18 @@ public final class ConstraintCatalog {
     /** Group of the two rules that judge how scattered an animateur's day is over the locations. */
     public static final String GROUPE_DISPERSION_JOURNEE = "dispersionJournee";
 
-    /** Group of the two rules that spread the load, and the hard slots, between animateurs. */
-    public static final String GROUPE_EQUILIBRE_CHARGE = "equilibreCharge";
-
     /**
      * Display grouping of the Règles du planning screen: rules listed under one
      * title, each keeping its own line, level and switch. Nothing is merged —
-     * the benches of the location and comfort rules ruled a merge out — and
-     * {@code trajetInsuffisantEntrePostes} stays apart on purpose.
+     * the bench of the location rules ruled a merge out — and
+     * {@code trajetInsuffisantEntrePostes} stays apart on purpose. Only rules of
+     * the same block of the screen may share a group: the load rules are not
+     * grouped, {@code equilibrerCharge} being an organisation rule and
+     * {@code equilibrerCreneauxPenibles} an advanced one.
      */
     private static final Map<String, String> GROUPES = Map.of(
             "eviterChangementEmplacementEloigne", GROUPE_DISPERSION_JOURNEE,
-            "limiterEmplacementsParJour", GROUPE_DISPERSION_JOURNEE,
-            "equilibrerCharge", GROUPE_EQUILIBRE_CHARGE,
-            "equilibrerCreneauxPenibles", GROUPE_EQUILIBRE_CHARGE);
+            "limiterEmplacementsParJour", GROUPE_DISPERSION_JOURNEE);
 
     /**
      * The meal break, and the first « organisation rule » held hard. No article

@@ -200,7 +200,7 @@
         @for (rule of rows; track rule.name; let i = $index) {
           @if (opensGroup(rows, i)) {
             <tr class="regles-groupe">
-              <th scope="colgroup" colspan="6">{{ groupeLabel(rule.groupe ?? '') }}</th>
+              <th scope="rowgroup" colspan="6">{{ groupeLabel(rule.groupe ?? '') }}</th>
             </tr>
           }
           <tr [class.regles-row-inactive]="!isActif(rule)" [class.regles-row-selected]="rule.name === regle()">

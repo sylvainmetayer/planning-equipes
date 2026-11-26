@@ -31,7 +31,7 @@ The rules your organisation gives itself: load balance, continuity on a stand, t
 
 Making a rule mandatory that the edition cannot hold gives an impossible plan: the diagnosis of hard failures names it. Disabling a protected rule (the meal break, the adult beside a minor) asks for a confirmation, which recalls that you remain the employer and the person responsible for the schedule that goes out. The screen permanently shows what is disabled. Nothing is disabled for you.
 
-Two pairs of rules are listed under one shared title, each keeping its own line, level and switch: *Spread over the day* (far location changes and the number of locations visited in a day) and *Load balance* (everyone's load and the hard timeslots). It is only a grouping on screen: no rule is merged, and "Trajets trop courts entre deux postes" (journeys too short between two shifts) stays apart under its own title. When the two rules of a title are not in the same block, the title repeats in each.
+Two rules are listed under one shared title, *Spread over the day* (far location changes and the number of locations visited in a day), each keeping its own line, level and switch. It is only a grouping on screen: no rule is merged, and "Trajets trop courts entre deux postes" (journeys too short between two shifts) stays apart under its own title. Load balance and the balance of hard timeslots are not grouped: one is an organisation rule, the other a preference of the Advanced block, and a title never spans two blocks.
 
 "Baisser l'importance" (lower the importance) is never the first gesture offered for an organisation rule: the Diagnostic always puts it last, and it disappears when the weight is already at its lowest.
 

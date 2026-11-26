@@ -276,7 +276,7 @@ class ConstraintCatalogTest {
     }
 
     @Test
-    void groupsTwoPairsForDisplayAndLeavesTheTripAlone() {
+    void groupsTheTwoLocationRulesAndLeavesTheTripAlone() {
         var grouped = ConstraintCatalog.PAR_NOM.values().stream()
                 .filter(definition -> definition.groupe() != null)
                 .collect(java.util.stream.Collectors.toMap(
@@ -284,8 +284,6 @@ class ConstraintCatalogTest {
         assertThat(grouped)
                 .containsExactlyInAnyOrderEntriesOf(java.util.Map.of(
                         "eviterChangementEmplacementEloigne", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE,
-                        "limiterEmplacementsParJour", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE,
-                        "equilibrerCharge", ConstraintCatalog.GROUPE_EQUILIBRE_CHARGE,
-                        "equilibrerCreneauxPenibles", ConstraintCatalog.GROUPE_EQUILIBRE_CHARGE));
+                        "limiterEmplacementsParJour", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE));
     }
 }

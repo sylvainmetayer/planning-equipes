@@ -141,8 +141,6 @@ export function groupeLabel(groupe: string): string {
   switch (groupe) {
     case 'dispersionJournee':
       return $localize`:@@regles.groupe.dispersionJournee:Dispersion sur la journée`;
-    case 'equilibreCharge':
-      return $localize`:@@regles.groupe.equilibreCharge:Équilibre de la charge`;
     default:
       return groupe;
   }
