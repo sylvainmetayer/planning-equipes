@@ -94,4 +94,17 @@ class PosteAffectationDifficultyComparatorFactoryTest {
     void underTheHardRunOfDaysTheEarliestDayIsPlacedFirstThenTheScarcestOfIt() {
         assertThat(placementOrder(true)).containsExactly(rareOnMonday, setUpOnMonday, rareOnTuesday);
     }
+
+    @Test
+    void theBenchSeamIsOnByDefaultAndDropsTheCalendarOrderWhenOff() {
+        assertThat(PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap)
+                .isTrue();
+        try {
+            PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap = false;
+            assertThat(placementOrder(true).getLast()).isSameAs(setUpOnMonday);
+        } finally {
+            PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap = true;
+        }
+        assertThat(placementOrder(true)).containsExactly(rareOnMonday, setUpOnMonday, rareOnTuesday);
+    }
 }
