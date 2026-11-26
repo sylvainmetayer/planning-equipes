@@ -30,6 +30,18 @@
       "texte": "L'écran *Aujourd'hui* tient dans la poche : on marque un absent, l'application propose des remplaçants qui respectent déjà les règles, et prévient les seules personnes concernées. Pour la salle de contrôle, l'**affichage mural** montre sur une télé les stands ouverts, les places libres et la consigne du jour, et se met à jour chaque minute. Les animateurs, eux, proposent leurs échanges de créneaux depuis leur espace ; l'organisation arbitre. Pour la journée même, voir [suivre le jour J](/docs/regles/suivre-le-jour-j/). Dans un salon, la même télé devient [la salle de contrôle](/planning-salon-foire/)."
     },
     {
+      "h2": "Un exemple : le samedi d'une convention de jeux",
+      "texte": "Un cas imaginé pour illustrer, pas celui d'un client. Une convention de trois jours, et un samedi où le stand des jeux de rôle ouvre de 10 h à 22 h, la zone des jeux de plateau de 9 h à 20 h, la billetterie de 8 h 30 à 19 h. Chaque stand reçoit son effectif minimum et maximum et la catégorie de jeu qu'il demande. Le calcul ne place sur le stand des jeux de rôle que des animateurs qui ont cette compétence ; une personne qui a déclaré ne pas venir le samedi n'est pas placée ; un mineur n'a pas de créneau que la loi lui interdit à cette heure-là. Si une règle impérative ne peut pas être tenue, le calcul le dit plutôt que de la contourner."
+    },
+    {
+      "h2": "Les compétences : qui peut tenir quel stand",
+      "texte": "Les catégories de jeu (jeux de rôle, jeux de figurines, initiation…) sont **celles que vous créez**, depuis l'écran des typologies, sans toucher au code. Chaque animateur reçoit les siennes avec un niveau, chaque stand déclare celles qu'il demande. C'est ce qui évite de mettre un débutant seul sur un stand technique, et de laisser un spécialiste unique tenir trois stands à la fois. Le guide [animateurs et compétences](/docs/regles/animateurs-et-competences/) montre la grille."
+    },
+    {
+      "h2": "Avant le premier jour : ce qu'il faut réunir",
+      "texte": "Trois listes suffisent : les stands avec leurs horaires et leurs effectifs, les animateurs avec leur date de naissance et leurs compétences, et les jours où chacun ne peut pas venir. Les deux premières s'importent depuis un tableur, la troisième se collecte sur les téléphones. Avant le premier calcul, l'écran *Diagnostic* dit combien de personnes il faut au minimum et quelles compétences manquent : [savoir combien de personnes recruter](/docs/regles/dimensionner-l-equipe/)."
+    },
+    {
       "h2": "Ce que reçoit chacun",
       "texte": "Un lien et un code par e-mail pour son espace sur téléphone, une feuille PDF avec un QR code, un abonnement à son agenda (ICS). Seules les personnes dont l'emploi du temps a changé reçoivent la nouvelle version."
     }
@@ -73,6 +85,18 @@
       {
         "h2": "On the day",
         "texte": "The *Today* screen fits in a pocket: you mark someone absent, the application suggests replacements who already respect the rules, and notifies only the people concerned. For the control room, the **wall display** shows the open stands, the free seats and the day's consigne on a TV, refreshed every minute. Staff propose swaps from their own space; the organisation arbitrates. For the day itself, see [following the day of the event](/en/docs/rules/follow-the-event-day/). At a trade show, the same TV becomes [the control room](/en/trade-show-staff-rota/)."
+      },
+      {
+        "h2": "An example: the Saturday of a games convention",
+        "texte": "A made-up case to illustrate, not a customer's. A three-day convention, and a Saturday where the role-playing stand opens from 10 am to 10 pm, the board-games area from 9 am to 8 pm and the ticket desk from 8:30 am to 7 pm. Each stand gets its minimum and maximum headcount and the game category it needs. The solver only places on the role-playing stand staff who have that skill; someone who declared they cannot come on Saturday is not placed; an under-18 gets no shift the law forbids at that hour. If a mandatory rule cannot be kept, the solver says so instead of working around it."
+      },
+      {
+        "h2": "Skills: who can run which stand",
+        "texte": "The game categories (role-playing, miniatures, introductions...) are **the ones you create**, from the categories screen, without touching any code. Each person gets theirs with a level, each stand declares the ones it needs. That is what stops a beginner being left alone on a technical stand, and a single specialist running three stands at once. The guide to [staff and skills](/en/docs/rules/staff-and-skills/) shows the grid."
+      },
+      {
+        "h2": "Before day one: what to gather",
+        "texte": "Three lists are enough: the stands with their hours and headcounts, the staff with their date of birth and skills, and the days each person cannot come. The first two are imported from a spreadsheet, the third is collected on phones. Before the first calculation, the *Diagnostic* screen says how many people you need at the very least and which skills are missing: [know how many people to recruit](/en/docs/rules/size-the-team/)."
       },
       {
         "h2": "What everyone receives",

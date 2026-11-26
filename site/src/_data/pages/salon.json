@@ -26,6 +26,14 @@
       "texte": "L'écran *Aujourd'hui* gère les absents et propose des remplaçants. L'**affichage mural** tourne sur une télé : stands ouverts regroupés par emplacement, vacation en cours et suivante, places vides depuis ce matin, pause sans relais dans l'heure. Le mode d'emploi est dans [suivre le jour J](/docs/regles/suivre-le-jour-j/)."
     },
     {
+      "h2": "Un exemple : un salon de quatre jours",
+      "texte": "Un cas imaginé pour illustrer, pas celui d'un client. L'accueil ouvre de 9 h à 19 h, la buvette de 8 h à 21 h, le vestiaire de 10 h à 18 h, avec plus de monde l'après-midi que le matin : chaque fenêtre d'ouverture porte son effectif. La buvette est tenue par deux personnes ; quand l'une part en pause, l'autre reste, et le plan n'est accepté que si c'est le cas pour chaque pause due. La même personne n'est pas placée au vestiaire puis à l'autre bout du site sans le temps de s'y rendre."
+    },
+    {
+      "h2": "Le salon de l'an prochain",
+      "texte": "Un salon revient chaque année avec les mêmes stands. Vous créez l'édition suivante en la copiant depuis la précédente, avec ou sans les animateurs, vous la préparez sans rien publier, puis vous l'activez d'un geste. Les deux éditions restent comparables : ce qui a été tenu cette année éclaire le dimensionnement de la suivante. Le guide [enchaîner les éditions](/docs/regles/enchainer-les-editions/) détaille la copie et l'activation."
+    },
+    {
       "h2": "Avant et après",
       "texte": "L'organisateur obtient un PDF global du planning, chacun son PDF avec un QR code et son agenda. Après l'événement, l'écran *Réalisé vs planifié* compare ce qui a été publié et ce qui a été tenu. Le guide [importer et exporter des fichiers](/docs/regles/importer-exporter/) montre les exports."
     }
@@ -65,6 +73,14 @@
       {
         "h2": "The control room",
         "texte": "The *Today* screen handles absences and suggests replacements. The **wall display** runs on a TV: open stands grouped by location, current and next shift, seats empty since this morning, a break without relief within the hour. How to use it is in [following the day of the event](/en/docs/rules/follow-the-event-day/)."
+      },
+      {
+        "h2": "An example: a four-day trade show",
+        "texte": "A made-up case to illustrate, not a customer's. The reception desk opens from 9 am to 7 pm, the bar from 8 am to 9 pm, the cloakroom from 10 am to 6 pm, with more people in the afternoon than in the morning: each opening window carries its own headcount. The bar is run by two people; when one goes on break, the other stays, and the plan is only accepted if that holds for every break that is due. The same person is not placed at the cloakroom and then at the far end of the site without time to walk there."
+      },
+      {
+        "h2": "Next year's show",
+        "texte": "A trade show comes back every year with the same stands. You create the next edition by copying the previous one, with or without the staff, prepare it without publishing anything, then activate it in one step. The two editions stay comparable: what was held this year informs the sizing of the next. The guide to [chaining editions](/en/docs/rules/chain-editions/) details copying and activation."
       },
       {
         "h2": "Before and after",
