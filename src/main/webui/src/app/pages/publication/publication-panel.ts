@@ -162,7 +162,7 @@ export class PublicationPanel implements OnInit {
     if (nonValidees === 0) {
       return '';
     }
-    return $localize`:@@publication.journeesNonValidees:${nonValidees}:count: journée(s) que personne n'a marquée « relue et acceptée » partiraient avec cette publication.`;
+    return $localize`:@@publication.journeesNonValidees:${nonValidees}:count: journée(s) que personne n'a relue ni figée partiraient avec cette publication.`;
   });
 
   protected readonly publishable = computed(() => {

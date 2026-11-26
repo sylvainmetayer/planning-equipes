@@ -1,24 +1,25 @@
-// « Relu et accepté » on a day of the planning: the review state, which the
-// lock mechanism never carried. Reading, accepting, withdrawing — and the
-// prerequisites the panel reads out before somebody accepts.
+// The state of a day of the planning — à relire, relue, figée (ADR 0121) —
+// and what the relecture reads around it: progression, prerequisites and the
+// readings a cold start keeps. The `/api/validations` writes are aliases kept
+// until 5.0; nothing here calls them.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
-  DemandeValidationJournee,
+  DayState,
+  DayStateView,
   KeptReading,
   PrerequisJournee,
   ProgressionValidations,
-  ResultatValidationJournee,
-  ValidationJournee,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ValidationsApi {
   private readonly api = inject(ApiService);
 
-  list(): Promise<ValidationJournee[]> {
-    return this.api.get<ValidationJournee[]>('/api/validations');
+  /** Every day of the grid and its state. */
+  etats(): Promise<DayStateView[]> {
+    return this.api.get<DayStateView[]>('/api/etats-journee');
   }
 
   /** How far the reading has got — what the progress banners show. */
@@ -38,11 +39,11 @@ export class ValidationsApi {
     );
   }
 
-  accept(demande: DemandeValidationJournee): Promise<ResultatValidationJournee> {
-    return this.api.post<ResultatValidationJournee>('/api/validations', demande);
-  }
-
-  withdraw(id: string): Promise<void> {
-    return this.api.delete(`/api/validations/${encodeURIComponent(id)}`);
+  /** Moves one day; only `FIGEE` lays the day lock down. */
+  setEtat(jour: string, etat: DayState, commentaire: string | null): Promise<DayStateView> {
+    return this.api.put<DayStateView>(`/api/etats-journee/${encodeURIComponent(jour)}`, {
+      etat,
+      commentaire,
+    });
   }
 }

@@ -125,7 +125,7 @@ public class ValidationJourneeService {
      *
      * <ul>
      *   <li>{@link DayState#FIGEE}: records the reading, lays the lock if the
-     *       day has none;</li>
+     *       day has none; without a comment, the day's existing one is kept;</li>
      *   <li>{@link DayState#RELUE}: records the reading, lifts the day's
      *       lock;</li>
      *   <li>{@link DayState#A_RELIRE}: withdraws both.</li>
@@ -145,6 +145,11 @@ public class ValidationJourneeService {
         if (etat == DayState.A_RELIRE) {
             repository.deleteJours(List.of(jour));
         } else {
+            if (etat == DayState.FIGEE && checked == null) {
+                // Freezing a day read keeps what the reviewer wrote.
+                ValidationJournee existing = readingsByDay().get(jour);
+                checked = existing == null ? null : existing.commentaire();
+            }
             repository.save(new ValidationJournee(
                     UUID.randomUUID().toString(), jour, Instant.now(), journal.nomAdmin(), checked));
         }

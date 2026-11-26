@@ -797,8 +797,7 @@ public final class CatalogueActions {
         outil("supprimer_contrainte_ad_hoc", AJUSTEMENT_SUPPRIME);
         outil("verrouiller", VERROU_POSE);
         outil("deverrouiller", VERROU_RETIRE);
-        outil("ajouter_validation_journee", JOURNEE_VALIDEE);
-        outil("retirer_validation_journee", JOURNEE_VALIDATION_RETIREE);
+        outil("modifier_etat_journee", JOURNEE_ETAT_CHANGE);
         outil("appliquer_consigne", CONSIGNE_POSEE);
         outil("lever_consigne", CONSIGNE_LEVEE);
         outil("definir_prereglage_consigne", PREREGLAGE_CONSIGNE_ENREGISTRE);
