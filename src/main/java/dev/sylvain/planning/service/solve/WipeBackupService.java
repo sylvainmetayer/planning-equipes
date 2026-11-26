@@ -41,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -378,18 +379,19 @@ public class WipeBackupService {
         Long avant = scope.writeAndReturn(
                 "Failed to back the edition up before a restore",
                 connection -> insert(connection, Trigger.RESTORE, id).orElse(null));
+        AtomicBoolean scenarioImporte = new AtomicBoolean();
         Restoration restoration;
         try {
             // A restored backup always carries a plan, possibly empty: the restore empties the seats it finds.
             ScenarioDto file = bound.scenario().plan() == null
                     ? bound.scenario().withPlan(new PlanDto(List.of(), List.of()))
                     : bound.scenario();
-            restoration = scenarioImportService.importForRestore(file, avant);
+            restoration = scenarioImportService.importForRestore(file, avant, () -> scenarioImporte.set(true));
             // A backup taken by an older release is converted on reading: what that dropped is said here too.
             restoration.avertissements().addAll(bound.warnings());
         } catch (RuntimeException e) {
-            String message =
-                    "Restauration de la sauvegarde " + id + " interrompue : " + e.getMessage() + " " + recourse(avant);
+            String message = "Restauration de la sauvegarde " + id + " interrompue. "
+                    + appliedSoFar(scenarioImporte.get()) + " Cause : " + e.getMessage() + " " + recourse(avant);
             if (e instanceof BusinessError) {
                 throw new BusinessError.Conflict(message);
             }
@@ -418,6 +420,15 @@ public class WipeBackupService {
         return restoration;
     }
 
+    /** What a failed restore had written: the import is not atomic, so the edition is in between. */
+    private static String appliedSoFar(boolean scenarioImporte) {
+        return scenarioImporte
+                ? "Le scénario de la sauvegarde est importé (référentiel, grille, paramètres) ; son planning n'est pas"
+                        + " remis, ou seulement en partie."
+                : "L'import du scénario n'est pas allé au bout : le référentiel de l'édition peut être en partie"
+                        + " remplacé, et le planning de la sauvegarde n'est pas remis.";
+    }
+
     /** What a failed restore says to go back: the backup of the state right before it, and the list. */
     private static String recourse(Long avant) {
         String liste = " Pour un état plus ancien, choisissez dans la liste des sauvegardes de l'édition : chacune y"
@@ -430,13 +441,14 @@ public class WipeBackupService {
     }
 
     /**
-     * Puts the plan section of a file back on the referential the import has
-     * just written: its seats found again by natural keys, its locks through
-     * the usual write. The file's own ids are matched against the edition's
+     * Puts the plan section of a restored backup back on the referential the
+     * import has just written — an ordinary import ignores that section: its
+     * seats found again by natural keys, its locks through the usual write.
+     * The file's own ids are matched against the edition's
      * rows ({@link #matchStands}, {@link #matchAnimateurs}) — the import's
      * remapping has already run, and the plan names the file's ids.
      *
-     * @param avant                  the backup of the state this replaced, {@code null} outside a restore
+     * @param avant                  the backup of the state this replaced, {@code null} when the edition was empty
      * @param referentielNonRestaure what the import could not create again, one sentence each
      */
     @RefusedWhileSolving

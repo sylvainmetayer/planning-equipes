@@ -94,7 +94,7 @@ public class ScenarioImportService {
      * {@code src/main/resources/scenarios}, by name.
      */
     public ScenarioImportOutcome importBundled(String name) {
-        return importScenario(ScenarioYamlReader.readBundledScenario(name), new Landing(false, null));
+        return importScenario(ScenarioYamlReader.readBundledScenario(name), new Landing(false, null, null));
     }
 
     /**
@@ -105,14 +105,12 @@ public class ScenarioImportService {
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
         ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(yamlContent);
-        Landing landing = new Landing(false, null);
-        ScenarioImportOutcome outcome = importScenario(bound.scenario(), landing);
+        ScenarioImportOutcome outcome = importScenario(bound.scenario(), new Landing(false, null, null));
         List<String> avertissements = new ArrayList<>(bound.warnings());
-        if (landing.plan != null) {
-            // A file carrying a plan section: what of it could not be put back is said, never dropped.
-            avertissements.addAll(landing.plan.affectationsNonRestaurees());
-            avertissements.addAll(landing.plan.verrouillagesNonRestaures());
-            avertissements.addAll(landing.plan.avertissements());
+        if (bound.scenario().plan() != null) {
+            // Only a restore puts a plan back (ADR 0112): an import by hand would write seats and locks past the
+            // checks every other plan write goes through. The section is said ignored, never dropped in silence.
+            avertissements.add(PLAN_IGNORE);
         }
         return new ScenarioImportOutcome(
                 outcome.editionId(), outcome.editionNom(), outcome.editionCreee(), avertissements);
@@ -125,12 +123,13 @@ public class ScenarioImportService {
      * rest — a stand without a timeslot, a timeslot without a stand — comes
      * back here too, through the usual creation: a backup brings back the
      * whole edition it was taken of. The file's plan section is then put back
-     * on it, as any file carrying one.
+     * on it — here only: an ordinary import ignores that section.
      *
-     * @param avant the backup of the state this replaces, named in the answer
+     * @param avant            the backup of the state this replaces, named in the answer
+     * @param scenarioImported told once the referential is written, right before the plan is put back
      */
-    public WipeBackupService.Restoration importForRestore(ScenarioDto scenario, Long avant) {
-        Landing landing = new Landing(true, avant);
+    public WipeBackupService.Restoration importForRestore(ScenarioDto scenario, Long avant, Runnable scenarioImported) {
+        Landing landing = new Landing(true, avant, scenarioImported);
         importScenario(scenario, landing);
         return landing.plan;
     }
@@ -141,14 +140,21 @@ public class ScenarioImportService {
         final boolean restore;
 
         final Long avant;
+        final Runnable scenarioImported;
         final List<String> nonRecrees = new ArrayList<>();
         WipeBackupService.Restoration plan;
 
-        Landing(boolean restore, Long avant) {
+        Landing(boolean restore, Long avant, Runnable scenarioImported) {
             this.restore = restore;
             this.avant = avant;
+            this.scenarioImported = scenarioImported;
         }
     }
+
+    /** Said by an ordinary import of a file carrying a plan section. */
+    static final String PLAN_IGNORE = "La section « plan: » du fichier (sièges et verrous) n'est pas appliquée par un"
+            + " import : seule la restauration d'une sauvegarde avant vidage remet un planning. Le scénario est"
+            + " importé sans planning.";
 
     /**
      * The import itself, identical whether the scenario came bundled or was
@@ -205,8 +211,10 @@ public class ScenarioImportService {
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
-            // Last: the seats and locks name the referential, the grid and the parameters just written.
-            if (scenario.plan() != null) {
+            // Last, and for a restore only: the seats and locks name the referential, the grid and the
+            // parameters just written.
+            if (landing.restore && scenario.plan() != null) {
+                landing.scenarioImported.run();
                 landing.plan = wipeBackup.applyPlan(scenario, landing.avant, landing.nonRecrees);
             }
         });

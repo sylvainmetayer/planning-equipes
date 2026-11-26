@@ -61,7 +61,7 @@ The response counts the seats filled, the locks written and those already in pla
 - Day validations and swap requests are not backed up.
 - Technical identifiers change (stands recreated, timeslots, staff members of an emptied edition): a snapshot that named them can no longer be restored, and the action journal keeps the old ones.
 
-Re-importing a backup's file yourself (Files, Import) also puts the schedule back, since the import reads the `plan:` section like the others: only the stands and timeslots with no seat do not come back, which the restore does in addition. The file holds the staff members' names, dates of birth, addresses and phone numbers: treat it like the database ([retention](../installer/rgpd-limites-a-consigner.md#les-copies-avant-vidage)).
+Re-importing a backup's file yourself (Files, Import) only brings the scenario back: the import ignores the `plan:` section and says so in its warnings, because a schedule laid by a file would bypass the checks of every other seat and lock write. Only the restore puts the schedule back, and the stands and timeslots with no seat. The file holds the staff members' names, dates of birth, addresses and phone numbers: treat it like the database ([retention](../installer/rgpd-limites-a-consigner.md#les-copies-avant-vidage)).
 
 ## The SQL dump for test tooling
 

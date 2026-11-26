@@ -192,6 +192,27 @@ class WipeBackupServiceTest {
     }
 
     /**
+     * A file carrying a plan section, imported by hand, lands without its plan
+     * and says so: only a restore puts seats and locks back (ADR 0112).
+     */
+    @Test
+    void anImportByHandIgnoresThePlanSectionWithAWarning() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            persistenceService.clearDatabase();
+            String file = wipeBackup.loadContent(wipeBackup.list().getFirst().id());
+
+            List<String> avertissements = scenarioImportService.importYaml(file).avertissements();
+
+            assertThat(avertissements).anyMatch(a -> a.contains("n'est pas appliquée par un import"));
+            assertThat(persistenceService.loadPersistedPlanning().getPostes())
+                    .allMatch(poste -> poste.getAnimateur() == null);
+            assertThat(locks()).isEmpty();
+        });
+    }
+
+    /**
      * A copy a 3.x release stored — the scenario without a plan section, the
      * plan in its column — is read as the same file: restorable, and
      * downloadable with the section (ADR 0112). No row of it is rewritten.
@@ -499,6 +520,7 @@ class WipeBackupServiceTest {
             assertThatThrownBy(() -> wipeBackup.restore(backup))
                     .isInstanceOf(BusinessError.Conflict.class)
                     .hasMessageContaining("interrompue")
+                    .hasMessageContaining("Le scénario de la sauvegarde est importé")
                     .hasMessageContaining("Aucun des");
             long avant = wipeBackup.list().getFirst().id();
             assertThat(ids()).contains(backup, avant);

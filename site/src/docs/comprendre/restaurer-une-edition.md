@@ -57,7 +57,7 @@ La réponse compte les sièges pourvus, les verrous écrits et ceux déjà posé
 - Les validations de journée et les demandes d'échange ne sont pas sauvegardées.
 - Les identifiants techniques changent (stands recréés, créneaux, animateurs d'une édition vidée) : un instantané qui les nommait ne se restaure plus, et le journal des actions garde les anciens.
 
-Réimporter soi-même le fichier d'une sauvegarde (Fichiers, Importer) remet aussi le planning, puisque l'import lit la section `plan:` comme les autres : seuls les stands et créneaux sans siège ne reviennent pas, ce que fait en plus la restauration. Les noms, dates de naissance, adresses et téléphones des animateurs sont dans ce fichier : traitez-le comme la base ([durée de conservation](../installer/rgpd-limites-a-consigner.md#les-copies-avant-vidage)).
+Réimporter soi-même le fichier d'une sauvegarde (Fichiers, Importer) ne remet que le scénario : l'import ignore la section `plan:` et le dit dans ses avertissements, parce qu'un planning posé par un fichier échapperait aux contrôles des autres écritures de sièges et de verrous. Seule la restauration remet le planning, et les stands et créneaux sans siège. Les noms, dates de naissance, adresses et téléphones des animateurs sont dans ce fichier : traitez-le comme la base ([durée de conservation](../installer/rgpd-limites-a-consigner.md#les-copies-avant-vidage)).
 
 ## Le dump SQL d'outillage de test
 

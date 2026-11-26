@@ -211,7 +211,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     `WipeBackupService` (what is stored before a reset, an import or a restore
     empties an edition: one scenario export whose last `plan:` section carries
     the seats and locks, and the restore, which is the ordinary import of that
-    file — non-atomic like the import, the plan found again by natural keys —
+    file and the only import that applies `plan:` (any other one ignores it,
+    with a warning) — non-atomic like the import, the plan found again by
+    natural keys —
     ADR 0084, in part replaced by ADR 0112; a 3.x copy keeps its `plan`
     column, read as that section),
     `StaffingVerificationService` (the staffing check: a made-up team solved
