@@ -2272,6 +2272,9 @@
           "libelleCourt" : {
             "type" : "string"
           },
+          "groupe" : {
+            "type" : "string"
+          },
           "remediation" : {
             "type" : "string"
           },

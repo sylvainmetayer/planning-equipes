@@ -1425,6 +1425,8 @@ export interface ConstraintView {
   description: string;
   /** The rule in a few words of the organiser's language — never the technical name. */
   libelleCourt?: string;
+  /** Display group the rules screen lists the rule under with its siblings; absent when it stands alone. */
+  groupe?: string | null;
   /** What to do when this rule is in default, most likely gesture first; see {@link ActionType}. */
   actions?: ActionType[];
   /**
