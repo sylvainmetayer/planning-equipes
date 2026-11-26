@@ -108,6 +108,7 @@ Une fenêtre est écartée si ses bornes manquent, si elle est vide ou inversée
 | `facteurDetour` | 1,3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 | `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
+| `placementRepas` | `FIN_MIDI_DEBUT_SOIR` | aucune : se règle par édition | `coupureRepasPlacementPrefere` |
 
 Quelques précisions de lecture :
 

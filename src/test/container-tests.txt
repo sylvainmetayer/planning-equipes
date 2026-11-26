@@ -191,6 +191,7 @@ dev/sylvain/planning/service/solve/AgeWeeklyCapMergeMigrationTest.java
 dev/sylvain/planning/service/solve/ComputeBudgetArchiveMigrationTest.java
 dev/sylvain/planning/service/solve/ConstraintLevelMigrationTest.java
 dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java
+dev/sylvain/planning/service/solve/MealPlacementMigrationTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java

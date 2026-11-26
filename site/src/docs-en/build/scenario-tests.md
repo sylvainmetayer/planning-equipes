@@ -302,7 +302,7 @@ The 5% rule decided for these measures: a medium loss beyond 5%, or a default sc
 
 ## The meal-rules bench
 
-`MealRulesBenchTest` measures what merging the two meal rules, `coupureRepasObligatoire` (the break owed, hard) and `coupureRepasPlacementPrefere` (where in the window it is taken, soft), into one rule whose preferred placement is a parameter would cost, before anybody writes it. It changes no behaviour and needs no seam in production code: the variants are toggles, weights that carry a rule to another level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) and a rewrite of the problem's `FenetreRepas` facts, whose `auPlusTard` flag is the placement the merged rule would read as a parameter.
+`MealRulesBenchTest` measures what merging the two meal rules, `coupureRepasObligatoire` (the break owed, hard) and `coupureRepasPlacementPrefere` (where in the window it is taken, soft), into one rule whose preferred placement is a parameter would cost, before anybody writes it. It changes no behaviour and needs no seam in production code: the variants are toggles, weights that carry a rule to another level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) and a rewrite of the problem's `FenetreRepas` facts, whose `auPlusTard` flag is the placement the merged rule would read as a parameter. What the bench showed was followed: the merge happens in the catalogue and on screen, not in the score, and the placement is an edition setting ([ADR 0123](repo:docs/decisions/0123-une-seule-entree-de-repas-placement-en-parametre.md)).
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=MealRulesBenchTest \

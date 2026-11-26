@@ -165,6 +165,33 @@ describe('ParametresSection', () => {
     expect(api['saveLegalParameters']).not.toHaveBeenCalled();
   });
 
+  it('offers the meal-break placement as a choice and saves the one picked', async () => {
+    api['qualityParameters'].mockResolvedValue({
+      placementRepas: 'FIN_MIDI_DEBUT_SOIR',
+      modifieLe: STAMP,
+    });
+    await openSection('organisation');
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      'select[data-field="placementRepas"]',
+    )!;
+    expect(Array.from(select.options).map((option) => option.value)).toEqual([
+      'FIN_MIDI_DEBUT_SOIR',
+      'DEBUT',
+      'FIN',
+      'AUCUN',
+    ]);
+    expect(select.value).toBe('FIN_MIDI_DEBUT_SOIR');
+
+    select.value = 'AUCUN';
+    select.dispatchEvent(new Event('change'));
+    await fixture.componentInstance['save']();
+
+    expect(api['saveQualityParameters']).toHaveBeenCalledExactlyOnceWith({
+      placementRepas: 'AUCUN',
+      modifieLe: STAMP,
+    });
+  });
+
   it('saves through « Enregistrer » without a native submit reloading the page', async () => {
     await openSection('legal');
     const pause = champ('Durée de la pause légale');

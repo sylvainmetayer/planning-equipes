@@ -111,6 +111,7 @@ A window is discarded if its bounds are missing, if it is empty or inverted, if 
 | `facteurDetour` | 1.3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 | `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
+| `placementRepas` | `FIN_MIDI_DEBUT_SOIR` | none: set per edition | `coupureRepasPlacementPrefere` |
 
 A few notes on reading it:
 

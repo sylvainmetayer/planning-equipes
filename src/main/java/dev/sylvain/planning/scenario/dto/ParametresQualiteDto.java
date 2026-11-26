@@ -1,5 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
+import dev.sylvain.planning.domain.PlacementRepas;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -35,4 +36,5 @@ public record ParametresQualiteDto(
         @Positive @DecimalMax("15") Double vitesseMarcheKmH,
         @DecimalMin("1") @DecimalMax("5") Double facteurDetour,
         @PositiveOrZero @Max(120) Integer toleranceTrajetMinutes,
-        @PositiveOrZero @Max(240) Integer toleranceArriveeGroupeeMinutes) {}
+        @PositiveOrZero @Max(240) Integer toleranceArriveeGroupeeMinutes,
+        PlacementRepas placementRepas) {}
