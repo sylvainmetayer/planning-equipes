@@ -98,7 +98,14 @@ Two **resources**, to attach once to inform all following calls:
 4.0 renames, groups or removes tools of 3.x, with no alias: a tool is published only under its current name ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
-No tool has been renamed or removed yet.
+| Name in 3.x | Name in 4.0 |
+| --- | --- |
+| `capturer_instantane` | `creer_version` |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
+| `lister_instantanes` | `lister_versions` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool

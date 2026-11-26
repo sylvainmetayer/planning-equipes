@@ -94,7 +94,7 @@ Le lien de l'espace et son authentification (jeton opaque, code envoyé par mail
 
 ## Le plan publié
 
-Deux plannings coexistent par édition, et il faut les nommer. Le **planning de travail** est celui que la résolution écrit et que l'administration manipule : `poste_affectation`, un seul par édition. Le **planning publié** est celui que les animateurs ont reçu : le dernier instantané marqué publié (`plan_snapshot.publie_le`). C'est un instantané et rien d'autre, car son contenu dénormalisé ([décision 0007](repo:docs/decisions/0007-instantanes-contenu-denormalise.md)) est exactement « un planning complet, indépendant de ce qui bouge après ».
+Deux plannings coexistent par édition, et il faut les nommer. Le **planning de travail** est celui que la résolution écrit et que l'administration manipule : `poste_affectation`, un seul par édition. Le **planning publié** est celui que les animateurs ont reçu : la dernière version d'origine `PUBLIEE` (table `version_plan`). C'est une version et rien d'autre, car son contenu dénormalisé ([décision 0007](repo:docs/decisions/0007-instantanes-contenu-denormalise.md)) est exactement « un planning complet, indépendant de ce qui bouge après ».
 
 **L'espace animateur lit le planning publié.** Ce qu'une personne voit est ce qu'on lui a envoyé : un échange validé, un remplacement appliqué ou une nouvelle résolution ne déplacent son espace qu'une fois publiés. Tant que rien n'a été publié sur l'édition, l'espace est **vide** et le dit : replier sur le planning de travail recréerait l'incohérence que la distinction supprime.
 

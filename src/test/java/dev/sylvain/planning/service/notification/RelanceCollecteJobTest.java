@@ -108,7 +108,7 @@ class RelanceCollecteJobTest {
         execute("DELETE FROM envoi_mail");
         execute("DELETE FROM declaration_disponibilite");
         execute("DELETE FROM parametres_collecte");
-        execute("DELETE FROM plan_snapshot");
+        execute("DELETE FROM version_plan");
         persistence.clearDatabase();
         alice = animateur("Alice", ALICE);
         // Bruno was invited and answered: declared is declared, whatever comes of it.

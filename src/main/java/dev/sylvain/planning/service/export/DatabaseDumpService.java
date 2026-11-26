@@ -154,7 +154,7 @@ public class DatabaseDumpService {
             // The published plan, and who was told about it. Before
             // publication_destinataire, "already told" and "still to tell" are
             // the same thing.
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             // Which of those mails reached their recipient: without it, a
             // restore says « envoyé » of nothing and hides every failure.
@@ -312,7 +312,7 @@ public class DatabaseDumpService {
             // replayed.
             "kpi_historique",
             // BIGSERIAL too, V40 and V54, for the same reason.
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             // BIGSERIAL since V110.
             "envoi_planning",

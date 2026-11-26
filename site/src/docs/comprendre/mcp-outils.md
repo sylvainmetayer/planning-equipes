@@ -95,7 +95,14 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n'est publié que sous son nom courant ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
-Aucun outil n'est encore renommé ni retiré.
+| Nom en 3.x | Nom en 4.0 |
+| --- | --- |
+| `capturer_instantane` | `creer_version` |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
+| `lister_instantanes` | `lister_versions` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
 <!-- mcp-renommages:fin -->
 
 ## Ce qui n'a pas d'outil

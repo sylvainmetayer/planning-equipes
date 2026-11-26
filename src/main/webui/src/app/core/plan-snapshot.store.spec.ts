@@ -15,6 +15,7 @@ function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
     id,
     libelle,
     automatique: false,
+    origine: 'MANUELLE',
     score: '0hard/0medium/0soft',
     nombreAffectations: 12,
     creeLe: '2026-08-18T10:00:00Z',

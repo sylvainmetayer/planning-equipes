@@ -812,7 +812,7 @@ class EspacePlanPublieTest {
     private void stripVacationSnapshots() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
-                        UPDATE plan_snapshot
+                        UPDATE version_plan
                         SET contenu = (
                             SELECT jsonb_agg(affectation - 'date' - 'heureDebut' - 'heureFin')
                             FROM jsonb_array_elements(contenu) AS affectation)
@@ -895,7 +895,7 @@ class EspacePlanPublieTest {
     private void forgetPublications() {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
-            statement.executeUpdate("DELETE FROM plan_snapshot");
+            statement.executeUpdate("DELETE FROM version_plan");
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to clear the plan snapshots", e);
         }

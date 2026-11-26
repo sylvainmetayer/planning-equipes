@@ -62,6 +62,7 @@ function snapshot(overrides: Partial<PlanSnapshot> = {}): PlanSnapshot {
     id: 7,
     libelle: 'Avant canicule',
     automatique: false,
+    origine: 'MANUELLE',
     score: '0hard',
     nombreAffectations: 190,
     creeLe: '2026-08-01T10:00:00Z',

@@ -198,13 +198,13 @@ public class McpPrompts {
 
                 %s
 
-                1. capturer_instantane avec un libellé qui dit d'où on part.
+                1. creer_version avec un libellé qui dit d'où on part.
                 2. Si une partie du planning est déjà bonne, fige-la avec verrouiller avant de \
                 relancer — sinon la résolution la défera.
                 3. lancer_solveur, puis statut_solveur jusqu'à la fin du job.
-                4. comparer_instantanes entre l'instantané capturé et « courant ».
+                4. comparer_versions entre l'instantané capturé et « courant ».
                 5. Dis-moi ce qui a changé : score, postes pourvus, écarts par contrainte. Si le \
-                résultat est moins bon, propose restaurer_instantane — mais ne le fais pas sans mon \
+                résultat est moins bon, propose restaurer_version — mais ne le fais pas sans mon \
                 accord. Si la pause sur le poste est déclarée (consulter_parametres_legaux), appelle \
                 analyser_pauses avec sansRelaisSeulement : chaque pause sans relais est un relais à \
                 organiser avant de publier.
@@ -706,7 +706,7 @@ public class McpPrompts {
 
                 %s
 
-                1. capturer_instantane d'abord : ce qui suit modifie un planning que des animateurs \
+                1. creer_version d'abord : ce qui suit modifie un planning que des animateurs \
                 ont peut-être déjà lu.
                 2. Applique le changement, après mon accord :
                    - un désistement : modifier_animateur, pour le jour indisponible ;

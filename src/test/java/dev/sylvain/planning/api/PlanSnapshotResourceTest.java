@@ -72,11 +72,12 @@ class PlanSnapshotResourceTest {
                 .contentType(ContentType.JSON)
                 .body("{\"libelle\":\"" + libelle + "\"}")
                 .when()
-                .post("/api/planning/snapshots")
+                .post("/api/planning/versions")
                 .then()
                 .statusCode(201)
                 .body("libelle", equalTo(libelle))
                 .body("automatique", equalTo(false))
+                .body("origine", equalTo("MANUELLE"))
                 .extract()
                 .jsonPath()
                 .getLong("id");
@@ -92,7 +93,7 @@ class PlanSnapshotResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .post("/api/planning/snapshots/" + id + "/restore")
+                .post("/api/planning/versions/" + id + "/restore")
                 .then()
                 .statusCode(200)
                 .body("restaure", equalTo(true))
@@ -105,7 +106,7 @@ class PlanSnapshotResourceTest {
         persistedPlan();
         int avant = given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/planning/snapshots")
+                .get("/api/planning/versions")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -117,13 +118,36 @@ class PlanSnapshotResourceTest {
 
         List<Boolean> automatiques = given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/planning/snapshots")
+                .get("/api/planning/versions")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
                 .getList("automatique", Boolean.class);
         assertThat(automatiques).hasSizeGreaterThan(avant).contains(true);
+    }
+
+    @Test
+    void theThreeRootsOf3xStillServeTheSameVersions() {
+        persistedPlan();
+        long id = capture("Pour l'alias");
+
+        String[] origines = {"/api/planning/versions", "/api/planning/snapshots"};
+        for (String racine : origines) {
+            given().header("X-Edition-Id", "E1")
+                    .when()
+                    .get(racine + "/" + id)
+                    .then()
+                    .statusCode(200)
+                    .body("meta.libelle", equalTo("Pour l'alias"))
+                    .body("meta.origine", equalTo("MANUELLE"));
+        }
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/snapshots")
+                .then()
+                .statusCode(200)
+                .body("origine", org.hamcrest.Matchers.hasItem("MANUELLE"));
     }
 
     @Test
@@ -141,7 +165,7 @@ class PlanSnapshotResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .post("/api/planning/snapshots/" + id + "/restore")
+                .post("/api/planning/versions/" + id + "/restore")
                 .then()
                 .statusCode(409)
                 .body("referencesManquantes.size()", greaterThan(0));
@@ -166,7 +190,7 @@ class PlanSnapshotResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/planning/snapshots/" + id)
+                .get("/api/planning/versions/" + id)
                 .then()
                 .statusCode(200)
                 .body("meta.libelle", equalTo("Grille bientôt abandonnée"))
@@ -198,7 +222,7 @@ class PlanSnapshotResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .post("/api/planning/snapshots/" + id + "/restore")
+                .post("/api/planning/versions/" + id + "/restore")
                 .then()
                 .statusCode(200);
 
@@ -236,7 +260,7 @@ class PlanSnapshotResourceTest {
         try {
             given().header("X-Edition-Id", "E1")
                     .when()
-                    .post("/api/planning/snapshots/" + id + "/restore")
+                    .post("/api/planning/versions/" + id + "/restore")
                     .then()
                     .statusCode(409)
                     .body("id", equalTo(jobId))
@@ -269,7 +293,7 @@ class PlanSnapshotResourceTest {
         try {
             given().header("X-Edition-Id", "E1")
                     .when()
-                    .post("/api/planning/snapshots/" + id + "/restore")
+                    .post("/api/planning/versions/" + id + "/restore")
                     .then()
                     .statusCode(409)
                     .body("perime", equalTo(true))
@@ -279,7 +303,7 @@ class PlanSnapshotResourceTest {
 
             given().header("X-Edition-Id", "E1")
                     .when()
-                    .post("/api/planning/snapshots/" + id + "/restore?forcer=true")
+                    .post("/api/planning/versions/" + id + "/restore?forcer=true")
                     .then()
                     .statusCode(200)
                     .body("restaure", equalTo(true))
@@ -322,7 +346,7 @@ class PlanSnapshotResourceTest {
     private void oublier(long id) {
         given().header("X-Edition-Id", "E1")
                 .when()
-                .delete("/api/planning/snapshots/" + id)
+                .delete("/api/planning/versions/" + id)
                 .then()
                 .statusCode(204);
     }
@@ -330,7 +354,7 @@ class PlanSnapshotResourceTest {
     private boolean staleInListing(long id) {
         return given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/planning/snapshots")
+                .get("/api/planning/versions")
                 .then()
                 .statusCode(200)
                 .extract()

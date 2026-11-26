@@ -85,7 +85,7 @@ class PublicationResourceTest {
     private void forgetPublications() {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
-            statement.executeUpdate("DELETE FROM plan_snapshot");
+            statement.executeUpdate("DELETE FROM version_plan");
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to clear the plan snapshots", e);
         }
