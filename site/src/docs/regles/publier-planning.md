@@ -15,8 +15,9 @@ La publication envoie leur planning et le lien de leur espace aux seules personn
 Avant de publier, vous voyez une ligne par personne à prévenir : ce qui change pour elle, sa dernière confirmation. Vous pouvez :
 
 - trier par ampleur et replier les changements mineurs ;
-- exporter le détail en CSV ;
-- différer le message de quelqu'un que vous préférez appeler d'abord. Cette personne ne reçoit rien et reste à prévenir à la publication suivante.
+- exporter le détail en CSV.
+
+Toutes les personnes de la liste reçoivent leur planning : on ne peut plus en retirer une de la publication. Pour appeler quelqu'un d'abord, faites-le avant de publier : « Prévenir seulement quelques personnes » ci-dessous ne couvre que les suites d'un échange accepté ou d'un remplacement.
 
 Le panneau de publication dit aussi combien de journées non relues partiraient.
 
@@ -32,7 +33,7 @@ Sur l'écran Diffuser, une table permanente couvre toute l'édition. Elle montre
 - l'état de l'envoi : envoyé, échec avec sa cause, sans e-mail, différé ;
 - le rappel de la veille, la relance et l'accusé de réception.
 
-Chaque ligne offre « Renvoyer son planning », « Relancer » et « Différer ». Des filtres existent par état et par jour (« ce qui change le 06/09 », compté comme dans la Journée). Un envoi en échec se voit et empêche l'accueil de dire « à jour ». Les documents à imprimer disent chacun pour qui ils sont.
+Chaque ligne offre « Renvoyer son planning » et « Relancer ». Des filtres existent par état et par jour (« ce qui change le 06/09 », compté comme dans la Journée). Un envoi en échec se voit et empêche l'accueil de dire « à jour ». Les documents à imprimer disent chacun pour qui ils sont.
 
 ### Quand un envoi échoue
 

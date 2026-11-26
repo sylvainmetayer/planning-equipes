@@ -92,10 +92,6 @@ class McpWarnsWhileSolvingStructuralTest {
             Map.entry("definir_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
             Map.entry("supprimer_prereglage_consigne", "un préréglage n'est lu que par le formulaire de consigne"),
             Map.entry(
-                    "retirer_validation_journee",
-                    "l'atterrissage ne fait que retirer des validations : il ne peut ni défaire ce retrait, ni"
-                            + " rendre la journée moins à relire"),
-            Map.entry(
                     "definir_journee_type",
                     "une journée type n'atteint la grille que par materialiser_journees_types, refusé pendant un calcul"),
             Map.entry(

@@ -73,11 +73,10 @@
         </div>
         <table class="publication-table">
           <caption class="visually-hidden" i18n="@@publication.table.caption">
-            Personnes à prévenir : ce qui change pour chacune, sa dernière confirmation, et la case qui diffère son message.
+            Personnes à prévenir : ce qui change pour chacune et sa dernière confirmation.
           </caption>
           <thead>
             <tr>
-              <th scope="col" i18n="@@publication.table.prevenir">Prévenir</th>
               <th scope="col" i18n="@@publication.table.personne">Personne</th>
               <th scope="col" i18n="@@publication.table.changement">Ce qui change</th>
               <th scope="col" i18n="@@publication.table.confirmation">Dernière confirmation</th>
@@ -85,12 +84,7 @@
           </thead>
           <tbody>
             @for (destinataire of rows(); track destinataire.animateurId) {
-              <tr [class.publication-ligne-exclue]="isExcluded(destinataire.animateurId)">
-                <td>
-                  <mat-checkbox [checked]="!isExcluded(destinataire.animateurId)"
-                                (change)="toggleExclusion(destinataire.animateurId, $event.checked)"
-                                [attr.aria-label]="destinataire.nomAffiche"></mat-checkbox>
-                </td>
+              <tr>
                 <td>
                   <span class="publication-destinataire-nom">{{ destinataire.nomAffiche }}</span>
                   @if (!destinataire.email) {
@@ -124,11 +118,6 @@
         @if (rows().length === 0) {
           <p class="publication-note" i18n="@@publication.table.vide">
             Le filtre masque toutes les lignes : ces personnes seront prévenues quand même.
-          </p>
-        }
-        @if (preview()?.nombreConcernes !== notifiedCount()) {
-          <p class="publication-note" i18n="@@publication.exclusions.rappel">
-            Les personnes décochées ne recevront rien et resteront à prévenir à la prochaine publication.
           </p>
         }
       }

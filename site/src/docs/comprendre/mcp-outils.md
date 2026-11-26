@@ -106,6 +106,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | `ajouter_fermeture_stand` | `creer_plage_stand` |
 | `ajouter_horaire_stand` | `creer_horaire_stand` |
 | `ajouter_ouverture_stand` | `creer_plage_stand` |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
@@ -121,12 +122,14 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->

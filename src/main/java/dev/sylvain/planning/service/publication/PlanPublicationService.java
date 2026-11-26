@@ -464,7 +464,7 @@ public class PlanPublicationService {
      * fails mid-way leaves a coherent published plan and a trace naming who was
      * missed.</p>
      *
-     * <p><b>Excluding somebody defers their message, it does not drop it</b>
+     * <p><b>Aiming at a few people defers the others, it does not drop them</b>
      * (issue #503). The capture still happens for everybody — the espace
      * follows the published plan, and leaving one person's espace behind would
      * need a second published plan, which is exactly the thing ADR 0011
@@ -473,43 +473,30 @@ public class PlanPublicationService {
      * schedule to what they really received and they come back in the count,
      * with the écart accumulated since.</p>
      *
-     * @param exclusions animateur ids the admin took out of this send; ids
-     *                   that are not recipients are ignored rather than
-     *                   refused — the screen may have been read before the
-     *                   last change
      * @throws BusinessError.Conflict while a solve is running, when there is
-     *         nothing persisted to publish, when nobody is concerned — that
+     *         nothing persisted to publish, or when nobody is concerned — that
      *         last one being the point of the feature, not an error to work
-     *         around — or when every single recipient was excluded
+     *         around
      */
     @RequiresActiveEdition
     public RapportPublication publier() {
-        return publier(List.of());
-    }
-
-    /**
-     * Same, with the people the admin took out of this send — see the
-     * {@code exclusions} parameter below.
-     */
-    @RequiresActiveEdition
-    public RapportPublication publier(List<String> exclusions) {
-        return publier(exclusions, null);
+        return publier((List<String>) null);
     }
 
     /**
      * A publication aimed at a few people: « Prévenir les 2 personnes » after
      * an échange accepted, or after a replacement on the day. Everybody else
-     * concerned is deferred exactly as an exclusion defers them (ADR 0047): the
-     * capture is still global — the espace follows the published plan — and
-     * their marker stays where it was, so they come back in the next count.
+     * concerned is deferred (ADR 0047): the capture is still global — the
+     * espace follows the published plan — and their marker stays where it was,
+     * so they come back in the next count.
      *
      * @param cibles the only recipients to write to; {@code null} or empty
-     *               means everybody concerned, minus {@code exclusions}. Ids
+     *               means everybody concerned. Ids
      *               that are not recipients are ignored, and a publication
      *               left with nobody to write to is refused like any other
      */
     @RequiresActiveEdition
-    public RapportPublication publier(List<String> exclusions, List<String> cibles) {
+    public RapportPublication publier(List<String> cibles) {
         ApercuPublication apercu = apercu();
         if (apercu.solveEnCours()) {
             throw new BusinessError.Conflict(
@@ -521,18 +508,16 @@ public class PlanPublicationService {
         if (apercu.destinataires().isEmpty()) {
             throw new BusinessError.Conflict("Personne n'est concerné : le planning publié est déjà à jour.");
         }
-        Set<String> demandes = exclusions == null ? Set.of() : new LinkedHashSet<>(exclusions);
         Set<String> visees = cibles == null || cibles.isEmpty() ? null : new LinkedHashSet<>(cibles);
         java.util.function.Predicate<DestinatairePublication> retenu =
-                destinataire -> !demandes.contains(destinataire.animateurId())
-                        && (visees == null || visees.contains(destinataire.animateurId()));
+                destinataire -> visees == null || visees.contains(destinataire.animateurId());
         List<DestinatairePublication> differes =
                 apercu.destinataires().stream().filter(retenu.negate()).toList();
         List<DestinatairePublication> retenus =
                 apercu.destinataires().stream().filter(retenu).toList();
         if (retenus.isEmpty()) {
             throw new BusinessError.Conflict(
-                    "Tous les destinataires sont exclus : cette publication ne préviendrait personne.");
+                    "Aucune des personnes visées n'est concernée : cette publication ne préviendrait personne.");
         }
 
         // The plan each person's diff was read against, kept before the
@@ -585,7 +570,7 @@ public class PlanPublicationService {
                     journal.recordAdminFailure("PUBLICATION_ECHEC", destinataire.animateurId());
                 }
                 case EXCLU -> {
-                    // Never an outcome of a send: excluded recipients are traced apart, unsent.
+                    // Never an outcome of a send: deferred recipients are traced apart, unsent.
                 }
             }
             trace.add(new Destinataire(

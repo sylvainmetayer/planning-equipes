@@ -88,10 +88,6 @@
   white-space: nowrap;
 }
 
-.publication-ligne-exclue {
-  opacity: 0.55;
-}
-
 .publication-ampleur {
   margin: 0;
   font-weight: 600;

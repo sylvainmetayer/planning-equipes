@@ -22,27 +22,27 @@ export function buildOperationsSections(): HelpSection[] {
       id: 'relecture',
       icon: 'fact_check',
       title: $localize`:@@aide.relecture.title:Relire le planning avant de publier`,
-      summary: $localize`:@@aide.relecture.summary:Marquer où vous en êtes de votre relecture, journée par journée, sans rien figer.`,
+      summary: $localize`:@@aide.relecture.summary:Dire où en est chaque journée : à relire, relue ou figée.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, on finit par se demander « où en étais-je ? ». Sur la page Planning, le menu de la barre de relecture ouvre « Relu et accepté… », dont « Marquer relu et accepté » enregistre votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues, et la page Solveur dit « 3 journées sur 12 ».`,
+          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, on finit par se demander « où en étais-je ? ». Sur la page Planning, le bouton d'état de la barre de relecture (« À relire », « Relue le… » ou « Figée ») ouvre le contrôle de la journée : choisissez « Relue » puis « Enregistrer l'état » pour enregistrer votre passage, avec la date et un commentaire si vous en laissez un. Le sélecteur de jour marque ensuite les journées relues ou figées, et la page Solveur dit « 3 journées sur 12 ».`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.journeeEntiere:La validation porte toujours sur la journée entière. Les filtres de la page changent ce que vous regardez, pas ce que vous acceptez. Pour relire stand par stand, filtrez, parcourez, puis validez la journée une fois le tour fait.`,
+          text: $localize`:@@aide.relecture.journeeEntiere:L'état porte toujours sur la journée entière. Les filtres de la page changent ce que vous regardez, pas ce que vous enregistrez. Pour relire stand par stand, filtrez, parcourez, puis marquez la journée relue une fois le tour fait.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.verrou:Accepter une journée ne la fige pas. Un verrouillage empêche le solveur de toucher à des sièges ; une validation dit qu'un humain a relu, et laisse le calcul améliorer le reste. La case « Verrouiller aussi cette journée » est proposée à côté parce que les deux gestes vont souvent ensemble, mais l'un n'implique pas l'autre.`,
+          text: $localize`:@@aide.relecture.verrou:« Relue » ne fige pas la journée : elle dit qu'un humain a relu, et laisse le calcul améliorer le reste. « Figée » est le verrou de journée : le calcul ne touche plus à aucun de ses sièges, et le choix demande une confirmation. Figer garde le commentaire de relecture.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.prerequis:La barre de relecture, sous le sélecteur de jour, compte ce qu'il faut regarder : sièges vides, pauses sans relais, sièges verrouillés, changements depuis la publication. Un clic sur une pastille filtre le rendu sur ce qu'elle compte (le tableau sur ses sièges vides ou verrouillés, les pauses sur celles sans relais, les changements), et un second clic le rend entier. Avant d'accepter, « Relu et accepté… » affiche aussi les écarts durs et les postes reposant sur quelqu'un d'irremplaçable : les chiffres des écrans Problèmes, Pauses et Fragilité, filtrés sur la date. Aucun ne bloque : si vous savez pourquoi un siège reste vide, acceptez et écrivez-le dans le commentaire.`,
+          text: $localize`:@@aide.relecture.prerequis:La barre de relecture, sous le sélecteur de jour, compte ce qu'il faut regarder : sièges vides, pauses sans relais, sièges verrouillés, changements depuis la publication. Un clic sur une pastille filtre le rendu sur ce qu'elle compte (le tableau sur ses sièges vides ou verrouillés, les pauses sur celles sans relais, les changements), et un second clic le rend entier. Avant de relire, le contrôle de la journée affiche aussi les écarts durs et les postes reposant sur quelqu'un d'irremplaçable : les chiffres des écrans Problèmes, Pauses et Fragilité, filtrés sur la date. Aucun ne bloque : si vous savez pourquoi un siège reste vide, marquez la journée relue et écrivez-le dans le commentaire.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.resolution:Une résolution qui déplace un siège d'une journée acceptée retire cette validation, et le récapitulatif le dit : personne n'a relu ce que le calcul vient d'écrire. Une journée aussi verrouillée garde sa validation, puisque rien n'a pu y bouger. Au moment de publier, le panneau de diffusion rappelle combien de journées non relues partiraient.`,
+          text: $localize`:@@aide.relecture.resolution:Une résolution qui déplace un siège d'une journée relue retire cette relecture, et le récapitulatif le dit : personne n'a relu ce que le calcul vient d'écrire. Une journée figée garde la sienne, puisque rien n'a pu y bouger. Au moment de publier, le panneau de diffusion rappelle combien de journées non relues partiraient.`,
         },
         {
           kind: 'paragraph',

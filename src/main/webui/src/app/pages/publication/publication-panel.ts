@@ -39,7 +39,6 @@ import {
   sortRecipients,
   RecipientSort,
 } from './publication-diff';
-import { PublicationSelection } from './publication-selection';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { PhaseEditionActions } from '../../shared/phase-edition-actions';
 import { EditionStore } from '../../core/edition.store';
@@ -54,8 +53,7 @@ import { isEditionInactive } from '../../core/edition-inactive';
  * <p>The panel owns the publication preview and re-reads it after every
  * publication; it tells the page what to put in its output panel
  * ({@link reported}) and that a publication left ({@link published}), so the
- * permanent table under it reads the new states. Who is held back is shared
- * with that table through {@link PublicationSelection}.</p>
+ * permanent table under it reads the new states.</p>
  */
 @Component({
   selector: 'app-publication-panel',
@@ -78,7 +76,6 @@ export class PublicationPanel implements OnInit {
   private readonly planningApi = inject(PlanningApi);
   private readonly phaseActions = inject(PhaseEditionActions);
   private readonly confirm = inject(ConfirmService);
-  private readonly selection = inject(PublicationSelection);
   private readonly params = currentViewParams();
 
   /** The line the page shows in its output panel: a sentence, a summary, or an error. */
@@ -119,9 +116,6 @@ export class PublicationPanel implements OnInit {
   protected readonly sortOrder = signal<RecipientSort>(readRecipientSort(this.params.get('tri')));
   protected readonly minorHidden = signal(this.params.get('mineurs') === 'masques');
 
-  /** Who the admin took out of this send — shared with the table under the panel. */
-  private readonly excluded = this.selection.excluded;
-
   protected readonly rows = computed(() => {
     const destinataires = this.preview()?.destinataires ?? [];
     return sortRecipients(
@@ -135,9 +129,7 @@ export class PublicationPanel implements OnInit {
     () => (this.preview()?.destinataires ?? []).filter((each) => each.mineur).length,
   );
 
-  protected readonly notifiedCount = computed(
-    () => (this.preview()?.nombreConcernes ?? 0) - this.excluded().size,
-  );
+  protected readonly notifiedCount = computed(() => this.preview()?.nombreConcernes ?? 0);
   protected readonly publishLabel = computed(() => libellePublier(this.preview()));
   /** What the button does, both effects in one sentence rather than in a tooltip. */
   protected readonly publishSentence = computed(() => {
@@ -162,7 +154,7 @@ export class PublicationPanel implements OnInit {
     if (nonValidees === 0) {
       return '';
     }
-    return $localize`:@@publication.journeesNonValidees:${nonValidees}:count: journée(s) que personne n'a marquée « relue et acceptée » partiraient avec cette publication.`;
+    return $localize`:@@publication.journeesNonValidees:${nonValidees}:count: journée(s) que personne n'a relue ni figée partiraient avec cette publication.`;
   });
 
   protected readonly publishable = computed(() => {
@@ -179,14 +171,6 @@ export class PublicationPanel implements OnInit {
 
   ngOnInit(): void {
     void this.reloadPreview();
-  }
-
-  protected isExcluded(animateurId: string): boolean {
-    return this.selection.isExcluded(animateurId);
-  }
-
-  protected toggleExclusion(animateurId: string, prevenir: boolean): void {
-    this.selection.setExcluded(animateurId, !prevenir);
   }
 
   protected changeSummaryOf(destinataire: DestinatairePublication): string {
@@ -215,7 +199,6 @@ export class PublicationPanel implements OnInit {
     if (this.busy() || !this.publishable()) {
       return;
     }
-    const excluded = [...this.excluded()];
     const count = this.notifiedCount();
     if (count <= 0) {
       return;
@@ -230,10 +213,7 @@ export class PublicationPanel implements OnInit {
     try {
       const confirmed = await this.confirm.ask({
         title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
-        message:
-          excluded.length === 0
-            ? $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`
-            : $localize`:@@publication.confirmMessageExclusions:${count}:count: personne(s) recevront leur planning à jour. ${excluded.length}:exclus: personne(s) ne recevront rien et resteront à prévenir à la prochaine publication.`,
+        message: $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
         confirmLabel: $localize`:@@publication.confirmAction:Publier`,
       });
       if (!confirmed) {
@@ -241,12 +221,11 @@ export class PublicationPanel implements OnInit {
       }
       this.reported.emit($localize`:@@publication.enCours:Publication du planning...`);
       try {
-        const report = await this.planningApi.publish(excluded);
+        const report = await this.planningApi.publish();
         const summary = resumePublication(report);
         this.reported.emit(
           summary.details ? `${summary.titre} — ${summary.details}` : summary.titre,
         );
-        this.selection.clear();
         this.listOpen.set(false);
         this.published.emit();
         // Publishing moved the edition to Publiée, which freezes its structure (ADR 0115).
@@ -270,10 +249,6 @@ export class PublicationPanel implements OnInit {
   async reloadPreview(): Promise<void> {
     try {
       const apercu = await this.planningApi.publicationPreview();
-      // An exclusion only means something about somebody the list still names:
-      // a person whose change was undone between two reads must not stay
-      // silently ticked off for the next publication.
-      this.selection.retain(new Set(apercu.destinataires.map((each) => each.animateurId)));
       this.preview.set(apercu);
     } catch {
       // The block stays silent rather than announcing a count it did not read.
