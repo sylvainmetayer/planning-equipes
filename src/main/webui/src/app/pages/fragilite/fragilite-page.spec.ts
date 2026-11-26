@@ -31,7 +31,7 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
     groupesAnalyses: 12,
     groupesDejaSousEffectif: 0,
     animateursIrremplacables: 0,
-    ninjaConfigure: true,
+    polyvalentConfigure: true,
     aucunAnimateur: false,
     message: 'Douze groupes analysés.',
     ...partial,
@@ -226,7 +226,7 @@ function animateur(partial: Partial<AnimateurFragilite> = {}): AnimateurFragilit
   return {
     animateurId: 'a1',
     nom: 'Alice Martin',
-    ninja: false,
+    polyvalent: false,
     affectations: 3,
     postesEffondres: 3,
     postesIrremplacables: 1,

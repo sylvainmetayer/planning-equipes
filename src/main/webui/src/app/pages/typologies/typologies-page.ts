@@ -100,7 +100,7 @@ function usageVide(typologieId: string): UsageTypologie {
  * Typologies CRUD: the game families a stand can propose and an animator master.
  *
  * Rows are multi-selectable for a bulk delete. There is no bulk edit here: a
- * typologie only carries its own label, and the ninja flag is single-holder by
+ * typologie only carries its own label, and the polyvalent flag is single-holder by
  * construction.
  *
  * Beside the referential row, what each typologie is worth to the planning:
@@ -153,7 +153,7 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> implements
     'id',
     'code',
     'label',
-    'ninja',
+    'polyvalent',
     'competents',
     'souhaits',
     'stands',
@@ -246,7 +246,7 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> implements
         id: (typologie) => typologie.id,
         code: (typologie) => typologie.code,
         label: (typologie) => typologie.label || typologie.id,
-        ninja: (typologie) => Boolean(typologie.ninja),
+        polyvalent: (typologie) => Boolean(typologie.polyvalent),
         competents: (typologie) => this.usage(typologie).competents,
         souhaits: (typologie) => this.usage(typologie).souhaits,
         stands: (typologie) => this.usage(typologie).stands,
@@ -268,8 +268,8 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> implements
             value: (typologie) => typologie.label,
           },
           {
-            title: $localize`:@@typologies.field.ninja:Typologie ninja`,
-            value: (typologie) => (typologie.ninja ? $localize`:@@common.oui:Oui` : ''),
+            title: $localize`:@@typologies.field.polyvalent:Typologie polyvalente`,
+            value: (typologie) => (typologie.polyvalent ? $localize`:@@common.oui:Oui` : ''),
           },
           {
             title: $localize`:@@typologies.column.competents:Compétents`,
@@ -358,12 +358,12 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> implements
   }
 
   /**
-   * « Typologie ninja », ticked in the table: the single holder changes, the
+   * « Typologie polyvalente », ticked in the table: the single holder changes, the
    * server demoting the previous one in the same write. Unticked, nobody is.
    */
-  protected async setNinja(typologie: TypologieItem, ninja: boolean): Promise<void> {
+  protected async setPolyvalent(typologie: TypologieItem, polyvalent: boolean): Promise<void> {
     const label = $localize`:@@typologies.entityLabel:Typologie`;
-    await this.crud.save('typologies', { ...typologie, ninja }, typologie.id, label, {
+    await this.crud.save('typologies', { ...typologie, polyvalent }, typologie.id, label, {
       text: typologie.label,
     });
   }
@@ -411,12 +411,12 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> implements
     return explicationEtat(usage);
   }
 
-  protected ninjaLabel(typologie: TypologieItem): string {
-    return $localize`:@@typologies.ninja.cocher:Typologie ninja : ${typologie.label || typologie.id}:typologie:`;
+  protected polyvalentLabel(typologie: TypologieItem): string {
+    return $localize`:@@typologies.polyvalent.cocher:Typologie polyvalente : ${typologie.label || typologie.id}:typologie:`;
   }
 
-  protected ninjaHint(): string {
-    return $localize`:@@typologies.field.ninjaHint:Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.`;
+  protected polyvalentHint(): string {
+    return $localize`:@@typologies.field.polyvalentHint:Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.`;
   }
 
   protected gridLabel(typologie: TypologieItem): string {

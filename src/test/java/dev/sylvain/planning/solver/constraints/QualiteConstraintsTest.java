@@ -874,9 +874,9 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void polyvalentNEstPasPenalisePourSesTypologiesDistinctes() {
-        // Being spread across many typologies is exactly a ninja's job, so the
+        // Being spread across many typologies is exactly a polyvalent's job, so the
         // cap that penalises three distinct typologies doesn't apply to them.
-        Animateur polyvalent = ninja("N1");
+        Animateur polyvalent = polyvalent("N1");
         polyvalent.getCompetences().put("STRATEGIE", NiveauCompetence.AUTONOME);
         polyvalent.getCompetences().put("AMBIANCE", NiveauCompetence.AUTONOME);
         polyvalent.getCompetences().put("ENIGME", NiveauCompetence.AUTONOME);
@@ -890,10 +890,10 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     @Test
     void polyvalentSansCompetenceSurLeStandNEstPasPenalise() {
-        // A ninja adapts to any stand: no "appréciation" mismatch even on a
+        // A polyvalent adapts to any stand: no "appréciation" mismatch even on a
         // typologie they hold no competence for.
         verify("appreciationIncompatible")
-                .given(poste(standStrat, creneauMatin, ninja("N1")))
+                .given(poste(standStrat, creneauMatin, polyvalent("N1")))
                 .penalizesBy(0);
     }
 

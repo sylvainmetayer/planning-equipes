@@ -25,10 +25,10 @@ import org.junit.jupiter.api.io.TempDir;
  * statement that forgets its {@code edition_id} predicate does not show: it
  * throws nothing, it simply reads or writes at the neighbours'.
  *
- * <p>It happened. Demoting the ninja typologie was written
+ * <p>It happened. Demoting the polyvalent typologie was written
  * {@code UPDATE typologie SET ninja = FALSE WHERE ninja AND id <> ?}, with no
  * edition, while the unique index it protects has been scoped per edition since
- * {@code V33}: marking a ninja on one edition erased the ninja of every other
+ * {@code V33}: marking a polyvalent on one edition erased the polyvalent of every other
  * one, and since that flag feeds the ordering of the construction heuristic,
  * the next solve of the neighbouring edition started somewhere else without
  * anything reporting it.</p>
@@ -1089,7 +1089,7 @@ class IsolationEditionStructurelleTest {
      * A form the scan cannot follow — assembled by a {@code StringBuilder}, by
      * {@code String.join}, or in a loop — must be <b>reported</b>. Skipping it
      * would be the same silence the scan was extended to break, and it is the
-     * silence that hid the ninja bug for two releases.
+     * silence that hid the polyvalent bug for two releases.
      */
     @Test
     void leScanSignaleUneFormeQuIlNeSaitPasSuivre(@TempDir Path racine) throws IOException {

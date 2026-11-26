@@ -11,7 +11,7 @@ import casPartages from './usage-typologies.cas.json';
 
 interface CasPartage {
   nom: string;
-  typologies: { id: string; ninja?: boolean }[];
+  typologies: { id: string; polyvalent?: boolean }[];
   stands: { id: string; typologies: string[] }[];
   animateurs: {
     id: string;
@@ -37,7 +37,7 @@ describe('usagesTypologies — cas partagés avec CoherenceAnalyzerTypologieUsag
       const typologies: TypologieItem[] = cas.typologies.map((typologie) => ({
         id: typologie.id,
         label: typologie.id,
-        ninja: typologie.ninja ?? false,
+        polyvalent: typologie.polyvalent ?? false,
       }));
       const stands = cas.stands.map(
         (stand) =>

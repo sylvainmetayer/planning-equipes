@@ -48,11 +48,11 @@
     "sections": [
       {
         "h2": "Open every day, long hours",
-        "texte": "A show or fair opens long hours, several days running. Each stand has its hours per day, and **each opening window can have its own headcount**: fewer people in the morning, more in the afternoon or in the evening. The rules on hours, rest and days in a row (eight by default, adjustable) hold for the whole team. [Rest and consecutive days](/docs/comprendre/repos-et-jours-d-affilee/) explains this ceiling (in French)."
+        "texte": "A show or fair opens long hours, several days running. Each stand has its hours per day, and **each opening window can have its own headcount**: fewer people in the morning, more in the afternoon or in the evening. The rules on hours, rest and days in a row (eight by default, adjustable) hold for the whole team. [Rest and consecutive days](/en/docs/build/rest-and-consecutive-days/) explains this ceiling."
       },
       {
         "h2": "Breaks and meals",
-        "texte": "A break that is due fits in two ways only: **a gap in the grid, or a colleague on the same stand holding the seat** for the whole break. Otherwise the plan is refused. The *Breaks and meals* screen shows where breaks fall, day by day and stand by stand, to see who comes off at the latest, and when. The reasoning is in [legal rules, breaks and meals](/docs/comprendre/regles-legales-et-pauses/) (in French). The legal frame for breaks is summed up in [the Labour Code](/en/labour-code/)."
+        "texte": "A break that is due fits in two ways only: **a gap in the grid, or a colleague on the same stand holding the seat** for the whole break. Otherwise the plan is refused. The *Breaks and meals* screen shows where breaks fall, day by day and stand by stand, to see who comes off at the latest, and when. The reasoning is in [legal rules, breaks and meals](/en/docs/build/legal-rules-and-breaks/). The legal frame for breaks is summed up in [the Labour Code](/en/labour-code/)."
       },
       {
         "h2": "Several venues, travel time",
@@ -64,11 +64,11 @@
       },
       {
         "h2": "The control room",
-        "texte": "The *Today* screen handles absences and suggests replacements. The **wall display** runs on a TV: open stands grouped by location, current and next shift, seats empty since this morning, a break without relief within the hour. How to use it is in [following the day of the event](/docs/regles/suivre-le-jour-j/) (in French)."
+        "texte": "The *Today* screen handles absences and suggests replacements. The **wall display** runs on a TV: open stands grouped by location, current and next shift, seats empty since this morning, a break without relief within the hour. How to use it is in [following the day of the event](/en/docs/rules/follow-the-event-day/)."
       },
       {
         "h2": "Before and after",
-        "texte": "The organiser gets a global PDF of the rota, everyone gets their own PDF with a QR code and their calendar. After the event, the *Realised vs planned* screen compares what was published with what was held. The guide to [importing and exporting files](/docs/regles/importer-exporter/) shows the exports (in French)."
+        "texte": "The organiser gets a global PDF of the rota, everyone gets their own PDF with a QR code and their calendar. After the event, the *Realised vs planned* screen compares what was published with what was held. The guide to [importing and exporting files](/en/docs/rules/import-and-export/) shows the exports."
       }
     ],
     "cta": "A trade show or fair to schedule?",

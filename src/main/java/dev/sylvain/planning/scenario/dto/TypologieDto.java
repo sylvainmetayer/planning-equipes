@@ -1,5 +1,6 @@
 package dev.sylvain.planning.scenario.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
@@ -17,7 +18,7 @@ import jakarta.validation.constraints.Positive;
  * existing typologie on (ADR 0050); a file without codes is matched on its
  * ids, read as codes.</p>
  *
- * <p>{@code ninja} (optional, {@code false} by default) marks the single
+ * <p>{@code polyvalent} (optional, {@code false} by default) marks the single
  * typologie whose holders are polyvalent — dispatchable on any stand. At most
  * one entry of the list should carry it; the referential keeps only the last
  * one applied.</p>
@@ -36,6 +37,6 @@ public record TypologieDto(
         @NotBlank String id,
         String code,
         @NotBlank String label,
-        Boolean ninja,
+        @JsonAlias("ninja") Boolean polyvalent,
         @Positive Integer maxCreneauxParAnimateur,
         String description) {}

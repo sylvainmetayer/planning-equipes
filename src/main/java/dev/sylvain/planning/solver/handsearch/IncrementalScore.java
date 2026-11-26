@@ -101,7 +101,7 @@ final class IncrementalScore {
     private final int[] crOcc;
     private final int[] crAhead;
     private final int[][] standCount;
-    private final int[][] ninjaCount;
+    private final int[][] polyvalentCount;
     private final int[] fSat;
     private final int[] succHeld;
     /** Breaks each animateur owes: somebody owing none cannot gain or lose a relay. */
@@ -187,7 +187,7 @@ final class IncrementalScore {
         standCount = new int[flat.nStands][nA];
         crOcc = new int[flat.nSlots];
         crAhead = new int[flat.nSlots];
-        ninjaCount = new int[flat.nSlots][flat.ninjaTotal == 0 ? 0 : nA];
+        polyvalentCount = new int[flat.nSlots][flat.polyvalentTotal == 0 ? 0 : nA];
         fSat = new int[flat.fExempt.length];
         succHeld = new int[nS];
         dFrom = new int[flat.nDays];
@@ -310,8 +310,8 @@ final class IncrementalScore {
     }
 
     private long slotCost(int cr) {
-        return crAhead[cr] > 0 && flat.ninjaTotal - crOcc[cr] < 1
-                ? cost(Rule.PRESERVER_BUFFER_POLYVALENTS, 1 - (flat.ninjaTotal - crOcc[cr]))
+        return crAhead[cr] > 0 && flat.polyvalentTotal - crOcc[cr] < 1
+                ? cost(Rule.PRESERVER_BUFFER_POLYVALENTS, 1 - (flat.polyvalentTotal - crOcc[cr]))
                 : 0;
     }
 
@@ -610,9 +610,9 @@ final class IncrementalScore {
             stAhead[stand] -= ahead;
             stDistinct[stand] -= --standCount[stand][from] == 0 ? 1 : 0;
         }
-        if (flat.ninja[from]) {
+        if (flat.polyvalent[from]) {
             crAhead[cr] -= ahead;
-            crOcc[cr] -= --ninjaCount[cr][from] == 0 ? 1 : 0;
+            crOcc[cr] -= --polyvalentCount[cr][from] == 0 ? 1 : 0;
         }
         for (int f : flat.forcedScope[s]) {
             fSat[f] -= flat.fConc[f][from] ? 1 : 0;
@@ -642,9 +642,9 @@ final class IncrementalScore {
             stAhead[stand] += ahead;
             stDistinct[stand] += standCount[stand][to]++ == 0 ? 1 : 0;
         }
-        if (flat.ninja[to]) {
+        if (flat.polyvalent[to]) {
             crAhead[cr] += ahead;
-            crOcc[cr] += ninjaCount[cr][to]++ == 0 ? 1 : 0;
+            crOcc[cr] += polyvalentCount[cr][to]++ == 0 ? 1 : 0;
         }
         for (int f : flat.forcedScope[s]) {
             fSat[f] += flat.fConc[f][to] ? 1 : 0;
@@ -1125,7 +1125,7 @@ final class IncrementalScore {
             cost += cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES, longest - flat.maxConsec)
                     + cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES_DUR, longest - flat.maxConsec);
         }
-        if (!flat.ninja[a] && likedAhead && Long.bitCount(likedMask) > flat.maxTypo) {
+        if (!flat.polyvalent[a] && likedAhead && Long.bitCount(likedMask) > flat.maxTypo) {
             cost += cost(Rule.LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR, Long.bitCount(likedMask) - flat.maxTypo);
         }
         if (flat.hasQuota) {

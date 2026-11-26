@@ -22,14 +22,14 @@ export interface UsageTypologie {
   typologieId: string;
   /**
    * Animateurs holding an appreciation on it, whatever the level. A polyvalent
-   * holding only the ninja category is not one (ADR 0017: a reinforcement,
+   * holding only the polyvalent category is not one (ADR 0017: a reinforcement,
    * never a specialist).
    */
   competents: number;
   referents: number;
   autonomes: number;
   debutants: number;
-  /** The ninjas who could still take its stands without holding it. */
+  /** The polyvalents who could still take its stands without holding it. */
   polyvalents: number;
   souhaits: number;
   /** Stands proposing it. */
@@ -51,7 +51,7 @@ const ETATS: readonly EtatTypologie[] = [
 /**
  * The usage of every typologie, in their order.
  *
- * Three choices, each held by a shared case. The ninja category is not
+ * Three choices, each held by a shared case. The polyvalent category is not
  * proposed by stands but held by people, so it is judged on its holders alone.
  * An edition without any animateur raises no orphan: the Référentiels step
  * already says the roster is empty. A stand proposing several categories
@@ -62,7 +62,7 @@ export function usagesTypologies(
   stands: readonly Stand[],
   animateurs: readonly Animateur[],
 ): UsageTypologie[] {
-  const ninjaId = typologies.find((typologie) => typologie.ninja)?.id ?? null;
+  const polyvalentId = typologies.find((typologie) => typologie.polyvalent)?.id ?? null;
   return typologies.map((typologie) => {
     const id = typologie.id;
     let referents = 0;
@@ -81,7 +81,7 @@ export function usagesTypologies(
         } else {
           debutants++;
         }
-      } else if (ninjaId !== null && Object.hasOwn(competences, ninjaId)) {
+      } else if (polyvalentId !== null && Object.hasOwn(competences, polyvalentId)) {
         polyvalents++;
       }
       if ((animateur.souhaits ?? []).includes(id)) {
@@ -101,18 +101,18 @@ export function usagesTypologies(
       polyvalents,
       souhaits,
       stands: proposants,
-      etat: etat(id === ninjaId, competents, proposants, animateurs.length > 0),
+      etat: etat(id === polyvalentId, competents, proposants, animateurs.length > 0),
     };
   });
 }
 
 function etat(
-  ninja: boolean,
+  polyvalent: boolean,
   competents: number,
   stands: number,
   rosterEntered: boolean,
 ): EtatTypologie {
-  if (ninja) {
+  if (polyvalent) {
     return competents > 0 ? 'NORMALE' : 'INUTILISEE';
   }
   if (stands === 0) {

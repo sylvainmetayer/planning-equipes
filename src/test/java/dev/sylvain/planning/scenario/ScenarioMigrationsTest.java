@@ -25,11 +25,28 @@ class ScenarioMigrationsTest {
     }
 
     @Test
-    void v1ToV2LosesNothingAndWarnsOfNothing() {
+    void v1ToV2LeavesADocumentWithoutTypologiesAlone() {
         List<String> warnings = new java.util.ArrayList<>();
         Map<String, Object> converted = ScenarioMigrations.v1ToV2(document(), warnings);
 
         assertThat(converted).isEqualTo(document());
+        assertThat(warnings).isEmpty();
+    }
+
+    @Test
+    void v1ToV2RenamesTheNinjaFlagOfATypologyAndKeepsTheRest() {
+        Map<String, Object> document = document();
+        document.put(
+                "typologies",
+                List.of(
+                        new LinkedHashMap<>(Map.of("id", "JOKER", "ninja", true)),
+                        new LinkedHashMap<>(Map.of("id", "JEUX", "label", "Jeux"))));
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.v1ToV2(document, warnings);
+
+        assertThat(converted.get("typologies"))
+                .isEqualTo(List.of(Map.of("id", "JOKER", "polyvalent", true), Map.of("id", "JEUX", "label", "Jeux")));
         assertThat(warnings).isEmpty();
     }
 

@@ -46,7 +46,7 @@ function plateauLabel(seconds: number): string {
  * « Règles du planning › Calcul »: what shapes a solve without being a rule —
  * its budget (the longest it may run, how long a feasible plan may go without
  * improving, whether its end is mailed), the hour the evening starts for the
- * Équité screen, and the ninja typologie. Rare settings, all on one form with
+ * Équité screen, and the polyvalent typologie. Rare settings, all on one form with
  * one « Enregistrer »: nothing here is written as it is typed.
  *
  * <p>The budget moved here from the Solveur page, which now only solves; its
@@ -244,42 +244,45 @@ export class ReglesCalcul implements OnInit {
     () => this.soireeDraft() !== null && this.soireeDraft() !== this.soireeStored(),
   );
 
-  /* ------------------------------ Ninja typologie ---------------------------- */
+  /* ------------------------------ Polyvalent typologie ---------------------------- */
 
-  /** Id of the typologie currently flagged ninja — at most one, `null` when none. */
-  private readonly ninjaStored = computed(
-    () => this.store.typologies().find((typologie) => typologie.ninja)?.id ?? null,
+  /** Id of the typologie currently flagged polyvalent — at most one, `null` when none. */
+  private readonly polyvalentStored = computed(
+    () => this.store.typologies().find((typologie) => typologie.polyvalent)?.id ?? null,
   );
   /** `undefined` while untouched: `null` is a choice of its own, « Aucune ». */
-  protected readonly ninjaDraft = signal<string | null | undefined>(undefined);
-  protected readonly typologieNinjaId = computed(() =>
-    this.ninjaDraft() === undefined ? this.ninjaStored() : (this.ninjaDraft() ?? null),
+  protected readonly polyvalentDraft = signal<string | null | undefined>(undefined);
+  protected readonly typologiePolyvalentId = computed(() =>
+    this.polyvalentDraft() === undefined
+      ? this.polyvalentStored()
+      : (this.polyvalentDraft() ?? null),
   );
-  private readonly ninjaDirty = computed(
-    () => this.ninjaDraft() !== undefined && this.ninjaDraft() !== this.ninjaStored(),
+  private readonly polyvalentDirty = computed(
+    () =>
+      this.polyvalentDraft() !== undefined && this.polyvalentDraft() !== this.polyvalentStored(),
   );
-  /** The ninja typologie is one of the fields a TYPOLOGIES_EMPLACEMENTS freeze covers (ADR 0052). */
+  /** The polyvalent typologie is one of the fields a TYPOLOGIES_EMPLACEMENTS freeze covers (ADR 0052). */
   protected readonly typologiesFrozen = computed(() =>
     this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
   );
 
   /**
-   * Without a ninja typologie nobody is polyvalent — nobody can be seated
+   * Without a polyvalent typologie nobody is polyvalent — nobody can be seated
    * outside their own competences, and the rule keeping one polyvalent free per
    * timeslot has nothing to protect: a silent degradation worth a sentence.
    */
-  protected readonly alerteNinjaManquant = computed(() => {
-    if (this.store.typologies().length === 0 || this.typologieNinjaId() !== null) {
+  protected readonly alertePolyvalentManquant = computed(() => {
+    if (this.store.typologies().length === 0 || this.typologiePolyvalentId() !== null) {
       return '';
     }
-    return $localize`:@@typologies.ninjaManquant:Aucune typologie « ninja » n'est désignée : aucun animateur n'est polyvalent, et la contrainte « préserver un polyvalent libre par créneau » ne protège plus rien.`;
+    return $localize`:@@typologies.polyvalentManquant:Aucune typologie « polyvalente » n'est désignée : aucun animateur n'est polyvalent, et la contrainte « préserver un polyvalent libre par créneau » ne protège plus rien.`;
   });
 
   /* --------------------------------- Form ----------------------------------- */
 
   /** Something typed on this tab that is not saved. */
   readonly dirty = computed(
-    () => this.budgetDirty() || this.mailDirty() || this.soireeDirty() || this.ninjaDirty(),
+    () => this.budgetDirty() || this.mailDirty() || this.soireeDirty() || this.polyvalentDirty(),
   );
 
   /** A solve holds the edition: the writes it would land over wait, like everywhere else. */
@@ -351,7 +354,7 @@ export class ReglesCalcul implements OnInit {
     this.backToDefault.set(false);
     this.mailDraft.set(null);
     this.soireeDraft.set(null);
-    this.ninjaDraft.set(undefined);
+    this.polyvalentDraft.set(undefined);
     this.applyStored();
     this.error.set('');
   }
@@ -360,7 +363,7 @@ export class ReglesCalcul implements OnInit {
    * One « Enregistrer » for the tab, each record written only when something
    * of it changed: the budget and the mail share a payload, the evening is a
    * field of the legal parameters — re-read just before, so a save here never
-   * resets what the « Légal » tab stored meanwhile —, the ninja is a flag of
+   * resets what the « Légal » tab stored meanwhile —, the polyvalent is a flag of
    * one typologie.
    */
   protected async save(): Promise<void> {
@@ -389,9 +392,9 @@ export class ReglesCalcul implements OnInit {
         this.soireeStored.set((saved.heureDebutSoiree ?? '').slice(0, 5));
         this.soireeDraft.set(null);
       }
-      if (this.ninjaDirty()) {
-        await this.saveNinja(this.typologieNinjaId());
-        this.ninjaDraft.set(undefined);
+      if (this.polyvalentDirty()) {
+        await this.savePolyvalent(this.typologiePolyvalentId());
+        this.polyvalentDraft.set(undefined);
       }
       this.notifications.notify({
         title: $localize`:@@regles.calcul.saved:Réglages du calcul enregistrés`,
@@ -406,16 +409,16 @@ export class ReglesCalcul implements OnInit {
   }
 
   /**
-   * Promotes `id` as the single ninja typologie, or clears the flag when `id`
+   * Promotes `id` as the single polyvalent typologie, or clears the flag when `id`
    * is `null`. Only the newly chosen typologie is sent: the server demotes the
    * previous holder in the same transaction.
    */
-  private async saveNinja(id: string | null): Promise<void> {
+  private async savePolyvalent(id: string | null): Promise<void> {
     const label = $localize`:@@typologies.entityLabel:Typologie`;
-    const courante = this.store.typologies().find((typologie) => typologie.ninja) ?? null;
+    const courante = this.store.typologies().find((typologie) => typologie.polyvalent) ?? null;
     if (id === null) {
       if (courante) {
-        await this.crud.save('typologies', { ...courante, ninja: false }, courante.id, label, {
+        await this.crud.save('typologies', { ...courante, polyvalent: false }, courante.id, label, {
           text: courante.label,
         });
       }
@@ -423,7 +426,7 @@ export class ReglesCalcul implements OnInit {
     }
     const target = this.store.typologies().find((typologie) => typologie.id === id);
     if (target) {
-      await this.crud.save('typologies', { ...target, ninja: true }, target.id, label, {
+      await this.crud.save('typologies', { ...target, polyvalent: true }, target.id, label, {
         text: target.label,
       });
     }

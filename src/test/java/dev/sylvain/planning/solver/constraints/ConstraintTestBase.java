@@ -162,18 +162,18 @@ abstract class ConstraintTestBase {
         return animateur(id, NAISSANCE_MAJEUR, Map.of("STRATEGIE", NiveauCompetence.AUTONOME));
     }
 
-    /** Typologie flagged "ninja" in the referential for the tests below. */
-    protected static final String TYPOLOGIE_NINJA = "JOKER";
+    /** Typologie flagged "polyvalent" in the referential for the tests below. */
+    protected static final String TYPOLOGIE_POLYVALENT = "JOKER";
 
     /**
-     * Polyvalent animateur: holds the referential's ninja typologie, so the
+     * Polyvalent animateur: holds the referential's polyvalent typologie, so the
      * solver may dispatch them on any stand and the "buffer de polyvalents"
      * constraint counts them. Mirrors what
-     * {@link Animateur#applyNinjaTypologie(String)} derives at load time.
+     * {@link Animateur#applyPolyvalentTypologie(String)} derives at load time.
      */
-    protected static Animateur ninja(String id) {
-        Animateur a = animateur(id, NAISSANCE_MAJEUR, Map.of(TYPOLOGIE_NINJA, NiveauCompetence.AUTONOME));
-        a.applyNinjaTypologie(TYPOLOGIE_NINJA);
+    protected static Animateur polyvalent(String id) {
+        Animateur a = animateur(id, NAISSANCE_MAJEUR, Map.of(TYPOLOGIE_POLYVALENT, NiveauCompetence.AUTONOME));
+        a.applyPolyvalentTypologie(TYPOLOGIE_POLYVALENT);
         return a;
     }
 

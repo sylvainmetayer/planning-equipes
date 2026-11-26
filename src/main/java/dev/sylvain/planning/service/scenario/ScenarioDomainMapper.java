@@ -234,15 +234,15 @@ final class ScenarioDomainMapper {
         List<Animateur> animateurs = required(scenario.animateurs(), "animateurs").stream()
                 .map(ScenarioDomainMapper::animateur)
                 .collect(Collectors.toCollection(ArrayList::new));
-        // A scenario carries its own typologie referential, so the ninja typologie
+        // A scenario carries its own typologie referential, so the polyvalent typologie
         // comes from the file itself — the database one may not be loaded yet (or
         // may describe a different event entirely).
-        String typologieNinja = typologies(scenario.typologies()).stream()
-                .filter(TypologieItem::ninja)
+        String typologiePolyvalent = typologies(scenario.typologies()).stream()
+                .filter(TypologieItem::polyvalent)
                 .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null);
-        animateurs.forEach(animateur -> animateur.applyNinjaTypologie(typologieNinja));
+        animateurs.forEach(animateur -> animateur.applyPolyvalentTypologie(typologiePolyvalent));
 
         LocalDate dateDebut = required(required(scenario.festival(), "festival").dateDebut(), "festival.dateDebut");
         return new ReferenceScenario(dateDebut, creneauxParId, standsParId, animateurs);
@@ -696,7 +696,7 @@ final class ScenarioDomainMapper {
                         dto.id(),
                         dto.code(),
                         dto.label(),
-                        Boolean.TRUE.equals(dto.ninja()),
+                        Boolean.TRUE.equals(dto.polyvalent()),
                         dto.maxCreneauxParAnimateur(),
                         dto.description(),
                         null))

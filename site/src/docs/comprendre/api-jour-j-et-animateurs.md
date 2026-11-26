@@ -59,7 +59,7 @@ Les raisons ne sont pas réécrites ici. Chacune porte le `contrainte` d'une rè
 
 La garantie face à l'assistant de réparation tient en une implication : tout animateur `disponible` est un candidat que `suggererReparations` propose sur le même siège (`CreneauAvailabilityCoherenceTest`). La réciproque est fausse volontairement : le second filtre de l'assistant lit les écarts du siège match par match, et le reproduire ici dupliquerait cette analyse. Tous les motifs applicables sont listés, pas seulement le plus bloquant : savoir que lever l'indisponibilité en laisserait trois autres derrière aide à décider s'il faut négocier.
 
-« Compétence absente » n'est pas une exclusion : l'appréciation est une contrainte medium (`appreciationIncompatible`), donc un motif de niveau `MEDIUM` sur une ligne qui peut rester `disponible`. Un renfort (typologie ninja) n'en porte jamais, `Animateur.hasCompetenceFor` le jugeant compétent partout.
+« Compétence absente » n'est pas une exclusion : l'appréciation est une contrainte medium (`appreciationIncompatible`), donc un motif de niveau `MEDIUM` sur une ligne qui peut rester `disponible`. Un renfort (typologie polyvalente) n'en porte jamais, `Animateur.hasCompetenceFor` le jugeant compétent partout.
 
 ## Figer la date du jour
 

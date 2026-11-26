@@ -2,15 +2,15 @@
 
 Vous savez ce que lisent et ce que coûtent les règles qui ne viennent pas du Code du travail : polyvalents, quotas par typologie, temps de trajet, covoiturage, seuils de qualité, stabilité d'un plan déjà publié, et la manière dont toutes traitent un passé déjà vécu.
 
-## Typologie ninja et réserve de polyvalents
+## Typologie polyvalente et réserve de polyvalents
 
-Au plus une typologie porte le drapeau `ninja` (index unique partiel). Un animateur qui la possède dans ses compétences est **polyvalent** :
+Au plus une typologie porte le drapeau `polyvalent` (index unique partiel). Un animateur qui la possède dans ses compétences est **polyvalent** :
 
 - `hasCompetenceFor(stand)` renvoie vrai pour n'importe quel stand : il n'est jamais pénalisé par `appreciationIncompatible` ;
 - il est exclu de `limiterTypologiesDistinctesParAnimateur`, car le disperser est sa raison d'être ;
 - `preserverBufferPolyvalents` pénalise chaque créneau où il ne reste aucun polyvalent libre.
 
-Cette dernière règle est **volontairement en tension** avec `equilibrerCharge` : un polyvalent laissé en réserve déséquilibre mécaniquement la charge. L'arbitrage est porté par les niveaux : soft contre medium, l'équilibrage l'emporte sauf à égalité. Tant qu'aucune typologie n'est ninja, personne n'est polyvalent et la règle ne coûte rien. Le polyvalent est un renfort, pas un spécialiste ([ADR 0017](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md)).
+Cette dernière règle est **volontairement en tension** avec `equilibrerCharge` : un polyvalent laissé en réserve déséquilibre mécaniquement la charge. L'arbitrage est porté par les niveaux : soft contre medium, l'équilibrage l'emporte sauf à égalité. Tant qu'aucune typologie n'est polyvalente, personne n'est polyvalent et la règle ne coûte rien. Le polyvalent est un renfort, pas un spécialiste ([ADR 0017](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md)).
 
 Aucune règle n'exprime aujourd'hui de préférence pour la variété des stands : celle qui pénalisait deux postes du même animateur sur le même stand entrait en conflit avec `eviterRoulementStandsPremium` et `limiterTypologiesDistinctesParAnimateur`, qui poussent à la stabilité. Rétablir ce besoin suppose d'abord de l'arbitrer contre ces deux règles.
 

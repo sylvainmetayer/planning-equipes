@@ -1,31 +1,32 @@
 # Planning Équipes
 
+**English** · [Français](README.fr.md)
+
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
-[![Fiabilité](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
-[![Sécurité](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
-[![Maintenabilité](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Reliability](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Security](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
+[![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=bugs)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
 [![Code smells](https://sonarcloud.io/api/project_badges/measure?project=sylvainmetayer_planning-equipes&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=sylvainmetayer_planning-equipes)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/sylvainmetayer/planning-equipes/badge)](https://scorecard.dev/viewer/?uri=github.com/sylvainmetayer/planning-equipes)
 
-Application de gestion de planning pour un événement : elle affecte
-automatiquement les animateurs aux stands, en respectant le cadre légal
-(notamment celui des mineurs), les compétences, les disponibilités et l'équité
-de charge. Elle s'adresse aux organisateurs d'événements (festivals, salons,
-manifestations sportives) qui gèrent une équipe de plusieurs dizaines de
-personnes, bénévoles ou salariées, dont des mineurs.
+Schedule management for an event: it assigns staff members to stands
+automatically, within the legal framework (minors in particular), skills,
+availability and a fair share of the workload. It is meant for the organisers of
+events (festivals, trade shows, sports events) who manage a team of several
+dozen people, volunteers or employees, minors included.
 
-![Le planning d'une journée](site/src/images/fr/planning.webp)
+![The schedule of one day](site/src/images/en/planning.webp)
 
-Présentation, captures et contact : **[planning.sylvain.dev](https://planning.sylvain.dev/)**.
+Presentation, screenshots and contact: **[planning.sylvain.dev](https://planning.sylvain.dev/en/)**.
 
-## Démarrage rapide
+## Quick start
 
-### Essayer (sans rien installer d'autre que Docker)
+### Try it (nothing to install but Docker)
 
-Il faut Docker (ou Podman) avec le plugin Compose. La pile de démonstration
-télécharge l'image publiée, démarre PostgreSQL et un puits de courriels, et
-n'écrit rien en dehors de ses volumes.
+You need Docker (or Podman) with the Compose plugin. The demo stack pulls the
+published image, starts PostgreSQL and a mail sink, and writes nothing outside
+its volumes.
 
 ```bash
 git clone https://github.com/sylvainmetayer/planning-equipes.git
@@ -34,91 +35,91 @@ docker compose --profile app pull
 docker compose --profile app up
 ```
 
-Puis ouvrir <http://localhost:8080> et se connecter avec le compte `admin` et le
-mot de passe que `docker-compose.yml` donne à `ADMIN_PASSWORD` (le choisir en
-posant cette variable avant `up`). Les courriels que l'application envoie, dont
-les codes d'accès de l'espace animateur, arrivent dans Mailpit sur
+Then open <http://localhost:8080> and sign in with the `admin` account and the
+password `docker-compose.yml` gives to `ADMIN_PASSWORD` (pick your own by
+setting that variable before `up`). The e-mails the application sends, access
+codes of the staff espace included, arrive in Mailpit at
 <http://localhost:8025>.
 
-Premiers pas, sur une édition remplie :
+First steps, on a filled edition:
 
-1. **Fichiers**, onglet *Importer*, carte *Exemples* : choisir un exemple puis
-   **Charger cet exemple**.
-2. **Solveur › Calculer le planning** : le calcul tourne en fond, la courbe se
-   trace en direct et une notification annonce la fin.
-3. Lire le résultat dans **Planning**, ce qui bloque dans **Diagnostic**, le
-   respect des règles dans **Règles du planning**, puis exporter depuis
-   **Diffuser** ou depuis la fiche d'un animateur.
+1. **Files**, *Import* tab, *Examples* card: pick an example, then
+   **Load this example**.
+2. **Solver › Solve**: the solve runs in the background, the curve is drawn
+   live and a notification announces the end.
+3. Read the result in **Planning**, what blocks in **Diagnostic**, how the rules
+   are respected in **Planning rules**, then export from **Share** or from a
+   staff member's profile.
 
-<kbd>Ctrl</kbd>+<kbd>K</kbd> trouve n'importe quel écran, et la page **Aide**
-(icône « ? ») est le mode d'emploi complet.
+<kbd>Ctrl</kbd>+<kbd>K</kbd> finds any screen, and the **Help** page ("?" icon)
+is the complete user manual.
 
-⚠️ Cette pile est faite pour le poste de travail : elle publie PostgreSQL sur
-l'hôte, ajoute pgAdmin sans authentification sur <http://localhost:5050> et
-utilise des mots de passe d'exemple. Elle tourne sur l'image `main`, celle de
-la recette. **Pour un déploiement accessible depuis Internet**, voir
-[Installer l'application](site/src/docs/installer/installation.md).
+⚠️ This stack is made for a workstation: it publishes PostgreSQL on the host,
+adds pgAdmin without authentication at <http://localhost:5050> and uses example
+passwords. It runs the `main` image, the one under acceptance testing. **For a
+deployment reachable from the Internet**, see
+[Install the application](site/src/docs-en/install/installation.md).
 
-### Développer
+### Develop
 
-Prérequis : Java 25, Maven et Node, épinglés dans `mise.toml` et installables
-d'un coup avec [mise](https://mise.jdx.dev) (`mise install`), et Docker ou
-Podman pour la base. Node n'est requis que pour travailler sur le frontend : le
-build Maven télécharge lui-même la version dont il a besoin.
+Prerequisites: Java 25, Maven and Node, pinned in `mise.toml` and installable
+in one go with [mise](https://mise.jdx.dev) (`mise install`), and Docker or
+Podman for the database. Node is only needed to work on the frontend: the Maven
+build downloads the version it needs by itself.
 
 ```bash
-docker compose up -d postgres     # la base seule
-./mvnw quarkus:dev                # l'application sur http://localhost:8080
+docker compose up -d postgres     # the database alone
+./mvnw quarkus:dev                # the application on http://localhost:8080
 ```
 
-Le code Java comme le frontend Angular sont rechargés à chaud : Quarkus démarre
-aussi le serveur de développement Angular et le proxifie, tout passe donc par
-<http://localhost:8080>. Le compte est `admin`, mot de passe `admin` (variable
-`ADMIN_PASSWORD`). Les tests : `./mvnw test`. Le détail (tests d'intégration,
-Podman, réglages du solveur, CI) est dans
-[`demarrer.md`](site/src/docs/comprendre/demarrer.md), [`tests.md`](site/src/docs/comprendre/tests.md), [`regler-le-solveur.md`](site/src/docs/comprendre/regler-le-solveur.md) et [`ci-et-livraison.md`](site/src/docs/comprendre/ci-et-livraison.md).
+Both the Java code and the Angular frontend are hot-reloaded: Quarkus also
+starts the Angular development server and proxies it, so everything goes
+through <http://localhost:8080>. The account is `admin`, password `admin`
+(variable `ADMIN_PASSWORD`). Tests: `./mvnw test`. The details (integration
+tests, Podman, solver settings, CI) are in
+[`getting-started.md`](site/src/docs-en/build/getting-started.md), [`tests.md`](site/src/docs-en/build/tests.md), [`tune-the-solver.md`](site/src/docs-en/build/tune-the-solver.md) and [`ci-and-delivery.md`](site/src/docs-en/build/ci-and-delivery.md).
 
 ## Documentation
 
-La documentation complète est publiée sur
-**[planning.sylvain.dev/docs](https://planning.sylvain.dev/docs/)**, en trois
-parties :
+The complete documentation is published at
+**[planning.sylvain.dev/en/docs](https://planning.sylvain.dev/en/docs/)**, in
+three parts (every page also exists in French, under
+[planning.sylvain.dev/docs](https://planning.sylvain.dev/docs/)):
 
-| Partie | Pour qui | Point d'entrée |
+| Part | For whom | Entry point |
 | --- | --- | --- |
-| **Les règles du jeu** | L'organisateur, le bénévole responsable | [`site/src/docs/regles/`](site/src/docs/regles/index.md) |
-| **Installer chez vous** | Qui héberge l'application | [`site/src/docs/installer/installation.md`](site/src/docs/installer/installation.md), [`site/src/docs/installer/variables-environnement.md`](site/src/docs/installer/variables-environnement.md) |
-| **Comprendre comment c'est fait** | Qui développe ou audite | [`site/src/docs/comprendre/vue-d-ensemble.md`](site/src/docs/comprendre/vue-d-ensemble.md), [`site/src/docs/comprendre/demarrer.md`](site/src/docs/comprendre/demarrer.md) |
+| **The rules of the game** | The organiser, the lead volunteer | [`site/src/docs-en/rules/`](site/src/docs-en/rules/index.md) |
+| **Install it yourself** | Whoever hosts the application | [`site/src/docs-en/install/installation.md`](site/src/docs-en/install/installation.md), [`site/src/docs-en/install/environment-variables.md`](site/src/docs-en/install/environment-variables.md) |
+| **How it's built** | Whoever develops or audits | [`site/src/docs-en/build/overview.md`](site/src/docs-en/build/overview.md), [`site/src/docs-en/build/getting-started.md`](site/src/docs-en/build/getting-started.md) |
 
-Les décisions d'architecture, les schémas et les diagrammes restent dans [`docs/`](docs/README.md). Le mode d'emploi
-pas à pas est dans l'application, page « Aide ».
+Architecture decisions, schemas and diagrams stay in [`docs/`](docs/README.md)
+(in French). The step-by-step manual is in the application, "Help" page.
 
-| Pour… | Voir |
+| To… | See |
 | --- | --- |
-| Les conventions suivies par les agents IA | [`AGENTS.md`](AGENTS.md) |
-| Contribuer (checklist de PR) | [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) |
-| Signaler une faille | [`.github/SECURITY.md`](.github/SECURITY.md) |
-| Code de conduite | [`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
+| The conventions AI agents follow | [`AGENTS.md`](AGENTS.md) |
+| Contribute (PR checklist) | [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) |
+| Report a vulnerability | [`.github/SECURITY.md`](.github/SECURITY.md) |
+| Code of conduct | [`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md) |
 
 ---
 
 ## Licence
 
-**AGPL-3.0-only** — voir [`LICENSE`](LICENSE) et [`NOTICE`](NOTICE).
+**AGPL-3.0-only**: see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
 
 Copyright (C) 2026 Sylvain METAYER (sylvain.dev).
 
-Concrètement : le code est libre d'usage, y compris commercial, à condition que
-toute version modifiée **mise à disposition sur un réseau** publie ses sources
-sous la même licence (article 13 de l'AGPL). Héberger l'application pour ses
-propres besoins n'impose rien de plus que de rendre disponible le code que l'on
-fait tourner.
+In practice: the code is free to use, commercially included, provided that any
+modified version **made available over a network** publishes its sources under
+the same licence (article 13 of the AGPL). Hosting the application for your own
+needs requires nothing more than making available the code you run.
 
-Les contributions sont acceptées sous cette licence — voir
+Contributions are accepted under this licence: see
 [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md).
 
-## Assistance IA
+## AI assistance
 
-Ce projet est développé avec l'assistance d'outils d'IA, sous revue humaine
-systématique. Les choix d'architecture, le modèle de domaine et
-l'interprétation du cadre légal sont assumés par l'auteur.
+This project is developed with the help of AI tools, under systematic human
+review. The architecture choices, the domain model and the reading of the legal
+framework are the author's own.

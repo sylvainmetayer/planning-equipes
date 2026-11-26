@@ -634,7 +634,7 @@ public class StaffingVerificationService {
 
     /**
      * {@code majeurs} adults and {@code mineurs} minors, available every day,
-     * holding every game category of the referential — the ninja one
+     * holding every game category of the referential — the polyvalent one
      * included, so a stand proposing none is open to them too. The adults are
      * born long enough ago to be adults on any date an edition may hold; the
      * minors turn sixteen on the first day, so the whole event sees them under
@@ -646,11 +646,11 @@ public class StaffingVerificationService {
     public static List<Animateur> team(
             int majeurs, int mineurs, List<TypologieItem> typologies, LocalDate premierJour) {
         Map<String, NiveauCompetence> competences = new LinkedHashMap<>();
-        String ninja = null;
+        String polyvalent = null;
         for (TypologieItem typologie : typologies) {
             competences.put(typologie.id(), NiveauCompetence.AUTONOME);
-            if (typologie.ninja() && ninja == null) {
-                ninja = typologie.id();
+            if (typologie.polyvalent() && polyvalent == null) {
+                polyvalent = typologie.id();
             }
         }
         LocalDate naissanceMineurs =
@@ -661,7 +661,7 @@ public class StaffingVerificationService {
             LocalDate naissance = index <= majeurs ? LocalDate.of(1970, Month.JANUARY, 1) : naissanceMineurs;
             Animateur animateur = new Animateur(id, "Fictif", id, naissance, false);
             animateur.setCompetences(new LinkedHashMap<>(competences));
-            animateur.applyNinjaTypologie(ninja);
+            animateur.applyPolyvalentTypologie(polyvalent);
             team.add(animateur);
         }
         return team;

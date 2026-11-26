@@ -113,7 +113,7 @@
   line-height: 1.15;
 }
 
-.competences-grille .ninja-icone {
+.competences-grille .polyvalent-icone {
   display: block;
   margin: 0 auto 0.1rem;
   font-size: 1rem;
@@ -122,9 +122,9 @@
   color: var(--app-accent);
 }
 
-/* The ninja column: holding it makes an animateur versatile, which earns a
+/* The polyvalent column: holding it makes an animateur versatile, which earns a
    marker down the whole column and not only on the header. */
-.competences-grille .colonne-ninja {
+.competences-grille .colonne-polyvalent {
   background: var(--mat-sys-surface-container-low);
 }
 

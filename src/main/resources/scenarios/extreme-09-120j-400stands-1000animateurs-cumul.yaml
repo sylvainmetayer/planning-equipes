@@ -46,7 +46,7 @@ typologies:
     label: "Jeux en bois"
   - id: POLYVALENT
     label: Polyvalent
-    ninja: true
+    polyvalent: true
 
 emplacements:
   - id: EMP-01

@@ -41,8 +41,8 @@ Les deux dernières se prouvent semaine par semaine, jamais sur le total : la ca
 
 `parCompetence` décline les quatre bornes par typologie, le goulot par compétence (« il manque 4 personnes compétentes en escape game »), avec deux règles d'attribution :
 
-- un siège compte pour une typologie seulement si son stand ne propose qu'elle. Les sièges d'un stand multi-typologies ne sont revendiqués par aucune et vont dans `siegesNonAttribues`. Un stand sans aucune typologie est le cas inverse : `hasCompetenceFor` ne répond oui qu'aux polyvalents, ses sièges sont la demande la plus serrée et rejoignent la ligne ninja (`siegesReservesAuxPolyvalents`). Sans typologie ninja au référentiel, personne ne peut les tenir ;
-- un polyvalent (typologie marquée `ninja`) compte comme spécialiste dans les seules compétences qu'il déclare, jamais dans toutes : le compter partout ajouterait la même personne à chaque vivier et masquerait le goulot. Il est reporté une fois de plus comme renfort partagé (`polyvalents`). `typologieNinjaDefinie` à faux se lit « pas de renfort ici », pas « pénurie ». Le manque de la ligne ninja est isolé dans `manquePolyvalents`, car ce vivier étant celui des renforts, il ne peut pas être proposé contre son propre manque.
+- un siège compte pour une typologie seulement si son stand ne propose qu'elle. Les sièges d'un stand multi-typologies ne sont revendiqués par aucune et vont dans `siegesNonAttribues`. Un stand sans aucune typologie est le cas inverse : `hasCompetenceFor` ne répond oui qu'aux polyvalents, ses sièges sont la demande la plus serrée et rejoignent la ligne polyvalente (`siegesReservesAuxPolyvalents`). Sans typologie polyvalente au référentiel, personne ne peut les tenir ;
+- un polyvalent (typologie marquée `polyvalent`) compte comme spécialiste dans les seules compétences qu'il déclare, jamais dans toutes : le compter partout ajouterait la même personne à chaque vivier et masquerait le goulot. Il est reporté une fois de plus comme renfort partagé (`polyvalents`). `typologiePolyvalenteDefinie` à faux se lit « pas de renfort ici », pas « pénurie ». Le manque de la ligne polyvalente est isolé dans `manquePolyvalents`, car ce vivier étant celui des renforts, il ne peut pas être proposé contre son propre manque.
 
 Les deux approximations restantes vont dans le même sens (demande sous-estimée pour les stands multi-typologies, vivier surestimé pour un animateur compétent sur plusieurs) : un goulot signalé en est un, l'absence de goulot ne prouve rien.
 
@@ -57,12 +57,12 @@ Sans animateur au référentiel, il n'y a pas de bornes : la réponse est celle 
 
 Un remplaçant possible est compétent, non déclaré indisponible ce jour-là, majeur si le stand est réservé aux majeurs, et libre de tout siège chevauchant. Repos quotidien, plafond hebdomadaire, ad hoc et préférences ne sont pas vérifiés : un « irremplaçable » l'est certainement, un « remplaçable » peut ne pas l'être après résolution. Un seul désistement est simulé à la fois.
 
-Les ninjas sont comptés différemment selon l'indicateur, à dessein (`Animateur.hasCompetenceFor` répond oui pour eux sur tous les stands) :
+Les polyvalents sont comptés différemment selon l'indicateur, à dessein (`Animateur.hasCompetenceFor` répond oui pour eux sur tous les stands) :
 
-- la rareté de compétence ne compte que les spécialistes et affiche les ninjas disponibles en `renforts`. Les inclure ferait disparaître presque toutes les lignes, un vide qui serait un artefact de mesure ;
-- la remplaçabilité d'un siège les compte pleinement : la question est de savoir si le siège peut être tenu demain, et le solveur y enverrait un ninja.
+- la rareté de compétence ne compte que les spécialistes et affiche les polyvalents disponibles en `renforts`. Les inclure ferait disparaître presque toutes les lignes, un vide qui serait un artefact de mesure ;
+- la remplaçabilité d'un siège les compte pleinement : la question est de savoir si le siège peut être tenu demain, et le solveur y enverrait un polyvalent.
 
-Le raisonnement et les deux options écartées sont dans [la décision 0017](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md). `ninjaConfigure: false` signale qu'aucune typologie n'est marquée ninja : les deux comptages coïncident alors et un `renforts` à zéro ne dit rien.
+Le raisonnement et les deux options écartées sont dans [la décision 0017](repo:docs/decisions/0017-fragilite-le-ninja-est-un-renfort-pas-un-specialiste.md). `polyvalentConfigure: false` signale qu'aucune typologie n'est marquée polyvalente : les deux comptages coïncident alors et un `renforts` à zéro ne dit rien.
 
 Trois précisions de contrat. Un couple est en réalité un triplet stand x créneau x fenêtre : un stand fermé en milieu de créneau produit plusieurs lignes qui ne diffèrent que par `heureDebut`, et `groupesSansSpecialiste` comme `groupesAnalyses` se comptent dans cette unité. `effectifMin` est l'effectif configuré pour la fenêtre, pas le plancher : sur une vacation de couverture de pause (`couverturePause: true`) les sièges sont générés à la moitié arrondie au supérieur, et `siegesRequis` porte le plancher applicable. Les listes sont bornées (20 postes détaillés par animateur, 100 couples) ; `postesNonDetailles` et `totalCompetencesRares` disent ce qui n'est pas montré, et les animateurs sans affectation ne sont pas listés.
 

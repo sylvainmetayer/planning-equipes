@@ -64,8 +64,8 @@ import { StatusMessage } from '../../shared/status-message';
                 <tr>
                   <th scope="row">
                     {{ ligne.label }}
-                    @if (ligne.ninja) {
-                      <span class="planning-typologie-ninja" i18n="@@planningTypologie.ninja">ninja</span>
+                    @if (ligne.polyvalent) {
+                      <span class="planning-typologie-polyvalent" i18n="@@planningTypologie.polyvalent">polyvalente</span>
                     }
                     @if (ligne.description) {
                       <span class="planning-typologie-description">{{ ligne.description }}</span>

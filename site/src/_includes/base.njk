@@ -11,7 +11,7 @@
 {% if noindex %}<meta name="robots" content="noindex">{% endif %}
 {% if canonical %}
 <link rel="canonical" href="{{ site.url }}{{ canonical }}">
-{% if not p.doc %}<link rel="alternate" hreflang="{{ lang }}" href="{{ site.url }}{{ canonical }}">
+{% if altUrl %}<link rel="alternate" hreflang="{{ lang }}" href="{{ site.url }}{{ canonical }}">
 <link rel="alternate" hreflang="{{ altLang }}" href="{{ site.url }}{{ altUrl }}">
 <link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ canonical if lang == 'fr' else altUrl }}">{% endif %}
 <link rel="alternate" type="text/markdown" href="{{ site.url }}{{ canonical }}index.md">
@@ -21,7 +21,7 @@
 <meta property="og:description" content="{{ description }}">
 <meta property="og:url" content="{{ site.url }}{{ canonical }}">
 <meta property="og:locale" content="{{ 'fr_FR' if lang == 'fr' else 'en_GB' }}">
-{% if not p.doc %}<meta property="og:locale:alternate" content="{{ 'en_GB' if lang == 'fr' else 'fr_FR' }}">{% endif %}
+{% if altUrl %}<meta property="og:locale:alternate" content="{{ 'en_GB' if lang == 'fr' else 'fr_FR' }}">{% endif %}
 <meta property="og:image" content="{{ site.url }}/og-{{ lang }}.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
@@ -40,6 +40,7 @@
 </head>
 <body>
 {% set common = copy[lang].commun %}
+{% set docsHome = '/en/docs/' if lang == 'en' else '/docs/' %}
 <a class="skip" href="#contenu">{{ common.skip }}</a>
 <header class="top">
   <div class="container top__in">
@@ -48,12 +49,12 @@
         {% for k in ['tableur', 'equipe', 'calcul', 'faq'] %}
         <li><a href="{{ urls[lang][k] }}"{% if k == key %} aria-current="page"{% endif %}>{{ common.nav[k] }}</a></li>
         {% endfor %}
-        <li><a href="/docs/"{% if lang != 'fr' %} hreflang="fr"{% endif %}{% if key == 'docs' %} aria-current="{{ 'page' if p.name == 'README' else 'true' }}"{% endif %}>{{ common.nav.docs }}</a></li>
+        <li><a href="{{ docsHome }}"{% if key == 'docs' %} aria-current="{{ 'page' if p.name == 'README' else 'true' }}"{% endif %}>{{ common.nav.docs }}</a></li>
       </ul>
     </nav>
     <a class="mark" href="{{ urls[lang].accueil }}" aria-label="{{ common.logoLabel }}"{% if key == 'accueil' %} aria-current="page"{% endif %}>{{ site.name }}</a>
     <p class="top__acts">
-      <a class="top__search" href="/docs/#doc-q"{% if lang != 'fr' %} hreflang="fr"{% endif %} data-pal-open aria-keyshortcuts="Control+K Meta+K"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></g></svg><span class="top__search-t">{{ common.palette.bouton }}</span><kbd data-pal-key hidden></kbd></a>
+      <a class="top__search" href="{{ docsHome }}#doc-q" data-pal-open aria-keyshortcuts="Control+K Meta+K"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></g></svg><span class="top__search-t">{{ common.palette.bouton }}</span><kbd data-pal-key hidden></kbd></a>
       <a class="top__lang" href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a>
       <button class="theme" type="button" data-theme-toggle data-t-auto="{{ common.theme.auto }}" data-t-clair="{{ common.theme.clair }}" data-t-sombre="{{ common.theme.sombre }}" aria-label="{{ common.theme.auto }}" hidden><svg class="theme__i theme__i--auto" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></g></svg><svg class="theme__i theme__i--clair" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg><svg class="theme__i theme__i--sombre" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></g></svg></button>
       <a class="btn btn--sm" href="{{ urls[lang].contact }}">{{ common.nav.contact }}</a>
@@ -73,7 +74,7 @@
       <li><a href="{{ site.repo }}/issues">{{ common.pied.probleme }}</a></li>
       <li><a href="{{ urls[lang].mentions }}">{{ common.pied.mentions }}</a></li>
       <li><a href="{{ urls[lang].plan }}">{{ common.pied.plan }}</a></li>
-      <li><a href="/docs/"{% if lang != 'fr' %} hreflang="fr"{% endif %}>{{ common.pied.docs }}</a></li>
+      <li><a href="{{ docsHome }}">{{ common.pied.docs }}</a></li>
       <li><a href="{{ altUrl or urls[altLang].accueil }}" hreflang="{{ altLang }}" lang="{{ altLang }}" aria-label="{{ common.nav.langueLabel }}">{{ common.nav.langue }}</a></li>
     </ul>
     <div class="foot__fine">

@@ -7,7 +7,7 @@
       <nav class="crumbs" aria-label="{{ copy[lang].commun.ariane }}"><ol><li><a href="{{ urls[lang].accueil }}">{{ copy[lang].commun.nav.accueil }}</a></li><li aria-current="page">{{ c.h1 | typo(lang) }}</li></ol></nav>
       <h1>{{ c.h1 | typo(lang) }}</h1>
       <p class="lead">{{ c.reponse | mdi(lang) | safe }}</p>
-      {% if c.bouton %}<p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a>{% if c.guide %} <a class="btn" href="/docs/installer/"{% if lang != 'fr' %} hreflang="fr"{% endif %}>{{ c.guide }}</a>{% endif %}</p>{% endif %}
+      {% if c.bouton %}<p class="acts"><a class="btn btn--primary" href="{{ mail }}">{{ c.bouton }}</a>{% if c.guide %} <a class="btn" href="{{ "/en/docs/install/" if lang == "en" else "/docs/installer/" }}">{{ c.guide }}</a>{% endif %}</p>{% endif %}
     </div>
   </header>
 

@@ -100,7 +100,7 @@ class StandHoraireDatesResourceTest {
     private static String createStandWithDatesRule(String edition) {
         given().header(HEADER, edition)
                 .contentType("application/json")
-                .body("{\"code\":\"TYPO\",\"label\":\"TYPO\",\"ninja\":false}")
+                .body("{\"code\":\"TYPO\",\"label\":\"TYPO\",\"polyvalent\":false}")
                 .when()
                 .post("/api/typologies")
                 .then()

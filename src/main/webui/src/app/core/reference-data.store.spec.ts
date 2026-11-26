@@ -92,7 +92,7 @@ describe('ReferenceDataStore bulk operations', () => {
   });
 
   it('rend une liste vide quand la ressource répond l’entité nue', async () => {
-    api.put.mockResolvedValueOnce({ id: 't1', nom: 'Ninja' });
+    api.put.mockResolvedValueOnce({ id: 't1', nom: 'Polyvalent' });
 
     expect((await store.save('typologies', { id: 't1' }, 't1')).avertissements).toEqual([]);
   });
@@ -109,7 +109,7 @@ describe('ReferenceDataStore bulk operations', () => {
   });
 
   it('rend l’identifiant de l’entité nue quand la ressource ne l’enveloppe pas', async () => {
-    api.put.mockResolvedValueOnce({ id: 't1', nom: 'Ninja' });
+    api.put.mockResolvedValueOnce({ id: 't1', nom: 'Polyvalent' });
 
     expect((await store.save('typologies', { id: 't1' }, 't1')).id).toBe('t1');
   });
@@ -138,7 +138,7 @@ describe('ReferenceDataStore bulk operations', () => {
 
   describe('rechargement sélectif', () => {
     it('ne recharge que la famille écrite, plus la volumétrie', async () => {
-      await store.save('typologies', { id: 't1', nom: 'Ninja' }, 't1');
+      await store.save('typologies', { id: 't1', nom: 'Polyvalent' }, 't1');
 
       const urls = api.get.mock.calls.map(([url]) => url);
       expect(urls).toEqual(expect.arrayContaining(['/api/typologies', '/api/planning/volumetrie']));
