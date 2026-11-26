@@ -156,10 +156,10 @@ public class PlanningService {
      * is rejected so callers cannot escape the scenarios folder.
      *
      * <p>The problem built here is the file's <b>nominal</b> grid: a
-     * {@code consignes:} section it may carry is not applied to the seats. The
-     * consigne layer is laid on by {@code StandService.resolve} when the
-     * problem is built from the referential (ADR 0043), so a file's consignes
-     * take effect once the file is <em>imported</em>, never when it is solved
+     * {@code consignes:} section it may carry is not applied to the seats. A
+     * consigne's plages are written on the stands when the file is imported
+     * (ADR 0125), so a file's consignes take effect once the file is
+     * <em>imported</em>, never when it is solved
      * straight from disk.</p>
      */
     public PlanningEvenement buildExample(String scenarioName) {
@@ -277,7 +277,8 @@ public class PlanningService {
             throw new IllegalStateException(
                     "Aucune donnée de référence à exporter. Créez des stands, des animateurs et des créneaux d'abord.");
         }
-        HoraireStandResolver.apply(stands, creneaux);
+        // Own hours: a consigne's plages leave the file, the consigne section carries them (ADR 0125).
+        HoraireStandResolver.applyOwnHours(stands);
 
         // The edition's créneaux are exported as-is: they are its vacations,
         // and a file that reads them back gets the same grid. No seat list:

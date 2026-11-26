@@ -191,7 +191,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.surPoste:Une relève enchaînée à l'après-midi reste possible`,
-              text: $localize`:@@aide.setup.def.surPoste:Une relève de 13 h à 20 h est sept heures d'affilée : elle doit une pause vers la sixième heure, et il suffit qu'un collègue tienne le stand à ce moment-là pour qu'elle soit légale. Rien à déclarer : ouvrez la place, le solveur s'en sert. L'écran Pauses pose ensuite la rotation, une personne à la fois par stand, et nomme les journées où le relais manque. La pause est du repos, donc déduite des plafonds et de tous les compteurs d'heures.`,
+              text: $localize`:@@aide.setup.def.surPoste:Une relève de 13 h à 20 h est sept heures d'affilée : elle doit une pause vers la sixième heure, et il suffit qu'un collègue tienne le stand à ce moment-là pour qu'elle soit légale. Rien à déclarer : ouvrez la place, le solveur s'en sert. Le Diagnostic nomme ensuite, dans ses Problèmes, les pauses où le relais manque. La pause est du repos, donc déduite des plafonds et de tous les compteurs d'heures.`,
             },
             {
               term: $localize`:@@aide.setup.term.repos:Le repos hebdomadaire, lu d'un tenant`,
@@ -214,7 +214,7 @@ export function buildSolverSections(): HelpSection[] {
             $localize`:@@aide.setup.step2:Horaires des stands, puis faisabilité : le besoin fenêtre par fenêtre, la capacité jour par jour, sans calcul.`,
             $localize`:@@aide.setup.step3:Une résolution courte, puis la page Problèmes : les écarts restants disent quelle règle tient les sièges vides.`,
             $localize`:@@aide.setup.step4:Une résolution longue, une fois la configuration stable, en ne changeant qu'une chose à la fois.`,
-            $localize`:@@aide.setup.step5:Fragilité, puis Pauses : qui est irremplaçable, et quels relais organiser avant de publier.`,
+            $localize`:@@aide.setup.step5:Fragilité, puis Problèmes : qui est irremplaçable, et quels relais organiser avant de publier.`,
           ],
         },
         {

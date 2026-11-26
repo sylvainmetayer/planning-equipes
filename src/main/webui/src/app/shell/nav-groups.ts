@@ -201,8 +201,8 @@ export function buildNavGroups(): NavGroup[] {
         },
         {
           // The page every reading of the plan starts from (issue #712): the
-          // former Journée, which absorbed the month calendar, the intendance
-          // and the graph.
+          // former Journée, which absorbed the month calendar and the graph:
+          // four views, Jour, Stand, Personne and Carte.
           path: '/journee',
           label: $localize`:@@nav.link.journee:Planning`,
           icon: 'view_day',
@@ -219,37 +219,21 @@ export function buildNavGroups(): NavGroup[] {
             ),
             tab(
               'vue',
-              'carte',
-              $localize`:@@journee.vue.carte:Carte`,
-              $localize`:@@nav.keywords.journeeCarte:plan emplacements graphe`,
-            ),
-            tab(
-              'vue',
-              'pauses',
-              $localize`:@@journee.vue.pauses:Pauses et repas`,
-              $localize`:@@nav.keywords.journeePauses:relais intendance sandwichs`,
-            ),
-            tab('vue', 'changements', $localize`:@@journee.vue.changements:Changements`),
-            // The two grids and the table (issue #713), where the Heures, the
-            // Équité, the Jours de repos, the Heatmap, the Répartition des
-            // heures and the Planning par typologie went.
-            tab(
-              'axe',
               'stand',
-              $localize`:@@planning.axe.stand:Par stand`,
+              $localize`:@@planning.vue.stand:Stand`,
               $localize`:@@nav.keywords.axeStand:heatmap couverture répartition des heures treemap`,
             ),
             tab(
-              'axe',
+              'vue',
               'personne',
-              $localize`:@@planning.axe.personne:Par personne`,
+              $localize`:@@planning.vue.personne:Personne`,
               $localize`:@@nav.keywords.axePersonne:heures paie équité jours de repos soirées frise`,
             ),
             tab(
-              'axe',
-              'typologie',
-              $localize`:@@planning.axe.typologie:Par typologie`,
-              $localize`:@@nav.keywords.axeTypologie:planning par typologie compétents`,
+              'vue',
+              'carte',
+              $localize`:@@journee.vue.carte:Carte`,
+              $localize`:@@nav.keywords.journeeCarte:plan emplacements graphe`,
             ),
           ],
         },

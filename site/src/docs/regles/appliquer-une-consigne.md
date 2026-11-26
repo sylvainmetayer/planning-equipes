@@ -29,7 +29,7 @@ Le courriel, l'espace et le PDF disent « horaires modifiés » avec le motif. U
 
 ## Lever une consigne
 
-La levée rend leurs heures aux titulaires des sièges fermés. Elle se prévisualise comme une pose. Une journée passée garde pour toujours la consigne qui l'a gouvernée.
+La levée rend leurs heures aux titulaires des sièges fermés. Elle se prévisualise comme une pose. Une journée passée garde pour toujours la consigne qui l'a gouvernée. La consigne s'inscrit dans les horaires de chaque stand, sur sa date, marquée « Consigne d'édition » ; la lever retire exactement ces horaires-là. Si vous en avez modifié un à la main entre-temps, il devient un horaire du stand et reste après la levée.
 
 ## Partir d'une alerte météo
 

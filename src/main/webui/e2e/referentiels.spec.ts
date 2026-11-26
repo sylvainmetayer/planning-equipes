@@ -193,11 +193,8 @@ test.describe('typologies', () => {
   });
 
   // The organiser's own note, the same round trip as the cap above: written in
-  // the form, read back from the server, and shown again where the plan is read
-  // by typologie — « cette typologie nécessite d'apprendre 45 jeux ».
-  test('la description saisie dans le formulaire se relit, et se retrouve dans la vue', async ({
-    browser,
-  }) => {
+  // the form, read back from the server — « cette typologie nécessite d'apprendre 45 jeux ».
+  test('la description saisie dans le formulaire se relit', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/stands?onglet=typologies');
 
@@ -227,8 +224,6 @@ test.describe('typologies', () => {
     await edition.getByRole('button', { name: /Modifier la typologie/ }).click();
     await expect(edition).toBeHidden();
 
-    await page.goto('/journee?axe=typologie');
-    await expect(page.getByText("Nécessite d'apprendre 45 jeux").first()).toBeVisible();
     await page.context().close();
   });
 
@@ -238,7 +233,7 @@ test.describe('typologies', () => {
     const page = await pageAdmin(browser, admin);
     // The former address lands on the section, which draws the table.
     await page.goto('/typologies-planning');
-    await expect(page).toHaveURL(/\/diagnostic\?.*onglet=besoin/);
+    await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin&section=typologie/);
     const table = page.locator('.besoin-typologie-table');
     await expect(table).toBeVisible();
 
@@ -248,7 +243,7 @@ test.describe('typologies', () => {
 
     // The seats open the Planning by stand, narrowed to the category.
     await row.locator('td a').first().click();
-    await expect(page).toHaveURL(/axe=stand/);
+    await expect(page).toHaveURL(/vue=stand/);
     await expect(page).toHaveURL(/typologie=/);
     await page.context().close();
   });

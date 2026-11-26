@@ -65,11 +65,11 @@ import { StatusMessage } from '../../shared/status-message';
                     }
                   </th>
                   <td class="besoin-typologie-nombre">
-                    <a routerLink="/journee" [queryParams]="{ axe: 'stand', typologie: ligne.typologie }"
+                    <a routerLink="/journee" [queryParams]="{ vue: 'stand', typologie: ligne.typologie }"
                        [title]="byStandLabel">{{ ligne.postes }}</a>
                   </td>
                   <td class="besoin-typologie-nombre">
-                    <a routerLink="/journee" [queryParams]="{ axe: 'stand', typologie: ligne.typologie }"
+                    <a routerLink="/journee" [queryParams]="{ vue: 'stand', typologie: ligne.typologie }"
                        [title]="byStandLabel">{{ heures(ligne.heures) }}</a>
                   </td>
                   <td class="besoin-typologie-nombre">{{ ligne.maxCreneauxParAnimateur ?? '—' }}</td>

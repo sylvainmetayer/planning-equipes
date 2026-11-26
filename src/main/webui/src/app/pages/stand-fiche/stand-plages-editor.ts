@@ -106,12 +106,18 @@ export class StandPlagesEditor {
   }
 
   protected originLabel(plage: PlageStand): string {
+    if (plage.consigne) {
+      return $localize`:@@standFiche.plages.origine.consigne:consigne`;
+    }
     return plage.depliee
       ? $localize`:@@standFiche.plages.origine.modele:modèle`
       : $localize`:@@standFiche.plages.origine.saisie:saisie`;
   }
 
   protected originTip(plage: PlageStand): string {
+    if (plage.consigne) {
+      return $localize`:@@standFiche.plages.origine.consigne.aide:Posée par la consigne du jour : lever la consigne la retire.`;
+    }
     return plage.depliee
       ? $localize`:@@standFiche.plages.origine.modele.aide:Posée par le modèle récurrent : un nouvel enregistrement du modèle la remplace.`
       : $localize`:@@standFiche.plages.origine.saisie.aide:Saisie à la main : le modèle n'y touche pas.`;

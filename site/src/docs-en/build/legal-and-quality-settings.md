@@ -81,7 +81,7 @@ A break that is due and has neither is a **hard breach**, one point per break, c
 
 The duration is **a single setting**, `dureePauseMinutes` (section `parametres.legal` of a scenario): 30 minutes by default, floor of 20 (art. L3121-16), raised to at least 30 for a minor (art. L3162-3) by `ParametresLegaux.dureePauseMinutes(mineur)`.
 
-**The calculation is written once.** `PauseSurPoste.dues(postes, parametres)` returns the breaks of one (staff member, day) pair: a sequence of `L` minutes beyond the ceiling `cap` owes `ceil((L − cap) / (cap + pause))` of them, the k-th one at the latest when the sequence reaches its k-th ceiling. The solver, the Breaks screen, the staff PDF and the ICS feed all read this method, so none of them can describe a break that another does not owe.
+**The calculation is written once.** `PauseSurPoste.dues(postes, parametres)` returns the breaks of one (staff member, day) pair: a sequence of `L` minutes beyond the ceiling `cap` owes `ceil((L − cap) / (cap + pause))` of them, the k-th one at the latest when the sequence reaches its k-th ceiling. The solver, the breaks report, the staff PDF and the ICS feed all read this method, so none of them can describe a break that another does not owe.
 
 **The deduction is unconditional.** A break that is due is rest, not effective work (art. L3121-1), so it is subtracted from the opening span: daily and weekly ceilings, hours report, fairness, Staffing need, KPIs. Nothing is hidden by this: in a plan with no hard breach, every deducted break was indeed taken, and that is what the two hard rules guarantee. A 14:00-midnight day is thus worth 9 h 30 of effective work; 13:00-midnight is worth 10 h 30 and is still refused. The calculation lives in `EffectiveWork`. The places that still count the opening span, and why, are in [the legal rules and breaks](regles-legales-et-pauses.md).
 
@@ -111,6 +111,7 @@ A window is discarded if its bounds are missing, if it is empty or inverted, if 
 | `facteurDetour` | 1.3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 | `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
+| `placementRepas` | `FIN_MIDI_DEBUT_SOIR` | none: set per edition | `coupureRepasPlacementPrefere` |
 
 A few notes on reading it:
 

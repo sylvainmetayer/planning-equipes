@@ -106,7 +106,7 @@ test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({
   await expect(page.getByRole('link', { name: 'Voir le planning', exact: true })).toBeVisible();
 
   // And the result is visible in the frontend right away.
-  await page.goto('/journee?axe=personne');
+  await page.goto('/journee?vue=personne');
   await expect(page.locator('#contenu')).toContainText('Solve');
   await page.context().close();
 });

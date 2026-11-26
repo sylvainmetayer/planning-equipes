@@ -81,6 +81,6 @@ describe('BesoinTypologie', () => {
     const { racine } = await monter();
     const lien = racine.querySelectorAll<HTMLAnchorElement>('tbody tr')[1].querySelector('td a')!;
 
-    expect(lien.getAttribute('href')).toBe('/journee?axe=stand&typologie=STRAT');
+    expect(lien.getAttribute('href')).toBe('/journee?vue=stand&typologie=STRAT');
   });
 });

@@ -113,7 +113,7 @@ export function appliquerPatchStand(
 ): Stand {
   return {
     ...stand,
-    ...applyExceptions(patch.horaires),
+    ...applyExceptions(patch.horaires, stand),
     emplacement: appliquerEmplacement(stand.emplacement ?? null, patch.emplacement, emplacements),
     typologiesProposees: appliquerModeListe(
       stand.typologiesProposees ?? [],
@@ -159,11 +159,12 @@ function applyHoraires(actuels: readonly HoraireStand[], patch: PatchHoraires): 
  */
 function applyExceptions(
   patch: PatchHoraires,
+  stand: Stand,
 ): Pick<Stand, 'ouvertures' | 'indisponibilites'> | Record<string, never> {
   if (patch.mode !== 'DEPUIS_STAND' || patch.source === null) {
     return {};
   }
-  const { ouvertures, indisponibilites } = horairesCopiedFrom(patch.source);
+  const { ouvertures, indisponibilites } = horairesCopiedFrom(patch.source, stand);
   return { ouvertures, indisponibilites };
 }
 

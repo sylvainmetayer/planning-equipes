@@ -78,7 +78,7 @@ Une pause due qui n'a ni l'un ni l'autre est un **écart dur**, un point par pau
 
 La durée est **un seul paramètre**, `dureePauseMinutes` (section `parametres.legal` d'un scénario) : 30 minutes par défaut, plancher de 20 (art. L3121-16), relevée à 30 au minimum pour un mineur (art. L3162-3) par `ParametresLegaux.dureePauseMinutes(mineur)`.
 
-**Le calcul est écrit une fois.** `PauseSurPoste.dues(postes, parametres)` rend les pauses d'un couple (animateur, jour) : une séquence de `L` minutes au-delà du plafond `cap` en doit `ceil((L − cap) / (cap + pause))`, la k-ième au plus tard quand la séquence atteint son k-ième plafond. Le solveur, l'écran Pauses, le PDF animateur et le flux ICS lisent tous cette méthode, donc aucun ne peut décrire une pause qu'un autre ne doit pas.
+**Le calcul est écrit une fois.** `PauseSurPoste.dues(postes, parametres)` rend les pauses d'un couple (animateur, jour) : une séquence de `L` minutes au-delà du plafond `cap` en doit `ceil((L − cap) / (cap + pause))`, la k-ième au plus tard quand la séquence atteint son k-ième plafond. Le solveur, le rapport des pauses, le PDF animateur et le flux ICS lisent tous cette méthode, donc aucun ne peut décrire une pause qu'un autre ne doit pas.
 
 **La déduction est inconditionnelle.** Une pause due est du repos, pas du travail effectif (art. L3121-1), donc elle est retranchée de l'amplitude : plafonds quotidien et hebdomadaires, rapport des heures, équité, Besoin, KPI. Rien n'est caché par là : dans un plan sans écart dur, toute pause déduite a bien été prise, et c'est ce que les deux règles dures garantissent. Une journée 14 h-minuit vaut ainsi 9 h 30 de travail effectif ; 13 h-minuit en vaut 10 h 30 et reste refusée. Le calcul vit dans `EffectiveWork`. Les endroits qui comptent encore l'amplitude, et pourquoi, sont dans [les règles légales et les pauses](regles-legales-et-pauses.md).
 
@@ -108,6 +108,7 @@ Une fenêtre est écartée si ses bornes manquent, si elle est vide ou inversée
 | `facteurDetour` | 1,3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 | `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
+| `placementRepas` | `FIN_MIDI_DEBUT_SOIR` | aucune : se règle par édition | `coupureRepasPlacementPrefere` |
 
 Quelques précisions de lecture :
 

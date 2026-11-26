@@ -211,6 +211,42 @@ export function equityFicheUrl(queryParams: Params): string | null {
   return `/animateurs/${encodeURIComponent(id)}?${params.toString()}`;
 }
 
+/**
+ * The views the Planning page gave up in 4.0 (it keeps Jour, Stand, Personne
+ * and Carte): their addresses land on the screen that holds their reading
+ * today — the table by game category in the Diagnostic's Besoin, the
+ * breaks among the Diagnostic's problems, what changed since the publication
+ * on the day's row of Diffuser — until the screens built for them exist
+ * (Besoin, « Repas et pauses »). A day named by `date` (or an ISO `jour`) goes
+ * along where the target reads one.
+ */
+export function planningFormerViewUrl(queryParams: Params): string | null {
+  const text = (key: string): string => {
+    const value = queryParams[key];
+    return typeof value === 'string' ? value : '';
+  };
+  if (text('axe') === 'typologie') {
+    return '/diagnostic?onglet=besoin&section=typologie';
+  }
+  switch (text('vue')) {
+    case 'pauses':
+      return '/diagnostic?onglet=problemes';
+    case 'changements': {
+      const jour = [text('date'), text('jour')].find((valeur) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(valeur),
+      );
+      return `/publication?onglet=envoyer${jour ? `&jour=${jour}` : ''}`;
+    }
+    default:
+      return null;
+  }
+}
+
+export const planningFormerViews: CanActivateFn = (route) => {
+  const url = planningFormerViewUrl(route.queryParams);
+  return url ? inject(Router).parseUrl(url) : true;
+};
+
 /** `/diagnostic?onglet=banc…`: the tab is gone, its address goes to the Journée. */
 export const benchTabToJournee: CanActivateFn = (route) =>
   route.queryParamMap.get('onglet') === 'banc'
@@ -680,14 +716,16 @@ const adminRoutes: Routes = [
     path: 'journee',
     title: () => $localize`:@@route.journee:Planning`,
     data: { aide: 'consulter' },
+    canActivate: [planningFormerViews],
     loadComponent: () => import('./pages/journee/journee-page').then((m) => m.JourneePage),
   },
   // The month calendar is the Planning page's day selector now: its day, its
   // stand and its animateur land there; the month it showed is the day's own.
   { path: 'calendar', redirectTo: redirectToPlanning({}, { month: '' }) },
-  // The intendance of the meals sits under the breaks, the graph's descent
-  // emplacement → stand → timeslot → animateur is the map's.
-  { path: 'intendance', redirectTo: redirectToJournee('pauses') },
+  // The intendance of the meals and the breaks have no view of the Planning
+  // page any more: the Diagnostic's problems are where they are read today. The
+  // graph's descent emplacement → stand → timeslot → animateur is the map's.
+  { path: 'intendance', redirectTo: () => '/diagnostic?onglet=problemes' },
   { path: 'graphe', redirectTo: redirectToJournee('carte') },
   // The six screens the two grids and the table of the Planning page gathered
   // (issue #713), their view state carried along — the treemap's day under a
@@ -711,13 +749,7 @@ const adminRoutes: Routes = [
   { path: 'day-calendar', redirectTo: redirectToJournee('jour', {}, 'tableau') },
   { path: 'rail-jour', redirectTo: redirectToJournee('jour', { vue: 'lignes' }, 'rail') },
   { path: 'carte-jour', redirectTo: redirectToJournee('carte') },
-  {
-    path: 'pauses',
-    redirectTo: redirectToJournee('pauses', {
-      vue: { key: 'relais', values: { 'sans-relais': 'sans' } },
-      jour: 'date',
-    }),
-  },
+  { path: 'pauses', redirectTo: () => '/diagnostic?onglet=problemes' },
   {
     // What the next solve must respect (issue #720): the hard rules with the
     // thresholds they read, the quality rules with their importance. The solve

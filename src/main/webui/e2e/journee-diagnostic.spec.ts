@@ -42,7 +42,7 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   await expect(page.locator('.rail-table')).toBeVisible();
 
   const appels = espionnerLApi(page);
-  const rendus = page.getByRole('radiogroup', { name: 'Rendu de la journée' });
+  const rendus = page.getByRole('radiogroup', { name: 'Vue du planning' });
   const modes = page.getByRole('radiogroup', { name: 'Mode de la vue Jour' });
   await modes.getByText('Tableau').click();
   await expect(page.locator('.jour-table')).toBeVisible();
@@ -51,19 +51,29 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   await expect(page.locator('.rail-table')).toBeVisible();
   await expect(page).not.toHaveURL(/vue=/);
 
-  await rendus.getByText('Pauses et repas').click();
-  await expect(page.locator('.pauses-message, .empty-hint').first()).toBeVisible();
-  await expect(page).toHaveURL(/vue=pauses/);
+  await rendus.getByText('Carte').click();
+  await expect(page.locator('.leaflet-container')).toBeVisible();
+  await expect(page).toHaveURL(/vue=carte/);
 
   await rendus.getByText('Jour').click();
   await expect(page.locator('.rail-table')).toBeVisible();
   await expect(page).not.toHaveURL(/vue=/);
 
-  // Four switches, and the plan, the breaks and the referentials were read
+  // Several switches, and the plan, the breaks and the referentials were read
   // once, before the spy: nothing was fetched again — the table no longer
   // re-reads a count of persisted assignments either (issue #712).
   expect(appels.filter((chemin) => chemin.startsWith('/api/planning'))).toEqual([]);
   expect(appels.filter((chemin) => chemin === '/api/pauses')).toEqual([]);
+
+  // Stand and Personne read their own reports: outside the no-refetch count above.
+  await rendus.getByText('Stand').click();
+  await expect(page.locator('.planning-grille').first()).toBeVisible();
+  await expect(page).toHaveURL(/vue=stand/);
+
+  await rendus.getByText('Personne').click();
+  await expect(page.locator('.planning-grille').first()).toBeVisible();
+  await expect(page).toHaveURL(/vue=personne/);
+
   await page.context().close();
 });
 
@@ -91,9 +101,27 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await expect(page.locator('.rail-table')).toBeVisible();
   await expect(page).toHaveURL(/\/journee$/);
 
+  // The views the page gave up (4.0) land on the screen holding their reading
+  // today: no bookmark falls on an empty page.
+  // Problèmes is the default tab of the Diagnostic, so its address drops `onglet`.
   await page.goto('/pauses?vue=sans-relais');
-  await expect(page).toHaveURL(/\/journee\?.*vue=pauses/);
-  await expect(page).toHaveURL(/relais=sans/);
+  await expect(page).toHaveURL(/\/diagnostic$/);
+  await page.goto('/journee?vue=pauses');
+  await expect(page).toHaveURL(/\/diagnostic$/);
+  await page.goto('/journee?axe=typologie');
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin&section=typologie/);
+  await page.goto(`/journee?vue=changements&date=${SEED.jour}`);
+  // Envoyer is the default tab of Diffuser: its address drops `onglet` too.
+  await expect(page).toHaveURL(new RegExp(String.raw`/publication\?jour=${SEED.jour}$`));
+  // A day compared with another: the comparison is gone, the day stays.
+  await page.goto(`/journee?date=${SEED.jour}&comparer=${SEED.jourSuivant}`);
+  await expect(page.locator('.rail-table')).toBeVisible();
+  await expect(page).not.toHaveURL(/comparer=/);
+  // The 3.x keys of the two grids are rewritten to the 4.0 ones.
+  await page.goto('/journee?axe=stand&vue=treemap');
+  await expect(page).toHaveURL(/\/journee\?vue=stand&rendu=treemap/);
+  await page.goto('/journee?axe=personne');
+  await expect(page).toHaveURL(/\/journee\?vue=personne/);
 
   await page.goto('/carte-jour');
   await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
@@ -104,8 +132,7 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await expect(page).toHaveURL(new RegExp(String.raw`/journee\?.*stand=${SEED.standDemandeur}`));
 
   await page.goto('/intendance');
-  await expect(page).toHaveURL(/\/journee\?.*vue=pauses/);
-  await expect(page.locator('#contenu')).toContainText('Combien de personnes mangent');
+  await expect(page).toHaveURL(/\/diagnostic$/);
 
   await page.goto('/graphe');
   await expect(page).toHaveURL(/\/journee\?.*vue=carte/);
@@ -160,15 +187,15 @@ test('le diagnostic ne mène à aucune timeline et ne se dit plus à l’essai',
  * scrolling, whatever the rendering — the day, the filters, the relecture and
  * the consigne fit above it.
  */
-test('le planning se lit sans défiler, sur les cinq rendus', async ({ browser }) => {
+test('le planning se lit sans défiler, sur les quatre vues', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.setViewportSize({ width: 1440, height: 900 });
   const premiers: Record<string, string> = {
     calendrier: '.jour-table tbody th',
     rail: '.rail-table tbody th',
     carte: '.leaflet-container',
-    pauses: '.pauses-message, .pauses-stand-titre, app-pauses-vue .empty-hint',
-    changements: '.journee-changements-toolbar',
+    stand: '.planning-grille tbody th',
+    personne: '.planning-grille tbody th',
   };
   for (const [vue, selecteur] of Object.entries(premiers)) {
     await page.goto(`/journee?vue=${vue}&date=${SEED.jour}`);
@@ -193,7 +220,7 @@ test("Leaflet ne voyage qu'avec le rendu carte", async ({ browser }) => {
   await expect(page.locator('.rail-table')).toBeVisible();
   const avantLaCarte = scripts.length;
 
-  await page.getByRole('radiogroup', { name: 'Rendu de la journée' }).getByText('Carte').click();
+  await page.getByRole('radiogroup', { name: 'Vue du planning' }).getByText('Carte').click();
   await expect(page.locator('.leaflet-container')).toBeVisible();
 
   // The map's chunk arrives with the map, not with the page.

@@ -72,10 +72,15 @@ public class EditionRepository {
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),
             new TableToCopy("stand_typologie", "stand_id, typologie"),
+            // A consigne's plages stay behind with it (ADR 0125): the dated consignes are not copied.
             new TableToCopy(
-                    "stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee"),
+                    "stand_indisponibilite",
+                    "stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee, consigne",
+                    " AND NOT consigne"),
             new TableToCopy(
-                    "stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee"),
+                    "stand_ouverture",
+                    "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee, consigne",
+                    " AND NOT consigne"),
             // The stand's model (V37, ADR 0104): the recurring rules a dateless edition keeps until
             // it has days. Their BIGSERIAL ids are kept as-is — the PKs are composite (edition_id,
             // id), the child FK follows the new edition_id, and the shared sequence has already
@@ -106,7 +111,7 @@ public class EditionRepository {
                     "max_emplacements_distincts_par_jour, heure_service_tardif, heure_service_matinal, "
                             + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max, "
                             + "jours_consecutifs_max, vitesse_marche_km_h, facteur_detour, "
-                            + "tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes"),
+                            + "tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes, placement_repas"),
             new TableToCopy("parametres_solveur", "mail_fin_resolution"),
             // Who the animateurs call: the organisation rarely changes number from one year to the next.
             new TableToCopy("contact_organisation", "telephone, email"),
@@ -144,7 +149,13 @@ public class EditionRepository {
             // even without the people — a number is never handed out twice.
             new TableToCopy("compteur_identifiant", "entite, dernier"));
 
-    record TableToCopy(String nom, String colonnes) {}
+    /** {@code condition} narrows the rows copied, appended to the edition predicate; empty copies them all. */
+    record TableToCopy(String nom, String colonnes, String condition) {
+
+        TableToCopy(String nom, String colonnes) {
+            this(nom, colonnes, "");
+        }
+    }
 
     private final DataSource dataSource;
 
@@ -394,7 +405,8 @@ public class EditionRepository {
         // Column lists come from the constant above, never from user input.
         try (PreparedStatement ps =
                 connection.prepareStatement("INSERT INTO " + table.nom() + " (edition_id, " + table.colonnes() + ") "
-                        + "SELECT ?, " + table.colonnes() + " FROM " + table.nom() + " WHERE edition_id = ?")) {
+                        + "SELECT ?, " + table.colonnes() + " FROM " + table.nom() + " WHERE edition_id = ?"
+                        + table.condition())) {
             ps.setString(1, cibleId);
             ps.setString(2, sourceId);
             ps.executeUpdate();

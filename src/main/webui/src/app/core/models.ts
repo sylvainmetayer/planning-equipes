@@ -145,6 +145,8 @@ export interface PlageStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /**
@@ -165,6 +167,8 @@ export interface IndisponibiliteStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
@@ -181,6 +185,8 @@ export interface OuvertureStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */
@@ -1089,7 +1095,12 @@ export interface ParametresQualite {
   toleranceTrajetMinutes?: number;
   /** Minutes the arrivals, or the departures, of a grouped arrival may differ before `arriveeGroupee` counts. */
   toleranceArriveeGroupeeMinutes?: number;
+  /** Which end of a meal window the break is preferred at: the term `coupureRepasPlacementPrefere` reads it (ADR 0123). */
+  placementRepas?: PlacementRepas;
 }
+
+/** The four values of the meal-break placement; the default keeps each window's own direction. */
+export type PlacementRepas = 'FIN_MIDI_DEBUT_SOIR' | 'DEBUT' | 'FIN' | 'AUCUN';
 
 export interface HardMediumSoftScore {
   /**
@@ -1131,6 +1142,8 @@ export interface FenetreRepas {
    * reopen (issue #596).
    */
   auPlusTard?: boolean;
+  /** `true` when the edition's placement is « aucun »: no end is preferred and the soft term is silent. */
+  sansPlacement?: boolean;
   /**
    * The one day this window governs (`AAAA-MM-JJ`), `null` for every day. A
    * consigne restating its meal windows sends them dated (issue #4).
@@ -1476,6 +1489,12 @@ export interface ConstraintView {
    * preference. `niveau` stays the catalogue's own.
    */
   niveauReglable?: boolean;
+  /**
+   * The rule this one is a scoring term of, `null` when it stands on its own:
+   * a term has no row on the rules screen, it is read through that rule
+   * (ADR 0123).
+   */
+  termeDe?: string | null;
   /** The level the rule has on this edition; null when it is not the edition's to choose. */
   niveauChoisi?: NiveauRegle | null;
   /** What one match of the rule is worth on the next solve at the level it scores on (1 to 500 — ADR 0057). */
@@ -4039,6 +4058,8 @@ export interface RapportPublication {
   echecs: string[];
   /** Who the admin took out of this send: they come back in the next count. */
   differes: string[];
+  /** Sentences for the caller (a 3.x field that no longer exists); none from this app. */
+  avertissements?: string[];
 }
 
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */

@@ -72,6 +72,42 @@ class ParametresSectionsResourceTest {
                 .body("ancienneteEchangeJours", equalTo(4));
     }
 
+    /** The meal-break placement (ADR 0123): shipped at its default, written under the stamp, read back. */
+    @Test
+    void theMealPlacementShipsItsDefaultAndIsWrittenThroughTheOrganisationSection() {
+        String courant = given().header("X-Edition-Id", "E1")
+                .get("/api/parametres/organisation")
+                .then()
+                .statusCode(200)
+                .body("placementRepas", equalTo("FIN_MIDI_DEBUT_SOIR"))
+                .extract()
+                .asString();
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body(courant.replace("\"FIN_MIDI_DEBUT_SOIR\"", "\"AUCUN\""))
+                .put("/api/parametres/organisation")
+                .then()
+                .statusCode(200)
+                .body("placementRepas", equalTo("AUCUN"));
+        given().header("X-Edition-Id", "E1")
+                .get("/api/parametres-qualite")
+                .then()
+                .statusCode(200)
+                .body("placementRepas", equalTo("AUCUN"));
+        // The edition is shared with the other classes: back to the shipped value, under the stamp just written.
+        String ecrit = given().header("X-Edition-Id", "E1")
+                .get("/api/parametres/organisation")
+                .then()
+                .extract()
+                .asString();
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body(ecrit.replace("\"AUCUN\"", "\"FIN_MIDI_DEBUT_SOIR\""))
+                .put("/api/parametres/organisation")
+                .then()
+                .statusCode(200);
+    }
+
     @Test
     void aFieldOfAnotherSectionIsRefusedBySectionButStillIgnoredByTheFormerRoot() {
         String courant = given().header("X-Edition-Id", "E1")

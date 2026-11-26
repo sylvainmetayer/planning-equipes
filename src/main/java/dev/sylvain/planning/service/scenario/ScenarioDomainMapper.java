@@ -109,9 +109,9 @@ final class ScenarioDomainMapper {
      *
      * <p>Nominal, deliberately: the {@code consignes:} section is read by
      * {@link #sections} for the import and never applied to the seats built
-     * here. The consigne layer belongs to {@code StandService.resolve}, over
-     * the referential (ADR 0043); a scenario solved straight from its file
-     * is solved on its nominal grid.</p>
+     * here. A consigne's plages are written on the stands when the file is
+     * imported (ADR 0125) and never travel in the file; a scenario solved
+     * straight from its file is solved on its nominal grid.</p>
      */
     static PlanningEvenement planning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         ReferenceScenario reference = reference(scenario);
@@ -146,8 +146,11 @@ final class ScenarioDomainMapper {
         // block, which no assignment could satisfy. A file that declares
         // nothing inherits the defaults, exactly like an edition that never
         // configured them.
-        evenement.setFenetresRepas(
-                FenetreRepas.from(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
+        evenement.setFenetresRepas(FenetreRepas.withPlacement(
+                FenetreRepas.from(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)),
+                parametresQualite(scenario.parametresQualite())
+                        .orElseGet(ParametresQualite::new)
+                        .placementRepas()));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file
         // that pins its weights describes the problem it was verified against,
         // and solving it must apply them whether or not it was ever imported.
@@ -738,7 +741,9 @@ final class ScenarioDomainMapper {
                 dto.toleranceTrajetMinutes() != null ? dto.toleranceTrajetMinutes() : defauts.toleranceTrajetMinutes(),
                 dto.toleranceArriveeGroupeeMinutes() != null
                         ? dto.toleranceArriveeGroupeeMinutes()
-                        : defauts.toleranceArriveeGroupeeMinutes()));
+                        : defauts.toleranceArriveeGroupeeMinutes(),
+                dto.placementRepas() != null ? dto.placementRepas() : defauts.placementRepas(),
+                null));
     }
 
     /**

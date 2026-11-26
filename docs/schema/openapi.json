@@ -2296,6 +2296,9 @@
           "niveauReglable" : {
             "type" : "boolean"
           },
+          "termeDe" : {
+            "type" : "string"
+          },
           "niveauChoisi" : {
             "$ref" : "#/components/schemas/NiveauRegle"
           },
@@ -3501,6 +3504,14 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "exclusions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Retiré en 4.0 : ignoré, signalé par avertissements.",
+            "deprecated" : true
           }
         }
       },
@@ -5138,6 +5149,9 @@
             "format" : "int32"
           },
           "auPlusTard" : {
+            "type" : "boolean"
+          },
+          "sansPlacement" : {
             "type" : "boolean"
           },
           "date" : {
@@ -7273,7 +7287,7 @@
       },
       "ParametresQualite" : {
         "type" : "object",
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes", "placementRepas" ],
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
             "type" : "integer",
@@ -7312,6 +7326,9 @@
           "toleranceArriveeGroupeeMinutes" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "placementRepas" : {
+            "$ref" : "#/components/schemas/PlacementRepas"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -7549,6 +7566,10 @@
           }
         }
       },
+      "PlacementRepas" : {
+        "type" : "string",
+        "enum" : [ "FIN_MIDI_DEBUT_SOIR", "DEBUT", "FIN", "AUCUN" ]
+      },
       "PlafondsConformite" : {
         "type" : "object",
         "required" : [ "hebdomadaireMajeurHeures", "hebdomadaireMineurHeures", "vacationHeures", "reposQuotidienHeures", "ecartsAuxDefauts" ],
@@ -7604,6 +7625,9 @@
             "format" : "int32"
           },
           "depliee" : {
+            "type" : "boolean"
+          },
+          "consigne" : {
             "type" : "boolean"
           }
         }
@@ -8780,6 +8804,12 @@
             }
           },
           "differes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "avertissements" : {
             "type" : "array",
             "items" : {
               "type" : "string"

@@ -11,6 +11,7 @@ import dev.sylvain.planning.service.edition.EditionPhaseService;
 import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
 import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
@@ -105,6 +106,8 @@ public class PlanPublicationService {
 
     private final EnvoiPlanningRepository envois;
 
+    private final JournalNotificationsRepository alertes;
+
     /** What a publication tells the outside world: counts, through the webhooks. */
     private final Event<PlanningPublished> published;
 
@@ -130,6 +133,7 @@ public class PlanPublicationService {
             NotifiedPlanRepository notifiedPlans,
             dev.sylvain.planning.service.journal.JournalActionService journal,
             EnvoiPlanningRepository envois,
+            JournalNotificationsRepository alertes,
             Event<PlanningPublished> published,
             EditionPhaseService phaseService) {
         this.persistenceService = persistenceService;
@@ -149,6 +153,7 @@ public class PlanPublicationService {
         this.notifiedPlans = notifiedPlans;
         this.journal = journal;
         this.envois = envois;
+        this.alertes = alertes;
         this.published = published;
         this.phaseService = phaseService;
     }
@@ -259,6 +264,9 @@ public class PlanPublicationService {
      *                  They keep the reference they really received, so they
      *                  come back in the next count with the écart accumulated
      *                  since — nothing is lost by deferring somebody
+     * @param avertissements sentences for the caller, never for a person: today
+     *                  only « the exclusions you sent no longer exist » to a
+     *                  3.x client (read until 5.0). Empty otherwise
      */
     @Schema(requiredProperties = {"envoyes", "snapshotId"})
     public record RapportPublication(
@@ -267,7 +275,14 @@ public class PlanPublicationService {
             int envoyes,
             List<String> sansEmail,
             List<String> echecs,
-            List<String> differes) {}
+            List<String> differes,
+            List<String> avertissements) {}
+
+    /** What a 3.x client that still sends {@code exclusions} is told: nobody was left out. */
+    static final String EXCLUSIONS_RETIREES = "« exclusions » n'existe plus depuis la 4.0 : "
+            + "personne n'a été exclu de cette publication, tous les destinataires concernés ont été prévenus "
+            + "(champ lu avec cet avertissement jusqu'en 5.0). Pour prévenir quelques personnes seulement, "
+            + "utilisez « cibles ».";
 
     /* ------------------------------- Preview ------------------------------- */
 
@@ -497,6 +512,17 @@ public class PlanPublicationService {
      */
     @RequiresActiveEdition
     public RapportPublication publier(List<String> cibles) {
+        return publier(cibles, null);
+    }
+
+    /**
+     * Same, for a 3.x client that may still send {@code exclusions}: the field
+     * is read, ignored and answered with a warning, until 5.0.
+     *
+     * @param exclusions the former field; anything non-empty adds the warning
+     */
+    @RequiresActiveEdition
+    public RapportPublication publier(List<String> cibles, List<String> exclusions) {
         ApercuPublication apercu = apercu();
         if (apercu.solveEnCours()) {
             throw new BusinessError.Conflict(
@@ -549,6 +575,7 @@ public class PlanPublicationService {
         List<EnvoiPlanningRepository.Envoi> livraisons = new ArrayList<>();
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
+        List<String> envoyesA = new ArrayList<>();
         int envoyes = 0;
         for (DestinatairePublication destinataire : retenus) {
             Issue issue = send(planning, reference, referencesParAnimateur, destinataire);
@@ -561,7 +588,10 @@ public class PlanPublicationService {
                     issue.cause(),
                     envoyeLe));
             switch (statut) {
-                case ENVOYE -> envoyes++;
+                case ENVOYE -> {
+                    envoyes++;
+                    envoyesA.add(destinataire.animateurId());
+                }
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
                 case ECHEC -> {
                     echecs.add(destinataire.nomAffiche());
@@ -606,6 +636,10 @@ public class PlanPublicationService {
         }
         traceRepository.recordRecipients(meta.id(), trace);
         envois.recordAll(livraisons);
+        // V160's alert says who the next publication will write to: it closes
+        // for the people this one really told, and for them only — somebody
+        // deferred, without an address or whose mail failed keeps it.
+        envoyesA.forEach(id -> alertes.release(JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE, id));
         // The marker moves for the people this publication addressed, and for
         // them only. Somebody it had nothing to say to was told nothing, so
         // claiming they know this plan would turn their next message from
@@ -643,7 +677,8 @@ public class PlanPublicationService {
                 envoyes,
                 List.copyOf(sansEmail),
                 List.copyOf(echecs),
-                differes.stream().map(DestinatairePublication::nomAffiche).toList());
+                differes.stream().map(DestinatairePublication::nomAffiche).toList(),
+                exclusions == null || exclusions.isEmpty() ? List.of() : List.of(EXCLUSIONS_RETIREES));
     }
 
     /** The outcome of one send, and why it failed when it did. */

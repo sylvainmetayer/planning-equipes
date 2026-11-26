@@ -16,7 +16,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * whether the consigne opens it or not. An opening is an <em>extension</em>,
  * chosen for each stand, never implied — and a stand that has none stays shut
  * on the créneaux the consigne added to the grid, which belong to nobody's
- * usual hours (see {@code ConsigneResolver}).</p>
+ * usual hours. What a consigne does to a stand is written on it as dated
+ * plages, marked as the consigne's (see {@code ConsignePlages}, ADR 0125).</p>
  *
  * <p>One value per date, so extending an alert adds dates, lifting it removes
  * the dates still to come, and a date already worked keeps for good the

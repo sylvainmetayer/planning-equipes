@@ -129,7 +129,7 @@
           <h2 id="realise-detail-titre" class="realise-titre">
             {{ detail()?.standNom ?? cellule.standId }} — {{ cellule.jour }}
           </h2>
-          <a matButton [routerLink]="['/journee']" [queryParams]="{ date: cellule.jour, vue: 'changements', reference: 'publication', stand: cellule.standId }"
+          <a matButton [routerLink]="['/journee']" [queryParams]="{ date: cellule.jour, vue: 'jour', mode: 'tableau', stand: cellule.standId }"
              i18n="@@realise.detail.journee">Voir la journée</a>
           <button matIconButton type="button" (click)="close()" aria-label="Fermer le détail"
                   i18n-aria-label="@@realise.detail.fermer">

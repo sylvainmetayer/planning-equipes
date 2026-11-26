@@ -25,7 +25,7 @@ test('le planning par stand retrouve sa densité et sa recherche après un recha
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=stand');
+  await page.goto('/journee?vue=stand');
   const lignes = page.locator('.planning-grille tbody th a.planning-grille-lien');
 
   await page.locator('mat-button-toggle').filter({ hasText: 'Compteurs' }).click();
@@ -47,7 +47,7 @@ test('le planning par stand se remet à zéro en une action, sans quitter son ax
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=stand&densite=compteurs&q=deux');
+  await page.goto('/journee?vue=stand&densite=compteurs&q=deux');
   const lignes = page.locator('.planning-grille tbody th a.planning-grille-lien');
   await expect(lignes).toHaveText([/Stand E2E deux/]);
 
@@ -55,7 +55,7 @@ test('le planning par stand se remet à zéro en une action, sans quitter son ax
 
   await expect(page).not.toHaveURL(/[?&]densite=/);
   await expect(page).not.toHaveURL(/[?&]q=/);
-  await expect(page).toHaveURL(/[?&]axe=stand/);
+  await expect(page).toHaveURL(/[?&]vue=stand/);
   await expect(lignes).toHaveCount(2);
   await page.context().close();
 });
@@ -67,14 +67,14 @@ test('une densité inconnue dans l’URL laisse le planning par stand sur les no
   // The Heatmap's former key, as a bookmark still carries it.
   await page.goto('/heatmap?view=par-jour');
 
-  await expect(page).toHaveURL(/[?&]axe=stand/);
+  await expect(page).toHaveURL(/[?&]vue=stand/);
   await expect(page.locator('.planning-grille tbody th').first()).toHaveText(/Stand E2E/);
   await page.context().close();
 });
 
 test('le tri par personne survit au rechargement, dans les deux sens', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=personne');
+  await page.goto('/journee?vue=personne');
   const noms = page.locator('.planning-grille tbody th a.planning-grille-lien');
   const entete = page.getByRole('button', { name: 'Animateur', exact: true });
 
@@ -107,7 +107,7 @@ test('une colonne de semaine disparue ne casse pas le planning par personne', as
   const page = await pageAdmin(browser, admin);
   await page.goto('/hours?sort=2019-W01&dir=asc');
 
-  await expect(page).toHaveURL(/[?&]axe=personne/);
+  await expect(page).toHaveURL(/[?&]vue=personne/);
   await expect(page.locator('.planning-grille tbody th a.planning-grille-lien')).toHaveCount(2);
   await page.context().close();
 });

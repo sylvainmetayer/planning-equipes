@@ -1,4 +1,4 @@
-// The page over the four renderings: what it reads once for all of them, how
+// The page over its four views: what it reads once for all of them, how
 // the day and the rendering come from the URL and go back to it, and that
 // switching the rendering fetches nothing again.
 
@@ -10,13 +10,11 @@ import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
-import { JourneesApi } from '../../core/api/journees-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { PostesApi } from '../../core/api/postes-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { ApiService } from '../../core/api.service';
 import {
-  ChangementsJournee,
   Creneau,
   HoursReading,
   HoursSource,
@@ -106,42 +104,6 @@ describe('JourneePage', () => {
     ),
     typologiesReport: vi.fn(() => Promise.resolve({ typologies: [], jours: [] })),
   };
-  const journeesApi = {
-    changements: vi.fn((jour: string, reference: string | null): Promise<ChangementsJournee> =>
-      Promise.resolve({
-        jour,
-        reference: reference === 'resolution' ? 'RESOLUTION' : 'PUBLICATION',
-        referenceDisponible: true,
-        referenceLe: '2026-07-20T10:00:00Z',
-        nouveaux: 1,
-        retires: 0,
-        remplaces: 0,
-        horairesModifies: 0,
-        animateursConcernes: 1,
-        parVacation: [
-          {
-            standId: 'Tir',
-            standNom: 'Tir',
-            date: jour,
-            heureDebut: '10:00:00',
-            heureFin: '12:00:00',
-            heureDebutAvant: null,
-            heureFinAvant: null,
-            avant: null,
-            apres: { animateurId: 'alice', nomAffiche: 'Alice Martin' },
-            type: 'NOUVEAU',
-          },
-        ],
-        parAnimateur: [
-          {
-            animateurId: 'alice',
-            nomAffiche: 'Alice Martin',
-            changements: [{ type: 'AJOUT', libelle: 'samedi 01/08 : Tir 10h-12h (nouveau)' }],
-          },
-        ],
-      }),
-    ),
-  };
   let fixture: ComponentFixture<JourneePage>;
   /** The query params as the router emits them: a navigation to this same route pushes a new map. */
   let queryParams$: BehaviorSubject<ParamMap>;
@@ -152,7 +114,6 @@ describe('JourneePage', () => {
     analysesApi.typologies.mockClear();
     analysesApi.breaks.mockClear();
     analysesApi.emplacements.mockClear();
-    journeesApi.changements.mockClear();
     loadForDisplay.mockResolvedValue(planningDeuxJours());
   });
 
@@ -172,7 +133,6 @@ describe('JourneePage', () => {
         provideRouter([]),
         { provide: PlanningStateService, useValue: { loadForDisplay, set } },
         { provide: AnalysesApi, useValue: analysesApi },
-        { provide: JourneesApi, useValue: journeesApi },
         { provide: PlanningApi, useValue: planningApi },
         {
           provide: ConsignesStore,
@@ -268,9 +228,10 @@ describe('JourneePage', () => {
 
   it('comes back to « Jour » in the mode it was left in', async () => {
     const page = await mount({ vue: 'jour', mode: 'tableau' }, { tableau: false });
-    page['changeTab']('carte');
+    page['selectView']('carte');
     expect(page['view']()).toBe('carte');
-    page['changeTab']('jour');
+    page['selectView']('stand');
+    page['selectView']('jour');
     expect(page['view']()).toBe('calendrier');
   });
 
@@ -371,14 +332,14 @@ describe('JourneePage', () => {
     expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
     expect(racine().querySelector('app-calendar-day-vue')).toBeNull();
 
-    page['changeView']('pauses');
+    page['changeView']('carte');
     TestBed.tick();
     await fixture.whenStable();
-    expect(racine().querySelector('app-pauses-vue')).not.toBeNull();
+    expect(racine().querySelector('app-carte-jour-vue')).not.toBeNull();
 
     expect(loadForDisplay).toHaveBeenCalledOnce();
     expect(analysesApi.breaks).toHaveBeenCalledOnce();
-    expect(TestBed.inject(Location).path()).toContain('vue=pauses');
+    expect(TestBed.inject(Location).path()).toContain('vue=carte');
   });
 
   // The palette's « Journée › Rail », used from the Journée page itself: the
@@ -502,10 +463,10 @@ describe('JourneePage', () => {
     expect(liens[0].getAttribute('target')).toBe('_blank');
   });
 
-  // #713: the same page, four axes, the filters kept from one to the other.
+  // #713: the same page, its grids, the filters kept from one to the other.
   it('draws each axis under the same filters, and keeps the person from one to the other', async () => {
     const page = await mount({
-      axe: 'personne',
+      vue: 'personne',
       animateur: 'alice',
       sort: 'heuresTotal',
       dir: 'desc',
@@ -515,33 +476,29 @@ describe('JourneePage', () => {
     expect(racine().querySelector('app-relecture-barre')).toBeNull();
     expect(TestBed.inject(Location).path()).toContain('sort=heuresTotal');
 
-    page['changeAxe']('jour');
+    page['selectView']('jour');
     TestBed.tick();
     await fixture.whenStable();
     expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
     const url = TestBed.inject(Location).path();
     expect(url).toContain('animateur=alice');
-    expect(url).not.toContain('axe=');
+    expect(url).not.toContain('vue=');
     // The sort is the person axis's own: it leaves the address with it.
     expect(url).not.toContain('sort=');
 
-    page['changeAxe']('stand');
+    page['selectView']('stand');
     TestBed.tick();
     await fixture.whenStable();
     expect(racine().querySelector('app-planning-stand-vue')).not.toBeNull();
-    expect(TestBed.inject(Location).path()).toContain('axe=stand');
+    expect(TestBed.inject(Location).path()).toContain('vue=stand');
 
-    page['changeAxe']('typologie');
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(racine().querySelector('app-planning-typologie-vue')).not.toBeNull();
     expect(page['animateur']()).toBe('alice');
   });
 
   // The hours are read by the server on the plan the address names (`source`),
   // and the browser sends no plan of its own.
   it('reads the hours on the plan the address names, and gives the choice back to the server on reset', async () => {
-    const page = await mount({ axe: 'personne', vue: 'synthese', source: 'persiste' });
+    const page = await mount({ vue: 'personne', rendu: 'synthese', source: 'persiste' });
 
     expect(planningApi.hoursReport).toHaveBeenLastCalledWith('persiste');
     expect(TestBed.inject(Location).path()).toContain('source=persiste');
@@ -569,7 +526,7 @@ describe('JourneePage', () => {
       report: { heureDebutSoiree: '20:00:00', semaines: [], animateurs: [] },
     });
     planningApi.hoursReport.mockImplementationOnce(() => Promise.resolve(lu('publie')));
-    const page = await mount({ axe: 'personne', vue: 'synthese', source: 'publie' });
+    const page = await mount({ vue: 'personne', rendu: 'synthese', source: 'publie' });
     const publie = () =>
       racine().querySelector<HTMLElement>(
         'app-planning-personne-vue mat-button-toggle[value="publie"]',
@@ -645,18 +602,26 @@ describe('JourneePage', () => {
     await redraw();
     expect(filtres()).toEqual(['Stand']);
 
-    page['changeAxe']('typologie');
-    await redraw();
-    expect(filtres()).toEqual(['Typologie', 'Filtrer par nom']);
-
-    page['changeAxe']('stand');
+    page['selectView']('stand');
     page['standView'].set('treemap');
     await redraw();
     expect(filtres()).toEqual(['Emplacement']);
   });
 
+  it('reads the 3.x axe and the vue of the grid it carried, and writes the 4.0 keys', async () => {
+    const page = await mount({ axe: 'personne', vue: 'frise' });
+    expect(page['axe']()).toBe('personne');
+    expect(page['personView']()).toBe('frise');
+    expect(TestBed.inject(Location).path()).toContain('vue=personne&rendu=frise');
+    expect(TestBed.inject(Location).path()).not.toContain('axe=');
+
+    const treemap = await mount({ axe: 'stand', vue: 'treemap' });
+    expect(treemap['standView']()).toBe('treemap');
+    expect(TestBed.inject(Location).path()).toContain('vue=stand&rendu=treemap');
+  });
+
   it('draws the days and the synthesis of the person axis apart, each in the width', async () => {
-    const page = await mount({ axe: 'personne' });
+    const page = await mount({ vue: 'personne' });
     const entetes = () =>
       Array.from(racine().querySelectorAll('.planning-grille thead th')).map((th) =>
         th.textContent?.trim(),
@@ -670,31 +635,31 @@ describe('JourneePage', () => {
     expect(racine().querySelector('.planning-grille-jour')).toBeNull();
     expect(entetes()).toContain('Écart méd.');
     const location = TestBed.inject(Location);
-    expect(location.path()).toContain('vue=synthese');
+    expect(location.path()).toContain('rendu=synthese');
     // No day column: the span has nothing to narrow.
     expect(location.path()).not.toContain('portee=');
   });
 
   it('keeps the span of the grids in the address, the week left out', async () => {
-    const page = await mount({ axe: 'personne', portee: 'jour' });
+    const page = await mount({ vue: 'personne', portee: 'jour' });
     const location = TestBed.inject(Location);
     expect(page['gridSpan']()).toBe('jour');
     expect(racine().querySelector('.planning-grille-portee-jour')).not.toBeNull();
     expect(location.path()).toContain('portee=jour');
 
     // The one span serves both grids.
-    page['changeAxe']('stand');
+    page['selectView']('stand');
     TestBed.tick();
     await fixture.whenStable();
     expect(location.path()).toContain('portee=jour');
 
     // The day's own renderings read no span: the key leaves with the grids.
-    page['changeAxe']('jour');
+    page['selectView']('jour');
     TestBed.tick();
     await fixture.whenStable();
     expect(location.path()).not.toContain('portee=');
 
-    page['changeAxe']('personne');
+    page['selectView']('personne');
     page['gridSpan'].set('semaine');
     TestBed.tick();
     await fixture.whenStable();
@@ -710,7 +675,8 @@ describe('JourneePage', () => {
     });
     const location = TestBed.inject(Location);
     expect(page['personView']()).toBe('synthese');
-    expect(location.path()).toContain('vue=synthese');
+    expect(location.path()).toContain('vue=personne&rendu=synthese');
+    expect(location.path()).not.toContain('axe=');
     expect(location.path()).toContain('sort=heuresTotal');
 
     // On the day grid the sort names a column nobody sees: it leaves the
@@ -728,7 +694,7 @@ describe('JourneePage', () => {
   });
 
   it('holds every cell to its colour over the whole event, and says why', async () => {
-    await mount({ axe: 'personne', portee: 'evenement' });
+    await mount({ vue: 'personne', portee: 'evenement' });
     expect(racine().querySelector('.planning-personne-densite-compact')).not.toBeNull();
     const note = racine().querySelector('#planning-grille-couleur-imposee');
     expect(note?.textContent).toContain('couleur');
@@ -737,17 +703,17 @@ describe('JourneePage', () => {
   });
 
   it('clears the keys of the treemap once it leaves the screen', async () => {
-    const page = await mount({ axe: 'stand' });
+    const page = await mount({ vue: 'stand' });
     // The treemap restores its state from the address bar, as a link gives it.
     const location = TestBed.inject(Location);
-    location.replaceState('/journee', 'axe=stand&regroupement=typologie&semaine=2026-07-27');
+    location.replaceState('/journee', 'vue=stand&regroupement=typologie&semaine=2026-07-27');
     page['standView'].set('treemap');
     TestBed.tick();
     await fixture.whenStable();
     expect(location.path()).toContain('regroupement=typologie');
     expect(location.path()).toContain('semaine=2026-07-27');
 
-    page['changeAxe']('personne');
+    page['selectView']('personne');
     TestBed.tick();
     await fixture.whenStable();
 
@@ -757,7 +723,7 @@ describe('JourneePage', () => {
   });
 
   it('opens the Siège panel from a cell of a grid, on its day', async () => {
-    const page = await mount({ axe: 'stand' });
+    const page = await mount({ vue: 'stand' });
 
     page['openSeatOnDay']({ posteId: 'p2', jour: '2026-08-02' });
     TestBed.tick();
@@ -787,54 +753,6 @@ describe('JourneePage', () => {
     expect(url).not.toContain('lignes=');
   });
 
-  it('reads the changes of the day on screen against the reference the URL names, and writes both back', async () => {
-    const page = await mount({ vue: 'changements', date: '2026-08-02', reference: 'resolution' });
-    await fixture.whenStable();
-
-    expect(journeesApi.changements).toHaveBeenCalledWith('2026-08-02', 'resolution');
-    expect(loadForDisplay).toHaveBeenCalledOnce();
-    const rendering = racine().querySelector('app-changements-vue');
-    expect(rendering).not.toBeNull();
-    expect(rendering?.textContent).toContain('Alice Martin');
-    expect(page['viewChanged']()).toBe(true);
-    expect(TestBed.inject(Location).path()).toContain('reference=resolution');
-    expect(TestBed.inject(Location).path()).not.toContain('lecture=');
-
-    page['resetView']();
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(TestBed.inject(Location).path()).not.toContain('reference=');
-    // The choice is the server's again: nothing is sent for the reference.
-    expect(journeesApi.changements).toHaveBeenLastCalledWith('2026-08-02', null);
-  });
-
-  it('leaves the reference to the server when nobody chose one, and shows the one it answered with', async () => {
-    const rienAComparer: ChangementsJournee = {
-      jour: '2026-08-01',
-      reference: 'RESOLUTION',
-      referenceDisponible: false,
-      referenceLe: null,
-      nouveaux: 0,
-      retires: 0,
-      remplaces: 0,
-      horairesModifies: 0,
-      animateursConcernes: 0,
-      parVacation: [],
-      parAnimateur: [],
-    };
-    // Asked twice: by the relecture bar's chip, and by the rendering.
-    journeesApi.changements
-      .mockResolvedValueOnce(rienAComparer)
-      .mockResolvedValueOnce(rienAComparer);
-    await mount({ vue: 'changements' });
-    await fixture.whenStable();
-
-    expect(journeesApi.changements).toHaveBeenCalledWith('2026-08-01', null);
-    const rendering = racine().querySelector('app-changements-vue');
-    expect(rendering?.textContent).toContain('Rien à comparer');
-    expect(TestBed.inject(Location).path()).not.toContain('reference=');
-  });
-
   it('drops the session copy of the plan and re-reads when a rendering wrote to it', async () => {
     const page = await mount();
 
@@ -842,91 +760,6 @@ describe('JourneePage', () => {
 
     expect(set).toHaveBeenCalledWith(null);
     expect(loadForDisplay).toHaveBeenCalledTimes(2);
-  });
-
-  it('puts the two days of the URL side by side, read-only, and restores the renderings on leaving', async () => {
-    const page = await mount({
-      date: '2026-08-01',
-      comparer: '2026-08-02',
-    });
-    await fixture.whenStable();
-
-    const comparaison = racine().querySelector('app-comparaison-vue');
-    expect(comparaison).not.toBeNull();
-    // No calendar while two days are on screen.
-    expect(racine().querySelector('app-calendar-day-vue')).toBeNull();
-    // A reading covers one whole day, never a pair.
-    expect(racine().querySelector('app-relecture-barre')).toBeNull();
-    // Tir is open on the first day only: a line on both sides, closed on the second.
-    expect(comparaison?.textContent).toContain('fermé ce jour-là');
-    expect(TestBed.inject(Location).path()).toContain('comparer=2026-08-02');
-
-    page['quitterComparaison']();
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
-    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
-    expect(racine().querySelector('app-relecture-barre')).not.toBeNull();
-    expect(TestBed.inject(Location).path()).not.toContain('comparer=');
-  });
-
-  it('ignores a second day equal to the first, or unknown, and says so', async () => {
-    await mount({ date: '2026-08-01', comparer: '2026-08-01' });
-    await fixture.whenStable();
-    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
-    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
-    expect(racine().textContent).toContain('Comparaison ignorée');
-
-    await mount({ comparer: '2030-01-01' });
-    await fixture.whenStable();
-    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
-    expect(racine().textContent).toContain("ce jour n'existe pas");
-  });
-
-  it('keeps a way out of a comparison requested on a plan of one day', async () => {
-    const oneDay = planningDeuxJours();
-    oneDay.postes = oneDay.postes.slice(0, 1);
-    loadForDisplay.mockResolvedValue(oneDay);
-    const page = await mount({ comparer: '2026-08-02' });
-    await fixture.whenStable();
-
-    expect(racine().textContent).toContain("ce jour n'existe pas");
-    const quitter = [...racine().querySelectorAll('button')].find((bouton) =>
-      bouton.textContent?.includes('Quitter la comparaison'),
-    );
-    expect(quitter).toBeDefined();
-    // No second selector: there is no other day to offer.
-    expect(racine().textContent).not.toContain('Comparer avec');
-    expect(page['viewChanged']()).toBe(true);
-
-    quitter?.click();
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(racine().textContent).not.toContain('Comparaison ignorée');
-    expect(racine().textContent).not.toContain('Quitter la comparaison');
-    expect(TestBed.inject(Location).path()).not.toContain('comparer=');
-  });
-
-  it('drops the second day on « Réinitialiser la vue »', async () => {
-    const page = await mount({ date: '2026-08-01', comparer: '2026-08-02', ecarts: '1' });
-    await fixture.whenStable();
-    expect(racine().querySelector('app-comparaison-vue')).not.toBeNull();
-
-    page['resetView']();
-    TestBed.tick();
-    await fixture.whenStable();
-    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
-    expect(page['viewChanged']()).toBe(false);
-    expect(TestBed.inject(Location).path()).not.toContain('comparer=');
-    expect(TestBed.inject(Location).path()).not.toContain('ecarts=');
-  });
-
-  it('keeps the map, the breaks and the changes on one day', async () => {
-    await mount({ vue: 'pauses', comparer: '2026-08-02' });
-    await fixture.whenStable();
-    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
-    expect(racine().querySelector('app-pauses-vue')).not.toBeNull();
-    expect(racine().textContent).not.toContain('Comparer avec');
   });
 
   it('shows the failure instead of an empty day when the plan cannot be read', async () => {

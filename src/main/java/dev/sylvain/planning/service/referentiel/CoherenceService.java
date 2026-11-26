@@ -97,21 +97,21 @@ public class CoherenceService {
     public List<Avertissement> onCreneau(Creneau creneau) {
         List<Stand> resolus = stands.list();
         if (creneau != null) {
-            HoraireStandResolver.apply(resolus, List.of(creneau));
+            stands.resolveOwnHours(resolus);
         }
         return CoherenceAnalyzer.onCreneau(creneau, resolus);
     }
 
     /**
-     * The edition's stands with their own hours expanded on {@code creneaux} —
-     * rules, then dated exceptions, and no consigne: what every warning of this
+     * The edition's stands on their own hours — their plages without the ones
+     * a consigne wrote (ADR 0125): what every warning of this
      * bean reads a stand against. The coherence checklist replays those
      * warnings on the whole edition and resolves its stands here, so that a
      * timeslot inside a consigne band is not reported outside every opening.
      */
     public List<Stand> standsOnOwnHours(List<Creneau> creneaux) {
         List<Stand> resolus = stands.list();
-        HoraireStandResolver.apply(resolus, creneaux);
+        stands.resolveOwnHours(resolus);
         return resolus;
     }
 
@@ -158,7 +158,7 @@ public class CoherenceService {
             return List.of();
         }
         List<Creneau> edition = creneaux.list();
-        HoraireStandResolver.apply(List.of(apres), edition);
+        stands.resolveOwnHours(List.of(apres));
         try {
             List<Avertissement> avertissements = new ArrayList<>(CoherenceAnalyzer.onStand(avant, apres, edition));
             // Cheap conditions first: an unchanged stand costs no referential read (bulk edit, one PUT per row).

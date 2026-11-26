@@ -54,6 +54,7 @@ public class StandRepository {
     private static final String COL_HEURE_FIN = "heure_fin";
     private static final String COL_MOTIF = "motif";
     private static final String COL_DEPLIEE = "depliee";
+    private static final String COL_CONSIGNE = "consigne";
 
     private final ConcurrentModificationGuard staleWrites;
 
@@ -117,7 +118,7 @@ public class StandRepository {
                 }
             }
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee
+                    SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee, consigne
                     FROM stand_indisponibilite
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -132,12 +133,13 @@ public class StandRepository {
                                 rs.getObject(COL_HEURE_FIN, LocalTime.class),
                                 rs.getString(COL_MOTIF));
                         fermeture.setDepliee(rs.getBoolean(COL_DEPLIEE));
+                        fermeture.setConsigne(rs.getBoolean(COL_CONSIGNE));
                         stand.getPlages().add(fermeture);
                     }
                 }
             }
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee
+                    SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee, consigne
                     FROM stand_ouverture
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -153,6 +155,7 @@ public class StandRepository {
                                 rs.getString(COL_MOTIF),
                                 rs.getObject("effectif", Integer.class));
                         ouverture.setDepliee(rs.getBoolean(COL_DEPLIEE));
+                        ouverture.setConsigne(rs.getBoolean(COL_CONSIGNE));
                         stand.getPlages().add(ouverture);
                     }
                 }
@@ -496,8 +499,8 @@ public class StandRepository {
         if (!fermetures.isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
-                    heure_debut, heure_fin, motif, depliee)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
+                    heure_debut, heure_fin, motif, depliee, consigne)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
                 for (PlageStand indispo : fermetures) {
                     ins.setString(2, standId);
                     ins.setObject(3, indispo.getDate());
@@ -505,6 +508,7 @@ public class StandRepository {
                     ins.setObject(5, indispo.getHeureFin());
                     ins.setString(6, indispo.getMotif());
                     ins.setBoolean(7, indispo.isDepliee());
+                    ins.setBoolean(8, indispo.isConsigne());
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -516,8 +520,9 @@ public class StandRepository {
         if (!ouvertures.isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_ouverture
-                        (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
+                        (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee,
+                         consigne)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""")) {
                 for (PlageStand ouverture : ouvertures) {
                     ins.setString(2, standId);
                     ins.setObject(3, ouverture.getDate());
@@ -526,6 +531,7 @@ public class StandRepository {
                     ins.setString(6, ouverture.getMotif());
                     ins.setObject(7, ouverture.getEffectif());
                     ins.setBoolean(8, ouverture.isDepliee());
+                    ins.setBoolean(9, ouverture.isConsigne());
                     ins.addBatch();
                 }
                 ins.executeBatch();

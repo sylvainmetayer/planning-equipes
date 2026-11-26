@@ -343,8 +343,8 @@ public class PlanningPersistenceService {
                         connection, "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
-                        heure_debut, heure_fin, motif, depliee)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, depliee, consigne)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -356,6 +356,7 @@ public class PlanningPersistenceService {
                         insert.setObject(5, indispo.getHeureFin());
                         insert.setString(6, indispo.getMotif());
                         insert.setBoolean(7, indispo.isDepliee());
+                        insert.setBoolean(8, indispo.isConsigne());
                         insert.addBatch();
                     }
                 }
@@ -370,8 +371,8 @@ public class PlanningPersistenceService {
                         connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
-                        heure_debut, heure_fin, motif, effectif, depliee)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, effectif, depliee, consigne)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -384,6 +385,7 @@ public class PlanningPersistenceService {
                         insert.setString(6, ouverture.getMotif());
                         insert.setObject(7, ouverture.getEffectif());
                         insert.setBoolean(8, ouverture.isDepliee());
+                        insert.setBoolean(9, ouverture.isConsigne());
                         insert.addBatch();
                     }
                 }
