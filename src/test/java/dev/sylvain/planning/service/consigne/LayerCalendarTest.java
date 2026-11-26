@@ -140,7 +140,7 @@ class LayerCalendarTest {
         Stand effectif = fabrique.get();
         HoraireStandResolver.apply(List.of(nominal), GRILLE);
         HoraireStandResolver.apply(List.of(effectif), GRILLE);
-        ConsigneResolver.apply(List.of(effectif), consignes, GRILLE);
+        ConsignePlages.apply(List.of(effectif), consignes, GRILLE);
         return LayerCalendar.build(List.of(nominal), List.of(effectif), consignes, GRILLE, du, au);
     }
 

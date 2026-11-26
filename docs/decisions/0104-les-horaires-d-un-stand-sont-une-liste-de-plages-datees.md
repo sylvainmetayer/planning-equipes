@@ -32,7 +32,8 @@ l'application s'en souvenait.
    la journée ; un jour qui porte une ouverture n'est ouvert que sur elles ; un
    jour qui ne porte que des fermetures est ouvert hors d'elles ; un jour ne
    porte jamais les deux modes. La consigne reste posée au-dessus, comme avant
-   (sa réécriture en plages est un changement à part).
+   (sa réécriture en plages est un changement à part : [0125](0125-la-consigne-s-ecrit-en-plages-datees.md),
+   où ses plages se lisent au-dessus de celles du stand).
 3. **Le stockage ne bouge pas** : les plages vivent dans les deux tables
    `stand_ouverture` et `stand_indisponibilite`, qui portaient déjà exactement
    cela, et le modèle dans les deux tables de règles de la 3.x,

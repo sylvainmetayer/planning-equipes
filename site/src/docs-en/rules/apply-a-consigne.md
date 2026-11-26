@@ -32,7 +32,7 @@ The e-mail, the espace and the PDF say "hours changed" with the reason. A public
 
 ## Lift a consigne
 
-Lifting gives their hours back to the holders of the closed seats. It is previewed like a setting. A past day keeps for ever the consigne that governed it.
+Lifting gives their hours back to the holders of the closed seats. It is previewed like a setting. A past day keeps for ever the consigne that governed it. The consigne is written into each stand's hours on its date, marked "Consigne d'édition"; lifting it removes exactly those hours. If you edited one by hand in the meantime, it becomes one of the stand's own hours and stays after the lift.
 
 ## Start from a weather alert
 

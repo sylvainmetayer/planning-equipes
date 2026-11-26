@@ -164,6 +164,7 @@ dev/sylvain/planning/service/analyse/RealisedOnDemandTest.java
 dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
+dev/sylvain/planning/service/consigne/ConsignePlagesMigrationTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
 dev/sylvain/planning/service/edition/PhaseMigrationTest.java
 dev/sylvain/planning/service/espace/CarpoolArchiveMigrationTest.java

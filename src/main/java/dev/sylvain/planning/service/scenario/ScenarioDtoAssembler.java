@@ -171,7 +171,10 @@ final class ScenarioDtoAssembler {
                         stand.isReserveMajeurs(),
                         stand.isPremium(),
                         stand.getNiveauEffort(),
-                        plages(stand.getPlages()),
+                        // A consigne's plages travel as the consigne itself, laid again on import.
+                        plages(stand.getPlages().stream()
+                                .filter(plage -> !plage.isConsigne())
+                                .toList()),
                         horaires(stand.getHoraires())))
                 .toList();
     }

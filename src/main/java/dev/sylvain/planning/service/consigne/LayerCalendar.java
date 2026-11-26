@@ -24,19 +24,17 @@ import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * The three layers that decide the seats a solve will receive, laid side by
- * side for every stand and day, before any solve: the stand's own hours
- * (recurring rules or dated exceptions, as {@link HoraireStandResolver} alone
- * leaves them), the consigne of the day (its band and the stand's reopenings),
- * and what is left once {@link ConsigneResolver} has run — plus the grid's
- * timeslots, drawn behind them.
+ * The three readings that decide the seats a solve will receive, laid side
+ * by side for every stand and day, before any solve: the stand's own hours
+ * (its plages without the ones a consigne wrote), the consigne of the day (its
+ * band and the stand's reopenings), and the stand once those plages are read
+ * with it — plus the grid's timeslots, drawn behind them.
  *
- * <p>Nothing is recomputed here: the two lists of stands come resolved by the
- * two resolvers themselves ({@code HoraireStandResolver.apply} and
- * {@code StandService.resolve}), and a day is read off them with
- * {@link ConsigneResolver#journeeNominale}, the very reading the consigne
- * layer starts from. The Ouvertures report stays the source of the seats; this
- * only says where each window comes from.</p>
+ * <p>Nothing is recomputed here: the two lists of stands come resolved by
+ * {@code StandService.resolveOwnHours} and {@code StandService.resolve}, and a
+ * day is read off them with {@link ConsignePlages#journeeNominale}, the very
+ * reading the consigne starts from. The Ouvertures report stays the source of
+ * the seats; this only says where each window comes from.</p>
  *
  * <p>Every window is given in minutes from the day's midnight, so the screen
  * places it without parsing a time: a timeslot crossing midnight ends past
@@ -204,7 +202,7 @@ public final class LayerCalendar {
     }
 
     private static ConsigneLayer consigneLayer(ConsigneEdition consigne) {
-        int[] bande = ConsigneResolver.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
+        int[] bande = ConsignePlages.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
         return new ConsigneLayer(
                 consigne.fermetureDebut(),
                 consigne.fermetureFin(),
@@ -222,10 +220,10 @@ public final class LayerCalendar {
         if (source != SourceHoraire.DEFAUT) {
             motif = Stream.concat(
                             nominal.getOuvertures().stream()
-                                    .filter(ouverture -> date.equals(ouverture.getDate()))
+                                    .filter(ouverture -> date.equals(ouverture.getDate()) && !ouverture.isConsigne())
                                     .map(PlageStand::getMotif),
                             nominal.getIndisponibilites().stream()
-                                    .filter(fermeture -> date.equals(fermeture.getDate()))
+                                    .filter(fermeture -> date.equals(fermeture.getDate()) && !fermeture.isConsigne())
                                     .map(PlageStand::getMotif))
                     .filter(Objects::nonNull)
                     .findFirst()
@@ -235,7 +233,7 @@ public final class LayerCalendar {
         if (consigne != null) {
             for (ConsigneEdition.Ouverture ouverture : consigne.openingsOf(nominal.getId())) {
                 if (ouverture.debut() != null) {
-                    int[] bornes = ConsigneResolver.minutes(ouverture.debut(), ouverture.fin());
+                    int[] bornes = ConsignePlages.minutes(ouverture.debut(), ouverture.fin());
                     reopenings.add(new LayerWindow(bornes[0], bornes[1], ouverture.effectif()));
                 }
             }
@@ -256,12 +254,12 @@ public final class LayerCalendar {
      * meeting at midnight at the same headcount are one.
      */
     static List<LayerWindow> windows(Stand stand, LocalDate date, int lendemain) {
-        List<LayerWindow> fenetres = ConsigneResolver.journeeNominale(stand, date).stream()
+        List<LayerWindow> fenetres = ConsignePlages.journeeNominale(stand, date).stream()
                 .map(segment -> new LayerWindow(segment.bornes()[0], segment.bornes()[1], headcount(stand, segment)))
                 .sorted(Comparator.comparingInt(LayerWindow::debutMinutes))
                 .collect(Collectors.toCollection(ArrayList::new));
         if (lendemain > 0) {
-            for (ConsigneResolver.Segment segment : ConsigneResolver.journeeNominale(stand, date.plusDays(1))) {
+            for (ConsignePlages.Segment segment : ConsignePlages.journeeNominale(stand, date.plusDays(1))) {
                 int debut = segment.bornes()[0];
                 int fin = Math.min(segment.bornes()[1], lendemain);
                 if (debut >= fin) {
@@ -284,7 +282,7 @@ public final class LayerCalendar {
         return fenetres;
     }
 
-    private static int headcount(Stand stand, ConsigneResolver.Segment segment) {
+    private static int headcount(Stand stand, ConsignePlages.Segment segment) {
         return segment.effectif() != null ? segment.effectif() : stand.getEffectifMin();
     }
 

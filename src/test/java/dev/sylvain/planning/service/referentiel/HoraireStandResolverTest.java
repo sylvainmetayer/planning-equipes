@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-/** {@link HoraireStandResolver}: the stored plages are the first layer, and what lies over them is reset. */
+/**
+ * {@link HoraireStandResolver}: the stored plages are the reading, and the ones a consigne wrote lie above the
+ * stand's own (ADR 0125).
+ */
 class HoraireStandResolverTest {
 
     private static final LocalDate MERCREDI = LocalDate.of(2026, 7, 8);
@@ -62,6 +65,85 @@ class HoraireStandResolverTest {
 
         assertThat(HoraireStandResolver.sourceOfDay(stand, MERCREDI))
                 .isEqualTo(HoraireStandResolver.SourceHoraire.EXCEPTION);
+    }
+
+    /** The consigne's band carves the stand's own openings; nothing else of the day moves. */
+    @Test
+    void aConsignesClosureCarvesTheStandsOwnOpenings() {
+        Stand stand = stand();
+        stand.getPlages().add(PlageStand.ouverture(null, MERCREDI, LocalTime.of(10, 0), LocalTime.of(20, 0), null, 3));
+        stand.getPlages()
+                .add(consigne(PlageStand.fermeture(null, MERCREDI, LocalTime.of(12, 0), LocalTime.of(18, 0), null)));
+
+        HoraireStandResolver.apply(List.of(stand), List.of());
+
+        assertThat(stand.getIndisponibilitesEffectives()).isEmpty();
+        assertThat(stand.getOuverturesEffectives())
+                .extracting(p -> p.getHeureDebut() + "-" + p.getHeureFin() + "@" + p.getEffectif())
+                .containsExactly("10:00-12:00@3", "18:00-20:00@3");
+    }
+
+    /** A stand that closes at 17h every day still reopens on the consigne's window: the consigne lies above. */
+    @Test
+    void aConsignesOpeningHoldsOverTheStandsOwnClosure() {
+        Stand stand = stand();
+        stand.getPlages().add(PlageStand.fermeture(null, MERCREDI, LocalTime.of(17, 0), null, "Fermeture du soir"));
+        stand.getPlages()
+                .add(consigne(PlageStand.fermeture(null, MERCREDI, LocalTime.of(12, 0), LocalTime.of(18, 0), null)));
+        stand.getPlages()
+                .add(consigne(PlageStand.ouverture(null, MERCREDI, LocalTime.of(18, 0), LocalTime.of(22, 0), null, 2)));
+
+        HoraireStandResolver.apply(List.of(stand), List.of());
+
+        assertThat(stand.getOuverturesEffectives())
+                .extracting(p -> p.getHeureDebut() + "-" + p.getHeureFin() + "@" + p.getEffectif())
+                .containsExactlyInAnyOrder("00:00-12:00@null", "18:00-22:00@2");
+    }
+
+    @Test
+    void aDayTheConsigneEmptiesReadsAsClosed() {
+        Stand stand = stand();
+        stand.getPlages().add(PlageStand.ouverture(null, MERCREDI, LocalTime.of(14, 0), LocalTime.of(16, 0), null));
+        stand.getPlages().add(consigne(PlageStand.fermeture(null, MERCREDI, LocalTime.of(12, 0), null, "Arrêté")));
+
+        HoraireStandResolver.apply(List.of(stand), List.of());
+
+        assertThat(stand.getOuverturesEffectives()).isEmpty();
+        assertThat(stand.getIndisponibilitesEffectives())
+                .extracting(p -> p.getHeureDebut() + "-" + p.getHeureFin() + " " + p.getMotif())
+                .containsExactly("00:00-null Arrêté");
+    }
+
+    @Test
+    void theOwnHoursAndTheSourceOfADayLeaveTheConsigneOut() {
+        Stand stand = stand();
+        stand.getPlages().add(consigne(PlageStand.fermeture(null, MERCREDI, LocalTime.of(12, 0), null, null)));
+
+        HoraireStandResolver.applyOwnHours(List.of(stand));
+
+        assertThat(stand.getPlagesEffectives()).isEmpty();
+        assertThat(HoraireStandResolver.sourceOfDay(stand, MERCREDI))
+                .isEqualTo(HoraireStandResolver.SourceHoraire.DEFAUT);
+    }
+
+    /** The origin follows the content: a consigne's plage sent back untouched keeps its mark, one edited loses it. */
+    @Test
+    void aConsignesPlageEditedByHandLosesItsMark() {
+        PlageStand stockee =
+                consigne(PlageStand.fermeture(1L, MERCREDI, LocalTime.of(12, 0), LocalTime.of(18, 0), "C"));
+        PlageStand renvoyee = PlageStand.fermeture(1L, MERCREDI, LocalTime.of(12, 0), LocalTime.of(18, 0), "C");
+        PlageStand modifiee = PlageStand.fermeture(2L, MERCREDI, LocalTime.of(12, 0), LocalTime.of(17, 0), "C");
+
+        PlageStand.carryOrigins(List.of(stockee), List.of(renvoyee, modifiee));
+
+        assertThat(renvoyee.isConsigne()).isTrue();
+        assertThat(modifiee.isConsigne()).isFalse();
+        assertThat(modifiee.isDepliee()).isFalse();
+    }
+
+    private static PlageStand consigne(PlageStand plage) {
+        plage.setConsigne(true);
+        return plage;
     }
 
     private static Stand stand() {

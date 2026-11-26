@@ -5300,6 +5300,8 @@
   "standFiche.plages.origine.saisie": "typed",
   "standFiche.plages.origine.modele.aide": "Laid by the recurring model: saving the model again replaces it.",
   "standFiche.plages.origine.saisie.aide": "Typed by hand: the model never touches it.",
+  "standFiche.plages.origine.consigne": "consigne",
+  "standFiche.plages.origine.consigne.aide": "Laid by the day's consigne: lifting the consigne removes it.",
   "standFiche.plages.jour.titre": "Remove every window of this day?",
   "standFiche.plages.jour.message": "On {$date}, the stand is open all day again. The windows laid by the model do not come back on their own.",
   "standFiche.plages.jour.confirmer": "Remove the day",

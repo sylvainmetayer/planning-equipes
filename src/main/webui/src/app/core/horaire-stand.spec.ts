@@ -163,6 +163,26 @@ describe('resoudreJour', () => {
     expect(resolu.fenetres).toEqual([{ heureDebut: '10:00', heureFin: null }]);
   });
 
+  it("lit les horaires propres du stand, sans les plages qu'une consigne a écrites", () => {
+    const sousConsigne = stand({
+      indisponibilites: [
+        {
+          id: 1,
+          date: '2026-07-10',
+          heureDebut: '12:00',
+          heureFin: '18:00',
+          motif: "Consigne d'édition",
+          consigne: true,
+        },
+      ],
+    });
+
+    const resolu = resoudreJour(sousConsigne, '2026-07-10');
+
+    expect(resolu.mode).toBeNull();
+    expect(resolu.source).toBe('DEFAUT');
+  });
+
   it('ne signale comme exception que les plages saisies, pas celles que le modèle a dépliées', () => {
     const deplie = stand({
       indisponibilites: [

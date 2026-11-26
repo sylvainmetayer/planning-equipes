@@ -114,7 +114,7 @@ class ConsigneScenarioFestivalHivernalTest {
         assertThat(ajoutesParDate.get(JEUDI).getHeureDebut()).isEqualTo(LocalTime.of(21, 0));
 
         // The stands come resolved by the scenario reader; the consigne is the layer above.
-        ConsigneResolver.apply(stands, consignes, grille);
+        ConsignePlages.apply(stands, consignes, grille);
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(stands, grille);
 
         // Nothing destroyed: every nominal créneau is still the same object in the grid.

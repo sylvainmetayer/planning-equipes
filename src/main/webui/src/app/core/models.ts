@@ -145,6 +145,8 @@ export interface PlageStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /**
@@ -165,6 +167,8 @@ export interface IndisponibiliteStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
@@ -181,6 +185,8 @@ export interface OuvertureStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */

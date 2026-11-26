@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.consigne.LayerCalendar.OpeningLayers;
 import dev.sylvain.planning.service.referentiel.CreneauService;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.StandService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -49,11 +48,10 @@ public class LayerCalendarService {
         // One read of the grid for both resolutions: the nominal and the
         // effective day must be cut from the same timeslots.
         List<Creneau> grille = creneaux.list();
-        // The nominal day, deliberately without the consigne layer: it is what
-        // the calendar shows next to the effective one, never a source of seats
-        // (argued in ConsigneCoucheStructurelleTest).
+        // The nominal day, the consigne's plages left out: what the calendar
+        // shows next to the effective one, never a source of seats.
         List<Stand> nominaux = stands.list();
-        HoraireStandResolver.apply(nominaux, grille);
+        stands.resolveOwnHours(nominaux);
         List<Stand> effectifs = stands.list();
         stands.resolve(effectifs, grille);
         return LayerCalendar.build(nominaux, effectifs, consignes.list(), grille, du, au);

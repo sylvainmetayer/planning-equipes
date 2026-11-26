@@ -1,6 +1,6 @@
 # 0043 — Consigne d'édition : fermer une bande horaire sans rien détruire
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté · **remplacé** par [0125](0125-la-consigne-s-ecrit-en-plages-datees.md) (novembre 2026) : la consigne ne se pose plus en quatrième couche, elle s'écrit en plages datées sur les stands ; le modèle, les gestes et les trois règles ci-dessous sont gardés
 - **Date** : septembre 2026
 - **Portée** : résolution des horaires de stand, grille de créneaux,
   résolution, validation de relecture, instantanés, publication, espace

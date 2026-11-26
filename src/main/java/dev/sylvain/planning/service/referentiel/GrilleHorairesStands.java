@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.MinutesOfDay;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
@@ -12,9 +13,11 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -232,6 +235,11 @@ public final class GrilleHorairesStands {
                         .add(creneau));
         List<PlageStand> ouvertures = new ArrayList<>();
         List<PlageStand> fermetures = new ArrayList<>();
+        // A day under consigne keeps its plages as stored (ADR 0125): the grid reads it with the band, and
+        // rewriting it would turn the consigne's plages into typed ones that its lift could no longer remove.
+        Set<LocalDate> sousConsigne = new HashSet<>();
+        stand.getPlages().stream().filter(PlageStand::isConsigne).forEach(p -> sousConsigne.add(p.getDate()));
+        parJour.keySet().removeAll(sousConsigne);
         parJour.forEach((date, duJour) -> {
             List<Fenetre> fenetres = dayWindows(duJour, segmentsParCreneau);
             if (fenetres.isEmpty()) {
@@ -250,6 +258,11 @@ public final class GrilleHorairesStands {
         List<PlageStand> before = new ArrayList<>(stand.getPlages());
         PlageStand.carryOrigins(before, ouvertures);
         PlageStand.carryOrigins(before, fermetures);
+        for (PlageStand gardee : before) {
+            if (sousConsigne.contains(gardee.getDate())) {
+                (gardee.getMode() == ModeHoraire.OUVERTURE ? ouvertures : fermetures).add(gardee);
+            }
+        }
         stand.setOuvertures(ouvertures);
         stand.setIndisponibilites(fermetures);
         stand.setPlagesEffectives(null);
