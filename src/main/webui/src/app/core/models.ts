@@ -1069,6 +1069,8 @@ export interface ConstraintToggle {
  * default an edition starts from.
  */
 export interface ParametresQualite {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   maxEmplacementsDistinctsParJour?: number;
   /** Hour from which a day's work counts as a late closing (`HH:mm:ss`); empty when the rule is neutralised. */
   heureServiceTardif?: string | null;
@@ -1616,6 +1618,8 @@ export interface CellulePivot {
  *   travail art. L3162-1 (art. D4153-3 under 16).
  */
 export interface ParametresLegaux {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   dureeHebdomadaireMaxMinutes: number;
   dureeHebdomadaireMaxMineurMinutes: number;
   /** Minimum gap (minutes) between two same-day vacations of one animateur. Default 30. */
@@ -1799,6 +1803,8 @@ export interface ReconnaissanceJourneesTypes {
 
 /** The edition's solve settings, as a `PUT /api/parametres/calcul` sends them. */
 export interface ParametresSolveur {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   /** Mails the outcome of a finished solve to the admin address (off by default). */
   mailFinResolution: boolean;
 }
@@ -1813,6 +1819,8 @@ export interface SolverBudgetBounds {
 
 /** `GET /api/parametres/calcul`: the edition's mail switch, with the instance's solve budget. */
 export interface SolverSettingsView {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   mailFinResolution: boolean;
   instance: SolverBudgetBounds;
 }
@@ -4771,6 +4779,8 @@ export interface ContactOrganisation {
  * Whether anything leaves is not decided here: only the active edition sends.
  */
 export interface ParametresNotifications {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   /** `HH:mm` local time, from which the day-before reminder may go out. */
   heureRappelVeille: string;
   delaiRelanceHeures: number;

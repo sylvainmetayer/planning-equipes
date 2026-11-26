@@ -67,7 +67,10 @@ describe('SolverSettingsService', () => {
   it('setMailFinResolution() saves via PUT and updates the signal', async () => {
     const service = configure(api);
     await service.setMailFinResolution(true);
-    expect(api.put).toHaveBeenCalledWith('/api/parametres/calcul', { mailFinResolution: true });
+    expect(api.put).toHaveBeenCalledWith('/api/parametres/calcul', {
+      mailFinResolution: true,
+      modifieLe: null,
+    });
     expect(service.mailFinResolution()).toBe(true);
     expect(service.bounds()).toEqual(INSTANCE);
   });

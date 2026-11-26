@@ -55,6 +55,8 @@ public class ParametresMcpTools {
 
     private static final String SECTIONS = "legal, organisation, notifications, calcul";
 
+    private static final String ARG_MODIFIE_LE = "modifieLe";
+
     @Tool(
             name = "consulter_parametres",
             description = "Consulte une section des paramètres de l'édition : « legal » (durées maximales, pauses, "
@@ -101,7 +103,8 @@ public class ParametresMcpTools {
                     + "« notifications » : cet outil n'envoie rien, les envois de nuit ne partent que de l'édition "
                     + "active (activer_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « calcul » : "
                     + "seul le mail de fin de résolution se règle ici, le budget de calcul est celui de "
-                    + "l'instance.",
+                    + "l'instance. Les sections répondent avec leur modifieLe : renvoyé à l'écriture, il refuse la "
+                    + "modification si la section a changé depuis cette lecture ; omis, rien n'est contrôlé.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -177,7 +180,13 @@ public class ParametresMcpTools {
                             description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours",
                             required = false)
                     Integer ancienneteEchangeJours,
+            @ToolArg(
+                            description = "modifieLe de la section lu avant la modification (précondition : refusé "
+                                    + "si la section a changé depuis ; omis, pas de contrôle)",
+                            required = false)
+                    String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        Instant expected = McpArgs.instant(modifieLe, ARG_MODIFIE_LE);
         Map<String, Object> given = new LinkedHashMap<>();
         given.put("dureeHebdomadaireMaxMinutes", dureeHebdomadaireMaxMinutes);
         given.put("dureeHebdomadaireMaxMineurMinutes", dureeHebdomadaireMaxMineurMinutes);
@@ -236,6 +245,7 @@ public class ParametresMcpTools {
                                 coupureRepasSoirDebut,
                                 coupureRepasSoirFin,
                                 heureDebutSoiree,
+                                expected,
                                 edition);
                     case "organisation" ->
                         updateParametresQualite(
@@ -249,11 +259,12 @@ public class ParametresMcpTools {
                                 facteurDetour,
                                 toleranceTrajetMinutes,
                                 toleranceArriveeGroupeeMinutes,
+                                expected,
                                 edition);
                     case "notifications" ->
                         updateParametresNotifications(
-                                heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, edition);
-                    default -> updateParametresSolveur(mailFinResolution, edition);
+                                heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, expected, edition);
+                    default -> updateParametresSolveur(mailFinResolution, expected, edition);
                 });
     }
 
@@ -329,8 +340,11 @@ public class ParametresMcpTools {
             String coupureRepasSoirDebut,
             String coupureRepasSoirFin,
             String heureDebutSoiree,
+            Instant modifieLe,
             String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
+        // The stamp read here is not the caller's: only the one it sent is a precondition.
+        parametres.setModifieLe(modifieLe);
         if (dureeHebdomadaireMaxMinutes != null) {
             parametres.setDureeHebdomadaireMaxMinutes(dureeHebdomadaireMaxMinutes);
         }
@@ -384,6 +398,7 @@ public class ParametresMcpTools {
             Double facteurDetour,
             Integer toleranceTrajetMinutes,
             Integer toleranceArriveeGroupeeMinutes,
+            Instant modifieLe,
             String edition) {
         ParametresQualite actuels = referenceDataService.getParametresQualite();
         ParametresQualite nouveaux = new ParametresQualite(
@@ -406,7 +421,8 @@ public class ParametresMcpTools {
                 toleranceTrajetMinutes == null ? actuels.toleranceTrajetMinutes() : toleranceTrajetMinutes,
                 toleranceArriveeGroupeeMinutes == null
                         ? actuels.toleranceArriveeGroupeeMinutes()
-                        : toleranceArriveeGroupeeMinutes);
+                        : toleranceArriveeGroupeeMinutes,
+                modifieLe);
         return ParametresQualiteView.of(referenceDataService.updateParametresQualite(nouveaux));
     }
 
@@ -422,6 +438,7 @@ public class ParametresMcpTools {
             double facteurDetour,
             int toleranceTrajetMinutes,
             int toleranceArriveeGroupeeMinutes,
+            Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresQualiteView> {
 
@@ -437,6 +454,7 @@ public class ParametresMcpTools {
                     parametres.facteurDetour(),
                     parametres.toleranceTrajetMinutes(),
                     parametres.toleranceArriveeGroupeeMinutes(),
+                    parametres.modifieLe(),
                     List.of());
         }
 
@@ -453,6 +471,7 @@ public class ParametresMcpTools {
                     facteurDetour,
                     toleranceTrajetMinutes,
                     toleranceArriveeGroupeeMinutes,
+                    modifieLe,
                     WarningCodes.with(avertissements, code));
         }
     }
@@ -463,9 +482,10 @@ public class ParametresMcpTools {
         return toView(referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
-    ParametresSolveurView updateParametresSolveur(Boolean mailFinResolution, String edition) {
+    ParametresSolveurView updateParametresSolveur(Boolean mailFinResolution, Instant modifieLe, String edition) {
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
-        ParametresSolveur voulus = new ParametresSolveur(givenOr(mailFinResolution, actuels.mailFinResolution()));
+        ParametresSolveur voulus =
+                new ParametresSolveur(givenOr(mailFinResolution, actuels.mailFinResolution()), modifieLe);
         return toView(
                 referenceDataService.updateParametresSolveur(voulus), referenceDataService.getSolverBudgetBounds());
     }
@@ -477,14 +497,19 @@ public class ParametresMcpTools {
     }
 
     ParametresNotifications updateParametresNotifications(
-            String heureRappelVeille, Integer delaiRelanceHeures, Integer ancienneteEchangeJours, String edition) {
+            String heureRappelVeille,
+            Integer delaiRelanceHeures,
+            Integer ancienneteEchangeJours,
+            Instant modifieLe,
+            String edition) {
         ParametresNotifications actuels = referenceDataService.getParametresNotifications();
         return referenceDataService.updateParametresNotifications(new ParametresNotifications(
                 heureRappelVeille == null
                         ? actuels.heureRappelVeille()
                         : McpArgs.heure(heureRappelVeille, "heureRappelVeille"),
                 delaiRelanceHeures == null ? actuels.delaiRelanceHeures() : delaiRelanceHeures,
-                ancienneteEchangeJours == null ? actuels.ancienneteEchangeJours() : ancienneteEchangeJours));
+                ancienneteEchangeJours == null ? actuels.ancienneteEchangeJours() : ancienneteEchangeJours,
+                modifieLe));
     }
 
     /* -------------------------- Contraintes ad hoc -------------------------- */
@@ -618,11 +643,12 @@ public class ParametresMcpTools {
                 parametres.getCoupureRepasMidiFin(),
                 parametres.getCoupureRepasSoirDebut(),
                 parametres.getCoupureRepasSoirFin(),
-                parametres.getHeureDebutSoiree());
+                parametres.getHeureDebutSoiree(),
+                parametres.getModifieLe());
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres, SolverBudgetBounds bounds) {
-        return new ParametresSolveurView(parametres.mailFinResolution(), bounds, List.of());
+        return new ParametresSolveurView(parametres.mailFinResolution(), bounds, parametres.modifieLe(), List.of());
     }
 
     static ContrainteAdHocView toView(ContrainteAdHoc contrainte) {
@@ -651,6 +677,7 @@ public class ParametresMcpTools {
             LocalTime coupureRepasSoirDebut,
             LocalTime coupureRepasSoirFin,
             LocalTime heureDebutSoiree,
+            Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresLegauxView> {
 
@@ -665,7 +692,8 @@ public class ParametresMcpTools {
                 LocalTime coupureRepasMidiFin,
                 LocalTime coupureRepasSoirDebut,
                 LocalTime coupureRepasSoirFin,
-                LocalTime heureDebutSoiree) {
+                LocalTime heureDebutSoiree,
+                Instant modifieLe) {
             this(
                     dureeHebdomadaireMaxMinutes,
                     dureeHebdomadaireMaxMineurMinutes,
@@ -678,6 +706,7 @@ public class ParametresMcpTools {
                     coupureRepasSoirDebut,
                     coupureRepasSoirFin,
                     heureDebutSoiree,
+                    modifieLe,
                     List.of());
         }
 
@@ -695,6 +724,7 @@ public class ParametresMcpTools {
                     coupureRepasSoirDebut,
                     coupureRepasSoirFin,
                     heureDebutSoiree,
+                    modifieLe,
                     WarningCodes.with(avertissements, code));
         }
     }
@@ -706,12 +736,14 @@ public class ParametresMcpTools {
     public record ParametresSolveurView(
             boolean mailFinResolution,
             SolverBudgetBounds instance,
+            Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresSolveurView> {
 
         @Override
         public ParametresSolveurView withWarning(String code) {
-            return new ParametresSolveurView(mailFinResolution, instance, WarningCodes.with(avertissements, code));
+            return new ParametresSolveurView(
+                    mailFinResolution, instance, modifieLe, WarningCodes.with(avertissements, code));
         }
     }
 

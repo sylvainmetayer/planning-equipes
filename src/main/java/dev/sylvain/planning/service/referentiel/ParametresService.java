@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
@@ -12,6 +13,7 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,9 +58,20 @@ public class ParametresService {
         return repository.getParametresLegaux();
     }
 
+    /**
+     * Saves the legal parameters. The write carries its own precondition: when
+     * {@code parametres.getModifieLe()} is set and the row was written since,
+     * {@link dev.sylvain.planning.service.BusinessError.Stale} (409); unset, nothing is checked.
+     * The three other sections below follow the same rule.
+     */
     public ParametresLegaux updateLegaux(ParametresLegaux parametres) {
         ParametresValidator.checkParametresLegaux(parametres);
-        repository.saveParametresLegaux(parametres);
+        Instant written = repository.saveParametresLegaux(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_legaux", repository.getParametresLegaux().getModifieLe());
+        }
+        parametres.setModifieLe(written);
         changeTracker.markModified();
         return parametres;
     }
@@ -78,8 +91,12 @@ public class ParametresService {
      * changes what happens after a solve, not the reference data fed to it.
      */
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
-        repository.saveParametresSolveur(parametres);
-        return parametres;
+        Instant written = repository.saveParametresSolveur(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_solveur", repository.getParametresSolveur().modifieLe());
+        }
+        return parametres.withStamp(written);
     }
 
     public ParametresNotifications getNotifications() {
@@ -94,8 +111,13 @@ public class ParametresService {
      */
     public ParametresNotifications updateNotifications(ParametresNotifications parametres) {
         ParametresValidator.checkParametresNotifications(parametres);
-        repository.saveParametresNotifications(parametres);
-        return parametres;
+        Instant written = repository.saveParametresNotifications(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_notifications",
+                    repository.getParametresNotifications().modifieLe());
+        }
+        return parametres.withStamp(written);
     }
 
     public ContactOrganisation getContactOrganisation() {
@@ -135,9 +157,13 @@ public class ParametresService {
      */
     public ParametresQualite updateQualite(ParametresQualite parametres) {
         ParametresValidator.checkParametresQualite(parametres);
-        repository.saveParametresQualite(parametres);
+        Instant written = repository.saveParametresQualite(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_qualite", qualite().modifieLe());
+        }
         changeTracker.markModified();
-        return parametres;
+        return parametres.withStamp(written);
     }
 
     /**
