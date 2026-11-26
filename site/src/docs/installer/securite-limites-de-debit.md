@@ -199,8 +199,8 @@ plafond selon l'usage.
 
 ## Quota de calcul
 
-Une instance exposée avec un mot de passe partagé (une démonstration
-publique) laisse quiconque lancer des calculs, et un calcul occupe la machine
+Une instance publique (`PUBLIC_INSTANCE=true`), par exemple exposée avec un
+mot de passe partagé pour une démonstration, laisse quiconque lancer des calculs, et un calcul occupe la machine
 des minutes durant. Si cette machine porte aussi une production, deux gardes
 d'exploitant bornent ce qu'un visiteur peut lui coûter :
 `SOLVER_MAX_SOLVES_PER_HOUR` (calculs acceptés sur 60 minutes glissantes) et
@@ -208,6 +208,8 @@ d'exploitant bornent ce qu'un visiteur peut lui coûter :
 la durée de chacun. Contrairement aux limiteurs précédents, ils comptent pour
 **toute l'instance**, pas par adresse : c'est la machine qu'on protège, et un
 visiteur qui change d'adresse ne repart pas à zéro. Le refus est un `409` qui
-dit quand revenir, pas un `429`. Coupés par défaut ; réglage et périmètre dans
-[le réglage du calcul](calcul-du-planning.md#borner-le-nombre-de-calculs-dune-instance-partagée), choix
-dans [l'ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
+dit quand revenir, pas un `429`. Coupés par défaut, et ignorés sur une instance
+qui n'est pas déclarée publique ; réglage et périmètre dans
+[le réglage du calcul](calcul-du-planning.md#borner-le-nombre-de-calculs-dune-instance-publique), choix
+dans [l'ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md)
+et [l'ADR 0110](repo:docs/decisions/0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md).

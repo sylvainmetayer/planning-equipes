@@ -145,9 +145,7 @@ public final class SolveWorker {
                 SolverConfiguration configuration = SolverConfiguration.ofSettings(settings);
                 SolveRunner.Solved solved = new SolveRunner(configuration, null, null)
                         .solvePrepared(
-                                problem,
-                                new SolveBudget(settings.seconds(), settings.plateauSeconds(), null),
-                                this::follow);
+                                problem, new SolveBudget(settings.seconds(), settings.plateauSeconds()), this::follow);
                 SolveExchange.Result result = exchange.resultOf(solved.planning(), configuration.solutionManager());
                 answer.set(new Answer(result.holders(), result.score(), solved.feasibilityFirst()));
                 state = State.DONE;

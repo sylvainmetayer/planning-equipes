@@ -1,0 +1,18 @@
+/* « Comparer deux versions », the plans view: the two lists above the comparator. */
+
+.comparer-sous-titre {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.comparer-reference {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.comparer-choix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}

@@ -4,21 +4,21 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.nullValue;
 
-import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.SolveBudget;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.response.ValidatableResponse;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The edition's solve budget over HTTP: stored per edition, bounded by the
- * operator's ceiling — the default one of {@code application.properties},
- * 3600 s for both halves — and refused rather than trimmed above it.
+ * The solve budget over HTTP: the instance's, the same for every edition
+ * (ADR 0110), shown beside the edition's mail switch and refused rather than
+ * trimmed above the operator's ceiling — 3600 s in {@code application.properties}.
  */
 @QuarkusTest
 class SolverBudgetResourceTest {
@@ -30,12 +30,6 @@ class SolverBudgetResourceTest {
     @Inject
     SolveBudgetPolicy policy;
 
-    @Inject
-    ReferenceDataService referenceData;
-
-    @Inject
-    EditionContext editionContext;
-
     @AfterEach
     void dropTheEditions() {
         created.forEach(id -> given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + id));
@@ -43,93 +37,72 @@ class SolverBudgetResourceTest {
     }
 
     @Test
-    void theSettingsCarryTheInstanceDefaultsAndCeilings() {
+    void theSettingsCarryTheInstanceBudgetAndCeiling() {
         String first = createEdition("Budget first");
         given().header(HEADER, first)
                 .when()
-                .get("/api/parametres-solveur")
+                .get("/api/parametres/calcul")
                 .then()
                 .statusCode(200)
+                .body("mailFinResolution", equalTo(false))
                 .body("dureeResolutionSecondes", nullValue())
                 .body("plateauSecondes", nullValue())
                 .body("instance.defaultSecondsLimit", equalTo(3))
                 .body("instance.defaultPlateauSeconds", equalTo(2))
                 .body("instance.maxSecondsLimit", equalTo(3600))
-                .body("instance.maxPlateauSeconds", equalTo(3600));
+                .body("instance.maxPlateauSeconds", nullValue());
     }
 
     @Test
-    void twoEditionsEachRunTheirOwnBudget() {
+    void everyEditionRunsTheInstanceBudgetAndNoWriteChangesIt() {
         String first = createEdition("Budget first");
         String second = createEdition("Budget second");
-        save(first, "{\"dureeResolutionSecondes\":1200,\"plateauSecondes\":60}", 200);
-        save(second, "{\"dureeResolutionSecondes\":600,\"plateauSecondes\":0}", 200);
 
-        assertThat(budgetOf(first)).isEqualTo(new SolveBudget(1200L, 60L, null));
-        assertThat(budgetOf(second)).isEqualTo(new SolveBudget(600L, 0L, null));
-
-        // « Revenir au défaut »: both halves back to the instance's.
-        save(first, "{\"dureeResolutionSecondes\":null,\"plateauSecondes\":null}", 200);
-        assertThat(budgetOf(first)).isEqualTo(new SolveBudget(3L, 2L, null));
-        assertThat(budgetOf(second)).isEqualTo(new SolveBudget(600L, 0L, null));
-    }
-
-    @Test
-    void aBudgetAboveTheCeilingIsRefusedCitingIt() {
-        String first = createEdition("Budget first");
+        // The mail switch is the edition's own; the budget a 3.x client still
+        // sends through the former root is read and ignored, never stored.
         given().header(HEADER, first)
                 .contentType("application/json")
-                .body("{\"dureeResolutionSecondes\":7200}")
+                .body("{\"mailFinResolution\":true}")
+                .when()
+                .put("/api/parametres/calcul")
+                .then()
+                .statusCode(200)
+                .body("mailFinResolution", equalTo(true));
+        given().header(HEADER, second)
+                .contentType("application/json")
+                .body("{\"dureeResolutionSecondes\":1200,\"plateauSecondes\":60,\"mailFinResolution\":false}")
                 .when()
                 .put("/api/parametres-solveur")
                 .then()
-                .statusCode(400)
-                .body("message", containsString("au plus 1 h"));
-        save(first, "{\"dureeResolutionSecondes\":600,\"plateauSecondes\":900}", 400);
+                .statusCode(200);
+
+        assertThat(policy.forSolve(null)).isEqualTo(new SolveBudget(3L, 2L));
+    }
+
+    /** The section refuses a field that is not its own, as every section does. */
+    @Test
+    void theCalculSectionRefusesABudgetField() {
+        String first = createEdition("Budget first");
+        given().header(HEADER, first)
+                .contentType("application/json")
+                .body("{\"dureeResolutionSecondes\":600}")
+                .when()
+                .put("/api/parametres/calcul")
+                .then()
+                .statusCode(400);
     }
 
     /**
-     * A scenario file carrying a budget above this instance's ceiling imports:
-     * the value is stored as the file says and every launch runs it capped,
-     * with the warning — the ADR 0051 treatment of a value stored earlier.
+     * A scenario file of the 3.x carrying a budget imports, and says the budget
+     * is ignored: the instance's is the only one.
      */
     @Test
-    void aScenarioBudgetAboveTheCeilingImportsAndRunsCapped() {
+    void aScenarioBudgetImportsAndIsSaidIgnored() {
         String first = createEdition("Budget first");
-        importScenario(first, 7200);
 
-        given().header(HEADER, first)
-                .when()
-                .get("/api/parametres-solveur")
-                .then()
-                .statusCode(200)
-                .body("dureeResolutionSecondes", equalTo(7200));
-        SolveBudget budget = budgetOf(first);
-        assertThat(budget.secondsLimit()).isEqualTo(3600L);
-        assertThat(budget.warning()).contains("2 h").contains("1 h");
-    }
+        importScenario(first, 7200).body("avertissements", hasItem(containsString("parametresSolveur")));
 
-    /**
-     * The mail switch sends the stored budget back whole (the Paramètres
-     * page): a duration above a ceiling lowered since must not make it fail.
-     * Changing that duration, though, is a value entered now.
-     */
-    @Test
-    void theMailSwitchSavesOverAStoredDurationAboveTheCeiling() {
-        String first = createEdition("Budget first");
-        importScenario(first, 7200);
-
-        save(first, "{\"dureeResolutionSecondes\":7200,\"plateauSecondes\":null,\"mailFinResolution\":true}", 200);
-        given().header(HEADER, first)
-                .when()
-                .get("/api/parametres-solveur")
-                .then()
-                .statusCode(200)
-                .body("dureeResolutionSecondes", equalTo(7200))
-                .body("mailFinResolution", equalTo(true));
-        // A plateau changed on its own saves too.
-        save(first, "{\"dureeResolutionSecondes\":7200,\"plateauSecondes\":600,\"mailFinResolution\":true}", 200);
-        save(first, "{\"dureeResolutionSecondes\":5400,\"plateauSecondes\":600,\"mailFinResolution\":true}", 400);
+        assertThat(policy.forSolve(null)).isEqualTo(new SolveBudget(3L, 2L));
     }
 
     @Test
@@ -151,13 +124,9 @@ class SolverBudgetResourceTest {
                 .body("message", containsString("au plus 1 h"));
     }
 
-    private SolveBudget budgetOf(String edition) {
-        return editionContext.executeIn(edition, () -> policy.forSolve(null, referenceData.getParametresSolveur()));
-    }
-
     /** A scenario of one timeslot, one stand, one animateur, pinning {@code secondes} as its duration. */
-    private static void importScenario(String edition, int secondes) {
-        given().header(HEADER, edition)
+    private static ValidatableResponse importScenario(String edition, int secondes) {
+        return given().header(HEADER, edition)
                 .contentType("text/plain")
                 .body("""
                         parametresSolveur:
@@ -196,16 +165,6 @@ class SolverBudgetResourceTest {
                 .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200);
-    }
-
-    private static void save(String edition, String body, int status) {
-        given().header(HEADER, edition)
-                .contentType("application/json")
-                .body(body)
-                .when()
-                .put("/api/parametres-solveur")
-                .then()
-                .statusCode(status);
     }
 
     private String createEdition(String nom) {

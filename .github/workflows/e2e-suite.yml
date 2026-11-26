@@ -177,6 +177,9 @@ jobs:
           # refusé hors dev et test (CompteAccesService). Les specs ne font que le
           # lire dans Mailpit, jamais l'ouvrir.
           PUBLIC_URL: http://e2e.example.org:8080
+          # Le budget de calcul est celui de l'instance (ADR 0110) : court, pour que
+          # le bouton « Calculer » des specs rende en quelques secondes.
+          SOLVER_SECONDS_LIMIT: 10
         run: |
           java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
           echo $! > app.pid

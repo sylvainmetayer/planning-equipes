@@ -27,15 +27,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { GelNotice } from '../../shared/gel-notice';
 import { StatusMessage } from '../../shared/status-message';
-import {
-  SOLVER_DURATION_UNIT_STEP,
-  SolverDurationUnit,
-  bestUnitFor,
-  budgetToSend,
-  formatSeconds,
-  secondsToValue,
-  valueToSeconds,
-} from '../solver/solver-duration';
+import { formatSeconds } from '../solver/solver-duration';
 
 /** A plateau as said on screen: « jamais » for 0. */
 function plateauLabel(seconds: number): string {
@@ -44,13 +36,13 @@ function plateauLabel(seconds: number): string {
 
 /**
  * « Règles du planning › Calcul »: what shapes a solve without being a rule —
- * its budget (the longest it may run, how long a feasible plan may go without
- * improving, whether its end is mailed), the hour the evening starts for the
- * Équité screen, and the polyvalent typologie. Rare settings, all on one form with
- * one « Enregistrer »: nothing here is written as it is typed.
+ * whether its end is mailed, the hour the evening starts for the Équité
+ * screen, and the polyvalent typologie. Rare settings, all on one form with one
+ * « Enregistrer »: nothing here is written as it is typed.
  *
- * <p>The budget moved here from the Solveur page, which now only solves; its
- * arithmetic stays in `solver/solver-duration.ts`, unit tested there.</p>
+ * <p>The solve budget (the longest a solve may run, how long a feasible plan
+ * may go without improving) is shown first and is not editable: it is the
+ * instance's, set by the operator (ADR 0110), the same for every edition.</p>
  */
 @Component({
   selector: 'app-regles-calcul',
@@ -87,57 +79,17 @@ export class ReglesCalcul implements OnInit {
 
   /* ------------------------------ Budget ----------------------------------- */
 
-  protected readonly unit = signal<SolverDurationUnit>('MINUTES');
-  protected readonly valueDraft = signal(0);
-  private readonly secondsSaved = signal(0);
-  protected readonly secondsDraft = computed(() => valueToSeconds(this.valueDraft(), this.unit()));
-  protected readonly step = computed(() => SOLVER_DURATION_UNIT_STEP[this.unit()]);
-
-  protected readonly plateauUnit = signal<SolverDurationUnit>('MINUTES');
-  protected readonly plateauDraft = signal(0);
-  private readonly plateauSaved = signal(0);
-  protected readonly plateauSecondsDraft = computed(() =>
-    valueToSeconds(this.plateauDraft(), this.plateauUnit()),
-  );
-  protected readonly plateauStep = computed(() => SOLVER_DURATION_UNIT_STEP[this.plateauUnit()]);
-
-  /**
-   * « Revenir au défaut » is a draft like any other: it puts the instance's
-   * values back in the fields and saves nothing — the edition follows the
-   * instance again once « Enregistrer » sends it.
-   */
-  private readonly backToDefault = signal(false);
-
   protected readonly bounds = this.solverSettings.bounds;
-  /** Whether the edition set anything of its own — what « Revenir au défaut » undoes. */
-  protected readonly customised = computed(
-    () =>
-      !this.backToDefault() &&
-      (this.solverSettings.dureeResolutionSecondes() !== null ||
-        this.solverSettings.plateauSecondes() !== null),
-  );
 
-  protected readonly ceilingText = computed(() => {
+  /** The instance's budget, said as the operator would. */
+  protected readonly budgetText = computed(() => {
     const bounds = this.bounds();
     return bounds
-      ? $localize`:@@solverBudget.ceiling:Au plus ${formatSeconds(bounds.maxSecondsLimit)}:max: par résolution sur cette instance, fixé par l'exploitant.`
+      ? $localize`:@@solverBudget.instanceValues:Durée maximale d'une résolution : ${formatSeconds(bounds.defaultSecondsLimit)}:duree:. Arrêt faute de progrès suffisant depuis : ${plateauLabel(bounds.defaultPlateauSeconds)}:plateau:.`
       : '';
   });
 
-  protected readonly defaultsText = computed(() => {
-    const bounds = this.bounds();
-    if (!bounds) {
-      return '';
-    }
-    const defaults = $localize`:@@solverBudget.defaults:Défaut de l'instance : ${formatSeconds(bounds.defaultSecondsLimit)}:duree:, plateau ${plateauLabel(bounds.defaultPlateauSeconds)}:plateau:.`;
-    if (this.customised()) {
-      return defaults;
-    }
-    const follows = $localize`:@@solverBudget.followsDefault:Cette édition le suit.`;
-    return `${defaults} ${follows}`;
-  });
-
-  /** What the solve under way on this edition was actually given, and why it differs, if it does. */
+  /** What the solve under way on this edition was actually given. */
   protected readonly runningText = computed(() => {
     const job = this.jobs.activeJob();
     const edition = this.editions.courant()?.id ?? null;
@@ -146,81 +98,7 @@ export class ReglesCalcul implements OnInit {
     }
     const plateau =
       job.plateauSeconds == null ? '' : `, plateau ${plateauLabel(job.plateauSeconds)}`;
-    const lines = [
-      $localize`:@@solverBudget.running:Calcul en cours : ${formatSeconds(job.secondsLimit)}:duree:${plateau}:plateau:.`,
-    ];
-    if (job.cappedFromSecondsLimit != null) {
-      lines.push(
-        $localize`:@@solverBudget.durationCapped:La durée enregistrée (${formatSeconds(job.cappedFromSecondsLimit)}:stored:) dépasse le plafond de l'instance : ce calcul tourne au plafond, ${formatSeconds(job.secondsLimit)}:max:.`,
-      );
-    }
-    if (job.cappedFromPlateauSeconds != null && job.plateauSeconds != null) {
-      lines.push(
-        $localize`:@@solverBudget.plateauCapped:L'arrêt sur plateau enregistré (${formatSeconds(job.cappedFromPlateauSeconds)}:stored:) dépasse le plafond de l'instance : ce calcul s'arrête au plafond, ${formatSeconds(job.plateauSeconds)}:max:.`,
-      );
-    }
-    return lines.join(' ');
-  });
-
-  /** What « Enregistrer » sends for the duration: `null` while it follows the instance. */
-  private readonly durationToSend = computed(() =>
-    this.backToDefault()
-      ? null
-      : budgetToSend(
-          this.solverSettings.dureeResolutionSecondes(),
-          this.secondsDraft(),
-          this.bounds()?.defaultSecondsLimit ?? null,
-        ),
-  );
-
-  /** What « Enregistrer » sends for the plateau: `null` while it follows the instance. */
-  private readonly plateauToSend = computed(() =>
-    this.backToDefault()
-      ? null
-      : budgetToSend(
-          this.solverSettings.plateauSecondes(),
-          this.plateauSecondsDraft(),
-          this.bounds()?.defaultPlateauSeconds ?? null,
-        ),
-  );
-
-  private readonly budgetDirty = computed(
-    () =>
-      this.durationToSend() !== this.solverSettings.dureeResolutionSecondes() ||
-      this.plateauToSend() !== this.solverSettings.plateauSecondes() ||
-      (!this.backToDefault() &&
-        (Math.round(this.secondsDraft()) !== this.secondsSaved() ||
-          Math.round(this.plateauSecondsDraft()) !== this.plateauSaved())),
-  );
-
-  /**
-   * Refused before the server does: the same rules, said where the value is
-   * typed. As on the server, a ceiling binds only a half the write changes,
-   * and the plateau is held against the duration only when the edition sets
-   * one of its own.
-   */
-  protected readonly draftError = computed(() => {
-    const bounds = this.bounds();
-    const seconds = Math.round(this.secondsDraft());
-    const plateau = Math.round(this.plateauSecondsDraft());
-    const durationChanged = this.durationToSend() !== this.solverSettings.dureeResolutionSecondes();
-    const plateauChanged = this.plateauToSend() !== this.solverSettings.plateauSecondes();
-    if (seconds <= 0) {
-      return $localize`:@@solverBudget.durationPositive:La durée doit être strictement positive.`;
-    }
-    if (plateau < 0) {
-      return $localize`:@@solverBudget.plateauNegative:Le plateau ne peut pas être négatif ; 0 signifie jamais.`;
-    }
-    if (bounds && durationChanged && seconds > bounds.maxSecondsLimit) {
-      return $localize`:@@solverBudget.aboveCeiling:Au plus ${formatSeconds(bounds.maxSecondsLimit)}:max: sur cette instance.`;
-    }
-    if (bounds && plateauChanged && plateau > bounds.maxPlateauSeconds) {
-      return $localize`:@@solverBudget.plateauAboveCeiling:Plateau : au plus ${formatSeconds(bounds.maxPlateauSeconds)}:max: sur cette instance.`;
-    }
-    if (this.plateauToSend() !== null && plateau > seconds) {
-      return $localize`:@@solverBudget.plateauAboveDuration:Le plateau ne peut pas dépasser la durée.`;
-    }
-    return '';
+    return $localize`:@@solverBudget.running:Calcul en cours : ${formatSeconds(job.secondsLimit)}:duree:${plateau}:plateau:.`;
   });
 
   /* --------------------------- Mail at the end ------------------------------ */
@@ -281,9 +159,7 @@ export class ReglesCalcul implements OnInit {
   /* --------------------------------- Form ----------------------------------- */
 
   /** Something typed on this tab that is not saved. */
-  readonly dirty = computed(
-    () => this.budgetDirty() || this.mailDirty() || this.soireeDirty() || this.polyvalentDirty(),
-  );
+  readonly dirty = computed(() => this.mailDirty() || this.soireeDirty() || this.polyvalentDirty());
 
   /** A solve holds the edition: the writes it would land over wait, like everywhere else. */
   protected readonly locked = computed(() => this.jobs.editingLocked());
@@ -305,7 +181,6 @@ export class ReglesCalcul implements OnInit {
           .catch(() => this.adminEmail.set(null)),
       ]);
       this.soireeStored.set((legaux.heureDebutSoiree ?? '').slice(0, 5));
-      this.applyStored();
     } catch (error) {
       this.error.set(errorPrefix(error));
     } finally {
@@ -313,75 +188,31 @@ export class ReglesCalcul implements OnInit {
     }
   }
 
-  protected onValueDraftChange(value: number): void {
-    this.backToDefault.set(false);
-    this.valueDraft.set(value);
-  }
-
-  protected onPlateauDraftChange(value: number): void {
-    this.backToDefault.set(false);
-    this.plateauDraft.set(value);
-  }
-
-  /** Switching unit re-expresses the current draft value, it never resets it (3 min → 180 s). */
-  protected onUnitChange(unit: SolverDurationUnit): void {
-    const seconds = this.secondsDraft();
-    this.unit.set(unit);
-    this.valueDraft.set(secondsToValue(seconds, unit));
-  }
-
-  protected onPlateauUnitChange(unit: SolverDurationUnit): void {
-    const seconds = this.plateauSecondsDraft();
-    this.plateauUnit.set(unit);
-    this.plateauDraft.set(secondsToValue(seconds, unit));
-  }
-
-  /** « Revenir au défaut »: the instance's values in the fields, sent on « Enregistrer ». */
-  protected resetToDefault(): void {
-    const bounds = this.bounds();
-    if (!bounds) {
-      return;
-    }
-    this.backToDefault.set(true);
-    this.unit.set(bestUnitFor(bounds.defaultSecondsLimit));
-    this.valueDraft.set(secondsToValue(bounds.defaultSecondsLimit, this.unit()));
-    this.plateauUnit.set(bestUnitFor(bounds.defaultPlateauSeconds));
-    this.plateauDraft.set(secondsToValue(bounds.defaultPlateauSeconds, this.plateauUnit()));
-  }
-
   /** Puts every field back to what is stored. */
   cancel(): void {
-    this.backToDefault.set(false);
     this.mailDraft.set(null);
     this.soireeDraft.set(null);
     this.polyvalentDraft.set(undefined);
-    this.applyStored();
     this.error.set('');
   }
 
   /**
    * One « Enregistrer » for the tab, each record written only when something
-   * of it changed: the budget and the mail share a payload, the evening is a
+   * of it changed: the mail is a setting of the edition, the evening is a
    * field of the legal parameters — re-read just before, so a save here never
    * resets what the « Légal » tab stored meanwhile —, the polyvalent is a flag of
    * one typologie.
    */
   protected async save(): Promise<void> {
-    if (!this.dirty() || this.draftError() || this.saving()) {
+    if (!this.dirty() || this.saving()) {
       return;
     }
     this.saving.set(true);
     this.error.set('');
     try {
-      if (this.budgetDirty() || this.mailDirty()) {
-        await this.solverSettings.setSettings(
-          this.durationToSend(),
-          this.plateauToSend(),
-          this.mailFinResolution(),
-        );
-        this.backToDefault.set(false);
+      if (this.mailDirty()) {
+        await this.solverSettings.setMailFinResolution(this.mailFinResolution());
         this.mailDraft.set(null);
-        this.applyStored(this.unit(), this.plateauUnit());
       }
       if (this.soireeDirty()) {
         const legaux = await this.constraintsApi.legalParameters();
@@ -430,19 +261,5 @@ export class ReglesCalcul implements OnInit {
         text: target.label,
       });
     }
-  }
-
-  /** Syncs the budget drafts from what the server holds, in the given units or the best ones. */
-  private applyStored(unit?: SolverDurationUnit, plateauUnit?: SolverDurationUnit): void {
-    const seconds = this.solverSettings.secondsLimit();
-    const plateau = this.solverSettings.effectivePlateauSeconds() ?? 0;
-    const durationUnit = unit ?? bestUnitFor(seconds);
-    this.unit.set(durationUnit);
-    this.valueDraft.set(secondsToValue(seconds, durationUnit));
-    this.secondsSaved.set(Math.round(seconds));
-    const unitForPlateau = plateauUnit ?? bestUnitFor(plateau);
-    this.plateauUnit.set(unitForPlateau);
-    this.plateauDraft.set(secondsToValue(plateau, unitForPlateau));
-    this.plateauSaved.set(Math.round(plateau));
   }
 }

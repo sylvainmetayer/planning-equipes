@@ -16,7 +16,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -236,14 +235,13 @@ class ScenarioYamlWriterTest {
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux,
                 null,
-                new ParametresSolveur(1800),
                 Map.of("equilibrerCharge", false),
                 Map.of("maxJoursConsecutifsTravailles", 5),
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
         Map<String, Object> parametres = (Map<String, Object>) parsed.get("parametres");
-        assertThat((Map<String, Object>) parametres.get("instance")).containsEntry("dureeResolutionSecondes", 1800);
+        assertThat(parametres).doesNotContainKey("instance");
         assertThat(parsed).doesNotContainKeys("parametresLegaux", "parametresSolveur", "parametresQualite");
         assertThat((Map<String, Object>) parametres.get("legal"))
                 .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
@@ -287,7 +285,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 new ParametresLegaux(),
                 null,
-                null,
                 Map.of(),
                 Map.of("equilibrerCharge", 125),
                 List.of()));
@@ -318,7 +315,6 @@ class ScenarioYamlWriterTest {
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", false)),
                 List.of(),
                 new ParametresLegaux(),
-                null,
                 null,
                 Map.of(),
                 Map.of("equilibrerCharge", 25),
@@ -421,7 +417,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of(incompatibilite)));
@@ -462,7 +457,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                null,
                 null,
                 null,
                 Map.of(),
@@ -507,7 +501,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of()));
@@ -544,7 +537,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 reglee,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of()));

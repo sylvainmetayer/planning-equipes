@@ -30,8 +30,9 @@ import org.junit.jupiter.api.Test;
 /**
  * The operator's guard on solving, through every entry point: the queue cap,
  * then the hourly quota once spent — over REST (the three asynchronous solves,
- * the synchronous one, the staffing check) and over MCP — and the persisted
- * queue replayed at startup, which neither is refused nor counts.
+ * the synchronous one, the staffing check) and over MCP — on a public
+ * instance, and a queued row left by a previous run, which is no longer
+ * replayed but said interrupted.
  *
  * <p>One test, in order, because the quota is the instance's: once spent, it
  * stays spent for the hour, and a second test could not start from a fresh
@@ -41,11 +42,12 @@ import org.junit.jupiter.api.Test;
 @TestProfile(SolverQuotaGuardTest.Profile.class)
 class SolverQuotaGuardTest {
 
-    /** Three runs an hour, one job waiting at most. */
+    /** A public instance: three runs an hour, one job waiting at most. */
     public static class Profile implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
             return Map.of(
+                    "planning.public-instance", "true",
                     "planning.solver.max-solves-per-hour", "3",
                     "planning.solver.max-queued-jobs", "1");
         }
@@ -70,7 +72,7 @@ class SolverQuotaGuardTest {
     EditionContext editionContext;
 
     @Test
-    void everyEntryPointMeetsTheQueueCapAndTheHourlyQuotaButAReplayDoesNot() {
+    void everyEntryPointMeetsTheQueueCapAndTheHourlyQuotaAndALeftQueuedRowIsSaidInterrupted() {
         importScenario();
 
         // 1st run, long enough to hold the solver while the queue fills.
@@ -147,11 +149,11 @@ class SolverQuotaGuardTest {
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageMatching(QUOTA_SPENT);
 
-        // A job the persisted queue replays at startup was counted when it was
-        // submitted: it runs, quota spent or not.
-        String replayed = UUID.randomUUID().toString();
+        // A row left QUEUED by a previous run (a 3.x queue) is not replayed any
+        // more: it comes back interrupted, and the log says so.
+        String left = UUID.randomUUID().toString();
         jobRepository.save(new LigneJob(
-                replayed,
+                left,
                 editionContext.editionIdCourant(),
                 "Édition de test",
                 JobType.SOLVE,
@@ -160,14 +162,14 @@ class SolverQuotaGuardTest {
                 null,
                 null,
                 null,
-                null,
                 true,
                 null,
                 Instant.now(),
                 null,
                 null));
-        assertThat(QueueReplay.replay(solverJobService)).isEqualTo(1);
-        assertThat(awaitFinished(replayed)).isEqualTo(JobStatus.COMPLETED);
+        assertThat(QueueReplay.replay(solverJobService)).isZero();
+        assertThat(solverJobService.find(left).orElseThrow().getStatus()).isEqualTo(JobStatus.INTERROMPU);
+        assertThat(solverJobService.find(left).orElseThrow().getError()).contains("file d'attente");
 
         jobRepository.list().forEach(ligne -> jobRepository.delete(ligne.id()));
     }

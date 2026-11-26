@@ -46,8 +46,7 @@ would never be reported. It is the only category of failure that the organiser s
 on their screen and nobody else ever sees.
 
 `SolverJobService.reportFailure` reports it where the exception is still
-in hand, with its stack, and covers at once the screen, the API, MCP and the queue
-replayed after a restart. The event carries the job type, its
+in hand, with its stack, and covers at once the screen, the API and MCP. The event carries the job type, its
 identifier, the edition and the scope. At worst (tracker absent or down),
 the log line remains: a reported failure must not become a lost failure.
 
@@ -87,7 +86,7 @@ everything on 9000, would move as one block, probes included.
 | --- | --- | --- | --- |
 | `planning_solver_duration_seconds` | timer | `type` (`full`, `incremental`), `outcome` (`completed`, `failed`, `refused`, `cancelled`, `interrupted`) | duration of a solve, from start to its final state; `refused` = business refusal (nothing to schedule), not a failure |
 | `planning_solver_failures_total` | counter | `type` | solves dead on an unexpected error, exactly those `reportFailure` sends to Sentry |
-| `planning_solver_queue_size` | gauge | — | jobs in the queue; also reflects the queue replayed at startup |
+| `planning_solver_queue_size` | gauge | — | jobs in the queue (in memory: empty after a restart) |
 | `planning_solver_active` | gauge (0/1) | — | a job holds the solver |
 | `planning_mail_sent_total`, `planning_mail_failures_total` | counters | `template` (`code-acces`, `planning-publie`, `rappel-veille`…) | mails handed to the SMTP server, or refused, notifications included (their failure is swallowed without being lost for all that) |
 | `planning_backup_duration_seconds` | timer | `outcome` (`success`, `failure`) | duration of each `pg_dump` |

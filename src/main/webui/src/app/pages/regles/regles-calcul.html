@@ -3,58 +3,15 @@
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
       <h2 mat-card-title i18n="@@solverBudget.title">Budget de calcul</h2>
-      @if (ceilingText()) {
-        <mat-card-subtitle>{{ ceilingText() }}</mat-card-subtitle>
-      }
+      <mat-card-subtitle i18n="@@solverBudget.instanceNote">Le même pour toutes les éditions : l'exploitant le règle sur le serveur (SOLVER_SECONDS_LIMIT, SOLVER_UNIMPROVED_SECONDS_LIMIT).</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      <div class="calendar-toolbar">
-        <mat-form-field appearance="outline" class="solver-duration">
-          <mat-label i18n="@@solverBudget.duration.label">Durée maximale</mat-label>
-          <input matInput type="number" [attr.min]="step()" [step]="step()" name="solverDurationValue"
-                 [disabled]="loading() || saving()"
-                 [ngModel]="valueDraft()" (ngModelChange)="onValueDraftChange($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="solver-duration-unit">
-          <mat-label i18n="@@dataSetup.solverDuration.unit.label">Unité</mat-label>
-          <mat-select name="solverDurationUnit" [disabled]="loading() || saving()"
-                      [ngModel]="unit()" (ngModelChange)="onUnitChange($event)">
-            <mat-option value="SECONDES" i18n="@@dataSetup.solverDuration.unit.secondes">Secondes</mat-option>
-            <mat-option value="MINUTES" i18n="@@dataSetup.solverDuration.unit.minutes">Minutes</mat-option>
-            <mat-option value="HEURES" i18n="@@dataSetup.solverDuration.unit.heures">Heures</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-      <div class="calendar-toolbar">
-        <mat-form-field subscriptSizing="dynamic" appearance="outline" class="solver-duration">
-          <mat-label i18n="@@solverBudget.plateau.label">Arrêt faute de progrès suffisant depuis</mat-label>
-          <input matInput type="number" min="0" [step]="plateauStep()" name="solverPlateauValue"
-                 [disabled]="loading() || saving()"
-                 [ngModel]="plateauDraft()" (ngModelChange)="onPlateauDraftChange($event)" />
-          <mat-hint i18n="@@solverBudget.plateau.hint">0 = jamais. Compte seulement une fois le planning faisable.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="solver-duration-unit">
-          <mat-label i18n="@@solverBudget.plateau.unit">Unité du plateau</mat-label>
-          <mat-select name="solverPlateauUnit" [disabled]="loading() || saving()"
-                      [ngModel]="plateauUnit()" (ngModelChange)="onPlateauUnitChange($event)">
-            <mat-option value="SECONDES" i18n="@@dataSetup.solverDuration.unit.secondes">Secondes</mat-option>
-            <mat-option value="MINUTES" i18n="@@dataSetup.solverDuration.unit.minutes">Minutes</mat-option>
-            <mat-option value="HEURES" i18n="@@dataSetup.solverDuration.unit.heures">Heures</mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-      @if (defaultsText()) {
-        <p class="calendar-meta">{{ defaultsText() }}</p>
+      @if (budgetText()) {
+        <p class="calendar-meta">{{ budgetText() }}</p>
       }
       @if (runningText()) {
         <p class="calendar-meta">{{ runningText() }}</p>
       }
-      <button matButton type="button" [disabled]="!customised() || loading() || saving()"
-              (click)="resetToDefault()">
-        <mat-icon>restart_alt</mat-icon>
-        <ng-container i18n="@@solverBudget.reset">Revenir au défaut</ng-container>
-      </button>
-      <app-status-message [text]="draftError()" tone="error" />
 
       <mat-slide-toggle name="mailFinResolution" class="regles-calcul-mail"
                         [checked]="mailFinResolution()"
@@ -108,7 +65,7 @@
   </mat-card>
 
   <div class="regles-save-bar">
-    <button matButton="filled" type="submit" [disabled]="!dirty() || !!draftError() || saving()">
+    <button matButton="filled" type="submit" [disabled]="!dirty() || saving()">
       <mat-icon>save</mat-icon>
       <ng-container i18n="@@common.save">Enregistrer</ng-container>
     </button>

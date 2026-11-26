@@ -51,13 +51,14 @@ class ScenarioMigrationsTest {
     }
 
     @Test
-    void v2ToV3MovesTheThreeParameterSectionsUnderParametres() {
+    void v2ToV3MovesTheParameterSectionsUnderParametresAndDropsTheBudgetSayingSo() {
         Map<String, Object> document = document();
         document.put("parametresLegaux", Map.of("dureePauseMinutes", 30));
         document.put("parametresQualite", Map.of("joursConsecutifsMax", 5));
         document.put("parametresSolveur", Map.of("dureeResolutionSecondes", 400));
+        List<String> warnings = new java.util.ArrayList<>();
 
-        Map<String, Object> converted = ScenarioParametresLink.convert(document, new java.util.ArrayList<>());
+        Map<String, Object> converted = ScenarioParametresLink.convert(document, warnings);
 
         assertThat(converted)
                 .doesNotContainKeys("parametresLegaux", "parametresQualite", "parametresSolveur")
@@ -65,8 +66,13 @@ class ScenarioMigrationsTest {
                         "parametres",
                         Map.of(
                                 "legal", Map.of("dureePauseMinutes", 30),
-                                "organisation", Map.of("joursConsecutifsMax", 5),
-                                "instance", Map.of("dureeResolutionSecondes", 400)));
+                                "organisation", Map.of("joursConsecutifsMax", 5)));
+        // The budget is the instance's now (ADR 0110): never lost in silence.
+        assertThat(warnings)
+                .singleElement()
+                .asString()
+                .contains("parametresSolveur")
+                .contains("SOLVER_SECONDS_LIMIT");
     }
 
     @Test

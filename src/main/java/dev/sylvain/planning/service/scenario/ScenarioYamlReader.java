@@ -6,7 +6,6 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
@@ -342,11 +341,6 @@ public final class ScenarioYamlReader {
      *                            Absent fields fall back to {@link ParametresLegaux}'s
      *                            own defaults, never to the live value, so the
      *                            scenario stays reproducible on its own
-     * @param parametresSolveur   lets a large scenario pin the termination duration
-     *                            it actually needs ({@code scenario-complet.yaml}
-     *                            takes ~8 min to reach a good score) rather than
-     *                            relying on the Données tab. Absent, the current
-     *                            database value is left untouched
      * @param typologies          {@code {id, label}} pairs defining the scenario's own
      *                            typologie referential entries up front, instead of
      *                            leaving every referenced id to the id-as-its-own-label
@@ -372,7 +366,6 @@ public final class ScenarioYamlReader {
     public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
             Optional<ParametresQualite> parametresQualite,
-            Optional<ParametresSolveur> parametresSolveur,
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
             Optional<ContraintesScenario> contraintes,

@@ -126,7 +126,7 @@ export class EmptyEditionCard {
     const deleted = nomEdition
       ? $localize`:@@editions.vider.message:Sont supprimés de « ${nomEdition}:edition: » : stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et leurs préréglages.`
       : $localize`:@@editions.vider.messageSansNom:Sont supprimés de l'édition courante : stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et leurs préréglages.`;
-    const kept = $localize`:@@editions.vider.restent:Restent ses typologies, emplacements, journées types, instantanés et paramètres, les autres éditions et l'instance.`;
+    const kept = $localize`:@@editions.vider.restent:Restent ses typologies, emplacements, journées types, versions et paramètres, les autres éditions et l'instance.`;
     const confirmed = await this.recopie.demander({
       title: nomEdition
         ? $localize`:@@editions.vider.confirmTitle:Vider l'édition « ${nomEdition}:edition: » ?`

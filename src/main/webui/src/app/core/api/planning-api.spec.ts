@@ -34,14 +34,14 @@ describe('PlanningApi', () => {
       '/api/planning/persisted/count',
       '/api/planning/scenarios',
       '/api/planning/publication',
-      '/api/planning/snapshots/comparables',
+      '/api/planning/versions/comparables',
     ]);
   });
 
   it('sends both sides of a comparison as query parameters', async () => {
     await planning.compareSnapshots('courant', '8');
 
-    expect(api.get).toHaveBeenCalledWith('/api/planning/snapshots/compare?base=courant&variante=8');
+    expect(api.get).toHaveBeenCalledWith('/api/planning/versions/compare?base=courant&variante=8');
   });
 
   it('posts the exclusions of a publication, and an empty body for a reset', async () => {

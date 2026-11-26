@@ -347,20 +347,14 @@ public class StaffingVerificationService {
     }
 
     /**
-     * The time a solve of the edition gets: the question « does the floor
+     * The time a solve of the instance gets: the question « does the floor
      * hold » is asked against the plan a real solve would find, and a check
      * given less fails where that solve succeeds. A duration asked for
      * explicitly must fall within the instance's bounds.
      */
     private long budgetSeconds(Long dureeSecondes) {
         SolverBudgetBounds bounds = referenceDataService.getSolverBudgetBounds();
-        Integer dureeEdition = referenceDataService.getParametresSolveur().dureeResolutionSecondes();
-        long plafond = bounds.defaultSecondsLimit();
-        if (dureeSecondes != null) {
-            plafond = dureeSecondes;
-        } else if (dureeEdition != null) {
-            plafond = dureeEdition;
-        }
+        long plafond = dureeSecondes != null ? dureeSecondes : bounds.defaultSecondsLimit();
         if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > bounds.maxSecondsLimit())) {
             throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
                     + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");

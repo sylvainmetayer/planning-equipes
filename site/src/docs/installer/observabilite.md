@@ -42,8 +42,7 @@ serait jamais remonté. C'est la seule catégorie de panne que l'organisateur vo
 sur son écran et que personne d'autre ne voit jamais.
 
 `SolverJobService.reportFailure` la signale là où l'exception est encore en
-main, avec sa pile, et couvre du même coup l'écran, l'API, MCP et la file
-rejouée après un redémarrage. L'événement porte le type du job, son
+main, avec sa pile, et couvre du même coup l'écran, l'API et MCP. L'événement porte le type du job, son
 identifiant, l'édition et le périmètre. Au pire (traqueur absent ou en panne),
 la ligne de journal reste : une panne signalée ne doit pas devenir une panne
 perdue.
@@ -84,7 +83,7 @@ inverse, tout sur 9000, se ferait d'un bloc, sondes comprises.
 | --- | --- | --- | --- |
 | `planning_solver_duration_seconds` | timer | `type` (`full`, `incremental`), `outcome` (`completed`, `failed`, `refused`, `cancelled`, `interrupted`) | durée d'une résolution, du démarrage à son état final ; `refused` = refus métier (rien à planifier), pas une panne |
 | `planning_solver_failures_total` | compteur | `type` | résolutions mortes sur une erreur inattendue, exactement celles que `reportFailure` envoie à Sentry |
-| `planning_solver_queue_size` | jauge | — | jobs en file ; reflète aussi la file rejouée au démarrage |
+| `planning_solver_queue_size` | jauge | — | jobs en file (en mémoire : vide après un redémarrage) |
 | `planning_solver_active` | jauge (0/1) | — | un job tient le solveur |
 | `planning_mail_sent_total`, `planning_mail_failures_total` | compteurs | `template` (`code-acces`, `planning-publie`, `rappel-veille`…) | mails remis au serveur SMTP, ou refusés, notifications comprises (leur échec est avalé sans être perdu pour autant) |
 | `planning_backup_duration_seconds` | timer | `outcome` (`success`, `failure`) | durée de chaque `pg_dump` |

@@ -1110,9 +1110,6 @@
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
-.sections.parametresSolveur.dureeResolutionSecondes = 40
-.sections.parametresSolveur.mailFinResolution = false
-.sections.parametresSolveur.plateauSecondes = 0
 .sections.prereglagesConsigne = null
 .sections.typologies[0]  0c2b3794b9f4cb44
 .sections.typologies[1]  f1961c4290daebba

@@ -195,7 +195,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'versions',
               $localize`:@@nav.link.versions:Versions du plan`,
-              $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
+              $localize`:@@nav.keywords.versions:versions instantanés comparateur autopsie restaurer historique résolutions`,
             ),
           ],
         },
@@ -462,13 +462,21 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
     { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
     // The toolbar's « ? » icon, on every admin page.
     { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
-    // Opened from the Éditions page with the pair to compare; reached here
-    // too, on the edition this tab works in and the first other one.
+    // Opened from Versions and from the Éditions page with the pair to compare;
+    // reached here too: two plan versions, or `?vue=editions` two editions.
     {
-      path: '/editions/comparer',
-      label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+      path: '/comparer',
+      label: $localize`:@@nav.link.comparer:Comparer deux versions`,
       icon: 'difference',
-      keywords: $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+      keywords: $localize`:@@nav.keywords.comparer:différences écart score couverture année précédente référentiel`,
+      tabs: [
+        tab(
+          'vue',
+          'editions',
+          $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+          $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+        ),
+      ],
     },
     {
       path: '/nouveautes',

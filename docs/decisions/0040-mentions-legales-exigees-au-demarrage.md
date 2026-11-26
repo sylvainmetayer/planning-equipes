@@ -1,6 +1,6 @@
 # 0040 — Exiger les mentions légales au démarrage, pas dans une case à cocher
 
-- **Statut** : accepté
+- **Statut** : accepté — **le refus ne vaut plus que sur une instance publique** ([0110](0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md)) ; ailleurs, un avertissement
 - **Date** : septembre 2026
 - **Portée** : configuration, exploitation, conformité
 

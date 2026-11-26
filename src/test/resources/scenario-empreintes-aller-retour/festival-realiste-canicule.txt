@@ -2181,9 +2181,6 @@
 .sections.parametresLegaux.heureDebutSoiree = 20:00
 .sections.parametresLegaux.reposQuotidienMinimalMinutes = 660
 .sections.parametresQualite = null
-.sections.parametresSolveur.dureeResolutionSecondes = 1800
-.sections.parametresSolveur.mailFinResolution = false
-.sections.parametresSolveur.plateauSecondes = null
 .sections.prereglagesConsigne = null
 .sections.typologies[0]  034c6b95c8ae70a8
 .sections.typologies[1]  200621f6114479cc

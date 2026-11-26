@@ -9,23 +9,14 @@ const INSTANCE = {
   defaultSecondsLimit: 900,
   defaultPlateauSeconds: 300,
   maxSecondsLimit: 3600,
-  maxPlateauSeconds: 3600,
 };
 
 class FakeApi {
   get = vi.fn((): Promise<SolverSettingsView> =>
-    Promise.resolve({
-      dureeResolutionSecondes: null,
-      plateauSecondes: null,
-      mailFinResolution: false,
-      instance: INSTANCE,
-    }),
+    Promise.resolve({ mailFinResolution: false, instance: INSTANCE }),
   );
   put = vi.fn((_url: string, body: ParametresSolveur): Promise<SolverSettingsView> =>
-    Promise.resolve({
-      ...body,
-      instance: INSTANCE,
-    }),
+    Promise.resolve({ ...body, instance: INSTANCE }),
   );
 }
 
@@ -52,30 +43,19 @@ describe('SolverSettingsService', () => {
     expect(service.secondsLimit()).toBe(DEFAULT_SOLVER_SECONDS_LIMIT);
   });
 
-  it('refresh() loads the value persisted server-side', async () => {
+  it('refresh() reads the instance budget and the edition mail switch', async () => {
     api.get = vi.fn(() =>
       Promise.resolve({
-        dureeResolutionSecondes: 240,
-        plateauSecondes: 60,
         mailFinResolution: true,
-        instance: INSTANCE,
+        instance: { ...INSTANCE, defaultSecondsLimit: 240, defaultPlateauSeconds: 60 },
       }),
     );
     const service = configure(api);
     await service.refresh();
-    expect(api.get).toHaveBeenCalledWith('/api/parametres-solveur');
+    expect(api.get).toHaveBeenCalledWith('/api/parametres/calcul');
     expect(service.secondsLimit()).toBe(240);
     expect(service.effectivePlateauSeconds()).toBe(60);
     expect(service.mailFinResolution()).toBe(true);
-  });
-
-  it('an edition that set nothing reads the instance defaults', async () => {
-    const service = configure(api);
-    await service.refresh();
-    expect(service.dureeResolutionSecondes()).toBeNull();
-    expect(service.secondsLimit()).toBe(900);
-    expect(service.effectivePlateauSeconds()).toBe(300);
-    expect(service.bounds()).toEqual(INSTANCE);
   });
 
   it('refresh() propagates a fetch failure to the caller', async () => {
@@ -84,28 +64,11 @@ describe('SolverSettingsService', () => {
     await expect(service.refresh()).rejects.toThrow('boom');
   });
 
-  it('setSettings() rounds, saves via PUT, and updates the signals', async () => {
+  it('setMailFinResolution() saves via PUT and updates the signal', async () => {
     const service = configure(api);
-    await service.setSettings(90.4, 30.2, true);
-    expect(api.put).toHaveBeenCalledWith('/api/parametres-solveur', {
-      dureeResolutionSecondes: 90,
-      plateauSecondes: 30,
-      mailFinResolution: true,
-    });
-    expect(service.secondsLimit()).toBe(90);
-    expect(service.plateauSecondes()).toBe(30);
+    await service.setMailFinResolution(true);
+    expect(api.put).toHaveBeenCalledWith('/api/parametres/calcul', { mailFinResolution: true });
     expect(service.mailFinResolution()).toBe(true);
-  });
-
-  it('setSettings(null, null, …) goes back to the instance default', async () => {
-    const service = configure(api);
-    await service.setSettings(1200, 60, false);
-    await service.setSettings(null, null, false);
-    expect(api.put).toHaveBeenLastCalledWith('/api/parametres-solveur', {
-      dureeResolutionSecondes: null,
-      plateauSecondes: null,
-      mailFinResolution: false,
-    });
-    expect(service.secondsLimit()).toBe(900);
+    expect(service.bounds()).toEqual(INSTANCE);
   });
 });

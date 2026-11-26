@@ -6,20 +6,20 @@ Vous saurez quelles propriétés bornent un calcul, ce que chaque réglage de `s
 
 | Propriété | Défaut | Rôle |
 | --- | --- | --- |
-| `planning.solver.seconds-limit` | `900` (`3` en `%test`) | Budget de résolution |
-| `planning.solver.unimproved-seconds-limit` | `180` (`2` en `%test`), `0` désactive | Fenêtre de plateau, que chaque édition règle |
+| `planning.solver.seconds-limit` | `900` (`SOLVER_SECONDS_LIMIT` ; `3` en `%test`) | Budget de résolution de l'instance, le même pour toutes les éditions ([ADR 0110](repo:docs/decisions/0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md)) |
+| `planning.solver.unimproved-seconds-limit` | `180` (`SOLVER_UNIMPROVED_SECONDS_LIMIT` ; `2` en `%test`), `0` désactive | Fenêtre de plateau de l'instance |
 | `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` en `%test`) | Gain de medium, par siège du problème, que la fenêtre doit apporter pour que le calcul continue |
 | `planning.solver.engine` | `hand` (`SOLVER_ENGINE`) | Le moteur qui cherche : `hand` (moteur direct, [ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)) ou `timefold` |
 | `planning.staffing.verification-default` | `calcul` | Ce que répond la vérification du besoin quand la requête ne choisit pas : `calcul` (une équipe fictive est résolue) ou `borne` (le minimum exact, sans calcul ; à adopter quand l'équivalence est totale, [ADR 0098](repo:docs/decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) |
-| `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'une édition règle ou qu'un lancement demande ; le démarrage est refusé s'il est sous `seconds-limit` |
-| `planning.solver.unimproved-seconds-limit-max` | celui de la durée (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Plafond du plateau d'une édition |
-| `planning.solver.max-solves-per-hour` | `0`, aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Quota de l'instance sur 60 minutes glissantes, compté au lancement par [`SolverQuota`](repo:src/main/java/dev/sylvain/planning/service/solve/SolverQuota.java) ([ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md)) |
-| `planning.solver.max-queued-jobs` | `0`, aucune limite (`SOLVER_MAX_QUEUED_JOBS`) | Tâches en file derrière celle qui tourne |
+| `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Plafond de ce qu'un lancement demande (`?seconds=`, MCP) ; le démarrage est refusé s'il est sous `seconds-limit` |
+| `planning.public-instance` | `false` (`PUBLIC_INSTANCE`) | Instance publique : seule elle applique le quota ci-dessous et refuse de démarrer sans mentions légales |
+| `planning.solver.max-solves-per-hour` | `0`, aucune limite (`SOLVER_MAX_SOLVES_PER_HOUR`) | Instance publique seulement : quota sur 60 minutes glissantes, compté au lancement par [`SolverQuota`](repo:src/main/java/dev/sylvain/planning/service/solve/SolverQuota.java) ([ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md)) |
+| `planning.solver.max-queued-jobs` | `0`, aucune limite (`SOLVER_MAX_QUEUED_JOBS`) | Instance publique seulement : tâches en file derrière celle qui tourne |
 | `planning.constraint-weights.<contrainte>` | `1` pour une règle dure, `5` pour la plupart des autres, `25` pour `stabiliteDuPlanPublie` | Poids du catalogue, voir [doser et désactiver les règles](doser-et-desactiver-les-regles.md) |
-| `planning.jobs.reprise-au-demarrage` | `true` (`false` en `%test`) | Rejoue la file persistée ; en test, une tâche laissée en file lancerait un vrai calcul au démarrage suivant |
+| `planning.jobs.reprise-au-demarrage` | `true` (`false` en `%test`) | Règle au démarrage ce qu'une exécution précédente a laissé inachevé : la file n'est plus conservée, ses tâches deviennent `INTERROMPU` ; un calcul parti sur une machine distante est suivi de nouveau |
 | `planning.diagnostic.mode` | `score-director` | Implémentation de la ventilation du score par contrainte ; `solution-manager` est l'oracle du test de contrat, pas un mode de secours ([ADR 0013](repo:docs/decisions/0013-diagnostic-par-le-score-director.md)) |
 
-Les plafonds `-max` et le quota ne se contournent pas : un service qui lance un calcul consomme le quota, et la reprise de la file au démarrage est la seule à le laisser passer. Pour exécuter le calcul sur une autre machine, voir [le calcul sur une autre machine](../installer/calcul-sur-une-autre-machine.md).
+Le plafond `-max` et le quota ne se contournent pas : un service qui lance un calcul consomme le quota (sans effet hors instance publique). Pour exécuter le calcul sur une autre machine, voir [le calcul sur une autre machine](../installer/calcul-sur-une-autre-machine.md).
 
 ## L'arrêt anticipé dépend de la faisabilité
 

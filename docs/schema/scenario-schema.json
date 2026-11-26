@@ -433,9 +433,6 @@
     "ParametresDto" : {
       "type" : "object",
       "properties" : {
-        "instance" : {
-          "$ref" : "#/$defs/ParametresSolveurDto"
-        },
         "legal" : {
           "$ref" : "#/$defs/ParametresLegauxDto"
         },
@@ -541,21 +538,6 @@
           "format" : "double",
           "exclusiveMinimum" : 0,
           "maximum" : 15
-        }
-      }
-    },
-    "ParametresSolveurDto" : {
-      "type" : "object",
-      "properties" : {
-        "dureeResolutionSecondes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "plateauSecondes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
         }
       }
     },

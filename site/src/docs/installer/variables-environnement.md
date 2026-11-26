@@ -28,15 +28,16 @@ L'application, elle, refuse aussi de démarrer en production, quel que soit le
 compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 
 - une des cinq clés exigées de `LEGAL_MENTIONS` est vide (`editeur`,
-  `hebergeur`, `contact`, `base-legale`, `conservation`), sauf
-  `LEGAL_DEMO_INSTANCE=true` ;
+  `hebergeur`, `contact`, `base-legale`, `conservation`) sur une instance
+  publique (`PUBLIC_INSTANCE=true`), sauf `LEGAL_DEMO_INSTANCE=true` ; sur une
+  autre, c'est un avertissement ;
 - `ADMIN_PASSWORD` ou `DB_PASSWORD` vaut la valeur d'exemple ou est vide ;
 - aucune porte n'ouvre l'administration (`OIDC_ENABLED=false` et
   `ADMIN_LOCAL_SECOURS=false`), ou `OIDC_CLIENT_SECRET` fait moins de 32
   caractères quand OIDC est actif ;
 - un webhook existe et `WEBHOOKS_SECRET_KEY` est absente ou invalide ;
-- `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous 900,
-  `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` sous 180 ;
+- `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous
+  `SOLVER_SECONDS_LIMIT` (900 par défaut) ;
 - une entrée de `CONNEXION_PROXYS_FIABLES` ou de `WEBHOOKS_RESEAUX_AUTORISES`
   est mal formée ;
 - la machine de calcul distante est mal décrite (voir *Calcul du planning*).
@@ -128,10 +129,12 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `SOLVER_ENGINE` | `hand` | `hand` : moteur direct, chaque plan re-scoré par les contraintes ; `timefold` : la recherche d'avant la 3.0.0 |
-| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps de calcul qu'une édition peut régler ou qu'un lancement peut demander ; sous le défaut de 900 s, démarrage refusé |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (celui de la durée) | Plafond de l'arrêt sans amélioration ; sous le défaut de 180 s, démarrage refusé |
-| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés par l'instance sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
-| `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière le calcul en cours |
+| `SOLVER_SECONDS_LIMIT` | `900` | Budget de calcul de l'instance : durée maximale d'un calcul, en secondes. Le même pour toutes les éditions |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Arrêt si le plan, déjà faisable, ne progresse plus depuis ce temps, en secondes ; `0` : jamais |
+| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps qu'un lancement peut demander (`?seconds=`, MCP) ; sous `SOLVER_SECONDS_LIMIT`, démarrage refusé |
+| `PUBLIC_INSTANCE` | `false` | `true` : instance publique. Applique le quota de calcul ci-dessous et refuse de démarrer sans mentions légales. Sans elle, le quota est ignoré (avec un avertissement) et les mentions manquantes sont un avertissement. Non posée du tout, l'avertissement dit aussi qu'une instance publique en 3.x ne l'est plus ; `false` le fait taire |
+| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Instance publique seulement : calculs acceptés sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
+| `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Instance publique seulement : tâches qui peuvent attendre derrière le calcul en cours |
 | `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. À réserver à une recette qui rejoue une édition ancienne |
 | `JOBS_STREAM_HEARTBEAT` | `PT20S` | Battement du flux de suivi des calculs, qui garde les proxys ouverts |
 | `JOBS_STREAM_SCORE` | `PT1S` | Fréquence d'envoi de la courbe de score d'un calcul en cours |
@@ -207,11 +210,11 @@ Les onze anciennes variables (`BRANDING_LOGO_URL`, `BRANDING_ACCENT_COLOR`, `BRA
 
 ## Mentions légales
 
-Cinq clés de `LEGAL_MENTIONS`, marquées **exigée**, refusent le démarrage en production quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true`. Elles s'affichent sur la page publique `/mentions-legales`. Les deux variables groupées ont la forme `clé=valeur;clé=valeur` (un point-virgule littéral dans une valeur s'écrit `\;`).
+Cinq clés de `LEGAL_MENTIONS`, marquées **exigée**, refusent le démarrage en production d'une instance publique (`PUBLIC_INSTANCE=true`) quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true` ; sur une autre instance, un avertissement. Elles s'affichent sur la page publique `/mentions-legales`. Les deux variables groupées ont la forme `clé=valeur;clé=valeur` (un point-virgule littéral dans une valeur s'écrit `\;`).
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
-| `LEGAL_DEMO_INSTANCE` | `false` | `true` : instance qui n'est pas en service, dispensée des mentions exigées |
+| `LEGAL_DEMO_INSTANCE` | `false` | `true` : instance qui n'est pas en service, dispensée des mentions exigées (ni refus ni avertissement) |
 | `LEGAL_MENTIONS` | *(vide)* | Les mentions, par clés : `editeur` (**exigée** : nom, forme juridique, adresse, immatriculation), `hebergeur` (**exigée** : nom et adresse), `contact` (**exigée** : adresse de contact, y compris pour exercer ses droits), `base-legale` (**exigée** : base légale du traitement des données personnelles), `conservation` (**exigée** : durée de conservation des données personnelles), `responsable-traitement` (quand il diffère de l'éditeur ; vide : l'éditeur), `directeur-publication` |
 | `LEGAL_ACCESSIBILITE` | *(vide)* | La déclaration d'accessibilité, par clés : `etat` (`totale`, `partielle` ou `non`), `date-audit`, `contenus` (contenus non accessibles), `signalement` (voie de signalement ; vide : l'adresse de contact des mentions) |
 

@@ -778,8 +778,8 @@ export class SolverPage implements OnInit {
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error). A planned solve
       // builds it when it starts, not now — the edition can keep being prepared.
-      // No duration either: the server applies the edition's budget —
-      // duration, plateau and the instance's ceiling — to whoever launches.
+      // No duration either: the server applies the instance's budget —
+      // duration and plateau — to whoever launches.
       await this.jobs.submitSolveFromReferenceData(
         undefined,
         enFile,

@@ -377,7 +377,7 @@ class HandSearchSolverTest {
         AtomicReference<Solver<PlanningEvenement>> handed = new AtomicReference<>();
 
         SolveRunner.Solved solved = new SolveRunner(ofWorker, null, null)
-                .solvePrepared(loaded.problem(), new SolveBudget(2L, 0L, null), handed::set);
+                .solvePrepared(loaded.problem(), new SolveBudget(2L, 0L), handed::set);
 
         assertThat(handed.get()).isInstanceOf(HandSearchSolver.class);
         assertThat(solved.feasibilityFirst()).isNull();

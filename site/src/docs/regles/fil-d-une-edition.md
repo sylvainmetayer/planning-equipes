@@ -81,7 +81,7 @@ L'application ne publie rien vers l'extérieur, n'envoie aucun message et n'ouvr
 | Verrou | Le planning d'une personne, d'un stand ou d'une journée, qu'aucun calcul ne touchera plus |
 | Ajustement manuel | Une exception posée à la main : une personne indisponible tel jour, deux personnes à ne pas mettre ensemble, une affectation imposée |
 | Consigne | Une fermeture imposée de l'extérieur (un arrêté préfectoral, une canicule) appliquée à tous les stands pour quelques dates |
-| Instantané | Une copie du planning mise de côté, qu'on peut remettre en place plus tard |
+| Version | Une copie du planning mise de côté (à la main, avant un calcul ou à la publication), qu'on peut remettre en place plus tard |
 | CSV, ICS, PDF | Les formats de fichier : CSV s'ouvre dans un tableur, ICS s'ajoute à un agenda (téléphone, Outlook, Google), PDF s'imprime |
 | Fichier scénario | Un fichier qui contient toute une édition, pour la recopier ou la partager |
 | Webhook | Un message que l'application envoie d'elle-même à un autre outil de l'équipe (Slack, Discord…) |

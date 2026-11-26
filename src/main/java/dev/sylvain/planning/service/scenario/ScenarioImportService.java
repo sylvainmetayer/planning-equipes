@@ -171,7 +171,6 @@ public class ScenarioImportService {
             }
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
-            sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
             if (restore != null) {

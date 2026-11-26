@@ -68,37 +68,19 @@ public class ParametresService {
         return repository.getParametresSolveur();
     }
 
-    /** The instance's defaults and ceilings, shown beside the edition's budget. */
+    /** The instance's budget and ceiling, shown beside the edition's mail switch. */
     public SolverBudgetBounds solverBudgetBounds() {
         return budgetPolicy.bounds();
     }
 
     /**
-     * Saves the edition's solve budget (Solveur page). Not a problem fact and
+     * Saves the edition's end-of-solve mail switch. Not a problem fact and
      * deliberately not tracked by {@link ReferenceDataChangeTracker}: it only
-     * changes how long a solve runs, not the reference data fed to it.
+     * changes what happens after a solve, not the reference data fed to it.
      */
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
-        ParametresValidator.checkParametresSolveur(
-                parametres, repository.getParametresSolveur(), budgetPolicy.bounds());
         repository.saveParametresSolveur(parametres);
         return parametres;
-    }
-
-    /**
-     * Saves the budget a scenario file pins, keeping this edition's mail
-     * switch — a file carries no mail setting. A value above the instance's
-     * ceiling is stored as the file says, and launches run it capped with a
-     * warning: see {@link ParametresValidator#checkImportedParametresSolveur}.
-     */
-    public ParametresSolveur importSolveur(ParametresSolveur parametres) {
-        ParametresValidator.checkImportedParametresSolveur(parametres, budgetPolicy.bounds());
-        ParametresSolveur kept = new ParametresSolveur(
-                parametres.dureeResolutionSecondes(),
-                parametres.plateauSecondes(),
-                repository.getParametresSolveur().mailFinResolution());
-        repository.saveParametresSolveur(kept);
-        return kept;
     }
 
     public ParametresNotifications getNotifications() {
