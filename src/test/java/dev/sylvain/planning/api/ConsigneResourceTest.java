@@ -514,9 +514,12 @@ class ConsigneResourceTest {
                 .containsExactlyInAnyOrder(JOUR + " 12:00:00-16:00:00 true", JOUR + " 18:00:00-20:00:00 true");
 
         // The band shortened by hand on one stand: that plage is no longer the consigne's.
-        for (Map<String, Object> plage : (List<Map<String, Object>>) strat.get("indisponibilites")) {
-            if ("12:00:00".equals(plage.get("heureDebut"))) {
-                plage.put("heureFin", "15:00:00");
+        // Both forms of the fiche say the same thing: « plages » and the deprecated « indisponibilites ».
+        for (String forme : List.of("indisponibilites", "plages")) {
+            for (Map<String, Object> plage : (List<Map<String, Object>>) strat.get(forme)) {
+                if ("12:00:00".equals(plage.get("heureDebut")) && !"OUVERTURE".equals(plage.get("mode"))) {
+                    plage.put("heureFin", "15:00:00");
+                }
             }
         }
         given().header("X-Edition-Id", "E1")
