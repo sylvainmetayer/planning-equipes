@@ -397,6 +397,119 @@ What to take from it:
 - **The direction of the placement weighs on the soft level, not on the rest.** The own soft of `placement-debut` is about eight times lower than `actuel`'s on `festival-hivernal` (-11,560 against -96,235) and `placement-fin`'s equals it: on that scenario, nearly all of the shipped gap is the "late at midday" preference. The direction that costs depends on the scenario: on `scenario-complet` it is `placement-debut` that equals `actuel` (-108,035 against -111,355) and `placement-fin` that falls to -2,055. `sans-placement` lets the shipped soft degrade (for instance -76,820 against -26,815 on `gamme-20`): the preference does act.
 - `gamme-14` (few meals to arbitrate) barely tells the variants apart: feasibility and time are the same, the medium only moves from 4,600 to 5,200 on small numbers, and only the shipped soft shows the preference acting (0 for `actuel`, -3,075 for `sans-placement`).
 
+## The comfort-rules bench
+
+`ComfortRulesBenchTest` measures what merging neighbouring comfort rules would cost, before anybody writes it (the target is about 36 rules, against 40 today). Three pairs are looked at: the two balances (`equilibrerCharge`, medium, and `equilibrerCreneauxPenibles`, soft), the two rules of premium and exhausting stands (`eviterRoulementStandsPremium` and `eviterEnchainementStandsEpuisants`), and the two mismatches of a seat (`appreciationIncompatible` and `experienceRequisePourStandsPremium`, the latter measured alone). `souhaitsIncompatibles`, `standComplexeAvecReferent`, `mineurNecessiteEncadrementMajeur` and the distribution of minors are not candidates. It touches nothing in production: the variants are rule toggles and a weight that carries a rule to another level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+
+```bash
+./mvnw test -Pscenario-tests -Dtest=ComfortRulesBenchTest \
+    -Dbench.scenario=festival-hivernal.yaml -Dbench.engine=hand \
+    -Dbench.seconds=60 -Dbench.seeds=3
+```
+
+The class also launches as a plain `main` on the test classpath. Each solve lasts its whole budget, with no plateau bailout, seeds 0 to 2. The variants are `actuel` (what ships), `sans-penibles` and `sans-charge` (one balance does the work of both), `penibles-medium` (the balance of demanding seats carried to the medium level, weight 1, as one single balance rule would), `sans-roulement`, `sans-enchainement` and `sans-experience-premium` (the rule a merge would absorb, off). Every final plan is scored again under the shipped rules, and the five rules above are read off it one by one: the last column is what each costs in the plan, at its own level (soft for `equilibrerCreneauxPenibles`, medium for the others). A rule at zero has nothing to merge on that scenario: `scenario-complet` and `gamme-24` have neither premium stands nor exhausting stands that touch.
+
+**A merge only passes if it keeps today's penalties exactly.** That is judged on paper before any bench: the same set of tuples, the same weight, hence the same default score.
+
+- `equilibrerCharge` and `equilibrerCreneauxPenibles`: the same shape (`loadBalance` per animateur) but not the same population (every held seat, against the demanding seats only), not the same level (medium, weight 5; soft, weight 1) and not the same per-edition setting. A rule has one level: the soft penalty vanishes or changes level. The default score moves.
+- `eviterRoulementStandsPremium` and `eviterEnchainementStandsEpuisants`: one counts, per premium stand, the faces beyond the crew; the other, the pairs of back-to-back seats of one person on exhausting stands. Neither the tuples nor the grouping key overlap: there is no common form that keeps both penalties.
+- `appreciationIncompatible` and `experienceRequisePourStandsPremium`: one medium point per seat, weight 5 on both sides, over the same stream of seats. A rule with two reasons would keep the default score as it is. What is lost is not in the score: the weight and the switch of each rule, which the organiser sets separately (the administrator's appreciation is the one weighed more heavily).
+
+What the bench adds to the analysis is the price of a merge that would remove a penalty (a `sans-…` variant) or change its level (`penibles-medium`). The plan is scored again under `actuel`'s rules; the gap is the medium under those rules, median of three seeds; a minus sign is a loss of medium. Noise between seeds is of the order of 5%: `gamme-24` gives `actuel` at -37,750 and every other variant at about -32,500, with no explanation for any of it.
+
+Measures of 26 November 2026, an 8-core, 32 GB machine (eight JVMs in parallel), 60 s per solve (30 s for `scenario-complet`), medians of three seeds:
+
+| Scenario | Engine | Variant | Feasible | Time to feasibility | Medium under `actuel`'s rules | Medium gap | Soft under `actuel`'s rules | Cost in the plan (`equilibrerCharge` / `equilibrerCreneauxPenibles` / `eviterRoulementStandsPremium` / `eviterEnchainementStandsEpuisants` / `experienceRequisePourStandsPremium`) |
+|---|---|---|---|---|---|---|---|---|
+| `festival-realiste-canicule` | direct | `actuel` | 3/3 | 1.8 s | -16,590 | +0.0 % | -68,000 | 110 / 1,325 / 630 / 0 / 30 |
+| `festival-realiste-canicule` | direct | `sans-penibles` | 3/3 | 0.6 s | -16,535 | +0.3 % | -66,730 | 110 / 1,750 / 620 / 0 / 45 |
+| `festival-realiste-canicule` | direct | `sans-charge` | 3/3 | 0.5 s | -18,005 | -8.5 % | -35,385 | 1,780 / 2,030 / 460 / 0 / 20 |
+| `festival-realiste-canicule` | direct | `penibles-medium` | 3/3 | 0.5 s | -16,630 | -0.2 % | -73,570 | 110 / 1,045 / 650 / 0 / 40 |
+| `festival-realiste-canicule` | direct | `sans-roulement` | 3/3 | 0.4 s | -18,645 | -12.4 % | -70,450 | 110 / 1,320 / 2,755 / 0 / 20 |
+| `festival-realiste-canicule` | direct | `sans-enchainement` | 3/3 | 0.4 s | -16,565 | +0.2 % | -67,550 | 110 / 1,340 / 610 / 0 / 30 |
+| `festival-realiste-canicule` | direct | `sans-experience-premium` | 3/3 | 0.4 s | -16,955 | -2.2 % | -63,400 | 110 / 1,295 / 605 / 0 / 445 |
+| `festival-realiste-canicule` | Timefold | `actuel` | 3/3 | 15.6 s | -19,360 | +0.0 % | -54,545 | 130 / 1,105 / 1,440 / 0 / 90 |
+| `festival-realiste-canicule` | Timefold | `sans-penibles` | 3/3 | 14.6 s | -19,050 | +1.6 % | -51,370 | 165 / 1,360 / 1,095 / 0 / 120 |
+| `festival-realiste-canicule` | Timefold | `sans-charge` | 3/3 | 13.9 s | -18,750 | +3.2 % | -46,180 | 2,235 / 2,145 / 555 / 0 / 15 |
+| `festival-realiste-canicule` | Timefold | `penibles-medium` | 3/3 | 14.4 s | -19,245 | +0.6 % | -58,590 | 110 / 995 / 1,415 / 0 / 80 |
+| `festival-realiste-canicule` | Timefold | `sans-roulement` | 3/3 | 14.1 s | -20,770 | -7.3 % | -55,955 | 180 / 980 / 3,125 / 0 / 90 |
+| `festival-realiste-canicule` | Timefold | `sans-enchainement` | 3/3 | 13.8 s | -19,175 | +1.0 % | -53,590 | 110 / 1,105 / 1,425 / 0 / 85 |
+| `festival-realiste-canicule` | Timefold | `sans-experience-premium` | 3/3 | 14.1 s | -19,785 | -2.2 % | -54,150 | 150 / 930 / 1,400 / 0 / 500 |
+| `festival-hivernal` | direct | `actuel` | 3/3 | 3.7 s | -25,270 | +0.0 % | -100,475 | 315 / 2,570 / 2,325 / 0 / 15 |
+| `festival-hivernal` | direct | `sans-penibles` | 3/3 | 2.9 s | -25,235 | +0.1 % | -99,870 | 315 / 2,965 / 2,315 / 0 / 10 |
+| `festival-hivernal` | direct | `sans-charge` | 3/3 | 1.8 s | -26,605 | -5.3 % | -93,600 | 3,800 / 3,860 / 1,965 / 0 / 0 |
+| `festival-hivernal` | direct | `penibles-medium` | 3/3 | 2.3 s | -24,915 | +1.4 % | -109,980 | 315 / 2,155 / 2,165 / 0 / 10 |
+| `festival-hivernal` | direct | `sans-roulement` | 3/3 | 2.8 s | -27,490 | -8.8 % | -96,040 | 315 / 2,730 / 4,910 / 0 / 35 |
+| `festival-hivernal` | direct | `sans-enchainement` | 3/3 | 2.5 s | -24,980 | +1.1 % | -96,855 | 315 / 2,565 / 2,150 / 0 / 15 |
+| `festival-hivernal` | direct | `sans-experience-premium` | 3/3 | 2.7 s | -26,345 | -4.3 % | -88,715 | 315 / 2,400 / 2,165 / 0 / 1,605 |
+| `festival-hivernal` | Timefold | `actuel` | 3/3 | 39.6 s | -35,110 | +0.0 % | -91,980 | 315 / 1,065 / 5,240 / 0 / 725 |
+| `festival-hivernal` | Timefold | `sans-penibles` | 3/3 | 36.2 s | -34,020 | +3.1 % | -97,540 | 315 / 1,520 / 4,310 / 0 / 670 |
+| `festival-hivernal` | Timefold | `sans-charge` | 0/3 | never | -27,000 | +23.1 % | -110,660 | 3,820 / 4,335 / 1,390 / 0 / 110 |
+| `festival-hivernal` | Timefold | `penibles-medium` | 3/3 | 36.4 s | -34,990 | +0.3 % | -97,365 | 330 / 905 / 5,295 / 0 / 740 |
+| `festival-hivernal` | Timefold | `sans-roulement` | 3/3 | 41.4 s | -36,350 | -3.5 % | -88,950 | 310 / 1,105 / 7,205 / 0 / 690 |
+| `festival-hivernal` | Timefold | `sans-enchainement` | 3/3 | 38.1 s | -34,815 | +0.8 % | -91,975 | 315 / 1,100 / 5,205 / 0 / 715 |
+| `festival-hivernal` | Timefold | `sans-experience-premium` | 3/3 | 39.4 s | -35,785 | -1.9 % | -94,660 | 330 / 1,040 / 5,295 / 0 / 1,645 |
+| `scenario-complet` | direct | `actuel` | 3/3 | 1.0 s | -18,275 | +0.0 % | -122,610 | 200 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-penibles` | 3/3 | 0.7 s | -18,265 | +0.1 % | -122,865 | 235 / 500 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-charge` | 3/3 | 0.6 s | -19,945 | -9.1 % | -61,550 | 3,290 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `penibles-medium` | 3/3 | 0.7 s | -18,280 | -0.0 % | -123,185 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-roulement` | 3/3 | 0.7 s | -18,240 | +0.2 % | -119,815 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-enchainement` | 3/3 | 0.7 s | -18,235 | +0.2 % | -119,810 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | direct | `sans-experience-premium` | 3/3 | 0.6 s | -18,235 | +0.2 % | -121,415 | 185 / 465 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `actuel` | 3/3 | 18.0 s | -29,520 | +0.0 % | -161,290 | 1,770 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-penibles` | 3/3 | 16.3 s | -28,560 | +3.3 % | -161,310 | 1,780 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-charge` | 3/3 | 16.5 s | -21,405 | +27.5 % | -70,190 | 4,055 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `penibles-medium` | 3/3 | 16.1 s | -28,495 | +3.5 % | -161,315 | 1,760 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-roulement` | 3/3 | 16.3 s | -28,485 | +3.5 % | -161,310 | 1,780 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-enchainement` | 3/3 | 16.3 s | -28,275 | +4.2 % | -161,300 | 1,770 / 0 / 0 / 0 / 0 |
+| `scenario-complet` | Timefold | `sans-experience-premium` | 3/3 | 15.6 s | -28,515 | +3.4 % | -161,305 | 1,770 / 0 / 0 / 0 / 0 |
+| `gamme-20` | direct | `actuel` | 3/3 | 3.0 s | -20,075 | +0.0 % | -43,855 | 435 / 2,775 / 2,000 / 30 / 0 |
+| `gamme-20` | direct | `sans-penibles` | 3/3 | 2.4 s | -20,060 | +0.1 % | -43,700 | 430 / 3,485 / 1,920 / 15 / 0 |
+| `gamme-20` | direct | `sans-charge` | 3/3 | 2.3 s | -20,065 | +0.0 % | -63,080 | 10,130 / 6,045 / 830 / 0 / 0 |
+| `gamme-20` | direct | `penibles-medium` | 3/3 | 2.3 s | -19,630 | +2.2 % | -53,655 | 440 / 1,605 / 1,840 / 20 / 0 |
+| `gamme-20` | direct | `sans-roulement` | 3/3 | 2.3 s | -21,835 | -8.8 % | -47,650 | 350 / 2,430 / 3,530 / 20 / 10 |
+| `gamme-20` | direct | `sans-enchainement` | 3/3 | 2.2 s | -20,030 | +0.2 % | -37,260 | 435 / 2,610 / 1,920 / 265 / 0 |
+| `gamme-20` | direct | `sans-experience-premium` | 3/3 | 2.1 s | -21,800 | -8.6 % | -39,275 | 435 / 2,435 / 2,090 / 20 / 2,430 |
+| `gamme-20` | Timefold | `actuel` | 3/3 | 43.8 s | -38,530 | +0.0 % | -118,705 | 3,250 / 4,695 / 2,290 / 425 / 1,010 |
+| `gamme-20` | Timefold | `sans-penibles` | 3/3 | 42.6 s | -38,600 | -0.2 % | -119,915 | 3,560 / 4,980 / 2,250 / 410 / 870 |
+| `gamme-20` | Timefold | `sans-charge` | 3/3 | 44.2 s | -22,830 | +40.7 % | -86,910 | 9,250 / 6,440 / 950 / 15 / 0 |
+| `gamme-20` | Timefold | `penibles-medium` | 3/3 | 46.2 s | -43,635 | -13.2 % | -124,395 | 3,885 / 5,040 / 2,590 / 435 / 600 |
+| `gamme-20` | Timefold | `sans-roulement` | 3/3 | 46.4 s | -45,330 | -17.6 % | -123,810 | 4,615 / 3,945 / 3,470 / 425 / 940 |
+| `gamme-20` | Timefold | `sans-enchainement` | 3/3 | 45.2 s | -40,790 | -5.9 % | -109,150 | 3,890 / 4,280 / 2,290 / 750 / 760 |
+| `gamme-20` | Timefold | `sans-experience-premium` | 3/3 | 44.5 s | -42,700 | -10.8 % | -122,410 | 4,505 / 4,545 / 2,380 / 315 / 3,130 |
+| `gamme-24` | direct | `actuel` | 3/3 | 3.3 s | -37,750 | +0.0 % | -11,165 | 5,090 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-penibles` | 3/3 | 3.3 s | -37,720 | +0.1 % | -11,220 | 5,135 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-charge` | 3/3 | 2.9 s | -31,465 | +16.6 % | -12,350 | 11,735 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `penibles-medium` | 3/3 | 3.0 s | -33,095 | +12.3 % | -11,850 | 5,030 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-roulement` | 3/3 | 1.6 s | -32,515 | +13.9 % | -12,140 | 5,055 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-enchainement` | 3/3 | 1.6 s | -32,495 | +13.9 % | -12,125 | 4,990 / 0 / 0 / 0 / 0 |
+| `gamme-24` | direct | `sans-experience-premium` | 3/3 | 1.6 s | -32,625 | +13.6 % | -12,090 | 4,975 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `actuel` | 0/3 | never | -38,545 | +0.0 % | -6,135 | 1,690 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-penibles` | 0/3 | never | -39,410 | -2.2 % | -6,250 | 1,845 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-charge` | 0/3 | never | -35,045 | +9.1 % | -8,545 | 12,995 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `penibles-medium` | 2/3 | 42.6 s | -43,090 | -11.8 % | -7,410 | 3,525 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-roulement` | 3/3 | 34.9 s | -43,250 | -12.2 % | -7,655 | 3,510 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-enchainement` | 3/3 | 33.0 s | -43,115 | -11.9 % | -7,680 | 3,495 / 0 / 0 / 0 / 0 |
+| `gamme-24` | Timefold | `sans-experience-premium` | 3/3 | 34.8 s | -43,420 | -12.6 % | -7,615 | 3,525 / 0 / 0 / 0 / 0 |
+
+What we take from it:
+
+- **`eviterRoulementStandsPremium` cannot be removed.** `sans-roulement` loses 12.4% (direct) and 7.3% (Timefold) on the heatwave, 8.8% (direct) on `festival-hivernal`, 8.8% (direct) and 17.6% (Timefold) on `gamme-20`. It is the rule that costs the most when taken away.
+- **`eviterEnchainementStandsEpuisants` weighs little, but not nothing.** It costs nothing in the plan of the two festivals or of `scenario-complet`: the solver already avoids the back-to-back. On `gamme-20` it costs 30 (direct) and 425 (Timefold) in `actuel`'s plan, and removing it loses 5.9% of medium under Timefold. A penalty that exists would vanish: the default score would move.
+- **The balances do not replace one another.** `sans-charge` loses 8.5% and 9.1% (direct) on the heatwave and `scenario-complet`, and `festival-hivernal` finds no feasible plan under Timefold; `penibles-medium` loses 13.2% under Timefold on `gamme-20`. Conversely `sans-penibles` stays within 3.5% everywhere, but its soft penalty exists (2,570 on `festival-hivernal`, direct): the default score would move.
+- **`sans-experience-premium` loses 8.6% (direct) and 10.8% (Timefold) on `gamme-20`**, 4.3% on `festival-hivernal` (direct): the rule is not inert, but a merge with two reasons would not remove it.
+- The losses measured on `gamme-24` and the gain of `sans-charge` under Timefold (+27.5% on `scenario-complet`, +40.7% on `gamme-20`) are noise or search dynamics: a plan that, without a rule, settles elsewhere. No conclusion rests on them. Under Timefold, `gamme-24` does not reach feasibility within 60 s in `actuel`, `sans-penibles` or `sans-charge` (eight JVMs on one machine); the direct engine holds it everywhere.
+
+The 5% rule decided for these measures: a loss of medium beyond 5%, or a default score that moves, and we do not merge. Recommendation for merging the comfort rules:
+
+| Pair | Merge keeps the score? | Worst medium loss measured | Recommendation |
+|---|---|---|---|
+| `equilibrerCharge` + `equilibrerCreneauxPenibles` | no (two levels, two populations) | -13.2% (`penibles-medium`, Timefold, `gamme-20`) | group on screen only: one « load balance » group, two rules |
+| `eviterRoulementStandsPremium` + `eviterEnchainementStandsEpuisants` | no (no common tuple) | -17.6% (`sans-roulement`, Timefold, `gamme-20`) | keep |
+| `appreciationIncompatible` + `experienceRequisePourStandsPremium` | yes, by construction (two reasons, one medium point each) | -10.8% (`sans-experience-premium`, Timefold, `gamme-20`), which does not apply to a merge at equal score | keep: the score would hold, but two organiser settings would disappear |
+
+No pair therefore merges while meeting both criteria: merging the comfort rules removes none of the 40 rules. The differential test and a before/after test on the scenarios would be enough, were the third pair chosen despite the lost setting.
+
 ## The direct engine: two tests that keep the rules in duplicate
 
 `solver/handsearch` writes the 42 rules a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.
