@@ -10,6 +10,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.AlerteService;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.Mail;
@@ -55,6 +57,12 @@ class PublicationResourceTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    JournalNotificationsRepository alertes;
+
+    @Inject
+    AlerteService alerteService;
+
     /**
      * Alice holds a seat and has an address, Bruno holds one without an
      * address, Chloé has an address and no seat: the three cases a publication
@@ -65,6 +73,7 @@ class PublicationResourceTest {
         mailbox.clear();
         forgetPublications();
         persistence.clearDatabase();
+        clearAlerts();
         persistPlan("MAIL-A", "MAIL-B");
         donnerEmail("PUB-A", EMAIL_ALICE);
         donnerEmail("PUB-B", null);
@@ -80,6 +89,15 @@ class PublicationResourceTest {
     @AfterEach
     void nettoyer() {
         forgetPublications();
+    }
+
+    private void clearAlerts() {
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DELETE FROM notification_planifiee");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to clear the alerts", e);
+        }
     }
 
     private void forgetPublications() {
@@ -121,6 +139,53 @@ class PublicationResourceTest {
         assertThat(mailbox.getMailsSentTo(EMAIL_CHLOE)).isEmpty();
 
         assertThat(apercu().getString("dernierePublicationLe")).isNotBlank();
+    }
+
+    /** A 3.x client that still sends {@code exclusions}: nobody is left out, and the answer says so. */
+    @Test
+    void anExclusionsFieldFromA3xClientIsIgnoredWithAWarning() {
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"exclusions\":[\"PUB-A\"]}")
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(rapport.getList("avertissements", String.class))
+                .singleElement()
+                .asString()
+                .contains("« exclusions » n'existe plus")
+                .doesNotContain("PUB-A");
+        assertThat(rapport.getList("differes")).isEmpty();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+    }
+
+    @Test
+    void aPublicationWithoutExclusionsCarriesNoWarning() {
+        assertThat(publier().getList("avertissements")).isEmpty();
+    }
+
+    /** V160's alert is one open question for the whole edition: the first publication closes it. */
+    @Test
+    void theFirstPublicationClosesTheRetiredExclusionAlert() {
+        alertes.claim(
+                JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE,
+                "PUB-A",
+                "PUB-A",
+                "Exclusion de publication retirée en 4.0.",
+                JournalNotificationsRepository.Severite.WARNING);
+        assertThat(alerteService.alertes(null))
+                .filteredOn(alerte -> "EXCLUSION_PUBLICATION_RETIREE".equals(alerte.type()))
+                .hasSize(1);
+
+        publier();
+
+        assertThat(alerteService.alertes(null))
+                .filteredOn(alerte -> "EXCLUSION_PUBLICATION_RETIREE".equals(alerte.type()))
+                .isEmpty();
     }
 
     @Test

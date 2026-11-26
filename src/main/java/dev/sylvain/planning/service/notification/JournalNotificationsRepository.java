@@ -190,6 +190,22 @@ public class JournalNotificationsRepository {
     }
 
     /**
+     * Closes every {@code type} alert of this edition at once: the fact it
+     * announced is settled for all of them (see
+     * {@link Type#EXCLUSION_PUBLICATION_RETIREE}, closed by the first
+     * publication). Only for a type whose rows are one open question.
+     */
+    public void releaseAll(Type type) {
+        scope.write("Failed to close the scheduled notification alerts", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "DELETE FROM notification_planifiee WHERE edition_id = ? AND type = ?")) {
+                ps.setString(2, type.name());
+                ps.executeUpdate();
+            }
+        });
+    }
+
+    /**
      * The alerts of this edition, newest first, capped <b>per type</b> so that
      * one noisy kind cannot starve another.
      *

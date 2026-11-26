@@ -21,7 +21,7 @@ Ce que ces écrans changent pendant l'événement est raconté dans [le jour J d
 
 Si les premiers candidats évalués ne conviennent pas, « Chercher plus loin » poursuit jusqu'à trouver quelqu'un, ou dit que personne ne peut tenir la place sans enfreindre une règle impérative.
 
-Le créneau en cours se répare aussi : le siège est coupé à l'heure qu'il est, ce qui a été tenu reste au nom de l'absent, le reste du créneau est remplacé.
+Une absence marquée apparaît sous « Absences du jour » et reste annulable, même avant toute publication (sans planning publié, toutes les absences de la journée sont listées). Le créneau en cours se répare aussi : le siège est coupé à l'heure qu'il est, ce qui a été tenu reste au nom de l'absent, le reste du créneau est remplacé.
 
 Les places ouvertes depuis ce matin sont distinguées des trous déjà connus à la publication.
 
