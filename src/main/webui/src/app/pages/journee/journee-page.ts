@@ -13,15 +13,12 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, ParamMap, RouterLink } from '@angular/router';
 import { reglagesAvances } from '../../core/reglages-avances';
 import { ReglagesAvancesToggle } from '../../shared/reglages-avances';
 import { AnalysesApi } from '../../core/api/analyses-api';
-import { ReferenceChangementsParam } from '../../core/api/journees-api';
 import { dayNavigation } from '../../core/day-navigation';
 import { errorPrefix } from '../../core/error-message';
 import {
@@ -50,9 +47,6 @@ import { CalendarDayView, FiltreSieges, readFiltreSieges } from '../calendar-day
 import { readInstant } from '../carte-jour/carte-jour';
 import { CarteJourView } from '../carte-jour/carte-jour-vue';
 import { PorteeCharge, readPorteeCharge } from '../carte-jour/charge-emplacement';
-import { PausesView } from '../pauses/pauses-vue';
-import { ChangementsReading, readReading, readReference } from './changements';
-import { ChangementsView } from './changements-vue';
 import { ConsigneLigne } from './consigne-ligne';
 import { MiniMois } from './mini-mois';
 import { RelectureBarre } from './relecture-barre';
@@ -74,27 +68,22 @@ import {
 import { PlanningPersonneView } from '../planning-personne/planning-personne-vue';
 import { GridSpan, readGridSpan } from '../planning-grille/jours-grille';
 import { TRI_NOM } from '../planning-grille/planning-grille';
-import { PlanningTypologieView } from '../planning-typologie/planning-typologie-vue';
 import { RepartitionHeuresView } from '../repartition-heures/repartition-heures-vue';
-import { ComparaisonView } from './comparaison-vue';
 import {
-  isComparable,
   JourEvenement,
   dayKey,
-  defaultComparisonDay,
   JourneeView,
-  jourSemaineVoisine,
-  PlanningAxe,
+  PlanningView,
   readAxe,
   requestedKey,
   jourDemande,
   jourInconnu,
   planningDays,
+  readRendu,
   readView,
   viewParams,
   tabOf,
-  JourneeTab,
-  resolveComparison,
+  PlanningAxe,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
@@ -110,6 +99,21 @@ const TREEMAP_KEYS_CLEARED = {
   semaine: null,
   jourTreemap: null,
   zoom: null,
+} as const;
+
+/**
+ * The 3.x keys the page reads no more, or reads once: `axe` is rewritten into
+ * `vue`, the others belonged to the views 4.0 removed. Left in the address, a
+ * stale `axe=stand` would bring the grid back on the next reload of « Jour ».
+ */
+const RETIRED_KEYS_CLEARED = {
+  axe: null,
+  comparer: null,
+  ecarts: null,
+  relais: null,
+  repas: null,
+  reference: null,
+  lecture: null,
 } as const;
 
 /** Which of the bar's five filters a rendering reads. */
@@ -138,28 +142,20 @@ const NO_FILTER: ShownFilters = {
 
 /**
  * The filters each rendering honours. The two grids and the table read all
- * five; the treemap reads the location alone, the game-category axis its
- * category and the name; the day's other renderings — the comparison
- * included — the name, the stand and the animateur; the map the stand alone.
+ * five; the treemap reads the location alone; the rail the name, the stand and
+ * the animateur; the map the stand alone.
  */
-function filtersShown(
-  axe: PlanningAxe,
-  standView: StandView,
-  view: JourneeView,
-  comparing: boolean,
-): ShownFilters {
+function filtersShown(axe: PlanningAxe, standView: StandView, view: JourneeView): ShownFilters {
   switch (axe) {
     case 'stand':
       return standView === 'treemap' ? { ...NO_FILTER, emplacement: true } : EVERY_FILTER;
     case 'personne':
       return EVERY_FILTER;
-    case 'typologie':
-      return { ...NO_FILTER, name: true, typologie: true };
     default:
       if (view === 'carte') {
         return { ...NO_FILTER, stand: true };
       }
-      return view === 'calendrier' && !comparing
+      return view === 'calendrier'
         ? EVERY_FILTER
         : { ...NO_FILTER, name: true, stand: true, animateur: true };
   }
@@ -184,8 +180,8 @@ interface Option {
 /**
  * « Planning » (issue #712, the former Journée): one day of the persisted plan
  * under four views — « Jour », in two modes: the rail animateur by animateur
- * (the default) or the table stands × timeslots —, the map hour by hour, the breaks and meals, what changed since a
- * reference — with the plan at the top: the title on one line, the day chosen
+ * (the default) or the table stands × timeslots —, « Stand » and « Personne »
+ * (the event's days laid out as grids), and the map hour by hour — with the plan at the top: the title on one line, the day chosen
  * on a foldable month, the stand and animateur filters as autocompletes, the
  * relecture as four chips that narrow the rendering, the consigne in a line,
  * « Imprimer » and « Afficher sur la TV ». Everything is carried by the URL.
@@ -204,10 +200,8 @@ interface Option {
     StatusMessage,
     MatButtonModule,
     MatButtonToggleModule,
-    MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
-    MatSelectModule,
     RouterLink,
     NewWindowLink,
     TableFilter,
@@ -215,14 +209,10 @@ interface Option {
     MiniMois,
     RelectureBarre,
     ConsigneLigne,
-    ChangementsView,
-    ComparaisonView,
     CalendarDayView,
     RailJourView,
-    PausesView,
     PlanningStandView,
     PlanningPersonneView,
-    PlanningTypologieView,
     RepartitionHeuresView,
     SeatPanel,
     // Rendered inside a `@defer` block only: `leaflet` travels with this
@@ -283,14 +273,9 @@ export class JourneePage implements OnInit {
   protected readonly lignesRail = signal<RailVue>('tous');
   protected readonly instantCarte = signal<number | null>(null);
   protected readonly chargeCarte = signal<PorteeCharge>('jour');
-  protected readonly withoutRelais = signal(false);
-  protected readonly coupuresManquantes = signal(false);
   protected readonly seulementProblemes = signal(false);
   /** The table's seat filter, set by the relecture chips (`sieges`). */
   protected readonly sieges = signal<FiltreSieges>('tous');
-  /** The Changements rendering's own state: the reference nobody chose stays null, the server picks. */
-  protected readonly referenceChangements = signal<ReferenceChangementsParam | null>(null);
-  protected readonly lectureChangements = signal<ChangementsReading>('vacations');
 
   protected readonly jours = computed<JourEvenement[]>(() =>
     planningDays(this.planning()?.postes ?? []),
@@ -318,63 +303,6 @@ export class JourneePage implements OnInit {
     const premier = this.jours()[0];
     return courant && premier && courant.key !== premier.key ? courant.key : null;
   });
-
-  /*
-   * The comparison mode: a second day, named by the `comparer` param in the
-   * same key format as `date`. It shows on the calendar and the rail only;
-   * the three other renderings stay on one day and keep the param for the
-   * way back.
-   */
-  /** The key the URL or the second selector asked for, as given; null out of the comparison. */
-  protected readonly comparerDemande = signal<string | null>(null);
-  private readonly comparaison = computed(() =>
-    resolveComparison(this.jours(), this.jourCourant(), this.comparerDemande()),
-  );
-  /** The second day, when it names a day of the plan other than the one on screen. */
-  protected readonly jourCompare = computed(() => this.comparaison().jour);
-  /** True when the rendering on screen can compare. */
-  protected readonly comparableView = computed(
-    () => this.axe() === 'jour' && isComparable(this.view()),
-  );
-  /** True when two days are on screen: the renderings, and their drag and drop, give way to the comparison. */
-  protected readonly comparaisonActive = computed(
-    () => this.comparableView() && this.jourCompare() !== null,
-  );
-  /** Why the requested second day was set aside — said once the plan is known, never guessed before. */
-  protected readonly comparaisonIgnoree = computed(() => {
-    if (this.jours().length === 0) {
-      return '';
-    }
-    switch (this.comparaison().refus) {
-      case 'identique':
-        return $localize`:@@journee.comparaison.ignoree.identique:Comparaison ignorée : le jour demandé est celui déjà affiché.`;
-      case 'inconnu':
-        return $localize`:@@journee.comparaison.ignoree.inconnu:Comparaison ignorée : ce jour n'existe pas dans le planning.`;
-      default:
-        return '';
-    }
-  });
-  /** What the `comparer` param carries: the resolved key, or the request as given until the plan says. */
-  private readonly comparerParam = computed(() => {
-    const demande = this.comparerDemande();
-    if (demande === null || this.jours().length === 0) {
-      return demande;
-    }
-    return this.jourCompare()?.key ?? demande;
-  });
-  /** « Même jour, semaine précédente / suivante », when the event holds it. */
-  protected readonly semainePrecedente = computed(() =>
-    jourSemaineVoisine(this.jours(), this.jourCourant(), -1),
-  );
-  protected readonly semaineSuivante = computed(() =>
-    jourSemaineVoisine(this.jours(), this.jourCourant(), 1),
-  );
-  /** The days the second selector offers: all but the one on screen. */
-  protected readonly joursComparables = computed(() =>
-    this.jours().filter((jour) => jour.key !== this.jourCourant()?.key),
-  );
-  /** « Seulement les différences » of the comparison (`ecarts`). */
-  protected readonly seulementEcarts = signal(false);
 
   protected readonly stands = computed<Option[]>(() => {
     const options = new Map<string, string>();
@@ -476,7 +404,7 @@ export class JourneePage implements OnInit {
    * does. A hidden filter keeps its value, for the rendering that reads it.
    */
   protected readonly shownFilters = computed<ShownFilters>(() =>
-    filtersShown(this.axe(), this.standView(), this.view(), this.comparaisonActive()),
+    filtersShown(this.axe(), this.standView(), this.view()),
   );
 
   /** The autocompletes speak in lists of ids; the page keeps one id, or none. */
@@ -489,17 +417,19 @@ export class JourneePage implements OnInit {
     this.typologie() ? [this.typologie()] : [],
   );
 
-  /** What the `vue` param carries: the rendering of the axis on screen, nothing on its default. */
-  private readonly viewParam = computed(() => {
+  /** What the `vue` param carries: the grid on screen, or the day's view (nothing on the rail). */
+  private readonly viewParam = computed(() =>
+    this.axe() === 'jour' ? viewParams(this.view()).vue : this.axe(),
+  );
+  /** What the `rendu` param carries: the rendering of the grid on screen, nothing on its default. */
+  private readonly renduParam = computed(() => {
     switch (this.axe()) {
       case 'stand':
         return this.standView() === 'grille' ? null : this.standView();
       case 'personne':
         return this.personView() === 'grille' ? null : this.personView();
-      case 'typologie':
-        return null;
       default:
-        return viewParams(this.view()).vue;
+        return null;
     }
   });
   /** What the `mode` param carries, in the day's view: the table; nothing on the rail. */
@@ -558,14 +488,8 @@ export class JourneePage implements OnInit {
       this.lignesRail() !== 'tous' ||
       this.instantCarte() !== null ||
       this.chargeCarte() !== 'jour' ||
-      this.withoutRelais() ||
-      this.coupuresManquantes() ||
       this.seulementProblemes() ||
-      this.sieges() !== 'tous' ||
-      this.seulementEcarts() ||
-      this.comparerDemande() !== null ||
-      this.referenceChangements() !== null ||
-      this.lectureChangements() !== 'vacations',
+      this.sieges() !== 'tous',
   );
 
   /**
@@ -646,14 +570,8 @@ export class JourneePage implements OnInit {
     this.lignesRail.set(RailJourView.readLignes(params.get('lignes')));
     this.instantCarte.set(readInstant(params.get('t')));
     this.chargeCarte.set(readPorteeCharge(params.get('charge')));
-    this.withoutRelais.set(params.get('relais') === 'sans');
-    this.coupuresManquantes.set(params.get('repas') === 'manquantes');
     this.seulementProblemes.set(params.get('problemes') === '1');
     this.sieges.set(readFiltreSieges(params.get('sieges')));
-    this.referenceChangements.set(readReference(params.get('reference')));
-    this.lectureChangements.set(readReading(params.get('lecture')));
-    this.comparerDemande.set(params.get('comparer') || null);
-    this.seulementEcarts.set(params.get('ecarts') === '1');
     // Every key of the screen, written by the one component that is always
     // mounted. The renderings hold their own state through `model()`, but a
     // rendering only writes while it is on screen: leaving the rail on
@@ -663,10 +581,11 @@ export class JourneePage implements OnInit {
     // `jour`, the key of the four former screens, is retired once the day is
     // known by its date.
     keepViewInQueryParams(() => ({
-      axe: this.axe() === 'jour' ? null : this.axe(),
+      ...RETIRED_KEYS_CLEARED,
       date: this.dateParam(),
       jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
       vue: this.viewParam(),
+      rendu: this.renduParam(),
       mode: this.modeParam(),
       densite: this.densiteParam(),
       portee: this.gridSpanParam(),
@@ -680,14 +599,8 @@ export class JourneePage implements OnInit {
       lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
       t: this.instantCarte() === null ? null : String(this.instantCarte()),
       charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
-      relais: this.withoutRelais() ? 'sans' : null,
-      repas: this.coupuresManquantes() ? 'manquantes' : null,
       problemes: this.seulementProblemes() ? '1' : null,
       sieges: this.sieges() === 'tous' ? null : this.sieges(),
-      reference: this.referenceChangements(),
-      lecture: this.lectureChangements() === 'vacations' ? null : this.lectureChangements(),
-      comparer: this.comparerParam(),
-      ecarts: this.seulementEcarts() ? '1' : null,
       siege: this.openSeatId(),
       creneau: this.creneauParam(),
       // The treemap writes its own keys while it is on screen; once it is
@@ -715,24 +628,6 @@ export class JourneePage implements OnInit {
       sansRepos: personne && this.noRestOnly() ? '1' : null,
       source: personne ? this.hoursSource() : null,
     };
-  }
-
-  /** « Comparer avec… »: opens the second selector on the likeliest twin of the day on screen. */
-  protected openComparison(): void {
-    const jour = defaultComparisonDay(this.jours(), this.jourCourant());
-    if (jour) {
-      this.comparerDemande.set(jour.key);
-    }
-  }
-
-  protected compareWith(key: string): void {
-    this.comparerDemande.set(key);
-  }
-
-  /** Back to one day: the renderings, and their drag and drop, return. */
-  protected quitterComparaison(): void {
-    this.comparerDemande.set(null);
-    this.seulementEcarts.set(false);
   }
 
   /**
@@ -867,18 +762,28 @@ export class JourneePage implements OnInit {
     this.view.set(view);
   }
 
-  /** The mode « Jour » was left in: coming back from the map, the breaks or the changes restores it. */
+  /** The mode « Jour » was left in: coming back from the map or a grid restores it. */
   private dayMode: JourneeView = 'rail';
 
+  /** The view toggle's value: the grid on screen, else « Jour » or the map. */
+  protected readonly currentView = computed<PlanningView>(() =>
+    this.axe() === 'jour' ? tabOf(this.view()) : this.axe(),
+  );
+
   /** The view toggle: « Jour » comes back in the mode it was left in, the rail at first. */
-  protected changeTab(vue: JourneeTab): void {
-    if (vue === this.currentTab()) {
+  protected selectView(view: PlanningView): void {
+    if (view === this.currentView()) {
       return;
     }
-    if (this.currentTab() === 'jour') {
+    if (this.currentView() === 'jour') {
       this.dayMode = this.view();
     }
-    this.view.set(vue === 'jour' ? this.dayMode : vue);
+    if (view === 'stand' || view === 'personne') {
+      this.axe.set(view);
+      return;
+    }
+    this.axe.set('jour');
+    this.view.set(view === 'jour' ? this.dayMode : 'carte');
   }
 
   protected choisirStand(ids: string[]): void {
@@ -894,18 +799,19 @@ export class JourneePage implements OnInit {
   }
 
   /**
-   * The axis and the rendering an address names. One `vue` key, read by the
-   * axis it lands on: the other axes keep their own.
+   * The view an address names: `vue` (`jour`, `stand`, `personne`, `carte`) and
+   * the day's `mode`, or the 3.x `axe`. A grid's own rendering is `rendu`, or
+   * the 3.x `vue` of that axis; the other axes keep theirs.
    */
   private readRendering(query: ParamMap): void {
-    this.axe.set(readAxe(query.get('axe')));
-    const requestedView = query.get('vue');
+    this.axe.set(readAxe(query.get('vue'), query.get('axe')));
+    const rendu = readRendu(query);
     if (this.axe() === 'stand') {
-      this.standView.set(readStandView(requestedView));
+      this.standView.set(readStandView(rendu));
     } else if (this.axe() === 'personne') {
-      this.personView.set(readPersonView(requestedView ?? impliedPersonView(query)));
-    } else if (this.axe() === 'jour') {
-      this.view.set(readView(requestedView, query.get('mode')));
+      this.personView.set(readPersonView(rendu ?? impliedPersonView(query)));
+    } else {
+      this.view.set(readView(query.get('vue'), query.get('mode')));
     }
   }
 
@@ -948,13 +854,8 @@ export class JourneePage implements OnInit {
     }
   }
 
-  /** Another axis: the filters, the day and the open seat stay, each axis keeps its own view. */
-  protected changeAxe(axe: PlanningAxe): void {
-    this.axe.set(axe);
-  }
-
   /**
-   * A cell of a grid was opened: the page moves to its day — so « Par jour »
+   * A cell of a grid was opened: the page moves to its day — so « Jour »
    * lands there — and opens the Siège panel on its seat.
    */
   protected openSeatOnDay(request: { posteId: string; jour: string }): void {
@@ -962,7 +863,7 @@ export class JourneePage implements OnInit {
     this.openSeat({ posteId: request.posteId });
   }
 
-  /** A tile of the treemap: that stand, on « Par jour », on the treemap's day when it had one. */
+  /** A tile of the treemap: that stand, on « Jour », on the treemap's day when it had one. */
   protected openStand(demande: { standId: string; date: string | null }): void {
     this.stand.set(demande.standId);
     if (demande.date) {
@@ -970,13 +871,6 @@ export class JourneePage implements OnInit {
     }
     this.view.set('calendrier');
     this.axe.set('jour');
-  }
-
-  /** The seats or hours of a game category: « Par stand », narrowed to it. */
-  protected showCategoryStands(typologie: string): void {
-    this.typologie.set(typologie);
-    this.standView.set('grille');
-    this.axe.set('stand');
   }
 
   protected choisirAnimateur(ids: string[]): void {
@@ -1013,13 +907,7 @@ export class JourneePage implements OnInit {
     this.lignesRail.set('tous');
     this.instantCarte.set(null);
     this.chargeCarte.set('jour');
-    this.withoutRelais.set(false);
-    this.coupuresManquantes.set(false);
     this.seulementProblemes.set(false);
     this.sieges.set('tous');
-    this.comparerDemande.set(null);
-    this.seulementEcarts.set(false);
-    this.referenceChangements.set(null);
-    this.lectureChangements.set('vacations');
   }
 }

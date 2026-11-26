@@ -88,7 +88,7 @@ L'écran de la salle de contrôle (`/mural/:jeton`) lit `GET /api/mural/{token}`
 - « Maintenant » est l'heure du serveur, et la journée suit la règle ci-dessus : à 1h, la vacation 22h-2h est encore celle de la veille, et en cours.
 - Toute la journée voyage, pas seulement la vacation en cours et la suivante : l'écran les choisit contre `now`, avancé du temps écoulé depuis la lecture, si bien qu'une vacation se termine à sa minute sans attendre la lecture suivante. `?impression=1` montre la journée entière.
 - Une vacation regroupe les sièges d'un stand qui partagent la même fenêtre effective ; une fin qui n'est pas après le début tombe le lendemain.
-- Les alertes sont les places libres d'une vacation en cours ou qui commence dans les deux heures, et les pauses sans relais du jour pas encore finies, lues dans le même rapport que l'écran Pauses.
+- Les alertes sont les places libres d'une vacation en cours ou qui commence dans les deux heures, et les pauses sans relais du jour pas encore finies, lues dans le rapport des pauses.
 - Une consigne « jusqu'à minuit » n'a pas de fin : `closedUntil` est `null` et l'écran écrit « minuit ».
 - Un lien restreint à des emplacements le reste : si ces emplacements sont supprimés, l'écran n'affiche plus rien, jamais toute l'édition sans prévenir.
 - `lastAccessAt` est tamponné au plus une fois par minute : il dit qu'un écran lit, pas combien de fois.

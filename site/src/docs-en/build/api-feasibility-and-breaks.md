@@ -84,7 +84,7 @@ The same read serves the individual schedule: `pauses[]` of `GET /api/espace-ani
 
 ## Meal logistics
 
-`GET /api/pauses/intendance` is the same read, counted instead of named: per day and per window, how many people are on break, hour by full hour and by location. The "Breaks and meals" rendering of the Planning page says who goes out and when; this one says how many meals to prepare and where to take them.
+`GET /api/pauses/intendance` is the same read, counted instead of named: per day and per window, how many people are on break, hour by full hour and by location. The breaks report (`GET /api/pauses`) says who goes out and when; this one says how many meals to prepare and where to take them.
 
 - `journees[].fenetres[]`: one table per declared window, with `tranches[]` (start of each band, aligned on the hour and not on the start of the window: 12:15-13:45 reads 12-13 then 13-14, the width being `pasMinutes`), `emplacements[]` and the totals.
 - `emplacements[].personnes[]` and `mineurs[]`: one count per band. `total` counts the distinct people of the window, never the sum of `personnes[]`, which counts someone once per hour their break crosses.

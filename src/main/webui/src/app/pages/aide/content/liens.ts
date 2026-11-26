@@ -41,9 +41,9 @@ export const lienFragilite = (): HelpLink => ({
 });
 
 export const lienPauses = (): HelpLink => ({
-  route: '/journee',
-  queryParams: { vue: 'pauses' },
-  label: $localize`:@@aide.link.pauses:Pauses et repas`,
+  route: '/diagnostic',
+  queryParams: { onglet: 'problemes' },
+  label: $localize`:@@aide.link.pausesProblemes:Pauses sans relais (Problèmes)`,
 });
 
 export const lienHoraires = (): HelpLink => ({

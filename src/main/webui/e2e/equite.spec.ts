@@ -27,7 +27,7 @@ test("l'écran Équité mène au planning par personne, avec ses colonnes et sa 
 }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/equite');
-  await expect(page).toHaveURL(/\/journee\?.*axe=personne/);
+  await expect(page).toHaveURL(/\/journee\?.*vue=personne/);
   await expect(page.locator(NOMS)).toHaveText([/Alice E2E/, /Bruno E2E/]);
   await expect(page.locator('.planning-grille thead')).toContainText('Écart méd.');
   // The one evening of the application, read on the legal parameters.
@@ -59,7 +59,7 @@ test('le filtre par nom se restaure au rechargement et se vide en une action', a
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=personne');
+  await page.goto('/journee?vue=personne');
   await page.getByLabel('Filtrer par nom').fill('Alice');
   const noms = page.locator(NOMS);
   await expect(noms).toHaveText([/Alice E2E/]);
@@ -77,7 +77,7 @@ test('le filtre par nom se restaure au rechargement et se vide en une action', a
 
 test("l'export CSV d'équité répond avec une ligne par animateur", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=personne');
+  await page.goto('/journee?vue=personne');
   await expect(page.locator(NOMS)).toHaveCount(2);
 
   const telechargement = page.waitForEvent('download');
@@ -114,7 +114,7 @@ test('un clic sur un animateur ouvre sa fiche, son planning déplié et son rada
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=personne');
+  await page.goto('/journee?vue=personne');
 
   await page
     .locator(NOMS)
