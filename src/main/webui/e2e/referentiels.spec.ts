@@ -373,6 +373,37 @@ test.describe('horaires de stand', () => {
     await page.context().close();
   });
 
+  test('la fiche montre le modèle et les plages, et on y ajoute puis retire une plage à la main', async ({
+    browser,
+  }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto(`/stands/${standModeleId}`);
+
+    // The model on top, editable: the rule the stand keeps.
+    const modele = page.locator('#stand-section-modele');
+    await expect(modele.getByLabel('Fenêtres de la journée')).toHaveValue('10:00-');
+
+    // Below, the plages: the dated opening typed at creation is marked « saisie ».
+    const plages = page.locator('#stand-section-plages');
+    const lignes = plages.locator('tbody tr');
+    await expect(lignes).toHaveCount(1);
+    await expect(lignes.filter({ hasText: 'Inauguration' })).toContainText('saisie');
+
+    // A plage typed by hand, then removed.
+    const ajout = plages.locator('.stand-plage-ajout');
+    await ajout.getByLabel('Date').fill(SEED.jour);
+    await ajout.getByLabel('Début').fill('14:00');
+    await ajout.getByLabel('Fin').fill('15:00');
+    await ajout.getByRole('button', { name: 'Ajouter la plage' }).click();
+    await expect(lignes).toHaveCount(2);
+    const ajoutee = lignes.filter({ hasText: '14:00' });
+    await expect(ajoutee).toContainText('saisie');
+    await ajoutee.getByRole('button', { name: 'Retirer cette plage' }).click();
+    await expect(lignes).toHaveCount(1);
+
+    await page.context().close();
+  });
+
   test('la modification en masse applique les horaires d’un stand modèle à la sélection', async ({
     browser,
   }) => {

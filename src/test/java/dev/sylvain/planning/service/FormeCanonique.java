@@ -180,6 +180,8 @@ public final class FormeCanonique {
         for (Class<?> type = valeur.getClass(); type != null && type != Object.class; type = type.getSuperclass()) {
             for (Field champ : type.getDeclaredFields()) {
                 if (!Modifier.isStatic(champ.getModifiers())
+                        // Transient = bookkeeping of a request body, not state of the entity.
+                        && !Modifier.isTransient(champ.getModifiers())
                         && !champ.isSynthetic()
                         && !VOLATILES.contains(champ.getName())) {
                     champs.add(champ);

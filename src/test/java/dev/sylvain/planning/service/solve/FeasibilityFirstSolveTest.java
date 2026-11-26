@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  */
 class FeasibilityFirstSolveTest {
 
-    private static final String HARD_RUN_RULE = "maxJoursConsecutifsTravaillesDur";
+    private static final String RUN_RULE = "maxJoursConsecutifsTravailles";
     private static final LocalDate MONDAY = LocalDate.of(2026, 7, 6);
 
     private final Stand stand = new Stand("S", "Stand", Set.of(), 1, 2, false);
@@ -55,9 +55,8 @@ class FeasibilityFirstSolveTest {
         assertThat(FeasibilityFirstSolve.applies(prepared(List.of(), publication)))
                 .as("a published plan, the stability rule as it ships")
                 .isTrue();
-        assertThat(FeasibilityFirstSolve.applies(
-                        prepared(List.of(new ConstraintToggle(HARD_RUN_RULE, true)), publication)))
-                .as("the hard run of days changes nothing to it")
+        assertThat(FeasibilityFirstSolve.applies(prepared(List.of(new ConstraintToggle(RUN_RULE, false)), publication)))
+                .as("the run of days changes nothing to it")
                 .isTrue();
         assertThat(FeasibilityFirstSolve.applies(prepared(List.of(), List.of())))
                 .as("nothing published: no price to suspend")

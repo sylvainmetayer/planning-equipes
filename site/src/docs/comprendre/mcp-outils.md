@@ -50,9 +50,11 @@ Une grille est faite de vacations et ne se demande plus en mode : un créneau es
 
 Un seul générateur produit la grille en lot ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)) : `previsualiser_generateur_creneaux` montre ce qu'il produirait et contrôle la grille obtenue, `appliquer_generateur_creneaux` l'écrit, avec les mêmes arguments et une `source`. `stands` découpe la grille que les horaires des stands impliquent (une coupure à chaque heure où un stand ouvre ou ferme), en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle ; `recurrence` ajoute des fenêtres répétées sur des dates ; `gabarits` applique le calendrier des gabarits ; `grille` lit les gabarits que la grille implique. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
 
-Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `ajouter_horaire_stand` d'une règle identique à une règle existante ne change rien ; `effacer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`ajouter_fermeture_stand`, `ajouter_ouverture_stand`).
+Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `creer_horaire_stand` d'une règle identique à une règle existante ne change rien ; `supprimer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`creer_plage_stand`).
 
-Une fenêtre d'ouverture (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
+Les plages datées d'un stand figurent dans `consulter_stand` et `lister_stands` sous `plages` (identifiant, mode, jour, heures, effectif, et `depliee` : dépliée du modèle ou saisie à la main). `creer_plage_stand` en pose une, ouverture ou fermeture (`mode`) ; `supprimer_plage_stand` en retire une (`plageId`) ou toutes celles d'un jour (`date`). Les trois écritures de plages sont refusées pendant un calcul et quand la phase de l'édition fige les stands.
+
+Une fenêtre d'ouverture (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
 
 Les gabarits sont les journées types de la 3.x. `modifier_gabarit` crée ou remplace un gabarit par son nom et ses vacations sur une ligne (« 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », `R` marquant un relais repas aux sièges divisés par deux), et le pose sur une plage ou des dates ; `supprimer_gabarit` retire un gabarit, ou seulement des dates du calendrier. Rien de cela n'écrit un créneau : `appliquer_generateur_creneaux` avec la source `gabarits` le fait, après l'aperçu. `lister_gabarits` rend les dates en écart ou sous consigne, que l'application ne touche pas ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
@@ -102,6 +104,10 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
 | `affecter_journee_type` | `modifier_gabarit` |
+| `ajouter_fermeture_stand` | `creer_plage_stand` |
+| `ajouter_horaire_stand` | `creer_horaire_stand` |
+| `ajouter_ouverture_stand` | `creer_plage_stand` |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
@@ -113,12 +119,15 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `consulter_parametres_solveur` | `consulter_parametres` |
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
 | `definir_journee_type` | `modifier_gabarit` |
+| `effacer_horaires_stand` | `supprimer_horaires_stand` |
+| `effacer_plages_stand` | `supprimer_plage_stand` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_journees_types` | `lister_gabarits` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `materialiser_journees_types` | `appliquer_generateur_creneaux` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
@@ -132,6 +141,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x ([ADR 0100](repo:docs/de
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `restaurer_instantane` | `restaurer_version` |
 | `retirer_dates_journee_type` | `supprimer_gabarit` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |

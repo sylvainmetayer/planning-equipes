@@ -26,7 +26,7 @@ import java.util.Arrays;
  *   <li>the sorted seats of one animateur — {@link #eval};</li>
  *   <li>a count shared by a line, a stand, a timeslot or the whole plan —
  *       {@link #lineCost}, {@link #standCost}, {@link #slotCost},
- *       {@link #forcedCost}, {@link #balance}, kept by {@link #set};</li>
+ *       {@link #balance}, kept by {@link #set};</li>
  *   <li>one animateur's cost reading somebody else's seats — a relayed break,
  *       the adult a minor needs, an ad hoc pair: {@link #set} then re-reads
  *       whoever depends on the seat that moved.</li>
@@ -77,7 +77,7 @@ final class IncrementalScore {
     /** Set while a candidate is only being weighed: the others it would touch are not re-read. */
     boolean alone;
 
-    // shared counts: per line, per premium stand, per timeslot, per forced assignment, and the two balances
+    // shared counts: per line, per premium stand, per timeslot, and the two balances
     private long shared;
     private long sharedHard;
     private long globalHard;
@@ -102,7 +102,6 @@ final class IncrementalScore {
     private final int[] crAhead;
     private final int[][] standCount;
     private final int[][] polyvalentCount;
-    private final int[] fSat;
     private final int[] succHeld;
     /** Breaks each animateur owes: somebody owing none cannot gain or lose a relay. */
     private final int[] dues;
@@ -188,7 +187,6 @@ final class IncrementalScore {
         crOcc = new int[flat.nSlots];
         crAhead = new int[flat.nSlots];
         polyvalentCount = new int[flat.nSlots][flat.polyvalentTotal == 0 ? 0 : nA];
-        fSat = new int[flat.fExempt.length];
         succHeld = new int[nS];
         dFrom = new int[flat.nDays];
         dTo = new int[flat.nDays];
@@ -315,16 +313,8 @@ final class IncrementalScore {
                 : 0;
     }
 
-    private long forcedCost(int f) {
-        return fSat[f] == 0 && !flat.fExempt[f] ? cost(Rule.AFFECTATION_FORCEE, 1) : 0;
-    }
-
     private long local(int s) {
-        long c = lineCost(flat.sLine[s]) + standCost(flat.sStand[s]) + slotCost(flat.sSlot[s]);
-        for (int f : flat.forcedScope[s]) {
-            c += forcedCost(f);
-        }
-        return c;
+        return lineCost(flat.sLine[s]) + standCost(flat.sStand[s]) + slotCost(flat.sSlot[s]);
     }
 
     private long balance(Rule rule, long squares, long seats, int people, long ahead) {
@@ -382,9 +372,6 @@ final class IncrementalScore {
         }
         for (int cr = 0; cr < flat.nSlots; cr++) {
             c += slotCost(cr);
-        }
-        for (int f = 0; f < fSat.length; f++) {
-            c += forcedCost(f);
         }
         for (int s = 0; s < flat.nS; s++) {
             if (assign[s] < 0) {
@@ -601,7 +588,7 @@ final class IncrementalScore {
         releaseScarce(s, from);
     }
 
-    /** The counts only some seats and some people enter: premium stands, polyvalent animateurs, forced assignments. */
+    /** The counts only some seats and some people enter: premium stands and polyvalent animateurs. */
     private void releaseScarce(int s, int from) {
         int stand = flat.sStand[s];
         int cr = flat.sSlot[s];
@@ -613,9 +600,6 @@ final class IncrementalScore {
         if (flat.polyvalent[from]) {
             crAhead[cr] -= ahead;
             crOcc[cr] -= --polyvalentCount[cr][from] == 0 ? 1 : 0;
-        }
-        for (int f : flat.forcedScope[s]) {
-            fSat[f] -= flat.fConc[f][from] ? 1 : 0;
         }
     }
 
@@ -645,9 +629,6 @@ final class IncrementalScore {
         if (flat.polyvalent[to]) {
             crAhead[cr] += ahead;
             crOcc[cr] += polyvalentCount[cr][to]++ == 0 ? 1 : 0;
-        }
-        for (int f : flat.forcedScope[s]) {
-            fSat[f] += flat.fConc[f][to] ? 1 : 0;
         }
     }
 
@@ -1044,7 +1025,9 @@ final class IncrementalScore {
                 if (biggest < need) {
                     cost += cost(Rule.COUPURE_REPAS_OBLIGATOIRE, need - biggest);
                 } else {
-                    int off = flat.mwLate[m] ? Math.max(0, close - need - lastGap) : firstGap - open;
+                    int off = flat.mwNoPlacement[m]
+                            ? 0
+                            : flat.mwLate[m] ? Math.max(0, close - need - lastGap) : firstGap - open;
                     if (off > 0) {
                         cost += cost(Rule.COUPURE_REPAS_PLACEMENT_PREFERE, off);
                     }
@@ -1118,8 +1101,7 @@ final class IncrementalScore {
     private long overTheEvent(int a, int longest, long likedMask, boolean likedAhead) {
         long cost = 0;
         if (longest > flat.maxConsec) {
-            cost += cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES, longest - flat.maxConsec)
-                    + cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES_DUR, longest - flat.maxConsec);
+            cost += cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES, longest - flat.maxConsec);
         }
         if (!flat.polyvalent[a] && likedAhead && Long.bitCount(likedMask) > flat.maxTypo) {
             cost += cost(Rule.LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR, Long.bitCount(likedMask) - flat.maxTypo);

@@ -43,12 +43,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        count the same. Polyvalents are exempt, versatility being what they are
  *        there for.
  * @param joursConsecutifsMax how many days in a row an animateur may
- *        work before {@code maxJoursConsecutifsTravailles} — and its hard twin
- *        {@code maxJoursConsecutifsTravaillesDur}, which the catalogue ships
- *        off — start counting the excess. Both read this one value, so the
- *        dosed form and the blocking form can never disagree on what « days in
- *        a row » means. Counted on the grid's own day numbers, not on
- *        calendar dates: a day the event does not cover breaks no run.
+ *        work before {@code maxJoursConsecutifsTravailles} starts counting
+ *        the excess, at whichever level the edition chose for it (ADR 0118).
+ *        Counted on the grid's own day numbers, not on calendar dates: a day the event does not cover breaks no run.
  * @param vitesseMarcheKmH walking speed, in km/h, that turns a distance between
  *        two emplacements into a walking time ({@code solver/TempsDeTrajet}).
  *        The default is a crowd's pace, not a hiker's.
@@ -62,6 +59,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        arrivals — and the last departures — of an {@code ARRIVEE_GROUPEE}
  *        group may be on a day before {@code arriveeGroupee} counts the
  *        minutes beyond.
+ * @param placementRepas which end of a meal window the break is preferred at
+ *        ({@link PlacementRepas}); the default keeps each window's own
+ *        direction, so no existing plan changes
  * @param modifieLe when the stored row was last written: sent back by a write
  *        as its precondition ({@code null} checks nothing, and so does a
  *        value that never came from a row)
@@ -75,7 +75,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
             "vitesseMarcheKmH",
             "facteurDetour",
             "toleranceTrajetMinutes",
-            "toleranceArriveeGroupeeMinutes"
+            "toleranceArriveeGroupeeMinutes",
+            "placementRepas"
         })
 public record ParametresQualite(
         int maxEmplacementsDistinctsParJour,
@@ -88,7 +89,40 @@ public record ParametresQualite(
         double facteurDetour,
         int toleranceTrajetMinutes,
         int toleranceArriveeGroupeeMinutes,
+        PlacementRepas placementRepas,
         Instant modifieLe) {
+
+    public ParametresQualite {
+        placementRepas = placementRepas == null ? PlacementRepas.FIN_MIDI_DEBUT_SOIR : placementRepas;
+    }
+
+    /** The ten thresholds, the meal placement at its default, and a stamp. */
+    public ParametresQualite(
+            int maxEmplacementsDistinctsParJour,
+            LocalTime heureServiceTardif,
+            LocalTime heureServiceMatinal,
+            int reposSouhaiteApresServiceTardifMinutes,
+            int typologiesDistinctesMax,
+            int joursConsecutifsMax,
+            double vitesseMarcheKmH,
+            double facteurDetour,
+            int toleranceTrajetMinutes,
+            int toleranceArriveeGroupeeMinutes,
+            Instant modifieLe) {
+        this(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes,
+                PlacementRepas.FIN_MIDI_DEBUT_SOIR,
+                modifieLe);
+    }
 
     /** The ten thresholds, as a value that never came from a row: no stamp. */
     public ParametresQualite(
@@ -128,6 +162,7 @@ public record ParametresQualite(
                 facteurDetour,
                 toleranceTrajetMinutes,
                 toleranceArriveeGroupeeMinutes,
+                placementRepas,
                 modifieLe);
     }
 
@@ -254,6 +289,7 @@ public record ParametresQualite(
                 facteurDetour,
                 toleranceTrajetMinutes,
                 toleranceArriveeGroupeeMinutes,
+                placementRepas,
                 modifieLe);
     }
 
@@ -270,6 +306,24 @@ public record ParametresQualite(
                 facteurDetour,
                 toleranceTrajetMinutes,
                 minutes,
+                placementRepas,
+                modifieLe);
+    }
+
+    /** The same thresholds, with the meal-break placement replaced. */
+    public ParametresQualite withPlacementRepas(PlacementRepas placement) {
+        return new ParametresQualite(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes,
+                placement,
                 modifieLe);
     }
 

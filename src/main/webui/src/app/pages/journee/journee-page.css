@@ -114,6 +114,14 @@
   gap: 0.375rem;
 }
 
+/* The state of the day, as plain text for a lecteur. */
+.relecture-etat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.75rem;
+}
+
 /* Something left to look at before accepting the day. */
 .relecture-compteur-alerte {
   --mat-button-text-label-text-color: var(--mat-sys-error);
@@ -319,15 +327,14 @@ app-mini-mois {
   color: var(--mat-sys-primary);
 }
 
-.journee-validation-commentaire {
-  margin: 0.25rem 0 0;
-  color: var(--mat-sys-on-surface-variant);
-}
-
 .journee-validation-note {
   margin: 0 0 0.75rem;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.875rem;
+}
+
+.journee-etat {
+  margin-bottom: 0.75rem;
 }
 
 .journee-validation-commentaire-champ {

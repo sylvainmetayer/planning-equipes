@@ -103,11 +103,10 @@ class JourJResourceTest {
 
         JsonPath marquee = markAbsent(absent, "Pas au point de rendez-vous", ENTRE_LES_DEUX, 200);
 
-        // One forced unavailability, on the afternoon slot only.
+        // The day off is the whole day (ADR 0117): both timeslots are listed, only the afternoon seats are freed.
         assertThat(marquee.getList("entrees.heureDebut", String.class))
-                .singleElement()
-                .asString()
-                .startsWith("14:00");
+                .hasSize(2)
+                .anyMatch(heure -> heure.startsWith("14:00"));
         // The morning seats keep the person that really held them.
         Map<String, String> apres = persistedOccupants();
         for (String poste : postesDuMatin) {
@@ -118,27 +117,24 @@ class JourJResourceTest {
         assertThat(liberes).isNotEmpty().allSatisfy(poste -> assertThat(apres).doesNotContainKey(poste));
     }
 
+    /** The absence is nothing but the day off of the fiche: no other record, no ad hoc exception. */
     @Test
-    void markingAbsentRecordsWhoAndWhen() {
+    void markingAbsentPutsTheDayOffOnTheFiche() {
         solveScenario();
         String absent = firstAnimateurOnDuty();
 
         markAbsent(absent, "Malade", ENTRE_LES_DEUX, 200);
 
-        JsonPath contraintes = given().header("X-Edition-Id", "E1")
-                .when()
-                .get("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .jsonPath();
-        List<Map<String, Object>> indisponibilites =
-                contraintes.getList("findAll { it.type == 'INDISPONIBILITE_FORCEE' }");
-        assertThat(indisponibilites).hasSize(1);
-        Map<String, Object> trace = indisponibilites.getFirst();
-        assertThat((String) trace.get("raison")).contains("mode jour J").contains("Malade");
-        assertThat((String) trace.get("creeParUtilisateurId")).isNotBlank();
-        assertThat(trace.get("creeLe")).isNotNull();
+        assertThat(daysOff(absent)).contains(JOUR);
+        assertThat(given().header("X-Edition-Id", "E1")
+                        .when()
+                        .get("/api/contraintes-ad-hoc")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getList("id"))
+                .isEmpty();
     }
 
     /**
@@ -167,7 +163,7 @@ class JourJResourceTest {
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
 
-        assertThat(forcedUnavailabilities()).hasSize(1);
+        assertThat(daysOff(absent)).containsOnlyOnce(JOUR);
     }
 
     @Test
@@ -182,48 +178,6 @@ class JourJResourceTest {
                 .then()
                 .statusCode(400)
                 .body("message", notNullValue());
-        assertThat(forcedUnavailabilities()).isEmpty();
-    }
-
-    /**
-     * The contradiction {@code ContrainteAdHocContradictions} already knows how
-     * to name: forcing somebody onto a seat they are declared unavailable for.
-     * Marking the absence must hit it <b>at entry</b>, name both exceptions, and
-     * leave the plan exactly as it was — not write half of the unavailabilities
-     * and let the next solve report a negative hard score.
-     */
-    @Test
-    void markingAbsentIsRefusedWhenItContradictsAForcedAssignment() {
-        solveScenario();
-        String absent = firstAnimateurOnDuty();
-        long afternoonCreneauId = afternoonCreneauId();
-        String forcedAssignment = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"AFFECTATION_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(absent, afternoonCreneauId))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("contrainte.id");
-        Map<String, String> avant = persistedOccupants();
-
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("{\"animateurId\":\"" + absent + "\"}")
-                .when()
-                .post("/api/jour-j/absences?date=" + JOUR + "&maintenant=" + JOUR + "T" + ENTRE_LES_DEUX)
-                .then()
-                .statusCode(400)
-                // Both exceptions are named: the one already recorded, and the
-                // one the absence would have written, under the id drawn for it.
-                .body("message", containsString(forcedAssignment))
-                .body("message", org.hamcrest.Matchers.matchesPattern("(?s).*contrainte C\\d+ .*C\\d+.*"));
-
-        assertThat(forcedUnavailabilities()).isEmpty();
-        assertThat(persistedOccupants()).isEqualTo(avant);
     }
 
     /** A lock is the operator saying "this one does not move" — refused whole, nothing written. */
@@ -250,18 +204,18 @@ class JourJResourceTest {
                 .statusCode(400)
                 .body("message", containsString(standVerrouille));
 
-        assertThat(forcedUnavailabilities()).isEmpty();
+        assertThat(daysOff(absent)).doesNotContain(JOUR);
         assertThat(persistedOccupants()).isEqualTo(avant);
     }
 
     /* ------------------------------ Annulation ----------------------------- */
 
     @Test
-    void cancellingAnAbsenceRemovesItsUnavailabilities() {
+    void cancellingAnAbsenceRemovesTheDayOff() {
         solveScenario();
         String absent = firstAnimateurOnDuty();
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
-        assertThat(forcedUnavailabilities()).hasSize(1);
+        assertThat(daysOff(absent)).contains(JOUR);
 
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -270,18 +224,17 @@ class JourJResourceTest {
                 .statusCode(200)
                 .body("supprimees", equalTo(1));
 
-        assertThat(forcedUnavailabilities()).isEmpty();
+        assertThat(daysOff(absent)).doesNotContain(JOUR);
         assertThat(etat(ENTRE_LES_DEUX).getList("absences")).isEmpty();
     }
 
-    /** Reversible timeslot by timeslot, not only as a block. */
+    /** A day off is a whole day: naming a timeslot when cancelling is read for compatibility and lifts all of it. */
     @Test
-    void cancellingOneTimeslotLeavesTheOthers() {
+    void cancellingByTimeslotStillLiftsTheWholeDay() {
         solveScenario();
         String absent = firstAnimateurOnDuty();
-        // From the start of the day: both timeslots are ahead.
         markAbsent(absent, null, "00:00", 200);
-        assertThat(forcedUnavailabilities()).hasSize(2);
+        assertThat(daysOff(absent)).contains(JOUR);
 
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -290,13 +243,7 @@ class JourJResourceTest {
                 .statusCode(200)
                 .body("supprimees", equalTo(1));
 
-        List<Map<String, Object>> restantes = forcedUnavailabilities();
-        assertThat(restantes).hasSize(1);
-        // The remaining exception names the morning timeslot. Compared by id, not
-        // as a substring of the exception's id: generated ids like C2 and C20
-        // contain each other.
-        Map<?, ?> creneau = (Map<?, ?>) restantes.getFirst().get("creneau");
-        assertThat(((Number) creneau.get("id")).longValue()).isNotEqualTo(afternoonCreneauId());
+        assertThat(daysOff(absent)).doesNotContain(JOUR);
     }
 
     @Test
@@ -336,8 +283,8 @@ class JourJResourceTest {
                 .jsonPath();
 
         assertThat(suggestions.getInt("plafond")).isEqualTo(20);
-        // The person just marked absent is never proposed back: the forced
-        // unavailability makes every simulation of them lose hard points.
+        // The person just marked absent is never proposed back: the day off
+        // makes every simulation of them lose hard points.
         assertThat(suggestions.getList("suggestions.animateurId", String.class)).doesNotContain(absent);
     }
 
@@ -366,84 +313,19 @@ class JourJResourceTest {
     /* ----------------------- Regressions of the review ---------------------- */
 
     /**
-     * Somebody carrying an unavailability on a timeslot that is <b>already
-     * over</b> is on duty this afternoon like anybody else. Flagging them
-     * "already marked absent" removed the only button that matters — the screen
-     * then could not do the one thing it exists for.
+     * With nothing published there is no plan to be missing from: the day off an
+     * absence writes is listed all the same, so it is seen and can be cancelled.
      */
     @Test
-    void anUnavailabilityOnAPastTimeslotDoesNotCountAsAbsentForTheRest() {
-        solveScenario();
-        long matin = morningCreneauId();
-        String surPlace = firstAnimateurOnDuty();
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(surPlace, matin))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200);
-
-        JsonPath etat = etat(ENTRE_LES_DEUX);
-
-        // Listed as an absence of the day — it is one — but not as somebody
-        // already handled for what is left of it.
-        assertThat(etat.getList("absences.animateurId", String.class)).contains(surPlace);
-        assertThat(etat.getBoolean("animateursDeService.find { it.animateurId == '" + surPlace + "' }.absent"))
-                .isFalse();
-    }
-
-    /**
-     * The mirror case: an unavailability on a timeslot that is <b>still
-     * ahead</b> does flag them. Written by hand rather than through this screen,
-     * because marking somebody absent frees their seats — they then hold none
-     * and leave the on-duty list altogether, where the flag could not be seen.
-     */
-    @Test
-    void anUnavailabilityOnARemainingTimeslotCountsAsAbsent() {
-        solveScenario();
-        String surPlace = firstAnimateurOnDuty();
-        given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(surPlace, afternoonCreneauId()))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200);
-
-        assertThat(etat(ENTRE_LES_DEUX)
-                        .getBoolean("animateursDeService.find { it.animateurId == '" + surPlace + "' }.absent"))
-                .isTrue();
-    }
-
-    /**
-     * Undoing an absence must not take a neighbour with it. A long-standing
-     * unavailability recorded from the Ajustements manuels screen, on the same
-     * animateur and the same day, is somebody else's decision — deleting it
-     * would silently widen what the next solve may do.
-     */
-    @Test
-    void cancellingAnAbsenceLeavesHandWrittenUnavailabilitiesAlone() {
+    void anAbsenceMarkedBeforeAnyPublicationIsListedAndCancellable() {
         solveScenario();
         String absent = firstAnimateurOnDuty();
-        long apresMidi = afternoonCreneauId();
-        String handWritten = given().header("X-Edition-Id", "E1")
-                .contentType("application/json")
-                .body("""
-                        {"type":"INDISPONIBILITE_FORCEE",
-                         "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(absent, apresMidi))
-                .when()
-                .post("/api/contraintes-ad-hoc")
-                .then()
-                .statusCode(200)
-                .extract()
-                .path("contrainte.id");
+
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
-        assertThat(forcedUnavailabilities()).hasSize(2);
+
+        JsonPath etat = etat(ENTRE_LES_DEUX);
+        assertThat(etat.getList("absences.animateurId", String.class)).containsExactly(absent);
+        assertThat(etat.getList("absences[0].entrees.annulable", Boolean.class)).containsOnly(true);
 
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -451,10 +333,29 @@ class JourJResourceTest {
                 .then()
                 .statusCode(200)
                 .body("supprimees", equalTo(1));
+        assertThat(etat(ENTRE_LES_DEUX).getList("absences")).isEmpty();
+    }
 
-        List<Map<String, Object>> restantes = forcedUnavailabilities();
-        assertThat(restantes).hasSize(1);
-        assertThat((String) restantes.getFirst().get("id")).isEqualTo(handWritten);
+    /**
+     * A day off on the fiche is a missing person only for the screen that asks
+     * « who is missing today »: somebody the published plan expected that day.
+     * The animateur is listed and flagged on the on-duty list. Written by
+     * hand on the fiche rather than through this screen, because marking
+     * somebody absent frees their seats — they then hold none and leave the
+     * on-duty list altogether, where the flag could not be seen.
+     */
+    @Test
+    void aDayOffOnTheFicheCountsAsAbsentOnceThePlanIsPublished() {
+        solveScenario();
+        String surPlace = firstAnimateurOnDuty();
+        putDaysOff(surPlace, List.of(JOUR));
+
+        publish();
+
+        JsonPath etat = etat(ENTRE_LES_DEUX);
+        assertThat(etat.getList("absences.animateurId", String.class)).containsExactly(surPlace);
+        assertThat(etat.getBoolean("animateursDeService.find { it.animateurId == '" + surPlace + "' }.absent"))
+                .isTrue();
     }
 
     /**
@@ -543,9 +444,9 @@ class JourJResourceTest {
         assertThat(etat.getList("creneauxRestants")).hasSize(3);
     }
 
-    /** It is still the journée's own timeslot, so an absence marked at 01:00 covers it. */
+    /** It is still the journée's own timeslot, so an absence marked at 01:00 lists it with the rest of the day. */
     @Test
-    void anAbsenceAtOneInTheMorningCoversTheRunningNightShift() {
+    void anAbsenceAtOneInTheMorningListsTheRunningNightShiftWithTheWholeDay() {
         solveScenarioWithNightShift();
 
         JsonPath marquee = given().header("X-Edition-Id", "E1")
@@ -558,7 +459,9 @@ class JourJResourceTest {
                 .extract()
                 .jsonPath();
 
-        assertThat(marquee.getList("entrees.creneauId", Integer.class)).containsExactly(CRENEAU_NUIT);
+        assertThat(marquee.getList("entrees.creneauId", Integer.class))
+                .hasSize(3)
+                .contains(CRENEAU_NUIT);
     }
 
     /** On the evening it opens, it is the last timeslot still ahead. */
@@ -705,11 +608,6 @@ class JourJResourceTest {
         return etat(ENTRE_LES_DEUX).getLong("creneauxRestants[0].id");
     }
 
-    /** The morning slot: read from the start of the day, where both are still ahead. */
-    private static long morningCreneauId() {
-        return etat("00:00").getLong("creneauxRestants[0].id");
-    }
-
     /** Explicit id of the seeded night shift — see {@link #solveScenarioWithNightShift()}. */
     private static final int CRENEAU_NUIT = 3;
 
@@ -787,15 +685,45 @@ class JourJResourceTest {
         return retenus;
     }
 
-    private static List<Map<String, Object>> forcedUnavailabilities() {
+    private static void publish() {
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
+    }
+
+    private static Map<String, Object> fiche(String animateurId) {
         return given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/contraintes-ad-hoc")
+                .get("/api/animateurs")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getList("findAll { it.type == 'INDISPONIBILITE_FORCEE' }");
+                .getMap("find { it.id == '" + animateurId + "' }");
+    }
+
+    /** The days off on an animateur's fiche. */
+    private static List<String> daysOff(String animateurId) {
+        List<String> jours = new java.util.ArrayList<>();
+        if (fiche(animateurId).get("joursIndisponibles") instanceof List<?> existing) {
+            existing.forEach(jour -> jours.add(String.valueOf(jour)));
+        }
+        return jours;
+    }
+
+    private static void putDaysOff(String animateurId, List<String> jours) {
+        Map<String, Object> fiche = fiche(animateurId);
+        fiche.put("joursIndisponibles", jours);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(fiche)
+                .when()
+                .put("/api/animateurs/" + animateurId)
+                .then()
+                .statusCode(200);
     }
 
     private static int jobCount() {

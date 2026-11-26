@@ -165,9 +165,7 @@ export function valueLabel(line: DeltaValueLine): string {
     coupureRepasSoirDebut: $localize`:@@comparerEditions.legal.soirDebut:Début de la fenêtre repas du soir`,
     coupureRepasSoirFin: $localize`:@@comparerEditions.legal.soirFin:Fin de la fenêtre repas du soir`,
     heureDebutSoiree: $localize`:@@comparerEditions.legal.soiree:Début de la soirée`,
-    INDISPONIBILITE_FORCEE: $localize`:@@comparerEditions.ajustement.indisponibilite:Indisponibilités forcées`,
     INCOMPATIBILITE: $localize`:@@comparerEditions.ajustement.incompatibilite:Incompatibilités`,
-    AFFECTATION_FORCEE: $localize`:@@comparerEditions.ajustement.affectation:Affectations forcées`,
     AFFINITE: $localize`:@@comparerEditions.ajustement.affinite:Affinités`,
     ARRIVEE_GROUPEE: $localize`:@@comparerEditions.ajustement.arriveeGroupee:Arrivées groupées`,
   };

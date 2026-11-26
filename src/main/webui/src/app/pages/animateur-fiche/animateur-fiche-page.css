@@ -29,8 +29,7 @@
   font-weight: 500;
 }
 
-.fiche-jour-off,
-.fiche-jour-force {
+.fiche-jour-off {
   border-color: var(--mat-sys-error);
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);

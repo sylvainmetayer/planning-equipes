@@ -18,6 +18,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Publishing the planning (issue #245): the button that replaced « envoyer à
@@ -59,36 +60,37 @@ public class PublicationResource {
     }
 
     /**
-     * What the admin takes out of this send (issue #503).
-     *
-     * @param exclusions animateur ids whose message is deferred: they keep the
-     *                   plan they were really told about, so they come back in
-     *                   the next count. An absent body, or an empty list,
-     *                   publishes to everybody concerned.
-     * @param cibles     when set, the only people to write to — « Prévenir les
-     *                   2 personnes » after an échange or a replacement.
-     *                   Everybody else concerned is deferred as an exclusion
-     *                   defers them
+     * @param cibles when set, the only people to write to — « Prévenir les
+     *               2 personnes » after an échange or a replacement.
+     *               Everybody else concerned is deferred: they come back in
+     *               the next count. An absent body, or an empty list,
+     *               publishes to everybody concerned.
+     * @param exclusions the 3.x field, read until 5.0: ignored — nobody can be
+     *               left out of a general send any more — and answered with
+     *               an {@code avertissements} sentence
      */
-    public record DemandePublication(List<String> exclusions, List<String> cibles) {}
+    public record DemandePublication(
+            List<String> cibles,
+
+            @Schema(deprecated = true, description = "Retiré en 4.0 : ignoré, signalé par avertissements.")
+            List<String> exclusions) {}
 
     /**
-     * Publishes, and writes to the concerned people the admin kept.
+     * Publishes, and writes to the people concerned.
      *
-     * <p>The deferred people travel in a body rather than as repeated query
+     * <p>The targets travel in a body rather than as repeated query
      * parameters: the list is unbounded, and an animateur id is
      * client-supplied — only « not blank » is required of it — so neither a
      * separator nor a URL is a safe place to carry a variable number of them.
-     * The call therefore now requires a {@code Content-Type: application/json},
-     * where it used to accept anything; an empty body is enough to say « je
-     * n'exclus personne ».</p>
+     * The call requires a {@code Content-Type: application/json}; an empty
+     * body is enough to say « tout le monde ».</p>
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public RapportPublication publier(DemandePublication demande) {
         return demande == null
-                ? publicationService.publier(List.of())
-                : publicationService.publier(demande.exclusions(), demande.cibles());
+                ? publicationService.publier()
+                : publicationService.publier(demande.cibles(), demande.exclusions());
     }
 
     /**

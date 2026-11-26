@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ConstraintView, ParametresLegaux } from '../../core/models';
 import {
+  BLOCS_REGLES,
   SEUILS,
   articlesOf,
   hasChanges,
   mergeSettings,
   blocOfRule,
+  groupeLabel,
   niveauEffectif,
+  opensGroup,
   readOngletRegles,
   rulesOfBloc,
   shownValue,
@@ -36,6 +39,22 @@ function rule(overrides: Partial<ConstraintView>): ConstraintView {
 }
 
 describe('regles', () => {
+  it('words a group title, and falls back to its id for an unknown one', () => {
+    expect(groupeLabel('dispersionJournee')).toBe('Dispersion sur la journée');
+    expect(groupeLabel('autre')).toBe('autre');
+  });
+
+  it('lists the rules of a catalogue group together, under one title', () => {
+    const rules = [
+      rule({ name: 'a', groupe: 'g' }),
+      rule({ name: 'b' }),
+      rule({ name: 'c', groupe: 'g' }),
+    ];
+    const rows = rulesOfBloc(rules, 'avance');
+    expect(rows.map((each) => each.name)).toEqual(['a', 'c', 'b']);
+    expect(rows.map((_, index) => opensGroup(rows, index))).toEqual([true, false, false]);
+  });
+
   it('reads the rules tab, and the two it replaced', () => {
     expect(readOngletRegles('regles')).toBe('regles');
     expect(readOngletRegles('legal')).toBe('regles');
@@ -86,6 +105,26 @@ describe('regles', () => {
     ]);
     expect(rulesOfBloc(rules, 'organisation').map((each) => each.name)).toEqual(['qualite']);
     expect(rulesOfBloc(rules, 'avance').map((each) => each.name)).toEqual(['affectation']);
+  });
+
+  it('lists a scoring term of another rule nowhere: it is read through that rule', () => {
+    const rules = [
+      rule({ name: 'repas', niveau: 'HARD', niveauReglable: true }),
+      rule({ name: 'repasPlacement', niveau: 'SOFT', termeDe: 'repas' }),
+    ];
+
+    expect(
+      BLOCS_REGLES.flatMap((bloc) => rulesOfBloc(rules, bloc)).map((each) => each.name),
+    ).toEqual(['repas']);
+  });
+
+  it('shows and stores the meal-break placement as the value it is', () => {
+    const descriptor = SEUILS['placementRepas'];
+    const stored = { placementRepas: 'DEBUT' };
+
+    expect(shownValue(descriptor, 'placementRepas', stored, {})).toBe('DEBUT');
+    expect(shownValue(descriptor, 'placementRepas', stored, { placementRepas: 'FIN' })).toBe('FIN');
+    expect(storedValue(descriptor, 'AUCUN')).toBe('AUCUN');
   });
 
   it('finds the articles a description cites, once each', () => {

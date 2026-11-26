@@ -66,7 +66,7 @@ test.describe('Publication du planning', () => {
     expect(etat.dernierePublicationLe).not.toBeNull();
     expect(etat.nombreConcernes).toBe(0);
 
-    const refus = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
+    const refus = await admin.post('/api/planning/publication', { data: {} });
     expect(refus.status(), await refus.text()).toBe(409);
   });
 
@@ -118,10 +118,8 @@ test.describe('Publication du planning', () => {
     await page.getByRole('radio', { name: /À prévenir · 2/ }).click();
     await expect(page).toHaveURL(/filtre=a-prevenir/);
     await expect(table.locator('tbody tr')).toHaveCount(2);
-    // Deferring from the table moves the sentence of the button above it.
-    await table.getByRole('button', { name: 'Différer' }).first().click();
-    await expect(page.getByText(/aux 1 personne\(s\) dont il a changé/)).toBeVisible();
-    await expect(table.getByRole('button', { name: 'Réintégrer' })).toBeVisible();
+    // Nobody can be left out of a general publication any more.
+    await expect(table.getByRole('button', { name: 'Différer' })).toHaveCount(0);
 
     await page.close();
   });
@@ -188,7 +186,7 @@ test.describe('Publication du planning', () => {
   test('publier écrit aux seules personnes concernées, puis le décompte retombe à zéro', async () => {
     await deplacerUnSiege(admin);
 
-    const publication = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
+    const publication = await admin.post('/api/planning/publication', { data: {} });
     expect(publication.ok(), await publication.text()).toBe(true);
     const rapport = (await publication.json()) as { envoyes: number; sansEmail: string[] };
     // Alice a une adresse, Bruno n'en a pas : le rapport le nomme au lieu de
@@ -212,29 +210,19 @@ test.describe('Publication du planning', () => {
   });
 
   /**
-   * Issue #503 : exclure quelqu'un diffère son message, il ne le supprime pas.
-   * La capture, elle, a bien lieu pour tout le monde — c'est ce qui garde
-   * l'espace cohérent (ADR 0011).
+   * Issue #503 : « Prévenir seulement quelques personnes » diffère les autres,
+   * il ne les supprime pas. La capture, elle, a bien lieu pour tout le monde —
+   * c'est ce qui garde l'espace cohérent (ADR 0011).
    */
-  test('décocher quelqu’un le laisse à prévenir à la publication suivante', async ({ browser }) => {
+  test('prévenir une seule personne laisse l’autre à prévenir à la publication suivante', async () => {
     await deplacerUnSiege(admin);
-    const page = await pageAdmin(browser, admin);
-    await page.goto('/publication');
 
-    await page.getByRole('button', { name: 'Voir ce qui change pour chacune' }).click();
-    // The permanent table below names Bruno too: the box is in the preview's.
-    const ligneBruno = page.locator('table.publication-table tbody tr', { hasText: 'Bruno' });
-    await expect(ligneBruno).toBeVisible();
-    await ligneBruno.getByRole('checkbox').click();
-    await expect(page.getByText(/Les personnes décochées ne recevront rien/)).toBeVisible();
-
-    await page.getByRole('button', { name: /Publier — 2 personnes concernées/ }).click();
-    await page.getByRole('button', { name: 'Publier', exact: true }).click();
+    const publication = await admin.post('/api/planning/publication', {
+      data: { cibles: [SEED.demandeur] },
+    });
+    expect(publication.ok(), await publication.text()).toBe(true);
 
     // Alice est prévenue, Bruno reste dans le décompte avec son propre écart.
-    await expect(
-      page.getByRole('button', { name: /Publier — 1 personne concernée/ }),
-    ).toBeVisible();
     const restant = await apercu(admin);
     expect(restant.destinataires.map((chacun) => chacun.animateurId)).toEqual([SEED.cible]);
     expect(restant.destinataires[0].reporte).toBe(true);
@@ -242,8 +230,6 @@ test.describe('Publication du planning', () => {
     const trace = await admin.get('/api/planning/publication/destinataires');
     const destinataires = (await trace.json()) as { animateurId: string; statut: string }[];
     expect(destinataires.find((chacun) => chacun.animateurId === SEED.cible)?.statut).toBe('EXCLU');
-
-    await page.close();
   });
 
   test('le détail des changements se télécharge en CSV', async () => {
@@ -272,7 +258,7 @@ test.describe('Publication du planning', () => {
     const pendant = await admin.get(`/api/espace-animateur/${jeton}`);
     expect(((await pendant.json()) as { postes: unknown[] }).postes).toHaveLength(1);
 
-    const publication = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
+    const publication = await admin.post('/api/planning/publication', { data: {} });
     expect(publication.ok(), await publication.text()).toBe(true);
 
     const apres = await admin.get(`/api/espace-animateur/${jeton}`);

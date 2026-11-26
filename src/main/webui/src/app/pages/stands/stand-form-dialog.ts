@@ -247,7 +247,7 @@ export class StandFormDialog {
     const source = this.standsModeles().find((stand) => stand.id === standId) ?? null;
     this.standSource.set(source);
     if (source !== null) {
-      this.patch(horairesCopiedFrom(source));
+      this.patch(horairesCopiedFrom(source, this.draft()));
     }
   }
 
@@ -258,7 +258,9 @@ export class StandFormDialog {
     }
     const nom = source.nom || source.id;
     const regles = (source.horaires ?? []).length;
-    const exceptions = (source.ouvertures ?? []).length + (source.indisponibilites ?? []).length;
+    const exceptions = [...(source.ouvertures ?? []), ...(source.indisponibilites ?? [])].filter(
+      (plage) => !plage.consigne,
+    ).length;
     return $localize`:@@stands.copieHoraires.faite:Horaires de « ${nom}:nom: » copiés : ${regles}:regles: règle(s), ${exceptions}:exceptions: exception(s) datée(s). Enregistrez pour les conserver.`;
   });
 

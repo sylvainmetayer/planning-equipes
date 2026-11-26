@@ -1,22 +1,19 @@
 package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.compte.CompteService;
-import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.mural.AffichageMuralService;
 import dev.sylvain.planning.service.mural.AffichageMuralView.MuralAlert;
 import dev.sylvain.planning.service.mural.AffichageMuralViewBuilder;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.DestinatairePublication;
+import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -29,7 +26,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,8 +42,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * The event-day screen ("mode jour J"): somebody did not show up, and the seats
  * they were holding have to change hands <b>now</b>.
  *
- * <p>Nothing here is new machinery. Marking somebody absent writes the same
- * {@code INDISPONIBILITE_FORCEE} the Ajustements manuels screen writes, freeing
+ * <p>Nothing here is new machinery. Marking somebody absent adds the day to the days
+ * off of their fiche (the forced unavailability is gone, ADR 0117), freeing
  * their seats is {@link PlanningService#applyReparation} with no replacement,
  * and looking for one is {@link PlanningService#suggererReparations}. What this
  * service adds is the <em>scope</em> the other screens have no reason to know
@@ -73,17 +69,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class JourJService {
 
-    /**
-     * The mark every reason this screen writes carries — what recognises its
-     * exceptions, since their ids are drawn by the application like any other
-     * (ADR 0050). Marking the same person absent twice on a timeslot
-     * overwrites the exception already there instead of piling up duplicates.
-     */
-    private static final String MARQUE_ABSENCE = "(mode jour J)";
-
-    /** Recorded against the exception when no admin session names the author. */
-    private static final String AUTEUR_INCONNU = "jour-j";
-
     private final ReferenceDataService referenceDataService;
 
     private final dev.sylvain.planning.service.consigne.ConsigneService consigneService;
@@ -91,8 +76,6 @@ public class JourJService {
     private final PlanningPersistenceService persistenceService;
 
     private final PlanningService planningService;
-
-    private final JournalActionService journal;
 
     private final JourJClock clock;
 
@@ -106,7 +89,7 @@ public class JourJService {
 
     private final JdbcEditionScope scope;
 
-    private final CompteService comptes;
+    private final PlanPublieService planPublieService;
 
     @Inject
     public JourJService(
@@ -114,20 +97,18 @@ public class JourJService {
             dev.sylvain.planning.service.consigne.ConsigneService consigneService,
             PlanningPersistenceService persistenceService,
             PlanningService planningService,
-            JournalActionService journal,
             JourJClock clock,
             SignalementAbsenceRepository signalements,
             AffichageMuralService muralService,
             DemandeEchangeService demandeEchangeService,
             PlanPublicationService publicationService,
             JdbcEditionScope scope,
-            CompteService comptes) {
-        this.comptes = comptes;
+            PlanPublieService planPublieService) {
+        this.planPublieService = planPublieService;
         this.referenceDataService = referenceDataService;
         this.consigneService = consigneService;
         this.persistenceService = persistenceService;
         this.planningService = planningService;
-        this.journal = journal;
         this.clock = clock;
         this.signalements = signalements;
         this.muralService = muralService;
@@ -176,7 +157,7 @@ public class JourJService {
 
         Map<String, Identite> identites = identites();
         List<AbsenceJourJ> absences =
-                absencesOf(creneauxDuJour, identites, referenceDataService.listContraintesAdHoc());
+                absencesOf(jour, creneauxDuJour, identites, referenceDataService.listAnimateurs());
         // Only an absence covering a timeslot that is still ahead counts as
         // "already marked". Somebody declared unavailable this morning and
         // nowhere else is on duty this afternoon like anyone else, and the
@@ -277,14 +258,15 @@ public class JourJService {
 
     /**
      * How many animateurs are absent on one journée — the absences the mode
-     * jour J lists for it, counted the same way: every forced unavailability
-     * in force on one of that day's timeslots, whoever wrote it. What the home
+     * jour J lists for it, counted the same way: the people the published plan
+     * expected that day (everybody, while nothing was ever published) whose
+     * fiche now lists it as a day off. What the home
      * screen's « Aujourd'hui » line says, without a second reading of who is
-     * missing — over the timeslots and the ad hoc constraints its caller has
-     * already read, rather than a second trip for each.
+     * missing — over the timeslots its caller has already read.
      */
-    public int absentCount(LocalDate jour, List<Creneau> creneaux, List<ContrainteAdHoc> contraintes) {
-        return absencesOf(creneauxOf(creneaux, jour), Map.of(), contraintes).size();
+    public int absentCount(LocalDate jour, List<Creneau> creneaux) {
+        return absencesOf(jour, creneauxOf(creneaux, jour), Map.of(), referenceDataService.listAnimateurs())
+                .size();
     }
 
     /**
@@ -306,26 +288,25 @@ public class JourJService {
 
     /**
      * Records that {@code animateurId} is not there for the rest of
-     * {@code date}: one {@code INDISPONIBILITE_FORCEE} per timeslot still
-     * ahead, and every seat they were holding over those timeslots emptied —
-     * except the seat of a timeslot that has already started, which the
-     * freeze keeps as it is (ADR 0044): the exception is recorded on it, the
-     * seat is not rewritten.
+     * {@code date}: the day joins the days off of their fiche, and every seat
+     * they were holding over the timeslots still ahead is emptied — except the
+     * seat of a timeslot that has already started, which the freeze keeps as it
+     * is (ADR 0044): the day off is recorded, the seat is not rewritten.
      *
-     * <p>Refused as a whole — before anything is written — when one of those
-     * exceptions would contradict an ad hoc exception already recorded (a
-     * forced assignment on the very same timeslot, typically), or when one of
-     * the seats to free is covered by a lock. Both refusals name what they
-     * clash with: discovering it as a negative hard score three minutes into
-     * the next solve is exactly the failure mode
-     * {@link ContrainteAdHocContradictions} exists to replace.</p>
+     * <p>A day off is a whole day (ADR 0117): the forced unavailability on one
+     * timeslot is gone, so an absence narrowed to one timeslot frees the rest
+     * of the day all the same.</p>
      *
-     * <p>The exceptions and the seats are written in one transaction.</p>
+     * <p>Refused as a whole — before anything is written — when one of the
+     * seats to free is covered by a lock: it names what it clashes with, rather
+     * than a negative hard score three minutes into the next solve.</p>
+     *
+     * <p>The day off and the seats are written in one transaction.</p>
      *
      * <p>Refused while a solve holds the edition, seats to free or not, and
-     * before any of the checks above: the solve read neither these exceptions
-     * nor the freed seats, and its landing could seat the absent person on the
-     * day again.</p>
+     * before any of the checks above: the solve read neither this day off nor
+     * the freed seats, and its landing could seat the absent person on the day
+     * again.</p>
      */
     @RefusedWhileSolving
     public AbsenceMarquee recordAbsence(
@@ -334,9 +315,10 @@ public class JourJService {
     }
 
     /**
-     * Same, narrowed to one timeslot when {@code creneauId} names one — the
-     * absence reported on a single seat (issue #533), or marked from the Siège
-     * panel on one shift rather than on the rest of the day.
+     * Same, with {@code creneauId} naming the timeslot the absence was reported
+     * on — a single seat (issue #533), or the Siège panel on one shift. It must
+     * be one of those still ahead; the absence covers the rest of the day all
+     * the same.
      *
      * @throws BusinessError.Invalid when that timeslot is not among the ones
      *         still ahead that day
@@ -375,9 +357,8 @@ public class JourJService {
         }
         List<Creneau> restants = duJour.stream()
                 .filter(creneau -> isStillAhead(creneau, maintenant))
-                .filter(creneau -> creneauId == null || creneauId.equals(creneau.getId()))
                 .toList();
-        if (restants.isEmpty()) {
+        if (restants.isEmpty() || creneauId != null && restants.stream().noneMatch(c -> creneauId.equals(c.getId()))) {
             throw new BusinessError.Invalid(
                     creneauId == null
                             ? "Aucun créneau ne reste à couvrir le " + jour + " après " + maintenant.toLocalTime()
@@ -404,24 +385,11 @@ public class JourJService {
                 .toList();
         refuseLockedSeats(aLiberer);
 
-        String motif = motif(raison, jour, maintenant);
-        Instant ecritLe = Instant.now();
-        String recordedBy = author();
-        Map<Long, String> dejaEcrites = new java.util.HashMap<>();
-        referenceDataService.listContraintesAdHoc().stream()
-                .filter(contrainte -> isWrittenHere(contrainte, animateur.getId()))
-                .forEach(contrainte -> dejaEcrites.put(contrainte.getCreneau().getId(), contrainte.getId()));
-        List<ContrainteAdHoc> exceptions = restants.stream()
-                .map(creneau ->
-                        exception(dejaEcrites.get(creneau.getId()), animateur, creneau, motif, recordedBy, ecritLe))
-                .toList();
         List<PosteAffectation> liberes = scope.writeAndReturn("Failed to record an absence", connection -> {
             if (alongside != null) {
                 alongside.execute(connection);
             }
-            // Refuses the whole set rather than the first offender, and writes
-            // nothing until every one of them is accepted.
-            referenceDataService.createContraintesAdHoc(connection, exceptions);
+            referenceDataService.addJourIndisponible(connection, animateurId, jour);
             // One write per seat, but a single read of the plan: applyReparation
             // reloads all of it on every call, and somebody holding five
             // remaining timeslots would pay five full loads of an 1 800-seat
@@ -434,59 +402,38 @@ public class JourJService {
                     null);
         });
 
-        Map<Long, Creneau> byId = creneauxById(restants);
         return new AbsenceMarquee(
                 animateurId,
                 nomAffiche(identites().get(animateurId), animateurId),
-                exceptions.stream()
-                        .map(exception -> entree(exception, byId, true))
-                        .toList(),
+                duJour.stream().map(creneau -> entree(animateurId, creneau)).toList(),
                 liberes.stream().map(JourJService::vacantSeat).toList());
     }
 
     /**
-     * Undoes a marked absence: one timeslot when {@code creneauId} names one,
-     * the whole day otherwise.
+     * Undoes a marked absence: the day leaves the days off of the fiche.
+     * {@code creneauId} is read for compatibility only — a day off is a whole
+     * day (ADR 0117).
      *
      * <p>Deliberately keyed on the <b>day</b> and not on what is still ahead: an
      * absence typed by mistake is undone a minute later, by which time the
      * timeslot it covers may already have started.</p>
      *
-     * <p>Only what <b>this screen wrote</b> is removed, recognised by the id it
-     * derives from (animateur, timeslot). Deleting every single-target
-     * unavailability landing on that day would have taken, along with the
-     * absence typed by mistake this morning, a long-standing one recorded weeks
-     * earlier from the Ajustements manuels screen — silently widening what the
-     * next solve is allowed to do. Same reason exceptions naming several people
-     * are left alone: they belong to whoever wrote them.</p>
-     *
      * <p>The seats are not handed back. Who holds a seat is a decision, and
      * assuming the previous occupant should get it back would silently undo
      * whatever replacement was applied in between.</p>
      *
-     * @return how many exceptions were removed
+     * @return how many days off were removed (0 or 1)
      */
     public int cancelAbsence(String animateurId, LocalDate date, Long creneauId) {
         LocalDate jour = date != null
                 ? date
                 : journee(referenceDataService.listCreneaux(), null, null).jour();
-        findAnimateur(animateurId, false);
-        Map<Long, Creneau> creneaux = creneauxById(creneauxOf(referenceDataService.listCreneaux(), jour));
-        List<ContrainteAdHoc> aSupprimer = referenceDataService.listContraintesAdHoc().stream()
-                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .filter(contrainte -> isWrittenHere(contrainte, animateurId))
-                .filter(contrainte -> targetsOnly(contrainte, animateurId))
-                .filter(contrainte -> contrainte.getCreneau() != null
-                        && creneaux.containsKey(contrainte.getCreneau().getId()))
-                .filter(contrainte -> creneauId == null
-                        || creneauId.equals(contrainte.getCreneau().getId()))
-                .toList();
-        if (aSupprimer.isEmpty()) {
-            throw new BusinessError.NotFound("Aucune absence enregistrée pour " + animateurId + " le " + jour
-                    + (creneauId == null ? "" : " sur le créneau " + creneauId) + ".");
+        Animateur animateur = findAnimateur(animateurId, false);
+        if (!animateur.isIndisponibleOn(jour)) {
+            throw new BusinessError.NotFound("Aucune absence enregistrée pour " + animateurId + " le " + jour + ".");
         }
-        aSupprimer.forEach(contrainte -> referenceDataService.deleteContrainteAdHoc(contrainte.getId()));
-        return aSupprimer.size();
+        referenceDataService.removeJourIndisponible(animateurId, jour);
+        return 1;
     }
 
     /* ------------------------------- Internals ----------------------------- */
@@ -618,119 +565,55 @@ public class JourJService {
         }
     }
 
-    private static String motif(String raison, LocalDate jour, LocalDateTime maintenant) {
-        String base = "Absent le " + jour + " à partir de " + maintenant.toLocalTime() + " " + MARQUE_ABSENCE;
-        return raison == null || raison.isBlank() ? base : base + " — " + raison.trim();
-    }
-
-    /** @param id the exception this screen already wrote there, {@code null} for a new one */
-    private static ContrainteAdHoc exception(
-            String id, Animateur animateur, Creneau creneau, String motif, String author, Instant maintenant) {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        Animateur cible = new Animateur();
-        cible.setId(animateur.getId());
-        contrainte.setAnimateursConcernes(new ArrayList<>(List.of(cible)));
-        Creneau portee = new Creneau();
-        portee.setId(creneau.getId());
-        contrainte.setCreneau(portee);
-        contrainte.setRaison(motif);
-        contrainte.setCreeParUtilisateurId(author);
-        contrainte.setCreeLe(maintenant);
-        return contrainte;
-    }
-
     /**
-     * Who is recorded as the author of the exception. The request names one
-     * (an account id, never an address); an anonymous call (the test profile opens the API) falls back to a
-     * constant rather than to null, so the trace never reads as "nobody".
-     */
-    private String author() {
-        // The account id, as the history writes it: the principal's name is an
-        // address under an OIDC session, and no address goes into a table.
-        String acteur = journal.nomAdmin();
-        return acteur == null ? AUTEUR_INCONNU : acteur;
-    }
-
-    /**
-     * Whether this exception is one this screen wrote for that animateur: an
-     * unavailability on one timeslot, naming that person alone, whose reason
-     * carries {@link #MARQUE_ABSENCE} — read back without a column of its own.
-     */
-    private static boolean isWrittenHere(ContrainteAdHoc contrainte, String animateurId) {
-        return contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
-                && contrainte.getCreneau() != null
-                && contrainte.getCreneau().getId() != null
-                && contrainte.getRaison() != null
-                && contrainte.getRaison().contains(MARQUE_ABSENCE)
-                && targetsOnly(contrainte, animateurId);
-    }
-
-    private static boolean targetsOnly(ContrainteAdHoc contrainte, String animateurId) {
-        List<String> ids = animateurIds(contrainte);
-        return ids.size() == 1 && ids.getFirst().equals(animateurId);
-    }
-
-    private static List<String> animateurIds(ContrainteAdHoc contrainte) {
-        List<Animateur> cibles = contrainte.getAnimateursConcernes();
-        if (cibles == null) {
-            return List.of();
-        }
-        return cibles.stream()
-                .filter(Objects::nonNull)
-                .map(Animateur::getId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-    }
-
-    /**
-     * Every forced unavailability in force on one of the day's timeslots,
-     * grouped by animateur — whoever wrote it. An absence declared weeks ahead
-     * from the Ajustements manuels screen shows here exactly like one marked
-     * this morning: what the screen answers is "who is missing today", not
-     * "what did this screen write".
+     * Who is missing on one day: the animateurs the published plan expected on
+     * it whose fiche now lists it as a day off, whoever recorded it. An absence
+     * declared weeks ahead shows here exactly like one marked this morning —
+     * what the screen answers is « who is missing today ». With nothing
+     * published there is no reference to be missing from: every day off of
+     * the day is listed, so that an absence marked here is seen, and can be
+     * cancelled, before the first publication.
      */
     private List<AbsenceJourJ> absencesOf(
-            List<Creneau> creneauxDuJour, Map<String, Identite> identites, List<ContrainteAdHoc> contraintes) {
-        Map<Long, Creneau> byId = creneauxById(creneauxDuJour);
-        Map<String, List<EntreeAbsence>> parAnimateur = new LinkedHashMap<>();
-        for (ContrainteAdHoc contrainte : contraintes) {
-            if (contrainte.getType() != TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
-                    || contrainte.getCreneau() == null
-                    || !byId.containsKey(contrainte.getCreneau().getId())) {
-                continue;
-            }
-            List<String> cibles = animateurIds(contrainte);
-            for (String cible : cibles) {
-                parAnimateur
-                        .computeIfAbsent(cible, id -> new ArrayList<>())
-                        .add(entree(contrainte, byId, cibles.size() == 1));
-            }
-        }
-        return parAnimateur.entrySet().stream()
-                .map(absence -> new AbsenceJourJ(
-                        absence.getKey(),
-                        nomAffiche(identites.get(absence.getKey()), absence.getKey()),
-                        absence.getValue().stream()
-                                .sorted(Comparator.comparing(
-                                        EntreeAbsence::heureDebut, Comparator.nullsLast(Comparator.naturalOrder())))
+            LocalDate jour, List<Creneau> creneauxDuJour, Map<String, Identite> identites, List<Animateur> animateurs) {
+        Set<String> attendus = expectedOn(jour);
+        return animateurs.stream()
+                .filter(animateur ->
+                        (attendus == null || attendus.contains(animateur.getId())) && animateur.isIndisponibleOn(jour))
+                .map(animateur -> new AbsenceJourJ(
+                        animateur.getId(),
+                        nomAffiche(identites.get(animateur.getId()), animateur.getId()),
+                        creneauxDuJour.stream()
+                                .map(creneau -> entree(animateur.getId(), creneau))
                                 .toList()))
                 .sorted(Comparator.comparing(AbsenceJourJ::nomAffiche))
                 .toList();
     }
 
-    private EntreeAbsence entree(ContrainteAdHoc contrainte, Map<Long, Creneau> creneaux, boolean annulable) {
-        Creneau creneau = creneaux.get(contrainte.getCreneau().getId());
+    /** The animateurs the published plan seats on {@code jour}; {@code null} when nothing was ever published. */
+    private Set<String> expectedOn(LocalDate jour) {
+        if (planPublieService.jamaisPublie()) {
+            return null;
+        }
+        return planPublieService.planPublie().getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && jour.equals(poste.getCreneau().getDate()))
+                .map(poste -> poste.getAnimateur().getId())
+                .collect(Collectors.toSet());
+    }
+
+    private static EntreeAbsence entree(String animateurId, Creneau creneau) {
         return new EntreeAbsence(
-                contrainte.getId(),
-                contrainte.getCreneau().getId(),
-                creneau == null ? null : creneau.getHeureDebut(),
-                creneau == null ? null : creneau.getHeureFin(),
-                contrainte.getRaison(),
-                contrainte.getCreeParUtilisateurId(),
-                comptes.nomAffiche(contrainte.getCreeParUtilisateurId()),
-                contrainte.getCreeLe(),
-                annulable);
+                animateurId + "-" + creneau.getId(),
+                creneau.getId(),
+                creneau.getHeureDebut(),
+                creneau.getHeureFin(),
+                null,
+                null,
+                null,
+                null,
+                true);
     }
 
     private static CreneauJourJ creneauJourJ(Creneau creneau, LocalDateTime maintenant) {
@@ -964,13 +847,13 @@ public class JourJService {
     public record AbsenceJourJ(String animateurId, String nomAffiche, List<EntreeAbsence> entrees) {}
 
     /**
-     * One timeslot of an absence, with the trace the exception carries.
+     * One timeslot of the day an absence covers. The trace the forced
+     * unavailability used to carry (who wrote it, when, why) is gone with it
+     * (ADR 0117): a day off of a fiche has no author, so those fields are
+     * {@code null}, kept on the wire so that the screen's contract does not move.
      *
-     * @param creeParNom the name (else the address) of the account that wrote it,
-     *                   resolved at read time; {@code null} when the author is no account
-     * @param annulable false when the exception names several animateurs: it was
-     *                  not written by this screen and undoing it here would free
-     *                  people nobody asked about
+     * @param contrainteId a key of the entry for the screen's list, no longer an exception's id
+     * @param annulable always true: the day off leaves the fiche
      */
     @Schema(requiredProperties = {"annulable", "creneauId"})
     public record EntreeAbsence(

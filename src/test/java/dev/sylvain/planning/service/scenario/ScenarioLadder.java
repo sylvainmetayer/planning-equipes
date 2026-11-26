@@ -302,29 +302,13 @@ final class ScenarioLadder {
         assertAdHocRules(solved);
     }
 
-    /** The three prescriptive ad hoc kinds, read on the plan; the affinity is a reward and binds nothing. */
+    /** The prescriptive ad hoc kinds, read on the plan; the affinity is a reward and binds nothing. */
     private static void assertAdHocRules(PlanningEvenement solved) {
         for (ContrainteAdHoc contrainte : solved.getContraintesAdHoc()) {
-            List<PosteAffectation> perimetre = solved.getPostes().stream()
-                    .filter(poste ->
-                            contrainte.getStand() == null || poste.getStand().equals(contrainte.getStand()))
-                    .filter(poste -> contrainte.getCreneau() == null
-                            || poste.getCreneau().equals(contrainte.getCreneau()))
-                    .toList();
             List<String> concernes = contrainte.getAnimateursConcernes().stream()
                     .map(Animateur::getId)
                     .toList();
             switch (contrainte.getType()) {
-                case INDISPONIBILITE_FORCEE ->
-                    assertThat(perimetre)
-                            .as("ad hoc %s", contrainte.getId())
-                            .noneMatch(poste -> poste.getAnimateur() != null
-                                    && concernes.contains(poste.getAnimateur().getId()));
-                case AFFECTATION_FORCEE ->
-                    assertThat(perimetre)
-                            .as("ad hoc %s", contrainte.getId())
-                            .anyMatch(poste -> poste.getAnimateur() != null
-                                    && concernes.contains(poste.getAnimateur().getId()));
                 case INCOMPATIBILITE -> {
                     Set<Creneau> creneauxDuPremier = seatsOf(solved, concernes.get(0)).stream()
                             .map(PosteAffectation::getCreneau)

@@ -209,6 +209,16 @@ public class ParametresService {
      * there is. Who changed it, and when, is the action journal's.</p>
      */
     public void setContrainteActive(String nom, boolean actif) {
+        if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom)) {
+            // The 3.x hard form names a level of the merged rule (ADR 0118): on is
+            // obligatoire, and the rule enforced; off is back to a preference.
+            String merged = ConstraintCatalog.currentName(nom);
+            setNiveauObligatoire(merged, actif);
+            if (actif) {
+                setContrainteActive(merged, true);
+            }
+            return;
+        }
         ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
         // Asking for exactly what the catalogue already says drops the row
         // rather than pinning it: the table then holds the decisions somebody

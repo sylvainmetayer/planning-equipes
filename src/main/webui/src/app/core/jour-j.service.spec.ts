@@ -94,7 +94,6 @@ describe('JourJService', () => {
     await service.prevenir(['A1', 'A2']);
 
     expect(api.post).toHaveBeenCalledWith('/api/planning/publication', {
-      exclusions: [],
       cibles: ['A1', 'A2'],
     });
   });

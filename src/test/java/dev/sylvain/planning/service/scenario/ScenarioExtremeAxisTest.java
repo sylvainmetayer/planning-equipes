@@ -147,10 +147,10 @@ class ScenarioExtremeAxisTest {
     @Test
     void twoThousandAdHocRules() {
         Loaded loaded = load("extreme-13-2000-contraintes-ad-hoc");
-        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(2000);
+        assertThat(loaded.problem().getContraintesAdHoc()).hasSize(800);
 
         Instant debut = Instant.now();
-        assertThat(ContrainteAdHocContradictions.detectAll(loaded.problem().getContraintesAdHoc(), loaded.creneaux()))
+        assertThat(ContrainteAdHocContradictions.detectAll(loaded.problem().getContraintesAdHoc()))
                 .isEmpty();
         assertThat(Duration.between(debut, Instant.now())).isLessThan(Duration.ofSeconds(5));
 

@@ -37,7 +37,7 @@ A badge flags a game category as **orphan** (offered by a stand, mastered by nob
 
 1. Open *Stands* and click "Add". The wizard guides the creation: identity, game categories, location, then the edition's timeslots, which you untick as needed, with the headcount of each. No rule to write.
 2. Fill in at least one game category (always), the minimum and maximum headcounts, and whether the stand is reserved for adults. The *premium* and *effort* flags are also set in the fiche.
-3. Set the hours: recurring rules completed by dated exceptions. Each opening window can name its own headcount, for a stand that does not have the same need in the morning, the afternoon and at night. The detail is in [Build the calendar and the hours](calendrier-et-horaires.md).
+3. Set the hours in the stand's fiche: a **recurring model** ("every Saturday and Sunday from 10:00 to 18:00, headcount 2"), laid as **dated windows** on the days of the event, and the windows you add by hand (an opening or a closure on a given day). Each opening window can name its own headcount, for a stand that does not have the same need in the morning, the afternoon and at night. The detail is in [Build the calendar and the hours](calendrier-et-horaires.md).
 
 The stands table sorts on every column and says, for each stand, its open days, its seats and, after a solve, its coverage.
 
@@ -45,14 +45,16 @@ The stands table sorts on every column and says, for each stand, its open days, 
 
 Each stand has its fiche, which gathers:
 
-- its day × timeslot grid, editable in place as in the Stand hours grid;
+- its **recurring model**, at the top, editable in place: the rule the stand keeps, for instance "every Saturday and Sunday from 10:00 to 18:00, headcount 2". Once saved, it is laid as windows on the days of the event;
+- its **dated windows**, below: one line per opening or closure, with its origin, *model* (laid by the model) or *typed* (added by hand). You filter by day, add a window, remove one or a whole day. A window laid by the model and removed by hand does not come back, until the model's rules change;
 - its opening anomalies, including a window declared at a time that no shift covers;
 - its seats after a solve;
 - the comparison with another stand;
-- the history of its changes;
-- its rules in condensed form.
+- the history of its changes.
 
-A stand's hours can be copied onto another from its fiche, or onto a whole selection from the bulk edit. The rules, dated exceptions and window headcounts are copied with a signal when a window exceeds the target stand's maximum headcount.
+During a solve, or when the stands are frozen (the *Solve* phase, or *Published* without unblocking), the fiche can be read but not written, and a banner says why. A reader sees everything, with no button. If somebody changed the stand in the meantime, saving the model offers to reload or overwrite knowingly.
+
+A stand's hours can be copied onto another from its fiche, or onto a whole selection from the bulk edit. The model, the windows and the window headcounts are copied with a signal when a window exceeds the target stand's maximum headcount.
 
 ## Working in tables
 

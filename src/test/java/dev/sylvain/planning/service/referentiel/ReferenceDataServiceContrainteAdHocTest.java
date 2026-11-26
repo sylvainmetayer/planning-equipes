@@ -126,60 +126,6 @@ class ReferenceDataServiceContrainteAdHocTest {
                 .hasMessageContaining("Ajustement inconnu");
     }
 
-    @Test
-    void aForcedSeatOnAnUnavailableSlotIsRefused() {
-        String indisponibilite = create(onCreneau(TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, matin, premier));
-
-        ContrainteAdHoc affectation = onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier);
-
-        assertThatThrownBy(() -> create(affectation))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(indisponibilite)
-                .hasMessageContaining("indisponible");
-    }
-
-    @Test
-    void twoForcedSeatsOnOverlappingCreneauxAreRefused() {
-        // The overlap is read from the persisted créneaux: the constraint only
-        // carries their ids.
-        String premiere = create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
-
-        ContrainteAdHoc chevauchante = onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier);
-
-        assertThatThrownBy(() -> create(chevauchante))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(premiere)
-                .hasMessageContaining("chevauchent");
-    }
-
-    @Test
-    void anIncompatiblePairForcedOntoOneCreneauIsRefused() {
-        String incompatibilite = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
-        String affectation = create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
-
-        ContrainteAdHoc secondeAffectation = onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second);
-
-        assertThatThrownBy(() -> create(secondeAffectation))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(incompatibilite)
-                .hasMessageContaining(affectation)
-                .hasMessageContaining("incompatibles");
-    }
-
-    @Test
-    void twoForcedSeatsOnDisjointCreneauxAreAccepted() {
-        Creneau soir = referenceDataService.createCreneau(
-                new Creneau(null, 1, LocalDate.of(2026, 8, 1), LocalTime.of(16, 0), LocalTime.of(20, 0)));
-        create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
-
-        assertThatCode(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, soir, premier)))
-                .doesNotThrowAnyException();
-
-        // The constraint on that créneau goes first: it names it.
-        cleanUpConstraints();
-        referenceDataService.deleteCreneau(soir.getId());
-    }
-
     /** Creates the constraint without an id and answers the one the application drew. */
     private String create(ContrainteAdHoc contrainte) {
         String id = referenceDataService.createContrainteAdHoc(contrainte).getId();

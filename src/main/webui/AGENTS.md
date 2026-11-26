@@ -362,12 +362,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the relecture as one line (`relecture-barre.ts`) — one count of the empty
   seats and the breaks without relay, leading to the Diagnostic's problems
   (`?sieges=vides|verrous` and `?relais=sans` still narrow the table and the
-  breaks from the address), the comment and
-  « Relu et accepté » in its menu (`relecture-dialog.ts` over the former
-  panel); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
+  breaks from the address), and the state of the day — À relire, Relue
+  (the date) or Figée (ADR 0121) — as a button opening the three-valued
+  control with the comment (`relecture-dialog.ts` over `validation-panel.ts`;
+  « Figée » asks first; a lecteur sees the state and no button; written
+  through `PUT /api/etats-journee/{jour}`, never the `/api/validations`
+  aliases); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
   journée » (`/impression/:date`) and « Afficher sur la TV » (Paramètres ›
-  Affichage mural). One day under five renderings chosen by
-  `?vue=calendrier|rail|carte|pauses|changements`: the table stands ×
+  Affichage mural). One day under four views chosen by
+  `?vue=jour|carte|pauses|changements`, the first with two modes in
+  `?mode=rail|tableau` (the rail, the default, is the absence of both; the 3.x
+  `?vue=calendrier` and `?vue=rail` are still read, `journee.ts`' `readView`):
+  the table stands ×
   timeslots across the whole width (`calendar-day-vue`, one name per chip,
   empty seats in red, a closed timeslot in a neutral « fermé », a partial
   opening as its hours), the rail animateur by animateur, the day replayed on

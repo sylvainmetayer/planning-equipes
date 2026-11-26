@@ -887,9 +887,9 @@ describe('SolverPage', () => {
   // organiser gets nothing out of, and the cause only shows once it is over.
   describe('before spending solver time on an impossible problem', () => {
     const bloquante: CauseInfaisabilite = {
-      type: 'AFFECTATION_FORCEE_SIEGE_VERROUILLE',
+      type: 'CONTRAINTES_AD_HOC_CONTRADICTOIRES',
       severite: 'CRITIQUE',
-      message: "L'affectation forcée C01 ne peut pas être tenue.",
+      message: "L'ajustement C01 contredit un autre ajustement.",
       creneauId: null,
       date: null,
       heureDebut: null,
@@ -931,7 +931,7 @@ describe('SolverPage', () => {
       causesBloquantes.set(
         ['C01', 'C02', 'C03', 'C04', 'C05'].map((id) => ({
           ...bloquante,
-          message: `L'affectation forcée ${id} ne peut pas être tenue.`,
+          message: `L'ajustement ${id} contredit un autre ajustement.`,
           contrainteIds: [id],
         })),
       );

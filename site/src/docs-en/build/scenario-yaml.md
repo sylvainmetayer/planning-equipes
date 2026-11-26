@@ -173,7 +173,7 @@ The added timeslots travel by natural key, because the ids of `creneaux` do not 
 
 The import writes directly into the reference data, after the stands and timeslots, and never through the action of the Consignes screen. The latter refuses a past or current date and itself adds the timeslots that its windows require: two things a file has already settled. A consigne on a past date can therefore be imported, and the statistics of that day are those of what was done.
 
-A scenario solved directly from `src/main/resources/scenarios/` (`PlanningService.buildExample`) does not apply them: the consigne layer is laid down by `StandService.resolve` on the reference data, and this scenario is solved on its nominal grid. They take effect once the file is imported.
+A scenario solved directly from `src/main/resources/scenarios/` (`PlanningService.buildExample`) does not apply them: a consigne's plages are written on the stands when the file is imported, and this scenario is solved on its nominal grid. They take effect once the file is imported; the file itself never carries those plages.
 
 ## The shipped files
 

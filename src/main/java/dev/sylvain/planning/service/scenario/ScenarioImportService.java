@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
@@ -8,6 +9,7 @@ import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.consigne.ConsignePlages;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
@@ -395,7 +397,7 @@ public class ScenarioImportService {
      */
     private void applyConsignes(ScenarioYamlReader.ScenarioSections sections) {
         sections.prereglagesConsigne().ifPresent(this::replacePrereglages);
-        sections.consignes().ifPresent(this::replaceConsignes);
+        sections.consignes().ifPresentOrElse(this::replaceConsignes, this::relayConsignes);
     }
 
     private void replacePrereglages(List<PrereglageConsigne> prereglages) {
@@ -422,12 +424,28 @@ public class ScenarioImportService {
                     new ConsigneService.VacationRef(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()),
                     creneau.getId());
         }
+        List<Stand> stands = referenceDataService.listStands();
         for (ScenarioYamlReader.ConsigneScenario entree : consignes) {
             List<Long> ids = new ArrayList<>();
             for (ConsigneService.VacationRef cle : entree.creneauxAjoutes()) {
                 ids.add(idsParCle.computeIfAbsent(cle, this::createCreneau));
             }
-            consigneRepository.save(entree.consigne().withCreneauxAjoutes(ids));
+            ConsigneEdition posee = entree.consigne().withCreneauxAjoutes(ids);
+            // A file carries the consigne, never its plages: they are laid again on the stands it imported.
+            // Read after the créneaux above are created: the closures over them need their hours.
+            consigneRepository.save(posee, ConsignePlages.of(stands, posee, referenceDataService.listCreneaux()));
+        }
+    }
+
+    /**
+     * A file without a consignes section keeps the edition's, but its stands came in without the plages
+     * those consignes had written: they are laid again on the stands as imported.
+     */
+    private void relayConsignes() {
+        List<Stand> stands = referenceDataService.listStands();
+        List<Creneau> grille = referenceDataService.listCreneaux();
+        for (ConsigneEdition consigne : consigneRepository.list()) {
+            consigneRepository.replacePlages(consigne.date(), ConsignePlages.of(stands, consigne, grille));
         }
     }
 

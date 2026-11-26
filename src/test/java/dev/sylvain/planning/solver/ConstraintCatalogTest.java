@@ -53,9 +53,12 @@ class ConstraintCatalogTest {
                 .toList();
 
         assertThat(reglables)
-                .contains("coupureRepasObligatoire", "mineurNecessiteEncadrementMajeur", "equilibrerCharge")
-                // The day-run cap keeps its two forms until they merge into one adjustable rule (ADR 0045).
-                .doesNotContain("maxJoursConsecutifsTravailles", "maxJoursConsecutifsTravaillesDur");
+                .contains(
+                        "coupureRepasObligatoire",
+                        "mineurNecessiteEncadrementMajeur",
+                        "equilibrerCharge",
+                        // One rule of adjustable level since its two forms merged (ADR 0118).
+                        "maxJoursConsecutifsTravailles");
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             if (definition.legale()
                     || definition.categorie().equals("Affectation")
@@ -273,5 +276,17 @@ class ConstraintCatalogTest {
                 .isEqualTo(30);
         assertThat(ConstraintCatalog.configuredWeight(property, "reposQuotidienMinimal"))
                 .isEqualTo(ConstraintCatalog.defaultWeight("reposQuotidienMinimal"));
+    }
+
+    @Test
+    void groupsTheTwoLocationRulesAndLeavesTheTripAlone() {
+        var grouped = ConstraintCatalog.PAR_NOM.values().stream()
+                .filter(definition -> definition.groupe() != null)
+                .collect(java.util.stream.Collectors.toMap(
+                        ConstraintCatalog.ConstraintDefinition::name, ConstraintCatalog.ConstraintDefinition::groupe));
+        assertThat(grouped)
+                .containsExactlyInAnyOrderEntriesOf(java.util.Map.of(
+                        "eviterChangementEmplacementEloigne", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE,
+                        "limiterEmplacementsParJour", ConstraintCatalog.GROUPE_DISPERSION_JOURNEE));
     }
 }

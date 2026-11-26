@@ -148,7 +148,8 @@ export function cellLink(axe: AxePivot, cle: string, libelle: string): LienPivot
   if (axe === 'STAND') {
     return {
       route: '/journee',
-      queryParams: { stand: cle },
+      // The table, where the stand's empty seats show; the rail draws people only.
+      queryParams: { vue: 'jour', mode: 'tableau', stand: cle },
       label: $localize`:@@constraints.pivot.detail.versStand:Voir le planning de ${libelle}:stand:`,
     };
   }

@@ -79,7 +79,7 @@ class GelReferentielStructuralTest {
 
     /** Method → the method of the same class whose body calls {@code gel.refuseIfFrozen}. */
     private static final Map<String, String> CHECKED_IN_BODY = Map.ofEntries(
-            Map.entry("StandService#update(String,Stand)", "update"),
+            Map.entry("StandService#update(String,Stand)", "save"),
             Map.entry("TypologieService#update(String,TypologieItem)", "update"),
             Map.entry("AnimateurService#update(String,Animateur)", "update"),
             Map.entry("AnimateurService#update(String,Animateur,Animateur)", "update"),
@@ -103,6 +103,12 @@ class GelReferentielStructuralTest {
                     "AnimateurService#update(String,Animateur,Animateur)"),
             Map.entry("ReferenceDataService#deleteAnimateur(String)", "AnimateurService#delete(String)"),
             Map.entry(
+                    "ReferenceDataService#addJourIndisponible(Connection,String,LocalDate)",
+                    "AnimateurService#addJourIndisponible(Connection,String,LocalDate)"),
+            Map.entry(
+                    "ReferenceDataService#removeJourIndisponible(String,LocalDate)",
+                    "AnimateurService#removeJourIndisponible(String,LocalDate)"),
+            Map.entry(
                     "ReferenceDataService#regenerateAnimateurToken(String)",
                     "AnimateurService#regenerateToken(String)"),
             Map.entry(
@@ -115,6 +121,12 @@ class GelReferentielStructuralTest {
                     "ReferenceDataService#writeStand(Stand,List,Emplacement)", "StandService#create(Connection,Stand)"),
             Map.entry(
                     "ReferenceDataService#writeStand(String,Stand)", "ReferenceDataService#updateStand(String,Stand)"),
+            Map.entry(
+                    "ReferenceDataService#addStandPlage(String,PlageStand)",
+                    "StandService#addPlage(String,PlageStand)"),
+            Map.entry(
+                    "ReferenceDataService#removeStandPlages(String,Long,LocalDate)",
+                    "StandService#removePlages(String,Long,LocalDate)"),
             Map.entry("ReferenceDataService#deleteStand(String)", "StandService#delete(String)"),
             Map.entry("ReferenceDataService#saisirGrilleHoraires(List)", "StandService#saisirGrille(List)"),
             Map.entry("ReferenceDataService#createEmplacement(Emplacement)", "EmplacementService#create(Emplacement)"),
@@ -181,13 +193,16 @@ class GelReferentielStructuralTest {
                     "AnimateurService#create(Animateur)",
                     "a new fiche is not a retouch: an animateur arrives with their competences"),
             Map.entry("AnimateurService#delete(String)", "the people's data stay open, the roster with them"),
+            Map.entry(
+                    "AnimateurService#addJourIndisponible(Connection,String,LocalDate)",
+                    "the people's days off stay open"),
+            Map.entry("AnimateurService#removeJourIndisponible(String,LocalDate)", "the people's days off stay open"),
             Map.entry("AnimateurService#regenerateToken(String)", "a credential, not the referential"),
             Map.entry("AnimateurService#regenerateAbonnementToken(String)", "same"),
             Map.entry(
                     "ReferenceDataService#createContrainteAdHoc(ContrainteAdHoc)",
                     "the ad hoc adjustments stay open: they are the late phase's own gesture"),
             Map.entry("ReferenceDataService#writeContrainteAdHoc(ContrainteAdHoc)", "same"),
-            Map.entry("ReferenceDataService#createContraintesAdHoc(Connection,List)", "same"),
             Map.entry("ReferenceDataService#deleteContrainteAdHoc(String)", "same"),
             Map.entry(
                     "ReferenceDataService#writeVerrouillage(VerrouillagePlanning)",

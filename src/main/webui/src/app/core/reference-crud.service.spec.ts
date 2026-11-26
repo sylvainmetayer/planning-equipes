@@ -137,7 +137,7 @@ describe('ReferenceCrudService', () => {
     ])('relie l’avertissement de %s à la fiche sur son écran', async (resource, id, route) => {
       store.save.mockResolvedValueOnce({
         id,
-        avertissements: [{ type: 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE', message: 'indisponible' }],
+        avertissements: [{ type: 'ARRIVEE_GROUPEE_JOURS_DIVERGENTS', message: 'indisponible' }],
       });
 
       await service.save(resource, { id }, null, 'Fiche');

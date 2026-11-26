@@ -115,7 +115,7 @@ Les graines étant fixées, deux runs d'une même configuration tracent la même
 
 ## Le banc des jours d'affilée
 
-`ConsecutiveRunsBenchTest` mesure ce que coûterait la fusion des deux formes de la règle des jours d'affilée (`maxJoursConsecutifsTravailles`, medium, et `maxJoursConsecutifsTravaillesDur`, dure) en une règle à niveau réglable, et le retrait de l'ordre de construction par calendrier ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md)). Il ne change aucun comportement : les variantes sont des interrupteurs, un poids qui porte la règle medium au niveau dur ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) et une couture de test sur le comparateur de construction.
+`ConsecutiveRunsBenchTest` mesure la règle des jours d'affilée à ses deux niveaux : `preference`, ce qui est livré, et `obligatoire`, son poids porté à un point dur ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)). Écrit avant la fusion des deux formes de la 3.x, il en a donné le prix, et celui du retrait de l'ordre de construction par calendrier ([ADR 0068](repo:docs/decisions/0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md), retiré par l'[ADR 0118](repo:docs/decisions/0118-une-seule-regle-de-jours-d-affilee-a-niveau-reglable.md)) : ce sont les mesures plus bas.
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=ConsecutiveRunsBenchTest \
@@ -123,7 +123,9 @@ Les graines étant fixées, deux runs d'une même configuration tracent la même
     -Dbench.seconds=120 -Dbench.seeds=3 -Dbench.cap=6
 ```
 
-La classe se lance aussi comme un `main` sur le classpath de test, pour faire tourner plusieurs scénarios dans des JVM parallèles. Chaque résolution dure tout son budget, sans arrêt sur plateau, graines 0 à 2. Les variantes sont `preference` (la forme medium seule : ce qui est livré, et la règle fusionnée au niveau préférence), `both` (les deux formes, comme un organisateur qui veut un plafond dur les allume aujourd'hui), `hard` (la forme dure seule : la règle fusionnée au niveau obligatoire), `hard-par-poids` (la forme medium dont le poids vaut un point dur : la règle fusionnée telle que l'ADR 0111 l'écrirait) et, sous Timefold seulement, `both-sans-calendrier` et `hard-sans-calendrier`. Le moteur direct construit toujours par rareté : l'ordre par calendrier n'existe pas chez lui, le retirer n'y change rien. Le plafond est fixé à six jours (`bench.cap`).
+La classe se lance aussi comme un `main` sur le classpath de test, pour faire tourner plusieurs scénarios dans des JVM parallèles. Chaque résolution dure tout son budget, sans arrêt sur plateau, graines 0 à 2. Le plafond est fixé à six jours (`bench.cap`).
+
+Les mesures ci-dessous ont été prises avant la fusion, sur les variantes d'alors : `preference` (la forme medium seule), `both` (les deux formes allumées), `hard` (la forme dure seule, avec l'ordre par calendrier sous Timefold), `hard-par-poids` (la forme medium dont le poids vaut un point dur : la règle fusionnée, `obligatoire` aujourd'hui) et, sous Timefold seulement, `both-sans-calendrier` et `hard-sans-calendrier`. Le moteur direct construit toujours par rareté : l'ordre par calendrier n'existait pas chez lui. Depuis la fusion, la recherche par jours entiers ([ADR 0049](repo:docs/decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)) suit la règle obligatoire : `obligatoire` vaut `hard-sans-calendrier`.
 
 La dernière colonne relit chaque plan final sous la règle obligatoire : le nombre de graines dont aucun animateur ne dépasse le plafond.
 
@@ -205,7 +207,7 @@ Mesures du 26 novembre 2026, une machine de 12 cœurs et 24 Go (neuf JVM en para
 Ce qu'on en retient :
 
 - **Le moteur direct** : la forme obligatoire coûte au plus 3,4 % de medium sur `gamme-20`, 0,5 % sur `scenario-complet`, rien sur `gamme-25` et la canicule, et fait mieux sur `gamme-16`. Elle tient le plafond partout où la grille le permet, ce que la préférence ne fait ni sur `scenario-complet`, ni sur `festival-hivernal`, ni toujours sur `gamme-20`. La faisabilité arrive en moins de 2 s, 12 s sur `festival-hivernal` dont la grille ne tient à six jours que dans une graine sur trois. `hard-par-poids` et `hard` donnent les mêmes plans à la graine près.
-- **Timefold** : l'ordre par calendrier vaut 6 à 8 % de medium sur la canicule et `scenario-complet`, 35 % sur `gamme-20` et `gamme-25`, et 10 à 15 % de temps jusqu'à la faisabilité. La règle fusionnée par le poids (`hard-par-poids`) retombe sur `hard-sans-calendrier`, puisque rien n'indique au comparateur que la règle est obligatoire.
+- **Timefold** : l'ordre par calendrier vaut 6 à 8 % de medium sur la canicule et `scenario-complet`, 35 % sur `gamme-20` et `gamme-25`, et 10 à 15 % de temps jusqu'à la faisabilité. La règle fusionnée par le poids (`hard-par-poids`) retombait sur `hard-sans-calendrier`, puisque rien n'indiquait au comparateur que la règle était obligatoire. L'ordre par calendrier est retiré en 4.0 : la régression est annoncée dans le guide [Passer à la 4.0](../installer/passer-a-la-4-0.md). Rejoué après la fusion, sur la même machine et sous Timefold, `obligatoire` atteint la faisabilité dans les trois graines et tient le plafond partout, au medium de `hard-sans-calendrier` à 0,3 % près ; `hard` en 3.x faisait 6 % (canicule), 8 % (`scenario-complet`) et 35 % (`gamme-20`, `gamme-25`) de medium en moins.
 - `gamme-28` (infaisable par construction) l'est dans toutes les variantes, aux deux moteurs.
 
 ## Le banc des règles de lieu
@@ -297,7 +299,7 @@ La règle des 5 % décidée pour ces mesures : une perte de medium au-delà de 5
 
 ## Le banc des règles de repas
 
-`MealRulesBenchTest` mesure ce que coûterait la fusion des deux règles de repas, `coupureRepasObligatoire` (la coupure due, dure) et `coupureRepasPlacementPrefere` (l'endroit de la fenêtre où elle est prise, souple), en une règle unique dont le placement préféré serait un paramètre, avant que personne ne l'écrive. Il ne change aucun comportement et ne demande aucune couture dans le code de production : les variantes sont des interrupteurs, des poids qui portent une règle à un autre niveau ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) et une réécriture des faits `FenetreRepas` du problème, dont l'indicateur `auPlusTard` est le placement que la règle fusionnée lirait comme paramètre.
+`MealRulesBenchTest` mesure ce que coûterait la fusion des deux règles de repas, `coupureRepasObligatoire` (la coupure due, dure) et `coupureRepasPlacementPrefere` (l'endroit de la fenêtre où elle est prise, souple), en une règle unique dont le placement préféré serait un paramètre, avant que personne ne l'écrive. Il ne change aucun comportement et ne demande aucune couture dans le code de production : les variantes sont des interrupteurs, des poids qui portent une règle à un autre niveau ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)) et une réécriture des faits `FenetreRepas` du problème, dont l'indicateur `auPlusTard` est le placement que la règle fusionnée lirait comme paramètre. Ce que le banc a montré a été suivi : la fusion se fait dans le catalogue et à l'écran, pas dans le score, et le placement est un paramètre de l'édition ([ADR 0123](repo:docs/decisions/0123-une-seule-entree-de-repas-placement-en-parametre.md)).
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=MealRulesBenchTest \
@@ -505,11 +507,11 @@ La règle des 5 % décidée pour ces mesures : une perte de medium au-delà de 5
 | `eviterRoulementStandsPremium` + `eviterEnchainementStandsEpuisants` | non (aucun tuple commun) | -17,6 % (`sans-roulement`, Timefold, `gamme-20`) | garder |
 | `appreciationIncompatible` + `experienceRequisePourStandsPremium` | oui, par construction (deux motifs, un point medium chacun) | -10,8 % (`sans-experience-premium`, Timefold, `gamme-20`), qui ne s'applique pas à une fusion à score égal | garder : le score tiendrait, mais deux réglages de l'organisateur disparaîtraient |
 
-Aucune paire ne se fond donc en respectant les deux critères : la fusion des règles de confort ne retire aucune des 40 règles. Le test différentiel et un test « avant/après » sur les scénarios suffiraient, si l'on choisissait la troisième paire malgré la perte de réglage.
+Aucune paire ne se fond donc en respectant les deux critères : la fusion des règles de confort ne retire aucune des 39 règles. Le test différentiel et un test « avant/après » sur les scénarios suffiraient, si l'on choisissait la troisième paire malgré la perte de réglage.
 
 ## Le moteur direct : deux tests qui tiennent les règles en double
 
-`solver/handsearch` écrit les 42 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
+`solver/handsearch` écrit les 39 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
 
 `HandSearchCoverageStructuralTest` exige que toute contrainte de `ConstraintCatalog` ait sa constante dans `Rule` et que toute constante soit comptée dans le score du moteur. Il échoue le premier, par son nom, quand une contrainte n'est ajoutée que d'un côté.
 

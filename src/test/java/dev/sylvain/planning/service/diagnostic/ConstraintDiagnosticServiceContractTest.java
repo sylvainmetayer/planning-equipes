@@ -271,7 +271,7 @@ class ConstraintDiagnosticServiceContractTest {
     }
 
     /**
-     * A staffed seat whose ad hoc exception cannot be honoured, plus an
+     * Two staffed seats whose ad hoc incompatibility cannot be honoured, plus an
      * unfilled one: enough to make several hard constraints match, with facts
      * of every shape the formatter knows (animateur, poste, ad hoc rule).
      */
@@ -281,14 +281,16 @@ class ConstraintDiagnosticServiceContractTest {
         Animateur alice = new Animateur("A1", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bob = new Animateur("A2", "Bob", "Durand", LocalDate.of(1990, 1, 1), false);
         PosteAffectation staffed = new PosteAffectation("P1", stand, creneau);
-        staffed.setAnimateur(bob);
         PosteAffectation unfilled = new PosteAffectation("P2", stand, creneau);
-        ContrainteAdHoc forcee = new ContrainteAdHoc("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
-        forcee.setAnimateursConcernes(List.of(alice));
+        staffed.setAnimateur(alice);
+        PosteAffectation second = new PosteAffectation("P3", stand, creneau);
+        second.setAnimateur(bob);
+        ContrainteAdHoc forcee = new ContrainteAdHoc("C1", TypeContrainteAdHoc.INCOMPATIBILITE);
+        forcee.setAnimateursConcernes(List.of(alice, bob));
         forcee.setCreneau(creneau);
         forcee.setRaison("Promesse faite en juin");
         return new PlanningEvenement(
-                creneau.getDate(), List.of(alice, bob), List.of(staffed, unfilled), List.of(forcee));
+                creneau.getDate(), List.of(alice, bob), List.of(staffed, second, unfilled), List.of(forcee));
     }
 
     private static PlanningEvenement planningWithoutViolations() {

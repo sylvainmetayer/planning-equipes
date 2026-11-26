@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioValidator;
-import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisabilite;
 import dev.sylvain.planning.service.scenario.ScenarioLadder.Loaded;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -39,27 +38,6 @@ class ScenarioLadderInfeasibleTest {
 
         assertThat(brokenHardConstraints(solved)).containsExactly("posteDoitEtrePourvu");
         assertThat(matchCounts(solved)).containsEntry("posteDoitEtrePourvu", 3);
-    }
-
-    /**
-     * The forced assignment falls on the day its animateur declared off. The
-     * pre-solve analysis names it as a blocking cause, and the solve keeps the
-     * day off: a seat on a day off costs more than any other breach, so the
-     * exception is the rule left unkept — never the other way round.
-     */
-    @Test
-    void rung27AForcedAssignmentOnADayOff() {
-        Loaded loaded = load("gamme-27-infaisable-affectation-forcee-jour-indisponible");
-        assertThat(loaded.feasibility().feasible()).isFalse();
-        assertThat(loaded.feasibility().causes()).singleElement().satisfies(cause -> {
-            assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.AFFECTATION_FORCEE_JOUR_INDISPONIBLE);
-            assertThat(cause.contrainteIds()).containsExactly("C01");
-        });
-
-        PlanningEvenement solved = solveFor(loaded, 5L);
-
-        assertThat(brokenHardConstraints(solved)).containsExactly("affectationForcee");
-        assertThat(ScenarioLadder.seatsOf(solved, "A111")).isEmpty();
     }
 
     @Test

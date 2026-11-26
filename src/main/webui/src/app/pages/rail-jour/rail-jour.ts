@@ -7,7 +7,6 @@
 
 import {
   Animateur,
-  ContrainteAdHoc,
   WalkView,
   GroupView,
   PauseDueView,
@@ -77,8 +76,6 @@ export interface RailLigne {
   amplitudeFin: string | null;
   /** True when any block overlaps the previous one: the animateur is in two places at once. */
   chevauchement: boolean;
-  /** Windows a forced ad hoc unavailability covers this day; empty in the common case. */
-  blocages: RailBlocage[];
   /** The legal breaks of the day, as the rotation places them, drawn over the vacations. */
   pauses: SegmentPause[];
   /** Tight walks between two consecutive vacations, drawn as a chevron in the gap. */
@@ -87,18 +84,6 @@ export interface RailLigne {
   covoiturage: RailCovoiturage | null;
   /** What a screen reader reads for the whole line — the rail itself is decorative. */
   resume: string;
-}
-
-/**
- * A window a recorded ad hoc exception keeps an animateur off, drawn hatched
- * behind the blocks — never a verdict computed here, only the fact as entered.
- */
-export interface RailBlocage {
-  heureDebut: string;
-  heureFin: string;
-  offsetPercent: number;
-  widthPercent: number;
-  label: string;
 }
 
 /** A member of a grouped arrival, on one day: who they ride with, and whether the car holds. */
@@ -173,72 +158,11 @@ interface Span {
   finMinutes: number;
 }
 
-/** A time window of one event day, kept with its labels so nothing has to format minutes back. */
-interface Fenetre {
-  debutMinutes: number;
-  finMinutes: number;
-  heureDebut: string;
-  heureFin: string;
-}
-
 /** What the percentages of one day's rail are measured against. */
 interface Echelle {
   /** Whole-hour start of the rail. */
   debutMinutes: number;
   amplitude: number;
-  /** Raw first-start/last-end of the day — what "covers the whole day" is measured against, never the rounded rail. */
-  journee: Fenetre;
-}
-
-/** Overlapping or touching windows merged into one, ordered — so a coverage test is a single comparison. */
-function merge(fenetres: Fenetre[]): Fenetre[] {
-  const ordonnees = [...fenetres].sort((left, right) => left.debutMinutes - right.debutMinutes);
-  const fusionnees: Fenetre[] = [];
-  ordonnees.forEach((fenetre) => {
-    const last = fusionnees.at(-1);
-    if (last && fenetre.debutMinutes <= last.finMinutes) {
-      if (fenetre.finMinutes > last.finMinutes) {
-        last.finMinutes = fenetre.finMinutes;
-        last.heureFin = fenetre.heureFin;
-      }
-      return;
-    }
-    fusionnees.push({ ...fenetre });
-  });
-  return fusionnees;
-}
-
-/**
- * Windows on which a recorded `INDISPONIBILITE_FORCEE` keeps an animateur off
- * the plan, by animateur id — the fact as it was entered, not a feasibility
- * verdict.
- *
- * Only the exceptions carrying **no stand** are read: with one, the fact says
- * "not on that stand", which forbids one seat and leaves the person perfectly
- * callable elsewhere on the same hours. Counting that as an unavailability
- * would hide exactly the person a day of tension is looking for. A `null`
- * créneau is the whole event, hence the whole day.
- */
-function blocagesParAnimateur(
-  contraintes: ContrainteAdHoc[],
-  creneaux: Map<number, Fenetre>,
-  journee: Fenetre,
-): Map<string, Fenetre[]> {
-  const blocages = new Map<string, Fenetre[]>();
-  contraintes.forEach((contrainte) => {
-    if (contrainte.type !== 'INDISPONIBILITE_FORCEE' || contrainte.stand) {
-      return;
-    }
-    const fenetre = contrainte.creneau ? creneaux.get(contrainte.creneau.id) : journee;
-    if (!fenetre) {
-      // A créneau of another day, or one no poste was generated for.
-      return;
-    }
-    (contrainte.animateursConcernes ?? []).forEach((target) => {
-      blocages.set(target.id, [...(blocages.get(target.id) ?? []), fenetre]);
-    });
-  });
-  return blocages;
 }
 
 function spanDuPoste(poste: PosteAffectation): Span {
@@ -269,20 +193,16 @@ interface ContenuJour {
   date: string | null;
   spans: Span[];
   spansParAnimateur: Map<string, Span[]>;
-  /** Hours of every créneau of the day, by id — what an ad hoc exception scoped to a créneau names. */
-  creneaux: Map<number, Fenetre>;
 }
 
 /**
  * One entry per event day found in the plan, chronologically. `animateurs` is
  * the edition's referential: every one of them gets a line on every day,
- * assigned or not. `contraintes` are the plan's ad hoc exceptions, read only to
- * hatch the hours an animateur was recorded as unavailable on.
+ * assigned or not.
  */
 export function buildRailJours(
   postes: PosteAffectation[],
   animateurs: Animateur[],
-  contraintes: ContrainteAdHoc[] = [],
   pauses: RapportPauses | null = null,
   walks: WalkSequenceReport | null = null,
   groupedArrivals: GroupedArrivalReport | null = null,
@@ -307,18 +227,9 @@ export function buildRailJours(
         date: creneau.date ?? null,
         spansParAnimateur: new Map(),
         spans: [],
-        creneaux: new Map(),
       };
       jours.set(creneau.jour, jour);
     }
-    // The créneau's own hours, not the poste's possibly narrowed window: an ad
-    // hoc exception names the créneau, so that is the window it covers.
-    jour.creneaux.set(creneau.id, {
-      debutMinutes: minutesOfDay(creneau.heureDebut),
-      finMinutes: endMinutesOfDay(creneau.heureFin),
-      heureDebut: formatHeure(creneau.heureDebut),
-      heureFin: formatHeure(creneau.heureFin),
-    });
     const span = spanDuPoste(poste);
     // Unfilled seats still widen the rail: an unstaffed 08:00 opening is part
     // of the day the reader is looking at.
@@ -340,7 +251,6 @@ export function buildRailJours(
         indexPauses,
         walksIndex,
         groupsByMember,
-        contraintes,
         animateurs: effectif,
         noms,
       }),
@@ -352,13 +262,12 @@ interface RailSources {
   indexPauses: IndexPauses;
   walksIndex: WalksIndex;
   groupsByMember: Map<string, GroupView[]>;
-  contraintes: ContrainteAdHoc[];
   animateurs: Animateur[];
   noms: Map<string, string>;
 }
 
 function buildRailJour(jour: number, contenu: ContenuJour, sources: RailSources): RailJour {
-  const { indexPauses, walksIndex, groupsByMember, contraintes, animateurs, noms } = sources;
+  const { indexPauses, walksIndex, groupsByMember, animateurs, noms } = sources;
   const { date, spans: spansDuJour, spansParAnimateur } = contenu;
   const premier = spansDuJour.reduce(
     (tot, span) => (span.debutMinutes < tot.debutMinutes ? span : tot),
@@ -368,19 +277,12 @@ function buildRailJour(jour: number, contenu: ContenuJour, sources: RailSources)
     (tard, span) => (span.finMinutes > tard.finMinutes ? span : tard),
     spansDuJour[0],
   );
-  const journee: Fenetre = {
-    debutMinutes: premier.debutMinutes,
-    finMinutes: dernier.finMinutes,
-    heureDebut: premier.heureDebut,
-    heureFin: dernier.heureFin,
-  };
   // Rounded outwards to whole hours so the scale's ticks are evenly spaced and
   // the gridlines can be drawn by one repeating background.
-  const debutMinutes = Math.floor(journee.debutMinutes / 60) * 60;
-  const finMinutes = Math.max(Math.ceil(journee.finMinutes / 60) * 60, debutMinutes + 60);
+  const debutMinutes = Math.floor(premier.debutMinutes / 60) * 60;
+  const finMinutes = Math.max(Math.ceil(dernier.finMinutes / 60) * 60, debutMinutes + 60);
   const amplitude = finMinutes - debutMinutes;
-  const echelle: Echelle = { debutMinutes, amplitude, journee };
-  const blocages = blocagesParAnimateur(contraintes, contenu.creneaux, journee);
+  const echelle: Echelle = { debutMinutes, amplitude };
 
   const heures: RailHeure[] = [];
   for (let minutes = debutMinutes; minutes <= finMinutes; minutes += 60) {
@@ -398,7 +300,6 @@ function buildRailJour(jour: number, contenu: ContenuJour, sources: RailSources)
         noms.get(animateur.id) ?? animateur.id,
         date,
         spansParAnimateur.get(animateur.id) ?? [],
-        merge(blocages.get(animateur.id) ?? []),
         echelle,
         {
           pausesDuJour: pausesDe(indexPauses, date, animateur.id),
@@ -434,29 +335,12 @@ function buildRailLigne(
   nom: string,
   date: string | null,
   spans: Span[],
-  fenetresBloquees: Fenetre[],
   echelle: Echelle,
   extras: RailLigneExtras,
 ): RailLigne {
   const { pausesDuJour, walks, covoiturage } = extras;
   const { debutMinutes, amplitude } = echelle;
   const pauses = segmentsPause(pausesDuJour, debutMinutes, amplitude);
-  const blocages: RailBlocage[] = fenetresBloquees.map((fenetre) => ({
-    heureDebut: fenetre.heureDebut,
-    heureFin: fenetre.heureFin,
-    offsetPercent: ((fenetre.debutMinutes - debutMinutes) / amplitude) * 100,
-    widthPercent: ((fenetre.finMinutes - fenetre.debutMinutes) / amplitude) * 100,
-    label: $localize`:@@railJour.blocage.tooltip:Indisponibilité saisie : ${fenetre.heureDebut}:debut: – ${fenetre.heureFin}:fin:`,
-  }));
-  const plages = fenetresBloquees
-    .map((fenetre) => `${fenetre.heureDebut} – ${fenetre.heureFin}`)
-    .join(' ; ');
-  const journeeEntiere = fenetresBloquees.some(
-    (fenetre) =>
-      fenetre.debutMinutes <= echelle.journee.debutMinutes &&
-      fenetre.finMinutes >= echelle.journee.finMinutes,
-  );
-
   const ordonnes = [...spans].sort((left, right) => left.debutMinutes - right.debutMinutes);
   let finPrecedente = -1;
   const blocs: RailBloc[] = ordonnes.map((span) => {
@@ -477,13 +361,8 @@ function buildRailLigne(
     };
   });
 
-  // Two ways of being unavailable, and they do not say the same thing: the
-  // animateur declared the day off, or an exception was recorded against them.
-  // A blockage covering only part of the day leaves them callable on the rest,
-  // so it hatches the hours without taking them out of the mobilisable count.
   const declareIndisponible = date !== null && (animateur.joursIndisponibles ?? []).includes(date);
-  const indisponible = declareIndisponible || journeeEntiere;
-  let statut: RailStatut = indisponible ? 'indisponible' : 'libre';
+  let statut: RailStatut = declareIndisponible ? 'indisponible' : 'libre';
   if (blocs.length > 0) {
     statut = 'affecte';
   }
@@ -491,15 +370,12 @@ function buildRailLigne(
     let base = $localize`:@@railJour.resume.libre:${nom}:animateur: — aucune vacation ce jour-là, mobilisable`;
     if (declareIndisponible) {
       base = $localize`:@@railJour.resume.indisponible:${nom}:animateur: — déclaré indisponible ce jour-là`;
-    } else if (journeeEntiere) {
-      base = $localize`:@@railJour.resume.indisponibleForcee:${nom}:animateur: — indisponibilité saisie sur toute la journée`;
     }
     return {
       animateurId: animateur.id,
       nom,
       statut,
       blocs,
-      blocages,
       dureeLabel: '',
       amplitudeDebut: null,
       amplitudeFin: null,
@@ -507,7 +383,7 @@ function buildRailLigne(
       pauses: [],
       trajets: [],
       covoiturage,
-      resume: statut === 'indisponible' ? base : mentionnerBlocages(base, plages),
+      resume: base,
     };
   }
 
@@ -531,7 +407,6 @@ function buildRailLigne(
     nom,
     statut,
     blocs,
-    blocages,
     dureeLabel,
     amplitudeDebut,
     amplitudeFin,
@@ -542,10 +417,7 @@ function buildRailLigne(
     trajets: walkSegments(walks, echelle.debutMinutes, echelle.amplitude),
     covoiturage,
     resume: mentionCarpool(
-      mentionWalks(
-        mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses),
-        walks,
-      ),
+      mentionWalks(mentionnerPauses(mentionOverlap(base, overlap), pauses), walks),
       covoiturage,
     ),
   };
@@ -604,14 +476,6 @@ function mentionnerPauses(base: string, pauses: SegmentPause[]): string {
   }
   const liste = pauses.map((pause) => pause.label).join(' ; ');
   return $localize`:@@railJour.resume.pauses:${base}:ligne: — ${liste}:pauses:`;
-}
-
-/** Appends the recorded unavailability windows to a line's summary, when there is any. */
-function mentionnerBlocages(base: string, plages: string): string {
-  if (!plages) {
-    return base;
-  }
-  return $localize`:@@railJour.resume.avecBlocage:${base}:ligne: — indisponibilité saisie : ${plages}:plages:`;
 }
 
 /** Same, for the overlap the outline alone would only tell a sighted reader. */

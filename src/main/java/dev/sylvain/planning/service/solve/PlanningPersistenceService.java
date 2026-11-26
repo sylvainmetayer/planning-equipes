@@ -11,7 +11,6 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.RefusedWhileFrozen;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -344,8 +343,8 @@ public class PlanningPersistenceService {
                         connection, "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
-                        heure_debut, heure_fin, motif, depliee)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, depliee, consigne)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -357,6 +356,7 @@ public class PlanningPersistenceService {
                         insert.setObject(5, indispo.getHeureFin());
                         insert.setString(6, indispo.getMotif());
                         insert.setBoolean(7, indispo.isDepliee());
+                        insert.setBoolean(8, indispo.isConsigne());
                         insert.addBatch();
                     }
                 }
@@ -371,8 +371,8 @@ public class PlanningPersistenceService {
                         connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
-                        heure_debut, heure_fin, motif, effectif, depliee)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, effectif, depliee, consigne)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
@@ -385,6 +385,7 @@ public class PlanningPersistenceService {
                         insert.setString(6, ouverture.getMotif());
                         insert.setObject(7, ouverture.getEffectif());
                         insert.setBoolean(8, ouverture.isDepliee());
+                        insert.setBoolean(9, ouverture.isConsigne());
                         insert.addBatch();
                     }
                 }
@@ -1017,25 +1018,6 @@ public class PlanningPersistenceService {
             throw new IllegalStateException("Failed to load the animateurs employed per day", e);
         }
         return parJour;
-    }
-
-    /**
-     * The same seats as {@link #loadAnimateursByStandCreneau()}, as the triples
-     * {@link ForcedAssignmentOnLockedSchedule} reads: who holds what, on which
-     * stand and which timeslot. That check lives in the referential package and
-     * has no business parsing a storage key, so the bridge is here — where the
-     * storage is.
-     */
-    public Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> loadPlacesTenues() {
-        Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> tenues = new LinkedHashSet<>();
-        loadAnimateursByStandCreneau().forEach((key, animateurIds) -> {
-            int separateur = key.lastIndexOf('#');
-            String standId = key.substring(0, separateur);
-            long creneauId = Long.parseLong(key.substring(separateur + 1));
-            animateurIds.forEach(animateurId ->
-                    tenues.add(new ForcedAssignmentOnLockedSchedule.PlaceTenue(animateurId, standId, creneauId)));
-        });
-        return Set.copyOf(tenues);
     }
 
     /** Grouping key of {@link #loadAnimateursByStandCreneau()}. */

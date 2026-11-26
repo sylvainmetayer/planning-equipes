@@ -117,23 +117,10 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   test.slow();
   await reseed();
 
-  // Three constraints, one of each type, created through the same API the
-  // frontend uses — without an id, which the application draws.
+  // One incompatibility, created through the same API the frontend uses —
+  // without an id, which the application draws. The forced types are gone
+  // (ADR 0117): a lock and a day off of the fiche say the same thing.
   const creations = [
-    {
-      type: 'INDISPONIBILITE_FORCEE',
-      animateursConcernes: [{ id: 'SOLV-P' }],
-      creneau: { id: C1 },
-      stand: null,
-      raison: 'E2E : Paula indisponible le matin',
-    },
-    {
-      type: 'AFFECTATION_FORCEE',
-      animateursConcernes: [{ id: 'SOLV-Q' }],
-      creneau: { id: C2 },
-      stand: { id: 'SOLV-S1' },
-      raison: 'E2E : Quentin imposé sur Stand Solve un',
-    },
     {
       type: 'INCOMPATIBILITE',
       animateursConcernes: [{ id: 'SOLV-R' }, { id: 'SOLV-T' }],
@@ -150,8 +137,6 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   // Visible on the admin screen before any solve.
   const page = await pageAdmin(browser, admin);
   await page.goto('/regles');
-  await expect(page.locator('#contenu')).toContainText('Paula indisponible le matin');
-  await expect(page.locator('#contenu')).toContainText('Quentin imposé sur Stand Solve un');
   await expect(page.locator('#contenu')).toContainText('Rita et Tom incompatibles');
 
   // The Solveur announces them before the click, each count a link to its tab
@@ -167,10 +152,6 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   expect(job.result?.diagnostic.postesNonPourvus).toBe(0);
 
   const planning = await planningPersiste(admin);
-  // INDISPONIBILITE_FORCEE : Paula never works créneau C1.
-  expect(postesDe(planning, 'SOLV-P').some((poste) => poste.endsWith(`@${C1}`))).toBe(false);
-  // AFFECTATION_FORCEE : Quentin holds exactly the imposed seat.
-  expect(occupantDe(planning, 'SOLV-S1', C2)).toBe('SOLV-Q');
   // INCOMPATIBILITE : Rita and Tom never share a créneau.
   for (const creneau of [C1, C2, C3, C4]) {
     const surCreneau = new Set(
@@ -184,9 +165,6 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
     ).toBe(false);
   }
 
-  // The forced seat reads back in the frontend: Quentin's fiche shows it.
-  await page.goto('/animateurs/SOLV-Q?section=timeline');
-  await expect(page.locator('#fiche-section-timeline')).toContainText('Stand Solve un');
   await page.context().close();
 });
 

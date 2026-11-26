@@ -58,9 +58,7 @@
    component stops binding the hour step on these lines, and a tile an hour wide
    would restart the hatching at every hour. */
 .rail-swatch-indisponible,
-.rail-swatch-blocage,
-.rail-cell-indisponible .rail-track,
-.rail-blocage {
+.rail-cell-indisponible .rail-track {
   background-image: repeating-linear-gradient(
     45deg,
     var(--mat-sys-surface-container-highest),
@@ -69,17 +67,6 @@
     transparent 8px
   );
   background-size: auto;
-}
-
-/* One recorded unavailability window, behind the blocks of the same line. */
-.rail-blocage {
-  position: absolute;
-  top: 1px;
-  bottom: 1px;
-  background-color: var(--mat-sys-surface-container-low);
-  border-radius: var(--mat-sys-corner-extra-small);
-  outline: 1px dashed var(--mat-sys-outline);
-  outline-offset: -1px;
 }
 
 /* The rail scrolls inside its card rather than with the page. `position:

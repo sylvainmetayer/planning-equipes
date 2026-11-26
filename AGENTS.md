@@ -140,7 +140,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  42 rules are written **a second time**. The default engine since 3.0.0
+  39 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -253,10 +253,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     only leaving that state lifts it, and a reading survives a solve only when
     its day was not recomputed: in the frozen past, frozen, or given back
     unchanged by a solve started from the plan in place — « Recommencer de
-    zéro » withdraws every other one (ADR 0069). The `/api/validations` writes
-    and the three `*_validation_journee` tools are `@Deprecated` aliases until
-    5.0, which never lift a lock; the state is open in every phase and during
-    a solve, like a lock;
+    zéro » withdraws every other one (ADR 0069); freezing without a comment keeps
+    the reading's. The MCP tools are `consulter_etats_journee` and
+    `modifier_etat_journee`; the `/api/validations` writes are `@Deprecated`
+    aliases until 5.0, which never lift a lock. The state is open in every
+    phase and during a solve, like a lock;
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
@@ -314,18 +315,26 @@ Single Quarkus service, no separate solver microservice. Package root:
     contract with such an account and refuses any other stand's or person's name.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
-    chosen stand by stand. `ConsigneResolver` is laid on top of a stand's
-    plages (ADR 0104; it was the fourth layer of the schedule while recurring
-    rules still existed), pure and static, applied by `StandService.resolve`
-    after `HoraireStandResolver` has set the stored plages as the effective
-    ones, and on the effective windows only; `ConsigneService` proposes, previews, lays down,
-    changes and lifts consignes and their presets — the only grid write it
-    makes is adding the timeslots an opening needs, and lifting removes those
-    alone; `ConsigneRepository` owns the six tables. Every reader of
-    effective windows goes through `StandService.resolve` /
-    `ReferenceData.resolveHoraires`: `ConsigneCoucheStructurelleTest` refuses
-    any other production caller of `HoraireStandResolver.apply` that is not
-    argued in its list, the same net as the edition-scoping tests.
+    chosen stand by stand. Since ADR 0125 a consigne is **written**, not laid
+    on read: `ConsignePlages` (pure and static) computes the dated plages it
+    puts on every stand of its date — a closure over the band, one over each
+    timeslot it added, an opening per window outside the band — each marked
+    `PlageStand.consigne`, and lifting removes exactly the marked ones (a plage
+    edited by hand loses the mark and stays, through `carryOrigins`).
+    `HoraireStandResolver` reads them **above** the stand's own plages: their
+    closures carve its own hours, their openings are added whatever its own
+    plages say. `ConsigneService` proposes, previews, lays down, changes and
+    lifts consignes and their presets — the only grid write it makes is adding
+    the timeslots an opening needs, and lifting removes those alone;
+    `ConsigneRepository` owns the six tables and the marked plages, and moves
+    every stand's stamp on a lay or a lift. A YAML file and an edition copy
+    never carry the marked plages: the import writes them again from the
+    consigne. Every reading of a stand's plages goes through
+    `StandService.resolve` / `ReferenceData.resolveHoraires` (or
+    `resolveOwnHours` for the stand's own hours, the consigne left out):
+    `ConsigneCoucheStructurelleTest` refuses any other production caller of
+    `HoraireStandResolver.apply` / `applyOwnHours` that is not argued in its
+    lists, the same net as the edition-scoping tests.
   - `service/edition/`; `service/publication/` (publishing, delivery,
     confirmations, `MailService`); `service/export/` (`PlanningExportService`
     over `AnimateurPlanningPdf`, `AnimateurFeuillePdf`, `GlobalPlanningPdf`
@@ -764,7 +773,7 @@ i18n rule at the top of this file:
   `getIndisponibilites()` are read-only views of the one list). No recurring
   rule is stored: a recurrence is a generator that writes plages, and
   `HorairesRecurrents` is the one frozen reading of the 3.x rules (migration
-  `V159`, the scenario-file link 4 → 5, the `ajouter_horaire_stand` tool). A
+  `V159`, the scenario-file link 4 → 5, the `creer_horaire_stand` tool). A
   day carries one mode, never both; no plage means open all day.
   `ShippedSchedulesDigestTest` holds the windows of every shipped scenario to
   what 3.x resolved, day by day.
@@ -793,12 +802,16 @@ i18n rule at the top of this file:
   against the fiche as it stood before; the bulk edit sends the whole merged
   fiche one row at a time, so anything else re-shouts on data nobody touched,
   and a warning that fires on correct data stops being read.
-- `ContrainteAdHoc`'s prescriptive types (`INDISPONIBILITE_FORCEE`,
-  `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are evaluated as `HardScore`, at the
-  same priority as legal/minor hard constraints — never demote these to
-  medium/soft. `AFFINITE` (issue #80) is the one deliberate exception: a soft
-  *reward* for co-assigning a preferred pair on the same stand — never promote
-  it to hard (that would be a forced assignment in disguise).
+- `ContrainteAdHoc` has three types since 4.0 (ADR 0117): `INCOMPATIBILITE` is
+  evaluated as `HardScore`, at the same priority as legal/minor hard
+  constraints — never demote it to medium/soft. `AFFINITE` (issue #80) is the
+  deliberate exception: a soft *reward* for co-assigning a preferred pair on
+  the same stand — never promote it to hard (that would be a forced assignment
+  in disguise); `ARRIVEE_GROUPEE` is soft too. The forced assignment and the
+  forced unavailability are gone, converted by `V161` and by
+  `ScenarioMigrations` into an animateur + timeslot lock and a day off of the
+  fiche: do not bring them back, and do not add a rule that pins or bars one
+  person on a seat.
 - Two ad hoc exceptions that **cannot both hold** are refused when written —
   `ContrainteAdHocContradictions`, applied by `ContrainteAdHocService` to a
   single entry and by `ReferenceDataService.importFromPlanning` to a whole

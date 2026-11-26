@@ -106,20 +106,46 @@ function rangCategorie(categorie: string): number {
 
 /**
  * The rules of one block, category by category in the reading order above, and
- * in the catalogue's own order inside a category — a stable sort keeps it.
+ * in the catalogue's own order inside a category — a stable sort keeps it. A
+ * scoring term of another rule (`termeDe`) has no row: it is read through that
+ * rule, whose settings carry it (ADR 0123).
  */
 export function rulesOfBloc(
   contraintes: readonly ConstraintView[],
   bloc: BlocRegle,
 ): ConstraintView[] {
-  return contraintes
-    .filter((rule) => blocOfRule(rule) === bloc)
+  const rows = contraintes
+    .filter((rule) => !rule.termeDe && blocOfRule(rule) === bloc)
     .map((rule, index) => ({ rule, index }))
     .sort(
       (a, b) =>
         rangCategorie(a.rule.categorie) - rangCategorie(b.rule.categorie) || a.index - b.index,
     )
     .map(({ rule }) => rule);
+  // A group sits where its first member does, so its rows are contiguous under one title.
+  return rows.flatMap((rule, index) => {
+    if (!rule.groupe) {
+      return [rule];
+    }
+    const first = rows.findIndex((each) => each.groupe === rule.groupe);
+    return first === index ? rows.filter((each) => each.groupe === rule.groupe) : [];
+  });
+}
+
+/** True when `rows[index]` opens a group: it has one and the row above is not in it. */
+export function opensGroup(rows: readonly ConstraintView[], index: number): boolean {
+  const groupe = rows[index]?.groupe;
+  return !!groupe && rows[index - 1]?.groupe !== groupe;
+}
+
+/** The title of a display group — the catalogue sends an id, the screen words it. */
+export function groupeLabel(groupe: string): string {
+  switch (groupe) {
+    case 'dispersionJournee':
+      return $localize`:@@regles.groupe.dispersionJournee:Dispersion sur la journée`;
+    default:
+      return groupe;
+  }
 }
 
 /**
@@ -146,9 +172,10 @@ export function articlesOf(description: string): string[] {
  * - `heures` — stored in minutes, typed in hours (a week of 48 h, not 2 880 min);
  * - `minutes`, `entier`, `decimal` — typed as stored;
  * - `heure` — a time of day, `HH:mm`;
- * - `plage` — two times of day, a window.
+ * - `plage` — two times of day, a window;
+ * - `choix` — one value among a short list, a select.
  */
-export type SeuilKind = 'heures' | 'minutes' | 'entier' | 'decimal' | 'heure' | 'plage';
+export type SeuilKind = 'heures' | 'minutes' | 'entier' | 'decimal' | 'heure' | 'plage' | 'choix';
 
 export interface SeuilDescriptor {
   /** Which record it is stored in: the legal parameters or the quality thresholds. */
@@ -269,6 +296,7 @@ export const SEUILS: Readonly<Record<string, SeuilDescriptor>> = {
     min: 0,
     step: 0.5,
   },
+  placementRepas: { source: 'qualite', kind: 'choix', fields: ['placementRepas'] },
 };
 
 /** A record of settings as the page holds it: the stored one, or the changes typed over it. */
@@ -292,6 +320,9 @@ export function shownValue(
   if (value === undefined || value === null || value === '') {
     return descriptor.kind === 'heure' || descriptor.kind === 'plage' ? '' : null;
   }
+  if (descriptor.kind === 'choix') {
+    return String(value);
+  }
   if (descriptor.kind === 'heures') {
     return Number(value) / 60;
   }
@@ -308,7 +339,7 @@ export function shownValue(
  */
 export function storedValue(descriptor: SeuilDescriptor, typed: string): string | number | null {
   const trimmed = typed.trim();
-  if (descriptor.kind === 'heure' || descriptor.kind === 'plage') {
+  if (descriptor.kind === 'heure' || descriptor.kind === 'plage' || descriptor.kind === 'choix') {
     return trimmed === '' ? null : trimmed;
   }
   if (trimmed === '') {

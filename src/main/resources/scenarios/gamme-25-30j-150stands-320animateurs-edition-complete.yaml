@@ -6033,6 +6033,7 @@ animateurs:
       - 2027-07-21
       - 2027-07-22
       - 2027-07-23
+      - 2027-07-25
       - 2027-07-26
       - 2027-07-27
       - 2027-07-28
@@ -7451,7 +7452,8 @@ animateurs:
       CIRQUE: AUTONOME
       MOTRICITE: REFERENT
       ROBOTIQUE: REFERENT
-    joursIndisponibles: []
+    joursIndisponibles:
+      - 2027-07-30
     souhaits:
       - MOTRICITE
       - ROBOTIQUE
@@ -11130,78 +11132,6 @@ animateurs:
       - ROBOTIQUE
 
 contraintesAdHoc:
-  - id: C01
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2542
-    standId: STAND-110
-    raison: "Ne tient plus ce stand"
-  - id: C02
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2537
-    standId: STAND-120
-    raison: "Ne tient plus ce stand"
-  - id: C03
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2738
-    standId: STAND-007
-    raison: "Ne tient plus ce stand"
-  - id: C04
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2733
-    standId: STAND-071
-    raison: "Ne tient plus ce stand"
-  - id: C05
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2639
-    standId: STAND-126
-    raison: "Ne tient plus ce stand"
-  - id: C06
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2540
-    standId: STAND-061
-    raison: "Ne tient plus ce stand"
-  - id: C07
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2700
-    standId: STAND-115
-    raison: "Ne tient plus ce stand"
-  - id: C08
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2575
-    standId: STAND-012
-    raison: "Ne tient plus ce stand"
-  - id: C09
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2514
-    creneauId: J14-APREM
-    raison: "Rendez-vous personnel"
-  - id: C10
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2608
-    creneauId: J25-APREM
-    raison: "Rendez-vous personnel"
-  - id: C11
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2765
-    creneauId: J9-APREM
-    raison: "Rendez-vous personnel"
-  - id: C12
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2670
-    creneauId: J30-APREM
-    raison: "Rendez-vous personnel"
   - id: C13
     type: INCOMPATIBILITE
     animateurs:
@@ -11238,54 +11168,6 @@ contraintesAdHoc:
       - A2802
       - A2511
     raison: "À ne pas faire travailler ensemble"
-  - id: C19
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2584
-    standId: STAND-006
-    raison: "Référent du stand"
-  - id: C20
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2776
-    standId: STAND-005
-    raison: "Référent du stand"
-  - id: C21
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2667
-    standId: STAND-003
-    raison: "Référent du stand"
-  - id: C22
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2557
-    standId: STAND-005
-    raison: "Référent du stand"
-  - id: C23
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2673
-    creneauId: J28-APREM
-    raison: "Accueil d'un groupe"
-  - id: C24
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2607
-    creneauId: J8-APREM
-    raison: "Accueil d'un groupe"
-  - id: C25
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2690
-    creneauId: J29-APREM
-    raison: "Accueil d'un groupe"
-  - id: C26
-    type: AFFECTATION_FORCEE
-    animateurs:
-      - A2502
-    creneauId: J28-APREM
-    raison: "Accueil d'un groupe"
   - id: C27
     type: AFFINITE
     animateurs:

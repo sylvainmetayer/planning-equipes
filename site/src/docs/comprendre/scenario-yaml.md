@@ -169,7 +169,7 @@ Les créneaux ajoutés voyagent par clé naturelle, parce que les ids de `crenea
 
 L'import écrit directement dans le référentiel, après les stands et les créneaux, et jamais par le geste de l'écran Consignes. Celui-ci refuse une date passée ou en cours et ajoute lui-même les créneaux que ses fenêtres exigent : deux choses qu'un fichier a déjà tranchées. Une consigne sur une date passée s'importe donc, et les statistiques de cette journée sont celles de ce qui a été fait.
 
-Un scénario résolu directement depuis `src/main/resources/scenarios/` (`PlanningService.buildExample`) ne les applique pas : la couche consigne est posée par `StandService.resolve` sur le référentiel, et ce scénario est résolu sur sa grille nominale. Elles prennent effet une fois le fichier importé.
+Un scénario résolu directement depuis `src/main/resources/scenarios/` (`PlanningService.buildExample`) ne les applique pas : les plages d'une consigne sont écrites sur les stands à l'import, et ce scénario est résolu sur sa grille nominale. Elles prennent effet une fois le fichier importé ; le fichier lui-même ne porte jamais ces plages.
 
 ## Les fichiers livrés
 

@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlacementRepas;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.journal.CurrentAction;
@@ -62,7 +63,7 @@ public class ParametresMcpTools {
             description = "Consulte une section des paramètres de l'édition : « legal » (durées maximales, pauses, "
                     + "repos, coupure repas), « organisation » (les seuils de qualité d'organisation lus par les règles "
                     + "moyennes dosables : emplacements et typologies distincts, jours d'affilée, services tardif et "
-                    + "matinal, temps de trajet, arrivée groupée), « notifications » (heure du rappel de la veille, "
+                    + "matinal, temps de trajet, arrivée groupée, placement préféré de la coupure repas), « notifications » (heure du rappel de la veille, "
                     + "délai de relance, ancienneté d'un échange sans réponse ; rien ne part d'une édition qui n'est "
                     + "pas l'édition active, voir lister_editions) ou « calcul » (le mail de fin de "
                     + "résolution de l'édition, avec le budget de calcul de l'instance : durée maximale d'une "
@@ -99,7 +100,8 @@ public class ParametresMcpTools {
                     + "mineur) en deçà. « organisation » : aucun seuil n'est une obligation légale, ils règlent le "
                     + "confort du planning ; le temps de marche entre deux emplacements vaut distance à vol d'oiseau "
                     + "× facteurDetour ÷ vitesseMarcheKmH, et un battement entre deux postes peut en manquer "
-                    + "toleranceTrajetMinutes avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit. "
+                    + "toleranceTrajetMinutes avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit ; "
+                    + "placementRepas dirige la préférence souple de la coupure repas sans toucher à la règle. "
                     + "« notifications » : cet outil n'envoie rien, les envois de nuit ne partent que de l'édition "
                     + "active (activer_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « calcul » : "
                     + "seul le mail de fin de résolution se règle ici, le budget de calcul est celui de "
@@ -168,6 +170,12 @@ public class ParametresMcpTools {
                             required = false)
                     Integer toleranceArriveeGroupeeMinutes,
             @ToolArg(
+                            description = "Placement préféré de la coupure repas dans sa fenêtre (soft, poids 1) : "
+                                    + "FIN_MIDI_DEBUT_SOIR (défaut : tard le midi, tôt le soir), DEBUT, FIN ou "
+                                    + "AUCUN (aucune préférence)",
+                            required = false)
+                    String placementRepas,
+            @ToolArg(
                             description = "true : une résolution terminée envoie son résultat par mail à l'adresse "
                                     + "d'administration (inerte tant que MAIL_ADMIN n'est pas configuré)",
                             required = false)
@@ -209,6 +217,7 @@ public class ParametresMcpTools {
         given.put("facteurDetour", facteurDetour);
         given.put("toleranceTrajetMinutes", toleranceTrajetMinutes);
         given.put("toleranceArriveeGroupeeMinutes", toleranceArriveeGroupeeMinutes);
+        given.put("placementRepas", placementRepas);
         given.put("mailFinResolution", mailFinResolution);
         given.put("heureRappelVeille", heureRappelVeille);
         given.put("delaiRelanceHeures", delaiRelanceHeures);
@@ -259,6 +268,7 @@ public class ParametresMcpTools {
                                 facteurDetour,
                                 toleranceTrajetMinutes,
                                 toleranceArriveeGroupeeMinutes,
+                                placementRepas,
                                 expected,
                                 edition);
                     case "notifications" ->
@@ -294,7 +304,8 @@ public class ParametresMcpTools {
                             "vitesseMarcheKmH",
                             "facteurDetour",
                             "toleranceTrajetMinutes",
-                            "toleranceArriveeGroupeeMinutes"),
+                            "toleranceArriveeGroupeeMinutes",
+                            "placementRepas"),
             "notifications", Set.of("heureRappelVeille", "delaiRelanceHeures", "ancienneteEchangeJours"),
             "calcul", Set.of("mailFinResolution"));
 
@@ -398,6 +409,7 @@ public class ParametresMcpTools {
             Double facteurDetour,
             Integer toleranceTrajetMinutes,
             Integer toleranceArriveeGroupeeMinutes,
+            String placementRepas,
             Instant modifieLe,
             String edition) {
         ParametresQualite actuels = referenceDataService.getParametresQualite();
@@ -422,6 +434,9 @@ public class ParametresMcpTools {
                 toleranceArriveeGroupeeMinutes == null
                         ? actuels.toleranceArriveeGroupeeMinutes()
                         : toleranceArriveeGroupeeMinutes,
+                placementRepas == null
+                        ? actuels.placementRepas()
+                        : McpArgs.enumeration(PlacementRepas.class, placementRepas, "placementRepas"),
                 modifieLe);
         return ParametresQualiteView.of(referenceDataService.updateParametresQualite(nouveaux));
     }
@@ -438,6 +453,7 @@ public class ParametresMcpTools {
             double facteurDetour,
             int toleranceTrajetMinutes,
             int toleranceArriveeGroupeeMinutes,
+            PlacementRepas placementRepas,
             Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresQualiteView> {
@@ -454,6 +470,7 @@ public class ParametresMcpTools {
                     parametres.facteurDetour(),
                     parametres.toleranceTrajetMinutes(),
                     parametres.toleranceArriveeGroupeeMinutes(),
+                    parametres.placementRepas(),
                     parametres.modifieLe(),
                     List.of());
         }
@@ -471,6 +488,7 @@ public class ParametresMcpTools {
                     facteurDetour,
                     toleranceTrajetMinutes,
                     toleranceArriveeGroupeeMinutes,
+                    placementRepas,
                     modifieLe,
                     WarningCodes.with(avertissements, code));
         }
@@ -536,11 +554,12 @@ public class ParametresMcpTools {
 
     @Tool(
             name = "creer_contrainte_ad_hoc",
-            description = "Crée une contrainte ad hoc. INDISPONIBILITE_FORCEE, INCOMPATIBILITE et "
-                    + "AFFECTATION_FORCEE sont évaluées par le solveur au même niveau HARD que les contraintes légales ; "
-                    + "AFFINITE est une récompense SOFT. INDISPONIBILITE_FORCEE : l'animateur ne peut pas être affecté "
-                    + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
-                    + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
+            description = "Crée une contrainte ad hoc. INCOMPATIBILITE est évaluée par le solveur au même niveau "
+                    + "HARD que les contraintes légales : les animateurs listés ne peuvent pas être affectés au même "
+                    + "stand sur le même créneau ; AFFINITE et ARRIVEE_GROUPEE sont SOFT. L'affectation forcée et "
+                    + "l'indisponibilité forcée n'existent plus : pour imposer une affectation, verrouiller le créneau "
+                    + "de l'animateur (verrouiller) ; pour l'écarter d'un jour, ajouter ce jour aux jours "
+                    + "indisponibles de sa fiche (modifier_animateur). "
                     + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
                     + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement). "
                     + "ARRIVEE_GROUPEE (SOFT) : 2 à 4 animateurs qui arrivent et repartent ensemble (covoiturage), "
@@ -554,10 +573,7 @@ public class ParametresMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenContrainteAdHocView createContrainteAdHoc(
-            @ToolArg(
-                            description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE, "
-                                    + "AFFINITE ou ARRIVEE_GROUPEE")
-                    String type,
+            @ToolArg(description = "Type : INCOMPATIBILITE, AFFINITE ou ARRIVEE_GROUPEE") String type,
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
             @ToolArg(description = "Id du stand concerné", required = false) String standId,

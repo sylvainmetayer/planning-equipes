@@ -18,8 +18,8 @@ import java.util.TreeMap;
 
 /**
  * Whether a cap of {@code k} days in a row leaves enough person-days to staff
- * the grid — the arithmetic behind {@code maxJoursConsecutifsTravaillesDur},
- * answered in plain Java, before any solve.
+ * the grid — the arithmetic behind {@code maxJoursConsecutifsTravailles} made
+ * obligatoire (ADR 0118), answered in plain Java, before any solve.
  *
  * <p>A <b>rolling</b> cap of {@code k} days means everybody rests at least once
  * in <em>every</em> window of {@code k + 1} consecutive calendar days. So, for

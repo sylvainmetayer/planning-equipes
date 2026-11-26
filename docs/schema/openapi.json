@@ -2284,6 +2284,9 @@
           "libelleCourt" : {
             "type" : "string"
           },
+          "groupe" : {
+            "type" : "string"
+          },
           "remediation" : {
             "type" : "string"
           },
@@ -2304,6 +2307,9 @@
           },
           "niveauReglable" : {
             "type" : "boolean"
+          },
+          "termeDe" : {
+            "type" : "string"
           },
           "niveauChoisi" : {
             "$ref" : "#/components/schemas/NiveauRegle"
@@ -3520,17 +3526,19 @@
       "DemandePublication" : {
         "type" : "object",
         "properties" : {
-          "exclusions" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
           "cibles" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             }
+          },
+          "exclusions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Retiré en 4.0 : ignoré, signalé par avertissements.",
+            "deprecated" : true
           }
         }
       },
@@ -5202,6 +5210,9 @@
             "format" : "int32"
           },
           "auPlusTard" : {
+            "type" : "boolean"
+          },
+          "sansPlacement" : {
             "type" : "boolean"
           },
           "date" : {
@@ -7376,7 +7387,7 @@
       },
       "ParametresQualite" : {
         "type" : "object",
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes", "placementRepas" ],
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
             "type" : "integer",
@@ -7415,6 +7426,9 @@
           "toleranceArriveeGroupeeMinutes" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "placementRepas" : {
+            "$ref" : "#/components/schemas/PlacementRepas"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -7652,6 +7666,10 @@
           }
         }
       },
+      "PlacementRepas" : {
+        "type" : "string",
+        "enum" : [ "FIN_MIDI_DEBUT_SOIR", "DEBUT", "FIN", "AUCUN" ]
+      },
       "PlafondsConformite" : {
         "type" : "object",
         "required" : [ "hebdomadaireMajeurHeures", "hebdomadaireMineurHeures", "vacationHeures", "reposQuotidienHeures", "ecartsAuxDefauts" ],
@@ -7707,6 +7725,9 @@
             "format" : "int32"
           },
           "depliee" : {
+            "type" : "boolean"
+          },
+          "consigne" : {
             "type" : "boolean"
           }
         }
@@ -8883,6 +8904,12 @@
             }
           },
           "differes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "avertissements" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -10369,6 +10396,13 @@
           "emplacement" : {
             "$ref" : "#/components/schemas/Emplacement"
           },
+          "plages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlageStand"
+            },
+            "readOnly" : false
+          },
           "horaires" : {
             "type" : "array",
             "items" : {
@@ -10382,13 +10416,15 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PlageStand"
-            }
+            },
+            "deprecated" : true
           },
           "ouvertures" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PlageStand"
-            }
+            },
+            "deprecated" : true
           }
         }
       },
@@ -10838,11 +10874,11 @@
       },
       "TypeAvertissement" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "MINEUR_SANS_REPRESENTANT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE", "STAND_SANS_EMPLACEMENT" ]
+        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "MINEUR_SANS_REPRESENTANT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE", "STAND_SANS_EMPLACEMENT" ]
       },
       "TypeCauseInfaisabilite" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "PLAFOND_JOURS_CONSECUTIFS" ]
+        "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES", "PLAFOND_JOURS_CONSECUTIFS" ]
       },
       "TypeChangement" : {
         "type" : "string",
@@ -10850,7 +10886,7 @@
       },
       "TypeContrainteAdHoc" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE", "ARRIVEE_GROUPEE" ]
+        "enum" : [ "INCOMPATIBILITE", "AFFINITE", "ARRIVEE_GROUPEE" ]
       },
       "TypeJoursHoraire" : {
         "type" : "string",
@@ -20589,6 +20625,109 @@
           }
         },
         "summary" : "Delete Stand",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/{id}/plages" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "date",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenStand"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Remove Plages Of Day",
+        "tags" : [ "Stand Resource" ]
+      },
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlageStand"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenStand"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Add Plage",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/{id}/plages/{plageId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "plageId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenStand"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Remove Plage",
         "tags" : [ "Stand Resource" ]
       }
     },

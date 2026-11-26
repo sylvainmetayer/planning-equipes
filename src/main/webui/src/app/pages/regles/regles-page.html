@@ -197,7 +197,12 @@
         </tr>
       </thead>
       <tbody>
-        @for (rule of rows; track rule.name) {
+        @for (rule of rows; track rule.name; let i = $index) {
+          @if (opensGroup(rows, i)) {
+            <tr class="regles-groupe">
+              <th scope="rowgroup" colspan="6">{{ groupeLabel(rule.groupe ?? '') }}</th>
+            </tr>
+          }
           <tr [class.regles-row-inactive]="!isActif(rule)" [class.regles-row-selected]="rule.name === regle()">
             <th scope="row">
               <button type="button" class="regles-nom" [attr.aria-expanded]="rule.name === regle()"
@@ -273,10 +278,15 @@
                   <span class="regles-seuil-valeur">{{ parametre.valeur }}</span>
                 </span>
               }
-              @if (parametresLien(rule, bloc); as section) {
+              @let liens = parametresLiens(rule, bloc);
+              @for (section of liens; track section) {
                 <a class="regles-lien-parametres" routerLink="/parametres" [queryParams]="{ onglet: section }"
-                   [attr.aria-label]="lienParametresLabel(rule)">
-                  <ng-container i18n="@@regles.lienParametres">Régler dans Paramètres</ng-container>
+                   [attr.aria-label]="liens.length > 1 ? lienParametresSection(section) + ' — ' + libelle(rule) : lienParametresLabel(rule)">
+                  @if (liens.length > 1) {
+                    {{ lienParametresSection(section) }}
+                  } @else {
+                    <ng-container i18n="@@regles.lienParametres">Régler dans Paramètres</ng-container>
+                  }
                 </a>
               }
             </td>

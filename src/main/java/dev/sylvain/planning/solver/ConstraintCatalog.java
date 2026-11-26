@@ -96,8 +96,22 @@ public final class ConstraintCatalog {
      */
     public static final int MAX_WEIGHT = 500;
 
-    /** The hard form of the run cap, shipped off (ADR 0045). */
-    private static final String MAX_JOURS_CONSECUTIFS_DUR = "maxJoursConsecutifsTravaillesDur";
+    /**
+     * The hard form of the run cap that 3.x shipped off (ADR 0045), merged in
+     * 4.0 into {@code maxJoursConsecutifsTravailles} at the obligatoire level
+     * (ADR 0118). Still read as an alias until 5.0: switching it on makes the
+     * merged rule obligatoire, switching it off makes it a preference again.
+     */
+    public static final String FORME_DURE_JOURS_CONSECUTIFS = "maxJoursConsecutifsTravaillesDur";
+
+    /**
+     * Why a weight sent under {@link #FORME_DURE_JOURS_CONSECUTIFS} is refused:
+     * it was a hard weight, and read as the merged rule's it would silently
+     * dose the preference down.
+     */
+    public static final String POIDS_FORME_DURE_REFUSE = "La forme dure « maxJoursConsecutifsTravaillesDur » n'existe "
+            + "plus : c'est le niveau obligatoire de « maxJoursConsecutifsTravailles ». Choisissez ce niveau, ou "
+            + "réglez le poids de « maxJoursConsecutifsTravailles ».";
 
     /* Names of the rules several tables of this class key on. */
     private static final String POSTE_DOIT_ETRE_POURVU = "posteDoitEtrePourvu";
@@ -116,6 +130,22 @@ public final class ConstraintCatalog {
     private static final String TRAJET_INSUFFISANT_ENTRE_POSTES = "trajetInsuffisantEntrePostes";
     private static final String MAX_JOURS_CONSECUTIFS_TRAVAILLES = "maxJoursConsecutifsTravailles";
     private static final String MINEUR_ENCADREMENT = "mineurNecessiteEncadrementMajeur";
+
+    /** Group of the two rules that judge how scattered an animateur's day is over the locations. */
+    public static final String GROUPE_DISPERSION_JOURNEE = "dispersionJournee";
+
+    /**
+     * Display grouping of the Règles du planning screen: rules listed under one
+     * title, each keeping its own line, level and switch. Nothing is merged —
+     * the bench of the location rules ruled a merge out — and
+     * {@code trajetInsuffisantEntrePostes} stays apart on purpose. Only rules of
+     * the same block of the screen may share a group: the load rules are not
+     * grouped, {@code equilibrerCharge} being an organisation rule and
+     * {@code equilibrerCreneauxPenibles} an advanced one.
+     */
+    private static final Map<String, String> GROUPES = Map.of(
+            "eviterChangementEmplacementEloigne", GROUPE_DISPERSION_JOURNEE,
+            "limiterEmplacementsParJour", GROUPE_DISPERSION_JOURNEE);
 
     /**
      * The meal break, and the first « organisation rule » held hard. No article
@@ -168,14 +198,8 @@ public final class ConstraintCatalog {
      * for minors does not move an inch: {@code travailDeNuitInterditPourMineur},
      * {@code standReserveAuxMajeurs}, the duration caps and the rest stay
      * active.</p>
-     *
-     * <p>{@code maxJoursConsecutifsTravaillesDur} is the second: the hard form
-     * of the six-day ceiling, which no article of the Code du travail
-     * requires. The medium form is the default; an organisation that wants the
-     * run blocked rather than dosed turns this one on. Same mechanism, no
-     * migration.</p>
      */
-    public static final Set<String> DESACTIVEES_PAR_DEFAUT = Set.of(MINEUR_ENCADREMENT, MAX_JOURS_CONSECUTIFS_DUR);
+    public static final Set<String> DESACTIVEES_PAR_DEFAUT = Set.of(MINEUR_ENCADREMENT);
 
     /**
      * What to do about a rule in default, rule by rule.
@@ -255,15 +279,9 @@ public final class ConstraintCatalog {
             Map.entry(
                     MAX_JOURS_CONSECUTIFS_TRAVAILLES,
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
-                            + "couvrir ces journées, relevez le plafond dans Paramètres › Organisation, ou baissez son "
-                            + "importance si la série vous convient."),
-            Map.entry(
-                    MAX_JOURS_CONSECUTIFS_DUR,
-                    "Trop de jours d'affilée, et cette édition tient la règle en dur : ouvrez des "
-                            + "disponibilités sur d'autres personnes pour couvrir ces journées. Si la série "
-                            + "doit rester possible, désactivez maxJoursConsecutifsTravaillesDur depuis "
-                            + "l'écran Règles du planning — maxJoursConsecutifsTravailles continue alors de la "
-                            + "pénaliser sans bloquer le plan."));
+                            + "couvrir ces journées, relevez le plafond dans Paramètres › Organisation, ou, si la "
+                            + "série doit rester possible, mettez la règle en préférence et baissez son "
+                            + "importance."));
 
     /** Read by the Contraintes screen when a rule has no lever of its own. */
     private static final Map<String, String> REMEDIATIONS_PAR_CATEGORIE = Map.of(
@@ -352,7 +370,6 @@ public final class ConstraintCatalog {
             Map.entry("pasDeChevauchementHoraire", List.of(Lever.REPAIR)),
             Map.entry(PLAFOND_CRENEAUX_PAR_TYPOLOGIE, List.of(Lever.GAME_CATEGORY_CAP, Lever.SKILL)),
             Map.entry(COUPURE_REPAS_OBLIGATOIRE, List.of(Lever.MEAL_WINDOW, Lever.SHIFT)),
-            Map.entry(MAX_JOURS_CONSECUTIFS_DUR, List.of(Lever.SEAT, Lever.RULE)),
             Map.entry("coupureRepasPlacementPrefere", List.of(Lever.MEAL_WINDOW)),
             Map.entry("affiniteAdHoc", List.of(Lever.ADJUSTMENTS)),
             Map.entry(ARRIVEE_GROUPEE, List.of(Lever.ADJUSTMENTS, Lever.THRESHOLD)),
@@ -370,7 +387,8 @@ public final class ConstraintCatalog {
             Map.entry(APPRECIATION_INCOMPATIBLE, List.of(Lever.SKILL, Lever.REPAIR)),
             Map.entry(SOUHAITS_INCOMPATIBLES, List.of(Lever.ANIMATEUR_PROFILES, Lever.REPAIR)),
             Map.entry(LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR, List.of(Lever.CAP, Lever.REPAIR)),
-            Map.entry(MAX_JOURS_CONSECUTIFS_TRAVAILLES, List.of(Lever.CAP, Lever.REPAIR)),
+            // RULE: its line is where the level is chosen, preference or obligatoire (ADR 0118).
+            Map.entry(MAX_JOURS_CONSECUTIFS_TRAVAILLES, List.of(Lever.CAP, Lever.SEAT, Lever.REPAIR, Lever.RULE)),
             Map.entry("favoriserMixiteDesNiveaux", List.of(Lever.SKILL, Lever.REPAIR)),
             Map.entry("equilibrerCreneauxPenibles", List.of(Lever.WORKLOAD, Lever.REPAIR)),
             Map.entry("preserverBufferPolyvalents", List.of(Lever.SKILL, Lever.REPAIR)));
@@ -399,6 +417,11 @@ public final class ConstraintCatalog {
                 return propre;
             }
             return REMEDIATIONS_PAR_CATEGORIE.getOrDefault(categorie, REMEDIATION_PAR_DEFAUT);
+        }
+
+        /** The display group this rule is listed under on the rules screen, or {@code null} when it stands alone. */
+        public String groupe() {
+            return GROUPES.get(name);
         }
 
         /** True when disabling this rule needs the confirmation described on {@link #CATEGORIES_PROTEGEES}. */
@@ -434,9 +457,9 @@ public final class ConstraintCatalog {
          * True for the organisation rules whose level the edition chooses
          * (ADR 0106): the medium rules of « Qualité d'organisation », the meal
          * break and the adult beside a minor. Not the legal rules, the
-         * eleven fixed ones, the soft preferences — a preference is one by
-         * nature — nor the two forms of the day-run cap, which
-         * merge into one adjustable rule later (ADR 0045).
+         * eleven fixed ones, nor the soft preferences — a preference is one by
+         * nature. The run of days is one of them since its two forms merged
+         * (ADR 0118).
          */
         public boolean niveauReglable() {
             return NIVEAU_REGLABLE.contains(name);
@@ -633,36 +656,30 @@ public final class ConstraintCatalog {
                             + "règle d'organisation de l'événement, tenue en dur par choix. La pause légale et "
                             + "la coupure repas restent deux choses distinctes : la coupure d'une heure ne tient "
                             + "pas lieu de relais, et un relais ne tient pas lieu de repas — même si un trou "
-                            + "d'une heure coupe bien la séquence de six heures au passage.",
+                            + "d'une heure coupe bien la séquence de six heures au passage. Entre deux coupures "
+                            + "possibles, un terme souple de placement (poids 1, sans niveau) "
+                            + "préfère celle que règle le paramètre « placement de la coupure repas » : fin du "
+                            + "midi et début du soir par défaut, début ou fin de chaque fenêtre, ou aucune "
+                            + "préférence.",
                     "Coupure repas"),
             new ConstraintDefinition(
                     "coupureRepasPlacementPrefere",
                     Niveau.SOFT,
                     CATEGORIE_PREFERENCES,
-                    "Entre deux coupures repas possibles dans la même fenêtre, préférer celle vers laquelle la "
-                            + "fenêtre penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands "
-                            + "viennent d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite. La couverture des "
-                            + "stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la "
-                            + "rotation.",
+                    "Terme de « Coupure repas » : entre deux coupures possibles dans la même fenêtre, préférer "
+                            + "celle que règle le paramètre de placement. Par défaut, vers laquelle la fenêtre "
+                            + "penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands viennent "
+                            + "d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite ; « début » ou « fin » "
+                            + "imposent le même sens aux deux fenêtres, « aucun » éteint la préférence. La "
+                            + "couverture des stands, elle, est dure : c'est son arbitrage avec cette préférence "
+                            + "qui répartit la rotation.",
                     "Placement de la coupure repas"),
-            new ConstraintDefinition(
-                    "indisponibiliteForcee",
-                    Niveau.HARD,
-                    CATEGORIE_AD_HOC,
-                    "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé.",
-                    "Indisponibilités posées à la main"),
             new ConstraintDefinition(
                     "incompatibiliteAdHoc",
                     Niveau.HARD,
                     CATEGORIE_AD_HOC,
                     "Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau.",
                     "Incompatibilités entre animateurs"),
-            new ConstraintDefinition(
-                    "affectationForcee",
-                    Niveau.HARD,
-                    CATEGORIE_AD_HOC,
-                    "Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé.",
-                    "Affectations forcées"),
             new ConstraintDefinition(
                     "affiniteAdHoc",
                     Niveau.SOFT,
@@ -802,23 +819,12 @@ public final class ConstraintCatalog {
                     CATEGORIE_QUALITE,
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
                             + "dans Paramètres › Organisation (huit par défaut) sans au moins un jour de repos : moins "
-                            + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
-                            + "article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la "
-                            + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733).",
+                            + "est possible, plus ne devrait pas l'être. Préférence par défaut ; une édition qui "
+                            + "veut un plafond bloquant la rend obligatoire, et un plan qui le dépasse n'est alors "
+                            + "plus livrable. Règle d'organisation, jamais légale : aucun article du Code du travail "
+                            + "n'impose un décompte glissant (L3132-1 se lit sur la semaine civile, Cass. soc. "
+                            + "13 nov. 2025, n° 24-10.733).",
                     "Jours travaillés d'affilée"),
-            new ConstraintDefinition(
-                    MAX_JOURS_CONSECUTIFS_DUR,
-                    Niveau.HARD,
-                    CATEGORIE_QUALITE,
-                    "Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le "
-                            + "plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, "
-                            + "réglable dans Paramètres › Organisation : les deux formes le lisent au même endroit. "
-                            + "Un poids ne change jamais le niveau "
-                            + "d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran "
-                            + "Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. "
-                            + "Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une "
-                            + "politique de l'organisateur, pas une obligation du Code du travail.",
-                    "Jours travaillés d'affilée, tenus en dur"),
             new ConstraintDefinition(
                     "favoriserMixiteDesNiveaux",
                     Niveau.SOFT,
@@ -853,11 +859,10 @@ public final class ConstraintCatalog {
 
     /** The rules whose level an edition chooses — see {@link ConstraintDefinition#niveauReglable()}. */
     private static final Set<String> NIVEAU_REGLABLE = definitions().stream()
-            .filter(definition -> (CATEGORIE_QUALITE.equals(definition.categorie())
-                            && definition.niveau() == Niveau.MEDIUM
-                            && !MAX_JOURS_CONSECUTIFS_TRAVAILLES.equals(definition.name()))
-                    || COUPURE_REPAS_OBLIGATOIRE.equals(definition.name())
-                    || MINEUR_ENCADREMENT.equals(definition.name()))
+            .filter(definition ->
+                    (CATEGORIE_QUALITE.equals(definition.categorie()) && definition.niveau() == Niveau.MEDIUM)
+                            || COUPURE_REPAS_OBLIGATOIRE.equals(definition.name())
+                            || MINEUR_ENCADREMENT.equals(definition.name()))
             .map(ConstraintDefinition::name)
             .collect(Collectors.toUnmodifiableSet());
 
@@ -876,6 +881,16 @@ public final class ConstraintCatalog {
             .map(ConstraintDefinition::name)
             .collect(Collectors.toUnmodifiableSet());
 
+    /**
+     * The rules that are a scoring term of another rather than a rule of their
+     * own, mapped to the rule they belong to: {@code coupureRepasPlacementPrefere}
+     * is read through « Coupure repas », whose placement setting tunes it
+     * (ADR 0123). The term keeps its own constraint, weight and toggle — a level
+     * would be meaningless on a preference, and merging it into the hard
+     * rule made four scenarios out of six infeasible — but no row of its own.
+     */
+    public static final Map<String, String> TERMES = Map.of("coupureRepasPlacementPrefere", COUPURE_REPAS_OBLIGATOIRE);
+
     /** Marks a rule of {@link #ANCIENS_NOMS} removed in 4.0 rather than renamed. */
     public static final String RETIREE = "retirée";
 
@@ -886,16 +901,31 @@ public final class ConstraintCatalog {
      * merged into one (a majeur / mineur pair) both name the one that replaces
      * them: what a stored setting of either said is then read as the most
      * protective of the two ({@link #formerNamesOf}, {@code ScenarioMigrations}
-     * and migration V152).
+     * and migration V152). {@link #FORME_DURE_JOURS_CONSECUTIFS} names a level
+     * rather than a rule: switched on, it reads as the merged rule made
+     * obligatoire (migration V162, ADR 0118).
      */
     public static final Map<String, String> ANCIENS_NOMS = Map.of(
-            "animateurVerrouilleFige", RETIREE,
-            "dureeQuotidienneMaxMajeur", "dureeQuotidienneMax",
-            "dureeQuotidienneMaxMineur", "dureeQuotidienneMax",
-            "travailContinuMaxMajeur", "travailContinuMax",
-            "travailContinuMaxMineur", "travailContinuMax",
-            "dureeHebdomadaireMaxMineur", "dureeHebdomadaireMax",
-            "reposHebdomadaireMineur", "reposHebdomadaireMinimal");
+            "animateurVerrouilleFige",
+            RETIREE,
+            "indisponibiliteForcee",
+            RETIREE,
+            "affectationForcee",
+            RETIREE,
+            FORME_DURE_JOURS_CONSECUTIFS,
+            MAX_JOURS_CONSECUTIFS_TRAVAILLES,
+            "dureeQuotidienneMaxMajeur",
+            "dureeQuotidienneMax",
+            "dureeQuotidienneMaxMineur",
+            "dureeQuotidienneMax",
+            "travailContinuMaxMajeur",
+            "travailContinuMax",
+            "travailContinuMaxMineur",
+            "travailContinuMax",
+            "dureeHebdomadaireMaxMineur",
+            "dureeHebdomadaireMax",
+            "reposHebdomadaireMineur",
+            "reposHebdomadaireMinimal");
 
     /**
      * The rules that absorbed a retired one and kept their own name
@@ -923,10 +953,13 @@ public final class ConstraintCatalog {
      * The weight a deployment configures for {@code nom}: the strongest of its own
      * property and those set under the names it absorbed in 4.0 (the most
      * protective of the merged settings), else {@link #defaultWeight}. {@code property}
-     * reads {@code planning.constraint-weights.<rule>}.
+     * reads {@code planning.constraint-weights.<rule>}. The weight of {@link
+     * #FORME_DURE_JOURS_CONSECUTIFS} is a hard one, which doses nothing: never
+     * read.
      */
     public static int configuredWeight(Function<String, Optional<Integer>> property, String nom) {
         return Stream.concat(Stream.of(nom), formerNamesOf(nom).stream())
+                .filter(name -> !FORME_DURE_JOURS_CONSECUTIFS.equals(name))
                 .map(property)
                 .flatMap(Optional::stream)
                 .max(Integer::compare)

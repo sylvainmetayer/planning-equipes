@@ -1,0 +1,118 @@
+<div class="stand-plages-filtre">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="stand-plages-jour">
+    <mat-label i18n="@@standFiche.plages.filtre">Jour</mat-label>
+    <mat-select [value]="jour()" (valueChange)="jourChange.emit($event ?? '')">
+      <mat-option value="" i18n="@@standFiche.plages.tousJours">Tous les jours</mat-option>
+      @for (day of days(); track day) {
+        <mat-option [value]="day">{{ day }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <span class="stand-plages-compte" i18n="@@standFiche.plages.compte">{{ filtered().length }} plage(s), dont {{ modelCount() }} du modèle</span>
+  @if (jour() && !lectureSeule()) {
+    <button matButton type="button" class="danger-action" [disabled]="locked() || busy() || filtered().length === 0" (click)="removeDay()">
+      <mat-icon>event_busy</mat-icon>
+      <ng-container i18n="@@standFiche.plages.retirerJour">Retirer ce jour</ng-container>
+    </button>
+  }
+</div>
+
+@if (filtered().length === 0) {
+  @if (jour()) {
+    <p class="empty-hint" i18n="@@standFiche.plages.aucuneJour">Aucune plage ce jour-là : le stand est ouvert toute la journée.</p>
+  } @else {
+    <p class="empty-hint" i18n="@@standFiche.plages.aucune">Aucune plage : le stand est ouvert toute la journée, tous les jours.</p>
+  }
+} @else {
+  <div class="stand-plages-defilement">
+    <table class="stand-plages">
+      <caption class="visually-hidden" i18n="@@standFiche.plages.caption">Plages datées du stand : une ouverture ou une fermeture par ligne</caption>
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@standFiche.plages.col.jour">Jour</th>
+          <th scope="col" i18n="@@standFiche.plages.col.horaire">Horaire</th>
+          <th scope="col" i18n="@@standFiche.plages.col.mode">Type</th>
+          <th scope="col" i18n="@@standFiche.plages.col.effectif">Effectif</th>
+          <th scope="col" i18n="@@standFiche.plages.col.origine">Origine</th>
+          <th scope="col" i18n="@@standFiche.plages.col.motif">Motif</th>
+          <th scope="col"><span class="visually-hidden" i18n="@@common.actions">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (plage of shown(); track plage.id ?? $index) {
+          <tr>
+            <th scope="row">{{ plage.date }}</th>
+            <td>
+              {{ plage.heureDebut | hhmm }}–{{ plage.heureFin ? (plage.heureFin | hhmm) : closing }}
+            </td>
+            <td><span class="stand-plage-badge" [class.stand-plage-ferme]="plage.mode === 'FERMETURE'">{{ modeLabel(plage.mode) }}</span></td>
+            <td>{{ plage.mode === 'OUVERTURE' ? (plage.effectif ?? '') : '' }}</td>
+            <td>
+              <span class="stand-plage-badge" [class.stand-plage-modele]="plage.depliee" [class.stand-plage-saisie]="!plage.depliee && !plage.consigne"
+                    [matTooltip]="originTip(plage)">{{ originLabel(plage) }}</span>
+            </td>
+            <td>{{ plage.motif }}</td>
+            <td>
+              @if (!lectureSeule()) {
+                <button matIconButton type="button" class="danger-action" [disabled]="locked() || busy()"
+                        i18n-aria-label="@@standFiche.plages.retirer" aria-label="Retirer cette plage"
+                        i18n-matTooltip="@@standFiche.plages.retirer" matTooltip="Retirer cette plage" (click)="remove(plage)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (cut() > 0) {
+    <p class="empty-hint">
+      <ng-container i18n="@@standFiche.plages.coupee">{{ cut() }} plage(s) de plus : choisissez un jour, ou</ng-container>
+      <button matButton type="button" (click)="all.set(true)" i18n="@@standFiche.plages.toutes">tout afficher</button>
+    </p>
+  }
+}
+
+@if (!lectureSeule()) {
+  <form class="stand-plage-ajout" (ngSubmit)="add()">
+    <h3 i18n="@@standFiche.plages.ajouter.titre">Ajouter une plage</h3>
+    <div class="stand-plage-champs">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@standFiche.plages.type">Type</mat-label>
+        <mat-select name="mode" [value]="form().mode" [disabled]="locked()" (valueChange)="setMode($event)">
+          <mat-option value="OUVERTURE" i18n="@@standFiche.plages.mode.ouverture">Ouverture</mat-option>
+          <mat-option value="FERMETURE" i18n="@@standFiche.plages.mode.fermeture">Fermeture</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@stands.indisponibilites.date">Date</mat-label>
+        <input matInput type="date" name="date" required [disabled]="locked()" [value]="form().date" (input)="patch({ date: $any($event.target).value })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@stands.indisponibilites.heureDebut">Début</mat-label>
+        <input matInput type="time" name="heureDebut" required [disabled]="locked()" [value]="form().heureDebut" (input)="patch({ heureDebut: $any($event.target).value })" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@standFiche.plages.fin">Fin (vide = fermeture du stand)</mat-label>
+        <input matInput type="time" name="heureFin" [disabled]="locked()" [value]="form().heureFin" (input)="patch({ heureFin: $any($event.target).value })" />
+      </mat-form-field>
+      @if (form().mode === 'OUVERTURE') {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="stand-plage-effectif">
+          <mat-label i18n="@@standFiche.plages.effectif">Effectif</mat-label>
+          <input matInput type="number" min="1" name="effectif" [disabled]="locked()" [value]="form().effectif" (input)="patch({ effectif: $any($event.target).value })" />
+        </mat-form-field>
+      }
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@stands.indisponibilites.motif">Motif (optionnel)</mat-label>
+        <input matInput name="motif" [disabled]="locked()" [value]="form().motif" (input)="patch({ motif: $any($event.target).value })" />
+      </mat-form-field>
+    </div>
+    <div class="stand-modele-actions">
+      <button matButton="filled" type="submit" [disabled]="locked() || busy() || formError() !== null">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@standFiche.plages.ajouter">Ajouter la plage</ng-container>
+      </button>
+    </div>
+  </form>
+}

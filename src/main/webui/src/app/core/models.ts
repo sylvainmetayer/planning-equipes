@@ -3,12 +3,7 @@
 
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
 export type NiveauEffort = 'NORMAL' | 'EPUISANT';
-export type TypeContrainteAdHoc =
-  | 'INDISPONIBILITE_FORCEE'
-  | 'INCOMPATIBILITE'
-  | 'AFFECTATION_FORCEE'
-  | 'AFFINITE'
-  | 'ARRIVEE_GROUPEE';
+export type TypeContrainteAdHoc = 'INCOMPATIBILITE' | 'AFFINITE' | 'ARRIVEE_GROUPEE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 
 /** `/api/typologies` items: the enum id plus a display label. */
@@ -110,6 +105,12 @@ export interface Stand {
   /** Physical location (kiosque, mairie, ...), nullable. */
   emplacement: Emplacement | null;
   /**
+   * The stand's schedule as the server stores it: every dated window, opening or closure, with its
+   * origin (`depliee`). `indisponibilites` and `ouvertures` are the same plages split by mode,
+   * deprecated and kept until 5.0; when a write sends both, the split lists win for their mode.
+   */
+  plages?: PlageStand[];
+  /**
    * Dated closure exceptions, e.g. "closed 14:00-16:00 on 2026-07-18". Empty =
    * always open (the default), unless `ouvertures` or a `horaires` rule says
    * otherwise for that day.
@@ -131,6 +132,24 @@ export interface Stand {
 }
 
 /**
+ * One dated window of a stand's schedule, an opening or a closure (ADR 0104). A `null` `heureFin`
+ * means "until closing time".
+ */
+export interface PlageStand {
+  id: number | null;
+  mode: ModeHoraire;
+  date: string;
+  heureDebut: string;
+  heureFin: string | null;
+  motif: string | null;
+  effectif?: number | null;
+  /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
+  depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
+}
+
+/**
  * A single dated closure window of a stand — possibly only part of a créneau
  * (issue #60). A `null` `heureFin` means "until closing time": the window runs
  * to the end of whatever créneau it is evaluated against.
@@ -148,6 +167,8 @@ export interface IndisponibiliteStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
@@ -164,6 +185,8 @@ export interface OuvertureStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */
@@ -711,9 +734,6 @@ export type TypeAvertissement =
   | 'STAND_FENETRE_SANS_EFFET'
   | 'STAND_JAMAIS_OUVERT'
   | 'CRENEAU_DEBORDE_OUVERTURE_STANDS'
-  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
-  | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
-  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
   | 'ARRIVEE_GROUPEE_JOURS_DIVERGENTS'
   | 'VERROUILLAGE_SUR_VIOLATION_DURE'
   | 'STAND_SANS_EMPLACEMENT';
@@ -1075,7 +1095,12 @@ export interface ParametresQualite {
   toleranceTrajetMinutes?: number;
   /** Minutes the arrivals, or the departures, of a grouped arrival may differ before `arriveeGroupee` counts. */
   toleranceArriveeGroupeeMinutes?: number;
+  /** Which end of a meal window the break is preferred at: the term `coupureRepasPlacementPrefere` reads it (ADR 0123). */
+  placementRepas?: PlacementRepas;
 }
+
+/** The four values of the meal-break placement; the default keeps each window's own direction. */
+export type PlacementRepas = 'FIN_MIDI_DEBUT_SOIR' | 'DEBUT' | 'FIN' | 'AUCUN';
 
 export interface HardMediumSoftScore {
   /**
@@ -1117,6 +1142,8 @@ export interface FenetreRepas {
    * reopen (issue #596).
    */
   auPlusTard?: boolean;
+  /** `true` when the edition's placement is « aucun »: no end is preferred and the soft term is silent. */
+  sansPlacement?: boolean;
   /**
    * The one day this window governs (`AAAA-MM-JJ`), `null` for every day. A
    * consigne restating its meal windows sends them dated (issue #4).
@@ -1167,11 +1194,6 @@ export interface ConstraintDiagnostic {
  *   cannot both hold, whatever the solver does. Refused at entry time, so this
  *   only ever reports what was recorded before that check existed or imported
  *   in one go — `contrainteIds` names the exceptions to arbitrate.
- * - The three `AFFECTATION_FORCEE_*`: one forced assignment nobody can honour.
- *   Its animateurs declared the days off, no seat of its scope may hold them
- *   (a minor on a night slot, an adults-only stand…), or their schedule is
- *   locked over the whole scope. Warned at entry time, reported here for as
- *   long as it stands — `contrainteIds` names the exception to move or delete.
  * - `PLAFOND_JOURS_CONSECUTIFS`: the cap on days worked in a row against the
  *   grid, or the plan in place, on its worst window of (cap + 1) days. `date`
  *   is the window's first day, `demande` and `capacite` are person-days, not
@@ -1179,12 +1201,7 @@ export interface ConstraintDiagnostic {
  *   warning and leaves `feasible` true.
  */
 export type TypeCauseInfaisabilite =
-  | 'CRENEAU_SOUS_EFFECTIF'
-  | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
-  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
-  | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
-  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
-  | 'PLAFOND_JOURS_CONSECUTIFS';
+  'CRENEAU_SOUS_EFFECTIF' | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES' | 'PLAFOND_JOURS_CONSECUTIFS';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';
@@ -1425,6 +1442,8 @@ export interface ConstraintView {
   description: string;
   /** The rule in a few words of the organiser's language — never the technical name. */
   libelleCourt?: string;
+  /** Display group the rules screen lists the rule under with its siblings; absent when it stands alone. */
+  groupe?: string | null;
   /** What to do when this rule is in default, most likely gesture first; see {@link ActionType}. */
   actions?: ActionType[];
   /**
@@ -1470,6 +1489,12 @@ export interface ConstraintView {
    * preference. `niveau` stays the catalogue's own.
    */
   niveauReglable?: boolean;
+  /**
+   * The rule this one is a scoring term of, `null` when it stands on its own:
+   * a term has no row on the rules screen, it is read through that rule
+   * (ADR 0123).
+   */
+  termeDe?: string | null;
   /** The level the rule has on this edition; null when it is not the edition's to choose. */
   niveauChoisi?: NiveauRegle | null;
   /** What one match of the rule is worth on the next solve at the level it scores on (1 to 500 — ADR 0057). */
@@ -4033,6 +4058,8 @@ export interface RapportPublication {
   echecs: string[];
   /** Who the admin took out of this send: they come back in the next count. */
   differes: string[];
+  /** Sentences for the caller (a 3.x field that no longer exists); none from this app. */
+  avertissements?: string[];
 }
 
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */
@@ -5035,11 +5062,6 @@ export interface CoherenceReport {
   anomalies: CoherenceIssue[];
 }
 
-/**
- * One day marked « relu et accepté ». A review
- * mark, not a lock: it freezes nothing, and the panel offers the lock beside it
- * without ever implying it.
- */
 /** Why a reading outlives a solve (ADR 0069). */
 export type KeepReason = 'PASSE' | 'VERROU' | 'INCHANGEE';
 
@@ -5050,28 +5072,16 @@ export interface KeptReading {
   motif: KeepReason;
 }
 
-export interface ValidationJournee {
-  id: string;
+/** One day of the grid and where it stands (ADR 0121); a frozen day may carry no reading. */
+export interface DayStateView {
   /** `AAAA-MM-JJ`. */
   jour: string;
-  valideLe: string;
-  /** The admin account the reading was written under; `null` when there was none. */
-  validePar: string | null;
-  commentaire: string | null;
-}
-
-/** What the panel posts to accept a day. */
-export interface DemandeValidationJournee {
-  jour: string;
+  etat: DayState;
+  validationId?: string | null;
+  valideLe?: string | null;
+  /** The admin account the reading was written under. */
+  validePar?: string | null;
   commentaire?: string | null;
-  /** Lay a day lock down at the same time. Never implied by the acceptance. */
-  poserVerrou?: boolean;
-}
-
-/** A reading, and whether the lock it asked for was actually laid down. */
-export interface ResultatValidationJournee {
-  validation: ValidationJournee;
-  verrouPose: boolean;
 }
 
 /** The codes of the four prerequisites, as the server names them. */
@@ -5107,11 +5117,11 @@ export interface PrerequisJournee {
 /** The state of a day: to be read, read, frozen (ADR 0121). */
 export type DayState = 'A_RELIRE' | 'RELUE' | 'FIGEE';
 
-/** How far the reading has got — « 3 journées sur 12 validées ». */
+/** How far the reading has got — « 3 journées sur 12 relues ou figées ». */
 export interface ProgressionValidations {
   journees: number;
   journeesValidees: number;
-  /** The accepted days themselves, `AAAA-MM-JJ`, ascending. */
+  /** The days read or frozen, `AAAA-MM-JJ`, ascending. */
   joursValides: string[];
 }
 

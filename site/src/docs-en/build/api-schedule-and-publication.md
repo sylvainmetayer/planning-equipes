@@ -71,13 +71,13 @@ Each send, from a publication or a resend, leaves its state in `envoi_planning`,
 
 ### Publishing for a few people
 
-`{"cibles": ["id", …]}` restricts a publication to the named people ("Tell the 2 people" after an accepted swap, or a replacement on event day). All the other people concerned are **deferred**, exactly as with `exclusions`: the capture stays global, their marker does not move, they come back in the next count. Targets that name nobody concerned leave the publication with no recipient: `409`.
+`{"cibles": ["id", …]}` restricts a publication to the named people ("Tell the 2 people" after an accepted swap, or a replacement on event day). All the other people concerned are **deferred** ([ADR 0047](repo:docs/decisions/0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md)): the capture stays global, their marker does not move, they come back in the next count. Targets that name nobody concerned leave the publication with no recipient: `409`.
 
-### Deferring somebody's message
+### The POST body
 
-The `POST` takes a JSON body `{"exclusions": ["id", …]}` and requires `Content-Type: application/json`: the list is of free length and a staff member's id comes from the client, so neither a separator nor a URL is a safe place to carry it. An empty body is enough to say "I exclude nobody".
+The `POST` takes a JSON body `{"cibles": ["id", …]}` and requires `Content-Type: application/json`: the list is of free length and a staff member's id comes from the client, so neither a separator nor a URL is a safe place to carry it. An empty body, or one without `cibles`, publishes to everybody concerned. The 3.x `exclusions` field is gone; a client still sending it gets a `200`: the field is **ignored** (nobody is left out of a general publication) and the answer carries `avertissements`, a list of sentences saying the exclusion no longer exists, until 5.0. The home alert `EXCLUSION_PUBLICATION_RETIREE` closes person by person, once a publication has really notified that person (successful send).
 
-The exclusion **defers** the message without deleting it ([ADR 0047](repo:docs/decisions/0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md)). The capture takes place for everyone (the espace follows the published plan), but the person's comparison marker (`animateur.plan_notifie_id`) does not move. The next publication names them again, with the gap accumulated since what they actually received, and `reporte` is `true` on their preview line. Excluding all the recipients is a `409`: publishing without notifying anybody makes no sense.
+A deferred person keeps their comparison marker (`animateur.plan_notifie_id`): the next publication names them again, with the gap accumulated since what they actually received, and `reporte` is `true` on their preview line.
 
 Each preview line carries what is needed to sort and filter without reading French: `ajouts`, `retraits`, `deplacements`, and `mineur`. The latter flags the same shift, on the same stand, slid by a quarter of an hour at most, with no swap decision pending. It is a reading criterion, never an automatic exclusion: deciding not to notify somebody is an act. Each line also carries `jours`, the dates of its changes (`ChangementVacation.touches`), which are the same rule the "Changes" tab of the Day view applies to keep a person on a day. The Share screen and the Day view therefore count the same people for the same day, which the test `ChangementsJourneeServiceTest#theDiffuserDayFilterAndTheChangesOfTheDayCountTheSamePeople` holds.
 

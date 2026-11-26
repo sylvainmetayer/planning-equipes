@@ -255,18 +255,26 @@ class BlockerPlaybookTest {
                 });
     }
 
-    /** A hard rule is held, not weighed: its rule link opens the legal tab, and nothing lowers it. */
+    /** A hard rule is held, not weighed: nothing lowers it. */
     @Test
     void aHardRuleNeverOffersItsWeight() {
-        ConstraintDefinition dur = ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravaillesDur");
+        ConstraintDefinition dur = ConstraintCatalog.PAR_NOM.get("dureeQuotidienneMax");
 
         assertThat(BlockerPlaybook.forRule(dur, null))
                 .extracting(ActionType::code)
                 .doesNotContain(BlockerPlaybook.CODE_LOWER_WEIGHT);
-        assertThat(BlockerPlaybook.forRule(dur, null))
+    }
+
+    /** The run of days points at its own line, where its level is chosen (ADR 0118). */
+    @Test
+    void theRunOfDaysOffersItsLineWhereTheLevelIsChosen() {
+        ConstraintDefinition jours = ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravailles");
+
+        assertThat(BlockerPlaybook.forRule(jours, null))
                 .filteredOn(action -> action.code().equals(BlockerPlaybook.CODE_SEE_RULE))
                 .singleElement()
-                .satisfies(action -> assertThat(action.parametres()).containsEntry("onglet", "legal"));
+                .satisfies(action ->
+                        assertThat(action.parametres()).containsEntry("regle", "maxJoursConsecutifsTravailles"));
     }
 
     @Test

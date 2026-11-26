@@ -511,8 +511,12 @@ public final class EditionDeltaComparator {
             emplacement.setId(translate(stand.getEmplacement().getId(), emplacementIds));
             copie.setEmplacement(emplacement);
         }
-        copie.setIndisponibilites(stand.getIndisponibilites());
-        copie.setOuvertures(stand.getOuvertures());
+        copie.setIndisponibilites(stand.getIndisponibilites().stream()
+                .filter(plage -> !plage.isConsigne())
+                .toList());
+        copie.setOuvertures(stand.getOuvertures().stream()
+                .filter(plage -> !plage.isConsigne())
+                .toList());
         return copie;
     }
 
@@ -535,6 +539,7 @@ public final class EditionDeltaComparator {
         copie.setNiveauEffort(stand.getNiveauEffort());
         copie.setEmplacement(stand.getEmplacement());
         copie.setIndisponibilites(stand.getIndisponibilites().stream()
+                .filter(fenetre -> !fenetre.isConsigne())
                 .map(fenetre -> PlageStand.fermeture(
                         fenetre.getId(),
                         position.apply(fenetre.getDate()),
@@ -543,6 +548,7 @@ public final class EditionDeltaComparator {
                         fenetre.getMotif()))
                 .collect(Collectors.toCollection(ArrayList::new)));
         copie.setOuvertures(stand.getOuvertures().stream()
+                .filter(fenetre -> !fenetre.isConsigne())
                 .map(fenetre -> PlageStand.ouverture(
                         fenetre.getId(),
                         position.apply(fenetre.getDate()),

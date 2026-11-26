@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Animateur, ContrainteAdHoc, Creneau, PosteAffectation, Stand } from '../../core/models';
+import { Animateur, Creneau, PosteAffectation, Stand } from '../../core/models';
 import { LigneRepos, buildTableauRepos, totauxParJour } from './repos';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
@@ -39,21 +39,6 @@ function animateur(id: string, overrides: Partial<Animateur> = {}): Animateur {
 
 function poste(overrides: Partial<PosteAffectation> & { id: string }): PosteAffectation {
   return { stand: null, creneau: null, animateur: null, ...overrides };
-}
-
-function indisponibiliteForcee(
-  animateurIds: string[],
-  overrides: Partial<ContrainteAdHoc> = {},
-): ContrainteAdHoc {
-  return {
-    id: `c-${animateurIds.join('-')}`,
-    type: 'INDISPONIBILITE_FORCEE',
-    animateursConcernes: animateurIds.map((id) => ({ id })),
-    creneau: null,
-    stand: null,
-    raison: 'test',
-    ...overrides,
-  };
 }
 
 function ligne(lignes: LigneRepos[], nom: string): LigneRepos {
@@ -204,26 +189,6 @@ describe('buildTableauRepos', () => {
     expect(cellules[1].conflit).toBe(true);
     expect(cellules[1].tooltip).toContain('déclarée indisponible');
     expect(cellules[0].conflit).toBe(false);
-  });
-
-  it('reads a whole-event forced unavailability, and only that one', () => {
-    const postes = troisJours([null, null, null]);
-
-    const ecarte = buildTableauRepos(postes, [animateur('Zoe')], [indisponibiliteForcee(['Zoe'])]);
-    expect(ligne(ecarte.lignes, 'Zoe').joursIndisponibles).toBe(3);
-
-    // Scoped to one créneau or one stand, the exception still leaves the day
-    // workable: counting it as a day off would invent rest nobody granted.
-    const target = buildTableauRepos(
-      postes,
-      [animateur('Zoe')],
-      [
-        indisponibiliteForcee(['Zoe'], { creneau: { id: 1 } }),
-        indisponibiliteForcee(['Zoe'], { stand: { id: 'Tir' } }),
-      ],
-    );
-    expect(ligne(target.lignes, 'Zoe').joursIndisponibles).toBe(0);
-    expect(ligne(target.lignes, 'Zoe').joursRepos).toBe(3);
   });
 
   it('puts the longest runs first, so the top of the grid is the list to act on', () => {

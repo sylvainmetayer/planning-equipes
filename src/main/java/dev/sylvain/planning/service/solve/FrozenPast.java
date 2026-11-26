@@ -25,7 +25,7 @@ import java.util.Map;
  *       today is ahead until 20:00;</li>
  *   <li><b>what a past seat holds</b> ({@link #freeze}): the animateur the
  *       persisted plan gave it, kept even if they have since declared the day
- *       off or a forced unavailability now covers them — it was worked, and
+ *       off — it was worked, and
  *       the incremental rule that frees an invalidated seat does not apply to
  *       history. A holder the referential no longer knows leaves the seat
  *       empty, and an empty past seat is pinned all the same: nobody can staff

@@ -69,8 +69,8 @@ class SolveEnginesPerimetersTest {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
         PlanningEvenement problem = loaded.problem();
         ReplanificationScope oneDay = new ReplanificationScope(Set.of(), Set.of(days.get(3)), Set.of());
-        ProblemBuilder.StatistiquesIncremental built = ProblemBuilder.figerPostesIncremental(
-                problem.getPostes(), problem.getAnimateurs(), persisted, oneDay, problem.getContraintesAdHoc());
+        ProblemBuilder.StatistiquesIncremental built =
+                ProblemBuilder.figerPostesIncremental(problem.getPostes(), problem.getAnimateurs(), persisted, oneDay);
         assertThat(built.postesFiges()).isPositive();
         assertThat(built.postesLiberesManuellement()).isPositive();
         Map<String, String> pinned = pinnedHolders(problem);
@@ -104,11 +104,7 @@ class SolveEnginesPerimetersTest {
                 .orElseThrow();
         absent.getJoursIndisponibles().add(day);
         ProblemBuilder.StatistiquesIncremental built = ProblemBuilder.figerPostesIncremental(
-                problem.getPostes(),
-                problem.getAnimateurs(),
-                persisted,
-                ReplanificationScope.automatic(),
-                problem.getContraintesAdHoc());
+                problem.getPostes(), problem.getAnimateurs(), persisted, ReplanificationScope.automatic());
         assertThat(built.postesLiberes()).isPositive();
         Map<String, String> pinned = pinnedHolders(problem);
 
@@ -126,8 +122,8 @@ class SolveEnginesPerimetersTest {
     void aReseededSolveStartsFromThePlanInPlace(SolverEngine engine) {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
         PlanningEvenement problem = loaded.problem();
-        int[] seededAndFreed = ProblemBuilder.reamorcerDepuisAffectations(
-                problem.getPostes(), problem.getAnimateurs(), persisted, problem.getContraintesAdHoc());
+        int[] seededAndFreed =
+                ProblemBuilder.reamorcerDepuisAffectations(problem.getPostes(), problem.getAnimateurs(), persisted);
         assertThat(seededAndFreed[0]).isEqualTo(problem.getPostes().size());
         HardMediumSoftScore start = loaded.configuration().solutionManager().update(problem);
         assertThat(start.isFeasible()).isTrue();
@@ -167,8 +163,7 @@ class SolveEnginesPerimetersTest {
     void theDaysAlreadyLivedStayAsTheyWere(SolverEngine engine) {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
         PlanningEvenement problem = loaded.problem();
-        ProblemBuilder.reamorcerDepuisAffectations(
-                problem.getPostes(), problem.getAnimateurs(), persisted, problem.getContraintesAdHoc());
+        ProblemBuilder.reamorcerDepuisAffectations(problem.getPostes(), problem.getAnimateurs(), persisted);
         PastHorizon noonOnTheThirdDay = new PastHorizon(days.get(2), LocalTime.NOON);
         assertThat(FrozenPast.mark(problem.getPostes(), noonOnTheThirdDay)).isPositive();
         FrozenPast.pin(problem.getPostes());
@@ -187,8 +182,7 @@ class SolveEnginesPerimetersTest {
     void aPublishedPlanWeighsOnTheSolveThatStartsFromIt(SolverEngine engine) {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(SCENARIO);
         PlanningEvenement problem = loaded.problem();
-        ProblemBuilder.reamorcerDepuisAffectations(
-                problem.getPostes(), problem.getAnimateurs(), persisted, problem.getContraintesAdHoc());
+        ProblemBuilder.reamorcerDepuisAffectations(problem.getPostes(), problem.getAnimateurs(), persisted);
         problem.setAffectationsPubliees(publishedFrom(problem));
         HardMediumSoftScore start = loaded.configuration().solutionManager().update(problem);
 
@@ -232,11 +226,9 @@ class SolveEnginesPerimetersTest {
                             problem.getPostes(),
                             problem.getAnimateurs(),
                             plan,
-                            new ReplanificationScope(Set.of(), Set.of(day), Set.of()),
-                            problem.getContraintesAdHoc());
+                            new ReplanificationScope(Set.of(), Set.of(day), Set.of()));
                 } else {
-                    ProblemBuilder.reamorcerDepuisAffectations(
-                            problem.getPostes(), problem.getAnimateurs(), plan, problem.getContraintesAdHoc());
+                    ProblemBuilder.reamorcerDepuisAffectations(problem.getPostes(), problem.getAnimateurs(), plan);
                 }
                 Map<String, String> pinned = pinnedHolders(problem);
                 Map<String, String> before = holders(problem);

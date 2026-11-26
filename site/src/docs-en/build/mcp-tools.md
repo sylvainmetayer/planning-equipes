@@ -53,9 +53,11 @@ A grid is made of shifts and is no longer asked for in a mode: a timeslot is a s
 
 One generator produces the grid in bulk ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)): `previsualiser_generateur_creneaux` shows what it would produce and checks the resulting grid, `appliquer_generateur_creneaux` writes it, with the same arguments and a `source`. `stands` cuts the grid the stands' hours imply (a cut at each hour where a stand opens or closes), as an addition or, with `remplacer=true`, in place of the grid and of the plan along with it; `recurrence` adds windows repeated over dates; `gabarits` applies the templates' calendar; `grille` reads the templates the grid implies. `creer_creneau` and `modifier_creneau` take an optional `couverturePause`: the meal relay keeps the stand open at half its headcount, rounded up.
 
-A stand's schedule model (its recurring rules, ADR 0104) appears in `consulter_stand` and `lister_stands` under `horaires`. `ajouter_horaire_stand` with a rule identical to an existing one changes nothing; `effacer_horaires_stand` clears the model **and** the plages it unfolded, and keeps the hand-entered ones (`ajouter_fermeture_stand`, `ajouter_ouverture_stand`).
+A stand's schedule model (its recurring rules, ADR 0104) appears in `consulter_stand` and `lister_stands` under `horaires`. `creer_horaire_stand` with a rule identical to an existing one changes nothing; `supprimer_horaires_stand` clears the model **and** the plages it unfolded, and keeps the hand-entered ones (`creer_plage_stand`).
 
-An opening window (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
+A stand's dated plages appear in `consulter_stand` and `lister_stands` under `plages` (id, mode, day, hours, headcount, and `depliee`: unfolded from the model or typed by hand). `creer_plage_stand` lays one, an opening or a closure (`mode`); `supprimer_plage_stand` removes one (`plageId`) or all those of a day (`date`). The three plage writes are refused during a solve and when the edition's phase freezes the stands.
+
+An opening window (`creer_horaire_stand`, `creer_stand_complet`, `creer_plage_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
 
 The templates (« gabarits ») are the day templates of 3.x. `modifier_gabarit` creates or replaces a template by its name and its shifts on one line ("09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00", `R` marking a meal relay with seats halved), and lays it over a range or dates; `supprimer_gabarit` removes a template, or only dates from the calendar. None of this writes a timeslot: `appliquer_generateur_creneaux` with the source `gabarits` does, after the preview. `lister_gabarits` returns the dates out of line or under a consigne, which applying does not touch ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
@@ -105,6 +107,10 @@ Two **resources**, to attach once to inform all following calls:
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
 | `affecter_journee_type` | `modifier_gabarit` |
+| `ajouter_fermeture_stand` | `creer_plage_stand` |
+| `ajouter_horaire_stand` | `creer_horaire_stand` |
+| `ajouter_ouverture_stand` | `creer_plage_stand` |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
@@ -116,12 +122,15 @@ Two **resources**, to attach once to inform all following calls:
 | `consulter_parametres_solveur` | `consulter_parametres` |
 | `creer_creneaux_recurrents` | `appliquer_generateur_creneaux` |
 | `definir_journee_type` | `modifier_gabarit` |
+| `effacer_horaires_stand` | `supprimer_horaires_stand` |
+| `effacer_plages_stand` | `supprimer_plage_stand` |
 | `figer_referentiel` | `modifier_phase_edition` |
 | `generer_creneaux_depuis_stands` | `appliquer_generateur_creneaux` |
 | `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_journees_types` | `lister_gabarits` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `materialiser_journees_types` | `appliquer_generateur_creneaux` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
@@ -135,6 +144,7 @@ Two **resources**, to attach once to inform all following calls:
 | `reconnaitre_journees_types` | `appliquer_generateur_creneaux` |
 | `restaurer_instantane` | `restaurer_version` |
 | `retirer_dates_journee_type` | `supprimer_gabarit` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_journee_type` | `supprimer_gabarit` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |

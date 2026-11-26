@@ -133,9 +133,6 @@ gamme-25-30j-150stands-320animateurs-edition-complete stands 90 bf365da075cb48bf
 gamme-26-infaisable-sous-effectif lus 1 741bc237d81bbe2d
 gamme-26-infaisable-sous-effectif reconnaissance 1 7ee5a78966a257e2
 gamme-26-infaisable-sous-effectif stands 0 e3b0c44298fc1c14
-gamme-27-infaisable-affectation-forcee-jour-indisponible lus 2 9b4f2e6d1070483d
-gamme-27-infaisable-affectation-forcee-jour-indisponible reconnaissance 1 5db4f166bc131611
-gamme-27-infaisable-affectation-forcee-jour-indisponible stands 0 e3b0c44298fc1c14
 gamme-28-infaisable-mur-des-six-jours lus 7 4ebbded60e42cba3
 gamme-28-infaisable-mur-des-six-jours reconnaissance 7 f77a78cb13a847ab
 gamme-28-infaisable-mur-des-six-jours stands 0 e3b0c44298fc1c14

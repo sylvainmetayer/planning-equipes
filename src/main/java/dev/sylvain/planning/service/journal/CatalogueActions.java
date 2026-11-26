@@ -557,6 +557,9 @@ public final class CatalogueActions {
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);
         route("StandResource#deleteStand", STAND_SUPPRIME);
+        route("StandResource#addPlage", STAND_PLAGE_AJOUTEE);
+        route("StandResource#removePlage", STAND_PLAGES_EFFACEES);
+        route("StandResource#removePlagesOfDay", STAND_PLAGES_EFFACEES);
         route("StandResource#importGrille", STANDS_IMPORTES);
         route("OuvertureStandsResource#saisir", OUVERTURES_SAISIES);
 
@@ -772,11 +775,10 @@ public final class CatalogueActions {
         outil("creer_stand_complet", STAND_CREE);
         outil("modifier_stand", STAND_MODIFIE);
         outil("supprimer_stand", STAND_SUPPRIME);
-        outil("ajouter_fermeture_stand", STAND_PLAGE_AJOUTEE);
-        outil("ajouter_ouverture_stand", STAND_PLAGE_AJOUTEE);
-        outil("effacer_plages_stand", STAND_PLAGES_EFFACEES);
-        outil("ajouter_horaire_stand", STAND_HORAIRE_AJOUTE);
-        outil("effacer_horaires_stand", STAND_HORAIRES_EFFACES);
+        outil("creer_plage_stand", STAND_PLAGE_AJOUTEE);
+        outil("supprimer_plage_stand", STAND_PLAGES_EFFACEES);
+        outil("creer_horaire_stand", STAND_HORAIRE_AJOUTE);
+        outil("supprimer_horaires_stand", STAND_HORAIRES_EFFACES);
 
         outil("creer_creneau", CRENEAU_CREE);
         outil("modifier_creneau", CRENEAU_MODIFIE);
@@ -805,8 +807,7 @@ public final class CatalogueActions {
         outil("supprimer_contrainte_ad_hoc", AJUSTEMENT_SUPPRIME);
         outil("verrouiller", VERROU_POSE);
         outil("deverrouiller", VERROU_RETIRE);
-        outil("ajouter_validation_journee", JOURNEE_VALIDEE);
-        outil("retirer_validation_journee", JOURNEE_VALIDATION_RETIREE);
+        outil("modifier_etat_journee", JOURNEE_ETAT_CHANGE);
         outil("appliquer_consigne", CONSIGNE_POSEE);
         outil("lever_consigne", CONSIGNE_LEVEE);
         outil("definir_prereglage_consigne", PREREGLAGE_CONSIGNE_ENREGISTRE);

@@ -1,16 +1,18 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.consigne.ConsignePlages;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
-import dev.sylvain.planning.service.consigne.ConsigneResolver;
 import dev.sylvain.planning.service.solve.RefusedWhileSolving;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -84,7 +86,7 @@ public class StandService {
     }
 
     /**
-     * Stands with the consignes already laid on their plages, so
+     * Stands resolved — the plages their consignes wrote included — so
      * {@link Creneau#segmentsOuvertsMinutes(Stand)} sees the effective
      * windows — what the solver, the poste generation and the feasibility
      * analysis all build on.
@@ -100,15 +102,25 @@ public class StandService {
     }
 
     /**
-     * The stored plages first, then the edition's consignes on top (issue
-     * #4): the one entry point every reader of effective windows goes
-     * through. A caller that read the plages itself would silently ignore
-     * a consigne and staff a band an arrêté closed —
-     * {@code ConsigneCoucheStructurelleTest} refuses any such caller.
+     * The stands' plages laid down as their effective ones — the plages the
+     * consignes wrote included (ADR 0125): the one entry point every reader
+     * of effective windows goes through. A two-mode day (a consigne's band on
+     * a stand that states its openings) is read here as openings minus
+     * closures; a caller that read the stored plages itself would honour the
+     * openings and miss the band — {@code ConsigneCoucheStructurelleTest}
+     * refuses any such caller.
      */
     public void resolve(List<Stand> stands, List<Creneau> creneaux) {
         HoraireStandResolver.apply(stands, creneaux);
-        ConsigneResolver.apply(stands, consignes.list(), creneaux);
+    }
+
+    /**
+     * The stands on their <b>own</b> hours: the plages a consigne wrote left
+     * out — what a stand declares, which the write-time warnings and the
+     * consigne's own nominal day read.
+     */
+    public void resolveOwnHours(List<Stand> stands) {
+        HoraireStandResolver.applyOwnHours(stands);
     }
 
     /** Id of the stand carrying {@code code}, {@code null} when none does. */
@@ -127,14 +139,21 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public Stand create(Stand stand) {
+        if (stand.carriesBothScheduleForms()) {
+            settleScheduleForms(stand, List.of());
+        }
         // A new stand has nothing stored to be unfolded from: whatever a client marked is a typed plage.
-        stand.getPlages().forEach(plage -> plage.setDepliee(false));
+        stand.getPlages().forEach(plage -> {
+            plage.setDepliee(false);
+            plage.setConsigne(false);
+        });
         validate(stand);
         scope.write("Failed to create stand " + stand.getNom(), connection -> {
             stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
             Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, THE_STAND);
             stand.setId(ids.next(connection, IdGenerator.Kind.STAND));
             repository.saveStand(connection, stand, true);
+            layConsignes(connection, stand);
         });
         changeTracker.markModified();
         return stand;
@@ -156,8 +175,24 @@ public class StandService {
             typologies.validateIds(connection, stand.getTypologiesProposees());
         }
         repository.saveStand(connection, stand, true);
+        layConsignes(connection, stand);
         // Marked by the caller once committed, see TypologieService.create.
         return stand;
+    }
+
+    /**
+     * A stand created under a consigne gets its plages, as the stands present when it was laid did
+     * (ADR 0125): the band closes every stand, the new one included.
+     */
+    private void layConsignes(Connection connection, Stand stand) throws SQLException {
+        List<ConsigneEdition> posees = consignes.list();
+        if (posees.isEmpty()) {
+            return;
+        }
+        List<Creneau> grille = creneaux.list();
+        for (ConsigneEdition consigne : posees) {
+            consignes.insertPlages(connection, consigne.date(), ConsignePlages.of(List.of(stand), consigne, grille));
+        }
     }
 
     /**
@@ -183,12 +218,85 @@ public class StandService {
      */
     @RefusedWhileSolving
     public Stand update(String id, Stand stand) {
+        return save(id, stand);
+    }
+
+    /**
+     * Lays one dated plage on the stand, kept as typed by hand ({@code depliee} false). Refused as a whole
+     * under a freeze of the stands: a plage is the schedule the solve is given, and no field of the
+     * fiche is left to compare.
+     */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
+    public Stand addPlage(String id, PlageStand plage) {
+        if (plage == null) {
+            throw new BusinessError.Invalid("Une plage est attendue dans le corps de la requête");
+        }
+        Stand stand = existing(id);
+        plage.setId(null);
+        plage.setDepliee(false);
+        plage.setConsigne(false);
+        stand.getPlages().add(plage);
+        save(id, stand);
+        // Read back: the new plage has its id only once stored, and the caller wants it.
+        return repository.findStand(id);
+    }
+
+    /**
+     * Removes the plage of this id, or every plage of {@code date} when no id is given; exactly one of
+     * the two. Refused as a whole under a freeze, like {@link #addPlage}.
+     */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
+    public Stand removePlages(String id, Long plageId, LocalDate date) {
+        if ((plageId == null) == (date == null)) {
+            throw new BusinessError.Invalid("Indiquer la plage (plageId) ou le jour dont retirer les plages (date)");
+        }
+        Stand stand = existing(id);
+        boolean removed = stand.getPlages()
+                // A day's removal leaves the consigne's plages to the consigne (ADR 0125); one named by id goes.
+                .removeIf(plage -> plageId != null
+                        ? plageId.equals(plage.getId())
+                        : date.equals(plage.getDate()) && !plage.isConsigne());
+        if (!removed && plageId != null) {
+            throw new BusinessError.NotFound("Plage inconnue sur le stand " + id + " : " + plageId);
+        }
+        save(id, stand);
+        return repository.findStand(id);
+    }
+
+    private static void settleScheduleForms(Stand stand, List<PlageStand> stored) {
+        Set<ModeHoraire> contradictory = stand.settleDeprecatedLists(stored);
+        if (!contradictory.isEmpty()) {
+            throw new BusinessError.Invalid("La fiche porte \"plages\" et "
+                    + (contradictory.size() > 1
+                            ? "\"ouvertures\" et \"indisponibilites\""
+                            : contradictory.contains(ModeHoraire.OUVERTURE) ? "\"ouvertures\"" : "\"indisponibilites\"")
+                    + " qui ne disent pas la même chose, et aucune ne reprend ce qui est enregistré : "
+                    + "n'en envoyer qu'une (plages), ou la modifier seule");
+        }
+    }
+
+    private Stand existing(String id) {
+        Stand stand = repository.findStand(id);
+        if (stand == null) {
+            throw new BusinessError.NotFound("Stand inconnu : " + id);
+        }
+        return stand;
+    }
+
+    private Stand save(String id, Stand stand) {
         if (!repository.standExists(id)) {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
+        Stand stored =
+                stand.carriesBothScheduleForms() || !stand.getPlages().isEmpty() ? repository.findStand(id) : null;
+        if (stand.carriesBothScheduleForms()) {
+            settleScheduleForms(stand, stored.getPlages());
+        }
         if (!stand.getPlages().isEmpty()) {
-            markOrigins(stand, repository.findStand(id));
+            markOrigins(stand, stored);
         }
         // Before the freeze compares: the game categories may be named by
         // their code, and a code is not the id the stored stand holds.
@@ -321,9 +429,13 @@ public class StandService {
         }
         // The plages the previous model unfolded carry their origin: they go, whatever day they are on, and
         // what somebody typed stays — even when it looks exactly like one of them.
-        List<PlageStand> handMade =
-                stand.getPlages().stream().filter(plage -> !plage.isDepliee()).toList();
-        stand.setPlages(HorairesRecurrents.expand(regles, handMade, jours));
+        // A consigne's plages lie on top of the day and do not keep the model from unfolding beneath them.
+        List<PlageStand> handMade = stand.getPlages().stream()
+                .filter(plage -> !plage.isDepliee() && !plage.isConsigne())
+                .toList();
+        List<PlageStand> plages = new ArrayList<>(HorairesRecurrents.expand(regles, handMade, jours));
+        stand.getPlages().stream().filter(PlageStand::isConsigne).forEach(plages::add);
+        stand.setPlages(plages);
     }
 
     /**

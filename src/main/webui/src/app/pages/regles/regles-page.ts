@@ -66,8 +66,10 @@ import {
   OngletRegles,
   SEUILS,
   articlesOf,
+  groupeLabel,
   isRuleTab,
   niveauEffectif,
+  opensGroup,
   readOngletRegles,
   rulesOfBloc,
 } from './regles';
@@ -434,6 +436,8 @@ export class ReglesPage implements OnInit {
 
   protected readonly niveauLabel = niveauLabel;
   protected readonly niveauEffectifOf = niveauEffectif;
+  protected readonly opensGroup = opensGroup;
+  protected readonly groupeLabel = groupeLabel;
 
   protected libelle(rule: ConstraintView): string {
     return rule.libelleCourt || rule.categorie;
@@ -550,21 +554,25 @@ export class ReglesPage implements OnInit {
   }
 
   /**
-   * The section of Paramètres a row links to: « Légal » for every legal rule —
+   * The sections of Paramètres a row links to: « Légal » for every legal rule —
    * the whole block points there, a rule with no figure of its own included —,
-   * else the one that holds a setting the rule reads, `null` when it reads none.
+   * else each section that holds a setting the rule reads, in reading order
+   * (« Coupure repas » reads its durations in « Légal » and its placement in
+   * « Organisation »); empty when it reads none.
    */
-  protected parametresLien(rule: ConstraintView, bloc: BlocRegle): 'legal' | 'organisation' | null {
+  protected parametresLiens(rule: ConstraintView, bloc: BlocRegle): ('legal' | 'organisation')[] {
     if (bloc === 'legal') {
-      return 'legal';
+      return ['legal'];
     }
-    for (const parametre of rule.parametres ?? []) {
-      const section = this.sectionOf(parametre);
-      if (section) {
-        return section;
-      }
-    }
-    return null;
+    const sections = (rule.parametres ?? []).map((parametre) => this.sectionOf(parametre));
+    return (['legal', 'organisation'] as const).filter((section) => sections.includes(section));
+  }
+
+  /** The link text of a row that points to two sections: each says which one it opens. */
+  protected lienParametresSection(section: 'legal' | 'organisation'): string {
+    return section === 'legal'
+      ? $localize`:@@regles.lienParametres.legal:Régler dans Paramètres › Légal`
+      : $localize`:@@regles.lienParametres.organisation:Régler dans Paramètres › Organisation`;
   }
 
   protected lienParametresLabel(rule: ConstraintView): string {

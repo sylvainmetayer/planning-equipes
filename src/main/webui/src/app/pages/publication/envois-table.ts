@@ -38,7 +38,6 @@ import {
   reminderLabel,
   versionLabel,
 } from './envois';
-import { PublicationSelection } from './publication-selection';
 import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
 import { isEditionInactive } from '../../core/edition-inactive';
@@ -76,7 +75,6 @@ export class EnvoisTable {
   protected readonly editionInactive = inject(EditionStore).inactive;
   private readonly planningApi = inject(PlanningApi);
   private readonly animateursApi = inject(AnimateursApi);
-  protected readonly selection = inject(PublicationSelection);
   private readonly params = currentViewParams();
 
   /** Bumped by the page after a publication: the states have moved. */
@@ -166,9 +164,6 @@ export class EnvoisTable {
     if (!ligne.aPrevenir) {
       return $localize`:@@diffuser.change.aJour:à jour`;
     }
-    if (this.selection.isExcluded(ligne.animateurId)) {
-      return $localize`:@@diffuser.change.differe:différé de la prochaine publication`;
-    }
     return ligne.differe
       ? $localize`:@@diffuser.change.reporte:à prévenir, différé la dernière fois`
       : $localize`:@@diffuser.change.aPrevenir:à prévenir`;
@@ -204,11 +199,6 @@ export class EnvoisTable {
       return;
     }
     await this.act('*', async () => this.remindReport(ids));
-  }
-
-  /** Holds somebody back from the next publication, or puts them back in it. */
-  protected toggleDefer(ligne: LigneEnvoi): void {
-    this.selection.setExcluded(ligne.animateurId, !this.selection.isExcluded(ligne.animateurId));
   }
 
   private async remindReport(ids: string[]): Promise<string> {

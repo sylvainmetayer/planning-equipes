@@ -129,13 +129,14 @@ class McpWarnsWhileSolvingTest {
                             .updateParametres(
                                     "calcul", null, null, null, null, null, null, null, null, null, null, null, null,
                                     null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                                    "E1")
+                                    null, "E1")
                             .parametres())
                     .avertissements());
             // Notifications are read by the night sends, never by a solve: nothing to warn about.
             assertThat(parametresTools
                             .updateParametres(
                                     "notifications",
+                                    null,
                                     null,
                                     null,
                                     null,
@@ -237,10 +238,10 @@ class McpWarnsWhileSolvingTest {
                     "2020-01-01", "Prénom", "Nom", null, null, null, List.of("2031-08-01"), ed);
             assertThat(animateur.avertissements()).contains("MINEUR_PENDANT_EVENEMENT", CODE);
             String animateurId = animateur.animateur().id();
-            // Forced onto a day the animateur is off: a warning, not a refusal.
+            // An ad hoc exception is written while the solve runs: accepted, with the warning.
             var contrainte = parametresTools.createContrainteAdHoc(
-                    "AFFECTATION_FORCEE", List.of(animateurId), creneauId, standComplet, null, ed);
-            assertThat(contrainte.avertissements()).contains("AFFECTATION_FORCEE_JOUR_INDISPONIBLE", CODE);
+                    "INCOMPATIBILITE", List.of(animateurId), creneauId, standComplet, null, ed);
+            assertThat(contrainte.avertissements()).contains(CODE);
             String contrainteId = contrainte.contrainte().id();
             assertWarned(() ->
                     parametresTools.deleteContrainteAdHoc(contrainteId, ed).avertissements());
@@ -248,7 +249,7 @@ class McpWarnsWhileSolvingTest {
                             .updateParametres(
                                     "legal", null, null, null, null, null, null, null, null, null, null, null, null,
                                     null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                                    ed)
+                                    null, ed)
                             .parametres())
                     .avertissements());
             WrittenVerrouillageView verrou = verrouillageTools.lock("JOUR", null, null, null, "2031-08-01", null, ed);
@@ -256,7 +257,7 @@ class McpWarnsWhileSolvingTest {
             assertWarned(() ->
                     verrouillageTools.unlock(verrou.verrouillage().id(), ed).avertissements());
             assertWarned(() -> validationTools
-                    .addJourneeValidation("2031-08-01", null, false, ed)
+                    .updateJourneeState("2031-08-01", "RELUE", null, ed)
                     .avertissements());
         } finally {
             editions.delete(ed);

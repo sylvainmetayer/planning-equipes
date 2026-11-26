@@ -200,15 +200,12 @@ test.describe('avertissements de saisie', () => {
     await expect(creation).toBeHidden();
     await expect(page).toHaveURL(/\/stands\/[^/?]+/);
 
-    // The rules, the condensed form of the fiche: the whole day's windows on
-    // one line — the morning, before the only créneau.
-    await page.getByRole('heading', { name: 'Règles', exact: true }).click();
-    await page.getByRole('button', { name: 'Modifier les règles' }).click();
-    const dialog = await dialogueOuvert(page);
-    await dialog.getByRole('button', { name: "Ajouter une règle d'horaire" }).click();
-    await dialog.getByLabel('Fenêtres de la journée').fill('08:00-10:00');
-    await dialog.getByRole('button', { name: 'Modifier le stand' }).click();
-    await expect(dialog).toBeHidden();
+    // The recurring model, on the fiche: the whole day's windows on one
+    // line — the morning, before the only créneau.
+    const modele = page.locator('#stand-section-modele');
+    await modele.getByRole('button', { name: "Ajouter une règle d'horaire" }).click();
+    await modele.getByLabel('Fenêtres de la journée').fill('08:00-10:00');
+    await modele.getByRole('button', { name: 'Enregistrer le modèle' }).click();
 
     // The message names the day and the window, and says the stand is written.
     await expect(page.getByText(/ne recoupent aucun créneau/)).toBeVisible();

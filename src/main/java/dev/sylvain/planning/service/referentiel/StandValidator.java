@@ -112,7 +112,10 @@ final class StandValidator {
                                 + ouverture.getHeureDebut() + ") — une ouverture ne peut pas chevaucher minuit, "
                                 + "entrez-en deux");
             }
-            checkEffectifFenetre(ouverture.getEffectif(), "une ouverture", stand);
+            // A consigne's opening carries the headcount it inherited when laid: laying it again is its own check.
+            if (!ouverture.isConsigne()) {
+                checkEffectifFenetre(ouverture.getEffectif(), "une ouverture", stand);
+            }
         }
     }
 
@@ -188,10 +191,11 @@ final class StandValidator {
     }
 
     /**
-     * A day can never carry both a closure and an opening window: mixing the
-     * two modes for one day is ambiguous (which one does the solver honour?),
-     * so it is rejected here rather than silently picking one — see
-     * {@code PlageStand}'s javadoc for the three-state rule this protects.
+     * A day can never carry both a closure and an opening window that
+     * somebody typed: mixing the two modes by hand is ambiguous, so it is
+     * rejected here rather than silently picking one. The plages a consigne
+     * wrote are left out (ADR 0125): its band falls on stands that state their
+     * openings, and that day reads as the openings minus the band.
      */
     private static void checkExclusiveModesPerDay(Stand stand) {
         // Never null through Stand's setters; checked alike to the two checks above.
@@ -199,10 +203,12 @@ final class StandValidator {
             return;
         }
         Set<LocalDate> joursFermeture = stand.getIndisponibilites().stream()
+                .filter(plage -> !plage.isConsigne())
                 .map(PlageStand::getDate)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Set<LocalDate> joursOuverture = stand.getOuvertures().stream()
+                .filter(plage -> !plage.isConsigne())
                 .map(PlageStand::getDate)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());

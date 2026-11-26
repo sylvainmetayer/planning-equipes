@@ -56,6 +56,10 @@ import java.util.stream.Stream;
  *                      a setting of its own: the fact already knows which
  *                      service it is, and nobody has shown a use for an
  *                      organiser who wants the other way round (issue #596).
+ *                      The edition's {@link PlacementRepas} setting can override
+ *                      it for every window ({@link #withPlacement})
+ * @param sansPlacement when {@code true}, no end is preferred and the soft
+ *                      placement term is silent ({@link PlacementRepas#AUCUN})
  */
 public record FenetreRepas(
         String libelle,
@@ -63,6 +67,7 @@ public record FenetreRepas(
         LocalTime fin,
         int dureeMinutes,
         boolean auPlusTard,
+        boolean sansPlacement,
         LocalDate date,
         Set<LocalDate> datesExclues) {
 
@@ -73,9 +78,45 @@ public record FenetreRepas(
         datesExclues = datesExclues == null ? Set.of() : Set.copyOf(datesExclues);
     }
 
+    /** A window with the placement of its own service, dated or not. */
+    public FenetreRepas(
+            String libelle,
+            LocalTime debut,
+            LocalTime fin,
+            int dureeMinutes,
+            boolean auPlusTard,
+            LocalDate date,
+            Set<LocalDate> datesExclues) {
+        this(libelle, debut, fin, dureeMinutes, auPlusTard, false, date, datesExclues);
+    }
+
     /** A window of every day of the edition. */
     public FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int dureeMinutes, boolean auPlusTard) {
-        this(libelle, debut, fin, dureeMinutes, auPlusTard, null, Set.of());
+        this(libelle, debut, fin, dureeMinutes, auPlusTard, false, null, Set.of());
+    }
+
+    /**
+     * The same window with the edition's placement setting applied: the shipped
+     * value keeps each window's own direction, the others set one for all.
+     */
+    public FenetreRepas withPlacement(PlacementRepas placement) {
+        return switch (placement) {
+            case FIN_MIDI_DEBUT_SOIR -> this;
+            case DEBUT -> placed(false, false);
+            case FIN -> placed(true, false);
+            case AUCUN -> placed(auPlusTard, true);
+        };
+    }
+
+    private FenetreRepas placed(boolean tard, boolean aucun) {
+        return new FenetreRepas(libelle, debut, fin, dureeMinutes, tard, aucun, date, datesExclues);
+    }
+
+    /** The windows with the edition's placement setting applied to each. */
+    public static List<FenetreRepas> withPlacement(List<FenetreRepas> fenetres, PlacementRepas placement) {
+        return fenetres.stream()
+                .map(fenetre -> fenetre.withPlacement(placement))
+                .toList();
     }
 
     /** True when this window governs {@code jour}: its own day, or every day it is not replaced on. */
@@ -113,6 +154,7 @@ public record FenetreRepas(
                                         generale.fin(),
                                         generale.dureeMinutes(),
                                         generale.auPlusTard(),
+                                        generale.sansPlacement(),
                                         null,
                                         exclusions.getOrDefault(generale.libelle(), Set.of()))),
                         datees.stream())
@@ -231,7 +273,7 @@ public record FenetreRepas(
         if (fin.toSecondOfDay() - debut.toSecondOfDay() < dureeMinutes * 60) {
             return false;
         }
-        fenetres.add(new FenetreRepas(libelle, debut, fin, dureeMinutes, auPlusTard, date, Set.of()));
+        fenetres.add(new FenetreRepas(libelle, debut, fin, dureeMinutes, auPlusTard, false, date, Set.of()));
         return true;
     }
 

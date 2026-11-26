@@ -126,7 +126,9 @@ public class CreneauGridService {
                         // edition's own grid. No plan in place — it is a
                         // hypothesis.
                         FeasibilityAnalyzer.ConsecutiveDaysRule.of(
-                                parametres.disabledContraintes(), parametres.qualite()),
+                                parametres.disabledContraintes(),
+                                parametres.niveauxObligatoires(),
+                                parametres.qualite()),
                         FeasibilityAnalyzer.PlanContext.NONE);
 
         return new RapportGrille(creneaux.size(), anomalies, ouvertures, faisabilite);

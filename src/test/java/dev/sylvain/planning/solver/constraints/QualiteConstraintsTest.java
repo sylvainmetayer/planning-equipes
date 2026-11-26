@@ -964,17 +964,11 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
     }
 
-    // --- maxJoursConsecutifsTravaillesDur (issue #31) -----------------------
-
-    /**
-     * The hard form of the same ceiling. It is in
-     * {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}, so an edition that
-     * never mentions it enforces nothing — which is what the third test below
-     * pins, and what a plain-Java harness handing the solver no toggle at all
-     * must also see.
-     */
-    private static final ConstraintToggle JOURS_DAFFILEE_EN_DUR =
-            new ConstraintToggle("maxJoursConsecutifsTravaillesDur", true);
+    // --- the run of days switched off, and its penalty ---------------------
+    //
+    // One rule since its two forms merged (ADR 0118): its level is a weight the
+    // edition chooses, which a ConstraintVerifier does not apply — the match
+    // weight checked here is the same at either level.
 
     private Object[] joursConsecutifsToggled(Animateur animateur, int jours, ConstraintToggle toggle) {
         return joursConsecutifsToggled(animateur, jours, toggle, SIX_DAY_CEILING);
@@ -994,42 +988,18 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void septJoursConsecutifsSontUnEcartDurQuandLaRegleEstAllumee() {
-        verify("maxJoursConsecutifsTravaillesDur")
-                .given(joursConsecutifsToggled(referentMajeur("A1"), 7, JOURS_DAFFILEE_EN_DUR))
-                .penalizesBy(1);
-    }
-
-    @Test
-    void sixJoursConsecutifsNeCoutentRienMemeEnDur() {
-        verify("maxJoursConsecutifsTravaillesDur")
-                .given(joursConsecutifsToggled(referentMajeur("A1"), 6, JOURS_DAFFILEE_EN_DUR))
-                .penalizesBy(0);
-    }
-
-    /**
-     * Absent from the edition, absent from the score: seven days in a row cost
-     * nothing here, and keep costing their medium point on
-     * {@code maxJoursConsecutifsTravailles}, which stays on by default. The two
-     * halves in one test, because it is the pair that is the decision.
-     */
-    @Test
-    void sansToggleLaRegleDureEstMuetteEtLaRegleSoupleTientTouteSeule() {
-        Animateur a1 = referentMajeur("A1");
-
-        verify("maxJoursConsecutifsTravaillesDur")
-                .given(joursConsecutifsToggled(a1, 7, null))
-                .penalizesBy(0);
+    void aRunOfDaysSwitchedOffCostsNothing() {
         verify("maxJoursConsecutifsTravailles")
-                .given(joursConsecutifsToggled(a1, 7, null))
-                .penalizesBy(1);
+                .given(joursConsecutifsToggled(
+                        referentMajeur("A1"), 7, new ConstraintToggle("maxJoursConsecutifsTravailles", false)))
+                .penalizesBy(0);
     }
 
     /** Twelve days in a row are six over the ceiling: the penalty follows the breach. */
     @Test
-    void laPenaliteDureSuitLaLongueurDeLaSerie() {
-        verify("maxJoursConsecutifsTravaillesDur")
-                .given(joursConsecutifsToggled(referentMajeur("A1"), 12, JOURS_DAFFILEE_EN_DUR))
+    void thePenaltyFollowsTheLengthOfTheRun() {
+        verify("maxJoursConsecutifsTravailles")
+                .given(joursConsecutifsToggled(referentMajeur("A1"), 12, null))
                 .penalizesBy(6);
     }
 
@@ -1038,13 +1008,13 @@ class QualiteConstraintsTest extends ConstraintTestBase {
      *
      * <p>Eight, not the six the organisation first stated: the value is a
      * feasibility condition, not a comfort. On {@code festival-hivernal} the
-     * hard form leaves 22 seats unfilled at six and reaches zero hard at eight,
+     * rule held hard leaves 22 seats unfilled at six and reaches zero hard at eight,
      * and a ceiling nothing can satisfy protects nobody — dosed, it only turns
      * the same impossibility into a penalty no rearrangement clears. See ADR
      * 0045. An edition that can hold six sets six on the Paramètres screen.</p>
      */
     @Test
-    void leSeuilLivreEstDeHuitJours() {
+    void theShippedCeilingIsEightDays() {
         assertThat(new ParametresQualite().joursConsecutifsMax()).isEqualTo(8);
 
         Animateur a1 = referentMajeur("A1");
@@ -1059,26 +1029,17 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     /**
      * The ceiling is the edition's, not the code's. An organiser who sets seven
      * days pays nothing for a seventh — and one who sets five pays for the
-     * sixth, which a looser ceiling lets through. Both forms read the same
-     * value, so the pair is checked together: a ceiling that moved for one form
-     * only would be a plan the screens describe two ways.
+     * sixth, which a looser ceiling lets through.
      */
     @Test
-    void lePlafondEstCeluiDeLEdition() {
+    void theCeilingIsTheEditions() {
         Animateur a1 = referentMajeur("A1");
 
         verify("maxJoursConsecutifsTravailles")
                 .given(joursConsecutifsToggled(a1, 7, null, dayCeiling(7)))
                 .penalizesBy(0);
-        verify("maxJoursConsecutifsTravaillesDur")
-                .given(joursConsecutifsToggled(a1, 7, JOURS_DAFFILEE_EN_DUR, dayCeiling(7)))
-                .penalizesBy(0);
-
         verify("maxJoursConsecutifsTravailles")
                 .given(joursConsecutifsToggled(a1, 6, null, dayCeiling(5)))
-                .penalizesBy(1);
-        verify("maxJoursConsecutifsTravaillesDur")
-                .given(joursConsecutifsToggled(a1, 6, JOURS_DAFFILEE_EN_DUR, dayCeiling(5)))
                 .penalizesBy(1);
     }
 

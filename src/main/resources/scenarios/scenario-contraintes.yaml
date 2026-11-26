@@ -55,10 +55,3 @@ contraintesAdHoc:
       - A1
       - A2
     raison: Ne travaillent pas ensemble
-  - id: INDISPO-1
-    type: INDISPONIBILITE_FORCEE
-    animateurs:
-      - A2
-    creneauId: J1-MATIN
-    standId: STAND-STRAT
-    raison: Formation

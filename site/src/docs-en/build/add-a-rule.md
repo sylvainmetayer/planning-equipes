@@ -22,7 +22,7 @@ Rules are grouped by family in `solver/constraints/`, one private method per rul
 | `QualiteConstraints` | organisational quality (medium) |
 | `PreferenceConstraints` | preferences (soft) |
 
-Decide the level too. The prescriptive types of ad hoc exception (`INDISPONIBILITE_FORCEE`, `INCOMPATIBILITE`, `AFFECTATION_FORCEE`) are hard breaches, at the same rank as the legal rules and the minors: never demote them. `AFFINITE` is the only deliberate exception, a soft reward: never promote it to hard, it would be a forced assignment in disguise. A weight never changes the level of a rule: if the same check must be both weighted *and* held hard, that is two rules, as for [days in a row](repos-et-jours-d-affilee.md).
+Decide the level too. The prescriptive type of ad hoc exception, `INCOMPATIBILITE`, is a hard breach, at the same rank as the legal rules and the minors: never demote it. `AFFINITE` is the only deliberate exception, a soft reward: never promote it to hard, it would be a forced assignment in disguise. A weight never changes the level of a rule: if the same check must be both weighted *and* held hard, that is two rules, as for [days in a row](repos-et-jours-d-affilee.md).
 
 ## 2. Write the constraint method
 

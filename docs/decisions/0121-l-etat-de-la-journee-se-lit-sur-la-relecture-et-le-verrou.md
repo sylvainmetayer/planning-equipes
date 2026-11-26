@@ -1,6 +1,6 @@
 # 0121 — L'état de la journée se lit sur la relecture et le verrou de journée
 
-- **Statut** : accepté, implémenté (côté serveur ; l'écran Journée et les outils MCP de l'état suivent)
+- **Statut** : accepté, implémenté (serveur, écran Journée et outils MCP de l'état)
 - **Date** : novembre 2026
 - **Portée** : `domain/DayState`, `service/validation/ValidationJourneeService`, `ValidationPrerequisService`, API (`/api/etats-journee`), routes et outils de validation gardés en alias, guide de migration 4.0
 - **Prolonge** : [0039](0039-validation-de-relecture-distincte-du-verrou.md) (la relecture ne pose jamais de verrou sans qu'on le demande), [0069](0069-une-relecture-survit-a-ce-que-le-calcul-n-a-pas-recalcule.md) (ce qu'un calcul fait d'une relecture), inchangées sur ces deux points
@@ -88,10 +88,12 @@ journées relues ou figées. Une journée figée sans relecture compte donc
 désormais : c'est le seul changement visible à la mise à jour.
 
 **D6 — Les routes et outils de validation restent, en alias, jusqu'en 5.0.**
-`GET`, `POST /api/validations`, `DELETE /api/validations/{id}` (dépréciés) et
-les outils `lister_validations_journee`, `ajouter_validation_journee`,
-`retirer_validation_journee` font ce qu'ils faisaient : ils écrivent la même
-relecture et le même verrou, donc l'état suit. Ils ne retirent jamais un
+`GET`, `POST /api/validations` et `DELETE /api/validations/{id}` (dépréciés)
+font ce qu'ils faisaient : ils écrivent la même relecture et le même verrou,
+donc l'état suit. Les trois outils `*_validation_journee` ne sont plus des
+alias : ils deviennent `consulter_etats_journee` et `modifier_etat_journee`,
+sans ancien nom (la table des renommages le dit), et l'écran Journée écrit par
+`PUT /api/etats-journee/{jour}`. Ils ne retirent jamais un
 verrou : retirer la relecture d'une journée figée la laisse figée, comme en
 3.x. Les prérequis, l'avancement et les relectures gardées à froid restent
 sous `/api/validations` ; le panneau des prérequis porte en plus l'état.
@@ -125,5 +127,7 @@ sous `/api/validations` ; le panneau des prérequis porte en plus l'état.
 - La relecture et le verrou restent deux lignes, écrites l'une après l'autre :
   un échec entre les deux laisse une relecture sans verrou, que le même geste
   répété complète.
-- L'écran Journée et les outils MCP de l'état viennent ensuite ; jusque-là
-  l'écran garde ses gestes de 3.x, qui passent par les alias.
+- L'écran Journée présente l'état en un contrôle à trois valeurs ; « Figée »
+  demande une confirmation, et figer sans commentaire garde celui de la
+  relecture (sans cela, relire puis figer effacerait ce que le relecteur a
+  écrit). Un lecteur voit l'état, sans bouton.
