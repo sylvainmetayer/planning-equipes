@@ -51,6 +51,31 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v2ToV3MovesTheThreeParameterSectionsUnderParametres() {
+        Map<String, Object> document = document();
+        document.put("parametresLegaux", Map.of("dureePauseMinutes", 30));
+        document.put("parametresQualite", Map.of("joursConsecutifsMax", 5));
+        document.put("parametresSolveur", Map.of("dureeResolutionSecondes", 400));
+
+        Map<String, Object> converted = ScenarioParametresLink.convert(document, new java.util.ArrayList<>());
+
+        assertThat(converted)
+                .doesNotContainKeys("parametresLegaux", "parametresQualite", "parametresSolveur")
+                .containsEntry(
+                        "parametres",
+                        Map.of(
+                                "legal", Map.of("dureePauseMinutes", 30),
+                                "organisation", Map.of("joursConsecutifsMax", 5),
+                                "instance", Map.of("dureeResolutionSecondes", 400)));
+    }
+
+    @Test
+    void v2ToV3LeavesADocumentWithoutParameterSectionsAlone() {
+        assertThat(ScenarioParametresLink.convert(document(), new java.util.ArrayList<>()))
+                .isEqualTo(document());
+    }
+
+    @Test
     void migrateStampsTheCurrentVersionAndLeavesTheInputUntouched() {
         Map<String, Object> input = document();
 

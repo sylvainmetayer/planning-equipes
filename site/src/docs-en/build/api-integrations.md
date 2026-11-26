@@ -51,7 +51,7 @@ An espace download is traced **only once the identity is proven**. Refused befor
 
 ## Scheduled notifications
 
-`GET` and `PUT /api/parametres-notifications` set the delays of the overnight sends **for this edition**. Whether they go out at all is not set here: only the active edition sends ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)).
+`GET` and `PUT /api/parametres/notifications` set the delays of the overnight sends **for this edition**. Whether they go out at all is not set here: only the active edition sends ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)).
 
 | Field | Role |
 | --- | --- |

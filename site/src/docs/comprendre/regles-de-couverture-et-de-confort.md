@@ -54,7 +54,7 @@ Des indisponibilités déclarées différentes rendent certains jours inévitabl
 
 ## Les seuils de qualité
 
-Les règles de « Qualité d'organisation » lisent leurs seuils dans `ParametresQualite`, fait de problème comme `ParametresLegaux`. Ils sont **persistés par édition** et se règlent sur Règles du planning, onglet Qualité, sur la ligne de la règle qui les lit. Le bloc `planning.contraintes.*` de la configuration donne les valeurs d'une édition qui ne les a jamais réglés, et un scénario les emporte dans sa section `parametresQualite:`.
+Les règles de « Qualité d'organisation » lisent leurs seuils dans `ParametresQualite`, fait de problème comme `ParametresLegaux`. Ils sont **persistés par édition** et se règlent sur Règles du planning, onglet Qualité, sur la ligne de la règle qui les lit. Le bloc `planning.contraintes.*` de la configuration donne les valeurs d'une édition qui ne les a jamais réglés, et un scénario les emporte dans sa section `parametres.organisation:`.
 
 | Seuil | Défaut | Règle qui le lit |
 |---|---|---|

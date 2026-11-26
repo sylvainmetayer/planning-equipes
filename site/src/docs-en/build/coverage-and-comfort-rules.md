@@ -57,7 +57,7 @@ Different declared unavailabilities make some days inevitably misaligned: the Ca
 
 ## Quality thresholds
 
-The "Qualité d'organisation" (organisation quality) rules read their thresholds in `ParametresQualite`, a problem fact like `ParametresLegaux`. They are **persisted per edition** and set on Planning rules, Quality tab, on the row of the rule that reads them. The `planning.contraintes.*` block of the configuration gives the values of an edition that has never set them, and a scenario overrides them in its `parametresQualite:` section.
+The "Qualité d'organisation" (organisation quality) rules read their thresholds in `ParametresQualite`, a problem fact like `ParametresLegaux`. They are **persisted per edition** and set on Planning rules, Quality tab, on the row of the rule that reads them. The `planning.contraintes.*` block of the configuration gives the values of an edition that has never set them, and a scenario overrides them in its `parametres.organisation:` section.
 
 | Threshold | Default | Rule that reads it |
 |---|---|---|

@@ -32,6 +32,7 @@ import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
+import dev.sylvain.planning.scenario.dto.ParametresDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
@@ -89,9 +90,7 @@ final class ScenarioDtoAssembler {
                 ScenarioBinder.SCHEMA_VERSION,
                 null,
                 new FestivalDto(dateDebut),
-                parametresSolveur(export.parametresSolveur()),
-                parametresLegaux(export.parametresLegaux()),
-                parametresQualite(export.parametresQualite()),
+                parametres(export),
                 contraintes(export),
                 nullWhenEmpty(typologies(export.typologies())),
                 creneaux(creneaux),
@@ -377,6 +376,17 @@ final class ScenarioDtoAssembler {
      * way back in, a half-written section would say « no late hour » where the
      * edition simply had one.
      */
+    /** {@code null} when the file pins nothing, so no empty {@code parametres:} is written. */
+    private static ParametresDto parametres(ScenarioYamlWriter.ScenarioExport export) {
+        ParametresDto parametres = new ParametresDto(
+                parametresLegaux(export.parametresLegaux()),
+                parametresQualite(export.parametresQualite()),
+                parametresSolveur(export.parametresSolveur()));
+        return parametres.legal() == null && parametres.organisation() == null && parametres.instance() == null
+                ? null
+                : parametres;
+    }
+
     private static ParametresQualiteDto parametresQualite(ParametresQualite parametres) {
         return parametres == null
                 ? null

@@ -7303,8 +7303,8 @@
         }
       },
       "ParametresNotifications" : {
-        "required" : [ "ancienneteEchangeJours", "delaiRelanceHeures" ],
         "type" : "object",
+        "required" : [ "ancienneteEchangeJours", "delaiRelanceHeures" ],
         "properties" : {
           "heureRappelVeille" : {
             "$ref" : "#/components/schemas/LocalTime"
@@ -7320,8 +7320,8 @@
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
         "type" : "object",
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
             "type" : "integer",
@@ -7377,6 +7377,24 @@
           },
           "mailFinResolution" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "ParametresView" : {
+        "required" : [ "legal", "organisation", "notifications", "instance" ],
+        "type" : "object",
+        "properties" : {
+          "legal" : {
+            "$ref" : "#/components/schemas/ParametresLegaux"
+          },
+          "organisation" : {
+            "$ref" : "#/components/schemas/ParametresQualite"
+          },
+          "notifications" : {
+            "$ref" : "#/components/schemas/ParametresNotifications"
+          },
+          "instance" : {
+            "$ref" : "#/components/schemas/SolverSettingsView"
           }
         }
       },
@@ -10049,8 +10067,8 @@
         }
       },
       "SolverSettingsView" : {
-        "required" : [ "mailFinResolution", "instance" ],
         "type" : "object",
+        "required" : [ "mailFinResolution", "instance" ],
         "properties" : {
           "dureeResolutionSecondes" : {
             "type" : "integer",
@@ -17026,6 +17044,24 @@
         "tags" : [ "Ouverture Stands Resource" ]
       }
     },
+    "/api/parametres" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Parametres",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
     "/api/parametres-contact" : {
       "put" : {
         "requestBody" : {
@@ -17075,6 +17111,7 @@
     },
     "/api/parametres-legaux" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17102,6 +17139,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17120,6 +17158,7 @@
     },
     "/api/parametres-notifications" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17147,6 +17186,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17165,6 +17205,7 @@
     },
     "/api/parametres-qualite" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17192,6 +17233,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17210,6 +17252,7 @@
     },
     "/api/parametres-solveur" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17239,6 +17282,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17252,6 +17296,98 @@
           }
         },
         "summary" : "Get Parametres Solveur",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/instance" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresSolveur"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolverSettingsView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Instance",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolverSettingsView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Instance",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/legal" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresLegaux"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Legal",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresLegaux"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Legal",
         "tags" : [ "Parametres Resource" ]
       }
     },
@@ -17318,6 +17454,96 @@
         },
         "summary" : "Test",
         "tags" : [ "Weather Resource" ]
+      }
+    },
+    "/api/parametres/notifications" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresNotifications"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Notifications",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresNotifications"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Notifications",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/organisation" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresQualite"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Organisation",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresQualite"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Organisation",
+        "tags" : [ "Parametres Resource" ]
       }
     },
     "/api/pauses" : {

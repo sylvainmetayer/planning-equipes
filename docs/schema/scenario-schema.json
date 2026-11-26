@@ -421,6 +421,20 @@
       },
       "required" : [ "date", "heureDebut" ]
     },
+    "ParametresDto" : {
+      "type" : "object",
+      "properties" : {
+        "instance" : {
+          "$ref" : "#/$defs/ParametresSolveurDto"
+        },
+        "legal" : {
+          "$ref" : "#/$defs/ParametresLegauxDto"
+        },
+        "organisation" : {
+          "$ref" : "#/$defs/ParametresQualiteDto"
+        }
+      }
+    },
     "ParametresLegauxDto" : {
       "type" : "object",
       "properties" : {
@@ -779,14 +793,8 @@
         "$ref" : "#/$defs/JourneeTypeDto"
       }
     },
-    "parametresLegaux" : {
-      "$ref" : "#/$defs/ParametresLegauxDto"
-    },
-    "parametresQualite" : {
-      "$ref" : "#/$defs/ParametresQualiteDto"
-    },
-    "parametresSolveur" : {
-      "$ref" : "#/$defs/ParametresSolveurDto"
+    "parametres" : {
+      "$ref" : "#/$defs/ParametresDto"
     },
     "postes" : {
       "type" : "array",
@@ -804,7 +812,7 @@
       "type" : "integer",
       "format" : "int32",
       "minimum" : 1,
-      "maximum" : 2
+      "maximum" : 3
     },
     "stands" : {
       "type" : "array",
