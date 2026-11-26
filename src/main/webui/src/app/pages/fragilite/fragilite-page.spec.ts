@@ -73,7 +73,7 @@ const PLANNING: PlanningEvenement = {
 const verrous = fakeOf<VerrouillageStore>({
   create: () => Promise.resolve([]),
   reload: () => Promise.resolve(undefined),
-  estAnimateurCreneauVerrouille: () => false,
+  isAnimateurCreneauVerrouille: () => false,
 });
 
 /**

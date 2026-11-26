@@ -73,8 +73,8 @@ interface Options {
   animateur?: string;
   verrous?: Partial<{
     estJourVerrouille: (date: string | null) => boolean;
-    estStandVerrouille: (id: string, jour: string | null) => boolean;
-    estAnimateurCreneauVerrouille: (animateurId: string, creneauId: number) => boolean;
+    isStandVerrouille: (id: string, jour: string | null) => boolean;
+    isAnimateurCreneauVerrouille: (animateurId: string, creneauId: number) => boolean;
   }>;
 }
 
@@ -96,9 +96,9 @@ function mount(options: Options = {}) {
         useValue: {
           reload: vi.fn(() => Promise.resolve(undefined)),
           estJourVerrouille: options.verrous?.estJourVerrouille ?? (() => false),
-          estStandVerrouille: options.verrous?.estStandVerrouille ?? (() => false),
-          estAnimateurCreneauVerrouille:
-            options.verrous?.estAnimateurCreneauVerrouille ?? (() => false),
+          isStandVerrouille: options.verrous?.isStandVerrouille ?? (() => false),
+          isAnimateurCreneauVerrouille:
+            options.verrous?.isAnimateurCreneauVerrouille ?? (() => false),
         },
       },
       { provide: MatDialog, useValue: { open } },
@@ -416,7 +416,7 @@ describe('CalendarDayView rendering', () => {
   it('padlocks a single line frozen by its stand', async () => {
     const { fixture } = mount({
       planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
-      verrous: { estStandVerrouille: (id) => id === 'Loup-Garou' },
+      verrous: { isStandVerrouille: (id) => id === 'Loup-Garou' },
     });
     await fixture.whenStable();
 
@@ -451,7 +451,7 @@ describe('CalendarDayView rendering', () => {
         poste('p1', stand('Dixit'), C1, animateur('a1', 'Camille')),
         poste('p2', AMBIANCE, C1, null),
       ]),
-      verrous: { estStandVerrouille: (id) => id === 'Dixit' },
+      verrous: { isStandVerrouille: (id) => id === 'Dixit' },
     });
     fixture.componentRef.setInput('sieges', 'vides');
     await fixture.whenStable();

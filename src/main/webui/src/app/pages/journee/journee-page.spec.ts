@@ -211,8 +211,8 @@ describe('JourneePage', () => {
             verrouillages: () => [],
             reload: vi.fn(() => Promise.resolve(undefined)),
             estJourVerrouille: () => false,
-            estStandVerrouille: () => false,
-            estAnimateurCreneauVerrouille: () => false,
+            isStandVerrouille: () => false,
+            isAnimateurCreneauVerrouille: () => false,
           },
         },
         {

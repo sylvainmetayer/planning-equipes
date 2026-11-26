@@ -239,7 +239,7 @@ export class FragilitePage {
     return (
       creneaux.length > 0 &&
       creneaux.every((creneauId) =>
-        this.verrous.estAnimateurCreneauVerrouille(animateurId, creneauId),
+        this.verrous.isAnimateurCreneauVerrouille(animateurId, creneauId),
       )
     );
   }
@@ -274,7 +274,7 @@ export class FragilitePage {
       this.planning.set(planning);
       const avertissements: Avertissement[] = [];
       for (const creneauId of this.creneauxOf(ligne.animateurId)) {
-        if (!this.verrous.estAnimateurCreneauVerrouille(ligne.animateurId, creneauId)) {
+        if (!this.verrous.isAnimateurCreneauVerrouille(ligne.animateurId, creneauId)) {
           avertissements.push(
             ...(await this.verrous.create({
               type: 'ANIMATEUR_CRENEAU',

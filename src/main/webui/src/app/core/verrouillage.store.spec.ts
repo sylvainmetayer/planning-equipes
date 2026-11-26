@@ -56,7 +56,7 @@ describe('VerrouillageStore', () => {
 
     expect(store.verrouillages()).toHaveLength(2);
     expect(store.estJourVerrouille('2026-07-08')).toBe(true);
-    expect(store.estStandVerrouille('STAND-A', '2026-07-08')).toBe(true);
+    expect(store.isStandVerrouille('STAND-A', '2026-07-08')).toBe(true);
   });
 
   it('reconnaît chaque type de cible', async () => {
@@ -67,11 +67,11 @@ describe('VerrouillageStore', () => {
 
     await store.reload();
 
-    expect(store.estAnimateurCreneauVerrouille('A1', 42)).toBe(true);
-    expect(store.estAnimateurCreneauVerrouille('A1', 43)).toBe(false);
-    expect(store.estAnimateurCreneauVerrouille('A2', 42)).toBe(false);
-    expect(store.estStandVerrouille('STAND-A', '2026-07-08')).toBe(true);
-    expect(store.estStandVerrouille('STAND-A', '2026-07-09')).toBe(false);
+    expect(store.isAnimateurCreneauVerrouille('A1', 42)).toBe(true);
+    expect(store.isAnimateurCreneauVerrouille('A1', 43)).toBe(false);
+    expect(store.isAnimateurCreneauVerrouille('A2', 42)).toBe(false);
+    expect(store.isStandVerrouille('STAND-A', '2026-07-08')).toBe(true);
+    expect(store.isStandVerrouille('STAND-A', '2026-07-09')).toBe(false);
     expect(store.estJourVerrouille(null)).toBe(false);
   });
 

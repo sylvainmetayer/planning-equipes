@@ -74,7 +74,7 @@ export class VerrouillageStore {
     );
   }
 
-  estStandVerrouille(standId: string | null | undefined, jour: string | null | undefined): boolean {
+  isStandVerrouille(standId: string | null | undefined, jour: string | null | undefined): boolean {
     return (
       !!standId &&
       !!jour &&
@@ -88,7 +88,7 @@ export class VerrouillageStore {
   }
 
   /** This person is kept on this timeslot: the lock an accepted échange or « Verrouiller » lays. */
-  estAnimateurCreneauVerrouille(
+  isAnimateurCreneauVerrouille(
     animateurId: string | null | undefined,
     creneauId: number | null | undefined,
   ): boolean {

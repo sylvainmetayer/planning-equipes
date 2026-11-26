@@ -333,8 +333,8 @@ export class SeatPanel {
           planning.postes ?? [],
           seat,
           (poste) =>
-            this.verrous.estStandVerrouille(poste.stand?.id, poste.creneau?.date) ||
-            this.verrous.estAnimateurCreneauVerrouille(poste.animateur?.id, poste.creneau?.id) ||
+            this.verrous.isStandVerrouille(poste.stand?.id, poste.creneau?.date) ||
+            this.verrous.isAnimateurCreneauVerrouille(poste.animateur?.id, poste.creneau?.id) ||
             this.verrous.estJourVerrouille(poste.creneau?.date),
         ),
         targetLabel: $localize`:@@calendarDay.deplacer.cible:Vers quel siège ?`,

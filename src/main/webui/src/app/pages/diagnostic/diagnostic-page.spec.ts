@@ -92,7 +92,7 @@ describe('DiagnosticPage', () => {
           provide: VerrouillageStore,
           useValue: {
             verrouillages: () => [],
-            estAnimateurCreneauVerrouille: () => false,
+            isAnimateurCreneauVerrouille: () => false,
             reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
