@@ -109,3 +109,39 @@
 .staffing-semaines {
   margin-top: 1rem;
 }
+
+/* The problem's volumetry (once the Solver page's): stat tiles reusing .staffing-stat, then the fill-ratio formula. */
+.besoin-volumetrie-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.solver-volumetry-formula {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0;
+}
+
+/* The volumetry, folded under its title. */
+.solver-volumetry-details {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.solver-volumetry-details > summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.solver-volumetry-title {
+  display: inline;
+  font: var(--mat-sys-title-medium);
+  margin: 0;
+}
+
+.solver-volumetry-details[open] > summary {
+  margin-bottom: 1rem;
+}

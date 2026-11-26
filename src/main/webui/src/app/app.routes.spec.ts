@@ -302,7 +302,9 @@ describe('app.routes', () => {
       expect(
         redirectTarget('repartition-heures', { date: '2026-09-05', regroupement: 'typologie' }),
       ).toBe('/journee?axe=stand&vue=treemap&jourTreemap=2026-09-05&regroupement=typologie');
-      expect(redirectTarget('typologies-planning', {})).toBe('/journee?axe=typologie');
+      expect(redirectTarget('typologies-planning', {})).toBe(
+        '/diagnostic?onglet=besoin&section=typologie',
+      );
     });
 
     // The two addresses carrying the most params: the map's cursor, and the

@@ -232,36 +232,22 @@ test.describe('typologies', () => {
     await page.context().close();
   });
 
-  // « Par typologie » of the Planning page: one table, the page's filters, and
+  // « Par typologie », read at the foot of the Diagnostic's Besoin: one table,
   // every figure a way to where it is acted on.
-  test('la vue par typologie filtre et renvoie chaque chiffre là où on agit', async ({
-    browser,
-  }) => {
+  test('le besoin par typologie renvoie chaque chiffre là où on agit', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
-    // The former address lands on the axis, which draws the table.
+    // The former address lands on the section, which draws the table.
     await page.goto('/typologies-planning');
-    await expect(page).toHaveURL(/\/journee\?.*axe=typologie/);
-    const table = page.locator('.planning-typologie-table');
-    await expect(table).toBeVisible();
-
-    // A text nothing matches empties it and says so, rather than looking like
-    // an edition with no typologies at all.
-    await page.getByLabel('Filtrer par nom').fill('zzz-aucune-typologie');
-    await expect(page.getByText('Aucune typologie ne correspond aux filtres.')).toBeVisible();
-    await page.getByLabel('Filtrer par nom').fill('');
+    await expect(page).toHaveURL(/\/diagnostic\?.*onglet=besoin/);
+    const table = page.locator('.besoin-typologie-table');
     await expect(table).toBeVisible();
 
     // The vetted go to the Animateurs list filtered on the category.
-    const competents = table.locator('tbody tr').first().getByRole('link').first();
-    await expect(competents).toHaveAttribute('href', /\/animateurs\?typologie=/);
+    const row = table.locator('tbody tr').first();
+    await expect(row.locator('a[href^="/animateurs?typologie="]').first()).toBeVisible();
 
-    // The seats open « Par stand », narrowed to the category.
-    await table
-      .locator('tbody tr')
-      .first()
-      .locator('button.planning-typologie-lien')
-      .first()
-      .click();
+    // The seats open the Planning by stand, narrowed to the category.
+    await row.locator('td a').first().click();
     await expect(page).toHaveURL(/axe=stand/);
     await expect(page).toHaveURL(/typologie=/);
     await page.context().close();

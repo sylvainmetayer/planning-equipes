@@ -24,6 +24,10 @@ describe('DiagnosticPage', () => {
   let fixture: ComponentFixture<DiagnosticPage>;
   // Each analysis answers nothing: what is pinned here is which tab is on
   // screen, never what an analysis draws — their own specs cover that.
+  const planningApi = {
+    persistedCount: vi.fn(() => Promise.resolve(null)),
+    typologiesReport: vi.fn(() => Promise.resolve({ typologies: [], jours: [] })),
+  };
   const analysesApi = {
     staffing: vi.fn(() => Promise.resolve(null)),
     fragility: vi.fn(() => Promise.resolve(null)),
@@ -69,7 +73,7 @@ describe('DiagnosticPage', () => {
           },
         },
         { provide: ConstraintsApi, useValue: { catalogue: vi.fn(() => Promise.resolve(null)) } },
-        { provide: PlanningApi, useValue: { persistedCount: vi.fn(() => Promise.resolve(null)) } },
+        { provide: PlanningApi, useValue: planningApi },
         {
           provide: SolverJobService,
           useValue: {
@@ -85,6 +89,13 @@ describe('DiagnosticPage', () => {
             animateurs: () => [],
             creneaux: () => [],
             typologies: () => [],
+            scale: () => ({
+              animateurCount: 0,
+              posteCount: 0,
+              contrainteAdHocCount: 0,
+              hoursToFill: 0,
+              hoursAvailable: 0,
+            }),
             reload: vi.fn(() => Promise.resolve(undefined)),
           },
         },
@@ -158,6 +169,12 @@ describe('DiagnosticPage', () => {
     await monter({ onglet: 'besoin' });
 
     expect(racine().querySelector('app-staffing-page app-formation-page')).not.toBeNull();
+    // The volumetry and the plan by typologie sit between the need and « À former ».
+    expect(
+      racine().querySelector('app-staffing-page #besoin-volumetrie app-solver-volumetry'),
+    ).not.toBeNull();
+    expect(racine().querySelector('app-staffing-page app-besoin-typologie')).not.toBeNull();
+    expect(planningApi.typologiesReport).toHaveBeenCalled();
     expect(analysesApi.trainingPlan).toHaveBeenCalled();
     expect(analysesApi.margin).toHaveBeenCalledWith('AVANT');
   });

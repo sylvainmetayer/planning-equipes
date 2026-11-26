@@ -703,7 +703,8 @@ const adminRoutes: Routes = [
     path: 'repartition-heures',
     redirectTo: redirectToPlanning({ axe: 'stand', vue: 'treemap' }, { date: 'jourTreemap' }),
   },
-  { path: 'typologies-planning', redirectTo: redirectToPlanning({ axe: 'typologie' }) },
+  // The plan read by game category is a section of the Diagnostic's Besoin.
+  { path: 'typologies-planning', redirectTo: () => '/diagnostic?onglet=besoin&section=typologie' },
   // The four screens the Journée page gathers, kept for the bookmarks. The
   // rail's `vue` (which lines) and the breaks' `vue` (only those without a
   // relay) are renamed to the keys the views own now.

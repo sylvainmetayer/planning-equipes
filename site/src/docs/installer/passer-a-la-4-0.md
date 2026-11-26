@@ -216,6 +216,12 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 - **Après (4.0)** : le tableau et le rail sont deux **modes** d'une même vue **Jour** : `?vue=jour&mode=rail` ou `?vue=jour&mode=tableau`. **Le rail est le mode par défaut** : une adresse sans `vue` ni `mode` ouvre le rail, là où elle ouvrait le tableau. La carte, les pauses et repas et les changements restent des vues à part, et la barre de relecture avec l'état de la journée (à relire, relue, figée) reste dans les deux modes.
 - **Ce que vous faites** : rien pour vos liens. `?vue=calendrier` et `?vue=rail` sont lus comme avant (le premier ouvre le tableau) tant que la 4.x dure, et `/day-calendar` et `/rail-jour` mènent au bon mode ; la 5.0 retirera les anciennes valeurs. Un signet ou une page d'aide interne qui devait ouvrir le tableau doit porter `mode=tableau`.
 
+### Le besoin se lit en un seul onglet du Diagnostic
+
+- **Avant (3.x)** : le besoin en animateurs, la volumétrie du problème (dans le Solveur) et le planning lu par typologie (dans le Planning, « Par typologie », ou `/typologies-planning`) étaient trois lectures dans trois écrans.
+- **Après (4.0)** : l'onglet **Besoin en animateurs** du Diagnostic les réunit : la borne exacte et la marge par jour, le besoin typologie par typologie, la section « Le planning, typologie par typologie », la volumétrie du problème (en bas, plus dans le Solveur) et « À former ». La faisabilité reste dans l'onglet Problèmes, où sont ses causes.
+- **Ce que vous faites** : rien pour vos liens. `/typologies-planning` ouvre la section `?onglet=besoin&section=typologie` ; `section=volumetrie` ouvre la volumétrie.
+
 ### Données et migrations
 
 Les migrations qui convertissent des données sont décrites ci-dessus, une par changement, au fil de leur fusion : pour l'instant, [les horaires des stands](#horaires-des-stands).

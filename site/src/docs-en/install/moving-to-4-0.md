@@ -220,6 +220,12 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 - **After (4.0)**: the table and the rail are two **modes** of a single **Day** view: `?vue=jour&mode=rail` or `?vue=jour&mode=tableau`. **The rail is the default mode**: an address with neither `vue` nor `mode` opens the rail, where it used to open the table. The map, the breaks and meals and the changes remain separate views, and the review bar with the state of the day (to review, reviewed, frozen) stays in both modes.
 - **What you do**: nothing for your links. `?vue=calendrier` and `?vue=rail` are read as before (the first opens the table) for the whole 4.x, and `/day-calendar` and `/rail-jour` lead to the right mode; 5.0 will remove the old values. A bookmark or an internal help page that should open the table must carry `mode=tableau`.
 
+### The need reads in a single tab of the Diagnostic
+
+- **Before (3.x)**: the staffing need, the volumetry of the problem (in the Solver) and the schedule read by game category (in the Planning, "By typologie", or `/typologies-planning`) were three readings on three screens.
+- **After (4.0)**: the **Staffing need** tab of the Diagnostic gathers them: the exact bound and the margin per day, the need game category by game category, the "The schedule, typologie by typologie" section, the volumetry of the problem (at the bottom, no longer in the Solver) and "To train". Feasibility stays in the Problems tab, where its causes are.
+- **What you do**: nothing for your links. `/typologies-planning` opens the `?onglet=besoin&section=typologie` section; `section=volumetrie` opens the volumetry.
+
 ### Data and migrations
 
 The migrations that convert data are described above, one per change, as they are merged: for now, [the stands' opening hours](#horaires-des-stands).

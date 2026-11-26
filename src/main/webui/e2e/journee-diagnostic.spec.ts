@@ -136,6 +136,10 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await page.goto('/diagnostic?onglet=former');
   await expect(page).toHaveURL(/onglet=besoin/);
   await expect(page.locator('#a-former')).toContainText('À former');
+
+  // The volumetry and the plan by typologie are sections of Besoin too.
+  await expect(page.locator('#besoin-volumetrie')).toContainText('Volumétrie du problème');
+  await expect(page.locator('#besoin-par-typologie')).toContainText('typologie par typologie');
   await page.context().close();
 });
 
