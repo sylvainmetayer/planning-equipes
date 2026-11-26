@@ -5,11 +5,8 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
-<<<<<<< HEAD
-import dev.sylvain.planning.service.ConcurrentModificationGuard;
-=======
 import dev.sylvain.planning.service.BusinessError;
->>>>>>> origin/main
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
