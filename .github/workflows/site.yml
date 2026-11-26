@@ -30,6 +30,11 @@ on:
 permissions:
   contents: read
 
+# Une PR annule son run précédent ; une poussée sur main va au bout.
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 defaults:
   run:
     working-directory: site
