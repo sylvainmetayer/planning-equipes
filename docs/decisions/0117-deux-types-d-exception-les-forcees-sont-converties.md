@@ -28,7 +28,7 @@ sont une de trop.
 rapport entre deux personnes, ce qu'un verrou ni la fiche ne savent dire.
 `AFFECTATION_FORCEE` et `INDISPONIBILITE_FORCEE` disparaissent, avec leurs deux
 règles (`affectationForcee`, `indisponibiliteForcee`, nommées dans
-`ConstraintCatalog.ANCIENS_NOMS` comme retirées : le décompte passe de 44 à 42),
+`ConstraintCatalog.ANCIENS_NOMS` comme retirées : le décompte passe de 42 à 40),
 leurs trois lectures d'intenabilité et leurs contradictions.
 
 **Elles sont converties, pas perdues** — à la migration `V156`, et à la lecture

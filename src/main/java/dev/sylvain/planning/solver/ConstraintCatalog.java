@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Business-facing catalogue of every constraint enforced by
@@ -548,23 +549,16 @@ public final class ConstraintCatalog {
                             + "sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire.",
                     "Pas de jour férié pour les mineurs"),
             new ConstraintDefinition(
-                    "reposHebdomadaireMineur",
-                    Niveau.HARD,
-                    CATEGORIE_LEGAL_MINEURS,
-                    "Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine "
-                            + "civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un "
-                            + "dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais "
-                            + "ne forment la paire d'aucune des deux. Les "
-                            + "dérogations conventionnelles supposent un accord étendu ou une autorisation de "
-                            + "l'inspection du travail : elles ne sont pas présumées.",
-                    "Repos hebdomadaire des mineurs"),
-            new ConstraintDefinition(
                     "dureeHebdomadaireMax",
                     Niveau.HARD,
                     CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
-                    "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
-                            + "travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, "
-                            + "d'ordre public). Les pauses dues sont déduites, comme au plafond quotidien.",
+                    "Un animateur ne peut pas dépasser la durée hebdomadaire de travail effectif, lue selon son "
+                            + "âge à la date du créneau : 48 heures par défaut pour un majeur, tous payés, manager ou "
+                            + "non (Code du travail art. L3121-20, d'ordre public), 35 heures par défaut pour un "
+                            + "mineur (art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés pendant les "
+                            + "vacances scolaires). Les deux plafonds sont les paramètres de durée hebdomadaire "
+                            + "maximale, des majeurs et des mineurs. Les pauses dues sont déduites, comme au plafond "
+                            + "quotidien.",
                     "Durée hebdomadaire maximale"),
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxDeuxSemaines",
@@ -578,15 +572,6 @@ public final class ConstraintCatalog {
                             + "seconde constante. Une semaine se juge pleine en travail effectif : les pauses "
                             + "dues en sont déduites.",
                     "Durée maximale sur deux semaines"),
-            new ConstraintDefinition(
-                    "dureeHebdomadaireMaxMineur",
-                    Niveau.HARD,
-                    CATEGORIE_LEGAL_MINEURS,
-                    "Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine "
-                            + "(Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés "
-                            + "pendant les vacances scolaires). Les pauses dues sont déduites, comme au "
-                            + "plafond quotidien.",
-                    "Durée hebdomadaire maximale des mineurs"),
             new ConstraintDefinition(
                     "reposQuotidienMinimal",
                     Niveau.HARD,
@@ -609,7 +594,12 @@ public final class ConstraintCatalog {
                     "Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures "
                             + "consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos "
                             + "quotidien (art. L3131-1). Un repos à cheval sur le lundi compte en entier "
-                            + "pour la semaine où il tombe.",
+                            + "pour la semaine où il tombe. Un mineur bénéficie en plus de deux jours de repos "
+                            + "consécutifs à l'intérieur de chaque semaine civile, du lundi 0 h au dimanche 24 h "
+                            + "(art. L3164-2 et L3121-35) : un dimanche et le lundi qui le suit sont chacun un jour "
+                            + "de repos de leur semaine, mais ne forment la paire d'aucune des deux. Les dérogations "
+                            + "conventionnelles supposent un accord étendu ou une autorisation de l'inspection du "
+                            + "travail : elles ne sont pas présumées.",
                     "Repos hebdomadaire minimal"),
             new ConstraintDefinition(
                     "travailContinuMax",
@@ -617,7 +607,10 @@ public final class ConstraintCatalog {
                     CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Aucune période de travail ininterrompue au-delà du plafond de l'âge de l'animateur à la "
                             + "date du créneau : 6 heures pour un majeur (art. L3121-16), 4 h 30 pour un mineur "
-                            + "(art. L3162-3). Au-delà, chaque pause due doit être prise, soit comme un trou dans "
+                            + "(art. L3162-3). L'application ne réclame la pause d'un majeur qu'au-delà de 6 heures de "
+                            + "travail continu : l'art. L3121-16 la rend due dès que le temps de travail quotidien "
+                            + "atteint 6 heures, et c'est un écart assumé au texte, retenu pour qu'un créneau de 6 "
+                            + "heures exactes (14 h-20 h par exemple) puisse être couvert, la pause tombant sinon à sa fin. Au-delà, chaque pause due doit être prise, soit comme un trou dans "
                             + "la grille d'au moins la durée paramétrée, soit relayée par un collègue du même "
                             + "stand tenant une place pendant toute la pause. Une pause que personne ne peut "
                             + "prendre est un écart dur. La durée est celle paramétrée, au minimum 20 minutes "
@@ -890,7 +883,19 @@ public final class ConstraintCatalog {
             "dureeQuotidienneMaxMajeur", "dureeQuotidienneMax",
             "dureeQuotidienneMaxMineur", "dureeQuotidienneMax",
             "travailContinuMaxMajeur", "travailContinuMax",
-            "travailContinuMaxMineur", "travailContinuMax");
+            "travailContinuMaxMineur", "travailContinuMax",
+            "dureeHebdomadaireMaxMineur", "dureeHebdomadaireMax",
+            "reposHebdomadaireMineur", "reposHebdomadaireMinimal");
+
+    /**
+     * The rules that absorbed a retired one and kept their own name
+     * ({@code dureeHebdomadaireMax}, {@code reposHebdomadaireMinimal}): before
+     * the merge their stored setting spoke for one age only, so it votes with
+     * the retired names — absent, it is « on » — where a rule with a new name
+     * votes only if a file writes it. A file written under the new meaning
+     * that names only such a rule is read as it says: for both ages.
+     */
+    public static final Set<String> NOMS_CONSERVES = Set.of("dureeHebdomadaireMax", "reposHebdomadaireMinimal");
 
     /**
      * The name a stored setting, a scenario key or a path segment written under
@@ -905,17 +910,16 @@ public final class ConstraintCatalog {
     }
 
     /**
-     * The weight a deployment configures for {@code nom}: its own property, else
-     * the strongest one set under a name it absorbed in 4.0 (the most protective
-     * of two merged settings), else {@link #defaultWeight}. {@code property}
+     * The weight a deployment configures for {@code nom}: the strongest of its own
+     * property and those set under the names it absorbed in 4.0 (the most
+     * protective of the merged settings), else {@link #defaultWeight}. {@code property}
      * reads {@code planning.constraint-weights.<rule>}.
      */
     public static int configuredWeight(Function<String, Optional<Integer>> property, String nom) {
-        return property.apply(nom)
-                .or(() -> formerNamesOf(nom).stream()
-                        .map(property)
-                        .flatMap(Optional::stream)
-                        .max(Integer::compare))
+        return Stream.concat(Stream.of(nom), formerNamesOf(nom).stream())
+                .map(property)
+                .flatMap(Optional::stream)
+                .max(Integer::compare)
                 .orElseGet(() -> defaultWeight(nom));
     }
 

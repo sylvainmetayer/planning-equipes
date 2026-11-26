@@ -178,6 +178,32 @@ class ScenarioMigrationsTest {
         assertThat(rulesOf(converted).get("niveaux")).isEqualTo(Map.of("dureeQuotidienneMax", "OBLIGATOIRE"));
     }
 
+    /** The two rules that kept their name vote with the retired one: unwritten, they are on. */
+    @Test
+    void aRuleThatKeptItsNameVotesWithTheRetiredOne() {
+        List<String> warnings = new java.util.ArrayList<>();
+
+        // the minors' half off alone: the adults' half, unwritten, is on -> the merged rule stays on
+        Map<String, Object> aloneOff = ScenarioMigrations.renameRetiredRules(
+                withRules(Map.of("desactivees", List.of("reposHebdomadaireMineur"))), warnings);
+        assertThat(rulesOf(aloneOff).get("desactivees")).isEqualTo(List.of());
+        assertThat(warnings).singleElement().asString().contains("reposHebdomadaireMineur", "reposHebdomadaireMinimal");
+
+        // both halves off: off, under the kept name, weights and levels folded on the strongest
+        Map<String, Object> bothOff = ScenarioMigrations.renameRetiredRules(
+                withRules(Map.of(
+                        "desactivees", List.of("dureeHebdomadaireMax", "dureeHebdomadaireMaxMineur"),
+                        "poids", Map.of("dureeHebdomadaireMax", 3, "dureeHebdomadaireMaxMineur", 25),
+                        "niveaux",
+                                Map.of(
+                                        "dureeHebdomadaireMax", "PREFERENCE",
+                                        "dureeHebdomadaireMaxMineur", "OBLIGATOIRE"))),
+                new java.util.ArrayList<>());
+        assertThat(rulesOf(bothOff).get("desactivees")).isEqualTo(List.of("dureeHebdomadaireMax"));
+        assertThat(rulesOf(bothOff).get("poids")).isEqualTo(Map.of("dureeHebdomadaireMax", 25));
+        assertThat(rulesOf(bothOff).get("niveaux")).isEqualTo(Map.of("dureeHebdomadaireMax", "OBLIGATOIRE"));
+    }
+
     @Test
     void aBareWeightKeyDoesNotBreakTheFold() {
         java.util.HashMap<String, Object> poids = new java.util.HashMap<>();

@@ -1136,7 +1136,7 @@ final class IncrementalScore {
             cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX, wMaj[w] - flat.adultWeekly);
         }
         if (wAheadMin[w] && wMin[w] > flat.minorWeekly) {
-            cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX_MINEUR, wMin[w] - flat.minorWeekly);
+            cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX, wMin[w] - flat.minorWeekly);
         }
         if (wMaj[w] >= flat.adultWeekly && wMaj[w + 1] >= flat.adultWeekly && (wAheadMaj[w] || wAheadMaj[w + 1])) {
             cost += cost(Rule.DUREE_HEBDOMADAIRE_MAX_DEUX_SEMAINES, 1);
@@ -1165,7 +1165,7 @@ final class IncrementalScore {
         }
         return longestFree < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
                 ? cost(
-                        Rule.REPOS_HEBDOMADAIRE_MINEUR,
+                        Rule.REPOS_HEBDOMADAIRE_MINIMAL,
                         PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE - longestFree)
                 : 0;
     }
