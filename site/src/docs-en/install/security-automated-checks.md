@@ -24,7 +24,7 @@ repository is public, this tab costs nothing.
 | Trivy, image | `docker-ghcr.yml` before signing; `securite.yml`, job `image`, every week | The image's system packages: Ubuntu layer, JRE, `postgresql-client` | `.trivyignore` |
 | CodeQL | "default" configuration of the repository settings | Data flow from one class to another (Java, TypeScript, Python, workflows) | in the *Security* tab |
 | OpenSSF Scorecard | `scorecard.yml` | The repository's supply-chain practices, public score (README badge) | in the *Security* tab |
-| OWASP ZAP *baseline* | `tests.yml`, job `dast` | The running application seen without an account: headers, cookies, errors | `.github/zap-baseline.tsv` |
+| OWASP ZAP *baseline* | `analyse-dynamique.yml`, every night on `main` | The running application seen without an account: headers, cookies, errors | `.github/zap-baseline.tsv` |
 | GitGuardian | GitHub application | Pushed secrets | `.gitguardian.yaml` |
 
 The image scan in `docker-ghcr.yml` **blocks publication**: an image

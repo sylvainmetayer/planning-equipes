@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# Une PR annule son run précédent ; une poussée sur main va au bout.
+concurrency:
+  group: verify-lockfile-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   verify:
     runs-on: ubuntu-latest
