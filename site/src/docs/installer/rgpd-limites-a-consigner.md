@@ -426,9 +426,12 @@ L'édition est recopiée avant chaque vidage, et ces copies ne sont pas
 purgées (`sauvegarde_avant_vidage`,
 [décision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
 une réinitialisation, un import de scénario ou la restauration d'une
-sauvegarde range d'abord l'export de scénario de l'édition (nom, prénom,
-date de naissance, adresse et téléphone de chaque animateur compris) et son
-planning (sièges et verrous, par identifiants seulement). **Une copie par
+sauvegarde range d'abord **un export YAML** de l'édition (nom, prénom,
+date de naissance, adresse et téléphone de chaque animateur compris), son
+planning (sièges et verrous, par identifiants seulement) en dernière section
+([décision 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)).
+Ce fichier est une donnée personnelle au sens du RGPD, comme le scénario
+exporté, et se restaure par l'import normal. **Une copie par
 vidage (sauf quand l'état est exactement celui de la copie précédente),
 conservée aussi longtemps que l'édition** : la seule purge est la
 suppression de l'édition, en cascade sur `edition_id`, donc la purge annuelle
@@ -437,7 +440,8 @@ l'édition**, et elle se consigne telle quelle au registre. Un administrateur
 peut en supprimer une (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`,
 journalisé). Elles ne partent ni dans l'export SQL ni par MCP ; seul un
 administrateur en liste, en télécharge, en restaure ou en supprime une, par
-l'API ; le téléchargement, la restauration et la suppression sont
+l'API ; le fichier téléchargé est un export complet et se garde comme la
+base ; le téléchargement, la restauration et la suppression sont
 journalisés, la simple liste (dates et origines, aucune donnée de personne)
 ne l'est pas. Ce qui ne les borne pas : une fiche
 supprimée reste dans les sauvegardes prises avant sa suppression, et
