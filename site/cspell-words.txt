@@ -1,5 +1,6 @@
 actionlint
 ADFS
+Ancien
 antispam
 autocommit
 Awaitility
@@ -148,6 +149,7 @@ dialog
 espace
 espaces
 forgeable
+gabarits
 geolocated
 guaranteeable
 horaires
