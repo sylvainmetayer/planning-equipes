@@ -47,7 +47,7 @@ import java.util.Optional;
  * The read-only diagnostics the screens have and MCP did not: how many
  * animateurs the event needs at all ({@code StaffingResource}), when each
  * stand is actually open ({@code OuvertureStandsResource}), how the editions
- * compare over the years ({@code KpiResource}), what an import would
+ * compare over the years ({@code MesuresEditionResource}), what an import would
  * overwrite ({@code ReferenceDataResource}), and the plan read by game
  * category ({@code TypologieAnalyseResource}).
  *
@@ -395,7 +395,7 @@ public class DiagnosticMcpTools {
      * An {@code edition} argument would suggest a filter that does not exist.
      */
     @Tool(
-            name = "lister_kpi_historique",
+            name = "lister_mesures_edition",
             description = "Historique des KPI, une ligne par résolution terminée, toutes éditions confondues et de "
                     + "la plus récente à la plus ancienne : score, couverture des postes, heures et écarts par "
                     + "contrainte. Sert à comparer une édition à la précédente.",
@@ -411,14 +411,14 @@ public class DiagnosticMcpTools {
 
     /**
      * Deliberately not edition-scoped either, for the reason
-     * {@code lister_kpi_historique} is not: a row survives the edition it
+     * {@code lister_mesures_edition} is not: a row survives the edition it
      * describes, and the rows of a deleted edition are exactly the ones
      * nothing else could ever clean up.
      */
     @Tool(
-            name = "supprimer_kpi_historique",
+            name = "supprimer_mesure_edition",
             description = "Supprime une ligne de l'historique des KPI, désignée par l'id que renvoie "
-                    + "lister_kpi_historique. Sert à retirer une résolution ratée qui fausse la comparaison entre "
+                    + "lister_mesures_edition. Sert à retirer une résolution ratée qui fausse la comparaison entre "
                     + "éditions ; l'historique est le seul endroit où elle est stockée, la ligne est perdue.",
             annotations =
                     @Tool.Annotations(
@@ -656,7 +656,7 @@ public class DiagnosticMcpTools {
     public record TypologieView(
             String typologie,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             Integer maxCreneauxParAnimateur,
             double heures,
             int postes,
@@ -670,7 +670,7 @@ public class DiagnosticMcpTools {
             return new TypologieView(
                     ligne.typologie(),
                     ligne.label(),
-                    ligne.ninja(),
+                    ligne.polyvalent(),
                     ligne.maxCreneauxParAnimateur(),
                     ligne.heures(),
                     ligne.postes(),
@@ -698,7 +698,7 @@ public class DiagnosticMcpTools {
     public record TypologieAFormerView(
             String typologie,
             String label,
-            boolean ninja,
+            boolean polyvalent,
             int manque,
             int specialistes,
             int competencesRares,
@@ -711,7 +711,7 @@ public class DiagnosticMcpTools {
             return new TypologieAFormerView(
                     ligne.typologie(),
                     ligne.label(),
-                    ligne.ninja(),
+                    ligne.polyvalent(),
                     ligne.manque(),
                     ligne.specialistes(),
                     ligne.competencesRares(),

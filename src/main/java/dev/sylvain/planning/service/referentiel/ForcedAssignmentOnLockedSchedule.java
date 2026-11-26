@@ -27,15 +27,15 @@ import java.util.stream.Collectors;
  *
  * <p>The solve has no move left. {@code affectationForcee} is satisfied only
  * when a seat of the scope holds one of the named animateurs; a lock either
- * pins the seats they already hold or — for {@code ANIMATEUR} and
- * {@code ANIMATEUR_CRENEAU} — forbids the solver to hand them a new one
+ * pins the seats they already hold or — for {@code ANIMATEUR_CRENEAU} —
+ * forbids the solver to hand them a new one
  * ({@code VerrouillageConstraints}). So an exception whose every named
  * animateur is frozen, and whose scope none of them already occupies, costs one
  * hard point on every solution: it gives up either the lock or the exception.
  * {@code ContrainteAdHocContradictions} already reports the same deadlock
  * between two exceptions; this is the half a lock closes.</p>
  *
- * <p>Only those two lock types are read. A lock on a stand, a timeslot or a day
+ * <p>Only that lock type is read. A lock on a stand and a day, or a day,
  * pins the seats that <b>hold somebody</b> and leaves the empty ones fillable
  * ({@code ProblemBuilder}), so it never stands in the way of an assignment the
  * exception asks for.</p>
@@ -166,16 +166,13 @@ public final class ForcedAssignmentOnLockedSchedule {
 
     /**
      * Whether a lock forbids giving this animateur a new seat on that
-     * timeslot — the two types {@code VerrouillageConstraints} penalises, and
-     * only those.
+     * timeslot — the one type {@code VerrouillageConstraints} penalises, and
+     * only that.
      */
     private static boolean frozen(List<VerrouillagePlanning> verrouillages, String animateurId, Long creneauId) {
         return verrouillages.stream().anyMatch(verrouillage -> {
             if (!animateurId.equals(verrouillage.getAnimateurId())) {
                 return false;
-            }
-            if (verrouillage.getType() == TypeVerrouillage.ANIMATEUR) {
-                return true;
             }
             return verrouillage.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
                     && creneauId != null

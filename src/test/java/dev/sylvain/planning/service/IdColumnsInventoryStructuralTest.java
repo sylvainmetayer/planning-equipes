@@ -62,14 +62,18 @@ class IdColumnsInventoryStructuralTest {
                     "journal_action.entite_id",
                     "an id of the referential column entite names — any of them, hence no key; "
                             + "a deleted row's line keeps naming it"),
-            Map.entry("kpi_historique.edition_id", "an edition id; the curves outlive a deleted edition"),
-            Map.entry("kpi_historique.kpi", "figures only, no id"),
             Map.entry(
-                    "kpi_realise.edition_id",
-                    "an edition id; the frozen realised measure outlives a deleted edition (ADR 0070)"),
+                    "mesure_edition.edition_id",
+                    "an edition id; the indicators and the frozen realised measure outlive a deleted edition"),
+            Map.entry("mesure_edition.kpi", "figures only, no id"),
             Map.entry(
-                    "kpi_realise.typologie_id",
+                    "mesure_edition.typologie_id",
                     "a game category id of that edition, empty for the whole event's row; its name is kept beside"),
+            // The two tables V148 replaced, kept as archives until 5.0.
+            Map.entry("kpi_historique_avant_4_0.edition_id", "archive of kpi_historique, dropped in 5.0"),
+            Map.entry("kpi_historique_avant_4_0.kpi", "archive of kpi_historique, dropped in 5.0"),
+            Map.entry("kpi_realise_avant_4_0.edition_id", "archive of kpi_realise, dropped in 5.0"),
+            Map.entry("kpi_realise_avant_4_0.typologie_id", "archive of kpi_realise, dropped in 5.0"),
             Map.entry("planning_resolution.dosage", "rule names and weights, no id"),
             Map.entry(
                     "webhook.chat_id",
@@ -80,11 +84,11 @@ class IdColumnsInventoryStructuralTest {
             Map.entry(
                     "notification_planifiee.cle",
                     "animateurId|date, animateurId|publicationInstant, or a swap request UUID — the dedup key"),
-            Map.entry("plan_snapshot.consignes", "dates, hours and motifs of the consignes, no id"),
+            Map.entry("version_plan.consignes", "dates, hours and motifs of the consignes, no id"),
             Map.entry(
-                    "plan_snapshot.contenu",
+                    "version_plan.contenu",
                     "standId and animateurId of every seat — what the stability of the published plan joins on"),
-            Map.entry("plan_snapshot.kpi", "figures only, no id"),
+            Map.entry("version_plan.kpi", "figures only, no id"),
             Map.entry(
                     "publication_destinataire.animateur_id",
                     "who a publication was sent to; the trace outlives the fiche"),
@@ -94,7 +98,8 @@ class IdColumnsInventoryStructuralTest {
                     "sauvegarde_avant_vidage.plan",
                     "standId, creneauId and animateurId of every seat and lock as they were before the wipe — found"
                             + " again by natural keys on restore, never joined on (ADR 0084)"),
-            Map.entry("solver_job.perimetre", "animateurIds and standIds of a queued solve, replayed at startup"),
+            Map.entry(
+                    "solver_job.perimetre", "animateurIds and standIds of a solve's scope, kept in the solve history"),
             Map.entry(
                     "resolution_distante.job_id",
                     "the solver job a remote solve belongs to (ADR 0086): a row of solver_job, itself global and"

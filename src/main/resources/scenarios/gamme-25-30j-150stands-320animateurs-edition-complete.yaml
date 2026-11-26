@@ -18,9 +18,6 @@ edition:
 festival:
   dateDebut: 2027-07-01
 
-parametresSolveur:
-  dureeResolutionSecondes: 1800
-
 contraintes:
   poids:
     appreciationIncompatible: 15
@@ -60,7 +57,7 @@ typologies:
     label: Musique
   - id: POLYVALENT
     label: Polyvalent
-    ninja: true
+    polyvalent: true
 
 emplacements:
   - id: EMP-01

@@ -50,35 +50,37 @@
       }
     },
     {
-      "nom": "le ninja n'est pas compté comme compétent : il est un polyvalent, et la typologie reste orpheline",
-      "typologies": [{ "id": "NINJA", "ninja": true }, { "id": "ECHECS" }],
+      "nom": "le polyvalent n'est pas compté comme compétent : il est un polyvalent, et la typologie reste orpheline",
+      "typologies": [{ "id": "POLYVALENT", "polyvalent": true }, { "id": "ECHECS" }],
       "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
       "animateurs": [
-        { "id": "A1", "competences": { "NINJA": "REFERENT" } },
-        { "id": "A2", "competences": { "NINJA": "AUTONOME" } }
+        { "id": "A1", "competences": { "POLYVALENT": "REFERENT" } },
+        { "id": "A2", "competences": { "POLYVALENT": "AUTONOME" } }
       ],
       "attendu": {
-        "NINJA": { "etat": "NORMALE", "competents": 2, "referents": 1, "autonomes": 1 },
+        "POLYVALENT": { "etat": "NORMALE", "competents": 2, "referents": 1, "autonomes": 1 },
         "ECHECS": { "etat": "ORPHELINE", "polyvalents": 2, "stands": 1 }
       }
     },
     {
-      "nom": "un ninja qui apprécie aussi la typologie compte comme compétent, pas comme polyvalent",
-      "typologies": [{ "id": "NINJA", "ninja": true }, { "id": "ECHECS" }],
+      "nom": "un polyvalent qui apprécie aussi la typologie compte comme compétent, pas comme polyvalent",
+      "typologies": [{ "id": "POLYVALENT", "polyvalent": true }, { "id": "ECHECS" }],
       "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
-      "animateurs": [{ "id": "A1", "competences": { "NINJA": "REFERENT", "ECHECS": "AUTONOME" } }],
+      "animateurs": [
+        { "id": "A1", "competences": { "POLYVALENT": "REFERENT", "ECHECS": "AUTONOME" } }
+      ],
       "attendu": {
-        "NINJA": { "etat": "NORMALE", "competents": 1, "referents": 1 },
+        "POLYVALENT": { "etat": "NORMALE", "competents": 1, "referents": 1 },
         "ECHECS": { "etat": "FRAGILE", "competents": 1, "autonomes": 1, "stands": 1 }
       }
     },
     {
-      "nom": "la typologie ninja que personne ne porte est inutilisée, jamais orpheline",
-      "typologies": [{ "id": "NINJA", "ninja": true }],
+      "nom": "la typologie polyvalente que personne ne porte est inutilisée, jamais orpheline",
+      "typologies": [{ "id": "POLYVALENT", "polyvalent": true }],
       "stands": [{ "id": "S1", "typologies": [] }],
       "animateurs": [{ "id": "A1", "competences": {} }],
       "attendu": {
-        "NINJA": { "etat": "INUTILISEE" }
+        "POLYVALENT": { "etat": "INUTILISEE" }
       }
     },
     {

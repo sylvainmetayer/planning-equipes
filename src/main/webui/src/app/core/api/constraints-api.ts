@@ -1,9 +1,15 @@
-// The `/api/constraints/*`, `/api/parametres-legaux` and `/api/parametres-qualite` endpoints — see
+// The `/api/constraints/*`, `/api/parametres/legal` and `/api/parametres/organisation` endpoints — see
 // planning-api.ts for why the paths live here and not in the pages.
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { ConstraintHistory, ConstraintsView, ParametresLegaux, ParametresQualite } from '../models';
+import {
+  ConstraintHistory,
+  ConstraintsView,
+  NiveauRegle,
+  ParametresLegaux,
+  ParametresQualite,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ConstraintsApi {
@@ -32,6 +38,14 @@ export class ConstraintsApi {
     });
   }
 
+  /** The level of an organisation rule on this edition, as the server kept it (ADR 0106, 0111). */
+  setNiveau(name: string, niveau: NiveauRegle): Promise<{ niveau: NiveauRegle }> {
+    return this.api.put<{ niveau: NiveauRegle }>(
+      `/api/constraints/${encodeURIComponent(name)}/niveau`,
+      { niveau },
+    );
+  }
+
   /** One rule's weight history, beside the edition's solves and that rule's violations in each. */
   history(name: string): Promise<ConstraintHistory> {
     return this.api.get<ConstraintHistory>(
@@ -40,18 +54,18 @@ export class ConstraintsApi {
   }
 
   legalParameters(): Promise<ParametresLegaux> {
-    return this.api.get<ParametresLegaux>('/api/parametres-legaux');
+    return this.api.get<ParametresLegaux>('/api/parametres/legal');
   }
 
   saveLegalParameters(parametres: ParametresLegaux): Promise<ParametresLegaux> {
-    return this.api.put<ParametresLegaux>('/api/parametres-legaux', parametres);
+    return this.api.put<ParametresLegaux>('/api/parametres/legal', parametres);
   }
 
   qualityParameters(): Promise<ParametresQualite> {
-    return this.api.get<ParametresQualite>('/api/parametres-qualite');
+    return this.api.get<ParametresQualite>('/api/parametres/organisation');
   }
 
   saveQualityParameters(parametres: ParametresQualite): Promise<ParametresQualite> {
-    return this.api.put<ParametresQualite>('/api/parametres-qualite', parametres);
+    return this.api.put<ParametresQualite>('/api/parametres/organisation', parametres);
   }
 }

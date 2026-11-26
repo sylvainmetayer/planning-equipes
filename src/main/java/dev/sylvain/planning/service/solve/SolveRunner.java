@@ -447,7 +447,8 @@ final class SolveRunner {
         problem.setParametresQualite(List.of(referenceDataService.getParametresQualite()));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
-        problem.setPonderationsContraintes(configuration.constraintWeightOverrides(problem.getPonderationsScenario()));
+        problem.setPonderationsContraintes(configuration.constraintWeightOverrides(
+                problem.getPonderationsScenario(), problem.getNiveauxScenario()));
     }
 
     /**

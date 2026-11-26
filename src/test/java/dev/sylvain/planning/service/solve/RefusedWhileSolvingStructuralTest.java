@@ -92,11 +92,11 @@ class RefusedWhileSolvingStructuralTest {
 
     /** A read says so in its name; nothing named this way may write ({@link #noMethodReadByItsNameWrites}). */
     private static final Pattern READ = Pattern.compile("^(list|find|get|count|preview|resolve|exemple|export|volumes"
-            + "|labels|validateIds|calendrier|etat|ninja|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
-            + "|typologieNinja|abonnementToken|idBy|idsBy|typologyIdsBy|report|joursEvenement|on[A-Z]"
+            + "|labels|validateIds|calendrier|etat|polyvalent|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
+            + "|typologiePolyvalent|abonnementToken|idBy|idsBy|typologyIdsBy|report|joursEvenement|on[A-Z]"
             + "|standsOnOwnHours|apercu|byDate|creneauxAjoutes|datesSousConsigne|indicateurs|lignesJourneesModifiees"
             + "|preselection|check|fenetre|impact|is[A-Z]|libelle|pendingDemandes|decisionsNonCommuniquees|simulate"
-            + "|absentCount|suggestions|between|build|configuredWeight|constraintWeights|disabledContraintes"
+            + "|absentCount|suggestions|between|build|configuredWeight|constraintWeights|niveauxObligatoires|disabledContraintes"
             + "|effective|qualite|solverBudgetBounds|load|lastPublication|assemblerPlanning|for[A-Z]|csv|zip"
             + "|stateOf|view|refuseIfFrozen).*");
 
@@ -220,9 +220,6 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#updateParametresSolveur(ParametresSolveur)",
                     "ParametresService#updateSolveur(ParametresSolveur)"),
             Map.entry(
-                    "ReferenceDataService#importParametresSolveur(ParametresSolveur)",
-                    "ParametresService#importSolveur(ParametresSolveur)"),
-            Map.entry(
                     "ReferenceDataService#updateParametresNotifications(ParametresNotifications)",
                     "ParametresService#updateNotifications(ParametresNotifications)"),
             Map.entry(
@@ -237,6 +234,12 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry(
                     "ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)",
                     "ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)"),
+            Map.entry(
+                    "ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)",
+                    "ParametresService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)"),
+            Map.entry(
+                    "ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)",
+                    "ParametresService#setNiveau(String,NiveauRegle,WeightChangeOrigin)"),
             Map.entry(
                     "ReferenceDataService#recordInheritedDosage(String)",
                     "ParametresService#recordInheritedDosage(String)"));
@@ -279,12 +282,13 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("VerrouillageService#delete(String)", NOT_LANDED),
             Map.entry("ParametresService#updateLegaux(ParametresLegaux)", NOT_LANDED),
             Map.entry("ParametresService#updateSolveur(ParametresSolveur)", NOT_LANDED),
-            Map.entry("ParametresService#importSolveur(ParametresSolveur)", NOT_LANDED),
             Map.entry("ParametresService#updateNotifications(ParametresNotifications)", NOT_LANDED),
             Map.entry("ParametresService#updateQualite(ParametresQualite)", NOT_LANDED),
             Map.entry("ParametresService#updateContactOrganisation(ContactOrganisation)", NOT_LANDED),
             Map.entry("ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)", NOT_LANDED),
+            Map.entry("ParametresService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", NOT_LANDED),
+            Map.entry("ParametresService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#recordInheritedDosage(String)", NOT_LANDED),
             Map.entry(
                     "GelReferentielService#freeze(ReferentialFamily)",
@@ -345,7 +349,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry(
                     "TeammateRequestService#validate(String)",
                     "writes its grouped arrival through the ad hoc path, " + NOT_LANDED),
-            Map.entry("TeammateRequestService#setAside(String,String)", "a pending request had written no exception"),
+            Map.entry("TeammateRequestService#setAside(String)", "a pending request had written no exception"),
             Map.entry(
                     "JourJService#cancelAbsence(String,LocalDate,Long)",
                     "removes the exceptions the absence wrote and hands no seat back: " + NOT_LANDED));

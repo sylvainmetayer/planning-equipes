@@ -170,12 +170,12 @@ final class FlatProblem {
     boolean[][] under16At;
     boolean[][] far;
     long[][] liked;
-    boolean[] ninja;
+    boolean[] polyvalent;
     boolean[] premium;
     int[][] walk;
     int[] quota;
     boolean hasQuota;
-    int ninjaTotal;
+    int polyvalentTotal;
     int[] mwOpen;
     int[] mwClose;
     int[] mwDur;
@@ -553,17 +553,17 @@ final class FlatProblem {
         minorAt = new boolean[nA][nDays];
         adultAt = new boolean[nA][nDays];
         under16At = new boolean[nA][nDays];
-        ninja = new boolean[nA];
+        polyvalent = new boolean[nA];
         isRef = new boolean[nStands][nA];
         isDeb = new boolean[nStands][nA];
         liked = new long[nStands][nA];
-        ninjaTotal = 0;
+        polyvalentTotal = 0;
         Set<String> offered = new HashSet<>();
         standsInOrder.forEach(stand -> offered.addAll(stand.getTypologiesProposees()));
         for (int a = 0; a < nA; a++) {
             Animateur animateur = animateurs.get(a);
-            ninja[a] = animateur.isNinja();
-            ninjaTotal += ninja[a] ? 1 : 0;
+            polyvalent[a] = animateur.isPolyvalent();
+            polyvalentTotal += polyvalent[a] ? 1 : 0;
             for (int d = 0; d < nDays; d++) {
                 minorAt[a][d] = animateur.isMineurOn(first.plusDays(d));
                 adultAt[a][d] = animateur.isMajeurOn(first.plusDays(d));
@@ -860,13 +860,11 @@ final class FlatProblem {
         return c;
     }
 
-    /** A seat that is not itself locked, taken by somebody a lock freezes: for the event, or on this timeslot. */
+    /** A seat that is not itself locked, taken by somebody a lock freezes on this timeslot. */
     private long lockTerms(int a, Creneau creneau, long[] breakdown) {
         long c = 0;
         for (VerrouillagePlanning lock : locksOf.get(a)) {
-            if (lock.getType() == TypeVerrouillage.ANIMATEUR) {
-                c += cost(Rule.ANIMATEUR_VERROUILLE_FIGE, 1, breakdown);
-            } else if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
+            if (lock.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU
                     && lock.getCreneauId() != null
                     && lock.getCreneauId().equals(creneau.getId())) {
                 c += cost(Rule.ANIMATEUR_VERROUILLE_CRENEAU_FIGE, 1, breakdown);

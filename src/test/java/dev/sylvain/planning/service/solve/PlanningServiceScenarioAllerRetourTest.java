@@ -157,7 +157,7 @@ class PlanningServiceScenarioAllerRetourTest {
         String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 animateurs, List.of(stand), List.of(creneau), List.of(poste("P1", stand, creneau)));
 
-        assertThat(yaml).doesNotContain(" &id").doesNotContain(" *id").startsWith("schemaVersion: 2\n");
+        assertThat(yaml).doesNotContain(" &id").doesNotContain(" *id").startsWith("schemaVersion: 4\n");
         assertThat(ScenarioValidator.validate(yaml)).isEmpty();
     }
 

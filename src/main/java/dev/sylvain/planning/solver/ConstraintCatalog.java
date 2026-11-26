@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,44 @@ public final class ConstraintCatalog {
         HARD,
         MEDIUM,
         SOFT
+    }
+
+    /**
+     * The level an edition chooses for an organisation rule (ADR 0106): one
+     * rule, written once, whose score level follows the choice. {@code OBLIGATOIRE}
+     * scores on the hard level, beside the legal rules — a plan that breaks it is
+     * not deliverable; the three preferences score on the medium level, at the
+     * weight of their position (ADR 0057). The legal rules and the eleven fixed
+     * ones (assignment, ad hoc, locks) have no choice: see
+     * {@link ConstraintDefinition#niveauReglable()}.
+     */
+    public enum NiveauRegle {
+        OBLIGATOIRE,
+        PREFERENCE_FORTE,
+        PREFERENCE_NORMALE,
+        PREFERENCE_LEGERE;
+
+        public boolean obligatoire() {
+            return this == OBLIGATOIRE;
+        }
+
+        /** The weight a position writes; none for {@link #OBLIGATOIRE}, which counts and does not dose. */
+        public int poids() {
+            return switch (this) {
+                case PREFERENCE_FORTE -> POIDS_FORT;
+                case PREFERENCE_NORMALE -> POIDS_NORMAL;
+                case PREFERENCE_LEGERE -> POIDS_FAIBLE;
+                case OBLIGATOIRE -> POIDS_DUR;
+            };
+        }
+
+        /** The position a preference weight reads as: a custom weight reads as the nearest side of the middle. */
+        public static NiveauRegle ofPoids(int poids) {
+            if (poids >= POIDS_FORT) {
+                return PREFERENCE_FORTE;
+            }
+            return poids <= POIDS_FAIBLE ? PREFERENCE_LEGERE : PREFERENCE_NORMALE;
+        }
     }
 
     /** The one category whose rules are dosed rather than switched off — see {@link ConstraintDefinition#dosable()}. */
@@ -74,6 +113,7 @@ public final class ConstraintCatalog {
     private static final String ARRIVEE_GROUPEE = "arriveeGroupee";
     private static final String TRAJET_INSUFFISANT_ENTRE_POSTES = "trajetInsuffisantEntrePostes";
     private static final String MAX_JOURS_CONSECUTIFS_TRAVAILLES = "maxJoursConsecutifsTravailles";
+    private static final String MINEUR_ENCADREMENT = "mineurNecessiteEncadrementMajeur";
 
     /**
      * The meal break, and the first « organisation rule » held hard. No article
@@ -133,8 +173,7 @@ public final class ConstraintCatalog {
      * run blocked rather than dosed turns this one on. Same mechanism, no
      * migration.</p>
      */
-    public static final Set<String> DESACTIVEES_PAR_DEFAUT =
-            Set.of("mineurNecessiteEncadrementMajeur", MAX_JOURS_CONSECUTIFS_DUR);
+    public static final Set<String> DESACTIVEES_PAR_DEFAUT = Set.of(MINEUR_ENCADREMENT, MAX_JOURS_CONSECUTIFS_DUR);
 
     /**
      * What to do about a rule in default, rule by rule.
@@ -391,6 +430,30 @@ public final class ConstraintCatalog {
         }
 
         /**
+         * True for the organisation rules whose level the edition chooses
+         * (ADR 0106): the medium rules of « Qualité d'organisation », the meal
+         * break and the adult beside a minor. Not the legal rules, the
+         * eleven fixed ones, the soft preferences — a preference is one by
+         * nature — nor the two forms of the day-run cap, which
+         * merge into one adjustable rule later (ADR 0045).
+         */
+        public boolean niveauReglable() {
+            return NIVEAU_REGLABLE.contains(name);
+        }
+
+        /**
+         * The level this rule scores on when an edition chose {@code obligatoire}
+         * ({@code null}: nothing chosen, the catalogue's own). A rule with no
+         * choice ignores it.
+         */
+        public Niveau niveauEffectif(Boolean obligatoire) {
+            if (!niveauReglable() || obligatoire == null) {
+                return niveau;
+            }
+            return obligatoire ? Niveau.HARD : Niveau.MEDIUM;
+        }
+
+        /**
          * False for the rules of {@link #DESACTIVEES_PAR_DEFAUT}: an edition
          * that never touched this rule does not enforce it. The Contraintes
          * screen shows it as off, and turning it on is what stores a toggle —
@@ -642,19 +705,13 @@ public final class ConstraintCatalog {
                             + "et l'équilibre de charge.",
                     "Arrivées groupées (covoiturage)"),
             new ConstraintDefinition(
-                    "animateurVerrouilleFige",
-                    Niveau.HARD,
-                    "Verrouillage du planning",
-                    "Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et "
-                            + "le solveur ne peut plus lui en attribuer de nouveaux.",
-                    "Plannings verrouillés"),
-            new ConstraintDefinition(
                     "animateurVerrouilleCreneauFige",
                     Niveau.HARD,
                     "Verrouillage du planning",
-                    "Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient "
-                            + "après l'échange ne bouge plus, sans geler le reste de leur planning.",
-                    "Échanges validés figés"),
+                    "Un animateur verrouillé sur un créneau (par exemple après un échange validé) y garde ce "
+                            + "qu'il tient : le solveur ne peut ni le lui retirer ni lui en attribuer un autre, "
+                            + "sans geler le reste de son planning.",
+                    "Animateurs figés sur un créneau"),
             new ConstraintDefinition(
                     STAND_COMPLEXE_AVEC_REFERENT,
                     Niveau.MEDIUM,
@@ -799,7 +856,7 @@ public final class ConstraintCatalog {
                     "preserverBufferPolyvalents",
                     Niveau.SOFT,
                     CATEGORIE_PREFERENCES,
-                    "Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir "
+                    "Garder au moins un animateur polyvalent (typologie polyvalente) libre sur chaque créneau, pour pouvoir "
                             + "réparer le planning en cas d'absence de dernière minute.",
                     "Réserve de polyvalents"));
 
@@ -815,8 +872,21 @@ public final class ConstraintCatalog {
     public static final Map<String, ConstraintDefinition> PAR_NOM = definitions().stream()
             .collect(Collectors.toUnmodifiableMap(ConstraintDefinition::name, Function.identity()));
 
+    /** The rules whose level an edition chooses — see {@link ConstraintDefinition#niveauReglable()}. */
+    private static final Set<String> NIVEAU_REGLABLE = definitions().stream()
+            .filter(definition -> (CATEGORIE_QUALITE.equals(definition.categorie())
+                            && definition.niveau() == Niveau.MEDIUM
+                            && !MAX_JOURS_CONSECUTIFS_TRAVAILLES.equals(definition.name()))
+                    || COUPURE_REPAS_OBLIGATOIRE.equals(definition.name())
+                    || MINEUR_ENCADREMENT.equals(definition.name()))
+            .map(ConstraintDefinition::name)
+            .collect(Collectors.toUnmodifiableSet());
+
     /**
-     * Names of every constraint enforced at {@link Niveau#HARD}.
+     * Names of every constraint enforced at {@link Niveau#HARD} <b>as the
+     * catalogue ships them</b>. An edition may move an organisation rule to or
+     * from this level: {@link #hardRulesOf} is the set a solve under its choices
+     * enforces.
      *
      * <p>A diagnostic only builds per-match violations for these: a soft or
      * medium constraint can have thousands of matches, which would bloat the
@@ -837,7 +907,7 @@ public final class ConstraintCatalog {
      * rule merge or rename fills it; the API, the YAML reader and the import
      * will read it then.
      */
-    public static final Map<String, String> ANCIENS_NOMS = Map.of();
+    public static final Map<String, String> ANCIENS_NOMS = Map.of("animateurVerrouilleFige", RETIREE);
 
     /**
      * Whether {@code nom} is enforced when nothing says otherwise. Read by
@@ -877,6 +947,45 @@ public final class ConstraintCatalog {
     public static int defaultWeight(String nom) {
         ConstraintDefinition definition = PAR_NOM.get(nom);
         return definition == null || definition.niveau() == Niveau.HARD ? POIDS_DUR : POIDS_NORMAL;
+    }
+
+    /**
+     * The names enforced at the hard level on an edition that chose
+     * {@code obligatoires} (name → {@code true} for obligatoire, {@code false}
+     * for a preference): the catalogue's hard rules, moved by those choices.
+     */
+    public static Set<String> hardRulesOf(Map<String, Boolean> obligatoires) {
+        return definitions().stream()
+                .filter(definition -> definition.niveauEffectif(obligatoires.get(definition.name())) == Niveau.HARD)
+                .map(ConstraintDefinition::name)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * Whether {@code nom} scored on the hard level in a plan that gave it
+     * {@code score}: the level the points sit on when it bit — an edition may
+     * have moved an organisation rule (ADR 0106) — the catalogue's own level
+     * when it scored nothing, which says nothing of the level it was under.
+     */
+    public static boolean isHardIn(String nom, HardMediumSoftScore score) {
+        if (score != null && !score.isZero()) {
+            return score.hardScore() != 0;
+        }
+        return NOMS_DURS.contains(nom);
+    }
+
+    /**
+     * The weight a rule carries when the edition stored none and the deployment
+     * set none, <b>at the level it scores on</b>: the hard weight on the hard
+     * level, and on any other the middle position — also for a rule the
+     * catalogue ships hard and an edition made a preference.
+     */
+    public static int defaultWeight(String nom, Boolean obligatoire) {
+        ConstraintDefinition definition = PAR_NOM.get(nom);
+        if (definition == null) {
+            return POIDS_DUR;
+        }
+        return definition.niveauEffectif(obligatoire) == Niveau.HARD ? POIDS_DUR : POIDS_NORMAL;
     }
 
     public static List<ConstraintDefinition> definitions() {

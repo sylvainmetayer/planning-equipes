@@ -21,8 +21,6 @@ edition:
   nom: Festival réaliste — canicule
 festival:
   dateDebut: 2026-09-01
-parametresSolveur:
-  dureeResolutionSecondes: 1800
 parametresLegaux:
   coupureRepasMinutes: 60
   coupureRepasSoirDebut: '17:00'
@@ -316,9 +314,9 @@ typologies:
   label: Jeux
 - id: HOMME_JEU
   label: Homme jeu
-- id: NINJA
-  label: Ninja
-  ninja: true
+- id: POLYVALENT
+  label: Polyvalent
+  polyvalent: true
 - id: CIRQUE
   label: Cirque
 - id: CARIOLE
@@ -2030,7 +2028,7 @@ stands:
   nom: Stand 48
   emplacementId: EMP-13
   typologiesProposees:
-  - NINJA
+  - POLYVALENT
   effectifMin: 3
   effectifMax: 3
   reserveMajeurs: false
@@ -2558,7 +2556,7 @@ animateurs:
   competences:
     DIV: REFERENT
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
 - id: A2
   email: A2@example.org
   prenom: Animateur
@@ -2748,7 +2746,7 @@ animateurs:
     ANIMATION: DEBUTANT
     LOGISTIQUE: AUTONOME
     LSF: DEBUTANT
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
     TROPH: DEBUTANT
 - id: A22
   email: A22@example.org
@@ -2817,7 +2815,7 @@ animateurs:
   competences:
     JEUX: REFERENT
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
 - id: A29
   email: A29@example.org
   prenom: Animateur
@@ -3768,7 +3766,7 @@ animateurs:
     HOMME_JEU: DEBUTANT
     JEUX: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
 - id: A129
   email: A129@example.org
   prenom: Animateur
@@ -3779,7 +3777,7 @@ animateurs:
     ANIMATION: DEBUTANT
     ENF: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: REFERENT
+    POLYVALENT: REFERENT
     TROPH: DEBUTANT
 - id: A130
   email: A130@example.org
@@ -3790,7 +3788,7 @@ animateurs:
   competences:
     DIV: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: AUTONOME
+    POLYVALENT: AUTONOME
 - id: A131
   email: A131@example.org
   prenom: Animateur
@@ -3801,7 +3799,7 @@ animateurs:
     DIV: DEBUTANT
     ENF: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: AUTONOME
+    POLYVALENT: AUTONOME
     TROPH: DEBUTANT
 - id: A132
   email: A132@example.org
@@ -3823,7 +3821,7 @@ animateurs:
     ANIMATION: DEBUTANT
     HOMME_JEU: AUTONOME
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
     TROPH: DEBUTANT
 - id: A134
   email: A134@example.org
@@ -3946,7 +3944,7 @@ animateurs:
     ANIMATION: AUTONOME
     JV: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
     TROPH: DEBUTANT
 - id: A146
   email: A146@example.org
@@ -3970,7 +3968,7 @@ animateurs:
     JEUX: DEBUTANT
     JV: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
     SPORT: AUTONOME
     TROPH: DEBUTANT
 - id: A148
@@ -4015,7 +4013,7 @@ animateurs:
     ENF: DEBUTANT
     JEUX: DEBUTANT
     LOGISTIQUE: AUTONOME
-    NINJA: DEBUTANT
+    POLYVALENT: DEBUTANT
     TROPH: DEBUTANT
 - id: A152
   email: A152@example.org

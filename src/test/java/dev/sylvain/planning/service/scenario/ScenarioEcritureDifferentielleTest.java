@@ -95,7 +95,6 @@ class ScenarioEcritureDifferentielleTest {
                 emplacements(stands),
                 lu.sections().parametresLegaux().orElse(null),
                 lu.sections().parametresQualite().orElse(null),
-                lu.sections().parametresSolveur().orElse(null),
                 lu.sections()
                         .contraintes()
                         .map(ScenarioEcritureDifferentielleTest::etats)

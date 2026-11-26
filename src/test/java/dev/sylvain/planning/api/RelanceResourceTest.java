@@ -234,7 +234,7 @@ class RelanceResourceTest {
     }
 
     private void forgetPublications() {
-        execute("DELETE FROM plan_snapshot");
+        execute("DELETE FROM version_plan");
     }
 
     private void execute(String sql) {

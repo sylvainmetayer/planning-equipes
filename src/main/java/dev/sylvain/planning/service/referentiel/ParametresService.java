@@ -5,6 +5,8 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
@@ -12,6 +14,7 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,9 +59,20 @@ public class ParametresService {
         return repository.getParametresLegaux();
     }
 
+    /**
+     * Saves the legal parameters. The write carries its own precondition: when
+     * {@code parametres.getModifieLe()} is set and the row was written since,
+     * {@link dev.sylvain.planning.service.BusinessError.Stale} (409); unset, nothing is checked.
+     * The three other sections below follow the same rule.
+     */
     public ParametresLegaux updateLegaux(ParametresLegaux parametres) {
         ParametresValidator.checkParametresLegaux(parametres);
-        repository.saveParametresLegaux(parametres);
+        Instant written = repository.saveParametresLegaux(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_legaux", repository.getParametresLegaux().getModifieLe());
+        }
+        parametres.setModifieLe(written);
         changeTracker.markModified();
         return parametres;
     }
@@ -67,37 +81,23 @@ public class ParametresService {
         return repository.getParametresSolveur();
     }
 
-    /** The instance's defaults and ceilings, shown beside the edition's budget. */
+    /** The instance's budget and ceiling, shown beside the edition's mail switch. */
     public SolverBudgetBounds solverBudgetBounds() {
         return budgetPolicy.bounds();
     }
 
     /**
-     * Saves the edition's solve budget (Solveur page). Not a problem fact and
+     * Saves the edition's end-of-solve mail switch. Not a problem fact and
      * deliberately not tracked by {@link ReferenceDataChangeTracker}: it only
-     * changes how long a solve runs, not the reference data fed to it.
+     * changes what happens after a solve, not the reference data fed to it.
      */
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
-        ParametresValidator.checkParametresSolveur(
-                parametres, repository.getParametresSolveur(), budgetPolicy.bounds());
-        repository.saveParametresSolveur(parametres);
-        return parametres;
-    }
-
-    /**
-     * Saves the budget a scenario file pins, keeping this edition's mail
-     * switch — a file carries no mail setting. A value above the instance's
-     * ceiling is stored as the file says, and launches run it capped with a
-     * warning: see {@link ParametresValidator#checkImportedParametresSolveur}.
-     */
-    public ParametresSolveur importSolveur(ParametresSolveur parametres) {
-        ParametresValidator.checkImportedParametresSolveur(parametres, budgetPolicy.bounds());
-        ParametresSolveur kept = new ParametresSolveur(
-                parametres.dureeResolutionSecondes(),
-                parametres.plateauSecondes(),
-                repository.getParametresSolveur().mailFinResolution());
-        repository.saveParametresSolveur(kept);
-        return kept;
+        Instant written = repository.saveParametresSolveur(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_solveur", repository.getParametresSolveur().modifieLe());
+        }
+        return parametres.withStamp(written);
     }
 
     public ParametresNotifications getNotifications() {
@@ -112,8 +112,13 @@ public class ParametresService {
      */
     public ParametresNotifications updateNotifications(ParametresNotifications parametres) {
         ParametresValidator.checkParametresNotifications(parametres);
-        repository.saveParametresNotifications(parametres);
-        return parametres;
+        Instant written = repository.saveParametresNotifications(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_notifications",
+                    repository.getParametresNotifications().modifieLe());
+        }
+        return parametres.withStamp(written);
     }
 
     public ContactOrganisation getContactOrganisation() {
@@ -153,9 +158,13 @@ public class ParametresService {
      */
     public ParametresQualite updateQualite(ParametresQualite parametres) {
         ParametresValidator.checkParametresQualite(parametres);
-        repository.saveParametresQualite(parametres);
+        Instant written = repository.saveParametresQualite(parametres);
+        if (written == null) {
+            throw ConcurrentModificationGuard.stale(
+                    "parametres_qualite", qualite().modifieLe());
+        }
         changeTracker.markModified();
-        return parametres;
+        return parametres.withStamp(written);
     }
 
     /**
@@ -247,6 +256,47 @@ public class ParametresService {
             return avant == apres ? null : WeightChange.of(nom, avant, apres, poids == null, null, null, origin, null);
         });
         changeTracker.markModified();
+    }
+
+    /** The level this edition explicitly chose per organisation rule: {@code true} for obligatoire. */
+    public Map<String, Boolean> niveauxObligatoires() {
+        return repository.getNiveauxObligatoires();
+    }
+
+    /**
+     * Stores the level of one organisation rule, or forgets it when
+     * {@code obligatoire} is {@code null}. Asking for exactly what the catalogue
+     * ships drops the choice rather than pinning it, as a weight or a toggle does.
+     * Refused for a rule whose level is not the edition's to choose.
+     */
+    public void setNiveauObligatoire(String nom, Boolean obligatoire, WeightChangeOrigin origin) {
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        if (definition == null || !definition.niveauReglable()) {
+            throw new BusinessError.Invalid("La règle « " + nom + " » n'a pas de niveau à choisir : les règles "
+                    + "légales et les règles de base restent obligatoires, les préférences restent des préférences.");
+        }
+        boolean parDefaut = obligatoire != null && definition.niveauEffectif(obligatoire) == definition.niveau();
+        repository.setNiveauObligatoire(nom, parDefaut ? null : obligatoire);
+        changeTracker.markModified();
+    }
+
+    /**
+     * The gesture of the screen and the MCP tool: {@code OBLIGATOIRE}, or one of
+     * the three preference positions, which also writes the weight of the
+     * position (ADR 0057) — a preference is the same rule weighed.
+     */
+    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau, WeightChangeOrigin origin) {
+        setNiveauObligatoire(nom, niveau.obligatoire(), origin);
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        boolean shippedHard = definition.niveau() == ConstraintCatalog.Niveau.HARD;
+        if (!niveau.obligatoire()) {
+            int defaut = shippedHard ? ConstraintCatalog.POIDS_NORMAL : configuredWeight(nom);
+            setConstraintWeight(nom, niveau.poids() == defaut ? null : niveau.poids(), origin);
+        } else if (shippedHard) {
+            // Back on its own hard level, a stored weight applies again as a hard one: the preference
+            // weight the way out wrote would make one breach weigh 25 legal ones. Obligatoire is hard 1.
+            setConstraintWeight(nom, null, origin);
+        }
     }
 
     /**

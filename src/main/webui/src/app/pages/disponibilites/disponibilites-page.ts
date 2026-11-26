@@ -41,9 +41,6 @@ import { EditionInactiveNote } from '../../shared/edition-inactive-note';
 import { EditionStore } from '../../core/edition.store';
 import { isEditionInactive } from '../../core/edition-inactive';
 
-/** Longest reason « Écarter » accepts — the server's own bound. */
-const REASON_MAX = 500;
-
 /**
  * Admin review of the self-service declarations (issue #291): one line of the
  * collection's state on top — it is configured on Paramètres › Édition (issue
@@ -127,7 +124,7 @@ export class DisponibilitesPage implements OnInit {
     this.carpools().filter((carpool) => carpool.status === 'EN_ATTENTE'),
   );
   protected readonly decidedCarpools = computed(() =>
-    this.carpools().filter((carpool) => carpool.status !== 'EN_ATTENTE'),
+    this.carpools().filter((carpool) => carpool.status === 'VALIDEE'),
   );
   /**
    * The demands that carry « Annuler l'arrivée groupée »: one per validated
@@ -334,27 +331,24 @@ export class DisponibilitesPage implements OnInit {
   }
 
   /**
-   * « Écarter »: the request is filed without any effect, with an optional
-   * reason the animateur reads in their espace and in the mail telling them.
-   * Nothing is written to the referential, so a running solve does not block it.
+   * « Écarter »: the request is deleted, with no other effect and no mail; the
+   * animateur may send a new one while the collection is open. Nothing is
+   * written to the referential, so a running solve does not block it.
    */
   protected async setCarpoolAside(carpool: TeammateRequestView): Promise<void> {
-    const reason = await PromptDialog.ask(this.dialog, {
+    const confirmed = await this.confirm.ask({
       title: $localize`:@@dispo.covoiturage.ecarterTitre:Écarter le covoiturage de ${this.membersLabel(carpool)}:membres: ?`,
-      message: $localize`:@@dispo.covoiturage.ecarterMessage:Aucun ajustement n'est créé. Le demandeur est prévenu par e-mail et peut envoyer une nouvelle demande tant que la collecte est ouverte.`,
-      label: $localize`:@@dispo.covoiturage.ecarterMotif:Motif (facultatif, lu par l'animateur dans son espace)`,
+      message: $localize`:@@dispo.covoiturage.ecarterMessage:La demande est supprimée, aucun ajustement n'est créé et personne n'est prévenu. Le demandeur peut en envoyer une nouvelle tant que la collecte est ouverte.`,
       confirmLabel: $localize`:@@dispo.covoiturage.ecarter:Écarter`,
-      optional: true,
-      maxLength: REASON_MAX,
     });
-    if (reason === null) {
+    if (!confirmed) {
       return;
     }
     this.decisionEnCours.set(carpool.id);
     try {
-      await this.disponibilitesApi.setCarpoolAside(carpool.id, reason || null);
+      await this.disponibilitesApi.setCarpoolAside(carpool.id);
       this.notifications.notify({
-        title: $localize`:@@dispo.covoiturage.ecartee:Covoiturage écarté, rien n'a été créé. Le demandeur est prévenu.`,
+        title: $localize`:@@dispo.covoiturage.ecartee:Covoiturage écarté, rien n'a été créé.`,
         variant: 'success',
         timeout: 5000,
       });
@@ -368,27 +362,23 @@ export class DisponibilitesPage implements OnInit {
 
   /**
    * « Annuler l'arrivée groupée »: deletes the exception a validation created
-   * or joined, files every demand validated against it as cancelled with the
-   * optional reason, and tells each member by mail. The one way to undo a
+   * or joined, and every demand validated against it. The one way to undo a
    * validated car: the Ajustements manuels screen refuses to touch it.
    */
   protected async cancelCarpool(carpool: TeammateRequestView): Promise<void> {
-    const reason = await PromptDialog.ask(this.dialog, {
+    const confirmed = await this.confirm.ask({
       title: $localize`:@@dispo.covoiturage.annulerTitre:Annuler l'arrivée groupée de ${this.membersLabel(carpool)}:membres: ?`,
-      message: $localize`:@@dispo.covoiturage.annulerMessage:L'ajustement « arrivée groupée » est supprimé. Chaque membre est prévenu par e-mail ; une nouvelle demande reste possible tant que la collecte est ouverte.`,
-      label: $localize`:@@dispo.covoiturage.annulerMotif:Motif (facultatif, lu par les membres dans leur espace)`,
+      message: $localize`:@@dispo.covoiturage.annulerMessage:L'ajustement « arrivée groupée » est supprimé, ainsi que les demandes validées avec lui. Personne n'est prévenu par e-mail : prévenez le groupe vous-même.`,
       confirmLabel: $localize`:@@dispo.covoiturage.annuler:Annuler l'arrivée groupée`,
-      optional: true,
-      maxLength: REASON_MAX,
     });
-    if (reason === null || this.solveStartedMeanwhile()) {
+    if (!confirmed || this.solveStartedMeanwhile()) {
       return;
     }
     this.decisionEnCours.set(carpool.id);
     try {
-      await this.disponibilitesApi.cancelCarpool(carpool.id, reason || null);
+      await this.disponibilitesApi.cancelCarpool(carpool.id);
       this.notifications.notify({
-        title: $localize`:@@dispo.covoiturage.annulee:Arrivée groupée annulée, ses membres sont prévenus. Régénérez le planning pour qu'il en tienne compte.`,
+        title: $localize`:@@dispo.covoiturage.annulee:Arrivée groupée annulée. Régénérez le planning pour qu'il en tienne compte.`,
         variant: 'success',
         timeout: 8000,
       });
@@ -402,17 +392,6 @@ export class DisponibilitesPage implements OnInit {
 
   protected membersLabel(carpool: TeammateRequestView): string {
     return carpool.members.map((membre) => membre.fullName).join(', ');
-  }
-
-  protected carpoolStatusLabel(carpool: TeammateRequestView): string {
-    switch (carpool.status) {
-      case 'VALIDEE':
-        return $localize`:@@dispo.covoiturage.statut.validee:Arrivée groupée validée`;
-      case 'ANNULEE':
-        return $localize`:@@dispo.covoiturage.statut.annulee:Annulée`;
-      default:
-        return $localize`:@@dispo.covoiturage.statut.ecartee:Écarté`;
-    }
   }
 
   /**

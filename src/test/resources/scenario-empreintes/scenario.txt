@@ -1,12 +1,13 @@
 .planning.affectationsPubliees = (vide)
-.planning.animateurs[0]  bebf7fd168aa4a87
-.planning.animateurs[1]  b87d0857e6c424cb
-.planning.animateurs[2]  ad3b483c834a29d4
+.planning.animateurs[0]  cabc9dac1e3847a2
+.planning.animateurs[1]  11308386800f934a
+.planning.animateurs[2]  ac66dc17a9e17bae
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = (vide)
 .planning.parametresLegaux[0]  545f1d29fd3c1a49
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
@@ -22,12 +23,12 @@
 .sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
+.sections.contraintes.obligatoires = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 15
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition = null
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
-.sections.parametresSolveur = null
 .sections.prereglagesConsigne = null
 .sections.typologies = (vide)

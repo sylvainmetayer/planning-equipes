@@ -83,12 +83,7 @@ function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagno
 function machine(overrides: Partial<MachineCalcul> = {}): MachineCalcul {
   return {
     configured: false,
-    onDemand: false,
     remoteByDefault: false,
-    state: null,
-    stopsAt: null,
-    billedHoursThisMonth: null,
-    lastStopError: null,
     ...overrides,
   };
 }
@@ -222,14 +217,12 @@ describe('SolverPage', () => {
     exportBundle: vi.fn(),
   };
   const planningState = { set: vi.fn(), require: vi.fn() };
-  const machineApi = { read: vi.fn(), prepare: vi.fn(), stop: vi.fn() };
+  const machineApi = { read: vi.fn() };
   const solverSettings = {
     refresh: vi.fn(),
     secondsLimit: () => 600,
     effectivePlateauSeconds: () => 0,
     bounds: () => null,
-    dureeResolutionSecondes: () => null,
-    plateauSecondes: () => null,
   };
   const notifications = { notify: vi.fn() };
   const confirm = { ask: vi.fn() };
@@ -1223,7 +1216,6 @@ describe('SolverPage', () => {
       await fixture.whenStable();
 
       expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).toBeNull();
-      expect(racine().querySelector('app-machine-calcul-card')).toBeNull();
       await page['onTimefoldSolve']();
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(
         undefined,
@@ -1234,9 +1226,7 @@ describe('SolverPage', () => {
     });
 
     it('preselects the instance default and sends the choice made', async () => {
-      machineApi.read.mockResolvedValue(
-        machine({ configured: true, remoteByDefault: true, state: 'PERMANENT' }),
-      );
+      machineApi.read.mockResolvedValue(machine({ configured: true, remoteByDefault: true }));
       const page = createPage();
       await fixture.whenStable();
       // Where the solve runs is folded under « Réglages avancés » (ADR 0090).
@@ -1244,8 +1234,6 @@ describe('SolverPage', () => {
       await fixture.whenStable();
 
       expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).not.toBeNull();
-      // A permanent worker: the choice, and no machine panel.
-      expect(racine().querySelector('app-machine-calcul-card')).toBeNull();
       await page['onTimefoldSolve']();
       expect(jobs.submitSolveFromReferenceData).toHaveBeenLastCalledWith(
         undefined,
@@ -1264,42 +1252,8 @@ describe('SolverPage', () => {
       );
     });
 
-    it('shows the machine panel for a machine created on demand', async () => {
-      machineApi.read.mockResolvedValue(
-        machine({ configured: true, onDemand: true, state: 'ABSENT' }),
-      );
-      createPage()['avance'].basculer();
-      await fixture.whenStable();
-
-      expect(racine().querySelector('app-machine-calcul-card')?.textContent).toContain(
-        'Préparer la machine',
-      );
-    });
-
-    it('keeps the machine panel visible, folded, while it may cost money', async () => {
-      for (const etat of [
-        { state: 'PREPARING' as const },
-        { state: 'READY' as const },
-        { state: 'SOLVING' as const },
-        { state: 'ABSENT' as const, lastStopError: 'arrêt refusé' },
-      ]) {
-        machineApi.read.mockResolvedValue(machine({ configured: true, onDemand: true, ...etat }));
-        createPage();
-        await fixture.whenStable();
-        expect(racine().querySelector('app-machine-calcul-card')).not.toBeNull();
-      }
-      machineApi.read.mockResolvedValue(
-        machine({ configured: true, onDemand: true, state: 'ABSENT' }),
-      );
-      createPage();
-      await fixture.whenStable();
-      expect(racine().querySelector('app-machine-calcul-card')).toBeNull();
-    });
-
     it('shows the place toggle, folded, once it differs from the default', async () => {
-      machineApi.read.mockResolvedValue(
-        machine({ configured: true, remoteByDefault: true, state: 'PERMANENT' }),
-      );
+      machineApi.read.mockResolvedValue(machine({ configured: true, remoteByDefault: true }));
       const page = createPage();
       await fixture.whenStable();
       expect(racine().querySelector('mat-button-toggle-group.solver-lieu')).toBeNull();
@@ -1321,15 +1275,15 @@ describe('SolverPage', () => {
       expect(page['etapeDistante']()).toBe('Calcul en cours sur la machine de calcul.');
     });
 
-    it('re-reads the machine when a job starts', async () => {
+    it('reads the worker settings once, not on every job', async () => {
       createPage();
       await fixture.whenStable();
-      const reads = machineApi.read.mock.calls.length;
 
       activeJob.set(tracked());
       TestBed.tick();
+      await fixture.whenStable();
 
-      await vi.waitFor(() => expect(machineApi.read.mock.calls).toHaveLength(reads + 1));
+      expect(machineApi.read).toHaveBeenCalledTimes(1);
     });
   });
 });

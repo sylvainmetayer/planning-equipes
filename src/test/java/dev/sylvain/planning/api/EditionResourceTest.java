@@ -113,10 +113,10 @@ class EditionResourceTest {
                 .path("stand.id");
     }
 
-    private String createTypologie(String editionId, String code, boolean ninja) {
+    private String createTypologie(String editionId, String code, boolean polyvalent) {
         return given().header(HEADER, editionId)
                 .contentType("application/json")
-                .body("{\"code\":\"" + code + "\",\"label\":\"" + code + "\",\"ninja\":" + ninja + "}")
+                .body("{\"code\":\"" + code + "\",\"label\":\"" + code + "\",\"polyvalent\":" + polyvalent + "}")
                 .when()
                 .post("/api/typologies")
                 .then()
@@ -125,7 +125,7 @@ class EditionResourceTest {
                 .path("id");
     }
 
-    private boolean isNinja(String editionId, String typologieId) {
+    private boolean isPolyvalent(String editionId, String typologieId) {
         return given().header(HEADER, editionId)
                 .when()
                 .get("/api/typologies")
@@ -133,7 +133,7 @@ class EditionResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getList("findAll { it.id == '" + typologieId + "' }.ninja", Boolean.class)
+                .getList("findAll { it.id == '" + typologieId + "' }.polyvalent", Boolean.class)
                 .getFirst();
     }
 
@@ -503,9 +503,9 @@ class EditionResourceTest {
                 .statusCode(200);
         given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"dureeResolutionSecondes\":123,\"mailFinResolution\":true}")
+                .body("{\"mailFinResolution\":true}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
         String polyvalent = createTypologie(source, "POLYVALENT", true);
@@ -523,17 +523,16 @@ class EditionResourceTest {
                 .body("coupureRepasMinutes", org.hamcrest.Matchers.equalTo(50));
         given().header(HEADER, copie)
                 .when()
-                .get("/api/parametres-solveur")
+                .get("/api/parametres/calcul")
                 .then()
                 .statusCode(200)
-                .body("mailFinResolution", org.hamcrest.Matchers.equalTo(true))
-                .body("dureeResolutionSecondes", org.hamcrest.Matchers.equalTo(123));
+                .body("mailFinResolution", org.hamcrest.Matchers.equalTo(true));
         given().header(HEADER, copie)
                 .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == '" + polyvalent + "' }.ninja", org.hamcrest.Matchers.equalTo(true))
+                .body("find { it.id == '" + polyvalent + "' }.polyvalent", org.hamcrest.Matchers.equalTo(true))
                 .body("find { it.id == '" + polyvalent + "' }.code", org.hamcrest.Matchers.equalTo("POLYVALENT"));
     }
 
@@ -628,23 +627,23 @@ class EditionResourceTest {
     /**
      * Writing in one edition must never reach across into another — the
      * invariant every business table's {@code edition_id} exists for. The
-     * "one ninja typologie" rule is where it is easiest to break: the write
+     * "one polyvalent typologie" rule is where it is easiest to break: the write
      * demotes the previous holder, and the unique index it protects has been
      * scoped per edition since {@code V33}, so the demotion must be scoped
-     * too. Ninja drives {@code Animateur#hasCompetenceFor}, hence the
+     * too. Polyvalent drives {@code Animateur#hasCompetenceFor}, hence the
      * construction-heuristic ordering and the polyvalent-buffer constraint:
      * losing it silently changes what the next solve of the other edition
      * explores.
      */
     @Test
-    void flaggingANinjaTypologieDoesNotUnflagAnotherEditionS() {
+    void flaggingAPolyvalentTypologieDoesNotUnflagAnotherEditionS() {
         String annee2025 = createEdition("Année 2025");
         String annee2026 = createEdition("Année 2026");
-        String ninja2025 = createTypologie(annee2025, "NINJA_2025", true);
+        String polyvalent2025 = createTypologie(annee2025, "POLYVALENT_2025", true);
 
-        String ninja2026 = createTypologie(annee2026, "NINJA_2026", true);
+        String polyvalent2026 = createTypologie(annee2026, "POLYVALENT_2026", true);
 
-        assertThat(isNinja(annee2026, ninja2026)).isTrue();
-        assertThat(isNinja(annee2025, ninja2025)).isTrue();
+        assertThat(isPolyvalent(annee2026, polyvalent2026)).isTrue();
+        assertThat(isPolyvalent(annee2025, polyvalent2025)).isTrue();
     }
 }

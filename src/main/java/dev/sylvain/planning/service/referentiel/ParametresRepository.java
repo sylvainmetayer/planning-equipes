@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.JdbcEditionScope;
+import dev.sylvain.planning.service.WriteStamp;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.math.BigDecimal;
@@ -13,8 +14,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +56,7 @@ public class ParametresRepository {
                         coupure_repas_minutes, coupure_repas_midi_debut,
                         coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin,
                         heure_debut_soiree, duree_vacation_max_minutes,
-                        duree_pause_minutes
+                        duree_pause_minutes, modifie_le
                         FROM parametres_legaux
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -71,6 +73,7 @@ public class ParametresRepository {
                 parametres.setHeureDebutSoiree(rs.getObject("heure_debut_soiree", LocalTime.class));
                 parametres.setDureeVacationMaxMinutes(rs.getInt("duree_vacation_max_minutes"));
                 parametres.setDureePauseMinutes(rs.getInt("duree_pause_minutes"));
+                parametres.setModifieLe(instant(rs));
                 return parametres;
             }
             return new ParametresLegaux();
@@ -79,7 +82,13 @@ public class ParametresRepository {
         }
     }
 
-    public void saveParametresLegaux(ParametresLegaux parametres) {
+    /**
+     * Writes the legal parameters unless they were written since {@code parametres.getModifieLe()}
+     * (issue #362: the precondition is part of the statement).
+     *
+     * @return the stamp written, {@code null} when the precondition refused it
+     */
+    public Instant saveParametresLegaux(ParametresLegaux parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_legaux (edition_id, duree_hebdomadaire_max_minutes,
@@ -100,7 +109,13 @@ public class ParametresRepository {
                         coupure_repas_soir_fin = EXCLUDED.coupure_repas_soir_fin,
                         heure_debut_soiree = EXCLUDED.heure_debut_soiree,
                         duree_vacation_max_minutes = EXCLUDED.duree_vacation_max_minutes,
-                        duree_pause_minutes = EXCLUDED.duree_pause_minutes""")) {
+                        duree_pause_minutes = EXCLUDED.duree_pause_minutes,
+                        modifie_le = now()
+                        WHERE CAST(? AS boolean)
+                        AND (CAST(? AS timestamptz) IS NULL
+                             OR date_trunc('milliseconds', parametres_legaux.modifie_le)
+                                = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                        RETURNING modifie_le""")) {
             ps.setInt(2, parametres.getDureeHebdomadaireMaxMinutes());
             ps.setInt(3, parametres.getDureeHebdomadaireMaxMineurMinutes());
             ps.setInt(4, parametres.getReposQuotidienMinimalMinutes());
@@ -112,10 +127,16 @@ public class ParametresRepository {
             ps.setObject(10, parametres.getHeureDebutSoiree());
             ps.setInt(11, parametres.getDureeVacationMaxMinutes());
             ps.setInt(12, parametres.getDureePauseMinutes());
-            ps.executeUpdate();
+            WriteStamp.bindPrecondition(ps, 13, true, parametres.getModifieLe());
+            return WriteStamp.writtenOrRefused(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save legal parameters", e);
         }
+    }
+
+    private static Instant instant(ResultSet rs) throws SQLException {
+        OffsetDateTime modifieLe = rs.getObject("modifie_le", OffsetDateTime.class);
+        return modifieLe == null ? null : modifieLe.toInstant();
     }
 
     /* ---------------------------- Quality parameters -------------------------- */
@@ -136,7 +157,7 @@ public class ParametresRepository {
                         heure_service_matinal, repos_souhaite_apres_service_tardif_minutes,
                         typologies_distinctes_max, jours_consecutifs_max,
                         vitesse_marche_km_h, facteur_detour, tolerance_trajet_minutes,
-                        tolerance_arrivee_groupee_minutes
+                        tolerance_arrivee_groupee_minutes, modifie_le
                         FROM parametres_qualite
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -151,7 +172,8 @@ public class ParametresRepository {
                         rs.getDouble("vitesse_marche_km_h"),
                         rs.getDouble("facteur_detour"),
                         rs.getInt("tolerance_trajet_minutes"),
-                        rs.getInt("tolerance_arrivee_groupee_minutes"));
+                        rs.getInt("tolerance_arrivee_groupee_minutes"),
+                        instant(rs));
             }
             return defauts;
         } catch (SQLException e) {
@@ -159,7 +181,8 @@ public class ParametresRepository {
         }
     }
 
-    public void saveParametresQualite(ParametresQualite parametres) {
+    /** Same precondition as {@link #saveParametresLegaux}. */
+    public Instant saveParametresQualite(ParametresQualite parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_qualite (edition_id, max_emplacements_distincts_par_jour,
@@ -180,7 +203,13 @@ public class ParametresRepository {
                         vitesse_marche_km_h = EXCLUDED.vitesse_marche_km_h,
                         facteur_detour = EXCLUDED.facteur_detour,
                         tolerance_trajet_minutes = EXCLUDED.tolerance_trajet_minutes,
-                        tolerance_arrivee_groupee_minutes = EXCLUDED.tolerance_arrivee_groupee_minutes""")) {
+                        tolerance_arrivee_groupee_minutes = EXCLUDED.tolerance_arrivee_groupee_minutes,
+                        modifie_le = now()
+                        WHERE CAST(? AS boolean)
+                        AND (CAST(? AS timestamptz) IS NULL
+                             OR date_trunc('milliseconds', parametres_qualite.modifie_le)
+                                = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                        RETURNING modifie_le""")) {
             ps.setInt(2, parametres.maxEmplacementsDistinctsParJour());
             ps.setObject(3, parametres.heureServiceTardif());
             ps.setObject(4, parametres.heureServiceMatinal());
@@ -191,7 +220,8 @@ public class ParametresRepository {
             ps.setBigDecimal(9, BigDecimal.valueOf(parametres.facteurDetour()));
             ps.setInt(10, parametres.toleranceTrajetMinutes());
             ps.setInt(11, parametres.toleranceArriveeGroupeeMinutes());
-            ps.executeUpdate();
+            WriteStamp.bindPrecondition(ps, 12, true, parametres.modifieLe());
+            return WriteStamp.writtenOrRefused(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save quality parameters", e);
         }
@@ -202,15 +232,12 @@ public class ParametresRepository {
     public ParametresSolveur getParametresSolveur() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT duree_resolution_secondes, plateau_secondes, mail_fin_resolution
+                        SELECT mail_fin_resolution, modifie_le
                         FROM parametres_solveur
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
-                return new ParametresSolveur(
-                        rs.getObject("duree_resolution_secondes", Integer.class),
-                        rs.getObject("plateau_secondes", Integer.class),
-                        rs.getBoolean("mail_fin_resolution"));
+                return new ParametresSolveur(rs.getBoolean("mail_fin_resolution"), instant(rs));
             }
             return new ParametresSolveur();
         } catch (SQLException e) {
@@ -218,20 +245,23 @@ public class ParametresRepository {
         }
     }
 
-    public void saveParametresSolveur(ParametresSolveur parametres) {
+    /** Same precondition as {@link #saveParametresLegaux}. */
+    public Instant saveParametresSolveur(ParametresSolveur parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        INSERT INTO parametres_solveur
-                            (edition_id, duree_resolution_secondes, plateau_secondes, mail_fin_resolution)
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO parametres_solveur (edition_id, mail_fin_resolution)
+                        VALUES (?, ?)
                         ON CONFLICT (edition_id)
-                        DO UPDATE SET duree_resolution_secondes = EXCLUDED.duree_resolution_secondes,
-                        plateau_secondes = EXCLUDED.plateau_secondes,
-                        mail_fin_resolution = EXCLUDED.mail_fin_resolution""")) {
-            ps.setObject(2, parametres.dureeResolutionSecondes(), Types.INTEGER);
-            ps.setObject(3, parametres.plateauSecondes(), Types.INTEGER);
-            ps.setBoolean(4, parametres.mailFinResolution());
-            ps.executeUpdate();
+                        DO UPDATE SET mail_fin_resolution = EXCLUDED.mail_fin_resolution,
+                        modifie_le = now()
+                        WHERE CAST(? AS boolean)
+                        AND (CAST(? AS timestamptz) IS NULL
+                             OR date_trunc('milliseconds', parametres_solveur.modifie_le)
+                                = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                        RETURNING modifie_le""")) {
+            ps.setBoolean(2, parametres.mailFinResolution());
+            WriteStamp.bindPrecondition(ps, 3, true, parametres.modifieLe());
+            return WriteStamp.writtenOrRefused(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save solver parameters", e);
         }
@@ -242,7 +272,7 @@ public class ParametresRepository {
     public ParametresNotifications getParametresNotifications() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT heure_rappel_veille, delai_relance_heures, anciennete_echange_jours
+                        SELECT heure_rappel_veille, delai_relance_heures, anciennete_echange_jours, modifie_le
                         FROM parametres_notifications
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -250,7 +280,8 @@ public class ParametresRepository {
                 return new ParametresNotifications(
                         rs.getObject("heure_rappel_veille", LocalTime.class),
                         rs.getInt("delai_relance_heures"),
-                        rs.getInt("anciennete_echange_jours"));
+                        rs.getInt("anciennete_echange_jours"),
+                        instant(rs));
             }
             return new ParametresNotifications();
         } catch (SQLException e) {
@@ -258,7 +289,8 @@ public class ParametresRepository {
         }
     }
 
-    public void saveParametresNotifications(ParametresNotifications parametres) {
+    /** Same precondition as {@link #saveParametresLegaux}. */
+    public Instant saveParametresNotifications(ParametresNotifications parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_notifications (edition_id, heure_rappel_veille,
@@ -267,11 +299,18 @@ public class ParametresRepository {
                         ON CONFLICT (edition_id)
                         DO UPDATE SET heure_rappel_veille = EXCLUDED.heure_rappel_veille,
                         delai_relance_heures = EXCLUDED.delai_relance_heures,
-                        anciennete_echange_jours = EXCLUDED.anciennete_echange_jours""")) {
+                        anciennete_echange_jours = EXCLUDED.anciennete_echange_jours,
+                        modifie_le = now()
+                        WHERE CAST(? AS boolean)
+                        AND (CAST(? AS timestamptz) IS NULL
+                             OR date_trunc('milliseconds', parametres_notifications.modifie_le)
+                                = date_trunc('milliseconds', CAST(? AS timestamptz)))
+                        RETURNING modifie_le""")) {
             ps.setObject(2, parametres.heureRappelVeille());
             ps.setInt(3, parametres.delaiRelanceHeures());
             ps.setInt(4, parametres.ancienneteEchangeJours());
-            ps.executeUpdate();
+            WriteStamp.bindPrecondition(ps, 5, true, parametres.modifieLe());
+            return WriteStamp.writtenOrRefused(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save notification parameters", e);
         }
@@ -345,7 +384,8 @@ public class ParametresRepository {
     public Map<String, Integer> getConstraintWeights() {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(
-                        connection, "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ?");
+                        connection,
+                        "SELECT nom, poids FROM ponderation_contrainte WHERE edition_id = ? AND poids IS NOT NULL");
                 ResultSet rs = ps.executeQuery()) {
             Map<String, Integer> ponderations = new LinkedHashMap<>();
             while (rs.next()) {
@@ -355,6 +395,64 @@ public class ParametresRepository {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load constraint weights", e);
         }
+    }
+
+    /**
+     * The level this edition explicitly chose per organisation rule (ADR 0106):
+     * {@code true} for obligatoire. The {@code obligatoire} column of the
+     * weights' table, where a row can hold a level and no weight.
+     */
+    public Map<String, Boolean> getNiveauxObligatoires() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "SELECT nom, obligatoire FROM ponderation_contrainte"
+                                + " WHERE edition_id = ? AND obligatoire IS NOT NULL");
+                ResultSet rs = ps.executeQuery()) {
+            Map<String, Boolean> niveaux = new LinkedHashMap<>();
+            while (rs.next()) {
+                niveaux.put(rs.getString("nom"), rs.getBoolean("obligatoire"));
+            }
+            return niveaux;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load constraint levels", e);
+        }
+    }
+
+    /**
+     * Records the level this edition chose for one rule, or forgets it when
+     * {@code obligatoire} is {@code null} (the catalogue's own level). The row
+     * goes away when it then holds neither a level nor a weight.
+     */
+    public void setNiveauObligatoire(String nom, Boolean obligatoire) {
+        scope.write("Failed to save constraint level", connection -> {
+            lockRule(connection, "ponderation_contrainte", nom);
+            if (obligatoire == null) {
+                // The row goes first when it holds no weight, or the update below would leave it empty.
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+                        DELETE FROM ponderation_contrainte
+                        WHERE edition_id = ? AND nom = ? AND poids IS NULL""")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+                        UPDATE ponderation_contrainte SET obligatoire = NULL
+                        WHERE edition_id = ? AND nom = ?""")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+            } else {
+                try (PreparedStatement ps = scope.prepareScoped(connection, """
+                        INSERT INTO ponderation_contrainte (edition_id, nom, obligatoire)
+                        VALUES (?, ?, ?)
+                        ON CONFLICT (edition_id, nom)
+                        DO UPDATE SET obligatoire = EXCLUDED.obligatoire""")) {
+                    ps.setString(2, nom);
+                    ps.setBoolean(3, obligatoire);
+                    ps.executeUpdate();
+                }
+            }
+        });
     }
 
     /**
@@ -378,12 +476,21 @@ public class ParametresRepository {
                     connection, "SELECT poids FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
                 ps.setString(2, nom);
                 try (ResultSet rs = ps.executeQuery()) {
-                    stored = rs.next() ? rs.getInt("poids") : null;
+                    int value = rs.next() ? rs.getInt("poids") : 0;
+                    stored = value == 0 ? null : value; // a row holding only a level has no weight
                 }
             }
             if (poids == null) {
+                // The row may hold the level chosen for this rule: then only the weight goes.
                 try (PreparedStatement ps = scope.prepareScoped(
-                        connection, "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ?")) {
+                        connection,
+                        "DELETE FROM ponderation_contrainte WHERE edition_id = ? AND nom = ? AND obligatoire IS NULL")) {
+                    ps.setString(2, nom);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "UPDATE ponderation_contrainte SET poids = NULL WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
                     ps.executeUpdate();
                 }

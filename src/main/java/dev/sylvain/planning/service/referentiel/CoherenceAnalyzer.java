@@ -16,7 +16,6 @@ import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.analyse.ViolationFormatter;
-import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -687,7 +686,7 @@ public final class CoherenceAnalyzer {
         TreeSet<String> regles = new TreeSet<>();
         int places = 0;
         for (PlanningDiagnosticService.ConstraintDiagnostic diagnostic : diagnostics) {
-            if (!ConstraintCatalog.NOMS_DURS.contains(diagnostic.name())) {
+            if (!diagnostic.hard()) {
                 continue;
             }
             long touchees = diagnostic.references().stream()
@@ -723,10 +722,10 @@ public final class CoherenceAnalyzer {
             ViolationFormatter.ViolationReference reference,
             Map<Long, LocalDate> joursParCreneau) {
         return switch (verrouillage.target().orElse(null)) {
-            case VerrouillageTarget.OnAnimateur(String animateurId) -> animateurId.equals(reference.animateurId());
-            case VerrouillageTarget.OnStand(String standId) -> standId.equals(reference.standId());
-            case VerrouillageTarget.OnCreneau(long creneauId) ->
-                Long.valueOf(creneauId).equals(reference.creneauId());
+            case VerrouillageTarget.OnStandAndJour(String standId, LocalDate jour) ->
+                standId.equals(reference.standId())
+                        && reference.creneauId() != null
+                        && jour.equals(joursParCreneau.get(reference.creneauId()));
             case VerrouillageTarget.OnJour(LocalDate jour) ->
                 reference.creneauId() != null && jour.equals(joursParCreneau.get(reference.creneauId()));
             case VerrouillageTarget.OnAnimateurAndCreneau(String animateurId, long creneauId) ->
@@ -848,10 +847,10 @@ public final class CoherenceAnalyzer {
      * The counts behind {@link EtatTypologie}, for one game category.
      *
      * @param competents  animateurs holding an appreciation on it, whatever the
-     *                    level — a polyvalent holding only the ninja category is
+     *                    level — a polyvalent holding only the polyvalent category is
      *                    <b>not</b> one (ADR 0017: a reinforcement, never a
      *                    specialist)
-     * @param polyvalents the ninjas who could still take its stands without
+     * @param polyvalents the polyvalents who could still take its stands without
      *                    holding it — what « tenable seulement par les polyvalents »
      *                    counts
      * @param souhaits    animateurs who wished for it
@@ -871,7 +870,7 @@ public final class CoherenceAnalyzer {
     /**
      * The usage of every game category of {@code typologies}, in their order.
      *
-     * <p>Three choices, each held by a shared case. The ninja category is not
+     * <p>Three choices, each held by a shared case. The polyvalent category is not
      * proposed by stands but held by people, so it is judged on its holders
      * alone: held, nothing to say; held by nobody, unused. An edition without
      * any animateur raises no orphan: the Référentiels step already says the
@@ -881,15 +880,15 @@ public final class CoherenceAnalyzer {
      */
     public static List<TypologieUsage> typologieUsages(
             Collection<TypologieItem> typologies, Collection<Stand> stands, Collection<Animateur> animateurs) {
-        String ninjaId = typologies.stream()
-                .filter(TypologieItem::ninja)
+        String polyvalentId = typologies.stream()
+                .filter(TypologieItem::polyvalent)
                 .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null);
         List<TypologieUsage> usages = new ArrayList<>();
         for (TypologieItem typologie : typologies) {
             String id = typologie.id();
-            HolderCounts holders = HolderCounts.of(id, ninjaId, animateurs);
+            HolderCounts holders = HolderCounts.of(id, polyvalentId, animateurs);
             int competents = holders.referents + holders.autonomes + holders.debutants;
             int proposants = (int) stands.stream()
                     .filter(stand -> stand.getTypologiesProposees() != null
@@ -904,7 +903,7 @@ public final class CoherenceAnalyzer {
                     holders.polyvalents,
                     holders.souhaits,
                     proposants,
-                    etat(id.equals(ninjaId), competents, proposants, !animateurs.isEmpty())));
+                    etat(id.equals(polyvalentId), competents, proposants, !animateurs.isEmpty())));
         }
         return List.copyOf(usages);
     }
@@ -917,14 +916,14 @@ public final class CoherenceAnalyzer {
         private int polyvalents;
         private int souhaits;
 
-        static HolderCounts of(String id, String ninjaId, Collection<Animateur> animateurs) {
+        static HolderCounts of(String id, String polyvalentId, Collection<Animateur> animateurs) {
             HolderCounts counts = new HolderCounts();
             for (Animateur animateur : animateurs) {
                 Map<String, NiveauCompetence> competences =
                         animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
                 if (competences.containsKey(id)) {
                     counts.addLevel(competences.get(id));
-                } else if (ninjaId != null && competences.containsKey(ninjaId)) {
+                } else if (polyvalentId != null && competences.containsKey(polyvalentId)) {
                     counts.polyvalents++;
                 }
                 if (animateur.getSouhaits() != null && animateur.getSouhaits().contains(id)) {
@@ -951,8 +950,8 @@ public final class CoherenceAnalyzer {
                 .count();
     }
 
-    private static EtatTypologie etat(boolean ninja, int competents, int stands, boolean rosterEntered) {
-        if (ninja) {
+    private static EtatTypologie etat(boolean polyvalent, int competents, int stands, boolean rosterEntered) {
+        if (polyvalent) {
             return competents > 0 ? EtatTypologie.NORMALE : EtatTypologie.INUTILISEE;
         }
         if (stands == 0) {

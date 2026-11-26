@@ -8,6 +8,8 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.WrittenContrainteAdHoc;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
@@ -18,8 +20,12 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -39,32 +45,66 @@ public class ParametresMcpTools {
 
     private final ReferenceDataService referenceDataService;
 
+    private final CurrentAction currentAction;
+
     @Inject
-    ParametresMcpTools(ReferenceDataService referenceDataService) {
+    ParametresMcpTools(ReferenceDataService referenceDataService, CurrentAction currentAction) {
         this.referenceDataService = referenceDataService;
+        this.currentAction = currentAction;
     }
 
-    /* ----------------------------- Legal parameters ------------------------- */
+    private static final String SECTIONS = "legal, organisation, notifications, calcul";
+
+    private static final String ARG_MODIFIE_LE = "modifieLe";
 
     @Tool(
-            name = "consulter_parametres_legaux",
-            description = "Consulte les paramètres légaux appliqués par le solveur (durées maximales, pauses, repos).",
+            name = "consulter_parametres",
+            description = "Consulte une section des paramètres de l'édition : « legal » (durées maximales, pauses, "
+                    + "repos, coupure repas), « organisation » (les seuils de qualité d'organisation lus par les règles "
+                    + "moyennes dosables : emplacements et typologies distincts, jours d'affilée, services tardif et "
+                    + "matinal, temps de trajet, arrivée groupée), « notifications » (heure du rappel de la veille, "
+                    + "délai de relance, ancienneté d'un échange sans réponse ; rien ne part d'une édition qui n'est "
+                    + "pas l'édition active, voir lister_editions) ou « calcul » (le mail de fin de "
+                    + "résolution de l'édition, avec le budget de calcul de l'instance : durée maximale d'une "
+                    + "résolution, arrêt sur plateau et plafond, que fixe l'exploitant et que cet outil ne modifie "
+                    + "pas).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ParametresLegauxView getParametresLegaux(
+    ParametresSectionView getParametres(
+            @ToolArg(description = "La section : " + SECTIONS) String section,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return toView(referenceDataService.getParametresLegaux());
+        return new ParametresSectionView(
+                section,
+                switch (section(section)) {
+                    case "legal" -> getParametresLegaux(edition);
+                    case "organisation" -> ParametresQualiteView.of(referenceDataService.getParametresQualite());
+                    case "notifications" -> referenceDataService.getParametresNotifications();
+                    default ->
+                        toView(
+                                referenceDataService.getParametresSolveur(),
+                                referenceDataService.getSolverBudgetBounds());
+                });
     }
 
     @Tool(
-            name = "modifier_parametres_legaux",
-            description = "Modifie les paramètres légaux. Seuls les champs fournis sont modifiés. Les plafonds "
-                    + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés "
-                    + "au-delà, et les planchers de pause (20 min pour un majeur, 30 pour un mineur) en deçà.",
+            name = "modifier_parametres",
+            description = "Modifie une section des paramètres de l'édition (voir consulter_parametres). Seuls les "
+                    + "champs fournis sont modifiés, et un champ qui n'est pas de la section demandée est refusé. "
+                    + "« legal » : les plafonds d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un "
+                    + "mineur) sont refusés au-delà, et les planchers de pause (20 min pour un majeur, 30 pour un "
+                    + "mineur) en deçà. « organisation » : aucun seuil n'est une obligation légale, ils règlent le "
+                    + "confort du planning ; le temps de marche entre deux emplacements vaut distance à vol d'oiseau "
+                    + "× facteurDetour ÷ vitesseMarcheKmH, et un battement entre deux postes peut en manquer "
+                    + "toleranceTrajetMinutes avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit. "
+                    + "« notifications » : cet outil n'envoie rien, les envois de nuit ne partent que de l'édition "
+                    + "active (activer_edition) ; l'heure du rappel ne peut pas dépasser 23:00. « calcul » : "
+                    + "seul le mail de fin de résolution se règle ici, le budget de calcul est celui de "
+                    + "l'instance. Les sections répondent avec leur modifieLe : renvoyé à l'écriture, il refuse la "
+                    + "modification si la section a changé depuis cette lecture ; omis, rien n'est contrôlé.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -72,7 +112,8 @@ public class ParametresMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ParametresLegauxView updateParametresLegaux(
+    ParametresSectionView updateParametres(
+            @ToolArg(description = "La section : " + SECTIONS) String section,
             @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false)
                     Integer dureeHebdomadaireMaxMinutes,
             @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false)
@@ -107,8 +148,203 @@ public class ParametresMcpTools {
                                     + "dans le tableau d'équité (HH:MM)",
                             required = false)
                     String heureDebutSoiree,
+            @ToolArg(description = "Emplacements distincts par jour et par animateur, au moins 1", required = false)
+                    Integer maxEmplacementsDistinctsParJour,
+            @ToolArg(description = "Typologies distinctes par animateur sur l'édition, au moins 1", required = false)
+                    Integer typologiesDistinctesMax,
+            @ToolArg(description = "Jours travaillés d'affilée, au moins 1", required = false)
+                    Integer joursConsecutifsMax,
+            @ToolArg(description = "Heure d'un service tardif (HH:MM)", required = false) String heureServiceTardif,
+            @ToolArg(description = "Heure d'un service matinal (HH:MM)", required = false) String heureServiceMatinal,
+            @ToolArg(description = "Repos souhaité après un service tardif, en minutes", required = false)
+                    Integer reposSouhaiteApresServiceTardifMinutes,
+            @ToolArg(description = "Vitesse de marche, en km/h (au plus 15)", required = false) Double vitesseMarcheKmH,
+            @ToolArg(description = "Facteur de détour, entre 1 et 5", required = false) Double facteurDetour,
+            @ToolArg(description = "Tolérance de trajet, en minutes (0 à 120)", required = false)
+                    Integer toleranceTrajetMinutes,
+            @ToolArg(
+                            description = "Tolérance d'une arrivée groupée, en minutes (0 à 240) : l'écart "
+                                    + "d'arrivée ou de départ toléré entre les membres d'un covoiturage",
+                            required = false)
+                    Integer toleranceArriveeGroupeeMinutes,
+            @ToolArg(
+                            description = "true : une résolution terminée envoie son résultat par mail à l'adresse "
+                                    + "d'administration (inerte tant que MAIL_ADMIN n'est pas configuré)",
+                            required = false)
+                    Boolean mailFinResolution,
+            @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
+                    String heureRappelVeille,
+            @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false)
+                    Integer delaiRelanceHeures,
+            @ToolArg(
+                            description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours",
+                            required = false)
+                    Integer ancienneteEchangeJours,
+            @ToolArg(
+                            description = "modifieLe de la section lu avant la modification (précondition : refusé "
+                                    + "si la section a changé depuis ; omis, pas de contrôle)",
+                            required = false)
+                    String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+        Instant expected = McpArgs.instant(modifieLe, ARG_MODIFIE_LE);
+        Map<String, Object> given = new LinkedHashMap<>();
+        given.put("dureeHebdomadaireMaxMinutes", dureeHebdomadaireMaxMinutes);
+        given.put("dureeHebdomadaireMaxMineurMinutes", dureeHebdomadaireMaxMineurMinutes);
+        given.put("dureeVacationMaxMinutes", dureeVacationMaxMinutes);
+        given.put("reposQuotidienMinimalMinutes", reposQuotidienMinimalMinutes);
+        given.put("dureePauseMinutes", dureePauseMinutes);
+        given.put("coupureRepasMinutes", coupureRepasMinutes);
+        given.put("coupureRepasMidiDebut", coupureRepasMidiDebut);
+        given.put("coupureRepasMidiFin", coupureRepasMidiFin);
+        given.put("coupureRepasSoirDebut", coupureRepasSoirDebut);
+        given.put("coupureRepasSoirFin", coupureRepasSoirFin);
+        given.put("heureDebutSoiree", heureDebutSoiree);
+        given.put("maxEmplacementsDistinctsParJour", maxEmplacementsDistinctsParJour);
+        given.put("typologiesDistinctesMax", typologiesDistinctesMax);
+        given.put("joursConsecutifsMax", joursConsecutifsMax);
+        given.put("heureServiceTardif", heureServiceTardif);
+        given.put("heureServiceMatinal", heureServiceMatinal);
+        given.put("reposSouhaiteApresServiceTardifMinutes", reposSouhaiteApresServiceTardifMinutes);
+        given.put("vitesseMarcheKmH", vitesseMarcheKmH);
+        given.put("facteurDetour", facteurDetour);
+        given.put("toleranceTrajetMinutes", toleranceTrajetMinutes);
+        given.put("toleranceArriveeGroupeeMinutes", toleranceArriveeGroupeeMinutes);
+        given.put("mailFinResolution", mailFinResolution);
+        given.put("heureRappelVeille", heureRappelVeille);
+        given.put("delaiRelanceHeures", delaiRelanceHeures);
+        given.put("ancienneteEchangeJours", ancienneteEchangeJours);
+        String chosen = section(section);
+        // The journal line names the section, as the REST route of that section does.
+        switch (chosen) {
+            case "legal" -> currentAction.action("PARAMETRES_LEGAUX_MODIFIES");
+            case "organisation" -> currentAction.action("PARAMETRES_QUALITE_MODIFIES");
+            case "notifications" -> currentAction.action("PARAMETRES_NOTIFICATIONS_MODIFIES");
+            default -> currentAction.action("PARAMETRES_SOLVEUR_MODIFIES");
+        }
+        given.values().removeIf(Objects::isNull);
+        given.keySet().stream()
+                .filter(name -> !OWN_ARGUMENTS.get(chosen).contains(name))
+                .findFirst()
+                .ifPresent(name -> {
+                    throw new BusinessError.Invalid("L'argument « " + name + " » n'est pas de la section « " + chosen
+                            + " » : voir la" + " description de l'outil, ou passez par la section qui le porte.");
+                });
+        return new ParametresSectionView(
+                chosen,
+                switch (chosen) {
+                    case "legal" ->
+                        updateParametresLegaux(
+                                dureeHebdomadaireMaxMinutes,
+                                dureeHebdomadaireMaxMineurMinutes,
+                                dureeVacationMaxMinutes,
+                                reposQuotidienMinimalMinutes,
+                                dureePauseMinutes,
+                                coupureRepasMinutes,
+                                coupureRepasMidiDebut,
+                                coupureRepasMidiFin,
+                                coupureRepasSoirDebut,
+                                coupureRepasSoirFin,
+                                heureDebutSoiree,
+                                expected,
+                                edition);
+                    case "organisation" ->
+                        updateParametresQualite(
+                                maxEmplacementsDistinctsParJour,
+                                typologiesDistinctesMax,
+                                joursConsecutifsMax,
+                                heureServiceTardif,
+                                heureServiceMatinal,
+                                reposSouhaiteApresServiceTardifMinutes,
+                                vitesseMarcheKmH,
+                                facteurDetour,
+                                toleranceTrajetMinutes,
+                                toleranceArriveeGroupeeMinutes,
+                                expected,
+                                edition);
+                    case "notifications" ->
+                        updateParametresNotifications(
+                                heureRappelVeille, delaiRelanceHeures, ancienneteEchangeJours, expected, edition);
+                    default -> updateParametresSolveur(mailFinResolution, expected, edition);
+                });
+    }
+
+    /** What each section accepts, for the refusal of a field that belongs to another. */
+    private static final Map<String, Set<String>> OWN_ARGUMENTS = Map.of(
+            "legal",
+                    Set.of(
+                            "dureeHebdomadaireMaxMinutes",
+                            "dureeHebdomadaireMaxMineurMinutes",
+                            "dureeVacationMaxMinutes",
+                            "reposQuotidienMinimalMinutes",
+                            "dureePauseMinutes",
+                            "coupureRepasMinutes",
+                            "coupureRepasMidiDebut",
+                            "coupureRepasMidiFin",
+                            "coupureRepasSoirDebut",
+                            "coupureRepasSoirFin",
+                            "heureDebutSoiree"),
+            "organisation",
+                    Set.of(
+                            "maxEmplacementsDistinctsParJour",
+                            "typologiesDistinctesMax",
+                            "joursConsecutifsMax",
+                            "heureServiceTardif",
+                            "heureServiceMatinal",
+                            "reposSouhaiteApresServiceTardifMinutes",
+                            "vitesseMarcheKmH",
+                            "facteurDetour",
+                            "toleranceTrajetMinutes",
+                            "toleranceArriveeGroupeeMinutes"),
+            "notifications", Set.of("heureRappelVeille", "delaiRelanceHeures", "ancienneteEchangeJours"),
+            "calcul", Set.of("mailFinResolution"));
+
+    private static String section(String section) {
+        String chosen = section == null ? "" : section.strip().toLowerCase(java.util.Locale.ROOT);
+        if (!OWN_ARGUMENTS.containsKey(chosen)) {
+            throw new BusinessError.Invalid("Section inconnue : « " + section + " ». Sections : " + SECTIONS + ".");
+        }
+        return chosen;
+    }
+
+    /**
+     * One section as the tools answer it. A section whose view carries
+     * warnings ({@link WarningCarrier}) keeps them inside it; notifications,
+     * which no solve reads, never carry one.
+     */
+    public record ParametresSectionView(String section, Object parametres)
+            implements WarningCarrier<ParametresSectionView> {
+
+        @Override
+        public ParametresSectionView withWarning(String code) {
+            return parametres instanceof WarningCarrier<?> carrier
+                    ? new ParametresSectionView(section, carrier.withWarning(code))
+                    : this;
+        }
+    }
+
+    /* ----------------------------- Per-section helpers ------------------------- */
+
+    ParametresLegauxView getParametresLegaux(String edition) {
+        return toView(referenceDataService.getParametresLegaux());
+    }
+
+    ParametresLegauxView updateParametresLegaux(
+            Integer dureeHebdomadaireMaxMinutes,
+            Integer dureeHebdomadaireMaxMineurMinutes,
+            Integer dureeVacationMaxMinutes,
+            Integer reposQuotidienMinimalMinutes,
+            Integer dureePauseMinutes,
+            Integer coupureRepasMinutes,
+            String coupureRepasMidiDebut,
+            String coupureRepasMidiFin,
+            String coupureRepasSoirDebut,
+            String coupureRepasSoirFin,
+            String heureDebutSoiree,
+            Instant modifieLe,
+            String edition) {
         ParametresLegaux parametres = referenceDataService.getParametresLegaux();
+        // The stamp read here is not the caller's: only the one it sent is a precondition.
+        parametres.setModifieLe(modifieLe);
         if (dureeHebdomadaireMaxMinutes != null) {
             parametres.setDureeHebdomadaireMaxMinutes(dureeHebdomadaireMaxMinutes);
         }
@@ -147,59 +383,23 @@ public class ParametresMcpTools {
 
     /* ---------------------------- Quality parameters ------------------------ */
 
-    @Tool(
-            name = "consulter_parametres_qualite",
-            description = "Consulte les seuils de « Qualité d'organisation » de l'édition, lus par les règles "
-                    + "moyennes dosables : emplacements distincts par jour, typologies distinctes par animateur, "
-                    + "jours travaillés d'affilée, heures d'un service tardif et d'un service matinal avec le repos "
-                    + "souhaité entre les deux, et le temps de trajet entre emplacements (vitesse de marche en km/h, "
-                    + "facteur de détour, tolérance en minutes), et la tolérance d'une arrivée groupée.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    ParametresQualiteView getParametresQualite(
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    ParametresQualiteView getParametresQualite(String edition) {
         return ParametresQualiteView.of(referenceDataService.getParametresQualite());
     }
 
-    @Tool(
-            name = "modifier_parametres_qualite",
-            description = "Modifie les seuils de « Qualité d'organisation ». Seuls les champs fournis sont "
-                    + "modifiés. Aucun n'est une obligation légale : ils règlent le confort du planning. Le temps de "
-                    + "marche entre deux emplacements vaut distance à vol d'oiseau × facteurDetour ÷ "
-                    + "vitesseMarcheKmH ; un battement entre deux postes peut en manquer toleranceTrajetMinutes "
-                    + "avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    @WarnsWhileSolving
     ParametresQualiteView updateParametresQualite(
-            @ToolArg(description = "Emplacements distincts par jour et par animateur, au moins 1", required = false)
-                    Integer maxEmplacementsDistinctsParJour,
-            @ToolArg(description = "Typologies distinctes par animateur sur l'édition, au moins 1", required = false)
-                    Integer typologiesDistinctesMax,
-            @ToolArg(description = "Jours travaillés d'affilée, au moins 1", required = false)
-                    Integer joursConsecutifsMax,
-            @ToolArg(description = "Heure d'un service tardif (HH:MM)", required = false) String heureServiceTardif,
-            @ToolArg(description = "Heure d'un service matinal (HH:MM)", required = false) String heureServiceMatinal,
-            @ToolArg(description = "Repos souhaité après un service tardif, en minutes", required = false)
-                    Integer reposSouhaiteApresServiceTardifMinutes,
-            @ToolArg(description = "Vitesse de marche, en km/h (au plus 15)", required = false) Double vitesseMarcheKmH,
-            @ToolArg(description = "Facteur de détour, entre 1 et 5", required = false) Double facteurDetour,
-            @ToolArg(description = "Tolérance de trajet, en minutes (0 à 120)", required = false)
-                    Integer toleranceTrajetMinutes,
-            @ToolArg(
-                            description = "Tolérance d'une arrivée groupée, en minutes (0 à 240) : l'écart "
-                                    + "d'arrivée ou de départ toléré entre les membres d'un covoiturage",
-                            required = false)
-                    Integer toleranceArriveeGroupeeMinutes,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+            Integer maxEmplacementsDistinctsParJour,
+            Integer typologiesDistinctesMax,
+            Integer joursConsecutifsMax,
+            String heureServiceTardif,
+            String heureServiceMatinal,
+            Integer reposSouhaiteApresServiceTardifMinutes,
+            Double vitesseMarcheKmH,
+            Double facteurDetour,
+            Integer toleranceTrajetMinutes,
+            Integer toleranceArriveeGroupeeMinutes,
+            Instant modifieLe,
+            String edition) {
         ParametresQualite actuels = referenceDataService.getParametresQualite();
         ParametresQualite nouveaux = new ParametresQualite(
                 maxEmplacementsDistinctsParJour == null
@@ -221,7 +421,8 @@ public class ParametresMcpTools {
                 toleranceTrajetMinutes == null ? actuels.toleranceTrajetMinutes() : toleranceTrajetMinutes,
                 toleranceArriveeGroupeeMinutes == null
                         ? actuels.toleranceArriveeGroupeeMinutes()
-                        : toleranceArriveeGroupeeMinutes);
+                        : toleranceArriveeGroupeeMinutes,
+                modifieLe);
         return ParametresQualiteView.of(referenceDataService.updateParametresQualite(nouveaux));
     }
 
@@ -237,6 +438,7 @@ public class ParametresMcpTools {
             double facteurDetour,
             int toleranceTrajetMinutes,
             int toleranceArriveeGroupeeMinutes,
+            Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresQualiteView> {
 
@@ -252,6 +454,7 @@ public class ParametresMcpTools {
                     parametres.facteurDetour(),
                     parametres.toleranceTrajetMinutes(),
                     parametres.toleranceArriveeGroupeeMinutes(),
+                    parametres.modifieLe(),
                     List.of());
         }
 
@@ -268,114 +471,45 @@ public class ParametresMcpTools {
                     facteurDetour,
                     toleranceTrajetMinutes,
                     toleranceArriveeGroupeeMinutes,
+                    modifieLe,
                     WarningCodes.with(avertissements, code));
         }
     }
 
     /* ---------------------------- Solver parameters ------------------------- */
 
-    @Tool(
-            name = "consulter_parametres_solveur",
-            description = "Consulte le budget de calcul de l'édition : durée maximale d'une résolution et arrêt "
-                    + "sur plateau (secondes sans amélioration d'un planning déjà faisable, 0 = jamais), null = défaut "
-                    + "de l'instance ; et, sous instance, les défauts et les plafonds fixés par l'exploitant.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    ParametresSolveurView getParametresSolveur(
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    ParametresSolveurView getParametresSolveur(String edition) {
         return toView(referenceDataService.getParametresSolveur(), referenceDataService.getSolverBudgetBounds());
     }
 
-    @Tool(
-            name = "modifier_parametres_solveur",
-            description = "Modifie le budget de calcul de l'édition. Un argument absent garde sa valeur. Une "
-                    + "valeur changée au-dessus du plafond de l'instance est refusée (voir "
-                    + "consulter_parametres_solveur) ; une valeur gardée telle quelle ne l'est pas, même au-dessus, "
-                    + "et tourne au plafond. Refusé aussi si le plateau dépasse la durée.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    @WarnsWhileSolving
-    ParametresSolveurView updateParametresSolveur(
-            @ToolArg(
-                            description = "Durée maximale d'une résolution, en secondes (strictement positive)",
-                            required = false)
-                    Integer dureeResolutionSecondes,
-            @ToolArg(
-                            description = "Arrêt si le planning, déjà faisable, ne s'améliore plus depuis ce nombre "
-                                    + "de secondes ; 0 = jamais",
-                            required = false)
-                    Integer plateauSecondes,
-            @ToolArg(description = "true : durée et plateau reviennent au défaut de l'instance", required = false)
-                    Boolean revenirAuDefaut,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        // The mail switch is not tunable here; it is kept as is.
+    ParametresSolveurView updateParametresSolveur(Boolean mailFinResolution, Instant modifieLe, String edition) {
         ParametresSolveur actuels = referenceDataService.getParametresSolveur();
-        boolean defaut = Boolean.TRUE.equals(revenirAuDefaut);
-        ParametresSolveur voulus = new ParametresSolveur(
-                defaut ? null : givenOr(dureeResolutionSecondes, actuels.dureeResolutionSecondes()),
-                defaut ? null : givenOr(plateauSecondes, actuels.plateauSecondes()),
-                actuels.mailFinResolution());
+        ParametresSolveur voulus =
+                new ParametresSolveur(givenOr(mailFinResolution, actuels.mailFinResolution()), modifieLe);
         return toView(
                 referenceDataService.updateParametresSolveur(voulus), referenceDataService.getSolverBudgetBounds());
     }
 
     /* ------------------------- Notification parameters ---------------------- */
 
-    @Tool(
-            name = "consulter_parametres_notifications",
-            description = "Consulte les délais des notifications planifiées de l'édition : l'heure du rappel de la "
-                    + "veille, le délai avant relance des animateurs qui n'ont pas confirmé, et l'ancienneté à partir "
-                    + "de laquelle une demande d'échange sans réponse est signalée. Rien ne part d'une édition qui "
-                    + "n'est pas l'édition active (voir lister_editions).",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    ParametresNotifications getParametresNotifications(
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+    ParametresNotifications getParametresNotifications(String edition) {
         return referenceDataService.getParametresNotifications();
     }
 
-    @Tool(
-            name = "modifier_parametres_notifications",
-            description = "Modifie les délais des notifications planifiées. Seuls les champs fournis sont "
-                    + "modifiés. Cet outil n'envoie rien : les envois de nuit (rappel de la veille, relance des "
-                    + "non-confirmés, alerte sur les échanges sans réponse) ne partent que de l'édition active "
-                    + "(activer_edition). L'heure du rappel ne peut pas dépasser 23:00 — plus tard, la tâche horaire "
-                    + "passerait par-dessus et le rappel ne partirait jamais.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
     ParametresNotifications updateParametresNotifications(
-            @ToolArg(description = "Heure du rappel de la veille (HH:MM), au plus tard 23:00", required = false)
-                    String heureRappelVeille,
-            @ToolArg(description = "Délai avant relance des non-confirmés, en heures", required = false)
-                    Integer delaiRelanceHeures,
-            @ToolArg(
-                            description = "Ancienneté d'une demande d'échange sans réponse avant alerte, en jours",
-                            required = false)
-                    Integer ancienneteEchangeJours,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
+            String heureRappelVeille,
+            Integer delaiRelanceHeures,
+            Integer ancienneteEchangeJours,
+            Instant modifieLe,
+            String edition) {
         ParametresNotifications actuels = referenceDataService.getParametresNotifications();
         return referenceDataService.updateParametresNotifications(new ParametresNotifications(
                 heureRappelVeille == null
                         ? actuels.heureRappelVeille()
                         : McpArgs.heure(heureRappelVeille, "heureRappelVeille"),
                 delaiRelanceHeures == null ? actuels.delaiRelanceHeures() : delaiRelanceHeures,
-                ancienneteEchangeJours == null ? actuels.ancienneteEchangeJours() : ancienneteEchangeJours));
+                ancienneteEchangeJours == null ? actuels.ancienneteEchangeJours() : ancienneteEchangeJours,
+                modifieLe));
     }
 
     /* -------------------------- Contraintes ad hoc -------------------------- */
@@ -480,7 +614,7 @@ public class ParametresMcpTools {
     }
 
     /** The value the caller gave, or the current one when it gave none. */
-    private static Integer givenOr(Integer given, Integer current) {
+    private static <T> T givenOr(T given, T current) {
         return given != null ? given : current;
     }
 
@@ -509,12 +643,12 @@ public class ParametresMcpTools {
                 parametres.getCoupureRepasMidiFin(),
                 parametres.getCoupureRepasSoirDebut(),
                 parametres.getCoupureRepasSoirFin(),
-                parametres.getHeureDebutSoiree());
+                parametres.getHeureDebutSoiree(),
+                parametres.getModifieLe());
     }
 
     static ParametresSolveurView toView(ParametresSolveur parametres, SolverBudgetBounds bounds) {
-        return new ParametresSolveurView(
-                parametres.dureeResolutionSecondes(), parametres.plateauSecondes(), bounds, List.of());
+        return new ParametresSolveurView(parametres.mailFinResolution(), bounds, parametres.modifieLe(), List.of());
     }
 
     static ContrainteAdHocView toView(ContrainteAdHoc contrainte) {
@@ -543,6 +677,7 @@ public class ParametresMcpTools {
             LocalTime coupureRepasSoirDebut,
             LocalTime coupureRepasSoirFin,
             LocalTime heureDebutSoiree,
+            Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresLegauxView> {
 
@@ -557,7 +692,8 @@ public class ParametresMcpTools {
                 LocalTime coupureRepasMidiFin,
                 LocalTime coupureRepasSoirDebut,
                 LocalTime coupureRepasSoirFin,
-                LocalTime heureDebutSoiree) {
+                LocalTime heureDebutSoiree,
+                Instant modifieLe) {
             this(
                     dureeHebdomadaireMaxMinutes,
                     dureeHebdomadaireMaxMineurMinutes,
@@ -570,6 +706,7 @@ public class ParametresMcpTools {
                     coupureRepasSoirDebut,
                     coupureRepasSoirFin,
                     heureDebutSoiree,
+                    modifieLe,
                     List.of());
         }
 
@@ -587,25 +724,26 @@ public class ParametresMcpTools {
                     coupureRepasSoirDebut,
                     coupureRepasSoirFin,
                     heureDebutSoiree,
+                    modifieLe,
                     WarningCodes.with(avertissements, code));
         }
     }
 
     /**
-     * The edition's budget — {@code null} follows the instance — and the
-     * instance's defaults and ceilings.
+     * The edition's end-of-solve mail switch, and the instance's solve budget
+     * the operator set — read-only here.
      */
     public record ParametresSolveurView(
-            Integer dureeResolutionSecondes,
-            Integer plateauSecondes,
+            boolean mailFinResolution,
             SolverBudgetBounds instance,
+            Instant modifieLe,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresSolveurView> {
 
         @Override
         public ParametresSolveurView withWarning(String code) {
             return new ParametresSolveurView(
-                    dureeResolutionSecondes, plateauSecondes, instance, WarningCodes.with(avertissements, code));
+                    mailFinResolution, instance, modifieLe, WarningCodes.with(avertissements, code));
         }
     }
 

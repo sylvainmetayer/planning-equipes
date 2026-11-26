@@ -12,7 +12,7 @@ Le planning est un problème de *shift rostering* au sens de Timefold : des anim
 
 Le statut mineur, majeur ou de moins de 16 ans se dérive de `dateNaissance` **à la date du créneau** (`isMineurOn`, `isMajeurOn`). Trois régimes légaux en dépendent et un booléen se désynchroniserait.
 
-Le drapeau « polyvalent » se dérive au chargement du problème : un animateur est polyvalent parce que ses compétences contiennent la typologie marquée `ninja`.
+Le drapeau « polyvalent » se dérive au chargement du problème : un animateur est polyvalent parce que ses compétences contiennent la typologie marquée `polyvalent`.
 
 Les typologies de jeu sont des lignes d'un référentiel CRUD (table `typologie`), pas un enum Java. `Stand.typologiesProposees` et `Animateur.competences` y renvoient par clé étrangère, donc on en crée ou renomme sans toucher au code. Une typologie porte deux champs de plus :
 

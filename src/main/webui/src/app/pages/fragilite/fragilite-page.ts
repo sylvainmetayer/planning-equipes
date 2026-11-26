@@ -21,7 +21,14 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { errorPrefix } from '../../core/error-message';
 import { libelleJour } from '../../core/horaire-stand';
-import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
+import {
+  AnimateurFragilite,
+  Avertissement,
+  CompetenceRare,
+  PlanningEvenement,
+  SeveriteFragilite,
+} from '../../core/models';
+import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { formatHeure } from '../../core/time-of-day';
@@ -99,6 +106,9 @@ export class FragilitePage {
   private readonly route = inject(ActivatedRoute);
   private readonly referentiel = inject(ReferenceDataStore);
   private readonly verrous = inject(VerrouillageStore);
+  private readonly planningState = inject(PlanningStateService);
+  /** Where a person's seats are read, to lock them one timeslot at a time. */
+  private readonly planning = signal<PlanningEvenement | null>(null);
   /** A solve holding the edition refuses the lock: « Verrouiller » waits for it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
@@ -171,6 +181,10 @@ export class FragilitePage {
     void this.referentiel.reload(['typologies', 'stands']).catch(() => undefined);
     // Who is locked already: their « Verrouiller » says so instead.
     void this.verrous.reload().catch(() => undefined);
+    this.planningState
+      .loadForDisplay()
+      .then((planning) => this.planning.set(planning))
+      .catch(() => undefined);
     const params = currentViewParams();
     this.view.set(readView(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
@@ -211,8 +225,23 @@ export class FragilitePage {
     return $localize`:@@fragilite.geste.verrouiller.label:Verrouiller le planning de ${nom}:nom:`;
   }
 
+  /** The timeslots this person holds a seat on, one id each. */
+  private creneauxOf(animateurId: string): number[] {
+    const ids = (this.planning()?.postes ?? [])
+      .filter((poste) => poste.animateur?.id === animateurId)
+      .map((poste) => poste.creneau?.id);
+    return [...new Set(ids.filter((id): id is number => typeof id === 'number'))];
+  }
+
+  /** Kept on every timeslot they hold — « Verrouiller » has nothing left to do. */
   protected isLocked(animateurId: string): boolean {
-    return this.verrous.estAnimateurVerrouille(animateurId);
+    const creneaux = this.creneauxOf(animateurId);
+    return (
+      creneaux.length > 0 &&
+      creneaux.every((creneauId) =>
+        this.verrous.isAnimateurCreneauVerrouille(animateurId, creneauId),
+      )
+    );
   }
 
   /**
@@ -239,10 +268,22 @@ export class FragilitePage {
     this.lockError.set('');
     this.lockWarning.set('');
     try {
-      const avertissements = await this.verrous.create({
-        type: 'ANIMATEUR',
-        animateurId: ligne.animateurId,
-      });
+      // One lock per timeslot the person holds: since ADR 0109 there is no
+      // lock on a whole schedule.
+      const planning = await this.planningState.require();
+      this.planning.set(planning);
+      const avertissements: Avertissement[] = [];
+      for (const creneauId of this.creneauxOf(ligne.animateurId)) {
+        if (!this.verrous.isAnimateurCreneauVerrouille(ligne.animateurId, creneauId)) {
+          avertissements.push(
+            ...(await this.verrous.create({
+              type: 'ANIMATEUR_CRENEAU',
+              animateurId: ligne.animateurId,
+              creneauId,
+            })),
+          );
+        }
+      }
       const nom = ligne.nom;
       const sieges = ligne.affectations;
       this.lockMessage.set(
@@ -271,11 +312,11 @@ export class FragilitePage {
   protected explicationCompetence(ligne: CompetenceRare): string {
     if (ligne.specialistes === 0) {
       return ligne.renforts > 0
-        ? $localize`:@@fragilite.competence.aucunSpecialisteRenfort:Aucun spécialiste de ce stand n'est disponible ; seuls ${ligne.renforts}:renforts: ninjas pourraient le tenir.`
+        ? $localize`:@@fragilite.competence.aucunSpecialisteRenfort:Aucun spécialiste de ce stand n'est disponible ; seuls ${ligne.renforts}:renforts: polyvalents pourraient le tenir.`
         : $localize`:@@fragilite.competence.aucunSpecialiste:Personne n'est compétent pour ce stand sur ce créneau.`;
     }
     return ligne.renforts > 0
-      ? $localize`:@@fragilite.competence.unSpecialisteRenfort:Une seule personne compétente, épaulée par ${ligne.renforts}:renforts: ninjas.`
-      : $localize`:@@fragilite.competence.unSpecialiste:Une seule personne compétente, et aucun ninja pour la remplacer.`;
+      ? $localize`:@@fragilite.competence.unSpecialisteRenfort:Une seule personne compétente, épaulée par ${ligne.renforts}:renforts: polyvalents.`
+      : $localize`:@@fragilite.competence.unSpecialiste:Une seule personne compétente, et aucun polyvalent pour la remplacer.`;
   }
 }

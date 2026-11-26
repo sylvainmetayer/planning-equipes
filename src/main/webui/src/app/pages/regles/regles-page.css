@@ -33,6 +33,29 @@
   }
 }
 
+/* The three blocks of the rules tab, one under the other. */
+.regles-blocs {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.regles-bloc h2 {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+}
+
+.regles-bloc .regles-sous-titre {
+  margin-bottom: 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.regles-lien-parametres {
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
 /* Dense on purpose: twenty-five satisfied hard rules fit on one screen. */
 .regles-table {
   width: 100%;
@@ -195,44 +218,12 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.regles-grille {
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 8px;
-  margin: 1rem 0 0;
-  padding: 0.5rem 1rem;
-}
-
-.regles-grille legend {
-  font: var(--mat-sys-title-small);
-  padding: 0 0.25rem;
-}
-
 .regles-save-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 1rem;
   margin: 1rem 0;
-}
-
-.regles-calcul-mail {
-  display: block;
-  margin-top: 1rem;
-}
-
-/* Solve budget fields, moved here from the Solveur page. */
-.solver-duration {
-  display: block;
-  width: 14rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
-}
-
-.solver-duration-unit {
-  display: block;
-  width: 9rem;
-  max-width: 100%;
-  margin-bottom: 1rem;
 }
 
 .constraint-protegee-icon {
@@ -343,10 +334,6 @@
 
 .weight-history-date {
   margin-right: 0.5rem;
-}
-
-.ninja-select {
-  min-width: 18rem;
 }
 
 /* After a write on an adjustment, lock or consigne tab: the relaunch offered in place. */

@@ -162,8 +162,6 @@ public class WebhookEmitter {
                     Notification.AbsenceReportFiled _,
                     Notification.AbsenceReportAccepted _,
                     Notification.CarpoolValidated _,
-                    Notification.CarpoolSetAside _,
-                    Notification.CarpoolCancelled _,
                     Notification.RappelVeille _,
                     Notification.RelanceConfirmation _,
                     // One mail per person, like the two reminders above: the
@@ -198,6 +196,7 @@ public class WebhookEmitter {
 
     static Occurrence occurrence(PlanningPublished published, ApplicationLinks links) {
         Map<String, Object> data = new LinkedHashMap<>();
+        // The id of the published version (ADR 0108): an outgoing contract, so the 3.x key stays.
         data.put("instantaneId", published.snapshotId());
         data.put("destinataires", published.recipients());
         data.put("envoyes", published.sent());

@@ -71,7 +71,7 @@
         <span><i class="pastille niveau-autonome">{{ lettreNiveau('AUTONOME') }}</i>{{ libelleNiveau('AUTONOME') }}</span>
         <span><i class="pastille niveau-referent">{{ lettreNiveau('REFERENT') }}</i>{{ libelleNiveau('REFERENT') }}</span>
         <span><i class="pastille cellule-souhait"></i><ng-container i18n="@@competences.legende.souhait">Typologie souhaitée par l'animateur</ng-container></span>
-        <span><mat-icon class="legende-icone">all_inclusive</mat-icon><ng-container i18n="@@competences.legende.ninja">Typologie ninja : la détenir rend polyvalent</ng-container></span>
+        <span><mat-icon class="legende-icone">all_inclusive</mat-icon><ng-container i18n="@@competences.legende.polyvalent">Typologie polyvalente : la détenir rend compétent sur tous les stands</ng-container></span>
         <span class="legende-clavier" i18n="@@competences.legende.clavier">Clic ou touches 0 à 3 dans une case, S ou le cœur pour le souhait, flèches pour se déplacer, Ctrl+V pour coller un bloc</span>
       </div>
 
@@ -82,10 +82,10 @@
             <tr>
               <th scope="col" class="colonne-animateur" i18n="@@competences.colonne.animateur">Animateur</th>
               @for (typologie of colonnes(); track typologie.id) {
-                <th scope="col" class="colonne-typologie" [class.colonne-ninja]="typologie.ninja"
+                <th scope="col" class="colonne-typologie" [class.colonne-polyvalent]="typologie.polyvalent"
                     [matTooltip]="typologie.code || typologie.label">
-                  @if (typologie.ninja) {
-                    <mat-icon class="ninja-icone" aria-hidden="true">all_inclusive</mat-icon>
+                  @if (typologie.polyvalent) {
+                    <mat-icon class="polyvalent-icone" aria-hidden="true">all_inclusive</mat-icon>
                   }
                   <a class="colonne-typologie-lien" routerLink="/stands" [queryParams]="{ onglet: 'typologies', edit: typologie.id }">{{ typologie.label || typologie.code || typologie.id }}</a>
                   @if (typologie.label && typologie.code) {
@@ -116,7 +116,7 @@
                   </button>
                 </th>
                 @for (typologie of colonnes(); track typologie.id) {
-                  <td class="cellule-competence-cadre" [class.colonne-ninja]="typologie.ninja">
+                  <td class="cellule-competence-cadre" [class.colonne-polyvalent]="typologie.polyvalent">
                     <button type="button"
                             [class]="'cellule-competence ' + classeNiveau(niveau(animateur.id, typologie.id))"
                             [class.cellule-modifiee]="isChanged(animateur.id, typologie.id)"

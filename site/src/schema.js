@@ -22,10 +22,11 @@ const faq = (lang, items) => ({
 
 function docSchema(p, modified) {
   const url = abs(p.url);
-  const home = copy.fr.commun.nav.accueil;
-  const trail = [{ name: home, item: abs(link.fr.accueil) }];
-  if (p.name !== 'README') trail.push({ name: copy.fr.docs.h1, item: abs('/docs/') });
-  trail.push({ name: p.name === 'README' ? copy.fr.docs.h1 : p.h1, item: url });
+  const { lang } = p;
+  const home = copy[lang].commun.nav.accueil;
+  const trail = [{ name: home, item: abs(link[lang].accueil) }];
+  if (p.kind !== 'home') trail.push({ name: copy[lang].docs.h1, item: abs(lang === 'en' ? '/en/docs/' : '/docs/') });
+  trail.push({ name: p.kind === 'home' ? copy[lang].docs.h1 : p.h1, item: url });
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -35,13 +36,13 @@ function docSchema(p, modified) {
         '@type': 'TechArticle',
         '@id': `${url}#page`,
         url,
-        name: typo(p.title, 'fr'),
+        name: typo(p.title, lang),
         description: p.description,
-        inLanguage: 'fr',
+        inLanguage: lang,
         isPartOf: { '@id': abs('/#site') },
         dateModified: modified,
         author: { '@id': site.author.id },
-        primaryImageOfPage: { '@type': 'ImageObject', url: abs('/og-fr.png') },
+        primaryImageOfPage: { '@type': 'ImageObject', url: abs(`/og-${lang}.png`) },
       },
       { '@type': 'BreadcrumbList', itemListElement: trail.map((t, i) => ({ '@type': 'ListItem', position: i + 1, ...t })) },
     ],

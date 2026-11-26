@@ -95,7 +95,7 @@ class ReparationMcpToolsTest {
     void assigningALockedPosteIsRefused() {
         AffectationView poste = premierPostePourvu();
         VerrouillageView verrou = verrouillageTools
-                .lock("ANIMATEUR", poste.animateurId(), null, null, null, null, "E1")
+                .lock("ANIMATEUR_CRENEAU", poste.animateurId(), null, poste.creneauId(), null, null, "E1")
                 .verrouillage();
 
         String posteId = poste.posteId();

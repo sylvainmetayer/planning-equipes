@@ -118,13 +118,6 @@ export interface TrackedJob {
   /** The feasible-plateau bailout the server gave this job, 0 for none; `null` when it did not say. */
   plateauSeconds?: number | null;
   /**
-   * What the edition stored where the instance's ceiling cut it — a ceiling
-   * lowered since, or a scenario imported above it — `null` for a half that
-   * ran as stored. The ceiling is the job's own `secondsLimit` / `plateauSeconds`.
-   */
-  cappedFromSecondsLimit?: number | null;
-  cappedFromPlateauSeconds?: number | null;
-  /**
    * Seconds into the run at which the best plan first became feasible, or null
    * until it does — the one field of a tracked job that changes while it runs,
    * so {@link SolverJobService} refreshes it instead of leaving the job as it
@@ -133,7 +126,7 @@ export interface TrackedJob {
   feasibleAtSeconds?: number | null;
   /** Whether the search runs on the compute machine (ADR 0086). */
   remote?: boolean;
-  /** `PREPARING` while that machine comes up: no budget runs, so no end is estimated. */
+  /** `PREPARING` until the worker has taken the problem: no budget runs, so no end is estimated. */
   remoteStage?: RemoteStage | null;
   /**
    * When the time budget started, if seen later than {@link startedAtMs}: the
@@ -790,10 +783,6 @@ export class SolverJobService {
       editionNom: job.editionNom ?? null,
       secondsLimit: job.secondsLimit == null ? null : Number(job.secondsLimit),
       plateauSeconds: job.plateauSeconds == null ? null : Number(job.plateauSeconds),
-      cappedFromSecondsLimit:
-        job.cappedFromSecondsLimit == null ? null : Number(job.cappedFromSecondsLimit),
-      cappedFromPlateauSeconds:
-        job.cappedFromPlateauSeconds == null ? null : Number(job.cappedFromPlateauSeconds),
       feasibleAtSeconds: job.feasibleAtSeconds == null ? null : Number(job.feasibleAtSeconds),
       remote: job.remote ?? false,
       remoteStage: job.remoteStage ?? null,

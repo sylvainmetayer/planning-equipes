@@ -166,19 +166,10 @@ class NotificationDispatcherTest {
         assertThatCode(() -> {
                     expediteur.surNotification(
                             new Notification.CarpoolValidated("A1", "bob@example.org", "Bob", List.of("Alice"), null));
-                    expediteur.surNotification(
-                            new Notification.CarpoolSetAside("A1", "alice@example.org", "Alice", "complet", null));
-                    expediteur.surNotification(new Notification.CarpoolCancelled(
-                            "A1", "alice@example.org", "Alice", List.of("Bob"), "panne", true, null));
                 })
                 .doesNotThrowAnyException();
         assertThat(registry.get("planning.mail.failures")
                         .tag("template", "covoiturage-valide")
-                        .counter()
-                        .count())
-                .isEqualTo(1.0);
-        assertThat(registry.get("planning.mail.failures")
-                        .tag("template", "covoiturage-annule")
                         .counter()
                         .count())
                 .isEqualTo(1.0);
@@ -256,10 +247,11 @@ class NotificationDispatcherTest {
         List<Recorded> log = new ArrayList<>();
         NotificationDispatcher dispatcher = recordingDispatcher(mails -> envoyes.addAll(List.of(mails)), log);
 
-        dispatcher.surNotification(new Notification.CarpoolSetAside("A9", "alice@example.org", "Alice", null, null));
+        dispatcher.surNotification(
+                new Notification.CarpoolValidated("A9", "alice@example.org", "Alice", List.of("Bob"), null));
         dispatcher.surNotification(oneSubmission());
 
-        assertThat(log).containsExactly(new Recorded("A9", "mail/covoiturage-ecarte", MailDeliveryOutcome.SENT));
+        assertThat(log).containsExactly(new Recorded("A9", "mail/covoiturage-valide", MailDeliveryOutcome.SENT));
     }
 
     /** A database refusing the trace changes nothing to the send it describes. */

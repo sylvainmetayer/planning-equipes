@@ -85,7 +85,7 @@
       },
       {
         "h2": "What breaks as the event grows",
-        "texte": "Rules on hours, breaks and rest are checked by hand, for each person and each day. Age changes the law that applies, depending on the date. A late unavailability, an absence on the day, and the whole grid has to be checked again. Then everyone has to be sent their version. Software automates those four jobs, and above all redoes them at every change. To reuse your file, follow [importing your animateurs from a spreadsheet](/docs/regles/importer-exporter/); what each import writes is in [the CSV imports](/docs/comprendre/imports-csv/) (in French). The rules the software keeps for you are on [the Labour Code page](/en/labour-code/), and the calculation is described in [how it works](/en/how-the-calculation-works/)."
+        "texte": "Rules on hours, breaks and rest are checked by hand, for each person and each day. Age changes the law that applies, depending on the date. A late unavailability, an absence on the day, and the whole grid has to be checked again. Then everyone has to be sent their version. Software automates those four jobs, and above all redoes them at every change. To reuse your file, follow [importing your staff members from a spreadsheet](/en/docs/rules/import-and-export/); what each import writes is in [the CSV imports](/en/docs/build/csv-imports/). The rules the software keeps for you are on [the Labour Code page](/en/labour-code/), and the calculation is described in [how it works](/en/how-the-calculation-works/)."
       }
     ],
     "tableau": {

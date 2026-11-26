@@ -146,8 +146,9 @@ class SolveEnginesPerimetersTest {
         PlanningEvenement problem = loaded.problem();
         VerrouillagePlanning day = new VerrouillagePlanning("lock-day", TypeVerrouillage.JOUR);
         day.setJour(days.get(1));
-        VerrouillagePlanning stand = new VerrouillagePlanning("lock-stand", TypeVerrouillage.STAND);
+        VerrouillagePlanning stand = new VerrouillagePlanning("lock-stand", TypeVerrouillage.STAND_JOUR);
         stand.setStandId(problem.getPostes().get(0).getStand().getId());
+        stand.setJour(problem.getPostes().get(0).getCreneau().getDate());
         List<VerrouillagePlanning> locks = List.of(day, stand);
         ProblemBuilder.applyVerrouillages(problem.getPostes(), problem.getAnimateurs(), locks, persisted);
         problem.setVerrouillages(locks);
@@ -282,7 +283,7 @@ class SolveEnginesPerimetersTest {
         SolverConfiguration ofSettings =
                 SolverConfiguration.ofSettings(new SolverConfiguration.SearchSettings(seconds, 0, 0, engine));
         return new SolveRunner(ofSettings, null, null)
-                .solvePrepared(loaded.problem(), new SolveBudget(seconds, 0L, null), solver -> {
+                .solvePrepared(loaded.problem(), new SolveBudget(seconds, 0L), solver -> {
                     // Without this every assertion here would hold with the setting ignored.
                     assertThat(solver instanceof HandSearchSolver).isEqualTo(engine == SolverEngine.HAND);
                     solver.addEventListener(event -> {

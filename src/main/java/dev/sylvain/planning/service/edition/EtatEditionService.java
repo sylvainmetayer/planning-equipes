@@ -812,7 +812,7 @@ public class EtatEditionService {
                 if (contrainte.matchCount() <= 0) {
                     continue;
                 }
-                if (ConstraintCatalog.NOMS_DURS.contains(contrainte.name())) {
+                if (contrainte.hard()) {
                     bloquants++;
                 } else if (isMedium(contrainte.name())) {
                     avertissements++;

@@ -84,7 +84,7 @@ class EtatEnvoisResourceTest {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM envoi_planning");
-            statement.executeUpdate("DELETE FROM plan_snapshot");
+            statement.executeUpdate("DELETE FROM version_plan");
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to clear the publications", e);
         }

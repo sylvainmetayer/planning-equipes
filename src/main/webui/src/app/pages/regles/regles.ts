@@ -3,52 +3,89 @@
 // rule reads is edited on the rule's own row. Kept out of the page so it is
 // unit tested without rendering.
 
-import { ConstraintView, ParametresLegaux, ParametresQualite } from '../../core/models';
+import {
+  ConstraintView,
+  NiveauContrainte,
+  ParametresLegaux,
+  ParametresQualite,
+} from '../../core/models';
 import { segmenterArticles } from '../../core/legifrance';
 
 /**
- * The six tabs, and the values of the `onglet` query param: what the next solve
+ * The four tabs, and the values of the `onglet` query param: what the next solve
  * must respect — the adjustments, the locks, the consignes (the former
- * « Consignes au solveur ») —, then the rules themselves and the solve budget.
+ * « Consignes au solveur ») —, then the rules themselves, in three blocks.
+ * `legal` and `qualite`, the two tabs the rules used to be split in, still read
+ * as `regles`: a bookmark or a link of another screen lands on the right one.
  */
-export type OngletRegles =
-  'ajustements' | 'verrouillages' | 'consignes' | 'legal' | 'qualite' | 'calcul';
+export type OngletRegles = 'ajustements' | 'verrouillages' | 'consignes' | 'regles';
 
 export const ONGLETS_REGLES: readonly OngletRegles[] = [
   'ajustements',
   'verrouillages',
   'consignes',
-  'legal',
-  'qualite',
-  'calcul',
+  'regles',
 ];
 
-/** The tabs that list rules, one row each. */
-export function isRuleTab(onglet: OngletRegles): onglet is 'legal' | 'qualite' {
-  return onglet === 'legal' || onglet === 'qualite';
+/** The tab that lists rules, three blocks of them. */
+export function isRuleTab(onglet: OngletRegles): onglet is 'regles' {
+  return onglet === 'regles';
 }
 
 /** Reads the `onglet` query param; anything unknown is `null`, so the page can fall back on the rule it was asked. */
 export function readOngletRegles(value: string | null): OngletRegles | null {
+  if (value === 'legal' || value === 'qualite') {
+    return 'regles';
+  }
   return (ONGLETS_REGLES as readonly string[]).includes(value ?? '')
     ? (value as OngletRegles)
     : null;
 }
 
 /**
- * The tab a rule is listed on: every hard rule on « Légal » — the law, the
- * minors' safety, the meal break the event is built on, the assignment
- * itself —, every medium or soft one on « Qualité ». The same split as
- * `ConstraintParameters.ongletOf` on the server, which links a setting to it.
+ * The three blocks of the rules tab (Q22): the obligations the law imposes,
+ * read only — their thresholds are set in Paramètres —, the organisation's own
+ * policy, each rule with a level, and the rest, folded under « Réglages
+ * avancés ».
  */
-export function ongletOfRule(rule: Pick<ConstraintView, 'niveau'>): 'legal' | 'qualite' {
-  return rule.niveau === 'HARD' ? 'legal' : 'qualite';
+export type BlocRegle = 'legal' | 'organisation' | 'avance';
+
+export const BLOCS_REGLES: readonly BlocRegle[] = ['legal', 'organisation', 'avance'];
+
+/**
+ * The block a rule is listed in, from what the catalogue says of it — never
+ * from a list of names, which a merge of rules would silently outdate: a rule
+ * an article founds is legal, one whose level the edition chooses is the
+ * organisation's policy, every other (assignment, adjustments, locks,
+ * preferences) is advanced.
+ */
+export function blocOfRule(rule: Pick<ConstraintView, 'legale' | 'niveauReglable'>): BlocRegle {
+  if (rule.legale) {
+    return 'legal';
+  }
+  return rule.niveauReglable ? 'organisation' : 'avance';
+}
+
+/**
+ * The level a rule scores on in this edition: the catalogue's own, moved by
+ * the edition's choice for a rule whose level it chooses (ADR 0106).
+ */
+export function niveauEffectif(
+  rule: Pick<ConstraintView, 'niveau' | 'niveauReglable' | 'niveauChoisi'>,
+): NiveauContrainte {
+  if (!rule.niveauReglable || !rule.niveauChoisi) {
+    return rule.niveau;
+  }
+  if (rule.niveauChoisi === 'OBLIGATOIRE') {
+    return 'HARD';
+  }
+  return rule.niveau === 'HARD' ? 'MEDIUM' : rule.niveau;
 }
 
 /**
  * The order the categories are read in: the Code du travail first, then what
  * the organiser holds as hard, then the assignment and the hand-written
- * exceptions; on « Qualité », the dosed rules before the preferences.
+ * exceptions; then the dosed rules before the preferences.
  */
 const ORDRE_CATEGORIES: readonly string[] = [
   'Légal (temps de travail)',
@@ -68,15 +105,15 @@ function rangCategorie(categorie: string): number {
 }
 
 /**
- * The rules of one tab, category by category in the reading order above, and
+ * The rules of one block, category by category in the reading order above, and
  * in the catalogue's own order inside a category — a stable sort keeps it.
  */
-export function rulesOfTab(
+export function rulesOfBloc(
   contraintes: readonly ConstraintView[],
-  onglet: 'legal' | 'qualite',
+  bloc: BlocRegle,
 ): ConstraintView[] {
   return contraintes
-    .filter((rule) => ongletOfRule(rule) === onglet)
+    .filter((rule) => blocOfRule(rule) === bloc)
     .map((rule, index) => ({ rule, index }))
     .sort(
       (a, b) =>

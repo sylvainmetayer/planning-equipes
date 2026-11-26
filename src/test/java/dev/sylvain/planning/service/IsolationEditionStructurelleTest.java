@@ -25,10 +25,10 @@ import org.junit.jupiter.api.io.TempDir;
  * statement that forgets its {@code edition_id} predicate does not show: it
  * throws nothing, it simply reads or writes at the neighbours'.
  *
- * <p>It happened. Demoting the ninja typologie was written
+ * <p>It happened. Demoting the polyvalent typologie was written
  * {@code UPDATE typologie SET ninja = FALSE WHERE ninja AND id <> ?}, with no
  * edition, while the unique index it protects has been scoped per edition since
- * {@code V33}: marking a ninja on one edition erased the ninja of every other
+ * {@code V33}: marking a polyvalent on one edition erased the polyvalent of every other
  * one, and since that flag feeds the ordering of the construction heuristic,
  * the next solve of the neighbouring edition started somewhere else without
  * anything reporting it.</p>
@@ -106,7 +106,7 @@ class IsolationEditionStructurelleTest {
             "parametres_signalement",
             "espace_session",
             "espace_acces",
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             "envoi_planning",
             "envoi_mail",
@@ -134,7 +134,12 @@ class IsolationEditionStructurelleTest {
             "reglage_noms_responsable",
             "reglage_noms_stand",
             "meteo_etat",
-            "sauvegarde_avant_vidage");
+            "sauvegarde_avant_vidage",
+            // V142's archive of the 3.x set-aside and cancelled covoiturages: no
+            // statement names it today, but it is partitioned like its source.
+            "declaration_coequipier_avant_4_0",
+            // V145's archive of the budgets editions had set: partitioned like its source.
+            "solve_budget_avant_4_0");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An
@@ -148,21 +153,21 @@ class IsolationEditionStructurelleTest {
      *       nightly dump saves the database, not an edition.</li>
      *   <li>{@code horloge_jour_j} — the simulated clock of the instance. A
      *       demo that moves the date moves it for everybody, on purpose.</li>
-     *   <li>{@code kpi_historique} — deliberately cross-edition, reads
-     *       <b>and</b> deletion. It is the history one reads to confront two
-     *       editions, and it stores the edition name alongside the id so a row
-     *       survives the deletion of its edition. The deletion follows: the
-     *       screen that shows the rows shows every edition's, edition column
-     *       included, so the row the operator deletes is the row they picked;
-     *       and a row orphaned by the deletion of its edition could not be
-     *       cleaned up at all by an edition-scoped {@code DELETE}. The id is a
-     *       server-wide {@code BIGSERIAL}, so it names one row on its own.</li>
-     *   <li>{@code kpi_realise} — the frozen measure of a finished edition
-     *       (ADR 0070, replaced by 0092), read by the <em>next</em> edition: the read is
-     *       another edition's row by definition, possibly one whose edition
-     *       was deleted since, and the row keeps the names it shows for that
-     *       reason. Its writes go through the edition's own scope all the
-     *       same: the service enters each edition before caching its measure.</li>
+     *   <li>{@code mesure_edition} — deliberately cross-edition, reads
+     *       <b>and</b> deletion. It folds, since 4.0 (V148), the indicators history
+     *       (one row per finished solve, read to confront two editions) and the
+     *       frozen realised measure of a finished edition (ADR 0070, replaced by
+     *       0092), which the <em>next</em> edition reads. It stores the edition name
+     *       alongside the id so a row survives the deletion of its edition, and its
+     *       realised reads are another edition's rows by definition, possibly of an
+     *       edition deleted since. The indicators' deletion follows: the screen that
+     *       shows the rows shows every edition's, edition column included, so the row
+     *       the operator deletes is the row they picked; and a row orphaned by the
+     *       deletion of its edition could not be cleaned up at all by an
+     *       edition-scoped {@code DELETE}. The id is a server-wide
+     *       {@code BIGSERIAL}, so it names one row on its own. The realised writes
+     *       go through the edition's own scope all the same: the service enters each
+     *       edition before caching its measure.</li>
      *   <li>{@code solver_job} — the solve queue is global by design (one
      *       solve at a time for the whole JVM, see the ADR §5); the job stores
      *       the edition it targets, it is not partitioned by it.</li>
@@ -187,11 +192,10 @@ class IsolationEditionStructurelleTest {
      *       form login is handled before any request names an edition, and a
      *       login opens every edition at once: there is no edition to file
      *       it under, and the screen shows it whatever edition is chosen.</li>
-     *   <li>{@code machine_calcul}, {@code resolution_distante} — the machine
-     *       a solve is run on and the solve a job left there (ADR 0086). One
-     *       machine serves every edition, as the queue is one for the whole
-     *       instance, and a restart looks for both before any request names
-     *       an edition; the job a remote solve belongs to carries its edition.</li>
+     *   <li>{@code resolution_distante} — the solve a job left on the
+     *       worker (ADR 0086), which a restart looks for before any request
+     *       names an edition; the job a remote solve belongs to carries its
+     *       edition. ({@code machine_calcul} is no longer queried: ADR 0103.)</li>
      *   <li>{@code compte} — a person, not a fiche: one account serves every
      *       edition, so the table has no edition to be partitioned by.</li>
      *   <li>{@code habilitation} — what that person may do, read for the whole
@@ -212,8 +216,7 @@ class IsolationEditionStructurelleTest {
             "edition",
             "backup_settings",
             "horloge_jour_j",
-            "kpi_historique",
-            "kpi_realise",
+            "mesure_edition",
             "solver_job",
             "creneau_remap",
             "version_applicative",
@@ -221,7 +224,6 @@ class IsolationEditionStructurelleTest {
             "webhook_livraison",
             "mcp_cle",
             "journal_connexion",
-            "machine_calcul",
             "resolution_distante",
             "compte",
             "habilitation",
@@ -276,12 +278,12 @@ class IsolationEditionStructurelleTest {
             "SELECT l.edition_id, e.nom AS edition_nom, l.id, l.libelle, l.noms_complets, l.restreint"
                     + " FROM lien_affichage_mural l JOIN edition e ON e.id = l.edition_id"
                     + " WHERE l.token_hash = ? AND l.revoque_le IS NULL",
-            "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
-                    + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.kpi FROM plan_snapshot s"
+            "SELECT s.id, s.libelle, s.origine, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
+                    + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.kpi FROM version_plan s"
                     + " LEFT JOIN edition e ON e.id = s.edition_id ORDER BY s.cree_le DESC, s.id DESC",
-            "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
+            "SELECT s.id, s.libelle, s.origine, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.contenu, s.kpi"
-                    + " FROM plan_snapshot s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
+                    + " FROM version_plan s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
             "DELETE FROM journal_action WHERE survenu_le < ?",
             "DELETE FROM envoi_mail WHERE envoye_le < ?",
             "UPDATE verification_besoin SET etat = 'ECHEC', terminee_le = now(), erreur = ? WHERE etat = 'EN_COURS'");
@@ -1091,7 +1093,7 @@ class IsolationEditionStructurelleTest {
      * A form the scan cannot follow — assembled by a {@code StringBuilder}, by
      * {@code String.join}, or in a loop — must be <b>reported</b>. Skipping it
      * would be the same silence the scan was extended to break, and it is the
-     * silence that hid the ninja bug for two releases.
+     * silence that hid the polyvalent bug for two releases.
      */
     @Test
     void leScanSignaleUneFormeQuIlNeSaitPasSuivre(@TempDir Path racine) throws IOException {

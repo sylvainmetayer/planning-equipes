@@ -115,9 +115,7 @@ final class ScenarioIdRemap {
                 scenario.schemaVersion(),
                 scenario.edition(),
                 scenario.festival(),
-                scenario.parametresSolveur(),
-                scenario.parametresLegaux(),
-                scenario.parametresQualite(),
+                scenario.parametres(),
                 scenario.contraintes(),
                 typologiesSection(scenario),
                 scenario.creneaux(),
@@ -128,7 +126,9 @@ final class ScenarioIdRemap {
                 postes(scenario.postes()),
                 contraintesAdHoc(scenario.contraintesAdHoc()),
                 scenario.prereglagesConsigne(),
-                consignes(scenario.consignes()));
+                consignes(scenario.consignes()),
+                // Named by natural keys and matched after the import, against the file's own ids.
+                scenario.plan());
     }
 
     /* ------------------------------ Matching ------------------------------ */
@@ -388,7 +388,7 @@ final class ScenarioIdRemap {
                     typologies.getOrDefault(dto.id(), dto.id()),
                     typologieCodes.get(dto.id()),
                     dto.label(),
-                    dto.ninja(),
+                    dto.polyvalent(),
                     dto.maxCreneauxParAnimateur(),
                     dto.description()));
         }

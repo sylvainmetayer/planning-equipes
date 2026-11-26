@@ -49,12 +49,12 @@ public class EditionRepository {
      * in {@code EditionDuplicationStructurelleTest}.</b> The list is written by
      * hand and a migration adding a column does not touch it: {@code
      * heure_debut_soiree} (V74) and {@code mail_fin_resolution} were silently
-     * reset to their default on every duplication, and {@code typologie.ninja}
+     * reset to their default on every duplication, and {@code typologie.polyvalent}
      * with them — a duplicated edition lost which typologie was the polyvalent
      * one. That test is what makes the next added column loud.</p>
      */
     static final List<TableToCopy> TABLES_A_COPIER = List.of(
-            new TableToCopy("typologie", "id, code, label, ninja, max_creneaux_par_animateur, description"),
+            new TableToCopy("typologie", "id, code, label, polyvalent, max_creneaux_par_animateur, description"),
             new TableToCopy("emplacement", "id, code, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
             // #172 ends with « Envoyer à all », mute without it); neither token
@@ -92,7 +92,7 @@ public class EditionRepository {
             // "nom, actif": since V82 a row carries the explicit state, and the
             // column is NOT NULL with no default — a copy leaving it out would fail.
             new TableToCopy("constraint_toggle", "nom, actif"),
-            new TableToCopy("ponderation_contrainte", "nom, poids"),
+            new TableToCopy("ponderation_contrainte", "nom, poids, obligatoire"),
             new TableToCopy(
                     "parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
@@ -106,7 +106,7 @@ public class EditionRepository {
                             + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max, "
                             + "jours_consecutifs_max, vitesse_marche_km_h, facteur_detour, "
                             + "tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes"),
-            new TableToCopy("parametres_solveur", "duree_resolution_secondes, plateau_secondes, mail_fin_resolution"),
+            new TableToCopy("parametres_solveur", "mail_fin_resolution"),
             // Who the animateurs call: the organisation rarely changes number from one year to the next.
             new TableToCopy("contact_organisation", "telephone, email"),
             // Consigne presets (V90, issue #4) describe the event's shape —

@@ -44,13 +44,17 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/diagnostic', marker: 'Diagnostic', sheet: 'diagnostic-onglets' },
   { path: '/diagnostic?onglet=problemes', sheet: 'probleme-counts' },
   { path: '/regles', marker: 'Règles du planning', sheet: 'regles-table' },
-  { path: '/regles?onglet=qualite', sheet: 'regles-importance' },
-  { path: '/regles?onglet=calcul', marker: 'Budget de calcul' },
+  { path: '/regles?onglet=regles', sheet: 'regles-importance' },
+  { path: '/regles?onglet=regles&avance=1', marker: 'Avancé' },
+  { path: '/parametres?onglet=calcul', marker: 'Budget de calcul', sheet: 'parametres-save-bar' },
   { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
   { path: '/solveur?onglet=versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },
   { path: '/nouveautes', marker: 'Nouveautés', sheet: 'news-release' },
   { path: '/editions', marker: 'Nouvelle édition', sheet: 'edition-nom-input' },
+  { path: '/comparer', marker: 'Comparer deux versions', sheet: 'comparer-choix' },
+  { path: '/comparer?vue=editions', marker: 'Comparer deux éditions', sheet: 'delta-choix' },
+  // The former address of the editions' comparison lands on its view.
   { path: '/editions/comparer', marker: 'Comparer deux éditions', sheet: 'delta-choix' },
   { path: '/stands', marker: 'Stands (' },
   { path: '/stands?onglet=lieux', marker: 'Lieux (', sheet: 'lieux-map-host' },
@@ -120,7 +124,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/aujourdhui', marker: "Aujourd'hui", sheet: 'jour-j-entete' },
-  { path: '/aujourdhui?onglet=realise', marker: 'Réalisé vs planifié', sheet: 'realise-toolbar' },
+  { path: '/mesures', marker: "Mesures d'édition", sheet: 'realise-toolbar' },
   // The former Marge disponible lands on the Diagnostic's Tension tab.
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
@@ -280,12 +284,12 @@ test('le pied de page admin indique la version en cours', async ({ browser }) =>
   await page.context().close();
 });
 
-test('le catalogue des règles documente le verrouillage des échanges', async ({ browser }) => {
+test('the rules catalogue documents the animateur + timeslot lock', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   // The rule's panel, opened by its address: the long text lives there.
   await page.goto('/regles?regle=animateurVerrouilleCreneauFige');
   await expect(page.locator('#contenu')).toContainText(
-    'Un échange validé est figé sur son créneau',
+    'Un animateur verrouillé sur un créneau (par exemple après un échange validé)',
   );
   await page.context().close();
 });

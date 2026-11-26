@@ -82,9 +82,6 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(importe.sections().parametresLegaux()).isPresent();
         assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes())
                 .isEqualTo(500);
-        assertThat(importe.sections().parametresSolveur()).isPresent();
-        assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes())
-                .isEqualTo(400);
     }
 
     /**
@@ -123,6 +120,21 @@ class PlanningServiceScenarioFromTextTest {
         assertThatThrownBy(() -> service.buildFromScenarioText(yaml))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("reglePasDansLeCatalogue");
+    }
+
+    /** A rule retired in 4.0 (ADR 0109), named by a 3.x export, is dropped rather than refused. */
+    @Test
+    void aRetiredRuleOfTheConstraintsSectionIsDropped() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml")
+                .replace("eviterRoulementStandsPremium", "animateurVerrouilleFige");
+
+        assertThat(service.buildFromScenarioText(yaml)
+                        .sections()
+                        .contraintes()
+                        .orElseThrow()
+                        .desactivees())
+                .isEmpty();
     }
 
     /**

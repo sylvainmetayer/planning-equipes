@@ -96,9 +96,8 @@ export interface PlacementContext {
  * Why an available line still gets no « Placer »: the write refuses it for a
  * reason the rules do not carry. `started` — the timeslot has begun, and the
  * past is not rewritten by hand (ADR 0044); `locked` — a lock on the person
- * forbids them a new seat then: their whole schedule (`ANIMATEUR`), or this
- * very timeslot (`ANIMATEUR_CRENEAU`, which an accepted échange or « Libérer »
- * lays to keep them off it). Null when nothing does.
+ * forbids them a new seat then: this very timeslot (`ANIMATEUR_CRENEAU`, which
+ * an accepted échange or « Libérer » lays to keep them off it). Null when nothing does.
  */
 export type PlacementBlock = 'started' | 'locked';
 
@@ -109,8 +108,8 @@ export function placementBlock(line: BenchLine, context: PlacementContext): Plac
   const locked = context.locks.some(
     (lock) =>
       lock.animateurId === line.animateurId &&
-      (lock.type === 'ANIMATEUR' ||
-        (lock.type === 'ANIMATEUR_CRENEAU' && lock.creneauId === context.creneauId)),
+      lock.type === 'ANIMATEUR_CRENEAU' &&
+      lock.creneauId === context.creneauId,
   );
   return locked ? 'locked' : null;
 }

@@ -117,26 +117,33 @@ ne contient **aucun jeton** : ni celui de l'espace, que les plannings
 individuels de l'archive n'impriment pas (ni lien ni QR code), ni celui de
 l'abonnement au calendrier, ce qu'un test vérifie ; et son manifeste
 `LISEZMOI.txt` rappelle ce qu'elle contient, le responsable de traitement et
-la durée de conservation déclarés (`LEGAL_RESPONSABLE_TRAITEMENT`,
-`LEGAL_CONSERVATION`). C'est le geste naturel avant la purge annuelle d'une
+la durée de conservation déclarés (clés `responsable-traitement` et
+`conservation` de `LEGAL_MENTIONS`). C'est le geste naturel avant la purge annuelle d'une
 édition terminée ; le registre le mentionne comme une **sortie de données**,
 journalisée comme les autres.
 
 ## Les demandes de covoiturage
 
-Une demande de covoiturage survit aussi à sa décision, dans
-`declaration_coequipier` : les identifiants des coéquipiers nommés, le statut
-et, quand l'organisation l'écarte ou annule l'arrivée groupée validée, un
-**motif en champ libre écrit par l'administrateur à l'intention de
-l'animateur**, relu dans son espace et repris dans l'e-mail qui lui annonce
-la décision (à chaque membre du groupe, pour une annulation). C'est un texte sur une personne,
-tapé par une autre : la consigne est de s'en tenir à la raison
-organisationnelle (« Bob ne vient que le samedi ») et de ne jamais y écrire
-une donnée de santé ou de famille. Il n'entre **pas** au journal des actions
-(qui ne garde que l'identifiant de la demande), ni dans ce que rendent les
-outils MCP ; il part dans le dump nocturne et l'export SQL comme le reste de
-la table, et disparaît avec l'édition. La table porte une clé étrangère sur
-le demandeur : sa fiche supprimée emporte ses demandes.
+Une demande de covoiturage vit dans `declaration_coequipier` : les
+identifiants des coéquipiers nommés et le statut, en attente ou validée.
+L'organisation qui l'écarte, ou qui annule l'arrivée groupée validée, la
+**supprime** : il ne reste que la ligne du journal des actions, qui ne garde
+que l'identifiant de la demande. La table porte une clé étrangère sur le
+demandeur : sa fiche supprimée emporte ses demandes.
+
+**L'archive de la 3.x.** En 3.x, une demande écartée ou annulée restait en
+base, avec un **motif en champ libre écrit par l'administrateur à
+l'intention de l'animateur**. La migration de la 4.0 (`V142`) ne l'efface
+pas : elle déplace ces demandes, motif compris, dans
+`declaration_coequipier_avant_4_0`. C'est un texte sur une personne, tapé par
+une autre, que l'application ne lit plus, ne montre plus et n'exporte pas (ni
+export SQL, ni outils MCP) ; il reste dans le dump nocturne, comme toute la
+base. **Durée de conservation : jusqu'à la 5.0, qui supprime la table.**
+D'ici là, l'archive part avec l'édition (purge annuelle) ou avec la fiche du
+demandeur, mêmes clés étrangères que la table d'origine. Vous pouvez la
+supprimer plus tôt, une fois la 4.0 en place et le retour à la 3.x exclu
+([purger et conserver](conservation-des-donnees.md#larchive-du-covoiturage-3x)).
+Consignez-la au registre avec cette durée.
 
 ## Les déclarations de disponibilités
 
@@ -419,9 +426,12 @@ L'édition est recopiée avant chaque vidage, et ces copies ne sont pas
 purgées (`sauvegarde_avant_vidage`,
 [décision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)) :
 une réinitialisation, un import de scénario ou la restauration d'une
-sauvegarde range d'abord l'export de scénario de l'édition (nom, prénom,
-date de naissance, adresse et téléphone de chaque animateur compris) et son
-planning (sièges et verrous, par identifiants seulement). **Une copie par
+sauvegarde range d'abord **un export YAML** de l'édition (nom, prénom,
+date de naissance, adresse et téléphone de chaque animateur compris), son
+planning (sièges et verrous, par identifiants seulement) en dernière section
+([décision 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)).
+Ce fichier est une donnée personnelle au sens du RGPD, comme le scénario
+exporté, et se restaure par l'import normal. **Une copie par
 vidage (sauf quand l'état est exactement celui de la copie précédente),
 conservée aussi longtemps que l'édition** : la seule purge est la
 suppression de l'édition, en cascade sur `edition_id`, donc la purge annuelle
@@ -430,7 +440,8 @@ l'édition**, et elle se consigne telle quelle au registre. Un administrateur
 peut en supprimer une (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`,
 journalisé). Elles ne partent ni dans l'export SQL ni par MCP ; seul un
 administrateur en liste, en télécharge, en restaure ou en supprime une, par
-l'API ; le téléchargement, la restauration et la suppression sont
+l'API ; le fichier téléchargé est un export complet et se garde comme la
+base ; le téléchargement, la restauration et la suppression sont
 journalisés, la simple liste (dates et origines, aucune donnée de personne)
 ne l'est pas. Ce qui ne les borne pas : une fiche
 supprimée reste dans les sauvegardes prises avant sa suppression, et

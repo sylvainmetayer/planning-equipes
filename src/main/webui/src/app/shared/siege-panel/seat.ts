@@ -94,15 +94,14 @@ export function resolveSeat(
 }
 
 /** How much a lock holding this seat freezes — what the panel says, and whether it can undo it here. */
-export type LockReach = 'seat' | 'person' | 'stand' | 'creneau' | 'day';
+export type LockReach = 'seat' | 'standDay' | 'day';
 
 export interface SeatLock {
   lock: VerrouillagePlanning;
   reach: LockReach;
   /**
    * Only the lock on this very seat — this person on this timeslot — is lifted
-   * from the panel. The others freeze a whole stand, day, timeslot or
-   * person's schedule: lifting one from a single seat would unfreeze far more
+   * from the panel. The others freeze a whole stand-day or day: lifting one from a single seat would unfreeze far more
    * than the reader is looking at, so they are lifted on the Verrouillages
    * screen, where their whole reach is shown.
    */
@@ -112,9 +111,7 @@ export interface SeatLock {
 /** The reach each kind of lock has when it covers a seat. */
 const REACH_BY_TYPE: Readonly<Record<TypeVerrouillage, LockReach>> = {
   ANIMATEUR_CRENEAU: 'seat',
-  ANIMATEUR: 'person',
-  STAND: 'stand',
-  CRENEAU: 'creneau',
+  STAND_JOUR: 'standDay',
   JOUR: 'day',
 };
 
@@ -128,19 +125,14 @@ function covers(lock: VerrouillagePlanning, poste: PosteAffectation): boolean {
   const creneau = poste.creneau;
   const onHolder = holder !== null && lock.animateurId === holder;
   const onCreneau = creneau !== null && lock.creneauId === creneau.id;
+  const day = creneau?.date;
   switch (lock.type) {
     case 'ANIMATEUR_CRENEAU':
       return onHolder && onCreneau;
-    case 'ANIMATEUR':
-      return onHolder;
-    case 'STAND':
-      return poste.stand !== null && lock.standId === poste.stand.id;
-    case 'CRENEAU':
-      return onCreneau;
-    case 'JOUR': {
-      const day = creneau?.date;
+    case 'STAND_JOUR':
+      return poste.stand !== null && lock.standId === poste.stand.id && !!day && lock.jour === day;
+    case 'JOUR':
       return !!day && lock.jour === day;
-    }
     default:
       return false;
   }
@@ -166,12 +158,8 @@ export function lockLabel(lock: SeatLock): string {
   switch (lock.reach) {
     case 'seat':
       return $localize`:@@siege.verrou.siege:Verrouillé : cette personne reste sur ce créneau au prochain calcul.`;
-    case 'person':
-      return $localize`:@@siege.verrou.personne:Tout l'emploi du temps de cette personne est verrouillé.`;
-    case 'stand':
-      return $localize`:@@siege.verrou.stand:Tout le stand est verrouillé.`;
-    case 'creneau':
-      return $localize`:@@siege.verrou.creneau:Tout le créneau est verrouillé.`;
+    case 'standDay':
+      return $localize`:@@siege.verrou.standJour:Tout le stand est verrouillé ce jour-là.`;
     default:
       return $localize`:@@siege.verrou.jour:Toute la journée est verrouillée.`;
   }

@@ -48,7 +48,7 @@ Un téléchargement d'espace n'est tracé **qu'une fois l'identité prouvée**. 
 
 ## Notifications planifiées
 
-`GET` et `PUT /api/parametres-notifications` règlent les délais des envois de nuit **de cette édition**. Qu'ils partent ou non ne se règle pas ici : seule l'édition active envoie ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)).
+`GET` et `PUT /api/parametres/notifications` règlent les délais des envois de nuit **de cette édition**. Qu'ils partent ou non ne se règle pas ici : seule l'édition active envoie ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)).
 
 | Champ | Rôle |
 | --- | --- |
@@ -82,7 +82,7 @@ L'outil MCP `consulter_alertes_meteo` lit les mêmes alertes. Le choix de ces de
 
 | Code d'événement | Quand | `donnees` |
 | --- | --- | --- |
-| `planning.publie` | une publication est partie | `instantaneId`, `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
+| `planning.publie` | une publication est partie | `instantaneId` (l'id de la version publiée : la clé garde son nom de la 3.x, que lisent des intégrations extérieures), `destinataires`, `envoyes`, `sansEmail`, `echecs`, `differes`, `planningsChanges` |
 | `echange.soumis` | une demande d'échange arrive sur le bureau | `nombre` |
 | `echanges.en_attente` | la tâche de nuit signale des demandes qui dorment | `nombre`, `ancienneteMaxJours` |
 | `disponibilites.declaree` | une déclaration attend d'être appliquée | `joursIndisponibles`, `souhaits` |
@@ -162,7 +162,7 @@ Les secrets ne se relisent jamais. Le secret HMAC est dans la réponse de l'appe
 
 - `productName` n'est jamais vide.
 - **`logoUrl` vide signifie « aucun logo »**, jamais « le logo par défaut » : une instance par client, et aucun client n'hérite de la marque d'un autre.
-- Les champs légaux valent la chaîne vide quand la variable `LEGAL_*` correspondante manque, et la page affiche alors **ce qui manque** plutôt qu'un éditeur inventé. Ils vivent en configuration et non dans le code : le dépôt est public, et pour un éditeur personne physique l'adresse et le numéro d'immatriculation sont des données personnelles.
+- Les champs légaux valent la chaîne vide quand la clé correspondante de `LEGAL_MENTIONS` manque, et la page affiche alors **ce qui manque** plutôt qu'un éditeur inventé. Ils vivent en configuration et non dans le code : le dépôt est public, et pour un éditeur personne physique l'adresse et le numéro d'immatriculation sont des données personnelles.
 - `mesureAudience` et `suiviErreurs` sont vrais quand le token Cloudflare et le DSN Sentry ont une valeur, celle que lisent vraiment le beacon et le SDK, non le fait d'avoir posé la variable d'environnement. La politique de confidentialité y accroche les paragraphes qui nomment Cloudflare et Bugsink : sans eux, un déploiement qui laisse les deux vides annoncerait deux traitements qui n'ont pas lieu. Ces drapeaux passent par cet endpoint et non par `/api/config`, qui porte pourtant les mêmes clés : sa lecture échoue en silence vers une configuration désactivée, ce qui **masquerait** ces paragraphes là où les outils tournent vraiment. Ici, un échec affiche une erreur au lieu d'une page silencieusement fausse.
 - `demoInstance` dit si l'instance s'est déclarée de démonstration (`LEGAL_DEMO_INSTANCE`). La page ne l'affiche pas : `scripts/verifier-deploiement.sh` le lit pour savoir si des mentions obligatoires vides sont un défaut. Il le demande à l'instance plutôt qu'au `.env.prod`, qui ne voit ni une valeur posée ailleurs ni les graphies (`True`, guillemets) que l'application accepte.
 

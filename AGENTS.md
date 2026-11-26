@@ -12,8 +12,13 @@ Custom reviewer agents are maintained for both ecosystems:
 When one version changes, update the other one in the same commit to keep them
 strictly synchronized.
 
-This file is written in English; user-facing documentation (`README.md`, `site/src/docs/`)
-is written in French, and domain identifiers stay in French business vocabulary.
+This file is written in English; user-facing documentation is written in French and
+in English, page for page (`README.fr.md` and `README.md`; `site/src/docs/` and its
+English twin `site/src/docs-en/`), and domain identifiers stay in French business
+vocabulary. In the English documentation an *animateur* is a **staff member**
+(the English interface says so too); the code keeps `Animateur`.
+A rule's *écart* is a **breach** on screen and in the English docs alike,
+while the code keeps `violation`.
 The Angular frontend UI (`src/main/webui`) is bilingual French/English via
 `@angular/localize`, translated at runtime (`loadTranslations()`, no per-locale
 build): French is the source language written directly in templates/components
@@ -134,7 +139,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  47 rules are written **a second time**. The default engine since 3.0.0
+  46 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -171,10 +176,9 @@ Single Quarkus service, no separate solver microservice. Package root:
     as an allow-list under a pseudonym and a stand-in birth date, free text
     stays home, and the plan that comes back is scored again before it is
     believed), the remote solve of ADR 0086 — `RemoteSolves` (where a full
-    solve runs when not here: a permanent worker's address, or a machine
-    asked of the operator's launcher through an HTTP hook, kept until idle
-    and found again after a restart; **a remote failure fails the job, never
-    falls back here**), `RemoteSolver` (a worker behind Timefold's `Solver`
+    solve runs when not here: a permanent worker's address, a solve left on
+    it found again after a restart — no machine on demand, ADR 0103;
+    **a remote failure fails the job, never falls back here**), `RemoteSolver` (a worker behind Timefold's `Solver`
     interface, so the queue, the stop and the score curve do not know where
     the search runs), `HandSearchSolver` (the direct engine of ADR 0087 behind
     the same interface, refereed by Timefold; `SolveRunner.solvePrepared` is
@@ -195,19 +199,26 @@ Single Quarkus service, no separate solver microservice. Package root:
     scratch, réamorcé (#174) or incremental (#86); the pieces needing no
     database stay static, which is what lets the PosteGeneration / Reamorcage /
     Incremental / Verrouillage tests run without a container),
-    `SolverJobService` (async solves, plus the solver queue — persisted through
-    `SolverJobRepository` and replayed at startup, so a restart no longer loses
-    the planned runs; `SolverJobTasks` and `SolverJobPersistence` carry what
-    does not hold the lock), `ConstraintAnalysisStore` (the score breakdown the
+    `SolverJobService` (async solves, plus the solver queue — **in memory
+    only** (ADR 0110): a queued job is never written to `solver_job`, nothing is
+    replayed at startup, and a restart loses the planned runs. A row a previous
+    run left queued or holding the solver comes back `INTERROMPU` with the reason
+    on the job and in the log, and only a full solve still running on a worker is
+    followed again; `SolverJobTasks` and `SolverJobPersistence` carry what does
+    not hold the lock), `ConstraintAnalysisStore` (the score breakdown the
     Règles du planning screen shows, written by every solve and re-derivable from the
     persisted plan alone — **nothing analyses by solving a plan it then throws
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,
     `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`,
-    `WipeBackupService` (the scenario and plan stored before a reset, an
-    import or a restore empties an edition, and the restore itself: one
-    ordered, non-atomic gesture through the import, the plan found again by
-    natural keys — ADR 0084),
+    `WipeBackupService` (what is stored before a reset, an import or a restore
+    empties an edition: one scenario export whose last `plan:` section carries
+    the seats and locks, and the restore, which is the ordinary import of that
+    file and the only import that applies `plan:` (any other one ignores it,
+    with a warning) — non-atomic like the import, the plan found again by
+    natural keys —
+    ADR 0084, in part replaced by ADR 0112; a 3.x copy keeps its `plan`
+    column, read as that section),
     `StaffingVerificationService` (the staffing check: a made-up team solved
     until feasible on its own thread, outside the queue — it gives way to any
     solve that starts, on `SolveStarting`, and keeps every check in
@@ -378,8 +389,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   assembles the `Mail`: the text part is **always** sent, the HTML one is an
   alternative, and the logo travels as an inline `cid:` attachment — never a
   remote `<img src>`, which mail clients block and spam filters penalise. It
-  comes from `BRANDING_PDF_LOGO` (bytes the application holds), not
-  `BRANDING_LOGO_URL` (a URL only a browser can resolve). Java names the
+  comes from the `pdf-logo` key of `BRANDING_IMAGES` (bytes the application holds), not
+  its `logo` key (a URL only a browser can resolve). Java names the
   template, decides the subject and passes values; adding a mail means adding
   the two files. Unit tests keep asserting on the wording without a container
   through `MailTemplates.standalone()`, which builds the same engine over the
@@ -569,14 +580,17 @@ Single Quarkus service, no separate solver microservice. Package root:
   application has four `@Scheduled`, not five): `RealisedVsPlannedService.report`
   answers from the plan, and the first report asked once the edition's last
   timeslot has ended, with something published, writes the measure into
-  `kpi_realise` as a cache, where the next edition reads it. **It writes
+  `mesure_edition` as a cache, where the next edition reads it. **It writes
   once**: an edition that has its rows is left alone (`ON CONFLICT DO NOTHING`
-  behind the check), so `fige_le` is the first read after the event; a report
+  behind the check), so `cree_le` of the `REALISE` rows is the first read after the event; a report
   whose past is not frozen is not cached and is logged; a failed write is
   logged, never propagated; re-freezing is an operator's SQL `DELETE` of the
-  edition's rows, never a route. `kpi_realise` carries no foreign key and
-  keeps the names it shows, like `kpi_historique`: the measure outlives the
-  deletion of its edition.
+  edition's `REALISE` rows, never a route. `mesure_edition` (V148: the former
+  `kpi_historique` — the indicators of each solve, `INDICATEURS` — and
+  `kpi_realise`, kept as `*_avant_4_0` archives until 5.0) carries no foreign
+  key and keeps the names it shows: the measure outlives the deletion of its
+  edition. Its routes are `/api/mesures-edition/*`; `/api/kpi/historique` and
+  `/api/planning/realise` stay deprecated aliases until 5.0.
   The measure itself is `RealisedVsPlannedAnalyzer`, over
   `ChangementsJourneeService.compareSeats` — never a comparison of its own —
   each day elapsed (its last timeslot over) against the publication in force
@@ -675,11 +689,20 @@ Single Quarkus service, no separate solver microservice. Package root:
   classify. See
   `docs/decisions/0001-cloisonnement-par-edition.md`.
 - Solver tuning: `planning.solver.seconds-limit` /
-  `planning.solver.unimproved-seconds-limit` in `application.properties`.
-  The operator's hourly quota and queue cap (`service/solve/SolverQuota`, ADR
-  0075) are checked at submission in the services, never in a resource: a new
-  way to start a solve calls `consume()` (and `checkQueue` if it can wait), and
-  the startup replay of the persisted queue must keep bypassing both.
+  `planning.solver.unimproved-seconds-limit` in `application.properties`
+  (`SOLVER_SECONDS_LIMIT`, `SOLVER_UNIMPROVED_SECONDS_LIMIT`). **The solve
+  budget is an instance setting, never an edition's** (ADR 0110): no table, no
+  `PUT`, no scenario field carries it, `SolveBudgetPolicy` reads the two
+  properties and `SOLVER_SECONDS_LIMIT_MAX` bounds only a duration asked for at
+  launch. The `calcul` section of the settings holds the edition's end-of-solve
+  mail and shows the instance budget read-only.
+  The hourly quota and queue cap (`service/solve/SolverQuota`, ADR 0075) apply
+  **only on a public instance** (`PUBLIC_INSTANCE=true`; elsewhere `consume()`
+  and `checkQueue` do nothing and boot warns if the limits are set) and are
+  checked at submission in the services, never in a resource: a new way to
+  start a solve calls `consume()` (and `checkQueue` if it can wait). The same
+  flag decides `RequiredMentionsLegales`: an empty required legal notice
+  refuses to boot a public instance and is a warning on any other.
 
 ### Frontend
 
@@ -775,8 +798,8 @@ The doc layout is intentional — respect it when adding or updating docs.
    `src/main/webui/AGENTS.md` for the frontend and nothing else. Never split
    repository memory across `CLAUDE.md`, `.github/copilot-instructions.md`,
    or similar files.
-2. **`README.md` is an introduction and a local quickstart, nothing more**: a
-   short presentation of the application, then *Démarrage rapide* — « Essayer »
+2. **`README.md` (English) and `README.fr.md` (French) are an introduction and a local quickstart, nothing more**: a
+   short presentation of the application, then the quick start (*Démarrage rapide*) — « Essayer »
    (the published image through `docker-compose.yml`) and « Développer »
    (`./mvnw quarkus:dev`) — and a pointer to the documentation. A short intro
    and a closing documentation index table are allowed; the functional
@@ -813,8 +836,17 @@ The doc layout is intentional — respect it when adding or updating docs.
    in the hosting part) and `memoire-du-projet.md`. Adding a topic means adding a
    page to the right part and its slug to that part's `index.md` — not a new
    root-level file and not a new README section.
-4. Docs are written in **French**; keep the existing tone and Markdown style
-   (tables for enumerable facts, fenced code blocks for commands).
+4. Docs are written in **French and in English**, page for page. The French
+   page is the source: `site/src/docs-en/<part>/<page>.md` is its twin, named
+   by the `twin: <fr part>/<fr page>` of its front matter, with the same
+   headings, lists, tables, code blocks and **link targets byte for byte** (only
+   the link text is translated; the build turns the targets and anchors into
+   the English pages' and fails on a page without twin or on a different shape,
+   `site/scripts/docs-twins.mjs`). The English parts are `rules/`, `install/`
+   and `build/`, published under `/en/docs/`; their `index.md` lists the English
+   page names in `docs:`. Changing a French page means changing its twin in the
+   same commit. Keep the existing tone and Markdown style (tables for
+   enumerable facts, fenced code blocks for commands).
 5. When behaviour changes, update the doc that owns it. Two owners are **not**
    Markdown files, and writing prose instead of touching them is the mistake
    this rule exists to prevent:
@@ -949,6 +981,7 @@ visible half of the third, a French word that carries an accent.
 | `VerrouillagePlanning` | *lock* | |
 | `DemandeEchange` | *swap request* | |
 | `Typologie` | *game category* | a CRUD referential, not an enum |
+| `Polyvalent` | *polyvalent* | the animateur holding the one typologie flagged `polyvalent` (formerly `ninja`, renamed in 4.0): eligible on any stand, a reinforcement and never a specialist |
 | `Horaire` | *opening hours* | |
 | `ConsigneEdition` | *consigne* | **not translated** — "directive" and "instruction" both lose what the French word carries: an order received from outside (an arrêté) and relayed as such to the whole event. Its *bande* is *the band* in prose; `PrereglageConsigne` is *a preset* |
 | `Vacation` | ***shift*** | false friend: English *vacation* means holidays |

@@ -113,7 +113,7 @@ class SignalementAbsenceFlowTest {
                 Statement statement = connection.createStatement()) {
             statement.executeUpdate("DELETE FROM signalement_absence");
             statement.executeUpdate("DELETE FROM parametres_signalement");
-            statement.executeUpdate("DELETE FROM plan_snapshot");
+            statement.executeUpdate("DELETE FROM version_plan");
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to clear the fixture", e);
         }
@@ -277,7 +277,8 @@ class SignalementAbsenceFlowTest {
         RestAssured.requestSpecification = null;
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"id\":\"SIG-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"SIG-A\"}")
+                .body("{\"id\":\"SIG-VERROU\",\"type\":\"ANIMATEUR_CRENEAU\",\"animateurId\":\"SIG-A\",\"creneauId\":"
+                        + creneauId + "}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

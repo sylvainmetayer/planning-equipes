@@ -30,7 +30,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.active:Une seule édition est active, marquée « Active » sur la page Éditions. Elle seule publie, envoie des courriels (planning, code d'accès, invitation à déclarer, relances, rappel de la veille, notifications d'échange) et ouvre l'espace animateur, les abonnements de calendrier et l'affichage mural. Une édition inactive reste entièrement utilisable ici : référentiel, résolution, verrous, simulations, instantanés ; elle n'écrit simplement à personne, ce que le bandeau du haut rappelle, et ses liens répondent comme un lien inconnu. Entre deux événements, aucune édition n'est active et rien ne part. Toute édition naît inactive, qu'elle soit créée, dupliquée ou importée ; seule la première d'une installation neuve naît active.`,
+          text: $localize`:@@aide.editions.active:Une seule édition est active, marquée « Active » sur la page Éditions. Elle seule publie, envoie des courriels (planning, code d'accès, invitation à déclarer, relances, rappel de la veille, notifications d'échange) et ouvre l'espace animateur, les abonnements de calendrier et l'affichage mural. Une édition inactive reste entièrement utilisable ici : référentiel, résolution, verrous, simulations, versions ; elle n'écrit simplement à personne, ce que le bandeau du haut rappelle, et ses liens répondent comme un lien inconnu. Entre deux événements, aucune édition n'est active et rien ne part. Toute édition naît inactive, qu'elle soit créée, dupliquée ou importée ; seule la première d'une installation neuve naît active.`,
         },
         {
           kind: 'paragraph',
@@ -56,13 +56,14 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.editions.vider:« Vider cette édition », en bas de la page Éditions, supprime les stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et préréglages de consigne de l'édition consultée, après avoir fait recopier son nom. Restent ses typologies, emplacements, journées types, instantanés et paramètres, les autres éditions et les réglages de l'instance. Refusé pendant une résolution et tant qu'une famille est figée.`,
+          text: $localize`:@@aide.editions.vider:« Vider cette édition », en bas de la page Éditions, supprime les stands, créneaux, animateurs, affectations, ajustements manuels, verrouillages, validations de journées, demandes d'échange, consignes et préréglages de consigne de l'édition consultée, après avoir fait recopier son nom. Restent ses typologies, emplacements, journées types, versions et paramètres, les autres éditions et les réglages de l'instance. Refusé pendant une résolution et tant qu'une famille est figée.`,
         },
       ],
       links: [
         { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         {
-          route: '/editions/comparer',
+          route: '/comparer',
+          queryParams: { vue: 'editions' },
           label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
         },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
@@ -93,7 +94,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.gel.typologies.terme:Typologies et emplacements`,
-              text: $localize`:@@aide.gel.typologies.def:Création, suppression, plafond par typologie et typologie ninja. Libellés, descriptions, noms et positions restent modifiables.`,
+              text: $localize`:@@aide.gel.typologies.def:Création, suppression, plafond par typologie et typologie polyvalente. Libellés, descriptions, noms et positions restent modifiables.`,
             },
             {
               term: $localize`:@@aide.gel.competences.terme:Compétences`,
@@ -136,7 +137,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.data.term.lieux:Lieux et typologies`,
-              text: $localize`:@@aide.data.def.autres:Un lieu (ou emplacement) est un endroit géolocalisé auquel rattacher un stand ; il sert à éviter les allers-retours d'un créneau à l'autre. Les lieux sont l'onglet « Lieux » de la page Stands : une carte les montre tous avec leurs stands, et faire glisser un marqueur y corrige la position sans ouvrir de fiche ; le tableau, trié à volonté, dit quels stands sont rattachés à chacun. Le formulaire d'un stand propose « Nouveau lieu… » sans quitter la page. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand. Sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie ninja » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
+              text: $localize`:@@aide.data.def.autres:Un lieu (ou emplacement) est un endroit géolocalisé auquel rattacher un stand ; il sert à éviter les allers-retours d'un créneau à l'autre. Les lieux sont l'onglet « Lieux » de la page Stands : une carte les montre tous avec leurs stands, et faire glisser un marqueur y corrige la position sans ouvrir de fiche ; le tableau, trié à volonté, dit quels stands sont rattachés à chacun. Le formulaire d'un stand propose « Nouveau lieu… » sans quitter la page. Une typologie est le vocabulaire commun entre les compétences d'un animateur et les jeux d'un stand. Sans typologie partagée, l'animateur ne peut pas tenir le stand. Cochez aussi, dans la colonne « Typologie polyvalente » de l'écran Typologies, la typologie dont les porteurs sont polyvalents : le solveur essaie d'en garder un libre sur chaque créneau. Sans elle, cette réserve n'existe pas.`,
             },
           ],
         },
@@ -242,7 +243,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         {
           route: '/regles',
-          queryParams: { onglet: 'legal' },
+          queryParams: { onglet: 'regles' },
           label: $localize`:@@nav.link.regles:Règles du planning`,
         },
       ],

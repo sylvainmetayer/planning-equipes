@@ -15,7 +15,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
@@ -38,7 +37,6 @@ import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
-import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
 import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
@@ -159,6 +157,9 @@ final class ScenarioDomainMapper {
         evenement.setPonderationsScenario(contraintes(scenario.contraintes())
                 .map(ContraintesScenario::poids)
                 .orElse(null));
+        evenement.setNiveauxScenario(contraintes(scenario.contraintes())
+                .map(ContraintesScenario::obligatoires)
+                .orElse(null));
         return evenement;
     }
 
@@ -234,15 +235,15 @@ final class ScenarioDomainMapper {
         List<Animateur> animateurs = required(scenario.animateurs(), "animateurs").stream()
                 .map(ScenarioDomainMapper::animateur)
                 .collect(Collectors.toCollection(ArrayList::new));
-        // A scenario carries its own typologie referential, so the ninja typologie
+        // A scenario carries its own typologie referential, so the polyvalent typologie
         // comes from the file itself — the database one may not be loaded yet (or
         // may describe a different event entirely).
-        String typologieNinja = typologies(scenario.typologies()).stream()
-                .filter(TypologieItem::ninja)
+        String typologiePolyvalent = typologies(scenario.typologies()).stream()
+                .filter(TypologieItem::polyvalent)
                 .map(TypologieItem::id)
                 .findFirst()
                 .orElse(null);
-        animateurs.forEach(animateur -> animateur.applyNinjaTypologie(typologieNinja));
+        animateurs.forEach(animateur -> animateur.applyPolyvalentTypologie(typologiePolyvalent));
 
         LocalDate dateDebut = required(required(scenario.festival(), "festival").dateDebut(), "festival.dateDebut");
         return new ReferenceScenario(dateDebut, creneauxParId, standsParId, animateurs);
@@ -434,7 +435,6 @@ final class ScenarioDomainMapper {
         return new ScenarioSections(
                 parametresLegaux(scenario.parametresLegaux()),
                 parametresQualite(scenario.parametresQualite()),
-                parametresSolveur(scenario.parametresSolveur()),
                 typologies(scenario.typologies()),
                 edition(scenario),
                 contraintes(scenario.contraintes()),
@@ -696,7 +696,7 @@ final class ScenarioDomainMapper {
                         dto.id(),
                         dto.code(),
                         dto.label(),
-                        Boolean.TRUE.equals(dto.ninja()),
+                        Boolean.TRUE.equals(dto.polyvalent()),
                         dto.maxCreneauxParAnimateur(),
                         dto.description(),
                         null))
@@ -755,13 +755,6 @@ final class ScenarioDomainMapper {
                         : defauts.toleranceArriveeGroupeeMinutes()));
     }
 
-    private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {
-        if (dto == null || (dto.dureeResolutionSecondes() == null && dto.plateauSecondes() == null)) {
-            return Optional.empty();
-        }
-        return Optional.of(new ParametresSolveur(dto.dureeResolutionSecondes(), dto.plateauSecondes(), false));
-    }
-
     /**
      * {@code contraintes:} — {@code desactivees:} (constraint names) and
      * {@code poids:} (name → weight). An unknown name is refused rather than
@@ -776,13 +769,13 @@ final class ScenarioDomainMapper {
         Set<String> desactivees = new LinkedHashSet<>();
         if (dto.desactivees() != null) {
             for (String nom : dto.desactivees()) {
-                desactivees.add(requireKnownConstraint(String.valueOf(nom)));
+                currentConstraint(String.valueOf(nom)).ifPresent(desactivees::add);
             }
         }
         Set<String> activees = new LinkedHashSet<>();
         if (dto.activees() != null) {
             for (String nom : dto.activees()) {
-                activees.add(requireKnownConstraint(String.valueOf(nom)));
+                currentConstraint(String.valueOf(nom)).ifPresent(activees::add);
             }
         }
         Set<String> contradictoires = new LinkedHashSet<>(desactivees);
@@ -797,11 +790,65 @@ final class ScenarioDomainMapper {
         if (dto.poids() != null) {
             for (Map.Entry<String, Integer> entry : dto.poids().entrySet()) {
                 if (entry.getValue() != null) {
-                    poids.put(requireKnownConstraint(entry.getKey()), entry.getValue());
+                    currentConstraint(entry.getKey()).ifPresent(nom -> poids.put(nom, entry.getValue()));
                 }
             }
         }
-        return Optional.of(new ContraintesScenario(desactivees, activees, poids));
+        Map<String, Boolean> obligatoires = new LinkedHashMap<>();
+        if (dto.niveaux() != null) {
+            dto.niveaux()
+                    .forEach((nom, niveau) -> readNiveau(requireKnownConstraint(nom), niveau, obligatoires, poids));
+        }
+        return Optional.of(new ContraintesScenario(desactivees, activees, poids, obligatoires));
+    }
+
+    /**
+     * One {@code niveaux:} entry (ADR 0106): {@code OBLIGATOIRE}, {@code PREFERENCE},
+     * or a position — {@code PREFERENCE_FORTE}, {@code _NORMALE}, {@code _LEGERE} —
+     * which also writes the weight the position stands for unless {@code poids:}
+     * names the rule. Refused for a rule whose level is not the edition's to choose.
+     */
+    private static void readNiveau(
+            String nom, String niveau, Map<String, Boolean> obligatoires, Map<String, Integer> poids) {
+        if (!ConstraintCatalog.PAR_NOM.get(nom).niveauReglable()) {
+            throw new BusinessError.Invalid(
+                    "La règle « " + nom + " » n'a pas de niveau à choisir : "
+                            + "les règles légales et les règles de base restent obligatoires, les préférences restent des préférences.");
+        }
+        String value = String.valueOf(niveau).trim();
+        if ("OBLIGATOIRE".equals(value)) {
+            obligatoires.put(nom, true);
+        } else if ("PREFERENCE".equals(value)) {
+            obligatoires.put(nom, false);
+        } else {
+            ConstraintCatalog.NiveauRegle position;
+            try {
+                position = ConstraintCatalog.NiveauRegle.valueOf(value);
+            } catch (IllegalArgumentException e) {
+                throw new BusinessError.Invalid(
+                        "Le niveau « " + value + " » de la règle « " + nom
+                                + " » est inconnu : OBLIGATOIRE, PREFERENCE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE.");
+            }
+            obligatoires.put(nom, position.obligatoire());
+            if (!position.obligatoire()) {
+                poids.putIfAbsent(nom, position.poids());
+            }
+        }
+    }
+
+    /**
+     * The catalogue name a file's constraint name stands for: itself, its
+     * replacement when 4.0 renamed it, nothing when 4.0 retired it — a 3.x
+     * export (or a wipe backup) naming a retired rule must still import.
+     */
+    private static Optional<String> currentConstraint(String nom) {
+        String ancien = ConstraintCatalog.ANCIENS_NOMS.get(nom);
+        if (ancien != null) {
+            return ConstraintCatalog.RETIREE.equals(ancien)
+                    ? Optional.empty()
+                    : Optional.of(requireKnownConstraint(ancien));
+        }
+        return Optional.of(requireKnownConstraint(nom));
     }
 
     private static String requireKnownConstraint(String nom) {

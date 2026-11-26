@@ -12,7 +12,7 @@ Partout, un outil qui lit un plan lit le **plan enregistré**, et une personne s
 - Le bloc `aTraiter` répond à « que dois-je faire ce matin ? » : déclarations et échanges en attente, journées non relues des sept jours à venir, silencieux à relancer. « Aujourd'hui » est celui de `JourJClock`, la date simulée comprise.
 - `etat_planning` dit quand le solveur a tourné pour la dernière fois, `etat_publication` quand les animateurs ont été prévenus. Seule la seconde décrit ce que les gens ont sous les yeux : un plan calculé ce matin et publié la semaine dernière est, pour eux, celui de la semaine dernière. `etat_publication` dit aussi qui serait concerné par la prochaine publication, sans rien envoyer.
 - `changements_journee` dit ce qui a bougé sur une date, depuis la dernière publication (`reference=publication`) ou depuis le plan d'avant la dernière résolution (`reference=resolution`), par siège et par animateur. Un siège gardé par la même personne à d'autres heures est une ligne `HORAIRES`. `referenceDisponible` faux veut dire « rien à comparer », jamais « aucun changement ».
-- `realise_vs_planifie` rend l'écran du même nom pour chaque stand et chaque journée **écoulée** : sièges publiés, tenus, absences, remplacements, vides, retirés (consigne, créneau supprimé : jamais une absence) ou ajoutés, minutes publiées, réalisées et perdues. Chaque journée est comparée à la publication en vigueur à son premier créneau ; une journée commencée avant toute publication (`lateReference`) n'entre dans aucun total. `nature` vaut `DECLARED` : ce qui a été enregistré, pas un pointage.
+- `comparer_realise_planifie` rend l'écran du même nom pour chaque stand et chaque journée **écoulée** : sièges publiés, tenus, absences, remplacements, vides, retirés (consigne, créneau supprimé : jamais une absence) ou ajoutés, minutes publiées, réalisées et perdues. Chaque journée est comparée à la publication en vigueur à son premier créneau ; une journée commencée avant toute publication (`lateReference`) n'entre dans aucun total. `nature` vaut `DECLARED` : ce qui a été enregistré, pas un pointage.
 - `synthese_affectations` répond en quelques dizaines de lignes (postes pourvus au total, par stand et par jour), là où `lister_affectations` dépenserait le contexte de l'assistant avant qu'il voie qu'un stand est en sous-effectif le samedi.
 
 ## Résoudre et corriger le plan
@@ -22,6 +22,8 @@ Partout, un outil qui lit un plan lit le **plan enregistré**, et une personne s
 `diagnostiquer_plan` ne résout rien : il recalcule le score du plan enregistré, celui dont parlent `etat_planning` et `lister_affectations`. Il rend la **lecture du score** (`lecture`), les mêmes phrases que la page Solveur, écrites par gabarits : elles ne nomment que des règles, des jours et des nombres, jamais une personne. Chaque règle en défaut porte ses `actions` types (code, geste, explication), comme dans `expliquer_echec_contraintes_dures`.
 
 Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche qui pourrait le tenir et chiffre chaque candidat, `affecter_poste` applique le choix. Deux outils et non un seul : un assistant qui évalue et applique dans le même appel ne laisse aucune étape où un humain puisse dire non. `affecter_poste` refuse un poste **verrouillé**, le verrou étant ce qu'on lui demande de respecter, et un poste dont le créneau est commencé. `accepter_demande_echange` est, avec lui, l'un des deux seuls outils qui écrivent dans le plan sans solveur : il applique l'échange puis le fige par des verrouillages `ANIMATEUR_CRENEAU`. D'où `analyser_impact_echange` à côté, car la prévalidation stockée avec la demande décrit le plan du jour où elle a été envoyée.
+
+`modifier_niveau_contrainte` choisit le niveau d'une règle d'organisation pour l'édition : `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` ou `PREFERENCE_LEGERE` (une préférence écrit le poids de sa position). `lister_contraintes` donne `niveauReglable` et `niveauChoisi` ; une règle légale, d'affectation, ad hoc, de verrou ou une préférence souple refuse le niveau. Comme `modifier_poids_contrainte`, l'outil est accepté pendant un calcul et le dit (`RESOLUTION_EN_COURS`).
 
 `consulter_historique_ponderation` rend ce que rend `GET /api/constraints/{name}/historique`, ou la vue globale sans `contrainte` : changements de poids et d'activation, valeurs avant et après, origine typée, puis les résolutions de l'édition avec le dosage de chacune. Un réglage fait par `modifier_poids_contrainte`, `activer_contrainte` ou `desactiver_contrainte` y porte l'origine `ASSISTANT`.
 
@@ -36,11 +38,11 @@ Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche 
 | `analyser_marge` | la marge par jour et tranche, en mode `avant` (défaut) ou `apres` ; le mode `tension` la croise avec la fragilité du plan, chaque case portant une `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`, `CALME`) et ses `motifs`, les sièges irremplaçables y étant tous comptés |
 | `plan_formation` | par typologie en manque ou tenue par un spécialiste unique, les chiffres des analyses et les candidats classés (jours de tension disponibles, puis souhait, puis niveau) ; un candidat est `DEBUTANT` ou `AUTONOME`, jamais `REFERENT`. Sans plan enregistré, `planPersiste` vaut `false` et seule la partie besoin parle |
 | `analyser_pauses` | par animateur et par jour, où tombe la pause due, sur quel stand, qui peut relayer (`relaisAnimateurIds`) ; une pause que personne ne peut relayer est un écart dur, le filtre `sansRelais` ne rend que celles-là |
-| `analyser_enchainements` | deux postes consécutifs d'un animateur sur deux emplacements géolocalisés dont le battement ne laisse pas le temps de marcher, ou seulement en prenant sur la pause (`walkOnBreak`) ; `geolocated=false` dit qu'aucun trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va bien ». Vitesse, détour et tolérance se règlent par `modifier_parametres_qualite` |
+| `analyser_enchainements` | deux postes consécutifs d'un animateur sur deux emplacements géolocalisés dont le battement ne laisse pas le temps de marcher, ou seulement en prenant sur la pause (`walkOnBreak`) ; `geolocated=false` dit qu'aucun trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va bien ». Vitesse, détour et tolérance se règlent par `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | pour chaque groupe, jour par jour, qui travaille, qui manque, l'écart des arrivées et des départs |
-| `comparer_editions` | le delta de l'écran Comparer deux éditions, sans aucun nom : une ligne d'animateur porte ses ids dans chaque édition et le nom des champs qui diffèrent, jamais leurs valeurs. Rien n'est rapproché par id ; `matching` dit sur quoi deux lignes l'ont été (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
+| `comparer_editions` | le delta de la vue Éditions de l'écran Comparer deux versions, sans aucun nom : une ligne d'animateur porte ses ids dans chaque édition et le nom des champs qui diffèrent, jamais leurs valeurs. Rien n'est rapproché par id ; `matching` dit sur quoi deux lignes l'ont été (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
-La pause se règle par `consulter_parametres_legaux` et `modifier_parametres_legaux` : une seule durée, `dureePauseMinutes` (30 par défaut), refusée sous son plancher d'ordre public de 20 minutes et que rien ne plafonne. Les 30 minutes dues à un mineur s'appliquent à la lecture, pas au réglage : une édition à 25 donne 25 aux majeurs et 30 aux mineurs. Les plafonds, le rapport des heures, l'équité et les indicateurs déduisent cette même durée ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). La même paire d'outils porte `heureDebutSoiree` et `dureeVacationMaxMinutes`.
+La pause se règle par `consulter_parametres` et `modifier_parametres` (section `legal`) : une seule durée, `dureePauseMinutes` (30 par défaut), refusée sous son plancher d'ordre public de 20 minutes et que rien ne plafonne. Les 30 minutes dues à un mineur s'appliquent à la lecture, pas au réglage : une édition à 25 donne 25 aux majeurs et 30 aux mineurs. Les plafonds, le rapport des heures, l'équité et les indicateurs déduisent cette même durée ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). La même section porte `heureDebutSoiree` et `dureeVacationMaxMinutes`.
 
 ## Construire la grille et les horaires
 
@@ -73,7 +75,7 @@ Les déclarations de disponibilité et les demandes d'échange arrivent de l'esp
 
 `synthese_confirmations` compte, parmi les animateurs qui ont un poste sur le plan publié, les confirmés, relancés, silencieux et les **échecs d'envoi** (comptés à part, sans adresse) et date la publication à laquelle ils répondent ; `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
 
-`lister_demandes_covoiturage` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et sans le motif d'un écart ni d'une annulation. La validation, l'écart et l'annulation restent des gestes d'écran, parce qu'ils préviennent les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage, qui prévient le groupe).
+`lister_demandes_covoiturage` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage).
 
 ## Les prompts et les ressources
 
@@ -95,7 +97,25 @@ Deux **ressources**, à attacher une fois pour informer tous les appels suivants
 La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n'est publié que sous son nom courant ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). Ce tableau est le rendu des lignes changées de [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv) ; un nom absent n'a pas changé. Quand le fichier change, `McpRenommageTest` échoue et imprime le tableau à coller entre les deux repères.
 
 <!-- mcp-renommages:debut -->
-Aucun outil n'est encore renommé ni retiré.
+| Nom en 3.x | Nom en 4.0 |
+| --- | --- |
+| `capturer_instantane` | `creer_version` |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
+| `consulter_parametres_legaux` | `consulter_parametres` |
+| `consulter_parametres_notifications` | `consulter_parametres` |
+| `consulter_parametres_qualite` | `consulter_parametres` |
+| `consulter_parametres_solveur` | `consulter_parametres` |
+| `lister_instantanes` | `lister_versions` |
+| `lister_kpi_historique` | `lister_mesures_edition` |
+| `modifier_parametres_legaux` | `modifier_parametres` |
+| `modifier_parametres_notifications` | `modifier_parametres` |
+| `modifier_parametres_qualite` | `modifier_parametres` |
+| `modifier_parametres_solveur` | `modifier_parametres` |
+| `realise_vs_planifie` | `comparer_realise_planifie` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
+| `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->
 
 ## Ce qui n'a pas d'outil

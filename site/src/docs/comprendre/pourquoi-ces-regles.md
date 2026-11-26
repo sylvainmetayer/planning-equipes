@@ -1,6 +1,6 @@
 # Les règles du solveur et leur catalogue
 
-Vous savez où lire la liste des 47 règles, comment elles se rangent par niveau, pourquoi l'écran et le code n'emploient pas le même mot pour un écart, et ce que deux champs de la fiche ne pilotent pas. Le tableau en fin de page est la liste complète, tenue à jour par un test.
+Vous savez où lire la liste des 46 règles, comment elles se rangent par niveau, pourquoi l'écran et le code n'emploient pas le même mot pour un écart, et ce que deux champs de la fiche ne pilotent pas. Le tableau en fin de page est la liste complète, tenue à jour par un test.
 
 Un planning est valide quand aucune règle dure n'est violée, et bon quand les règles de qualité sont peu pénalisées. Les règles se rangent sur les trois niveaux du `HardMediumSoftScore` de Timefold : **dur** (bloquant), **medium** (fortement pénalisé, signalé à l'organisateur) et **soft** (préférence qui départage deux plannings valides).
 
@@ -17,7 +17,7 @@ Le niveau, la catégorie, la description métier et l'article de loi de chaque r
 | Question | Page |
 |---|---|
 | Pourquoi une règle légale, de pause, de repos ou de semaine est écrite ainsi | [Règles légales et pauses](regles-legales-et-pauses.md) |
-| Typologie ninja, quotas, trajet, covoiturage, seuils de qualité, stabilité du plan publié | [Règles de couverture et de confort](regles-de-couverture-et-de-confort.md) |
+| Typologie polyvalente, quotas, trajet, covoiturage, seuils de qualité, stabilité du plan publié | [Règles de couverture et de confort](regles-de-couverture-et-de-confort.md) |
 | Éteindre, pondérer, lire un plancher, historique de dosage | [Doser et désactiver les règles](doser-et-desactiver-les-regles.md) |
 | Exceptions posées à la main et leurs contradictions | [Les exceptions ad hoc](exceptions-ad-hoc.md) |
 
@@ -96,8 +96,7 @@ Ce tableau est le rendu de `ConstraintCatalog`. Quand le catalogue change, `Docu
 | `affectationForcee` | HARD | Contraintes ad hoc | Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé. |
 | `affiniteAdHoc` | SOFT | Contraintes ad hoc | Paire d'animateurs à privilégier : chaque créneau où les deux sont affectés au même stand est récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, sans jamais la forcer. |
 | `arriveeGroupee` | SOFT | Contraintes ad hoc | Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur la ligne de la règle). Chaque jour et chaque paire du groupe coûtent les minutes d'écart au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent tenir des stands différents. Contrainte souple : elle cède devant les règles légales et l'équilibre de charge. |
-| `animateurVerrouilleFige` | HARD | Verrouillage du planning | Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et le solveur ne peut plus lui en attribuer de nouveaux. |
-| `animateurVerrouilleCreneauFige` | HARD | Verrouillage du planning | Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient après l'échange ne bouge plus, sans geler le reste de leur planning. |
+| `animateurVerrouilleCreneauFige` | HARD | Verrouillage du planning | Un animateur verrouillé sur un créneau (par exemple après un échange validé) y garde ce qu'il tient : le solveur ne peut ni le lui retirer ni lui en attribuer un autre, sans geler le reste de son planning. |
 | `standComplexeAvecReferent` | MEDIUM | Qualité d'organisation | Chaque stand devrait compter au moins un référent sur chaque créneau. |
 | `equilibrerCharge` | MEDIUM | Qualité d'organisation | La charge de travail doit être répartie équitablement entre les animateurs. |
 | `stabiliteDuPlanPublie` | MEDIUM | Qualité d'organisation | Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. Muette tant que rien n'a été publié ; une vacation que le plan publié n'avait pas — autre jour, autres heures ou autre stand — reste libre. |
@@ -116,5 +115,5 @@ Ce tableau est le rendu de `ConstraintCatalog`. Quand le catalogue change, `Docu
 | `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, réglable sur la ligne de la règle : les deux formes le lisent au même endroit. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
-| `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
+| `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie polyvalente) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
 <!-- catalogue:fin -->

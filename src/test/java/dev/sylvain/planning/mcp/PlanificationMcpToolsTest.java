@@ -4,11 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneDetailView;
-import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneView;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
+import dev.sylvain.planning.mcp.VersionMcpTools.VersionDetailView;
+import dev.sylvain.planning.mcp.VersionMcpTools.VersionView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
@@ -16,7 +16,6 @@ import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,7 +56,7 @@ class PlanificationMcpToolsTest {
     VerrouillageMcpTools verrouillageTools;
 
     @Inject
-    InstantaneMcpTools instantaneTools;
+    VersionMcpTools instantaneTools;
 
     @Inject
     SolverJobService solverJobService;
@@ -76,10 +75,10 @@ class PlanificationMcpToolsTest {
 
     @Test
     void captureCompareThenRestoreAPlanning() {
-        InstantaneView capture = solveAndCapture();
-        assertThat(capture.automatique()).isFalse();
+        VersionView capture = solveAndCapture();
+        assertThat(capture.origine()).isEqualTo("MANUELLE");
         assertThat(instantaneTools.listSnapshots("E1"))
-                .extracting(InstantaneView::id)
+                .extracting(VersionView::id)
                 .contains(capture.id());
 
         var comparaison = instantaneTools.compareSnapshots(String.valueOf(capture.id()), "courant", "E1");
@@ -96,9 +95,9 @@ class PlanificationMcpToolsTest {
 
     @Test
     void readingASnapshotReturnsOnlyIds() {
-        InstantaneView capture = solveAndCapture();
+        VersionView capture = solveAndCapture();
 
-        InstantaneDetailView detail = instantaneTools.getSnapshot(capture.id(), null, null, 5, "E1");
+        VersionDetailView detail = instantaneTools.getSnapshot(capture.id(), null, null, 5, "E1");
 
         assertThat(detail.affectations()).hasSizeLessThanOrEqualTo(5);
         assertThat(detail.affectationsTotal()).isEqualTo(capture.nombreAffectations());
@@ -111,17 +110,18 @@ class PlanificationMcpToolsTest {
     @Test
     void lockThenUnlockAnAnimateurOfThePlanning() {
         solve();
-        String animateurId = planningTools.listAffectations(null, null, null, false, null, "E1").affectations().stream()
-                .map(AffectationView::animateurId)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        AffectationView tenu =
+                planningTools.listAffectations(null, null, null, false, null, "E1").affectations().stream()
+                        .filter(vue -> vue.animateurId() != null)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        String animateurId = tenu.animateurId();
 
         VerrouillageView pose = verrouillageTools
-                .lock("ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", "E1")
+                .lock("ANIMATEUR_CRENEAU", animateurId, null, tenu.creneauId(), null, "vérifié avec l'équipe", "E1")
                 .verrouillage();
 
-        assertThat(pose.type()).isEqualTo("ANIMATEUR");
+        assertThat(pose.type()).isEqualTo("ANIMATEUR_CRENEAU");
         assertThat(pose.animateurId()).isEqualTo(animateurId);
         assertThat(pose.id()).isNotBlank();
         assertThat(verrouillageTools.listVerrouillages("E1"))
@@ -136,7 +136,8 @@ class PlanificationMcpToolsTest {
 
     @Test
     void lockingAnUnknownTargetIsRefused() {
-        assertThatThrownBy(() -> verrouillageTools.lock("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null, null, "E1"))
+        assertThatThrownBy(() -> verrouillageTools.lock(
+                        "STAND_JOUR", null, "STAND-QUI-NEXISTE-PAS", null, "2026-08-15", null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("STAND-QUI-NEXISTE-PAS");
@@ -168,9 +169,9 @@ class PlanificationMcpToolsTest {
                 .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
-    private InstantaneView solveAndCapture() {
+    private VersionView solveAndCapture() {
         solve();
-        InstantaneView capture = instantaneTools.captureSnapshot("Après le premier solve", "E1");
+        VersionView capture = instantaneTools.captureSnapshot("Après le premier solve", "E1");
         assertThat(capture.nombreAffectations()).isPositive();
         return capture;
     }

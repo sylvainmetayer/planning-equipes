@@ -72,7 +72,6 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { IncrementalResult } from './incremental-result';
-import { MachineCalculCard } from './machine-calcul-card';
 import { ReplanificationData, ReplanificationDialog } from './replanification-dialog';
 import { RouterLink } from '@angular/router';
 import { ScoreCurveCard } from './score-curve-card';
@@ -124,7 +123,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
  *
  * <p>An orchestrator: the queue, the score curve, the volumetry, the recap
  * and the incremental diff are each a component of their own next door; the
- * solve budget is set on « Règles du planning › Calcul ». What stays here is what the result handler has to write, and the three
+ * solve budget is set on « Paramètres › Calcul ». What stays here is what the result handler has to write, and the three
  * ways of launching a solve.</p>
  *
  * <p>The <b>diffusion</b> is no longer one of them (issue #320): exporting the
@@ -155,7 +154,6 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
     ValidationBanner,
     RouterLink,
     MatButtonToggleModule,
-    MachineCalculCard,
   ],
   templateUrl: './solver-page.html',
   styleUrls: ['./solver.css', './replanification.css', './score-curve.css'],
@@ -238,20 +236,10 @@ export class SolverPage implements OnInit {
 
   /* ----------------------------- Compute machine -- ---------------------------- */
 
-  /** The compute machine of ADR 0086; null until read, and nothing of it shows unless `configured`. */
+  /** The worker of ADR 0086; null until read, and nothing of it shows unless `configured`. */
   protected readonly machine = signal<MachineCalcul | null>(null);
   protected readonly machineConfiguree = computed(() => this.machine()?.configured === true);
   protected readonly remoteByDefault = computed(() => this.machine()?.remoteByDefault ?? false);
-  /** A machine that is up, or whose last stop failed, may be billing: its card never folds away. */
-  protected readonly machineUp = computed(() => {
-    const m = this.machine();
-    return (
-      m?.state === 'PREPARING' ||
-      m?.state === 'READY' ||
-      m?.state === 'SOLVING' ||
-      !!m?.lastStopError
-    );
-  });
   /** « Sur la machine de calcul » for the next full solve; follows the instance default until chosen. */
   protected readonly distant = linkedSignal(() => this.remoteByDefault());
 
@@ -404,24 +392,8 @@ export class SolverPage implements OnInit {
   private readonly session = inject(SessionStore);
 
   constructor() {
-    // The machine's state moves with the jobs: re-read when one starts, ends
-    // or changes stage — the first run of this effect is the initial read.
-    const jobStage = computed(() => {
-      const job = this.jobs.activeJob();
-      return `${job?.id ?? ''}|${job?.remoteStage ?? ''}`;
-    });
-    effect(() => {
-      jobStage();
-      untracked(() => void this.loadMachine());
-    });
-    // And slowly while a machine is up: it stops by itself after an idle delay.
-    const poll = setInterval(() => {
-      const machine = this.machine();
-      if (machine?.onDemand && machine.state !== 'ABSENT') {
-        void this.loadMachine();
-      }
-    }, 15_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(poll));
+    // Instance settings: read once, nothing on this screen changes them.
+    void this.loadMachine();
     void this.problemes.reload();
     void this.crud.reload();
     void this.validations.reload();
@@ -806,8 +778,8 @@ export class SolverPage implements OnInit {
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error). A planned solve
       // builds it when it starts, not now — the edition can keep being prepared.
-      // No duration either: the server applies the edition's budget —
-      // duration, plateau and the instance's ceiling — to whoever launches.
+      // No duration either: the server applies the instance's budget —
+      // duration and plateau — to whoever launches.
       await this.jobs.submitSolveFromReferenceData(
         undefined,
         enFile,

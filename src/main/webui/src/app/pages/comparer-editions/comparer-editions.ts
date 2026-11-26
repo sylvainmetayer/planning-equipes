@@ -116,7 +116,7 @@ export function fieldLabel(field: string): string {
     code: $localize`:@@comparerEditions.champ.code:code`,
     nom: $localize`:@@comparerEditions.champ.nom:nom`,
     label: $localize`:@@comparerEditions.champ.label:libellé`,
-    ninja: $localize`:@@comparerEditions.champ.ninja:polyvalente`,
+    polyvalent: $localize`:@@comparerEditions.champ.polyvalent:polyvalente`,
     maxCreneauxParAnimateur: $localize`:@@comparerEditions.champ.quota:plafond par animateur`,
     description: $localize`:@@comparerEditions.champ.description:description`,
     latitude: $localize`:@@comparerEditions.champ.latitude:latitude`,

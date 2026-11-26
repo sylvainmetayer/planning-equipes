@@ -87,7 +87,7 @@ form.form-grid {
  * only applies once a scroll has been decided, which is exactly the decision
  * being got wrong. 4.25 rem holds the tallest band these grids produce — 4.11
  * for the two rows of headers on `/ouvertures`, 4.22 for a three-line typologie
- * label under its ninja icon on `/competences` — and a band that outgrew it
+ * label under its polyvalent icon on `/competences` — and a band that outgrew it
  * would put a focused cell back under the header, which is what the keyboard
  * walk of `e2e/grilles-collantes.spec.ts` measures. Erring long costs nothing:
  * it only leaves a little more of the grid visible above the cell being typed

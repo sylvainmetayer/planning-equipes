@@ -7,28 +7,30 @@ pagination:
 permalink: "{{ p.url }}index.html"
 eleventyExcludeFromCollections: true
 eleventyComputed:
-  lang: "fr"
+  lang: "{{ p.lang }}"
   key: "docs"
-  altLang: "en"
+  altLang: "{{ p.altLang }}"
+  altUrl: "{{ p.altUrl }}"
   canonical: "{{ p.url }}"
   title: "{{ p.title }}"
   description: "{{ p.description }}"
   ogTitle: "{{ p.h1 }}"
-  ogAlt: "{{ copy.fr.accueil.ogTitre }}"
+  ogAlt: "{{ copy[p.lang].accueil.ogTitre }}"
 ---
-{% set c = copy.fr.docs %}
+{% set c = copy[lang].docs %}
+{% set docsBase = '/en/docs/' if lang == 'en' else '/docs/' %}
 {% set part = docsParts | byId(p.part) %}
 <article class="doc" data-player="{{ part.player if part else 2 }}">
   <header class="ask">
     <div class="container">
-      <nav class="crumbs" aria-label="{{ copy.fr.commun.ariane }}"><ol><li><a href="{{ urls.fr.accueil }}">{{ copy.fr.commun.nav.accueil }}</a></li>
+      <nav class="crumbs" aria-label="{{ copy[lang].commun.ariane }}"><ol><li><a href="{{ urls[lang].accueil }}">{{ copy[lang].commun.nav.accueil }}</a></li>
         {%- if p.kind == 'home' %}<li aria-current="page">{{ c.h1 }}</li>
-        {%- elif p.kind == 'part' %}<li><a href="/docs/">{{ c.h1 }}</a></li><li aria-current="page">{{ part.titre | typo('fr') }}</li>
-        {%- else %}<li><a href="/docs/">{{ c.h1 }}</a></li><li><a href="/docs/{{ part.id }}/">{{ part.titre | typo('fr') }}</a></li><li aria-current="page">{{ p.h1 | typo('fr') }}</li>{% endif %}</ol></nav>
-      <h1>{{ (c.h1 if p.kind == 'home' else p.h1) | typo('fr') }}</h1>
-      {% if p.kind == 'part' %}<p class="lead">{{ part.pour | typo('fr') }}</p>{% endif %}
+        {%- elif p.kind == 'part' %}<li><a href="{{ docsBase }}">{{ c.h1 }}</a></li><li aria-current="page">{{ part.titre | typo(lang) }}</li>
+        {%- else %}<li><a href="{{ docsBase }}">{{ c.h1 }}</a></li><li><a href="{{ docsBase }}{{ part.id }}/">{{ part.titre | typo(lang) }}</a></li><li aria-current="page">{{ p.h1 | typo(lang) }}</li>{% endif %}</ol></nav>
+      <h1>{{ (c.h1 if p.kind == 'home' else p.h1) | typo(lang) }}</h1>
+      {% if p.kind == 'part' %}<p class="lead">{{ part.pour | typo(lang) }}</p>{% endif %}
       {% if p.kind == 'home' %}
-      <form class="doc__search" role="search" method="get" action="/docs/" data-search>
+      <form class="doc__search" role="search" method="get" action="{{ docsBase }}" data-search>
         <label for="doc-q">{{ c.recherche }}</label>
         <span class="search__row"><input id="doc-q" name="q" type="search" autocomplete="off" required> <button class="btn btn--primary" type="submit">{{ c.chercher }}</button></span>
       </form>
@@ -42,14 +44,14 @@ eleventyComputed:
   {% if p.kind == 'home' %}
   <div class="container doc__intro"><div class="doc__main doc__main--intro">{{ p.body | safe }}</div></div>
   <div class="container doc__parts">
-    {% for pt in docsParts %}
+    {% for pt in docsParts %}{% if pt.lang == lang %}
     <section class="card doc__part-card" data-player="{{ pt.player }}" aria-labelledby="part-{{ pt.id }}">
-      <h2 id="part-{{ pt.id }}"><a href="/docs/{{ pt.id }}/">{{ pt.titre | typo('fr') }}</a></h2>
-      <p>{{ pt.pour | typo('fr') }}</p>
-      <ul>{% for n in pt.docs | head(5) %}{% set d = docs | byName(n) %}<li><a href="{{ d.url }}">{{ d.h1 | typo('fr') }}</a></li>{% endfor %}</ul>
-      <p class="doc__more"><a href="/docs/{{ pt.id }}/">{{ c.toutVoir | replace('{n}', pt.docs.length) }}</a></p>
+      <h2 id="part-{{ pt.id }}"><a href="{{ docsBase }}{{ pt.id }}/">{{ pt.titre | typo(lang) }}</a></h2>
+      <p>{{ pt.pour | typo(lang) }}</p>
+      <ul>{% for n in pt.docs | head(5) %}{% set d = docs | byName(n) %}<li><a href="{{ d.url }}">{{ d.h1 | typo(lang) }}</a></li>{% endfor %}</ul>
+      <p class="doc__more"><a href="{{ docsBase }}{{ pt.id }}/">{{ c.toutVoir | replace('{n}', pt.docs.length) }}</a></p>
     </section>
-    {% endfor %}
+    {% endif %}{% endfor %}
   </div>
 
   {% elif p.kind == 'part' %}
@@ -60,19 +62,19 @@ eleventyComputed:
     <div class="doc__side">
       {% if p.toc.length %}
       <nav class="doc__nav" aria-labelledby="doc-toc"><details open data-fold-narrow><summary class="doc__label" id="doc-toc">{{ c.surCettePage }}</summary>
-        <ul>{% for h in p.toc %}<li class="doc__l{{ h.level }}"><a href="#{{ h.id }}">{{ h.text | typo('fr') }}</a></li>{% endfor %}</ul>
+        <ul>{% for h in p.toc %}<li class="doc__l{{ h.level }}"><a href="#{{ h.id }}">{{ h.text | typo(lang) }}</a></li>{% endfor %}</ul>
       </details></nav>
       {% endif %}
-      <nav class="doc__nav" aria-labelledby="doc-all"><details open data-fold-narrow><summary class="doc__label" id="doc-all">{{ part.titre | typo('fr') }}</summary>
-        <ul>{% for n in part.docs %}{% set d = docs | byName(n) %}<li><a href="{{ d.url }}"{% if d.url == p.url %} aria-current="page"{% endif %}>{{ d.h1 | typo('fr') }}</a></li>{% endfor %}</ul>
+      <nav class="doc__nav" aria-labelledby="doc-all"><details open data-fold-narrow><summary class="doc__label" id="doc-all">{{ part.titre | typo(lang) }}</summary>
+        <ul>{% for n in part.docs %}{% set d = docs | byName(n) %}<li><a href="{{ d.url }}"{% if d.url == p.url %} aria-current="page"{% endif %}>{{ d.h1 | typo(lang) }}</a></li>{% endfor %}</ul>
         <p class="doc__others">{{ c.autresParties }}
-        {% for pt in docsParts %}{% if pt.id != part.id %}<a href="/docs/{{ pt.id }}/">{{ pt.titre | typo('fr') }}</a>{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}</p>
+        {% for pt in docsParts %}{% if pt.lang == lang and pt.id != part.id %}<a href="{{ docsBase }}{{ pt.id }}/">{{ pt.titre | typo(lang) }}</a>{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}</p>
       </details></nav>
     </div>
     <div class="doc__main">{{ p.body | safe }}
       <nav class="doc__pager" aria-label="{{ c.pagerLabel }}">
-        {% if p.prev %}{% set d = docs | byName(p.prev) %}<a class="doc__prev" href="{{ d.url }}" rel="prev"><span>{{ c.precedent }}</span> {{ (part.titre if d.kind == 'part' else d.h1) | typo('fr') }}</a>{% endif %}
-        {% if p.next %}{% set d = docs | byName(p.next) %}<a class="doc__next" href="{{ d.url }}" rel="next"><span>{{ c.suivant }}</span> {{ d.h1 | typo('fr') }}</a>{% endif %}
+        {% if p.prev %}{% set d = docs | byName(p.prev) %}<a class="doc__prev" href="{{ d.url }}" rel="prev"><span>{{ c.precedent }}</span> {{ (part.titre if d.kind == 'part' else d.h1) | typo(lang) }}</a>{% endif %}
+        {% if p.next %}{% set d = docs | byName(p.next) %}<a class="doc__next" href="{{ d.url }}" rel="next"><span>{{ c.suivant }}</span> {{ d.h1 | typo(lang) }}</a>{% endif %}
       </nav>
       {% if p.edit %}<p class="doc__edit"><a href="{{ p.edit }}">{{ c.corriger }}</a></p>{% endif %}
     </div>
@@ -82,7 +84,7 @@ eleventyComputed:
   <section class="sec sec--close doc__close" aria-labelledby="doc-close-t">
     <div class="container close">
       <h2 id="doc-close-t">{{ c.fermeture }}</h2>
-      <p class="acts"><a class="btn btn--primary" href="{{ urls.fr.contact }}">{{ copy.fr.commun.nav.contact }}</a> <a class="btn" href="{{ urls.fr.hebergement }}">{{ c.autreLien }}</a></p>
+      <p class="acts"><a class="btn btn--primary" href="{{ urls[lang].contact }}">{{ copy[lang].commun.nav.contact }}</a> <a class="btn" href="{{ urls[lang].hebergement }}">{{ c.autreLien }}</a></p>
     </div>
   </section>
 </article>

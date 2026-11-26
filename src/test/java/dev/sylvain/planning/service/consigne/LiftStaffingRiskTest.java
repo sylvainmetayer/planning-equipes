@@ -94,9 +94,15 @@ class LiftStaffingRiskTest {
     @Test
     void somebodyHeldByAnAnimateurLockIsCountedButNoDayIsNamedForThem() {
         List<VerrouillagePlanning> locks = new ArrayList<>(lockEveryDayBut(FRIDAY));
-        VerrouillagePlanning person = new VerrouillagePlanning("A", TypeVerrouillage.ANIMATEUR);
-        person.setAnimateurId(fullWeek.getId());
-        locks.add(person);
+        for (PosteAffectation poste : plan) {
+            if (poste.getAnimateur().equals(fullWeek)) {
+                VerrouillagePlanning person =
+                        new VerrouillagePlanning("A" + poste.getId(), TypeVerrouillage.ANIMATEUR_CRENEAU);
+                person.setAnimateurId(fullWeek.getId());
+                person.setCreneauId(poste.getCreneau().getId());
+                locks.add(person);
+            }
+        }
         assertThat(LiftStaffingRisk.assess(FRIDAY, 100, 400, List.of(fullWeek), plan, locks, LONG_AGO))
                 .contains(new LiftStaffingRisk.Risk(1, 0, List.of()));
     }

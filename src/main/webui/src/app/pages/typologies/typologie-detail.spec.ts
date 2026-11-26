@@ -32,7 +32,7 @@ function animateur(id: string, competences: Record<string, string>): Animateur {
   };
 }
 
-const enfance: TypologieItem = { id: 'ENF', label: 'Enfance', ninja: false };
+const enfance: TypologieItem = { id: 'ENF', label: 'Enfance', polyvalent: false };
 
 describe('buildTypologieDetail', () => {
   it('lists the stands proposing it and the animateurs vetted on it', () => {

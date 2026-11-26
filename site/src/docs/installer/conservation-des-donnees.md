@@ -12,7 +12,7 @@ La page *Historique* la lit ; personne ne l'écrit à la main et rien ne l'effac
 
 ## Ce qui reste jusqu'à ce que vous le supprimiez
 
-Pour tout le reste, la durée annoncée par `LEGAL_CONSERVATION` s'affiche dans la politique de confidentialité et **rien dans le code ne l'applique** : aucune purge automatique n'existe aujourd'hui. Un engagement écrit qui n'est pas tenu expose plus qu'une absence d'engagement, donc la purge se fait à la main, à date fixe. C'est voulu, et ce que l'automatisation devra porter le jour venu est écrit dans la [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
+Pour tout le reste, la durée annoncée par la clé `conservation` de `LEGAL_MENTIONS` s'affiche dans la politique de confidentialité et **rien dans le code ne l'applique** : aucune purge automatique n'existe aujourd'hui. Un engagement écrit qui n'est pas tenu expose plus qu'une absence d'engagement, donc la purge se fait à la main, à date fixe. C'est voulu, et ce que l'automatisation devra porter le jour venu est écrit dans la [décision 0016](repo:docs/decisions/0016-purge-manuelle-avant-automatisation.md).
 
 ### La purge annuelle
 
@@ -31,9 +31,15 @@ Ces sauvegardes ne sont **jamais purgées automatiquement** ([décision 0084](re
 
 Automatiser la purge ne réglerait pas ce cas : elle raisonne par édition échue.
 
+### L'archive du covoiturage 3.x
+
+La migration de la 4.0 range les demandes de covoiturage que la 3.x avait écartées ou annulées, avec le motif libre écrit pour l'animateur, dans la table `declaration_coequipier_avant_4_0` ([ce qu'elle contient](rgpd-limites-a-consigner.md#les-demandes-de-covoiturage)). L'application ne la lit plus et ne l'exporte pas. Elle est **gardée jusqu'à la 5.0**, qui la supprime ; d'ici là, elle part avec son édition (la purge annuelle la couvre) ou avec la fiche du demandeur.
+
+Une fois la 4.0 en place et le retour à la 3.x exclu, rien ne vous oblige à attendre : `DROP TABLE declaration_coequipier_avant_4_0;` la supprime, sans effet sur l'application. Notez-le au registre comme une purge.
+
 ## La mesure du réalisé
 
-Aucune tâche planifiée ne la calcule : l'écran « Réalisé vs planifié » la calcule à la demande ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). La première lecture faite une fois le dernier créneau de l'édition terminé, quand quelque chose a été publié, écrit la mesure dans `kpi_realise` : absences, remplacements, sièges vides et heures perdues, par typologie, sans aucune personne.
+Aucune tâche planifiée ne la calcule : l'écran « Mesures d'édition » la calcule à la demande ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). La première lecture faite une fois le dernier créneau de l'édition terminé, quand quelque chose a été publié, écrit la mesure dans `mesure_edition` (nature `REALISE`) : absences, remplacements, sièges vides et heures perdues, par typologie, sans aucune personne.
 
 C'est ce que l'édition suivante lit sur son écran Versions et sur l'onglet Besoin : cette lecture calcule d'abord la mesure de chaque édition terminée et publiée qui n'en a pas, et la suppression d'une édition écrit la sienne avant de l'effacer. Il n'y a donc rien à ouvrir à la main. Une horloge simulée n'écrit rien.
 
@@ -44,7 +50,7 @@ La mesure **n'est écrite qu'une fois** par édition : une correction faite apr�
 Pour **refiger** une édition après une correction qui doit compter, il n'y a pas de bouton : supprimez ses lignes, la prochaine lecture les réécrit à partir du plan du moment.
 
 ```sql
-DELETE FROM kpi_realise WHERE edition_id = '<id de l''édition>';
+DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = '<id de l''édition>';
 ```
 
 L'identifiant se lit sur l'écran Éditions. La mesure supprimée disparaît aussi de l'écran Versions de l'édition suivante jusqu'à la lecture qui la réécrit ; une édition supprimée entre-temps ne sera plus jamais refigée.

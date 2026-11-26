@@ -142,8 +142,9 @@ class SolveExchangeTest {
         PosteAffectation locked =
                 held.stream().filter(poste -> !poste.isVerrouille()).findFirst().orElseThrow();
         locked.setVerrouille(true);
-        VerrouillagePlanning lock = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning lock = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR_CRENEAU);
         lock.setAnimateurId(locked.getAnimateur().getId());
+        lock.setCreneauId(locked.getCreneau().getId());
         lock.setRaison(LOCK_REASON);
         prepared.setVerrouillages(new ArrayList<>(List.of(lock)));
 
@@ -263,7 +264,7 @@ class SolveExchangeTest {
         assertThat(keys)
                 .as("what is written of a person, wherever they appear")
                 .containsExactlyInAnyOrder(
-                        "id", "dateNaissance", "competences", "souhaits", "joursIndisponibles", "ninja");
+                        "id", "dateNaissance", "competences", "souhaits", "joursIndisponibles", "polyvalent");
         assertThat(outbound.realIds().values())
                 .as("the way back knows everybody")
                 .containsAll(
@@ -415,7 +416,7 @@ class SolveExchangeTest {
 
     /** The production search, stopped on a count of score calculations instead of on time. */
     private PlanningEvenement solve(PlanningEvenement problem) {
-        SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(30L, 0L, null), problem);
+        SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(30L, 0L), problem);
         solverConfig.setTerminationConfig(new TerminationConfig().withScoreCalculationCountLimit(CALCULATIONS));
         SolverConfiguration.adaptToProblem(solverConfig, problem);
         return SolverFactory.<PlanningEvenement>create(solverConfig)

@@ -22,12 +22,12 @@ export interface TypologieItem {
   code?: string | null;
   label: string;
   /**
-   * The single "ninja" typologie of the referential: animateurs who hold it are
+   * The single "polyvalent" typologie of the referential: animateurs who hold it are
    * polyvalent — the solver may dispatch them on any stand, and keeps some of
    * them free as a buffer against last-minute absences. Promoting one typologie
    * demotes the previous holder server-side.
    */
-  ninja?: boolean;
+  polyvalent?: boolean;
   /**
    * How many créneaux one animateur may hold on this typologie over the WHOLE
    * edition (issue #594). Absent or `null` means no cap. A poste counts for
@@ -51,7 +51,7 @@ export interface TypologieItem {
 }
 
 export interface Animateur {
-  ninja?: boolean;
+  polyvalent?: boolean;
   id: string;
   prenom: string;
   nom: string;
@@ -493,7 +493,7 @@ export interface PosteFragile {
 export interface AnimateurFragilite {
   animateurId: string;
   nom: string;
-  ninja: boolean;
+  polyvalent: boolean;
   affectations: number;
   postesEffondres: number;
   postesIrremplacables: number;
@@ -504,7 +504,7 @@ export interface AnimateurFragilite {
 }
 
 /**
- * One stand × créneau at most one *specialist* can hold. Ninjas are counted
+ * One stand × créneau at most one *specialist* can hold. Polyvalents are counted
  * apart, as `renforts`: they are competent everywhere, so folding them in would
  * erase the scarcity this list exists to show.
  */
@@ -535,7 +535,7 @@ export interface RapportFragilite {
   groupesAnalyses: number;
   groupesDejaSousEffectif: number;
   animateursIrremplacables: number;
-  ninjaConfigure: boolean;
+  polyvalentConfigure: boolean;
   /** The edition holds no animateur at all: nothing is feasible, and `message` says so. */
   aucunAnimateur: boolean;
   message: string;
@@ -560,7 +560,7 @@ export interface CandidatFormation {
 export interface TypologieAFormer {
   typologie: string;
   label?: string | null;
-  ninja: boolean;
+  polyvalent: boolean;
   /** The staffing need's shortfall for it; 0 when the Besoin tab signals none. */
   manque: number;
   specialistes: number;
@@ -690,8 +690,8 @@ export interface RapportTension {
   pireCellule?: CelluleTension | null;
   animateursTotal: number;
   cellulesCritiques: number;
-  /** False: no ninja typologie, so « no reinforcement » is the rule, not a finding. */
-  ninjaConfigure: boolean;
+  /** False: no polyvalent typologie, so « no reinforcement » is the rule, not a finding. */
+  polyvalentConfigure: boolean;
   referentielsManquants: ReferentielManquant[];
   message: string;
 }
@@ -1003,7 +1003,7 @@ export interface RapportIntendance {
 }
 
 /** What a {@link VerrouillagePlanning} freezes (issue #87; ANIMATEUR_CRENEAU: issue #165). */
-export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU' | 'ANIMATEUR_CRENEAU';
+export type TypeVerrouillage = 'ANIMATEUR_CRENEAU' | 'STAND_JOUR' | 'JOUR';
 
 /**
  * A validated part of the planning the solver must not touch again
@@ -1021,7 +1021,7 @@ export interface VerrouillagePlanning {
    * while the grid holds no such vacation.
    */
   creneauId: number | null;
-  /** ISO date of the vacation a `CRENEAU`/`ANIMATEUR_CRENEAU` lock names. */
+  /** ISO date of the vacation an `ANIMATEUR_CRENEAU` lock names. */
   creneauDate?: string | null;
   creneauHeureDebut?: string | null;
   creneauHeureFin?: string | null;
@@ -1064,11 +1064,13 @@ export interface ConstraintToggle {
 }
 
 /**
- * `/api/parametres-qualite`: the quality ceilings of the edition. Stored per
+ * `/api/parametres/organisation`: the quality ceilings of the edition. Stored per
  * edition since issue #591; what the server's own configuration carries is the
  * default an edition starts from.
  */
 export interface ParametresQualite {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   maxEmplacementsDistinctsParJour?: number;
   /** Hour from which a day's work counts as a late closing (`HH:mm:ss`); empty when the rule is neutralised. */
   heureServiceTardif?: string | null;
@@ -1476,7 +1478,15 @@ export interface ConstraintView {
    * relative importance genuinely varies from one organiser to the next.
    */
   dosable: boolean;
-  /** What one match of the rule is worth on the next solve (1 to 500 — ADR 0057). */
+  /**
+   * The edition chooses this rule's level (ADR 0106, 0111): an organisation
+   * rule — never a legal, assignment, ad hoc or lock rule, nor a soft
+   * preference. `niveau` stays the catalogue's own.
+   */
+  niveauReglable?: boolean;
+  /** The level the rule has on this edition; null when it is not the edition's to choose. */
+  niveauChoisi?: NiveauRegle | null;
+  /** What one match of the rule is worth on the next solve at the level it scores on (1 to 500 — ADR 0057). */
   poids: number;
   score: string | null;
   matchCount: number | null;
@@ -1601,7 +1611,7 @@ export interface CellulePivot {
 }
 
 /**
- * `/api/parametres-legaux`: admin-configurable legal parameters, consumed by
+ * `/api/parametres/legal`: admin-configurable legal parameters, consumed by
  * the `dureeHebdomadaireMax` and `dureeHebdomadaireMaxMineur` hard constraints.
  *
  * Both are ordre public ceilings, refused above their legal maximum by the
@@ -1616,6 +1626,8 @@ export interface CellulePivot {
  *   travail art. L3162-1 (art. D4153-3 under 16).
  */
 export interface ParametresLegaux {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   dureeHebdomadaireMaxMinutes: number;
   dureeHebdomadaireMaxMineurMinutes: number;
   /** Minimum gap (minutes) between two same-day vacations of one animateur. Default 30. */
@@ -1797,30 +1809,26 @@ export interface ReconnaissanceJourneesTypes {
   calendrier: AffectationJourneeType[];
 }
 
-/**
- * The edition's solve budget, as a `PUT /api/parametres-solveur` sends it.
- * `null` follows the instance's default — « Revenir au défaut » writes it.
- */
+/** The edition's solve settings, as a `PUT /api/parametres/calcul` sends them. */
 export interface ParametresSolveur {
-  dureeResolutionSecondes: number | null;
-  /** Stop once a feasible planning has not improved for this long; 0 = never. */
-  plateauSecondes: number | null;
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   /** Mails the outcome of a finished solve to the admin address (off by default). */
   mailFinResolution: boolean;
 }
 
-/** What the operator decided for every edition: the defaults a `null` resolves to, and the ceilings. */
+/** What the operator decided for every edition: the solve budget, and the ceiling a launch may ask for. */
 export interface SolverBudgetBounds {
   defaultSecondsLimit: number;
+  /** Stop once a feasible planning has not improved for this long; 0 = never. */
   defaultPlateauSeconds: number;
   maxSecondsLimit: number;
-  maxPlateauSeconds: number;
 }
 
-/** `GET /api/parametres-solveur`: the edition's budget, with the instance's bounds it is read against. */
+/** `GET /api/parametres/calcul`: the edition's mail switch, with the instance's solve budget. */
 export interface SolverSettingsView {
-  dureeResolutionSecondes: number | null;
-  plateauSecondes: number | null;
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   mailFinResolution: boolean;
   instance: SolverBudgetBounds;
 }
@@ -1931,10 +1939,6 @@ export interface JobView {
   secondsLimit: number | null;
   /** The feasible-plateau bailout the job runs under, 0 for none. */
   plateauSeconds?: number | null;
-  /** The duration the edition stored where the instance's ceiling (`secondsLimit`) cut it, or null. */
-  cappedFromSecondsLimit?: number | null;
-  /** The plateau the edition stored where the instance's ceiling (`plateauSeconds`) cut it, or null. */
-  cappedFromPlateauSeconds?: number | null;
   /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
   reamorcage?: Reamorcage | null;
   submittedAt: string;
@@ -1955,25 +1959,14 @@ export interface JobView {
   result: unknown;
 }
 
-/** `PREPARING` while the compute machine comes up — the time budget does not run yet. */
+/** `PREPARING` until the worker has taken the problem — the time budget does not run yet. */
 export type RemoteStage = 'PREPARING' | 'SOLVING';
 
-/** State of the compute machine; `PERMANENT` for a worker that is always there. */
-export type MachineCalculState = 'PERMANENT' | 'ABSENT' | 'PREPARING' | 'READY' | 'SOLVING';
-
-/** `GET /api/machine-calcul`: the machine a full solve may run on instead of here (ADR 0086). */
+/** `GET /api/machine-calcul`: whether a full solve may run on the permanent worker instead of here (ADR 0086). */
 export interface MachineCalcul {
-  /** False: the instance has no compute machine, and nothing of it is shown. */
+  /** False: the instance has no worker, and nothing of it is shown. */
   configured: boolean;
-  /** True when the machine is created by a launcher and stopped after an idle delay. */
-  onDemand: boolean;
   remoteByDefault: boolean;
-  state: MachineCalculState | null;
-  /** When an idle machine will be stopped, or null. */
-  stopsAt: string | null;
-  billedHoursThisMonth: number | null;
-  /** A rented machine that could not be stopped, and keeps costing: shown as a warning. */
-  lastStopError: string | null;
 }
 
 /**
@@ -2108,8 +2101,8 @@ export type ReferentielManquant = 'STANDS' | 'CRENEAUX' | 'ANIMATEURS';
 export interface TypologieStaffing {
   typologie: string;
   label: string;
-  /** True for the referential's polyvalent ("ninja") typologie, if any. */
-  ninja: boolean;
+  /** True for the referential's polyvalent typologie, if any. */
+  polyvalent: boolean;
   sieges: number;
   heures: number;
   nombreSemaines: number;
@@ -2129,7 +2122,7 @@ export interface TypologieStaffing {
   borneRetenue: BorneStaffing;
   /**
    * Animateurs declaring this typologie among their competences. Polyvalents
-   * are not counted here unless they declared it: a ninja is a reinforcement,
+   * are not counted here unless they declared it: a polyvalent is a reinforcement,
    * never a specialist.
    */
   specialistes: number;
@@ -2146,30 +2139,30 @@ export interface TypologieStaffing {
  */
 export interface CompetenceStaffing {
   parTypologie: TypologieStaffing[];
-  /** Animateurs holding the ninja typologie: dispatchable anywhere, one seat at a time. */
+  /** Animateurs holding the polyvalent typologie: dispatchable anywhere, one seat at a time. */
   polyvalents: number;
   /** Seats of stands proposing **several** typologies: claimed by no row. */
   siegesNonAttribues: number;
   /**
    * Seats of stands proposing **no** typologie — the opposite case, and the
    * tightest demand there is: only a polyvalent can hold one. Folded into the
-   * ninja row when the referential has one, holdable by nobody when it has not.
+   * polyvalent row when the referential has one, holdable by nobody when it has not.
    */
   siegesReservesAuxPolyvalents: number;
   manqueTotal: number;
   /**
-   * The part of `manqueTotal` carried by the ninja row itself. No reinforcement
+   * The part of `manqueTotal` carried by the polyvalent row itself. No reinforcement
    * absorbs it: that row's pool *is* the reserve.
    */
   manquePolyvalents: number;
   /** `0` means the animateur referential is still empty and nothing was compared. */
   animateursTotal: number;
   /**
-   * Whether the referential marks a ninja typologie at all. Without one nobody
+   * Whether the referential marks a polyvalent typologie at all. Without one nobody
    * is polyvalent, and `polyvalents: 0` must read as "no such notion here"
    * rather than as a shortage of backup.
    */
-  typologieNinjaDefinie: boolean;
+  typologiePolyvalenteDefinie: boolean;
   /** Sum of every row's minimum: the team the seats would need if nobody held two typologies. */
   planchersCumules: number;
 }
@@ -2426,7 +2419,7 @@ export interface AnimateurTypologie {
 export interface LigneTypologie {
   typologie: string;
   label: string;
-  ninja: boolean;
+  polyvalent: boolean;
   /** The quota of issue #594; `null` when the typologie caps nothing. */
   maxCreneauxParAnimateur: number | null;
   /** The organiser's own note on the typologie; `null` when none was written. */
@@ -2561,7 +2554,10 @@ export interface AppConfig {
 export interface PlanSnapshot {
   id: number;
   libelle: string;
+  /** Same as `origine === 'AVANT_CALCUL'`; kept for the 3.x screen, removed in 5.0. */
   automatique: boolean;
+  /** Where the version comes from: asked by a person, taken before a solve, or published (ADR 0108). */
+  origine: 'MANUELLE' | 'AVANT_CALCUL' | 'PUBLIEE';
   score: string | null;
   nombreAffectations: number;
   creeLe: string | null;
@@ -2620,7 +2616,7 @@ export interface DiffContrainte {
   variante: number | null;
 }
 
-/** `GET /api/planning/snapshots/compare` — a read of measured metrics, never a solve. */
+/** `GET /api/planning/versions/compare` — a read of measured metrics, never a solve. */
 export interface ComparaisonSnapshots {
   base: CoteComparaison;
   variante: CoteComparaison;
@@ -2797,7 +2793,7 @@ export interface Interruption {
   persistedScore: string | null;
 }
 
-/** `POST /api/planning/snapshots/{id}/restore` on success. */
+/** `POST /api/planning/versions/{id}/restore` on success. */
 export interface RestaurationSnapshot {
   restaure: boolean;
   affectations: number;
@@ -3780,7 +3776,8 @@ export interface NouvelleDeclaration {
 
 /* ---------- Carpool: the grouped arrival ---------- */
 
-export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE' | 'ECARTEE' | 'ANNULEE';
+/** Validated, or not yet (`EN_ATTENTE`): a refused or cancelled demand is deleted. */
+export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE';
 
 /**
  * `GET /api/espace-animateur/{jeton}/covoiturage`: the Covoiturage tab —
@@ -3793,18 +3790,11 @@ export interface CarpoolEspaceView {
   collectionEnd?: string | null;
   /** Who can be named: the edition's other animateurs. */
   colleagues: CollegueView[];
-  /** The others in my car: validated group, else pending request, else the last one set aside or cancelled. */
+  /** The others in my car: validated group, else pending request. */
   teammateIds: string[];
   /** `null` when there is no car. */
   status?: StatutDemandeCoequipier | null;
-  /** Why my last request was set aside, or my car cancelled, when the organisation said. */
-  reason?: string | null;
   decidedAt?: string | null;
-}
-
-/** Payload of `POST /api/disponibilites/coequipiers/{id}/annulation`: an optional reason for the group. */
-export interface CarpoolCancellation {
-  reason?: string | null;
 }
 
 /** Payload of `POST /api/espace-animateur/{jeton}/covoiturage`; empty withdraws the pending request. */
@@ -3835,8 +3825,6 @@ export interface TeammateRequestView {
   contrainteId: string | null;
   createdAt: string;
   decidedAt: string | null;
-  /** Why it was set aside or cancelled, as typed for the animateur; `null` when none. */
-  reason?: string | null;
 }
 
 /** Answer of a validation: the demand, and what the created exception raised. */
@@ -4174,7 +4162,13 @@ export interface Dosage {
   instanceWeights: Record<string, number>;
   disabled: string[];
   enabled: string[];
+  /** Rules the edition moved to the other level than the catalogue's (ADR 0106). */
+  levels?: Record<string, 'OBLIGATOIRE' | 'PREFERENCE'>;
 }
+
+/** The level of an organisation rule on an edition: mandatory, or a preference at one of three positions. */
+export type NiveauRegle =
+  'OBLIGATOIRE' | 'PREFERENCE_FORTE' | 'PREFERENCE_NORMALE' | 'PREFERENCE_LEGERE';
 
 /** Where a change of weight or activation came from — never who. */
 export type WeightChangeOrigin = 'SCREEN' | 'ASSISTANT' | 'SCENARIO' | 'DUPLICATION';
@@ -4217,7 +4211,7 @@ export interface ConstraintHistory {
   resolutions: ResolutionUnderDosage[];
 }
 
-/** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */
+/** One row of `GET /api/mesures-edition/indicateurs` (issue #89) — survives its edition's deletion. */
 export interface KpiHistoriqueEntry {
   id: number;
   editionId: string;
@@ -4795,10 +4789,12 @@ export interface ContactOrganisation {
 }
 
 /**
- * Per-edition delays of the scheduled notifications (`/api/parametres-notifications`).
+ * Per-edition delays of the scheduled notifications (`/api/parametres/notifications`).
  * Whether anything leaves is not decided here: only the active edition sends.
  */
 export interface ParametresNotifications {
+  /** When this section was last written: sent back by the write as its precondition (issue #362); `null` or absent checks nothing. */
+  modifieLe?: string | null;
   /** `HH:mm` local time, from which the day-before reminder may go out. */
   heureRappelVeille: string;
   delaiRelanceHeures: number;

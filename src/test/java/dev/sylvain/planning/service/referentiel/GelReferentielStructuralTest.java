@@ -73,8 +73,8 @@ class GelReferentielStructuralTest {
 
     /** A read says so in its name; nothing named this way may write. */
     private static final Pattern READ = Pattern.compile("^(list|find|get|count|preview|resolve|exemple|export|volumes"
-            + "|labels|validate|calendrier|etat|ninja|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
-            + "|typologieNinja|abonnementToken|idBy|idsBy|typologyIdsBy).*");
+            + "|labels|validate|calendrier|etat|polyvalent|controler|gridAnomalies|diagnose|fenetresRepas|snapshot"
+            + "|typologiePolyvalent|abonnementToken|idBy|idsBy|typologyIdsBy).*");
 
     /** Method → the method of the same class whose body calls {@code gel.refuseIfFrozen}. */
     private static final Map<String, String> CHECKED_IN_BODY = Map.ofEntries(
@@ -87,7 +87,7 @@ class GelReferentielStructuralTest {
             Map.entry("AnimateurCsvImportService#apply(AnimateurCsvImportRequest)", "apply"),
             Map.entry("ScenarioImportService#importBundled(String)", "importScenario"),
             Map.entry("ScenarioImportService#importYaml(String)", "importScenario"),
-            Map.entry("ScenarioImportService#importForRestore(String)", "importScenario"));
+            Map.entry("ScenarioImportService#importForRestore(ScenarioDto,Long,Runnable)", "importScenario"));
 
     /** A facade method → the method, classified in this test, it hands the write over to. */
     private static final Map<String, String> DELEGATES = Map.ofEntries(
@@ -211,12 +211,13 @@ class GelReferentielStructuralTest {
                     "ReferenceDataService#updateParametresLegaux(ParametresLegaux)",
                     "the settings are not one of the four families"),
             Map.entry("ReferenceDataService#updateParametresSolveur(ParametresSolveur)", "same"),
-            Map.entry("ReferenceDataService#importParametresSolveur(ParametresSolveur)", "same"),
             Map.entry("ReferenceDataService#updateParametresNotifications(ParametresNotifications)", "same"),
             Map.entry("ReferenceDataService#updateParametresQualite(ParametresQualite)", "same"),
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),
             Map.entry("ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)", "same"),
             Map.entry("ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)", "same"),
+            Map.entry("ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", "same"),
+            Map.entry("ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", "same"),
             Map.entry(
                     "ReferenceDataService#recordInheritedDosage(String)",
                     "a history line on the settings a duplicated edition inherited, not one of the four families"));

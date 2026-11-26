@@ -154,7 +154,7 @@ public class DatabaseDumpService {
             // The published plan, and who was told about it. Before
             // publication_destinataire, "already told" and "still to tell" are
             // the same thing.
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             // Which of those mails reached their recipient: without it, a
             // restore says « envoyé » of nothing and hides every failure.
@@ -170,11 +170,12 @@ public class DatabaseDumpService {
             //
             // Last in the list because it depends on nothing: deletes are
             // issued in reverse, so it goes first, and nothing references it.
-            "kpi_historique",
-            // The frozen realised measure of finished editions (ADR 0070):
-            // no foreign key either, for the same reason — it outlives the
-            // edition it describes, and a restore must bring it back.
-            "kpi_realise");
+            //
+            // Since 4.0 (V148) it carries the realised measure of finished
+            // editions (ADR 0070, 0092) beside the indicators: no foreign key
+            // either, for the same reason — it outlives the edition it
+            // describes, and a restore must bring it back.
+            "mesure_edition");
 
     /**
      * The tables deliberately left out, and why each one stays out.
@@ -209,8 +210,9 @@ public class DatabaseDumpService {
      *       right covers: part of the right it hangs from, with the same reason.
      *       Not even a foreign key to {@code stand}, which a restore deletes and
      *       recreates.</li>
-     *   <li>{@code solver_job} — the queue, replayed at startup. A restore
-     *       would make the receiving instance run somebody else's solves.</li>
+     *   <li>{@code solver_job} — the solve history, and the remote solves
+     *       followed again at startup. A restore would make the receiving
+     *       instance follow somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
      *       opposite reason to all the others: including it would mean every
      *       import <em>erases</em> the local journal, since the dump deletes
@@ -246,15 +248,28 @@ public class DatabaseDumpService {
      *       already carries, every animateur's identity included, once per
      *       wipe and with no purge: the file an admin downloads must not hold
      *       it again.</li>
-     *   <li>{@code machine_calcul}, {@code resolution_distante} — the rented
-     *       machine of this instance and the solve it runs (ADR 0086): the
-     *       state of a machine, not the dataset. Restored elsewhere, another
-     *       instance would believe it owns a machine it never started.</li>
+     *   <li>{@code resolution_distante} — the solve this instance left on
+     *       its worker (ADR 0086): the state of a machine, not the dataset.
+     *       Restored elsewhere, another instance would follow a solve it
+     *       never sent. {@code machine_calcul}, no longer written since ADR
+     *       0103, stays listed until a migration drops it.</li>
      *   <li>{@code animateur_contact} — the emergency contact and legal
      *       representative of an animateur (ADR 0096): a third party's name and
      *       number, read by the RH right and the administrators only. A file
      *       that leaves the instance does not carry them; restoring a dump
      *       recreates the fiches without them.</li>
+     *   <li>{@code declaration_coequipier_avant_4_0} — the covoiturage
+     *       demands 3.x had set aside or cancelled, free-text motif included,
+     *       archived by V142 and dropped in 5.0: an archive nothing reads, not
+     *       a dataset, and a text about a person that a file leaving the
+     *       instance has no reason to carry.</li>
+     *   <li>{@code solve_budget_avant_4_0} — the solve budgets editions had
+     *       set of their own, archived by V145 and dropped in 5.0: an archive
+     *       nothing reads, the budget being the instance's now.</li>
+     *   <li>{@code kpi_historique_avant_4_0}, {@code kpi_realise_avant_4_0} —
+     *       the two tables {@code mesure_edition} replaced, kept by V148 and
+     *       dropped in 5.0: archives nothing reads, the measures being dumped
+     *       from {@code mesure_edition} now.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -281,7 +296,11 @@ public class DatabaseDumpService {
             "sauvegarde_avant_vidage",
             "machine_calcul",
             "resolution_distante",
-            "animateur_contact");
+            "animateur_contact",
+            "declaration_coequipier_avant_4_0",
+            "solve_budget_avant_4_0",
+            "kpi_historique_avant_4_0",
+            "kpi_realise_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
@@ -300,12 +319,12 @@ public class DatabaseDumpService {
             "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
-            // BIGSERIAL since V48: left unsynced, the first measurement
-            // written after an import would collide with an id the dump just
-            // replayed.
-            "kpi_historique",
+            // BIGSERIAL since V48 (kpi_historique, folded into mesure_edition by
+            // V148): left unsynced, the first measurement written after an
+            // import would collide with an id the dump just replayed.
+            "mesure_edition",
             // BIGSERIAL too, V40 and V54, for the same reason.
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             // BIGSERIAL since V110.
             "envoi_planning",

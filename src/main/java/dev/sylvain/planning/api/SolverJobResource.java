@@ -532,16 +532,6 @@ public class SolverJobResource {
             Long secondsLimit,
             /** The feasible-plateau bailout the job runs under, 0 for none; null on a job queued before it was stored. */
             Long plateauSeconds,
-            /**
-             * The duration the edition stored where the instance's ceiling cut
-             * it — a ceiling lowered since, or a scenario imported above it —
-             * or null when it ran as stored; the ceiling is secondsLimit.
-             * Values rather than a sentence, so the screen says it in its
-             * reader's language.
-             */
-            Long cappedFromSecondsLimit,
-            /** Same for the plateau, whose ceiling is plateauSeconds. */
-            Long cappedFromPlateauSeconds,
             /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
             Reamorcage reamorcage,
             Instant submittedAt,
@@ -558,8 +548,8 @@ public class SolverJobResource {
             /** Whether the search runs on the instance's worker rather than here (ADR 0086). */
             boolean remote,
             /**
-             * Where a remote solve under way stands — {@code PREPARING} while
-             * its machine comes up, {@code SOLVING} once the worker has the
+             * Where a remote solve under way stands — {@code PREPARING} until
+             * the worker has taken the problem, {@code SOLVING} once the worker has the
              * problem; null for a solve run here, and once the job is over.
              */
             String remoteStage,
@@ -590,8 +580,6 @@ public class SolverJobResource {
                     null,
                     null,
                     null,
-                    null,
-                    null,
                     full.submittedAt(),
                     full.startedAt(),
                     full.finishedAt(),
@@ -613,8 +601,6 @@ public class SolverJobResource {
                     editionNom,
                     secondsLimit,
                     plateauSeconds,
-                    cappedFromSecondsLimit,
-                    cappedFromPlateauSeconds,
                     reamorcage,
                     submittedAt,
                     startedAt,
@@ -646,8 +632,6 @@ public class SolverJobResource {
                     job.getEditionNom(),
                     job.getSecondsLimit(),
                     job.getPlateauSeconds(),
-                    job.getCappedFrom() == null ? null : job.getCappedFrom().secondsLimit(),
-                    job.getCappedFrom() == null ? null : job.getCappedFrom().plateauSeconds(),
                     job.getReamorcage(),
                     job.getSubmittedAt(),
                     job.getStartedAt(),

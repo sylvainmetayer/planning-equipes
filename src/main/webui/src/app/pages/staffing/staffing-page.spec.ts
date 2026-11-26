@@ -87,7 +87,7 @@ function typologie(overrides: Partial<TypologieStaffing> = {}): TypologieStaffin
   return {
     typologie: 'ESCAPE',
     label: 'Escape game',
-    ninja: false,
+    polyvalent: false,
     sieges: 12,
     heures: 60,
     nombreSemaines: 1,
@@ -116,7 +116,7 @@ function competence(overrides: Partial<CompetenceStaffing> = {}): CompetenceStaf
     manqueTotal: 0,
     manquePolyvalents: 0,
     animateursTotal: 40,
-    typologieNinjaDefinie: true,
+    typologiePolyvalenteDefinie: true,
     planchersCumules: 6,
     ...overrides,
   };
@@ -532,7 +532,11 @@ describe('StaffingPage', () => {
     });
 
     it('says a reserve of zero is no notion here when no typologie is marked polyvalente', async () => {
-      const page = await pageWith({ manqueTotal: 3, polyvalents: 0, typologieNinjaDefinie: false });
+      const page = await pageWith({
+        manqueTotal: 3,
+        polyvalents: 0,
+        typologiePolyvalenteDefinie: false,
+      });
 
       expect(page['reserveLabel']()).toContain('Aucune typologie');
       expect(page['reserveLabel']()).not.toContain('plus mince');
@@ -558,18 +562,18 @@ describe('StaffingPage', () => {
     // nothing can only be held by a polyvalent — by nobody when the
     // referential marks none.
     it('separates the seats only polyvalents can hold from those no typologie claims', async () => {
-      const withNinja = await pageWith({
+      const withPolyvalent = await pageWith({
         siegesReservesAuxPolyvalents: 20,
-        typologieNinjaDefinie: true,
+        typologiePolyvalenteDefinie: true,
       });
-      expect(withNinja['siegesReservesLabel']()).toContain('20');
-      expect(withNinja['siegesReservesLabel']()).toContain('seuls les polyvalents');
+      expect(withPolyvalent['siegesReservesLabel']()).toContain('20');
+      expect(withPolyvalent['siegesReservesLabel']()).toContain('seuls les polyvalents');
 
-      const withoutNinja = await pageWith({
+      const withoutPolyvalent = await pageWith({
         siegesReservesAuxPolyvalents: 20,
-        typologieNinjaDefinie: false,
+        typologiePolyvalenteDefinie: false,
       });
-      expect(withoutNinja['siegesReservesLabel']()).toContain('personne');
+      expect(withoutPolyvalent['siegesReservesLabel']()).toContain('personne');
     });
 
     // Offering the reinforcements against their own shortage would promise an
@@ -662,8 +666,8 @@ describe('StaffingPage', () => {
         lien.getAttribute('href'),
       );
       expect(hrefs).toContain('/creneaux?onglet=horaires&du=2026-09-01&au=2026-09-01');
-      expect(hrefs).toContain('/regles?onglet=legal&regle=coupureRepasObligatoire');
-      expect(hrefs).toContain('/regles?onglet=legal&regle=maxJoursConsecutifsTravaillesDur');
+      expect(hrefs).toContain('/regles?onglet=regles&regle=coupureRepasObligatoire');
+      expect(hrefs).toContain('/regles?onglet=regles&regle=maxJoursConsecutifsTravaillesDur');
       expect(root.querySelector('.staffing-marge')?.textContent).toBe('-2');
       expect(root.querySelector('.staffing-marge-tranche')?.textContent).toBe('18:00-22:00');
       expect(root.textContent).toContain('Horaires des stands du 01/09');

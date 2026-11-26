@@ -37,8 +37,11 @@ conventional_commits = true
 # Pre-rewrite commits may not parse; keep them out rather than fail.
 filter_unconventional = true
 protect_breaking_commits = true
-# Only stable release tags structure the file; `v0-pre-decoupage` and other
-# non-semver tags are ignored.
+# Only stable release tags structure the file; `v0-pre-decoupage`, the release
+# candidates (`v4.0.0-rc.1`) and other non-semver tags are ignored. A release
+# candidate is therefore not a boundary: the section of a stable tag spans the
+# candidates that preceded it, and `release.yml` gives a candidate its own
+# section by an explicit range from the last stable tag.
 tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
 sort_commits = "oldest"
 commit_parsers = [

@@ -17,25 +17,14 @@
     <mat-icon>policy</mat-icon>
     <ng-container i18n="@@consignesSolveur.onglet.consignes">Consignes</ng-container>
   </mat-button-toggle>
-  @if (avance.ouvert() || onglet() === 'legal' || onglet() === 'qualite' || onglet() === 'calcul') {
-  <mat-button-toggle value="legal">
+  <mat-button-toggle value="regles">
     <mat-icon>gavel</mat-icon>
-    <ng-container i18n="@@regles.onglet.legal">Légal</ng-container>
+    <ng-container i18n="@@regles.onglet.regles">Règles</ng-container>
   </mat-button-toggle>
-  <mat-button-toggle value="qualite">
-    <mat-icon>tune</mat-icon>
-    <ng-container i18n="@@regles.onglet.qualite">Qualité</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="calcul">
-    <mat-icon>timer</mat-icon>
-    <ng-container i18n="@@regles.onglet.calcul">Calcul</ng-container>
-  </mat-button-toggle>
-  }
 </mat-button-toggle-group>
-<app-reglages-avances [etat]="avance" />
 
 @if (relance(); as mode) {
-  @if (!isRuleTab(onglet()) && onglet() !== 'calcul') {
+  @if (!isRuleTab(onglet())) {
     <output class="regles-relancer">
       <span i18n="@@consignesSolveur.relancer">Le prochain calcul en tiendra compte.</span>
       <app-relancer-calcul [mode]="mode" />
@@ -55,16 +44,9 @@
   }
 }
 
-@if (calculMonte()) {
-  <app-regles-calcul [hidden]="onglet() !== 'calcul'" />
-}
 @if (isRuleTab(onglet())) {
   <div class="regles-toolbar">
-    @if (onglet() === 'legal') {
-      <p class="regles-sous-titre" i18n="@@regles.legal.subtitle">Ce que tout plan doit tenir : la loi, la sécurité des mineurs, l'affectation elle-même.</p>
-    } @else {
-      <p class="regles-sous-titre" i18n="@@regles.qualite.subtitle">Ce qui départage deux plans valables : plus l'importance est forte, plus le calcul y tient.</p>
-    }
+    <p class="regles-sous-titre" i18n="@@regles.regles.subtitle">Ce que tout plan doit tenir, puis la politique de l'organisation : plus le niveau d'une règle est élevé, plus le calcul y tient.</p>
     <span class="calendar-meta">
       @if (analysedAt(); as quand) {
         <ng-container i18n="@@regles.analyse.date">Écarts de la dernière analyse, le {{ quand }}.</ng-container>
@@ -83,124 +65,28 @@
   }
 
   <div class="regles-layout" [class.regles-layout-panneau]="selectedRule() !== null">
-    <div class="table-wrapper">
-      <table class="regles-table">
-        <caption class="visually-hidden">
-          @if (onglet() === 'legal') {
-            <ng-container i18n="@@regles.legal.caption">Règles obligatoires, leur fondement, leur état et leurs réglages</ng-container>
-          } @else {
-            <ng-container i18n="@@regles.qualite.caption">Règles de qualité et préférences, leur importance et leurs réglages</ng-container>
-          }
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" i18n="@@regles.col.regle">Règle</th>
-            @if (onglet() === 'legal') {
-              <th scope="col" i18n="@@regles.col.article">Article</th>
-            }
-            <th scope="col" i18n="@@regles.col.active">Active</th>
-            @if (onglet() === 'qualite') {
-              <th scope="col" i18n="@@regles.col.importance">Importance</th>
-            }
-            <th scope="col" i18n="@@regles.col.reglages">Réglages</th>
-            <th scope="col" i18n="@@regles.col.ecarts">Écarts</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (rule of rows(); track rule.name) {
-            <tr [class.regles-row-inactive]="!isActif(rule)" [class.regles-row-selected]="rule.name === regle()">
-              <th scope="row">
-                <button type="button" class="regles-nom" [attr.aria-expanded]="rule.name === regle()"
-                        (click)="select(rule)">{{ libelle(rule) }}</button>
-                @if (hardWeightCustomised(rule)) {
-                  <span class="regles-personnalise" i18n="@@regles.poidsDur.ligne">poids personnalisé {{ poidsOf(rule) }}</span>
-                }
-              </th>
-              @if (onglet() === 'legal') {
-                <td class="regles-article">
-                  @for (article of articles(rule); track article) {
-                    <app-legal-text [text]="article" />
-                  } @empty {
-                    <span class="regles-categorie">{{ rule.categorie }}</span>
-                  }
-                </td>
-              }
-              <td class="regles-actif">
-                <mat-slide-toggle [checked]="isActif(rule)" [disabled]="saving() || jobs.editingLocked()"
-                                  [aria-label]="libelle(rule)" (change)="toggle(rule, $event)" />
-                @if (protectionApplies(rule)) {
-                  <mat-icon class="constraint-protegee-icon" aria-hidden="false"
-                            matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
-                            i18n-matTooltip="@@constraints.protegee.tooltip"
-                            aria-label="Règle légale ou de sécurité : la désactiver demande une confirmation."
-                            i18n-aria-label="@@constraints.protegee.tooltip">gavel</mat-icon>
-                }
-              </td>
-              @if (onglet() === 'qualite') {
-                <td class="regles-importance">
-                  <mat-button-toggle-group hideSingleSelectionIndicator [value]="importanceOf(rule)"
-                                           [disabled]="saving() || jobs.editingLocked()"
-                                           [attr.aria-label]="libelle(rule)"
-                                           (change)="setImportance(rule, $event.value)">
-                    @for (option of importances; track option.value) {
-                      <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
-                    }
-                  </mat-button-toggle-group>
-                  @if (importanceOf(rule) === null) {
-                    <span class="regles-personnalise" i18n="@@regles.importance.personnalisee">personnalisée ({{ poidsOf(rule) }})</span>
-                  }
-                </td>
-              }
-              <td class="regles-seuils">
-                @for (parametre of rule.parametres ?? []; track parametre.libelle) {
-                  <span class="regles-seuil">
-                    <span class="regles-seuil-libelle">{{ parametre.libelle }}</span>
-                    @if (editable(parametre)) {
-                      @switch (seuil(parametre).kind) {
-                        @case ('plage') {
-                          <input type="time" class="regles-seuil-input" [disabled]="saving()"
-                                 [attr.aria-label]="seuilLabel(parametre, rule, 0)"
-                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[0])"
-                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[0], $any($event.target).value)" />
-                          –
-                          <input type="time" class="regles-seuil-input" [disabled]="saving()"
-                                 [attr.aria-label]="seuilLabel(parametre, rule, 1)"
-                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[1])"
-                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[1], $any($event.target).value)" />
-                        }
-                        @case ('heure') {
-                          <input type="time" class="regles-seuil-input" [disabled]="saving()"
-                                 [attr.aria-label]="seuilLabel(parametre, rule, 0)"
-                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[0])"
-                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[0], $any($event.target).value)" />
-                        }
-                        @default {
-                          <input type="number" class="regles-seuil-input regles-seuil-nombre" [disabled]="saving()"
-                                 [attr.aria-label]="seuilLabel(parametre, rule, 0)"
-                                 [attr.min]="seuil(parametre).min ?? null" [attr.max]="seuil(parametre).max ?? null"
-                                 [attr.step]="seuil(parametre).step ?? null"
-                                 [value]="valeurSeuil(parametre, seuil(parametre).fields[0])"
-                                 (input)="onSeuilTyped(parametre, seuil(parametre).fields[0], $any($event.target).value)" />
-                          {{ uniteSeuil(parametre) }}
-                        }
-                      }
-                    } @else {
-                      <span class="regles-seuil-valeur">{{ parametre.valeur }}</span>
-                    }
-                  </span>
-                }
-              </td>
-              <td class="regles-ecarts" [class.regles-ecarts-hit]="(rule.matchCount ?? 0) > 0">
-                {{ ecartsLabel(rule) }}
-                @if (rule.plancher) {
-                  <mat-icon class="regles-plancher" inline aria-hidden="false"
-                            [matTooltip]="plancherLabel(rule)" [attr.aria-label]="plancherLabel(rule)">info</mat-icon>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+    <div class="regles-blocs">
+      <section class="regles-bloc" aria-labelledby="regles-bloc-legal">
+        <h2 id="regles-bloc-legal" i18n="@@regles.bloc.legal">Obligations légales</h2>
+        <p class="regles-sous-titre" i18n="@@regles.bloc.legal.hint">Lecture seule : la loi s'applique à tout plan. Les seuils se règlent dans Paramètres › Légal.</p>
+        <ng-container *ngTemplateOutlet="tableau; context: { rows: legalRows(), bloc: 'legal' }" />
+      </section>
+
+      <section class="regles-bloc" aria-labelledby="regles-bloc-organisation">
+        <h2 id="regles-bloc-organisation" i18n="@@regles.bloc.organisation">Politique de l'organisation</h2>
+        <p class="regles-sous-titre" i18n="@@regles.bloc.organisation.hint">Pour chaque règle, son niveau : obligatoire, un plan qui l'enfreint n'est pas livrable ; sinon une préférence forte, normale ou légère, que le calcul fait peser en conséquence.</p>
+        <ng-container *ngTemplateOutlet="tableau; context: { rows: organisationRows(), bloc: 'organisation' }" />
+      </section>
+
+      <app-reglages-avances [etat]="avance">
+        <ng-template>
+          <section class="regles-bloc" aria-labelledby="regles-bloc-avance">
+            <h2 id="regles-bloc-avance" i18n="@@regles.bloc.avance">Avancé</h2>
+            <p class="regles-sous-titre" i18n="@@regles.bloc.avance.hint">Le reste : l'affectation, les ajustements, les verrouillages et les préférences d'agrément.</p>
+            <ng-container *ngTemplateOutlet="tableau; context: { rows: avanceRows(), bloc: 'avance' }" />
+          </section>
+        </ng-template>
+      </app-reglages-avances>
     </div>
 
     @if (selectedRule(); as rule) {
@@ -212,7 +98,7 @@
             <mat-icon>close</mat-icon>
           </button>
         </header>
-        <p class="regles-panneau-niveau">{{ niveauLabel(rule.niveau) }} · {{ rule.categorie }}</p>
+        <p class="regles-panneau-niveau">{{ niveauLabel(niveauEffectifOf(rule)) }} · {{ rule.categorie }}</p>
         <p><app-legal-text [text]="rule.description" /></p>
         @if (rule.remediation) {
           <h3 i18n="@@regles.panneau.quoiFaire">En cas d'écart</h3>
@@ -232,7 +118,7 @@
             Voir le détail ({{ rule.violations.length }})
           </button>
         }
-        @if (rule.niveau !== 'HARD') {
+        @if (!obligatoire(rule)) {
           <h3 i18n="@@regles.panneau.poids">Poids exact</h3>
           <label class="regles-panneau-poids">
             <input #poids type="number" class="regles-seuil-input regles-seuil-nombre" step="1"
@@ -241,7 +127,7 @@
                    (change)="onPoidsTyped(rule, poids)" />
             <span i18n="@@regles.panneau.poidsHint">Faible 1, normale 5, forte 25 ; tout autre nombre, de 1 à 500, reste possible.</span>
           </label>
-        } @else if (rule.poids !== poidsDur) {
+        } @else if (rule.niveau === 'HARD' && rule.poids !== poidsDur) {
           <h3 i18n="@@regles.panneau.poidsDur">Poids personnalisé</h3>
           <p class="regles-panneau-poids">
             <span i18n="@@regles.panneau.poidsDurTexte">Cette règle obligatoire porte un poids de {{ poidsOf(rule) }}, enregistré avant qu'une règle dure cesse de se doser : chacun de ses écarts compte pour autant dans le score.</span>
@@ -254,25 +140,6 @@
       </aside>
     }
   </div>
-
-  @if (onglet() === 'legal') {
-    <fieldset class="regles-grille">
-      <legend i18n="@@regles.grille.legend">Contrôle de la grille des créneaux</legend>
-      <label class="regles-seuil">
-        <span class="regles-seuil-libelle" i18n="@@constraints.legal.field.reposQuotidien">Repos quotidien minimal (heures)</span>
-        <input type="number" class="regles-seuil-input regles-seuil-nombre" min="0" step="0.5" [disabled]="saving()"
-               [value]="valeurGrille('reposQuotidienMinimalMinutes')"
-               (input)="onGrilleTyped('reposQuotidienMinimalMinutes', $any($event.target).value)" />
-      </label>
-      <label class="regles-seuil">
-        <span class="regles-seuil-libelle" i18n="@@constraints.legal.field.dureeVacationMax">Durée maximale d'une vacation (heures)</span>
-        <input type="number" class="regles-seuil-input regles-seuil-nombre" min="0.5" step="0.5" [disabled]="saving()"
-               [value]="valeurGrille('dureeVacationMaxMinutes')"
-               (input)="onGrilleTyped('dureeVacationMaxMinutes', $any($event.target).value)" />
-      </label>
-      <p class="calendar-meta" i18n="@@regles.grille.hint">Aucune règle ne les lit : le contrôle de la grille avertit quand un créneau ne les laisse pas tenir.</p>
-    </fieldset>
-  }
 
   <div class="regles-save-bar">
     <button matButton="filled" type="button" [disabled]="!dirty() || saving()" (click)="save()">
@@ -290,3 +157,136 @@
   </div>
   <app-status-message [text]="error()" tone="error" />
 }
+
+<ng-template #tableau let-rows="rows" let-bloc="bloc">
+  <div class="table-wrapper">
+    <table class="regles-table">
+      <caption class="visually-hidden">
+        @switch (bloc) {
+          @case ('legal') {
+            <ng-container i18n="@@regles.legal.caption">Obligations légales, leur fondement et leurs réglages</ng-container>
+          }
+          @case ('organisation') {
+            <ng-container i18n="@@regles.organisation.caption">Règles d'organisation, leur niveau et leurs réglages</ng-container>
+          }
+          @default {
+            <ng-container i18n="@@regles.avance.caption">Autres règles, leur état et leurs réglages</ng-container>
+          }
+        }
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" i18n="@@regles.col.regle">Règle</th>
+          @if (bloc === 'legal') {
+            <th scope="col" i18n="@@regles.col.article">Article</th>
+          }
+          @if (bloc === 'organisation') {
+            <th scope="col" i18n="@@regles.col.niveau">Niveau</th>
+          }
+          @if (bloc !== 'legal') {
+            <th scope="col" i18n="@@regles.col.active">Active</th>
+          }
+          @if (bloc === 'avance') {
+            <th scope="col" i18n="@@regles.col.importance">Importance</th>
+          }
+          <th scope="col" i18n="@@regles.col.reglages">Réglages</th>
+          <th scope="col" i18n="@@regles.col.ecarts">Écarts</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (rule of rows; track rule.name) {
+          <tr [class.regles-row-inactive]="!isActif(rule)" [class.regles-row-selected]="rule.name === regle()">
+            <th scope="row">
+              <button type="button" class="regles-nom" [attr.aria-expanded]="rule.name === regle()"
+                      (click)="select(rule)">{{ libelle(rule) }}</button>
+              @if (hardWeightCustomised(rule)) {
+                <span class="regles-personnalise" i18n="@@regles.poidsDur.ligne">poids personnalisé {{ poidsOf(rule) }}</span>
+              }
+              @if (bloc === 'legal' && !isActif(rule)) {
+                <span class="regles-personnalise" i18n="@@regles.desactivee">désactivée</span>
+                <button matButton type="button" [disabled]="saving() || jobs.editingLocked()"
+                        [attr.aria-label]="reactivateLabel(rule)" (click)="reactivate(rule)"
+                        i18n="@@regles.reactiver">Réactiver</button>
+              }
+            </th>
+            @if (bloc === 'legal') {
+              <td class="regles-article">
+                @for (article of articles(rule); track article) {
+                  <app-legal-text [text]="article" />
+                } @empty {
+                  <span class="regles-categorie">{{ rule.categorie }}</span>
+                }
+              </td>
+            }
+            @if (bloc === 'organisation') {
+              <td class="regles-importance">
+                <mat-button-toggle-group hideSingleSelectionIndicator [value]="niveauOf(rule)"
+                                         [disabled]="saving() || jobs.editingLocked()"
+                                         [attr.aria-label]="libelle(rule)"
+                                         (change)="setNiveau(rule, $event.value)">
+                  @for (option of niveaux; track option.value) {
+                    <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
+                  }
+                </mat-button-toggle-group>
+                @if (!obligatoire(rule) && importanceOf(rule) === null) {
+                  <span class="regles-personnalise" i18n="@@regles.importance.personnalisee">personnalisée ({{ poidsOf(rule) }})</span>
+                }
+              </td>
+            }
+            @if (bloc !== 'legal') {
+              <td class="regles-actif">
+                <mat-slide-toggle [checked]="isActif(rule)" [disabled]="saving() || jobs.editingLocked()"
+                                  [aria-label]="libelle(rule)" (change)="toggle(rule, $event)" />
+                @if (protectionApplies(rule)) {
+                  <mat-icon class="constraint-protegee-icon" aria-hidden="false"
+                            matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                            i18n-matTooltip="@@constraints.protegee.tooltip"
+                            aria-label="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                            i18n-aria-label="@@constraints.protegee.tooltip">gavel</mat-icon>
+                }
+              </td>
+            }
+            @if (bloc === 'avance') {
+              <td class="regles-importance">
+                @if (rule.niveau !== 'HARD') {
+                  <mat-button-toggle-group hideSingleSelectionIndicator [value]="importanceOf(rule)"
+                                           [disabled]="saving() || jobs.editingLocked()"
+                                           [attr.aria-label]="libelle(rule)"
+                                           (change)="setImportance(rule, $event.value)">
+                    @for (option of importances; track option.value) {
+                      <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
+                    }
+                  </mat-button-toggle-group>
+                  @if (importanceOf(rule) === null) {
+                    <span class="regles-personnalise" i18n="@@regles.importance.personnalisee">personnalisée ({{ poidsOf(rule) }})</span>
+                  }
+                }
+              </td>
+            }
+            <td class="regles-seuils">
+              @for (parametre of rule.parametres ?? []; track parametre.libelle) {
+                <span class="regles-seuil">
+                  <span class="regles-seuil-libelle">{{ parametre.libelle }}</span>
+                  <span class="regles-seuil-valeur">{{ parametre.valeur }}</span>
+                </span>
+              }
+              @if (parametresLien(rule, bloc); as section) {
+                <a class="regles-lien-parametres" routerLink="/parametres" [queryParams]="{ onglet: section }"
+                   [attr.aria-label]="lienParametresLabel(rule)">
+                  <ng-container i18n="@@regles.lienParametres">Régler dans Paramètres</ng-container>
+                </a>
+              }
+            </td>
+            <td class="regles-ecarts" [class.regles-ecarts-hit]="(rule.matchCount ?? 0) > 0">
+              {{ ecartsLabel(rule) }}
+              @if (rule.plancher) {
+                <mat-icon class="regles-plancher" inline aria-hidden="false"
+                          [matTooltip]="plancherLabel(rule)" [attr.aria-label]="plancherLabel(rule)">info</mat-icon>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</ng-template>

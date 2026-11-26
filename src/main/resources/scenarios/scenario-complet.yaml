@@ -17,14 +17,10 @@ festival:
 # said, and a hand list that drifts from the stands is a fixture that no longer
 # describes the problem it claims to.
 #
-# 2112 postes: reaching a good score takes ~6-8 min, well above the 180 s
-# Débogage default — pin it here so importing this scenario auto-configures the
-# solver's termination duration instead of under-timing every solve. 480 s is a
+# 2112 postes: reaching a good score takes ~6-8 min, a solve of 480 s or more is a
 # budget for score quality, not for feasibility: 0 hard is now reached in ~12 s
 # (383 s back when this file enumerated its own seats — the generated order
-# converges much faster).
-parametresSolveur:
-  dureeResolutionSecondes: 480
+# converges much faster). The budget is the instance's (SOLVER_SECONDS_LIMIT).
 
 # Constraint dosage this scenario was verified with. The deployment default is
 # neutral (1 for every constraint, see application.properties), so a scenario

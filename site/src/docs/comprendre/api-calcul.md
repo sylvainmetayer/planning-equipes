@@ -1,6 +1,6 @@
 # Lancer, suivre et arrêter un calcul par l'API
 
-Vous saurez lancer un calcul (complet, en file ou incrémental), prévoir ce qu'il va recevoir, suivre sa progression en direct, lire ce qu'il laisse derrière lui (plan précédent, instantanés, comparaison A/B) et éviter ses pièges : budget, redémarrage du serveur, point de départ. La mécanique interne du solveur est dans [le calcul du planning](comment-le-planning-est-calcule.md).
+Vous saurez lancer un calcul (complet, en file ou incrémental), prévoir ce qu'il va recevoir, suivre sa progression en direct, lire ce qu'il laisse derrière lui (plan précédent, versions, comparaison A/B) et éviter ses pièges : budget, redémarrage du serveur, point de départ. La mécanique interne du solveur est dans [le calcul du planning](comment-le-planning-est-calcule.md).
 
 ## Quatre lancements, un seul parcours
 
@@ -10,15 +10,15 @@ Le calcul synchrone, l'asynchrone depuis un problème envoyé, l'asynchrone depu
 
 ### Un seul calcul à la fois
 
-Un seul job de résolution tourne pour toute l'application, verrou porté par le serveur. Les autres sessions voient le job actif par `GET /api/jobs/active` et reçoivent `409` à un second lancement, le corps portant le job en cours. C'est le seul `409` de lancement dont le corps est un job : le quota horaire et la file plafonnée de l'exploitant (`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, voir [le réglage du calcul](../installer/calcul-du-planning.md)) et le référentiel figé répondent `409` avec un simple `{ message }`. Un client les distingue par la forme du corps (un `id` et un `status`), pas par le statut.
+Un seul job de résolution tourne pour toute l'application, verrou porté par le serveur. Les autres sessions voient le job actif par `GET /api/jobs/active` et reçoivent `409` à un second lancement, le corps portant le job en cours. C'est le seul `409` de lancement dont le corps est un job : le quota horaire et la file plafonnée d'une instance publique (`SOLVER_MAX_SOLVES_PER_HOUR`, `SOLVER_MAX_QUEUED_JOBS`, voir [le réglage du calcul](../installer/calcul-du-planning.md)) et le référentiel figé répondent `409` avec un simple `{ message }`. Un client les distingue par la forme du corps (un `id` et un `status`), pas par le statut.
 
 ## Le budget
 
-Le serveur décide de la durée et de l'arrêt sur plateau **au lancement**, d'après `GET /api/parametres-solveur` de l'édition : un `null` suit le défaut du déploiement (`planning.solver.seconds-limit`, `planning.solver.unimproved-seconds-limit`), que la réponse expose sous `instance` avec les plafonds de l'exploitant (`SOLVER_SECONDS_LIMIT_MAX`, `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`). Écran, script et MCP obtiennent donc le même budget. Trois pièges :
+Le budget est celui de l'**instance** (ADR 0110), le même pour toutes les éditions : `planning.solver.seconds-limit` et `planning.solver.unimproved-seconds-limit`, que `GET /api/parametres/calcul` expose sous `instance` avec le plafond d'un lancement (`maxSecondsLimit`, `SOLVER_SECONDS_LIMIT_MAX`). Aucune écriture ne le change : `PUT /api/parametres/calcul` ne règle que le mail de fin de résolution de l'édition. Écran, script et MCP obtiennent donc le même budget. Trois pièges :
 
-- **un plafond refuse, il ne tronque pas.** Une valeur au-dessus du plafond est refusée en `400` qui cite le plafond, à l'enregistrement comme sur un `?seconds=` ou un `secondes` MCP. Seule exception : une valeur déjà enregistrée quand l'exploitant abaisse le plafond tourne au plafond, et le job le dit (`cappedFromSecondsLimit`, `cappedFromPlateauSeconds`). Le plafond ne contrôle donc que ce que l'écriture change : un `PUT` qui renvoie la durée enregistrée telle quelle passe, même au-dessus. Un scénario importé s'enregistre tel qu'il est écrit et tourne plafonné de la même façon ;
-- **le plateau reste conditionné à la faisabilité** : l'arrêt est « faisable ET N secondes sans amélioration », il ne coupe jamais un calcul qui a encore des places à pourvoir. Un `?seconds=` explicite sur une édition sans plateau réglé veut dire « exactement cette durée » ;
-- **un job garde le budget de son lancement.** Il est résolu à la soumission, persisté avec la file (`plateau_seconds` à côté de `seconds_limit`) et rejoué tel quel après un redémarrage. La replanification incrémentale a sa durée propre (60 s sans `?seconds=`), sous le même plafond.
+- **un plafond refuse, il ne tronque pas.** Une durée au-dessus du plafond est refusée en `400` qui cite le plafond, sur un `?seconds=` comme sur un `secondes` MCP ;
+- **le plateau reste conditionné à la faisabilité** : l'arrêt est « faisable ET N secondes sans amélioration », il ne coupe jamais un calcul qui a encore des places à pourvoir. Un `?seconds=` explicite, différent de la durée de l'instance, veut dire « exactement cette durée » : pas de plateau ;
+- **un job garde le budget de son lancement.** Il est résolu à la soumission. La replanification incrémentale a sa durée propre (60 s sans `?seconds=`) et pas de plateau, sous le même plafond.
 
 ## Prévoir ce que le calcul va recevoir
 
@@ -100,9 +100,9 @@ Le premier plan faisable (zéro dur) arrive souvent bien avant la fin, et c'est 
 
 `POST /api/solve/incremental/async` repart du plan persisté, épingle ce qu'un changement tardif n'a pas invalidé et ne recalcule que le reste. Le corps est facultatif et **élargit** le périmètre : `animateurIds`, `jours` et `standIds` forment une union. Sans corps, le périmètre est ce que les changements ont invalidé plus les postes vides. Le job échoue s'il n'y a aucun plan à reprendre. Les places déjà commencées sont réglées avant le périmètre : épinglées, jamais rouvertes (`jours` nommant une journée passée ne rouvre rien), comptées dans `statistiques.postesPasses` et `postesPassesVides`, et une replanification dont toutes les places sont passées est refusée comme le calcul complet. Le mécanisme est dans [verrous, gel et replanification](plan-verrous-et-publication.md).
 
-## Instantanés et comparaison A/B
+## Versions et comparaison A/B
 
-Un seul plan est persisté par édition ; les instantanés sont la seule persistance capable d'en garder plusieurs. Un instantané est **pris automatiquement avant chaque calcul** : c'est le filet anti-écrasement de qui n'a pas pensé à enregistrer. Les automatiques sont purgés au-delà des N derniers (`planning.snapshots.automatiques-conservees`, 5), ceux créés à la main jamais.
+Un seul plan est persisté par édition ; les **versions** sont la seule persistance capable d'en garder plusieurs ([ADR 0108](repo:docs/decisions/0108-un-seul-type-version-a-trois-origines.md)). Une version a trois origines, dites par `origine` : `MANUELLE` (demandée par une personne), `AVANT_CALCUL` (prise d'office) et `PUBLIEE` (ce que les animateurs ont reçu). Les routes sont `/api/planning/versions` ; les racines 3.x `/api/planning/snapshots` en sont des alias dépréciés, retirés en 5.0, et `automatique` reste servi (vrai pour `AVANT_CALCUL`) pour le même temps. Une version est **prise automatiquement avant chaque calcul** : c'est le filet anti-écrasement de qui n'a pas pensé à enregistrer. Les automatiques sont purgés au-delà des N derniers (`planning.snapshots.automatiques-conservees`, 5), ceux créés à la main jamais.
 
 Le résultat d'un calcul nomme cet instantané et son score : `previousPlan : { snapshotId, score, degraded }`. `degraded` compare les deux scores dans l'ordre de Timefold (dur, medium, soft) et vaut `false` dès qu'un des deux manque ou est illisible, car mieux vaut ne rien affirmer qu'une fausse alerte. `previousPlan` est `null` au premier calcul d'une édition. Le score d'un instantané est copié à la capture depuis la dernière analyse, qui vit en mémoire : après un redémarrage, la première lecture la recalcule depuis le plan enregistré, et le calcul suivant rétablit ce score avant de remplacer le plan s'il manque encore.
 
@@ -110,11 +110,11 @@ Le résultat d'un calcul nomme cet instantané et son score : `previousPlan : { 
 
 Un instantané dit s'il est encore à jour (`perime`, `referenceModifieLe`). Le référentiel porte la date de sa dernière mutation (`edition.reference_modifie_le`, écrite par [`ReferenceDataChangeTracker`](repo:src/main/java/dev/sylvain/planning/service/ReferenceDataChangeTracker.java)) ; un instantané capturé avant elle est périmé. Cette date est persistée : après un redémarrage, une valeur en mémoire se lirait « jamais modifié », donc « à jour », et c'est devant le bouton *Restaurer* qu'un faux « à jour » coûte le plus cher ([ADR 0038](repo:docs/decisions/0038-fraicheur-du-referentiel-persistee.md)).
 
-`POST /api/planning/snapshots/{id}/restore` répond `409` **sans rien écrire** dans trois cas :
+`POST /api/planning/versions/{id}/restore` répond `409` **sans rien écrire** dans trois cas :
 
 - une **référence a disparu** : le corps liste lesquelles. Ce refus est vérifié en premier, un instantané étant le plus souvent périmé parce que des ids ont disparu ;
 - l'instantané est **périmé** : le corps porte `perime: true` et la date. Le geste se rejoue avec `?forcer=true`, car le plan reste restaurable, il ne décrit simplement plus le référentiel d'aujourd'hui. `forcer` ne lève que ce refus ;
-- un calcul tient le solveur **de cette édition** : il écraserait le plan remis en place. Le corps est celui des écritures du référentiel, avec le job nommé. La garde est dans le service, que l'API et l'outil MCP `restaurer_instantane` partagent ; un calcul d'une autre édition ne refuse rien.
+- un calcul tient le solveur **de cette édition** : il écraserait le plan remis en place. Le corps est celui des écritures du référentiel, avec le job nommé. La garde est dans le service, que l'API et l'outil MCP `restaurer_version` partagent ; un calcul d'une autre édition ne refuse rien.
 
 Une restauration remet le plan avec le dosage sous lequel il avait été calculé.
 
@@ -123,12 +123,12 @@ Une restauration remet le plan avec le dosage sous lequel il avait été calcul�
 Un instantané peut porter l'état « publié » (`publieLe`) : c'est le plan que les animateurs ont reçu, et il sort de la purge. Deux refus `409` à la suppression :
 
 - **la dernière publication** : l'espace la lit, et la supprimer reprendrait sans un mot ce qui a été annoncé. Les publications remplacées se suppriment comme n'importe quel instantané ;
-- **une publication qui mesure une journée écoulée** : Réalisé vs planifié compare chaque journée terminée au plan publié en vigueur à son premier créneau, et supprimer cette publication réécrirait l'écart après coup. Le refus nomme la date de la journée, jamais une personne, et vaut pour l'outil MCP `supprimer_instantane`. Il est évalué avant la suppression, car la réponse dépend de l'horloge et des créneaux.
+- **une publication qui mesure une journée écoulée** : Réalisé vs planifié compare chaque journée terminée au plan publié en vigueur à son premier créneau, et supprimer cette publication réécrirait l'écart après coup. Le refus nomme la date de la journée, jamais une personne, et vaut pour l'outil MCP `supprimer_version`. Il est évalué avant la suppression, car la réponse dépend de l'horloge et des créneaux.
 
 Le repère de comparaison d'une personne différée (`animateur.plan_notifie_id`) peut désigner l'une de ces publications. La supprimer la fait relire comme « jamais prévenue » : sa prochaine publication lui annoncera son planning entier plutôt que ses écarts.
 
 ### Comparer deux plans
 
-`GET /api/planning/snapshots/compare` ne déclenche **aucun calcul** : il lit des KPI mesurés à la capture. `GET /api/planning/snapshots/comparables` traverse les éditions, d'où `editionsDifferentes`, qui n'est pas une anomalie (une variante est une autre édition) mais que l'interface doit dire. Dans `diffViolations`, `null` signifie **non mesuré**, jamais zéro, et `kpiRecalcule` marque le mode dégradé d'un instantané sans KPI stockés (couverture et volumétrie exactes, écarts non mesurés).
+`GET /api/planning/versions/compare` ne déclenche **aucun calcul** : il lit des KPI mesurés à la capture. `GET /api/planning/versions/comparables` traverse les éditions, d'où `editionsDifferentes`, qui n'est pas une anomalie (une variante est une autre édition) mais que l'interface doit dire. Dans `diffViolations`, `null` signifie **non mesuré**, jamais zéro, et `kpiRecalcule` marque le mode dégradé d'un instantané sans KPI stockés (couverture et volumétrie exactes, écarts non mesurés).
 
 **Deux plans calculés sous des dosages différents ne se comparent pas à poids égaux** : `dosagesDifferents` le dit quand les deux `kpi.dosage` sont connus et diffèrent. Un instantané porte aussi les consignes en vigueur à sa capture (`consignes`, par date) : `null` sur un instantané antérieur veut dire **inconnu**, un tableau vide « il n'y en avait pas ». `consignesDifferentes` reste à `false` dès qu'un côté ne sait pas, et signale quand une différence de sièges ou d'heures vient d'une bande qu'un arrêté a fermée plutôt que d'un réglage du solveur ([les consignes](api-planning-et-publication.md#consignes)).

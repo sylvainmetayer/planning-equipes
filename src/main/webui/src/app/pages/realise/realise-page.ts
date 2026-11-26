@@ -48,7 +48,7 @@ interface OpenedCell {
 /**
  * « Réalisé vs planifié » : the gap between the plan the animateurs were sent
  * and the plan held, stand by stand over the elapsed days, read from
- * `GET /api/planning/realise`.
+ * `GET /api/mesures-edition/realise`.
  *
  * The grid is the Planning page's shared grid (`pages/planning-grille`), its
  * cells coloured by the gap; a cell opens its shifts under it — the Changements

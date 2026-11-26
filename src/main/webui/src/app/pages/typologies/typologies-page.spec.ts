@@ -4,7 +4,7 @@
 // animateur that named it, so the confirmation must carry that count. A
 // confirmation that says "irréversible" without saying *what* it takes down is
 // the same as no confirmation.
-// The ninja flag is ticked in the table itself, one holder at a time.
+// The polyvalent flag is ticked in the table itself, one holder at a time.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -217,10 +217,10 @@ describe('TypologiesPage table', () => {
     ]);
   });
 
-  it('ticks the ninja typologie, and only it, and moves the flag from the table', async () => {
+  it('ticks the polyvalent typologie, and only it, and moves the flag from the table', async () => {
     await rendre([
       { id: 'ambiance', label: 'Ambiance' },
-      { id: 'ninja', label: 'Ninja', ninja: true },
+      { id: 'polyvalent', label: 'Polyvalent', polyvalent: true },
     ]);
 
     const cases = Array.from(racine().querySelectorAll('tbody tr')).map(
@@ -228,13 +228,13 @@ describe('TypologiesPage table', () => {
     );
     expect(cases.map((each) => each.checked)).toEqual([false, true]);
     // Named by its row: a column of bare checkboxes says nothing to a screen reader.
-    expect(cases[0].getAttribute('aria-label')).toBe('Typologie ninja : Ambiance');
+    expect(cases[0].getAttribute('aria-label')).toBe('Typologie polyvalente : Ambiance');
 
     cases[0].click();
     await fixture.whenStable();
     expect(crud.save).toHaveBeenCalledWith(
       'typologies',
-      expect.objectContaining({ id: 'ambiance', ninja: true }),
+      expect.objectContaining({ id: 'ambiance', polyvalent: true }),
       'ambiance',
       'Typologie',
       { text: 'Ambiance' },

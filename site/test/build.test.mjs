@@ -50,8 +50,8 @@ test('hreflang is reciprocal and the sitemap lists every page', () => {
       continue;
     }
     const self = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
-    // The documentation exists in French only: no alternate, but the sitemap lists it
-    if (self.startsWith(`${ORIGIN}/docs/`)) {
+    // The generated licence inventory exists in French only: no alternate, but the sitemap lists it
+    if (self === `${ORIGIN}/docs/installer/licences-tierces/`) {
       assert.ok(!html.includes('hreflang="en" href'), `${self} : alternate anglaise`);
       assert.ok(sitemap.includes(`<loc>${self}</loc>`), `${self} absent du sitemap`);
       assert.ok(existsSync(join(dirname(page), 'index.md')), `${page} : jumeau Markdown`);
@@ -82,16 +82,19 @@ test('the content security policy allows the fonts and nothing remote but the be
 test('the docs are published in place, without the decisions and the project memory', () => {
   const docs = join(dist, 'docs');
   assert.ok(existsSync(join(docs, 'index.html')) && ['regles', 'installer', 'comprendre'].every((part) => existsSync(join(docs, part, 'index.html'))));
+  const en = join(dist, 'en/docs');
+  assert.ok(existsSync(join(en, 'index.html')) && ['rules', 'install', 'build'].every((part) => existsSync(join(en, part, 'index.html'))));
   assert.ok(!existsSync(join(docs, 'decisions')) && !existsSync(join(docs, 'memoire-du-projet')));
   assert.ok(existsSync(join(docs, 'diagrammes/solve.svg')) && !existsSync(join(docs, 'diagrammes/solve.puml')));
-  for (const page of pages.filter((p) => p.includes(`${join(dist, 'docs')}/`))) {
+  for (const page of pages.filter((p) => p.includes(`${join(dist, 'docs')}/`) || p.includes(`${en}/`))) {
     const html = read(page);
-    assert.match(html, /<html lang="fr">/, `${page} : lang`);
+    assert.match(html, page.includes(`${en}/`) ? /<html lang="en">/ : /<html lang="fr">/, `${page} : lang`);
     // Anything that is not published points to GitHub, never to a dead /docs path
     assert.ok(!/href="(?:\.\.\/|\/docs\/(?:decisions|memoire))/.test(html), `${page} : lien relatif non réécrit`);
     assert.ok(!/href="[^"#:]*\.md[#"]/.test(html), `${page} : lien .md non réécrit`);
   }
   assert.ok(read(join(dist, 'llms.txt')).includes('/docs/comprendre/vue-d-ensemble/index.md'), 'llms.txt sans la documentation');
+  assert.ok(read(join(dist, 'llms.txt')).includes('/en/docs/build/overview/index.md'), 'llms.txt sans la documentation anglaise');
 });
 
 test('an address of the former docs, published once, leads to a page that exists', () => {
@@ -118,11 +121,14 @@ test('every page has its own title', () => {
 test('one light index serves the site search: the guides with their sections, then the pages of both languages', () => {
   assert.ok(!existsSync(join(dist, 'docs/search.json')));
   const file = join(dist, 'search.json');
-  assert.ok(readFileSync(file).length < 120_000, 'index de recherche trop lourd');
+  assert.ok(readFileSync(file).length < 240_000, 'index de recherche trop lourd');
   const index = JSON.parse(read(file));
   const api = index.find((e) => e.u === '/docs/comprendre/api-conventions/');
   assert.equal(api.k, 'doc');
   for (const [id] of api.h) assert.ok(read(join(dist, 'docs/comprendre/api-conventions/index.html')).includes(`id="${decodeURIComponent(id)}"`), `#${id}`);
+  const apiEn = index.find((e) => e.u === '/en/docs/build/api-conventions/');
+  assert.equal(apiEn.l, 'en');
+  for (const [id] of apiEn.h) assert.ok(read(join(dist, 'en/docs/build/api-conventions/index.html')).includes(`id="${decodeURIComponent(id)}"`), `#${id}`);
   for (const l of ['fr', 'en']) assert.ok(index.some((e) => e.k === 'page' && e.l === l && e.u === (l === 'fr' ? '/' : '/en/')), `accueil ${l}`);
   for (const e of index) assert.ok(resolves(e.u), e.u);
 });
@@ -130,7 +136,7 @@ test('one light index serves the site search: the guides with their sections, th
 test('the header search is a link to the docs search without script, and the site map has no search of its own', () => {
   for (const page of pages.filter((p) => !p.endsWith('404.html'))) {
     const html = read(page);
-    assert.match(html, /<a class="top__search" href="\/docs\/#doc-q"[^>]*data-pal-open/, page);
+    assert.match(html, /<a class="top__search" href="\/(?:en\/)?docs\/#doc-q"[^>]*data-pal-open/, page);
     assert.match(html, /<dialog class="pal"[^>]*data-pal/, page);
     assert.ok(html.includes('/assets/palette.js'), page);
     assert.ok(!html.includes('/assets/search.js'), page);
@@ -146,7 +152,25 @@ test('"À lire aussi" never lists the home page, and the hosting page leads to t
   for (const page of pages) {
     const related = read(page).match(/<aside class="container related"[\s\S]*?<\/aside>/)?.[0] ?? '';
     assert.ok(!/href="(\/|\/en\/)"/.test(related), `${page} : lien vers l'accueil dans « À lire aussi »`);
+    assert.ok(!/<p>[^<]*\]\(\/[^<]*<\/p>/.test(read(page)), `${page} : lien Markdown affiché tel quel`);
   }
   assert.match(read(join(dist, 'heberger/index.html')), /<a class="btn" href="\/docs\/installer\/">Installer chez vous<\/a>/);
-  assert.match(read(join(dist, 'en/self-hosting/index.html')), /<a class="btn" href="\/docs\/installer\/" hreflang="fr">[^<]*in French\)<\/a>/);
+  assert.match(read(join(dist, 'en/self-hosting/index.html')), /<a class="btn" href="\/en\/docs\/install\/">Install it yourself<\/a>/);
+});
+
+test('every docs page has its twin in the other language, and the language switch leads to it', () => {
+  const link = (html, rel) => html.match(new RegExp(`<link rel="alternate" hreflang="${rel}" href="${ORIGIN}([^"]+)"`))?.[1];
+  for (const page of pages.filter((p) => p.includes(`${join(dist, 'docs')}/`) || p.includes(`${join(dist, 'en/docs')}/`) || p.endsWith(join(dist, 'docs/index.html')))) {
+    const html = read(page);
+    const lang = html.match(/<html lang="(\w+)"/)[1];
+    const self = html.match(/<link rel="canonical" href="[^/]+\/\/[^/]+([^"]+)"/)[1];
+    if (self === '/docs/installer/licences-tierces/') continue;
+    const other = link(html, lang === 'fr' ? 'en' : 'fr');
+    assert.ok(other, `${self} : pas de jumelle`);
+    assert.ok(read(join(dist, other, 'index.html')).includes(`href="${ORIGIN}${self}"`), `${other} ne renvoie pas vers ${self}`);
+    assert.ok(html.includes(`<a class="top__lang" href="${other}"`), `${self} : le sélecteur de langue ne mène pas à ${other}`);
+    // The Docs tab of the menu stays in the language of the page
+    assert.ok(html.includes(`<li><a href="${lang === 'fr' ? '/docs/' : '/en/docs/'}"`), `${self} : onglet Docs`);
+    assert.ok(!html.includes(`<li><a href="${lang === 'fr' ? '/docs/' : '/en/docs/'}" hreflang`), `${self} : hreflang sur l'onglet Docs`);
+  }
 });

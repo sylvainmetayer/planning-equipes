@@ -6,7 +6,7 @@ function ligne(patch: Partial<TypologieAFormer>): TypologieAFormer {
   return {
     typologie: 'ESCAPE',
     label: 'Escape game',
-    ninja: false,
+    polyvalent: false,
     manque: 0,
     specialistes: 1,
     competencesRares: 0,

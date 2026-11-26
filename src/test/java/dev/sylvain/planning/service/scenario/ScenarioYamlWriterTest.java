@@ -16,7 +16,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -236,15 +235,15 @@ class ScenarioYamlWriterTest {
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux,
                 null,
-                new ParametresSolveur(1800),
                 Map.of("equilibrerCharge", false),
                 Map.of("maxJoursConsecutifsTravailles", 5),
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
-        assertThat((Map<String, Object>) parsed.get("parametresSolveur"))
-                .containsEntry("dureeResolutionSecondes", 1800);
-        assertThat((Map<String, Object>) parsed.get("parametresLegaux"))
+        Map<String, Object> parametres = (Map<String, Object>) parsed.get("parametres");
+        assertThat(parametres).doesNotContainKey("instance");
+        assertThat(parsed).doesNotContainKeys("parametresLegaux", "parametresSolveur", "parametresQualite");
+        assertThat((Map<String, Object>) parametres.get("legal"))
                 .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
                 .containsEntry("dureePauseMinutes", 45)
                 // The meal break travels with the legal parameters; times stay
@@ -259,7 +258,7 @@ class ScenarioYamlWriterTest {
                 .satisfies(typologie -> assertThat(typologie)
                         .containsEntry("id", "STRATEGIE")
                         .containsEntry("label", "Stratégie")
-                        .containsEntry("ninja", true));
+                        .containsEntry("polyvalent", true));
         assertThat((List<Map<String, Object>>) parsed.get("emplacements"))
                 .singleElement()
                 .satisfies(emplacement ->
@@ -286,7 +285,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 new ParametresLegaux(),
                 null,
-                null,
                 Map.of(),
                 Map.of("equilibrerCharge", 125),
                 List.of()));
@@ -298,6 +296,56 @@ class ScenarioYamlWriterTest {
         assertThat(ScenarioValidator.validate(yaml)).isEmpty();
         ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
         assertThat(relu.planning().getPonderationsScenario()).containsEntry("equilibrerCharge", 125);
+    }
+
+    /**
+     * The level an edition chose for a rule (ADR 0106) goes out under
+     * {@code contraintes.niveaux} and comes back as the same choice; a position
+     * also gives the weight of that position, and a rule with no level to
+     * choose is refused rather than read as the catalogue's.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void theLevelsAnEditionChoseSurviveTheRoundTrip() {
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+                List.of(animateur),
+                List.of(stand),
+                List.of(creneau),
+                List.of(),
+                List.of(new TypologieItem("STRATEGIE", "Stratégie", false)),
+                List.of(),
+                new ParametresLegaux(),
+                null,
+                Map.of(),
+                Map.of("equilibrerCharge", 25),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of("stabiliteDuPlanPublie", true, "coupureRepasObligatoire", false)));
+
+        Map<String, Object> contraintes =
+                (Map<String, Object>) new Yaml().<Map<String, Object>>load(yaml).get("contraintes");
+        assertThat((Map<String, Object>) contraintes.get("niveaux"))
+                .containsEntry("stabiliteDuPlanPublie", "OBLIGATOIRE")
+                .containsEntry("coupureRepasObligatoire", "PREFERENCE");
+        assertThat(ScenarioValidator.validate(yaml)).isEmpty();
+        ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
+        assertThat(relu.planning().getNiveauxScenario())
+                .containsEntry("stabiliteDuPlanPublie", true)
+                .containsEntry("coupureRepasObligatoire", false);
+
+        String position = yaml.replace("stabiliteDuPlanPublie: OBLIGATOIRE", "stabiliteDuPlanPublie: PREFERENCE_FORTE");
+        ScenarioYamlReader.ScenarioImporte parPosition =
+                ScenarioYamlReader.buildFromScenarioText(position, ParametresLegaux::new);
+        assertThat(parPosition.planning().getNiveauxScenario()).containsEntry("stabiliteDuPlanPublie", false);
+        assertThat(parPosition.planning().getPonderationsScenario()).containsEntry("stabiliteDuPlanPublie", 25);
+
+        String sansChoix = yaml.replace("stabiliteDuPlanPublie: OBLIGATOIRE", "dureeQuotidienneMaxMajeur: PREFERENCE");
+        assertThatThrownBy(() -> ScenarioYamlReader.buildFromScenarioText(sansChoix, ParametresLegaux::new))
+                .hasMessageContaining("dureeQuotidienneMaxMajeur")
+                .hasMessageContaining("pas de niveau");
     }
 
     /**
@@ -369,7 +417,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of(incompatibilite)));
@@ -410,7 +457,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                null,
                 null,
                 null,
                 Map.of(),
@@ -455,7 +501,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of()));
@@ -492,7 +537,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 reglee,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of()));

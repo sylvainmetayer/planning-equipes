@@ -267,6 +267,19 @@ const FORMER_DEBUG_TABS: Readonly<Record<string, string>> = {
   yaml: 'verifier',
 };
 
+/**
+ * `/aujourdhui?onglet=realise`, the tab the realised had until 4.0, lands on
+ * the Mesures d'édition, its other query params kept.
+ */
+export const redirectFormerRealiseTab: CanActivateFn = (route) => {
+  if (route.queryParamMap.get('onglet') !== 'realise') {
+    return true;
+  }
+  const queryParams = { ...route.queryParams };
+  delete queryParams['onglet'];
+  return inject(Router).createUrlTree(['/mesures'], { queryParams });
+};
+
 function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): string | null } }) {
   if (route.queryParamMap.get('focus') === TODAY_ANCHOR) {
     return inject(Router).createUrlTree(['/parametres'], {
@@ -300,11 +313,23 @@ export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fra
   if (!params.has('regle') && fragment && !fragment.startsWith('categorie-')) {
     params.set('regle', fragment);
   }
-  // The former screen listed the legal rules first; `/regles` now opens on the adjustments.
+  // The former screen listed the rules first: `onglet=regles` is the tab that does.
   if (!params.has('regle') && !params.has('onglet')) {
-    params.set('onglet', 'legal');
+    params.set('onglet', 'regles');
   }
   return `/regles?${params.toString()}`;
+};
+
+/** `/editions/comparer?a=&b=` → the « Éditions » view of `/comparer`, with its pair. */
+export const redirectEditionComparison: RedirectFunction = ({ queryParams }) => {
+  const params = new URLSearchParams({ vue: 'editions' });
+  for (const key of ['a', 'b']) {
+    const value = queryParams[key];
+    if (typeof value === 'string' && value) {
+      params.set(key, value);
+    }
+  }
+  return `/comparer?${params.toString()}`;
 };
 
 /**
@@ -319,15 +344,20 @@ export const redirectKpiToVersions: RedirectFunction = ({ queryParams }) =>
     : '/solveur?onglet=versions';
 
 /**
- * Two tabs of Paramètres left the page (issue #720): the legal parameters are
- * now the « Légal » tab of Règles du planning, on the row of each rule that
- * reads them, and the automatic e-mails a section of « Édition », reached by
- * its anchor. A bookmark on either lands where the setting went, the other
- * query params kept; `globaux` is read as `instance` by the page itself.
+ * Paramètres became four sections (`/api/parametres/{section}`): the legal
+ * parameters are its « Légal » tab, the automatic e-mails its « Notifications »
+ * one — reached by the former `?onglet=emails` or by the `#emails` anchor of
+ * « Édition » — and the solve budget its « Calcul » one, which was a tab of
+ * Règles du planning (`redirectCalculToParametres`). A bookmark lands where the
+ * setting went, the other query params kept; `globaux` is read as `instance` by
+ * the page itself.
  */
 export const parametresOngletsDeplaces: CanActivateFn = (route) => {
   const onglet = route.queryParamMap.get('onglet');
-  if (onglet !== 'legaux' && onglet !== 'emails') {
+  const verslNotifications =
+    onglet === 'emails' ||
+    ((onglet === null || onglet === 'edition') && route.fragment === 'emails');
+  if (onglet !== 'legaux' && !verslNotifications) {
     return true;
   }
   const router = inject(Router);
@@ -337,12 +367,21 @@ export const parametresOngletsDeplaces: CanActivateFn = (route) => {
       queryParams[key] = route.queryParamMap.getAll(key).join(',');
     }
   }
-  return onglet === 'legaux'
-    ? router.createUrlTree(['/regles'], { queryParams: { ...queryParams, onglet: 'legal' } })
-    : router.createUrlTree(['/parametres'], {
-        queryParams: { ...queryParams, onglet: 'edition' },
-        fragment: 'emails',
-      });
+  return router.createUrlTree(['/parametres'], {
+    queryParams: { ...queryParams, onglet: onglet === 'legaux' ? 'legal' : 'notifications' },
+  });
+};
+
+/** `/regles?onglet=calcul` became « Paramètres › Calcul »: any other tab of Règles opens as it is. */
+export const redirectCalculToParametres: CanActivateFn = (route) => {
+  if (route.queryParamMap.get('onglet') !== 'calcul') {
+    return true;
+  }
+  const queryParams: Record<string, string> = {};
+  for (const key of route.queryParamMap.keys) {
+    queryParams[key] = route.queryParamMap.getAll(key).join(',');
+  }
+  return inject(Router).createUrlTree(['/parametres'], { queryParams });
 };
 
 /**
@@ -412,15 +451,26 @@ const adminRoutes: Routes = [
     // The event day's hub (ADR 0066): what « Mode jour J » became.
     path: 'aujourdhui',
     title: () => $localize`:@@route.aujourdhui:Aujourd'hui`,
-    data: { aide: 'jour-j', aideOnglets: { realise: 'realise' } },
+    data: { aide: 'jour-j' },
+    canActivate: [redirectFormerRealiseTab],
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
+  },
+  {
+    // What an edition leaves behind (issue #272): the realised against the
+    // published plan, and the indicators of its solves, as two views
+    // (`?vue=realise`, the default, or `?vue=indicateurs`).
+    path: 'mesures',
+    title: () => $localize`:@@route.mesures:Mesures d'édition`,
+    data: { aide: 'realise' },
+    loadComponent: () => import('./pages/mesures/mesures-page').then((m) => m.MesuresPage),
   },
   // The former address, kept for the bookmarks and the links already sent;
   // its query parameters travel with it.
   { path: 'jour-j', redirectTo: redirectKeepingQuery('aujourdhui') },
   // The gap between the published plan and the plan held, per stand and per
-  // elapsed day, became the « Réalisé vs planifié » tab of Aujourd'hui.
-  { path: 'realise', redirectTo: redirectToOnglet('aujourdhui', 'realise') },
+  // elapsed day, was the « Réalisé vs planifié » tab of Aujourd'hui: it is a
+  // view of the Mesures d'édition since 4.0.
+  { path: 'realise', redirectTo: redirectKeepingQuery('mesures') },
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
@@ -459,6 +509,7 @@ const adminRoutes: Routes = [
     data: {
       aide: 'configuration-solveur',
       aideOnglets: {
+        calcul: 'configuration-solveur',
         mural: 'affichage-mural',
         instance: 'webhooks',
         historique: 'historique-des-actions',
@@ -507,16 +558,18 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
   {
-    // What changed in the referential from one edition to another, `?a=&b=`.
-    // Served without a menu entry: the Éditions page opens it.
-    path: 'editions/comparer',
-    title: () => $localize`:@@route.comparerEditions:Comparer deux éditions`,
-    data: { aide: 'editions' },
+    // « Comparer deux versions »: two plan versions (`?vue=versions&comparer=a,b`,
+    // the default) or two editions' reference data (`?vue=editions&a=&b=`).
+    // Served without a menu entry: Versions and Éditions open it.
+    path: 'comparer',
+    title: () => $localize`:@@route.comparer:Comparer deux versions`,
+    data: { aide: 'calculer' },
     loadComponent: () =>
-      import('./pages/comparer-editions/comparer-editions-page').then(
-        (m) => m.ComparerEditionsPage,
-      ),
+      import('./pages/comparer-editions/comparer-page').then((m) => m.ComparerPage),
   },
+  // The editions' comparison was a page of its own until 4.0: it is now the
+  // « Éditions » view of that screen, its pair `?a=&b=` kept.
+  { path: 'editions/comparer', redirectTo: redirectEditionComparison },
   // The solver was the home page until #485, under `/exports` and `/solver`.
   // `/exports` became the export screen, now a tab of Fichiers; only
   // `/solver` still lands on the solver.
@@ -664,15 +717,16 @@ const adminRoutes: Routes = [
     }),
   },
   {
-    // Every setting that decides the plan, in one place (issue #720): the
-    // hard rules with the thresholds they read, the quality rules with their
-    // importance, and the solve budget.
+    // What the next solve must respect (issue #720): the hard rules with the
+    // thresholds they read, the quality rules with their importance. The solve
+    // budget is Paramètres › Calcul.
     path: 'regles',
     title: () => $localize`:@@route.regles:Règles du planning`,
     data: {
       aide: 'ajustements-manuels',
-      aideOnglets: { consignes: 'consignes', calcul: 'configuration-solveur' },
+      aideOnglets: { consignes: 'consignes' },
     },
+    canActivate: [redirectCalculToParametres],
     loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),
     // A row edited and not saved would silently survive, invisible, until the next reload.
     canDeactivate: [(page: ReglesPage) => page.canLeave()],

@@ -16,6 +16,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { EditionStore } from '../../core/edition.store';
@@ -29,21 +30,15 @@ import {
 } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import {
-  currentViewParams,
-  keepViewInQueryParams,
-  optionalParam,
-} from '../../core/view-query-params';
+import { currentViewParams, keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { confirmStaleRestore } from '../../shared/stale-snapshot-confirm';
 import { StatusMessage } from '../../shared/status-message';
 import { EditionPrecedente } from './edition-precedente';
-import { ComparaisonPanel } from './comparaison-panel';
 import {
   CURRENT_PLAN,
   VersionRow,
-  comparisonSides,
   eventLabel,
   kpiSentence,
   lastPublishedId,
@@ -60,8 +55,9 @@ type TableRow = VersionRow | { kind: 'courant'; key: typeof CURRENT_PLAN; date: 
  * the edition in one chronology, newest first — what the Autopsie, the
  * Instantanés and the Comparateur showed on three screens. A snapshot row
  * restores, compares with the plan in place, or is ticked; two ticked rows —
- * or one and « Plan en place » — open the comparator as a panel beside the
- * table (`?comparer=a,b`, so the pair survives a reload and can be shared).
+ * or one and « Plan en place » — open « Comparer deux versions » (`/comparer`).
+ * Each version says its origin — manual, taken before a solve, published —
+ * since 4.0 (ADR 0108).
  *
  * <p>A solve row carries its measures but no plan of its own: what a solve
  * produced is the plan in place until the next solve, whose automatic
@@ -71,7 +67,6 @@ type TableRow = VersionRow | { kind: 'courant'; key: typeof CURRENT_PLAN; date: 
 @Component({
   selector: 'app-versions-page',
   imports: [
-    ComparaisonPanel,
     EditionPrecedente,
     MatButtonModule,
     MatCheckboxModule,
@@ -99,6 +94,7 @@ export class VersionsPage implements OnInit {
   private readonly jobs = inject(SolverJobService);
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly confirm = inject(ConfirmService);
+  private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
 
   private readonly entries = signal<KpiHistoriqueEntry[]>([]);
@@ -138,19 +134,15 @@ export class VersionsPage implements OnInit {
 
   /** The ticked selectors: snapshot ids as text, or {@link CURRENT_PLAN}. At most two. */
   protected readonly ticked = signal<string[]>([]);
-  /** The pair the panel compares, from `?comparer=` or a « Comparer » button. */
-  protected readonly compared = signal<string[]>(
-    readComparison(currentViewParams().get('comparer')),
-  );
-  protected readonly sides = computed(() => comparisonSides(this.compared(), this.snapshots()));
-
   private readonly publishedId = computed(() => lastPublishedId(this.store.snapshots()));
 
   constructor() {
-    keepViewInQueryParams(() => ({
-      comparer: optionalParam(this.compared().join(',')),
-      editions: this.allEditions() ? 'toutes' : null,
-    }));
+    keepViewInQueryParams(() => ({ editions: this.allEditions() ? 'toutes' : null }));
+    // A 3.x link carried the pair in `?comparer=`: it opens the comparison screen.
+    const pair = readComparison(currentViewParams().get('comparer'));
+    if (pair.length === 2) {
+      this.openComparison(pair, true);
+    }
   }
 
   ngOnInit(): void {
@@ -229,16 +221,20 @@ export class VersionsPage implements OnInit {
 
   protected compareTicked(): void {
     if (this.ticked().length === 2) {
-      this.compared.set([...this.ticked()]);
+      this.openComparison(this.ticked());
     }
   }
 
   protected compareWithCurrent(snapshot: PlanSnapshot): void {
-    this.compared.set([String(snapshot.id), CURRENT_PLAN]);
+    this.openComparison([String(snapshot.id), CURRENT_PLAN]);
   }
 
-  protected closeComparison(): void {
-    this.compared.set([]);
+  /** « Comparer deux versions » is a screen of its own: the pair rides in the address. */
+  private openComparison(pair: readonly string[], replaceUrl = false): void {
+    void this.router.navigate(['/comparer'], {
+      queryParams: { vue: 'versions', comparer: pair.join(',') },
+      replaceUrl,
+    });
   }
 
   protected dateLabel(row: TableRow): string {
@@ -256,6 +252,10 @@ export class VersionsPage implements OnInit {
     }
     // Captured before its measures were stored: it still says how many seats it holds.
     return $localize`:@@versions.phrase.affectations:${row.snapshot.nombreAffectations}:count: affectation(s).`;
+  }
+
+  protected originIcon(snapshot: PlanSnapshot): string {
+    return { MANUELLE: 'bookmark', AVANT_CALCUL: 'history', PUBLIEE: 'campaign' }[snapshot.origine];
   }
 
   protected isPublished(snapshot: PlanSnapshot): boolean {
@@ -307,7 +307,7 @@ export class VersionsPage implements OnInit {
   protected async capture(): Promise<void> {
     const libelle = await PromptDialog.ask(this.dialog, {
       title: $localize`:@@snapshots.capture.title:Enregistrer le plan actuel`,
-      label: $localize`:@@snapshots.capture.label:Nom de l'instantané`,
+      label: $localize`:@@snapshots.capture.label:Nom de la version`,
       confirmLabel: $localize`:@@snapshots.capture.confirm:Enregistrer`,
     });
     if (!libelle) {
@@ -317,7 +317,7 @@ export class VersionsPage implements OnInit {
     await this.write('capture', async () => {
       await this.store.capturer(libelle);
       this.message.set(
-        $localize`:@@snapshots.captured:Instantané « ${libelle}:libelle: » enregistré.`,
+        $localize`:@@snapshots.captured:Version « ${libelle}:libelle: » enregistrée.`,
       );
     });
   }
@@ -327,7 +327,7 @@ export class VersionsPage implements OnInit {
       return;
     }
     const confirme = await this.confirm.ask({
-      title: $localize`:@@snapshots.restore.title:Restaurer cet instantané ?`,
+      title: $localize`:@@snapshots.restore.title:Restaurer cette version ?`,
       message: $localize`:@@snapshots.restore.message:Le plan actuellement enregistré est remplacé par « ${snapshot.libelle}:libelle: ». Enregistrez-le d'abord si vous voulez le garder.`,
       confirmLabel: $localize`:@@snapshots.restore.confirm:Restaurer`,
       danger: true,
@@ -371,7 +371,7 @@ export class VersionsPage implements OnInit {
       return;
     }
     const confirme = await this.confirm.ask({
-      title: $localize`:@@snapshots.delete.title:Supprimer cet instantané ?`,
+      title: $localize`:@@snapshots.delete.title:Supprimer cette version ?`,
       message: $localize`:@@snapshots.delete.message:« ${snapshot.libelle}:libelle: » sera définitivement perdu.`,
       danger: true,
     });
@@ -412,12 +412,9 @@ export class VersionsPage implements OnInit {
     }
   }
 
-  /** A deleted snapshot leaves the selection and the comparison it was part of. */
+  /** A deleted snapshot leaves the selection it was part of. */
   private forget(selector: string): void {
     this.ticked.update((ticked) => ticked.filter((each) => each !== selector));
-    if (this.compared().includes(selector)) {
-      this.compared.set([]);
-    }
   }
 
   /** A refused restore names what is missing: that list is the actionable part. */

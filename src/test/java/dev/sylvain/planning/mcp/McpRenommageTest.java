@@ -33,7 +33,7 @@ class McpRenommageTest {
     /** {@code <verbe>_<objet>}, the verb drawn from the closed set of ADR 0100. */
     static final Pattern CONVENTION = Pattern.compile("(?:lister|consulter|analyser|diagnostiquer|comparer|simuler"
             + "|previsualiser|creer|modifier|supprimer|activer|desactiver|verrouiller|deverrouiller|appliquer"
-            + "|lancer|arreter|importer|exporter|publier|envoyer)(?:_[a-z0-9]+)+");
+            + "|lancer|arreter|importer|exporter|publier|envoyer|restaurer)(?:_[a-z0-9]+)+");
 
     static Map<String, String> table(String tsv) {
         Map<String, String> rows = new LinkedHashMap<>();

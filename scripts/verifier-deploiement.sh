@@ -145,7 +145,7 @@ if [[ "$DEMO" == true ]]; then
 else
   manquantes="$(jq -r '[{editeur, hebergeur, contact, baseLegale, conservation} | to_entries[]
                        | select((.value // "") | test("^\\s*$")) | .key] | join(", ")' <<<"$mentions")"
-  [[ -z "$manquantes" ]] || ko "Mentions légales obligatoires vides : $manquantes (instance non déclarée de démonstration : LEGAL_DEMO_INSTANCE=true, ou --instance-demo pour ne pas les exiger)"
+  [[ -z "$manquantes" ]] || ko "Mentions légales obligatoires vides : $manquantes (clés de LEGAL_MENTIONS ; instance non déclarée de démonstration : LEGAL_DEMO_INSTANCE=true, ou --instance-demo pour ne pas les exiger)"
   ok "Mentions légales obligatoires renseignées"
 fi
 

@@ -113,8 +113,8 @@ class SchemaIntegrityTest {
                 creneauA);
         update(
                 "INSERT INTO verrouillage_planning (edition_id, id, type, creneau_id, creneau_date,"
-                        + " creneau_heure_debut, creneau_heure_fin)"
-                        + " VALUES (?, 'V1', 'CRENEAU', ?, DATE '2026-07-14', TIME '10:00', TIME '12:00')",
+                        + " creneau_heure_debut, creneau_heure_fin, animateur_id)"
+                        + " VALUES (?, 'V1', 'ANIMATEUR_CRENEAU', ?, DATE '2026-07-14', TIME '10:00', TIME '12:00', 'A1')",
                 a,
                 creneauA);
         update(
@@ -174,14 +174,14 @@ class SchemaIntegrityTest {
                 .isNull();
         assertThat(count("declaration_coequipier", a)).isEqualTo(1);
 
-        long snapshot = Long.parseLong(scalar("INSERT INTO plan_snapshot (edition_id, libelle, contenu) VALUES ('" + a
+        long snapshot = Long.parseLong(scalar("INSERT INTO version_plan (edition_id, libelle, contenu) VALUES ('" + a
                 + "', 'l', '[]'::jsonb) RETURNING id::text"));
         update("UPDATE animateur SET plan_notifie_id = ? WHERE edition_id = ? AND id = 'A1'", snapshot, a);
         update(
                 "INSERT INTO planning_resolution (edition_id, resolu_le, snapshot_avant_solve_id) VALUES (?, now(), ?)",
                 a,
                 snapshot);
-        update("DELETE FROM plan_snapshot WHERE id = ?", snapshot);
+        update("DELETE FROM version_plan WHERE id = ?", snapshot);
         assertThat(scalar("SELECT plan_notifie_id FROM animateur WHERE id = 'A1' AND edition_id = '" + a + "'"))
                 .isNull();
         assertThat(scalar("SELECT snapshot_avant_solve_id FROM planning_resolution WHERE edition_id = '" + a + "'"))

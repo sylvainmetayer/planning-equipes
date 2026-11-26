@@ -10,9 +10,6 @@ schemaVersion: 2
 festival:
   dateDebut: 2027-07-07
 
-parametresSolveur:
-  dureeResolutionSecondes: 900
-
 contraintes:
   poids:
     appreciationIncompatible: 15
@@ -47,7 +44,7 @@ typologies:
     label: "Arts du cirque"
   - id: POLYVALENT
     label: Polyvalent
-    ninja: true
+    polyvalent: true
 
 emplacements:
   - id: EMP-01

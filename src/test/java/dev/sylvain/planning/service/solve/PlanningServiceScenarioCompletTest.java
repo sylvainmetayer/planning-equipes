@@ -38,8 +38,7 @@ class PlanningServiceScenarioCompletTest {
     // with the production solve budget so this regression test remains stable
     // while still failing when hard-feasibility cannot be reached.
     //
-    // Raised from 180s to the file's own parametresSolveur.dureeResolutionSecondes
-    // (480s): adding the Homme-jeu stand (issue #93) grew the problem from 2088
+    // Raised from 180s to 480s: adding the Homme-jeu stand (issue #93) grew the problem from 2088
     // to 2112 postes/150 to 152 animateurs, which pushed convergence past the
     // previous 180s guardrail (verified: 21s before, still -1 hard at 180s
     // after) even though the scenario is still comfortably feasible well within

@@ -73,7 +73,7 @@ class LanguagePolicyStructuralTest {
             indisponibilite indisponibilites indisponible indisponibles ouverture ouvertures
             competence competences souhait souhaits parametre parametres legal legaux
             mineur mineurs majeur majeurs effectif effectifs repos scenario scenarios
-            solveur foire ninja premium qualite niveau referent
+            solveur foire polyvalent polyvalents premium qualite niveau referent
             jeton jetons
             jour jours journee semaine semaines heure heures duree fenetre fenetres
             repas pause midi soir nuit matin ferie hebdomadaire quotidien quotidienne

@@ -37,8 +37,8 @@ class McpEditionStructurelleTest {
             "statut_solveur",
             "lister_jobs",
             "supprimer_job",
-            "lister_kpi_historique",
-            "supprimer_kpi_historique",
+            "lister_mesures_edition",
+            "supprimer_mesure_edition",
             "etat_sauvegardes",
             "modifier_sauvegardes");
 
@@ -55,8 +55,8 @@ class McpEditionStructurelleTest {
             "statut_solveur", "SolveurMcpTools ne voit que les jobs des éditions visibles",
             "lister_jobs", "SolveurMcpTools ne voit que les jobs des éditions visibles",
             "supprimer_job", "SolveurMcpTools ne voit que les jobs des éditions visibles",
-            "lister_kpi_historique", "KpiHistoriqueService filtre par visibleToCaller",
-            "supprimer_kpi_historique", "KpiHistoriqueService filtre par visibleToCaller",
+            "lister_mesures_edition", "KpiHistoriqueService filtre par visibleToCaller",
+            "supprimer_mesure_edition", "KpiHistoriqueService filtre par visibleToCaller",
             "lister_editions", "filtrée par visibleToCaller",
             "edition_courante", "refusée quand l'édition active n'est pas visible");
 

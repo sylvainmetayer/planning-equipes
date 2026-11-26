@@ -423,7 +423,7 @@
               "examples" : [ "2022-03-10" ]
             }
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "modifieLe" : {
@@ -610,7 +610,7 @@
         }
       },
       "AnimateurFragilite" : {
-        "required" : [ "affectations", "competencesRares", "ninja", "postesEffondres", "postesIrremplacables", "postesNonDetailles" ],
+        "required" : [ "affectations", "competencesRares", "polyvalent", "postesEffondres", "postesIrremplacables", "postesNonDetailles" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -619,7 +619,7 @@
           "nom" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "affectations" : {
@@ -1206,14 +1206,6 @@
           }
         }
       },
-      "CarpoolCancellation" : {
-        "type" : "object",
-        "properties" : {
-          "reason" : {
-            "type" : "string"
-          }
-        }
-      },
       "CarpoolDayView" : {
         "required" : [ "aligned" ],
         "type" : "object",
@@ -1254,19 +1246,8 @@
           "status" : {
             "type" : "string"
           },
-          "reason" : {
-            "type" : "string"
-          },
           "decidedAt" : {
             "$ref" : "#/components/schemas/Instant"
-          }
-        }
-      },
-      "CarpoolSetAside" : {
-        "type" : "object",
-        "properties" : {
-          "reason" : {
-            "type" : "string"
           }
         }
       },
@@ -1850,7 +1831,7 @@
         }
       },
       "CompetenceStaffing" : {
-        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologieNinjaDefinie", "planchersCumules" ],
+        "required" : [ "animateursTotal", "manquePolyvalents", "manqueTotal", "polyvalents", "siegesNonAttribues", "siegesReservesAuxPolyvalents", "typologiePolyvalenteDefinie", "planchersCumules" ],
         "type" : "object",
         "properties" : {
           "parTypologie" : {
@@ -1883,7 +1864,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "typologieNinjaDefinie" : {
+          "typologiePolyvalenteDefinie" : {
             "type" : "boolean"
           },
           "planchersCumules" : {
@@ -1946,24 +1927,8 @@
           "configured" : {
             "type" : "boolean"
           },
-          "onDemand" : {
-            "type" : "boolean"
-          },
           "remoteByDefault" : {
             "type" : "boolean"
-          },
-          "state" : {
-            "$ref" : "#/components/schemas/MachineState"
-          },
-          "stopsAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          },
-          "billedHoursThisMonth" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "lastStopError" : {
-            "type" : "string"
           }
         }
       },
@@ -2255,6 +2220,15 @@
           }
         }
       },
+      "ConstraintNiveauUpdate" : {
+        "required" : [ "niveau" ],
+        "type" : "object",
+        "properties" : {
+          "niveau" : {
+            "$ref" : "#/components/schemas/NiveauRegle"
+          }
+        }
+      },
       "ConstraintParameter" : {
         "type" : "object",
         "properties" : {
@@ -2305,7 +2279,7 @@
         }
       },
       "ConstraintView" : {
-        "required" : [ "actif", "activeByDefault", "dosable", "legale", "poids", "protegee" ],
+        "required" : [ "actif", "activeByDefault", "dosable", "legale", "niveauReglable", "poids", "protegee" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -2340,6 +2314,12 @@
           },
           "dosable" : {
             "type" : "boolean"
+          },
+          "niveauReglable" : {
+            "type" : "boolean"
+          },
+          "niveauChoisi" : {
+            "$ref" : "#/components/schemas/NiveauRegle"
           },
           "poids" : {
             "type" : "integer",
@@ -3762,7 +3742,7 @@
         }
       },
       "Dosage" : {
-        "required" : [ "weights", "instanceWeights", "disabled", "enabled" ],
+        "required" : [ "weights", "instanceWeights", "disabled", "enabled", "levels" ],
         "type" : "object",
         "properties" : {
           "weights" : {
@@ -3788,6 +3768,12 @@
           "enabled" : {
             "type" : "array",
             "items" : {
+              "type" : "string"
+            }
+          },
+          "levels" : {
+            "type" : "object",
+            "additionalProperties" : {
               "type" : "string"
             }
           }
@@ -5875,14 +5861,6 @@
             "type" : "integer",
             "format" : "int64"
           },
-          "cappedFromSecondsLimit" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "cappedFromPlateauSeconds" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "reamorcage" : {
             "$ref" : "#/components/schemas/Reamorcage"
           },
@@ -6699,7 +6677,7 @@
         }
       },
       "LigneTypologie" : {
-        "required" : [ "ninja", "heures", "postes" ],
+        "required" : [ "polyvalent", "heures", "postes" ],
         "type" : "object",
         "properties" : {
           "typologie" : {
@@ -6708,7 +6686,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "maxCreneauxParAnimateur" : {
@@ -6777,10 +6755,6 @@
           "description" : "As defined by 'partial-time' in RFC3339",
           "url" : "https://www.rfc-editor.org/rfc/rfc3339.html#section-5.6"
         }
-      },
-      "MachineState" : {
-        "type" : "string",
-        "enum" : [ "PERMANENT", "ABSENT", "PREPARING", "READY", "SOLVING" ]
       },
       "MailConfigView" : {
         "type" : "object",
@@ -7043,6 +7017,10 @@
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
       },
+      "NiveauRegle" : {
+        "type" : "string",
+        "enum" : [ "OBLIGATOIRE", "PREFERENCE_FORTE", "PREFERENCE_NORMALE", "PREFERENCE_LEGERE" ]
+      },
       "NouveauCompte" : {
         "type" : "object",
         "properties" : {
@@ -7162,6 +7140,10 @@
             }
           }
         }
+      },
+      "Origine" : {
+        "type" : "string",
+        "enum" : [ "MANUELLE", "AVANT_CALCUL", "PUBLIEE" ]
       },
       "OutboundSseEvent" : {
         "type" : "object",
@@ -7283,6 +7265,9 @@
           },
           "heureDebutSoiree" : {
             "$ref" : "#/components/schemas/LocalTime"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -7323,8 +7308,8 @@
         }
       },
       "ParametresNotifications" : {
-        "required" : [ "ancienneteEchangeJours", "delaiRelanceHeures" ],
         "type" : "object",
+        "required" : [ "ancienneteEchangeJours", "delaiRelanceHeures" ],
         "properties" : {
           "heureRappelVeille" : {
             "$ref" : "#/components/schemas/LocalTime"
@@ -7336,12 +7321,15 @@
           "ancienneteEchangeJours" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
         "type" : "object",
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
             "type" : "integer",
@@ -7380,6 +7368,9 @@
           "toleranceArriveeGroupeeMinutes" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -7387,16 +7378,29 @@
         "required" : [ "mailFinResolution" ],
         "type" : "object",
         "properties" : {
-          "dureeResolutionSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "plateauSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "mailFinResolution" : {
             "type" : "boolean"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ParametresView" : {
+        "required" : [ "legal", "organisation", "notifications", "calcul" ],
+        "type" : "object",
+        "properties" : {
+          "legal" : {
+            "$ref" : "#/components/schemas/ParametresLegaux"
+          },
+          "organisation" : {
+            "$ref" : "#/components/schemas/ParametresQualite"
+          },
+          "notifications" : {
+            "$ref" : "#/components/schemas/ParametresNotifications"
+          },
+          "calcul" : {
+            "$ref" : "#/components/schemas/SolverSettingsView"
           }
         }
       },
@@ -8591,7 +8595,7 @@
         }
       },
       "RapportFragilite" : {
-        "required" : [ "animateursIrremplacables", "aucunAnimateur", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "ninjaConfigure", "totalCompetencesRares" ],
+        "required" : [ "animateursIrremplacables", "aucunAnimateur", "groupesAnalyses", "groupesDejaSousEffectif", "groupesSansSpecialiste", "polyvalentConfigure", "totalCompetencesRares" ],
         "type" : "object",
         "properties" : {
           "animateurs" : {
@@ -8626,7 +8630,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "ninjaConfigure" : {
+          "polyvalentConfigure" : {
             "type" : "boolean"
           },
           "aucunAnimateur" : {
@@ -8914,7 +8918,7 @@
         }
       },
       "RapportTension" : {
-        "required" : [ "animateursTotal", "cellulesCritiques", "jours", "message", "ninjaConfigure", "referentielsManquants", "tranches" ],
+        "required" : [ "animateursTotal", "cellulesCritiques", "jours", "message", "polyvalentConfigure", "referentielsManquants", "tranches" ],
         "type" : "object",
         "properties" : {
           "tranches" : {
@@ -8940,7 +8944,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "ninjaConfigure" : {
+          "polyvalentConfigure" : {
             "type" : "boolean"
           },
           "referentielsManquants" : {
@@ -9962,7 +9966,7 @@
         }
       },
       "SnapshotMeta" : {
-        "required" : [ "automatique", "id", "nombreAffectations", "perime" ],
+        "required" : [ "automatique", "id", "nombreAffectations", "origine", "perime" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -9974,6 +9978,9 @@
           },
           "automatique" : {
             "type" : "boolean"
+          },
+          "origine" : {
+            "$ref" : "#/components/schemas/Origine"
           },
           "score" : {
             "type" : "string"
@@ -10048,7 +10055,7 @@
       },
       "SolverBudgetBounds" : {
         "type" : "object",
-        "required" : [ "defaultSecondsLimit", "defaultPlateauSeconds", "maxSecondsLimit", "maxPlateauSeconds" ],
+        "required" : [ "defaultSecondsLimit", "defaultPlateauSeconds", "maxSecondsLimit" ],
         "properties" : {
           "defaultSecondsLimit" : {
             "type" : "integer",
@@ -10061,30 +10068,21 @@
           "maxSecondsLimit" : {
             "type" : "integer",
             "format" : "int64"
-          },
-          "maxPlateauSeconds" : {
-            "type" : "integer",
-            "format" : "int64"
           }
         }
       },
       "SolverSettingsView" : {
-        "required" : [ "mailFinResolution", "instance" ],
         "type" : "object",
+        "required" : [ "mailFinResolution", "instance" ],
         "properties" : {
-          "dureeResolutionSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "plateauSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "mailFinResolution" : {
             "type" : "boolean"
           },
           "instance" : {
             "$ref" : "#/components/schemas/SolverBudgetBounds"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -10760,9 +10758,6 @@
           },
           "decidedAt" : {
             "$ref" : "#/components/schemas/Instant"
-          },
-          "reason" : {
-            "type" : "string"
           }
         }
       },
@@ -10804,11 +10799,11 @@
       },
       "TypeVerrouillage" : {
         "type" : "string",
-        "enum" : [ "ANIMATEUR", "STAND", "JOUR", "CRENEAU", "ANIMATEUR_CRENEAU" ]
+        "enum" : [ "ANIMATEUR_CRENEAU", "STAND_JOUR", "JOUR" ]
       },
       "TypologieAFormer" : {
         "type" : "object",
-        "required" : [ "candidats", "competencesRares", "groupesSansSpecialiste", "joursTension", "manque", "ninja", "postesIrremplacables", "specialistes" ],
+        "required" : [ "candidats", "competencesRares", "groupesSansSpecialiste", "joursTension", "manque", "polyvalent", "postesIrremplacables", "specialistes" ],
         "properties" : {
           "typologie" : {
             "type" : "string"
@@ -10816,7 +10811,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "manque" : {
@@ -10867,7 +10862,7 @@
         }
       },
       "TypologieItem" : {
-        "required" : [ "ninja" ],
+        "required" : [ "polyvalent" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -10879,7 +10874,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "maxCreneauxParAnimateur" : {
@@ -10896,7 +10891,7 @@
       },
       "TypologieStaffing" : {
         "type" : "object",
-        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "ninja", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes", "enchainementTotal", "minimumPlafond" ],
+        "required" : [ "chargeTotal", "heures", "manque", "minimumTotal", "polyvalent", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "rotationTotal", "sieges", "specialistes", "enchainementTotal", "minimumPlafond" ],
         "properties" : {
           "typologie" : {
             "type" : "string"
@@ -10904,7 +10899,7 @@
           "label" : {
             "type" : "string"
           },
-          "ninja" : {
+          "polyvalent" : {
             "type" : "boolean"
           },
           "sieges" : {
@@ -13285,6 +13280,45 @@
         "tags" : [ "Constraint Resource" ]
       }
     },
+    "/api/constraints/{name}/niveau" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConstraintNiveauUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConstraintNiveauUpdate"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Niveau",
+        "tags" : [ "Constraint Resource" ]
+      }
+    },
     "/api/constraints/{name}/poids" : {
       "put" : {
         "parameters" : [ {
@@ -13933,29 +13967,14 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CarpoolCancellation"
-              }
-            }
-          },
-          "required" : true
-        },
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TeammateRequestView"
-                }
+                "schema" : { }
               }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Cancel Carpool",
@@ -13972,29 +13991,14 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CarpoolSetAside"
-              }
-            }
-          },
-          "required" : true
-        },
         "responses" : {
           "200" : {
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/TeammateRequestView"
-                }
+                "schema" : { }
               }
             }
-          },
-          "400" : {
-            "description" : "Bad Request"
           }
         },
         "summary" : "Set Carpool Aside",
@@ -16718,6 +16722,7 @@
     },
     "/api/kpi/historique" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -16739,6 +16744,7 @@
     },
     "/api/kpi/historique/{id}" : {
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -16777,42 +16783,6 @@
           }
         },
         "summary" : "Get",
-        "tags" : [ "Compute Machine Resource" ]
-      }
-    },
-    "/api/machine-calcul/arreter" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ComputeMachine"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Stop",
-        "tags" : [ "Compute Machine Resource" ]
-      }
-    },
-    "/api/machine-calcul/preparer" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ComputeMachine"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "Prepare",
         "tags" : [ "Compute Machine Resource" ]
       }
     },
@@ -16976,6 +16946,133 @@
         "tags" : [ "Mentions Legales Resource" ]
       }
     },
+    "/api/mesures-edition/indicateurs" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/KpiHistoriqueEntry"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List Indicators",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/indicateurs/{id}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete Indicator",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RealisedVsPlanned"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Report",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise/detail" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "jour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "stand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CellDetail"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Detail",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
+    "/api/mesures-edition/realise/precedente" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreviousEdition"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Previous Edition",
+        "tags" : [ "Mesures Edition Resource" ]
+      }
+    },
     "/api/mural/{token}" : {
       "get" : {
         "parameters" : [ {
@@ -17082,6 +17179,24 @@
         "tags" : [ "Ouverture Stands Resource" ]
       }
     },
+    "/api/parametres" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Parametres",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
     "/api/parametres-contact" : {
       "put" : {
         "requestBody" : {
@@ -17131,6 +17246,7 @@
     },
     "/api/parametres-legaux" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17158,6 +17274,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17176,6 +17293,7 @@
     },
     "/api/parametres-notifications" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17203,6 +17321,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17221,6 +17340,7 @@
     },
     "/api/parametres-qualite" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17248,6 +17368,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17266,6 +17387,7 @@
     },
     "/api/parametres-solveur" : {
       "put" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -17295,6 +17417,7 @@
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17308,6 +17431,98 @@
           }
         },
         "summary" : "Get Parametres Solveur",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/calcul" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresSolveur"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolverSettingsView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Calcul",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolverSettingsView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Calcul",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/legal" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresLegaux"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Legal",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresLegaux"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Legal",
         "tags" : [ "Parametres Resource" ]
       }
     },
@@ -17374,6 +17589,96 @@
         },
         "summary" : "Test",
         "tags" : [ "Weather Resource" ]
+      }
+    },
+    "/api/parametres/notifications" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresNotifications"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Notifications",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresNotifications"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Notifications",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres/organisation" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresQualite"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Organisation",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresQualite"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Organisation",
+        "tags" : [ "Parametres Resource" ]
       }
     },
     "/api/pauses" : {
@@ -17947,6 +18252,7 @@
     },
     "/api/planning/realise" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -17965,6 +18271,7 @@
     },
     "/api/planning/realise/detail" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "jour",
           "in" : "query",
@@ -17996,6 +18303,7 @@
     },
     "/api/planning/realise/export" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18010,6 +18318,7 @@
     },
     "/api/planning/realise/precedente" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18186,6 +18495,7 @@
     },
     "/api/planning/snapshots" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18205,6 +18515,7 @@
         "tags" : [ "Plan Snapshot Resource" ]
       },
       "post" : {
+        "deprecated" : true,
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -18234,6 +18545,7 @@
     },
     "/api/planning/snapshots/comparables" : {
       "get" : {
+        "deprecated" : true,
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -18255,6 +18567,7 @@
     },
     "/api/planning/snapshots/compare" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "base",
           "in" : "query",
@@ -18286,6 +18599,7 @@
     },
     "/api/planning/snapshots/{id}" : {
       "get" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -18311,6 +18625,7 @@
         "tags" : [ "Plan Snapshot Resource" ]
       },
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -18336,6 +18651,7 @@
     },
     "/api/planning/snapshots/{id}/restore" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "id",
           "in" : "path",
@@ -18381,6 +18697,187 @@
         },
         "summary" : "Rapport",
         "tags" : [ "Typologie Analyse Resource" ]
+      }
+    },
+    "/api/planning/versions" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SnapshotMeta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Version Plan Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CaptureRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Capture",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/comparables" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SnapshotMeta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Comparables",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/compare" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "base",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "variante",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ComparaisonSnapshots"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Compare",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SnapshotDetail"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Version Plan Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete",
+        "tags" : [ "Version Plan Resource" ]
+      }
+    },
+    "/api/planning/versions/{id}/restore" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "forcer",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Restore",
+        "tags" : [ "Version Plan Resource" ]
       }
     },
     "/api/planning/volumetrie" : {

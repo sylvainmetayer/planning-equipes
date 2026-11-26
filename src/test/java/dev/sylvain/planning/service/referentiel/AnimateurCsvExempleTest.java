@@ -102,7 +102,7 @@ class AnimateurCsvExempleTest {
                         null,
                         typologie.id(),
                         typologie.label(),
-                        Boolean.TRUE.equals(typologie.ninja()),
+                        Boolean.TRUE.equals(typologie.polyvalent()),
                         null,
                         null,
                         null));

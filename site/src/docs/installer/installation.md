@@ -35,7 +35,7 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
    cp .env.prod.example .env.prod
    ```
 
-   Les sept variables obligatoires sont `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et `MAIL_FROM`. Le compose refuse de démarrer si l'une manque, et l'application refuse de son côté les deux mots de passe d'exemple et cinq mentions légales vides. La liste complète de ses refus ouvre [l'inventaire des variables](variables-environnement.md#obligatoires-en-production).
+   Les sept variables obligatoires sont `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et `MAIL_FROM`. Le compose refuse de démarrer si l'une manque, et l'application refuse de son côté les deux mots de passe d'exemple et, sur une instance publique (`PUBLIC_INSTANCE=true`), cinq mentions légales vides. La liste complète de ses refus ouvre [l'inventaire des variables](variables-environnement.md#obligatoires-en-production).
 
 2. Choisissez une version nommée. `APP_VERSION=1.2.0` dans le `.env.prod`, jamais `main` ni `latest`. `main` est l'image de recette, reconstruite à chaque fusion et chaque dimanche ; `latest` désigne ce que le registre veut bien. Un rapport d'incident doit pouvoir nommer le déploiement : « la 1.2.0 » le fait, « l'image de mardi » non. Ce que promet un numéro est dans [les numéros de version](versioning.md).
 
@@ -67,7 +67,7 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
    | Disponibilité | `/q/health/ready` répond `UP` : base joignable, aucune migration en attente ni en échec. L'attente est bornée (120 s, `--attente`) pour laisser passer les migrations d'un premier démarrage |
    | Version | la version exposée par `/api/config` est celle attendue (`--version-libre` tant que `APP_VERSION=main`) |
    | Marque et mentions | `/api/branding` et `/api/mentions-legales` répondent |
-   | Mentions obligatoires | aucune des cinq mentions exigées n'est vide ; sauté si l'instance se déclare de démonstration (`demoInstance` de `/api/mentions-legales`, soit `LEGAL_DEMO_INSTANCE=true` tel que l'application l'a lu), ou avec `--instance-demo` |
+   | Mentions obligatoires | aucune des cinq clés exigées de `LEGAL_MENTIONS` n'est vide ; sauté si l'instance se déclare de démonstration (`demoInstance` de `/api/mentions-legales`, soit `LEGAL_DEMO_INSTANCE=true` tel que l'application l'a lu), ou avec `--instance-demo` |
 
    Le pied de page de l'application (administration comme espace animateur) et la page *Débogage* (hors menu : Ctrl+K, ou l'adresse `/debug`, onglet *Résolution*) affichent la version déployée : le tag `vX.Y.Z` pour une image de release, l'identifiant du commit pour une image de recette. C'est ce qu'un rapport de faille doit citer ([signaler une faille](repo:.github/SECURITY.md)).
 

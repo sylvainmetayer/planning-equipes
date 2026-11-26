@@ -92,7 +92,7 @@
       </mat-select>
     </mat-form-field>
     <mat-form-field appearance="outline">
-      <mat-label i18n="@@stands.field.premium">Premium (stand éditeur)</mat-label>
+      <mat-label i18n="@@stands.field.premium">Stand premium</mat-label>
       <mat-select name="premium" [ngModel]="patch().premium" (ngModelChange)="update({ premium: $event })">
         @for (mode of modesBooleen; track mode.value) {
           <mat-option [value]="mode.value">{{ mode.label }}</mat-option>

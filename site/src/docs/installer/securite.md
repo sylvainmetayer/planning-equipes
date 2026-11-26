@@ -24,10 +24,12 @@ Pour un aperçu de ce qu'on attend d'un hébergeur, avant les détails, voir [h�
 - [ ] aucune variable `REMOTE_USER_*` dans votre environnement : le mode
       en-tête de proxy est retiré en 4.0, le démarrage les signale et les
       ignore ;
-- [ ] variables `LEGAL_*` renseignées : `/mentions-legales` est public, et une
+- [ ] variable `LEGAL_MENTIONS` renseignée : `/mentions-legales` est public, et une
       page de mentions légales vide vaut absence de mentions légales. Cinq
       d'entre elles (éditeur, hébergeur, contact, base légale, conservation)
-      **font échouer le démarrage**, donc cette case se coche toute seule ;
+      **font échouer le démarrage d'une instance publique**
+      (`PUBLIC_INSTANCE=true`) et l'avertissent sinon : déclarez votre instance
+      publique, et cette case se coche toute seule ;
       les deux autres restent à votre main (voir les mentions légales dans [`exploitation.md`](exploitation.md)) ;
 - [ ] jeu de données de production chargé, jamais les fixtures de test.
 

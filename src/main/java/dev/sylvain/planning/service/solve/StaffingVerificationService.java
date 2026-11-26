@@ -16,7 +16,6 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.ProblemBuilder.Seats;
-import dev.sylvain.planning.solver.ConstraintCatalog;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -348,20 +347,14 @@ public class StaffingVerificationService {
     }
 
     /**
-     * The time a solve of the edition gets: the question « does the floor
+     * The time a solve of the instance gets: the question « does the floor
      * hold » is asked against the plan a real solve would find, and a check
      * given less fails where that solve succeeds. A duration asked for
      * explicitly must fall within the instance's bounds.
      */
     private long budgetSeconds(Long dureeSecondes) {
         SolverBudgetBounds bounds = referenceDataService.getSolverBudgetBounds();
-        Integer dureeEdition = referenceDataService.getParametresSolveur().dureeResolutionSecondes();
-        long plafond = bounds.defaultSecondsLimit();
-        if (dureeSecondes != null) {
-            plafond = dureeSecondes;
-        } else if (dureeEdition != null) {
-            plafond = dureeEdition;
-        }
+        long plafond = dureeSecondes != null ? dureeSecondes : bounds.defaultSecondsLimit();
         if (dureeSecondes != null && (plafond < DUREE_MIN_SECONDES || plafond > bounds.maxSecondsLimit())) {
             throw new BusinessError.Invalid("La durée de la vérification doit être comprise entre " + DUREE_MIN_SECONDES
                     + " et " + bounds.maxSecondsLimit() + " secondes : " + plafond + ".");
@@ -625,7 +618,7 @@ public class StaffingVerificationService {
     private List<String> brokenHardRules(PlanningEvenement solved) {
         return planningService.diagnose(solved).contraintes().stream()
                 .filter(diagnostic -> diagnostic.matchCount() > 0)
-                .filter(diagnostic -> ConstraintCatalog.NOMS_DURS.contains(diagnostic.name()))
+                .filter(ConstraintDiagnostic::hard)
                 .sorted(Comparator.comparingInt(ConstraintDiagnostic::matchCount)
                         .reversed())
                 .map(ConstraintDiagnostic::name)
@@ -634,7 +627,7 @@ public class StaffingVerificationService {
 
     /**
      * {@code majeurs} adults and {@code mineurs} minors, available every day,
-     * holding every game category of the referential — the ninja one
+     * holding every game category of the referential — the polyvalent one
      * included, so a stand proposing none is open to them too. The adults are
      * born long enough ago to be adults on any date an edition may hold; the
      * minors turn sixteen on the first day, so the whole event sees them under
@@ -646,11 +639,11 @@ public class StaffingVerificationService {
     public static List<Animateur> team(
             int majeurs, int mineurs, List<TypologieItem> typologies, LocalDate premierJour) {
         Map<String, NiveauCompetence> competences = new LinkedHashMap<>();
-        String ninja = null;
+        String polyvalent = null;
         for (TypologieItem typologie : typologies) {
             competences.put(typologie.id(), NiveauCompetence.AUTONOME);
-            if (typologie.ninja() && ninja == null) {
-                ninja = typologie.id();
+            if (typologie.polyvalent() && polyvalent == null) {
+                polyvalent = typologie.id();
             }
         }
         LocalDate naissanceMineurs =
@@ -661,7 +654,7 @@ public class StaffingVerificationService {
             LocalDate naissance = index <= majeurs ? LocalDate.of(1970, Month.JANUARY, 1) : naissanceMineurs;
             Animateur animateur = new Animateur(id, "Fictif", id, naissance, false);
             animateur.setCompetences(new LinkedHashMap<>(competences));
-            animateur.applyNinjaTypologie(ninja);
+            animateur.applyPolyvalentTypologie(polyvalent);
             team.add(animateur);
         }
         return team;

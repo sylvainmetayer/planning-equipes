@@ -249,10 +249,14 @@ describe('ParametresPage — onglets', () => {
   });
 
   it('names its tabs, the instance ones folded, and opens on the edition', async () => {
-    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Comptes']);
+    expect(onglets()).toEqual(['Édition', 'Notifications', 'Affichage mural', 'Comptes']);
     await openAdvanced();
     expect(onglets()).toEqual([
       'Édition',
+      'Notifications',
+      'Légal',
+      'Organisation',
+      'Calcul',
       'Affichage mural',
       'Comptes',
       'Instance',
@@ -262,12 +266,12 @@ describe('ParametresPage — onglets', () => {
     expect(textOf()).toContain("Nom de l'édition");
     expect(textOf()).toContain('Gel du référentiel');
     expect(textOf()).toContain('Guichets');
-    expect(textOf()).toContain('Rappels et relances automatiques');
+    expect(textOf()).not.toContain('Rappels et relances automatiques');
     expect(textOf()).toContain("Contact de l'organisation");
     expect(textOf()).toContain('Alerte météo');
     // What decides the plan is not here any more: one line points to it.
     expect(textOf()).not.toContain('Paramètres légaux');
-    expect(textOf()).not.toContain('Typologie ninja');
+    expect(textOf()).not.toContain('Typologie polyvalente');
     expect(textOf()).not.toContain('Sauvegarde automatique');
   });
 
@@ -281,6 +285,12 @@ describe('ParametresPage — onglets', () => {
     expect(textOf()).toContain('Webhooks');
   });
 
+  it('puts the e-mails the edition sends under Notifications', async () => {
+    await cliquerOnglet('Notifications');
+    expect(textOf()).toContain('Rappels et relances automatiques');
+    expect(textOf()).not.toContain("Nom de l'édition");
+  });
+
   it('shows the Comptes tab to an administrator and its card under it', async () => {
     await cliquerOnglet('Comptes');
     expect(textOf()).toContain('Ajouter un compte');
@@ -289,7 +299,15 @@ describe('ParametresPage — onglets', () => {
   it('offers an organiser neither the accounts nor the instance tabs', async () => {
     await rendre({ admin: false });
     await openAdvanced();
-    expect(onglets()).toEqual(['Édition', 'Affichage mural', 'Historique']);
+    expect(onglets()).toEqual([
+      'Édition',
+      'Notifications',
+      'Légal',
+      'Organisation',
+      'Calcul',
+      'Affichage mural',
+      'Historique',
+    ]);
     for (const demande of ['comptes', 'instance', 'mcp']) {
       await rendre({ admin: false, onglet: demande });
       expect(textOf()).not.toContain('Ajouter un compte');
@@ -343,7 +361,7 @@ describe('ParametresPage — onglets', () => {
   });
 
   it('opens on the default tab when the address names one it does not know', async () => {
-    await rendre({ onglet: 'notifications' });
+    await rendre({ onglet: 'inconnu' });
 
     expect(textOf()).toContain('Guichets');
   });

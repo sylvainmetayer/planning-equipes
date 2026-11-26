@@ -161,7 +161,7 @@ public class EspaceAnimateurService {
      * One of the animateur's seats in the persisted planning.
      *
      * @param emplacementNom where the stand is set up, {@code null} when it is
-     *                       attached to no emplacement — « Ninja 14h-18h »
+     *                       attached to no emplacement — « Polyvalent 14h-18h »
      *                       alone leaves a volunteer asking somebody which hall
      *                       to look in, which occupies two people instead of
      *                       zero (issue #534)
@@ -873,15 +873,11 @@ public class EspaceAnimateurService {
      * @param colleagues     who can be named — the list the foire already
      *                       shows, never myself
      * @param teammateIds    the others in my car: the validated grouped
-     *                       arrival holding me, else my pending request, else
-     *                       my last request set aside or the car cancelled
-     *                       under me; empty when none
+     *                       arrival holding me, else my pending request;
+     *                       empty when none
      * @param status         {@code VALIDEE} — the organisation's to change, a
-     *                       request is then refused —, {@code EN_ATTENTE},
-     *                       {@code ECARTEE}, {@code ANNULEE}; {@code null}
-     *                       when there is no car
-     * @param reason         why my last request was set aside or my car
-     *                       cancelled, when the organisation said
+     *                       request is then refused — or {@code EN_ATTENTE};
+     *                       {@code null} when there is no car
      */
     @Schema(requiredProperties = {"collectionOpen", "colleagues", "teammateIds"})
     public record CarpoolEspaceView(
@@ -891,7 +887,6 @@ public class EspaceAnimateurService {
             List<ColleagueView> colleagues,
             List<String> teammateIds,
             String status,
-            String reason,
             Instant decidedAt) {}
 
     public CarpoolEspaceView buildCarpoolView(String animateurId) {
@@ -909,7 +904,6 @@ public class EspaceAnimateurService {
                 colleagues,
                 state == null ? List.of() : state.teammateIds(),
                 state == null ? null : state.status().name(),
-                state == null ? null : state.reason(),
                 state == null ? null : state.decidedAt());
     }
 

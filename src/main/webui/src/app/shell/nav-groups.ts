@@ -195,7 +195,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'versions',
               $localize`:@@nav.link.versions:Versions du plan`,
-              $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
+              $localize`:@@nav.keywords.versions:versions instantanés comparateur autopsie restaurer historique résolutions`,
             ),
           ],
         },
@@ -311,14 +311,7 @@ export function buildNavGroups(): NavGroup[] {
               $localize`:@@consignesSolveur.onglet.consignes:Consignes`,
               $localize`:@@nav.keywords.consignes:arrêté canicule fermeture`,
             ),
-            tab('onglet', 'legal', $localize`:@@regles.onglet.legal:Légal`),
-            tab('onglet', 'qualite', $localize`:@@regles.onglet.qualite:Qualité`),
-            tab(
-              'onglet',
-              'calcul',
-              $localize`:@@regles.onglet.calcul:Calcul`,
-              $localize`:@@nav.keywords.reglesCalcul:budget durée ninja soirée`,
-            ),
+            tab('onglet', 'regles', $localize`:@@regles.onglet.regles:Règles`),
           ],
         },
       ],
@@ -365,16 +358,6 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'emergency',
           shortcut: 'a',
           keywords: $localize`:@@nav.keywords.aujourdhui:jour J absent remplacer téléphone TV mural`,
-          tabs: [
-            // The days already held, read against what had been published:
-            // during the event for the elapsed days, and after it.
-            tab(
-              'onglet',
-              'realise',
-              $localize`:@@nav.link.realise:Réalisé vs planifié`,
-              $localize`:@@nav.keywords.realise:écart bilan absences remplacements tenu publié jour J`,
-            ),
-          ],
         },
       ],
     },
@@ -391,7 +374,31 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'edition',
               $localize`:@@parametres.onglet.edition:Édition`,
-              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage e-mails contact`,
+              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage météo contact`,
+            ),
+            tab(
+              'onglet',
+              'notifications',
+              $localize`:@@parametres.onglet.notifications:Notifications`,
+              $localize`:@@nav.keywords.parametresNotifications:e-mails automatiques rappel veille relance`,
+            ),
+            tab(
+              'onglet',
+              'legal',
+              $localize`:@@regles.onglet.legal:Légal`,
+              $localize`:@@nav.keywords.parametresLegal:plafonds Code du travail pause coupure repas durée hebdomadaire`,
+            ),
+            tab(
+              'onglet',
+              'organisation',
+              $localize`:@@parametres.onglet.organisation:Organisation`,
+              $localize`:@@nav.keywords.parametresOrganisation:seuils confort emplacements typologies jours consécutifs trajet`,
+            ),
+            tab(
+              'onglet',
+              'calcul',
+              $localize`:@@regles.onglet.calcul:Calcul`,
+              $localize`:@@nav.keywords.reglesCalcul:budget durée polyvalent soirée`,
             ),
             tab(
               'onglet',
@@ -462,13 +469,39 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
     { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
     // The toolbar's « ? » icon, on every admin page.
     { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
-    // Opened from the Éditions page with the pair to compare; reached here
-    // too, on the edition this tab works in and the first other one.
+    // Opened from Versions and from the Éditions page with the pair to compare;
+    // reached here too: two plan versions, or `?vue=editions` two editions.
     {
-      path: '/editions/comparer',
-      label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+      path: '/comparer',
+      label: $localize`:@@nav.link.comparer:Comparer deux versions`,
       icon: 'difference',
-      keywords: $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+      keywords: $localize`:@@nav.keywords.comparer:différences écart score couverture année précédente référentiel`,
+      tabs: [
+        tab(
+          'vue',
+          'editions',
+          $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+          $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+        ),
+      ],
+    },
+    // What the edition leaves behind (issue #272): the realised against the
+    // published plan, and the indicators of the solves. Served without a menu
+    // entry — the thirteen are the moments of the cycle —, found by the palette
+    // and the help.
+    {
+      path: '/mesures',
+      label: $localize`:@@nav.link.mesures:Mesures d'édition`,
+      icon: 'balance',
+      keywords: $localize`:@@nav.keywords.mesures:réalisé écart bilan absences remplacements tenu publié indicateurs historique kpi`,
+      tabs: [
+        tab(
+          'vue',
+          'indicateurs',
+          $localize`:@@mesures.vue.indicateurs:Indicateurs des résolutions`,
+          $localize`:@@nav.keywords.mesuresIndicateurs:historique kpi résolutions score couverture comparer éditions`,
+        ),
+      ],
     },
     {
       path: '/nouveautes',

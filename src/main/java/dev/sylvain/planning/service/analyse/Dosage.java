@@ -23,15 +23,30 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *                        changed » apart from « the edition retuned »
  * @param disabled        rules switched off though the catalogue ships them on
  * @param enabled         rules switched on though the catalogue ships them off
+ * @param levels          rules an edition moved to the other level than the
+ *                        catalogue's (ADR 0106), {@code OBLIGATOIRE} or
+ *                        {@code PREFERENCE}: the weight of such a rule is the
+ *                        one of its level, and is not repeated in {@code weights}
  */
-@Schema(requiredProperties = {"weights", "instanceWeights", "disabled", "enabled"})
+@Schema(requiredProperties = {"weights", "instanceWeights", "disabled", "enabled", "levels"})
 public record Dosage(
         Map<String, Integer> weights,
         Map<String, Integer> instanceWeights,
         List<String> disabled,
-        List<String> enabled) {
+        List<String> enabled,
+        Map<String, String> levels) {
+
+    /** A dosage that moved no level — every one stamped before levels existed. */
+    public Dosage(
+            Map<String, Integer> weights,
+            Map<String, Integer> instanceWeights,
+            List<String> disabled,
+            List<String> enabled) {
+        this(weights, instanceWeights, disabled, enabled, null);
+    }
 
     public Dosage {
+        levels = levels == null ? Map.of() : new TreeMap<>(levels);
         weights = weights == null ? Map.of() : new TreeMap<>(weights);
         instanceWeights = instanceWeights == null ? Map.of() : new TreeMap<>(instanceWeights);
         disabled = disabled == null ? List.of() : disabled.stream().sorted().toList();
@@ -41,7 +56,7 @@ public record Dosage(
     /** Nothing retuned, nothing switched away from the catalogue. */
     @JsonIgnore
     public boolean isDefault() {
-        return weights.isEmpty() && disabled.isEmpty() && enabled.isEmpty();
+        return weights.isEmpty() && disabled.isEmpty() && enabled.isEmpty() && levels.isEmpty();
     }
 
     /** Whether two solves ran under the same effective weighting, the deployment's layer included. */

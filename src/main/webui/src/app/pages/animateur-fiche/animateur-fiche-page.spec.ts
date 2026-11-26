@@ -80,7 +80,7 @@ function profile(partial: Partial<AnimateurProfile> = {}): AnimateurProfile {
     fragilite: {
       animateurId: 'a1',
       nom: 'Camille Durand',
-      ninja: false,
+      polyvalent: false,
       affectations: 2,
       postesEffondres: 1,
       postesIrremplacables: 1,
@@ -366,7 +366,11 @@ describe('AnimateurFichePage', () => {
 
     button('Verrouiller tout son planning').click();
     await vi.waitFor(() =>
-      expect(verrous.create).toHaveBeenCalledWith({ type: 'ANIMATEUR', animateurId: 'a1' }),
+      expect(verrous.create).toHaveBeenCalledWith({
+        type: 'ANIMATEUR_CRENEAU',
+        animateurId: 'a1',
+        creneauId: profile().affectations[0].creneauId,
+      }),
     );
   });
 

@@ -450,6 +450,37 @@ class DocumentationStructuralTest {
                 .isEqualTo(attendu);
     }
 
+    private static final Path CONTRAINTES_MD_EN = Path.of("site/src/docs-en/build/why-these-rules.md");
+
+    /**
+     * The catalogue carries no English, so the twin's table is translated by
+     * hand: it cannot be compared word for word, but it lists the same rules,
+     * in the same order, at the same level — a rule added to the catalogue
+     * without its English row fails here.
+     */
+    @Test
+    void theEnglishConstraintsTableListsTheCatalogueRules() throws IOException {
+        String doc = Files.readString(CONTRAINTES_MD_EN, StandardCharsets.UTF_8);
+        int debut = doc.indexOf(DEBUT);
+        int fin = doc.indexOf(FIN);
+        assertThat(debut).as("marker %s in %s", DEBUT, CONTRAINTES_MD_EN).isNotNegative();
+        assertThat(fin).as("marker %s in %s", FIN, CONTRAINTES_MD_EN).isGreaterThan(debut);
+
+        List<String> actuel = doc.substring(debut + DEBUT.length(), fin)
+                .strip()
+                .lines()
+                .skip(2)
+                .map(line -> line.split(" \\| ", 3))
+                .map(cells -> cells[0].replace("| ", "") + " " + cells[1])
+                .toList();
+        List<String> attendu = ConstraintCatalog.definitions().stream()
+                .map(definition -> "`" + definition.name() + "` " + definition.niveau())
+                .toList();
+        assertThat(actuel)
+                .as("rule names and levels of the table in %s, against the catalogue", CONTRAINTES_MD_EN)
+                .containsExactlyElementsOf(attendu);
+    }
+
     private static String tableau() {
         String lignes = ConstraintCatalog.definitions().stream()
                 .map(definition ->
@@ -462,6 +493,7 @@ class DocumentationStructuralTest {
     /* ----------------------- variables-environnement.md ----------------------- */
 
     private static final Path VARIABLES_MD = Path.of("site/src/docs/installer/variables-environnement.md");
+    private static final Path VARIABLES_MD_EN = Path.of("site/src/docs-en/install/environment-variables.md");
     private static final Path PROPERTIES = Path.of("src/main/resources/application.properties");
     private static final Path DOCS = Path.of("docs");
     private static final Path SITE_DOCS = Path.of("site/src/docs");
@@ -477,23 +509,61 @@ class DocumentationStructuralTest {
      */
     @Test
     void everyEnvironmentVariableOfTheConfigurationIsDocumented() throws IOException {
-        String page = Files.readString(VARIABLES_MD, StandardCharsets.UTF_8);
-        Set<String> missing = new TreeSet<>();
-        for (String line : Files.readAllLines(PROPERTIES, StandardCharsets.UTF_8)) {
-            if (line.startsWith("#")) {
-                continue;
+        // The French page and its English twin each claim to be complete
+        for (Path file : List.of(VARIABLES_MD, VARIABLES_MD_EN)) {
+            String page = Files.readString(file, StandardCharsets.UTF_8);
+            Set<String> missing = new TreeSet<>();
+            for (String line : Files.readAllLines(PROPERTIES, StandardCharsets.UTF_8)) {
+                if (line.startsWith("#")) {
+                    continue;
+                }
+                Matcher m = ENVIRONMENT_VARIABLE.matcher(line);
+                while (m.find()) {
+                    if (!page.contains("`" + m.group(1) + "`")) {
+                        missing.add(m.group(1));
+                    }
+                }
             }
-            Matcher m = ENVIRONMENT_VARIABLE.matcher(line);
-            while (m.find()) {
-                if (!page.contains("`" + m.group(1) + "`")) {
-                    missing.add(m.group(1));
+            assertThat(missing)
+                    .as("variables read by application.properties and absent from " + file)
+                    .isEmpty();
+        }
+    }
+
+    /**
+     * Every French page of {@code site/src/docs/} has an English twin in {@code site/src/docs-en/}
+     * (its front matter names the French page in {@code twin:}), and every English page names
+     * a French page that exists. The site build holds the same thing, and the shape of each pair;
+     * this one runs where the backend tests run. The generated licence inventory is not translated.
+     */
+    @Test
+    void everyFrenchPageHasItsEnglishTwin() throws IOException {
+        Pattern twin = Pattern.compile("\\A---\\n(?:.*\\n)*?twin: *(\\S+)\\n(?:.*\\n)*?---\\n");
+        Set<String> french = new TreeSet<>();
+        try (Stream<Path> files = Files.walk(SITE_DOCS)) {
+            files.filter(f -> f.toString().endsWith(".md"))
+                    .forEach(f -> french.add(SITE_DOCS.relativize(f).toString().replaceAll("\\.md$", "")));
+        }
+        Set<String> twinned = new TreeSet<>();
+        Set<String> problems = new TreeSet<>();
+        try (Stream<Path> files = Files.walk(Path.of("site/src/docs-en"))) {
+            for (Path f : files.filter(p -> p.toString().endsWith(".md")).toList()) {
+                Matcher m = twin.matcher(Files.readString(f, StandardCharsets.UTF_8));
+                if (!m.find()) {
+                    problems.add(f + " has no `twin:` in its front matter");
+                } else if (!french.contains(m.group(1))) {
+                    problems.add(f + " names " + m.group(1) + ", which is not a French page");
+                } else if (!twinned.add(m.group(1))) {
+                    problems.add(f + ": " + m.group(1) + " already has a twin");
                 }
             }
         }
-        assertThat(missing)
-                .as(
-                        "variables read by application.properties and absent from site/src/docs/installer/variables-environnement.md")
-                .isEmpty();
+        for (String page : french) {
+            if (!twinned.contains(page)) {
+                problems.add(page + " has no English twin in site/src/docs-en/");
+            }
+        }
+        assertThat(problems).as("French pages and their English twins").isEmpty();
     }
 
     /**

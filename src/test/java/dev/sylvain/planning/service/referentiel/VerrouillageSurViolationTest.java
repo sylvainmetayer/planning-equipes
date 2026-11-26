@@ -35,8 +35,9 @@ class VerrouillageSurViolationTest {
 
     @Test
     void anAnimateurLockOverTheirOwnHardViolationIsSaid() {
-        VerrouillagePlanning surAlice = verrou(TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning surAlice = verrou(TypeVerrouillage.ANIMATEUR_CRENEAU);
         surAlice.setAnimateurId("A1");
+        surAlice.setCreneauId(1L);
 
         assertThat(CoherenceAnalyzer.onVerrouillage(
                         surAlice,
@@ -72,8 +73,9 @@ class VerrouillageSurViolationTest {
 
     @Test
     void aLockOverSomebodyElsesViolationSaysNothing() {
-        VerrouillagePlanning surBob = verrou(TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning surBob = verrou(TypeVerrouillage.ANIMATEUR_CRENEAU);
         surBob.setAnimateurId("A2");
+        surBob.setCreneauId(1L);
 
         assertThat(CoherenceAnalyzer.onVerrouillage(
                         surBob,
@@ -85,8 +87,9 @@ class VerrouillageSurViolationTest {
     /** Only the hard rules: a comfort rule in default is what the score is for, not what a lock freezes. */
     @Test
     void aSoftRuleInDefaultIsNotWorthAWord() {
-        VerrouillagePlanning surStand = verrou(TypeVerrouillage.STAND);
+        VerrouillagePlanning surStand = verrou(TypeVerrouillage.STAND_JOUR);
         surStand.setStandId("PLATEAU");
+        surStand.setJour(SAMEDI);
 
         assertThat(CoherenceAnalyzer.onVerrouillage(
                         surStand,
@@ -108,8 +111,9 @@ class VerrouillageSurViolationTest {
      */
     @Test
     void anEditionWithoutAnAnalysisIsNotGuessedAt() {
-        VerrouillagePlanning surAlice = verrou(TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning surAlice = verrou(TypeVerrouillage.ANIMATEUR_CRENEAU);
         surAlice.setAnimateurId("A1");
+        surAlice.setCreneauId(1L);
 
         assertThat(CoherenceAnalyzer.onVerrouillage(surAlice, List.of(), grille))
                 .isEmpty();
@@ -140,7 +144,7 @@ class VerrouillageSurViolationTest {
     @Test
     void aLockWithoutATargetSaysNothing() {
         assertThat(CoherenceAnalyzer.onVerrouillage(
-                        verrou(TypeVerrouillage.ANIMATEUR),
+                        verrou(TypeVerrouillage.ANIMATEUR_CRENEAU),
                         List.of(hardRule("animateurDisponible", new ViolationReference("…", "A1", "PLATEAU", 1L))),
                         grille))
                 .isEmpty();

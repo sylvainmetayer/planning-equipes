@@ -22,12 +22,25 @@ public class RetiredVariables {
     private static final String HEADER_MODE = "Le mode en-tête de proxy est retiré en 4.0 : connectez-vous par un "
             + "fournisseur OIDC ou un compte de l'application (site/src/docs/installer/passer-a-la-4-0.md).";
 
+    private static final String LAUNCHER = "Le lanceur de machine à la demande est retiré en 4.0 : déclarez votre "
+            + "machine comme worker permanent avec SOLVER_WORKER_URL (site/src/docs/installer/passer-a-la-4-0.md).";
+
+    private static final String PLATEAU_CEILING = "Le plafond de l'arrêt sur plateau est retiré en 4.0 : le budget de "
+            + "calcul est celui de l'instance, que SOLVER_UNIMPROVED_SECONDS_LIMIT règle, et plus aucune édition ne "
+            + "le règle (site/src/docs/installer/passer-a-la-4-0.md).";
+
     static final List<Retired> RETIRED = List.of(
+            new Retired("SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX", PLATEAU_CEILING),
             new Retired("REMOTE_USER_ENABLED", HEADER_MODE),
             new Retired("REMOTE_USER_HEADER", HEADER_MODE),
             new Retired("REMOTE_USER_SECRET_HEADER", HEADER_MODE),
             new Retired("REMOTE_USER_SECRET", HEADER_MODE),
-            new Retired("REMOTE_USER_ADMIN_EMAIL", HEADER_MODE));
+            new Retired("REMOTE_USER_ADMIN_EMAIL", HEADER_MODE),
+            new Retired("SOLVER_WORKER_HOOK_URL", LAUNCHER),
+            new Retired("SOLVER_WORKER_HOOK_SECRET", LAUNCHER),
+            new Retired("SOLVER_WORKER_INSTANCE", LAUNCHER),
+            new Retired("SOLVER_WORKER_START_TIMEOUT", LAUNCHER),
+            new Retired("SOLVER_WORKER_IDLE_TIMEOUT", LAUNCHER));
 
     /** The retired variables {@code env} sets to a non-blank value, as warning lines. */
     static List<String> warnings(UnaryOperator<String> env) {

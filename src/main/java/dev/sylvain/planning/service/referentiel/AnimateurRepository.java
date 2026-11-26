@@ -110,18 +110,18 @@ public class AnimateurRepository {
                 }
             }
             // Polyvalence is carried by the referential, not by the animateur row:
-            // holding the ninja typologie is what makes an animateur dispatchable
+            // holding the polyvalent typologie is what makes an animateur dispatchable
             // on any stand, so the flag is derived here once competences are known.
-            String typologieNinja = null;
+            String typologiePolyvalent = null;
             try (PreparedStatement ps = scope.prepareScoped(
-                            connection, "SELECT id FROM typologie WHERE edition_id = ? AND ninja LIMIT 1");
+                            connection, "SELECT id FROM typologie WHERE edition_id = ? AND polyvalent LIMIT 1");
                     ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    typologieNinja = rs.getString("id");
+                    typologiePolyvalent = rs.getString("id");
                 }
             }
             for (Animateur animateur : byId.values()) {
-                animateur.applyNinjaTypologie(typologieNinja);
+                animateur.applyPolyvalentTypologie(typologiePolyvalent);
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list animators", e);

@@ -1,0 +1,73 @@
+<form class="parametres-section" (ngSubmit)="save()">
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      @if (section() === 'legal') {
+        <h2 mat-card-title i18n="@@parametres.section.legal.title">Paramètres légaux</h2>
+        <mat-card-subtitle i18n="@@parametres.section.legal.subtitle">Les plafonds du Code du travail et la coupure repas de l'événement. Chaque ligne d'obligation légale de « Règles du planning » renvoie ici : c'est le seul endroit où ils s'écrivent.</mat-card-subtitle>
+      } @else {
+        <h2 mat-card-title i18n="@@parametres.section.organisation.title">Seuils d'organisation</h2>
+        <mat-card-subtitle i18n="@@parametres.section.organisation.subtitle">Ce qui règle le confort d'un planning et non la loi. Le niveau de chaque règle se règle dans « Règles du planning ».</mat-card-subtitle>
+      }
+    </mat-card-header>
+    <mat-card-content class="parametres-section-champs">
+      @for (champ of champs(); track champ.cle) {
+        <div class="parametres-section-champ">
+          <span class="parametres-section-libelle" [id]="'seuil-' + champ.cle">{{ champ.libelle }}</span>
+          @switch (champ.descriptor.kind) {
+            @case ('plage') {
+              <span class="parametres-section-saisie">
+                @for (field of champ.descriptor.fields; track field; let index = $index) {
+                  @if (index > 0) { – }
+                  <input type="time" [disabled]="loading() || saving()" [attr.aria-label]="endLabel(champ, index)"
+                         [attr.data-field]="field" [attr.aria-invalid]="shownInvalid(field) || null"
+                         [attr.aria-describedby]="shownInvalid(field) ? 'seuil-erreur-' + champ.cle : null"
+                         [value]="value(champ, field)"
+                         (input)="typed(champ, field, $any($event.target).value)" />
+                }
+              </span>
+            }
+            @case ('heure') {
+              <span class="parametres-section-saisie">
+                <input type="time" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+                       [attr.data-field]="champ.descriptor.fields[0]"
+                       [value]="value(champ, champ.descriptor.fields[0])"
+                       (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
+              </span>
+            }
+            @default {
+              <span class="parametres-section-saisie">
+                <input type="number" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+                       [attr.min]="champ.descriptor.min ?? null" [attr.max]="champ.descriptor.max ?? null"
+                       [attr.step]="champ.descriptor.step ?? null"
+                       [attr.data-field]="champ.descriptor.fields[0]"
+                       [attr.aria-invalid]="shownInvalid(champ.descriptor.fields[0]) || null"
+                       [attr.aria-describedby]="shownInvalid(champ.descriptor.fields[0]) ? 'seuil-erreur-' + champ.cle : null"
+                       [value]="value(champ, champ.descriptor.fields[0])"
+                       (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
+                {{ unit(champ) }}
+              </span>
+            }
+          }
+          @if (champInvalid(champ)) {
+            <span class="parametres-section-erreur" [id]="'seuil-erreur-' + champ.cle">{{ expected(champ) }}</span>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <div class="parametres-save-bar">
+    <button matButton="filled" type="submit" [disabled]="!dirty() || saving()">
+      <mat-icon>save</mat-icon>
+      <ng-container i18n="@@common.save">Enregistrer</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="!dirty() || saving()" (click)="cancel()">
+      <ng-container i18n="@@regles.annuler">Annuler les modifications</ng-container>
+    </button>
+    <a matButton routerLink="/regles" [queryParams]="{ onglet: 'regles' }">
+      <mat-icon>fact_check</mat-icon>
+      <ng-container i18n="@@nav.link.regles">Règles du planning</ng-container>
+    </a>
+  </div>
+  <app-status-message [text]="error()" tone="error" />
+</form>

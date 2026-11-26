@@ -14,7 +14,10 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
- * KPI history (issue #89). Unlike every other resource, the listing spans
+ * <b>Deprecated alias</b> of {@code /mesures-edition/indicateurs}
+ * ({@link MesuresEditionResource}), kept until 5.0.
+ *
+ * <p>KPI history (issue #89). Unlike every other resource, the listing spans
  * <b>all</b> editions: comparing 2025 to 2026 is the point, and a row must
  * survive the deletion of the edition it describes (its labels are
  * denormalised for exactly that). Rows are written by the solve jobs
@@ -37,14 +40,20 @@ public class KpiResource {
     }
 
     @GET
+    @Deprecated
     public List<KpiHistoriqueEntry> list() {
         return kpiHistoriqueService.list();
     }
 
     @DELETE
     @Path("/{id}")
+    @Deprecated
     public Response delete(@PathParam("id") long id) {
-        if (!kpiHistoriqueService.delete(id)) {
+        return delete(kpiHistoriqueService, id);
+    }
+
+    static Response delete(KpiHistoriqueService service, long id) {
+        if (!service.delete(id)) {
             throw new NotFoundException("Unknown KPI history row: " + id);
         }
         return Response.noContent().build();

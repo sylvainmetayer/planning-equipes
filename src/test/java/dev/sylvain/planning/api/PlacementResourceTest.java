@@ -169,7 +169,8 @@ class PlacementResourceTest {
         FreeSeat siege = freeSeat();
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"id\":\"PLAC-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"" + siege.libre() + "\"}")
+                .body("{\"id\":\"PLAC-VERROU\",\"type\":\"ANIMATEUR_CRENEAU\",\"animateurId\":\"" + siege.libre()
+                        + "\",\"creneauId\":" + siege.creneauId() + "}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

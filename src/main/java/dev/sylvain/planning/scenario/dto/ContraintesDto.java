@@ -15,7 +15,7 @@ import java.util.Map;
  * from an edition that had disabled a rule, or raised the importance of
  * balanced workloads, re-imported elsewhere as if neither had happened: the
  * "same" scenario then solved a different problem, silently — exactly the hole
- * {@code parametresLegaux}/{@code parametresSolveur} were added to close.</p>
+ * {@code parametresLegaux} was added to close.</p>
  *
  * @param desactivees names of the constraints (see {@code ConstraintCatalog})
  *                    the import must switch off
@@ -30,8 +30,16 @@ import java.util.Map;
  *                    deployment default from {@code application.properties};
  *                    at most {@link ConstraintCatalog#MAX_WEIGHT}, the bound the
  *                    settings accept
+ * @param niveaux     the level the edition chose, per organisation rule
+ *                    (ADR 0106): {@code OBLIGATOIRE}, {@code PREFERENCE}, or a
+ *                    position ({@code PREFERENCE_FORTE}, {@code PREFERENCE_NORMALE},
+ *                    {@code PREFERENCE_LEGERE}) that also gives the weight of
+ *                    that position unless {@code poids} names the rule. What
+ *                    the file does not name goes back to the catalogue's own
+ *                    level; a rule with no level to choose is refused
  */
 public record ContraintesDto(
         List<String> desactivees,
         List<String> activees,
-        Map<String, @Min(1) @Max(ConstraintCatalog.MAX_WEIGHT) Integer> poids) {}
+        Map<String, @Min(1) @Max(ConstraintCatalog.MAX_WEIGHT) Integer> poids,
+        Map<String, String> niveaux) {}

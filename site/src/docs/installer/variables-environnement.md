@@ -27,16 +27,17 @@ Le `docker-compose.prod.yml` refuse de démarrer sans elles (`?` dans le compose
 L'application, elle, refuse aussi de démarrer en production, quel que soit le
 compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 
-- une des cinq mentions légales exigées est vide (`LEGAL_EDITEUR`,
-  `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_BASE_LEGALE`,
-  `LEGAL_CONSERVATION`), sauf `LEGAL_DEMO_INSTANCE=true` ;
+- une des cinq clés exigées de `LEGAL_MENTIONS` est vide (`editeur`,
+  `hebergeur`, `contact`, `base-legale`, `conservation`) sur une instance
+  publique (`PUBLIC_INSTANCE=true`), sauf `LEGAL_DEMO_INSTANCE=true` ; sur une
+  autre, c'est un avertissement ;
 - `ADMIN_PASSWORD` ou `DB_PASSWORD` vaut la valeur d'exemple ou est vide ;
 - aucune porte n'ouvre l'administration (`OIDC_ENABLED=false` et
   `ADMIN_LOCAL_SECOURS=false`), ou `OIDC_CLIENT_SECRET` fait moins de 32
   caractères quand OIDC est actif ;
 - un webhook existe et `WEBHOOKS_SECRET_KEY` est absente ou invalide ;
-- `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous 900,
-  `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` sous 180 ;
+- `BACKUP_RETENTION` sort de 1 à 30, `SOLVER_SECONDS_LIMIT_MAX` est sous
+  `SOLVER_SECONDS_LIMIT` (900 par défaut) ;
 - une entrée de `CONNEXION_PROXYS_FIABLES` ou de `WEBHOOKS_RESEAUX_AUTORISES`
   est mal formée ;
 - la machine de calcul distante est mal décrite (voir *Calcul du planning*).
@@ -128,22 +129,19 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `SOLVER_ENGINE` | `hand` | `hand` : moteur direct, chaque plan re-scoré par les contraintes ; `timefold` : la recherche d'avant la 3.0.0 |
-| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps de calcul qu'une édition peut régler ou qu'un lancement peut demander ; sous le défaut de 900 s, démarrage refusé |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | (celui de la durée) | Plafond de l'arrêt sans amélioration ; sous le défaut de 180 s, démarrage refusé |
-| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés par l'instance sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
-| `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière le calcul en cours |
+| `SOLVER_SECONDS_LIMIT` | `900` | Budget de calcul de l'instance : durée maximale d'un calcul, en secondes. Le même pour toutes les éditions |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Arrêt si le plan, déjà faisable, ne progresse plus depuis ce temps, en secondes ; `0` : jamais |
+| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps qu'un lancement peut demander (`?seconds=`, MCP) ; sous `SOLVER_SECONDS_LIMIT`, démarrage refusé |
+| `PUBLIC_INSTANCE` | `false` | `true` : instance publique. Applique le quota de calcul ci-dessous et refuse de démarrer sans mentions légales. Sans elle, le quota est ignoré (avec un avertissement) et les mentions manquantes sont un avertissement. Non posée du tout, l'avertissement dit aussi qu'une instance publique en 3.x ne l'est plus ; `false` le fait taire |
+| `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Instance publique seulement : calculs acceptés sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
+| `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Instance publique seulement : tâches qui peuvent attendre derrière le calcul en cours |
 | `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. À réserver à une recette qui rejoue une édition ancienne |
 | `JOBS_STREAM_HEARTBEAT` | `PT20S` | Battement du flux de suivi des calculs, qui garde les proxys ouverts |
 | `JOBS_STREAM_SCORE` | `PT1S` | Fréquence d'envoi de la courbe de score d'un calcul en cours |
-| `SOLVER_WORKER_URL` | *(vide)* | Adresse d'un worker permanent qui reçoit les calculs complets. En `https`, sauf sur la boucle locale ; exige `SOLVER_WORKER_SECRET` ; exclut `SOLVER_WORKER_HOOK_URL`. Sinon, démarrage refusé |
+| `SOLVER_WORKER_URL` | *(vide)* | Adresse d'un worker permanent qui reçoit les calculs complets. En `https`, sauf sur la boucle locale ; exige `SOLVER_WORKER_SECRET`. Sinon, démarrage refusé |
 | `SOLVER_WORKER_SECRET` | *(vide)* | Secret partagé avec le worker, la même valeur des deux côtés : obligatoire avec `SOLVER_WORKER_URL`, et pour démarrer l'image en mode worker |
 | `SOLVER_WORKER_TLS_FINGERPRINT` | *(vide)* | Empreinte du certificat du worker, épinglée |
-| `SOLVER_WORKER_HOOK_URL` | *(vide)* | Adresse du lanceur qui crée une machine à la demande (incompatible avec l'URL d'un worker permanent). En `https`, sauf sur la boucle locale ou un réseau privé ; exige `SOLVER_WORKER_HOOK_SECRET` |
-| `SOLVER_WORKER_HOOK_SECRET` | *(vide)* | Secret du lanceur |
-| `SOLVER_WORKER_INSTANCE` | `planning` | Nom que l'instance donne au lanceur, quand il en sert plusieurs |
 | `SOLVER_WORKER_DEFAULT` | `local` | `remote` : un calcul part sur la machine de calcul quand son lancement ne dit rien ; `local` sinon |
-| `SOLVER_WORKER_START_TIMEOUT` | `PT5M` | Temps accordé à une machine pour démarrer |
-| `SOLVER_WORKER_IDLE_TIMEOUT` | `PT45M` | Inactivité au bout de laquelle une machine à la demande est arrêtée |
 | `SOLVER_WORKER_MODE` | `false` | `true` : l'image démarre le worker de calcul au lieu de l'application. Lue par `docker/entrypoint.sh` |
 | `SOLVER_WORKER_PORT` | `8443` | Mode worker : port d'écoute |
 | `SOLVER_WORKER_TLS_KEYSTORE` | (aucun) | Mode worker : fichier PKCS#12 du certificat TLS. Sans lui, le worker écoute en HTTP sur la seule boucle locale ; avec lui, en HTTPS sur toutes les interfaces |
@@ -196,41 +194,31 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 
 ## Marque et documents
 
+Les images et les couleurs se règlent par deux variables **groupées**, de la forme `clé=valeur;clé=valeur` (un point-virgule littéral dans une valeur s'écrit `\;`). Une clé inconnue est signalée au démarrage et ignorée.
+
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
 | `BRANDING_PRODUCT_NAME` | `Planning Équipes` | Nom du produit : onglet, titres, sujets des mails, PDF |
 | `BRANDING_ORGANISATION` | *(vide)* | Client pour lequel l'instance est déployée, imprimé au pied des PDF et des mails |
-| `BRANDING_LOGO_URL` | *(vide)* | Logo affiché dans l'application (URL, ou fichier servi à la racine) |
-| `BRANDING_ACCENT_COLOR` | *(vide)* | Couleur d'accent de l'interface, toute couleur CSS |
-| `BRANDING_MASCOT_URL` | *(vide)* | Mascotte en grand, montrée par le code Konami |
-| `BRANDING_MASCOT_ICON_URL` | *(vide)* | La même mascotte en petit |
 | `BRANDING_SUPPORT_EMAIL` | `planning@sylvain.dev` | Adresse de support nommée par la page Aide ; vide : le paragraphe disparaît |
-| `BRANDING_PDF_LOGO` | *(vide)* | Logo de l'en-tête des PDF et des mails HTML (embarqué, jamais chargé à distance) |
-| `BRANDING_PDF_STRIP` | *(vide)* | Bandeau décoratif de la première page du planning individuel |
-| `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF |
-| `BRANDING_PDF_MUTED` | `#6b7280` | Texte secondaire des PDF |
-| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF et des mails HTML |
-| `BRANDING_PDF_HIGHLIGHT` | `#e4eaf1` | Fond des tuiles de statistiques et des en-têtes de tableau |
-| `BRANDING_PDF_PILL` | `#f1f4f8` | Fond des pastilles d'horaire et filets de tableau |
+| `BRANDING_IMAGES` | *(vide)* | Les images, par clés : `logo` (logo affiché dans l'application : URL, ou fichier servi à la racine), `mascot` (mascotte en grand, montrée par le code Konami), `mascot-icon` (la même en petit), `pdf-logo` (logo de l'en-tête des PDF et des mails HTML, embarqué, jamais chargé à distance), `pdf-strip` (bandeau décoratif de la première page du planning individuel) |
+| `BRANDING_COLORS` | *(vide)* | Les couleurs, par clés : `accent` (accent de l'interface, toute couleur CSS), `pdf-headline` (encre principale des PDF, `#1f2933`), `pdf-muted` (texte secondaire, `#6b7280`), `pdf-accent` (accent des PDF et des mails HTML, `#3a6ea5`), `pdf-highlight` (fond des tuiles de statistiques et des en-têtes de tableau, `#e4eaf1`), `pdf-pill` (fond des pastilles d'horaire et filets de tableau, `#f1f4f8`) |
+
+Exemple, entre guillemets (un shell lit le `;` comme une fin de commande) : `BRANDING_IMAGES="logo=logo.png;pdf-logo=classpath:/branding/logo.png"` et `BRANDING_COLORS="accent=#8b1e3f;pdf-accent=#8b1e3f"`.
+
+Les onze anciennes variables (`BRANDING_LOGO_URL`, `BRANDING_ACCENT_COLOR`, `BRANDING_MASCOT_URL`, `BRANDING_MASCOT_ICON_URL`, `BRANDING_PDF_LOGO`, `BRANDING_PDF_STRIP`, `BRANDING_PDF_HEADLINE`, `BRANDING_PDF_MUTED`, `BRANDING_PDF_ACCENT`, `BRANDING_PDF_HIGHLIGHT`, `BRANDING_PDF_PILL`) sont **encore lues** pendant toute la 4.x, avec un avertissement au démarrage, et retirées en 5.0 ; quand les deux sont posées, la clé groupée l'emporte. Voir [Passer de la 3.x à la 4.0](passer-a-la-4-0.md).
 
 ## Mentions légales
 
-Les cinq marquées **exigée** refusent le démarrage en production quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true`. Elles s'affichent sur la page publique `/mentions-legales`.
+Cinq clés de `LEGAL_MENTIONS`, marquées **exigée**, refusent le démarrage en production d'une instance publique (`PUBLIC_INSTANCE=true`) quand elles sont vides, sauf `LEGAL_DEMO_INSTANCE=true` ; sur une autre instance, un avertissement. Elles s'affichent sur la page publique `/mentions-legales`. Les deux variables groupées ont la forme `clé=valeur;clé=valeur` (un point-virgule littéral dans une valeur s'écrit `\;`).
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
-| `LEGAL_DEMO_INSTANCE` | `false` | `true` : instance qui n'est pas en service, dispensée des mentions exigées |
-| `LEGAL_EDITEUR` | *(vide)* | **Exigée.** Éditeur (nom, forme juridique, adresse, immatriculation) |
-| `LEGAL_DIRECTEUR_PUBLICATION` | *(vide)* | Directeur de la publication |
-| `LEGAL_HEBERGEUR` | *(vide)* | **Exigée.** Hébergeur (nom et adresse) |
-| `LEGAL_CONTACT` | *(vide)* | **Exigée.** Adresse de contact, y compris pour exercer ses droits |
-| `LEGAL_RESPONSABLE_TRAITEMENT` | *(vide)* | Responsable de traitement, quand il diffère de l'éditeur ; vide : l'éditeur |
-| `LEGAL_BASE_LEGALE` | *(vide)* | **Exigée.** Base légale du traitement des données personnelles |
-| `LEGAL_CONSERVATION` | *(vide)* | **Exigée.** Durée de conservation des données personnelles |
-| `LEGAL_ACCESSIBILITE_ETAT` | *(vide)* | Déclaration d'accessibilité : conformité `totale`, `partielle` ou `non` |
-| `LEGAL_ACCESSIBILITE_DATE_AUDIT` | *(vide)* | Date de l'audit d'accessibilité |
-| `LEGAL_ACCESSIBILITE_CONTENUS` | *(vide)* | Contenus non accessibles |
-| `LEGAL_ACCESSIBILITE_SIGNALEMENT` | *(vide)* | Voie de signalement ; vide : l'adresse de contact des mentions |
+| `LEGAL_DEMO_INSTANCE` | `false` | `true` : instance qui n'est pas en service, dispensée des mentions exigées (ni refus ni avertissement) |
+| `LEGAL_MENTIONS` | *(vide)* | Les mentions, par clés : `editeur` (**exigée** : nom, forme juridique, adresse, immatriculation), `hebergeur` (**exigée** : nom et adresse), `contact` (**exigée** : adresse de contact, y compris pour exercer ses droits), `base-legale` (**exigée** : base légale du traitement des données personnelles), `conservation` (**exigée** : durée de conservation des données personnelles), `responsable-traitement` (quand il diffère de l'éditeur ; vide : l'éditeur), `directeur-publication` |
+| `LEGAL_ACCESSIBILITE` | *(vide)* | La déclaration d'accessibilité, par clés : `etat` (`totale`, `partielle` ou `non`), `date-audit`, `contenus` (contenus non accessibles), `signalement` (voie de signalement ; vide : l'adresse de contact des mentions) |
+
+Les onze anciennes variables (`LEGAL_EDITEUR`, `LEGAL_DIRECTEUR_PUBLICATION`, `LEGAL_HEBERGEUR`, `LEGAL_CONTACT`, `LEGAL_RESPONSABLE_TRAITEMENT`, `LEGAL_BASE_LEGALE`, `LEGAL_CONSERVATION`, `LEGAL_ACCESSIBILITE_ETAT`, `LEGAL_ACCESSIBILITE_DATE_AUDIT`, `LEGAL_ACCESSIBILITE_CONTENUS`, `LEGAL_ACCESSIBILITE_SIGNALEMENT`) sont **encore lues** pendant toute la 4.x, avec un avertissement au démarrage, et retirées en 5.0.
 
 ## Marque blanche
 
@@ -248,13 +236,13 @@ Deux limites à connaître :
 
 - la **palette d'Angular Material** (boutons, barres, champs) est compilée par
   `mat.theme()` dans `src/main/webui/src/material-theme.scss` :
-  `BRANDING_ACCENT_COLOR` ne pilote que `--app-accent`, lu par les feuilles de
+  la clé `accent` de `BRANDING_COLORS` ne pilote que `--app-accent`, lu par les feuilles de
   style propres à l'application. Recolorer les composants Material eux-mêmes
   demande une recompilation du frontend ;
 - les **images** ne sont pas téléversables depuis l'application. Un logo se
-  fournit soit par une URL (`BRANDING_LOGO_URL` ; la CSP par défaut accepte
+  fournit soit par une URL (clé `logo` de `BRANDING_IMAGES` ; la CSP par défaut accepte
   `https:` et `data:`), soit par un fichier monté à côté du conteneur
-  (`BRANDING_PDF_LOGO`), soit par une image embarquée dans le jar
+  (clé `pdf-logo`), soit par une image embarquée dans le jar
   (`classpath:/branding/…`). **Aucun visuel n'est livré avec le dépôt** : les
   images d'un déploiement appartiennent à son client, elles se montent à côté
   du conteneur ou se servent par URL.

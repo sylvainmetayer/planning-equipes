@@ -74,31 +74,33 @@ export class VerrouillageStore {
     );
   }
 
-  estStandVerrouille(standId: string | null | undefined): boolean {
+  isStandVerrouille(standId: string | null | undefined, jour: string | null | undefined): boolean {
     return (
       !!standId &&
+      !!jour &&
       this.actifs().some(
-        (verrouillage) => verrouillage.type === 'STAND' && verrouillage.standId === standId,
+        (verrouillage) =>
+          verrouillage.type === 'STAND_JOUR' &&
+          verrouillage.standId === standId &&
+          verrouillage.jour === jour,
       )
     );
   }
 
-  estCreneauVerrouille(creneauId: number | null | undefined): boolean {
+  /** This person is kept on this timeslot: the lock an accepted échange or « Verrouiller » lays. */
+  isAnimateurCreneauVerrouille(
+    animateurId: string | null | undefined,
+    creneauId: number | null | undefined,
+  ): boolean {
     return (
+      !!animateurId &&
       creneauId !== null &&
       creneauId !== undefined &&
       this.actifs().some(
-        (verrouillage) => verrouillage.type === 'CRENEAU' && verrouillage.creneauId === creneauId,
-      )
-    );
-  }
-
-  estAnimateurVerrouille(animateurId: string | null | undefined): boolean {
-    return (
-      !!animateurId &&
-      this.actifs().some(
         (verrouillage) =>
-          verrouillage.type === 'ANIMATEUR' && verrouillage.animateurId === animateurId,
+          verrouillage.type === 'ANIMATEUR_CRENEAU' &&
+          verrouillage.animateurId === animateurId &&
+          verrouillage.creneauId === creneauId,
       )
     );
   }

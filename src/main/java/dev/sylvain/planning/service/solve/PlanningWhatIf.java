@@ -1126,9 +1126,9 @@ public final class PlanningWhatIf {
      * they hold no seat on that timeslot — which is the rail gesture's and
      * « Placer »'s main case — so {@code couvre} cannot see it, and neither can
      * the score: the persisted plan carries no lock facts. Yet « the solver
-     * may not give them an extra seat » is exactly what an ANIMATEUR lock
-     * says, and an ANIMATEUR_CRENEAU lock is what an accepted échange posts to
-     * keep the freed person free on that timeslot.
+     * may not give them an extra seat » is exactly what an ANIMATEUR_CRENEAU
+     * lock says, and it is what an accepted échange posts to keep the freed
+     * person free on that timeslot.
      */
     static void refuseIfReceiverLocked(
             List<VerrouillagePlanning> verrouillages, String receveur, PosteAffectation siege) {
@@ -1137,7 +1137,6 @@ public final class PlanningWhatIf {
         }
         Long creneauId = siege.getCreneau() == null ? null : siege.getCreneau().getId();
         boolean verrouille = verrouillages.stream().anyMatch(verrouillage -> switch (verrouillage.getType()) {
-            case ANIMATEUR -> receveur.equals(verrouillage.getAnimateurId());
             case ANIMATEUR_CRENEAU ->
                 receveur.equals(verrouillage.getAnimateurId())
                         && creneauId != null
@@ -1689,7 +1688,7 @@ public final class PlanningWhatIf {
         for (ConstraintContribution ca : apres.contributions()) {
             String name = ca.constraintName();
             int supplement = ca.matchCount() - matchesAvant.getOrDefault(name, 0);
-            if (ConstraintCatalog.NOMS_DURS.contains(name) && supplement > 0) {
+            if (ConstraintCatalog.isHardIn(name, ca.score()) && supplement > 0) {
                 ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
                 violations.add(
                         new HardViolation(name, definition == null ? name : definition.description(), supplement));

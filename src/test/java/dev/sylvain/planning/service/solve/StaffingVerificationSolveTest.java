@@ -123,13 +123,13 @@ class StaffingVerificationSolveTest {
     @Test
     void theMadeUpTeamHoldsEveryCategoryAndIsAdultOnAnyDate() {
         List<TypologieItem> typologies =
-                List.of(new TypologieItem("JEUX", "Jeux"), new TypologieItem("NINJA", "Ninja", true));
+                List.of(new TypologieItem("JEUX", "Jeux"), new TypologieItem("POLYVALENT", "Polyvalent", true));
 
         var team = StaffingVerificationService.team(3, 0, typologies, LUNDI);
 
         assertThat(team).hasSize(3).allSatisfy(animateur -> {
-            assertThat(animateur.getCompetences()).containsOnlyKeys("JEUX", "NINJA");
-            assertThat(animateur.isNinja()).isTrue();
+            assertThat(animateur.getCompetences()).containsOnlyKeys("JEUX", "POLYVALENT");
+            assertThat(animateur.isPolyvalent()).isTrue();
             assertThat(animateur.isMajeurOn(LocalDate.of(2026, 7, 6))).isTrue();
             assertThat(animateur.getJoursIndisponibles()).isNullOrEmpty();
         });

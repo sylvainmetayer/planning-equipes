@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -9,9 +10,13 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.scenario.ScenarioBinder;
+import dev.sylvain.planning.scenario.ScenarioMigrations;
+import dev.sylvain.planning.scenario.dto.AffectationPlanDto;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
+import dev.sylvain.planning.scenario.dto.PlanDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
+import dev.sylvain.planning.scenario.dto.VerrouPlanDto;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.referentiel.Avertissement;
@@ -19,6 +24,7 @@ import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.scenario.ScenarioImportService;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
+import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,11 +38,13 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -45,10 +53,11 @@ import java.util.stream.Collectors;
 
 /**
  * The safety net under the two gestures that empty an edition — the reset and
- * the import of a scenario (ADR 0084): right before either writes, the
- * edition's own scenario export and its plan (seats and locks) are stored in
- * {@code sauvegarde_avant_vidage}, and {@link #restore} puts one back in a
- * single gesture. The nightly dump could only do so by rolling every other
+ * the import of a scenario (ADR 0084, in part replaced by ADR 0112): right
+ * before either writes, the edition is stored in {@code sauvegarde_avant_vidage}
+ * as <b>one scenario export, its plan (seats and locks) as the last section</b>,
+ * and {@link #restore} gives that file to the ordinary import, which puts
+ * everything back. The nightly dump could only do so by rolling every other
  * edition back with it.
  *
  * <p>A backup that cannot be written <b>stops</b> the wipe — the opposite of
@@ -60,6 +69,11 @@ import java.util.stream.Collectors;
  * deletes one ({@link #delete}) or their edition goes, by cascade. An
  * automatic purge was tried, and every one of its sparing rules let a gesture
  * evict the very backup it needed (ADR 0084).</p>
+ *
+ * <p>A backup stored by a 3.x release keeps its plan in the {@code plan}
+ * column, next to a scenario without that section; it is read as the same
+ * file, the column folded in as the section ({@link #withLegacyPlan}), and
+ * stays restorable and downloadable. The column is not written any more.</p>
  */
 @ApplicationScoped
 public class WipeBackupService {
@@ -106,7 +120,7 @@ public class WipeBackupService {
             List<String> avertissements,
             String score) {}
 
-    /** The plan column: seats and locks, under the ids the edition had when the backup was taken. */
+    /** Seats and locks, under the ids the edition had when the backup was taken — the legacy {@code plan} column's shape. */
     record PlanBackup(List<AffectationSnapshot> affectations, List<LockBackup> verrouillages) {}
 
     /** A lock, its timeslot named by its natural key — the one the lock itself stores. */
@@ -212,15 +226,14 @@ public class WipeBackupService {
         if (!holdsAnything(connection)) {
             return Optional.empty();
         }
-        String yaml = planningService.scenarioYaml();
-        String plan = json(new PlanBackup(snapshots.loadPersistedAffectations(), locks()));
+        String yaml =
+                planningService.scenarioYaml(toDto(new PlanBackup(snapshots.loadPersistedAffectations(), locks())));
         try (PreparedStatement ps = scope.prepareScoped(connection, """
  SELECT s.id FROM sauvegarde_avant_vidage s
- WHERE s.edition_id = ? AND s.contenu = ? AND s.plan = ?::jsonb
+ WHERE s.edition_id = ? AND s.contenu = ?
  AND s.id = (SELECT d.id FROM sauvegarde_avant_vidage d WHERE d.edition_id = s.edition_id
  ORDER BY d.cree_le DESC, d.id DESC LIMIT 1)""")) {
             ps.setString(2, yaml);
-            ps.setString(3, plan);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(rs.getLong(1));
@@ -228,14 +241,13 @@ public class WipeBackupService {
             }
         }
         try (PreparedStatement ps = scope.prepareScoped(connection, """
- INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, plan, restaure_id, restauration_aboutie)
- VALUES (?, ?, ?, ?::jsonb, ?, ?)
+ INSERT INTO sauvegarde_avant_vidage (edition_id, origine, contenu, restaure_id, restauration_aboutie)
+ VALUES (?, ?, ?, ?, ?)
  RETURNING id""")) {
             ps.setString(2, trigger.name());
             ps.setString(3, yaml);
-            ps.setString(4, plan);
-            ps.setObject(5, restaureId, java.sql.Types.BIGINT);
-            ps.setObject(6, restaureId == null ? null : Boolean.FALSE, java.sql.Types.BOOLEAN);
+            ps.setObject(4, restaureId, java.sql.Types.BIGINT);
+            ps.setObject(5, restaureId == null ? null : Boolean.FALSE, java.sql.Types.BOOLEAN);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return Optional.of(rs.getLong(1));
@@ -312,43 +324,52 @@ public class WipeBackupService {
         });
     }
 
-    /** The scenario a backup of the current edition holds, ready for the import. */
+    /**
+     * The file a backup of the current edition holds, ready for the import:
+     * the stored text, or — for a backup of a 3.x release — that text with its
+     * plan column folded in as the {@code plan:} section.
+     */
     public String loadContent(long id) {
-        return column(id, SELECT_CONTENU);
+        StoredBackup stored = stored(id);
+        return stored.plan() == null
+                ? stored.contenu()
+                : ScenarioYamlWriter.dump(withLegacyPlan(
+                        ScenarioYamlReader.parseScenarioText(stored.contenu()),
+                        readPlan(stored.plan(), new ArrayList<>())));
+    }
+
+    /** The backup as the import reads it: the file, its plan section included, and what its conversion dropped. */
+    private ScenarioBinder.Bound load(long id) {
+        StoredBackup stored = stored(id);
+        ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(stored.contenu());
+        if (stored.plan() == null) {
+            return bound;
+        }
+        List<String> warnings = new ArrayList<>(bound.warnings());
+        PlanBackup plan = readPlan(stored.plan(), warnings);
+        return new ScenarioBinder.Bound(withLegacyPlan(bound.scenario(), plan), warnings);
     }
 
     /**
-     * Puts a backup back, in one gesture (ADR 0084). In this order:
+     * Puts a backup back (ADR 0112): the refusals first, then the current
+     * state backed up ({@link Trigger#RESTORE}, always — unless the edition
+     * holds nothing, or its latest backup already is this very state, which is
+     * then the one named), then the file given to the <b>ordinary import</b>,
+     * which also brings back the stands and timeslots no seat ties to the
+     * rest, and finally puts the plan section back on the referential it wrote
+     * (seats found by natural keys, {@link #applyPlan}), locks through the
+     * usual lock write. The backup of the second step is then marked as
+     * belonging to a restore that went through — for the list and the error
+     * message only: the mark decides nothing.
      *
-     * <ol>
-     *   <li>the refusals, before anything is written: a solve holding the
-     *       edition (the interceptor), a frozen family, a backup this edition
-     *       does not hold, a file the import would refuse — its stands and ad
-     *       hoc exceptions included;</li>
-     *   <li>the current state is backed up ({@link Trigger#RESTORE}), always
-     *       — unless the edition holds nothing, or its latest backup already is
-     *       this very state, which is then the one named; restoring it undoes
-     *       this restore;</li>
-     *   <li>the scenario is imported by the import itself, which also brings
-     *       back the stands and timeslots no seat ties to the rest;</li>
-     *   <li>the plan is put back on it, found by natural keys
-     *       ({@link #match}); refused if a plan with seats finds none;</li>
-     *   <li>the locks, through the usual lock write; the backup of step 2 is
-     *       then marked as belonging to a restore that went through — for the
-     *       list and the error message only: the mark decides nothing.</li>
-     * </ol>
-     *
-     * <p><b>Not atomic</b>: the repository has no transaction spanning several
-     * services (ADR 0084, after the choice of A5). A failure after step 2
-     * leaves the edition half restored and says at which step, with the id of
-     * the backup of step 2, the state right before this attempt, and nothing
-     * else: which earlier backup was the state before a whole series of
-     * attempts is the reader's choice, from the list — the table cannot tell
-     * it for certain (a gesture that writes no backup leaves no trace in it).
-     * Restoring that backup puts the edition back as it was right before this
-     * attempt, the technical ids apart. The restored referential gets new ids too: what
-     * named the old ones outside the backup (snapshots, day reviews, swap
-     * requests, the journal) no longer finds them.</p>
+     * <p><b>Not atomic</b>, as the import is not (ADR 0084): the repository
+     * has no transaction spanning several services. A failure after the
+     * backup says so with the id of that backup, the state right before this
+     * attempt, and nothing else: restoring it puts the edition back as it was
+     * right before this attempt, the technical ids apart. The restored
+     * referential gets new ids too: what named the old ones outside the backup
+     * (snapshots, day reviews, swap requests, the journal) no longer finds
+     * them.</p>
      *
      * <p>Nothing here refuses a seat for breaking a hard rule — no seat write
      * of the application does; the score of the restored plan says whether
@@ -356,28 +377,28 @@ public class WipeBackupService {
      */
     @RefusedWhileSolving
     public Restoration restore(long id) {
-        String yaml = loadContent(id);
-        PlanBackup plan = readPlan(column(id, SELECT_PLAN));
-        referenceDataService.checkImportable(ScenarioYamlReader.fromDto(
-                        ScenarioYamlReader.parseScenarioText(yaml), referenceDataService::getParametresLegaux)
-                .planning());
+        ScenarioBinder.Bound bound = load(id);
+        referenceDataService.checkImportable(
+                ScenarioYamlReader.fromDto(bound.scenario(), referenceDataService::getParametresLegaux)
+                        .planning());
         gel.refuseIfFrozen();
 
         Long avant = scope.writeAndReturn(
                 "Failed to back the edition up before a restore",
                 connection -> insert(connection, Trigger.RESTORE, id).orElse(null));
-        String etape = "import du scénario";
+        AtomicBoolean scenarioImporte = new AtomicBoolean();
         Restoration restoration;
         try {
-            List<String> referentielNonRestaure = scenarioImportService.importForRestore(yaml);
-            etape = "réapplication du planning";
-            ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(yaml);
-            restoration = reapply(id, plan, bound.scenario(), avant, referentielNonRestaure);
+            // A restored backup always carries a plan, possibly empty: the restore empties the seats it finds.
+            ScenarioDto file = bound.scenario().plan() == null
+                    ? bound.scenario().withPlan(new PlanDto(List.of(), List.of()))
+                    : bound.scenario();
+            restoration = scenarioImportService.importForRestore(file, avant, () -> scenarioImporte.set(true));
             // A backup taken by an older release is converted on reading: what that dropped is said here too.
             restoration.avertissements().addAll(bound.warnings());
         } catch (RuntimeException e) {
-            String message = "Restauration de la sauvegarde " + id + " interrompue à l'étape « " + etape + " » : "
-                    + e.getMessage() + " " + recourse(avant);
+            String message = "Restauration de la sauvegarde " + id + " interrompue. "
+                    + appliedSoFar(scenarioImporte.get()) + " Cause : " + e.getMessage() + " " + recourse(avant);
             if (e instanceof BusinessError) {
                 throw new BusinessError.Conflict(message);
             }
@@ -406,6 +427,15 @@ public class WipeBackupService {
         return restoration;
     }
 
+    /** What a failed restore had written: the import is not atomic, so the edition is in between. */
+    private static String appliedSoFar(boolean scenarioImporte) {
+        return scenarioImporte
+                ? "Le scénario de la sauvegarde est importé (référentiel, grille, paramètres) ; son planning n'est pas"
+                        + " remis, ou seulement en partie."
+                : "L'import du scénario n'est pas allé au bout : le référentiel de l'édition peut être en partie"
+                        + " remplacé, et le planning de la sauvegarde n'est pas remis.";
+    }
+
     /** What a failed restore says to go back: the backup of the state right before it, and the list. */
     private static String recourse(Long avant) {
         String liste = " Pour un état plus ancien, choisissez dans la liste des sauvegardes de l'édition : chacune y"
@@ -417,8 +447,20 @@ public class WipeBackupService {
                 + " : la restaurer remet l'édition comme elle était à ce moment-là." + liste;
     }
 
-    private Restoration reapply(
-            long id, PlanBackup plan, ScenarioDto scenario, Long avant, List<String> referentielNonRestaure) {
+    /**
+     * Puts the plan section of a restored backup back on the referential the
+     * import has just written — an ordinary import ignores that section: its
+     * seats found again by natural keys, its locks through the usual write.
+     * The file's own ids are matched against the edition's
+     * rows ({@link #matchStands}, {@link #matchAnimateurs}) — the import's
+     * remapping has already run, and the plan names the file's ids.
+     *
+     * @param avant                  the backup of the state this replaced, {@code null} when the edition was empty
+     * @param referentielNonRestaure what the import could not create again, one sentence each
+     */
+    @RefusedWhileSolving
+    public Restoration applyPlan(ScenarioDto scenario, Long avant, List<String> referentielNonRestaure) {
+        PlanBackup plan = fromDto(scenario.plan());
         List<Stand> standsActuels = referenceDataService.listStands();
         List<Animateur> animateursActuels = referenceDataService.listAnimateurs();
         Map<String, String> stands = matchStands(scenario.stands(), standsActuels);
@@ -429,7 +471,7 @@ public class WipeBackupService {
         List<AffectationSnapshot> restaurees = matchSeats(plan, stands, animateurs, grille, nonRestaurees);
         if (!plan.affectations().isEmpty() && restaurees.isEmpty()) {
             throw new BusinessError.Conflict("Aucun des " + plan.affectations().size()
-                    + " sièges de la sauvegarde ne correspond au référentiel restauré.");
+                    + " sièges du planning du fichier ne correspond au référentiel restauré.");
         }
         // A continuation whose first half did not come back continues nothing.
         Set<String> postes =
@@ -446,12 +488,12 @@ public class WipeBackupService {
                         seat.animateurId(),
                         seat.heureDebutEffective(),
                         seat.heureFinEffective()));
-        snapshots.rewritePlan("Failed to restore the plan of backup " + id, restaurees, null);
+        snapshots.rewritePlan("Failed to restore the plan of a file", restaurees, null);
         int assises = (int)
                 restaurees.stream().filter(seat -> seat.animateurId() != null).count();
 
         LockPass locks = restoreLocks(plan, stands, animateurs, grille);
-        // Read once the locks are in: an animateur lock weighs in the score.
+        // Read once the locks are in: an animateur + créneau lock weighs in the score.
         try {
             analysisStore.refreshFromPersistedPlan();
         } catch (RuntimeException _) {
@@ -717,39 +759,114 @@ public class WipeBackupService {
         return candidats.size() == 1 ? Optional.of(id.apply(candidats.getFirst())) : Optional.empty();
     }
 
-    private static final String SELECT_CONTENU =
-            "SELECT contenu FROM sauvegarde_avant_vidage WHERE edition_id = ? AND id = ?";
+    /** A backup row: the file, and the plan column a 3.x release wrote next to it ({@code null} since). */
+    private record StoredBackup(String contenu, String plan) {}
 
-    private static final String SELECT_PLAN =
-            "SELECT plan FROM sauvegarde_avant_vidage WHERE edition_id = ? AND id = ?";
-
-    /** The one column {@code sql} selects, of one backup of the current edition. */
-    private String column(long id, String sql) {
+    private StoredBackup stored(long id) {
         return scope.read("Failed to read an edition's backup", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection, "SELECT contenu, plan FROM sauvegarde_avant_vidage WHERE edition_id = ? AND id = ?")) {
                 ps.setLong(2, id);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (!rs.next()) {
                         throw new BusinessError.NotFound("Sauvegarde " + id + " introuvable dans cette édition.");
                     }
-                    return rs.getString(1);
+                    return new StoredBackup(rs.getString(1), rs.getString(2));
                 }
             }
         });
     }
 
-    private String json(PlanBackup plan) {
-        try {
-            return objectMapper.writeValueAsString(plan);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to write the plan of a backup", e);
-        }
+    /**
+     * A 3.x backup read as the file a current one is: its plan column, under the
+     * ids the edition had when it was taken — those of the file — as the
+     * {@code plan:} section. A file that already carries one keeps it.
+     */
+    static ScenarioDto withLegacyPlan(ScenarioDto scenario, PlanBackup plan) {
+        return scenario.plan() != null ? scenario : scenario.withPlan(toDto(plan));
     }
 
-    private PlanBackup readPlan(String json) {
+    static PlanDto toDto(PlanBackup plan) {
+        return new PlanDto(
+                plan.affectations().stream()
+                        .map(seat -> new AffectationPlanDto(
+                                seat.posteId(),
+                                seat.standId(),
+                                LocalDate.parse(seat.date()),
+                                LocalTime.parse(seat.heureDebut()),
+                                LocalTime.parse(seat.heureFin()),
+                                seat.animateurId(),
+                                seat.heureDebutEffective() == null ? null : LocalTime.parse(seat.heureDebutEffective()),
+                                seat.heureFinEffective() == null ? null : LocalTime.parse(seat.heureFinEffective()),
+                                seat.suiteDe()))
+                        .toList(),
+                plan.verrouillages().stream()
+                        .map(lock -> new VerrouPlanDto(
+                                lock.type(),
+                                lock.animateurId(),
+                                lock.standId(),
+                                lock.creneauDate(),
+                                lock.creneauHeureDebut(),
+                                lock.creneauHeureFin(),
+                                lock.jour(),
+                                lock.raison()))
+                        .toList());
+    }
+
+    static PlanBackup fromDto(PlanDto plan) {
+        return new PlanBackup(
+                orEmpty(plan.affectations()).stream()
+                        .map(seat -> new AffectationSnapshot(
+                                seat.posteId(),
+                                seat.standId(),
+                                null,
+                                seat.date().toString(),
+                                seat.heureDebut().toString(),
+                                seat.heureFin().toString(),
+                                seat.animateurId(),
+                                seat.heureDebutEffective() == null
+                                        ? null
+                                        : seat.heureDebutEffective().toString(),
+                                seat.heureFinEffective() == null
+                                        ? null
+                                        : seat.heureFinEffective().toString(),
+                                seat.suiteDe()))
+                        .toList(),
+                orEmpty(plan.verrous()).stream()
+                        .map(lock -> new LockBackup(
+                                lock.type(),
+                                lock.animateurId(),
+                                lock.standId(),
+                                lock.creneauDate(),
+                                lock.creneauHeureDebut(),
+                                lock.creneauHeureFin(),
+                                lock.jour(),
+                                lock.raison()))
+                        .toList());
+    }
+
+    private static <T> List<T> orEmpty(List<T> list) {
+        return list == null ? List.of() : list;
+    }
+
+    /**
+     * The plan column of a 3.x backup, never rewritten: its locks of a type
+     * retired in 4.0 are converted here, on reading, as migration V151
+     * converted the ones of the database (ADR 0109) — said in {@code warnings}.
+     */
+    private PlanBackup readPlan(String json, List<String> warnings) {
         try {
-            return objectMapper.readValue(json, PlanBackup.class);
-        } catch (JsonProcessingException e) {
+            Map<String, Object> plan = new LinkedHashMap<>(objectMapper.readValue(json, new TypeReference<>() {}));
+            if (plan.get("verrouillages") instanceof List<?> locks) {
+                plan.put(
+                        "verrouillages",
+                        ScenarioMigrations.convertRetiredLocks(
+                                plan.get("affectations") instanceof List<?> seats ? seats : List.of(),
+                                locks,
+                                warnings));
+            }
+            return objectMapper.convertValue(plan, PlanBackup.class);
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             throw new IllegalStateException("Failed to read the plan of a backup", e);
         }
     }

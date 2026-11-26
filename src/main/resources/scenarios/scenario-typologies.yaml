@@ -11,7 +11,7 @@ festival:
 typologies:
   - id: STRATEGIE
     label: "Stratégie"
-    ninja: true
+    polyvalent: true
 
 creneaux:
   - id: J1

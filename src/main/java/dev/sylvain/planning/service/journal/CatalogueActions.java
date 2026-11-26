@@ -102,8 +102,6 @@ public final class CatalogueActions {
     private static final String SOLVE_INCREMENTAL_LANCE = "SOLVE_INCREMENTAL_LANCE";
     private static final String SOLVE_ARRETE = "SOLVE_ARRETE";
     private static final String JOB_SUPPRIME = "JOB_SUPPRIME";
-    private static final String MACHINE_CALCUL_PREPAREE = "MACHINE_CALCUL_PREPAREE";
-    private static final String MACHINE_CALCUL_ARRETEE = "MACHINE_CALCUL_ARRETEE";
     private static final String PLANNING_REINITIALISE = "PLANNING_REINITIALISE";
     private static final String PLANNING_RESTAURE_SAUVEGARDE = "PLANNING_RESTAURE_SAUVEGARDE";
     private static final String SAUVEGARDE_VIDAGE_SUPPRIMEE = "SAUVEGARDE_VIDAGE_SUPPRIMEE";
@@ -149,6 +147,7 @@ public final class CatalogueActions {
     private static final String EXPORT_DELTA_EDITIONS = "EXPORT_DELTA_EDITIONS";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
+    private static final String PARAMETRES_MODIFIES = "PARAMETRES_MODIFIES";
     private static final String PARAMETRES_LEGAUX_MODIFIES = "PARAMETRES_LEGAUX_MODIFIES";
     private static final String PARAMETRES_QUALITE_MODIFIES = "PARAMETRES_QUALITE_MODIFIES";
     private static final String PARAMETRES_SOLVEUR_MODIFIES = "PARAMETRES_SOLVEUR_MODIFIES";
@@ -159,6 +158,7 @@ public final class CatalogueActions {
     private static final String CONTRAINTE_ACTIVEE = "CONTRAINTE_ACTIVEE";
     private static final String CONTRAINTE_DESACTIVEE = "CONTRAINTE_DESACTIVEE";
     private static final String CONTRAINTE_PONDEREE = "CONTRAINTE_PONDEREE";
+    private static final String CONTRAINTE_NIVEAU = "CONTRAINTE_NIVEAU";
     private static final String SAUVEGARDE_BASCULEE = "SAUVEGARDE_BASCULEE";
     private static final String DATE_JOUR_J_FORCEE = "DATE_JOUR_J_FORCEE";
     private static final String CLE_MCP_REVELEE = "CLE_MCP_REVELEE";
@@ -337,8 +337,6 @@ public final class CatalogueActions {
         // gestures of an operator. What the application does to it on its own
         // — started for a solve, stopped once idle — belongs to no edition
         // and is in the log, not here.
-        action(MACHINE_CALCUL_PREPAREE, "Machine de calcul préparée", Entite.PLANNING);
-        action(MACHINE_CALCUL_ARRETEE, "Machine de calcul arrêtée", Entite.PLANNING);
         // A solve of a made-up team (ADR 0071): it touches neither the plan
         // nor the problem, but an organiser sizing a team comes back to read
         // the trail of sizes tried — the launch is theirs, the end the
@@ -421,6 +419,7 @@ public final class CatalogueActions {
         changesData(BASE_IMPORTEE, "Base de données restaurée depuis un fichier", Entite.SAUVEGARDE);
 
         /* ------------------------- Settings ------------------------- */
+        changesData(PARAMETRES_MODIFIES, "Paramètres modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_LEGAUX_MODIFIES, "Paramètres légaux modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_QUALITE_MODIFIES, "Paramètres de qualité modifiés", Entite.PARAMETRES);
         changesData(PARAMETRES_SOLVEUR_MODIFIES, "Paramètres du solveur modifiés", Entite.PARAMETRES);
@@ -434,6 +433,7 @@ public final class CatalogueActions {
         changesData(CONTRAINTE_ACTIVEE, "Contrainte activée", Entite.PARAMETRES);
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
         changesData(CONTRAINTE_PONDEREE, "Poids d'une contrainte modifié", Entite.PARAMETRES);
+        changesData(CONTRAINTE_NIVEAU, "Niveau d'une contrainte modifié", Entite.PARAMETRES);
         action(SAUVEGARDE_BASCULEE, "Sauvegarde nocturne suspendue ou reprise", Entite.SAUVEGARDE);
         action(DATE_JOUR_J_FORCEE, "Date et heure simulées", Entite.PARAMETRES);
         action(CLE_MCP_REVELEE, "Clé MCP révélée", Entite.PARAMETRES);
@@ -604,8 +604,6 @@ public final class CatalogueActions {
         route("StaffingResource#verify", VERIFICATION_BESOIN_LANCEE);
         route("SolverJobResource#solveIncremental", SOLVE_INCREMENTAL_LANCE);
         route("SolverJobResource#cancelJob", SOLVE_ARRETE);
-        route("ComputeMachineResource#prepare", MACHINE_CALCUL_PREPAREE);
-        route("ComputeMachineResource#stop", MACHINE_CALCUL_ARRETEE);
         route("SolverJobResource#deleteJob", JOB_SUPPRIME);
         route("AffectationExplanationResource#applyDeplacement", AFFECTATION_DEPLACEE);
         route("AffectationExplanationResource#applyReparation", AFFECTATION_POSEE);
@@ -616,6 +614,9 @@ public final class CatalogueActions {
         route("JourJResource#fileAbsenceReport", EMPECHEMENT_CLASSE);
         route("JourJResource#configureAbsenceReports", SIGNALEMENTS_CONFIGURES);
 
+        route("VersionPlanResource#capture", INSTANTANE_CAPTURE);
+        route("VersionPlanResource#restore", INSTANTANE_RESTAURE);
+        route("VersionPlanResource#delete", INSTANTANE_SUPPRIME);
         route("PlanSnapshotResource#capture", INSTANTANE_CAPTURE);
         route("PlanSnapshotResource#restore", INSTANTANE_RESTAURE);
         route("PlanSnapshotResource#delete", INSTANTANE_SUPPRIME);
@@ -623,6 +624,7 @@ public final class CatalogueActions {
         route("EnvoiPlanningResource#sendToOneAnimateur", PLANNING_ENVOYE);
         route("DebugResource#sendTestMail", MAIL_TEST_ENVOYE);
         route("KpiResource#delete", KPI_SUPPRIME);
+        route("MesuresEditionResource#deleteIndicator", KPI_SUPPRIME);
 
         route("PlanningExportResource#exportAllPdfZip", EXPORT_PDF);
         route("PlanningExportResource#exportAnimateurPdf", EXPORT_PDF_ANIMATEUR);
@@ -647,6 +649,7 @@ public final class CatalogueActions {
         route("FormationResource#exportCsv", EXPORT_FORMATION);
         route("AnimateurResource#recordListExport", EXPORT_LISTE_ANIMATEURS);
         route("RealiseResource#exportCsv", EXPORT_REALISE);
+        route("MesuresEditionResource#exportCsv", EXPORT_REALISE);
         route("EditionResource#exportDeltaCsv", EXPORT_DELTA_EDITIONS);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
@@ -656,11 +659,16 @@ public final class CatalogueActions {
         route("ParametresResource#updateParametresQualite", PARAMETRES_QUALITE_MODIFIES);
         route("ParametresResource#updateParametresSolveur", PARAMETRES_SOLVEUR_MODIFIES);
         route("ParametresResource#updateParametresNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
+        route("ParametresResource#updateLegal", PARAMETRES_LEGAUX_MODIFIES);
+        route("ParametresResource#updateOrganisation", PARAMETRES_QUALITE_MODIFIES);
+        route("ParametresResource#updateCalcul", PARAMETRES_SOLVEUR_MODIFIES);
+        route("ParametresResource#updateNotifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         route("WeatherResource#update", PARAMETRES_METEO_MODIFIES);
         route("ParametresResource#updateContactOrganisation", CONTACT_ORGANISATION_MODIFIE);
         route("ReglageResponsablesResource#put", REGLAGE_RESPONSABLES_MODIFIE);
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
+        route("ConstraintResource#setNiveau", CONTRAINTE_NIVEAU);
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);
         route("HorlogeResource#setDateJourJ", DATE_JOUR_J_FORCEE);
         route("McpResource#reveal", CLE_MCP_REVELEE);
@@ -797,24 +805,25 @@ public final class CatalogueActions {
         outil("deplacer_affectation", AFFECTATION_DEPLACEE);
         outil("affecter_poste", AFFECTATION_POSEE);
 
-        outil("capturer_instantane", INSTANTANE_CAPTURE);
-        outil("restaurer_instantane", INSTANTANE_RESTAURE);
-        outil("supprimer_instantane", INSTANTANE_SUPPRIME);
+        outil("creer_version", INSTANTANE_CAPTURE);
+        outil("restaurer_version", INSTANTANE_RESTAURE);
+        outil("supprimer_version", INSTANTANE_SUPPRIME);
         outil("publier_planning", PLANNING_PUBLIE);
         outil("envoyer_planning_animateur", PLANNING_ENVOYE);
         outil("relancer_animateurs", ANIMATEURS_RELANCES);
-        outil("supprimer_kpi_historique", KPI_SUPPRIME);
+        outil("supprimer_mesure_edition", KPI_SUPPRIME);
 
         outil("importer_scenario", SCENARIO_IMPORTE);
         outil("importer_scenario_yaml", SCENARIO_IMPORTE);
 
-        outil("modifier_parametres_legaux", PARAMETRES_LEGAUX_MODIFIES);
-        outil("modifier_parametres_qualite", PARAMETRES_QUALITE_MODIFIES);
-        outil("modifier_parametres_solveur", PARAMETRES_SOLVEUR_MODIFIES);
-        outil("modifier_parametres_notifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
+        // The tool states its section's action (CurrentAction), as each REST
+        // section route has its own; this one only names a call refused on an
+        // unknown section.
+        outil("modifier_parametres", PARAMETRES_MODIFIES);
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);
         outil("desactiver_contrainte", CONTRAINTE_DESACTIVEE);
         outil("modifier_poids_contrainte", CONTRAINTE_PONDEREE);
+        outil("modifier_niveau_contrainte", CONTRAINTE_NIVEAU);
 
         outil("modifier_sauvegardes", SAUVEGARDE_BASCULEE);
 

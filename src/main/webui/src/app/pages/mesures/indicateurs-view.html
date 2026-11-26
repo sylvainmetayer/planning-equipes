@@ -1,0 +1,59 @@
+<p class="mesures-sous-titre" i18n="@@mesures.indicateurs.subtitle">
+  Une ligne par résolution terminée, toutes éditions confondues, de la plus récente à la plus ancienne : de quoi
+  comparer une édition à la précédente. Une ligne survit à l'édition qu'elle décrit.
+</p>
+<div class="mesures-toolbar">
+  <button matButton type="button" [disabled]="loading()" (click)="reload()">
+    <mat-icon>refresh</mat-icon>
+    <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+  </button>
+</div>
+
+@if (loading() || pending() !== null) {
+  <mat-progress-bar mode="indeterminate" />
+}
+<app-status-message [text]="error()" tone="error" />
+
+<div class="table-wrapper">
+  <table mat-table class="mesures-table" [dataSource]="entries()">
+    <caption class="visually-hidden" i18n="@@mesures.indicateurs.caption">
+      Indicateurs des résolutions : date, édition, résultat en phrases et actions
+    </caption>
+    <ng-container matColumnDef="quand">
+      <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@versions.column.quand">Quand</th>
+      <td mat-cell *matCellDef="let entry">{{ dateLabel(entry) }}</td>
+    </ng-container>
+    <ng-container matColumnDef="edition">
+      <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@mesures.indicateurs.edition">Édition</th>
+      <td mat-cell *matCellDef="let entry">{{ entry.editionNom ?? entry.editionId }}</td>
+    </ng-container>
+    <ng-container matColumnDef="resultat">
+      <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@versions.column.resultat">Résultat</th>
+      <td mat-cell *matCellDef="let entry" class="mesures-resultat">{{ sentenceOf(entry) }}</td>
+    </ng-container>
+    <ng-container matColumnDef="actions" stickyEnd>
+      <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+      <td mat-cell *matCellDef="let entry" class="row-actions">
+        <button
+          matIconButton
+          class="danger-action"
+          i18n-matTooltip="@@versions.supprimerMesure"
+          matTooltip="Supprimer cette mesure"
+          i18n-aria-label="@@versions.supprimerMesure"
+          aria-label="Supprimer cette mesure"
+          [disabled]="pending() !== null"
+          (click)="remove(entry)"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns"></tr>
+  </table>
+  @if (empty()) {
+    <p class="empty-hint" i18n="@@mesures.indicateurs.empty">
+      Aucune mesure pour l'instant : chaque résolution terminée en ajoute une.
+    </p>
+  }
+</div>

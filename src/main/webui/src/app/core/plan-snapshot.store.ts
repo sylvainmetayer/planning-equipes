@@ -44,19 +44,19 @@ export class PlanSnapshotStore {
   async reload(): Promise<void> {
     this._chargement.set(true);
     try {
-      this._snapshots.set(await this.api.get<PlanSnapshot[]>('/api/planning/snapshots'));
+      this._snapshots.set(await this.api.get<PlanSnapshot[]>('/api/planning/versions'));
     } finally {
       this._chargement.set(false);
     }
   }
 
   async capturer(libelle: string): Promise<void> {
-    await this.api.post<PlanSnapshot>('/api/planning/snapshots', { libelle });
+    await this.api.post<PlanSnapshot>('/api/planning/versions', { libelle });
     await this.reload();
   }
 
   async supprimer(id: number): Promise<void> {
-    await this.api.delete(`/api/planning/snapshots/${id}`);
+    await this.api.delete(`/api/planning/versions/${id}`);
     await this.reload();
   }
 
@@ -69,8 +69,8 @@ export class PlanSnapshotStore {
    */
   async restaurer(id: number, forcer = false): Promise<RestaurationSnapshot> {
     const url = forcer
-      ? `/api/planning/snapshots/${id}/restore?forcer=true`
-      : `/api/planning/snapshots/${id}/restore`;
+      ? `/api/planning/versions/${id}/restore?forcer=true`
+      : `/api/planning/versions/${id}/restore`;
     try {
       // The raw HttpErrorResponse, not the flattened Error: the 409 body
       // carries the ids the snapshot names and the referential has lost, and

@@ -66,7 +66,7 @@ Une **frise** dessine une barre par personne, ce qui tient un événement d'un m
 Ce que chacun a reçu sur tout l'événement, chaque valeur triable :
 
 - heures et écart à la médiane, heures par semaine ;
-- soirée (à partir de l'heure réglée dans *Règles du planning*, onglet *Calcul*, la seule soirée de l'application), week-end, jours fériés, dimanche ;
+- soirée (à partir de l'heure réglée dans *Paramètres*, onglet *Calcul*, la seule soirée de l'application), week-end, jours fériés, dimanche ;
 - « Nuit (paie) » après 22 h ;
 - amplitude maximale d'une journée (du premier début à la dernière fin, trous compris) et nombre de journées au-delà de 12 h, signalées sans aucune règle derrière ;
 - postes et postes exigeants ; stands, typologies et emplacements distincts ;

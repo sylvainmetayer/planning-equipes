@@ -41,8 +41,8 @@ import org.junit.jupiter.api.Test;
 /**
  * « Je viens avec… » end to end: asked for from the Covoiturage tab of the
  * espace while the collection is open, apart from the declaration, validated by
- * the admin into an {@code ARRIVEE_GROUPEE} exception — or set aside with a
- * reason — and each decision told by mail; a validated car is then the
+ * the admin into an {@code ARRIVEE_GROUPEE} exception — or set aside, which
+ * deletes it — and only the validation is told by mail; a validated car is then the
  * Covoiturage tab's to cancel, never the Ajustements manuels screen's.
  */
 @QuarkusTest
@@ -190,44 +190,31 @@ class CarpoolFlowTest {
     }
 
     @Test
-    void aCarSetAsideWritesNothingTellsTheRequesterWhyAndLetsThemAskAgain() {
+    void aCarSetAsideDeletesTheDemandWritesNothingMailsNobodyAndLetsThemAskAgain() {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
         String demande = carpools().getString(of("COV-A") + ".id");
         mailbox.clear();
 
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"reason\":\"Bob ne vient que le samedi.\"}")
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/ecart")
                 .then()
-                .statusCode(200)
-                .body("status", is("ECARTEE"))
-                .body("reason", equalTo("Bob ne vient que le samedi."));
+                .statusCode(204);
         assertThat(groupedArrivals()).isEmpty();
-        carpoolView("COV-A").body("status", equalTo("ECARTEE")).body("reason", equalTo("Bob ne vient que le samedi."));
-        assertThat(mailbox.getMailsSentTo(email("COV-A")))
-                .singleElement()
-                .satisfies(mail -> assertThat(mail.getText()).contains("Bob ne vient que le samedi."));
-        // Nobody else was part of a decision: Bob hears nothing.
+        assertThat(carpools().getString(of("COV-A") + ".id")).isNull();
+        carpoolView("COV-A").body("status", is(nullValue()));
+        assertThat(mailbox.getMailsSentTo(email("COV-A"))).isNullOrEmpty();
         assertThat(mailbox.getMailsSentTo(email("COV-B"))).isNullOrEmpty();
+        // The demand is gone, its trace is not: the journal keeps the gesture and the demand's id.
+        EntreeJournal ligne = journal.list(20).stream()
+                .filter(entree -> "COVOITURAGE_ECARTE".equals(entree.action()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(ligne.entiteId()).isEqualTo(demande);
+        assertThat(ligne.resultat()).isEqualTo(EntreeJournal.Resultat.SUCCES);
 
         requestCarpool("COV-A", idsOf("COV-C")).statusCode(200).body("status", equalTo("EN_ATTENTE"));
-    }
-
-    @Test
-    void aReasonLongerThanASentenceIsRefused() {
-        requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
-        String demande = carpools().getString(of("COV-A") + ".id");
-
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body("{\"reason\":\"" + "x".repeat(501) + "\"}")
-                .when()
-                .post("/api/disponibilites/coequipiers/" + demande + "/ecart")
-                .then()
-                .statusCode(400);
-        assertThat(carpools().getString(of("COV-A") + ".status")).isEqualTo("EN_ATTENTE");
     }
 
     @Test
@@ -295,7 +282,7 @@ class CarpoolFlowTest {
     }
 
     @Test
-    void cancellingAValidatedCarDeletesTheExceptionMarksEveryDemandAndTellsEachMember() {
+    void cancellingAValidatedCarDeletesTheExceptionAndEveryDemandAndMailsNobody() {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
         requestCarpool("COV-B", idsOf("COV-A")).statusCode(200);
         String demandeA = carpools().getString(of("COV-A") + ".id");
@@ -303,51 +290,20 @@ class CarpoolFlowTest {
         assertThat(groupedArrivals()).hasSize(1);
         mailbox.clear();
 
-        cancel(demandeA, "{\"reason\":\"La voiture est en panne.\"}")
-                .statusCode(200)
-                .body("status", equalTo("ANNULEE"))
-                .body("reason", equalTo("La voiture est en panne."))
-                .body("decidedAt", is(org.hamcrest.Matchers.notNullValue()));
+        cancel(demandeA).statusCode(204);
 
         assertThat(groupedArrivals()).isEmpty();
         for (String label : List.of("COV-A", "COV-B")) {
-            assertThat(carpools().getString(of(label) + ".status")).isEqualTo("ANNULEE");
-            assertThat(carpools().getString(of(label) + ".reason")).isEqualTo("La voiture est en panne.");
-            assertThat(mailbox.getMailsSentTo(email(label))).singleElement().satisfies(mail -> {
-                assertThat(mail.getSubject()).contains("arrivée groupée est annulée");
-                assertThat(mail.getText())
-                        .contains("La voiture est en panne.")
-                        .contains("nouvelle demande depuis l'onglet Covoiturage")
-                        .contains("/covoiturage");
-            });
+            assertThat(carpools().getString(of(label) + ".id")).isNull();
+            assertThat(mailbox.getMailsSentTo(email(label))).isNullOrEmpty();
+            carpoolView(label).body("status", is(nullValue())).body("teammateIds", equalTo(List.of()));
         }
-        // The action is journalled by the demand's id; the reason travels nowhere near it.
         EntreeJournal ligne = journal.list(20).stream()
                 .filter(entree -> "COVOITURAGE_ANNULE".equals(entree.action()))
                 .findFirst()
                 .orElseThrow();
         assertThat(ligne.entiteId()).isEqualTo(demandeA);
         assertThat(ligne.resultat()).isEqualTo(EntreeJournal.Resultat.SUCCES);
-        assertThat(ligne.toString()).doesNotContain("panne");
-
-        // Both members read it in their espace, reason included, with a blank picker.
-        carpoolView("COV-A")
-                .body("status", equalTo("ANNULEE"))
-                .body("reason", equalTo("La voiture est en panne."))
-                .body("teammateIds", equalTo(List.of(ids.get("COV-B"))));
-        carpoolView("COV-B").body("status", equalTo("ANNULEE"));
-    }
-
-    @Test
-    void aMemberWhoNeverAskedReadsTheCancellationToo() {
-        sessions.put("COV-C", EspaceSessions.open(mailbox, tokenOf("COV-C"), email("COV-C")));
-        requestCarpool("COV-A", idsOf("COV-C")).statusCode(200);
-        String demande = carpools().getString(of("COV-A") + ".id");
-        validate(demande);
-
-        cancel(demande, "{}").statusCode(200).body("reason", is(nullValue()));
-
-        carpoolView("COV-C").body("status", equalTo("ANNULEE")).body("teammateIds", equalTo(List.of(ids.get("COV-A"))));
     }
 
     @Test
@@ -356,28 +312,14 @@ class CarpoolFlowTest {
         String demande = carpools().getString(of("COV-A") + ".id");
 
         // Pending: nothing to cancel.
-        cancel(demande, "{}").statusCode(409);
+        cancel(demande).statusCode(409);
 
         validate(demande);
-        cancel(demande, "{}").statusCode(200);
-        // Twice: the group is gone.
-        cancel(demande, "{}").statusCode(409);
+        cancel(demande).statusCode(204);
+        // Twice: the demand is gone with the group.
+        cancel(demande).statusCode(404);
 
-        // Set aside: nothing to cancel either.
-        requestCarpool("COV-A", idsOf("COV-C")).statusCode(200);
-        String nouvelle = carpools()
-                .getString("find { it.animateurId == '" + ids.get("COV-A") + "' && it.status == 'EN_ATTENTE' }.id");
-        given().header("X-Edition-Id", "E1")
-                .contentType(ContentType.JSON)
-                .body("{}")
-                .when()
-                .post("/api/disponibilites/coequipiers/" + nouvelle + "/ecart")
-                .then()
-                .statusCode(200);
-        cancel(nouvelle, "{}").statusCode(409);
-
-        cancel("demande-inconnue", "{}").statusCode(404);
-        cancel(demande, "{\"reason\":\"" + "x".repeat(501) + "\"}").statusCode(400);
+        cancel("demande-inconnue").statusCode(404);
     }
 
     /**
@@ -404,7 +346,7 @@ class CarpoolFlowTest {
             jobId = solverJobs.submitSolve(probleme, 60L).getId();
             assertThat(solverJobs.findActive()).isPresent();
 
-            cancel(demande, "{}").statusCode(409);
+            cancel(demande).statusCode(409);
 
             assertThat(groupedArrivals()).hasSize(1);
             assertThat(carpools().getString(of("COV-A") + ".status")).isEqualTo("VALIDEE");
@@ -432,29 +374,12 @@ class CarpoolFlowTest {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
         String demande = carpools().getString(of("COV-A") + ".id");
         validate(demande);
-        cancel(demande, "{}").statusCode(200);
+        cancel(demande).statusCode(204);
 
         requestCarpool("COV-A", idsOf("COV-C")).statusCode(200).body("status", equalTo("EN_ATTENTE"));
         requestCarpool("COV-A", "[]").statusCode(200);
         setWindow(false);
         requestCarpool("COV-A", idsOf("COV-C")).statusCode(400);
-    }
-
-    @Test
-    void aCancellationOutsideTheCollectionTellsTheGroupToContactTheOrganisation() {
-        requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
-        String demande = carpools().getString(of("COV-A") + ".id");
-        validate(demande);
-        setWindow(false);
-        mailbox.clear();
-
-        cancel(demande, "{}").statusCode(200);
-
-        assertThat(mailbox.getMailsSentTo(email("COV-B")))
-                .singleElement()
-                .satisfies(mail -> assertThat(mail.getText())
-                        .contains("adressez-vous à l'organisation")
-                        .doesNotContain("nouvelle demande"));
     }
 
     @Test
@@ -517,10 +442,9 @@ class CarpoolFlowTest {
                 .getBoolean("find { it.id == '" + contrainteId + "' }.issueDeCovoiturage");
     }
 
-    private io.restassured.response.ValidatableResponse cancel(String demande, String body) {
+    private io.restassured.response.ValidatableResponse cancel(String demande) {
         return given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body(body)
                 .when()
                 .post("/api/disponibilites/coequipiers/" + demande + "/annulation")
                 .then();

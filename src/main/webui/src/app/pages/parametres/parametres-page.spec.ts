@@ -1,7 +1,7 @@
 // The rendered page — this screen holds the most destructive button of the
-// application (replay a SQL dump, every edition included). The ninja picker and
-// the end-of-solve mail moved to « Règles du planning › Calcul » and are tested
-// in `regles-calcul.spec.ts`.
+// application (replay a SQL dump, every edition included). The polyvalent picker and
+// the end-of-solve mail are « Paramètres › Calcul », tested in
+// `parametres-calcul.spec.ts`.
 //
 // The scenario operations left this screen: they are covered by
 // `scenario-preenregistre.spec.ts` (Débogage), `import-scenario-card.spec.ts`
@@ -309,7 +309,7 @@ describe('ParametresPage rendering', () => {
   it('points to « Règles du planning » for what decides the plan', async () => {
     await rendre();
 
-    const lien = racine().querySelector('a[href="/regles?onglet=legal"]');
+    const lien = racine().querySelector('a[href="/regles"]');
     expect(lien?.textContent).toContain('Règles du planning');
   });
 

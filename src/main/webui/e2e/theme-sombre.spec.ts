@@ -37,7 +37,7 @@ function fondDeLaPage(page: Page): Promise<string> {
 
 /**
  * La paire que `core/branding.ts` pose sur `--app-accent` quand un déploiement
- * renseigne BRANDING_ACCENT_COLOR. Recopiée ici parce que la valeur est
+ * renseigne BRANDING_COLORS (accent). Recopiée ici parce que la valeur est
  * injectée hors d'Angular : `branding.spec.ts` épingle la même chaîne, donc
  * une dérive côté source rend d'abord le test unitaire rouge.
  *
@@ -186,7 +186,7 @@ test("l'accent de marque reste lisible sur les deux fonds", async ({ browser }) 
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');
 
-  // Ce que `appliquerBranding()` écrit quand BRANDING_ACCENT_COLOR est renseigné.
+  // Ce que `appliquerBranding()` écrit quand BRANDING_COLORS (accent) est renseigné.
   await page.evaluate((paire) => {
     document.documentElement.style.setProperty('--app-accent', paire);
   }, ACCENT_PAIRE);

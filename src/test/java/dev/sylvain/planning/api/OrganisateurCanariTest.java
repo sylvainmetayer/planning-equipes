@@ -72,9 +72,9 @@ class OrganisateurCanariTest {
         try {
             try (var connection = dataSource.getConnection();
                     var ps = connection.prepareStatement("""
-                            INSERT INTO plan_snapshot (edition_id, libelle, automatique, nombre_affectations,
+                            INSERT INTO version_plan (edition_id, libelle, origine, nombre_affectations,
                                 cree_le, contenu, consignes)
-                            VALUES (?, ?, false, 0, now(), '[]'::jsonb, '[]'::jsonb)""")) {
+                            VALUES (?, ?, 'MANUELLE', 0, now(), '[]'::jsonb, '[]'::jsonb)""")) {
                 ps.setString(1, editionId);
                 ps.setString(2, canari);
                 ps.executeUpdate();
@@ -84,11 +84,11 @@ class OrganisateurCanariTest {
             // an organiser of a later one must not be shown.
             try (var connection = dataSource.getConnection();
                     var ps = connection.prepareStatement("""
-                            INSERT INTO kpi_realise (edition_id, typologie_id, edition_nom, typologie_nom,
+                            INSERT INTO mesure_edition (nature, edition_id, typologie_id, edition_nom, typologie_nom,
                                 premier_jour, dernier_jour, jours_comptes, sieges_publies, sieges_tenus, absences,
                                 remplacements, sieges_vides, sieges_retires, sieges_ajoutes, minutes_publiees,
                                 minutes_realisees, minutes_perdues)
-                            VALUES (?, 'T', ?, ?, DATE '2000-01-01', DATE '2000-01-02', 1, 1, 1, 0, 0, 0, 0, 0, 60, 60, 0)""")) {
+                            VALUES ('REALISE', ?, 'T', ?, ?, DATE '2000-01-01', DATE '2000-01-02', 1, 1, 1, 0, 0, 0, 0, 0, 60, 60, 0)""")) {
                 ps.setString(1, editionId);
                 ps.setString(2, canari);
                 ps.setString(3, canari);
@@ -104,7 +104,8 @@ class OrganisateurCanariTest {
 
             // Positive control: an administrator does see what was seeded, so the
             // organiser's silence below means something.
-            for (String chemin : List.of("/api/planning/snapshots/comparables", "/api/kpi/historique", "/api/jobs")) {
+            for (String chemin :
+                    List.of("/api/planning/snapshots/comparables", "/api/mesures-edition/indicateurs", "/api/jobs")) {
                 assertThat(given().header("X-Edition-Id", "E1")
                                 .header("Authorization", admin)
                                 .get(chemin)

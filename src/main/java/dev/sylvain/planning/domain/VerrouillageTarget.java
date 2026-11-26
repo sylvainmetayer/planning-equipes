@@ -3,13 +3,13 @@ package dev.sylvain.planning.domain;
 import java.time.LocalDate;
 
 /**
- * What a lock freezes: an animateur, a stand, a timeslot, a day, or an
- * animateur on one precise timeslot.
+ * What a lock freezes: an animateur on one precise timeslot, a stand
+ * on one day, or a whole day.
  *
- * <p>{@link VerrouillagePlanning} carries that flat — five nullable target
+ * <p>{@link VerrouillagePlanning} carries that flat — nullable target
  * columns and a discriminator — because that is what an SQL row, a JSON DTO
  * and a Timefold problem fact all require. The price of that flattening was a
- * {@code switch} where <b>every branch had to remember to set the four other
+ * {@code switch} where <b>every branch had to remember to set the other
  * columns to {@code null}</b>: forgetting one passed the {@code CHECK}
  * constraint of the database and left a lock aiming at two targets at
  * once.</p>
@@ -26,53 +26,26 @@ public sealed interface VerrouillageTarget {
     TypeVerrouillage type();
 
     /**
-     * Is this seat frozen? The {@link OnAnimateur} variant reads the current
-     * animateur of the seat, so it only answers usefully once the seat has been
-     * seeded back from the persisted planning.
+     * Is this seat frozen? The {@link OnAnimateurAndCreneau} variant reads the
+     * current animateur of the seat, so it only answers usefully once the seat
+     * has been seeded back from the persisted planning.
      */
     boolean couvre(PosteAffectation poste);
 
-    /** Everything this animateur holds, everywhere. */
-    record OnAnimateur(String animateurId) implements VerrouillageTarget {
+    /** Everything played on this stand on this day. */
+    record OnStandAndJour(String standId, LocalDate jour) implements VerrouillageTarget {
 
         @Override
         public TypeVerrouillage type() {
-            return TypeVerrouillage.ANIMATEUR;
+            return TypeVerrouillage.STAND_JOUR;
         }
 
         @Override
         public boolean couvre(PosteAffectation poste) {
-            return poste.getAnimateur() != null
-                    && animateurId.equals(poste.getAnimateur().getId());
-        }
-    }
-
-    /** Everything played on this stand. */
-    record OnStand(String standId) implements VerrouillageTarget {
-
-        @Override
-        public TypeVerrouillage type() {
-            return TypeVerrouillage.STAND;
-        }
-
-        @Override
-        public boolean couvre(PosteAffectation poste) {
-            return poste.getStand() != null && standId.equals(poste.getStand().getId());
-        }
-    }
-
-    /** This whole shift, on every stand. */
-    record OnCreneau(long creneauId) implements VerrouillageTarget {
-
-        @Override
-        public TypeVerrouillage type() {
-            return TypeVerrouillage.CRENEAU;
-        }
-
-        @Override
-        public boolean couvre(PosteAffectation poste) {
-            return poste.getCreneau() != null
-                    && Long.valueOf(creneauId).equals(poste.getCreneau().getId());
+            return poste.getStand() != null
+                    && standId.equals(poste.getStand().getId())
+                    && poste.getCreneau() != null
+                    && jour.equals(poste.getCreneau().getDate());
         }
     }
 

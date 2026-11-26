@@ -146,7 +146,7 @@ public class EditionService {
      * works on.
      *
      * <p>That last one is a {@code 409}: a solver job of the edition, running
-     * or waiting in the queue — a queue replayed at startup included —, or a
+     * or waiting in the queue — a solve followed again on its worker included —, or a
      * staffing check under way on it. The job would otherwise start, or land
      * its plan, in an edition gone from under it, and fail on the way. Not
      * {@code @RefusedWhileSolving}, whose interceptor asks about the

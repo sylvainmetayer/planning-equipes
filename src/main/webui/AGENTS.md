@@ -44,7 +44,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `--mat-sys-*` equivalent), `--app-positive` in `styles/branding.css` (the
   "better" green of an écart or an affinity: Material 3 has no success role,
   so a page needing it reads that variable instead of writing its own pair),
-  and `--app-accent` once `BRANDING_ACCENT_COLOR`
+  and `--app-accent` once `BRANDING_COLORS (accent)`
   fills it — `core/branding.ts` writes it as a pair, the configured colour on
   light and an OKLCH-lightened twin on dark, because it is a *text* colour on
   `--mat-sys-surface` in a dozen partials. Deliberately outside the switch: the
@@ -81,8 +81,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `buildOffMenuLinks()` the **routes served but listed in no group** —
   `/debug` (raw technical information, reached by Ctrl+K or its address),
   `/editions` (« Gérer »), `/aide` (the toolbar's icon),
-  `/nouveautes` (the foot of the menu), `/editions/comparer` (opened from the
-  Éditions page) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
+  `/nouveautes` (the foot of the menu), `/comparer` (opened from the
+  Versions and Éditions pages) and the Quarkus Dev UI in development; `buildLegalLinks()` the legal pages.
   `nav-groups.spec.ts` fails on a route of `app.routes.ts` that none of the
   three knows. The standalone routes `/login`, `/mot-de-passe` (the page of the mailed single-use link,
   ADR 0094: the token rides in the URL fragment, the page makes the one call that
@@ -166,16 +166,23 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   mail, Mailpit, pgAdmin; a guard on the route sends its former
   `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
   `/mcp-client` (a redirect to `/parametres?onglet=mcp`),
-  `/parametres` (« Paramètres » — five tabs chosen by
-  `?onglet=edition|mural|instance|historique|mcp` — the last two the former
+  `/parametres` (« Paramètres » — tabs chosen by
+  `?onglet=edition|notifications|legal|organisation|calcul|mural|comptes|instance|historique|mcp`:
+  the four sections of the edition's parameters, one per
+  `/api/parametres/{section}` — « Notifications » (the e-mails it sends of
+  itself, `parametres-notifications`), then, under « Réglages avancés »,
+  « Légal » and « Organisation » (`parametres-section`: every threshold of the
+  section on one form, the same values the rule rows of `/regles` edit, each
+  save re-reading the record) and « Calcul » (`parametres-calcul`: the
+  instance's solve budget shown, never edited — ADR 0110 —, the end-of-solve
+  mail, the start of the evening, the polyvalent typologie) — and the last two the former
   `/historique` (its « Connexions » tab `?onglet=connexions`) and
   `/mcp-client`: the edition's own settings that no rule
   reads — its name, the freeze of its referential (the only place it is
   edited), its guichets (the collection of availabilities, the foire au
   planning, the covoiturage that follows the collection — each opened and
   closed here with its dates, Échanges and Disponibilités keeping one line of
-  their state, `shared/guichet-etat.ts`), the e-mails it sends of itself
-  (`#emails`), the weather alert (`#meteo`, `pages/parametres/parametres-meteo`
+  their state, `shared/guichet-etat.ts`), the weather alert (`#meteo`, `pages/parametres/parametres-meteo`
   — thresholds, a preset suggested per phenomenon, the last query's state,
   « Tester maintenant » and the Open-Meteo attribution) and the
   organisation's contact shown in the espace —, the wall
@@ -188,20 +195,28 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
   only where the server allows a simulated clock, which the toolbar's
   hourglass links to; `?onglet=globaux`, its former name, reads as
-  `instance`, and a guard sends `?onglet=legaux` to `/regles?onglet=legal`
-  and `?onglet=emails` to `#emails`), `/regles`
-  (« Règles du planning » — six tabs chosen by
-  `?onglet=ajustements|verrouillages|consignes|legal|qualite|calcul`: first
-  the three of the former `/consignes-solveur` (described there), the
-  adjustments the default; then
-  one dense row per hard rule — short label, article, on/off, the thresholds
-  it reads edited on the row —, the same table for the medium and soft rules
-  with their importance in three positions (faible 1 / normale 5 / forte 25,
-  `core/importance.ts`, ADR 0057), and the solve budget, the start of the
-  evening and the ninja typologie; nothing is written before the tab's
-  « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
-  exact weight, history of its settings — on its own tab, the stable address
-  the Diagnostic and the reading of the score link to),
+  `instance`, and a guard sends `?onglet=legaux` to
+  `?onglet=legal` and `?onglet=emails` (or the `#emails` anchor) to
+  `?onglet=notifications`; `/regles?onglet=calcul` is redirected to
+  `/parametres?onglet=calcul`), `/regles`
+  (« Règles du planning » — four tabs chosen by
+  `?onglet=ajustements|verrouillages|consignes|regles`: first the three of
+  the former `/consignes-solveur` (described there), the adjustments the
+  default; then « Règles » (`legal` and `qualite`, its two former tabs, still
+  read as it), in three blocks the catalogue files — `blocOfRule`, from
+  `legale` and `niveauReglable`, never from a rule's name, since rules merge:
+  « Obligations légales », read only, each row linking to Paramètres › Légal
+  where the thresholds are written (they are edited nowhere else, here or in
+  Organisation); « Politique de l'organisation », each rule with its level —
+  obligatoire, forte, normale or légère, written by `PUT
+  /api/constraints/{name}/niveau` (ADR 0106, 0111; the screen keeps the four,
+  « normale » being every rule's default) — and its exact weight in the panel,
+  offered to a preference only; and « Avancé », the rest, folded by
+  `?avance=1` (ADR 0090) and opened by a `?regle=` it holds. The switches,
+  levels and weights are written on the tab's « Enregistrer »; `?regle=<name>`
+  opens that rule's panel — long text, exact weight, history of its
+  settings —, the stable address the Diagnostic and the reading of the score
+  link to),
   `/stands` (« Stands » — three tabs chosen by `?onglet=`, the third
   `?onglet=typologies`, the former `/typologies` (described there): the table, filtered
   by `q` and by the `?typologie=` and `?emplacement=` chips, every column
@@ -316,7 +331,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   one « Autres façons de créer la grille » menu; the grid check is a band read
   by itself on every visit and after every write), `/typologies` (a redirect
   to `/stands?onglet=typologies`: every count
-  links to the list it counts, the ninja category is ticked in the table, and
+  links to the list it counts, the polyvalent category is ticked in the table, and
   three columns read the computed plan: seats, hours, assigned without the
   skill),
   `/consignes-solveur` (now a redirect to `/regles`, its `onglet` and params
@@ -446,29 +461,35 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and `mesure` (what a figure counts beyond a statut: the colleague's answer,
   the requests a delay was measured over) read by the server, `statuts`,
   `dirigees`, `prevalidee`, `jour`, `stand`, `contrainte` — shown as removable
-  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — two tabs chosen by
-  `?onglet=`: the day-of hub, and `?onglet=realise` the former `/realise`
-  (described there); the hub:
-  `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
+  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — the day-of hub, its former
+  `?onglet=realise` tab now a view of `/mesures`, which the route guard sends
+  there; the hub: `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
   search over the whole roster — name, id or phone —, mark somebody absent,
   repair the seats they held — the timeslot under way included, split at
   « now » server-side (ADR 0066) —, « Chercher plus loin » when the first
   twenty candidates hold nobody viable, the new holes told from the published ones, « Prévenir les N
   personnes » through the targeted publication, « Fermer des stands demain »,
-  the TV link), `/realise` (a redirect to `/aujourdhui?onglet=realise`:
+  the TV link), `/mesures` (« Mesures d'édition », issue #272, ADR 0113 —
+  two views chosen by `?vue=`, hosted by `pages/mesures/`: `realise`, the
+  default, and `indicateurs`, the history of every finished solve across
+  editions with its delete; `/realise` redirects there; the API is
+  `/api/mesures-edition`, the 3.x paths staying deprecated aliases until 5.0).
   « Réalisé vs planifié » — the gap between the
   published plan and the plan held over the elapsed days, read from
-  `GET /api/planning/realise`: the declared-realised notice, the event's
+  `GET /api/mesures-edition/realise`: the declared-realised notice, the event's
   figures, the shared `pages/planning-grille` with one line per stand and one
   column per counted day, each cell coloured by its worst gap and opening its
   shifts under the grid — holders named, on this admin screen only — kept as
   `?jour=&stand=`, the totals per game category, and the CSV without any
   person), `/versions` (a redirect to `/solveur?onglet=versions`, the
   Solveur's second tab: « Versions du
-  plan » — the finished solves and the snapshots of the edition in one
+  plan » — the finished solves and the versions of the edition (each saying
+  its `origine`: manual, before a solve, published; ADR 0108, read from
+  `/api/planning/versions`, no longer the `/snapshots` alias) in one
   chronology over the pure `versions.ts`, `?editions=toutes` for every
-  edition's; two ticked rows, or one and « Plan en place », open the A/B
-  comparator as a panel beside the table, `?comparer=a,b` keeping the pair;
+  edition's; two ticked rows, or one and « Plan en place », open
+  `/comparer?vue=versions&comparer=a,b` (a 3.x `?comparer=` on this tab is
+  sent there);
   `/kpi`, `/instantanes` and `/comparateur` redirect there — `/kpi?edition=*`
   to `?editions=toutes` —, the replay of the former Autopsie is gone;
   under the table, `pages/versions/edition-precedente.ts` says the Réalisé vs
@@ -488,9 +509,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   a plan is computed or to the grid narrowed to the day, and to the grid with
   its layers),
   `/disponibilites` (a redirect to `/animateurs?onglet=disponibilites`: what the animateurs
-  declared), `/editions`, `/editions/comparer` (« Comparer deux éditions » — the
+  declared), `/editions`, `/comparer` (« Comparer deux versions » — one screen,
+  `pages/comparer-editions/comparer-page.ts`, two views chosen by `?vue=`
+  through `ongletHote`'s `vue` key: `versions` (default,
+  `comparer-versions-view.ts`, two lists over `GET /api/planning/versions/comparables`
+  and the A/B comparator of `pages/versions/comparaison-panel.ts`, the pair in
+  `?comparer=a,b`, the older side the reference) and `editions` — the former
+  `/editions/comparer`, which redirects there with its `?a=&b=` — the
   referential delta of `GET /api/editions/{a}/delta/{b}`, the pair in `?a=&b=`,
-  served without a menu entry and opened from the Éditions page: a summary
+  served without a menu entry and opened from the Versions and Éditions pages: a summary
   sentence, the banner of a duplication without the people, the two Volumétries
   side by side, one foldable panel per family, each line saying what matched it
   and opening its fiche in the edition holding it through `EditionStore.openIn`,

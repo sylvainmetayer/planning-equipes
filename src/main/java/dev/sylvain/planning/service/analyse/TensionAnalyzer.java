@@ -75,7 +75,7 @@ public final class TensionAnalyzer {
         FRAGILES_AU_DELA_DE_LA_MARGE,
         /** {@code SURVEILLEE}: fragile seats, with enough people to spare. */
         SIEGES_FRAGILES,
-        /** {@code SURVEILLEE}: a stand resting on one specialist, and no ninja to back them up. */
+        /** {@code SURVEILLEE}: a stand resting on one specialist, and no polyvalent to back them up. */
         SPECIALISTE_UNIQUE_SANS_RENFORT
     }
 
@@ -140,7 +140,7 @@ public final class TensionAnalyzer {
     public record JourTension(LocalDate date, int jour, List<CelluleTension> cellules, CelluleTension pireCellule) {}
 
     /**
-     * @param ninjaConfigure  the referential marks a ninja category: without
+     * @param polyvalentConfigure  the referential marks a polyvalent category: without
      *                        one, « no reinforcement » is the rule, not a
      *                        finding, and the screen says so
      * @param cellulesCritiques cells rated {@code CRITIQUE}
@@ -151,7 +151,7 @@ public final class TensionAnalyzer {
                 "cellulesCritiques",
                 "jours",
                 "message",
-                "ninjaConfigure",
+                "polyvalentConfigure",
                 "referentielsManquants",
                 "tranches"
             })
@@ -161,7 +161,7 @@ public final class TensionAnalyzer {
             CelluleTension pireCellule,
             int animateursTotal,
             int cellulesCritiques,
-            boolean ninjaConfigure,
+            boolean polyvalentConfigure,
             List<ReferentielManquant> referentielsManquants,
             String message)
             implements MarginReading {}
@@ -237,7 +237,7 @@ public final class TensionAnalyzer {
                 pire,
                 apres.animateursTotal(),
                 critiques,
-                fragilite.ninjaConfigure(),
+                fragilite.polyvalentConfigure(),
                 apres.referentielsManquants(),
                 message(sansAnimateur, jours, critiques, pire));
     }

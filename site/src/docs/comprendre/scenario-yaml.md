@@ -47,7 +47,7 @@ La règle 1 fait qu'un scénario exporté puis réimporté dans la même éditio
 
 ## Ce que l'export garantit
 
-« Exporter les données actuelles en scénario » écrit toutes les sections que l'import sait relire : les entités, mais aussi `typologies`, `emplacements`, `parametresLegaux`, `parametresSolveur`, `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` et `consignes`. Réimporter le fichier reproduit exactement le même problème. C'est la raison d'être de l'export.
+« Exporter les données actuelles en scénario » écrit toutes les sections que l'import sait relire : les entités, mais aussi `typologies`, `emplacements`, `parametres` (légal, organisation, instance), `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` et `consignes`. Réimporter le fichier reproduit exactement le même problème. C'est la raison d'être de l'export.
 
 Un champ oublié dans une section n'est pas « non surchargeable » : l'import écrit un objet neuf et le champ retombe au défaut. `heureDebutSoiree`, absente du DTO à l'origine, ramenait ainsi une édition réglée à 22 h à 20 h et déplaçait les heures de soirée de l'équité sans un mot. Un fichier sans ces sections retombe de même sur les réglages de l'instance qui l'importe et rejoue un autre problème. Pour qui touche au format : chaque champ lu doit aussi être écrit.
 
@@ -55,13 +55,28 @@ Les créneaux sortent toujours tels quels, avec `couverturePause: true` quand il
 
 ## `schemaVersion`
 
-Un fichier écrit par l'application commence par `schemaVersion: 2` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
+Un fichier écrit par l'application commence par `schemaVersion: 4` (`ScenarioBinder.SCHEMA_VERSION`). À la lecture, la clé est facultative et vaut 1 quand elle manque. Un fichier plus ancien que la version courante traverse une **chaîne de conversions** (`ScenarioMigrations`) avant d'être lié : chaque maillon est une fonction pure de la version *n* à la *n + 1*, avec son test, et chaque changement de modèle ajoute le sien. Ce qu'un maillon ne peut pas convertir est ignoré **avec un avertissement dans le rapport d'import** (`avertissements`), jamais en silence. Les scénarios livrés, les archives de fin d'événement et les copies faites avant un vidage restent ainsi lisibles. Le lecteur v1 est gardé pendant toute la 4.x et retiré en 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). Un numéro supérieur à celui que la version lit est refusé avec une phrase claire (« produit par une version plus récente ») plutôt qu'avec un « champ inconnu » sur la première clé nouvelle. Une version de l'application antérieure à la clé refuse tout fichier qui la porte, comme n'importe quelle clé inconnue.
+
+## `contraintes.niveaux` : le niveau choisi par règle
+
+Depuis la version 4 du format, la section `contraintes` porte aussi `niveaux`, le niveau que l'édition a choisi pour une règle d'organisation : `OBLIGATOIRE`, `PREFERENCE`, ou une position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) qui donne en plus le poids de cette position (25, 5, 1) quand `poids` ne nomme pas la règle. Une règle que le fichier ne nomme pas revient au niveau du catalogue. Une règle qui n'a pas de niveau à choisir (légale, d'affectation, ad hoc, verrou, préférence souple) est **refusée par son nom**. Un fichier 3.x ou v3 n'en porte pas, et se lit comme avant : le maillon 3 → 4 ne change rien ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+
+```yaml
+contraintes:
+  niveaux:
+    stabiliteDuPlanPublie: OBLIGATOIRE
+    equilibrerCharge: PREFERENCE_FORTE
+```
 
 ## `postes` : absente et vide ne disent pas la même chose
 
 Absente, la section est générée à partir des stands et des créneaux importés, par le constructeur qu'utilise aussi une résolution : un siège par place sur chaque créneau et segment réellement ouvert. Le nombre de places vient de la fenêtre d'ouverture quand elle porte un `effectif`, sinon de `effectifMin`, jamais de `effectifMax` (voir [Le modèle des données](modele-des-donnees.md)).
 
 Présente, elle est reprise telle quelle, y compris vide, ce qui permet un staffing hors règle ; aucun scénario livré ne s'en sert. Une liste écrite répète ce que `effectifMin` dit déjà et fige la grille contre toute modification ultérieure d'un stand. L'export ne l'écrit donc jamais.
+
+## `plan` : le planning d'une copie avant vidage
+
+Dernière section, facultative : les sièges pourvus (`affectations`) et les verrous (`verrous`) de l'édition, avec les identifiants du fichier ; un créneau s'y nomme par sa date et ses heures. Seule la copie rangée avant un vidage l'écrit ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)) : l'export de Fichiers n'en porte pas, et un fichier sans cette section se lit comme avant (le format reste en version 3). Seule la restauration de cette copie applique la section : elle remet les sièges et les verrous sur le référentiel qu'elle vient d'écrire, retrouvés par code puis nom pour un stand, adresse puis prénom et nom pour un animateur, jour et heures pour un créneau, et liste ce qui n'est pas retrouvé. Un import ordinaire (Fichiers, `importer_scenario_yaml`) l'ignore, avec un avertissement dans le rapport. Détail de la restauration : [Restaurer une édition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
 
 ## `contraintes` : en bloc, jamais en fusion
 
@@ -86,7 +101,7 @@ Une portée plus précise prime sur une portée plus large, et une exception dat
 
 ## Typologies, journées types et clés retirées
 
-Chaque stand du fichier propose au moins une typologie : `typologiesProposees: []` est refusé par le validateur comme par l'import, qui nomme l'entrée et son id. Une typologie citée sans être déclarée est créée avec un libellé et un code égaux à la valeur citée ; la section `typologies`, appliquée après l'import pour ne pas être écrasée par cette création, fixe un vrai libellé et un `code`. Au plus une typologie porte `ninja: true` (en déclarer une retire le drapeau de la précédente). Chaque entrée peut porter `maxCreneauxParAnimateur`, le plafond de créneaux sur l'édition entière, et `description`, la note affichée sur l'écran Typologies.
+Chaque stand du fichier propose au moins une typologie : `typologiesProposees: []` est refusé par le validateur comme par l'import, qui nomme l'entrée et son id. Une typologie citée sans être déclarée est créée avec un libellé et un code égaux à la valeur citée ; la section `typologies`, appliquée après l'import pour ne pas être écrasée par cette création, fixe un vrai libellé et un `code`. Au plus une typologie porte `polyvalent: true` (en déclarer une retire le drapeau de la précédente). Chaque entrée peut porter `maxCreneauxParAnimateur`, le plafond de créneaux sur l'édition entière, et `description`, la note affichée sur l'écran Typologies.
 
 `journeesTypes` est optionnelle : nom, vacations (avec `couverturePause` pour un relais repas) et dates que chaque journée gouverne. Appliquée après les créneaux, elle remplace journées types et calendrier mais n'écrit aucun créneau : un fichier cohérent liste sous `creneaux` ce que ses journées types disent. Absente, l'import reconnaît les journées types que les créneaux impliquent ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)).
 
@@ -94,8 +109,8 @@ Certaines clés sont refusées par leur nom, avec un message qui dit quoi écrir
 
 | Clé refusée | Remplacement |
 | --- | --- |
-| `parametresDecoupage`, `decoupageAuto` | le découpage automatique n'existe plus ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)) ; `dureeVacationMaxMinutes` a rejoint `parametresLegaux` |
-| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (dans `parametresLegaux`) | une seule durée, `dureePauseMinutes`, et une seule règle de pause ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
+| `parametresDecoupage`, `decoupageAuto` | le découpage automatique n'existe plus ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)) ; `dureeVacationMaxMinutes` a rejoint `parametres.legal` |
+| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (dans `parametres.legal`) | une seule durée, `dureePauseMinutes`, et une seule règle de pause ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
 
 ## Consignes et préréglages
 

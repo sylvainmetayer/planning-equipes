@@ -51,8 +51,8 @@
 @if (tab() === 'covoiturage') {
   <h2 i18n="@@dispo.covoiturage.titre">Demandes de covoiturage</h2>
   <p class="dispo-admin-commentaire" i18n="@@dispo.covoiturage.intro">
-    « Je viens avec… » : demandé depuis l'espace, à part des déclarations. Valider crée un ajustement « arrivée
-    groupée » ; écarter le classe, avec un motif facultatif. Chacun est prévenu par e-mail.
+    « Je viens avec… » : demandé depuis l'espace. Valider crée un ajustement « arrivée groupée » et prévient
+    chaque membre par e-mail ; écarter supprime la demande.
   </p>
   @if (editingLocked()) {
     <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
@@ -102,19 +102,13 @@
     <p class="espace-vide" i18n="@@dispo.covoiturage.aucun">Aucune demande de covoiturage en attente.</p>
   }
   @if (decidedCarpools().length > 0) {
-    <h2 i18n="@@dispo.covoiturage.decidees">Déjà traitées</h2>
+    <h2 i18n="@@dispo.covoiturage.decidees">Arrivées groupées validées</h2>
     <ul class="dispo-admin-valeurs">
       @for (carpool of decidedCarpools(); track carpool.id) {
         <li>
-          <strong>{{ membersLabel(carpool) }}</strong> — {{ carpoolStatusLabel(carpool) }}
+          <strong>{{ membersLabel(carpool) }}</strong>
           @if (carpool.decidedAt) {
             <span>{{ carpool.decidedAt | date: 'short' }}</span>
-          }
-          @if (carpool.reason) {
-            <span class="dispo-admin-commentaire">
-              <mat-icon inline aria-hidden="true">forum</mat-icon>
-              {{ carpool.reason }}
-            </span>
           }
           @if (cancellableCarpoolIds().has(carpool.id)) {
             <button

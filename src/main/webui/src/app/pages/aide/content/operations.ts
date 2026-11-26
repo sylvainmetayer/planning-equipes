@@ -86,7 +86,7 @@ export function buildOperationsSections(): HelpSection[] {
         {
           kind: 'callout',
           title: $localize`:@@aide.consignes.callout.title:Rien n'est détruit`,
-          text: $localize`:@@aide.consignes.callout.text:La bande ferme tous les stands, sans exception, au-dessus de leurs règles et de leurs exceptions datées. Elle ne ferme que cela : un stand non coché garde ses horaires hors bande. Les créneaux nominaux gardent leur identifiant, leurs sièges et leurs verrous ; les vacations de la bande deviennent simplement sans siège. Les créneaux manquants pour couvrir une fenêtre sont ajoutés et marqués « ajouté par consigne » ; les journées types ignorent ces dates, affichées « sous consigne » plutôt qu'en écart. Les statistiques comptent les heures réellement travaillées, et un instantané emporte les consignes en vigueur à sa capture.`,
+          text: $localize`:@@aide.consignes.callout.text:La bande ferme tous les stands, sans exception, au-dessus de leurs règles et de leurs exceptions datées. Elle ne ferme que cela : un stand non coché garde ses horaires hors bande. Les créneaux nominaux gardent leur identifiant, leurs sièges et leurs verrous ; les vacations de la bande deviennent simplement sans siège. Les créneaux manquants pour couvrir une fenêtre sont ajoutés et marqués « ajouté par consigne » ; les journées types ignorent ces dates, affichées « sous consigne » plutôt qu'en écart. Les statistiques comptent les heures réellement travaillées, et une version emporte les consignes en vigueur à sa capture.`,
         },
         {
           kind: 'definitions',
@@ -272,9 +272,8 @@ export function buildOperationsSections(): HelpSection[] {
       ],
       links: [
         {
-          route: '/aujourdhui',
-          queryParams: { onglet: 'realise' },
-          label: $localize`:@@nav.link.realise:Réalisé vs planifié`,
+          route: '/mesures',
+          label: $localize`:@@nav.link.mesures:Mesures d'édition`,
         },
         { route: '/aujourdhui', label: $localize`:@@nav.link.aujourdhui:Aujourd'hui` },
         lienVersions(),
@@ -351,7 +350,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.fragilite:Fragilité du planning`,
-              text: $localize`:@@aide.views.def.fragiliteGestes:Qui est irremplaçable. Pour chaque personne, l'écran donne les créneaux qui passeraient sous l'effectif minimum si elle se désiste et, dans la colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. Trois gestes suivent : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts.`,
+              text: $localize`:@@aide.views.def.fragiliteGestes:Qui est irremplaçable. Pour chaque personne, l'écran donne les créneaux qui passeraient sous l'effectif minimum si elle se désiste et, dans la colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. Trois gestes suivent : « Verrouiller » garde tout son planning tel quel au prochain calcul, « Qui peut remplacer » ouvre le panneau du siège qu'elle laisserait le plus difficile à tenir, « Former » ouvre la grille des compétences sur les typologies de ses stands. Son nom mène à sa fiche. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents y sont comptés à part, en renforts.`,
             },
             {
               term: $localize`:@@aide.views.term.former:À former`,
@@ -363,7 +362,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.versions:Versions du plan`,
-              text: $localize`:@@aide.views.def.versions:Les résolutions terminées et les instantanés de l'édition dans un seul tableau, du plus récent au plus ancien, le résultat de chacun en phrases : les règles obligatoires tenues ou non, les places pourvues. Un instantané se restaure, se compare avec le plan en place ou se supprime depuis sa ligne ; cochez deux lignes (ou une ligne et « Plan en place », en tête du tableau), puis « Comparer » : la comparaison s'ouvre à côté du tableau, la plus ancienne des deux en référence, sur le score, la couverture, l'équité et les écarts aux règles, avec le sens de chaque différence écrit en toutes lettres. Elle prévient quand les deux plans n'ont pas la même taille ou ont été calculés sous des poids différents. « Toutes les éditions » y ajoute les versions des autres éditions, pour comparer une variante à l'édition nominale ; celles-là ne se restaurent et ne se suppriment que depuis leur édition. L'adresse garde la paire comparée. Une ligne de résolution n'a pas de plan à elle : ce qu'elle a produit est le plan en place jusqu'à la résolution suivante, dont l'instantané automatique le garde. Rien n'y est nominatif.`,
+              text: $localize`:@@aide.views.def.versions:Les résolutions terminées et les versions de l'édition dans un seul tableau, du plus récent au plus ancien, le résultat de chacun en phrases : les règles obligatoires tenues ou non, les places pourvues. Une version dit son origine : enregistrée à la main, prise automatiquement avant un calcul, ou publiée. Elle se restaure, se compare avec le plan en place ou se supprime depuis sa ligne ; cochez deux lignes (ou une ligne et « Plan en place », en tête du tableau), puis « Comparer » : l'écran Comparer deux versions s'ouvre, la plus ancienne des deux en référence, sur le score, la couverture, l'équité et les écarts aux règles, avec le sens de chaque différence écrit en toutes lettres. Il prévient quand les deux plans n'ont pas la même taille ou ont été calculés sous des poids différents. « Toutes les éditions » ajoute au tableau les versions des autres éditions, pour comparer une variante à l'édition nominale ; celles-là ne se restaurent et ne se suppriment que depuis leur édition. L'adresse garde la paire comparée, et la vue « Éditions » du même écran compare le référentiel de deux éditions. Une ligne de résolution n'a pas de plan à elle : ce qu'elle a produit est le plan en place jusqu'à la résolution suivante, dont la version prise avant le calcul le garde. Rien n'y est nominatif.`,
             },
           ],
         },

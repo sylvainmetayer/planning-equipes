@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,9 +17,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { PostesApi } from '../../core/api/postes-api';
-import { ongletHote } from '../../core/onglet-hote';
-import { RealisePage } from '../realise/realise-page';
-import { readOngletAujourdhui } from './aujourdhui-onglet';
 import { JourJService } from '../../core/jour-j.service';
 import {
   AbsenceJourJ,
@@ -89,8 +85,6 @@ interface Trou extends PosteAPourvoir {
   imports: [
     EditionInactiveNote,
     AujourdhuiTv,
-    MatButtonToggleModule,
-    RealisePage,
     StatusMessage,
     FormsModule,
     NgTemplateOutlet,
@@ -111,11 +105,6 @@ interface Trou extends PosteAPourvoir {
 export class JourJPage implements OnInit {
   /** The edition worked in is not the active one: what reaches outside is refused (ADR 0072). */
   protected readonly editionInactive = inject(EditionStore).inactive;
-  /**
-   * Two tabs (`?onglet=`): the day under way, and `?onglet=realise` the
-   * elapsed days read against what had been published — the former `/realise`.
-   */
-  protected readonly ongletsPage = ongletHote(readOngletAujourdhui, 'jour');
 
   private readonly jourJ = inject(JourJService);
   private readonly postesApi = inject(PostesApi);

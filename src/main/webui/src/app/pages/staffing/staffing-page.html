@@ -62,14 +62,14 @@
           @if (resume.semaineCritique) {
             {{ semaineCritiqueLabel() }}
           }
-          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'dureeHebdomadaireMax' }"
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'dureeHebdomadaireMax' }"
              i18n="@@staffing.lien.plafondHebdo">Plafond hebdomadaire</a>
         </p>
         <p [class.staffing-binding]="estBorneRetenue('COUPURE_REPAS')">
           <mat-icon inline aria-hidden="true">restaurant</mat-icon>
           <strong i18n="@@staffing.mealBound.label">Coupure repas : {{ resume.picRepas }}</strong>
           <ng-container i18n="@@staffing.mealBound.description"> — ce qu'impose la coupure repas : qui travaille de part et d'autre d'une fenêtre doit s'en absenter, quelqu'un d'autre tenant le siège. Vaut 0 quand la règle est désactivée.</ng-container>
-          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'coupureRepasObligatoire' }"
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'coupureRepasObligatoire' }"
              i18n="@@staffing.lien.fenetreRepas">Fenêtre repas</a>
         </p>
         <p [class.staffing-binding]="estBorneRetenue('ROTATION_JOURS')">
@@ -86,7 +86,7 @@
           <strong i18n="@@staffing.sequenceBound.label">Enchaînement des jours : {{ resume.enchainementTotal }}</strong>
           <ng-container i18n="@@staffing.sequenceBound.description"> — les calendriers de repos réels, jour après jour :
           {{ joursTravaillesMax() }} jours par semaine, {{ consecutiveCapLabel() }}.</ng-container>
-          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'maxJoursConsecutifsTravaillesDur' }"
+          <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'maxJoursConsecutifsTravaillesDur' }"
              i18n="@@staffing.lien.joursAffilee">Jours d'affilée</a>
         </p>
         @if (estBorneRetenue('REPOS_QUOTIDIEN')) {
@@ -95,7 +95,7 @@
             <strong i18n="@@staffing.restBound.label">Repos quotidien : {{ resume.minimumTotal }}</strong>
             <ng-container i18n="@@staffing.restBound.description"> — qui ferme tard ne peut pas ouvrir le lendemain : les
             sièges du soir et ceux du matin suivant, que personne ne tient ensemble, exigent autant de personnes distinctes.</ng-container>
-            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'reposQuotidienMinimal' }"
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'reposQuotidienMinimal' }"
                i18n="@@staffing.lien.reposQuotidien">Repos quotidien</a>
           </p>
         }
@@ -105,7 +105,7 @@
             <strong i18n="@@staffing.continuousBound.label">Travail continu : {{ resume.minimumTotal }}</strong>
             <ng-container i18n="@@staffing.continuousBound.description"> — plus de six heures d'affilée exigent une pause
             relayée par un collègue du même stand : sans relais possible, deux sièges qui s'enchaînent ne vont pas à la même personne.</ng-container>
-            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'travailContinuMaxMajeur' }"
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'travailContinuMaxMajeur' }"
                i18n="@@staffing.lien.travailContinu">Travail continu</a>
           </p>
         }
@@ -116,7 +116,7 @@
             <ng-container i18n="@@staffing.capBound.description"> — une typologie limite le nombre de créneaux qu'une
             même personne peut tenir sur l'édition : ses sièges exigent au moins autant de personnes distinctes. La
             fiche par typologie ci-dessous dit laquelle.</ng-container>
-            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'legal', regle: 'plafondCreneauxParTypologie' }"
+            <a class="staffing-lien" routerLink="/regles" [queryParams]="{ onglet: 'regles', regle: 'plafondCreneauxParTypologie' }"
                i18n="@@staffing.lien.plafondTypologie">Plafond par typologie</a>
           </p>
         }
@@ -351,7 +351,7 @@
               <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.typologie">Typologie</th>
               <td mat-cell *matCellDef="let row">
                 {{ row.label }}
-                @if (row.ninja) {
+                @if (row.polyvalent) {
                   <!--
                     aria-hidden="false" on purpose: MatIcon hides itself from assistive tech, which
                     would drop the tooltip's own description. Same trap as the shell's icon buttons.
@@ -359,9 +359,9 @@
                   <mat-icon
                     inline
                     aria-hidden="false"
-                    class="staffing-ninja"
-                    [matTooltip]="ninjaTooltip"
-                    [attr.aria-label]="ninjaTooltip"
+                    class="staffing-polyvalent"
+                    [matTooltip]="polyvalentTooltip"
+                    [attr.aria-label]="polyvalentTooltip"
                     >bolt</mat-icon
                   >
                 }
@@ -425,7 +425,7 @@
           </p>
         }
         @if (goulot.siegesReservesAuxPolyvalents > 0) {
-          <p class="empty-hint staffing-caveat" [class.staffing-critical]="!goulot.typologieNinjaDefinie">
+          <p class="empty-hint staffing-caveat" [class.staffing-critical]="!goulot.typologiePolyvalenteDefinie">
             <mat-icon inline aria-hidden="true">person_search</mat-icon>
             <span>{{ siegesReservesLabel() }}</span>
           </p>

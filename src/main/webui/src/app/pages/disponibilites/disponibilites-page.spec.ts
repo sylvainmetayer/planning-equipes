@@ -240,7 +240,6 @@ function pendingCarpool(): TeammateRequestView {
     contrainteId: null,
     createdAt: '2026-06-01T10:00:00Z',
     decidedAt: null,
-    reason: null,
   };
 }
 
@@ -253,7 +252,7 @@ function decidedCarpool(
     ...pendingCarpool(),
     id,
     status,
-    contrainteId: status === 'ECARTEE' ? null : 'C7',
+    contrainteId: 'C7',
     decidedAt: '2026-06-02T10:00:00Z',
     ...overrides,
   };
@@ -388,36 +387,28 @@ describe('DisponibilitesPage during a solve', () => {
     expect(api.validateCarpool).toHaveBeenCalledWith('K1');
   });
 
-  it('sets a carpool aside with the reason typed, or none', async () => {
+  it('sets a carpool aside after a confirmation, and sends nothing when it is declined', async () => {
     api.carpools.mockResolvedValue([pendingCarpool()]);
-    dialogAnswer = 'Bob ne vient que le samedi.';
     const fixture = await mount({ onglet: 'covoiturage' });
     await fixture.whenStable();
 
     button(fixture, 'Écarter').click();
     await fixture.whenStable();
-    expect(api.setCarpoolAside).toHaveBeenCalledWith('K1', 'Bob ne vient que le samedi.');
+    expect(api.setCarpoolAside).toHaveBeenCalledWith('K1');
 
-    dialogAnswer = '';
+    ask.mockResolvedValue(false);
     button(fixture, 'Écarter').click();
     await fixture.whenStable();
-    expect(api.setCarpoolAside).toHaveBeenLastCalledWith('K1', null);
-
-    dialogAnswer = null;
-    button(fixture, 'Écarter').click();
-    await fixture.whenStable();
-    expect(api.setCarpoolAside).toHaveBeenCalledTimes(2);
+    expect(api.setCarpoolAside).toHaveBeenCalledTimes(1);
     api.carpools.mockReset();
     api.carpools.mockResolvedValue([]);
   });
 
-  it('offers to cancel a validated group once, and never a set-aside or cancelled one', async () => {
+  it('offers to cancel a validated group once', async () => {
     api.carpools.mockResolvedValueOnce([
       decidedCarpool('K1', 'VALIDEE'),
       // Bob's own demand, validated with the same car: one action for the group.
       decidedCarpool('K2', 'VALIDEE', { animateurId: 'A2' }),
-      decidedCarpool('K3', 'ECARTEE', { reason: 'complet' }),
-      decidedCarpool('K4', 'ANNULEE', { contrainteId: 'C5', reason: 'panne' }),
     ]);
     const fixture = await mount({ onglet: 'covoiturage' });
     await fixture.whenStable();
@@ -428,11 +419,8 @@ describe('DisponibilitesPage during a solve', () => {
     expect(actions).toHaveLength(1);
   });
 
-  it('cancels a validated group with the reason typed, then reads it as cancelled', async () => {
-    api.carpools
-      .mockResolvedValueOnce([decidedCarpool('K1', 'VALIDEE')])
-      .mockResolvedValue([decidedCarpool('K1', 'ANNULEE', { reason: 'La voiture est en panne.' })]);
-    dialogAnswer = 'La voiture est en panne.';
+  it('cancels a validated group after a confirmation, then no longer lists it', async () => {
+    api.carpools.mockResolvedValueOnce([decidedCarpool('K1', 'VALIDEE')]).mockResolvedValue([]);
     const fixture = await mount({ onglet: 'covoiturage' });
     await fixture.whenStable();
 
@@ -441,18 +429,15 @@ describe('DisponibilitesPage during a solve', () => {
     await new Promise((resolve) => setTimeout(resolve));
     await fixture.whenStable();
 
-    expect(api.cancelCarpool).toHaveBeenCalledWith('K1', 'La voiture est en panne.');
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(text).toContain('Annulée');
-    expect(text).toContain('La voiture est en panne.');
+    expect(api.cancelCarpool).toHaveBeenCalledWith('K1');
     expect(button(fixture, "Annuler l'arrivée groupée")).toBeUndefined();
     api.carpools.mockReset();
     api.carpools.mockResolvedValue([]);
   });
 
-  it('sends no cancellation when the dialog is dismissed', async () => {
+  it('sends no cancellation when the confirmation is declined', async () => {
     api.carpools.mockResolvedValueOnce([decidedCarpool('K1', 'VALIDEE')]);
-    dialogAnswer = null;
+    ask.mockResolvedValue(false);
     const fixture = await mount({ onglet: 'covoiturage' });
     await fixture.whenStable();
 

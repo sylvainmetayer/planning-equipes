@@ -1,10 +1,11 @@
 .planning.affectationsPubliees = (vide)
-.planning.animateurs[0]  237e74a6df3c0fca
+.planning.animateurs[0]  fbdd534e835b0dac
 .planning.constraintsDesactivees = (vide)
 .planning.contraintesAdHoc = (vide)
 .planning.dateDebutFestival = 2026-07-08
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  6527fde991063640
+.planning.niveauxScenario = null
 .planning.parametresLegaux[0]  545f1d29fd3c1a49
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null
@@ -20,6 +21,5 @@
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
-.sections.parametresSolveur = null
 .sections.prereglagesConsigne = null
-.sections.typologies[0]  e380684243394355
+.sections.typologies[0]  1c275c67664f7088

@@ -365,11 +365,6 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(page.getByText('Compétences enregistrées')).toBeVisible();
 
   // 7. Un solve court, depuis la page Solveur.
-  const parametres = await page.request.put('/api/parametres-solveur', {
-    ...DANS_EDITION,
-    data: { dureeResolutionSecondes: 8 },
-  });
-  expect(parametres.ok(), await parametres.text()).toBe(true);
   await page.goto('/solveur');
   await page.getByRole('button', { name: 'Calculer le planning' }).click();
   await expect
