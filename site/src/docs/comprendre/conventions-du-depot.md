@@ -1,6 +1,6 @@
 # Conventions du dépôt
 
-Vous saurez qui décide du formatage, quelle langue s'écrit où, comment un diagramme PlantUML entre dans une page et reste fidèle au code, comment se tiennent les feuilles de style, et où vivent la vitrine et les sources de cette documentation.
+Vous saurez qui décide du formatage, quelle langue s'écrit où, comment un diagramme PlantUML entre dans une page et reste fidèle au code, comment se tiennent les feuilles de style, comment plusieurs branches modifient les mêmes fichiers sans conflit, et où vivent la vitrine et les sources de cette documentation.
 
 ## Le formatage est décidé par un outil
 
@@ -71,6 +71,59 @@ Une classe que plusieurs pages utilisent va dans `pages.css`. `npm run css-scope
 La page de présentation, qui porte aussi cette documentation, est un site Eleventy à part, dans `site/`. Elle a ses dépendances (`site/package.json`, aucune n'entre dans l'application), son workflow `.github/workflows/site.yml` et sa publication par Cloudflare Pages. Le workflow est filtré sur `site/**`, sur `docs/**` (le site publie les diagrammes et l'inventaire des licences) et sur `ConstraintCatalog.java`, dont les articles du Code du travail sont relus par `site/test/articles.test.mjs`. Les textes s'éditent dans Pages CMS, configuré par `.pages.yml` à la racine du dépôt.
 
 `mise run site`, depuis la racine, installe les dépendances et lance le serveur Eleventy. Les commandes, les tests, le tournage des captures et les réglages Cloudflare sont dans [`site/README.md`](repo:site/README.md), et la charte (jetons, polices, règles, la partie « Documentation ») dans [`site/design.md`](repo:site/design.md), à lire avant tout changement de `site/`. Le scénario `vitrine-fete-du-jeu-de-pierrefeuille.yaml`, livré avec les autres, est le décor des captures : il ne change pas sans qu'on les refasse.
+
+## Les fichiers que plusieurs branches modifient
+
+Plusieurs PR ouvertes en même temps touchent les mêmes fichiers, et chaque conflit coûte une fusion de plus et un passage de CI. Ces fichiers sont découpés pour que deux branches n'écrivent pas les mêmes lignes.
+
+| Fichier | Forme | Ce qui la tient |
+| --- | --- | --- |
+| Guide « Passer de la 3.x à la 4.0 » | une section par fichier, dans `site/src/docs/installer/passer-a-la-4-0/` et `site/src/docs-en/install/moving-to-4-0/` | le build du site |
+| Nombre de règles du catalogue | jamais écrit en chiffres : `{{ regles.total }}` dans une page, « chaque règle du catalogue » dans le code et `AGENTS.md` | `DocumentationStructuralTest` |
+| `src/test/resources/migrations-empreintes.txt` | une ligne par migration, triée par version | `FlywayMigrationsFrozenTest` |
+| `docs/decisions/README.md` | une ligne par ADR, triée par numéro, la table en fin de fichier | `DocumentationStructuralTest` |
+| `src/test/resources/json-contract.txt` | une clé par ligne, `Type.clé`, triée | `JsonContractTest` |
+| `src/main/resources/mcp-renommages.tsv` | une ligne par outil, triée par ancien nom | `McpRenommageTest` |
+| `src/main/webui/public/i18n/messages.en.json` | trié par id | `npm run i18n-check` |
+
+Le site compte `{{ regles.total }}` sur la table du catalogue de [Pourquoi ces règles](pourquoi-ces-regles.md), que `DocumentationStructuralTest` tient égale à `ConstraintCatalog`.
+
+Les quatre listes à une ligne par entrée sont fusionnées en union de lignes (`merge=union` dans `.gitattributes`) : deux branches qui ajoutent chacune une ligne ne se gênent plus. Une union peut laisser des lignes hors d'ordre, ou deux lignes pour une même entrée quand les deux côtés l'ont modifiée : le test de chaque fichier le refuse, et la correction se fait à la main. Le catalogue anglais reste hors de l'union, à cause des virgules du JSON ; un conflit s'y résout en gardant les deux côtés, puis `npm run i18n-check` signale les orphelins :
+
+```bash
+jq -S -s '.[0] * .[1]' <(git show MERGE_HEAD:src/main/webui/public/i18n/messages.en.json) <(git show HEAD:src/main/webui/public/i18n/messages.en.json) > src/main/webui/public/i18n/messages.en.json
+```
+
+### Ajouter une section au guide de passage à la 4.0
+
+La page `passer-a-la-4-0.md` ne garde que l'introduction ; chaque changement est un fichier du dossier `passer-a-la-4-0/`, que le site ajoute à la suite de la page. La page publiée, son adresse et ses ancres restent les mêmes.
+
+1. Créez `site/src/docs/installer/passer-a-la-4-0/<sujet>.md`. Il ouvre sur un titre de niveau 3 et porte un `ordre:` numérique dans son front matter :
+
+   ```markdown
+   ---
+   ordre: 245
+   ---
+
+   ### Le titre du changement
+   ```
+
+2. Créez sa jumelle anglaise dans `site/src/docs-en/install/moving-to-4-0/`, sous le **même nom de fichier** et avec le même `ordre:`.
+3. Les sections se rangent par `ordre:` croissant, puis par nom de fichier. Les sections déjà là vont de 10 en 10, et « Données et migrations » porte 1000 pour rester la dernière : prenez une valeur entre deux dizaines, là où la section doit paraître, pour ne pas croiser une autre branche.
+4. Écrivez les liens comme dans la page elle-même, relatifs au dossier `installer/` et non à celui de la section.
+
+Le build refuse une section sans `ordre:` numérique et une page anglaise dont les sections ne sont pas celles de la française dans le même ordre ; le contrôle des jumelles compare les pages assemblées.
+
+### Les numéros de migration
+
+Personne ne réserve de numéro de migration : une branche prend le suivant de `main` au moment de pousser. Si une autre PR le prend avant la fusion, le coordinateur lance le script de renumérotation sur la branche propre, juste avant de la fusionner :
+
+```bash
+git fetch origin
+python3 .github/scripts/renumeroter-migration.py origin/main
+```
+
+Quand la plus basse migration ajoutée par la branche ne dépasse plus la plus haute de `main`, le script les renomme toutes, dans leur ordre, aux numéros qui suivent. Il reporte le changement **dans les seules lignes que la branche a ajoutées** : le nom du fichier et chaque `Vnnn`, les cibles Flyway des tests (`target("…")`, `fromVersion("…")`), l'empreinte, recalculée, et le tri du fichier d'empreintes. Une ligne de `main` qui parle de sa propre migration du même numéro n'est pas touchée. Il affiche chaque changement et laisse le tout à committer. Il refuse, sans rien écrire, un arbre modifié, deux migrations ajoutées sous un même numéro et une ligne ajoutée qui nomme le fichier de `main` de ce numéro. Son test, `.github/scripts/test_renumeroter_migration.py`, le joue sur un dépôt temporaire dans le job `frontend`.
 
 ## Où vivent les sources de la documentation
 

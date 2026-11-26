@@ -7,7 +7,7 @@
 // link (written `repo:<path from the repository root>` in the sources); a link to a
 // page that does not exist fails the build, an anchor that does not resolve is a
 // warning.
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import MarkdownIt from 'markdown-it';
@@ -240,7 +240,11 @@ function readDoc(name, published, twinOf) {
   const raw = readFileSync(EXTERNAL[name] ? `${ROOT}${EXTERNAL[name]}` : `${DIRS[lang]}${bare}.md`, 'utf8');
   const front = raw.match(FRONT);
   const meta = front ? yaml(front[1]) : {};
-  const source = front ? raw.slice(front[0].length) : raw;
+  const sections = EXTERNAL[name] ? [] : sectionsOf(`${DIRS[lang]}${bare}/`);
+  const page = front ? raw.slice(front[0].length) : raw;
+  const whole = sections.length ? `${[page.trimEnd(), ...sections.map((s) => s.body.trim())].join('\n\n')}\n` : page;
+  // In a code span (`{{ regles.total }}`) the placeholder is shown as written
+  const source = whole.replace(/(?<!`)\{\{ regles\.total \}\}(?!`)/g, () => String(ruleCount()));
   // The page a link is read from: for an English page, its French twin (the links are written as there)
   const from = lang === 'en' ? meta.twin : name;
   const state = { name, from, lang, twinOf, ids: new Set(), idList: [], toc: [], links: [], h1: '', lead: '' };
@@ -266,8 +270,39 @@ function readDoc(name, published, twinOf) {
     edit: EXTERNAL[name] ? undefined : `${site.repo}/edit/main/${sourcePath(name)}`,
     toc: state.toc,
     source,
+    sections: sections.map((s) => s.file),
     state,
   };
+}
+
+// A page `x.md` may be cut into sections, the files of the folder `x/` next to it, appended
+// to the page in the order of their `ordre:` (then of their name): two pull requests each add
+// a file instead of editing the same lines. The English page's folder holds the same file names.
+function sectionsOf(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.md'))
+    .map((file) => {
+      const raw = readFileSync(`${dir}${file}`, 'utf8');
+      const front = raw.match(FRONT);
+      const ordre = front ? yaml(front[1])?.ordre : undefined;
+      if (!Number.isFinite(ordre)) throw new Error(`${dir}${file} : pas d'\`ordre:\` numérique dans le front matter`);
+      return { file, ordre, body: raw.slice(front[0].length) };
+    })
+    .sort((a, b) => a.ordre - b.ordre || (a.file < b.file ? -1 : 1));
+}
+
+// The number of rules of the catalogue, written `{{ regles.total }}` in a page: the rows of the
+// constraints table of pourquoi-ces-regles.md, which DocumentationStructuralTest holds to be
+// the catalogue rendered
+// Read on each call, not cached: `eleventy --serve` keeps the module, and a cached count would
+// outlive an edit of the catalogue table
+function ruleCount() {
+  const page = readFileSync(`${DIRS.fr}comprendre/pourquoi-ces-regles.md`, 'utf8');
+  const table = page.match(/<!-- catalogue:debut -->([\s\S]*?)<!-- catalogue:fin -->/)?.[1] ?? '';
+  const rules = table.split('\n').filter((l) => l.startsWith('| `')).length;
+  if (!rules) throw new Error('comprendre/pourquoi-ces-regles.md : la table du catalogue est introuvable');
+  return rules;
 }
 
 let cache;
@@ -279,7 +314,12 @@ export function loadParts() {
 export function loadDocs() {
   if (cache) return cache;
   const walk = (lang, dir) =>
-    readdirSync(`${DIRS[lang]}${dir}`).flatMap((f) => (statSync(`${DIRS[lang]}${dir}${f}`).isDirectory() ? walk(lang, `${dir}${f}/`) : f.endsWith('.md') ? [`${dir}${f.slice(0, -3)}`] : []));
+    readdirSync(`${DIRS[lang]}${dir}`).flatMap((f) => {
+      const path = `${DIRS[lang]}${dir}${f}`;
+      // The folder of a page's sections is that page, not pages of its own
+      if (statSync(path).isDirectory()) return existsSync(`${path}.md`) ? [] : walk(lang, `${dir}${f}/`);
+      return f.endsWith('.md') ? [`${dir}${f.slice(0, -3)}`] : [];
+    });
   const frNames = [...walk('fr', ''), ...Object.keys(EXTERNAL)];
   const enNames = walk('en', '').map((n) => `en/${n}`);
   const published = new Set(frNames);
@@ -302,6 +342,8 @@ export function loadDocs() {
   }
   // An English page says what its French twin says, in the same shape (headings, links, tables...)
   for (const [fr, en] of twinOf) {
+    const [frSections, enSections] = [byName[fr].sections.join(', '), byName[en].sections.join(', ')];
+    if (frSections !== enSections) throw new Error(`${sourcePath(en)} : ses sections (${enSections}) ne sont pas celles de ${sourcePath(fr)} (${frSections})`);
     const [errors] = compare(byName[fr].source, byName[en].source);
     if (errors.length) throw new Error(`${sourcePath(en)} ne suit pas sa jumelle ${sourcePath(fr)} :\n  ${errors.join('\n  ')}`);
   }

@@ -20,7 +20,26 @@ Le format reste **court**, une page. Les décisions étayées par des mesures
 portent celles-ci en annexe, à condition qu'elles soient reproductibles sur un
 scénario versionné de `src/main/resources/scenarios/`.
 
+## Décisions à lire ensemble
+
+**0002** et **0013** se lisent ensemble : la première pose le blocage du
+diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
+la seconde montre que le verrou ne portait que sur une façade et n'en garde
+qu'un seul. **0014** en tire la conséquence : l'analyse ne coûtant plus qu'un
+calcul de score, elle se dérive du plan persisté au lieu d'une résolution dont
+on jette le résultat.
+
+Deux décisions se lisent ensemble : **0001** pose le cloisonnement par édition,
+**0009** le révise en supprimant le second niveau qu'il avait retenu. **0038**
+le révise sur un autre point : la fraîcheur du référentiel, que 0001 rangeait
+en mémoire vive, descend en base le jour où un badge en dépend. **0008**
+documente une orchestration livrée puis retirée par 0009 — son raisonnement est
+conservé parce que ses mesures gardent leur valeur pour toute réflexion future
+sur le parallélisme.
+
 ## Index
+
+Une ligne par décision, dans l'ordre des numéros : la table finit le fichier, et une nouvelle décision ajoute sa ligne à la fin.
 
 | # | Décision | Statut |
 | --- | --- | --- |
@@ -111,25 +130,10 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0092](0092-le-realise-se-calcule-a-la-demande.md) | Le réalisé vs planifié se calcule à la demande, sans job de nuit : la première lecture faite une fois l'événement fini écrit `kpi_realise` comme un cache, une seule fois ; remplace 0070 | Accepté · remplace 0070 |
 | [0093](0093-connexion-par-un-fournisseur-oidc-et-secours-ferme.md) | Connexion par un fournisseur OIDC facultatif : le fournisseur dit qui, l'application dit quoi (compte actif et droit `ADMIN`), rattachement par émetteur + sujet sur adresse vérifiée, compte `admin` de la configuration fermé par défaut derrière un fournisseur et journalisé, mode en-tête de proxy déprécié | Accepté · prolonge 0076 ; point 5 remplacé par 0102 |
 | [0094](0094-comptes-locaux-par-mot-de-passe.md) | Comptes locaux par mot de passe : bcrypt, lien à usage unique (72 h à l'invitation, 1 h à la réinitialisation) choisi par son propriétaire seul, code à six chiffres par mail en seconde étape par défaut, défi échangé par le formulaire de Quarkus, comptes ouverts derrière OIDC alors que le secours reste fermé | Accepté · prolonge 0093 |
-| [0097](0097-mcp-par-oauth-et-rotation-de-la-cle.md) | Le MCP se connecte aussi par OAuth (second locataire OIDC porteur seul, audience dédiée, compte actif et droits de l'application, organisateur limité à ses éditions) et la clé se renouvelle depuis l'écran MCP (hachée, montrée une fois, recouvrement choisi) | Accepté · prolonge 0093 |
 | [0095](0095-le-responsable-de-stand-lit-son-stand.md) | Le responsable de stand lit son stand : un droit `RESPONSABLE_STAND` sur un compte (une édition, ses stands), un rôle qui n'ouvre que `/api/responsable/*`, édition active et plan publié seulement, horaires et trous sans nom par défaut, noms réglables par édition et par stand avec date d'ouverture, affichette tirée de la même vue |
 | [0096](0096-le-droit-rh-lit-le-rapport-de-conformite.md) | Le droit RH lit le rapport de conformité : un droit de compte par édition, un rôle qui n'ouvre que `/api/rh/*`, l'édition dans le chemin, le plan publié seulement, des règles légales relues telles qu'écrites, consultations et exports journalisés par le service |
+| [0097](0097-mcp-par-oauth-et-rotation-de-la-cle.md) | Le MCP se connecte aussi par OAuth (second locataire OIDC porteur seul, audience dédiée, compte actif et droits de l'application, organisateur limité à ses éditions) et la clé se renouvelle depuis l'écran MCP (hachée, montrée une fois, recouvrement choisi) | Accepté · prolonge 0093 |
 | [0098](0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md) | La vérification du besoin sait répondre par la borne exacte seule (flot maximal, « au moins N », sans solve ni quota) ; le calcul de l'équipe fictive reste le défaut tant que l'équivalence mesurée sur la gamme n'est pas totale ; basculement par une propriété | Accepté · remplace en partie 0071 |
-
-**0002** et **0013** se lisent ensemble : la première pose le blocage du
-diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
-la seconde montre que le verrou ne portait que sur une façade et n'en garde
-qu'un seul. **0014** en tire la conséquence : l'analyse ne coûtant plus qu'un
-calcul de score, elle se dérive du plan persisté au lieu d'une résolution dont
-on jette le résultat.
-
-Deux décisions se lisent ensemble : **0001** pose le cloisonnement par édition,
-**0009** le révise en supprimant le second niveau qu'il avait retenu. **0038**
-le révise sur un autre point : la fraîcheur du référentiel, que 0001 rangeait
-en mémoire vive, descend en base le jour où un badge en dépend. **0008**
-documente une orchestration livrée puis retirée par 0009 — son raisonnement est
-conservé parce que ses mesures gardent leur valeur pour toute réflexion future
-sur le parallélisme.
 | [0099](0099-le-lecteur-voit-sans-rien-ecrire.md) | Le lecteur voit sans rien écrire : un droit `LECTEUR` par édition, le serveur refuse tout ce qui n'est pas une lecture (calculs compris), les exports PDF et ICS restent ouverts et les données brutes fermées, le MCP par OAuth ne lui ouvre que les outils en lecture seule, le cumul avec un droit d'organisateur se décide édition par édition | Accepté · prolonge 0093, 0097 |
 | [0100](0100-convention-de-nommage-des-outils-mcp.md) | Les outils MCP se nomment `<verbe>_<objet>`, verbe pris dans un ensemble fermé qui porte les hints ; `mcp-renommages.tsv` dit où est passé chaque nom publié en 3.1.0, sans alias, et un test refuse un nom sans ligne | Accepté · prolonge 0097 |
 | [0101](0101-schema-yaml-2-et-chaine-de-conversions.md) | Le YAML passe en version 2 : l'écriture ne produit que la v2, le lecteur garde la v1 par une chaîne de conversions (un maillon testé par changement de modèle), ce qui ne se convertit pas est ignoré avec un avertissement dans le rapport d'import | Accepté · prolonge 0084 |

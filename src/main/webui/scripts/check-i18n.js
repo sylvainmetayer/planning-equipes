@@ -33,6 +33,10 @@
 //                -> the extractor keeps one and only warns; the English
 //                   catalogue holds a single string, so one of the two
 //                   places reads as the other in English
+//   ordre        the ids of messages.en.json out of code-unit order
+//                -> every branch appends its ids at the end of the file, and
+//                   two of them conflict there; sorted, each one lands at its
+//                   own place
 //
 // Run it with `npm run i18n-check`.
 
@@ -40,6 +44,7 @@ const { spawnSync } = require('node:child_process');
 const { mkdtempSync, readFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { join } = require('node:path');
+const { byCodeUnit } = require('./code-unit-order');
 
 const WEBUI = join(__dirname, '..');
 const CATALOGUE = join(WEBUI, 'public/i18n/messages.en.json');
@@ -221,6 +226,8 @@ const divergents = Object.keys(source)
 
 const libelles = libellesDivergents(source, anglais);
 const longs = messagesTropLongs(source);
+const ids = Object.keys(anglais);
+const desordre = ids.filter((id, i) => i > 0 && byCodeUnit(ids[i - 1], id) >= 0);
 
 if (
   manquants.length === 0 &&
@@ -228,7 +235,8 @@ if (
   divergents.length === 0 &&
   libelles.size === 0 &&
   longs.length === 0 &&
-  homonymesSource.size === 0
+  homonymesSource.size === 0 &&
+  desordre.length === 0
 ) {
   console.log(
     `i18n-check : ${Object.keys(source).length}/${Object.keys(source).length} messages traduits, placeholders cohérents, libellés cités alignés sur l'écran, aucun message au-dessus de ${PLAFOND} caractères hors aide et légal.`,
@@ -288,6 +296,13 @@ if (homonymesSource.size > 0) {
     [...homonymesSource.keys()],
     (id) =>
       [...homonymesSource.get(id)].map((texte) => `      ${JSON.stringify(texte)}`).join('\n'),
+  );
+}
+
+if (desordre.length > 0) {
+  lister(
+    "Hors de l'ordre des ids — `jq -S . public/i18n/messages.en.json` remet le fichier en ordre",
+    desordre,
   );
 }
 

@@ -139,8 +139,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   `PreferenceConstraints`), one private method per constraint.
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
-  (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  39 rules are written **a second time**. The default engine since 3.0.0
+  (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where every
+  rule of the catalogue is written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and
@@ -664,8 +664,16 @@ Single Quarkus service, no separate solver microservice. Package root:
   `src/main/resources/db/migration/`. Schema change = **new versioned file**;
   never edit an applied migration. `FlywayMigrationsFrozenTest` holds both
   halves: a new file needs its line in
-  `src/test/resources/migrations-empreintes.txt` (the failure prints it), and
-  an applied file whose fingerprint moved is refused.
+  `src/test/resources/migrations-empreintes.txt`, in version order (the
+  failure prints it), and an applied file whose fingerprint moved is refused.
+  **Nobody reserves a migration number**: a branch takes the next one above
+  `main` when it pushes, and right before merging it the coordinator runs
+  `.github/scripts/renumeroter-migration.py`, which moves the branch's
+  migrations above `main` again if another merge took the number, with their
+  references in the lines the branch added (fingerprint, `Vnnn`, Flyway
+  targets of the tests). `check-reserved-numbers.sh` therefore only warns on
+  a migration in a pull request, fails on one the push to `main` added below
+  `main`, and still fails on a decision record number already taken.
 - **Every referential row carries `modifie_le`** (issue #362), and every write
   of one carries its own precondition: the `ON CONFLICT DO UPDATE` clause
   compares the caller's `modifieLe` with the stored one and returns no row when
@@ -963,6 +971,17 @@ scenario workflow are the `dependency-update` skill.
   assistant helped — without a model version, which ages badly and teaches
   nobody anything. `.github/scripts/check-commits.sh` holds these rules on
   every pull request.
+- **A file several branches extend is cut so that they do not collide**
+  (`site/src/docs/comprendre/conventions-du-depot.md`): a section of the guide
+  « Passer de la 3.x à la 4.0 » is a file of its own under
+  `site/src/docs/installer/passer-a-la-4-0/` (and its twin under
+  `site/src/docs-en/install/moving-to-4-0/`, same file name, same `ordre:`);
+  a page never writes the number of rules out, it writes
+  `{{ regles.total }}`, and code says « every rule of the catalogue »
+  (`DocumentationStructuralTest`); the fingerprints, the decision index, the
+  JSON contract (one key per line) and the MCP renames are sorted lists merged
+  as a union of lines (`.gitattributes`), their test putting the order back;
+  `messages.en.json` is sorted by id (`npm run i18n-check`).
 - **Public links go through `ApplicationLinks`, never through concatenation.**
   URLs printed outside the app (notification mails, individual PDFs) target
   **Angular SPA routes** (`src/main/webui/src/app/app.routes.ts`), not JAX-RS
