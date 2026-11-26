@@ -211,3 +211,4 @@ dev/sylvain/planning/api/LocalSignInLockoutTest.java
 dev/sylvain/planning/api/LocalSignInSprayTest.java
 dev/sylvain/planning/api/LecteurCanariTest.java
 dev/sylvain/planning/mcp/OidcMcpLecteurTest.java
+dev/sylvain/planning/service/referentiel/LockTypesMigrationTest.java

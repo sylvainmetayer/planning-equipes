@@ -62,13 +62,14 @@ class PlanningServiceVerrouillageTest {
     }
 
     @Test
-    void unVerrouillageStandFigeTousSesCreneaux() {
+    void unVerrouillageStandJourNeFigeQueCeStandCeJour() {
         List<PosteAffectation> postes = List.of(
                 poste("poste-0", standA, matinJ1),
                 poste("poste-1", standA, matinJ2),
                 poste("poste-2", standB, matinJ1));
-        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.STAND);
+        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.STAND_JOUR);
         verrouillage.setStandId("STAND-A");
+        verrouillage.setJour(J1);
 
         ProblemBuilder.applyVerrouillages(
                 postes,
@@ -80,51 +81,10 @@ class PlanningServiceVerrouillageTest {
                         PlanningPersistenceService.standCreneauKey("STAND-B", 1L), List.of("A2")));
 
         assertThat(postes.get(0).isVerrouille()).isTrue();
-        assertThat(postes.get(1).isVerrouille()).isTrue();
+        assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
+        assertThat(postes.get(1).isVerrouille()).isFalse();
         assertThat(postes.get(2).isVerrouille()).isFalse();
         assertThat(postes.get(2).getAnimateur()).isNull();
-    }
-
-    @Test
-    void unVerrouillageCreneauNeFigeQueCeCreneau() {
-        List<PosteAffectation> postes = List.of(poste("poste-0", standA, matinJ1), poste("poste-1", standA, matinJ2));
-        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.CRENEAU);
-        verrouillage.setCreneauId(2L);
-
-        ProblemBuilder.applyVerrouillages(
-                postes,
-                animateurs,
-                List.of(verrouillage),
-                Map.of(
-                        PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1"),
-                        PlanningPersistenceService.standCreneauKey("STAND-A", 2L), List.of("A2")));
-
-        assertThat(postes.get(0).isVerrouille()).isFalse();
-        assertThat(postes.get(1).isVerrouille()).isTrue();
-        assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
-    }
-
-    /**
-     * The seat frozen by an ANIMATEUR lock is the one that animateur held, not
-     * the first seat of the stand × créneau: seats are re-seeded in persisted
-     * order before the locks are evaluated.
-     */
-    @Test
-    void unVerrouillageAnimateurFigeLeSiegeQueCetAnimateurTenait() {
-        List<PosteAffectation> postes = List.of(poste("poste-0", standA, matinJ1), poste("poste-1", standA, matinJ1));
-        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.ANIMATEUR);
-        verrouillage.setAnimateurId("A2");
-
-        ProblemBuilder.applyVerrouillages(
-                postes,
-                animateurs,
-                List.of(verrouillage),
-                Map.of(PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1", "A2")));
-
-        assertThat(postes.get(0).isVerrouille()).isFalse();
-        assertThat(postes.get(0).getAnimateur()).isNull();
-        assertThat(postes.get(1).isVerrouille()).isTrue();
-        assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
     }
 
     /**

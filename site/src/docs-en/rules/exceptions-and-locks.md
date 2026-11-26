@@ -29,11 +29,13 @@ If the adjustment places someone where no seat can hold them (a minor forced ont
 
 ## Locks: freeze part of the plan
 
-A lock freezes a person, a stand, a day or a timeslot. The next solve no longer touches it and optimises the rest. A lock is an action on a plan that is already solved: it keeps what a solve produced, and says nothing about what should be there.
+A lock freezes a person on a timeslot, a stand on a day, or a whole day. The next solve no longer touches it and optimises the rest. To freeze a person's whole schedule, use the button on their profile: it lays one lock per timeslot. A lock is an action on a plan that is already solved: it keeps what a solve produced, and says nothing about what should be there.
 
 1. Open *Planning rules*, *Locks* tab (or lock from a person's profile, from a seat's panel, or from the *Fragility* tab of the Diagnostic).
 2. Before a lock is set, the screen counts the assignments it will freeze and leads to the day that shows them.
 3. Confirm.
+
+The staff member + timeslot lock is also the way to keep someone on one precise timeslot: place them on the seat (from the day view), then lock them on that timeslot; the solve keeps them there and gives them no other seat at that time.
 
 ## Act on several rows at once
 

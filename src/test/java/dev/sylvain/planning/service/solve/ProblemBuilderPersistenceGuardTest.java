@@ -57,7 +57,7 @@ class ProblemBuilderPersistenceGuardTest {
 
         @Override
         public List<VerrouillagePlanning> listVerrouillages() {
-            return List.of(new VerrouillagePlanning("V1", TypeVerrouillage.STAND));
+            return List.of(new VerrouillagePlanning("V1", TypeVerrouillage.JOUR));
         }
     }
 

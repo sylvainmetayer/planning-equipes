@@ -123,6 +123,21 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 - **After (4.0)**: a single table, `mesure_edition`, with a `nature` column (`INDICATEURS` or `REALISE`) ([ADR 0113](repo:docs/decisions/0113-une-table-et-un-ecran-pour-les-mesures-d-edition.md)). It still has **no foreign key**: the measure outlives the edition. The realised is still **written only once** (`ON CONFLICT DO NOTHING`), and freezing it again is still a SQL deletion of its rows. One screen, *Edition measures* (`/mesures`, off the menu: a link at the top of *Today*, where the tab was, the palette and the help), with two views in the address: `?vue=realise` (the default) and `?vue=indicateurs`. The API moves under `/api/mesures-edition` (`/indicateurs`, `/realise`, `/realise/detail`, `/realise/export`, `/realise/precedente`). The MCP tools become `lister_mesures_edition`, `supprimer_mesure_edition` and `comparer_realise_planifie`.
 - **What you do**: nothing for your data. Migration `V148` copies every row (the history's identifiers are kept), then keeps the old tables under the names `kpi_historique_avant_4_0` and `kpi_realise_avant_4_0`: the application neither reads nor exports them, and 5.0 deletes them. Once 4.0 is in place and going back to 3.x is ruled out, `DROP TABLE` removes them with no effect on the application. A script that froze an edition again must write `DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = '…'`. The old paths `/api/kpi/historique` and `/api/planning/realise` still answer, as aliases declared obsolete (`deprecated` in the OpenAPI), throughout 4.x: move to the new ones before 5.0. The old screen addresses (`/realise`, `/aujourdhui?onglet=realise`) lead to the measures screen. Re-read any instructions, prompts or scripts that name one of the three tools against the table of [old tool names](../comprendre/mcp-outils.md#anciens-noms-doutils).
 
+### The lock has only three types
+
+- **Before (3.x)**: a lock could target a staff member over the whole event (`ANIMATEUR`), a stand over the whole event (`STAND`), a day (`JOUR`), a timeslot for every stand (`CRENEAU`) or a staff member on a timeslot (`ANIMATEUR_CRENEAU`, also laid by an accepted swap).
+- **After (4.0)**: three types ([ADR 0109](repo:docs/decisions/0109-trois-types-de-verrou.md)): staff member + timeslot (`ANIMATEUR_CRENEAU`), stand + day (`STAND_JOUR`), day (`JOUR`). Migration `V151` converts each old lock into what it froze on the saved plan, so that plan does not move at the next solve:
+
+| Old lock | Becomes |
+| --- | --- |
+| `ANIMATEUR` | one staff member + timeslot lock per timeslot where the staff member holds a seat |
+| `STAND` | one stand + day lock per day on which the stand has seats |
+| `CRENEAU` | one staff member + timeslot lock per staff member holding a seat on that timeslot |
+| `JOUR`, `ANIMATEUR_CRENEAU` | unchanged |
+
+  A lock for which the plan has no matching seat froze nothing and disappears. The `animateurVerrouilleFige` rule is removed: a staff member is no longer locked "everywhere", so nothing forbids giving them a seat elsewhere, and empty seats are not frozen (as before). The number of rules goes from 47 to 46. The `verrouiller` MCP tool keeps its name; its `type` argument takes `ANIMATEUR_CRENEAU`, `STAND_JOUR` or `JOUR`, and the API refuses the old values with a `400`. The `plan:` section of a YAML file (the one of the copy before a wipe) carries only these three types; a file naming an old one is read with the same conversion, and each converted lock is reported by a warning.
+- **What you do**: nothing for your locks. The locks of older editions are converted the same way. A script or prompt that laid an `ANIMATEUR`, `STAND` or `CRENEAU` lock must lay one lock per timeslot or per day. A copy before a wipe taken in 3.x that contains such locks stays restorable: its locks are converted on reading, the same way, without the stored copy being rewritten.
+
 ### Data and migrations
 
 Coming: the migrations that convert data, and what they do to your existing editions.

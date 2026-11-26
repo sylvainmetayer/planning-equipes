@@ -119,6 +119,21 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 - **Après (4.0)** : une seule table, `mesure_edition`, avec une colonne `nature` (`INDICATEURS` ou `REALISE`) ([ADR 0113](repo:docs/decisions/0113-une-table-et-un-ecran-pour-les-mesures-d-edition.md)). Elle reste **sans clé étrangère** : la mesure survit à l'édition. Le réalisé reste **écrit une seule fois** (`ON CONFLICT DO NOTHING`), et le refiger reste une suppression SQL de ses lignes. Un écran, *Mesures d'édition* (`/mesures`, hors menu : un lien en tête d'*Aujourd'hui*, là où était l'onglet, la palette et l'aide), avec deux vues dans l'adresse : `?vue=realise` (par défaut) et `?vue=indicateurs`. L'API passe sous `/api/mesures-edition` (`/indicateurs`, `/realise`, `/realise/detail`, `/realise/export`, `/realise/precedente`). Les outils MCP deviennent `lister_mesures_edition`, `supprimer_mesure_edition` et `comparer_realise_planifie`.
 - **Ce que vous faites** : rien pour vos données. La migration `V148` recopie toutes les lignes (les identifiants de l'historique sont conservés), puis garde les anciennes tables sous les noms `kpi_historique_avant_4_0` et `kpi_realise_avant_4_0` : l'application ne les lit ni ne les exporte, et la 5.0 les supprime. Une fois la 4.0 en place et le retour à la 3.x exclu, `DROP TABLE` les supprime sans effet sur l'application. Un script qui figeait de nouveau une édition doit écrire `DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = '…'`. Les anciens chemins `/api/kpi/historique` et `/api/planning/realise` répondent encore, comme alias déclarés obsolètes (`deprecated` dans l'OpenAPI), pendant toute la 4.x : passez aux nouveaux avant la 5.0. Les anciennes adresses d'écran (`/realise`, `/aujourdhui?onglet=realise`) mènent à l'écran des mesures. Relisez les instructions, invites ou scripts qui nomment l'un des trois outils avec la table des [anciens noms d'outils](../comprendre/mcp-outils.md#anciens-noms-doutils).
 
+### Le verrou n'a plus que trois types
+
+- **Avant (3.x)** : un verrou pouvait cibler un animateur sur tout l'événement (`ANIMATEUR`), un stand sur tout l'événement (`STAND`), une journée (`JOUR`), un créneau pour tous les stands (`CRENEAU`) ou un animateur sur un créneau (`ANIMATEUR_CRENEAU`, posé aussi par un échange accepté).
+- **Après (4.0)** : trois types ([ADR 0109](repo:docs/decisions/0109-trois-types-de-verrou.md)) : animateur + créneau (`ANIMATEUR_CRENEAU`), stand + journée (`STAND_JOUR`), journée (`JOUR`). La migration `V151` convertit chaque ancien verrou en ce qu'il figeait sur le plan enregistré, pour que ce plan ne bouge pas à la prochaine résolution :
+
+| Ancien verrou | Devient |
+| --- | --- |
+| `ANIMATEUR` | un verrou animateur + créneau par créneau où l'animateur tient une place |
+| `STAND` | un verrou stand + journée par jour où le stand a des places |
+| `CRENEAU` | un verrou animateur + créneau par animateur qui tient une place sur ce créneau |
+| `JOUR`, `ANIMATEUR_CRENEAU` | inchangés |
+
+  Un verrou dont le plan n'a aucune place correspondante ne figeait rien et disparaît. La règle `animateurVerrouilleFige` est retirée : un animateur ne se verrouille plus « partout », donc plus rien n'interdit de lui donner une place ailleurs, et les places vides ne se figent pas (comme avant). Le nombre de règles passe de 47 à 46. L'outil MCP `verrouiller` garde son nom ; son argument `type` prend `ANIMATEUR_CRENEAU`, `STAND_JOUR` ou `JOUR`, et l'API refuse les anciennes valeurs en `400`. La section `plan:` d'un fichier YAML (celle de la copie avant vidage) ne porte plus que ces trois types ; un fichier qui en nomme un ancien est lu avec la même conversion, et chaque verrou converti est signalé par un avertissement.
+- **Ce que vous faites** : rien pour vos verrous. Les verrouillages des anciennes éditions sont convertis de même. Un script ou une invite qui posait un verrou `ANIMATEUR`, `STAND` ou `CRENEAU` doit poser un verrou par créneau ou par journée. Une copie avant vidage prise en 3.x qui en contient reste restaurable : ses verrous sont convertis à la lecture, de la même façon, sans que la copie rangée soit réécrite.
+
 ### Données et migrations
 
 À venir : les migrations qui convertissent des données, et ce qu'elles font de vos éditions existantes.

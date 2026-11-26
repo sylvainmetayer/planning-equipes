@@ -113,8 +113,8 @@ class SchemaIntegrityTest {
                 creneauA);
         update(
                 "INSERT INTO verrouillage_planning (edition_id, id, type, creneau_id, creneau_date,"
-                        + " creneau_heure_debut, creneau_heure_fin)"
-                        + " VALUES (?, 'V1', 'CRENEAU', ?, DATE '2026-07-14', TIME '10:00', TIME '12:00')",
+                        + " creneau_heure_debut, creneau_heure_fin, animateur_id)"
+                        + " VALUES (?, 'V1', 'ANIMATEUR_CRENEAU', ?, DATE '2026-07-14', TIME '10:00', TIME '12:00', 'A1')",
                 a,
                 creneauA);
         update(

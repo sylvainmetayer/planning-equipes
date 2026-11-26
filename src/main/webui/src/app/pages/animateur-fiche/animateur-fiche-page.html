@@ -608,11 +608,7 @@
           <ul class="fiche-liste">
             @for (verrou of fiche.verrous; track verrou.id) {
               <li>
-                @if (verrou.type === 'ANIMATEUR') {
-                  <ng-container i18n="@@fiche.suivi.verrouTout">Tout son planning</ng-container>
-                } @else {
-                  {{ verrou.creneauDate }} {{ shortTime(verrou.creneauHeureDebut) }}→{{ shortTime(verrou.creneauHeureFin) }}
-                }
+                {{ verrou.creneauDate }} {{ shortTime(verrou.creneauHeureDebut) }}→{{ shortTime(verrou.creneauHeureFin) }}
                 @if (verrou.raison) {
                   — {{ verrou.raison }}
                 }

@@ -705,19 +705,13 @@ public final class ConstraintCatalog {
                             + "et l'équilibre de charge.",
                     "Arrivées groupées (covoiturage)"),
             new ConstraintDefinition(
-                    "animateurVerrouilleFige",
-                    Niveau.HARD,
-                    "Verrouillage du planning",
-                    "Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et "
-                            + "le solveur ne peut plus lui en attribuer de nouveaux.",
-                    "Plannings verrouillés"),
-            new ConstraintDefinition(
                     "animateurVerrouilleCreneauFige",
                     Niveau.HARD,
                     "Verrouillage du planning",
-                    "Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient "
-                            + "après l'échange ne bouge plus, sans geler le reste de leur planning.",
-                    "Échanges validés figés"),
+                    "Un animateur verrouillé sur un créneau (par exemple après un échange validé) y garde ce "
+                            + "qu'il tient : le solveur ne peut ni le lui retirer ni lui en attribuer un autre, "
+                            + "sans geler le reste de son planning.",
+                    "Animateurs figés sur un créneau"),
             new ConstraintDefinition(
                     STAND_COMPLEXE_AVEC_REFERENT,
                     Niveau.MEDIUM,
@@ -913,7 +907,7 @@ public final class ConstraintCatalog {
      * rule merge or rename fills it; the API, the YAML reader and the import
      * will read it then.
      */
-    public static final Map<String, String> ANCIENS_NOMS = Map.of();
+    public static final Map<String, String> ANCIENS_NOMS = Map.of("animateurVerrouilleFige", RETIREE);
 
     /**
      * Whether {@code nom} is enforced when nothing says otherwise. Read by

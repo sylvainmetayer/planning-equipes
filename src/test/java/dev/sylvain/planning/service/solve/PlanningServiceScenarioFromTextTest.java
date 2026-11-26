@@ -122,6 +122,21 @@ class PlanningServiceScenarioFromTextTest {
                 .hasMessageContaining("reglePasDansLeCatalogue");
     }
 
+    /** A rule retired in 4.0 (ADR 0109), named by a 3.x export, is dropped rather than refused. */
+    @Test
+    void aRetiredRuleOfTheConstraintsSectionIsDropped() {
+        PlanningService service = service();
+        String yaml = scenarioYamlText("scenario-contraintes.yaml")
+                .replace("eviterRoulementStandsPremium", "animateurVerrouilleFige");
+
+        assertThat(service.buildFromScenarioText(yaml)
+                        .sections()
+                        .contraintes()
+                        .orElseThrow()
+                        .desactivees())
+                .isEmpty();
+    }
+
     /**
      * The hand-entered constraints come from the file when it carries them —
      * not from the database — so re-importing a scenario reproduces exactly

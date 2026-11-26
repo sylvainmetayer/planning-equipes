@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
@@ -15,6 +17,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.scenario.dto.AffectationPlanDto;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.BusinessError;
@@ -169,7 +172,7 @@ class WipeBackupServiceTest {
                     .isNotEmpty()
                     .allSatisfy(ligne -> assertThat(ligne).contains("animateur A999 introuvable"));
             assertThat(restoration.verrouillagesNonRestaures())
-                    .containsExactly("Verrou ANIMATEUR : animateur A999 introuvable");
+                    .containsExactly("Verrou ANIMATEUR_CRENEAU : animateur A999 introuvable");
             assertThat(plan()).isEqualTo(attendu);
         });
     }
@@ -186,7 +189,7 @@ class WipeBackupServiceTest {
             ScenarioDto file = ScenarioYamlReader.parseScenarioText(wipeBackup.loadContent(backup));
 
             assertThat(file.plan().affectations()).isNotEmpty();
-            assertThat(file.plan().verrous()).hasSize(4);
+            assertThat(file.plan().verrous()).hasSize(3);
             assertThat(planColumnIsNull(backup)).isTrue();
         });
     }
@@ -243,6 +246,58 @@ class WipeBackupServiceTest {
             assertThat(standNames()).isEqualTo(stands);
             assertThat(plan()).isEqualTo(plan);
             assertThat(locks()).isEqualTo(verrous);
+        });
+    }
+
+    /**
+     * A 3.x copy whose plan column carries locks of a type retired in 4.0
+     * (ADR 0109): converted on reading as V151 converts the database — one
+     * animateur + timeslot lock per seat the animateur held, one stand + day
+     * lock per day of the stand — and the stored column is not rewritten.
+     */
+    @Test
+    void aThreeCopyLockOfARetiredTypeComesBackAsTheSeatsItFroze() {
+        inANewEdition(() -> {
+            scenarioImportService.importBundled(SCENARIO);
+            seatEveryoneAndLock();
+            persistenceService.clearDatabase();
+            long backup = wipeBackup.list().getFirst().id();
+            ScenarioDto file = ScenarioYamlReader.parseScenarioText(wipeBackup.loadContent(backup));
+            AffectationPlanDto seat = file.plan().affectations().stream()
+                    .filter(s -> s.animateurId() != null)
+                    .findFirst()
+                    .orElseThrow();
+            long timeslotsOfAnimateur = file.plan().affectations().stream()
+                    .filter(s -> seat.animateurId().equals(s.animateurId()))
+                    .map(s -> s.date() + " " + s.heureDebut() + "-" + s.heureFin())
+                    .distinct()
+                    .count();
+            long daysOfStand = file.plan().affectations().stream()
+                    .filter(s -> seat.standId().equals(s.standId()))
+                    .map(AffectationPlanDto::date)
+                    .distinct()
+                    .count();
+            ObjectNode column = objectMapper.valueToTree(new WipeBackupService.PlanBackup(
+                    WipeBackupService.fromDto(file.plan()).affectations(), List.of()));
+            ArrayNode retired = column.putArray("verrouillages");
+            retired.addObject().put("type", "ANIMATEUR").put("animateurId", seat.animateurId());
+            retired.addObject().put("type", "STAND").put("standId", seat.standId());
+            sql("UPDATE sauvegarde_avant_vidage SET contenu = $q$" + ScenarioYamlWriter.dump(file.withPlan(null))
+                    + "$q$, plan = $q$" + column + "$q$::jsonb WHERE id = " + backup);
+            String stored = planColumn(backup);
+
+            Restoration restoration = wipeBackup.restore(backup);
+
+            assertThat(restoration.verrouillagesNonRestaures()).isEmpty();
+            assertThat(restoration.avertissements())
+                    .anyMatch(warning -> warning.startsWith("Verrou ANIMATEUR"))
+                    .anyMatch(warning -> warning.startsWith("Verrou STAND"));
+            List<VerrouillagePlanning> locks = referenceDataService.listVerrouillages();
+            assertThat(locks.stream().filter(v -> v.getType() == TypeVerrouillage.ANIMATEUR_CRENEAU))
+                    .hasSize((int) timeslotsOfAnimateur);
+            assertThat(locks.stream().filter(v -> v.getType() == TypeVerrouillage.STAND_JOUR))
+                    .hasSize((int) daysOfStand);
+            assertThat(planColumn(backup)).isEqualTo(stored);
         });
     }
 
@@ -895,9 +950,14 @@ class WipeBackupServiceTest {
         Animateur verrouille = animateurs.get(0);
         Stand stand = referenceDataService.listStands().get(0);
         Creneau creneau = referenceDataService.listCreneaux().get(0);
-        lock(TypeVerrouillage.ANIMATEUR, v -> v.setAnimateurId(verrouille.getId()));
-        lock(TypeVerrouillage.STAND, v -> v.setStandId(stand.getId()));
-        lock(TypeVerrouillage.CRENEAU, v -> v.setCreneauId(creneau.getId()));
+        lock(TypeVerrouillage.ANIMATEUR_CRENEAU, v -> {
+            v.setAnimateurId(verrouille.getId());
+            v.setCreneauId(creneau.getId());
+        });
+        lock(TypeVerrouillage.STAND_JOUR, v -> {
+            v.setStandId(stand.getId());
+            v.setJour(creneau.getDate());
+        });
         lock(TypeVerrouillage.JOUR, v -> v.setJour(creneau.getDate()));
         return verrouille;
     }
@@ -1040,6 +1100,18 @@ class WipeBackupServiceTest {
                         st.executeQuery("SELECT plan IS NULL FROM sauvegarde_avant_vidage WHERE id = " + backup)) {
             rs.next();
             return rs.getBoolean(1);
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private String planColumn(long backup) {
+        try (Connection connection = dataSource.getConnection();
+                Statement st = connection.createStatement();
+                java.sql.ResultSet rs =
+                        st.executeQuery("SELECT plan::text FROM sauvegarde_avant_vidage WHERE id = " + backup)) {
+            rs.next();
+            return rs.getString(1);
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.scenario.ScenarioBinder;
+import dev.sylvain.planning.scenario.ScenarioMigrations;
 import dev.sylvain.planning.scenario.dto.AffectationPlanDto;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.PlanDto;
@@ -36,6 +38,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -331,16 +334,20 @@ public class WipeBackupService {
         return stored.plan() == null
                 ? stored.contenu()
                 : ScenarioYamlWriter.dump(withLegacyPlan(
-                        ScenarioYamlReader.parseScenarioText(stored.contenu()), readPlan(stored.plan())));
+                        ScenarioYamlReader.parseScenarioText(stored.contenu()),
+                        readPlan(stored.plan(), new ArrayList<>())));
     }
 
     /** The backup as the import reads it: the file, its plan section included, and what its conversion dropped. */
     private ScenarioBinder.Bound load(long id) {
         StoredBackup stored = stored(id);
         ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(stored.contenu());
-        return stored.plan() == null
-                ? bound
-                : new ScenarioBinder.Bound(withLegacyPlan(bound.scenario(), readPlan(stored.plan())), bound.warnings());
+        if (stored.plan() == null) {
+            return bound;
+        }
+        List<String> warnings = new ArrayList<>(bound.warnings());
+        PlanBackup plan = readPlan(stored.plan(), warnings);
+        return new ScenarioBinder.Bound(withLegacyPlan(bound.scenario(), plan), warnings);
     }
 
     /**
@@ -486,7 +493,7 @@ public class WipeBackupService {
                 restaurees.stream().filter(seat -> seat.animateurId() != null).count();
 
         LockPass locks = restoreLocks(plan, stands, animateurs, grille);
-        // Read once the locks are in: an animateur lock weighs in the score.
+        // Read once the locks are in: an animateur + créneau lock weighs in the score.
         try {
             analysisStore.refreshFromPersistedPlan();
         } catch (RuntimeException _) {
@@ -842,10 +849,24 @@ public class WipeBackupService {
         return list == null ? List.of() : list;
     }
 
-    private PlanBackup readPlan(String json) {
+    /**
+     * The plan column of a 3.x backup, never rewritten: its locks of a type
+     * retired in 4.0 are converted here, on reading, as migration V151
+     * converted the ones of the database (ADR 0109) — said in {@code warnings}.
+     */
+    private PlanBackup readPlan(String json, List<String> warnings) {
         try {
-            return objectMapper.readValue(json, PlanBackup.class);
-        } catch (JsonProcessingException e) {
+            Map<String, Object> plan = new LinkedHashMap<>(objectMapper.readValue(json, new TypeReference<>() {}));
+            if (plan.get("verrouillages") instanceof List<?> locks) {
+                plan.put(
+                        "verrouillages",
+                        ScenarioMigrations.convertRetiredLocks(
+                                plan.get("affectations") instanceof List<?> seats ? seats : List.of(),
+                                locks,
+                                warnings));
+            }
+            return objectMapper.convertValue(plan, PlanBackup.class);
+        } catch (JsonProcessingException | IllegalArgumentException e) {
             throw new IllegalStateException("Failed to read the plan of a backup", e);
         }
     }
