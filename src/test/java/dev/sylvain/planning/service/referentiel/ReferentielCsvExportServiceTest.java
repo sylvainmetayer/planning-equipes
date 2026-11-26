@@ -87,11 +87,13 @@ class ReferentielCsvExportServiceTest {
             stands:
               - id: EXP-S1
                 nom: "Stand un; et demi"
+                emplacementId: EXP-P
                 typologiesProposees: [EXP-A, EXP-B]
                 effectifMin: 2
                 effectifMax: 3
               - id: EXP-S2
                 nom: "=1+1"
+                emplacementId: EXP-E
                 typologiesProposees: [EXP-B]
                 effectifMin: 1
                 effectifMax: 1
