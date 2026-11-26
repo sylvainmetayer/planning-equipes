@@ -558,7 +558,7 @@ describe('app.routes', () => {
       expect(constraintsTarget({}, 'coupureRepasObligatoire')).toBe(
         '/regles?regle=coupureRepasObligatoire',
       );
-      expect(constraintsTarget({}, 'categorie-legal-mineurs')).toBe('/regles?onglet=legal');
+      expect(constraintsTarget({}, 'categorie-legal-mineurs')).toBe('/regles?onglet=regles');
     });
   });
 

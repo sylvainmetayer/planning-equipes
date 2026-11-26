@@ -313,9 +313,9 @@ export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fra
   if (!params.has('regle') && fragment && !fragment.startsWith('categorie-')) {
     params.set('regle', fragment);
   }
-  // The former screen listed the legal rules first; `/regles` now opens on the adjustments.
+  // The former screen listed the rules first: `onglet=regles` is the tab that does.
   if (!params.has('regle') && !params.has('onglet')) {
-    params.set('onglet', 'legal');
+    params.set('onglet', 'regles');
   }
   return `/regles?${params.toString()}`;
 };

@@ -3,10 +3,10 @@
     <mat-card-header>
       @if (section() === 'legal') {
         <h2 mat-card-title i18n="@@parametres.section.legal.title">Paramètres légaux</h2>
-        <mat-card-subtitle i18n="@@parametres.section.legal.subtitle">Les plafonds du Code du travail et la coupure repas de l'événement. Les mêmes réglages se modifient en contexte, sur la ligne de chaque règle, dans « Règles du planning ».</mat-card-subtitle>
+        <mat-card-subtitle i18n="@@parametres.section.legal.subtitle">Les plafonds du Code du travail et la coupure repas de l'événement. Chaque ligne d'obligation légale de « Règles du planning » renvoie ici : c'est le seul endroit où ils s'écrivent.</mat-card-subtitle>
       } @else {
         <h2 mat-card-title i18n="@@parametres.section.organisation.title">Seuils d'organisation</h2>
-        <mat-card-subtitle i18n="@@parametres.section.organisation.subtitle">Ce qui règle le confort d'un planning et non la loi. L'importance de chaque règle se règle dans « Règles du planning ».</mat-card-subtitle>
+        <mat-card-subtitle i18n="@@parametres.section.organisation.subtitle">Ce qui règle le confort d'un planning et non la loi. Le niveau de chaque règle se règle dans « Règles du planning ».</mat-card-subtitle>
       }
     </mat-card-header>
     <mat-card-content class="parametres-section-champs">
@@ -64,7 +64,7 @@
     <button matButton type="button" [disabled]="!dirty() || saving()" (click)="cancel()">
       <ng-container i18n="@@regles.annuler">Annuler les modifications</ng-container>
     </button>
-    <a matButton routerLink="/regles" [queryParams]="{ onglet: section() === 'legal' ? 'legal' : 'qualite' }">
+    <a matButton routerLink="/regles" [queryParams]="{ onglet: 'regles' }">
       <mat-icon>fact_check</mat-icon>
       <ng-container i18n="@@nav.link.regles">Règles du planning</ng-container>
     </a>

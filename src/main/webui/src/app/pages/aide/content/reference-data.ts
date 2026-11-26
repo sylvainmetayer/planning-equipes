@@ -243,7 +243,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         { route: '/stands', label: $localize`:@@nav.link.stands:Stands` },
         {
           route: '/regles',
-          queryParams: { onglet: 'legal' },
+          queryParams: { onglet: 'regles' },
           label: $localize`:@@nav.link.regles:Règles du planning`,
         },
       ],
