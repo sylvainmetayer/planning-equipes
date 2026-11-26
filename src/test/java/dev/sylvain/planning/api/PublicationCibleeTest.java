@@ -30,8 +30,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Deferring somebody's message (issue #503): « on ne prévient pas Untel ce
- * soir, on l'appelle d'abord ».
+ * Notifying only a few people (issue #503): « Prévenir les 2 personnes » after
+ * an échange accepted. « Exclure à la publication » is gone (4.0): a general
+ * publication writes to everybody, whatever a client still sends.
  *
  * <p>What has to hold is the promise the feature makes — a deferred person is
  * <b>not</b> a person written off. The publication happens for everybody, so
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.Test;
  * received rather than from a plan they were never sent.</p>
  */
 @QuarkusTest
-class PublicationExclusionTest {
+class PublicationCibleeTest {
 
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 11);
     private static final long CRENEAU_ID = 9401L;
@@ -77,12 +78,12 @@ class PublicationExclusionTest {
     /* ------------------------------- Nominal ------------------------------- */
 
     @Test
-    void anExcludedPersonReceivesNothingAndStaysToBeTold() {
+    void aPersonNotTargetedReceivesNothingAndStaysToBeTold() {
         publier();
         mailbox.clear();
         swapTheTwoSeats();
 
-        JsonPath rapport = publier("EXC-B");
+        JsonPath rapport = publier("EXC-A");
 
         assertThat(rapport.getInt("envoyes")).isEqualTo(1);
         assertThat(rapport.getList("differes")).containsExactly("Bruno Petit");
@@ -106,10 +107,10 @@ class PublicationExclusionTest {
     void theGapAccumulatesUntilTheMessageFinallyGoesOut() {
         publier();
         swapTheTwoSeats();
-        publier("EXC-B");
+        publier("EXC-A");
         // A third state: Bruno leaves the plan entirely.
         persistPlanSolo("EXC-A");
-        publier("EXC-B");
+        publier("EXC-A");
         mailbox.clear();
 
         JsonPath apercu = apercu();
@@ -123,10 +124,10 @@ class PublicationExclusionTest {
     }
 
     @Test
-    void theTraceAndTheHistoryBothNameWhoWasLeftOut() {
+    void theTraceAndTheHistoryBothNameWhoWasDeferred() {
         publier();
         swapTheTwoSeats();
-        publier("EXC-B");
+        publier("EXC-A");
 
         JsonPath trace = given().header("X-Edition-Id", "E1")
                 .when()
@@ -154,26 +155,37 @@ class PublicationExclusionTest {
 
     /* -------------------------------- Limites ------------------------------ */
 
+    /** A client of the 3.x still sends « exclusions »: nobody is left out any more. */
     @Test
-    void excludingEverybodyIsRefusedRatherThanPublishingToNobody() {
-        given().header("X-Edition-Id", "E1")
+    void theFormerExclusionsFieldIsIgnoredAndEverybodyIsTold() {
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
                 .body(Map.of("exclusions", List.of("EXC-A", "EXC-B")))
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(rapport.getInt("envoyes")).isEqualTo(2);
+        assertThat(rapport.getList("differes")).isEmpty();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+        assertThat(mailbox.getMailsSentTo(EMAIL_BRUNO)).hasSize(1);
+    }
+
+    /** Targeting nobody the preview names is refused rather than publishing to nobody. */
+    @Test
+    void targetingSomebodyUnknownIsRefused() {
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body(Map.of("cibles", List.of("EXC-INCONNU")))
                 .when()
                 .post("/api/planning/publication")
                 .then()
                 .statusCode(409)
                 .body("message", containsString("ne préviendrait personne"));
         assertThat(mailbox.getTotalMessagesSent()).isZero();
-    }
-
-    /** An id nobody is expecting is ignored: the screen may have been read before the last change. */
-    @Test
-    void anUnknownExclusionChangesNothing() {
-        JsonPath rapport = publier("EXC-INCONNU");
-
-        assertThat(rapport.getInt("envoyes")).isEqualTo(2);
-        assertThat(rapport.getList("differes")).isEmpty();
     }
 
     /* ---------------------------------- CSV -------------------------------- */
@@ -209,10 +221,11 @@ class PublicationExclusionTest {
                 .jsonPath();
     }
 
-    private JsonPath publier(String... exclusions) {
+    /** No target means everybody concerned. */
+    private JsonPath publier(String... cibles) {
         return given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body(Map.of("exclusions", List.of(exclusions)))
+                .body(cibles.length == 0 ? Map.of() : Map.of("cibles", List.of(cibles)))
                 .when()
                 .post("/api/planning/publication")
                 .then()

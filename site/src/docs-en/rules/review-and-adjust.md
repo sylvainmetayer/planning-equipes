@@ -38,15 +38,17 @@ The panel offers to notify the people concerned (the change is not published) an
 
 In the *Table* view, each name and each empty seat opens the seat panel. "Move to..." moves to a free seat, or swaps with a person; the action is refused if a hard rule would be broken. The *Rail* offers the same gesture from a shift, to give it to another person or swap it with theirs.
 
-## Mark a day "reviewed and accepted"
+## Change the state of a day
 
 1. On the Planning page, find the counter of what is left to look at (empty seats and breaks with no relay): it leads to the problems of the Diagnostic.
-2. In the day's menu, choose "Reviewed and accepted...". The prerequisites of that day are displayed: hard breaches, empty seats, breaks with no relay, irreplaceable seats.
-3. Accept, possibly anyway: the application then says so.
+2. Click the day's state button ("To review", "Reviewed on..." or "Frozen"). A three-valued control opens, with the prerequisites of that day: hard breaches, empty seats, breaks with no relay, irreplaceable seats.
+3. Choose "Reviewed", possibly anyway, with a comment, then "Save the state". Choosing "Frozen" asks for confirmation: the solver will no longer touch that day, and the review comment is kept.
 
-Progress is read in the Solver ("3 days out of 12") and by a tick on each reviewed day of the Planning page's mini-month. The validation always covers the whole day, whatever the filter displayed.
+A read-only user sees the state of the day, with no button to change it.
 
-Accepting freezes nothing: locking is offered alongside, never imposed (see [Set exceptions and locks](ajustements-et-verrous.md)).
+Progress is read in the Solver ("3 days out of 12") and by a tick on each reviewed day of the Planning page's mini-month. The state always covers the whole day, whatever the filter displayed.
+
+Reviewing freezes nothing: only the "Frozen" value lays the whole-day lock (see [Set exceptions and locks](ajustements-et-verrous.md)).
 
 ### The three states of a day
 
@@ -54,11 +56,11 @@ Each day is **to review**, **reviewed** or **frozen**.
 
 | State | What it means | What a new solve does with it |
 | --- | --- | --- |
-| To review | Nobody has accepted it | It recomputes it freely |
-| Reviewed | Someone accepted it, nothing is frozen | It may recompute it, and the day then goes back to review |
+| To review | Nobody has reviewed it | It recomputes it freely |
+| Reviewed | Someone reviewed it, nothing is frozen | It may recompute it, and the day then goes back to review |
 | Frozen | It carries a whole-day lock | It no longer touches it |
 
-Only your gesture freezes a day: accepting it never does. Removing the whole-day lock makes it reviewed if it had been accepted, to review otherwise. A frozen day counts as reviewed in the progress, even when locked from the locks screen without being accepted. The edition's phase does not change the state of the days: you can review or freeze a day in preparation, while computing as well as after publication.
+Only your gesture freezes a day: reviewing it never does. Removing the whole-day lock makes it reviewed if it had been reviewed, to review otherwise. A frozen day counts as reviewed in the progress, even when locked from the locks screen without being accepted. The edition's phase does not change the state of the days: you can review or freeze a day in preparation, while computing as well as after publication.
 
 ### When a new solve removes a review
 

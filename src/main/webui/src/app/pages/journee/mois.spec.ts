@@ -50,7 +50,7 @@ describe('the day selector of the Planning page', () => {
     // Today is the server's, whichever day is on screen.
     expect(cases.map((cellule) => cellule.aujourdhui)).toEqual([false, true]);
     expect(libelleCase(cases[0])).toBe('Jour 1 · 3 siège(s) vide(s) · verrouillée · sous consigne');
-    expect(libelleCase(cases[1])).toBe("Jour 2 · aujourd'hui · relue et acceptée");
+    expect(libelleCase(cases[1])).toBe("Jour 2 · aujourd'hui · relue ou figée");
   });
 
   it('draws no month for timeslots that carry no date', () => {

@@ -7,6 +7,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { PosteAffectation, RapportPauses } from '../../core/models';
+import { SessionStore } from '../../core/session.store';
+import { DayState } from '../../core/models';
 import { ValidationsStore } from '../../core/validations.store';
 import { RelectureBarre } from './relecture-barre';
 
@@ -65,7 +67,7 @@ function pausesReport(): RapportPauses {
   };
 }
 
-async function monter(options: { relus?: string[] } = {}) {
+async function monter(options: { relus?: string[]; etat?: DayState; lectureSeule?: boolean } = {}) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -75,15 +77,16 @@ async function monter(options: { relus?: string[] } = {}) {
         provide: ValidationsStore,
         useValue: {
           acceptedDays: signal(new Set(options.relus ?? [])),
-          validations: signal(
+          etats: signal(
             (options.relus ?? []).map((jour) => ({
-              id: 'v',
               jour,
+              etat: options.etat ?? 'RELUE',
               valideLe: '2026-09-04T10:00:00Z',
             })),
           ),
         },
       },
+      { provide: SessionStore, useValue: { lectureSeule: signal(options.lectureSeule ?? false) } },
       { provide: MatDialog, useValue: { open: vi.fn() } },
     ],
   });
@@ -113,5 +116,19 @@ describe('RelectureBarre', () => {
 
     const relue = await monter({ relus: ['2026-09-05'] });
     expect(relue.fixture.nativeElement.textContent).toContain('Relue le');
+  });
+
+  it('says a frozen day is frozen', async () => {
+    const { fixture } = await monter({ relus: ['2026-09-05'], etat: 'FIGEE' });
+
+    expect(fixture.nativeElement.textContent).toContain('Figée');
+  });
+
+  it('gives a lecteur the state and no button', async () => {
+    const { fixture } = await monter({ relus: ['2026-09-05'], lectureSeule: true });
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.textContent).toContain('Relue le');
+    expect(element.querySelector('button')).toBeNull();
   });
 });

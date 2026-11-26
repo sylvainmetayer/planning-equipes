@@ -4,7 +4,7 @@
       <h2 mat-card-title i18n="@@journee.validation.title">Relecture de la journée</h2>
     }
     <mat-card-subtitle i18n="@@journee.validation.hint">
-      Marquer cette journée relue et acceptée. Le verrouillage, lui, empêche le solveur d'y toucher.
+      À relire, relue ou figée : une journée figée n'est plus recalculée.
     </mat-card-subtitle>
   </mat-card-header>
 
@@ -21,15 +21,29 @@
     <app-status-message [text]="erreur()" tone="error" />
 
     @if (prerequis(); as lu) {
-      @if (lu.validee) {
+      <mat-button-toggle-group
+        class="journee-etat"
+        [value]="choix()"
+        (change)="choix.set($event.value)"
+        aria-label="État de la journée"
+        i18n-aria-label="@@journee.etat.groupe"
+      >
+        <mat-button-toggle value="A_RELIRE" i18n="@@journee.relecture.aRelire">À relire</mat-button-toggle>
+        <mat-button-toggle value="RELUE" i18n="@@journee.etat.relue">Relue</mat-button-toggle>
+        <mat-button-toggle value="FIGEE" i18n="@@journee.etat.figee">Figée</mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (choix() === 'FIGEE') {
+        <p class="journee-validation-note" i18n="@@journee.etat.figeeNote">
+          Figée : le calcul ne touchera plus à cette journée.
+        </p>
+      }
+      @if (lu.valideeLe) {
         <p class="journee-validation-etat">
           <mat-icon>task_alt</mat-icon>
           <span>{{ acceptedLabel() }}</span>
         </p>
-        @if (lu.commentaire) {
-          <p class="journee-validation-commentaire">{{ lu.commentaire }}</p>
-        }
-      } @else {
+      }
+      @if (lu.etat === 'A_RELIRE') {
         <ul class="journee-validation-prerequis">
           @for (item of lu.prerequis; track item.code) {
             <li [class.journee-validation-ko]="item.connu && !item.satisfait">
@@ -39,36 +53,23 @@
           }
         </ul>
         <p class="journee-validation-note" i18n="@@journee.validation.malgreTout">
-          Un prérequis non satisfait n'empêche pas d'accepter la journée : dites pourquoi dans le commentaire.
+          Un prérequis non satisfait n'empêche pas de relire la journée : dites pourquoi dans le commentaire.
         </p>
+      }
+      @if (choix() !== 'A_RELIRE') {
         <mat-form-field subscriptSizing="dynamic" appearance="outline" class="journee-validation-commentaire-champ">
           <mat-label i18n="@@journee.validation.commentaire.label">Commentaire de relecture</mat-label>
           <input matInput [value]="commentaire()" (input)="onCommentaire($event)" maxlength="500" />
           <mat-hint i18n="@@journee.validation.commentaire.hint">Facultatif</mat-hint>
         </mat-form-field>
-        <mat-checkbox [checked]="poserVerrou()" (change)="poserVerrou.set($event.checked)">
-          <ng-container i18n="@@journee.validation.verrou">Verrouiller aussi cette journée</ng-container>
-        </mat-checkbox>
       }
     }
   </mat-card-content>
 
   <mat-card-actions class="card-actions">
-    @if (prerequis()?.validee) {
-      <button matButton="tonal" type="button" [disabled]="busy()" (click)="withdraw()">
-        <mat-icon>undo</mat-icon>
-        <ng-container i18n="@@journee.validation.retirer">Retirer la validation</ng-container>
-      </button>
-    } @else {
-      <button
-        matButton="filled"
-        type="button"
-        [disabled]="busy() || !jour()"
-        (click)="accept()"
-      >
-        <mat-icon>fact_check</mat-icon>
-        <ng-container i18n="@@journee.validation.valider">Marquer relu et accepté</ng-container>
-      </button>
-    }
+    <button matButton="filled" type="button" [disabled]="busy() || !jour() || !modifie()" (click)="save()">
+      <mat-icon>fact_check</mat-icon>
+      <ng-container i18n="@@journee.etat.enregistrer">Enregistrer l'état</ng-container>
+    </button>
   </mat-card-actions>
 </mat-card>

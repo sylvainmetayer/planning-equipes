@@ -11,10 +11,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { intlLocale } from '../../core/locale';
 import { PosteAffectation, RapportPauses } from '../../core/models';
+import { SessionStore } from '../../core/session.store';
 import { ValidationsStore } from '../../core/validations.store';
 import { syntheseJournee } from './journee';
 import { RelectureDialog, RelectureDialogData } from './relecture-dialog';
@@ -22,9 +22,9 @@ import { RelectureDialog, RelectureDialogData } from './relecture-dialog';
 /**
  * The relecture of the day on screen, in one line (issue #712): what is left
  * to look at before accepting the day — seats nobody holds and breaks nobody
- * can relieve — as one count leading to the Diagnostic's problems, and a menu
- * holding the reading itself: its state, « Relu et accepté… » (the comment
- * and the lock in a dialog), and the withdrawal.
+ * can relieve — as one count leading to the Diagnostic's problems, and
+ * the state of the day — à relire, relue, figée (ADR 0121) — which opens the
+ * control in a dialog; a lecteur sees the state and has no button.
  *
  * <p>It replaced four chips that each narrowed the rendering: one count is
  * read at a glance, and the problems are detailed in one place. The count is
@@ -33,7 +33,7 @@ import { RelectureDialog, RelectureDialogData } from './relecture-dialog';
  */
 @Component({
   selector: 'app-relecture-barre',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule, RouterLink],
+  imports: [MatButtonModule, MatIconModule, RouterLink],
   template: `
     <div class="relecture-barre" role="group" [attr.aria-label]="groupeLabel">
       <a
@@ -43,21 +43,17 @@ import { RelectureDialog, RelectureDialogData } from './relecture-dialog';
         [class.relecture-compteur-alerte]="aRelire() > 0"
         >{{ aRelireLabel() }}</a
       >
-      <button matButton type="button" class="relecture-menu" [matMenuTriggerFor]="menu">
-        <mat-icon>{{ relue() ? 'task_alt' : 'fact_check' }}</mat-icon>
-        {{ etatLabel() }}
-        <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-      </button>
-      <mat-menu #menu="matMenu">
-        <button mat-menu-item type="button" (click)="open()">
-          <mat-icon>fact_check</mat-icon>
-          @if (relue()) {
-            <span i18n="@@journee.relecture.menu.voir">Relecture et commentaire…</span>
-          } @else {
-            <span i18n="@@journee.relecture.menu.accepter">Relu et accepté…</span>
-          }
+      @if (lectureSeule()) {
+        <span class="relecture-etat">
+          <mat-icon aria-hidden="true">{{ icone() }}</mat-icon>
+          {{ etatLabel() }}
+        </span>
+      } @else {
+        <button matButton type="button" class="relecture-menu" (click)="open()">
+          <mat-icon>{{ icone() }}</mat-icon>
+          {{ etatLabel() }}
         </button>
-      </mat-menu>
+      }
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -96,16 +92,27 @@ export class RelectureBarre {
       : $localize`:@@journee.relecture.aRelireN:${count}:count: point(s) à relire`;
   });
 
-  protected readonly relue = computed(() => this.validations.acceptedDays().has(this.jour()));
+  protected readonly lectureSeule = inject(SessionStore).lectureSeule;
+  private readonly dayState = computed(() =>
+    this.validations.etats().find((item) => item.jour === this.jour()),
+  );
+  protected readonly etat = computed(() => this.dayState()?.etat ?? 'A_RELIRE');
+  protected readonly icone = computed(() =>
+    this.etat() === 'FIGEE' ? 'lock' : this.etat() === 'RELUE' ? 'task_alt' : 'fact_check',
+  );
   protected readonly etatLabel = computed(() => {
-    if (!this.relue()) {
+    const etat = this.etat();
+    if (etat === 'FIGEE') {
+      return $localize`:@@journee.relecture.figee:Figée`;
+    }
+    if (etat === 'A_RELIRE') {
       return $localize`:@@journee.relecture.aRelire:À relire`;
     }
-    const validation = this.validations.validations().find((item) => item.jour === this.jour());
-    if (!validation?.valideLe) {
-      return $localize`:@@journee.relecture.relue:Relue et acceptée`;
+    const reviewedAt = this.dayState()?.valideLe;
+    if (!reviewedAt) {
+      return $localize`:@@journee.relecture.relue:Relue`;
     }
-    const quand = new Date(validation.valideLe).toLocaleDateString(intlLocale());
+    const quand = new Date(reviewedAt).toLocaleDateString(intlLocale());
     return $localize`:@@journee.relecture.relueLe:Relue le ${quand}:date:`;
   });
 

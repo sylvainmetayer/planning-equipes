@@ -115,11 +115,11 @@ export class PlanningApi {
 
   /**
    * Mails every animateur holding a seat — real mail to real people, confirmed
-   * by the caller first. `exclusions` names the people whose message is
-   * deferred: they receive nothing and come back in the next count.
+   * by the caller first. Nobody can be left out of it: to write to a few
+   * people only, see {@link publishTo}.
    */
-  publish(exclusions: readonly string[] = []): Promise<RapportPublication> {
-    return this.api.post<RapportPublication>('/api/planning/publication', { exclusions });
+  publish(): Promise<RapportPublication> {
+    return this.api.post<RapportPublication>('/api/planning/publication', {});
   }
 
   /**
@@ -129,7 +129,6 @@ export class PlanningApi {
    */
   publishTo(cibles: readonly string[]): Promise<RapportPublication> {
     return this.api.post<RapportPublication>('/api/planning/publication', {
-      exclusions: [],
       cibles,
     });
   }

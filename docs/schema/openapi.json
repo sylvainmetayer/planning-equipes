@@ -2272,6 +2272,9 @@
           "libelleCourt" : {
             "type" : "string"
           },
+          "groupe" : {
+            "type" : "string"
+          },
           "remediation" : {
             "type" : "string"
           },
@@ -3493,12 +3496,6 @@
       "DemandePublication" : {
         "type" : "object",
         "properties" : {
-          "exclusions" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
           "cibles" : {
             "type" : "array",
             "items" : {

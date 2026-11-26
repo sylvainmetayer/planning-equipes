@@ -249,10 +249,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     only leaving that state lifts it, and a reading survives a solve only when
     its day was not recomputed: in the frozen past, frozen, or given back
     unchanged by a solve started from the plan in place — « Recommencer de
-    zéro » withdraws every other one (ADR 0069). The `/api/validations` writes
-    and the three `*_validation_journee` tools are `@Deprecated` aliases until
-    5.0, which never lift a lock; the state is open in every phase and during
-    a solve, like a lock;
+    zéro » withdraws every other one (ADR 0069); freezing without a comment keeps
+    the reading's. The MCP tools are `consulter_etats_journee` and
+    `modifier_etat_journee`; the `/api/validations` writes are `@Deprecated`
+    aliases until 5.0, which never lift a lock. The state is open in every
+    phase and during a solve, like a lock;
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
