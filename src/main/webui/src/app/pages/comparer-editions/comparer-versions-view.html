@@ -6,7 +6,7 @@
 <div class="comparer-choix">
   <mat-form-field appearance="outline">
     <mat-label i18n="@@comparerVersions.field.premiere">Première version</mat-label>
-    <select matNativeControl [value]="first() ?? ''" (change)="choose('first', $any($event.target).value)">
+    <select #firstList matNativeControl [value]="first() ?? ''" (change)="choose('first', $any($event.target).value)">
       <option value="" i18n="@@comparerVersions.choisir">Choisir…</option>
       <option [value]="current" [selected]="first() === current" i18n="@@versions.courant">Plan en place</option>
       @for (version of versions() ?? []; track version.id) {
@@ -37,6 +37,11 @@
 }
 
 @if (sides(); as pair) {
+  @if (reference(); as ref) {
+    <p class="comparer-reference" i18n="@@comparerVersions.reference">
+      Référence : {{ ref }}, la plus ancienne des deux. Les écarts se lisent d'elle vers l'autre.
+    </p>
+  }
   <app-comparaison-panel [base]="pair.base" [variante]="pair.variante" [snapshots]="versions() ?? []"
                          (closed)="close()" />
 } @else if (!sameTwice() && !chargement()) {

@@ -71,7 +71,10 @@ describe('ComparerVersionsView', () => {
       .componentInstance as FakePanel;
     expect(panel.base()).toBe('7');
     expect(panel.variante()).toBe('8');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Année 2025');
+    const text = (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
+    expect(text).toContain('Année 2025');
+    // The reference is named on screen, not only implied by the column order.
+    expect(text).toContain('Référence : Version 7');
   });
 
   it('asks for a pair while none is chosen, and refuses the same version twice', async () => {
@@ -97,5 +100,7 @@ describe('ComparerVersionsView', () => {
     fixture.componentInstance['close']();
     await fixture.whenStable();
     expect(TestBed.inject(Location).path()).not.toContain('comparer=');
+    // The closed panel took the focus with it: it lands back on the first list.
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('select'));
   });
 });
