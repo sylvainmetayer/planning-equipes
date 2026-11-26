@@ -227,34 +227,34 @@ public final class ConstraintCatalog {
             Map.entry(
                     COUPURE_REPAS_OBLIGATOIRE,
                     "La journée ne laisse pas la place au repas : coupez la journée en deux vacations, "
-                            + "élargissez la fenêtre repas sur sa ligne de Règles du planning, ou raccourcissez le "
+                            + "élargissez la fenêtre repas dans Paramètres › Légal, ou raccourcissez le "
                             + "créneau."),
             Map.entry(
                     LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR,
-                    "Trop de typologies différentes pour une même personne : relevez le plafond sur la ligne "
-                            + "de la règle, dans Règles du planning, ou baissez son importance."),
+                    "Trop de typologies différentes pour une même personne : relevez le plafond dans "
+                            + "Paramètres › Organisation, ou baissez son importance."),
             Map.entry(
                     STABILITE_DU_PLAN_PUBLIE,
                     "Le plan s'écarte de ce qui a été publié : chaque écart est une vacation à "
                             + "re-annoncer. Verrouillez ce qui doit tenir, ou montez l'importance de la règle."),
             Map.entry(
                     LIMITER_EMPLACEMENTS_PAR_JOUR,
-                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond sur la "
-                            + "ligne de la règle, dans Règles du planning, ou baissez son importance."),
+                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond dans "
+                            + "Paramètres › Organisation, ou baissez son importance."),
             Map.entry(
                     ARRIVEE_GROUPEE,
                     "Un groupe de covoiturage n'arrive ou ne repart pas ensemble : vérifiez que ses membres ont "
-                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance sur la ligne de la "
-                            + "règle, dans Règles du planning, ou montez son importance."),
+                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance dans "
+                            + "Paramètres › Organisation, ou montez son importance."),
             Map.entry(
                     TRAJET_INSUFFISANT_ENTRE_POSTES,
                     "Le battement ne laisse pas le temps de marcher d'un emplacement à l'autre : élargissez "
                             + "le battement ou rapprochez les stands — ou ajustez la vitesse de marche, le facteur "
-                            + "de détour et la tolérance sur la ligne de la règle, dans Règles du planning."),
+                            + "de détour et la tolérance dans Paramètres › Organisation."),
             Map.entry(
                     MAX_JOURS_CONSECUTIFS_TRAVAILLES,
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
-                            + "couvrir ces journées, relevez le plafond sur la ligne de la règle, ou baissez son "
+                            + "couvrir ces journées, relevez le plafond dans Paramètres › Organisation, ou baissez son "
                             + "importance si la série vous convient."),
             Map.entry(
                     MAX_JOURS_CONSECUTIFS_DUR,
@@ -276,8 +276,7 @@ public final class ConstraintCatalog {
             "Règle de sécurité posée par l'organisateur : ajoutez un majeur sur ces créneaux, ou "
                     + "assumez l'encadrement hors planning et laissez la règle éteinte.",
             CATEGORIE_ORGANISATION_REPAS,
-            "Réglez la fenêtre repas et sa durée sur la ligne de la coupure repas, dans Règles du "
-                    + "planning, ou découpez les "
+            "Réglez la fenêtre repas et sa durée dans Paramètres › Légal, ou découpez les "
                     + "journées trop longues en deux vacations.",
             CATEGORIE_AFFECTATION,
             "Le plan ne peut pas tenir en l'état : ajoutez des animateurs disponibles, ou "
@@ -684,8 +683,8 @@ public final class ConstraintCatalog {
                     Niveau.SOFT,
                     CATEGORIE_AD_HOC,
                     "Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, "
-                            + "arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur "
-                            + "la ligne de la règle). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
+                            + "arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable dans "
+                            + "Paramètres › Organisation). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
                             + "au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures "
                             + "quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent "
                             + "tenir des stands différents. Contrainte souple : elle cède devant les règles légales "
@@ -815,7 +814,7 @@ public final class ConstraintCatalog {
                     Niveau.MEDIUM,
                     CATEGORIE_QUALITE,
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
-                            + "sur la ligne de la règle (huit par défaut) sans au moins un jour de repos : moins "
+                            + "dans Paramètres › Organisation (huit par défaut) sans au moins un jour de repos : moins "
                             + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
                             + "article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la "
                             + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733).",
@@ -826,7 +825,7 @@ public final class ConstraintCatalog {
                     CATEGORIE_QUALITE,
                     "Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le "
                             + "plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, "
-                            + "réglable sur la ligne de la règle : les deux formes le lisent au même endroit. "
+                            + "réglable dans Paramètres › Organisation : les deux formes le lisent au même endroit. "
                             + "Un poids ne change jamais le niveau "
                             + "d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran "
                             + "Règles du planning, par activer_contrainte ou par contraintes.activees d'un scénario. "
