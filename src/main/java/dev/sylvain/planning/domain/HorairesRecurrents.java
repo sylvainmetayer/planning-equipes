@@ -87,7 +87,7 @@ public final class HorairesRecurrents {
         }
 
         /** The same rule without its row id: what two rules are compared on. */
-        public Regle sansId() {
+        public Regle withoutId() {
             return new Regle(mode, jours, joursSemaine, dateDebut, dateFin, dates, fenetres, motif, null);
         }
 

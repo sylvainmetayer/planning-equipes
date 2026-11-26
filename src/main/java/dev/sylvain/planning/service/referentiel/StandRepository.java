@@ -218,7 +218,7 @@ public class StandRepository {
     }
 
     /** The model of one stand (its recurring rules), empty when it has none. */
-    public List<Regle> horairesDe(String standId) {
+    public List<Regle> modelRules(String standId) {
         return scope.read(
                 "Failed to read the schedule model of stand " + standId,
                 connection -> loadHoraires(connection).getOrDefault(standId, List.of()));

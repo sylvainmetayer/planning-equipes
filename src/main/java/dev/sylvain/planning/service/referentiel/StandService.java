@@ -304,7 +304,7 @@ public class StandService {
             }
         }
         List<HorairesRecurrents.Regle> stored =
-                stand.getId() == null ? List.of() : repository.horairesDe(stand.getId());
+                stand.getId() == null ? List.of() : repository.modelRules(stand.getId());
         if (sameRules(regles, stored)) {
             stand.setHoraires(null);
             return;
@@ -330,9 +330,9 @@ public class StandService {
 
     private static boolean sameRules(List<HorairesRecurrents.Regle> sent, List<HorairesRecurrents.Regle> stored) {
         return sent.stream()
-                .map(HorairesRecurrents.Regle::sansId)
+                .map(HorairesRecurrents.Regle::withoutId)
                 .toList()
-                .equals(stored.stream().map(HorairesRecurrents.Regle::sansId).toList());
+                .equals(stored.stream().map(HorairesRecurrents.Regle::withoutId).toList());
     }
 
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
