@@ -441,9 +441,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   It reads the plan the page loaded, never one per cell, and asks for the
   candidates on demand; the seat is `?siege=<poste id>`, and `?creneau=` (with
   `stand=`), the bench's old keys, is resolved to a seat once the plan is read),
-  `/diagnostic` (« Diagnostic » — what blocks, what is missing, where it is
-  tight, what is fragile, as tabs chosen by
-  `?onglet=problemes|besoin|tension|fragilite`. Problèmes: each card says
+  `/diagnostic` (« Diagnostic » — what blocks, what is missing, what is at
+  risk, as tabs chosen by
+  `?onglet=problemes|besoin|risques|conformite`. Problèmes: each card says
   « Où » (its hotspots, each opening the Planning page's Siège panel on that
   stand and timeslot), « Qui » (each name opening `/animateurs/:id`) and the
   gestures `ConstraintCatalog` gives the rule, in its order, « Baisser
@@ -458,15 +458,17 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`pages/marge/margin-before-grid.ts`), the game category table a column
   « Édition précédente » — the previous edition's absence rate and lost hours,
   for information, matched by id then by name in `pages/realise/mesure.ts` —
-  while one exists, « À former » (`pages/formation`) its last section. Tension (`pages/marge/tension-tab.ts`): the « après » margin
+  while one exists. Risques (`pages/diagnostic/risques-tab.ts`) stacks three
+  screens, each kept as it was and landed on by `?section=fragilite|former|tension`
+  (obeyed once the sections above are loaded, then dropped): Fragilité, « À former »
+  (`pages/formation`) and Tension (`pages/marge/tension-tab.ts`): the « après » margin
   crossed with the fragility, one column per start hour of the grid, the fill
   the margin's sign and the grade a frame, each cell opening the Siège panel
   of its timeslot. Fragilité: « Verrouiller », « Qui peut remplacer »,
   « Former » per person. The tab components keep their own view state in the
   URL next to the page's key; `?onglet=banc` is sent to the Planning page by
-  `benchTabToJournee`, `?onglet=former` to `?onglet=besoin&section=former` by
-  `trainingTabToNeed`, a landing the Besoin tab obeys once its figures are on
-  screen, then drops), `/echanges` (« Échanges » —
+  `benchTabToJournee`, `?onglet=fragilite|former|tension` to
+  `?onglet=risques&section=…` by `formerTabsToRisques`), `/echanges` (« Échanges » —
   opens on the queue, under the foire's one-line state (`shared/guichet-etat`);
   an accepted swap offers « Prévenir les 2 personnes », a publication
   aimed at those two through `PlanningApi.publishTo`, and « Corriger le

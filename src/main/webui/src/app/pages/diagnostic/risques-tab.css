@@ -1,0 +1,10 @@
+/* The Risques tab: three screens stacked, each scrolled to from `?section=`. */
+.risques-section {
+  display: block;
+  scroll-margin-top: 5rem;
+}
+
+.risques-titre {
+  margin: 1.5rem 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+}

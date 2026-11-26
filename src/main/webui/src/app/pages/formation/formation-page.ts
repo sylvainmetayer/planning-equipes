@@ -21,11 +21,11 @@ import { StatusMessage } from '../../shared/status-message';
 import { resumeDeficit } from './formation';
 
 /**
- * « À former » : who to train, typologie by typologie — the foot of the
- * Diagnostic's Besoin tab, which carries its heading; once a tab of its own,
+ * « À former » : who to train, typologie by typologie — a section of the
+ * Diagnostic's Risques tab, which carries its heading; once a tab of its own,
  * `?onglet=former` now lands there.
  *
- * The shortage shown is the Besoin tab's and the Fragilité tab's, read from
+ * The shortage shown is the Besoin tab's and the Fragilité section's, read from
  * `GET /api/formation`, which reuses both reports rather than defining a
  * third; the candidates are the people one level from mastering the
  * typologie, ranked by the server in the order the screen spells out. Nothing
@@ -54,7 +54,7 @@ export class FormationPage {
 
   private readonly plan = resource({ loader: () => this.analysesApi.trainingPlan() });
   protected readonly rapport = retainedValue(this.plan);
-  protected readonly chargement = this.plan.isLoading;
+  readonly chargement = this.plan.isLoading;
   protected readonly erreur = errorText(this.plan);
 
   protected readonly exportBusy = signal(false);

@@ -219,8 +219,14 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 ### Le besoin se lit en un seul onglet du Diagnostic
 
 - **Avant (3.x)** : le besoin en animateurs, la volumétrie du problème (dans le Solveur) et le planning lu par typologie (dans le Planning, « Par typologie », ou `/typologies-planning`) étaient trois lectures dans trois écrans.
-- **Après (4.0)** : l'onglet **Besoin en animateurs** du Diagnostic les réunit : la borne exacte et la marge par jour, le besoin typologie par typologie, la section « Le planning, typologie par typologie », la volumétrie du problème (en bas, plus dans le Solveur) et « À former ». La faisabilité reste dans l'onglet Problèmes, où sont ses causes.
+- **Après (4.0)** : l'onglet **Besoin en animateurs** du Diagnostic les réunit : la borne exacte et la marge par jour, le besoin typologie par typologie, la section « Le planning, typologie par typologie », la volumétrie du problème (en bas, plus dans le Solveur). La faisabilité reste dans l'onglet Problèmes, où sont ses causes.
 - **Ce que vous faites** : rien pour vos liens. `/typologies-planning` ouvre la section `?onglet=besoin&section=typologie` ; `section=volumetrie` mène à la volumétrie.
+
+### Fragilité, « À former » et Tension sont un seul onglet : Risques
+
+- **Avant (3.x)** : la fragilité du plan, la tension heure par heure (ex-Marge disponible) et « À former » étaient trois onglets du Diagnostic (la tension sous le nom de Marge disponible, un écran à part), qui lisent le même manque sous trois angles.
+- **Après (4.0)** : le Diagnostic n'a plus que trois onglets en dehors de la Conformité (Problèmes, Besoin en animateurs, **Risques**). Risques empile, de haut en bas, la *Fragilité*, « À former » et la *Tension*, chacune avec ses propres filtres dans l'adresse. « À former » quitte donc le Besoin.
+- **Ce que vous faites** : rien pour vos liens. `?onglet=fragilite`, `?onglet=former`, `?onglet=tension`, `/fragilite` et `/marge?mode=apres|tension` sont lus comme avant et mènent à `?onglet=risques&section=fragilite|former|tension` (les autres paramètres, filtres de la fragilité ou jour, sont gardés) ; `?onglet=besoin&section=former` n'existe plus, la section a changé d'onglet. La 5.0 retirera les anciennes adresses.
 
 ### La page Planning n'offre plus que quatre vues
 

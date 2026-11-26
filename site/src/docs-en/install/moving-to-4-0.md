@@ -223,8 +223,14 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 ### The need reads in a single tab of the Diagnostic
 
 - **Before (3.x)**: the staffing need, the volumetry of the problem (in the Solver) and the schedule read by game category (in the Planning, "By typologie", or `/typologies-planning`) were three readings on three screens.
-- **After (4.0)**: the **Staffing need** tab of the Diagnostic gathers them: the exact bound and the margin per day, the need game category by game category, the "The schedule, typologie by typologie" section, the volumetry of the problem (at the bottom, no longer in the Solver) and "To train". Feasibility stays in the Problems tab, where its causes are.
+- **After (4.0)**: the **Staffing need** tab of the Diagnostic gathers them: the exact bound and the margin per day, the need game category by game category, the "The schedule, typologie by typologie" section, the volumetry of the problem (at the bottom, no longer in the Solver). Feasibility stays in the Problems tab, where its causes are.
 - **What you do**: nothing for your links. `/typologies-planning` opens the `?onglet=besoin&section=typologie` section; `section=volumetrie` leads to the volumetry.
+
+### Fragility, "To train" and Tension are one tab: Risks
+
+- **Before (3.x)**: the plan's fragility, the hour-by-hour tension (the former Available margin screen) and "To train" were three tabs of the Diagnostic reading the same shortage from three angles.
+- **After (4.0)**: the Diagnostic has only three tabs besides Compliance (Problems, Staffing need, **Risks**). Risks stacks, from top to bottom, *Fragility*, "To train" and *Tension*, each with its own filters in the address. "To train" therefore leaves the Staffing need tab.
+- **What you do**: nothing for your links. `?onglet=fragilite`, `?onglet=former`, `?onglet=tension`, `/fragilite` and `/marge?mode=apres|tension` are read as before and lead to `?onglet=risques&section=fragilite|former|tension` (the other parameters, fragility filters or day, are kept); `?onglet=besoin&section=former` no longer exists, the section changed tabs. 5.0 will remove the old addresses.
 
 ### The Planning page offers only four views
 

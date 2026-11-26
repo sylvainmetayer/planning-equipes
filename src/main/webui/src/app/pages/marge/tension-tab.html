@@ -129,13 +129,13 @@
               @for (standId of cellule.standsSansSpecialiste; track standId) {
                 <li>
                   <ng-container i18n="@@tension.detail.sansSpecialiste">Sans spécialiste :</ng-container>
-                  <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
+                  <a routerLink="/diagnostic" [queryParams]="{ onglet: 'risques', section: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
                 </li>
               }
               @for (standId of cellule.standsSpecialisteUnique; track standId) {
                 <li>
                   <ng-container i18n="@@tension.detail.specialisteUnique">Spécialiste unique :</ng-container>
-                  <a routerLink="/diagnostic" [queryParams]="{ onglet: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
+                  <a routerLink="/diagnostic" [queryParams]="{ onglet: 'risques', section: 'fragilite', vue: 'COMPETENCES', q: standId }">{{ nomStand(standId) }}</a>
                 </li>
               }
             </ul>

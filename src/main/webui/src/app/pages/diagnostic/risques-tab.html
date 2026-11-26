@@ -1,0 +1,18 @@
+<section id="risques-fragilite" class="risques-section" aria-labelledby="risques-fragilite-titre">
+  <h2 id="risques-fragilite-titre" class="risques-titre" i18n="@@risques.fragilite.title">Fragilité</h2>
+  <app-fragilite-page [entete]="false" />
+</section>
+
+<section id="risques-former" class="risques-section" aria-labelledby="risques-former-titre">
+  <h2 id="risques-former-titre" class="risques-titre" i18n="@@formation.title">À former</h2>
+  <p class="empty-hint" i18n="@@staffing.former.description">
+    Les typologies en déficit au besoin ou à la fragilité, et qui former sur chacune : un clic ouvre la grille des
+    compétences filtrée sur la typologie.
+  </p>
+  <app-formation-page />
+</section>
+
+<section id="risques-tension" class="risques-section" aria-labelledby="risques-tension-titre">
+  <h2 id="risques-tension-titre" class="risques-titre" i18n="@@risques.tension.title">Tension</h2>
+  <app-tension-tab />
+</section>

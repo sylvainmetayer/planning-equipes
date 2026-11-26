@@ -115,7 +115,7 @@ export class FragilitePage {
   private readonly fragilite = resource({ loader: () => this.analysesApi.fragility() });
   /** Kept across a failed refresh; the template shows the failure in its place, not a blank card. */
   protected readonly rapport = retainedValue(this.fragilite);
-  protected readonly chargement = this.fragilite.isLoading;
+  readonly chargement = this.fragilite.isLoading;
   protected readonly erreur = errorText(this.fragilite);
   protected readonly view = signal<VueFragilite>('ANIMATEURS');
   protected readonly filtre = signal<FiltreFragilite>('TOUS');

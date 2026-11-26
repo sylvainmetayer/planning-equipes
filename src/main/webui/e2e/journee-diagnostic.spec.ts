@@ -150,19 +150,22 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await expect(page).toHaveURL(/\/diagnostic/);
   await expect(page.locator('#contenu')).toContainText('Diagnostic');
 
-  // The margin became two tabs: its « avant » reading a column of Besoin, its
-  // « après » and « tension » readings the Tension tab.
+  // The margin became a column of Besoin and a section of Risques: its « avant »
+  // reading the column, its « après » and « tension » readings the section.
   await page.goto('/marge');
   await expect(page).toHaveURL(/\/diagnostic\?onglet=besoin/);
   await expect(page.locator('#contenu')).toContainText('Disponibles − sièges');
   await page.goto('/marge?mode=tension');
-  await expect(page).toHaveURL(/\/diagnostic\?onglet=tension/);
+  await expect(page).toHaveURL(/\/diagnostic\?onglet=risques/);
   await expect(page.locator('#contenu')).toContainText('Tension, tranche par tranche');
 
-  // « À former » is the foot of Besoin.
+  // Fragilité, « À former » and Tension are the three sections of Risques.
   await page.goto('/diagnostic?onglet=former');
-  await expect(page).toHaveURL(/onglet=besoin/);
-  await expect(page.locator('#a-former')).toContainText('À former');
+  await expect(page).toHaveURL(/onglet=risques/);
+  await expect(page.locator('#risques-former')).toContainText('À former');
+  await page.goto('/diagnostic?onglet=fragilite');
+  await expect(page).toHaveURL(/onglet=risques/);
+  await expect(page.locator('#risques-fragilite')).toContainText('Fragilité');
 
   // The volumetry and the plan by typologie are sections of Besoin too.
   await expect(page.locator('#besoin-volumetrie')).toContainText('Volumétrie du problème');
@@ -172,7 +175,7 @@ test('the addresses of former screens lead to the right rendering, parameters in
 
 test('le diagnostic ne mène à aucune timeline et ne se dit plus à l’essai', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  for (const onglet of ['problemes', 'besoin', 'tension', 'fragilite']) {
+  for (const onglet of ['problemes', 'besoin', 'risques']) {
     await page.goto(`/diagnostic?onglet=${onglet}`);
     await expect(page.locator('#contenu h1')).toHaveCount(1);
     await expect(page.locator('#contenu a[href^="/timeline"]')).toHaveCount(0);
@@ -239,20 +242,20 @@ test('le diagnostic ouvre ses onglets sans changer de page, chacun avec son éta
   await expect(page.locator('#contenu h1')).toHaveCount(1);
 
   const onglets = page.getByRole('radiogroup', { name: 'Onglet du diagnostic' });
-  await onglets.getByText('Fragilité').click();
-  await expect(page).toHaveURL(/onglet=fragilite/);
+  await onglets.getByText('Risques').click();
+  await expect(page).toHaveURL(/onglet=risques/);
   const champ = page.getByLabel('Filtrer', { exact: true });
   await champ.fill('Alice');
   // The tab's own state sits next to the page's key, neither erasing the other.
-  await expect(page).toHaveURL(/onglet=fragilite/);
+  await expect(page).toHaveURL(/onglet=risques/);
   await expect(page).toHaveURL(/[?&]q=Alice/);
 
   await onglets.getByText('Besoin en animateurs').click();
   await expect(page).toHaveURL(/onglet=besoin/);
   await expect(page.locator('#contenu')).toContainText('Minimum retenu');
 
-  await onglets.getByText('Tension').click();
-  await expect(page).toHaveURL(/onglet=tension/);
+  await onglets.getByText('Risques').click();
+  await expect(page).toHaveURL(/onglet=risques/);
   await expect(page.locator('#contenu')).toContainText('Tension, tranche par tranche');
   await page.context().close();
 });

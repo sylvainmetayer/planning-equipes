@@ -404,7 +404,7 @@ describe('parametrer-pour-un-planning-complet', () => {
       undefined,
       { onglet: 'besoin' },
       undefined,
-      { onglet: 'fragilite' },
+      { onglet: 'risques', section: 'fragilite' },
       { onglet: 'problemes' },
     ]);
   });

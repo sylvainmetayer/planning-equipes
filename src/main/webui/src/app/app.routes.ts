@@ -422,34 +422,44 @@ export const redirectCalculToParametres: CanActivateFn = (route) => {
 };
 
 /**
- * `/diagnostic?onglet=former…`: « À former » is a section of the Besoin tab
- * now, at its foot — the address opens that tab scrolled to it
- * (`section=former`), its other params kept.
+ * `/diagnostic?onglet=fragilite|former|tension…`: the three are sections of the
+ * Risques tab now — the address opens that tab scrolled to the section
+ * (`section=`), its other params kept (the fragility filters, the day).
  */
-export const trainingTabToNeed: CanActivateFn = (route) => {
-  if (route.queryParamMap.get('onglet') !== 'former') {
+export const formerTabsToRisques: CanActivateFn = (route) => {
+  const onglet = route.queryParamMap.get('onglet');
+  if (onglet !== 'fragilite' && onglet !== 'former' && onglet !== 'tension') {
     return true;
   }
+  return inject(Router).parseUrl(risquesUrl(onglet, route.queryParams));
+};
+
+/** The Risques tab on one section, the other params travelling with it. */
+function risquesUrl(section: string, queryParams: Params): string {
   const params = new URLSearchParams();
-  params.set('onglet', 'besoin');
-  params.set('section', 'former');
-  for (const [key, value] of Object.entries(route.queryParams)) {
+  params.set('onglet', 'risques');
+  params.set('section', section);
+  for (const [key, value] of Object.entries(queryParams)) {
     if (key !== 'onglet' && key !== 'section' && value !== undefined && value !== null) {
       params.set(key, paramText(value as string | readonly string[]));
     }
   }
-  return inject(Router).parseUrl(`/diagnostic?${params.toString()}`);
-};
+  return `/diagnostic?${params.toString()}`;
+}
 
 /**
- * The Marge disponible screen became two tabs of the Diagnostic: its « avant »
+ * The Marge disponible screen became two places of the Diagnostic: its « avant »
  * reading is a column of Besoin, its « après » and « tension » readings merged
- * into Tension. `mode` names the tab, and goes; every other param travels.
+ * into the Tension section of Risques. `mode` names where, and goes; every
+ * other param travels.
  */
 export function margeToDiagnostic(queryParams: Params): string {
   const mode = queryParams['mode'];
+  if (mode === 'apres' || mode === 'tension') {
+    return risquesUrl('tension', { ...queryParams, mode: undefined });
+  }
   const params = new URLSearchParams();
-  params.set('onglet', mode === 'apres' || mode === 'tension' ? 'tension' : 'besoin');
+  params.set('onglet', 'besoin');
   for (const [key, value] of Object.entries(queryParams)) {
     if (key !== 'mode' && key !== 'onglet' && value !== undefined && value !== null) {
       params.set(key, paramText(value as string | readonly string[]));
@@ -512,14 +522,14 @@ const adminRoutes: Routes = [
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
     data: { aide: 'lire-les-resultats' },
-    canActivate: [benchTabToJournee, trainingTabToNeed],
+    canActivate: [benchTabToJournee, formerTabsToRisques],
     loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
   // The screens the Diagnostic page gathers, kept for the bookmarks; the
   // bench's own went on to the Journée with it.
   { path: 'problemes', redirectTo: redirectToDiagnostic('problemes') },
   { path: 'staffing', redirectTo: redirectToDiagnostic('besoin') },
-  { path: 'fragilite', redirectTo: redirectToDiagnostic('fragilite') },
+  { path: 'fragilite', redirectTo: ({ queryParams }) => risquesUrl('fragilite', queryParams) },
   { path: 'marge', redirectTo: ({ queryParams }) => margeToDiagnostic(queryParams) },
   { path: 'banc-de-touche', redirectTo: ({ queryParams }) => benchToJournee(queryParams) },
   {

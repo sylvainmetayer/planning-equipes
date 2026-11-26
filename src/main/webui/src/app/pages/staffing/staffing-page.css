@@ -69,7 +69,7 @@
   font: var(--mat-sys-title-small);
 }
 
-/* « À former », at the foot of the need; scrolled to from `?onglet=former`. */
+/* The sections below the need's figures; scrolled to from `?section=`. */
 .staffing-former {
   display: block;
   scroll-margin-top: 5rem;
