@@ -290,7 +290,7 @@ describe('AdminShell', () => {
       expect(resolutionReload).toHaveBeenCalledOnce();
     });
 
-    it('offers to freeze the stands and the timeslots once a solve has landed', () => {
+    it('offers the Calcul phase once a solve has landed', () => {
       createShell();
       gelOffer.mockClear();
 

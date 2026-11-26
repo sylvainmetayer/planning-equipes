@@ -107,6 +107,8 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `figer_referentiel` | `modifier_phase_edition` |
+| `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
 | `modifier_parametres_legaux` | `modifier_parametres` |

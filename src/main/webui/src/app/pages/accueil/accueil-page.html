@@ -159,6 +159,11 @@
                 <mat-icon iconPositionEnd>{{ coherenceOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
               </button>
             }
+            @if (ligne.panneau === 'phase') {
+              <div class="accueil-panneau">
+                <app-phase-edition-control />
+              </div>
+            }
             @if (ligne.panneau === 'coherence' && coherenceOpen()) {
               <div id="accueil-coherence-panneau" class="accueil-panneau">
                 @if (coherenceLoading() && !coherenceReport()) {

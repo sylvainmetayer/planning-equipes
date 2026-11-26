@@ -18,15 +18,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The 3.x freeze through MCP, kept as aliases of the phase of the edition
- * until 5.0 (ADR 0115): {@code figer_referentiel} and {@code lever_gel} work
- * in the edition their argument names, {@code etat_edition} reads the freeze
- * back, and a write tool of a frozen family comes back as a
- * refusal carrying the sentence — the same guard as over HTTP, since both reach
- * the same services.
+ * The phase of the edition through MCP (ADR 0115): {@code modifier_phase_edition}
+ * works in the edition its argument names, declares a phase or unblocks and
+ * freezes the structure of a published one, {@code etat_edition} reads the
+ * freeze back, and a write tool of a frozen family comes back as a refusal
+ * carrying the sentence — the same guard as over HTTP, since both reach the
+ * same services.
  */
 @QuarkusTest
-class GelReferentielMcpToolsTest {
+class PhaseEditionMcpToolsTest {
 
     /** The edition each test works in, drawn by the server when created (ids are generated). */
     private static String edition;
@@ -63,9 +63,6 @@ class GelReferentielMcpToolsTest {
 
     @AfterEach
     void liftEverythingAndDropTheEdition() {
-        for (ReferentialFamily famille : ReferentialFamily.values()) {
-            editionTools.liftFreeze(famille.name(), edition);
-        }
         given().header("X-Edition-Id", "E1").when().delete("/api/editions/" + edition);
     }
 
@@ -82,35 +79,58 @@ class GelReferentielMcpToolsTest {
     }
 
     @Test
-    void freezingAFamilyEntersTheCalculPhaseAndLiftingLeavesIt() {
-        GelReferentielService.EtatGel fige = editionTools.freezeReferential("stands", edition);
-        assertThat(fige.fige()).isTrue();
-        assertThat(fige.figeLe()).isNotNull();
+    void declaringCalculFreezesTheFourFamiliesAndPreparationOpensThemAgain() {
+        EditionMcpTools.PhaseView calcul = editionTools.changeEditionPhase("CALCUL", null, edition);
+        assertThat(calcul.phase()).isEqualTo("CALCUL");
+        assertThat(calcul.edition()).isEqualTo(edition);
 
         EtatEditionView etat = editionTools.editionState(edition);
         assertThat(etat.gel().familles())
                 .filteredOn(GelReferentielService.EtatGel::fige)
                 .extracting(GelReferentielService.EtatGel::famille)
-                .as("the Calcul phase freezes the four families, not the one named")
                 .containsExactly(ReferentialFamily.values());
         // Another edition is not frozen by this one.
         assertThat(editionTools.editionState("E1").gel().familles()).noneMatch(GelReferentielService.EtatGel::fige);
 
-        assertThat(editionTools.liftFreeze("STANDS", edition).fige()).isFalse();
+        assertThat(editionTools.changeEditionPhase("PREPARATION", null, edition).phase())
+                .isEqualTo("PREPARATION");
         assertThat(editionTools.editionState(edition).gel().familles()).noneMatch(GelReferentielService.EtatGel::fige);
     }
 
     @Test
-    void anUnknownFamilyIsRefusedWithTheListOfFamilies() {
-        assertThatThrownBy(() -> editionTools.freezeReferential("HORAIRES", edition))
+    void theStructureUnblocksAndFreezesAgainInPublishedOnly() {
+        assertThatThrownBy(() -> editionTools.changeEditionPhase(null, "DEBLOQUER", edition))
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Conflict.class);
+
+        editionTools.changeEditionPhase("PUBLIEE", null, edition);
+        assertThat(editionTools.changeEditionPhase(null, "DEBLOQUER", edition).structureDebloquee())
+                .isTrue();
+        assertThat(editionTools.changeEditionPhase(null, "REFIGER", edition).structureDebloquee())
+                .isFalse();
+    }
+
+    @Test
+    void aPhaseOrAStructureGestureIsRequiredButNotBoth() {
+        assertThatThrownBy(() -> editionTools.changeEditionPhase(null, null, edition))
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> editionTools.changeEditionPhase("CALCUL", "DEBLOQUER", edition))
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Invalid.class);
+    }
+
+    @Test
+    void anUnknownPhaseIsRefusedWithTheListOfPhases() {
+        assertThatThrownBy(() -> editionTools.changeEditionPhase("FINIE", null, edition))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
-                .hasMessageContaining("TYPOLOGIES_EMPLACEMENTS");
+                .hasMessageContaining("PUBLIEE");
     }
 
     @Test
     void theWriteToolsOfAFrozenFamilyAreRefused() {
-        editionTools.freezeReferential("STANDS", edition);
+        editionTools.changeEditionPhase("CALCUL", null, edition);
 
         String stand = idOfCode("/api/stands", "STAND-STRAT");
         String strategie = idOfCode("/api/typologies", "STRATEGIE");

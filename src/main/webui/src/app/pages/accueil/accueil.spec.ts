@@ -182,7 +182,7 @@ describe('buildLignes', () => {
   it('lists the twelve steps of the cycle in the order of the guide', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.id)).toEqual([
       'referentiels',
-      'gel',
+      'phase',
       'coherence',
       'collecte',
       'ouvertures',
@@ -270,12 +270,8 @@ describe('buildLignes', () => {
       queryParams: { date: '2026-07-10' },
       libelle: 'Voir le planning',
     });
-    // The freeze is set in Paramètres only: the line says its state and leads there.
-    expect(liens.get('gel')).toMatchObject({
-      route: '/parametres',
-      queryParams: { onglet: 'edition' },
-      fragment: 'gel-referentiel',
-    });
+    // The phase is moved on the line itself, which unfolds its control: no link out.
+    expect(liens.get('phase')).toBeUndefined();
     expect(liens.get('problemes')).toMatchObject({
       route: '/diagnostic',
       queryParams: { onglet: 'problemes' },

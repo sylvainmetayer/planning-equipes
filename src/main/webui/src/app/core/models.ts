@@ -832,6 +832,9 @@ export interface Creneau {
   couverturePause?: boolean;
 }
 
+/** Where an edition stands in its cycle, the order of the cycle (ADR 0115). */
+export type EditionPhase = 'PREPARATION' | 'CALCUL' | 'PUBLIEE' | 'TERMINEE';
+
 /**
  * A whole edition of the event — "Année 2025", "Année 2026" — and the scope
  * every piece of reference data belongs to (`/api/editions`). `active` is not
@@ -846,7 +849,7 @@ export interface Edition {
   active: boolean;
   creeLe: string | null;
   /** Where the edition stands in its cycle (ADR 0115). */
-  phase?: 'PREPARATION' | 'CALCUL' | 'PUBLIEE' | 'TERMINEE';
+  phase?: EditionPhase;
   /** When the edition entered its phase. */
   phaseDepuis?: string;
   /** In `PUBLIEE` only: the structure was reopened for a last-minute change. */

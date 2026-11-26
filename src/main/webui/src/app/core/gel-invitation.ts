@@ -1,7 +1,8 @@
-// The invitation to freeze the stands and the timeslots (ADR 0052), offered at
-// the two milestones where a late edit starts to cost: the edition's first
-// completed solve, and its first publication. Offered, never imposed — a
-// snack bar leading to the freeze switches, once per edition and milestone.
+// The invitation to enter the Calcul phase (ADR 0052, 0115), which freezes the
+// stands and the timeslots, offered at the milestone where a late edit starts
+// to cost: the edition's first completed solve. Publishing needs none, since
+// it moves the edition to Publiée on its own. Offered, never imposed — a
+// snack bar leading to the phase control, once per edition.
 //
 // « Once » is remembered in this browser (localStorage, per edition): the
 // invitation is a nudge, not state the server must hold, and a second browser
@@ -11,11 +12,11 @@
 
 import { Injectable, inject } from '@angular/core';
 import { editionScopedKey } from './edition-courante';
-import { GelReferentielStore } from './gel-referentiel.store';
+import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
 
-/** The two moments the invitation is offered at. */
-export type GelMilestone = 'resolution' | 'publication';
+/** The moment the invitation is offered at. */
+export type GelMilestone = 'resolution';
 
 const STORAGE_BASE = 'planning-equipes.gel-invitation';
 
@@ -42,45 +43,36 @@ function markOffered(milestone: GelMilestone): void {
 
 @Injectable({ providedIn: 'root' })
 export class GelInvitation {
-  private readonly store = inject(GelReferentielStore);
+  private readonly editions = inject(EditionStore);
   private readonly notifications = inject(NotificationService);
 
   /**
-   * Offers to freeze the stands and the timeslots, unless this milestone was
-   * already offered in this edition or both are frozen already. Never throws:
-   * it rides on a solve's landing and a publication's success.
+   * Offers to enter the Calcul phase, unless this milestone was already
+   * offered in this edition or the edition is past its preparation. Never
+   * throws: it rides on a solve's landing.
    */
-  async offer(milestone: GelMilestone): Promise<void> {
+  offer(milestone: GelMilestone): void {
     if (alreadyOffered(milestone)) {
       return;
     }
-    // The store never rejects: a failed read leaves its error set instead. Not
-    // knowing what is frozen, the invitation is neither shown nor spent — the
-    // next milestone landing will offer it again.
-    try {
-      await this.store.reload();
-    } catch {
-      return;
-    }
-    if (this.store.error()) {
+    // Not knowing the phase, the invitation is neither shown nor spent: the
+    // next solve landing will offer it again.
+    const phase = this.editions.phase();
+    if (phase === null) {
       return;
     }
     markOffered(milestone);
-    if (this.store.isFrozen('STANDS') && this.store.isFrozen('CRENEAUX')) {
+    if (phase !== 'PREPARATION') {
       return;
     }
     this.notifications.notify({
-      title: $localize`:@@gel.invitation.titre:Figer les stands et les créneaux ?`,
-      message:
-        milestone === 'publication'
-          ? $localize`:@@gel.invitation.publication:Le planning est publié : une retouche ferait bouger des plannings envoyés.`
-          : $localize`:@@gel.invitation.resolution:Un planning est calculé : une retouche le rendrait obsolète.`,
+      title: $localize`:@@gel.invitation.titre:Passer l'édition en phase Calcul ?`,
+      message: $localize`:@@gel.invitation.resolution:Un planning est calculé : une retouche des stands ou des créneaux le rendrait obsolète. La phase Calcul les fige.`,
       variant: 'info',
       timeout: 0,
       lien: {
-        route: '/parametres',
-        queryParams: { onglet: 'edition' },
-        libelle: $localize`:@@gel.invitation.lien:Voir le gel du référentiel`,
+        route: '/',
+        libelle: $localize`:@@gel.invitation.lien:Voir la phase de l'édition`,
       },
     });
   }

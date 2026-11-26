@@ -5,13 +5,18 @@ import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { EditionStore } from '../core/edition.store';
 import { Edition } from '../core/models';
+import { phaseLabel } from '../core/phase-edition';
+import { SessionStore } from '../core/session.store';
+import { PhaseEditionActions } from './phase-edition-actions';
 
 /**
  * Persistent strip under the toolbar naming the edition every screen is
  * currently reading from — and whether it is the active one, the only one
  * that reaches outside (ADR 0072) — with a one-click switcher, and a banner
  * when the editions' state asks for a decision (the active one is over, the
- * next one starts within days). Every page's data
+ * next one starts within days), or while the structure of a published edition
+ * is unblocked (ADR 0115) — the one state that must not be forgotten open.
+ * Every page's data
  * depends on that answer, so it is given once in the shell instead of on any
  * one page — see `docs/decisions/0001-cloisonnement-par-edition.md`.
  *
@@ -33,6 +38,9 @@ import { Edition } from '../core/models';
         <span class="edition-actuelle-bar-label">
           <span i18n="@@editionActuelle.label">Édition actuelle :</span>
           <strong>{{ edition.nom }}</strong>
+          @if (phase(); as nomPhase) {
+            <span class="edition-actuelle-bar-phase" i18n="@@editionActuelle.phase">· phase {{ nomPhase }}</span>
+          }
           @if (!edition.active) {
             <span class="edition-actuelle-bar-inactive" i18n="@@editionActuelle.inactive">(inactive : rien n'en part vers l'extérieur)</span>
           }
@@ -64,6 +72,18 @@ import { Edition } from '../core/models';
           </a>
         </span>
       </div>
+      @if (structureDebloquee()) {
+        <div class="edition-actuelle-bar edition-actuelle-bar-rappel" role="status" data-bandeau="structure-debloquee">
+          <mat-icon class="edition-actuelle-bar-icon">lock_open</mat-icon>
+          <span i18n="@@editionActuelle.debloquee">Structure débloquée : stands, créneaux, typologies et emplacements se modifient. La publication suivante la refige.</span>
+          @if (!lectureSeule()) {
+            <span class="edition-actuelle-bar-actions">
+              <button matButton type="button" [disabled]="actions.busy()" (click)="refiger()"
+                      i18n="@@phase.refiger.geste">Refiger</button>
+            </span>
+          }
+        </div>
+      }
       @if (situations().length > 0) {
         <div class="edition-actuelle-bar edition-actuelle-bar-rappel" role="status">
           <mat-icon class="edition-actuelle-bar-icon">notification_important</mat-icon>
@@ -92,7 +112,8 @@ import { Edition } from '../core/models';
     .edition-actuelle-bar-icon {
       flex-shrink: 0;
     }
-    .edition-actuelle-bar-inactive {
+    .edition-actuelle-bar-inactive,
+    .edition-actuelle-bar-phase {
       font: var(--mat-sys-body-small);
       white-space: nowrap;
     }
@@ -140,6 +161,17 @@ export class EditionActuelleBar {
   protected readonly editionActuelle = computed(() => this.store.courant());
   protected readonly autresEditions = computed(() => this.store.autres());
   protected readonly situations = computed(() => this.store.situations());
+  protected readonly phase = computed(() => {
+    const phase = this.store.phase();
+    return phase ? phaseLabel(phase) : '';
+  });
+  protected readonly structureDebloquee = this.store.structureDebloquee;
+  protected readonly lectureSeule = inject(SessionStore).lectureSeule;
+  protected readonly actions = inject(PhaseEditionActions);
+
+  protected refiger(): void {
+    void this.actions.refreezeStructure();
+  }
 
   protected basculer(edition: Edition): void {
     this.store.basculer(edition);
