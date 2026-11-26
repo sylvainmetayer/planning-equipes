@@ -39,11 +39,11 @@ To retouch a seat without starting the solve again, `suggerer_reparations` looks
 | `analyser_marge` | the margin per day and slice, in `avant` mode (default) or `apres`; the `tension` mode crosses it with the plan's fragility, each cell carrying a `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`, `CALME`) and its `motifs`, the irreplaceable seats all being counted there |
 | `plan_formation` | per game category that is short or held by a single specialist, the figures of the analyses and the ranked candidates (available tension days, then wish, then level); a candidate is `DEBUTANT` or `AUTONOME`, never `REFERENT`. With no saved plan, `planPersiste` is `false` and only the need part speaks |
 | `analyser_pauses` | per staff member and per day, where the due break falls, on which stand, who can relay (`relaisAnimateurIds`); a break that nobody can relay is a hard breach, the `sansRelais` filter returns only those |
-| `analyser_enchainements` | two consecutive seats of a staff member on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break (`walkOnBreak`); `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well". Speed, detour and tolerance are set by `modifier_parametres_qualite` |
+| `analyser_enchainements` | two consecutive seats of a staff member on two geolocated locations whose gap leaves no time to walk, or only by taking it from the break (`walkOnBreak`); `geolocated=false` says that no trip could be computed, rather than an empty list that would read as "all is well". Speed, detour and tolerance are set by `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | for each group, day by day, who works, who is missing, the gap in arrivals and departures |
 | `comparer_editions` | the delta of the Compare two editions screen, with no name at all: a staff row carries its ids in each edition and the names of the fields that differ, never their values. Nothing is matched by id; `matching` says on what two rows were matched (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
-The break is set by `consulter_parametres_legaux` and `modifier_parametres_legaux`: a single duration, `dureePauseMinutes` (30 by default), refused below its public-policy floor of 20 minutes and capped by nothing. The 30 minutes due to a minor apply at reading time, not at setting time: an edition at 25 gives 25 to adults and 30 to minors. The ceilings, the hours report, fairness and the indicators deduct this same duration ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). The same pair of tools carries `heureDebutSoiree` and `dureeVacationMaxMinutes`.
+The break is set by `consulter_parametres` and `modifier_parametres` (section `legal`): a single duration, `dureePauseMinutes` (30 by default), refused below its public-policy floor of 20 minutes and capped by nothing. The 30 minutes due to a minor apply at reading time, not at setting time: an edition at 25 gives 25 to adults and 30 to minors. The ceilings, the hours report, fairness and the indicators deduct this same duration ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). The same section carries `heureDebutSoiree` and `dureeVacationMaxMinutes`.
 
 ## Building the grid and the hours
 
@@ -98,7 +98,16 @@ Two **resources**, to attach once to inform all following calls:
 4.0 renames, groups or removes tools of 3.x, with no alias: a tool is published only under its current name ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)). This table is the rendering of the changed rows of [`mcp-renommages.tsv`](repo:src/main/resources/mcp-renommages.tsv); a name that is absent has not changed. When the file changes, `McpRenommageTest` fails and prints the table to paste between the two markers.
 
 <!-- mcp-renommages:debut -->
-No tool has been renamed or removed yet.
+| Name in 3.x | Name in 4.0 |
+| --- | --- |
+| `consulter_parametres_legaux` | `consulter_parametres` |
+| `consulter_parametres_notifications` | `consulter_parametres` |
+| `consulter_parametres_qualite` | `consulter_parametres` |
+| `consulter_parametres_solveur` | `consulter_parametres` |
+| `modifier_parametres_legaux` | `modifier_parametres` |
+| `modifier_parametres_notifications` | `modifier_parametres` |
+| `modifier_parametres_qualite` | `modifier_parametres` |
+| `modifier_parametres_solveur` | `modifier_parametres` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool

@@ -48,7 +48,7 @@ Un téléchargement d'espace n'est tracé **qu'une fois l'identité prouvée**. 
 
 ## Notifications planifiées
 
-`GET` et `PUT /api/parametres-notifications` règlent les délais des envois de nuit **de cette édition**. Qu'ils partent ou non ne se règle pas ici : seule l'édition active envoie ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)).
+`GET` et `PUT /api/parametres/notifications` règlent les délais des envois de nuit **de cette édition**. Qu'ils partent ou non ne se règle pas ici : seule l'édition active envoie ([ADR 0072](repo:docs/decisions/0072-une-seule-edition-active.md)).
 
 | Champ | Rôle |
 | --- | --- |

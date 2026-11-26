@@ -65,6 +65,8 @@ public class JournalOutilInterceptor {
             return context.proceed();
         }
         String entiteId = entiteId(context);
+        // Only what this call states counts, not a previous call's in the same context.
+        currentAction.action(null);
         try {
             Object resultat = context.proceed();
             // A creation names nothing in its arguments — the id is drawn by
@@ -76,15 +78,25 @@ public class JournalOutilInterceptor {
             // noted them on the way — the same enrichment the REST filter
             // reads, so a « champs modifiés » column no longer depends on
             // which door the write came through.
-            journal.recordAction(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, currentAction.champs(), 200);
+            journal.recordAction(
+                    stated(action.get()), Acteur.ASSISTANT, PRINCIPAL, entiteId, currentAction.champs(), 200);
             return resultat;
         } catch (Exception e) {
             // A refused tool call is a fact worth keeping: an assistant that
             // tried to delete an edition and was told no belongs in the
             // history quite as much as one that succeeded.
-            journal.recordAction(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 400);
+            journal.recordAction(stated(action.get()), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 400);
             throw e;
         }
+    }
+
+    /**
+     * The action the tool stated it performed ({@link CurrentAction#action(String)}),
+     * for a tool that serves several — {@code modifier_parametres}, one per
+     * section — as {@code JournalActionFilter} reads it for a route.
+     */
+    private ActionJournalisee stated(ActionJournalisee catalogue) {
+        return CatalogueActions.forCode(currentAction.action()).orElse(catalogue);
     }
 
     /**

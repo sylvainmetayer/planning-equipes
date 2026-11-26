@@ -126,9 +126,74 @@ class McpWarnsWhileSolvingTest {
                 .orElseThrow();
         solveHoldsTheEdition();
         try {
-            assertWarned(() -> parametresTools
-                    .updateParametresSolveur(duree, null, null, "E1")
+            assertWarned(() -> ((ParametresMcpTools.ParametresSolveurView) parametresTools
+                            .updateParametres(
+                                    "instance",
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    duree,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    "E1")
+                            .parametres())
                     .avertissements());
+            // Notifications are read by the night sends, never by a solve: nothing to warn about.
+            assertThat(parametresTools
+                            .updateParametres(
+                                    "notifications",
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    "E1")
+                            .withWarning(CODE)
+                            .parametres())
+                    .isNotInstanceOf(WarningCarrier.class);
             assertWarned(() ->
                     contrainteTools.updateContrainteWeight(contrainte, 3, "E1").avertissements());
             assertWarned(
@@ -207,8 +272,12 @@ class McpWarnsWhileSolvingTest {
             String contrainteId = contrainte.contrainte().id();
             assertWarned(() ->
                     parametresTools.deleteContrainteAdHoc(contrainteId, ed).avertissements());
-            assertWarned(() -> parametresTools
-                    .updateParametresLegaux(null, null, null, null, null, null, null, null, null, null, null, ed)
+            assertWarned(() -> ((ParametresMcpTools.ParametresLegauxView) parametresTools
+                            .updateParametres(
+                                    "legal", null, null, null, null, null, null, null, null, null, null, null, null,
+                                    null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                                    null, ed)
+                            .parametres())
                     .avertissements());
             WrittenVerrouillageView verrou = verrouillageTools.lock("JOUR", null, null, null, "2031-08-01", null, ed);
             assertThat(verrou.avertissements()).contains(CODE);

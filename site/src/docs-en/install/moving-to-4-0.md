@@ -56,8 +56,8 @@ The details and an example are in [the environment variables](variables-environn
 ### YAML scenario format
 
 - **Before**: the application writes `schemaVersion: 1`.
-- **After**: it writes `schemaVersion: 2`. It still reads v1 files (key absent or equal to 1): they go through a chain of conversions, link by link, as the model changes during 4.x. What the chain cannot convert is ignored, and every ignored item appears in the import report's warnings, never silently. The 1 → 2 link already renames the game categories' `ninja` key to `polyvalent`, losing nothing.
-- **What you do**: nothing to read your old files, end-of-event archives or copies taken before a wipe. A v2 scenario cannot be imported into a 3.x application ("newer format"): keep a v1 export before upgrading, it is your way back. The v1 reader is removed in 5.0.
+- **After**: it writes `schemaVersion: 3`. It still reads v1 files (key absent or equal to 1): they go through a chain of conversions, link by link, as the model changes during 4.x. What the chain cannot convert is ignored, and every ignored item appears in the import report's warnings, never silently. The 1 → 2 link already renames the game categories' `ninja` key to `polyvalent`, losing nothing.
+- **What you do**: nothing to read your old files, end-of-event archives or copies taken before a wipe. A v2 or v3 scenario cannot be imported into a 3.x application ("newer format"): keep a v1 export before upgrading, it is your way back. The v1 reader is removed in 5.0.
 
 ### Schedule rule names
 
@@ -68,6 +68,12 @@ Coming: mapping of old names, rules merged or removed.
 **Before**: 157 tools whose names almost all start with a verb (`lister_stands`), with about ten exceptions (`equite_planning`, `volumes`…). **After**: tools are named `<verb>_<object>`, the verb taken from a closed set ([ADR 0100](repo:docs/decisions/0100-convention-de-nommage-des-outils-mcp.md)), some are grouped or removed, and there is **no alias**: a tool is published only under its current name. The mapping, old name then new name or "removed", is in [the old tool names](../comprendre/mcp-outils.md#anciens-noms-doutils), filled in as 4.0 changes land (for now no tool is renamed).
 
 **What you do**: if you have written instructions, prompts or scripts that name tools, reread them against this table; an assistant that reconnects rereads the tool list and has nothing else to change.
+
+### The edition's settings in four sections
+
+- **Before (3.x)**: four API roots (`/api/parametres-legaux`, `-qualite`, `-solveur`, `-notifications`), eight MCP tools (`consulter_parametres_legaux`, `modifier_parametres_legaux`, and their three counterparts) and, in a YAML scenario, the top-level keys `parametresLegaux`, `parametresQualite` and `parametresSolveur`.
+- **After (4.0)**: the settings have four sections, `legal`, `organisation` (the former "quality"), `notifications` and `instance` (the former "solver", the solve budget). The API serves them as `GET /api/parametres` (all four) and `GET`/`PUT /api/parametres/<section>`, which refuses with a 400 a field that is not of the section. Two MCP tools replace them: `consulter_parametres` and `modifier_parametres`, each with a `section` argument (same refusal). A scenario groups them under one key, `parametres:` (`legal`, `organisation`, `instance`; notifications are not part of it, as before). The database does not change: no SQL migration.
+- **What you do**: nothing for your data or files: v1 and v2 scenarios are converted on reading. The former API roots still answer, as aliases declared obsolete (`deprecated` in the OpenAPI), throughout 4.x, and ignore an unknown field as before; they are removed in 5.0, like the old format. If a script or a prompt names the old MCP tools, reread it against the [MCP tools](../comprendre/mcp-outils.md#anciens-noms-doutils) table; no tool alias is published.
 
 ### The "ninja" game category becomes "all-rounder"
 

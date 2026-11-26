@@ -7,6 +7,8 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.journal.EntreeJournal;
+import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -34,6 +36,9 @@ class ParametresSolveurMcpToolsTest {
     @Inject
     EditionContext editionContext;
 
+    @Inject
+    JournalActionService journal;
+
     private String edition;
 
     @BeforeEach
@@ -52,7 +57,7 @@ class ParametresSolveurMcpToolsTest {
 
     @Test
     void aPlateauAloneSavesOverAKeptDurationAboveTheCeiling() {
-        var view = tools.updateParametresSolveur(null, 600, null, edition);
+        var view = instance(null, 600);
 
         assertThat(view.dureeResolutionSecondes()).isEqualTo(7200);
         assertThat(view.plateauSecondes()).isEqualTo(600);
@@ -61,7 +66,96 @@ class ParametresSolveurMcpToolsTest {
     @Test
     void aDurationChangedAboveTheCeilingIsStillRefused() {
         // A refusal comes back as a tool error carrying its sentence (@RefusMetier).
-        assertThatThrownBy(() -> tools.updateParametresSolveur(5400, null, null, edition))
-                .hasMessageContaining("au plus 1 h");
+        assertThatThrownBy(() -> instance(5400, null)).hasMessageContaining("au plus 1 h");
+    }
+
+    @Test
+    void theJournalNamesTheSectionAsItsRestRouteDoes() {
+        instance(null, 600);
+
+        EntreeJournal ligne =
+                editionContext.executeIn(edition, () -> journal.list(5)).getFirst();
+        assertThat(ligne.acteur()).hasToString("ASSISTANT");
+        assertThat(ligne.action()).isEqualTo("PARAMETRES_SOLVEUR_MODIFIES");
+    }
+
+    @Test
+    void aSectionIsReadByItsName() {
+        var view = tools.getParametres("instance", edition);
+
+        assertThat(view.section()).isEqualTo("instance");
+        assertThat(view.parametres()).isInstanceOf(ParametresMcpTools.ParametresSolveurView.class);
+    }
+
+    @Test
+    void anUnknownSectionAndAnArgumentOfAnotherSectionAreRefused() {
+        assertThatThrownBy(() -> tools.getParametres("solveur", edition)).hasMessageContaining("Section inconnue");
+        // dureePauseMinutes is a legal field, not an instance one.
+        assertThatThrownBy(() -> tools.updateParametres(
+                        "instance",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        25,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        600,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        edition))
+                .hasMessageContaining("n'est pas de la section");
+    }
+
+    /** {@code modifier_parametres} on the instance section, as the tool is called. */
+    private ParametresMcpTools.ParametresSolveurView instance(Integer duree, Integer plateau) {
+        return (ParametresMcpTools.ParametresSolveurView) tools.updateParametres(
+                        "instance",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        duree,
+                        plateau,
+                        null,
+                        null,
+                        null,
+                        null,
+                        edition)
+                .parametres();
     }
 }

@@ -45,7 +45,7 @@ The number of seats of an open segment (at least one, half rounded up on a break
 
 ## The legal settings
 
-`ParametresLegaux` is a problem fact (`@ProblemFactCollectionProperty` on `PlanningEvenement`, like `ContrainteAdHoc`), stored **per edition**, adjustable through `GET` and `PUT /api/parametres-legaux`. It carries both the ceilings set by law and the rules the organisation sets for itself:
+`ParametresLegaux` is a problem fact (`@ProblemFactCollectionProperty` on `PlanningEvenement`, like `ContrainteAdHoc`), stored **per edition**, adjustable through `GET` and `PUT /api/parametres/legal` (the `legal` section of the settings, next to `organisation`, `notifications` and `instance`; `GET /api/parametres` returns all four). It carries both the ceilings set by law and the rules the organisation sets for itself:
 
 | Field | Default | Origin |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ The Code requires the break to be **real**, not to be scheduled: an organiser wh
 
 A break that is due and has neither is a **hard breach**, one point per break, carried by `travailContinuMaxMajeur` and `travailContinuMaxMineur`, plus the eligibility-exclusion flat penalty for a minor. There is nothing to declare: a `pauseSurPoste` parameter used to exist and switched these two rules off, and it has been removed.
 
-The duration is **a single setting**, `dureePauseMinutes` (section `parametresLegaux` of a scenario): 30 minutes by default, floor of 20 (art. L3121-16), raised to at least 30 for a minor (art. L3162-3) by `ParametresLegaux.dureePauseMinutes(mineur)`.
+The duration is **a single setting**, `dureePauseMinutes` (section `parametres.legal` of a scenario): 30 minutes by default, floor of 20 (art. L3121-16), raised to at least 30 for a minor (art. L3162-3) by `ParametresLegaux.dureePauseMinutes(mineur)`.
 
 **The calculation is written once.** `PauseSurPoste.dues(postes, parametres)` returns the breaks of one (staff member, day) pair: a sequence of `L` minutes beyond the ceiling `cap` owes `ceil((L − cap) / (cap + pause))` of them, the k-th one at the latest when the sequence reaches its k-th ceiling. The solver, the Breaks screen, the staff PDF and the ICS feed all read this method, so none of them can describe a break that another does not owe.
 
@@ -123,9 +123,9 @@ A few notes on reading it:
 
 ## Scenario sections
 
-A scenario file can set its own `parametresLegaux`, `parametresQualite` and `parametresSolveur`. For `parametresLegaux`, only the fields to override are given and the others keep the default **of the Java class**, never the value in the database: a large scenario can thus configure its own solve duration without depending on what a previous scenario left behind. A file that does not carry the section takes the settings of the edition that imports it. In `parametresQualite`, the two hours are read as they are (a section that names neither describes an edition where `eviterFermeturePuisOuverture` says nothing, a legitimate setting) and omitted numbers take their default.
+A scenario file can set its own settings, under `parametres:`: `legal`, `organisation` (the quality thresholds) and `instance` (the solve budget). For `legal`, only the fields to override are given and the others keep the default **of the Java class**, never the value in the database: a large scenario can thus configure its own solve duration without depending on what a previous scenario left behind. A file that does not carry the section takes the settings of the edition that imports it. In `organisation`, the two hours are read as they are (a section that names neither describes an edition where `eviterFermeturePuisOuverture` says nothing, a legitimate setting) and omitted numbers take their default.
 
-Removed sections and keys are **refused by name** rather than ignored (`ScenarioBinder`): `parametresDecoupage` and `decoupageAuto` (splitting has gone: a grid of opening spans read as shifts would give 14-hour days without a word), and the keys `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` of `parametresLegaux`, each with its replacement. The same mechanism refuses any unknown key and a `schemaVersion` newer than the one the version reads. The full formats are in [scenario-yaml](scenario-yaml.md).
+Removed sections and keys are **refused by name** rather than ignored (`ScenarioBinder`): `parametresDecoupage` and `decoupageAuto` (splitting has gone: a grid of opening spans read as shifts would give 14-hour days without a word), and the keys `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` of `parametres.legal`, each with its replacement. The same mechanism refuses any unknown key and a `schemaVersion` newer than the one the version reads. The full formats are in [scenario-yaml](scenario-yaml.md).
 
 <!-- Links to Légifrance. Each reference points to the search by article
      number, which always resolves to the version in force: a LEGIARTI

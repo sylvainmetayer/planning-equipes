@@ -51,6 +51,46 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v2ToV3MovesTheThreeParameterSectionsUnderParametres() {
+        Map<String, Object> document = document();
+        document.put("parametresLegaux", Map.of("dureePauseMinutes", 30));
+        document.put("parametresQualite", Map.of("joursConsecutifsMax", 5));
+        document.put("parametresSolveur", Map.of("dureeResolutionSecondes", 400));
+
+        Map<String, Object> converted = ScenarioParametresLink.convert(document, new java.util.ArrayList<>());
+
+        assertThat(converted)
+                .doesNotContainKeys("parametresLegaux", "parametresQualite", "parametresSolveur")
+                .containsEntry(
+                        "parametres",
+                        Map.of(
+                                "legal", Map.of("dureePauseMinutes", 30),
+                                "organisation", Map.of("joursConsecutifsMax", 5),
+                                "instance", Map.of("dureeResolutionSecondes", 400)));
+    }
+
+    @Test
+    void v2ToV3KeepsASectionTheFileAlreadyCarriesAndSaysWhatItDropped() {
+        Map<String, Object> document = document();
+        document.put("parametres", Map.of("legal", Map.of("dureePauseMinutes", 20)));
+        document.put("parametresLegaux", Map.of("dureePauseMinutes", 30));
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioParametresLink.convert(document, warnings);
+
+        assertThat(converted)
+                .doesNotContainKey("parametresLegaux")
+                .containsEntry("parametres", Map.of("legal", Map.of("dureePauseMinutes", 20)));
+        assertThat(warnings).singleElement().asString().contains("parametresLegaux", "parametres.legal");
+    }
+
+    @Test
+    void v2ToV3LeavesADocumentWithoutParameterSectionsAlone() {
+        assertThat(ScenarioParametresLink.convert(document(), new java.util.ArrayList<>()))
+                .isEqualTo(document());
+    }
+
+    @Test
     void migrateStampsTheCurrentVersionAndLeavesTheInputUntouched() {
         Map<String, Object> input = document();
 
