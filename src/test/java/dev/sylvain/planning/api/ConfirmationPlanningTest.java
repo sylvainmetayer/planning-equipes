@@ -273,7 +273,7 @@ class ConfirmationPlanningTest {
 
     /** A published snapshot survives {@code clearDatabase()} — see PublicationResourceTest. */
     private void forgetPublications() {
-        execute("DELETE FROM plan_snapshot");
+        execute("DELETE FROM version_plan");
     }
 
     private void forgetConfirmations() {

@@ -80,11 +80,11 @@ class IdColumnsInventoryStructuralTest {
             Map.entry(
                     "notification_planifiee.cle",
                     "animateurId|date, animateurId|publicationInstant, or a swap request UUID — the dedup key"),
-            Map.entry("plan_snapshot.consignes", "dates, hours and motifs of the consignes, no id"),
+            Map.entry("version_plan.consignes", "dates, hours and motifs of the consignes, no id"),
             Map.entry(
-                    "plan_snapshot.contenu",
+                    "version_plan.contenu",
                     "standId and animateurId of every seat — what the stability of the published plan joins on"),
-            Map.entry("plan_snapshot.kpi", "figures only, no id"),
+            Map.entry("version_plan.kpi", "figures only, no id"),
             Map.entry(
                     "publication_destinataire.animateur_id",
                     "who a publication was sent to; the trace outlives the fiche"),

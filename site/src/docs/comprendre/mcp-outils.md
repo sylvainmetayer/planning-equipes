@@ -99,14 +99,20 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
+| `capturer_instantane` | `creer_version` |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `lister_instantanes` | `lister_versions` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
 <!-- mcp-renommages:fin -->
 
 ## Ce qui n'a pas d'outil

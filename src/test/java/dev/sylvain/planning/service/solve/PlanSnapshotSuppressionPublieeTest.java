@@ -142,7 +142,7 @@ class PlanSnapshotSuppressionPublieeTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps =
-                        connection.prepareStatement("DELETE FROM plan_snapshot WHERE libelle = ANY (?)")) {
+                        connection.prepareStatement("DELETE FROM version_plan WHERE libelle = ANY (?)")) {
             ps.setArray(1, connection.createArrayOf("text", LIBELLES.toArray()));
             ps.executeUpdate();
         } catch (Exception e) {

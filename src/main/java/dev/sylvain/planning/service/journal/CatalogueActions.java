@@ -614,6 +614,9 @@ public final class CatalogueActions {
         route("JourJResource#fileAbsenceReport", EMPECHEMENT_CLASSE);
         route("JourJResource#configureAbsenceReports", SIGNALEMENTS_CONFIGURES);
 
+        route("VersionPlanResource#capture", INSTANTANE_CAPTURE);
+        route("VersionPlanResource#restore", INSTANTANE_RESTAURE);
+        route("VersionPlanResource#delete", INSTANTANE_SUPPRIME);
         route("PlanSnapshotResource#capture", INSTANTANE_CAPTURE);
         route("PlanSnapshotResource#restore", INSTANTANE_RESTAURE);
         route("PlanSnapshotResource#delete", INSTANTANE_SUPPRIME);
@@ -800,9 +803,9 @@ public final class CatalogueActions {
         outil("deplacer_affectation", AFFECTATION_DEPLACEE);
         outil("affecter_poste", AFFECTATION_POSEE);
 
-        outil("capturer_instantane", INSTANTANE_CAPTURE);
-        outil("restaurer_instantane", INSTANTANE_RESTAURE);
-        outil("supprimer_instantane", INSTANTANE_SUPPRIME);
+        outil("creer_version", INSTANTANE_CAPTURE);
+        outil("restaurer_version", INSTANTANE_RESTAURE);
+        outil("supprimer_version", INSTANTANE_SUPPRIME);
         outil("publier_planning", PLANNING_PUBLIE);
         outil("envoyer_planning_animateur", PLANNING_ENVOYE);
         outil("relancer_animateurs", ANIMATEURS_RELANCES);

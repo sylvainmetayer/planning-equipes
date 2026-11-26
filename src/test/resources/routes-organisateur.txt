@@ -34,8 +34,8 @@ AnimateurResource#updateAnimateur PUT /animateurs/{id}
 ArchiveEvenementResource#availability GET /exports/archive-evenement/disponibilite
 ArchiveEvenementResource#export GET /exports/archive-evenement
 ChangementsJourneeResource#changements GET /journees/{jour}/changements
-ConsigneResource#apercuLevee POST /consignes/levee/apercu
 ConsigneResource#apercu POST /consignes/apercu
+ConsigneResource#apercuLevee POST /consignes/levee/apercu
 ConsigneResource#createPrereglage POST /consignes/prereglages
 ConsigneResource#deletePrereglage DELETE /consignes/prereglages/{id}
 ConsigneResource#etat GET /consignes
@@ -206,8 +206,8 @@ RealiseResource#report GET /planning/realise
 ReferenceDataResource#exportCsv GET /reference-data/export-csv
 ReferenceDataResource#fileScenarioTarget POST /reference-data/cible-scenario-fichier
 ReferenceDataResource#impactImport GET /reference-data/impact-import
-ReferenceDataResource#importScenarioFile POST /reference-data/import-scenario-fichier
 ReferenceDataResource#importScenario POST /reference-data/import-scenario
+ReferenceDataResource#importScenarioFile POST /reference-data/import-scenario-fichier
 ReferenceDataResource#scenarioTarget GET /reference-data/cible-scenario
 ReferenceDataResource#validateScenarioFile POST /reference-data/valider-scenario-fichier
 ReferenceDataResource#volumesExportCsv GET /reference-data/export-csv/volumes
@@ -257,6 +257,13 @@ ValidationJourneeResource#withdraw DELETE /validations/{id}
 VerrouillageResource#create POST /verrouillages
 VerrouillageResource#delete DELETE /verrouillages/{id}
 VerrouillageResource#list GET /verrouillages
+VersionPlanResource#capture POST /planning/versions
+VersionPlanResource#comparables GET /planning/versions/comparables
+VersionPlanResource#compare GET /planning/versions/compare
+VersionPlanResource#delete DELETE /planning/versions/{id}
+VersionPlanResource#get GET /planning/versions/{id}
+VersionPlanResource#list GET /planning/versions
+VersionPlanResource#restore POST /planning/versions/{id}/restore
 WeatherResource#get GET /parametres/meteo
 WeatherResource#test POST /parametres/meteo/test
 WeatherResource#update PUT /parametres/meteo

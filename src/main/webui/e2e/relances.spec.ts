@@ -159,7 +159,7 @@ test.describe('Relance manuelle des silencieux', () => {
     // Sans publication, il n'y a rien à confirmer, donc personne à relancer.
     const oubli = await admin.post('/api/database/import', {
       headers: { 'Content-Type': 'text/plain' },
-      data: 'delete from plan_snapshot;',
+      data: 'delete from version_plan;',
     });
     expect(oubli.ok(), await oubli.text()).toBe(true);
     expect((await synthese(admin)).jamaisPublie).toBe(true);

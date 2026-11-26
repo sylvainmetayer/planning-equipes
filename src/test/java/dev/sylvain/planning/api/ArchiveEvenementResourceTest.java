@@ -107,7 +107,7 @@ class ArchiveEvenementResourceTest {
     void forgetPublications() throws SQLException {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement delete =
-                        connection.prepareStatement("DELETE FROM plan_snapshot WHERE edition_id = ?")) {
+                        connection.prepareStatement("DELETE FROM version_plan WHERE edition_id = ?")) {
             delete.setString(1, defaultEdition);
             delete.executeUpdate();
         }

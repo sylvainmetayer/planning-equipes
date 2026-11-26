@@ -102,14 +102,20 @@ Two **resources**, to attach once to inform all following calls:
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
+| `capturer_instantane` | `creer_version` |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `lister_instantanes` | `lister_versions` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
 <!-- mcp-renommages:fin -->
 
 ## What has no tool
