@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
   signal,
@@ -19,6 +20,7 @@ import { AdminApi } from '../../core/api/admin-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionStore } from '../../core/edition.store';
 import { errorPrefix } from '../../core/error-message';
+import { ModifiedFormsRegistry } from '../../core/formulaires-modifies';
 import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -35,7 +37,7 @@ function plateauLabel(seconds: number): string {
 }
 
 /**
- * « Règles du planning › Calcul »: what shapes a solve without being a rule —
+ * « Paramètres › Calcul »: what shapes a solve without being a rule —
  * whether its end is mailed, the hour the evening starts for the Équité
  * screen, and the polyvalent typologie. Rare settings, all on one form with one
  * « Enregistrer »: nothing here is written as it is typed.
@@ -45,7 +47,7 @@ function plateauLabel(seconds: number): string {
  * instance's, set by the operator (ADR 0110), the same for every edition.</p>
  */
 @Component({
-  selector: 'app-regles-calcul',
+  selector: 'app-parametres-calcul',
   imports: [
     FormsModule,
     GelNotice,
@@ -59,10 +61,10 @@ function plateauLabel(seconds: number): string {
     RouterLink,
     StatusMessage,
   ],
-  templateUrl: './regles-calcul.html',
+  templateUrl: './parametres-calcul.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReglesCalcul implements OnInit {
+export class ParametresCalcul implements OnInit {
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
   private readonly jobs = inject(SolverJobService);
@@ -72,6 +74,8 @@ export class ReglesCalcul implements OnInit {
   private readonly crud = inject(ReferenceCrudService);
   protected readonly store = inject(ReferenceDataStore);
   private readonly gel = injectGelReferentiel();
+  private readonly registry = inject(ModifiedFormsRegistry);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
@@ -165,6 +169,16 @@ export class ReglesCalcul implements OnInit {
   protected readonly locked = computed(() => this.jobs.editingLocked());
 
   ngOnInit(): void {
+    // The Solveur asks before « Calculer » while something is typed here: the calculation would not see it.
+    this.destroyRef.onDestroy(
+      this.registry.register(
+        'parametres-calcul',
+        $localize`:@@parametres.calcul.saisie.label:les paramètres du calcul`,
+        this.dirty,
+      ),
+    );
+    // The polyvalent picker lists the typologies.
+    void this.store.reload(['typologies']).catch(() => undefined);
     void this.load();
   }
 

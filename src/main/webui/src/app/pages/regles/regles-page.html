@@ -17,7 +17,7 @@
     <mat-icon>policy</mat-icon>
     <ng-container i18n="@@consignesSolveur.onglet.consignes">Consignes</ng-container>
   </mat-button-toggle>
-  @if (avance.ouvert() || onglet() === 'legal' || onglet() === 'qualite' || onglet() === 'calcul') {
+  @if (avance.ouvert() || onglet() === 'legal' || onglet() === 'qualite') {
   <mat-button-toggle value="legal">
     <mat-icon>gavel</mat-icon>
     <ng-container i18n="@@regles.onglet.legal">Légal</ng-container>
@@ -26,16 +26,12 @@
     <mat-icon>tune</mat-icon>
     <ng-container i18n="@@regles.onglet.qualite">Qualité</ng-container>
   </mat-button-toggle>
-  <mat-button-toggle value="calcul">
-    <mat-icon>timer</mat-icon>
-    <ng-container i18n="@@regles.onglet.calcul">Calcul</ng-container>
-  </mat-button-toggle>
   }
 </mat-button-toggle-group>
 <app-reglages-avances [etat]="avance" />
 
 @if (relance(); as mode) {
-  @if (!isRuleTab(onglet()) && onglet() !== 'calcul') {
+  @if (!isRuleTab(onglet())) {
     <output class="regles-relancer">
       <span i18n="@@consignesSolveur.relancer">Le prochain calcul en tiendra compte.</span>
       <app-relancer-calcul [mode]="mode" />
@@ -55,9 +51,6 @@
   }
 }
 
-@if (calculMonte()) {
-  <app-regles-calcul [hidden]="onglet() !== 'calcul'" />
-}
 @if (isRuleTab(onglet())) {
   <div class="regles-toolbar">
     @if (onglet() === 'legal') {

@@ -331,15 +331,20 @@ export const redirectKpiToVersions: RedirectFunction = ({ queryParams }) =>
     : '/solveur?onglet=versions';
 
 /**
- * Two tabs of Paramètres left the page (issue #720): the legal parameters are
- * now the « Légal » tab of Règles du planning, on the row of each rule that
- * reads them, and the automatic e-mails a section of « Édition », reached by
- * its anchor. A bookmark on either lands where the setting went, the other
- * query params kept; `globaux` is read as `instance` by the page itself.
+ * Paramètres became four sections (`/api/parametres/{section}`): the legal
+ * parameters are its « Légal » tab, the automatic e-mails its « Notifications »
+ * one — reached by the former `?onglet=emails` or by the `#emails` anchor of
+ * « Édition » — and the solve budget its « Calcul » one, which was a tab of
+ * Règles du planning (`redirectCalculToParametres`). A bookmark lands where the
+ * setting went, the other query params kept; `globaux` is read as `instance` by
+ * the page itself.
  */
 export const parametresOngletsDeplaces: CanActivateFn = (route) => {
   const onglet = route.queryParamMap.get('onglet');
-  if (onglet !== 'legaux' && onglet !== 'emails') {
+  const verslNotifications =
+    onglet === 'emails' ||
+    ((onglet === null || onglet === 'edition') && route.fragment === 'emails');
+  if (onglet !== 'legaux' && !verslNotifications) {
     return true;
   }
   const router = inject(Router);
@@ -349,12 +354,21 @@ export const parametresOngletsDeplaces: CanActivateFn = (route) => {
       queryParams[key] = route.queryParamMap.getAll(key).join(',');
     }
   }
-  return onglet === 'legaux'
-    ? router.createUrlTree(['/regles'], { queryParams: { ...queryParams, onglet: 'legal' } })
-    : router.createUrlTree(['/parametres'], {
-        queryParams: { ...queryParams, onglet: 'edition' },
-        fragment: 'emails',
-      });
+  return router.createUrlTree(['/parametres'], {
+    queryParams: { ...queryParams, onglet: onglet === 'legaux' ? 'legal' : 'notifications' },
+  });
+};
+
+/** `/regles?onglet=calcul` became « Paramètres › Calcul »: any other tab of Règles opens as it is. */
+export const redirectCalculToParametres: CanActivateFn = (route) => {
+  if (route.queryParamMap.get('onglet') !== 'calcul') {
+    return true;
+  }
+  const queryParams: Record<string, string> = {};
+  for (const key of route.queryParamMap.keys) {
+    queryParams[key] = route.queryParamMap.getAll(key).join(',');
+  }
+  return inject(Router).createUrlTree(['/parametres'], { queryParams });
 };
 
 /**
@@ -471,6 +485,7 @@ const adminRoutes: Routes = [
     data: {
       aide: 'configuration-solveur',
       aideOnglets: {
+        calcul: 'configuration-solveur',
         mural: 'affichage-mural',
         instance: 'webhooks',
         historique: 'historique-des-actions',
@@ -678,15 +693,16 @@ const adminRoutes: Routes = [
     }),
   },
   {
-    // Every setting that decides the plan, in one place (issue #720): the
-    // hard rules with the thresholds they read, the quality rules with their
-    // importance, and the solve budget.
+    // What the next solve must respect (issue #720): the hard rules with the
+    // thresholds they read, the quality rules with their importance. The solve
+    // budget is Paramètres › Calcul.
     path: 'regles',
     title: () => $localize`:@@route.regles:Règles du planning`,
     data: {
       aide: 'ajustements-manuels',
-      aideOnglets: { consignes: 'consignes', calcul: 'configuration-solveur' },
+      aideOnglets: { consignes: 'consignes' },
     },
+    canActivate: [redirectCalculToParametres],
     loadComponent: () => import('./pages/regles/regles-page').then((m) => m.ReglesPage),
     // A row edited and not saved would silently survive, invisible, until the next reload.
     canDeactivate: [(page: ReglesPage) => page.canLeave()],

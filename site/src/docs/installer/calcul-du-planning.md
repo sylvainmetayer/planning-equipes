@@ -6,7 +6,7 @@ Vous fixez le budget de calcul de l'instance, vous protégez une instance partag
 
 Ce que le calcul fait de ce temps est expliqué dans [combien de temps ça prend](/comment-marche-le-calcul/).
 
-Le budget est **un réglage d'instance**, le même pour toutes les éditions : le solveur est partagé, un calcul à la fois, et la durée qu'un calcul y tient n'est pas la décision d'une édition. L'écran *Règles du planning › Calcul* l'affiche sans le modifier.
+Le budget est **un réglage d'instance**, le même pour toutes les éditions : le solveur est partagé, un calcul à la fois, et la durée qu'un calcul y tient n'est pas la décision d'une édition. L'écran *Paramètres › Calcul* l'affiche sans le modifier.
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |

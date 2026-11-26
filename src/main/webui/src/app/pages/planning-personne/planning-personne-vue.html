@@ -51,7 +51,7 @@
       <span class="planning-grille-pastille planning-personne-soiree"></span>
     }
     @if (heureSoiree()) {
-      <a routerLink="/regles" [queryParams]="{ onglet: 'calcul' }" i18n="@@planningPersonne.legende.soiree">soirée, dès {{ heureSoiree() }}</a>
+      <a routerLink="/parametres" [queryParams]="{ onglet: 'calcul' }" i18n="@@planningPersonne.legende.soiree">soirée, dès {{ heureSoiree() }}</a>
     } @else {
       <ng-container i18n="@@planningPersonne.legende.soireeSansHeure">soirée</ng-container>
     }
