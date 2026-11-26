@@ -49,7 +49,7 @@ class EditionDuplicationStructurelleTest {
             Map.entry("emplacement.modifie_le", "same"),
             Map.entry("stand.modifie_le", "same"),
             Map.entry("animateur.modifie_le", "same"),
-            Map.entry("journee_type.modifie_le", "same"),
+            Map.entry("gabarit.modifie_le", "same"),
             Map.entry("prereglage_consigne.modifie_le", "same"),
             Map.entry("parametres_meteo.modifie_le", "same"),
             Map.entry("parametres_legaux.modifie_le", "same"),

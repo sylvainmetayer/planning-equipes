@@ -113,9 +113,8 @@ final class ScenarioLadder {
 
         /** What applying the file's day templates to its own grid would change: nothing, for a consistent file. */
         JourneesTypesMaterialisation.Plan dayTemplatesPlan() {
-            ScenarioYamlReader.JourneesTypesScenario section =
-                    sections.journeesTypes().orElseThrow();
-            return JourneesTypesMaterialisation.planifier(section.journeesTypes(), section.calendrier(), creneaux);
+            ScenarioYamlReader.GabaritsScenario section = sections.gabarits().orElseThrow();
+            return JourneesTypesMaterialisation.planifier(section.gabarits(), section.calendrier(), creneaux);
         }
     }
 

@@ -1,7 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.JdbcEditionScope;
@@ -27,7 +27,7 @@ import java.util.Map;
 
 /** The day templates, their vacations and the calendar that applies them (V75). */
 @ApplicationScoped
-public class JourneeTypeRepository {
+public class GabaritRepository {
 
     private final ConcurrentModificationGuard staleWrites;
 
@@ -36,7 +36,7 @@ public class JourneeTypeRepository {
     private final CreneauRepository creneaux;
 
     @Inject
-    public JourneeTypeRepository(
+    public GabaritRepository(
             ConcurrentModificationGuard staleWrites, JdbcEditionScope scope, CreneauRepository creneaux) {
         this.staleWrites = staleWrites;
         this.scope = scope;
@@ -45,41 +45,41 @@ public class JourneeTypeRepository {
 
     private static final String SELECT_JOURNEES_SQL = """
             SELECT j.id, j.nom, j.modifie_le
-            FROM journee_type j
+            FROM gabarit j
             WHERE j.edition_id = ?
             ORDER BY j.id""";
 
     private static final String SELECT_VACATIONS_SQL = """
-            SELECT v.journee_type_id, v.heure_debut, v.heure_fin, v.couverture_pause
-            FROM journee_type_vacation v
+            SELECT v.gabarit_id, v.heure_debut, v.heure_fin, v.couverture_pause
+            FROM gabarit_vacation v
             WHERE v.edition_id = ?
-            ORDER BY v.journee_type_id, v.position, v.id""";
+            ORDER BY v.gabarit_id, v.position, v.id""";
 
     private static final String SELECT_CALENDRIER_SQL = """
-            SELECT d.date_jour, d.journee_type_id
-            FROM journee_type_date d
+            SELECT d.date_jour, d.gabarit_id
+            FROM gabarit_date d
             WHERE d.edition_id = ?
             ORDER BY d.date_jour""";
 
     private static final String UPDATE_JOURNEE_SQL = """
-            UPDATE journee_type
+            UPDATE gabarit
             SET nom = ?, modifie_le = now()
             WHERE edition_id = ? AND id = ?
             AND (CAST(? AS timestamptz) IS NULL
-                 OR date_trunc('milliseconds', journee_type.modifie_le)
+                 OR date_trunc('milliseconds', gabarit.modifie_le)
                     = date_trunc('milliseconds', CAST(? AS timestamptz)))
             RETURNING modifie_le""";
 
-    public List<JourneeType> list() {
+    public List<Gabarit> list() {
         return scope.read("Failed to list day templates", this::listTx);
     }
 
-    private List<JourneeType> listTx(Connection connection) throws SQLException {
-        Map<Long, JourneeType> parId = new LinkedHashMap<>();
+    private List<Gabarit> listTx(Connection connection) throws SQLException {
+        Map<Long, Gabarit> parId = new LinkedHashMap<>();
         try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_JOURNEES_SQL);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                JourneeType journeeType = new JourneeType(rs.getLong("id"), rs.getString("nom"), List.of());
+                Gabarit journeeType = new Gabarit(rs.getLong("id"), rs.getString("nom"), List.of());
                 journeeType.setModifieLe(
                         rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                 parId.put(journeeType.getId(), journeeType);
@@ -88,7 +88,7 @@ public class JourneeTypeRepository {
         try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_VACATIONS_SQL);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                JourneeType journeeType = parId.get(rs.getLong("journee_type_id"));
+                Gabarit journeeType = parId.get(rs.getLong("gabarit_id"));
                 if (journeeType != null) {
                     journeeType
                             .getVacations()
@@ -111,28 +111,27 @@ public class JourneeTypeRepository {
         try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_CALENDRIER_SQL);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                calendrier.add(
-                        new Affectation(rs.getObject("date_jour", LocalDate.class), rs.getLong("journee_type_id")));
+                calendrier.add(new Affectation(rs.getObject("date_jour", LocalDate.class), rs.getLong("gabarit_id")));
             }
         }
         return calendrier;
     }
 
     public boolean exists(long id) {
-        return scope.exists("journee_type", id);
+        return scope.exists("gabarit", id);
     }
 
     /** Inserts the template and its vacations; the generated id and stamp are set back onto it. */
-    public JourneeType insert(JourneeType journeeType) {
+    public Gabarit insert(Gabarit journeeType) {
         return scope.writeAndReturn("Failed to save day template", connection -> {
             insertTx(connection, journeeType);
             return journeeType;
         });
     }
 
-    private void insertTx(Connection connection, JourneeType journeeType) throws SQLException {
+    private void insertTx(Connection connection, Gabarit journeeType) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO journee_type (edition_id, nom)
+                INSERT INTO gabarit (edition_id, nom)
                 VALUES (?, ?)
                 RETURNING id, modifie_le""")) {
             ps.setString(2, journeeType.getNom());
@@ -146,10 +145,10 @@ public class JourneeTypeRepository {
         insertVacationsTx(connection, journeeType);
     }
 
-    private void insertVacationsTx(Connection connection, JourneeType journeeType) throws SQLException {
+    private void insertVacationsTx(Connection connection, Gabarit journeeType) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO journee_type_vacation
-                (edition_id, journee_type_id, position, heure_debut, heure_fin, couverture_pause)
+                INSERT INTO gabarit_vacation
+                (edition_id, gabarit_id, position, heure_debut, heure_fin, couverture_pause)
                 VALUES (?, ?, ?, ?, ?, ?)""")) {
             int position = 0;
             for (VacationType vacation : journeeType.getVacations()) {
@@ -168,7 +167,7 @@ public class JourneeTypeRepository {
      * Rewrites name and vacations in place, id kept, under the precondition
      * that nobody wrote the template since the caller read it (issue #362).
      */
-    public void update(JourneeType journeeType) {
+    public void update(Gabarit journeeType) {
         scope.write("Failed to save day template " + journeeType.getId(), connection -> {
             // Not prepareScoped: an UPDATE's first placeholder belongs to its SET clause.
             try (PreparedStatement ps = connection.prepareStatement(UPDATE_JOURNEE_SQL)) {
@@ -181,12 +180,12 @@ public class JourneeTypeRepository {
                 ps.setTimestamp(5, attendu);
                 Instant ecrit = WriteStamp.writtenOrRefused(ps);
                 if (ecrit == null) {
-                    staleWrites.refuseStale("journee_type", journeeType.getId());
+                    staleWrites.refuseStale("gabarit", journeeType.getId());
                 }
                 journeeType.setModifieLe(ecrit);
             }
             try (PreparedStatement ps = scope.prepareScoped(
-                    connection, "DELETE FROM journee_type_vacation WHERE edition_id = ? AND journee_type_id = ?")) {
+                    connection, "DELETE FROM gabarit_vacation WHERE edition_id = ? AND gabarit_id = ?")) {
                 ps.setLong(2, journeeType.getId());
                 ps.executeUpdate();
             }
@@ -196,7 +195,7 @@ public class JourneeTypeRepository {
 
     /** Drops the template; its calendar dates go with it (cascade), the créneaux they produced stay. */
     public void delete(long id) {
-        scope.delete("DELETE FROM journee_type WHERE edition_id = ? AND id = ?", id);
+        scope.delete("DELETE FROM gabarit WHERE edition_id = ? AND id = ?", id);
     }
 
     /** The calendar as a whole: every date is rewritten, a date left out is no longer governed. */
@@ -206,16 +205,15 @@ public class JourneeTypeRepository {
     }
 
     private void replaceCalendrierTx(Connection connection, List<Affectation> calendrier) throws SQLException {
-        try (PreparedStatement ps =
-                scope.prepareScoped(connection, "DELETE FROM journee_type_date WHERE edition_id = ?")) {
+        try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM gabarit_date WHERE edition_id = ?")) {
             ps.executeUpdate();
         }
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO journee_type_date (edition_id, date_jour, journee_type_id)
+                INSERT INTO gabarit_date (edition_id, date_jour, gabarit_id)
                 VALUES (?, ?, ?)""")) {
             for (Affectation affectation : calendrier) {
                 ps.setObject(2, affectation.date());
-                ps.setLong(3, affectation.journeeTypeId());
+                ps.setLong(3, affectation.gabaritId());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -228,24 +226,23 @@ public class JourneeTypeRepository {
      * provisional ids (negative, or the file's numbering) that the calendar
      * names; each is inserted, and the calendar rewritten through the mapping.
      */
-    public void replaceAll(List<JourneeType> journeesTypes, List<Affectation> calendrier) {
+    public void replaceAll(List<Gabarit> gabarits, List<Affectation> calendrier) {
         scope.write("Failed to replace the day templates", connection -> {
-            try (PreparedStatement ps =
-                    scope.prepareScoped(connection, "DELETE FROM journee_type WHERE edition_id = ?")) {
+            try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM gabarit WHERE edition_id = ?")) {
                 ps.executeUpdate();
             }
             Map<Long, Long> remap = new HashMap<>();
-            for (JourneeType journeeType : journeesTypes) {
+            for (Gabarit journeeType : gabarits) {
                 Long provisoire = journeeType.getId();
                 insertTx(connection, journeeType);
                 remap.put(provisoire, journeeType.getId());
             }
             List<Affectation> reecrit = new ArrayList<>();
             for (Affectation affectation : calendrier) {
-                Long nouvelId = remap.get(affectation.journeeTypeId());
+                Long nouvelId = remap.get(affectation.gabaritId());
                 if (nouvelId == null) {
                     throw new IllegalStateException(
-                            "Calendar names a template that was not written: " + affectation.journeeTypeId());
+                            "Calendar names a template that was not written: " + affectation.gabaritId());
                 }
                 reecrit.add(new Affectation(affectation.date(), nouvelId));
             }

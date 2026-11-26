@@ -25,7 +25,7 @@
 .sections.contraintes.poids{equilibrerCharge} = 35
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 15
 .sections.edition = null
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.prereglagesConsigne = null

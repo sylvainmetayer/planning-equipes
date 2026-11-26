@@ -145,7 +145,7 @@ public class WipeBackupService {
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",
-            "journee_type",
+            "gabarit",
             // Upserted by an import (a label, a code rewritten), never by a reset.
             "typologie",
             "emplacement");

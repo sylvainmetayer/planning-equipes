@@ -2169,7 +2169,7 @@
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 25
 .sections.edition.id = festival-realiste-canicule
 .sections.edition.nom = Festival réaliste — canicule
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux.coupureRepasMidiDebut = 12:00
 .sections.parametresLegaux.coupureRepasMidiFin = 14:00
 .sections.parametresLegaux.coupureRepasMinutes = 60

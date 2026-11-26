@@ -96,9 +96,9 @@ class IsolationEditionStructurelleTest {
             "stand_ouverture",
             "stand_horaire",
             "stand_horaire_fenetre",
-            "journee_type",
-            "journee_type_vacation",
-            "journee_type_date",
+            "gabarit",
+            "gabarit_vacation",
+            "gabarit_date",
             "creneau_stand_ouvert",
             "demande_echange",
             "parametres_echange",
@@ -140,7 +140,9 @@ class IsolationEditionStructurelleTest {
             // V145's archive of the budgets editions had set: partitioned like its source.
             "solve_budget_avant_4_0",
             // V158's archive of the weight history the action journal replaced: partitioned like its source.
-            "ponderation_contrainte_historique_avant_4_0");
+            "ponderation_contrainte_historique_avant_4_0",
+            // V169's archive of the day templates the generator cannot apply: partitioned like its source.
+            "journee_type_avant_4_0");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An

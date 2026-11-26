@@ -87,7 +87,7 @@ class ScenarioLadderMediumTest {
     void rung10ThreeDayTemplatesAndAnEditionOfItsOwn() {
         Loaded loaded = load("gamme-10-4j-8stands-20animateurs-journees-types-multiples");
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
-        assertThat(loaded.sections().journeesTypes().orElseThrow().journeesTypes())
+        assertThat(loaded.sections().gabarits().orElseThrow().gabarits())
                 .extracting(template -> template.getNom())
                 .containsExactly("Montage", "Jour normal", "Nocturne");
         assertThat(loaded.sections().edition().orElseThrow().id()).isEqualTo("GAMME-10");

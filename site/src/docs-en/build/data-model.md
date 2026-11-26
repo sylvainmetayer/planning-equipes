@@ -40,9 +40,9 @@ An `Edition` carries neither dates nor an "ongoing" flag: it is a partition, not
 
 Being inside the event is not enough to be usable, and the gap is paid for on unavailability. The declaration form offers only the timeslot dates, and applying a declaration replaces `joursIndisponibles` as a whole. An unavailability set on a gap day is therefore erased at the first accepted declaration, without the staff member ever having seen it. The CSV import **rejects** that row; manual entry **warns** without blocking (`INDISPONIBILITE_JOUR_SANS_CRENEAU`). Two deliberate doctrines, never a silence.
 
-## Day templates generate the timeslots
+## The timeslot generator and its templates
 
-An edition describes each kind of day once ("Normal day", "Late opening", "Set-up") by its name and its shifts, then lays these day templates over a calendar of dates ([decision 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)). It is the first object that carries dates independently of timeslots: an edition's dates are entered there, before the first timeslot.
+The grid is produced in bulk by one generator (`GenerateurCreneaux`, [decision 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), from the stands' hours, a recurring pattern or the **templates** (« gabarits »), the day templates of 3.x (tables `gabarit`, `gabarit_vacation`, `gabarit_date`). An edition describes each kind of day once ("Normal day", "Late opening", "Set-up") by its name and its shifts, then lays these templates over a calendar of dates ([decision 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)). It is the first object that carries dates independently of timeslots: an edition's dates are entered there, before the first timeslot.
 
 The calendar is a **generator**, never the truth. Applying the calendar materialises the timeslots by difference on the key `(date, début, fin)`, the one the grid check calls a duplicate:
 
@@ -50,12 +50,12 @@ The calendar is a **generator**, never the truth. Applying the calendar material
 | --- | --- |
 | Identical timeslot | It keeps its id, its seats and its locks. Only its meal relay flag can change in place |
 | Missing timeslot | It is created |
-| Timeslot that the day template does not name, on a governed date | It is deleted with its seats, after a preview with figures |
+| Timeslot that the template does not name, on a governed date | It is deleted with its seats, after a preview with figures |
 | Date that the calendar does not assign | It is never touched |
 
-Everything downstream (seats, locks, `JoursEvenement`) keeps reading the timeslots. The logic is pure (`JourneesTypesMaterialisation`) and the service only persists it.
+Everything downstream (seats, locks, `JoursEvenement`) keeps reading the timeslots. The logic is pure (`JourneesTypesMaterialisation`) and the generator only persists it.
 
-Modifying a day template afterwards propagates nothing: its dates become "out of line" and the organiser applies again. **Recognition** goes the opposite way: it reads the day templates that a grid implies (each date with the same shifts and the same flags is the same day) and replaces day templates and calendar. It follows every replacement of the grid (scenario import, derivation from the stands' hours), so that an imported edition and a typed edition read the same on the Timeslots screen.
+Modifying a template afterwards propagates nothing: its dates become "out of line" and the organiser applies again. **Recognition** goes the opposite way: it reads the templates that a grid implies (each date with the same shifts and the same flags is the same day) and replaces templates and calendar. It follows every replacement of the grid (scenario import, derivation from the stands' hours), so that an imported edition and a typed edition read the same on the Timeslots screen.
 
 The timeslots that a [consigne](horaires-et-fenetres-des-stands.md#la-consigne-quatrième-couche) (an official order relayed to the whole event) added to the grid are neither counted as out of line nor deleted on apply: a day template never names them, they belong to the consigne, which removes them when it is lifted. The card shows these dates as "under consigne" (`datesSousConsigne`).
 

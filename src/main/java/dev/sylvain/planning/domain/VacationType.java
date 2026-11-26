@@ -3,7 +3,7 @@ package dev.sylvain.planning.domain;
 import java.time.LocalTime;
 
 /**
- * One vacation of a {@link JourneeType}: the hours, and whether it is a meal
+ * One vacation of a {@link Gabarit}: the hours, and whether it is a meal
  * relay — the same flag a {@link Creneau} carries as {@code couverturePause},
  * so that materialising the template writes exactly what the créneau form
  * would.

@@ -25,6 +25,34 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v5ToV6RenamesTheDayTemplatesSectionInPlace() {
+        Map<String, Object> document = document();
+        List<Object> section = List.of(Map.of("nom", "Jour normal", "vacations", List.of(), "dates", List.of()));
+        document.put("journeesTypes", section);
+        document.put("stands", List.of());
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.v5ToV6(document, warnings);
+
+        assertThat(converted).doesNotContainKey("journeesTypes").containsEntry("gabarits", section);
+        assertThat(List.copyOf(converted.keySet())).containsExactly("festival", "gabarits", "stands");
+        assertThat(warnings).isEmpty();
+    }
+
+    @Test
+    void v5ToV6KeepsTheTemplatesOfAFileCarryingBothKeysAndSaysSo() {
+        Map<String, Object> document = document();
+        document.put("journeesTypes", List.of("ancien"));
+        document.put("gabarits", List.of("nouveau"));
+        List<String> warnings = new java.util.ArrayList<>();
+
+        Map<String, Object> converted = ScenarioMigrations.v5ToV6(document, warnings);
+
+        assertThat(converted).doesNotContainKey("journeesTypes").containsEntry("gabarits", List.of("nouveau"));
+        assertThat(warnings).singleElement().asString().contains("journeesTypes");
+    }
+
+    @Test
     void v1ToV2LeavesADocumentWithoutTypologiesAlone() {
         List<String> warnings = new java.util.ArrayList<>();
         Map<String, Object> converted = ScenarioMigrations.v1ToV2(document(), warnings);

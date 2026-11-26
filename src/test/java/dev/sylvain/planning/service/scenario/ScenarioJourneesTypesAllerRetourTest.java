@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VacationType;
@@ -17,7 +17,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * The {@code journeesTypes:} section, written by the export and read by the
+ * The {@code gabarits:} section, written by the export and read by the
  * import: the same joint {@code PlanningServiceScenarioAllerRetourTest} holds
  * for the entity sections.
  */
@@ -27,13 +27,13 @@ class ScenarioJourneesTypesAllerRetourTest {
 
     @Test
     void laSectionEcriteParLExportEstRelueParLImport() {
-        JourneeType nocturne = new JourneeType(
+        Gabarit nocturne = new Gabarit(
                 7L,
                 "Nocturne",
                 List.of(
                         new VacationType(LocalTime.of(14, 0), LocalTime.of(20, 0), false),
                         new VacationType(LocalTime.of(20, 0), LocalTime.MIDNIGHT, false)));
-        JourneeType normal = new JourneeType(
+        Gabarit normal = new Gabarit(
                 8L, "Jour normal", List.of(new VacationType(LocalTime.of(12, 0), LocalTime.of(13, 0), true)));
         String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
                 List.of(animateur()),
@@ -53,18 +53,17 @@ class ScenarioJourneesTypesAllerRetourTest {
                         new Affectation(LUNDI.plusDays(1), 7L),
                         new Affectation(LUNDI.plusDays(2), 8L))));
 
-        assertThat(yaml).contains("journeesTypes:").contains("Nocturne").contains("couverturePause: true");
+        assertThat(yaml).contains("gabarits:").contains("Nocturne").contains("couverturePause: true");
 
         ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
 
-        ScenarioYamlReader.JourneesTypesScenario section =
-                relu.sections().journeesTypes().orElseThrow();
-        assertThat(section.journeesTypes()).extracting(JourneeType::getNom).containsExactly("Nocturne", "Jour normal");
-        assertThat(section.journeesTypes().get(0).getVacations()).hasSize(2);
-        assertThat(section.journeesTypes().get(1).getVacations().get(0).couverturePause())
+        ScenarioYamlReader.GabaritsScenario section = relu.sections().gabarits().orElseThrow();
+        assertThat(section.gabarits()).extracting(Gabarit::getNom).containsExactly("Nocturne", "Jour normal");
+        assertThat(section.gabarits().get(0).getVacations()).hasSize(2);
+        assertThat(section.gabarits().get(1).getVacations().get(0).couverturePause())
                 .isTrue();
-        Long idNocturne = section.journeesTypes().get(0).getId();
-        Long idNormal = section.journeesTypes().get(1).getId();
+        Long idNocturne = section.gabarits().get(0).getId();
+        Long idNormal = section.gabarits().get(1).getId();
         assertThat(section.calendrier())
                 .containsExactlyInAnyOrder(
                         new Affectation(LUNDI, idNormal),
@@ -77,10 +76,10 @@ class ScenarioJourneesTypesAllerRetourTest {
         String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur()), List.of(stand()), List.of(creneau()), List.of());
 
-        assertThat(yaml).doesNotContain("journeesTypes");
+        assertThat(yaml).doesNotContain("gabarits");
         assertThat(ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new)
                         .sections()
-                        .journeesTypes())
+                        .gabarits())
                 .isEmpty();
     }
 

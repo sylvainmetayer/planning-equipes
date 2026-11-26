@@ -1,7 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalDate;
@@ -31,7 +31,7 @@ public final class JourneesTypesMaterialisation {
     private JourneesTypesMaterialisation() {}
 
     /** One date governed by one template. */
-    public record Affectation(LocalDate date, Long journeeTypeId) {}
+    public record Affectation(LocalDate date, Long gabaritId) {}
 
     /**
      * What applying the calendar would do, créneau by créneau.
@@ -60,10 +60,9 @@ public final class JourneesTypesMaterialisation {
      * rather than silently skipped: the screen never produces one, and an
      * assistant that did needs to hear it.
      */
-    public static Plan planifier(
-            List<JourneeType> journeesTypes, List<Affectation> calendrier, List<Creneau> existants) {
-        Map<Long, JourneeType> parId = new LinkedHashMap<>();
-        for (JourneeType journeeType : journeesTypes) {
+    public static Plan planifier(List<Gabarit> gabarits, List<Affectation> calendrier, List<Creneau> existants) {
+        Map<Long, Gabarit> parId = new LinkedHashMap<>();
+        for (Gabarit journeeType : gabarits) {
             parId.put(journeeType.getId(), journeeType);
         }
         Map<LocalDate, List<Creneau>> existantsParDate = new TreeMap<>();
@@ -84,10 +83,10 @@ public final class JourneesTypesMaterialisation {
         List<Affectation> tri = new ArrayList<>(calendrier);
         tri.sort(Comparator.comparing(Affectation::date));
         for (Affectation affectation : tri) {
-            JourneeType journeeType = parId.get(affectation.journeeTypeId());
+            Gabarit journeeType = parId.get(affectation.gabaritId());
             if (journeeType == null) {
                 throw new BusinessError.Invalid("Le " + affectation.date()
-                        + " est affecté à une journée type inconnue : " + affectation.journeeTypeId());
+                        + " est affecté à une journée type inconnue : " + affectation.gabaritId());
             }
             int avant = misAJour.size() + aCreer.size() + aSupprimer.size();
             Plan duJour = planDay(
@@ -104,7 +103,7 @@ public final class JourneesTypesMaterialisation {
     }
 
     /** The plan of one calendar date against the créneaux it already has; no drift dates. */
-    private static Plan planDay(LocalDate date, JourneeType journeeType, List<Creneau> existantsDuJour) {
+    private static Plan planDay(LocalDate date, Gabarit journeeType, List<Creneau> existantsDuJour) {
         List<Creneau> conserves = new ArrayList<>();
         List<Creneau> misAJour = new ArrayList<>();
         List<Creneau> aCreer = new ArrayList<>();
@@ -134,7 +133,7 @@ public final class JourneesTypesMaterialisation {
     }
 
     /** The templates a grid implies, and the calendar that maps its dates onto them. */
-    public record Reconnaissance(List<JourneeType> journeesTypes, List<Affectation> calendrier) {}
+    public record Reconnaissance(List<Gabarit> gabarits, List<Affectation> calendrier) {}
 
     /**
      * Reads the day templates back out of a grid: every date whose créneaux
@@ -150,7 +149,7 @@ public final class JourneesTypesMaterialisation {
                         .add(creneau);
             }
         }
-        Map<String, JourneeType> parSignature = new LinkedHashMap<>();
+        Map<String, Gabarit> parSignature = new LinkedHashMap<>();
         Map<String, Long> rangParSignature = new LinkedHashMap<>();
         List<Affectation> calendrier = new ArrayList<>();
         for (Map.Entry<LocalDate, List<Creneau>> jour : parDate.entrySet()) {
@@ -164,9 +163,9 @@ public final class JourneesTypesMaterialisation {
                             (first, ignored) -> first,
                             LinkedHashMap::new))
                     .values());
-            JourneeType candidat = new JourneeType(null, null, vacations);
+            Gabarit candidat = new Gabarit(null, null, vacations);
             String signature = candidat.signature();
-            JourneeType journeeType = parSignature.get(signature);
+            Gabarit journeeType = parSignature.get(signature);
             if (journeeType == null) {
                 long rang = parSignature.size() + 1L;
                 candidat.setNom("Journée type " + rang);

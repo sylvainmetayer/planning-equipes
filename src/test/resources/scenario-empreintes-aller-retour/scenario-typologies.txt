@@ -18,7 +18,7 @@
 .sections.consignes = null
 .sections.contraintes = null
 .sections.edition = null
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.prereglagesConsigne = null

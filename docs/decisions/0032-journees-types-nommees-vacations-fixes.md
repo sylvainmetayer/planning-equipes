@@ -1,6 +1,6 @@
 # 0032 — Des journées types nommées génèrent les créneaux, qui restent la vérité
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; remplacé en partie par [0126](0126-un-generateur-de-creneaux-unique.md) (les journées types sont les gabarits du générateur de créneaux, sémantique gardée)
 - **Date** : septembre 2026
 - **Portée** : référentiel des créneaux, import de scénario, MCP, IHM
 

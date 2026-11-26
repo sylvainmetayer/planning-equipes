@@ -63,6 +63,7 @@ public final class CatalogueActions {
     private static final String CRENEAUX_SUPPRIMES = "CRENEAUX_SUPPRIMES";
     private static final String CRENEAUX_RECURRENTS_CREES = "CRENEAUX_RECURRENTS_CREES";
     private static final String CRENEAUX_DERIVES = "CRENEAUX_DERIVES";
+    private static final String CRENEAUX_GENERES = "CRENEAUX_GENERES";
     private static final String CRENEAUX_IMPORTES = "CRENEAUX_IMPORTES";
     private static final String JOURNEE_TYPE_CREEE = "JOURNEE_TYPE_CREEE";
     private static final String JOURNEE_TYPE_MODIFIEE = "JOURNEE_TYPE_MODIFIEE";
@@ -279,6 +280,7 @@ public final class CatalogueActions {
         changesData(CRENEAUX_SUPPRIMES, "Créneaux supprimés en lot", Entite.CRENEAU);
         changesData(CRENEAUX_RECURRENTS_CREES, "Créneaux récurrents générés", Entite.CRENEAU);
         changesData(CRENEAUX_DERIVES, "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
+        changesData(CRENEAUX_GENERES, "Créneaux générés (gabarits, horaires des stands ou récurrence)", Entite.CRENEAU);
         changesData(CRENEAUX_IMPORTES, "Créneaux importés depuis un fichier", Entite.CRENEAU);
         // Day templates (ADR 0032): a template or its calendar changes nothing
         // the solver reads until applied; applying does, recognising does not.
@@ -564,6 +566,13 @@ public final class CatalogueActions {
         route("CreneauResource#createRecurrence", CRENEAUX_RECURRENTS_CREES);
         route("CreneauResource#applyDerivation", CRENEAUX_DERIVES);
         route("CreneauResource#importCsv", CRENEAUX_IMPORTES);
+        route("GenerateurCreneauxResource#createGabarit", JOURNEE_TYPE_CREEE);
+        route("GenerateurCreneauxResource#updateGabarit", JOURNEE_TYPE_MODIFIEE);
+        route("GenerateurCreneauxResource#deleteGabarit", JOURNEE_TYPE_SUPPRIMEE);
+        route("GenerateurCreneauxResource#setCalendrier", CALENDRIER_JOURNEES_TYPES_MODIFIE);
+        route("GenerateurCreneauxResource#withdraw", CALENDRIER_JOURNEES_TYPES_MODIFIE);
+        route("GenerateurCreneauxResource#apply", CRENEAUX_GENERES);
+        route("GenerateurCreneauxResource#reconnaitre", JOURNEES_TYPES_RECONNUES);
         route("JourneeTypeResource#create", JOURNEE_TYPE_CREEE);
         route("JourneeTypeResource#update", JOURNEE_TYPE_MODIFIEE);
         route("JourneeTypeResource#delete", JOURNEE_TYPE_SUPPRIMEE);
@@ -775,6 +784,9 @@ public final class CatalogueActions {
         outil("supprimer_creneaux", CRENEAUX_SUPPRIMES);
         outil("creer_creneaux_recurrents", CRENEAUX_RECURRENTS_CREES);
         outil("generer_creneaux_depuis_stands", CRENEAUX_DERIVES);
+        outil("modifier_gabarit", JOURNEE_TYPE_DEFINIE);
+        outil("supprimer_gabarit", JOURNEE_TYPE_SUPPRIMEE);
+        outil("appliquer_generateur_creneaux", CRENEAUX_GENERES);
         outil("definir_journee_type", JOURNEE_TYPE_DEFINIE);
         outil("supprimer_journee_type", JOURNEE_TYPE_SUPPRIMEE);
         outil("affecter_journee_type", CALENDRIER_JOURNEES_TYPES_MODIFIE);
@@ -908,6 +920,8 @@ public final class CatalogueActions {
         untracked("CreneauResource#previewRecurrence", PREVISUALISATION);
         untracked("CreneauResource#previewDerivation", PREVISUALISATION);
         untracked("JourneeTypeResource#previewApplication", PREVISUALISATION);
+        untracked("GenerateurCreneauxResource#preview", PREVISUALISATION);
+        untracked("GenerateurCreneauxResource#previewReconnaissance", PREVISUALISATION);
         untracked("JourneeTypeResource#previewReconnaissance", PREVISUALISATION);
         untracked("ConsigneResource#preselection", "lit les stands contre une bande, n'écrit rien");
         untracked("ConsigneResource#apercu", PREVISUALISATION);

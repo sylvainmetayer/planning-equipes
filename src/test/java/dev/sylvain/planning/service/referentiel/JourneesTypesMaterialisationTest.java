@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.JourneeType;
+import dev.sylvain.planning.domain.Gabarit;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Affectation;
@@ -25,7 +25,7 @@ class JourneesTypesMaterialisationTest {
     private static final LocalDate LUNDI = LocalDate.of(2027, 7, 12);
     private static final LocalDate MARDI = LUNDI.plusDays(1);
 
-    private static final JourneeType JOUR_NORMAL = new JourneeType(
+    private static final Gabarit JOUR_NORMAL = new Gabarit(
             1L,
             "Jour normal",
             List.of(
@@ -151,15 +151,15 @@ class JourneesTypesMaterialisationTest {
 
         Reconnaissance reconnaissance = JourneesTypesMaterialisation.reconnaitre(grille);
 
-        assertThat(reconnaissance.journeesTypes())
-                .extracting(JourneeType::getNom)
+        assertThat(reconnaissance.gabarits())
+                .extracting(Gabarit::getNom)
                 .containsExactly("Journée type 1", "Journée type 2");
-        assertThat(reconnaissance.journeesTypes().get(0).getVacations())
+        assertThat(reconnaissance.gabarits().get(0).getVacations())
                 .extracting(vacation -> vacation.heureDebut().toString())
                 .containsExactly("09:00", "12:00", "14:00");
-        assertThat(reconnaissance.journeesTypes().get(1).getVacations()).hasSize(4);
-        Long normal = reconnaissance.journeesTypes().get(0).getId();
-        Long nocturne = reconnaissance.journeesTypes().get(1).getId();
+        assertThat(reconnaissance.gabarits().get(1).getVacations()).hasSize(4);
+        Long normal = reconnaissance.gabarits().get(0).getId();
+        Long nocturne = reconnaissance.gabarits().get(1).getId();
         assertThat(reconnaissance.calendrier())
                 .containsExactly(
                         new Affectation(LUNDI, normal),
@@ -167,7 +167,7 @@ class JourneesTypesMaterialisationTest {
                         new Affectation(mercredi, normal));
         // Applying what was just recognised changes nothing: the round trip is the invariant.
         assertThat(JourneesTypesMaterialisation.planifier(
-                                reconnaissance.journeesTypes(), reconnaissance.calendrier(), grille)
+                                reconnaissance.gabarits(), reconnaissance.calendrier(), grille)
                         .isEmpty())
                 .isTrue();
     }
@@ -178,7 +178,7 @@ class JourneesTypesMaterialisationTest {
         Reconnaissance reconnaissance = JourneesTypesMaterialisation.reconnaitre(
                 List.of(creneau(1L, LUNDI, "12:00", "13:00", true), creneau(2L, MARDI, "12:00", "13:00", false)));
 
-        assertThat(reconnaissance.journeesTypes()).hasSize(2);
+        assertThat(reconnaissance.gabarits()).hasSize(2);
     }
 
     /**
@@ -189,21 +189,21 @@ class JourneesTypesMaterialisationTest {
      */
     @Test
     void unCalendrierRefuseUneDateAffecteeDeuxFoisOuUneJourneeTypeInconnue() {
-        assertThatThrownBy(() -> JourneeTypeService.checkCalendrier(
+        assertThatThrownBy(() -> GenerateurCreneaux.checkCalendrier(
                         List.of(new Affectation(LUNDI, 1L), new Affectation(LUNDI, 2L)), Set.of(1L, 2L)))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining(LUNDI.toString())
                 .hasMessageContaining("deux fois");
 
-        assertThatThrownBy(() -> JourneeTypeService.checkCalendrier(List.of(new Affectation(LUNDI, 9L)), Set.of(1L)))
+        assertThatThrownBy(() -> GenerateurCreneaux.checkCalendrier(List.of(new Affectation(LUNDI, 9L)), Set.of(1L)))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("introuvable");
 
-        assertThatThrownBy(() -> JourneeTypeService.checkCalendrier(List.of(new Affectation(null, 1L)), Set.of(1L)))
+        assertThatThrownBy(() -> GenerateurCreneaux.checkCalendrier(List.of(new Affectation(null, 1L)), Set.of(1L)))
                 .isInstanceOf(BusinessError.Invalid.class);
 
         // The shape the screen and a well-formed file both send.
-        JourneeTypeService.checkCalendrier(
+        GenerateurCreneaux.checkCalendrier(
                 List.of(new Affectation(LUNDI, 1L), new Affectation(MARDI, 2L)), Set.of(1L, 2L));
     }
 

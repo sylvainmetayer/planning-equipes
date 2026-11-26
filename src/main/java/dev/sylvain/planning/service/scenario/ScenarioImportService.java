@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
+import dev.sylvain.planning.service.referentiel.GenerateurCreneaux;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.WipeBackupService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
@@ -68,6 +69,8 @@ public class ScenarioImportService {
 
     private final WipeBackupService wipeBackup;
 
+    private final GenerateurCreneaux generateur;
+
     @Inject
     public ScenarioImportService(
             ReferenceDataService referenceDataService,
@@ -77,7 +80,9 @@ public class ScenarioImportService {
             ScenarioTargetIds identifiants,
             GelReferentielService gel,
             JournalActionService journal,
-            WipeBackupService wipeBackup) {
+            WipeBackupService wipeBackup,
+            GenerateurCreneaux generateur) {
+        this.generateur = generateur;
         this.journal = journal;
         this.wipeBackup = wipeBackup;
         this.referenceDataService = referenceDataService;
@@ -206,7 +211,7 @@ public class ScenarioImportService {
                 // seated stand or animateur names, which only that section brings.
                 landing.nonRecrees.addAll(recreateUnseated(remappe));
             }
-            applyJourneesTypes(sections);
+            applyGabarits(sections);
             applyContraintes(sections);
             applyConsignes(sections);
             // Last, and for a restore only: the seats and locks name the referential, the grid and the
@@ -311,14 +316,12 @@ public class ScenarioImportService {
     }
 
     /**
-     * The file's own day templates, when it names them, replace the ones the
+     * The file's own templates ({@code gabarits:}), when it names them, replace the ones the
      * planning import recognised from its créneaux; absent, the recognised ones
      * stand — the screen and the file then describe the same edition.
      */
-    private void applyJourneesTypes(ScenarioYamlReader.ScenarioSections sections) {
-        sections.journeesTypes()
-                .ifPresent(section ->
-                        referenceDataService.importJourneesTypes(section.journeesTypes(), section.calendrier()));
+    private void applyGabarits(ScenarioYamlReader.ScenarioSections sections) {
+        sections.gabarits().ifPresent(section -> generateur.importer(section.gabarits(), section.calendrier()));
     }
 
     /**

@@ -86,10 +86,9 @@ public class EditionRepository {
             new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin, effectif"),
             // Day templates (V75): ids copied verbatim — one global sequence, so a
             // copied id never meets a generated one.
-            new TableToCopy("journee_type", "id, nom"),
-            new TableToCopy(
-                    "journee_type_vacation", "id, journee_type_id, position, heure_debut, heure_fin, couverture_pause"),
-            new TableToCopy("journee_type_date", "date_jour, journee_type_id"),
+            new TableToCopy("gabarit", "id, nom"),
+            new TableToCopy("gabarit_vacation", "id, gabarit_id, position, heure_debut, heure_fin, couverture_pause"),
+            new TableToCopy("gabarit_date", "date_jour, gabarit_id"),
             // "nom, actif": since V82 a row carries the explicit state, and the
             // column is NOT NULL with no default — a copy leaving it out would fail.
             new TableToCopy("constraint_toggle", "nom, actif"),

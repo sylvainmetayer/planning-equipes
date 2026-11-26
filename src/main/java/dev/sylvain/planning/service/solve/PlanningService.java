@@ -296,8 +296,8 @@ public class PlanningService {
                 referenceDataService.getEtatsContraintes(),
                 referenceDataService.getConstraintWeights(),
                 referenceDataService.snapshotContraintes(),
-                referenceDataService.listJourneesTypes(),
-                referenceDataService.calendrierJourneesTypes(),
+                referenceDataService.listGabarits(),
+                referenceDataService.calendrierGabarits(),
                 referenceDataService.listConsignes(),
                 referenceDataService.listPrereglagesConsigne(),
                 referenceDataService.getNiveauxObligatoires());

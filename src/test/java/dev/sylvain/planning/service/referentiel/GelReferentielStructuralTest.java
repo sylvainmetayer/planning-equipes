@@ -61,7 +61,7 @@ class GelReferentielStructuralTest {
     private static final List<Class<?>> GUARDED = List.of(
             StandService.class,
             CreneauService.class,
-            JourneeTypeService.class,
+            GenerateurCreneaux.class,
             TypologieService.class,
             EmplacementService.class,
             AnimateurService.class,
@@ -138,22 +138,8 @@ class GelReferentielStructuralTest {
                     "ReferenceDataService#deleteCreneaux(Connection,Collection)",
                     "CreneauService#deleteInBulk(Connection,Collection)"),
             Map.entry(
-                    "ReferenceDataService#createRecurrence(RegleRecurrence)",
-                    "ReferenceDataService#createCreneaux(List)"),
-            Map.entry("ReferenceDataService#applyDerivation(Parametres,boolean)", "CreneauService#replace(List)"),
-            Map.entry(
                     "ReferenceDataService#importCsvReferentiel(ImportTarget,ReferentielCsvImportRequest)",
                     "ReferentielCsvImportService#apply(ImportTarget,ReferentielCsvImportRequest)"),
-            Map.entry("ReferenceDataService#createJourneeType(JourneeType)", "JourneeTypeService#create(JourneeType)"),
-            Map.entry(
-                    "ReferenceDataService#updateJourneeType(long,JourneeType)",
-                    "JourneeTypeService#update(long,JourneeType)"),
-            Map.entry("ReferenceDataService#deleteJourneeType(long)", "JourneeTypeService#delete(long)"),
-            Map.entry(
-                    "ReferenceDataService#setCalendrierJourneesTypes(List)", "JourneeTypeService#setCalendrier(List)"),
-            Map.entry("ReferenceDataService#applyJourneesTypes()", "JourneeTypeService#apply()"),
-            Map.entry("ReferenceDataService#reconnaitreJourneesTypes()", "JourneeTypeService#reconnaitre()"),
-            Map.entry("ReferenceDataService#importJourneesTypes(List,List)", "JourneeTypeService#importer(List,List)"),
             Map.entry(
                     "ReferenceDataService#importTypologie(TypologieItem)", "TypologieService#importer(TypologieItem)"),
             Map.entry("ReferenceDataService#createTypologie(TypologieItem)", "TypologieService#create(TypologieItem)"),
@@ -177,15 +163,17 @@ class GelReferentielStructuralTest {
                             + " consignesOnlyReachTheGridThroughTheirOwnDoor holds that nothing else calls it"),
             Map.entry("CreneauService#deleteInBulk(Connection,Collection)", "same, for the timeslots a consigne added"),
             Map.entry(
-                    "JourneeTypeService#create(JourneeType)",
+                    "GenerateurCreneaux#create(Gabarit)",
                     "a day template reaches the grid only through apply(), which is refused"),
-            Map.entry("JourneeTypeService#update(long,JourneeType)", "same"),
-            Map.entry("JourneeTypeService#delete(long)", "same — and the timeslots it produced stay"),
-            Map.entry("JourneeTypeService#setCalendrier(List)", "the calendar reaches the grid only through apply()"),
-            Map.entry("JourneeTypeService#reconnaitre()", "rewrites the templates from the grid, never the grid"),
+            Map.entry("GenerateurCreneaux#update(long,Gabarit)", "same"),
+            Map.entry("GenerateurCreneaux#delete(long)", "same — and the timeslots it produced stay"),
+            Map.entry("GenerateurCreneaux#setCalendrier(List)", "the calendar reaches the grid only through apply()"),
+            Map.entry("GenerateurCreneaux#reconnaitre()", "rewrites the templates from the grid, never the grid"),
             Map.entry(
-                    "JourneeTypeService#importer(List,List)",
+                    "GenerateurCreneaux#importer(List,List)",
                     "a scenario's own section, and a scenario import is refused under any freeze"),
+            Map.entry("GenerateurCreneaux#assign(long,Set)", "the calendar reaches the grid only through apply()"),
+            Map.entry("GenerateurCreneaux#withdraw(Set)", "same: a withdrawn date keeps its timeslots"),
             Map.entry(
                     "EmplacementService#update(String,Emplacement)",
                     "renaming or moving a location: the freeze covers its creation and deletion only"),

@@ -37,9 +37,9 @@ Une `Edition` ne porte ni dates ni drapeau « en cours » : c'est un cloisonneme
 
 Être dans l'événement ne suffit pas pour être utilisable, et l'écart se paie sur les indisponibilités. Le formulaire de déclaration ne propose que les dates de créneaux, et appliquer une déclaration remplace `joursIndisponibles` en bloc. Une indisponibilité posée sur un jour creux est donc effacée à la première déclaration acceptée, sans que l'animateur l'ait jamais vue. L'import CSV **rejette** cette ligne ; la saisie manuelle **avertit** sans bloquer (`INDISPONIBILITE_JOUR_SANS_CRENEAU`). Deux doctrines assumées, jamais un silence.
 
-## Les journées types génèrent les créneaux
+## Le générateur de créneaux et ses gabarits
 
-Une édition décrit chaque sorte de journée une fois (« Jour normal », « Nocturne », « Montage ») par son nom et ses vacations, puis pose ces journées types sur un calendrier de dates ([décision 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)). C'est le premier objet qui porte des dates indépendamment des créneaux : les dates d'une édition se saisissent là, avant le premier créneau.
+La grille se produit en lot par un seul générateur (`GenerateurCreneaux`, [décision 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), depuis les horaires des stands, un motif récurrent ou les **gabarits**, les journées types de la 3.x (tables `gabarit`, `gabarit_vacation`, `gabarit_date`). Une édition décrit chaque sorte de journée une fois (« Jour normal », « Nocturne », « Montage ») par son nom et ses vacations, puis pose ces gabarits sur un calendrier de dates ([décision 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)). C'est le premier objet qui porte des dates indépendamment des créneaux : les dates d'une édition se saisissent là, avant le premier créneau.
 
 Le calendrier est un **générateur**, jamais la vérité. Appliquer le calendrier matérialise les créneaux par différence sur la clé `(date, début, fin)`, celle que le contrôle de grille appelle un doublon :
 
@@ -47,12 +47,12 @@ Le calendrier est un **générateur**, jamais la vérité. Appliquer le calendri
 | --- | --- |
 | Créneau identique | Il garde son id, ses sièges et ses verrous. Seul son drapeau de relais repas peut changer en place |
 | Créneau manquant | Il est créé |
-| Créneau que la journée type ne nomme pas, sur une date gouvernée | Il est supprimé avec ses sièges, après un aperçu chiffré |
+| Créneau que le gabarit ne nomme pas, sur une date gouvernée | Il est supprimé avec ses sièges, après un aperçu chiffré |
 | Date que le calendrier n'affecte pas | Elle n'est jamais touchée |
 
-Tout l'aval (postes, verrous, `JoursEvenement`) continue de lire les créneaux. La logique est pure (`JourneesTypesMaterialisation`) et le service ne fait que la persister.
+Tout l'aval (postes, verrous, `JoursEvenement`) continue de lire les créneaux. La logique est pure (`JourneesTypesMaterialisation`) et le générateur ne fait que la persister.
 
-Modifier une journée type après coup ne propage rien : ses dates passent « en écart » et l'organisateur réapplique. La **reconnaissance** fait le chemin inverse : elle lit les journées types qu'une grille implique (chaque date aux mêmes vacations et aux mêmes drapeaux est la même journée) et remplace journées types et calendrier. Elle suit tout remplacement de la grille (import de scénario, dérivation depuis les horaires des stands), si bien qu'une édition importée et une édition tapée se lisent pareil sur l'écran Créneaux.
+Modifier un gabarit après coup ne propage rien : ses dates passent « en écart » et l'organisateur réapplique. La **reconnaissance** fait le chemin inverse : elle lit les gabarits qu'une grille implique (chaque date aux mêmes vacations et aux mêmes drapeaux est la même journée) et remplace gabarits et calendrier. Elle suit tout remplacement de la grille (import de scénario, dérivation depuis les horaires des stands), si bien qu'une édition importée et une édition tapée se lisent pareil sur l'écran Créneaux.
 
 Les créneaux qu'une [consigne](horaires-et-fenetres-des-stands.md#la-consigne-quatrième-couche) a ajoutés à la grille ne sont ni comptés en écart ni supprimés à l'application : une journée type ne les nomme jamais, ils appartiennent à la consigne, qui les retire à sa levée. La carte affiche ces dates « sous consigne » (`datesSousConsigne`).
 

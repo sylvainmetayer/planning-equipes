@@ -128,7 +128,7 @@ public class EditionDeltaService {
                     stands,
                     animateurs,
                     creneaux,
-                    referenceData.listJourneesTypes(),
+                    referenceData.listGabarits(),
                     legaux,
                     referenceData.getEtatsContraintes(),
                     referenceData.getConstraintWeights(),

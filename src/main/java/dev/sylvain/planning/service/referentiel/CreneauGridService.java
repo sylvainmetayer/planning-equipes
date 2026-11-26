@@ -2,22 +2,18 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.VacationVerrouillee;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
-import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -30,15 +26,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Builds and checks the edition's <b>grid of créneaux</b>: expanding a
- * recurrence rule ("09:00-12:00 and 14:00-18:00, every day but the weekend,
- * from the 6th to the 19th") into concrete créneaux, and auditing a grid for
- * the mistakes nothing else catches.
+ * Checks the edition's <b>grid of créneaux</b>: auditing a grid for the
+ * mistakes nothing else catches. Producing one is {@link GenerateurCreneaux}'s
+ * (ADR 0126), which reads this verdict on every preview.
  *
  * <p>Written for the MCP tools (issue: assisted créneau creation), where a
  * single sentence can produce sixty rows at once and a silent typo is
@@ -55,9 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * overlaps, holes, durations — which is exactly what {@link #validate} adds
  * before folding the other two reports in.</p>
  *
- * <p>Nothing here writes: generation returns unsaved {@link Creneau}s and
- * validation returns a report. Persisting is the caller's decision, which is
- * what makes a preview possible.</p>
+ * <p>Nothing here writes: validation returns a report.</p>
  */
 @ApplicationScoped
 public class CreneauGridService {
@@ -87,122 +79,6 @@ public class CreneauGridService {
     public CreneauGridService(FeasibilityAnalyzer feasibilityAnalyzer, ParametresService parametres) {
         this.feasibilityAnalyzer = feasibilityAnalyzer;
         this.parametres = parametres;
-    }
-
-    /* ------------------------------ Generation ------------------------------ */
-
-    /**
-     * Expands {@code regle} into unsaved créneaux, one per (matching date ×
-     * window), ordered by date then start time.
-     *
-     * <p>{@link Creneau#getJour()} is left at its default: the day number is
-     * never stored, {@code CreneauRepository} recomputes it with
-     * {@link Creneau#assignerJours} on every read so that consecutive calendar
-     * days always differ by one. Setting it here would be write-only noise —
-     * and would be wrong the moment these créneaux join an edition whose
-     * earliest date is older.</p>
-     */
-    public static List<Creneau> generateRecurrence(RegleRecurrence regle) {
-        List<FenetreHoraire> fenetres = regle.fenetresValidees();
-        List<Creneau> creneaux = new ArrayList<>();
-        for (LocalDate date : regle.datesCouvertes()) {
-            for (FenetreHoraire fenetre : fenetres) {
-                creneaux.add(new Creneau(null, 0, date, fenetre.getHeureDebut(), fenetre.getHeureFin()));
-            }
-        }
-        creneaux.sort(Comparator.comparing(Creneau::getDate).thenComparing(Creneau::getHeureDebut));
-        return creneaux;
-    }
-
-    /**
-     * A recurrence to expand. Reuses {@link TypeJoursHoraire} and
-     * {@link FenetreHoraire} rather than inventing a parallel vocabulary: an
-     * operator who has learned "TOUS / JOURS_SEMAINE / PLAGE / DATES" on stand
-     * horaires should not have to learn a second dialect for créneaux.
-     *
-     * @param exclusions dates to skip whatever the selector says — the
-     *                   "every day except the 14th" case, which would
-     *                   otherwise force listing every date explicitly
-     */
-    public record RegleRecurrence(
-            TypeJoursHoraire jours,
-            LocalDate dateDebut,
-            LocalDate dateFin,
-            Set<DayOfWeek> joursSemaine,
-            Set<LocalDate> dates,
-            Set<LocalDate> exclusions,
-            List<FenetreHoraire> fenetres) {
-
-        public RegleRecurrence {
-            jours = jours != null ? jours : TypeJoursHoraire.TOUS;
-            joursSemaine = joursSemaine != null ? Set.copyOf(joursSemaine) : Set.of();
-            dates = dates != null ? Set.copyOf(dates) : Set.of();
-            exclusions = exclusions != null ? Set.copyOf(exclusions) : Set.of();
-            fenetres = fenetres != null ? List.copyOf(fenetres) : List.of();
-        }
-
-        /** The windows, rejecting the malformed ones with a message an assistant can act on. */
-        List<FenetreHoraire> fenetresValidees() {
-            if (fenetres.isEmpty()) {
-                throw new BusinessError.Invalid("Aucune fenêtre horaire fournie, ex. « 09:00-12:00,14:00-18:00 »");
-            }
-            for (FenetreHoraire fenetre : fenetres) {
-                if (fenetre.getHeureDebut() == null || fenetre.getHeureFin() == null) {
-                    throw new BusinessError.Invalid(
-                            "Chaque fenêtre doit porter une heure de début ET une heure de fin : un créneau est "
-                                    + "l'amplitude elle-même, il n'a pas de fermeture extérieure dont hériter.");
-                }
-                if (fenetre.getHeureDebut().equals(fenetre.getHeureFin())) {
-                    throw new BusinessError.Invalid(
-                            "Fenêtre de durée nulle : " + fenetre.getHeureDebut() + " → " + fenetre.getHeureFin());
-                }
-            }
-            return fenetres;
-        }
-
-        /**
-         * The dates the rule actually covers, exclusions removed. A selector
-         * needing bounds says so explicitly rather than silently generating
-         * nothing, which is the failure mode that wastes an assistant's turn.
-         */
-        Set<LocalDate> datesCouvertes() {
-            Set<LocalDate> retenues = new TreeSet<>();
-            if (jours == TypeJoursHoraire.DATES) {
-                if (dates.isEmpty()) {
-                    throw new BusinessError.Invalid("La portée DATES exige la liste des dates.");
-                }
-                retenues.addAll(dates);
-            } else {
-                retenues.addAll(datesInRange());
-            }
-            retenues.removeAll(exclusions);
-            if (retenues.isEmpty()) {
-                throw new BusinessError.Invalid("La règle ne couvre aucune date : sélecteur et exclusions s'annulent.");
-            }
-            return retenues;
-        }
-
-        /** The dates of a bounded selector, before exclusions. */
-        private List<LocalDate> datesInRange() {
-            if (dateDebut == null || dateFin == null) {
-                throw new BusinessError.Invalid(
-                        "La portée " + jours + " exige dateDebut et dateFin (bornes incluses).");
-            }
-            if (dateFin.isBefore(dateDebut)) {
-                throw new BusinessError.Invalid(
-                        "dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ").");
-            }
-            if (jours == TypeJoursHoraire.JOURS_SEMAINE && joursSemaine.isEmpty()) {
-                throw new BusinessError.Invalid("La portée JOURS_SEMAINE exige joursSemaine, ex. MONDAY,TUESDAY.");
-            }
-            List<LocalDate> retenues = new ArrayList<>();
-            for (LocalDate date = dateDebut; !date.isAfter(dateFin); date = date.plusDays(1)) {
-                if (jours != TypeJoursHoraire.JOURS_SEMAINE || joursSemaine.contains(date.getDayOfWeek())) {
-                    retenues.add(date);
-                }
-            }
-            return retenues;
-        }
     }
 
     /* ------------------------------ Validation ------------------------------ */

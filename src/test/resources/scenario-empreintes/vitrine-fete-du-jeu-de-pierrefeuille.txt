@@ -1108,7 +1108,7 @@
 .sections.contraintes.poids{repartitionMineursParCreneau} = 10
 .sections.edition.id = PIERREFEUILLE-2027
 .sections.edition.nom = Fête du jeu de Pierrefeuille 2027
-.sections.journeesTypes = null
+.sections.gabarits = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.prereglagesConsigne = null

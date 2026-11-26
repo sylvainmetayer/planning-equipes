@@ -67,31 +67,34 @@ The other writes go through (game categories, locations, ad hoc constraints, leg
 
 ## The timeslot grid
 
-A timeslot is created alone or in a series: a rule (the timeslots of a template day and the days it covers) adds dozens at once, like the MCP tool `creer_creneaux_recurrents`.
+A timeslot is created alone (`POST /api/creneaux`) or in bulk by **the timeslot generator** ([ADR 0126](repo:docs/decisions/0126-un-generateur-de-creneaux-unique.md)), which produces dozens of timeslots at once from one of three sources: the templates (« gabarits », the day templates of 3.x) applied to their dates, the stands' hours, or a recurring pattern. Three gestures hold for all of them: `POST /api/generateur-creneaux/apercu` writes nothing and returns the verdict on the grid that would result, `POST /api/generateur-creneaux/application` writes, `POST /api/generateur-creneaux/retrait` withdraws dates from the templates' calendar (their timeslots stay).
 
 ```json
-POST /api/creneaux/recurrence/apercu
-{ "jours": "JOURS_SEMAINE", "dateDebut": "2026-07-06", "dateFin": "2026-07-19",
-  "joursSemaine": ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"],
-  "exclusions": ["2026-07-14"],
-  "fenetres": [ { "heureDebut": "09:00", "heureFin": "12:00" },
-                { "heureDebut": "14:00", "heureFin": "18:00" } ] }
-→ { "nombreGeneres": 18, "creneaux": [ … ], "controle": { … } }
+POST /api/generateur-creneaux/apercu
+{ "source": "RECURRENCE",
+  "recurrence": { "jours": "JOURS_SEMAINE", "dateDebut": "2026-07-06", "dateFin": "2026-07-19",
+    "joursSemaine": ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY"],
+    "exclusions": ["2026-07-14"],
+    "fenetres": [ { "heureDebut": "09:00", "heureFin": "12:00" },
+                  { "heureDebut": "14:00", "heureFin": "18:00" } ] } }
+→ { "source": "RECURRENCE", "nombreGeneres": 18, "creneaux": [ … ], "controle": { … } }
 ```
 
-`jours` reuses the stand hours selector (`TOUS`, `JOURS_SEMAINE`, `PLAGE`, `DATES`). The preview writes nothing and returns the verdict on the grid that would result; `POST /api/creneaux/recurrence` adds without ever replacing. A rule that repeats an existing timeslot comes out as `DOUBLON` (`ERREUR`); `400` on a malformed rule. A timeslot is a shift: an overlap on the same day is the normal form of two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)).
+`jours` reuses the stand hours selector (`TOUS`, `JOURS_SEMAINE`, `PLAGE`, `DATES`); a recurrence adds and never replaces. A generation that repeats an existing timeslot comes out as `DOUBLON` (`ERREUR`); `400` on a malformed request. A timeslot is a shift: an overlap on the same day is the normal shape of two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). The 3.x routes (`/api/creneaux/recurrence`, `/api/creneaux/derivation`, `/api/journees-types`) remain aliases marked deprecated until 5.0, with their old shapes.
 
 `GET /api/creneaux/controle` returns the grid's anomalies (`severite` `ERREUR` or `AVERTISSEMENT`, `type`, `date`, `message`), those of the stands' openings and the feasibility report (`null` with no stand or no timeslot). Two duration caps can be read there: beyond `parametresLegaux.dureeVacationMaxMinutes` (6 h by default, threshold of art. L3121-16) a `VACATION_TROP_LONGUE` warning, beyond what daily rest allows a `REPOS_QUOTIDIEN_IMPOSSIBLE` error. `GET /api/creneaux/diagnostic` describes the grid in place: number of shifts, dates, meal relays, `joursFeries`.
 
 **Public holidays.** The check adds `VACATION_JOUR_FERIE` (one line per date) when shifts fall on a public holiday and the edition has at least one minor available that day, because only adults sit there (art. L3164-6). With no minor available, it stays silent: a festival legitimately opens on 14 July. Nothing is blocked, the hard constraint already exists; the message counts the minors without naming them. `GET /api/jours-feries?debut=AAAA-MM-JJ&fin=AAAA-MM-JJ` returns the public holidays of a range (`[{ date, label }]`) for the entry screens. It is a calendar fact, no edition is read but the admin login is still required; two years at most, `400` on a reversed range, a range that is too long or an unreadable date. The scope is that of `JoursFeries` (the eleven days of art. L3133-1, mainland France outside Alsace-Moselle), and the client never computes Easter: the label travels with the date.
 
-**Deriving the grid from the stand hours.** When the hours already exist, the grid follows from them: each hour at which a stand opens or closes is a cut, and each slice between two cuts where at least one stand is open becomes a timeslot. `POST /api/creneaux/derivation/apercu` and `POST /api/creneaux/derivation` take `{ dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes, remplacer }`:
+**The `STANDS` source: deriving the grid from the stand hours.** When the hours already exist, the grid follows from them: each hour at which a stand opens or closes is a cut, and each slice between two cuts where at least one stand is open becomes a timeslot. The request carries `derivation: { dateDebut, dateFin, heureFermeture, dureeMinimaleMinutes, remplacer }`:
 
 - `heureFermeture` gives an end to the "until closing" windows (`00:00` for midnight: the last timeslot crosses midnight).
 - A slice shorter than `dureeMinimaleMinutes` (15 by default) joins the next one, or the previous one failing that; a gap shorter than that is closed rather than splitting the timeslot in two.
 - `remplacer` judges and, on writing, replaces the whole grid, the solved plan going with it; otherwise the timeslots are added.
 
 Only the days a stand declares "open on these windows" take part: a stand that is silent on a day is open when the others are. The response carries the timeslots, the `coupures`, the `joursSansFenetre` and the `controle` verdict; `400` with no window at all.
+
+**The `GABARITS` source.** The templates are managed under `/api/generateur-creneaux/gabarits` and their calendar under `PUT /api/generateur-creneaux/calendrier`; `GET /api/generateur-creneaux` returns both and the dates out of line. Applying materialises the calendar by difference (`application`: timeslots kept, updated, created, removed with their seats); a date without a template is never touched. `POST /api/generateur-creneaux/reconnaissance` goes the other way and replaces the templates with those the grid implies. A timeslot created on a day the edition did not count unfolds the stands' model, like one typed by hand ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)).
 
 ## File imports
 

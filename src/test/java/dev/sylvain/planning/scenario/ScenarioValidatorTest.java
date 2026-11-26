@@ -141,7 +141,7 @@ class ScenarioValidatorTest {
                         MINIMAL + "parametresDecoupage:\n  dureeVacationCibleMinutes: 240\n"))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("parametresDecoupage")
-                .hasMessageContaining("journeesTypes");
+                .hasMessageContaining("gabarits");
 
         assertThatThrownBy(() -> ScenarioValidator.validate(MINIMAL + "decoupageAuto: {}\n"))
                 .isInstanceOf(ScenarioFormatException.class)
