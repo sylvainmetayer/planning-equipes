@@ -2,7 +2,10 @@ package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A <b>dated window</b> of a {@link Stand}: on {@code date}, between
@@ -151,6 +154,21 @@ public class PlageStand {
 
     public void setDepliee(boolean depliee) {
         this.depliee = depliee;
+    }
+
+    /** What makes two plages the same one: everything but the row id and the origin. */
+    public String contentKey() {
+        return mode + "|" + date + "|" + heureDebut + "|" + heureFin + "|" + effectif + "|" + motif;
+    }
+
+    /**
+     * Marks each plage of {@code after} as unfolded when {@code before} holds an unfolded plage of the
+     * same content, and as typed otherwise: the origin follows the content, never what a caller says.
+     */
+    public static void carryOrigins(Collection<PlageStand> before, Collection<PlageStand> after) {
+        Set<String> unfolded = new HashSet<>();
+        before.stream().filter(PlageStand::isDepliee).forEach(plage -> unfolded.add(plage.contentKey()));
+        after.forEach(plage -> plage.setDepliee(unfolded.contains(plage.contentKey())));
     }
 
     /** True when {@code heureDebut}/{@code heureFin} form a non-empty, same-day window (an open end counts as valid). */

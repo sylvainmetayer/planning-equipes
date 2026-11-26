@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -332,17 +331,7 @@ public class StandService {
      * stored keeps its mark, one the editor changed, or a client wrote, is typed by hand.
      */
     private static void markOrigins(Stand sent, Stand stored) {
-        Set<String> unfolded = new HashSet<>();
-        if (stored != null) {
-            stored.getPlages().stream().filter(PlageStand::isDepliee).forEach(plage -> unfolded.add(key(plage)));
-        }
-        sent.getPlages().forEach(plage -> plage.setDepliee(unfolded.contains(key(plage))));
-    }
-
-    /** What makes two plages the same one: everything but the row id and the origin. */
-    private static String key(PlageStand plage) {
-        return plage.getMode() + "|" + plage.getDate() + "|" + plage.getHeureDebut() + "|" + plage.getHeureFin() + "|"
-                + plage.getEffectif() + "|" + plage.getMotif();
+        PlageStand.carryOrigins(stored != null ? stored.getPlages() : List.of(), sent.getPlages());
     }
 
     private static boolean sameRules(List<HorairesRecurrents.Regle> sent, List<HorairesRecurrents.Regle> stored) {

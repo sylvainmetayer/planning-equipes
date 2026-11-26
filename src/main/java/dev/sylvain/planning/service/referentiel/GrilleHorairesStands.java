@@ -246,6 +246,10 @@ public final class GrilleHorairesStands {
                 ouvertures.add(PlageStand.ouverture(null, date, fenetre.debut, fenetre.fin, null, effectif));
             }
         });
+        // A plage the grid leaves as it was keeps its origin: only what the grid changes becomes typed.
+        List<PlageStand> before = new ArrayList<>(stand.getPlages());
+        PlageStand.carryOrigins(before, ouvertures);
+        PlageStand.carryOrigins(before, fermetures);
         stand.setOuvertures(ouvertures);
         stand.setIndisponibilites(fermetures);
         stand.setPlagesEffectives(null);

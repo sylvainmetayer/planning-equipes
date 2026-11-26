@@ -334,4 +334,48 @@ class GrilleHorairesStandsTest {
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("vide");
     }
+
+    @Test
+    void laGrilleGardeLaMarqueDesPlagesQuElleNeModifiePas() {
+        List<Creneau> creneaux = grille(3);
+        Stand stand = stand("MARQUE", 1, 1);
+        List<SaisieCellule> saisie = sameCellsEveryDay(creneaux, 2, 2, null, 3, null);
+        GrilleHorairesStands.apply(stand, creneaux, saisie);
+        stand.getPlages().forEach(plage -> plage.setDepliee(true));
+
+        // The third day alone changes: its first timeslot gets another headcount.
+        List<SaisieCellule> modifiee = new ArrayList<>(saisie);
+        modifiee.set(10, new SaisieCellule(creneaux.get(10).getId(), 4));
+        GrilleHorairesStands.apply(stand, creneaux, modifiee);
+
+        LocalDate jour3 = JOUR_1.plusDays(2);
+        assertThat(stand.getPlages().stream().filter(plage -> !plage.getDate().equals(jour3)))
+                .isNotEmpty()
+                .allMatch(PlageStand::isDepliee);
+        // On that day, the plage the grid rewrote is typed; the one it left as it was keeps its mark.
+        assertThat(stand.getPlages().stream()
+                        .filter(plage -> plage.getDate().equals(jour3)
+                                && plage.getHeureDebut().equals(LocalTime.of(10, 0))))
+                .isNotEmpty()
+                .noneMatch(PlageStand::isDepliee);
+        assertThat(stand.getPlages().stream()
+                        .filter(plage -> plage.getDate().equals(jour3)
+                                && plage.getHeureDebut().equals(LocalTime.of(14, 0))))
+                .isNotEmpty()
+                .allMatch(PlageStand::isDepliee);
+    }
+
+    @Test
+    void uneSaisieIdentiqueAUnePlageDeplieeRedevientDepliee() {
+        // Origin follows content: same effect, so same mark (ADR 0104).
+        PlageStand unfolded = PlageStand.ouverture(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        unfolded.setDepliee(true);
+        PlageStand typed = PlageStand.ouverture(null, JOUR_1, LocalTime.of(10, 0), LocalTime.of(12, 0), null);
+        PlageStand other = PlageStand.ouverture(null, JOUR_1, LocalTime.of(14, 0), LocalTime.of(16, 0), null);
+
+        PlageStand.carryOrigins(List.of(unfolded), List.of(typed, other));
+
+        assertThat(typed.isDepliee()).isTrue();
+        assertThat(other.isDepliee()).isFalse();
+    }
 }

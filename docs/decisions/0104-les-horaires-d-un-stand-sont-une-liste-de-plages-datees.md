@@ -108,8 +108,11 @@ l'application s'en souvenait.
    eux. L'origine est dite par le serveur : à l'écriture d'une fiche, une plage
    garde sa marque si elle est identique, à l'identifiant près, à une plage
    stockée marquée ; une plage modifiée, ou écrite par un client, est une
-   saisie. La saisie de la grille de stands réécrit la fiche entière : ce
-   qu'elle pose est saisi à la main.
+   saisie. La saisie de la grille de stands réécrit la fiche entière avec la
+   même règle : une plage que la grille laisse telle quelle garde sa marque,
+   ce qu'elle change devient saisi. La marque suit le contenu : une plage
+   saisie identique à une plage dépliée redevient dépliée, ce qui est
+   acceptable, l'effet sur le stand étant le même.
 
 ## Ce que ça coûte
 
