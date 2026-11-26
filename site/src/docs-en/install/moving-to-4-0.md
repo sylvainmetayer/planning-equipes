@@ -143,22 +143,6 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
   A lock for which the plan has no matching seat froze nothing and disappears. The `animateurVerrouilleFige` rule is removed: a staff member is no longer locked "everywhere", so nothing forbids giving them a seat elsewhere, and empty seats are not frozen (as before). The number of rules goes from 47 to 46. The `verrouiller` MCP tool keeps its name; its `type` argument takes `ANIMATEUR_CRENEAU`, `STAND_JOUR` or `JOUR`, and the API refuses the old values with a `400`. The `plan:` section of a YAML file (the one of the copy before a wipe) carries only these three types; a file naming an old one is read with the same conversion, and each converted lock is reported by a warning.
 - **What you do**: nothing for your locks. The locks of older editions are converted the same way. A script or prompt that laid an `ANIMATEUR`, `STAND` or `CRENEAU` lock must lay one lock per timeslot or per day. A copy before a wipe taken in 3.x that contains such locks stays restorable: its locks are converted on reading, the same way, without the stored copy being rewritten.
 
-<<<<<<< HEAD
-### The forced assignment and the forced unavailability are converted
-
-- **Before (3.x)**: an ad hoc exception had five types, among them the **forced unavailability** (a person ruled out of a timeslot, a stand or the whole event) and the **forced assignment** (at least one seat of the scope held by one of the named people).
-- **After (4.0)**: three types ([ADR 0117](repo:docs/decisions/0117-deux-types-d-exception-les-forcees-sont-converties.md)): incompatibility, affinity, grouped arrival. The two rules `indisponibiliteForcee` and `affectationForcee` are removed (the number of rules goes from 42 to 40); their names are read with a warning in a 3.x file or copy. Migration `V161` converts each exception into what replaces it, without touching the saved plan:
-
-| 3.x exception | Becomes |
-| --- | --- |
-| forced assignment on a timeslot | one lock staff member + timeslot for each named person who holds a seat of the scope on the saved plan |
-| forced unavailability on a timeslot | the **whole day** added to the unavailable days of the fiche |
-| forced unavailability with no timeslot | every day carrying a timeslot, added to the unavailable days of the fiche |
-| forced unavailability on a stand; forced assignment with no timeslot, or that nobody holds | nothing: reported in the migration log, kept in the `contrainte_ad_hoc_avant_4_0` archive |
-
-- **What is lost**: a forced unavailability on **a single timeslot** becomes a **whole day**: the fiche knows no timeslot. If the saved plan seats the person on another timeslot that day, it carries, after the migration, a hard availability breach: it shows on the Problems page, and the next solve moves the person. Each case is reported in the migration log (`RAISE WARNING`, one message per exception); read it before launching the first solve. The event-day mode also marks an absence by adding the **whole day** to the unavailable days of the fiche, whatever timeslot it started from.
-- **What you do**: nothing for your data. The `contrainte_ad_hoc_avant_4_0` archive (`convertie` column: true or false) is neither read nor exported by the application and 5.0 drops it; once 4.0 is in place and a return to 3.x is ruled out, `DROP TABLE` removes it with no effect on the application. A script, prompt or MCP tool that created an `INDISPONIBILITE_FORCEE` or `AFFECTATION_FORCEE` exception is now refused: lock the person's timeslot (`verrouiller`, type `ANIMATEUR_CRENEAU`), or add the day to their `joursIndisponibles` (`modifier_animateur`). A 3.x YAML file carrying one of these types is read with the same conversion, a forced assignment being converted only if the file carries a plan (`plan:` section) where the person holds the seat; each case is a warning of the import report. The built-in help gives the gesture: "How to do without a forced assignment".
-=======
 ### The reference data freeze becomes the phase of the edition
 
 - **Before (3.x)**: reference data was frozen family by family (stands, timeslots, game categories and locations, skills), each laid down and lifted on its own in Settings (table `gel_referentiel`). Nothing froze by itself, not even after a publication.
@@ -174,7 +158,20 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 
   What is lost: the per-family detail. An edition that had frozen only its stands sees its timeslots, game categories and locations and skills frozen too; a published edition that had frozen its skills finds them editable again; the freeze date of each family becomes a single phase date. The `gel_referentiel` table stays in place, read by nothing and left out of the SQL export, for a way back to 3.x, and 5.0 drops it.
 - **What you do**: after the upgrade, open each ongoing edition and check its phase on the home page ("freeze" block) or with `GET /api/editions/courant`. If a family is frozen while you wanted it open, lift it in Settings, *Edition* tab: in Solving, the edition goes back to Preparation (the four families reopen); in Published, the structure is unblocked. Until 5.0, the `PUT` and `DELETE /api/editions/courant/gel/{famille}` routes and the MCP tools `figer_referentiel` and `lever_gel` remain aliases of the phase (freezing one family in Preparation freezes them all); a script that calls them must move to `PUT /api/editions/courant/phase` and `/api/editions/courant/deblocage-structure` before 5.0. After a publication, a script or import that changed stands or timeslots is refused with `409 REFERENTIEL_FIGE` until the structure is unblocked.
->>>>>>> origin/main
+### The forced assignment and the forced unavailability are converted
+
+- **Before (3.x)**: an ad hoc exception had five types, among them the **forced unavailability** (a person ruled out of a timeslot, a stand or the whole event) and the **forced assignment** (at least one seat of the scope held by one of the named people).
+- **After (4.0)**: three types ([ADR 0117](repo:docs/decisions/0117-deux-types-d-exception-les-forcees-sont-converties.md)): incompatibility, affinity, grouped arrival. The two rules `indisponibiliteForcee` and `affectationForcee` are removed (the number of rules goes from 42 to 40); their names are read with a warning in a 3.x file or copy. Migration `V161` converts each exception into what replaces it, without touching the saved plan:
+
+| 3.x exception | Becomes |
+| --- | --- |
+| forced assignment on a timeslot | one lock staff member + timeslot for each named person who holds a seat of the scope on the saved plan |
+| forced unavailability on a timeslot | the **whole day** added to the unavailable days of the fiche |
+| forced unavailability with no timeslot | every day carrying a timeslot, added to the unavailable days of the fiche |
+| forced unavailability on a stand; forced assignment with no timeslot, or that nobody holds | nothing: reported in the migration log, kept in the `contrainte_ad_hoc_avant_4_0` archive |
+
+- **What is lost**: a forced unavailability on **a single timeslot** becomes a **whole day**: the fiche knows no timeslot. If the saved plan seats the person on another timeslot that day, it carries, after the migration, a hard availability breach: it shows on the Problems page, and the next solve moves the person. Each case is reported in the migration log (`RAISE WARNING`, one message per exception); read it before launching the first solve. The event-day mode also marks an absence by adding the **whole day** to the unavailable days of the fiche, whatever timeslot it started from.
+- **What you do**: nothing for your data. The `contrainte_ad_hoc_avant_4_0` archive (`convertie` column: true or false) is neither read nor exported by the application and 5.0 drops it; once 4.0 is in place and a return to 3.x is ruled out, `DROP TABLE` removes it with no effect on the application. A script, prompt or MCP tool that created an `INDISPONIBILITE_FORCEE` or `AFFECTATION_FORCEE` exception is now refused: lock the person's timeslot (`verrouiller`, type `ANIMATEUR_CRENEAU`), or add the day to their `joursIndisponibles` (`modifier_animateur`). A 3.x YAML file carrying one of these types is read with the same conversion, a forced assignment being converted only if the file carries a plan (`plan:` section) where the person holds the seat; each case is a warning of the import report. The built-in help gives the gesture: "How to do without a forced assignment".
 
 ### Data and migrations
 

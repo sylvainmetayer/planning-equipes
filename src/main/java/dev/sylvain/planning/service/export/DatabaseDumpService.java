@@ -267,17 +267,14 @@ public class DatabaseDumpService {
      *       the two tables {@code mesure_edition} replaced, kept by V148 and
      *       dropped in 5.0: archives nothing reads, the measures being dumped
      *       from {@code mesure_edition} now.</li>
-<<<<<<< HEAD
-     *   <li>{@code contrainte_ad_hoc_avant_4_0} — the forced assignments and
-     *       unavailabilities the 4.0 withdrew, kept by V161 and dropped in 5.0:
-     *       an archive nothing reads, a free-text reason that may name a person
-     *       included.</li>
-=======
      *   <li>{@code gel_referentiel} — the 3.x per-family freeze, replaced by
      *       the phase of the edition (ADR 0115) and dropped in 5.0: an archive
      *       nothing reads. The phase travels with the {@code edition} row, so a
      *       restore does not reopen what the organiser had frozen.</li>
->>>>>>> origin/main
+     *   <li>{@code contrainte_ad_hoc_avant_4_0} — the forced assignments and
+     *       unavailabilities the 4.0 withdrew, kept by V161 and dropped in 5.0:
+     *       an archive nothing reads, a free-text reason that may name a person
+     *       included.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -309,11 +306,8 @@ public class DatabaseDumpService {
             "solve_budget_avant_4_0",
             "kpi_historique_avant_4_0",
             "kpi_realise_avant_4_0",
-<<<<<<< HEAD
+            "gel_referentiel",
             "contrainte_ad_hoc_avant_4_0");
-=======
-            "gel_referentiel");
->>>>>>> origin/main
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
