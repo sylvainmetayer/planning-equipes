@@ -65,7 +65,7 @@ The details and an example are in [the environment variables](variables-environn
 ### YAML scenario format
 
 - **Before**: the application writes `schemaVersion: 1`.
-- **After**: it writes `schemaVersion: 6`. It still reads v1 files (key absent or equal to 1): they go through a chain of conversions, link by link, as the model changes during 4.x. What the chain cannot convert is ignored, and every ignored item appears in the import report's warnings, never silently. The 1 → 2 link already renames the game categories' `ninja` key to `polyvalent`, losing nothing; the 4 → 5 link converts the stands' opening hours into plages (see [Stand opening hours](#horaires-des-stands)); the 5 → 6 link renames the `journeesTypes` section to `gabarits` (see [One timeslot generator](#one-timeslot-generator)).
+- **After**: it writes `schemaVersion: 6`. It still reads v1 files (key absent or equal to 1): they go through a chain of conversions, link by link, as the model changes during 4.x. What the chain cannot convert is ignored, and every ignored item appears in the import report's warnings, never silently. The 1 → 2 link already renames the game categories' `ninja` key to `polyvalent`, losing nothing; the 4 → 5 link converts the stands' opening hours into plages (see [Stand opening hours](#horaires-des-stands)); the 5 → 6 link renames the `journeesTypes` section to `gabarits` (see [One timeslot generator](#un-seul-generateur-de-creneaux)).
 - **What you do**: nothing to read your old files, end-of-event archives or copies taken before a wipe. A v2 to v5 scenario cannot be imported into a 3.x application ("newer format"): keep a v1 export before upgrading, it is your way back. The v1 reader is removed in 5.0.
 
 ### The level of an organisation rule is chosen per edition
@@ -189,4 +189,4 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 
 ### Data and migrations
 
-The migrations that convert data are described above, one per change, as they are merged: for now, [the stands' opening hours](#horaires-des-stands) and [the day templates turned templates of the generator](#one-timeslot-generator).
+The migrations that convert data are described above, one per change, as they are merged: for now, [the stands' opening hours](#horaires-des-stands) and [the day templates turned templates of the generator](#un-seul-generateur-de-creneaux).
