@@ -2,7 +2,7 @@
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
-- **Portée** : `QualiteConstraints`, moteur direct (`Rule`, `IncrementalScore`), catalogue (`ANCIENS_NOMS`, règles à niveau réglable), heuristique de construction (`PosteAffectationDifficultyComparatorFactory`), mouvement de relocalisation (`WeekRelocationMoveIteratorFactory`), analyses (`FeasibilityAnalyzer`, `ConsecutiveDaysCapacity`, `DaySequenceFloor`), schéma (migration `V157`), scénario YAML, API et outils MCP
+- **Portée** : `QualiteConstraints`, moteur direct (`Rule`, `IncrementalScore`), catalogue (`ANCIENS_NOMS`, règles à niveau réglable), heuristique de construction (`PosteAffectationDifficultyComparatorFactory`), mouvement de relocalisation (`WeekRelocationMoveIteratorFactory`), analyses (`FeasibilityAnalyzer`, `ConsecutiveDaysCapacity`, `DaySequenceFloor`), schéma (migration `V162`), scénario YAML, API et outils MCP
 - **Révise** : [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) (les deux formes), [0049](0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md) (ce qui déclenche la recherche par jours entiers), [0068](0068-sous-la-regle-dure-la-construction-suit-le-calendrier.md) (retiré)
 - **Applique** : [0106](0106-obligatoire-est-un-niveau-reglable-par-edition.md) et [0111](0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md) (le niveau d'une règle est le niveau de son poids)
 
@@ -54,7 +54,7 @@ régression ne touche que `SOLVER_ENGINE=timefold` à l'obligatoire.
 2. **La forme dure devient un niveau.** `maxJoursConsecutifsTravaillesDur` est
    lue comme alias jusqu'en 5.0, mais comme un **niveau**, pas comme un nom de
    règle :
-   - **base** (`V157`) : une édition qui l'avait allumée voit la règle fusionnée
+   - **base** (`V162`) : une édition qui l'avait allumée voit la règle fusionnée
      passer obligatoire, et rallumée si la forme dosée avait été éteinte ;
      sinon, la règle garde le niveau, le poids et l'interrupteur de la forme
      dosée. C'est la lecture la plus protectrice, comme `V152`

@@ -878,7 +878,7 @@ public final class ConstraintCatalog {
      * protective of the two ({@link #formerNamesOf}, {@code ScenarioMigrations}
      * and migration V152). {@link #FORME_DURE_JOURS_CONSECUTIFS} names a level
      * rather than a rule: switched on, it reads as the merged rule made
-     * obligatoire (migration V157, ADR 0118).
+     * obligatoire (migration V162, ADR 0118).
      */
     public static final Map<String, String> ANCIENS_NOMS = Map.of(
             "animateurVerrouilleFige",

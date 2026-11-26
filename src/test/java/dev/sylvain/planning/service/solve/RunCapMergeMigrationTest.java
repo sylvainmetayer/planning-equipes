@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V157 folds the hard form of the run of days into the one rule that replaces
+ * V162 folds the hard form of the run of days into the one rule that replaces
  * it (ADR 0118), on the most protective reading: an edition that had switched
  * the hard form on gets the rule obligatoire, switched back on if the dosed form
  * was off, its stored weight kept; any other edition keeps the dosed form's
@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class RunCapMergeMigrationTest {
 
-    private static final String SCHEMA = "migration_v157";
-    private static final String V157 = "db/migration/V157__une_seule_regle_de_jours_d_affilee.sql";
+    private static final String SCHEMA = "migration_v162";
+    private static final String V162 = "db/migration/V162__une_seule_regle_de_jours_d_affilee.sql";
 
     @BeforeAll
     static void migrateUpToTheMigrationBefore() throws SQLException {
@@ -44,10 +44,10 @@ class RunCapMergeMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration");
-        // The last migration before V157, whichever number the others took.
+        // The last migration before V162, whichever number the others took.
         String before = java.util.Arrays.stream(flyway.load().info().all())
                 .map(info -> info.getVersion())
-                .filter(version -> version != null && version.compareTo(MigrationVersion.fromVersion("157")) < 0)
+                .filter(version -> version != null && version.compareTo(MigrationVersion.fromVersion("162")) < 0)
                 .max(Comparable::compareTo)
                 .orElseThrow()
                 .getVersion();
@@ -128,8 +128,8 @@ class RunCapMergeMigrationTest {
     }
 
     private static String migration() throws Exception {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V157)) {
-            assertThat(file).as(V157).isNotNull();
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V162)) {
+            assertThat(file).as(V162).isNotNull();
             return new String(file.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
