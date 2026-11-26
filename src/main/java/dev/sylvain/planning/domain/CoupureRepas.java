@@ -94,8 +94,11 @@ public record CoupureRepas(
         return Math.max(0, auPlusTard - debutDernierTrouMinutes);
     }
 
-    /** What this window's preference costs: minutes away from the end it points to. */
+    /** What this window's preference costs: minutes away from the end it points to; 0 with no placement. */
     public int preferredSlotGapMinutes() {
+        if (fenetre.sansPlacement()) {
+            return 0;
+        }
         return fenetre.auPlusTard() ? avanceMinutes() : retardMinutes();
     }
 

@@ -474,8 +474,8 @@ public final class BlockerPlaybook {
     }
 
     /**
-     * The cap of days in a row, on its rule's line — the hard form's: both
-     * forms read the one threshold, set on either line.
+     * The cap of days in a row, on its rule's line, whatever level the
+     * edition chose for it (ADR 0118).
      */
     private static ActionType consecutiveDaysCapAction() {
         return new ActionType(
@@ -484,7 +484,7 @@ public final class BlockerPlaybook {
                 "Un jour de plus au plafond rend à chacun un jour de travail sur chaque fenêtre : c'est le levier"
                         + " le plus direct quand la grille ne tient pas.",
                 ROUTE_RULES,
-                ruleParams(ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravaillesDur")));
+                ruleParams(ConstraintCatalog.PAR_NOM.get("maxJoursConsecutifsTravailles")));
     }
 
     private static ActionType liftLockAction(Context context) {

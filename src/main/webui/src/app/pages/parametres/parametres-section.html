@@ -34,6 +34,17 @@
                        (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
               </span>
             }
+            @case ('choix') {
+              <span class="parametres-section-saisie">
+                <select [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+                        [attr.data-field]="champ.descriptor.fields[0]"
+                        (change)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)">
+                  @for (option of placements(); track option.value) {
+                    <option [value]="option.value" [selected]="option.value === value(champ, champ.descriptor.fields[0])">{{ option.label }}</option>
+                  }
+                </select>
+              </span>
+            }
             @default {
               <span class="parametres-section-saisie">
                 <input type="number" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"

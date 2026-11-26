@@ -10,10 +10,14 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.analyse.AlerteService;
+import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
+import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
@@ -55,6 +59,12 @@ class PublicationResourceTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    JournalNotificationsRepository alertes;
+
+    @Inject
+    AlerteService alerteService;
+
     /**
      * Alice holds a seat and has an address, Bruno holds one without an
      * address, Chloé has an address and no seat: the three cases a publication
@@ -65,6 +75,7 @@ class PublicationResourceTest {
         mailbox.clear();
         forgetPublications();
         persistence.clearDatabase();
+        clearAlerts();
         persistPlan("MAIL-A", "MAIL-B");
         donnerEmail("PUB-A", EMAIL_ALICE);
         donnerEmail("PUB-B", null);
@@ -80,6 +91,15 @@ class PublicationResourceTest {
     @AfterEach
     void nettoyer() {
         forgetPublications();
+    }
+
+    private void clearAlerts() {
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()) {
+            statement.executeUpdate("DELETE FROM notification_planifiee");
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to clear the alerts", e);
+        }
     }
 
     private void forgetPublications() {
@@ -121,6 +141,100 @@ class PublicationResourceTest {
         assertThat(mailbox.getMailsSentTo(EMAIL_CHLOE)).isEmpty();
 
         assertThat(apercu().getString("dernierePublicationLe")).isNotBlank();
+    }
+
+    /** A 3.x client that still sends {@code exclusions}: nobody is left out, and the answer says so. */
+    @Test
+    void anExclusionsFieldFromA3xClientIsIgnoredWithAWarning() {
+        JsonPath rapport = given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"exclusions\":[\"PUB-A\"]}")
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(rapport.getList("avertissements", String.class))
+                .singleElement()
+                .asString()
+                .contains("« exclusions » n'existe plus")
+                .doesNotContain("PUB-A");
+        assertThat(rapport.getList("differes")).isEmpty();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+    }
+
+    @Test
+    void aPublicationWithoutExclusionsCarriesNoWarning() {
+        assertThat(publier().getList("avertissements")).isEmpty();
+    }
+
+    /** V160's alert says who the next publication writes to: it closes for the people really told. */
+    @Test
+    void aPublicationClosesTheRetiredExclusionAlertOfThePeopleItTold() {
+        raiseAlert("PUB-A");
+        raiseAlert("PUB-B");
+
+        publier();
+
+        // Alice was mailed; Bruno has no address, so he still has to be told.
+        assertThat(alertedIds()).containsExactly("PUB-B");
+    }
+
+    @Test
+    void aTargetedPublicationKeepsTheAlertOfThePeopleItDeferred() {
+        raiseAlert("PUB-A");
+        raiseAlert("PUB-B");
+
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"cibles\":[\"PUB-A\"]}")
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
+
+        assertThat(alertedIds()).containsExactly("PUB-B");
+    }
+
+    @Test
+    void aFailedSendKeepsTheAlert() {
+        QuarkusMock.installMockForType(new BouncingMailService(), MailService.class);
+        raiseAlert("PUB-A");
+
+        assertThat(publier().getList("echecs")).hasSize(1);
+
+        assertThat(alertedIds()).containsExactly("PUB-A");
+    }
+
+    private void raiseAlert(String animateurId) {
+        alertes.claim(
+                JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE,
+                animateurId,
+                animateurId,
+                "Exclusion de publication retirée en 4.0.",
+                JournalNotificationsRepository.Severite.WARNING);
+    }
+
+    private List<String> alertedIds() {
+        return alerteService.alertes(null).stream()
+                .filter(alerte -> "EXCLUSION_PUBLICATION_RETIREE".equals(alerte.type()))
+                .map(alerte -> alerte.animateurId())
+                .toList();
+    }
+
+    /** A mail server refusing every recipient. */
+    private static final class BouncingMailService extends MailService {
+        BouncingMailService() {
+            super(null, null, null, null, null);
+        }
+
+        @Override
+        public void sendPlanningPublie(
+                String animateurId, String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
+            throw new IllegalStateException("550 5.1.1 recipient refused");
+        }
     }
 
     @Test

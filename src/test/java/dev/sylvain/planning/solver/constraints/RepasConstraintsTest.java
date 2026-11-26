@@ -4,6 +4,8 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlacementRepas;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
@@ -284,6 +286,86 @@ class RepasConstraintsTest extends ConstraintTestBase {
         verify("coupureRepasPlacementPrefere")
                 .given(MIDI, poste(standA, vacation("10-20", 10, 20), a84))
                 .penalizesBy(0);
+    }
+
+    /* ------------- the placement setting, one case per value (ADR 0123) ------------- */
+
+    /** Midday, the break falls at 13:00: the late end of 12:00-14:00. */
+    private void middayLateBreak(PlacementRepas placement, int expected) {
+        assertPlacementCost(
+                expected,
+                MIDI.withPlacement(placement),
+                poste(standA, vacation("10-12", 10, 12), a84),
+                poste(standA, vacation("12-13", 12, 13), a84),
+                poste(standC, vacation("14-20", 14, 20), a84));
+    }
+
+    /** Midday, the break falls at 12:00: the early end. */
+    private void middayEarlyBreak(PlacementRepas placement, int expected) {
+        assertPlacementCost(
+                expected,
+                MIDI.withPlacement(placement),
+                poste(standA, vacation("10-12", 10, 12), a84),
+                poste(standB, vacation("13-14", 13, 14), a84),
+                poste(standC, vacation("14-20", 14, 20), a84));
+    }
+
+    /** Evening, the break falls at 19:00: the early end of 19:00-21:00. */
+    private void eveningEarlyBreak(PlacementRepas placement, int expected) {
+        assertPlacementCost(
+                expected,
+                SOIR.withPlacement(placement),
+                poste(standA, vacation("14-19", 14, 19), a84),
+                poste(standB, vacation("20-21", 20, 21), a84),
+                poste(standC, vacation("21-23", 21, 23), a84));
+    }
+
+    private void assertPlacementCost(int expected, FenetreRepas fenetre, PosteAffectation... postes) {
+        Object[] facts = new Object[postes.length + 1];
+        facts[0] = fenetre;
+        System.arraycopy(postes, 0, facts, 1, postes.length);
+        verify("coupureRepasPlacementPrefere").given(facts).penalizesBy(expected);
+    }
+
+    @Test
+    void theShippedPlacementKeepsEachWindowsOwnDirection() {
+        middayLateBreak(PlacementRepas.FIN_MIDI_DEBUT_SOIR, 0);
+        middayEarlyBreak(PlacementRepas.FIN_MIDI_DEBUT_SOIR, 60);
+        eveningEarlyBreak(PlacementRepas.FIN_MIDI_DEBUT_SOIR, 0);
+    }
+
+    @Test
+    void theStartPlacementPrefersTheEarlyBreakInBothWindows() {
+        middayLateBreak(PlacementRepas.DEBUT, 60);
+        middayEarlyBreak(PlacementRepas.DEBUT, 0);
+        eveningEarlyBreak(PlacementRepas.DEBUT, 0);
+    }
+
+    @Test
+    void theEndPlacementPrefersTheLateBreakInBothWindows() {
+        middayLateBreak(PlacementRepas.FIN, 0);
+        middayEarlyBreak(PlacementRepas.FIN, 60);
+        eveningEarlyBreak(PlacementRepas.FIN, 60);
+    }
+
+    @Test
+    void noPlacementSilencesTheTermWhereverTheBreakFalls() {
+        middayLateBreak(PlacementRepas.AUCUN, 0);
+        middayEarlyBreak(PlacementRepas.AUCUN, 0);
+        eveningEarlyBreak(PlacementRepas.AUCUN, 0);
+    }
+
+    /** The setting tunes the preference only: the break stays owed, whatever the placement. */
+    @Test
+    void noPlacementNeverLiftsTheMandatoryBreak() {
+        verify("coupureRepasObligatoire")
+                .given(
+                        MIDI.withPlacement(PlacementRepas.AUCUN),
+                        poste(standA, vacation("10-12", 10, 12), a84),
+                        poste(standA, vacation("12-13", 12, 13), a84),
+                        poste(standB, vacation("13-14", 13, 14), a84),
+                        poste(standC, vacation("14-20", 14, 20), a84))
+                .penalizesBy(60);
     }
 
     /* ------------------- counted, never reproached (ADR 0044) ------------------- */

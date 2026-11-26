@@ -2,8 +2,9 @@ package dev.sylvain.planning.solver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -20,10 +21,11 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * The order the construction heuristic places seats in: scarcest first, and,
- * under the hard run of days, earliest day first (ADR 0068). The heuristic
- * places the <em>greatest</em> seat first, so « placed first » reads as
- * « compares greater » here.
+ * The order the construction heuristic places seats in: scarcest first,
+ * whatever the level of the run of days — the calendar order 3.x put first
+ * under its hard form (ADR 0068) is withdrawn (ADR 0118). The heuristic places
+ * the <em>greatest</em> seat first, so « placed first » reads as « compares
+ * greater » here.
  */
 class PosteAffectationDifficultyComparatorFactoryTest {
 
@@ -62,7 +64,8 @@ class PosteAffectationDifficultyComparatorFactoryTest {
                 defaults.typologiesDistinctesMax(),
                 6)));
         if (hardRunCap) {
-            solution.setConstraintsDesactivees(List.of(new ConstraintToggle("maxJoursConsecutifsTravaillesDur", true)));
+            solution.setPonderationsContraintes(ConstraintWeightOverrides.of(
+                    Map.of("maxJoursConsecutifsTravailles", HardMediumSoftScore.ofHard(1))));
         }
         return solution;
     }
@@ -76,35 +79,14 @@ class PosteAffectationDifficultyComparatorFactoryTest {
     }
 
     @Test
-    void withoutTheHardRunOfDaysTheScarcestSeatsArePlacedFirstWhateverTheirDay() {
+    void theScarcestSeatsArePlacedFirstWhateverTheirDay() {
         assertThat(placementOrder(false).getLast()).isSameAs(setUpOnMonday);
     }
 
     @Test
-    void underTheHardRunOfDaysASeatWithoutADayIsPlacedLast() {
-        PosteAffectation undated = new PosteAffectation("P4", fewOnly, null);
-        Comparator<PosteAffectation> difficulty =
-                new PosteAffectationDifficultyComparatorFactory().createComparator(solution(true));
-        List<PosteAffectation> seats = new ArrayList<>(List.of(undated, rareOnTuesday, setUpOnMonday));
-        seats.sort(difficulty.reversed());
-        assertThat(seats).containsExactly(setUpOnMonday, rareOnTuesday, undated);
-    }
-
-    @Test
-    void underTheHardRunOfDaysTheEarliestDayIsPlacedFirstThenTheScarcestOfIt() {
-        assertThat(placementOrder(true)).containsExactly(rareOnMonday, setUpOnMonday, rareOnTuesday);
-    }
-
-    @Test
-    void theBenchSeamIsOnByDefaultAndDropsTheCalendarOrderWhenOff() {
-        assertThat(PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap)
-                .isTrue();
-        try {
-            PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap = false;
-            assertThat(placementOrder(true).getLast()).isSameAs(setUpOnMonday);
-        } finally {
-            PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap = true;
-        }
-        assertThat(placementOrder(true)).containsExactly(rareOnMonday, setUpOnMonday, rareOnTuesday);
+    void theRunOfDaysMadeObligatoireKeepsTheScarcityOrder() {
+        assertThat(WeekRelocationMoveIteratorFactory.hardRunCap(solution(true))).isEqualTo(6);
+        assertThat(placementOrder(true)).isEqualTo(placementOrder(false));
+        assertThat(placementOrder(true).getLast()).isSameAs(setUpOnMonday);
     }
 }

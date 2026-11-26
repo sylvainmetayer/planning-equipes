@@ -11,7 +11,6 @@ import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EmptyReferenceData;
-import dev.sylvain.planning.solver.PosteAffectationDifficultyComparatorFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,28 +27,11 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * Measures what merging {@code maxJoursConsecutifsTravailles} (medium) and
- * {@code maxJoursConsecutifsTravaillesDur} (hard) into one rule of adjustable
- * level would cost, and what removing the calendar construction order of
- * ADR 0068 would cost — before anybody writes either. Nothing here changes a
- * behaviour: the variants are toggles, a weight that moves the medium rule to
- * the hard level (ADR 0111) and one test seam on the comparator.
- *
- * <p>Variants (the cap is {@code bench.cap}, 6 by default):</p>
- * <ul>
- *   <li>{@code preference} — the medium form alone: what ships, and what the
- *       merged rule would be at the preference level;</li>
- *   <li>{@code both} — both forms on, as an organiser who wants a hard cap runs
- *       them today (the calendar order applies under Timefold);</li>
- *   <li>{@code hard} — the hard form alone, calendar order applying under
- *       Timefold: the merged rule at the mandatory level, as built today;</li>
- *   <li>{@code both-sans-calendrier}, {@code hard-sans-calendrier} — the same
- *       without the calendar order (Timefold only: the direct engine builds by
- *       scarcity alone, so removing the order changes nothing there);</li>
- *   <li>{@code hard-par-poids} — the medium form alone, its weight turned into
- *       one hard point: the merged rule as ADR 0111 would write it, which
- *       carries no calendar order since nothing tells the comparator.</li>
- * </ul>
+ * Measures the run-of-days rule at its two levels (ADR 0118): {@code preference},
+ * what ships, and {@code obligatoire}, the rule's weight turned into one hard
+ * point (ADR 0111). Written before the merge of its two 3.x forms to price it
+ * (the figures of 26 November 2026 in {@code tests-de-scenarios.md}); kept to
+ * measure the merged rule at either level.
  *
  * <p>Properties: {@code bench.scenario} (a name of {@code scenarios/} or an
  * absolute path, required), {@code bench.engine} ({@code hand}, the default, or
@@ -57,7 +39,7 @@ import org.junit.jupiter.api.Test;
  * {@code bench.cap} (6), {@code bench.variants} (a comma list, all by default),
  * {@code bench.out} (a folder, {@code target/bench} by default). Each solve
  * runs the whole budget, with no plateau bailout, so every variant gets the same
- * time. Every final plan is scored again under the {@code both} rules, the common
+ * time. Every final plan is scored again with the rule obligatoire, the common
  * ruler: its hard is the days beyond the cap, its medium the cost everyone pays.
  * Output: one CSV line per solve and a Markdown line per variant (medians over the
  * seeds), in {@code jours-affilee-<scenario>-<engine>.csv/.md}.</p>
@@ -68,37 +50,18 @@ import org.junit.jupiter.api.Test;
 @Tag("scenario-lent")
 class ConsecutiveRunsBenchTest {
 
-    private static final String SOFT_FORM = "maxJoursConsecutifsTravailles";
-    private static final String HARD_FORM = "maxJoursConsecutifsTravaillesDur";
+    private static final String RULE = "maxJoursConsecutifsTravailles";
 
     private enum Variant {
-        PREFERENCE("preference", true, false, false, false, true),
-        BOTH("both", true, true, false, false, true),
-        BOTH_NO_CALENDAR("both-sans-calendrier", true, true, false, true, false),
-        HARD("hard", false, true, false, false, true),
-        HARD_NO_CALENDAR("hard-sans-calendrier", false, true, false, true, false),
-        HARD_BY_WEIGHT("hard-par-poids", true, false, true, false, true);
+        PREFERENCE("preference", false),
+        OBLIGATOIRE("obligatoire", true);
 
         final String label;
-        final boolean soft;
         final boolean hard;
-        final boolean softAsHard;
-        final boolean noCalendar;
-        final boolean onHandEngine;
 
-        Variant(
-                String label,
-                boolean soft,
-                boolean hard,
-                boolean softAsHard,
-                boolean noCalendar,
-                boolean onHandEngine) {
+        Variant(String label, boolean hard) {
             this.label = label;
-            this.soft = soft;
             this.hard = hard;
-            this.softAsHard = softAsHard;
-            this.noCalendar = noCalendar;
-            this.onHandEngine = onHandEngine;
         }
     }
 
@@ -131,29 +94,24 @@ class ConsecutiveRunsBenchTest {
                 "variant,seed,feasible_ms,hard,medium,soft,ruler_hard,ruler_medium,ruler_soft\n",
                 StandardCharsets.UTF_8);
         StringBuilder md = new StringBuilder();
-        try {
-            for (Variant variant : Variant.values()) {
-                if ((!timefold && !variant.onHandEngine) || (!wanted.isEmpty() && !wanted.contains(variant.label))) {
-                    continue;
-                }
-                List<Result> results = new ArrayList<>();
-                for (long seed = 0; seed < seeds; seed++) {
-                    Result result = solve(scenario, timefold, variant, seed, seconds, cap);
-                    results.add(result);
-                    Files.writeString(
-                            csv,
-                            variant.label + "," + seed + "," + result.feasibleMillis() + "," + score(result.own(), ",")
-                                    + "," + score(result.ruler(), ",") + "\n",
-                            StandardCharsets.UTF_8,
-                            StandardOpenOption.APPEND);
-                    System.out.println("BENCH-AFFILEE " + stem + " " + variant.label + " seed " + seed + " "
-                            + result.own().toShortString());
-                }
-                md.append(summary(name, timefold ? "Timefold" : "direct", variant, results));
+        for (Variant variant : Variant.values()) {
+            if (!wanted.isEmpty() && !wanted.contains(variant.label)) {
+                continue;
             }
-        } finally {
-            // The calendar order is a JVM-wide seam: always put back.
-            PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap = true;
+            List<Result> results = new ArrayList<>();
+            for (long seed = 0; seed < seeds; seed++) {
+                Result result = solve(scenario, timefold, variant, seed, seconds, cap);
+                results.add(result);
+                Files.writeString(
+                        csv,
+                        variant.label + "," + seed + "," + result.feasibleMillis() + "," + score(result.own(), ",")
+                                + "," + score(result.ruler(), ",") + "\n",
+                        StandardCharsets.UTF_8,
+                        StandardOpenOption.APPEND);
+                System.out.println("BENCH-AFFILEE " + stem + " " + variant.label + " seed " + seed + " "
+                        + result.own().toShortString());
+            }
+            md.append(summary(name, timefold ? "Timefold" : "direct", variant, results));
         }
         Files.writeString(dir.resolve(stem + ".md"), md, StandardCharsets.UTF_8);
         System.out.print(md);
@@ -190,18 +148,10 @@ class ConsecutiveRunsBenchTest {
                 q.modifieLe())));
         FrozenPast.pin(problem.getPostes());
         ConstraintWeightOverrides<HardMediumSoftScore> weightsAsStand = problem.getPonderationsContraintes();
-        problem.setConstraintsDesactivees(toggles(problem, variant.soft, variant.hard));
-        if (variant.softAsHard) {
-            Map<String, HardMediumSoftScore> overrides = new HashMap<>();
-            if (weightsAsStand != null) {
-                weightsAsStand
-                        .getKnownConstraintIds()
-                        .forEach(id -> overrides.put(id, weightsAsStand.getConstraintWeight(id)));
-            }
-            overrides.put(SOFT_FORM, HardMediumSoftScore.ofHard(1));
-            problem.setPonderationsContraintes(ConstraintWeightOverrides.of(overrides));
+        problem.setConstraintsDesactivees(withRuleOn(problem));
+        if (variant.hard) {
+            problem.setPonderationsContraintes(obligatoire(weightsAsStand));
         }
-        PosteAffectationDifficultyComparatorFactory.calendarOrderUnderHardRunCap = !variant.noCalendar;
 
         Solver<PlanningEvenement> solver;
         if (timefold) {
@@ -227,8 +177,7 @@ class ConsecutiveRunsBenchTest {
         });
         PlanningEvenement solved = solver.solve(problem);
         HardMediumSoftScore own = solved.getScore();
-        solved.setConstraintsDesactivees(toggles(solved, true, true));
-        solved.setPonderationsContraintes(weightsAsStand);
+        solved.setPonderationsContraintes(obligatoire(weightsAsStand));
         return new Result(
                 variant,
                 seed,
@@ -237,14 +186,24 @@ class ConsecutiveRunsBenchTest {
                 configuration.solutionManager().update(solved));
     }
 
-    /** The scenario's toggles with the two forms of the rule set explicitly. */
-    private static List<ConstraintToggle> toggles(PlanningEvenement problem, boolean soft, boolean hard) {
+    /** The scenario's toggles, with the rule on. */
+    private static List<ConstraintToggle> withRuleOn(PlanningEvenement problem) {
         List<ConstraintToggle> toggles = new ArrayList<>(problem.getConstraintsDesactivees().stream()
-                .filter(t -> !SOFT_FORM.equals(t.getNom()) && !HARD_FORM.equals(t.getNom()))
+                .filter(t -> !RULE.equals(t.getNom()))
                 .toList());
-        toggles.add(new ConstraintToggle(SOFT_FORM, soft));
-        toggles.add(new ConstraintToggle(HARD_FORM, hard));
+        toggles.add(new ConstraintToggle(RULE, true));
         return toggles;
+    }
+
+    /** The weights the scenario stands with, the rule's turned into one hard point. */
+    private static ConstraintWeightOverrides<HardMediumSoftScore> obligatoire(
+            ConstraintWeightOverrides<HardMediumSoftScore> weights) {
+        Map<String, HardMediumSoftScore> overrides = new HashMap<>();
+        if (weights != null) {
+            weights.getKnownConstraintIds().forEach(id -> overrides.put(id, weights.getConstraintWeight(id)));
+        }
+        overrides.put(RULE, HardMediumSoftScore.ofHard(1));
+        return ConstraintWeightOverrides.of(overrides);
     }
 
     private static String summary(String scenario, String engine, Variant variant, List<Result> results) {

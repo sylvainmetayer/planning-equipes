@@ -75,7 +75,7 @@ Each send, from a publication or a resend, leaves its state in `envoi_planning`,
 
 ### The POST body
 
-The `POST` takes a JSON body `{"cibles": ["id", …]}` and requires `Content-Type: application/json`: the list is of free length and a staff member's id comes from the client, so neither a separator nor a URL is a safe place to carry it. An empty body, or one without `cibles`, publishes to everybody concerned. The 3.x `exclusions` field is gone; a client still sending it is read without error and **ignored**: nobody is left out of a general publication.
+The `POST` takes a JSON body `{"cibles": ["id", …]}` and requires `Content-Type: application/json`: the list is of free length and a staff member's id comes from the client, so neither a separator nor a URL is a safe place to carry it. An empty body, or one without `cibles`, publishes to everybody concerned. The 3.x `exclusions` field is gone; a client still sending it gets a `200`: the field is **ignored** (nobody is left out of a general publication) and the answer carries `avertissements`, a list of sentences saying the exclusion no longer exists, until 5.0. The home alert `EXCLUSION_PUBLICATION_RETIREE` closes person by person, once a publication has really notified that person (successful send).
 
 A deferred person keeps their comparison marker (`animateur.plan_notifie_id`): the next publication names them again, with the gap accumulated since what they actually received, and `reporte` is `true` on their preview line.
 

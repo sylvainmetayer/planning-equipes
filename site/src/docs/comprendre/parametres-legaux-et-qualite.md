@@ -103,11 +103,12 @@ Une fenêtre est écartée si ses bornes manquent, si elle est vide ou inversée
 | `heureServiceMatinal` | 10 h | `planning.contraintes.heure-service-matinal` | `eviterFermeturePuisOuverture` |
 | `reposSouhaiteApresServiceTardifMinutes` | 720 | `planning.contraintes.repos-souhaite-apres-service-tardif-minutes` | `eviterFermeturePuisOuverture` |
 | `typologiesDistinctesMax` | 2 | `planning.contraintes.typologies-distinctes-max` | `limiterTypologiesDistinctesParAnimateur` |
-| `joursConsecutifsMax` | 8 | `planning.contraintes.jours-consecutifs-max` | `maxJoursConsecutifsTravailles` et sa forme dure |
+| `joursConsecutifsMax` | 8 | `planning.contraintes.jours-consecutifs-max` | `maxJoursConsecutifsTravailles`, à tous ses niveaux |
 | `vitesseMarcheKmH` | 4 | `planning.contraintes.vitesse-marche-km-h` | `trajetInsuffisantEntrePostes` |
 | `facteurDetour` | 1,3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 | `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
+| `placementRepas` | `FIN_MIDI_DEBUT_SOIR` | aucune : se règle par édition | `coupureRepasPlacementPrefere` |
 
 Quelques précisions de lecture :
 

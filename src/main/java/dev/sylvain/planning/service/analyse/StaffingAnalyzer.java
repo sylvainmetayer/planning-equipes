@@ -104,7 +104,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * else holds the seat meanwhile.</li>
  * <li><b>Enchaînement des jours</b> — the exact cover of the day sequence by
  * {@link DaySequenceFloor}: the weekly six days and, when the edition holds
- * {@code maxJoursConsecutifsTravaillesDur}, the cap on days in a row, solved
+ * {@code maxJoursConsecutifsTravailles} obligatoire, the cap on days in a row, solved
  * together as a maximum flow over everybody's rest days. It can only confirm
  * or raise the rotation bound, which divides each week on its own and cannot
  * see a run of worked days straddling two of them.</li>

@@ -1025,7 +1025,9 @@ final class IncrementalScore {
                 if (biggest < need) {
                     cost += cost(Rule.COUPURE_REPAS_OBLIGATOIRE, need - biggest);
                 } else {
-                    int off = flat.mwLate[m] ? Math.max(0, close - need - lastGap) : firstGap - open;
+                    int off = flat.mwNoPlacement[m]
+                            ? 0
+                            : flat.mwLate[m] ? Math.max(0, close - need - lastGap) : firstGap - open;
                     if (off > 0) {
                         cost += cost(Rule.COUPURE_REPAS_PLACEMENT_PREFERE, off);
                     }
@@ -1099,8 +1101,7 @@ final class IncrementalScore {
     private long overTheEvent(int a, int longest, long likedMask, boolean likedAhead) {
         long cost = 0;
         if (longest > flat.maxConsec) {
-            cost += cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES, longest - flat.maxConsec)
-                    + cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES_DUR, longest - flat.maxConsec);
+            cost += cost(Rule.MAX_JOURS_CONSECUTIFS_TRAVAILLES, longest - flat.maxConsec);
         }
         if (!flat.polyvalent[a] && likedAhead && Long.bitCount(likedMask) > flat.maxTypo) {
             cost += cost(Rule.LIMITER_TYPOLOGIES_DISTINCTES_PAR_ANIMATEUR, Long.bitCount(likedMask) - flat.maxTypo);

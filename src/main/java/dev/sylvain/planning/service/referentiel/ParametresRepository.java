@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlacementRepas;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.WriteStamp;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -151,7 +152,7 @@ public class ParametresRepository {
                         heure_service_matinal, repos_souhaite_apres_service_tardif_minutes,
                         typologies_distinctes_max, jours_consecutifs_max,
                         vitesse_marche_km_h, facteur_detour, tolerance_trajet_minutes,
-                        tolerance_arrivee_groupee_minutes, modifie_le
+                        tolerance_arrivee_groupee_minutes, placement_repas, modifie_le
                         FROM parametres_qualite
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -167,6 +168,7 @@ public class ParametresRepository {
                         rs.getDouble("facteur_detour"),
                         rs.getInt("tolerance_trajet_minutes"),
                         rs.getInt("tolerance_arrivee_groupee_minutes"),
+                        PlacementRepas.valueOf(rs.getString("placement_repas")),
                         instant(rs));
             }
             return defauts;
@@ -183,8 +185,8 @@ public class ParametresRepository {
                         heure_service_tardif, heure_service_matinal,
                         repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max,
                         jours_consecutifs_max, vitesse_marche_km_h, facteur_detour,
-                        tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes, placement_repas)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET
                         max_emplacements_distincts_par_jour = EXCLUDED.max_emplacements_distincts_par_jour,
@@ -198,6 +200,7 @@ public class ParametresRepository {
                         facteur_detour = EXCLUDED.facteur_detour,
                         tolerance_trajet_minutes = EXCLUDED.tolerance_trajet_minutes,
                         tolerance_arrivee_groupee_minutes = EXCLUDED.tolerance_arrivee_groupee_minutes,
+                        placement_repas = EXCLUDED.placement_repas,
                         modifie_le = now()
                         WHERE CAST(? AS boolean)
                         AND (CAST(? AS timestamptz) IS NULL
@@ -214,7 +217,8 @@ public class ParametresRepository {
             ps.setBigDecimal(9, BigDecimal.valueOf(parametres.facteurDetour()));
             ps.setInt(10, parametres.toleranceTrajetMinutes());
             ps.setInt(11, parametres.toleranceArriveeGroupeeMinutes());
-            WriteStamp.bindPrecondition(ps, 12, true, parametres.modifieLe());
+            ps.setString(12, parametres.placementRepas().name());
+            WriteStamp.bindPrecondition(ps, 13, true, parametres.modifieLe());
             return WriteStamp.writtenOrRefused(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save quality parameters", e);

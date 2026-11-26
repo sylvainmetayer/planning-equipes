@@ -546,4 +546,40 @@ describe('JourJPage', () => {
 
     expect(jourJ.annulerAbsence).toHaveBeenCalledWith('A1', undefined, 2);
   });
+
+  /**
+   * With nothing published the server lists the day off all the same, with the
+   * bare entries it writes (no author, no reason): the card must show it and
+   * the whole absence must stay cancellable.
+   */
+  it('shows and cancels an absence recorded before any publication', async () => {
+    await rendre(
+      etat({
+        absences: [
+          {
+            animateurId: 'A1',
+            nomAffiche: 'Alice Referente',
+            entrees: [
+              {
+                contrainteId: 'A1-2',
+                creneauId: 2,
+                heureDebut: '14:00:00',
+                heureFin: '18:00:00',
+                raison: null,
+                creeParUtilisateurId: null,
+                creeParNom: null,
+                creeLe: null,
+                annulable: true,
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(text()).toContain('Absences du jour');
+    await cliquer("Annuler toute l'absence");
+
+    expect(jourJ.annulerAbsence).toHaveBeenCalledWith('A1', undefined, undefined);
+  });
 });

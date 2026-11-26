@@ -188,10 +188,17 @@ final class SolverConfiguration {
             for (String former : ConstraintCatalog.formerNamesOf(definition.name())) {
                 if (config.getOptionalValue("planning.constraint-weights." + former, Integer.class)
                         .isPresent()) {
-                    LOG.warnf(
-                            "planning.constraint-weights.%s is read as planning.constraint-weights.%s"
-                                    + " (rule merged in 4.0, the strongest weight wins): rename it",
-                            former, definition.name());
+                    if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(former)) {
+                        LOG.warnf(
+                                "planning.constraint-weights.%s is no longer read: the hard form of the run of"
+                                        + " days is now the obligatoire level of %s (ADR 0118); remove it",
+                                former, definition.name());
+                    } else {
+                        LOG.warnf(
+                                "planning.constraint-weights.%s is read as planning.constraint-weights.%s"
+                                        + " (rule merged in 4.0, the strongest weight wins): rename it",
+                                former, definition.name());
+                    }
                 }
             }
         }

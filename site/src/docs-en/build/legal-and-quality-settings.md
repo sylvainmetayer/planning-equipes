@@ -106,11 +106,12 @@ A window is discarded if its bounds are missing, if it is empty or inverted, if 
 | `heureServiceMatinal` | 10:00 | `planning.contraintes.heure-service-matinal` | `eviterFermeturePuisOuverture` |
 | `reposSouhaiteApresServiceTardifMinutes` | 720 | `planning.contraintes.repos-souhaite-apres-service-tardif-minutes` | `eviterFermeturePuisOuverture` |
 | `typologiesDistinctesMax` | 2 | `planning.contraintes.typologies-distinctes-max` | `limiterTypologiesDistinctesParAnimateur` |
-| `joursConsecutifsMax` | 8 | `planning.contraintes.jours-consecutifs-max` | `maxJoursConsecutifsTravailles` and its hard form |
+| `joursConsecutifsMax` | 8 | `planning.contraintes.jours-consecutifs-max` | `maxJoursConsecutifsTravailles`, at every level |
 | `vitesseMarcheKmH` | 4 | `planning.contraintes.vitesse-marche-km-h` | `trajetInsuffisantEntrePostes` |
 | `facteurDetour` | 1.3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 | `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
+| `placementRepas` | `FIN_MIDI_DEBUT_SOIR` | none: set per edition | `coupureRepasPlacementPrefere` |
 
 A few notes on reading it:
 
