@@ -281,7 +281,7 @@ public class StandService {
      * lay them on, and the write is refused rather than the rules dropped.
      */
     private void layDownReceivedRules(Stand stand) {
-        List<HorairesRecurrents.Regle> regles = stand.takeReglesRecues();
+        List<HorairesRecurrents.Regle> regles = stand.takeReceivedRules();
         if (regles.isEmpty()) {
             return;
         }

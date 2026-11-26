@@ -26,7 +26,7 @@ gamme-05-2j-4stands-8animateurs-mineurs 4c1183cf4c35cbe6205505fcd5f849148be24557
 gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc 14b36fc74a2500d3df137e553c2fbef145b00e3ca87885d9cba0abede8e61e47 4 3 0
 gamme-07-3j-5stands-10animateurs-horaires-recurrents 3201995f8c5cc0363a68f2d3ad4a1fa94665b73ca765a2a431d1b512867a4255 5 3 20
 gamme-08-3j-5stands-16animateurs-relais-midi-reduit 4f620d272cc2d602ec99df293f3833cdd608d2fa07ba28154bba3e251bf8f317 5 3 0
-gamme-09-4j-6stands-14animateurs-typologies-ninja-emplacements d6d5d6b37f47f5b0d30cf05cab165575ec56b097c9df3f539a71b3fb77c44b5b 6 4 0
+gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements d6d5d6b37f47f5b0d30cf05cab165575ec56b097c9df3f539a71b3fb77c44b5b 6 4 0
 gamme-10-4j-8stands-20animateurs-journees-types-multiples 6f872fc805ac15b4df59cc450ad9269900bd04f106c084e875fb087f4eab2388 8 4 32
 gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit 2562733c22351fc3c6984db7c5706550ed940baa67372fd06648adc031000208 8 5 40
 gamme-12-7j-10stands-24animateurs-semaine-complete-ferie f9a6d70ddaeb202ca6f62386f9ead55e7486ebeace046dc37fe9151125ca937c 10 7 0

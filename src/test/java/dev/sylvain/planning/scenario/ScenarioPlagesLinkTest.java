@@ -55,13 +55,12 @@ class ScenarioPlagesLinkTest {
                         LocalDate.of(2026, 7, 9),
                         LocalDate.of(2026, 7, 10),
                         LocalDate.of(2026, 7, 10));
-        assertThat(stand.plages().get(0))
-                .satisfies(plage -> {
-                    assertThat(plage.mode()).isEqualTo(ModeHoraire.OUVERTURE);
-                    assertThat(plage.heureDebut()).isEqualTo(LocalTime.of(10, 0));
-                    assertThat(plage.heureFin()).isEqualTo(LocalTime.of(12, 0));
-                    assertThat(plage.effectif()).isEqualTo(2);
-                });
+        assertThat(stand.plages().get(0)).satisfies(plage -> {
+            assertThat(plage.mode()).isEqualTo(ModeHoraire.OUVERTURE);
+            assertThat(plage.heureDebut()).isEqualTo(LocalTime.of(10, 0));
+            assertThat(plage.heureFin()).isEqualTo(LocalTime.of(12, 0));
+            assertThat(plage.effectif()).isEqualTo(2);
+        });
         assertThat(warnings).isEmpty();
     }
 
@@ -118,9 +117,10 @@ class ScenarioPlagesLinkTest {
                 """, warnings);
 
         assertThat(stand.plages()).isNullOrEmpty();
-        assertThat(warnings).singleElement().satisfies(avertissement -> assertThat(avertissement)
-                .contains("SANS-JOUR")
-                .contains("horaires récurrents"));
+        assertThat(warnings)
+                .singleElement()
+                .satisfies(avertissement ->
+                        assertThat(avertissement).contains("SANS-JOUR").contains("horaires récurrents"));
     }
 
     /** A 3.x export without {@code schemaVersion} (version 1) walks the whole chain and finds its plages too. */

@@ -58,7 +58,8 @@ public class Stand {
      * edition's days. Never stored, never served. Temporary bridge, removed
      * with the plages editor (ADR 0104).
      */
-    private List<HorairesRecurrents.Regle> reglesRecues = List.of();
+    @JsonIgnore
+    private List<HorairesRecurrents.Regle> receivedRules = List.of();
 
     /**
      * When this row was last written (issue #362), read from the referential
@@ -243,14 +244,14 @@ public class Stand {
      */
     @JsonProperty("horaires")
     public void setHoraires(List<HorairesRecurrents.Regle> horaires) {
-        this.reglesRecues = horaires != null ? List.copyOf(horaires) : List.of();
+        this.receivedRules = horaires != null ? List.copyOf(horaires) : List.of();
     }
 
     /** The rules {@link #setHoraires} received and nothing has laid down yet; reading them clears them. */
     @JsonIgnore
-    public List<HorairesRecurrents.Regle> takeReglesRecues() {
-        List<HorairesRecurrents.Regle> regles = reglesRecues;
-        reglesRecues = List.of();
+    public List<HorairesRecurrents.Regle> takeReceivedRules() {
+        List<HorairesRecurrents.Regle> regles = receivedRules;
+        receivedRules = List.of();
         return regles;
     }
 

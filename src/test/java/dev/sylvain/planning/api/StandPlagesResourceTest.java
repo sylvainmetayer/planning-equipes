@@ -107,8 +107,7 @@ class StandPlagesResourceTest {
                 .body("""
                         {"nom":"Avec règle","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
                          "horaires":%s,
-                         "ouvertures":[{"date":"2026-07-12","heureDebut":"09:00","heureFin":"11:00"}]}"""
-                        .formatted(rules))
+                         "ouvertures":[{"date":"2026-07-12","heureDebut":"09:00","heureFin":"11:00"}]}""".formatted(rules))
                 .when()
                 .post("/api/stands")
                 .then()
