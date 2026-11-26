@@ -206,17 +206,13 @@ test('an edition entered end to end, solved, and read back in the opening hours 
 
   // 3. Les journées types et leur calendrier : c'est là que l'édition prend ses dates.
   await page.goto('/creneaux');
-  await creerJourneeType(
-    page,
-    'Jour normal',
-    '09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-18:00',
-  );
+  await creerJourneeType(page, 'Jour normal', '09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-18:00');
   // La nocturne : ses vacations se coupent à 19 h, l'ouverture de la fenêtre
   // repas du soir — une vacation 18-22 d'un bloc ne laisserait à personne
   // l'heure de coupure que la règle exige.
   await creerJourneeType(page, 'Nocturne', '14:00-19:00, 19:00-23:00');
   await expect(page.locator('.journee-type-item')).toHaveCount(2);
-  await expect(page.locator('.vacation-chip-relais')).toHaveCount(2);
+  await expect(page.locator('.vacation-chip')).toHaveCount(6);
 
   await affecterDates(page, JOUR1, JOUR2, 'Jour normal', 2);
   await expect(page.locator('.journees-types-table tbody tr')).toHaveCount(2);
@@ -234,8 +230,6 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await expect(page.getByText(/Calendrier appliqué : 10 créneau\(x\) créé\(s\)/)).toBeVisible();
   await expect(page.locator('.creneaux-liste-card h2')).toContainText('Créneaux (10)');
   await expect(page.locator('.journee-conforme')).toHaveCount(3);
-  // Le relais repas se lit sur la liste des créneaux.
-  await expect(page.locator('.creneaux-table .relais-repas-icon')).toHaveCount(4);
 
   // 4. Les stands, puis leur effectif par créneau dans la grille des ouvertures.
   for (const stand of STANDS) {

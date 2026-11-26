@@ -90,7 +90,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.phase.creneaux.terme:Créneaux`,
-              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, relais repas, et ce qui génère la grille : journées types appliquées, séries, dérivation. Les journées types elles-mêmes restent modifiables.`,
+              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, et ce qui génère la grille : journées types appliquées, séries, dérivation. Les journées types elles-mêmes restent modifiables.`,
             },
             {
               term: $localize`:@@aide.phase.typologies.terme:Typologies et emplacements`,
@@ -213,7 +213,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.creneaux.term.journeesTypes:Les journées types`,
-              text: $localize`:@@aide.creneaux.def.journeesTypes:Décrivez une fois chaque sorte de journée (« Jour normal », « Nocturne », « Montage ») par ses vacations sur une ligne : « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 », un R marquant un relais repas où le stand ne tient que la moitié de ses sièges. Un calendrier pose ensuite une journée type sur chaque date.`,
+              text: $localize`:@@aide.creneaux.def.journeesTypes:Décrivez une fois chaque sorte de journée (« Jour normal », « Nocturne », « Montage ») par ses vacations sur une ligne : « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ». Un calendrier pose ensuite une journée type sur chaque date.`,
             },
             {
               term: $localize`:@@aide.creneaux.term.appliquer:Appliquer le calendrier`,
@@ -221,7 +221,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.creneaux.term.serie:Appliquer sans mémoriser`,
-              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : dans le dialogue d'une journée type, ce bouton pose ses créneaux sur les jours choisis, après un aperçu, sans garder la journée type. Les relais repas ne suivent pas.`,
+              text: $localize`:@@aide.creneaux.def.serie:La même chose sans mémoire, pour un besoin ponctuel : dans le dialogue d'une journée type, ce bouton pose ses créneaux sur les jours choisis, après un aperçu, sans garder la journée type.`,
             },
             {
               term: $localize`:@@aide.creneaux.term.deriver:Dériver des horaires des stands`,

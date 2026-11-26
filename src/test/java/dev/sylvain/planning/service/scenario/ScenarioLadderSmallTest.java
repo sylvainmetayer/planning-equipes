@@ -1,7 +1,6 @@
 package dev.sylvain.planning.service.scenario;
 
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.assertFeasible;
-import static dev.sylvain.planning.service.scenario.ScenarioLadder.endMinute;
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.load;
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.matchCounts;
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.seatCountByStandAndDate;
@@ -10,7 +9,6 @@ import static dev.sylvain.planning.service.scenario.ScenarioLadder.seatsOf;
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.seatsOnStand;
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.solveFor;
 import static dev.sylvain.planning.service.scenario.ScenarioLadder.solveUntilFeasible;
-import static dev.sylvain.planning.service.scenario.ScenarioLadder.startMinute;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 

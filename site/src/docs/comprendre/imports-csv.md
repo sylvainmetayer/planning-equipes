@@ -28,7 +28,7 @@ Les en-têtes se reconnaissent à la casse et aux accents près, et plusieurs va
 
 L'aperçu n'écrit rien. L'écriture relit le fichier et refait tous les contrôles. Chaque ligne fautive est refusée seule, avec sa raison, sans bloquer les autres, et une ligne refusée ne laisse rien derrière elle, pas même la typologie qu'elle citait.
 
-Un collage depuis un tableur est accepté sur chaque carte : les cellules, séparées par des tabulations, sont réécrites en CSV à `;` avec chaque cellule entre guillemets, puis envoyées comme un fichier `collage.csv`. Les guillemets sont nécessaires, car le serveur reconnaît le séparateur en comptant `,`, `;` et la tabulation hors guillemets et ne doit pas prendre les virgules de `09:00-12:00, 12:00-13:00 R` pour lui. Une fois l'import écrit, « Voir les N lignes importées » ouvre l'écran du référentiel filtré par `?ids=` ; « Tout afficher » retire le filtre.
+Un collage depuis un tableur est accepté sur chaque carte : les cellules, séparées par des tabulations, sont réécrites en CSV à `;` avec chaque cellule entre guillemets, puis envoyées comme un fichier `collage.csv`. Les guillemets sont nécessaires, car le serveur reconnaît le séparateur en comptant `,`, `;` et la tabulation hors guillemets et ne doit pas prendre les virgules de `09:00-12:00, 12:00-13:00` pour lui. Une fois l'import écrit, « Voir les N lignes importées » ouvre l'écran du référentiel filtré par `?ids=` ; « Tout afficher » retire le filtre.
 
 ### Créneaux et journées types
 

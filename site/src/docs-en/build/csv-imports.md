@@ -31,7 +31,7 @@ Headers are recognised regardless of case and accents, and several values in one
 
 The preview writes nothing. The write re-reads the file and redoes every check. Each faulty row is refused on its own, with its reason, without blocking the others, and a refused row leaves nothing behind, not even the game category it cited.
 
-A paste from a spreadsheet is accepted on every card: the cells, separated by tabs, are rewritten as CSV with `;` and each cell in quotes, then sent as a `collage.csv` file. The quotes are necessary, because the server detects the separator by counting `,`, `;` and the tab outside quotes and must not mistake the commas of `09:00-12:00, 12:00-13:00 R` for it. Once an import is written, "See the N imported rows" opens the reference screen filtered by `?ids=`; "Show all" removes the filter.
+A paste from a spreadsheet is accepted on every card: the cells, separated by tabs, are rewritten as CSV with `;` and each cell in quotes, then sent as a `collage.csv` file. The quotes are necessary, because the server detects the separator by counting `,`, `;` and the tab outside quotes and must not mistake the commas of `09:00-12:00, 12:00-13:00` for it. Once an import is written, "See the N imported rows" opens the reference screen filtered by `?ids=`; "Show all" removes the filter.
 
 ### Timeslots and day templates
 

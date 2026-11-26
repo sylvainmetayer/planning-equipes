@@ -81,7 +81,7 @@ public class GenerateurCreneauxMcpTools {
     EtatView modifyGabarit(
             @ToolArg(description = "Nom du gabarit, ex. « Jour normal »") String nom,
             @ToolArg(
-                            description = "Vacations, ex. « 09:00-12:00, 12:00-13:00 R, 14:00-20:00 » ; absentes, le "
+                            description = "Vacations, ex. « 09:00-12:00, 12:00-13:00, 14:00-20:00 » ; absentes, le "
                                     + "gabarit existant garde les siennes",
                             required = false)
                     String vacations,

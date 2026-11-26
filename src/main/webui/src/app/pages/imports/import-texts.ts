@@ -35,7 +35,7 @@ export function referentialImportTexts(target: ReferentielImportTarget): Referen
     case 'JOURNEES_TYPES':
       return {
         colonnes: $localize`:@@imports.journeesTypes.colonnes:Colonnes « nom » et « vacations », obligatoires ; « dates » facultative.`,
-        aide: $localize`:@@imports.journeesTypes.aide:Les vacations tiennent sur une ligne, « 09:00-12:00, 12:00-13:00 R, 14:00-20:00 », R pour un relais repas. Les créneaux ne bougent qu'à l'application du calendrier.`,
+        aide: $localize`:@@imports.journeesTypes.aide:Les vacations tiennent sur une ligne, « 09:00-12:00, 12:00-13:00, 14:00-20:00 ». Les créneaux ne bougent qu'à l'application du calendrier.`,
       };
   }
 }

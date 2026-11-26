@@ -25,7 +25,7 @@ Les règles communes :
 
 - Les trois premiers fichiers demandent le minimum : un code et un libellé (typologies), un code et un nom (emplacements), un code, un nom et des typologies (stands). L'effectif d'un stand et les coordonnées d'un emplacement restent facultatifs.
 - Les créneaux se reconnaissent à leur date et à leurs deux heures plutôt qu'à un identifiant.
-- Les journées types se reconnaissent à leur nom. Leurs vacations tiennent sur une ligne (« 09:00-12:00, 12:00-13:00 R, 14:00-20:00 »). Leurs dates complètent le calendrier sans le remplacer : la grille ne bouge qu'à l'application du calendrier.
+- Les journées types se reconnaissent à leur nom. Leurs vacations tiennent sur une ligne (« 09:00-12:00, 12:00-13:00, 14:00-20:00 »). Leurs dates complètent le calendrier sans le remplacer : la grille ne bouge qu'à l'application du calendrier.
 - Une colonne absente n'efface rien, et une ligne dont le code est connu est mise à jour.
 - Une typologie citée sans exister est créée, après l'avoir annoncée.
 - Aucun identifiant n'est jamais saisi ni lu dans un fichier : l'application attribue les siens (A1, A2… pour les animateurs, S1… pour les stands), numérotés dans chaque édition. Une ligne se désigne par son code, sinon par son nom ; un animateur par son adresse e-mail, sinon par ses nom et prénom.

@@ -143,9 +143,9 @@ export class JourneeTypeDialog {
   private message(erreur: ErreurVacations, morceau: string): string {
     switch (erreur) {
       case 'VIDE':
-        return $localize`:@@journeesTypes.form.error.vide:Indiquez les vacations de la journée, par exemple « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 ».`;
+        return $localize`:@@journeesTypes.form.error.vide:Indiquez les vacations de la journée, par exemple « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 ».`;
       case 'FORME':
-        return $localize`:@@journeesTypes.form.error.forme:« ${morceau}:morceau: » n'est pas une vacation : écrivez « début-fin », et un R après pour un relais repas.`;
+        return $localize`:@@journeesTypes.form.error.forme:« ${morceau}:morceau: » n'est pas une vacation : écrivez « début-fin ».`;
       case 'HEURE':
         return $localize`:@@journeesTypes.form.error.heure:« ${morceau}:morceau: » : une heure s'écrit 09:00 ou 9h30.`;
       case 'DOUBLON':

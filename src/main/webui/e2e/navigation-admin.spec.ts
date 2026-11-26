@@ -72,7 +72,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // Les deux cartes du calendrier partagent la carte des référentiels, et
   // leur marqueur vise ce que seule la carte visée dit.
   { path: '/fichiers?cible=creneaux', marker: 'heureDebut' },
-  { path: '/fichiers?cible=journees-types', marker: 'relais repas' },
+  { path: '/fichiers?cible=journees-types', marker: 'tiennent sur une ligne' },
   {
     // Le titre de l'écran est celui des onglets : le marqueur vise ce que
     // seule cette carte-ci dit.

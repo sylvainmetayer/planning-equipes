@@ -183,7 +183,7 @@ public class ReferentielCsvImportService {
                     """;
             case JOURNEES_TYPES -> """
                     nom;vacations;dates
-                    Jour normal;"09:00-12:00, 12:00-13:00 R, 13:00-20:00";2026-07-10|2026-07-11
+                    Jour normal;"09:00-12:00, 12:00-13:00, 13:00-20:00";2026-07-10|2026-07-11
                     Nocturne;"14:00-20:00, 20:00-00:00";2026-07-12
                     Montage;"08:00-12:00";
                     """;

@@ -383,7 +383,7 @@ public class ReferentielCsvExportService {
      * <p><b>Every</b> separator, not only the one this file writes. {@code
      * CsvParser} recognises the dialect by counting {@code ;}, {@code ,} and
      * tabs outside quotes over the whole file, and picks the most frequent: a
-     * column of shift lines — « 09:00-12:00, 12:00-13:00 R, 14:00-20:00 » —
+     * column of shift lines — « 09:00-12:00, 12:00-13:00, 14:00-20:00 » —
      * puts three commas on every row against the header's two semicolons, and
      * the file we just wrote comes back read as comma-separated. Quoting takes
      * those characters out of the count entirely, which is the only reliable

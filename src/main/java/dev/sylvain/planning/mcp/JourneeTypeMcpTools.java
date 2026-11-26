@@ -70,7 +70,7 @@ public class JourneeTypeMcpTools {
     @Deprecated
     JourneeTypeView defineJourneeType(
             @ToolArg(description = "Nom de la journée type, ex. « Jour normal »") String nom,
-            @ToolArg(description = "Vacations, ex. « 09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00 »")
+            @ToolArg(description = "Vacations, ex. « 09:00-12:00, 12:00-13:00, 13:00-14:00, 14:00-20:00 »")
                     String vacations,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
         Gabarit journeeType = new Gabarit(null, nom, VacationsLigne.parse(vacations));

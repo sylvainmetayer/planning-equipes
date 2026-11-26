@@ -28,7 +28,7 @@ The common rules:
 
 - The first three files ask for the minimum: a code and a label (game categories), a code and a name (locations), a code, a name and game categories (stands). A stand's headcount and a location's coordinates remain optional.
 - Timeslots are recognised by their date and their two times rather than by an identifier.
-- Template days are recognised by their name. Their shifts fit on one line ("09:00-12:00, 12:00-13:00 R, 14:00-20:00"). Their dates complete the calendar without replacing it: the grid only moves when you apply the calendar.
+- Template days are recognised by their name. Their shifts fit on one line ("09:00-12:00, 12:00-13:00, 14:00-20:00"). Their dates complete the calendar without replacing it: the grid only moves when you apply the calendar.
 - A missing column erases nothing, and a row whose code is known is updated.
 - A game category that is cited without existing is created, after being announced.
 - No identifier is ever entered or read in a file: the application assigns its own (A1, A2... for staff, S1... for stands), numbered within each edition. A row is designated by its code, otherwise by its name; a staff member by their e-mail address, otherwise by their last and first name.
