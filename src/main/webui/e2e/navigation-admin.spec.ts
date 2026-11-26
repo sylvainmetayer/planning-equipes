@@ -283,12 +283,12 @@ test('le pied de page admin indique la version en cours', async ({ browser }) =>
   await page.context().close();
 });
 
-test('le catalogue des règles documente le verrouillage des échanges', async ({ browser }) => {
+test('the rules catalogue documents the animateur + timeslot lock', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   // The rule's panel, opened by its address: the long text lives there.
   await page.goto('/regles?regle=animateurVerrouilleCreneauFige');
   await expect(page.locator('#contenu')).toContainText(
-    'Un échange validé est figé sur son créneau',
+    'Un animateur verrouillé sur un créneau (par exemple après un échange validé)',
   );
   await page.context().close();
 });
