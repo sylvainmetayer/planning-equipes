@@ -366,4 +366,48 @@ class GenerateurCreneauxResourceTest {
             }
         }
     }
+
+    /** Every malformed call is a 400 or a 404 with its reason, never a 500. */
+    @Test
+    void aMalformedCallIsRefusedWithItsReason() {
+        String edition = given().contentType("application/json")
+                .body("{\"nom\":\"Générateur refus (test)\"}")
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
+        refusal(edition, "/apercu", "", 400, "source est requise");
+        refusal(edition, "/application", "{}", 400, "source est requise");
+        refusal(edition, "/apercu", "{\"source\":\"STANDS\"}", 400, "derivation");
+        refusal(edition, "/application", "{\"source\":\"RECURRENCE\"}", 400, "recurrence");
+        refusal(edition, "/apercu", "{\"source\":\"GABARITS\"}", 400, "Aucune date");
+        refusal(edition, "/retrait", "{\"dates\":[]}", 400, "Aucune date à retirer");
+        refusal(edition, "/reconnaissance/apercu", "", 400, "rien à reconnaître");
+        refusal(edition, "/calendrier", "[{\"date\":\"2033-08-01\",\"gabaritId\":987654}]", 400, "introuvable");
+        given().header("X-Edition-Id", edition)
+                .contentType("application/json")
+                .body(JOUR_NORMAL)
+                .when()
+                .put("/api/generateur-creneaux/gabarits/987654")
+                .then()
+                .statusCode(404);
+        given().header("X-Edition-Id", edition)
+                .when()
+                .delete("/api/generateur-creneaux/gabarits/987654")
+                .then()
+                .statusCode(404);
+    }
+
+    private static void refusal(String edition, String path, String body, int status, String phrase) {
+        var request = given().header("X-Edition-Id", edition).contentType("application/json");
+        if (!body.isEmpty()) {
+            request = request.body(body);
+        }
+        var response = path.equals("/calendrier")
+                ? request.when().put("/api/generateur-creneaux" + path)
+                : request.when().post("/api/generateur-creneaux" + path);
+        response.then().statusCode(status).body("message", containsString(phrase));
+    }
 }
