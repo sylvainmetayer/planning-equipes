@@ -156,8 +156,15 @@ describe('JourneePage', () => {
     loadForDisplay.mockResolvedValue(planningDeuxJours());
   });
 
-  async function mount(queryParams: Record<string, string> = {}): Promise<JourneePage> {
-    queryParams$ = new BehaviorSubject(convertToParamMap({ mode: 'tableau', ...queryParams }));
+  // Most cases below were written on the table, the page's 3.x default: they
+  // mount it explicitly; `{ tableau: false }` mounts the address as given.
+  async function mount(
+    queryParams: Record<string, string> = {},
+    { tableau = true } = {},
+  ): Promise<JourneePage> {
+    queryParams$ = new BehaviorSubject(
+      convertToParamMap(tableau ? { mode: 'tableau', ...queryParams } : queryParams),
+    );
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -236,7 +243,7 @@ describe('JourneePage', () => {
   }
 
   it('reads the plan, the breaks and the referentials once, and opens on the rail of the first day', async () => {
-    const page = await mount({ mode: 'rail' });
+    const page = await mount({}, { tableau: false });
 
     expect(loadForDisplay).toHaveBeenCalledOnce();
     expect(analysesApi.breaks).toHaveBeenCalledOnce();
@@ -245,6 +252,26 @@ describe('JourneePage', () => {
     expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
     expect(page['stands']().map((each) => each.id)).toEqual(['Dixit', 'Tir']);
     expect(page['animateurs']()[0].label).toBe('Alice Martin');
+    // The default names neither the view nor the mode.
+    expect(TestBed.inject(Location).path()).not.toMatch(/vue=|mode=/);
+  });
+
+  it('rewrites the 3.x keys of the table and the rail to the view « Jour »', async () => {
+    const table = await mount({ vue: 'calendrier' }, { tableau: false });
+    expect(table['view']()).toBe('calendrier');
+    expect(TestBed.inject(Location).path()).toContain('vue=jour&mode=tableau');
+
+    const rail = await mount({ vue: 'rail' }, { tableau: false });
+    expect(rail['view']()).toBe('rail');
+    expect(TestBed.inject(Location).path()).not.toMatch(/vue=|mode=/);
+  });
+
+  it('comes back to « Jour » in the mode it was left in', async () => {
+    const page = await mount({ vue: 'jour', mode: 'tableau' }, { tableau: false });
+    page['changeTab']('carte');
+    expect(page['view']()).toBe('carte');
+    page['changeTab']('jour');
+    expect(page['view']()).toBe('calendrier');
   });
 
   // #711: the bench's old address names a timeslot and a stand. The page

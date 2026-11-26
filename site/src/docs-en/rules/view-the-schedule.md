@@ -20,7 +20,7 @@ Everything goes through a single page, *Planning* (*Plan* group). Everything is 
 
 ## By day
 
-The **Day** view has two modes, chosen next to the "Day" button: the **rail**, open by default, and the **table**. The mode stays in the address (`mode=rail` or `mode=tableau`). The map, the breaks and meals and the changes are the day's other views. The review bar and the state of the day (to review, reviewed, frozen) stay there in both modes.
+The **Day** view has two modes, chosen next to the "Day" button: the **rail**, open by default, and the **table**. The table is written in the address (`vue=jour&mode=tableau`); the rail, the default mode, writes nothing there. The map, the breaks and meals and the changes are the day's other views. The review bar and the state of the day (to review, reviewed, frozen) stay there in both modes.
 
 ### Table mode
 

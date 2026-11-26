@@ -95,7 +95,7 @@ describe('cellLink', () => {
     });
     expect(cellLink('STAND', 'BLEU', 'Pavillon Bleu')).toEqual({
       route: '/journee',
-      queryParams: { stand: 'BLEU' },
+      queryParams: { vue: 'jour', mode: 'tableau', stand: 'BLEU' },
       label: 'Voir le planning de Pavillon Bleu',
     });
     expect(cellLink('ANIMATEUR', 'a1', 'Alice Martin')).toEqual({

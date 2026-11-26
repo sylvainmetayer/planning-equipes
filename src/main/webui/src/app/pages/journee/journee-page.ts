@@ -92,8 +92,8 @@ import {
   planningDays,
   readView,
   viewParams,
-  vueOf,
-  JourneeVue,
+  tabOf,
+  JourneeTab,
   resolveComparison,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
@@ -183,8 +183,8 @@ interface Option {
 
 /**
  * « Planning » (issue #712, the former Journée): one day of the persisted plan
- * under five renderings — the table stands × timeslots, the rail animateur by
- * animateur, the map hour by hour, the breaks and meals, what changed since a
+ * under four views — « Jour », in two modes: the rail animateur by animateur
+ * (the default) or the table stands × timeslots —, the map hour by hour, the breaks and meals, what changed since a
  * reference — with the plan at the top: the title on one line, the day chosen
  * on a foldable month, the stand and animateur filters as autocompletes, the
  * relecture as four chips that narrow the rendering, the consigne in a line,
@@ -259,7 +259,8 @@ export class JourneePage implements OnInit {
   /** The axis (issue #713): the day, the stands, the people, the game categories. */
   protected readonly axe = signal<PlanningAxe>('jour');
   protected readonly view = signal<JourneeView>('rail');
-  protected readonly vueOf = vueOf;
+  /** The view toggle's value: « Jour » for both of its modes. */
+  protected readonly currentTab = computed(() => tabOf(this.view()));
   protected readonly filtre = signal('');
   protected readonly stand = signal('');
   protected readonly animateur = signal('');
@@ -866,11 +867,18 @@ export class JourneePage implements OnInit {
     this.view.set(view);
   }
 
-  /** The view toggle: « Jour » keeps the mode on screen, the rail when coming from another view. */
-  protected changeVue(vue: JourneeVue): void {
-    if (vue !== vueOf(this.view())) {
-      this.view.set(vue === 'jour' ? 'rail' : vue);
+  /** The mode « Jour » was left in: coming back from the map, the breaks or the changes restores it. */
+  private dayMode: JourneeView = 'rail';
+
+  /** The view toggle: « Jour » comes back in the mode it was left in, the rail at first. */
+  protected changeTab(vue: JourneeTab): void {
+    if (vue === this.currentTab()) {
+      return;
     }
+    if (this.currentTab() === 'jour') {
+      this.dayMode = this.view();
+    }
+    this.view.set(vue === 'jour' ? this.dayMode : vue);
   }
 
   protected choisirStand(ids: string[]): void {

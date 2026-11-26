@@ -8,6 +8,9 @@ import {
   planningDays,
   readAxe,
   readView,
+  JOURNEE_VIEWS,
+  viewParams,
+  tabOf,
 } from './journee';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
@@ -53,6 +56,16 @@ describe('readView', () => {
     expect(readView('libres')).toBe('rail');
     expect(readView(null)).toBe('rail');
     expect(readView(null, 'tableau')).toBe('calendrier');
+  });
+
+  it('reads back every rendering from the params it writes, the rail from none', () => {
+    for (const view of JOURNEE_VIEWS) {
+      const { vue, mode } = viewParams(view);
+      expect(readView(vue, mode)).toBe(view);
+    }
+    expect(viewParams('rail')).toEqual({ vue: null, mode: null });
+    expect(viewParams('calendrier')).toEqual({ vue: 'jour', mode: 'tableau' });
+    expect(JOURNEE_VIEWS.map(tabOf)).toEqual(['jour', 'jour', 'carte', 'pauses', 'changements']);
   });
 });
 

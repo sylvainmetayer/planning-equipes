@@ -17,7 +17,7 @@ Tout passe par une seule page, *Planning* (groupe *Planifier*). Tout est porté 
 
 ## Par jour
 
-La vue **Jour** se lit en deux modes, que l'on choisit à côté du bouton « Jour » : le **rail**, ouvert par défaut, et le **tableau**. Le mode reste dans l'adresse (`mode=rail` ou `mode=tableau`). La carte, les pauses et repas et les changements sont les autres vues de la journée. La barre de relecture et l'état de la journée (à relire, relue, figée) restent là dans les deux modes.
+La vue **Jour** se lit en deux modes, que l'on choisit à côté du bouton « Jour » : le **rail**, ouvert par défaut, et le **tableau**. Le tableau s'écrit dans l'adresse (`vue=jour&mode=tableau`) ; le rail, mode par défaut, n'y écrit rien. La carte, les pauses et repas et les changements sont les autres vues de la journée. La barre de relecture et l'état de la journée (à relire, relue, figée) restent là dans les deux modes.
 
 ### Mode tableau
 

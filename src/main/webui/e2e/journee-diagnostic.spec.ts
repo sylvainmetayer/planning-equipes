@@ -59,7 +59,7 @@ test('la journée change de rendu sans relire le planning, et garde le jour choi
   await expect(page.locator('.rail-table')).toBeVisible();
   await expect(page).not.toHaveURL(/vue=/);
 
-  // Three switches, and the plan, the breaks and the referentials were read
+  // Four switches, and the plan, the breaks and the referentials were read
   // once, before the spy: nothing was fetched again — the table no longer
   // re-reads a count of persisted assignments either (issue #712).
   expect(appels.filter((chemin) => chemin.startsWith('/api/planning'))).toEqual([]);
@@ -74,10 +74,22 @@ test('the addresses of former screens lead to the right rendering, parameters in
 
   await page.goto('/rail-jour?vue=libres');
   await expect(page).toHaveURL(/\/journee\?.*lignes=libres/);
-  await expect(page).toHaveURL(/lignes=libres/);
+  // The rail is the default mode: its address names neither the view nor the mode.
+  await expect(page).not.toHaveURL(/vue=|mode=/);
   await expect(page.getByRole('radiogroup', { name: 'Lignes affichées' })).toContainText(
     'Mobilisables',
   );
+
+  // The table, by its former screen and by its 3.x key: both rewritten to the mode.
+  await page.goto('/day-calendar');
+  await expect(page.locator('.jour-table')).toBeVisible();
+  await expect(page).toHaveURL(/\/journee\?vue=jour&mode=tableau$/);
+  await page.goto('/journee?vue=calendrier');
+  await expect(page.locator('.jour-table')).toBeVisible();
+  await expect(page).toHaveURL(/\/journee\?vue=jour&mode=tableau$/);
+  await page.goto('/journee?vue=rail');
+  await expect(page.locator('.rail-table')).toBeVisible();
+  await expect(page).toHaveURL(/\/journee$/);
 
   await page.goto('/pauses?vue=sans-relais');
   await expect(page).toHaveURL(/\/journee\?.*vue=pauses/);
