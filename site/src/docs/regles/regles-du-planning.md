@@ -4,7 +4,7 @@ Vous ajustez ce qui décide du plan : les seuils légaux, l'importance de chaque
 
 ![La page Règles du planning](/images/fr/regles.webp "Règles du planning")
 
-Tout se règle dans *Règles du planning* (groupe *Planifier*), en trois onglets de réglage : *Légal*, *Qualité* et *Calcul*. Ce sont des réglages d'expert : ils n'apparaissent qu'après un clic sur « Réglages avancés », sous la rangée d'onglets. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
+Tout se règle dans *Règles du planning* (groupe *Planifier*), en deux onglets de réglage : *Légal* et *Qualité*. Ce sont des réglages d'expert : ils n'apparaissent qu'après un clic sur « Réglages avancés », sous la rangée d'onglets. Rien ne s'écrit avant « Enregistrer », et « Relancer le calcul » est à un clic.
 
 Ces seuils viennent du droit du travail : [ce que le Code du travail impose à un planning](/code-du-travail/) dit ce que le logiciel applique de lui-même et ce qu'il laisse à votre jugement.
 
@@ -27,12 +27,14 @@ Le même tableau pour les règles de qualité et les préférences. Chaque règl
 
 « Baisser l'importance » n'est jamais le premier geste proposé pour une règle de qualité : le Diagnostic le met toujours en dernier, et il disparaît quand l'importance est déjà au plus bas.
 
-## L'onglet Calcul
+## Les mêmes réglages, par section, dans Paramètres
 
-- la durée du calcul et l'arrêt quand plus rien ne progresse, affichés sans pouvoir les modifier : ils sont réglés pour toute l'instance (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)) ;
-- l'e-mail de fin de résolution ;
-- le début de la soirée, la seule soirée de l'application ;
-- la typologie polyvalente.
+*Paramètres* range les réglages de l'édition en quatre sections, chacune un onglet : *Notifications* (les rappels et relances automatiques), *Légal*, *Organisation* et *Calcul*. Les trois dernières sont des réglages d'expert, derrière « Réglages avancés ».
+
+- *Légal* et *Organisation* listent, sur un seul formulaire, tous les seuils que les onglets *Légal* et *Qualité* de *Règles du planning* éditent ligne à ligne : plafonds hebdomadaires, pause, coupure repas, jours d'affilée, trajets, services tardifs. Les deux endroits écrivent les mêmes valeurs ; rien ne s'écrit avant « Enregistrer ».
+- *Calcul* affiche la durée du calcul et l'arrêt quand plus rien ne progresse, sans pouvoir les modifier : ils sont réglés pour toute l'instance (voir [Calculer le planning](calculer-planning.md#régler-la-durée-du-calcul)). Il porte aussi l'e-mail de fin de résolution, le début de la soirée, la seule soirée de l'application, et la typologie polyvalente.
+
+L'ancien onglet *Calcul* de *Règles du planning* et son adresse (`/regles?onglet=calcul`) mènent à cette section.
 
 ## Quand une règle ne peut pas s'améliorer : le plancher
 

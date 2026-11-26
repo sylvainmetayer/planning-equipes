@@ -9,7 +9,7 @@ You set the instance's solve budget, you protect a shared instance against back-
 
 What the solve does with that time is explained in [how long it takes](/comment-marche-le-calcul/).
 
-The budget is **an instance setting**, the same for every edition: the solver is shared, one solve at a time, and how long a solve holds it is not one edition's decision. The *Planning rules › Solve* screen shows it without changing it.
+The budget is **an instance setting**, the same for every edition: the solver is shared, one solve at a time, and how long a solve holds it is not one edition's decision. The *Settings › Solve* screen shows it without changing it.
 
 | Variable | Default | Role |
 | --- | --- | --- |

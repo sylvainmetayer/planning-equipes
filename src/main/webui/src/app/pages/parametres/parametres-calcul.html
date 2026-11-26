@@ -1,5 +1,5 @@
-<!-- « Règles du planning › Calcul »: one form, one « Enregistrer » — see `ReglesCalcul`. -->
-<form class="regles-calcul" (ngSubmit)="save()">
+<!-- « Paramètres › Calcul »: one form, one « Enregistrer » — see `ParametresCalcul`. -->
+<form class="parametres-calcul" (ngSubmit)="save()">
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
       <h2 mat-card-title i18n="@@solverBudget.title">Budget de calcul</h2>
@@ -13,7 +13,7 @@
         <p class="calendar-meta">{{ runningText() }}</p>
       }
 
-      <mat-slide-toggle name="mailFinResolution" class="regles-calcul-mail"
+      <mat-slide-toggle name="mailFinResolution" class="parametres-calcul-mail"
                         [checked]="mailFinResolution()"
                         [disabled]="loading() || saving() || adminEmail() === null"
                         (change)="mailDraft.set($event.checked)">
@@ -64,7 +64,7 @@
     </mat-card-content>
   </mat-card>
 
-  <div class="regles-save-bar">
+  <div class="parametres-save-bar">
     <button matButton="filled" type="submit" [disabled]="!dirty() || saving()">
       <mat-icon>save</mat-icon>
       <ng-container i18n="@@common.save">Enregistrer</ng-container>

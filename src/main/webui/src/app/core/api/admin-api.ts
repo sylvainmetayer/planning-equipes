@@ -60,11 +60,11 @@ export class AdminApi {
   /* ------------------------- scheduled notifications ---------------------- */
 
   notificationSettings(): Promise<ParametresNotifications> {
-    return this.api.get<ParametresNotifications>('/api/parametres-notifications');
+    return this.api.get<ParametresNotifications>('/api/parametres/notifications');
   }
 
   saveNotificationSettings(parametres: ParametresNotifications): Promise<ParametresNotifications> {
-    return this.api.put<ParametresNotifications>('/api/parametres-notifications', parametres);
+    return this.api.put<ParametresNotifications>('/api/parametres/notifications', parametres);
   }
 
   /** Who the animateurs of this edition call: shown in their espace. */

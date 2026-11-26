@@ -18,7 +18,7 @@ NOTIFICATIONS_TIMEZONE=Europe/Paris
 
 <sub>Source: [`diagrammes/notifications-planifiees.puml`](repo:docs/diagrammes/notifications-planifiees.puml).</sub>
 
-The cron is hourly, on purpose. The time the reminder goes out is decided **per edition**, in *Settings*, *Edition* tab, *Automatic reminders and follow-ups* card; a single task cannot leave at four different times for four editions. It therefore wakes up often, and each edition sends once its own time has passed. This is harmless because every send is reserved in the database before it leaves: running twelve times in the evening writes to nobody twice.
+The cron is hourly, on purpose. The time the reminder goes out is decided **per edition**, in *Settings*, *Notifications* tab, *Automatic reminders and follow-ups* card; a single task cannot leave at four different times for four editions. It therefore wakes up often, and each edition sends once its own time has passed. This is harmless because every send is reserved in the database before it leaves: running twelve times in the evening writes to nobody twice.
 
 The time zone is that of the event, set separately (`NOTIFICATIONS_TIMEZONE`), and not that of the container (`TZ`, see [back up and restore](sauvegarde-et-restauration.md#1-laisser-la-sauvegarde-de-nuit-tourner)): "18:00" on the screen must mean 18:00 for the person reading it, whatever the time zone of the machine.
 

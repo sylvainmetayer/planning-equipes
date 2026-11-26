@@ -166,16 +166,23 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   mail, Mailpit, pgAdmin; a guard on the route sends its former
   `?onglet=donnees` and `?onglet=yaml` to Fichiers' examples and validator),
   `/mcp-client` (a redirect to `/parametres?onglet=mcp`),
-  `/parametres` (« Paramètres » — five tabs chosen by
-  `?onglet=edition|mural|instance|historique|mcp` — the last two the former
+  `/parametres` (« Paramètres » — tabs chosen by
+  `?onglet=edition|notifications|legal|organisation|calcul|mural|comptes|instance|historique|mcp`:
+  the four sections of the edition's parameters, one per
+  `/api/parametres/{section}` — « Notifications » (the e-mails it sends of
+  itself, `parametres-notifications`), then, under « Réglages avancés »,
+  « Légal » and « Organisation » (`parametres-section`: every threshold of the
+  section on one form, the same values the rule rows of `/regles` edit, each
+  save re-reading the record) and « Calcul » (`parametres-calcul`: the
+  instance's solve budget shown, never edited — ADR 0110 —, the end-of-solve
+  mail, the start of the evening, the polyvalent typologie) — and the last two the former
   `/historique` (its « Connexions » tab `?onglet=connexions`) and
   `/mcp-client`: the edition's own settings that no rule
   reads — its name, the freeze of its referential (the only place it is
   edited), its guichets (the collection of availabilities, the foire au
   planning, the covoiturage that follows the collection — each opened and
   closed here with its dates, Échanges and Disponibilités keeping one line of
-  their state, `shared/guichet-etat.ts`), the e-mails it sends of itself
-  (`#emails`), the weather alert (`#meteo`, `pages/parametres/parametres-meteo`
+  their state, `shared/guichet-etat.ts`), the weather alert (`#meteo`, `pages/parametres/parametres-meteo`
   — thresholds, a preset suggested per phenomenon, the last query's state,
   « Tester maintenant » and the Open-Meteo attribution) and the
   organisation's contact shown in the espace —, the wall
@@ -188,18 +195,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (`pages/parametres/horloge-simulee-card`, over `PUT /api/horloge`), shown
   only where the server allows a simulated clock, which the toolbar's
   hourglass links to; `?onglet=globaux`, its former name, reads as
-  `instance`, and a guard sends `?onglet=legaux` to `/regles?onglet=legal`
-  and `?onglet=emails` to `#emails`), `/regles`
-  (« Règles du planning » — six tabs chosen by
-  `?onglet=ajustements|verrouillages|consignes|legal|qualite|calcul`: first
+  `instance`, and a guard sends `?onglet=legaux` to
+  `?onglet=legal` and `?onglet=emails` (or the `#emails` anchor) to
+  `?onglet=notifications`; `/regles?onglet=calcul` is redirected to
+  `/parametres?onglet=calcul`), `/regles`
+  (« Règles du planning » — five tabs chosen by
+  `?onglet=ajustements|verrouillages|consignes|legal|qualite`: first
   the three of the former `/consignes-solveur` (described there), the
   adjustments the default; then
   one dense row per hard rule — short label, article, on/off, the thresholds
   it reads edited on the row —, the same table for the medium and soft rules
   with their importance in three positions (faible 1 / normale 5 / forte 25,
-  `core/importance.ts`, ADR 0057), and the instance's solve budget (shown,
-  never edited: ADR 0110), the end-of-solve mail, the start of the
-  evening and the polyvalent typologie; nothing is written before the tab's
+  `core/importance.ts`, ADR 0057); nothing is written before the tab's
   « Enregistrer », and `?regle=<name>` opens that rule's panel — long text,
   exact weight, history of its settings — on its own tab, the stable address
   the Diagnostic and the reading of the score link to),

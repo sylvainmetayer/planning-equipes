@@ -204,3 +204,44 @@
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
 }
+
+.parametres-save-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 1rem 0;
+}
+
+.parametres-calcul-mail {
+  display: block;
+  margin-top: 1rem;
+}
+
+.parametres-section-champs {
+  display: grid;
+  gap: 0.75rem 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+}
+
+.parametres-section-champ {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.parametres-section-champ input {
+  width: 7rem;
+}
+
+.polyvalent-select {
+  min-width: 18rem;
+}
+
+.parametres-section-erreur {
+  flex-basis: 100%;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}

@@ -215,7 +215,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
         },
         {
           route: '/parametres',
-          queryParams: { onglet: 'edition' },
+          queryParams: { onglet: 'notifications' },
           label: $localize`:@@aide.lien.parametresEmails:Paramètres — e-mails automatiques`,
         },
         {

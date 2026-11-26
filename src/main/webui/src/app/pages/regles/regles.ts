@@ -7,12 +7,11 @@ import { ConstraintView, ParametresLegaux, ParametresQualite } from '../../core/
 import { segmenterArticles } from '../../core/legifrance';
 
 /**
- * The six tabs, and the values of the `onglet` query param: what the next solve
+ * The five tabs, and the values of the `onglet` query param: what the next solve
  * must respect — the adjustments, the locks, the consignes (the former
- * « Consignes au solveur ») —, then the rules themselves and the solve budget.
+ * « Consignes au solveur ») —, then the rules themselves.
  */
-export type OngletRegles =
-  'ajustements' | 'verrouillages' | 'consignes' | 'legal' | 'qualite' | 'calcul';
+export type OngletRegles = 'ajustements' | 'verrouillages' | 'consignes' | 'legal' | 'qualite';
 
 export const ONGLETS_REGLES: readonly OngletRegles[] = [
   'ajustements',
@@ -20,7 +19,6 @@ export const ONGLETS_REGLES: readonly OngletRegles[] = [
   'consignes',
   'legal',
   'qualite',
-  'calcul',
 ];
 
 /** The tabs that list rules, one row each. */

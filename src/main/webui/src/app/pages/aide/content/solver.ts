@@ -48,7 +48,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis, en bas de page, « Réglages avancés » : le lieu du calcul et la machine distante, la courbe de score et la volumétrie du problème (la machine reste affichée tant qu'elle est allumée). Les versions du plan sont dans l'onglet « Versions du plan » ; le budget de calcul se règle dans Règles du planning, onglet Calcul.`,
+          text: $localize`:@@aide.calculer.entrees:La page s'ouvre sur ce qui empêche un planning sans écart (faisabilité et alertes), puis sur « Ce calcul tiendra compte de » : les verrouillages, les ajustements manuels, les consignes et leurs dates, les déclarations de disponibilité encore en attente (le calcul ne les verra pas), les règles désactivées et les modifications faites depuis la dernière résolution. Chaque compteur mène à l'écran qui les liste ; un compteur à zéro reste affiché, en retrait. Viennent ensuite les trois boutons, chacun avec sa phrase. Après un calcul, son résultat se lit en phrases. Juste dessous se trouvent « Voir le planning », « Relire » (la première journée pas encore relue) et « Publier », puis, en bas de page, « Réglages avancés » : le lieu du calcul et la machine distante, la courbe de score et la volumétrie du problème (la machine reste affichée tant qu'elle est allumée). Les versions du plan sont dans l'onglet « Versions du plan » ; le budget de calcul se consulte dans Paramètres, onglet Calcul.`,
         },
         {
           kind: 'paragraph',
@@ -104,11 +104,11 @@ export function buildSolverSections(): HelpSection[] {
           items: [
             {
               term: $localize`:@@aide.config.term.duree:Budget de calcul`,
-              text: $localize`:@@aide.config.def.budget:Réglé par l'exploitant de l'instance et le même pour toutes les éditions : la page Règles du planning, onglet Calcul, l'affiche sans le modifier, et le serveur l'applique à tout calcul, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Pour les changer, l'exploitant modifie SOLVER_SECONDS_LIMIT et SOLVER_UNIMPROVED_SECONDS_LIMIT et redémarre ; un script ou l'assistant peut demander une durée plus courte à un lancement, jusqu'à un plafond que fixe l'exploitant.`,
+              text: $localize`:@@aide.config.def.budget:Réglé par l'exploitant de l'instance et le même pour toutes les éditions : la page Paramètres, onglet Calcul, l'affiche sans le modifier, et le serveur l'applique à tout calcul, depuis l'écran comme depuis l'assistant. Deux réglages. La durée maximale (15 min par défaut) est celui qui compte le plus : commencez court (1 à 3 min) pour révéler les blocages structurels, puis passez à 15 ou 30 min, voire davantage, pour la résolution finale. L'arrêt sans amélioration (5 min par défaut, 0 pour jamais) écourte un calcul qui ne progresse plus ; il ne compte qu'une fois le score dur à zéro, de sorte qu'un calcul n'abandonne jamais tant que des places restent à pourvoir. Pour les changer, l'exploitant modifie SOLVER_SECONDS_LIMIT et SOLVER_UNIMPROVED_SECONDS_LIMIT et redémarre ; un script ou l'assistant peut demander une durée plus courte à un lancement, jusqu'à un plafond que fixe l'exploitant.`,
             },
             {
               term: $localize`:@@aide.config.term.mailFin:Prévenir à la fin d'une résolution`,
-              text: $localize`:@@aide.config.def.mailFin:Un interrupteur de Règles du planning, onglet Calcul, fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score, et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur.`,
+              text: $localize`:@@aide.config.def.mailFin:Un interrupteur de Paramètres, onglet Calcul, fait écrire à l'administrateur dès qu'une résolution de cette édition se termine : l'édition, le score, et si le planning est faisable. De quoi lancer un calcul de trente minutes et partir. Il reste sans effet tant qu'aucune adresse administrateur n'est configurée sur le serveur.`,
             },
             {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
@@ -152,7 +152,11 @@ export function buildSolverSections(): HelpSection[] {
       links: [
         { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
         { route: '/regles', label: $localize`:@@nav.link.regles:Règles du planning` },
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'calcul' },
+          label: $localize`:@@nav.link.parametres:Paramètres`,
+        },
         lienVerrouillages(),
       ],
     },
