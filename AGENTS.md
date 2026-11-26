@@ -310,18 +310,26 @@ Single Quarkus service, no separate solver microservice. Package root:
     contract with such an account and refuses any other stand's or person's name.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
-    chosen stand by stand. `ConsigneResolver` is laid on top of a stand's
-    plages (ADR 0104; it was the fourth layer of the schedule while recurring
-    rules still existed), pure and static, applied by `StandService.resolve`
-    after `HoraireStandResolver` has set the stored plages as the effective
-    ones, and on the effective windows only; `ConsigneService` proposes, previews, lays down,
-    changes and lifts consignes and their presets — the only grid write it
-    makes is adding the timeslots an opening needs, and lifting removes those
-    alone; `ConsigneRepository` owns the six tables. Every reader of
-    effective windows goes through `StandService.resolve` /
-    `ReferenceData.resolveHoraires`: `ConsigneCoucheStructurelleTest` refuses
-    any other production caller of `HoraireStandResolver.apply` that is not
-    argued in its list, the same net as the edition-scoping tests.
+    chosen stand by stand. Since ADR 0125 a consigne is **written**, not laid
+    on read: `ConsignePlages` (pure and static) computes the dated plages it
+    puts on every stand of its date — a closure over the band, one over each
+    timeslot it added, an opening per window outside the band — each marked
+    `PlageStand.consigne`, and lifting removes exactly the marked ones (a plage
+    edited by hand loses the mark and stays, through `carryOrigins`).
+    `HoraireStandResolver` reads them **above** the stand's own plages: their
+    closures carve its own hours, their openings are added whatever its own
+    plages say. `ConsigneService` proposes, previews, lays down, changes and
+    lifts consignes and their presets — the only grid write it makes is adding
+    the timeslots an opening needs, and lifting removes those alone;
+    `ConsigneRepository` owns the six tables and the marked plages, and moves
+    every stand's stamp on a lay or a lift. A YAML file and an edition copy
+    never carry the marked plages: the import writes them again from the
+    consigne. Every reading of a stand's plages goes through
+    `StandService.resolve` / `ReferenceData.resolveHoraires` (or
+    `resolveOwnHours` for the stand's own hours, the consigne left out):
+    `ConsigneCoucheStructurelleTest` refuses any other production caller of
+    `HoraireStandResolver.apply` / `applyOwnHours` that is not argued in its
+    lists, the same net as the edition-scoping tests.
   - `service/edition/`; `service/publication/` (publishing, delivery,
     confirmations, `MailService`); `service/export/` (`PlanningExportService`
     over `AnimateurPlanningPdf`, `AnimateurFeuillePdf`, `GlobalPlanningPdf`

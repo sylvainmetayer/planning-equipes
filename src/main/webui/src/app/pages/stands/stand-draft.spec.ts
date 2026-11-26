@@ -265,6 +265,15 @@ describe('conflitOuvertureFermeture', () => {
     expect(conflitOuvertureFermeture(invalide)).toBe(true);
   });
 
+  it("leaves out the plages a consigne wrote: its band lies above the stand's own openings", () => {
+    const sousConsigne = draft({
+      indisponibilites: [plage({ date: '2026-07-10', consigne: true })],
+      ouvertures: [plage({ date: '2026-07-10' })],
+    });
+
+    expect(conflitOuvertureFermeture(sousConsigne)).toBe(false);
+  });
+
   it('accepts a closure and an opening on two different days', () => {
     const valid = draft({
       indisponibilites: [plage({ date: '2026-07-10' })],

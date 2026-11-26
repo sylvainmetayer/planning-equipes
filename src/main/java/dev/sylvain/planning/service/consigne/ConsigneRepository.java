@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.consigne;
 
 import dev.sylvain.planning.domain.ConsigneEdition;
+import dev.sylvain.planning.domain.ModeHoraire;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
@@ -163,6 +165,14 @@ public class ConsigneRepository {
         scope.write("Failed to save the consigne of " + consigne.date(), connection -> save(connection, consigne));
     }
 
+    /** Writes the consigne and the plages it lays on the stands, in one transaction. */
+    public void save(ConsigneEdition consigne, Map<String, List<PlageStand>> plagesParStand) {
+        scope.write("Failed to save the consigne of " + consigne.date(), connection -> {
+            save(connection, consigne);
+            replacePlages(connection, consigne.date(), plagesParStand);
+        });
+    }
+
     /** The stamp the stored consigne of {@code date} carries now, {@code null} when it has none. */
     private Instant lastWriteOf(Connection connection, LocalDate date) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(
@@ -280,15 +290,80 @@ public class ConsigneRepository {
         }
     }
 
-    /** Removes the consigne of {@code date} and everything it carried; says whether there was one. */
+    /**
+     * Removes the consigne of {@code date} and everything it carried — the plages it wrote on the stands
+     * included, exactly those still carrying its mark (ADR 0125); says whether there was one.
+     */
     public boolean delete(LocalDate date) {
         return scope.writeAndReturn("Failed to lift the consigne of " + date, connection -> {
+            removePlages(connection, date);
             try (PreparedStatement ps = scope.prepareScoped(
                     connection, "DELETE FROM consigne_edition WHERE edition_id = ? AND date_jour = ?")) {
                 ps.setObject(2, date);
                 return ps.executeUpdate() > 0;
             }
         });
+    }
+
+    /** The same replacement in a transaction of its own. */
+    public void replacePlages(LocalDate date, Map<String, List<PlageStand>> plagesParStand) {
+        scope.write(
+                "Failed to lay the plages of the consigne of " + date,
+                connection -> replacePlages(connection, date, plagesParStand));
+    }
+
+    /**
+     * Replaces the plages the consigne of {@code date} wrote on the stands by {@code plagesParStand}, each
+     * row marked as the consigne's, inside the caller's transaction.
+     */
+    public void replacePlages(Connection connection, LocalDate date, Map<String, List<PlageStand>> plagesParStand)
+            throws SQLException {
+        removePlages(connection, date);
+        try (PreparedStatement fermeture = scope.prepareScoped(connection, """
+                        INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
+                        heure_debut, heure_fin, motif, consigne)
+                        VALUES (?, ?, ?, ?, ?, ?, TRUE)""");
+                PreparedStatement ouverture = scope.prepareScoped(connection, """
+                        INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
+                        heure_debut, heure_fin, motif, effectif, consigne)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)""")) {
+            for (Map.Entry<String, List<PlageStand>> entree : plagesParStand.entrySet()) {
+                for (PlageStand plage : entree.getValue()) {
+                    PreparedStatement ps = plage.getMode() == ModeHoraire.FERMETURE ? fermeture : ouverture;
+                    ps.setString(2, entree.getKey());
+                    ps.setObject(3, date);
+                    ps.setObject(4, plage.getHeureDebut());
+                    ps.setObject(5, plage.getHeureFin());
+                    ps.setString(6, plage.getMotif());
+                    if (ps == ouverture) {
+                        ps.setObject(7, plage.getEffectif());
+                    }
+                    ps.addBatch();
+                }
+            }
+            fermeture.executeBatch();
+            ouverture.executeBatch();
+        }
+    }
+
+    /**
+     * Deletes the plages the consigne of {@code date} wrote, and moves every stand's stamp: a stand
+     * edited from a form opened before would otherwise write back the day as it was, and drop the band
+     * (or bring it back after the lift) without anyone being asked (issue #362).
+     */
+    private void removePlages(Connection connection, LocalDate date) throws SQLException {
+        deleteDated(
+                connection,
+                "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND date_indisponibilite = ? AND consigne",
+                date);
+        deleteDated(
+                connection,
+                "DELETE FROM stand_ouverture WHERE edition_id = ? AND date_ouverture = ? AND consigne",
+                date);
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "UPDATE stand SET modifie_le = now() WHERE edition_id = ?")) {
+            ps.executeUpdate();
+        }
     }
 
     /* ------------------------------- presets ------------------------------- */

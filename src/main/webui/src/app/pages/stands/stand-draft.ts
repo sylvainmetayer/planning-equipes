@@ -164,10 +164,16 @@ function plageInvalide(plage: {
 
 /** A day can't carry both a closure and an opening — the backend rejects this outright. */
 export function conflitOuvertureFermeture(draft: StandDraft): boolean {
+  // A consigne's plages lie above the stand's own hours: its band on a stand that states its openings is no conflict.
   const joursFermeture = new Set(
-    draft.indisponibilites.map((indispo) => indispo.date).filter(Boolean),
+    draft.indisponibilites
+      .filter((indispo) => !indispo.consigne)
+      .map((indispo) => indispo.date)
+      .filter(Boolean),
   );
-  return draft.ouvertures.some((ouverture) => ouverture.date && joursFermeture.has(ouverture.date));
+  return draft.ouvertures.some(
+    (ouverture) => !ouverture.consigne && ouverture.date && joursFermeture.has(ouverture.date),
+  );
 }
 
 /**

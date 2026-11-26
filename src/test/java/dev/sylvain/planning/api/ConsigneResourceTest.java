@@ -468,6 +468,101 @@ class ConsigneResourceTest {
         assertThat(creneaux().getList("heureDebut")).containsExactlyInAnyOrder("09:00:00", "14:00:00");
     }
 
+    /** One stand as the API serves it. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> stand(String id) {
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getMap("find { it.id == '" + id + "' }");
+    }
+
+    /** {@code key} of a stand as « date heureDebut-heureFin consigne », one entry per plage. */
+    @SuppressWarnings("unchecked")
+    private static List<String> plages(Map<String, Object> stand, String key) {
+        return ((List<Map<String, Object>>) stand.get(key))
+                .stream()
+                        .map(plage -> plage.get("date") + " " + plage.get("heureDebut") + "-" + plage.get("heureFin")
+                                + " " + plage.get("consigne"))
+                        .toList();
+    }
+
+    /** ADR 0125: a consigne is plages written on the stands, and lifting it removes exactly those. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void liftingRemovesExactlyThePlagesTheConsigneWroteAndKeepsWhatWasEditedByHand() {
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(demande(List.of(ouverture(standStrat))))
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+
+        // The band on every stand, the evening créneau it added closed to the stand it does not open.
+        Map<String, Object> strat = stand(standStrat);
+        assertThat(plages(strat, "indisponibilites"))
+                .containsExactlyInAnyOrder(JOUR + " 12:00:00-16:00:00 true", JOUR + " 18:00:00-20:00:00 true");
+        assertThat(plages(strat, "ouvertures")).containsExactly(JOUR + " 18:00:00-20:00:00 true");
+        Map<String, Object> homme = stand(hommeJeu);
+        assertThat(plages(homme, "ouvertures")).containsExactly(JOUR + " 14:00:00-16:00:00 false");
+        assertThat(plages(homme, "indisponibilites"))
+                .containsExactlyInAnyOrder(JOUR + " 12:00:00-16:00:00 true", JOUR + " 18:00:00-20:00:00 true");
+
+        // The band shortened by hand on one stand: that plage is no longer the consigne's.
+        for (Map<String, Object> plage : (List<Map<String, Object>>) strat.get("indisponibilites")) {
+            if ("12:00:00".equals(plage.get("heureDebut"))) {
+                plage.put("heureFin", "15:00:00");
+            }
+        }
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(strat)
+                .when()
+                .put("/api/stands/" + standStrat)
+                .then()
+                .statusCode(200);
+        assertThat(plages(stand(standStrat), "indisponibilites"))
+                .containsExactlyInAnyOrder(JOUR + " 12:00:00-15:00:00 false", JOUR + " 18:00:00-20:00:00 true");
+
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("dates", List.of(JOUR)))
+                .when()
+                .post("/api/consignes/levee")
+                .then()
+                .statusCode(204);
+
+        assertThat(plages(stand(standStrat), "indisponibilites")).containsExactly(JOUR + " 12:00:00-15:00:00 false");
+        assertThat(plages(stand(standStrat), "ouvertures")).isEmpty();
+        assertThat(plages(stand(hommeJeu), "ouvertures")).containsExactly(JOUR + " 14:00:00-16:00:00 false");
+        assertThat(plages(stand(hommeJeu), "indisponibilites")).isEmpty();
+    }
+
+    /** A form opened before the consigne is laid would write the day back without it: its stamp is refused. */
+    @Test
+    void aStandFormOpenedBeforeTheConsigneIsRefused() {
+        Map<String, Object> avant = stand(standStrat);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(demande(List.of(ouverture(standStrat))))
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(avant)
+                .when()
+                .put("/api/stands/" + standStrat)
+                .then()
+                .statusCode(409);
+    }
+
     @Test
     void liftingUnderAWeekLockedFullCountsWhoIsOutOfDaysAndNamesTheDayToReopen() {
         // Somebody seated on the six other days of the ISO week (Mon 6 to Sun 12 July), every one JOUR-locked.
@@ -1013,6 +1108,14 @@ class ConsigneResourceTest {
                 .body("prereglages[0].nom", equalTo("Plan canicule"))
                 .body("prereglages[0].repas.soirFin", equalTo("22:00:00"))
                 .body("consignes", hasSize(0));
+        // Nor the plages the consigne wrote on the stands (ADR 0125).
+        given().header("X-Edition-Id", copie)
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .body("collectMany { it.indisponibilites + it.ouvertures }.findAll { it.consigne }", hasSize(0))
+                .body("collectMany { it.ouvertures }", hasSize(1));
         given().header("X-Edition-Id", "E1")
                 .when()
                 .delete("/api/editions/" + copie)

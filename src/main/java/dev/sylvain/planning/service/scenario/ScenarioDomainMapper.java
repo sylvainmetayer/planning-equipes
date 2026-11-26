@@ -109,9 +109,9 @@ final class ScenarioDomainMapper {
      *
      * <p>Nominal, deliberately: the {@code consignes:} section is read by
      * {@link #sections} for the import and never applied to the seats built
-     * here. The consigne layer belongs to {@code StandService.resolve}, over
-     * the referential (ADR 0043); a scenario solved straight from its file
-     * is solved on its nominal grid.</p>
+     * here. A consigne's plages are written on the stands when the file is
+     * imported (ADR 0125) and never travel in the file; a scenario solved
+     * straight from its file is solved on its nominal grid.</p>
      */
     static PlanningEvenement planning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         ReferenceScenario reference = reference(scenario);

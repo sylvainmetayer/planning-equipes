@@ -23,7 +23,7 @@ import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.ViolationFormatter.ViolationReference;
-import dev.sylvain.planning.service.consigne.ConsigneResolver;
+import dev.sylvain.planning.service.consigne.ConsignePlages;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceFamily;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceIssue;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
@@ -169,7 +169,7 @@ class CoherenceReferentielServiceTest {
                 null);
         List<Stand> solverView = List.of(stand("PLATEAU", false));
         HoraireStandResolver.apply(solverView, creneaux);
-        ConsigneResolver.apply(solverView, List.of(consigne), creneaux);
+        ConsignePlages.apply(solverView, List.of(consigne), creneaux);
         List<Stand> ownHours = List.of(stand("PLATEAU", false));
         HoraireStandResolver.apply(ownHours, creneaux);
         // The consigne really shuts the stand over the Saturday timeslot.

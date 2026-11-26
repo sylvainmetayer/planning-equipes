@@ -66,7 +66,7 @@ public class CoherenceReferentielService {
 
     private final StaffingService staffingService;
 
-    /** Resolves the stands the write-time warnings are replayed on, without the consigne layer. */
+    /** Resolves the stands the write-time warnings are replayed on, without the plages a consigne wrote. */
     private final CoherenceService coherence;
 
     /** Behind {@code Instance} like {@link CoherenceService}'s: the plain-Java harnesses have no database. */
@@ -167,10 +167,10 @@ public class CoherenceReferentielService {
      * Everything {@link #build} reads, gathered once.
      *
      * @param stands       resolved against {@code creneaux}, as the solver reads them
-     * @param ownHoursStands the same stands with their own hours only — rules and dated
-     *                     exceptions, no consigne: the write-time warnings are replayed on
+     * @param ownHoursStands the same stands with their own hours only — their plages without
+     *                     the ones a consigne wrote: the write-time warnings are replayed on
      *                     them, as {@link CoherenceService} raises them. Against the
-     *                     consigne layer, every timeslot inside a band would read as
+     *                     consigne's plages, every timeslot inside a band would read as
      *                     outside every opening, which is the consigne, not a mistake
      * @param placesTenues the seats of the persisted plan, read only when a lock and a
      *                     forced assignment both exist
