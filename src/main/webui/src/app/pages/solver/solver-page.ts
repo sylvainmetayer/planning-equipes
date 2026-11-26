@@ -123,7 +123,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
  *
  * <p>An orchestrator: the queue, the score curve, the volumetry, the recap
  * and the incremental diff are each a component of their own next door; the
- * solve budget is set on « Règles du planning › Calcul ». What stays here is what the result handler has to write, and the three
+ * solve budget is set on « Paramètres › Calcul ». What stays here is what the result handler has to write, and the three
  * ways of launching a solve.</p>
  *
  * <p>The <b>diffusion</b> is no longer one of them (issue #320): exporting the

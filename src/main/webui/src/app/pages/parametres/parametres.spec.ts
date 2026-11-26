@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { readOngletParametres } from './parametres';
 
 describe('readOngletParametres', () => {
-  it('names one of the three tabs, the edition one otherwise', () => {
+  it('names one of its tabs, the edition one otherwise', () => {
     expect(readOngletParametres('edition')).toBe('edition');
     expect(readOngletParametres('mural')).toBe('mural');
     expect(readOngletParametres('instance')).toBe('instance');
-    expect(readOngletParametres('notifications')).toBe('edition');
+    expect(readOngletParametres('notifications')).toBe('notifications');
+    expect(readOngletParametres('calcul')).toBe('calcul');
+    expect(readOngletParametres('legaux')).toBe('edition');
     expect(readOngletParametres('')).toBe('edition');
     expect(readOngletParametres(null)).toBe('edition');
   });

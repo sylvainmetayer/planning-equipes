@@ -45,7 +45,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/diagnostic?onglet=problemes', sheet: 'probleme-counts' },
   { path: '/regles', marker: 'Règles du planning', sheet: 'regles-table' },
   { path: '/regles?onglet=qualite', sheet: 'regles-importance' },
-  { path: '/regles?onglet=calcul', marker: 'Budget de calcul' },
+  { path: '/parametres?onglet=calcul', marker: 'Budget de calcul', sheet: 'parametres-save-bar' },
   { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
   { path: '/solveur?onglet=versions', marker: 'Plan en place', sheet: 'versions-toolbar' },
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },

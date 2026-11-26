@@ -5,10 +5,8 @@ import {
   DestroyRef,
   computed,
   inject,
-  linkedSignal,
   OnInit,
   signal,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -46,7 +44,6 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
-import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -75,7 +72,6 @@ import {
   shownValue,
   storedValue,
 } from './regles';
-import { ReglesCalcul } from './regles-calcul';
 import { WeightHistoryView } from './weight-history-view';
 
 /** Called lazily (never at module scope): the level of a rule in the words of the screen. */
@@ -120,8 +116,6 @@ function importanceLabel(importance: Importance): string {
  * - « Qualité » — the same table for the medium and soft rules, with their
  *   importance in three positions (faible / normale / forte, weights 1 / 5 /
  *   25) and the exact weight in the panel for whoever wants it.
- * - « Calcul » — the solve budget, the start of the evening, the polyvalent
- *   typologie: `ReglesCalcul`.
  *
  * Nothing is written as it is typed: « Légal » and « Qualité » share one set
  * of pending changes — a threshold like the meal window is read by a rule of
@@ -144,7 +138,6 @@ function importanceLabel(importance: Importance): string {
     MatTooltipModule,
     ReglagesAvancesToggle,
     RelancerCalcul,
-    ReglesCalcul,
     RouterLink,
     StatusMessage,
     VerrouillagesPage,
@@ -158,7 +151,6 @@ function importanceLabel(importance: Importance): string {
 })
 export class ReglesPage implements OnInit {
   private readonly constraintsApi = inject(ConstraintsApi);
-  private readonly referenceData = inject(ReferenceDataStore);
   private readonly dialog = inject(MatDialog);
   private readonly legalDisable = inject(LegalDisableConfirmService);
   private readonly confirm = inject(ConfirmService);
@@ -266,18 +258,6 @@ export class ReglesPage implements OnInit {
   );
   protected readonly dirty = computed(() => this.pendingCount() > 0);
 
-  private readonly calcul = viewChild(ReglesCalcul);
-
-  /**
-   * « Calcul » stays mounted once opened, hidden on the two other tabs: its
-   * fields are drafts of its own, and destroying it on a tab switch dropped
-   * them without a word — and without the question `canLeave` asks.
-   */
-  protected readonly calculMonte = linkedSignal<OngletRegles, boolean>({
-    source: this.onglet,
-    computation: (onglet, previous) => (previous?.value ?? false) || onglet === 'calcul',
-  });
-
   /* ------------------------------ Read-outs --------------------------------- */
 
   protected readonly feasibility = computed(() => this.view()?.faisabilite ?? null);
@@ -329,15 +309,13 @@ export class ReglesPage implements OnInit {
       inject(ModifiedFormsRegistry).register(
         'regles-du-planning',
         $localize`:@@regles.saisie.label:les règles du planning`,
-        computed(() => this.dirty() || (this.calcul()?.dirty() ?? false)),
+        this.dirty,
       ),
     );
   }
 
   ngOnInit(): void {
     void this.load();
-    // « Calcul » lists the typologies.
-    void this.referenceData.reload().catch(() => undefined);
   }
 
   private async load(): Promise<void> {
@@ -583,7 +561,7 @@ export class ReglesPage implements OnInit {
    * Writes the pending changes, one record after the other, each cleared once
    * stored — a refusal on the third leaves the first two saved and says why.
    * The two parameter records are re-read just before being written: the
-   * server replaces a whole record, and « Calcul » writes a field of the legal
+   * server replaces a whole record, and Paramètres › Calcul writes a field of the legal
    * one too.
    */
   protected async save(): Promise<void> {
@@ -633,7 +611,7 @@ export class ReglesPage implements OnInit {
 
   /** Asked by the router before leaving: pending changes are dropped only on purpose. */
   canLeave(): Promise<boolean> {
-    if (!this.dirty() && !(this.calcul()?.dirty() ?? false)) {
+    if (!this.dirty()) {
       return Promise.resolve(true);
     }
     return this.confirm.ask({

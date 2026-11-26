@@ -215,11 +215,6 @@
   margin: 1rem 0;
 }
 
-.regles-calcul-mail {
-  display: block;
-  margin-top: 1rem;
-}
-
 .constraint-protegee-icon {
   color: var(--mat-sys-error);
   font-size: 1.125rem;
@@ -328,10 +323,6 @@
 
 .weight-history-date {
   margin-right: 0.5rem;
-}
-
-.polyvalent-select {
-  min-width: 18rem;
 }
 
 /* After a write on an adjustment, lock or consigne tab: the relaunch offered in place. */
