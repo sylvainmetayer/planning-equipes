@@ -34,6 +34,12 @@ These backups are **never purged automatically** ([decision 0084](repo:docs/deci
 
 Automating the purge would not settle this case: it reasons by expired edition.
 
+### The 3.x carpool archive
+
+The 4.0 migration moves the carpool requests that 3.x had rejected or cancelled, with the free-text reason written for the staff member, into the `declaration_coequipier_avant_4_0` table ([what it holds](rgpd-limites-a-consigner.md#les-demandes-de-covoiturage)). The application no longer reads it and does not export it. It is **kept until 5.0**, which drops it; until then, it goes with its edition (the annual purge covers it) or with the requester's record.
+
+Once 4.0 is in place and going back to 3.x is ruled out, nothing forces you to wait: `DROP TABLE declaration_coequipier_avant_4_0;` drops it, with no effect on the application. Record it in the register as a purge.
+
 ## Measuring the realised
 
 No scheduled task computes it: the "Realised vs planned" screen computes it on demand ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). The first read made once the edition's last timeslot has ended, when something has been published, writes the measure into `kpi_realise`: absences, replacements, empty seats and lost hours, by game category, with no person at all.

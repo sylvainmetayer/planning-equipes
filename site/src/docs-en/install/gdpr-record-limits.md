@@ -128,19 +128,25 @@ logged like the others.
 
 ## Carpool requests
 
-A carpool request also survives its decision, in
-`declaration_coequipier`: the ids of the teammates named, the status
-and, when the organisation rejects it or cancels the validated group arrival, a
-**free-text reason written by the administrator for the
-staff member**, read again in their espace and repeated in the e-mail that announces
-the decision to them (to each member of the group, for a cancellation). It is text about a person,
-typed by another: the rule is to stick to the organisational reason
-("Bob only comes on Saturday") and never to write
-health or family data in it. It does **not** enter the action log
-(which keeps only the request id), nor what the MCP tools return;
-it goes into the nightly dump and the SQL export like the rest of the table,
-and disappears with the edition. The table has a foreign key on
-the requester: deleting their record deletes their requests.
+A carpool request lives in `declaration_coequipier`: the ids of the
+teammates named and the status, pending or validated. When the organisation
+rejects it, or cancels the validated group arrival, it **deletes** it: what
+is left is the action log line, which keeps only the request id. The table
+has a foreign key on the requester: deleting their record deletes their
+requests.
+
+**The 3.x archive.** In 3.x, a rejected or cancelled request stayed in the
+database, with a **free-text reason written by the administrator for the
+staff member**. The 4.0 migration (`V142`) does not erase it: it moves those
+requests, reason included, into `declaration_coequipier_avant_4_0`. It is
+text about a person, typed by another, that the application no longer reads,
+shows or exports (neither the SQL export nor the MCP tools); it stays in the
+nightly dump, like the whole database. **Retention: until 5.0, which drops
+the table.** Until then, the archive goes with the edition (annual purge) or
+with the requester's record, through the same foreign keys as the original
+table. You can drop it earlier, once 4.0 is in place and going back to 3.x is
+ruled out ([purge and keep data](conservation-des-donnees.md#larchive-du-covoiturage-3x)).
+Record it in the register with that retention.
 
 ## Availability declarations
 

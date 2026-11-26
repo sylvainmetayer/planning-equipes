@@ -206,6 +206,13 @@ class CarpoolFlowTest {
         carpoolView("COV-A").body("status", is(nullValue()));
         assertThat(mailbox.getMailsSentTo(email("COV-A"))).isNullOrEmpty();
         assertThat(mailbox.getMailsSentTo(email("COV-B"))).isNullOrEmpty();
+        // The demand is gone, its trace is not: the journal keeps the gesture and the demand's id.
+        EntreeJournal ligne = journal.list(20).stream()
+                .filter(entree -> "COVOITURAGE_ECARTE".equals(entree.action()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(ligne.entiteId()).isEqualTo(demande);
+        assertThat(ligne.resultat()).isEqualTo(EntreeJournal.Resultat.SUCCES);
 
         requestCarpool("COV-A", idsOf("COV-C")).statusCode(200).body("status", equalTo("EN_ATTENTE"));
     }
