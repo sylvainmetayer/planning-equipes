@@ -761,7 +761,7 @@ i18n rule at the top of this file:
   `getIndisponibilites()` are read-only views of the one list). No recurring
   rule is stored: a recurrence is a generator that writes plages, and
   `HorairesRecurrents` is the one frozen reading of the 3.x rules (migration
-  `V159`, the scenario-file link 4 → 5, the `ajouter_horaire_stand` tool). A
+  `V159`, the scenario-file link 4 → 5, the `creer_horaire_stand` tool). A
   day carries one mode, never both; no plage means open all day.
   `ShippedSchedulesDigestTest` holds the windows of every shipped scenario to
   what 3.x resolved, day by day.

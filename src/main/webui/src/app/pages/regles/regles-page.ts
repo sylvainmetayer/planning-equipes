@@ -66,8 +66,10 @@ import {
   OngletRegles,
   SEUILS,
   articlesOf,
+  groupeLabel,
   isRuleTab,
   niveauEffectif,
+  opensGroup,
   readOngletRegles,
   rulesOfBloc,
 } from './regles';
@@ -434,6 +436,8 @@ export class ReglesPage implements OnInit {
 
   protected readonly niveauLabel = niveauLabel;
   protected readonly niveauEffectifOf = niveauEffectif;
+  protected readonly opensGroup = opensGroup;
+  protected readonly groupeLabel = groupeLabel;
 
   protected libelle(rule: ConstraintView): string {
     return rule.libelleCourt || rule.categorie;

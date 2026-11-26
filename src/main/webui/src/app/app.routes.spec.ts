@@ -243,7 +243,7 @@ describe('app.routes', () => {
   describe('les anciennes adresses des rendus de la journée', () => {
     it('garde les filtres et renomme la clé du rail', () => {
       expect(redirectTarget('rail-jour', { vue: 'libres', stand: 'S1' })).toBe(
-        '/journee?vue=rail&lignes=libres&stand=S1',
+        '/journee?vue=jour&mode=rail&lignes=libres&stand=S1',
       );
     });
 
@@ -255,8 +255,8 @@ describe('app.routes', () => {
       );
     });
 
-    it('mène au calendrier sans paramètre superflu', () => {
-      expect(redirectTarget('day-calendar', {})).toBe('/journee?vue=calendrier');
+    it('mène au tableau de la vue Jour sans paramètre superflu', () => {
+      expect(redirectTarget('day-calendar', {})).toBe('/journee?vue=jour&mode=tableau');
     });
 
     // #712: the month calendar, the intendance and the graph became the

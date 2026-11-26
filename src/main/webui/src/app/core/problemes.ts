@@ -687,7 +687,7 @@ export function construireProblemes(
         },
         ...days.map((date) => ({
           route: '/journee',
-          queryParams: { vue: 'rail', date },
+          queryParams: { vue: 'jour', mode: 'rail', date },
           libelle: $localize`:@@problemes.lien.railDuJour:Voir le rail du ${date}:date:`,
         })),
       ],
@@ -731,7 +731,7 @@ export function construireProblemes(
       actions: [],
       liens: days.map((date) => ({
         route: '/journee',
-        queryParams: { vue: 'rail', date },
+        queryParams: { vue: 'jour', mode: 'rail', date },
         libelle: $localize`:@@problemes.lien.railDuJour:Voir le rail du ${date}:date:`,
       })),
     });

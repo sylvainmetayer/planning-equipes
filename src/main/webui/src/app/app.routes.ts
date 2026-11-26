@@ -69,8 +69,9 @@ function redirectToPlanning(
 function redirectToJournee(
   vue: string,
   renames: Record<string, ParamRename> = {},
+  mode?: string,
 ): RedirectFunction {
-  return redirectToPlanning({ vue }, renames);
+  return redirectToPlanning(mode ? { vue, mode } : { vue }, renames);
 }
 
 /**
@@ -706,8 +707,8 @@ const adminRoutes: Routes = [
   // The four screens the Journée page gathers, kept for the bookmarks. The
   // rail's `vue` (which lines) and the breaks' `vue` (only those without a
   // relay) are renamed to the keys the views own now.
-  { path: 'day-calendar', redirectTo: redirectToJournee('calendrier') },
-  { path: 'rail-jour', redirectTo: redirectToJournee('rail', { vue: 'lignes' }) },
+  { path: 'day-calendar', redirectTo: redirectToJournee('jour', {}, 'tableau') },
+  { path: 'rail-jour', redirectTo: redirectToJournee('jour', { vue: 'lignes' }, 'rail') },
   { path: 'carte-jour', redirectTo: redirectToJournee('carte') },
   {
     path: 'pauses',

@@ -664,7 +664,7 @@ describe('construireProblemes — tight walks', () => {
     expect(problemes[0].liens).toEqual([
       {
         route: '/journee',
-        queryParams: { vue: 'rail', date: '2026-08-01' },
+        queryParams: { vue: 'jour', mode: 'rail', date: '2026-08-01' },
         libelle: 'Voir le rail du 2026-08-01',
       },
     ]);
@@ -770,7 +770,7 @@ describe('construireProblemes — covoiturages', () => {
     ]);
     expect(problemes[0].liens.map((lien) => lien.queryParams)).toEqual([
       { onglet: 'ajustements', ids: 'G1' },
-      { vue: 'rail', date: '2026-08-01' },
+      { vue: 'jour', mode: 'rail', date: '2026-08-01' },
     ]);
   });
 });

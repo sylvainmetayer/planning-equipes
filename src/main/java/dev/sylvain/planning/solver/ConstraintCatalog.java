@@ -117,6 +117,22 @@ public final class ConstraintCatalog {
     private static final String MAX_JOURS_CONSECUTIFS_TRAVAILLES = "maxJoursConsecutifsTravailles";
     private static final String MINEUR_ENCADREMENT = "mineurNecessiteEncadrementMajeur";
 
+    /** Group of the two rules that judge how scattered an animateur's day is over the locations. */
+    public static final String GROUPE_DISPERSION_JOURNEE = "dispersionJournee";
+
+    /**
+     * Display grouping of the Règles du planning screen: rules listed under one
+     * title, each keeping its own line, level and switch. Nothing is merged —
+     * the bench of the location rules ruled a merge out — and
+     * {@code trajetInsuffisantEntrePostes} stays apart on purpose. Only rules of
+     * the same block of the screen may share a group: the load rules are not
+     * grouped, {@code equilibrerCharge} being an organisation rule and
+     * {@code equilibrerCreneauxPenibles} an advanced one.
+     */
+    private static final Map<String, String> GROUPES = Map.of(
+            "eviterChangementEmplacementEloigne", GROUPE_DISPERSION_JOURNEE,
+            "limiterEmplacementsParJour", GROUPE_DISPERSION_JOURNEE);
+
     /**
      * The meal break, and the first « organisation rule » held hard. No article
      * of the Code du travail requires lunch — L3121-16 covers only the twenty
@@ -399,6 +415,11 @@ public final class ConstraintCatalog {
                 return propre;
             }
             return REMEDIATIONS_PAR_CATEGORIE.getOrDefault(categorie, REMEDIATION_PAR_DEFAUT);
+        }
+
+        /** The display group this rule is listed under on the rules screen, or {@code null} when it stands alone. */
+        public String groupe() {
+            return GROUPES.get(name);
         }
 
         /** True when disabling this rule needs the confirmation described on {@link #CATEGORIES_PROTEGEES}. */

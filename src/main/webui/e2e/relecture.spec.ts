@@ -162,7 +162,7 @@ test('la progression se lit sur le sélecteur de jour et sur le solveur', async 
 
 test('un seul compteur dit ce qui reste à relire, et mène aux problèmes', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?vue=rail');
+  await page.goto('/journee?vue=jour&mode=rail');
 
   const compteur = page.locator('.relecture-barre').getByRole('link', { name: /à relire/ });
   await compteur.click();
