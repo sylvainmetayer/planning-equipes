@@ -1,0 +1,18 @@
+<h1 class="page-title" i18n="@@nav.link.mesures">Mesures d'édition</h1>
+<mat-button-toggle-group class="page-onglets" [value]="views.onglet()" (change)="views.changer($event.value)"
+                         aria-label="Ce que l'on mesure" i18n-aria-label="@@mesures.vue.label">
+  <mat-button-toggle value="realise">
+    <mat-icon>balance</mat-icon>
+    <ng-container i18n="@@nav.link.realise">Réalisé vs planifié</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="indicateurs">
+    <mat-icon>monitoring</mat-icon>
+    <ng-container i18n="@@mesures.vue.indicateurs">Indicateurs des résolutions</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
+
+@if (views.onglet() === 'indicateurs') {
+  <app-indicateurs-view />
+} @else {
+  <app-realise-page />
+}

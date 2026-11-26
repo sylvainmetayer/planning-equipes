@@ -153,21 +153,21 @@ class IsolationEditionStructurelleTest {
      *       nightly dump saves the database, not an edition.</li>
      *   <li>{@code horloge_jour_j} — the simulated clock of the instance. A
      *       demo that moves the date moves it for everybody, on purpose.</li>
-     *   <li>{@code kpi_historique} — deliberately cross-edition, reads
-     *       <b>and</b> deletion. It is the history one reads to confront two
-     *       editions, and it stores the edition name alongside the id so a row
-     *       survives the deletion of its edition. The deletion follows: the
-     *       screen that shows the rows shows every edition's, edition column
-     *       included, so the row the operator deletes is the row they picked;
-     *       and a row orphaned by the deletion of its edition could not be
-     *       cleaned up at all by an edition-scoped {@code DELETE}. The id is a
-     *       server-wide {@code BIGSERIAL}, so it names one row on its own.</li>
-     *   <li>{@code kpi_realise} — the frozen measure of a finished edition
-     *       (ADR 0070, replaced by 0092), read by the <em>next</em> edition: the read is
-     *       another edition's row by definition, possibly one whose edition
-     *       was deleted since, and the row keeps the names it shows for that
-     *       reason. Its writes go through the edition's own scope all the
-     *       same: the service enters each edition before caching its measure.</li>
+     *   <li>{@code mesure_edition} — deliberately cross-edition, reads
+     *       <b>and</b> deletion. It folds, since 4.0 (V148), the indicators history
+     *       (one row per finished solve, read to confront two editions) and the
+     *       frozen realised measure of a finished edition (ADR 0070, replaced by
+     *       0092), which the <em>next</em> edition reads. It stores the edition name
+     *       alongside the id so a row survives the deletion of its edition, and its
+     *       realised reads are another edition's rows by definition, possibly of an
+     *       edition deleted since. The indicators' deletion follows: the screen that
+     *       shows the rows shows every edition's, edition column included, so the row
+     *       the operator deletes is the row they picked; and a row orphaned by the
+     *       deletion of its edition could not be cleaned up at all by an
+     *       edition-scoped {@code DELETE}. The id is a server-wide
+     *       {@code BIGSERIAL}, so it names one row on its own. The realised writes
+     *       go through the edition's own scope all the same: the service enters each
+     *       edition before caching its measure.</li>
      *   <li>{@code solver_job} — the solve queue is global by design (one
      *       solve at a time for the whole JVM, see the ADR §5); the job stores
      *       the edition it targets, it is not partitioned by it.</li>
@@ -216,8 +216,7 @@ class IsolationEditionStructurelleTest {
             "edition",
             "backup_settings",
             "horloge_jour_j",
-            "kpi_historique",
-            "kpi_realise",
+            "mesure_edition",
             "solver_job",
             "creneau_remap",
             "version_applicative",

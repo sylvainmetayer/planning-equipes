@@ -55,7 +55,7 @@ Par défaut l'écran montre le prénom et l'initiale ; une lettre de plus, puis 
 
 ## Mesurer le réalisé contre le prévu
 
-L'onglet *Réalisé vs planifié* de la page Aujourd'hui donne, après coup ou jour par jour, l'écart entre le planning publié et ce qui a été tenu, stand par stand et journée par journée :
+La vue *Réalisé vs planifié* de l'écran *Mesures d'édition* (un lien en tête d'*Aujourd'hui*) donne, après coup ou jour par jour, l'écart entre le planning publié et ce qui a été tenu, stand par stand et journée par journée :
 
 - sièges publiés, tenus, absences marquées le jour J, remplacements, sièges restés vides ;
 - heures publiées, réalisées et perdues ;
@@ -70,6 +70,8 @@ Quelques règles de lecture :
 - Une case ouvre ses vacations, noms compris, à l'écran seulement. L'export CSV ne contient que stands, jours et compteurs.
 
 Une fois l'événement terminé, la mesure de l'édition est calculée puis figée une fois pour toutes (à la première lecture de l'écran, de celui des Versions de l'édition suivante, ou à la suppression de l'édition). Elle survit à l'édition : l'écran Versions de l'édition suivante la rappelle, et l'onglet Besoin affiche, pour information, le taux d'absence et les heures perdues de chaque typologie l'année précédente.
+
+La vue *Indicateurs des résolutions*, sur le même écran (`?vue=indicateurs`), liste le résultat de chaque résolution terminée, toutes éditions confondues, de quoi comparer une édition à la précédente ; une ligne peut y être supprimée, elle survit sinon à son édition.
 
 ## Après l'événement
 

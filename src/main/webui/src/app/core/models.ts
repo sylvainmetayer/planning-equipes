@@ -4197,7 +4197,7 @@ export interface ConstraintHistory {
   resolutions: ResolutionUnderDosage[];
 }
 
-/** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */
+/** One row of `GET /api/mesures-edition/indicateurs` (issue #89) — survives its edition's deletion. */
 export interface KpiHistoriqueEntry {
   id: number;
   editionId: string;

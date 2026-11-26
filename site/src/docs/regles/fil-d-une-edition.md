@@ -17,7 +17,7 @@ L'application s'ouvre sur l'**état de l'édition**, qui dit où vous en êtes. 
 | Comprendre | Quand un planning n'est pas réalisable ou laisse des places vides, l'application dit pourquoi et ce qu'il vaut mieux corriger en premier | [Comprendre un planning qui coince](comprendre-un-planning.md), [Consulter le planning](consulter-planning.md) |
 | Diffuser | Publier le planning, envoyer à chaque animateur le sien (PDF, calendrier), puis suivre qui l'a reçu et confirmé | [Publier le planning](publier-planning.md) |
 | Jour J | L'écran *Aujourd'hui* montre la journée en cours, les trous à combler et les imprévus ; l'écran mural affiche la journée sur un téléviseur du poste de contrôle | [Suivre le jour J](suivre-le-jour-j.md) |
-| Après | Comparer le prévu et le réalisé (onglet *Réalisé vs planifié* de l'écran Aujourd'hui), archiver l'événement, repartir de cette édition pour la suivante | [Enchaîner les éditions](enchainer-les-editions.md), [Importer et exporter des fichiers](importer-exporter.md) |
+| Après | Comparer le prévu et le réalisé (vue *Réalisé vs planifié* de l'écran Mesures d'édition), archiver l'événement, repartir de cette édition pour la suivante | [Enchaîner les éditions](enchainer-les-editions.md), [Importer et exporter des fichiers](importer-exporter.md) |
 
 ## Lire l'état de l'édition
 

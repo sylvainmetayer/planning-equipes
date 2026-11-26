@@ -106,16 +106,18 @@ class RealisedVsPlannedServiceTest {
     void seed() {
         String edition = editionContext.editionIdCourant();
         execute("DELETE FROM version_plan WHERE edition_id = ?", edition);
-        execute("DELETE FROM kpi_realise WHERE edition_id = ?", edition);
+        execute("DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?", edition);
         persistence.clearDatabase();
         persistence.persist(plan("RV-", Set.of("STRATEGIE"), 970_300_000L));
     }
 
     @AfterEach
     void cleanUp() {
-        execute("DELETE FROM kpi_realise WHERE edition_id = ?", editionContext.editionIdCourant());
+        execute(
+                "DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?",
+                editionContext.editionIdCourant());
         for (String edition : creees) {
-            execute("DELETE FROM kpi_realise WHERE edition_id = ?", edition);
+            execute("DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?", edition);
             if (editionService.listEditions().stream()
                     .anyMatch(each -> each.getId().equals(edition))) {
                 editionService.delete(edition);
@@ -301,8 +303,10 @@ class RealisedVsPlannedServiceTest {
 
         assertThat(service.previousEdition().editionId()).isEqualTo(reelle);
 
-        execute("UPDATE kpi_realise SET jours_comptes = 3 WHERE edition_id = ?", variante);
-        execute("UPDATE kpi_realise SET fige_le = fige_le + interval '1 day' WHERE edition_id = ?", reelle);
+        execute("UPDATE mesure_edition SET jours_comptes = 3 WHERE nature = 'REALISE' AND edition_id = ?", variante);
+        execute(
+                "UPDATE mesure_edition SET cree_le = cree_le + interval '1 day' WHERE nature = 'REALISE' AND edition_id = ?",
+                reelle);
         assertThat(service.previousEdition().editionId()).isEqualTo(variante);
     }
 
@@ -409,7 +413,7 @@ class RealisedVsPlannedServiceTest {
                 PreparedStatement ps = connection.prepareStatement("""
                         SELECT typologie_id, premier_jour, dernier_jour, jours_comptes, sieges_publies, absences,
                                remplacements, sieges_vides, minutes_perdues
-                        FROM kpi_realise WHERE edition_id = ? ORDER BY typologie_id""")) {
+                        FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ? ORDER BY typologie_id""")) {
             ps.setString(1, editionId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

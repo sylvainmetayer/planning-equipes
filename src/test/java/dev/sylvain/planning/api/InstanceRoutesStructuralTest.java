@@ -62,6 +62,7 @@ class InstanceRoutesStructuralTest {
             "VerrouillageResource",
             "PauseResource",
             "RealiseResource",
+            "MesuresEditionResource",
             "OuvertureStandsResource",
             "PublicationResource",
             "ReferenceDataResource",
