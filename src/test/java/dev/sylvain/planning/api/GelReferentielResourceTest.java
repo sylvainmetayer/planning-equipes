@@ -20,7 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The freeze of the referential over HTTP (ADR 0052): each family refuses its
+ * The freeze of the referential over HTTP, through the 3.x routes kept as
+ * aliases of the phase of the edition until 5.0 (ADR 0115; the phase itself
+ * is {@code EditionPhaseResourceTest}): each frozen family refuses its
  * writes in {@code 409 REFERENTIEL_FIGE} by every path — the form, the bulk
  * edit (the same {@code PUT}, once per row), the CSV and grid imports — while
  * what it does not cover stays open.
@@ -139,7 +141,7 @@ class GelReferentielResourceTest {
                 .then()
                 .statusCode(200)
                 .body("gel.familles.find { it.famille == 'STANDS' }.fige", equalTo(true))
-                .body("gel.familles.find { it.famille == 'COMPETENCES' }.fige", equalTo(false))
+                .body("gel.familles.find { it.famille == 'COMPETENCES' }.fige", equalTo(true))
                 .body("gel.statut", equalTo("FAIT"));
 
         edition()
@@ -149,6 +151,12 @@ class GelReferentielResourceTest {
                 .statusCode(200)
                 .body("fige", equalTo(false))
                 .body("figeLe", nullValue());
+        // Lifting one family leaves the Calcul phase: the four reopen together.
+        edition()
+                .when()
+                .get("/api/editions/courant/gel")
+                .then()
+                .body("fige", equalTo(List.of(false, false, false, false)));
         edition().when().get("/api/editions/courant/etat").then().body("gel.statut", equalTo("INFO"));
 
         edition()
@@ -218,7 +226,7 @@ class GelReferentielResourceTest {
                 .delete("/api/stands/" + hommeJeu)
                 .then()
                 .body("message", containsString("« Stands »"))
-                .body("message", containsString("Levez le gel"));
+                .body("message", containsString("Repassez-la en Préparation"));
     }
 
     @Test
@@ -466,7 +474,7 @@ class GelReferentielResourceTest {
                     .then()
                     .statusCode(409)
                     .body("code", equalTo(FIGE))
-                    .body("familles", equalTo(List.of("CRENEAUX")))
+                    .body("familles", equalTo(List.of("STANDS", "CRENEAUX", "TYPOLOGIES_EMPLACEMENTS", "COMPETENCES")))
                     .body("message", containsString("« Créneaux »"));
         }
     }
@@ -502,8 +510,8 @@ class GelReferentielResourceTest {
                 .then()
                 .statusCode(409)
                 .body("code", equalTo(FIGE))
-                .body("familles", equalTo(List.of("STANDS", "COMPETENCES")))
-                .body("message", containsString("« Stands », « Compétences des animateurs »"));
+                .body("familles", equalTo(List.of("STANDS", "CRENEAUX", "TYPOLOGIES_EMPLACEMENTS", "COMPETENCES")))
+                .body("message", containsString("« Stands », « Créneaux »"));
         edition().when().post("/api/planning/reset").then().statusCode(409).body("code", equalTo(FIGE));
 
         // Nothing was written: the stands the scenario carries are still there.

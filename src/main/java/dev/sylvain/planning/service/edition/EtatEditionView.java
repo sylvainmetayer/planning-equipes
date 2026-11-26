@@ -125,13 +125,13 @@ public record EtatEditionView(
     public record EtatReferentiels(int stands, int animateurs, int creneaux, int typologiesOrphelines, Statut statut) {}
 
     /**
-     * The freeze of the referential (ADR 0052), family by family: what the
-     * organiser declared ready and no path may write any more. Read beside the
-     * referentials line, since a frozen family is a preparation step closed.
-     * {@code FAIT} once the stands and the timeslots are frozen — the two the
-     * screens propose to freeze after a first solve —, {@code INFO} otherwise:
-     * freezing is offered, never required, and an open family holds nothing
-     * back.
+     * The freeze of the referential, family by family, as the phase of the
+     * edition decides it (ADR 0115): what no path may write any more. Read
+     * beside the referentials line, since a frozen family is a preparation
+     * step closed. {@code FAIT} once the stands and the timeslots are frozen —
+     * from the Calcul phase on —, {@code INFO} otherwise: leaving the
+     * preparation is offered, never required, and an open family holds
+     * nothing back.
      *
      * @param familles the four families, frozen or not, in declaration order
      */

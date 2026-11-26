@@ -79,9 +79,13 @@ Si deux onglets ou deux personnes ouvrent la même fiche, la seconde à enregist
 
 ## Figer le référentiel quand la préparation est terminée
 
-Une préparation terminée se fige par famille : stands, créneaux, typologies et emplacements, compétences. Tant que le gel dure, plus aucun chemin (formulaire, modification en masse, import, assistant) ne modifie ces fiches, et les champs figés s'affichent en lecture seule avec un cadenas.
+Une édition avance par phases : Préparation, Calcul, Publiée, Terminée. Tant qu'elle est en Préparation, tout se modifie. Dès qu'elle passe en Calcul, le référentiel est figé : stands, créneaux, typologies et emplacements, compétences des animateurs. Plus aucun chemin (formulaire, modification en masse, import, assistant) ne modifie alors ces fiches, et les champs figés s'affichent en lecture seule avec un cadenas.
 
-Le gel est proposé après le premier calcul et la première publication, jamais imposé. Il se règle dans Paramètres, onglet *Édition*. Les disponibilités, les ajustements, les verrous et les consignes restent libres. À la levée du gel, l'application rappelle si le planning est déjà publié.
+Pour passer en Calcul, figez une famille dans Paramètres, onglet *Édition* : les quatre se figent ensemble. Levez-en une pour revenir en Préparation, et les quatre se rouvrent.
+
+La première publication fait passer l'édition en Publiée. La structure (stands, créneaux, typologies et emplacements) y reste figée, mais les fiches des animateurs se modifient de nouveau. Pour un changement de dernière minute, comme ajouter un stand la veille, levez le gel des stands : la structure se débloque sans quitter la phase Publiée, et la publication suivante la refige d'elle-même.
+
+Dans toutes les phases, les disponibilités, les ajustements, les verrous et les consignes restent libres. À la levée du gel, l'application rappelle si le planning est déjà publié.
 
 ## Et ensuite
 

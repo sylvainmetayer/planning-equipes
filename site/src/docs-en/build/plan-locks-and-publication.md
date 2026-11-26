@@ -3,7 +3,7 @@ twin: comprendre/plan-verrous-et-publication
 ---
 # Locks, freeze, replanning, swaps and the published plan
 
-You will know what the solver keeps or reopens when you rerun a solve on an existing plan, what distinguishes a lock from a reference-data freeze and from an ad hoc exception, how a swap of staff members is applied, and why the staff espace reads a different plan from the one the administration works on.
+You will know what the solver keeps or reopens when you rerun a solve on an existing plan, what distinguishes a lock from the phase of the edition and from an ad hoc exception, how a swap of staff members is applied, and why the staff espace reads a different plan from the one the administration works on.
 
 ## A lock freezes seats
 
@@ -26,9 +26,18 @@ Two rules:
 
 Reviewing a day ("reviewed and accepted") is a different state from the lock ([decision 0039](repo:docs/decisions/0039-validation-de-relecture-distincte-du-verrou.md)): validating never lays a lock unless asked.
 
-## The reference-data freeze freezes records
+## The phase of the edition freezes records
 
-The lock freezes **seats** of a solved plan; the freeze freezes the **records** from which that plan is solved, once their preparation is finished ([decision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)). The organiser sets and lifts it by family (`ReferentialFamily`), in one edition:
+The lock freezes **seats** of a solved plan; the phase of the edition freezes the **records** from which that plan is solved ([decision 0115](repo:docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md), which replaces the per-family freeze of [decision 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)). An edition is in one of four phases, and each freezes families (`ReferentialFamily`):
+
+| Phase | Stands, timeslots, game categories and locations | Staff skills |
+| --- | --- | --- |
+| Preparation (`PREPARATION`) | editable | editable |
+| Solving (`CALCUL`) | frozen | frozen |
+| Published (`PUBLIEE`) | frozen, unless the structure is unblocked | editable |
+| Finished (`TERMINEE`) | frozen | frozen |
+
+What a frozen family no longer lets you write:
 
 | Family | What can no longer be written |
 | --- | --- |
@@ -37,9 +46,11 @@ The lock freezes **seats** of a solved plan; the freeze freezes the **records** 
 | Game categories and locations | Creation, deletion, cap per game category, all-rounder game category |
 | Skills | Skill levels of staff members already registered (record, grid, import) |
 
-A frozen family refuses writes **by every path** (form, bulk edit, CSV import, grid import, MCP) with a `409` carrying the code `REFERENTIEL_FIGE`. Still free: a stand's name, place and effort level, a game category's label and description, a location's name and position, personal data other than skills (availability, wishes, declarations, e-mail), the **creation** of a staff member with their skills, adjustments, locks and **consignes**, and the tool provided to close a band late without destroying anything. Scenario import and reset, which replace everything, are refused as long as a family is frozen.
+A frozen family refuses writes **by every path** (form, bulk edit, CSV import, grid import, MCP) with a `409` carrying the code `REFERENTIEL_FIGE`, and the message says how to reopen it. Still free in every phase: a stand's name, place and effort level, a game category's label and description, a location's name and position, personal data other than skills (availability, wishes, declarations, e-mail), the **creation** of a staff member with their skills, adjustments, locks and **consignes**, and the tool provided to close a band late without destroying anything. Scenario import, restoring a copy taken before a wipe and the reset, which replace everything, are refused as soon as a family is frozen.
 
-A freeze is not copied when an edition is duplicated: the new one starts again in preparation. It does not affect a solve in progress. In the code, the guard is an annotation (`@RefusedWhileFrozen`) on service methods, carried by `GelReferentielService`; the routes are `GET /api/editions/courant/gel` and `PUT`, `GET` and `DELETE /api/editions/courant/gel/{famille}`.
+**The first publication moves the edition to Published**, from Preparation as from Solving; a later publication keeps it there, and a finished edition stays finished. Every other change of phase is an explicit gesture, going back included (`PUT /api/editions/courant/phase`). In Published, the structure can be **unblocked** for a last-minute change without leaving the phase (`PUT /api/editions/courant/deblocage-structure`), and is frozen again by `DELETE` on the same route or, automatically, by the next publication. These gestures are journalled.
+
+Duplicating an edition starts again in Preparation. A phase does not affect a solve in progress. In the code, the guard is an annotation (`@RefusedWhileFrozen`) on service methods, carried by `GelReferentielService`, which reads the phase. The 3.x routes (`PUT` and `DELETE /api/editions/courant/gel/{famille}`) remain until 5.0 as aliases of the phase: freezing a family in Preparation moves to Solving, lifting in Solving goes back to Preparation, and in a published edition they unblock and refreeze the structure. `GET /api/editions/courant/gel` gives the state of each family as the phase decides it.
 
 ## Incremental replanning
 

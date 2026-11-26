@@ -3978,6 +3978,15 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "phase" : {
+            "$ref" : "#/components/schemas/EditionPhase"
+          },
+          "phaseDepuis" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "structureDebloquee" : {
+            "type" : "boolean"
           }
         }
       },
@@ -4064,6 +4073,10 @@
             "$ref" : "#/components/schemas/DeltaVolumes"
           }
         }
+      },
+      "EditionPhase" : {
+        "type" : "string",
+        "enum" : [ "PREPARATION", "CALCUL", "PUBLIEE", "TERMINEE" ]
       },
       "Emplacement" : {
         "type" : "object",
@@ -7515,6 +7528,14 @@
       "Phase" : {
         "type" : "string",
         "enum" : [ "PREPARATION", "EVENEMENT", "APRES" ]
+      },
+      "PhaseChange" : {
+        "type" : "object",
+        "properties" : {
+          "phase" : {
+            "$ref" : "#/components/schemas/EditionPhase"
+          }
+        }
       },
       "PlafondsConformite" : {
         "type" : "object",
@@ -14399,6 +14420,40 @@
         "tags" : [ "Edition Resource" ]
       }
     },
+    "/api/editions/courant/deblocage-structure" : {
+      "put" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Edition"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Unblock Structure",
+        "tags" : [ "Edition Resource" ]
+      },
+      "delete" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Edition"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Refreeze Structure",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
     "/api/editions/courant/etat" : {
       "get" : {
         "responses" : {
@@ -14440,6 +14495,7 @@
     },
     "/api/editions/courant/gel/{famille}" : {
       "delete" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "famille",
           "in" : "path",
@@ -14488,6 +14544,7 @@
         "tags" : [ "Edition Resource" ]
       },
       "put" : {
+        "deprecated" : true,
         "parameters" : [ {
           "name" : "famille",
           "in" : "path",
@@ -14509,6 +14566,37 @@
           }
         },
         "summary" : "Freeze",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/courant/phase" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PhaseChange"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Edition"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Phase",
         "tags" : [ "Edition Resource" ]
       }
     },
