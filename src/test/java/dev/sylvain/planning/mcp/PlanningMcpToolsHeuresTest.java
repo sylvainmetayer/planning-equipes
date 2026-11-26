@@ -117,6 +117,7 @@ class PlanningMcpToolsHeuresTest {
                 1L,
                 "Publication",
                 false,
+                PlanSnapshotService.Origine.PUBLIEE,
                 null,
                 1,
                 PUBLISHED_AT,

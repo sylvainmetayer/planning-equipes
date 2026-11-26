@@ -5,20 +5,22 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ConsigneDto;
@@ -29,11 +31,12 @@ import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
+import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
+import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
-import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
 import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
@@ -52,6 +55,7 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenari
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
 import dev.sylvain.planning.service.solve.ProblemBuilder;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -65,6 +69,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
@@ -268,7 +273,42 @@ final class ScenarioDomainMapper {
                             plage.mode() == ModeHoraire.OUVERTURE ? plage.effectif() : null))
                     .collect(Collectors.toCollection(ArrayList::new)));
         }
+        if (dto.horaires() != null) {
+            stand.setHoraires(
+                    dto.horaires().stream().map(ScenarioDomainMapper::regle).toList());
+        }
         return stand;
+    }
+
+    /**
+     * One rule of a stand's model. The day selector is flattened on the rule: {@code jours} absent
+     * reads as {@link TypeJoursHoraire#TOUS}, and a window without {@code heureFin} runs « until
+     * closing time ». Only a stand without timeslot keeps one: a file that has some is unfolded by
+     * the conversion of its version.
+     */
+    private static HorairesRecurrents.Regle regle(HoraireStandDto dto) {
+        if (dto.mode() == null) {
+            throw new BusinessError.Invalid("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
+        }
+        if (dto.fenetres() == null || dto.fenetres().isEmpty()) {
+            throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
+        }
+        List<FenetreHoraire> fenetres = new ArrayList<>();
+        for (FenetreHoraireDto fenetre : dto.fenetres()) {
+            if (fenetre.heureDebut() == null) {
+                throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres.heureDebut");
+            }
+            fenetres.add(new FenetreHoraire(fenetre.heureDebut(), fenetre.heureFin(), fenetre.effectif()));
+        }
+        return new HorairesRecurrents.Regle(
+                dto.mode(),
+                dto.jours() == null ? TypeJoursHoraire.TOUS : dto.jours(),
+                dto.joursSemaine() == null ? null : new TreeSet<DayOfWeek>(dto.joursSemaine()),
+                dto.dateDebut(),
+                dto.dateFin(),
+                dto.dates() == null ? null : new TreeSet<LocalDate>(dto.dates()),
+                fenetres,
+                dto.motif());
     }
 
     private static Animateur animateur(AnimateurDto dto) {
@@ -364,7 +404,6 @@ final class ScenarioDomainMapper {
         return new ScenarioSections(
                 parametresLegaux(scenario.parametresLegaux()),
                 parametresQualite(scenario.parametresQualite()),
-                parametresSolveur(scenario.parametresSolveur()),
                 typologies(scenario.typologies()),
                 edition(scenario),
                 contraintes(scenario.contraintes()),
@@ -683,13 +722,6 @@ final class ScenarioDomainMapper {
                 dto.toleranceArriveeGroupeeMinutes() != null
                         ? dto.toleranceArriveeGroupeeMinutes()
                         : defauts.toleranceArriveeGroupeeMinutes()));
-    }
-
-    private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {
-        if (dto == null || (dto.dureeResolutionSecondes() == null && dto.plateauSecondes() == null)) {
-            return Optional.empty();
-        }
-        return Optional.of(new ParametresSolveur(dto.dureeResolutionSecondes(), dto.plateauSecondes(), false));
     }
 
     /**

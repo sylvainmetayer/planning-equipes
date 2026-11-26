@@ -33,4 +33,10 @@ public record StandDto(
         Boolean premium,
         NiveauEffort niveauEffort,
         /** The stand's schedule: dated opening and closing windows. Absent or empty = open on every créneau. */
-        List<@Valid PlageStandDto> plages) {}
+        List<@Valid PlageStandDto> plages,
+        /**
+         * The stand's model: recurring rules kept while the edition has no timeslot, and
+         * unfolded into plages as it gains days (ADR 0104). A file that has timeslots carries
+         * plages instead: the conversion of a 3.x file unfolds them.
+         */
+        List<@Valid HoraireStandDto> horaires) {}

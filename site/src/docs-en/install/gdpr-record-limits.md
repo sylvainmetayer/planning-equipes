@@ -128,19 +128,25 @@ logged like the others.
 
 ## Carpool requests
 
-A carpool request also survives its decision, in
-`declaration_coequipier`: the ids of the teammates named, the status
-and, when the organisation rejects it or cancels the validated group arrival, a
-**free-text reason written by the administrator for the
-staff member**, read again in their espace and repeated in the e-mail that announces
-the decision to them (to each member of the group, for a cancellation). It is text about a person,
-typed by another: the rule is to stick to the organisational reason
-("Bob only comes on Saturday") and never to write
-health or family data in it. It does **not** enter the action log
-(which keeps only the request id), nor what the MCP tools return;
-it goes into the nightly dump and the SQL export like the rest of the table,
-and disappears with the edition. The table has a foreign key on
-the requester: deleting their record deletes their requests.
+A carpool request lives in `declaration_coequipier`: the ids of the
+teammates named and the status, pending or validated. When the organisation
+rejects it, or cancels the validated group arrival, it **deletes** it: what
+is left is the action log line, which keeps only the request id. The table
+has a foreign key on the requester: deleting their record deletes their
+requests.
+
+**The 3.x archive.** In 3.x, a rejected or cancelled request stayed in the
+database, with a **free-text reason written by the administrator for the
+staff member**. The 4.0 migration (`V142`) does not erase it: it moves those
+requests, reason included, into `declaration_coequipier_avant_4_0`. It is
+text about a person, typed by another, that the application no longer reads,
+shows or exports (neither the SQL export nor the MCP tools); it stays in the
+nightly dump, like the whole database. **Retention: until 5.0, which drops
+the table.** Until then, the archive goes with the edition (annual purge) or
+with the requester's record, through the same foreign keys as the original
+table. You can drop it earlier, once 4.0 is in place and going back to 3.x is
+ruled out ([purge and keep data](conservation-des-donnees.md#larchive-du-covoiturage-3x)).
+Record it in the register with that retention.
 
 ## Availability declarations
 
@@ -421,9 +427,12 @@ The edition is copied before each wipe, and these copies are not
 purged (`sauvegarde_avant_vidage`,
 [decision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)):
 a reset, a scenario import or the restore of a backup first stores
-the edition's scenario export (first name, last name,
-date of birth, address and phone of each staff member included) and its
-schedule (seats and locks, by ids only). **One copy per
+**one YAML export** of the edition (first name, last name,
+date of birth, address and phone of each staff member included), its
+schedule (seats and locks, by ids only) as the last section
+([decision 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)).
+This file is personal data under the GDPR, like the exported scenario, and is
+restored through the normal import. **One copy per
 wipe (except when the state is exactly that of the previous copy),
 kept as long as the edition**: the only purge is the
 deletion of the edition, in cascade on `edition_id`, so the annual purge
@@ -432,7 +441,8 @@ the edition**, and it is recorded as such in the register. An administrator
 can delete one (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`,
 logged). They go neither into the SQL export nor through MCP; only an
 administrator lists, downloads, restores or deletes one, through
-the API; downloading, restoring and deleting are
+the API; the downloaded file is a full export and is kept like the
+database; downloading, restoring and deleting are
 logged, the plain list (dates and origins, no personal data)
 is not. What does not bound them: a deleted
 record stays in the backups taken before its deletion, and

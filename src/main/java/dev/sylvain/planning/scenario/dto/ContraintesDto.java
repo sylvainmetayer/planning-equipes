@@ -15,7 +15,7 @@ import java.util.Map;
  * from an edition that had disabled a rule, or raised the importance of
  * balanced workloads, re-imported elsewhere as if neither had happened: the
  * "same" scenario then solved a different problem, silently — exactly the hole
- * {@code parametresLegaux}/{@code parametresSolveur} were added to close.</p>
+ * {@code parametresLegaux} was added to close.</p>
  *
  * @param desactivees names of the constraints (see {@code ConstraintCatalog})
  *                    the import must switch off

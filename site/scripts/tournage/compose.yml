@@ -11,5 +11,9 @@ services:
       PUBLIC_URL: https://planning.example.org
       # Les écrans de la documentation ouvrent des sessions de comptes locaux : pas de code reçu par e-mail à saisir
       AUTH_LOCAL_SECONDE_ETAPE: "false"
+      # Le calcul filmé dure moins d'une minute : le plan est faisable en quelques secondes,
+      # la suite n'améliore que la qualité. Le budget est celui de l'instance, plus celui du scénario.
+      SOLVER_SECONDS_LIMIT: "40"
+      SOLVER_UNIMPROVED_SECONDS_LIMIT: "0"
   pgadmin:
     profiles: ["jamais"]

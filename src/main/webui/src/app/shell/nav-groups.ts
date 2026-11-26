@@ -195,7 +195,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'versions',
               $localize`:@@nav.link.versions:Versions du plan`,
-              $localize`:@@nav.keywords.versions:instantanés comparateur autopsie restaurer historique résolutions`,
+              $localize`:@@nav.keywords.versions:versions instantanés comparateur autopsie restaurer historique résolutions`,
             ),
           ],
         },
@@ -313,12 +313,6 @@ export function buildNavGroups(): NavGroup[] {
             ),
             tab('onglet', 'legal', $localize`:@@regles.onglet.legal:Légal`),
             tab('onglet', 'qualite', $localize`:@@regles.onglet.qualite:Qualité`),
-            tab(
-              'onglet',
-              'calcul',
-              $localize`:@@regles.onglet.calcul:Calcul`,
-              $localize`:@@nav.keywords.reglesCalcul:budget durée polyvalent soirée`,
-            ),
           ],
         },
       ],
@@ -391,7 +385,31 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'edition',
               $localize`:@@parametres.onglet.edition:Édition`,
-              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage e-mails contact`,
+              $localize`:@@nav.keywords.parametresEdition:gel guichets collecte foire covoiturage météo contact`,
+            ),
+            tab(
+              'onglet',
+              'notifications',
+              $localize`:@@parametres.onglet.notifications:Notifications`,
+              $localize`:@@nav.keywords.parametresNotifications:e-mails automatiques rappel veille relance`,
+            ),
+            tab(
+              'onglet',
+              'legal',
+              $localize`:@@regles.onglet.legal:Légal`,
+              $localize`:@@nav.keywords.parametresLegal:plafonds Code du travail pause coupure repas durée hebdomadaire`,
+            ),
+            tab(
+              'onglet',
+              'organisation',
+              $localize`:@@parametres.onglet.organisation:Organisation`,
+              $localize`:@@nav.keywords.parametresOrganisation:seuils confort emplacements typologies jours consécutifs trajet`,
+            ),
+            tab(
+              'onglet',
+              'calcul',
+              $localize`:@@regles.onglet.calcul:Calcul`,
+              $localize`:@@nav.keywords.reglesCalcul:budget durée polyvalent soirée`,
             ),
             tab(
               'onglet',
@@ -462,13 +480,21 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
     { path: '/editions', label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' },
     // The toolbar's « ? » icon, on every admin page.
     { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
-    // Opened from the Éditions page with the pair to compare; reached here
-    // too, on the edition this tab works in and the first other one.
+    // Opened from Versions and from the Éditions page with the pair to compare;
+    // reached here too: two plan versions, or `?vue=editions` two editions.
     {
-      path: '/editions/comparer',
-      label: $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+      path: '/comparer',
+      label: $localize`:@@nav.link.comparer:Comparer deux versions`,
       icon: 'difference',
-      keywords: $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+      keywords: $localize`:@@nav.keywords.comparer:différences écart score couverture année précédente référentiel`,
+      tabs: [
+        tab(
+          'vue',
+          'editions',
+          $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
+          $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+        ),
+      ],
     },
     {
       path: '/nouveautes',

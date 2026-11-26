@@ -8,7 +8,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
-import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.EtatTypologie;
@@ -155,7 +154,7 @@ public class StandMcpTools {
     @Tool(
             name = "creer_stand_complet",
             description = "Crée un stand ET tout ce dont il dépend en un seul appel : son emplacement, ses "
-                    + "typologies, et ses horaires d'ouverture (posés en plages datées sur les jours des créneaux). Conçu pour la mise en place d'une édition, où "
+                    + "typologies, et ses horaires d'ouverture (posés en plages datées sur les jours des créneaux, ou gardés comme modèle du stand tant qu'il n'y en a pas). Conçu pour la mise en place d'une édition, où "
                     + "créer un stand demande sinon quatre allers-retours — et où creer_stand échoue tant que les "
                     + "typologies citées n'existent pas. "
                     + "L'emplacement est créé s'il n'existe pas ET que emplacementNom est fourni ; les typologies "
@@ -338,17 +337,14 @@ public class StandMcpTools {
     }
 
     /**
-     * A recurrence is a generator since 4.0: the rule is laid down as one plage per matching day of the
-     * edition, and a day that already carries a plage is left as it is. It needs the edition's créneaux
-     * to know its days.
+     * A recurrence is the stand's model since 4.0 (ADR 0104): added to its rules, then laid down as one
+     * plage per matching day of the edition — or kept as it is while the edition has no timeslot, and
+     * unfolded when it gains days. The write does it ({@code StandService}).
      */
-    private void writeRule(Stand stand, HorairesRecurrents.Regle regle) {
-        Set<LocalDate> jours = HorairesRecurrents.datesConcernees(referenceDataService.listCreneaux());
-        if (jours.isEmpty()) {
-            throw new BusinessError.Invalid("L'édition n'a aucun créneau : un horaire se pose sur des jours précis. "
-                    + "Créez d'abord les créneaux, ou ajoutez des plages datées (ajouter_ouverture_stand).");
-        }
-        stand.setPlages(HorairesRecurrents.expand(List.of(regle), stand.getPlages(), jours));
+    private static void writeRule(Stand stand, HorairesRecurrents.Regle regle) {
+        List<HorairesRecurrents.Regle> regles = new ArrayList<>(stand.getHoraires());
+        regles.add(regle);
+        stand.setHoraires(regles);
     }
 
     /**
@@ -544,13 +540,14 @@ public class StandMcpTools {
 
     @Tool(
             name = "ajouter_horaire_stand",
-            description = "Pose un horaire récurrent sur un stand : il est écrit sous forme d'une plage datée par "
-                    + "jour d'événement concerné (les jours des créneaux de l'édition). mode=OUVERTURE veut dire « fermé sauf sur ces fenêtres », mode=FERMETURE « ouvert "
-                    + "sauf sur ces fenêtres ». La portée jours vaut TOUS (tous les jours), JOURS_SEMAINE (avec "
-                    + "joursSemaine), PLAGE (avec dateDebut/dateFin) ou DATES (avec dates). Les fenêtres se saisissent "
-                    + "« HH:MM-HH:MM », ou « HH:MM- » pour courir jusqu'à la fermeture du jour ; plusieurs fenêtres se "
-                    + "séparent par une virgule (ex. « 10:00-12:00,14:00- » pour une coupure méridienne). Un jour qui porte "
-                    + "déjà une plage n'est pas modifié ; sans créneau dans l'édition, l'outil est refusé.",
+            description =
+                    "Pose un horaire récurrent sur un stand : il est écrit sous forme d'une plage datée par "
+                            + "jour d'événement concerné (les jours des créneaux de l'édition). mode=OUVERTURE veut dire « fermé sauf sur ces fenêtres », mode=FERMETURE « ouvert "
+                            + "sauf sur ces fenêtres ». La portée jours vaut TOUS (tous les jours), JOURS_SEMAINE (avec "
+                            + "joursSemaine), PLAGE (avec dateDebut/dateFin) ou DATES (avec dates). Les fenêtres se saisissent "
+                            + "« HH:MM-HH:MM », ou « HH:MM- » pour courir jusqu'à la fermeture du jour ; plusieurs fenêtres se "
+                            + "séparent par une virgule (ex. « 10:00-12:00,14:00- » pour une coupure méridienne). Un jour qui porte "
+                            + "déjà une plage n'est pas modifié ; sans créneau dans l'édition, l'horaire est gardé comme modèle du stand et posé sur les jours des créneaux qui seront créés.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

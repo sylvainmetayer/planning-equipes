@@ -34,10 +34,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V141 turns the recurring rules of a stand into dated plages. It runs once on
+ * V149 turns the recurring rules of a stand into dated plages. It runs once on
  * every database in service, so it is played here on a database filled the way
- * 3.x filled it: the migrations up to V140 once, in a schema of their own, then
- * for each case the rows and the V141 file itself — not a copy — in a transaction
+ * 3.x filled it: the migrations up to V148 once, in a schema of their own, then
+ * for each case the rows and the V149 file itself — not a copy — in a transaction
  * rolled back afterwards.
  *
  * <p>The central rule: the windows a stand opens and closes on, <b>day by day</b>,
@@ -52,12 +52,12 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class StandPlagesMigrationTest {
 
-    private static final String SCHEMA = "migration_v141";
-    private static final String V141 = "db/migration/V141__plages_de_stand.sql";
+    private static final String SCHEMA = "migration_v149";
+    private static final String V149 = "db/migration/V149__plages_de_stand.sql";
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
-    static void migrateUpToV140() throws SQLException {
+    static void migrateUpToV147() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -68,7 +68,7 @@ class StandPlagesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("140")
+                .target("147")
                 .load()
                 .migrate();
     }
@@ -210,49 +210,42 @@ class StandPlagesMigrationTest {
     }
 
     /**
-     * An edition with no timeslot has no day to lay its rules on: they are neither converted nor lost, they stay in
-     * the archive tables the migration renames, and a warning says so.
+     * The rules stay where they are, the stand's model, whatever the edition: an edition with no timeslot has no
+     * day to lay them on and keeps them unconverted, one that has days gets its plages and keeps them too.
      */
     @Test
-    void anEditionWithoutTimeslotKeepsItsRulesInTheArchiveTables() throws Exception {
-        Map<String, Object> document = Map.of(
-                "creneaux",
-                List.of(),
-                "stands",
-                List.of(Map.of(
-                        "id",
-                        "S",
-                        "horaires",
-                        List.of(Map.of("mode", "OUVERTURE", "fenetres", List.of(Map.of("heureDebut", "14:00")))))));
+    void theRulesStayTheModelWhateverTheEdition() throws Exception {
+        Map<String, Object> rules = Map.of(
+                "id",
+                "S",
+                "horaires",
+                List.of(Map.of("mode", "OUVERTURE", "fenetres", List.of(Map.of("heureDebut", "14:00")))));
+        Map<String, Object> withoutDays = Map.of("creneaux", List.of(), "stands", List.of(rules));
+        Map<String, Object> dated =
+                Map.of("creneaux", List.of(creneau("2026-07-08", "10:00", "20:00")), "stands", List.of(rules));
 
-        int[] counts = inRolledBackTransaction(connection -> {
-            load(connection, document);
+        int[] before = inRolledBackTransaction(connection -> {
+            load(connection, withoutDays);
             migrate(connection);
-            return new int[] {
-                count(connection, "stand_ouverture") + count(connection, "stand_indisponibilite"),
-                count(connection, "stand_horaire_avant_4_0"),
-                count(connection, "stand_horaire_fenetre_avant_4_0")
-            };
+            return counts(connection);
+        });
+        int[] after = inRolledBackTransaction(connection -> {
+            load(connection, dated);
+            migrate(connection);
+            return counts(connection);
         });
 
-        assertThat(counts).containsExactly(0, 1, 1);
+        // plages, model rules, model windows
+        assertThat(before).containsExactly(0, 1, 1);
+        assertThat(after).containsExactly(1, 1, 1);
     }
 
-    @Test
-    void theRulesTablesAreRenamedNotDropped() throws Exception {
-        boolean[] present = inRolledBackTransaction(connection -> {
-            migrate(connection);
-            return new boolean[] {
-                exists(connection, "stand_horaire"),
-                exists(connection, "stand_horaire_fenetre"),
-                exists(connection, "stand_horaire_avant_4_0"),
-                exists(connection, "stand_horaire_fenetre_avant_4_0"),
-                exists(connection, "stand_ouverture"),
-                exists(connection, "stand_indisponibilite")
-            };
-        });
-
-        assertThat(present).containsExactly(false, false, true, true, true, true);
+    private static int[] counts(Connection connection) throws SQLException {
+        return new int[] {
+            count(connection, "stand_ouverture") + count(connection, "stand_indisponibilite"),
+            count(connection, "stand_horaire"),
+            count(connection, "stand_horaire_fenetre")
+        };
     }
 
     /* --------------------------------- rows --------------------------------- */
@@ -502,9 +495,9 @@ class StandPlagesMigrationTest {
     }
 
     private static void migrate(Connection connection) throws IOException, SQLException {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V141);
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V149);
                 Statement statement = connection.createStatement()) {
-            assertThat(file).as(V141).isNotNull();
+            assertThat(file).as(V149).isNotNull();
             statement.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

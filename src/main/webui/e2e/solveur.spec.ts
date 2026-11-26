@@ -76,12 +76,7 @@ async function reseed(): Promise<void> {
 test('un solve lancé depuis la page Solveur pourvoit tous les postes', async ({ browser }) => {
   test.slow();
   await reseed();
-  // Short default duration, so the UI button triggers a quick run.
-  const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: 6 },
-  });
-  expect(parametres.ok()).toBe(true);
-
+  // The UI button triggers a quick run: the stack's budget is short (SOLVER_SECONDS_LIMIT).
   const page = await pageAdmin(browser, admin);
   await page.goto('/solveur');
   await page.getByRole('button', { name: 'Calculer le planning' }).click();
@@ -292,11 +287,6 @@ test('la courbe de score se replie, s’en souvient, et continue d’enregistrer
 }) => {
   test.slow();
   await reseed();
-  const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: 6 },
-  });
-  expect(parametres.ok()).toBe(true);
-
   // Une première résolution, pour qu'une courbe existe à l'ouverture.
   const premier = await lancerSolve(admin, 6);
   expect(premier.status).toBe('COMPLETED');

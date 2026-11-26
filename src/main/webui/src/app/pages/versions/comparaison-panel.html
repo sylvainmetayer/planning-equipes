@@ -1,5 +1,5 @@
-<!-- The comparator of « Versions du plan », opened beside the table (issue
-     #702): A is the older side, B the newer — « what changed since ». -->
+<!-- The comparator of « Comparer deux versions » (issue #272): A is the
+     older side, B the newer — « what changed since ». -->
 <aside class="versions-panneau" aria-labelledby="versions-panneau-titre">
   <div class="versions-panneau-entete">
     <h2 id="versions-panneau-titre" class="versions-panneau-titre" i18n="@@versions.comparaison.titre">Comparaison</h2>
@@ -45,7 +45,7 @@
                 </ul>
               }
             } @else {
-              <p i18n="@@comparateur.consignes.inconnues">Consignes inconnues : instantané antérieur à leur capture.</p>
+              <p i18n="@@comparateur.consignes.inconnues">Consignes inconnues : version antérieure à leur capture.</p>
             }
           </div>
         }
@@ -68,13 +68,13 @@
     }
     @if (cotesPerimes().length > 0) {
       <p class="locked-hint" i18n="@@comparateur.warning.perimes">
-        Instantané(s) périmé(s) ici : {{ cotesPerimes().join(', ') }}. Leur référentiel a changé depuis la capture :
+        Version(s) périmée(s) ici : {{ cotesPerimes().join(', ') }}. Leur référentiel a changé depuis la capture :
         ces chiffres décrivent un problème qui n'est plus celui d'aujourd'hui.
       </p>
     }
     @if (kpiRecalcule()) {
       <p class="locked-hint" i18n="@@comparateur.warning.recalcule">
-        Au moins un instantané est antérieur à l'enregistrement des KPI : ses métriques sont recalculées depuis son
+        Au moins une version est antérieure à l'enregistrement des KPI : ses métriques sont recalculées depuis son
         contenu. Couverture et volumétrie exactes, écarts non mesurés (mode dégradé).
       </p>
     }

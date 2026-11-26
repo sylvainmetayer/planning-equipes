@@ -41,12 +41,11 @@ Pendant la collecte, dans l'onglet *Covoiturage* de son espace, un animateur nom
 
 Côté organisation, *Animateurs*, onglet *Disponibilités*, puis *Covoiturage*, retrouve ces demandes. Si chacun a nommé les autres, il dit combien de jours leurs indisponibilités divergent. Vous décidez chaque demande à part :
 
-- **valider** l'arrivée groupée ;
-- ou l'**écarter**, avec un motif facultatif que l'animateur lit.
+- **valider** l'arrivée groupée : chaque membre reçoit alors un e-mail, le seul de ce circuit ;
+- ou l'**écarter** : la demande est supprimée, sans e-mail, et l'animateur peut en envoyer une autre.
 
-Chacun est prévenu par e-mail.
 
-Une demande validée devient un ajustement manuel que seule l'organisation peut annuler, depuis ce même onglet, en prévenant chaque membre. Le calcul cherche à leur donner les mêmes jours et des arrivées et départs proches (tolérance réglable, 30 minutes par défaut), sans imposer le même stand. Le Rail marque les membres, la page Problèmes liste les jours désalignés, et l'espace dit à chacun, jour par jour, si son covoiturage tient.
+Une demande validée devient un ajustement manuel que seule l'organisation peut annuler, depuis ce même onglet (la demande disparaît, sans e-mail : prévenez le groupe vous-même). Le calcul cherche à leur donner les mêmes jours et des arrivées et départs proches (tolérance réglable, 30 minutes par défaut), sans imposer le même stand. Le Rail marque les membres, la page Problèmes liste les jours désalignés, et l'espace dit à chacun, jour par jour, si son covoiturage tient.
 
 ## Ensuite
 

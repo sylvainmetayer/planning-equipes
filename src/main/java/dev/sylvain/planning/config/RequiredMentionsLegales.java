@@ -1,5 +1,6 @@
 package dev.sylvain.planning.config;
 
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,9 +11,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Refuses to boot a live deployment whose legal notice page would be empty.
+ * Refuses to boot a live <b>public</b> deployment whose legal notice page would be
+ * empty, and warns on any other.
  *
  * <p>{@code /api/mentions-legales} is public and always reachable, and the
  * page renders "Aucune information légale n'a été renseignée sur ce
@@ -32,6 +35,11 @@ import java.util.Optional;
  * demanding it separately would contradict its own fallback; and a directeur
  * de publication is not required of every publisher. Both stay optional.</p>
  *
+ * <p><b>Only a public instance is refused</b> ({@code PUBLIC_INSTANCE}, ADR
+ * 0110): anywhere else the same sentence is logged as a warning and the boot
+ * goes on, because an organiser's own instance, reachable by its team alone,
+ * has no stranger to publish a notice to.</p>
+ *
  * <p>The escape hatch is explicit rather than inferred: a demo or test
  * instance sets {@code LEGAL_DEMO_INSTANCE=true} and boots with an empty page.
  * Guessing that from {@code PUBLIC_URL} or from the launch mode would have
@@ -47,22 +55,32 @@ public class RequiredMentionsLegales {
 
     private final ConfigMentionsLegales mentions;
 
+    /** {@code PUBLIC_INSTANCE}, {@code null} when not set at all. */
+    private final Boolean publicInstance;
+
     @Inject
-    public RequiredMentionsLegales(ConfigMentionsLegales mentions) {
+    public RequiredMentionsLegales(
+            ConfigMentionsLegales mentions,
+            @ConfigProperty(name = "planning.public-instance") Optional<Boolean> publicInstance) {
         this.mentions = mentions;
+        this.publicInstance = publicInstance.orElse(null);
     }
 
     void checkAtStartup(@Observes StartupEvent startup) {
         // Dev and test run on the shipped empty defaults on purpose, exactly
         // as they do for the two passwords.
         if (LaunchMode.current().isProduction()) {
-            check(
+            String warning = check(
                     mentions.demoInstance(),
+                    publicInstance,
                     value(mentions.editeur()),
                     value(mentions.hebergeur()),
                     value(mentions.contact()),
                     value(mentions.donnees().baseLegale()),
                     value(mentions.donnees().conservation()));
+            if (warning != null) {
+                Log.warn(warning);
+            }
         }
     }
 
@@ -75,16 +93,21 @@ public class RequiredMentionsLegales {
      * production boot, like {@link DefaultSecrets#check}. Takes the values
      * rather than the mapping for the same reason: the rule is about what an
      * operator wrote, and a test should not have to stand in for Quarkus.
+     *
+     * @param publicInstance {@code PUBLIC_INSTANCE}, {@code null} when not set
+     * @return the warning to log on an instance that is not public, or
+     *         {@code null} when nothing is missing
      */
-    static void check(
+    static String check(
             boolean demoInstance,
+            Boolean publicInstance,
             String editeur,
             String hebergeur,
             String contact,
             String baseLegale,
             String conservation) {
         if (demoInstance) {
-            return;
+            return null;
         }
         Map<String, String> required = new LinkedHashMap<>();
         required.put("editeur", editeur);
@@ -102,14 +125,25 @@ public class RequiredMentionsLegales {
             }
         });
         if (missing.isEmpty()) {
-            return;
+            return null;
         }
         // Every one of them at once: an operator who fixes one variable per
         // boot pays five restarts to learn what a single message can say.
-        throw new IllegalStateException("La page /mentions-legales est publique et serait vide : "
+        String message = "La page /mentions-legales est publique et serait vide : "
                 + "LEGAL_MENTIONS ne renseigne pas " + String.join(", ", missing) + ". "
                 + "La LCEN exige un éditeur et un hébergeur identifiés, le RGPD une base légale, "
-                + "une durée de conservation et une adresse pour exercer ses droits. "
-                + "Renseignez-les, ou posez LEGAL_DEMO_INSTANCE=true s'il ne s'agit pas d'une instance en service.");
+                + "une durée de conservation et une adresse pour exercer ses droits. ";
+        if (Boolean.TRUE.equals(publicInstance)) {
+            throw new IllegalStateException(
+                    message
+                            + "Renseignez-les, ou posez LEGAL_DEMO_INSTANCE=true s'il ne s'agit pas d'une instance en service.");
+        }
+        // Not public: the operator is told, never blocked (ADR 0110).
+        if (publicInstance == null) {
+            // A 3.x public instance refused this boot; say why it no longer does.
+            return message + PublicInstance.undeclared("et son démarrage n'est plus refusé faute de mentions légales");
+        }
+        return message + "Renseignez-les avant d'ouvrir l'instance au public : avec PUBLIC_INSTANCE=true, "
+                + "le démarrage serait refusé.";
     }
 }

@@ -12,13 +12,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * What the recurring rules of 3.x (a stand's {@code horaires}) mean, kept as a
  * pure function so that they can be turned into {@link PlageStand}s — by the
  * Flyway migration that converts a database, by the scenario file link that
- * converts a 3.x file, and by the assistant tools that still take a rule —
- * with <b>one</b> reading of the rules. The rule is no longer stored (ADR 0104).
+ * converts a 3.x file, by the assistant tools that still take a rule, and by
+ * the unfolding of a stand's <b>model</b> on the days an edition gains — with
+ * <b>one</b> reading of the rules. A rule is the stand's model while its
+ * edition has no dates, then it is unfolded into plages (ADR 0114).
  *
  * <p>Per calendar day: a dated exception wins outright; otherwise the covering
  * rules of the highest specificity ({@link TypeJoursHoraire#specificite()}) do,
@@ -45,6 +48,7 @@ public final class HorairesRecurrents {
      * 3.x editor's bridge ({@code Stand#setHoraires}), whose rules still carry an {@code id}.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
+    @Schema(name = "HoraireStand")
     public record Regle(
             ModeHoraire mode,
             TypeJoursHoraire jours,
@@ -53,7 +57,21 @@ public final class HorairesRecurrents {
             LocalDate dateFin,
             Set<LocalDate> dates,
             List<FenetreHoraire> fenetres,
-            String motif) {
+            String motif,
+            Long id) {
+
+        /** A rule not stored yet. */
+        public Regle(
+                ModeHoraire mode,
+                TypeJoursHoraire jours,
+                Set<DayOfWeek> joursSemaine,
+                LocalDate dateDebut,
+                LocalDate dateFin,
+                Set<LocalDate> dates,
+                List<FenetreHoraire> fenetres,
+                String motif) {
+            this(mode, jours, joursSemaine, dateDebut, dateFin, dates, fenetres, motif, null);
+        }
 
         public Regle {
             mode = mode != null ? mode : ModeHoraire.OUVERTURE;
@@ -66,6 +84,11 @@ public final class HorairesRecurrents {
         /** A rule applying to every event day — the shape of the overwhelming majority of them. */
         public static Regle everyDay(ModeHoraire mode, FenetreHoraire... fenetres) {
             return new Regle(mode, TypeJoursHoraire.TOUS, null, null, null, null, List.of(fenetres), null);
+        }
+
+        /** The same rule without its row id: what two rules are compared on. */
+        public Regle sansId() {
+            return new Regle(mode, jours, joursSemaine, dateDebut, dateFin, dates, fenetres, motif, null);
         }
 
         /** True when this rule has something to say about {@code date}. */

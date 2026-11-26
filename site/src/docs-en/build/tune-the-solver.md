@@ -9,20 +9,20 @@ You will know which properties bound a solve, what each `solverConfig.xml` setti
 
 | Property | Default | Role |
 | --- | --- | --- |
-| `planning.solver.seconds-limit` | `900` (`3` in `%test`) | Solve budget |
-| `planning.solver.unimproved-seconds-limit` | `180` (`2` in `%test`), `0` disables | Plateau window, which each edition sets |
+| `planning.solver.seconds-limit` | `900` (`SOLVER_SECONDS_LIMIT`; `3` in `%test`) | The instance's solve budget, the same for every edition ([ADR 0110](repo:docs/decisions/0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md)) |
+| `planning.solver.unimproved-seconds-limit` | `180` (`SOLVER_UNIMPROVED_SECONDS_LIMIT`; `2` in `%test`), `0` disables | The instance's plateau window |
 | `planning.solver.plateau-gain-medium-per-seat` | `0.25` (`0` in `%test`) | Medium gain, per seat of the problem, that the window must bring for the solve to continue |
 | `planning.solver.engine` | `hand` (`SOLVER_ENGINE`) | The engine that searches: `hand` (direct engine, [ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)) or `timefold` |
 | `planning.staffing.verification-default` | `calcul` | What the staffing check answers when the request does not choose: `calcul` (a made-up team is solved) or `borne` (the exact minimum, with no solve; to adopt once the equivalence is total, [ADR 0098](repo:docs/decisions/0098-la-borne-exacte-s-affiche-d-abord-le-calcul-reste-le-defaut.md)) |
-| `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Ceiling on what an edition sets or a launch requests; startup is refused if it is below `seconds-limit` |
-| `planning.solver.unimproved-seconds-limit-max` | that of the duration (`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`) | Ceiling on an edition's plateau |
-| `planning.solver.max-solves-per-hour` | `0`, no limit (`SOLVER_MAX_SOLVES_PER_HOUR`) | Instance quota over a sliding 60 minutes, counted at launch by [`SolverQuota`](repo:src/main/java/dev/sylvain/planning/service/solve/SolverQuota.java) ([ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md)) |
-| `planning.solver.max-queued-jobs` | `0`, no limit (`SOLVER_MAX_QUEUED_JOBS`) | Jobs queued behind the one that is running |
+| `planning.solver.seconds-limit-max` | `3600` (`SOLVER_SECONDS_LIMIT_MAX`) | Ceiling on what a launch requests (`?seconds=`, MCP); startup is refused if it is below `seconds-limit` |
+| `planning.public-instance` | `false` (`PUBLIC_INSTANCE`) | Public instance: only it applies the quota below and refuses to start without legal notices |
+| `planning.solver.max-solves-per-hour` | `0`, no limit (`SOLVER_MAX_SOLVES_PER_HOUR`) | Public instance only: quota over a sliding 60 minutes, counted at launch by [`SolverQuota`](repo:src/main/java/dev/sylvain/planning/service/solve/SolverQuota.java) ([ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md)) |
+| `planning.solver.max-queued-jobs` | `0`, no limit (`SOLVER_MAX_QUEUED_JOBS`) | Public instance only: jobs queued behind the one that is running |
 | `planning.constraint-weights.<contrainte>` | `1` for a hard rule, `5` for most of the others, `25` for `stabiliteDuPlanPublie` | Catalogue weight, see [weight and disable rules](doser-et-desactiver-les-regles.md) |
-| `planning.jobs.reprise-au-demarrage` | `true` (`false` in `%test`) | Replays the persisted queue; in test, a job left in the queue would launch a real solve at the next startup |
+| `planning.jobs.reprise-au-demarrage` | `true` (`false` in `%test`) | Settles at startup what a previous run left unfinished: the queue is no longer kept, its jobs become `INTERROMPU`; a solve that went to a remote machine is followed again |
 | `planning.diagnostic.mode` | `score-director` | Implementation of the per-constraint score breakdown; `solution-manager` is the oracle of the contract test, not a fallback mode ([ADR 0013](repo:docs/decisions/0013-diagnostic-par-le-score-director.md)) |
 
-The `-max` ceilings and the quota cannot be bypassed: a service that launches a solve consumes the quota, and the replay of the queue at startup is the only one allowed to let it through. To run the solve on another machine, see [solving on another machine](../installer/calcul-sur-une-autre-machine.md).
+The `-max` ceiling and the quota cannot be bypassed: a service that launches a solve consumes the quota (which does nothing outside a public instance). To run the solve on another machine, see [solving on another machine](../installer/calcul-sur-une-autre-machine.md).
 
 ## Early stopping depends on feasibility
 

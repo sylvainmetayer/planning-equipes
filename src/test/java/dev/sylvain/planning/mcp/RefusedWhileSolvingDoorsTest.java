@@ -49,7 +49,7 @@ class RefusedWhileSolvingDoorsTest {
     AnimateurMcpTools animateurTools;
 
     @Inject
-    InstantaneMcpTools snapshotTools;
+    VersionMcpTools snapshotTools;
 
     @Inject
     ReferenceDataService referenceData;

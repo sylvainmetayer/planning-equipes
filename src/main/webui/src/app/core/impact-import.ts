@@ -25,7 +25,7 @@ export function messageImpactImport(
     if (impact.planningResolu) {
       lignes.push(
         avecInstantane
-          ? $localize`:@@dataSetup.impact.planning:Le planning résolu (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; un instantané sera enregistré automatiquement avant l'import.`
+          ? $localize`:@@dataSetup.impact.planning:Le planning résolu (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s) ; une version sera enregistrée automatiquement avant l'import.`
           : $localize`:@@dataSetup.impact.planningSansInstantane:Le planning résolu de cette édition (${impact.postes}:postes: affectation(s)) sera effacé, ainsi que ${impact.verrous}:verrous: verrouillage(s).`,
       );
     }

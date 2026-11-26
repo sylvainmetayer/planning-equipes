@@ -144,9 +144,9 @@ class DatabaseResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"dureeResolutionSecondes\":42}")
+                .body("{\"mailFinResolution\":true}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
 
@@ -169,7 +169,6 @@ class DatabaseResourceTest {
                 .contains("INSERT INTO parametres_legaux (")
                 .contains("2760")
                 .contains("INSERT INTO parametres_solveur (")
-                .contains("42")
                 .contains("INSERT INTO constraint_toggle (")
                 .contains("dureeHebdomadaireMax");
 
@@ -189,19 +188,17 @@ class DatabaseResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/parametres-solveur")
+                .get("/api/parametres/calcul")
                 .then()
                 .statusCode(200)
-                .body("dureeResolutionSecondes", equalTo(42));
+                .body("mailFinResolution", equalTo(true));
 
-        // Back to the deployment's budget: the default edition's duration is
-        // now what a job launched without ?seconds= runs, and 42 s would slow
-        // down every solve test that comes after this one.
+        // Back to the default: no mail at the end of the solves that come after this test.
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"dureeResolutionSecondes\":null}")
+                .body("{\"mailFinResolution\":false}")
                 .when()
-                .put("/api/parametres-solveur")
+                .put("/api/parametres/calcul")
                 .then()
                 .statusCode(200);
     }
@@ -471,13 +468,13 @@ class DatabaseResourceTest {
      *
      * <p>Chosen among the nine tables this dump gained because it is the one
      * that exercises the most: {@code publication_destinataire} carries a
-     * foreign key to {@code plan_snapshot}, so the insert order in
+     * foreign key to {@code version_plan}, so the insert order in
      * {@code TABLES} has to be right and the delete order — issued in reverse —
      * has to be right too. Both rows also have a {@code BIGSERIAL} id, so both
      * belong in {@code IDENTITY_TABLES}.</p>
      *
      * <p>Deleted through the API rather than through {@code /api/planning/reset}:
-     * reset does not touch {@code plan_snapshot}, so a restore that changed
+     * reset does not touch {@code version_plan}, so a restore that changed
      * nothing would still have looked green.</p>
      */
     @Test
@@ -485,7 +482,7 @@ class DatabaseResourceTest {
         // Raw rows on purpose, with literal ids — but in the edition the
         // requests below resolve to, whose id is drawn (ADR 0050).
         String defaut = defaultEdition();
-        sqlRequest("INSERT INTO plan_snapshot (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
+        sqlRequest("INSERT INTO version_plan (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
                         + "('" + defaut + "', 777, 'Plan du test', 3, '{\"postes\": []}');\n"
                         + "INSERT INTO publication_destinataire "
                         + "(edition_id, id, snapshot_id, animateur_id, nom_affiche, email, statut) VALUES "
@@ -505,7 +502,7 @@ class DatabaseResourceTest {
                     .body("find { it.id == 777 }.libelle", equalTo("Plan du test"));
 
             String dump = exportDump();
-            assertThat(dump).contains("INSERT INTO plan_snapshot (").contains("INSERT INTO publication_destinataire (");
+            assertThat(dump).contains("INSERT INTO version_plan (").contains("INSERT INTO publication_destinataire (");
 
             // The wipe the restore is supposed to undo: the delete cascades onto
             // the recipient, so both rows go.
@@ -562,7 +559,7 @@ class DatabaseResourceTest {
                 .contains("DELETE FROM declaration_disponibilite")
                 .contains("DELETE FROM confirmation_planning")
                 .contains("DELETE FROM notification_planifiee")
-                .contains("DELETE FROM plan_snapshot")
+                .contains("DELETE FROM version_plan")
                 .contains("DELETE FROM publication_destinataire")
                 .contains("DELETE FROM kpi_historique")
                 // And the tables that must not travel stay out, in both directions.

@@ -7,11 +7,11 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -155,6 +155,36 @@ class ScenarioYamlWriterTest {
         assertThat(plages.get(0)).containsEntry("heureDebut", "20:00").doesNotContainKey("heureFin");
     }
 
+    /** A stand's model (ADR 0104) travels under {@code horaires} and comes back as the same rules. */
+    @Test
+    void aStandsModelTravelsUnderHorairesAndComesBackAsTheSameRules() {
+        stand.setHoraires(List.of(new HorairesRecurrents.Regle(
+                dev.sylvain.planning.domain.ModeHoraire.OUVERTURE,
+                dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE,
+                java.util.Set.of(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY),
+                null,
+                null,
+                null,
+                List.of(new dev.sylvain.planning.domain.FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0), 2)),
+                "Week-end")));
+
+        String yaml =
+                ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());
+        dev.sylvain.planning.scenario.dto.StandDto read =
+                ScenarioYamlReader.parseScenarioText(yaml).stands().get(0);
+
+        assertThat(yaml).contains("horaires:").contains("joursSemaine:");
+        assertThat(read.horaires()).singleElement().satisfies(dto -> {
+            assertThat(dto.jours()).isEqualTo(dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE);
+            assertThat(dto.joursSemaine()).containsExactly(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY);
+            assertThat(dto.fenetres()).singleElement().satisfies(fenetre -> {
+                assertThat(fenetre.heureFin()).isEqualTo(LocalTime.of(18, 0));
+                assertThat(fenetre.effectif()).isEqualTo(2);
+            });
+            assertThat(dto.motif()).isEqualTo("Week-end");
+        });
+    }
+
     /**
      * Reproducibility: an exported scenario must carry the settings that shape
      * a solve, not only its entities. Without them the file replayed elsewhere
@@ -178,15 +208,15 @@ class ScenarioYamlWriterTest {
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux,
                 null,
-                new ParametresSolveur(1800),
                 Map.of("equilibrerCharge", false),
                 Map.of("maxJoursConsecutifsTravailles", 5),
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
 
-        assertThat((Map<String, Object>) parsed.get("parametresSolveur"))
-                .containsEntry("dureeResolutionSecondes", 1800);
-        assertThat((Map<String, Object>) parsed.get("parametresLegaux"))
+        Map<String, Object> parametres = (Map<String, Object>) parsed.get("parametres");
+        assertThat(parametres).doesNotContainKey("instance");
+        assertThat(parsed).doesNotContainKeys("parametresLegaux", "parametresSolveur", "parametresQualite");
+        assertThat((Map<String, Object>) parametres.get("legal"))
                 .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
                 .containsEntry("dureePauseMinutes", 45)
                 // The meal break travels with the legal parameters; times stay
@@ -227,7 +257,6 @@ class ScenarioYamlWriterTest {
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", false)),
                 List.of(),
                 new ParametresLegaux(),
-                null,
                 null,
                 Map.of(),
                 Map.of("equilibrerCharge", 125),
@@ -309,7 +338,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of(incompatibilite)));
@@ -350,7 +378,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                null,
                 null,
                 null,
                 Map.of(),
@@ -395,7 +422,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of()));
@@ -432,7 +458,6 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 reglee,
-                null,
                 Map.of(),
                 Map.of(),
                 List.of()));

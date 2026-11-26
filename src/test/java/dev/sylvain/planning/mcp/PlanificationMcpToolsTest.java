@@ -4,11 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneDetailView;
-import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneView;
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
 import dev.sylvain.planning.mcp.VerrouillageMcpTools.VerrouillageView;
+import dev.sylvain.planning.mcp.VersionMcpTools.VersionDetailView;
+import dev.sylvain.planning.mcp.VersionMcpTools.VersionView;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
@@ -57,7 +57,7 @@ class PlanificationMcpToolsTest {
     VerrouillageMcpTools verrouillageTools;
 
     @Inject
-    InstantaneMcpTools instantaneTools;
+    VersionMcpTools instantaneTools;
 
     @Inject
     SolverJobService solverJobService;
@@ -76,10 +76,10 @@ class PlanificationMcpToolsTest {
 
     @Test
     void captureCompareThenRestoreAPlanning() {
-        InstantaneView capture = solveAndCapture();
-        assertThat(capture.automatique()).isFalse();
+        VersionView capture = solveAndCapture();
+        assertThat(capture.origine()).isEqualTo("MANUELLE");
         assertThat(instantaneTools.listSnapshots("E1"))
-                .extracting(InstantaneView::id)
+                .extracting(VersionView::id)
                 .contains(capture.id());
 
         var comparaison = instantaneTools.compareSnapshots(String.valueOf(capture.id()), "courant", "E1");
@@ -96,9 +96,9 @@ class PlanificationMcpToolsTest {
 
     @Test
     void readingASnapshotReturnsOnlyIds() {
-        InstantaneView capture = solveAndCapture();
+        VersionView capture = solveAndCapture();
 
-        InstantaneDetailView detail = instantaneTools.getSnapshot(capture.id(), null, null, 5, "E1");
+        VersionDetailView detail = instantaneTools.getSnapshot(capture.id(), null, null, 5, "E1");
 
         assertThat(detail.affectations()).hasSizeLessThanOrEqualTo(5);
         assertThat(detail.affectationsTotal()).isEqualTo(capture.nombreAffectations());
@@ -168,9 +168,9 @@ class PlanificationMcpToolsTest {
                 .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
-    private InstantaneView solveAndCapture() {
+    private VersionView solveAndCapture() {
         solve();
-        InstantaneView capture = instantaneTools.captureSnapshot("Après le premier solve", "E1");
+        VersionView capture = instantaneTools.captureSnapshot("Après le premier solve", "E1");
         assertThat(capture.nombreAffectations()).isPositive();
         return capture;
     }

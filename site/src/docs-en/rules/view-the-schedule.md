@@ -69,7 +69,7 @@ A **timeline** draws one bar per person, which fits a month-long event on one sc
 What each person received over the whole event, each value sortable:
 
 - hours and gap to the median, hours per week;
-- evening (from the time set in *Planning rules*, *Solve* tab, the only evening in the application), weekend, public holidays, Sunday;
+- evening (from the time set in *Settings*, *Solve* tab, the only evening in the application), weekend, public holidays, Sunday;
 - "Night (payroll)" after 22:00;
 - maximum opening span of a day (from the first start to the last end, gaps included) and number of days beyond 12 hours, flagged with no rule behind them;
 - seats and demanding seats; distinct stands, game categories and locations;

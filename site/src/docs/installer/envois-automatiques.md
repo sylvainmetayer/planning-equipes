@@ -15,7 +15,7 @@ NOTIFICATIONS_TIMEZONE=Europe/Paris
 
 <sub>Source : [`diagrammes/notifications-planifiees.puml`](repo:docs/diagrammes/notifications-planifiees.puml).</sub>
 
-Le cron est horaire, volontairement. L'heure d'envoi du rappel se décide **par édition**, dans *Paramètres*, onglet *Édition*, carte *Rappels et relances automatiques* ; une tâche unique ne peut pas partir à quatre heures différentes pour quatre éditions. Elle se réveille donc souvent, et chaque édition envoie quand son heure à elle est passée. C'est sans danger parce que chaque envoi est réservé en base avant de partir : tourner douze fois dans la soirée n'écrit à personne deux fois.
+Le cron est horaire, volontairement. L'heure d'envoi du rappel se décide **par édition**, dans *Paramètres*, onglet *Notifications*, carte *Rappels et relances automatiques* ; une tâche unique ne peut pas partir à quatre heures différentes pour quatre éditions. Elle se réveille donc souvent, et chaque édition envoie quand son heure à elle est passée. C'est sans danger parce que chaque envoi est réservé en base avant de partir : tourner douze fois dans la soirée n'écrit à personne deux fois.
 
 Le fuseau est celui de l'événement, réglé à part (`NOTIFICATIONS_TIMEZONE`), et non celui du conteneur (`TZ`, voir [sauvegarder et restaurer](sauvegarde-et-restauration.md#1-laisser-la-sauvegarde-de-nuit-tourner)) : « 18 h » sur l'écran doit vouloir dire 18 h pour la personne qui lit, quel que soit le fuseau de la machine.
 

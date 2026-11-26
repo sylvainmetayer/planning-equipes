@@ -1,6 +1,41 @@
 {
   "$schema" : "https://json-schema.org/draft/2020-12/schema",
   "$defs" : {
+    "AffectationPlanDto" : {
+      "type" : "object",
+      "properties" : {
+        "animateurId" : {
+          "type" : "string"
+        },
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureDebutEffective" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFinEffective" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "posteId" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "standId" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "suiteDe" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "date", "heureDebut", "heureFin", "posteId", "standId" ]
+    },
     "AnimateurDto" : {
       "type" : "object",
       "properties" : {
@@ -185,6 +220,10 @@
       },
       "required" : [ "date", "heureDebut", "heureFin", "id" ]
     },
+    "DayOfWeek" : {
+      "type" : "string",
+      "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
+    },
     "EditionCibleDto" : {
       "type" : "object",
       "properties" : {
@@ -233,6 +272,23 @@
       },
       "required" : [ "debut" ]
     },
+    "FenetreHoraireDto" : {
+      "type" : "object",
+      "properties" : {
+        "effectif" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        }
+      },
+      "required" : [ "heureDebut" ]
+    },
     "FestivalDto" : {
       "type" : "object",
       "properties" : {
@@ -241,6 +297,46 @@
         }
       },
       "required" : [ "dateDebut" ]
+    },
+    "HoraireStandDto" : {
+      "type" : "object",
+      "properties" : {
+        "dateDebut" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "dateFin" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "dates" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/LocalDate"
+          }
+        },
+        "fenetres" : {
+          "minItems" : 1,
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/FenetreHoraireDto"
+          }
+        },
+        "jours" : {
+          "$ref" : "#/$defs/TypeJoursHoraire"
+        },
+        "joursSemaine" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/DayOfWeek"
+          }
+        },
+        "mode" : {
+          "$ref" : "#/$defs/ModeHoraire"
+        },
+        "motif" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "fenetres", "mode" ]
     },
     "JourneeTypeDto" : {
       "type" : "object",
@@ -318,6 +414,17 @@
         }
       },
       "required" : [ "debut", "standId" ]
+    },
+    "ParametresDto" : {
+      "type" : "object",
+      "properties" : {
+        "legal" : {
+          "$ref" : "#/$defs/ParametresLegauxDto"
+        },
+        "organisation" : {
+          "$ref" : "#/$defs/ParametresQualiteDto"
+        }
+      }
     },
     "ParametresLegauxDto" : {
       "type" : "object",
@@ -419,21 +526,6 @@
         }
       }
     },
-    "ParametresSolveurDto" : {
-      "type" : "object",
-      "properties" : {
-        "dureeResolutionSecondes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "plateauSecondes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
-        }
-      }
-    },
     "PlageStandDto" : {
       "type" : "object",
       "properties" : {
@@ -459,6 +551,23 @@
         }
       },
       "required" : [ "date", "heureDebut", "mode" ]
+    },
+    "PlanDto" : {
+      "type" : "object",
+      "properties" : {
+        "affectations" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/AffectationPlanDto"
+          }
+        },
+        "verrous" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/VerrouPlanDto"
+          }
+        }
+      }
     },
     "PosteDto" : {
       "type" : "object",
@@ -559,6 +668,12 @@
         "emplacementId" : {
           "type" : "string"
         },
+        "horaires" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/HoraireStandDto"
+          }
+        },
         "id" : {
           "type" : "string",
           "minLength" : 1
@@ -595,6 +710,14 @@
     "TypeContrainteAdHoc" : {
       "type" : "string",
       "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE", "ARRIVEE_GROUPEE" ]
+    },
+    "TypeJoursHoraire" : {
+      "type" : "string",
+      "enum" : [ "TOUS", "JOURS_SEMAINE", "PLAGE", "DATES" ]
+    },
+    "TypeVerrouillage" : {
+      "type" : "string",
+      "enum" : [ "ANIMATEUR", "STAND", "JOUR", "CRENEAU", "ANIMATEUR_CRENEAU" ]
     },
     "TypologieDto" : {
       "type" : "object",
@@ -638,6 +761,36 @@
         }
       },
       "required" : [ "heureDebut", "heureFin" ]
+    },
+    "VerrouPlanDto" : {
+      "type" : "object",
+      "properties" : {
+        "animateurId" : {
+          "type" : "string"
+        },
+        "creneauDate" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "creneauHeureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "creneauHeureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "jour" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "raison" : {
+          "type" : "string"
+        },
+        "standId" : {
+          "type" : "string"
+        },
+        "type" : {
+          "$ref" : "#/$defs/TypeVerrouillage"
+        }
+      },
+      "required" : [ "type" ]
     }
   },
   "type" : "object",
@@ -687,14 +840,11 @@
         "$ref" : "#/$defs/JourneeTypeDto"
       }
     },
-    "parametresLegaux" : {
-      "$ref" : "#/$defs/ParametresLegauxDto"
+    "parametres" : {
+      "$ref" : "#/$defs/ParametresDto"
     },
-    "parametresQualite" : {
-      "$ref" : "#/$defs/ParametresQualiteDto"
-    },
-    "parametresSolveur" : {
-      "$ref" : "#/$defs/ParametresSolveurDto"
+    "plan" : {
+      "$ref" : "#/$defs/PlanDto"
     },
     "postes" : {
       "type" : "array",
@@ -712,7 +862,7 @@
       "type" : "integer",
       "format" : "int32",
       "minimum" : 1,
-      "maximum" : 3
+      "maximum" : 4
     },
     "stands" : {
       "type" : "array",

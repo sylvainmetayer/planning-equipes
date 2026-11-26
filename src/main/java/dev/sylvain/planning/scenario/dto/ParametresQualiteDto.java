@@ -14,7 +14,7 @@ import java.time.LocalTime;
  * <p>Persisted per edition since issue #591. A file exported from an edition
  * that raised its typology ceiling and re-imported elsewhere would otherwise
  * solve a different problem, silently — the same hole
- * {@code parametresLegaux}, {@code parametresSolveur} and {@code contraintes}
+ * {@code parametresLegaux} and {@code contraintes}
  * were added to close.</p>
  *
  * <p>The two hours are <b>wholesale</b>: present, the section describes the

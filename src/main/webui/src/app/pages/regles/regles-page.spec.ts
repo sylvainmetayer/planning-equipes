@@ -24,9 +24,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
-import { ReglesCalcul } from './regles-calcul';
 import { ReglesPage } from './regles-page';
-import { OngletRegles } from './regles';
 
 function rule(overrides: Partial<ConstraintView>): ConstraintView {
   return {
@@ -168,8 +166,6 @@ describe('ReglesPage', () => {
           useValue: {
             refresh: vi.fn(() => Promise.resolve(undefined)),
             bounds: signal(null),
-            dureeResolutionSecondes: signal(null),
-            plateauSecondes: signal(null),
             mailFinResolution: signal(false),
             secondsLimit: () => 900,
             effectivePlateauSeconds: () => 300,
@@ -334,27 +330,6 @@ describe('ReglesPage', () => {
     expect(racine().querySelector('.regles-panneau')?.textContent).not.toContain(
       'Poids personnalisé',
     );
-  });
-
-  it('keeps what « Calcul » holds unsaved across a tab switch, and asks before leaving', async () => {
-    const switchTab = (tab: OngletRegles) => page()['changerOnglet'](tab);
-    expect(fixture.debugElement.query(By.directive(ReglesCalcul))).toBeNull();
-    switchTab('calcul');
-    await fixture.whenStable();
-    const calcul = () => fixture.debugElement.query(By.directive(ReglesCalcul));
-    const before = calcul().componentInstance as ReglesCalcul;
-    before['soireeDraft'].set('19:30');
-    await fixture.whenStable();
-    expect(before.dirty()).toBe(true);
-
-    switchTab('legal');
-    await fixture.whenStable();
-
-    expect(page()['onglet']()).toBe('legal');
-    expect(calcul().componentInstance).toBe(before);
-    expect((calcul().nativeElement as HTMLElement).hidden).toBe(true);
-    await fixture.componentInstance.canLeave();
-    expect(ask).toHaveBeenCalledOnce();
   });
 
   it('asks before leaving with changes pending, and not otherwise', async () => {

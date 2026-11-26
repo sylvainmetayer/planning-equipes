@@ -1,8 +1,8 @@
 # 0104 — Les horaires d'un stand sont une liste de plages datées
 
 - **Statut** : accepté, implémenté (modèle, migration, format YAML) · l'API, les outils MCP et l'écran suivent dans leurs propres changements
-- **Date** : novembre 2026
-- **Portée** : modèle du stand, résolution des horaires, migration de la base, format du scénario YAML (version 3), sauvegardes avant vidage
+- **Date** : novembre 2026 · révisé le 26 novembre : « modèle gardé, déplié ensuite » (§ 1, 3, 5, 6, 7)
+- **Portée** : modèle du stand, résolution des horaires, migration de la base, format du scénario YAML (version 4), sauvegardes avant vidage
 
 ## Contexte
 
@@ -23,10 +23,11 @@ l'application s'en souvenait.
 
 1. **Un stand porte une liste de plages datées**, `Stand.plages` : un jour, des
    heures (la fin peut manquer : « jusqu'à la fermeture »), un mode
-   (`OUVERTURE` ou `FERMETURE`), un effectif pour une ouverture, un motif. Il
-   n'existe plus de règle stockée. Une récurrence est un **générateur** : elle
-   écrit une plage par jour concerné (l'éditeur de plages en est le lieu, dans
-   un changement à part).
+   (`OUVERTURE` ou `FERMETURE`), un effectif pour une ouverture, un motif. La
+   résolution ne lit que cela. Une récurrence reste, tant que l'édition n'a
+   pas de dates, le **modèle** du stand (« samedi et dimanche, 10 h–18 h »,
+   `Stand.horaires`) ; dès que des créneaux existent, il est **déplié** en
+   plages sur les jours de l'événement (§ 5).
 2. **La résolution ne lit que des plages.** Un jour sans plage est ouvert toute
    la journée ; un jour qui porte une ouverture n'est ouvert que sur elles ; un
    jour qui ne porte que des fermetures est ouvert hors d'elles ; un jour ne
@@ -34,10 +35,12 @@ l'application s'en souvenait.
    (sa réécriture en plages est un changement à part).
 3. **Le stockage ne bouge pas** : les plages vivent dans les deux tables
    `stand_ouverture` et `stand_indisponibilite`, qui portaient déjà exactement
-   cela. La migration `V141` ne copie donc aucune plage existante ; elle ne fait
-   que **convertir les règles** en plages et renommer les deux tables de règles
-   (`stand_horaire_avant_4_0`, `stand_horaire_fenetre_avant_4_0`), supprimées en
-   5.0.
+   cela, et le modèle dans les deux tables de règles de la 3.x,
+   `stand_horaire` et `stand_horaire_fenetre`, inchangées et non renommées (leurs
+   identifiants sont ceux que l'éditeur actuel relit). La migration `V149` ne
+   copie aucune plage existante, ne supprime aucune règle : elle **convertit en
+   plages les règles des éditions qui ont des créneaux** et laisse les règles
+   en place, modèle de leur stand.
 4. **La conversion est celle que l'application faisait à chaque lecture**, jour
    par jour, sur les jours de l'événement — du premier au dernier créneau de
    l'édition, plus le lendemain d'un créneau qui passe minuit : une exception
@@ -50,35 +53,50 @@ l'application s'en souvenait.
    joue les deux contre le condensé de ce que la 3.x calculait sur chacun des
    scénarios livrés, jour par jour.
 5. **Une édition sans créneau n'a pas de jour** où poser ses règles : elles
-   sont **conservées à part**, dans les tables renommées, et un avertissement
-   de migration nomme l'édition. Elles ne sont jamais perdues en silence. Le
-   guide de passage demande en outre un export YAML de chaque édition avant la
-   montée : relu en 4.0, il reconvertit les règles sur les jours des créneaux
-   qu'il compte (on les y ajoute au besoin).
-6. **Le format YAML passe en version 3** : la clé `plages` remplace
-   `horaires`, `ouvertures` et `indisponibilites` d'un stand. Le maillon 2 → 3
-   convertit un fichier plus ancien de la même façon, sur les jours des créneaux
-   du fichier, et avertit (rapport d'import) d'un stand dont les règles n'ont
-   pas de jour ([0101](0101-schema-yaml-2-et-chaine-de-conversions.md)).
+   restent le **modèle** du stand, ni converties, ni perdues, sans
+   avertissement. Le modèle est **déplié à la création des créneaux** — le
+   moment le plus sûr, parce que tout créneau naît par une seule porte
+   (`CreneauRepository`, que la création, la modification, la création en lot,
+   l'import, les journées types et le remplacement de la grille traversent) et
+   parce qu'une résolution ne doit pas écrire. Un créneau qui ouvre un jour
+   que l'édition ne comptait pas (le sien, et le lendemain s'il passe minuit)
+   déplie le modèle de chaque stand sur ce jour, avec la lecture du § 4 :
+   **idempotent** par construction. Un jour n'est nouveau qu'une fois, un jour
+   qui porte déjà une plage la garde, une plage supprimée à la main ne revient
+   pas, et un deuxième créneau sur le même jour n'ajoute rien. Le modèle
+   **reste** une fois déplié — l'éditeur actuel le relit, il déplie les jours
+   qui s'ajouteront, il est la source du futur générateur de créneaux : une
+   règle envoyée à une édition qui a déjà des créneaux est stockée **et**
+   dépliée aussitôt sur ses jours (les plages que l'ancien modèle avait
+   dépliées sont retirées d'abord, une plage saisie à la main reste) ;
+   renvoyer le modèle stocké tel quel ne déplie rien.
+6. **Le format YAML passe en version 4** : la clé `plages` remplace
+   `ouvertures` et `indisponibilites` d'un stand, et `horaires` devient le
+   modèle. Le maillon 3 → 4 convertit un fichier plus ancien sur les jours des
+   créneaux du fichier ; sans créneau dans le fichier, les règles restent sous
+   `horaires`, sans rien dire ([0101](0101-schema-yaml-2-et-chaine-de-conversions.md)).
+   La version 3 est celle des paramètres, prise entre-temps par un autre
+   changement.
 
 7. **Pont temporaire pour l'écran de la 3.x**, retiré avec l'éditeur de
-   plages : tant que celui-ci n'est pas livré, l'éditeur d'horaires actuel
-   envoie encore des règles (`horaires`) dans la fiche du stand. Le serveur ne
-   les stocke pas : il les **convertit aussitôt en plages** sur les jours de
-   l'événement, avec la même lecture (`HorairesRecurrents`), comme le fait déjà
-   l'outil d'assistant `ajouter_horaire_stand`. Une édition sans créneau n'a
-   pas de jour où les poser : l'écriture est refusée avec sa raison, jamais
-   tronquée. La fiche relue ne montre donc plus de règle, mais les plages
-   qu'elle a produites. Ainsi `main` garde un écran qui enregistre entre deux
-   changements.
+   plages : l'éditeur d'horaires actuel envoie et relit les règles dans la
+   fiche du stand (`horaires`, avec leurs identifiants). Le serveur les traite
+   comme au § 5 : gardées comme modèle sans créneau, dépliées aussitôt sinon,
+   comme le fait déjà l'outil d'assistant `ajouter_horaire_stand`. Une écriture
+   sans `horaires` laisse le modèle tel quel, `horaires: []` l'efface. Jamais
+   de refus, jamais de règle perdue en silence.
 
 ## Ce que ça coûte
 
-- **Un jour ajouté après coup** (un créneau sur une date que l'événement ne
-  comptait pas) n'a plus de règle pour le gouverner : le stand y est ouvert toute
-  la journée, même s'il « n'ouvrait que le week-end ». C'est le prix de ne plus
-  stocker de règle ; le générateur de l'éditeur est fait pour le payer d'un
-  clic.
+- **Un modèle et des plages se côtoient** dans une édition qui en a les deux :
+  un jour déplié n'est plus distinguable d'un jour saisi à la main, sinon par
+  recalcul (modifier le modèle retire les plages que l'ancien aurait posées,
+  s'il en reste d'identiques). Une plage saisie à la main qui ressemble en tout
+  point à une plage dépliée part avec elles. L'éditeur de plages, qui
+  remplacera le pont, a le dernier mot.
+- **Un fichier YAML d'une édition datée porte la règle et ses plages** : plus
+  long qu'un fichier de plages seules, mais il se relit comme la base que la
+  migration a convertie.
 - **Un horaire quotidien sur une longue édition pèse davantage en base** : une
   ligne par jour et par fenêtre au lieu d'une règle.
 - **La migration ne redescend pas.** Retour : l'export YAML d'avant la montée,
@@ -86,9 +104,23 @@ l'application s'en souvenait.
 
 ## Alternatives écartées
 
-- **Garder les règles et ajouter les plages** : c'est l'état d'avant, avec un
-  modèle de plus. Les trois couches, et les analyses qui les arbitrent,
-  restent.
+- **Garder les règles comme troisième couche de la résolution** : c'est l'état
+  d'avant. Le modèle n'est lu que pour être déplié ; la résolution, les
+  analyses et le solveur ne voient que des plages.
+- **Ne rien garder** (la première rédaction de cette décision) : une édition
+  sans créneau perdait ses règles ou les rangeait dans une archive que rien ne
+  lisait, et le parcours qui commence par les horaires des stands, puis crée les
+  créneaux, devenait impossible.
+- **Déplier à la résolution plutôt qu'à la création des créneaux** : la
+  résolution lit à chaque écran et ne doit pas écrire ; une lecture qui change
+  la base rend deux écrans successifs incohérents.
+- **Ne garder le modèle que sans créneau** (consommé dès qu'il y a des
+  jours) : un seul créneau créé le consommerait et les jours suivants
+  retomberaient sur « ouvert toute la journée » ; l'écran actuel perdrait la
+  règle qu'il relit. Le dépliage par jour nouveau évite les deux.
+- **Une colonne JSON sur `stand`** pour le modèle : plus compacte, mais l'écran
+  actuel relit l'identifiant de chaque règle (copie d'un stand à l'autre) ; les
+  tables de règles de la 3.x le portent déjà.
 - **Une seule table `plage_stand`** (une table, une colonne de mode) : plus
   propre sur le papier, mais il fallait recopier les plages existantes — la
   partie de la migration où une perte serait silencieuse — pour un gain que

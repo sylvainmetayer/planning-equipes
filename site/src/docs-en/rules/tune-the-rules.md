@@ -7,7 +7,7 @@ You adjust what decides the plan: the legal thresholds, the importance of each p
 
 ![The Planning rules page](/images/fr/regles.webp "Planning rules")
 
-Everything is set in *Planning rules* (*Plan* group), in three settings tabs: *Legal*, *Quality* and *Solve*. These are expert settings: they only appear after a click on "Advanced settings", under the row of tabs. Nothing is written before "Save", and "Run the solve again" is one click away.
+Everything is set in *Planning rules* (*Plan* group), in two settings tabs: *Legal* and *Quality*. These are expert settings: they only appear after a click on "Advanced settings", under the row of tabs. Nothing is written before "Save", and "Run the solve again" is one click away.
 
 These thresholds come from labour law: [what the French Labour Code requires of a schedule](/code-du-travail/) says what the software applies by itself and what it leaves to your judgement.
 
@@ -30,12 +30,14 @@ The same table for the quality rules and the preferences. Each rule has an impor
 
 "Baisser l'importance" (lower the importance) is never the first gesture offered for a quality rule: the Diagnostic always puts it last, and it disappears when the importance is already at its lowest.
 
-## The Solve tab
+## The same settings, by section, in Settings
 
-- the length of the solve and the stop when nothing progresses any more (see [Solve the schedule](calculer-planning.md#régler-la-durée-du-calcul));
-- the end-of-solve e-mail;
-- the start of the evening, the application's only evening;
-- the all-rounder game category.
+*Settings* groups the edition's settings into four sections, each a tab: *Notifications* (the automatic reminders and follow-ups), *Legal*, *Organisation* and *Solve*. The last three are expert settings, behind "Advanced settings".
+
+- *Legal* and *Organisation* list, on a single form, every threshold that the *Legal* and *Quality* tabs of *Planning rules* edit row by row: weekly ceilings, break, meal break, consecutive days, travel, late services. Both places write the same values; nothing is written before "Save".
+- *Solve* shows the length of the solve and the stop when nothing progresses any more, without being editable: they are set for the whole instance (see [Solve the schedule](calculer-planning.md#régler-la-durée-du-calcul)). It also holds the end-of-solve e-mail, the start of the evening, the application's only evening, and the all-rounder game category.
+
+The former *Solve* tab of *Planning rules* and its address (`/regles?onglet=calcul`) lead to this section.
 
 ## When a rule cannot improve: the floor
 

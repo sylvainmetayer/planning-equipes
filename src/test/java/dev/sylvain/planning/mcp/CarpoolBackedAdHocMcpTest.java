@@ -68,7 +68,6 @@ class CarpoolBackedAdHocMcpTest {
                 StatutDemandeCoequipier.EN_ATTENTE,
                 null,
                 Instant.now(),
-                null,
                 null));
         contrainte = carpools.validate(demande).request().contrainteId();
     }
@@ -98,7 +97,7 @@ class CarpoolBackedAdHocMcpTest {
 
     @Test
     void onceCancelledFromTheTabNothingIsLeftToDelete() {
-        carpools.cancel(demande, null);
+        carpools.cancel(demande);
 
         assertThat(referenceData.listContraintesAdHoc())
                 .noneMatch(c -> c.getId().equals(contrainte));

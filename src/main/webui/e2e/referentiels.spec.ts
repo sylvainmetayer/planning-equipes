@@ -351,9 +351,13 @@ test.describe('horaires de stand', () => {
     expect(cible.horaires).toHaveLength(1);
     expect(cible.horaires[0].fenetres[0].heureDebut).toMatch(/^10:00/);
     expect(cible.horaires[0].id).not.toBe(modele.horaires[0].id);
-    expect(cible.ouvertures).toHaveLength(1);
-    expect(cible.ouvertures[0].date).toBe(SEED.jour);
-    expect(cible.ouvertures[0].id).not.toBe(modele.ouvertures[0].id);
+    // The edition has days: the rule is also unfolded into plages on them (ADR 0104), the dated
+    // exception of the seeded day keeping its own day.
+    const exceptionCible = cible.ouvertures.filter((each) => each.date === SEED.jour);
+    expect(exceptionCible).toHaveLength(1);
+    expect(exceptionCible[0].id).not.toBe(
+      modele.ouvertures.find((each) => each.date === SEED.jour)?.id,
+    );
 
     // The openings grid reads the store afresh: the seeded day now opens at 11:00,
     // which the cells of that day say on hover.
@@ -385,7 +389,7 @@ test.describe('horaires de stand', () => {
     await expect(appliquer).toBeDisabled();
     await ouvrirSelect(page, 'Stand modèle');
     await page.getByRole('option', { name: 'Stand modèle E2E' }).click();
-    await expect(dialog.getByText(/1 règle\(s\) et 1 exception\(s\) datée\(s\)/)).toBeVisible();
+    await expect(dialog.getByText(/1 règle\(s\) et \d+ exception\(s\) datée\(s\)/)).toBeVisible();
     await expect(appliquer).toBeEnabled();
     await appliquer.click();
     await expect(dialog).toBeHidden();
@@ -394,8 +398,11 @@ test.describe('horaires de stand', () => {
       const stand = await lireStand(id);
       expect(stand.horaires, id).toHaveLength(1);
       expect(stand.horaires[0].fenetres[0].heureDebut).toMatch(/^10:00/);
-      expect(stand.ouvertures, id).toHaveLength(1);
-      expect(stand.ouvertures[0].date).toBe(SEED.jour);
+      // The rule is unfolded on the days of the edition; the exception of the seeded day stays alone on it.
+      expect(
+        stand.ouvertures.filter((each) => each.date === SEED.jour),
+        id,
+      ).toHaveLength(1);
     }
     // The model itself was not in the selection and keeps its own rows.
     expect((await lireStand(standModeleId)).horaires).toHaveLength(1);

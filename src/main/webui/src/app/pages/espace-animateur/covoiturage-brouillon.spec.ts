@@ -17,7 +17,6 @@ function view(overrides: Partial<CarpoolEspaceView> = {}): CarpoolEspaceView {
     colleagues: [],
     teammateIds: [],
     status: null,
-    reason: null,
     decidedAt: null,
     ...overrides,
   };
@@ -34,21 +33,13 @@ describe('covoiturage draft', () => {
     expect(carpoolModified(pending, [])).toBe(true);
   });
 
-  it('starts blank after a cancelled car, which does not lock the tab', () => {
-    const cancelled = view({ teammateIds: ['A2'], status: 'ANNULEE', reason: 'panne' });
+  it('starts blank when nothing is held, and nothing typed is no change', () => {
+    const none = view();
 
-    expect(initialTeammates(cancelled)).toEqual([]);
-    expect(carpoolLocked(cancelled)).toBe(false);
-    expect(carpoolModified(cancelled, [])).toBe(false);
-    expect(carpoolModified(cancelled, ['A3'])).toBe(true);
-  });
-
-  it('starts blank after a request set aside, and nothing typed is no change', () => {
-    const setAside = view({ teammateIds: ['A2'], status: 'ECARTEE', reason: 'complet' });
-
-    expect(initialTeammates(setAside)).toEqual([]);
-    expect(carpoolModified(setAside, [])).toBe(false);
-    expect(carpoolModified(setAside, ['A2'])).toBe(true);
+    expect(initialTeammates(none)).toEqual([]);
+    expect(carpoolLocked(none)).toBe(false);
+    expect(carpoolModified(none, [])).toBe(false);
+    expect(carpoolModified(none, ['A3'])).toBe(true);
   });
 
   it('never takes a fourth teammate, and sends the car sorted', () => {

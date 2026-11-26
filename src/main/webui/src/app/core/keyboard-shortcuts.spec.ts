@@ -200,7 +200,7 @@ describe('chercherCommandes', () => {
     ['probl', '/diagnostic', { onglet: 'problemes' }],
     ['mural', '/parametres', { onglet: 'mural' }],
     ['instance', '/parametres', { onglet: 'instance' }],
-    ['calcul', '/regles', { onglet: 'calcul' }],
+    ['calcul', '/parametres', { onglet: 'calcul' }],
     ['yaml', '/fichiers', { cible: 'scenario' }],
     ['exemples', '/fichiers', { cible: 'exemples' }],
     ['démonstration', '/fichiers', { cible: 'exemples' }],

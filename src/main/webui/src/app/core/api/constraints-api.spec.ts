@@ -24,7 +24,7 @@ describe('ConstraintsApi', () => {
     await constraints.diagnose();
 
     expect(api.get).toHaveBeenNthCalledWith(1, '/api/constraints');
-    expect(api.get).toHaveBeenNthCalledWith(2, '/api/parametres-legaux');
+    expect(api.get).toHaveBeenNthCalledWith(2, '/api/parametres/legal');
     expect(api.post).toHaveBeenCalledWith('/api/constraints/diagnostic', {});
   });
 
@@ -50,6 +50,6 @@ describe('ConstraintsApi', () => {
 
     await constraints.saveLegalParameters(parametres);
 
-    expect(api.put).toHaveBeenCalledWith('/api/parametres-legaux', parametres);
+    expect(api.put).toHaveBeenCalledWith('/api/parametres/legal', parametres);
   });
 });

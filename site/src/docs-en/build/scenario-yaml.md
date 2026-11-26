@@ -51,7 +51,7 @@ Rule 1 means that a scenario exported then re-imported in the same edition updat
 
 ## What the export guarantees
 
-"Export current data as a scenario" writes all the sections the import can read back: the entities, but also `typologies`, `emplacements`, `parametresLegaux`, `parametresSolveur`, `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` and `consignes`. Re-importing the file reproduces exactly the same problem. That is the reason for the export to exist.
+"Export current data as a scenario" writes all the sections the import can read back: the entities, but also `typologies`, `emplacements`, `parametres` (legal, organisation, instance), `journeesTypes`, `contraintes`, `contraintesAdHoc`, `prereglagesConsigne` and `consignes`. Re-importing the file reproduces exactly the same problem. That is the reason for the export to exist.
 
 A field forgotten in a section is not "not overridable": the import writes a fresh object and the field falls back to the default. `heureDebutSoiree`, absent from the DTO at the start, thus brought an edition set to 22:00 back to 20:00 and shifted the fairness evening hours without a word. A file without these sections likewise falls back on the settings of the instance that imports it and replays a different problem. For whoever touches the format: every field read must also be written.
 
@@ -59,13 +59,17 @@ Timeslots always come out as they are, with `couverturePause: true` when they co
 
 ## `schemaVersion`
 
-A file written by the application starts with `schemaVersion: 3` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+A file written by the application starts with `schemaVersion: 4` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
 
 ## `postes`: absent and empty do not say the same thing
 
 When absent, the section is generated from the imported stands and timeslots, by the builder that a solve also uses: one seat per place on each timeslot and segment actually open. The number of places comes from the opening window when it carries an `effectif`, otherwise from `effectifMin`, never from `effectifMax` (see [The data model](modele-des-donnees.md)).
 
 When present, it is taken as is, even if empty, which allows off-rule staffing; no shipped scenario uses it. A written list repeats what `effectifMin` already says and freezes the grid against any later change of a stand. The export therefore never writes it.
+
+## `plan`: the schedule of a copy before a wipe
+
+Last section, optional: the seats filled (`affectations`) and the locks (`verrous`) of the edition, with the file's identifiers; a timeslot is named there by its date and hours. Only the copy stored before a wipe writes it ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)): the Files export does not carry one, and a file without this section is read as before (the format stays at version 4). Only the restore of that copy applies the section: it puts the seats and locks back on the reference data it has just written, found by code then name for a stand, address then first and last name for a staff member, day and hours for a timeslot, and lists what is not found. An ordinary import (Files, `importer_scenario_yaml`) ignores it, with a warning in the report. Restore details: [Restore an edition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
 
 ## `contraintes`: as a block, never merged
 
@@ -81,7 +85,7 @@ Weights are read on the current scale (low 1, normal 5, high 25, see [ADR 0057](
 
 ## Stand hours
 
-A stand carries a `plages` list: each one is a dated window, open or closed (`mode: OUVERTURE` or `FERMETURE`), with its `date` and its hours. There is no recurring rule ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)): a daily schedule is written as one plage per day.
+A stand carries a `plages` list: each one is a dated window, open or closed (`mode: OUVERTURE` or `FERMETURE`), with its `date` and its hours. A daily schedule is written as one plage per day ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). A stand may also carry, under `horaires`, its **model**: recurring rules ("Saturday and Sunday, 10:00-18:00") that the application keeps and unfolds into plages over the edition's days, then over those it gains: a file of a dated edition carries the rule and its plages.
 
 ```yaml
 stands:
@@ -98,7 +102,7 @@ stands:
 - An omitted `effectif` means "inherit from `effectifMin`", the most common case. Filling it in on an opening lets a stand whose load varies during the day (4 people in the morning, 5 in the evening) remain a single stand. A closure carries none.
 - A day with no plage is open all day; a day never carries both an opening and a closure. The full arbitration is in [Hours, consignes and effective windows](horaires-et-fenetres-des-stands.md).
 
-A version 1 or 2 file still carries `horaires` (recurring rules), `ouvertures` and `indisponibilites`: link 2 → 3 converts them into plages over the days of the file's `creneaux`, with the reading the application gave them. A stand whose rules have no day to land on (the file has no timeslot) loses its rules, and the import report says so.
+A version 1 to 3 file still carries `horaires` (recurring rules), `ouvertures` and `indisponibilites`: link 3 → 4 converts them into plages over the days of the file's `creneaux`, with the reading the application gave them. A stand whose rules have no day to land on (the file has no timeslot) keeps them under `horaires`, as its model: nothing is lost, nothing is said. A file that has timeslots keeps its rules under `horaires` too, with the plages they gave.
 
 ## Game categories, typical days and removed keys
 
@@ -110,8 +114,8 @@ Some keys are refused by name, with a message that says what to write instead. A
 
 | Refused key | Replacement |
 | --- | --- |
-| `parametresDecoupage`, `decoupageAuto` | automatic splitting no longer exists ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)); `dureeVacationMaxMinutes` joined `parametresLegaux` |
-| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (in `parametresLegaux`) | a single duration, `dureePauseMinutes`, and a single break rule ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
+| `parametresDecoupage`, `decoupageAuto` | automatic splitting no longer exists ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)); `dureeVacationMaxMinutes` joined `parametres.legal` |
+| `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` (in `parametres.legal`) | a single duration, `dureePauseMinutes`, and a single break rule ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)) |
 
 ## Consignes and presets
 

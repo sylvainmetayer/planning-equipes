@@ -183,9 +183,6 @@ class WebhookFormatsTest {
                         "Jeanne",
                         List.of("Paul Durand"),
                         "https://x/animateur/TOKEN-ABC"),
-                new Notification.CarpoolSetAside("A1", "jeanne.dupont@example.org", "Jeanne", null, null),
-                new Notification.CarpoolCancelled(
-                        "A1", "jeanne.dupont@example.org", "Jeanne", List.of("Paul Durand"), null, true, null),
                 new Notification.ResolutionTerminee("Année 2026", "0hard/-3medium/-12soft", true),
                 new Notification.RappelVeille(
                         "A1",

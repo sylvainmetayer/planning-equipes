@@ -73,6 +73,14 @@ public class EditionRepository {
             new TableToCopy("stand_typologie", "stand_id, typologie"),
             new TableToCopy("stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
             new TableToCopy("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif"),
+            // The stand's model (V37, ADR 0104): the recurring rules a dateless edition keeps until
+            // it has days. Their BIGSERIAL ids are kept as-is — the PKs are composite (edition_id,
+            // id), the child FK follows the new edition_id, and the shared sequence has already
+            // consumed those values, so future inserts cannot collide.
+            new TableToCopy(
+                    "stand_horaire",
+                    "id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates, motif"),
+            new TableToCopy("stand_horaire_fenetre", "id, horaire_id, position, heure_debut, heure_fin, effectif"),
             // Day templates (V75): ids copied verbatim — one global sequence, so a
             // copied id never meets a generated one.
             new TableToCopy("journee_type", "id, nom"),
@@ -96,7 +104,7 @@ public class EditionRepository {
                             + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max, "
                             + "jours_consecutifs_max, vitesse_marche_km_h, facteur_detour, "
                             + "tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes"),
-            new TableToCopy("parametres_solveur", "duree_resolution_secondes, plateau_secondes, mail_fin_resolution"),
+            new TableToCopy("parametres_solveur", "mail_fin_resolution"),
             // Who the animateurs call: the organisation rarely changes number from one year to the next.
             new TableToCopy("contact_organisation", "telephone, email"),
             // Consigne presets (V90, issue #4) describe the event's shape —

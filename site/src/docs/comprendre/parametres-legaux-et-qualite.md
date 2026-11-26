@@ -42,7 +42,7 @@ Le nombre de sièges d'un segment ouvert (au moins un, la moitié arrondie au su
 
 ## Les paramètres légaux
 
-`ParametresLegaux` est un fait de problème (`@ProblemFactCollectionProperty` sur `PlanningEvenement`, comme `ContrainteAdHoc`), stocké **par édition**, réglable depuis `GET` et `PUT /api/parametres-legaux`. Il porte à la fois les plafonds de la loi et les règles que l'organisation se donne :
+`ParametresLegaux` est un fait de problème (`@ProblemFactCollectionProperty` sur `PlanningEvenement`, comme `ContrainteAdHoc`), stocké **par édition**, réglable depuis `GET` et `PUT /api/parametres/legal` (section `legal` des paramètres, avec `organisation`, `notifications` et `instance` ; `GET /api/parametres` rend les quatre). Il porte à la fois les plafonds de la loi et les règles que l'organisation se donne :
 
 | Champ | Défaut | Origine |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ Le Code exige que la pause soit **réelle**, pas qu'elle soit planifiée : un or
 
 Une pause due qui n'a ni l'un ni l'autre est un **écart dur**, un point par pause, porté par `travailContinuMaxMajeur` et `travailContinuMaxMineur`, plus le forfait d'exclusion d'éligibilité pour un mineur. Il n'y a rien à déclarer : un paramètre `pauseSurPoste` a existé et éteignait ces deux règles, il est retiré.
 
-La durée est **un seul paramètre**, `dureePauseMinutes` (section `parametresLegaux` d'un scénario) : 30 minutes par défaut, plancher de 20 (art. L3121-16), relevée à 30 au minimum pour un mineur (art. L3162-3) par `ParametresLegaux.dureePauseMinutes(mineur)`.
+La durée est **un seul paramètre**, `dureePauseMinutes` (section `parametres.legal` d'un scénario) : 30 minutes par défaut, plancher de 20 (art. L3121-16), relevée à 30 au minimum pour un mineur (art. L3162-3) par `ParametresLegaux.dureePauseMinutes(mineur)`.
 
 **Le calcul est écrit une fois.** `PauseSurPoste.dues(postes, parametres)` rend les pauses d'un couple (animateur, jour) : une séquence de `L` minutes au-delà du plafond `cap` en doit `ceil((L − cap) / (cap + pause))`, la k-ième au plus tard quand la séquence atteint son k-ième plafond. Le solveur, l'écran Pauses, le PDF animateur et le flux ICS lisent tous cette méthode, donc aucun ne peut décrire une pause qu'un autre ne doit pas.
 
@@ -120,9 +120,9 @@ Quelques précisions de lecture :
 
 ## Les sections de scénario
 
-Un fichier de scénario peut fixer ses propres `parametresLegaux`, `parametresQualite` et `parametresSolveur`. Pour `parametresLegaux`, seuls les champs à surcharger sont donnés et les autres gardent le défaut **de la classe Java**, jamais la valeur en base : un gros scénario peut ainsi configurer lui-même sa durée de résolution sans dépendre de ce qu'un scénario précédent a laissé. Un fichier qui ne porte pas la section prend les paramètres de l'édition qui l'importe. Dans `parametresQualite`, les deux heures sont lues telles quelles (une section qui n'en nomme aucune décrit une édition où `eviterFermeturePuisOuverture` ne dit rien, un réglage légitime) et les nombres omis prennent leur défaut.
+Un fichier de scénario peut fixer ses propres paramètres, sous `parametres:` : `legal` et `organisation` (les seuils de qualité). Le budget de calcul n'en fait plus partie : c'est un réglage d'instance, et un ancien fichier qui le porte (`parametresSolveur`) est lu et ignoré, l'import le disant. Pour `legal`, seuls les champs à surcharger sont donnés et les autres gardent le défaut **de la classe Java**, jamais la valeur en base : un scénario ne dépend donc pas de ce qu'un scénario précédent a laissé. Un fichier qui ne porte pas la section prend les paramètres de l'édition qui l'importe. Dans `organisation`, les deux heures sont lues telles quelles (une section qui n'en nomme aucune décrit une édition où `eviterFermeturePuisOuverture` ne dit rien, un réglage légitime) et les nombres omis prennent leur défaut.
 
-Les sections et clés retirées sont **refusées par leur nom** plutôt qu'ignorées (`ScenarioBinder`) : `parametresDecoupage` et `decoupageAuto` (le découpage a disparu : une grille d'amplitudes lue comme des vacations donnerait des journées de 14 h sans un mot), et les clés `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` de `parametresLegaux`, chacune avec sa remplaçante. Le même mécanisme refuse toute clé inconnue et un `schemaVersion` plus récent que celui que la version lit. Les formats complets sont dans [scenario-yaml](scenario-yaml.md).
+Les sections et clés retirées sont **refusées par leur nom** plutôt qu'ignorées (`ScenarioBinder`) : `parametresDecoupage` et `decoupageAuto` (le découpage a disparu : une grille d'amplitudes lue comme des vacations donnerait des journées de 14 h sans un mot), et les clés `pauseSurPoste`, `pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes`, `dureePauseMineurMinutes` de `parametres.legal`, chacune avec sa remplaçante. Le même mécanisme refuse toute clé inconnue et un `schemaVersion` plus récent que celui que la version lit. Les formats complets sont dans [scenario-yaml](scenario-yaml.md).
 
 <!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par
      numéro d'article, qui résout toujours la version en vigueur : un

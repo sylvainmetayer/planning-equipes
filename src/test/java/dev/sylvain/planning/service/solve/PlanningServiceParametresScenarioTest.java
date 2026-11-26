@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
@@ -44,8 +43,6 @@ class PlanningServiceParametresScenarioTest {
 
         assertThat(service.loadScenarioSections("scenario.yml").parametresLegaux())
                 .isEmpty();
-        assertThat(service.loadScenarioSections("scenario.yml").parametresSolveur())
-                .isEmpty();
     }
 
     @Test
@@ -72,11 +69,6 @@ class PlanningServiceParametresScenarioTest {
         // sexagesimal Number (43830 = 12*3600 + 30*60), not a String — a naive
         // (String) cast throws ClassCastException instead of parsing it.
         assertThat(legaux.getCoupureRepasMidiDebut()).isEqualTo(LocalTime.of(12, 30));
-
-        ParametresSolveur solveur = service.loadScenarioSections("scenario-parametres-optionnels.yaml")
-                .parametresSolveur()
-                .orElseThrow();
-        assertThat(solveur.dureeResolutionSecondes()).isEqualTo(400);
     }
 
     @Test
@@ -106,7 +98,6 @@ class PlanningServiceParametresScenarioTest {
                     .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
                             .parametresLegaux()
                             .isPresent());
-            assertThat(service.loadScenarioSections(nom).parametresSolveur()).isNotNull();
             assertThat(service.loadScenarioSections(nom).typologies())
                     .isEqualTo(service.loadScenarioSections(ScenarioYamlReader.DEFAULT_SCENARIO)
                             .typologies());

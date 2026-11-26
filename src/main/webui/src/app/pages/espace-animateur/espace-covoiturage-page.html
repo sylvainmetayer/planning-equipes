@@ -64,44 +64,6 @@
           <span i18n="@@espace.covoiturage.enAttente">En attente de l'organisation — avec {{ current() }}.</span>
         </p>
       }
-      @case ('ECARTEE') {
-        <p class="espace-dispo-aide">
-          <mat-icon inline>block</mat-icon>
-          <span i18n="@@espace.covoiturage.ecartee">Votre demande avec {{ current() }} a été écartée par l'organisation.</span>
-          @if (carpool.decidedAt) {
-            <span> ({{ carpool.decidedAt | date: 'short' }})</span>
-          }
-        </p>
-        @if (carpool.reason) {
-          <p class="espace-dispo-reponse">
-            <mat-icon inline>forum</mat-icon>
-            {{ carpool.reason }}
-          </p>
-        }
-        @if (carpool.collectionOpen) {
-          <p class="espace-dispo-aide" i18n="@@espace.covoiturage.ecartee.nouvelle">Vous pouvez envoyer une nouvelle demande ci-dessous.</p>
-        }
-      }
-      @case ('ANNULEE') {
-        <p class="espace-dispo-aide">
-          <mat-icon inline>cancel</mat-icon>
-          <span i18n="@@espace.covoiturage.annulee">L'organisation a annulé cette arrivée groupée avec {{ current() }}.</span>
-          @if (carpool.decidedAt) {
-            <span> ({{ carpool.decidedAt | date: 'short' }})</span>
-          }
-        </p>
-        @if (carpool.reason) {
-          <p class="espace-dispo-reponse">
-            <mat-icon inline>forum</mat-icon>
-            {{ carpool.reason }}
-          </p>
-        }
-        @if (carpool.collectionOpen) {
-          <p class="espace-dispo-aide" i18n="@@espace.covoiturage.annulee.nouvelle">Vous pouvez envoyer une nouvelle demande ci-dessous.</p>
-        } @else {
-          <p class="espace-dispo-aide" i18n="@@espace.covoiturage.annulee.organisation">Pour voyager de nouveau en groupe, adressez-vous à l'organisation.</p>
-        }
-      }
       @default {
         <p class="espace-vide" i18n="@@espace.covoiturage.aucune">Aucune demande de covoiturage.</p>
       }

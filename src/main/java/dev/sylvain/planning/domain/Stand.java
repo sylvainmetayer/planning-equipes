@@ -53,13 +53,12 @@ public class Stand {
     private List<PlageStand> plagesEffectives;
 
     /**
-     * Recurring rules a caller of the 3.x editor sent under {@code horaires},
-     * waiting for {@code StandService} to lay them down as plages over the
-     * edition's days. Never stored, never served. Temporary bridge, removed
-     * with the plages editor (ADR 0104).
+     * The stand's <b>model</b> (ADR 0104): recurring rules such as « Saturday and Sunday 10:00-18:00 »,
+     * kept while the edition has no day to lay them on and unfolded into {@link #plages} as days
+     * appear. {@code null} means « not sent »: a write carrying no {@code horaires} leaves the stored
+     * rules alone, where an empty list clears them. Resolution never reads it, only plages.
      */
-    @JsonIgnore
-    private List<HorairesRecurrents.Regle> receivedRules = List.of();
+    private List<HorairesRecurrents.Regle> horaires;
 
     /**
      * When this row was last written (issue #362), read from the referential
@@ -228,31 +227,25 @@ public class Stand {
         replace(ModeHoraire.OUVERTURE, ouvertures);
     }
 
-    /**
-     * Always empty: the recurring rules of 3.x are not stored any more. The key stays on the
-     * payload so the editor of the previous release keeps working until the plages editor
-     * replaces it (ADR 0104).
-     */
+    /** The stand's model: the rules it declares, never the plages they produced. */
     @JsonProperty("horaires")
-    public List<Object> getHoraires() {
-        return List.of();
+    public List<HorairesRecurrents.Regle> getHoraires() {
+        return horaires != null ? horaires : List.of();
     }
 
     /**
-     * Rules sent by that editor: kept aside, then expanded into plages over the edition's
-     * days by {@code StandService} before the stand is validated — never dropped in silence.
+     * Sets the model. The server stores it as it is while the edition has no day, and unfolds it
+     * into plages over the days it has otherwise (see {@code StandService}).
      */
     @JsonProperty("horaires")
     public void setHoraires(List<HorairesRecurrents.Regle> horaires) {
-        this.receivedRules = horaires != null ? List.copyOf(horaires) : List.of();
+        this.horaires = horaires != null ? List.copyOf(horaires) : null;
     }
 
-    /** The rules {@link #setHoraires} received and nothing has laid down yet; reading them clears them. */
+    /** The rules a write sent, {@code null} when it sent none — the difference between « keep » and « clear ». */
     @JsonIgnore
-    public List<HorairesRecurrents.Regle> takeReceivedRules() {
-        List<HorairesRecurrents.Regle> regles = receivedRules;
-        receivedRules = List.of();
-        return regles;
+    public List<HorairesRecurrents.Regle> horairesEnvoyes() {
+        return horaires;
     }
 
     private void replace(ModeHoraire mode, List<PlageStand> remplacantes) {

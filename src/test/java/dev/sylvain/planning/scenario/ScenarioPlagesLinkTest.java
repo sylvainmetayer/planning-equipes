@@ -10,7 +10,7 @@ import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Link 2 → 3 of the scenario chain: a stand's schedule becomes a list of dated plages (ADR 0104). */
+/** Link 3 → 4 of the scenario chain: a stand's schedule becomes a list of dated plages (ADR 0104). */
 class ScenarioPlagesLinkTest {
 
     private static final String HEAD = """
@@ -44,7 +44,9 @@ class ScenarioPlagesLinkTest {
                           - { heureDebut: "14:00" }
                 """, warnings);
 
-        // 8 July, 9 July (night timeslot) and 10 July (the morning after it): three days, two windows each.
+        // 8 July, 9 July (night timeslot) and 10 July (the morning after it): three days, two windows each,
+        // and the rule is unfolded and kept: it is the stand's model.
+        assertThat(stand.horaires()).hasSize(1);
         assertThat(stand.plages()).hasSize(6);
         assertThat(stand.plages())
                 .extracting(PlageStandDto::date)
@@ -96,9 +98,9 @@ class ScenarioPlagesLinkTest {
         assertThat(stand.plages().get(0).motif()).isEqualTo("Férié");
     }
 
-    /** A file with no timeslot has no day to lay the rules on: they are dropped and the report says so, by stand. */
+    /** A file with no timeslot has no day to lay the rules on: they stay the stand's model, nothing is said. */
     @Test
-    void rulesOfAFileWithoutTimeslotAreDroppedWithAWarningNamingTheStand() {
+    void rulesOfAFileWithoutTimeslotStayTheStandsModel() {
         List<String> warnings = new java.util.ArrayList<>();
         StandDto stand = standOf("""
                 festival:
@@ -117,10 +119,13 @@ class ScenarioPlagesLinkTest {
                 """, warnings);
 
         assertThat(stand.plages()).isNullOrEmpty();
-        assertThat(warnings)
-                .singleElement()
-                .satisfies(avertissement ->
-                        assertThat(avertissement).contains("SANS-JOUR").contains("horaires récurrents"));
+        assertThat(stand.horaires()).singleElement().satisfies(regle -> {
+            assertThat(regle.mode()).isEqualTo(ModeHoraire.OUVERTURE);
+            assertThat(regle.fenetres())
+                    .singleElement()
+                    .satisfies(fenetre -> assertThat(fenetre.heureDebut()).isEqualTo(LocalTime.of(14, 0)));
+        });
+        assertThat(warnings).isEmpty();
     }
 
     /** A 3.x export without {@code schemaVersion} (version 1) walks the whole chain and finds its plages too. */
@@ -150,8 +155,8 @@ class ScenarioPlagesLinkTest {
     }
 
     @Test
-    void aVersionThreeDocumentIsLeftAlone() {
-        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings("schemaVersion: 3\n" + HEAD + """
+    void aVersionFourDocumentIsLeftAlone() {
+        ScenarioBinder.Bound bound = ScenarioBinder.bindWithWarnings("schemaVersion: 4\n" + HEAD + """
                   - id: S
                     nom: S
                     typologiesProposees: [T]

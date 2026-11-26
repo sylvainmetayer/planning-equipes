@@ -29,14 +29,16 @@ export function ongletHote<T extends string>(
   read: (value: string | null) => T,
   defaut: T,
   canLeave: () => Promise<boolean> = () => Promise.resolve(true),
+  /** The query key the tab rides in: `onglet`, or `vue` for a screen whose variants are views. */
+  cle = 'onglet',
 ): OngletHote<T> {
   const location = inject(Location);
-  const onglet = signal<T>(read(currentViewParams().get('onglet')));
+  const onglet = signal<T>(read(currentViewParams().get(cle)));
   // Followed: the palette's tab entries navigate to this very route with
   // another `onglet`, and the router reuses the component.
   inject(ActivatedRoute, { optional: true })
     ?.queryParamMap?.pipe(takeUntilDestroyed())
-    .subscribe((params) => onglet.set(read(params.get('onglet'))));
+    .subscribe((params) => onglet.set(read(params.get(cle))));
   return {
     onglet: onglet.asReadonly(),
     async changer(next: T): Promise<void> {
@@ -47,7 +49,7 @@ export function ongletHote<T extends string>(
       // `?avance=1` belongs to the page, not to the tab: the fold stays open.
       const params = new URLSearchParams();
       if (next !== defaut) {
-        params.set('onglet', next);
+        params.set(cle, next);
       }
       if (new URLSearchParams(requete).get('avance') === '1') {
         params.set('avance', '1');

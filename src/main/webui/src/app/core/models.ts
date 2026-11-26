@@ -1070,7 +1070,7 @@ export interface ConstraintToggle {
 }
 
 /**
- * `/api/parametres-qualite`: the quality ceilings of the edition. Stored per
+ * `/api/parametres/organisation`: the quality ceilings of the edition. Stored per
  * edition since issue #591; what the server's own configuration carries is the
  * default an edition starts from.
  */
@@ -1607,7 +1607,7 @@ export interface CellulePivot {
 }
 
 /**
- * `/api/parametres-legaux`: admin-configurable legal parameters, consumed by
+ * `/api/parametres/legal`: admin-configurable legal parameters, consumed by
  * the `dureeHebdomadaireMax` and `dureeHebdomadaireMaxMineur` hard constraints.
  *
  * Both are ordre public ceilings, refused above their legal maximum by the
@@ -1803,30 +1803,22 @@ export interface ReconnaissanceJourneesTypes {
   calendrier: AffectationJourneeType[];
 }
 
-/**
- * The edition's solve budget, as a `PUT /api/parametres-solveur` sends it.
- * `null` follows the instance's default — « Revenir au défaut » writes it.
- */
+/** The edition's solve settings, as a `PUT /api/parametres/calcul` sends them. */
 export interface ParametresSolveur {
-  dureeResolutionSecondes: number | null;
-  /** Stop once a feasible planning has not improved for this long; 0 = never. */
-  plateauSecondes: number | null;
   /** Mails the outcome of a finished solve to the admin address (off by default). */
   mailFinResolution: boolean;
 }
 
-/** What the operator decided for every edition: the defaults a `null` resolves to, and the ceilings. */
+/** What the operator decided for every edition: the solve budget, and the ceiling a launch may ask for. */
 export interface SolverBudgetBounds {
   defaultSecondsLimit: number;
+  /** Stop once a feasible planning has not improved for this long; 0 = never. */
   defaultPlateauSeconds: number;
   maxSecondsLimit: number;
-  maxPlateauSeconds: number;
 }
 
-/** `GET /api/parametres-solveur`: the edition's budget, with the instance's bounds it is read against. */
+/** `GET /api/parametres/calcul`: the edition's mail switch, with the instance's solve budget. */
 export interface SolverSettingsView {
-  dureeResolutionSecondes: number | null;
-  plateauSecondes: number | null;
   mailFinResolution: boolean;
   instance: SolverBudgetBounds;
 }
@@ -1937,10 +1929,6 @@ export interface JobView {
   secondsLimit: number | null;
   /** The feasible-plateau bailout the job runs under, 0 for none. */
   plateauSeconds?: number | null;
-  /** The duration the edition stored where the instance's ceiling (`secondsLimit`) cut it, or null. */
-  cappedFromSecondsLimit?: number | null;
-  /** The plateau the edition stored where the instance's ceiling (`plateauSeconds`) cut it, or null. */
-  cappedFromPlateauSeconds?: number | null;
   /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
   reamorcage?: Reamorcage | null;
   submittedAt: string;
@@ -2556,7 +2544,10 @@ export interface AppConfig {
 export interface PlanSnapshot {
   id: number;
   libelle: string;
+  /** Same as `origine === 'AVANT_CALCUL'`; kept for the 3.x screen, removed in 5.0. */
   automatique: boolean;
+  /** Where the version comes from: asked by a person, taken before a solve, or published (ADR 0108). */
+  origine: 'MANUELLE' | 'AVANT_CALCUL' | 'PUBLIEE';
   score: string | null;
   nombreAffectations: number;
   creeLe: string | null;
@@ -2615,7 +2606,7 @@ export interface DiffContrainte {
   variante: number | null;
 }
 
-/** `GET /api/planning/snapshots/compare` — a read of measured metrics, never a solve. */
+/** `GET /api/planning/versions/compare` — a read of measured metrics, never a solve. */
 export interface ComparaisonSnapshots {
   base: CoteComparaison;
   variante: CoteComparaison;
@@ -2792,7 +2783,7 @@ export interface Interruption {
   persistedScore: string | null;
 }
 
-/** `POST /api/planning/snapshots/{id}/restore` on success. */
+/** `POST /api/planning/versions/{id}/restore` on success. */
 export interface RestaurationSnapshot {
   restaure: boolean;
   affectations: number;
@@ -3775,7 +3766,8 @@ export interface NouvelleDeclaration {
 
 /* ---------- Carpool: the grouped arrival ---------- */
 
-export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE' | 'ECARTEE' | 'ANNULEE';
+/** Validated, or not yet (`EN_ATTENTE`): a refused or cancelled demand is deleted. */
+export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE';
 
 /**
  * `GET /api/espace-animateur/{jeton}/covoiturage`: the Covoiturage tab —
@@ -3788,18 +3780,11 @@ export interface CarpoolEspaceView {
   collectionEnd?: string | null;
   /** Who can be named: the edition's other animateurs. */
   colleagues: CollegueView[];
-  /** The others in my car: validated group, else pending request, else the last one set aside or cancelled. */
+  /** The others in my car: validated group, else pending request. */
   teammateIds: string[];
   /** `null` when there is no car. */
   status?: StatutDemandeCoequipier | null;
-  /** Why my last request was set aside, or my car cancelled, when the organisation said. */
-  reason?: string | null;
   decidedAt?: string | null;
-}
-
-/** Payload of `POST /api/disponibilites/coequipiers/{id}/annulation`: an optional reason for the group. */
-export interface CarpoolCancellation {
-  reason?: string | null;
 }
 
 /** Payload of `POST /api/espace-animateur/{jeton}/covoiturage`; empty withdraws the pending request. */
@@ -3830,8 +3815,6 @@ export interface TeammateRequestView {
   contrainteId: string | null;
   createdAt: string;
   decidedAt: string | null;
-  /** Why it was set aside or cancelled, as typed for the animateur; `null` when none. */
-  reason?: string | null;
 }
 
 /** Answer of a validation: the demand, and what the created exception raised. */
@@ -4790,7 +4773,7 @@ export interface ContactOrganisation {
 }
 
 /**
- * Per-edition delays of the scheduled notifications (`/api/parametres-notifications`).
+ * Per-edition delays of the scheduled notifications (`/api/parametres/notifications`).
  * Whether anything leaves is not decided here: only the active edition sends.
  */
 export interface ParametresNotifications {

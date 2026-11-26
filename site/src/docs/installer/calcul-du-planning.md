@@ -1,28 +1,32 @@
 # Régler le calcul du planning
 
-Vous décidez jusqu'où une édition peut pousser le calcul, vous protégez une instance partagée contre l'enchaînement de calculs, vous dimensionnez la mémoire et vous choisissez le moteur de recherche. Le solveur est **un seul pour toute l'instance** : une résolution à la fois, toutes éditions confondues, la file comprise.
+Vous fixez le budget de calcul de l'instance, vous protégez une instance partagée contre l'enchaînement de calculs, vous dimensionnez la mémoire et vous choisissez le moteur de recherche. Le solveur est **un seul pour toute l'instance** : une résolution à la fois, toutes éditions confondues, la file comprise.
 
-## Plafonner le temps de calcul d'une édition
+## Fixer le budget de calcul de l'instance
 
 Ce que le calcul fait de ce temps est expliqué dans [combien de temps ça prend](/comment-marche-le-calcul/).
 
-Chaque édition règle son budget sur l'écran *Solveur* (durée maximale, arrêt sans amélioration), mais c'est vous qui fixez jusqu'où elle peut aller.
+Le budget est **un réglage d'instance**, le même pour toutes les éditions : le solveur est partagé, un calcul à la fois, et la durée qu'un calcul y tient n'est pas la décision d'une édition. L'écran *Paramètres › Calcul* l'affiche sans le modifier.
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
-| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Durée maximale qu'une édition peut régler, ou qu'un lancement peut demander (`?seconds=`, MCP), en secondes |
-| `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | celle de `SOLVER_SECONDS_LIMIT_MAX` | Plafond de l'arrêt sans amélioration, en secondes |
+| `SOLVER_SECONDS_LIMIT` | `900` | Durée maximale d'un calcul, en secondes |
+| `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Arrêt si le plan, déjà faisable, ne progresse plus depuis ce temps, en secondes ; `0` : jamais |
+| `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Durée maximale qu'un lancement peut demander (`?seconds=`, MCP), en secondes |
 
-Au-dessus, la valeur est **refusée**, avec un message qui cite le plafond. Elle n'est pas rognée en silence : un organisateur qui règle trois heures en obtiendrait deux en croyant le budget épuisé. Abaisser un plafond sous une valeur qu'une édition a déjà enregistrée ne casse rien : ses calculs tournent au plafond, et le moniteur du solveur le dit.
+Une durée demandée au-dessus de `SOLVER_SECONDS_LIMIT_MAX` est **refusée**, avec un message qui cite le plafond. Elle n'est pas rognée en silence : qui demande trois heures en obtiendrait deux en croyant le budget épuisé.
 
-**Le démarrage est refusé** si un plafond est inférieur au défaut correspondant (`planning.solver.seconds-limit`, 900 s ; `planning.solver.unimproved-seconds-limit`, 180 s) : chaque édition restée au défaut se verrait sinon refuser ses propres calculs.
+**Le démarrage est refusé** si `SOLVER_SECONDS_LIMIT_MAX` est inférieur à `SOLVER_SECONDS_LIMIT` : tout lancement serait sinon refusé.
 
-## Borner le nombre de calculs d'une instance partagée
+`SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` est retirée en 4.0 : plus aucune édition ne règle son plateau, il n'y a plus rien à plafonner. La poser n'empêche pas de démarrer, l'application le dit au démarrage.
 
-Les plafonds ci-dessus bornent **un** calcul. Une instance qui partage sa machine avec une autre, typiquement une démonstration publique à mot de passe partagé à côté d'une production, doit aussi borner combien on peut en enchaîner. Deux gardes, coupées par défaut, valent pour toute l'instance, toutes éditions et tous appelants confondus :
+## Borner le nombre de calculs d'une instance publique
+
+Le budget ci-dessus borne **un** calcul. Une instance ouverte à des inconnus, ou qui partage sa machine avec une autre (typiquement une démonstration publique à mot de passe partagé à côté d'une production), doit aussi borner combien on peut en enchaîner. Deux gardes, coupées par défaut, valent pour toute l'instance, toutes éditions et tous appelants confondus, **et seulement si l'instance se déclare publique** :
 
 | Variable | Défaut | Rôle |
 | --- | --- | --- |
+| `PUBLIC_INSTANCE` | `false` | `true` : l'instance est publique. Elle applique les deux gardes ci-dessous et refuse de démarrer sans [mentions légales](mentions-legales.md) |
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Calculs acceptés sur les 60 dernières minutes glissantes |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Tâches qui peuvent attendre derrière celle qui tourne (« Planifier »), celle-ci non comprise |
 
@@ -32,7 +36,13 @@ Le quota compte chaque calcul **accepté au lancement**, quel que soit le chemin
 
 L'heure est donnée dans le fuseau de `NOTIFICATIONS_TIMEZONE`, celui de l'événement. La file pleine se refuse de la même façon (« Cette instance limite la file d'attente du solveur à 2 résolutions planifiées… »).
 
-Le compteur vit **en mémoire** : un redémarrage le remet à zéro, ce qui suffit contre l'abus visé. La file rejouée au démarrage n'est ni refusée ni comptée une seconde fois. Pour une démonstration, un ordre de grandeur : un quota d'une douzaine par heure et une file de deux, avec `SOLVER_SECONDS_LIMIT_MAX` abaissé à ce qu'un visiteur a la patience d'attendre. Le choix de borner ici plutôt qu'au reverse proxy est [l'ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
+Sur une instance qui n'est **pas** publique, les deux gardes ne font rien, et l'application dit au démarrage qu'elles sont ignorées si vous les avez posées : l'instance de votre équipe n'a aucune raison de refuser son organisateur.
+
+Le compteur vit **en mémoire** : un redémarrage le remet à zéro, ce qui suffit contre l'abus visé. La file d'attente elle aussi : voir plus bas. Pour une démonstration, un ordre de grandeur : un quota d'une douzaine par heure et une file de deux, avec `SOLVER_SECONDS_LIMIT_MAX` abaissé à ce qu'un visiteur a la patience d'attendre. Le choix de borner ici plutôt qu'au reverse proxy est [l'ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md), limité aux instances publiques par [l'ADR 0110](repo:docs/decisions/0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md).
+
+## La file d'attente est en mémoire
+
+Les calculs « planifiés » attendent leur tour **en mémoire** : un redémarrage de l'application les perd. Au démarrage, ceux qu'une version précédente avait laissés en file ou en cours sont marqués **interrompus** dans l'historique des calculs, avec la raison écrite sur la tâche, et le journal de l'application en donne le nombre. Rien ne repart tout seul : relancez le calcul. Un calcul parti sur une machine de calcul distante est, lui, suivi de nouveau ([Résoudre sur une autre machine](calcul-sur-une-autre-machine.md)).
 
 ## La mémoire de l'application
 

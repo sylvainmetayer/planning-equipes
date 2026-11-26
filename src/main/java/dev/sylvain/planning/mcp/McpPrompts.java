@@ -179,7 +179,7 @@ public class McpPrompts {
                 suffit-il ? Puis analyser_marge en mode « avant » : une tranche négative manquera de \
                 monde quoi que fasse le solveur.
                 9. analyser_faisabilite : reste-t-il une cause structurellement bloquante ?
-                10. consulter_parametres_legaux : la pause minimale entre vacations et la pause sur le \
+                10. consulter_parametres (section legal) : la pause minimale entre vacations et la pause sur le \
                 poste sont-elles réglées comme l'organisateur le veut ? À 30 minutes entre vacations, \
                 deux blocs qui se touchent exigent deux équipes ; sans la pause sur le poste, aucune \
                 séquence ne peut dépasser six heures.
@@ -198,14 +198,14 @@ public class McpPrompts {
 
                 %s
 
-                1. capturer_instantane avec un libellé qui dit d'où on part.
+                1. creer_version avec un libellé qui dit d'où on part.
                 2. Si une partie du planning est déjà bonne, fige-la avec verrouiller avant de \
                 relancer — sinon la résolution la défera.
                 3. lancer_solveur, puis statut_solveur jusqu'à la fin du job.
-                4. comparer_instantanes entre l'instantané capturé et « courant ».
+                4. comparer_versions entre l'instantané capturé et « courant ».
                 5. Dis-moi ce qui a changé : score, postes pourvus, écarts par contrainte. Si le \
-                résultat est moins bon, propose restaurer_instantane — mais ne le fais pas sans mon \
-                accord. Si la pause sur le poste est déclarée (consulter_parametres_legaux), appelle \
+                résultat est moins bon, propose restaurer_version — mais ne le fais pas sans mon \
+                accord. Si la pause sur le poste est déclarée (consulter_parametres (section legal)), appelle \
                 analyser_pauses avec sansRelaisSeulement : chaque pause sans relais est un relais à \
                 organiser avant de publier.
 
@@ -394,7 +394,7 @@ public class McpPrompts {
                 question n'a encore été posée à personne : arrête-toi là.
                 2. lister_destinataires_publication : les envois en échec et les personnes sans \
                 adresse, par id. Ceux-là n'ont rien reçu : les relancer ne servirait à rien.
-                3. consulter_parametres_notifications : la relance automatique de nuit part d'elle-même \
+                3. consulter_parametres (section notifications) : la relance automatique de nuit part d'elle-même \
                 après le délai réglé. Dis-moi si elle suffit avant de proposer une relance à la main.
                 4. relancer_animateurs pour les silencieux que je désigne, après mon accord : personne \
                 ne reçoit deux fois la relance d'une même publication, et le compte rendu dit, par id, \
@@ -519,9 +519,9 @@ public class McpPrompts {
                 à la fois et après mon accord. Le niveau HARD, MEDIUM ou SOFT ne se règle pas ; seul \
                 le poids, à niveau égal. Une règle légale désactivée doit être une décision que je \
                 prends en connaissance de cause : dis-le-moi en toutes lettres avant.
-                4. consulter_parametres_solveur : la durée d'une résolution et l'arrêt sur plateau. \
-                modifier_parametres_solveur après mon accord, sous les plafonds de l'instance — un \
-                budget plus long ne corrige pas un manque de monde (analyser_effectifs).
+                4. consulter_parametres (section calcul) : la durée d'une résolution et l'arrêt sur plateau, \
+                que fixe l'exploitant de l'instance et que tu ne modifies pas — un budget plus long ne \
+                corrige pas un manque de monde (analyser_effectifs).
                 5. Rappelle-moi que rien de tout cela ne change le planning en place : le nouveau \
                 dosage vaut pour la prochaine résolution, et diagnostiquer_plan relit dès maintenant \
                 le plan persisté sous ce dosage.""".formatted(suffixe(edition), editionFrame(edition)));
@@ -545,8 +545,8 @@ public class McpPrompts {
                 2. analyser_arrivees_groupees sur le planning résolu : jour par jour, qui travaille, \
                 qui reste sans poste alors qu'un autre membre travaille, et l'écart entre les arrivées \
                 et entre les départs. Classe les jours non alignés du plus grand écart au plus petit.
-                3. consulter_parametres_qualite : quelle tolérance d'arrivée groupée l'édition \
-                accepte-t-elle ? modifier_parametres_qualite seulement après mon accord, et en me \
+                3. consulter_parametres (section organisation) : quelle tolérance d'arrivée groupée l'édition \
+                accepte-t-elle ? modifier_parametres (section organisation) seulement après mon accord, et en me \
                 disant que la tolérance ne vaut qu'à la prochaine résolution.
                 4. analyser_enchainements : un membre du groupe qui court d'un emplacement à l'autre \
                 entre deux postes arrive en retard pour tout le monde.
@@ -673,7 +673,7 @@ public class McpPrompts {
                 3. diagnostiquer_plan : le plan persisté est-il faisable, et sur quelles règles \
                 reste-t-il en défaut ? Une règle de temps de travail encore en défaut se traite \
                 avant diffusion, pas après.
-                4. consulter_parametres_legaux, puis analyser_pauses avec sansRelaisSeulement : une \
+                4. consulter_parametres (section legal), puis analyser_pauses avec sansRelaisSeulement : une \
                 pause que personne ne peut relayer est une pause qui n'aura pas lieu.
                 5. heures_travaillees, puis equite_planning : y a-t-il des semaines au-dessus du \
                 plafond, ou des écarts que personne n'a arbitrés — heures de soirée, de week-end, \
@@ -705,7 +705,7 @@ public class McpPrompts {
 
                 %s
 
-                1. capturer_instantane d'abord : ce qui suit modifie un planning que des animateurs \
+                1. creer_version d'abord : ce qui suit modifie un planning que des animateurs \
                 ont peut-être déjà lu.
                 2. Applique le changement, après mon accord :
                    - un désistement : modifier_animateur, pour le jour indisponible ;

@@ -61,7 +61,6 @@ public class SolverJobRepository {
             JobStatus statut,
             Long secondsLimit,
             Long plateauSeconds,
-            SolveBudget.CappedFrom cappedFrom,
             ReplanificationScope scope,
             Reamorcage reamorcage,
             boolean rejouable,
@@ -80,9 +79,8 @@ public class SolverJobRepository {
     public void save(LigneJob ligne) {
         String sql = """
  INSERT INTO solver_job (id, edition_id, edition_nom, type, statut, seconds_limit,
- perimetre, reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le, plateau_seconds,
- capped_from_seconds_limit, capped_from_plateau_seconds)
- VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ perimetre, reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le, plateau_seconds)
+ VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?)
  ON CONFLICT (id)
  DO UPDATE SET statut = EXCLUDED.statut, erreur = EXCLUDED.erreur, demarre_le = EXCLUDED.demarre_le,
  termine_le = EXCLUDED.termine_le""";
@@ -103,14 +101,6 @@ public class SolverJobRepository {
             ps.setTimestamp(12, horodatage(ligne.demarreLe()));
             ps.setTimestamp(13, horodatage(ligne.termineLe()));
             setLong(ps, 14, ligne.plateauSeconds());
-            setLong(
-                    ps,
-                    15,
-                    ligne.cappedFrom() == null ? null : ligne.cappedFrom().secondsLimit());
-            setLong(
-                    ps,
-                    16,
-                    ligne.cappedFrom() == null ? null : ligne.cappedFrom().plateauSeconds());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to persist solver job " + ligne.id(), e);
@@ -124,8 +114,7 @@ public class SolverJobRepository {
     public List<LigneJob> list() {
         String sql = """
  SELECT id, edition_id, edition_nom, type, statut, seconds_limit, perimetre::text AS perimetre,
- reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le, plateau_seconds,
- capped_from_seconds_limit, capped_from_plateau_seconds
+ reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le, plateau_seconds
  FROM solver_job
  ORDER BY ordre""";
         List<LigneJob> lignes = new ArrayList<>();
@@ -160,10 +149,6 @@ public class SolverJobRepository {
         Long secondsLimit = rs.wasNull() ? null : valeurSecondsLimit;
         long valeurPlateau = rs.getLong("plateau_seconds");
         Long plateauSeconds = rs.wasNull() ? null : valeurPlateau;
-        long valeurCappedSeconds = rs.getLong("capped_from_seconds_limit");
-        Long cappedSeconds = rs.wasNull() ? null : valeurCappedSeconds;
-        long valeurCappedPlateau = rs.getLong("capped_from_plateau_seconds");
-        Long cappedPlateau = rs.wasNull() ? null : valeurCappedPlateau;
         return new LigneJob(
                 rs.getString("id"),
                 rs.getString("edition_id"),
@@ -172,7 +157,6 @@ public class SolverJobRepository {
                 JobStatus.valueOf(rs.getString("statut")),
                 secondsLimit,
                 plateauSeconds,
-                SolveBudget.CappedFrom.of(cappedSeconds, cappedPlateau),
                 readScope(rs.getString("perimetre")),
                 readReamorcage(rs.getString("reamorcage")),
                 rs.getBoolean("rejouable"),

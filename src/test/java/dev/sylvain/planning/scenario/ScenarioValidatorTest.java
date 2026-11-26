@@ -125,8 +125,8 @@ class ScenarioValidatorTest {
         List<String> erreurs = ScenarioValidator.validate(withLegaux);
 
         assertThat(erreurs)
-                .anySatisfy(erreur -> assertThat(erreur).contains("parametresLegaux.dureeVacationMaxMinutes"))
-                .anySatisfy(erreur -> assertThat(erreur).contains("parametresLegaux.reposQuotidienMinimalMinutes"));
+                .anySatisfy(erreur -> assertThat(erreur).contains("parametres.legal.dureeVacationMaxMinutes"))
+                .anySatisfy(erreur -> assertThat(erreur).contains("parametres.legal.reposQuotidienMinimalMinutes"));
     }
 
     /**

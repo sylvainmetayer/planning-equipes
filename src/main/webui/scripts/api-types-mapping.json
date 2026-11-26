@@ -107,7 +107,6 @@
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",
     "GeneratedMcpKey": "Réponse de la rotation de la clé : la clé en clair, une fois ; la route répond par une Response sans schéma.",
     "EchangeSimulation": "Simulation d'échange, réemballée par la resource.",
-    "ImpactValidations": "Charge utile d'un job de résolution, jamais exposée comme schéma REST — comme ImpactPublication juste au-dessus.",
-    "HoraireStand": "Les règles récurrentes ne sont plus stockées (4.0, ADR 0104) : la clé `horaires` de la fiche reste vide jusqu'à l'écran de plages, et ce type n'a plus de schéma."
+    "ImpactValidations": "Charge utile d'un job de résolution, jamais exposée comme schéma REST — comme ImpactPublication juste au-dessus."
   }
 }

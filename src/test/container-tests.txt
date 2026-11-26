@@ -90,6 +90,7 @@ dev/sylvain/planning/api/OpenApiResourceTest.java
 dev/sylvain/planning/api/OuvertureStandsResourceTest.java
 dev/sylvain/planning/api/PangolinHeaderFilterTest.java
 dev/sylvain/planning/api/ParametresLegauxResourceTest.java
+dev/sylvain/planning/api/ParametresSectionsResourceTest.java
 dev/sylvain/planning/api/PauseResourceTest.java
 dev/sylvain/planning/api/PlacementResourceTest.java
 dev/sylvain/planning/api/PlanSnapshotResourceTest.java
@@ -161,6 +162,7 @@ dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
+dev/sylvain/planning/service/espace/CarpoolArchiveMigrationTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
 dev/sylvain/planning/service/mcp/McpKeyServiceTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java
@@ -178,6 +180,7 @@ dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
+dev/sylvain/planning/service/solve/ComputeBudgetArchiveMigrationTest.java
 dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
@@ -190,6 +193,7 @@ dev/sylvain/planning/service/solve/SolverJobHandEngineTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
 dev/sylvain/planning/service/solve/SolverJobRepriseTest.java
 dev/sylvain/planning/service/solve/SolverMetricsTest.java
+dev/sylvain/planning/service/solve/VersionPlanMigrationTest.java
 dev/sylvain/planning/service/solve/WipeBackupServiceTest.java
 dev/sylvain/planning/service/validation/ValidationJourneeServiceTest.java
 dev/sylvain/planning/service/weather/WeatherAlertJobTest.java

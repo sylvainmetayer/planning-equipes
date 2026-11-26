@@ -39,7 +39,7 @@ import java.util.Map;
  * published JSON Schema says {@code string} either way.
  *
  * <p><b>An unknown key is refused, by name.</b> The hand-written parser this
- * replaces ignored one silently, so a mistyped {@code parametresSolveur:}
+ * replaces ignored one silently, so a mistyped {@code parametresLegaux:}
  * meant a solve that quietly ran on the database's values rather than the
  * ones the scenario pinned. A file that says something the application does
  * not understand is a file whose author should hear about it.
@@ -61,7 +61,7 @@ public final class ScenarioBinder {
      * converting older ones through {@link ScenarioMigrations}. A file may omit
      * the key, meaning 1.
      */
-    public static final int SCHEMA_VERSION = 3;
+    public static final int SCHEMA_VERSION = 4;
 
     private ScenarioBinder() {}
 
@@ -114,13 +114,14 @@ public final class ScenarioBinder {
     @SuppressWarnings("unchecked")
     private static void refuseRetiredSections(Object document) {
         Map<String, Object> racine = (Map<String, Object>) document;
-        refuseRetiredLegalKeys(racine.get("parametresLegaux"));
+        refuseRetiredLegalKeys(
+                racine.get("parametres") instanceof Map<?, ?> parametres ? parametres.get("legal") : null);
         if (racine.containsKey("parametresDecoupage")) {
             throw new ScenarioFormatException("La section « parametresDecoupage » n'existe plus : le découpage"
                     + " automatique a été retiré, une grille est toujours faite de vacations. Déclarez les"
                     + " vacations telles quelles sous « creneaux », ou décrivez-les une fois sous"
                     + " « journeesTypes » et affectez-leur des dates. Le seuil « dureeVacationMaxMinutes »,"
-                    + " lui, a rejoint « parametresLegaux ».");
+                    + " lui, a rejoint « parametres.legal ».");
         }
         if (racine.containsKey("decoupageAuto")) {
             throw new ScenarioFormatException("La section « decoupageAuto » n'existe plus : il n'y a plus"
@@ -179,7 +180,7 @@ public final class ScenarioBinder {
         for (Map.Entry<String, String> retiree : CLES_LEGALES_RETIREES.entrySet()) {
             if (legaux.containsKey(retiree.getKey())) {
                 throw new ScenarioFormatException(
-                        "La clé « parametresLegaux." + retiree.getKey() + " » n'existe plus : " + retiree.getValue());
+                        "La clé « parametres.legal." + retiree.getKey() + " » n'existe plus : " + retiree.getValue());
             }
         }
     }

@@ -3,8 +3,8 @@
 -- Une plage est une ouverture ou une fermeture datée : c'est exactement ce que
 -- portent déjà stand_ouverture et stand_indisponibilite, qui restent donc le
 -- stockage (le modèle applicatif les lit en une seule liste, `Stand.plages`).
--- Ce qui disparaît, ce sont les règles récurrentes (stand_horaire et ses
--- fenêtres), converties ici en plages sur les jours de l'événement — du premier
+-- Les règles récurrentes (stand_horaire et ses fenêtres) d'une édition qui a des
+-- créneaux sont converties ici en plages sur les jours de l'événement — du premier
 -- au dernier créneau de l'édition, plus le lendemain d'un créneau qui passe
 -- minuit — avec la lecture exacte que l'application en avait à chaque lecture
 -- (HorairesRecurrents) :
@@ -20,12 +20,12 @@
 -- Un jour sans créneau n'a pas de plage : c'était le seul cas où la règle disait
 -- quelque chose d'une date que l'application ne lisait jamais.
 --
--- Une édition SANS créneau n'a aucun jour où poser ses règles. Elles ne sont ni
--- converties ni perdues : les deux tables de règles sont renommées, pas
--- supprimées (leur suppression est pour la 5.0), et un avertissement nomme
--- chaque édition concernée. Le guide de passage à la 4.0 demande en outre un
--- export YAML de chaque édition avant la montée : l'export 3.x relu en 4.0
--- reconvertit ses règles dès que l'édition a des créneaux.
+-- Les règles elles-mêmes ne sont ni supprimées ni renommées : stand_horaire et
+-- ses fenêtres restent le MODÈLE du stand, que l'écran d'horaires relit et que
+-- l'application déplie sur chaque jour que l'édition gagne (à chaque créneau qui
+-- ouvre un jour nouveau), avec la même lecture. Une édition SANS créneau n'a aucun
+-- jour où poser ses règles : rien n'est converti, elles attendent ses créneaux, et
+-- rien n'est perdu ni inventé. La résolution, elle, ne lit jamais que des plages.
 
 CREATE TEMP TABLE jour_evenement ON COMMIT DROP AS
 SELECT DISTINCT c.edition_id, d.jour
@@ -47,20 +47,6 @@ SELECT h.edition_id, h.stand_id, h.id AS horaire_id, h.mode,
 FROM stand_horaire h
 JOIN stand_horaire_fenetre f ON f.edition_id = h.edition_id AND f.horaire_id = h.id;
 ANALYZE regle_fenetre;
-
-DO $$
-DECLARE
-    edition RECORD;
-BEGIN
-    FOR edition IN
-        SELECT DISTINCT r.edition_id
-        FROM regle_fenetre r
-        WHERE NOT EXISTS (SELECT 1 FROM jour_evenement j WHERE j.edition_id = r.edition_id)
-        ORDER BY 1
-    LOOP
-        RAISE WARNING 'Édition % : ses horaires récurrents de stand ne sont pas convertis en plages, elle n''a aucun créneau. Ils sont conservés dans stand_horaire_avant_4_0 et stand_horaire_fenetre_avant_4_0.', edition.edition_id;
-    END LOOP;
-END $$;
 
 -- Les jours à résoudre : ceux de l'événement où le stand n'a aucune plage datée.
 CREATE TEMP TABLE stand_jour ON COMMIT DROP AS
@@ -141,7 +127,3 @@ WHERE EXISTS (SELECT 1 FROM regle_fenetre r
               WHERE r.edition_id = sj.edition_id AND r.stand_id = sj.stand_id AND r.mode = 'OUVERTURE')
   AND NOT EXISTS (SELECT 1 FROM jour_resolu d
                   WHERE d.edition_id = sj.edition_id AND d.stand_id = sj.stand_id AND d.jour = sj.jour);
-
--- Archive, jusqu'à la 5.0 : l'application ne les lit plus.
-ALTER TABLE stand_horaire_fenetre RENAME TO stand_horaire_fenetre_avant_4_0;
-ALTER TABLE stand_horaire RENAME TO stand_horaire_avant_4_0;

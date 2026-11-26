@@ -66,7 +66,7 @@ import org.jboss.logging.Logger;
  * reads a history Flyway has finished with, and no request is served before it
  * decides. The priority is about the other observers: {@code LIBRARY_BEFORE}
  * puts this one ahead of every application observer left at the default
- * (the solver queue replay first among them), and after
+ * (the settling of the solver jobs a previous run left first among them), and after
  * {@code SentryInitializer}, which runs at {@code PLATFORM_BEFORE} so that the
  * warning has somewhere to go. The record is a second observer, at
  * {@code PLATFORM_AFTER}: past every other boot check — {@code DefaultSecrets},

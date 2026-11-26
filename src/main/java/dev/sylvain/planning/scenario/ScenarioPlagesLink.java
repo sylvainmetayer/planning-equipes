@@ -18,16 +18,17 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Link 2 → 3 of {@link ScenarioMigrations} (ADR 0104): a stand's schedule is a
+ * Link 3 → 4 of {@link ScenarioMigrations} (ADR 0104): a stand's schedule is a
  * list of dated {@code plages}. The three keys that used to say it —
  * {@code horaires} (recurring rules), {@code ouvertures} and
  * {@code indisponibilites} (dated windows) — become one {@code plages:} list,
  * the rules being expanded over the days of the file's {@code creneaux} exactly
  * as 3.x resolved them at every read ({@link HorairesRecurrents}).
  *
- * <p>A file with rules and <b>no timeslot</b> has no day to expand them on: the
- * rules are dropped and said so, naming the stand. The original file still
- * holds them, which is what a pre-upgrade export is for.</p>
+ * <p>The rules stay under {@code horaires}, which is now the stand's model (ADR
+ * 0104): a file with <b>no timeslot</b> has no day to expand them on, and the
+ * application unfolds them when the edition gains days. Nothing is dropped,
+ * nothing is said.</p>
  */
 final class ScenarioPlagesLink {
 
@@ -44,7 +45,7 @@ final class ScenarioPlagesLink {
         for (Object stand : liste) {
             converted.add(
                     stand instanceof Map<?, ?> map
-                            ? convertStand((Map<String, Object>) ScenarioYaml.normaliseDates(map), jours, warnings)
+                            ? convertStand((Map<String, Object>) ScenarioYaml.normaliseDates(map), jours)
                             : stand);
         }
         Map<String, Object> out = new LinkedHashMap<>(document);
@@ -53,15 +54,13 @@ final class ScenarioPlagesLink {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> convertStand(
-            Map<String, Object> stand, Set<LocalDate> jours, List<String> warnings) {
+    private static Map<String, Object> convertStand(Map<String, Object> stand, Set<LocalDate> jours) {
         List<Map<String, Object>> horaires = maps(stand.get("horaires"));
         List<Map<String, Object>> ouvertures = maps(stand.get("ouvertures"));
         List<Map<String, Object>> indisponibilites = maps(stand.get("indisponibilites"));
         if (horaires.isEmpty() && ouvertures.isEmpty() && indisponibilites.isEmpty()) {
             return stand;
         }
-        String id = String.valueOf(stand.get("id"));
         // The dated windows travel as the author wrote them, so that a value the reader refuses is refused
         // under its own path; the rules only need to know which days they name.
         List<Map<String, Object>> plages = new ArrayList<>();
@@ -78,16 +77,11 @@ final class ScenarioPlagesLink {
         for (Map<String, Object> horaire : horaires) {
             regles.add(rule(horaire));
         }
-        if (!regles.isEmpty() && jours.isEmpty()) {
-            warnings.add("Stand « " + id + " » : ses horaires récurrents n'ont pas été convertis, le fichier ne"
-                    + " compte aucun créneau et il n'y a donc aucun jour où les poser. Ils figurent encore dans le"
-                    + " fichier d'origine ; saisissez des plages datées une fois les créneaux créés.");
-            regles = List.of();
-        }
+        // The rules stay the stand's model, as written, and are unfolded on the days the file has (none
+        // without a timeslot): the file reads as the database the migration converted.
         List<PlageStand> expanded = HorairesRecurrents.expand(regles, joursNommes, jours);
         expanded.subList(joursNommes.size(), expanded.size()).forEach(plage -> plages.add(toMap(plage)));
         Map<String, Object> out = new LinkedHashMap<>(stand);
-        out.remove("horaires");
         out.remove("ouvertures");
         out.remove("indisponibilites");
         if (!plages.isEmpty()) {

@@ -1,29 +1,40 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.NaturalOrder;
 import dev.sylvain.planning.service.WriteStamp;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 /**
@@ -143,12 +154,165 @@ public class StandRepository {
                     }
                 }
             }
+            Map<String, List<Regle>> horaires = loadHoraires(connection);
+            byId.forEach((id, stand) -> stand.setHoraires(horaires.getOrDefault(id, List.of())));
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list stands", e);
         }
         List<Stand> stands = new ArrayList<>(byId.values());
         stands.sort(Comparator.comparing(Stand::getId, NaturalOrder.OF_IDS));
         return stands;
+    }
+
+    /** True when some stand of the edition holds a model: the cheap test before any unfolding. */
+    boolean hasModels(Connection connection) throws SQLException {
+        try (PreparedStatement ps =
+                        scope.prepareScoped(connection, "SELECT 1 FROM stand_horaire WHERE edition_id = ? LIMIT 1");
+                ResultSet rs = ps.executeQuery()) {
+            return rs.next();
+        }
+    }
+
+    /**
+     * Lays every stand's model on {@code jours}, the days an edition has just gained (ADR 0104): the
+     * plages the rules stand for, read as 3.x read them at every read. A stand that already carries a
+     * plage on a day keeps it, so a day unfolded twice — or one dated by hand — gets no duplicate.
+     */
+    void unfoldModels(Connection connection, Set<LocalDate> jours) throws SQLException {
+        Map<String, List<Regle>> models = loadHoraires(connection);
+        if (models.isEmpty() || jours.isEmpty()) {
+            return;
+        }
+        Map<String, List<PlageStand>> declared = new LinkedHashMap<>();
+        try (PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "SELECT stand_id, date_ouverture AS jour FROM stand_ouverture WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            collectDeclaredDays(rs, declared);
+        }
+        try (PreparedStatement ps = scope.prepareScoped(
+                        connection,
+                        "SELECT stand_id, date_indisponibilite AS jour FROM stand_indisponibilite WHERE edition_id = ?");
+                ResultSet rs = ps.executeQuery()) {
+            collectDeclaredDays(rs, declared);
+        }
+        models.forEach((standId, rules) -> {
+            List<PlageStand> exceptions = declared.getOrDefault(standId, List.of());
+            List<PlageStand> expanded = HorairesRecurrents.expand(rules, exceptions, jours);
+            List<PlageStand> added = expanded.subList(exceptions.size(), expanded.size());
+            try {
+                insertPlages(connection, standId, added);
+            } catch (SQLException e) {
+                throw new IllegalStateException("Failed to unfold the schedule model of stand " + standId, e);
+            }
+        });
+    }
+
+    /** The days each stand already carries a plage on, as placeholders the rules leave alone. */
+    private static void collectDeclaredDays(ResultSet rs, Map<String, List<PlageStand>> declared) throws SQLException {
+        while (rs.next()) {
+            declared.computeIfAbsent(rs.getString(COL_STAND_ID), id -> new ArrayList<>())
+                    .add(PlageStand.fermeture(
+                            null, rs.getObject("jour", LocalDate.class), LocalTime.MIDNIGHT, null, null));
+        }
+    }
+
+    /** The model of one stand (its recurring rules), empty when it has none. */
+    public List<Regle> horairesDe(String standId) {
+        return scope.read(
+                "Failed to read the schedule model of stand " + standId,
+                connection -> loadHoraires(connection).getOrDefault(standId, List.of()));
+    }
+
+    /**
+     * The model of every stand of the edition, windows included, in two queries: stand id to its
+     * rules in the order they were declared.
+     */
+    Map<String, List<Regle>> loadHoraires(Connection connection) throws SQLException {
+        Map<Long, List<FenetreHoraire>> fenetres = new LinkedHashMap<>();
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
+                SELECT horaire_id, heure_debut, heure_fin, effectif
+                FROM stand_horaire_fenetre
+                WHERE edition_id = ?
+                ORDER BY horaire_id, position, id""");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                fenetres.computeIfAbsent(rs.getLong("horaire_id"), id -> new ArrayList<>())
+                        .add(new FenetreHoraire(
+                                rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                rs.getObject(COL_HEURE_FIN, LocalTime.class),
+                                rs.getObject("effectif", Integer.class)));
+            }
+        }
+        Map<String, List<Regle>> parStand = new LinkedHashMap<>();
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
+                SELECT id, stand_id, mode, type_jours, jours_semaine, date_debut, date_fin, dates::text[] AS dates, motif
+                FROM stand_horaire
+                WHERE edition_id = ?
+                ORDER BY stand_id, id""");
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                long id = rs.getLong("id");
+                parStand.computeIfAbsent(rs.getString(COL_STAND_ID), stand -> new ArrayList<>())
+                        .add(new Regle(
+                                ModeHoraire.valueOf(rs.getString("mode")),
+                                TypeJoursHoraire.valueOf(rs.getString("type_jours")),
+                                readWeekdays(rs.getString("jours_semaine")),
+                                rs.getObject("date_debut", LocalDate.class),
+                                rs.getObject("date_fin", LocalDate.class),
+                                readDates(rs.getArray("dates")),
+                                fenetres.getOrDefault(id, List.of()),
+                                rs.getString(COL_MOTIF),
+                                id));
+            }
+        }
+        return parStand;
+    }
+
+    /**
+     * Reads back the {@code date[]} column (V122), selected as {@code text[]}
+     * so no element goes through the JVM's time zone; an empty set when it is
+     * {@code NULL}.
+     */
+    private static Set<LocalDate> readDates(Array array) throws SQLException {
+        if (array == null) {
+            return Set.of();
+        }
+        try {
+            return Arrays.stream((Object[]) array.getArray())
+                    .map(date -> LocalDate.parse((String) date))
+                    .collect(Collectors.toCollection(TreeSet::new));
+        } finally {
+            array.free();
+        }
+    }
+
+    /** Writes a rule's dates as the {@code date[]} {@link #readDates} reads, or {@code null} when empty. */
+    private static Array dateArray(Connection connection, Set<LocalDate> dates) throws SQLException {
+        if (dates == null || dates.isEmpty()) {
+            return null;
+        }
+        return connection.createArrayOf(
+                "date", dates.stream().map(LocalDate::toString).toArray(String[]::new));
+    }
+
+    /** Reads back the weekdays column, comma-separated names: seven at most, so V37's text form holds them. */
+    private static Set<DayOfWeek> readWeekdays(String names) {
+        if (names == null || names.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(names.split(","))
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .map(DayOfWeek::valueOf)
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    private static String joinWeekdays(Set<DayOfWeek> weekdays) {
+        if (weekdays == null || weekdays.isEmpty()) {
+            return null;
+        }
+        return weekdays.stream().map(DayOfWeek::name).collect(Collectors.joining(","));
     }
 
     /** One stand, or {@code null} — what a write needs to compare against, instead of the whole referential. */
@@ -310,14 +474,29 @@ public class StandRepository {
             del.setString(2, stand.getId());
             del.executeUpdate();
         }
-        List<PlageStand> fermetures = stand.getIndisponibilites();
+        try (PreparedStatement del =
+                scope.prepareScoped(connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?")) {
+            del.setString(2, stand.getId());
+            del.executeUpdate();
+        }
+        insertPlages(connection, stand.getId(), stand.getPlages());
+        if (stand.horairesEnvoyes() != null) {
+            upsertHoraires(connection, stand);
+        }
+    }
+
+    /** Adds plages to a stand, closures and openings each to their own table; nothing is deleted. */
+    void insertPlages(Connection connection, String standId, List<PlageStand> plages) throws SQLException {
+        List<PlageStand> fermetures = plages.stream()
+                .filter(p -> p.getMode() == ModeHoraire.FERMETURE)
+                .toList();
         if (!fermetures.isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
                     heure_debut, heure_fin, motif)
                     VALUES (?, ?, ?, ?, ?, ?)""")) {
                 for (PlageStand indispo : fermetures) {
-                    ins.setString(2, stand.getId());
+                    ins.setString(2, standId);
                     ins.setObject(3, indispo.getDate());
                     ins.setObject(4, indispo.getHeureDebut());
                     ins.setObject(5, indispo.getHeureFin());
@@ -327,24 +506,70 @@ public class StandRepository {
                 ins.executeBatch();
             }
         }
-        try (PreparedStatement del =
-                scope.prepareScoped(connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?")) {
-            del.setString(2, stand.getId());
-            del.executeUpdate();
-        }
-        List<PlageStand> ouvertures = stand.getOuvertures();
+        List<PlageStand> ouvertures = plages.stream()
+                .filter(p -> p.getMode() == ModeHoraire.OUVERTURE)
+                .toList();
         if (!ouvertures.isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_ouverture
                         (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
                 for (PlageStand ouverture : ouvertures) {
-                    ins.setString(2, stand.getId());
+                    ins.setString(2, standId);
                     ins.setObject(3, ouverture.getDate());
                     ins.setObject(4, ouverture.getHeureDebut());
                     ins.setObject(5, ouverture.getHeureFin());
                     ins.setString(6, ouverture.getMotif());
                     ins.setObject(7, ouverture.getEffectif());
+                    ins.addBatch();
+                }
+                ins.executeBatch();
+            }
+        }
+    }
+
+    /** Replaces the stand's model wholesale — the windows go with their rule through {@code ON DELETE CASCADE}. */
+    private void upsertHoraires(Connection connection, Stand stand) throws SQLException {
+        try (PreparedStatement del =
+                scope.prepareScoped(connection, "DELETE FROM stand_horaire WHERE edition_id = ? AND stand_id = ?")) {
+            del.setString(2, stand.getId());
+            del.executeUpdate();
+        }
+        for (Regle regle : stand.getHoraires()) {
+            long horaireId;
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
+                    INSERT INTO stand_horaire (edition_id, stand_id, mode, type_jours,
+                    jours_semaine, date_debut, date_fin, dates, motif)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id""")) {
+                ins.setString(2, stand.getId());
+                ins.setString(3, regle.mode().name());
+                ins.setString(4, regle.jours().name());
+                ins.setString(5, joinWeekdays(regle.joursSemaine()));
+                ins.setObject(6, regle.dateDebut());
+                ins.setObject(7, regle.dateFin());
+                ins.setArray(8, dateArray(connection, regle.dates()));
+                ins.setString(9, regle.motif());
+                try (ResultSet rs = ins.executeQuery()) {
+                    rs.next();
+                    horaireId = rs.getLong("id");
+                }
+            }
+            if (regle.fenetres().isEmpty()) {
+                continue;
+            }
+            try (PreparedStatement ins = scope.prepareScoped(connection, """
+                    INSERT INTO stand_horaire_fenetre
+                        (edition_id, horaire_id, position, heure_debut, heure_fin, effectif)
+                    VALUES (?, ?, ?, ?, ?, ?)""")) {
+                // A parameter keeps its value across addBatch() until it is set again.
+                ins.setLong(2, horaireId);
+                int position = 0;
+                for (FenetreHoraire fenetre : regle.fenetres()) {
+                    ins.setInt(3, position++);
+                    ins.setObject(4, fenetre.getHeureDebut());
+                    ins.setObject(5, fenetre.getHeureFin());
+                    ins.setObject(6, fenetre.getEffectif());
                     ins.addBatch();
                 }
                 ins.executeBatch();

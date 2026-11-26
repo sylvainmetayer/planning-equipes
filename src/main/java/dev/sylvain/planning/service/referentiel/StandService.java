@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
@@ -144,6 +145,7 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     Stand create(Connection connection, Stand stand) throws SQLException {
+        layDownReceivedRules(stand);
         StandValidator.check(stand);
         stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
         Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, THE_STAND);
@@ -274,15 +276,22 @@ public class StandService {
     }
 
     /**
-     * Temporary bridge for the 3.x schedule editor, removed with the plages editor
-     * (ADR 0104): rules it sends under {@code horaires} are expanded into plages
-     * over the edition's days, with the reading 3.x applied at every read — a day
-     * that already carries a plage keeps it. Without a timeslot there is no day to
-     * lay them on, and the write is refused rather than the rules dropped.
+     * What a stand does with the recurring rules it is sent under {@code horaires} (ADR 0104), the
+     * bridge of the 3.x schedule editor until the plages editor replaces it. They are always the
+     * stand's <b>model</b>, stored as sent — the editor reads them back — and, when the edition has
+     * days, also unfolded into plages on them, with the reading 3.x applied at every read:
+     * <ul>
+     * <li>none sent, or the stored ones sent back unchanged: nothing moves;</li>
+     * <li>no timeslot: no day to lay them on, the model waits for the days the edition gains
+     * ({@code CreneauRepository});</li>
+     * <li>timeslots: the plages the previous model had unfolded are withdrawn (recomputed, then
+     * removed where they are still there unchanged), the new model is unfolded, and a day that
+     * carries a plage of its own keeps it.</li>
+     * </ul>
      */
     private void layDownReceivedRules(Stand stand) {
-        List<HorairesRecurrents.Regle> regles = stand.takeReceivedRules();
-        if (regles.isEmpty()) {
+        List<HorairesRecurrents.Regle> regles = stand.horairesEnvoyes();
+        if (regles == null) {
             return;
         }
         for (HorairesRecurrents.Regle regle : regles) {
@@ -294,12 +303,36 @@ public class StandService {
                         + "fin après elle (vide : jusqu'à la fermeture) — une fenêtre ne peut pas chevaucher minuit");
             }
         }
+        List<HorairesRecurrents.Regle> stored =
+                stand.getId() == null ? List.of() : repository.horairesDe(stand.getId());
+        if (sameRules(regles, stored)) {
+            stand.setHoraires(null);
+            return;
+        }
         Set<LocalDate> jours = HorairesRecurrents.datesConcernees(creneaux.list());
         if (jours.isEmpty()) {
-            throw new BusinessError.Invalid("L'édition n'a aucun créneau : un horaire récurrent se pose sur les jours "
-                    + "de l'événement. Créez d'abord les créneaux, ou saisissez des ouvertures et fermetures datées.");
+            return;
         }
-        stand.setPlages(HorairesRecurrents.expand(regles, stand.getPlages(), jours));
+        Set<String> unfoldedBefore = HorairesRecurrents.expand(stored, List.of(), jours).stream()
+                .map(StandService::key)
+                .collect(Collectors.toSet());
+        List<PlageStand> handMade = stand.getPlages().stream()
+                .filter(plage -> !unfoldedBefore.contains(key(plage)))
+                .toList();
+        stand.setPlages(HorairesRecurrents.expand(regles, handMade, jours));
+    }
+
+    /** What makes two plages the same one for the withdrawal: everything but the row id. */
+    private static String key(PlageStand plage) {
+        return plage.getMode() + "|" + plage.getDate() + "|" + plage.getHeureDebut() + "|" + plage.getHeureFin() + "|"
+                + plage.getEffectif() + "|" + plage.getMotif();
+    }
+
+    private static boolean sameRules(List<HorairesRecurrents.Regle> sent, List<HorairesRecurrents.Regle> stored) {
+        return sent.stream()
+                .map(HorairesRecurrents.Regle::sansId)
+                .toList()
+                .equals(stored.stream().map(HorairesRecurrents.Regle::sansId).toList());
     }
 
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */

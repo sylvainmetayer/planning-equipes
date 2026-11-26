@@ -86,7 +86,7 @@ class GelReferentielStructuralTest {
             Map.entry("AnimateurCsvImportService#apply(AnimateurCsvImportRequest)", "apply"),
             Map.entry("ScenarioImportService#importBundled(String)", "importScenario"),
             Map.entry("ScenarioImportService#importYaml(String)", "importScenario"),
-            Map.entry("ScenarioImportService#importForRestore(String)", "importScenario"));
+            Map.entry("ScenarioImportService#importForRestore(ScenarioDto,Long,Runnable)", "importScenario"));
 
     /** A facade method → the method, classified in this test, it hands the write over to. */
     private static final Map<String, String> DELEGATES = Map.ofEntries(
@@ -209,7 +209,6 @@ class GelReferentielStructuralTest {
                     "ReferenceDataService#updateParametresLegaux(ParametresLegaux)",
                     "the settings are not one of the four families"),
             Map.entry("ReferenceDataService#updateParametresSolveur(ParametresSolveur)", "same"),
-            Map.entry("ReferenceDataService#importParametresSolveur(ParametresSolveur)", "same"),
             Map.entry("ReferenceDataService#updateParametresNotifications(ParametresNotifications)", "same"),
             Map.entry("ReferenceDataService#updateParametresQualite(ParametresQualite)", "same"),
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),

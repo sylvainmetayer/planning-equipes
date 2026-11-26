@@ -36,11 +36,11 @@ Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche 
 | `analyser_marge` | la marge par jour et tranche, en mode `avant` (défaut) ou `apres` ; le mode `tension` la croise avec la fragilité du plan, chaque case portant une `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`, `CALME`) et ses `motifs`, les sièges irremplaçables y étant tous comptés |
 | `plan_formation` | par typologie en manque ou tenue par un spécialiste unique, les chiffres des analyses et les candidats classés (jours de tension disponibles, puis souhait, puis niveau) ; un candidat est `DEBUTANT` ou `AUTONOME`, jamais `REFERENT`. Sans plan enregistré, `planPersiste` vaut `false` et seule la partie besoin parle |
 | `analyser_pauses` | par animateur et par jour, où tombe la pause due, sur quel stand, qui peut relayer (`relaisAnimateurIds`) ; une pause que personne ne peut relayer est un écart dur, le filtre `sansRelais` ne rend que celles-là |
-| `analyser_enchainements` | deux postes consécutifs d'un animateur sur deux emplacements géolocalisés dont le battement ne laisse pas le temps de marcher, ou seulement en prenant sur la pause (`walkOnBreak`) ; `geolocated=false` dit qu'aucun trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va bien ». Vitesse, détour et tolérance se règlent par `modifier_parametres_qualite` |
+| `analyser_enchainements` | deux postes consécutifs d'un animateur sur deux emplacements géolocalisés dont le battement ne laisse pas le temps de marcher, ou seulement en prenant sur la pause (`walkOnBreak`) ; `geolocated=false` dit qu'aucun trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va bien ». Vitesse, détour et tolérance se règlent par `modifier_parametres` (section `organisation`) |
 | `analyser_arrivees_groupees` | pour chaque groupe, jour par jour, qui travaille, qui manque, l'écart des arrivées et des départs |
-| `comparer_editions` | le delta de l'écran Comparer deux éditions, sans aucun nom : une ligne d'animateur porte ses ids dans chaque édition et le nom des champs qui diffèrent, jamais leurs valeurs. Rien n'est rapproché par id ; `matching` dit sur quoi deux lignes l'ont été (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
+| `comparer_editions` | le delta de la vue Éditions de l'écran Comparer deux versions, sans aucun nom : une ligne d'animateur porte ses ids dans chaque édition et le nom des champs qui diffèrent, jamais leurs valeurs. Rien n'est rapproché par id ; `matching` dit sur quoi deux lignes l'ont été (`CODE`, `NOM`, `EMAIL`, `IDENTITE`, `POSITION`) |
 
-La pause se règle par `consulter_parametres_legaux` et `modifier_parametres_legaux` : une seule durée, `dureePauseMinutes` (30 par défaut), refusée sous son plancher d'ordre public de 20 minutes et que rien ne plafonne. Les 30 minutes dues à un mineur s'appliquent à la lecture, pas au réglage : une édition à 25 donne 25 aux majeurs et 30 aux mineurs. Les plafonds, le rapport des heures, l'équité et les indicateurs déduisent cette même durée ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). La même paire d'outils porte `heureDebutSoiree` et `dureeVacationMaxMinutes`.
+La pause se règle par `consulter_parametres` et `modifier_parametres` (section `legal`) : une seule durée, `dureePauseMinutes` (30 par défaut), refusée sous son plancher d'ordre public de 20 minutes et que rien ne plafonne. Les 30 minutes dues à un mineur s'appliquent à la lecture, pas au réglage : une édition à 25 donne 25 aux majeurs et 30 aux mineurs. Les plafonds, le rapport des heures, l'équité et les indicateurs déduisent cette même durée ([ADR 0048](repo:docs/decisions/0048-une-seule-regle-de-pause.md)). La même section porte `heureDebutSoiree` et `dureeVacationMaxMinutes`.
 
 ## Construire la grille et les horaires
 
@@ -73,7 +73,7 @@ Les déclarations de disponibilité et les demandes d'échange arrivent de l'esp
 
 `synthese_confirmations` compte, parmi les animateurs qui ont un poste sur le plan publié, les confirmés, relancés, silencieux et les **échecs d'envoi** (comptés à part, sans adresse) et date la publication à laquelle ils répondent ; `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
 
-`lister_demandes_covoiturage` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et sans le motif d'un écart ni d'une annulation. La validation, l'écart et l'annulation restent des gestes d'écran, parce qu'ils préviennent les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage, qui prévient le groupe).
+`lister_demandes_covoiturage` rend les « Je viens avec… » de la collecte, à part de la déclaration : membres, statut, `confirmedByAll`, jours où les indisponibilités divergent, ajustement créé, le tout par id et avec le statut `EN_ATTENTE` (non validée) ou `VALIDEE`. La validation, l'écart et l'annulation restent des gestes d'écran, parce que la validation prévient les animateurs par courriel ; un assistant crée directement un `ARRIVEE_GROUPEE` par `creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une arrivée groupée qu'une demande validée soutient rend un résultat en erreur portant la phrase de l'écran Ajustements manuels (annulez-la depuis Disponibilités > Covoiturage).
 
 ## Les prompts et les ressources
 
@@ -97,8 +97,22 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
+| `capturer_instantane` | `creer_version` |
 | `compacter_horaires_stands` | retiré |
+| `comparer_instantanes` | `comparer_versions` |
+| `consulter_instantane` | `consulter_version` |
+| `consulter_parametres_legaux` | `consulter_parametres` |
+| `consulter_parametres_notifications` | `consulter_parametres` |
+| `consulter_parametres_qualite` | `consulter_parametres` |
+| `consulter_parametres_solveur` | `consulter_parametres` |
 | `effacer_horaires_stand` | retiré |
+| `lister_instantanes` | `lister_versions` |
+| `modifier_parametres_legaux` | `modifier_parametres` |
+| `modifier_parametres_notifications` | `modifier_parametres` |
+| `modifier_parametres_qualite` | `modifier_parametres` |
+| `modifier_parametres_solveur` | `modifier_parametres` |
+| `restaurer_instantane` | `restaurer_version` |
+| `supprimer_instantane` | `supprimer_version` |
 <!-- mcp-renommages:fin -->
 
 ## Ce qui n'a pas d'outil

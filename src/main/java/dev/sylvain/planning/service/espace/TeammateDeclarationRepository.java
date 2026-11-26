@@ -27,7 +27,7 @@ import java.util.Optional;
 public class TeammateDeclarationRepository {
 
     private static final String COLONNES =
-            "id, animateur_id, nature, coequipiers, statut, contrainte_id, cree_le, decide_le, motif";
+            "id, animateur_id, nature, coequipiers, statut, contrainte_id, cree_le, decide_le";
 
     private final JdbcEditionScope scope;
 
@@ -57,7 +57,7 @@ public class TeammateDeclarationRepository {
      * upsert.
      */
     private static final String UPSERT_SQL = "INSERT INTO declaration_coequipier (edition_id, " + COLONNES + ") "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
             + "ON CONFLICT (edition_id, animateur_id, nature) WHERE statut = 'EN_ATTENTE' "
             + "DO UPDATE SET id = EXCLUDED.id, coequipiers = EXCLUDED.coequipiers, cree_le = EXCLUDED.cree_le";
 
@@ -73,7 +73,6 @@ public class TeammateDeclarationRepository {
                 upsert.setString(7, demande.contrainteId());
                 upsert.setTimestamp(8, Timestamp.from(demande.creeLe()));
                 upsert.setTimestamp(9, demande.decideLe() == null ? null : Timestamp.from(demande.decideLe()));
-                upsert.setString(10, demande.motif());
                 upsert.executeUpdate();
             }
         });
@@ -94,26 +93,39 @@ public class TeammateDeclarationRepository {
     }
 
     /**
-     * Records the admin's verdict on one pending demand.
+     * Records the admin's validation of one pending demand.
      *
-     * @param motif the reason given when setting it aside, {@code null} otherwise
      * @return how many rows moved: {@code 0} means somebody decided it first
      */
-    public int decide(
-            String id, StatutDemandeCoequipier statut, String contrainteId, Timestamp decideLe, String motif) {
-        return scope.writeAndReturn("Failed to record the decision on teammates " + id, connection -> {
+    public int validate(String id, String contrainteId, Timestamp decideLe) {
+        return scope.writeAndReturn("Failed to record the validation of teammates " + id, connection -> {
             // Not prepareScoped: the SET clause claims the first placeholders,
             // so the edition_id predicate is bound explicitly.
             try (PreparedStatement ps = connection.prepareStatement("""
                     UPDATE declaration_coequipier
-                    SET statut = ?, contrainte_id = ?, decide_le = ?, motif = ?
+                    SET statut = 'VALIDEE', contrainte_id = ?, decide_le = ?
                     WHERE edition_id = ? AND id = ? AND statut = 'EN_ATTENTE'""")) {
-                ps.setString(1, statut.name());
-                ps.setString(2, contrainteId);
-                ps.setTimestamp(3, decideLe);
-                ps.setString(4, motif);
-                ps.setString(5, scope.editionId());
-                ps.setString(6, id);
+                ps.setString(1, contrainteId);
+                ps.setTimestamp(2, decideLe);
+                ps.setString(3, scope.editionId());
+                ps.setString(4, id);
+                return ps.executeUpdate();
+            }
+        });
+    }
+
+    /**
+     * Deletes one pending demand: what « Écarter » does now that a demand is
+     * validated or not, with no trace of a refusal.
+     *
+     * @return how many rows were deleted: {@code 0} means somebody decided it first
+     */
+    public int deletePendingById(String id) {
+        return scope.writeAndReturn("Failed to delete the teammates " + id, connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection,
+                    "DELETE FROM declaration_coequipier WHERE edition_id = ? AND id = ? AND statut = 'EN_ATTENTE'")) {
+                ps.setString(2, id);
                 return ps.executeUpdate();
             }
         });
@@ -121,31 +133,25 @@ public class TeammateDeclarationRepository {
 
     /**
      * Cancels a validated grouped arrival in one transaction: every validated
-     * demand of the edition pointing at {@code contrainteId} becomes
-     * {@code ANNULEE} with the reason, and the {@code ARRIVEE_GROUPEE}
-     * exception itself is deleted — its members and scope go with it by
-     * cascade. The exception row is deleted here rather than through the ad
-     * hoc service, whose delete refuses a request-backed grouped arrival: this
-     * is the one gesture allowed to remove it, and the demands and the
-     * exception must move together or not at all.
+     * demand of the edition pointing at {@code contrainteId} is deleted, and
+     * so is the {@code ARRIVEE_GROUPEE} exception itself — its members and
+     * scope go with it by cascade. The exception row is deleted here rather
+     * than through the ad hoc service, whose delete refuses a request-backed
+     * grouped arrival: this is the one gesture allowed to remove it, and the
+     * demands and the exception must move together or not at all.
      *
-     * @return how many demands moved: {@code 0} means nothing was validated
-     *         against that exception any more, or it was already gone, and
-     *         nothing was written
+     * @return how many demands were deleted: {@code 0} means nothing was
+     *         validated against that exception any more, or it was already
+     *         gone, and nothing was written
      */
-    public int cancelGroup(String contrainteId, Timestamp decideLe, String motif) {
+    public int cancelGroup(String contrainteId) {
         return scope.writeAndReturn("Failed to cancel the grouped arrival " + contrainteId, connection -> {
             int annulees;
-            // Not prepareScoped: the SET clause claims the first placeholders,
-            // so the edition_id predicate is bound explicitly.
-            try (PreparedStatement ps = connection.prepareStatement("""
-                    UPDATE declaration_coequipier
-                    SET statut = 'ANNULEE', decide_le = ?, motif = ?
-                    WHERE edition_id = ? AND contrainte_id = ? AND statut = 'VALIDEE'""")) {
-                ps.setTimestamp(1, decideLe);
-                ps.setString(2, motif);
-                ps.setString(3, scope.editionId());
-                ps.setString(4, contrainteId);
+            try (PreparedStatement ps = scope.prepareScoped(
+                    connection,
+                    "DELETE FROM declaration_coequipier WHERE edition_id = ? AND contrainte_id = ? "
+                            + "AND statut = 'VALIDEE'")) {
+                ps.setString(2, contrainteId);
                 annulees = ps.executeUpdate();
             }
             if (annulees == 0) {
@@ -198,7 +204,6 @@ public class TeammateDeclarationRepository {
                 StatutDemandeCoequipier.valueOf(rs.getString("statut")),
                 rs.getString("contrainte_id"),
                 creeLe == null ? null : creeLe.toInstant(),
-                decideLe == null ? null : decideLe.toInstant(),
-                rs.getString("motif"));
+                decideLe == null ? null : decideLe.toInstant());
     }
 }

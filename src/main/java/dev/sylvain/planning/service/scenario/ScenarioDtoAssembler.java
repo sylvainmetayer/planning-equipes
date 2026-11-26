@@ -5,14 +5,15 @@ import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.ConsigneDto;
@@ -22,12 +23,14 @@ import dev.sylvain.planning.scenario.dto.CreneauAjouteDto;
 import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
 import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
+import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.FestivalDto;
+import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
+import dev.sylvain.planning.scenario.dto.ParametresDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
-import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PlageStandDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
@@ -83,9 +86,7 @@ final class ScenarioDtoAssembler {
                 ScenarioBinder.SCHEMA_VERSION,
                 null,
                 new FestivalDto(dateDebut),
-                parametresSolveur(export.parametresSolveur()),
-                parametresLegaux(export.parametresLegaux()),
-                parametresQualite(export.parametresQualite()),
+                parametres(export),
                 contraintes(export),
                 nullWhenEmpty(typologies(export.typologies())),
                 creneaux(creneaux),
@@ -96,7 +97,8 @@ final class ScenarioDtoAssembler {
                 export.postes() == null ? null : postes(export.postes()),
                 nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)),
                 nullWhenEmpty(prereglagesConsigne(export.prereglagesConsigne())),
-                nullWhenEmpty(consignes(export.consignes(), creneaux)));
+                nullWhenEmpty(consignes(export.consignes(), creneaux)),
+                null);
     }
 
     private static <T> List<T> nullWhenEmpty(List<T> liste) {
@@ -169,7 +171,8 @@ final class ScenarioDtoAssembler {
                         stand.isReserveMajeurs(),
                         stand.isPremium(),
                         stand.getNiveauEffort(),
-                        plages(stand.getPlages())))
+                        plages(stand.getPlages()),
+                        horaires(stand.getHoraires())))
                 .toList();
     }
 
@@ -230,6 +233,32 @@ final class ScenarioDtoAssembler {
                         plage.getHeureFin(),
                         plage.getMotif(),
                         plage.getEffectif()))
+                .toList();
+    }
+
+    /**
+     * The stand's model. The day selector is flattened onto the rule, and only the fields the
+     * selector actually uses are carried; {@code null} for a stand with none.
+     */
+    private static List<HoraireStandDto> horaires(List<HorairesRecurrents.Regle> regles) {
+        if (regles.isEmpty()) {
+            return null;
+        }
+        return regles.stream()
+                .map(regle -> new HoraireStandDto(
+                        regle.mode(),
+                        regle.jours(),
+                        regle.jours() == TypeJoursHoraire.JOURS_SEMAINE ? List.copyOf(regle.joursSemaine()) : null,
+                        regle.jours() == TypeJoursHoraire.PLAGE ? regle.dateDebut() : null,
+                        regle.jours() == TypeJoursHoraire.PLAGE ? regle.dateFin() : null,
+                        regle.jours() == TypeJoursHoraire.DATES ? List.copyOf(regle.dates()) : null,
+                        // heureFin and effectif absent rather than null: « until closing » reads better as a
+                        // missing end, and writing the effectif out would freeze today's minimum in the file.
+                        regle.fenetres().stream()
+                                .map(fenetre -> new FenetreHoraireDto(
+                                        fenetre.getHeureDebut(), fenetre.getHeureFin(), fenetre.getEffectif()))
+                                .toList(),
+                        regle.motif()))
                 .toList();
     }
 
@@ -329,6 +358,13 @@ final class ScenarioDtoAssembler {
      * way back in, a half-written section would say « no late hour » where the
      * edition simply had one.
      */
+    /** {@code null} when the file pins nothing, so no empty {@code parametres:} is written. */
+    private static ParametresDto parametres(ScenarioYamlWriter.ScenarioExport export) {
+        ParametresDto parametres = new ParametresDto(
+                parametresLegaux(export.parametresLegaux()), parametresQualite(export.parametresQualite()));
+        return parametres.legal() == null && parametres.organisation() == null ? null : parametres;
+    }
+
     private static ParametresQualiteDto parametresQualite(ParametresQualite parametres) {
         return parametres == null
                 ? null
@@ -343,14 +379,6 @@ final class ScenarioDtoAssembler {
                         parametres.facteurDetour(),
                         parametres.toleranceTrajetMinutes(),
                         parametres.toleranceArriveeGroupeeMinutes());
-    }
-
-    private static ParametresSolveurDto parametresSolveur(ParametresSolveur parametres) {
-        if (parametres == null
-                || (parametres.dureeResolutionSecondes() == null && parametres.plateauSecondes() == null)) {
-            return null;
-        }
-        return new ParametresSolveurDto(parametres.dureeResolutionSecondes(), parametres.plateauSecondes());
     }
 
     /** Only the fields a scenario file is read back with. */

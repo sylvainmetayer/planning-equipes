@@ -112,7 +112,7 @@ class StandPlagesResourceTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("stand.horaires", org.hamcrest.Matchers.empty())
+                .body("stand.horaires.size()", org.hamcrest.Matchers.is(2))
                 .extract()
                 .path("stand.id");
 
@@ -122,22 +122,143 @@ class StandPlagesResourceTest {
         assertThat(readWindows(edition, stand, "indisponibilites")).containsExactly("2026-07-11 14:00-16:00 Démo");
     }
 
+    /**
+     * « Modèle gardé, déplié ensuite »: with no timeslot there is no day to lay a rule on, so it
+     * stays the stand's model (read back with its id), and every timeslot that opens a new day
+     * unfolds it there — once: a second timeslot on the same day adds nothing.
+     */
     @Test
-    void aRuleSentOnAnEditionWithoutTimeslotIsRefusedWithItsReason() {
-        String edition = createEdition("Règle sans créneau");
+    void aRuleSentOnAnEditionWithoutTimeslotIsKeptThenUnfoldedOnTheDaysItGains() {
+        String edition = createEdition("Modèle sans créneau");
         createTypologie(edition);
 
-        given().header(HEADER, edition)
+        String stand = given().header(HEADER, edition)
                 .contentType("application/json")
                 .body("""
-                        {"nom":"Avec règle","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                        {"nom":"Avec modèle","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "horaires":[{"mode":"OUVERTURE","jours":"JOURS_SEMAINE","joursSemaine":["SATURDAY","SUNDAY"],
+                                      "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .body("stand.horaires.size()", org.hamcrest.Matchers.is(1))
+                .extract()
+                .path("stand.id");
+        assertThat(readWindows(edition, stand, "ouvertures")).isEmpty();
+
+        // 2026-07-11 is a Saturday, 2026-07-13 a Monday: the model opens the stand on the first only.
+        createCreneau(edition, "2026-07-11", "10:00", "12:00");
+        createCreneau(edition, "2026-07-11", "14:00", "16:00");
+        createCreneau(edition, "2026-07-13", "10:00", "12:00");
+
+        assertThat(readWindows(edition, stand, "ouvertures")).containsExactly("2026-07-11 10:00-18:00 x-");
+        assertThat(readWindows(edition, stand, "indisponibilites"))
+                .containsExactly("2026-07-13 00:00- Jour non déclaré par le stand");
+        given().header(HEADER, edition)
+                .when()
+                .get("/api/stands")
+                .then()
+                .body("find { it.id == '" + stand + "' }.horaires.size()", org.hamcrest.Matchers.is(1));
+    }
+
+    /**
+     * In an edition that has days the rule is unfolded and also kept (the editor reads it back); editing
+     * it withdraws what the previous one unfolded and unfolds the new one, a plage of the day's own staying.
+     */
+    @Test
+    void editingTheModelOfADatedEditionReplacesWhatItHadUnfolded() {
+        String edition = createEdition("Modèle modifié");
+        createTypologie(edition);
+        createCreneau(edition, "2026-07-10", "10:00", "12:00");
+        createCreneau(edition, "2026-07-11", "10:00", "12:00");
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Modifié","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "horaires":[{"mode":"OUVERTURE","jours":"TOUS",
+                                      "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}],
+                         "ouvertures":[{"date":"2026-07-11","heureDebut":"09:00","heureFin":"10:00","motif":"Main"}]}""")
+                .when()
+                .post("/api/stands")
+                .then()
+                .statusCode(200)
+                .body("stand.horaires.size()", org.hamcrest.Matchers.is(1))
+                .extract()
+                .path("stand.id");
+        assertThat(readWindows(edition, stand, "ouvertures"))
+                .containsExactlyInAnyOrder("2026-07-10 10:00-18:00 x-", "2026-07-11 09:00-10:00 x-");
+
+        // The editor sends the stand as it read it, with the rule changed to 14:00-16:00.
+        List<java.util.Map<String, Object>> lues = given().header(HEADER, edition)
+                .when()
+                .get("/api/stands")
+                .then()
+                .extract()
+                .jsonPath()
+                .getList("find { it.id == '" + stand + "' }.ouvertures");
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body(java.util.Map.of(
+                        "nom",
+                        "Modifié",
+                        "typologiesProposees",
+                        List.of("TYPO"),
+                        "effectifMin",
+                        1,
+                        "effectifMax",
+                        2,
+                        "horaires",
+                        List.of(java.util.Map.of(
+                                "mode", "OUVERTURE",
+                                "jours", "TOUS",
+                                "fenetres", List.of(java.util.Map.of("heureDebut", "14:00", "heureFin", "16:00")))),
+                        "ouvertures",
+                        lues))
+                .when()
+                .put("/api/stands/" + stand)
+                .then()
+                .statusCode(200);
+
+        assertThat(readWindows(edition, stand, "ouvertures"))
+                .containsExactlyInAnyOrder("2026-07-10 14:00-16:00 x-", "2026-07-11 09:00-10:00 x-");
+    }
+
+    /** Sending the stored model back, as the 3.x editor does on every save, changes nothing. */
+    @Test
+    void theModelSentBackUnchangedIsLeftAlone() {
+        String edition = createEdition("Modèle renvoyé");
+        createTypologie(edition);
+        String stand = given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Renvoyé","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
                          "horaires":[{"mode":"OUVERTURE","jours":"TOUS",
                                       "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}]}""")
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(400)
-                .body(org.hamcrest.Matchers.containsString("aucun créneau"));
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+        createCreneau(edition, "2026-07-11", "10:00", "12:00");
+        assertThat(readWindows(edition, stand, "ouvertures")).containsExactly("2026-07-11 10:00-18:00 x-");
+
+        // The stand as the editor read it, its rule and its plages: saved again after the day was
+        // unfolded, and after a hand deletion of that day's plage — which must stay deleted.
+        given().header(HEADER, edition)
+                .contentType("application/json")
+                .body("""
+                        {"nom":"Renvoyé","typologiesProposees":["TYPO"],"effectifMin":1,"effectifMax":2,
+                         "horaires":[{"mode":"OUVERTURE","jours":"TOUS",
+                                      "fenetres":[{"heureDebut":"10:00","heureFin":"18:00"}]}],
+                         "ouvertures":[]}""")
+                .when()
+                .put("/api/stands/" + stand)
+                .then()
+                .statusCode(200);
+
+        assertThat(readWindows(edition, stand, "ouvertures")).isEmpty();
     }
 
     @Test

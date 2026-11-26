@@ -31,8 +31,10 @@ public final class ScenarioMigrations {
     }
 
     /** Ordered by {@code from}; the last link must end at {@link ScenarioBinder#SCHEMA_VERSION}. */
-    static final List<Link> CHAIN =
-            List.of(new Link(1, ScenarioMigrations::v1ToV2), new Link(2, ScenarioPlagesLink::convert));
+    static final List<Link> CHAIN = List.of(
+            new Link(1, ScenarioMigrations::v1ToV2),
+            new Link(2, ScenarioParametresLink::convert),
+            new Link(3, ScenarioPlagesLink::convert));
 
     private ScenarioMigrations() {}
 

@@ -215,9 +215,6 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#updateParametresSolveur(ParametresSolveur)",
                     "ParametresService#updateSolveur(ParametresSolveur)"),
             Map.entry(
-                    "ReferenceDataService#importParametresSolveur(ParametresSolveur)",
-                    "ParametresService#importSolveur(ParametresSolveur)"),
-            Map.entry(
                     "ReferenceDataService#updateParametresNotifications(ParametresNotifications)",
                     "ParametresService#updateNotifications(ParametresNotifications)"),
             Map.entry(
@@ -274,7 +271,6 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("VerrouillageService#delete(String)", NOT_LANDED),
             Map.entry("ParametresService#updateLegaux(ParametresLegaux)", NOT_LANDED),
             Map.entry("ParametresService#updateSolveur(ParametresSolveur)", NOT_LANDED),
-            Map.entry("ParametresService#importSolveur(ParametresSolveur)", NOT_LANDED),
             Map.entry("ParametresService#updateNotifications(ParametresNotifications)", NOT_LANDED),
             Map.entry("ParametresService#updateQualite(ParametresQualite)", NOT_LANDED),
             Map.entry("ParametresService#updateContactOrganisation(ContactOrganisation)", NOT_LANDED),
@@ -340,7 +336,7 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry(
                     "TeammateRequestService#validate(String)",
                     "writes its grouped arrival through the ad hoc path, " + NOT_LANDED),
-            Map.entry("TeammateRequestService#setAside(String,String)", "a pending request had written no exception"),
+            Map.entry("TeammateRequestService#setAside(String)", "a pending request had written no exception"),
             Map.entry(
                     "JourJService#cancelAbsence(String,LocalDate,Long)",
                     "removes the exceptions the absence wrote and hands no seat back: " + NOT_LANDED));

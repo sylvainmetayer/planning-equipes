@@ -409,7 +409,7 @@ class SolveExchangeTest {
 
     /** The production search, stopped on a count of score calculations instead of on time. */
     private PlanningEvenement solve(PlanningEvenement problem) {
-        SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(30L, 0L, null), problem);
+        SolverConfig solverConfig = configuration.solverConfigFor(new SolveBudget(30L, 0L), problem);
         solverConfig.setTerminationConfig(new TerminationConfig().withScoreCalculationCountLimit(CALCULATIONS));
         SolverConfiguration.adaptToProblem(solverConfig, problem);
         return SolverFactory.<PlanningEvenement>create(solverConfig)

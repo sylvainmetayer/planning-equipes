@@ -29,21 +29,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The solver queue surviving a restart.
+ * What a restart makes of the solver jobs (ADR 0110).
  *
  * <p>A restart cannot be staged over HTTP, so these tests write the rows a
  * stopped server would have left in {@code solver_job} and then call
  * {@link SolverJobService#restaurer()} — which is exactly what the
  * {@code StartupEvent} observer does when the application boots (it is disabled
- * under {@code %test}, or a queue left by one test run would start a real solve
- * as the next one boots).</p>
+ * under {@code %test}).</p>
  *
- * <p>Two properties matter. A queued job must come back and <b>actually run</b>,
- * building its problem from the referential of the restart — which is the same
- * contract it already had in the queue, and the reason storing the intention is
- * enough. And a job that was <em>holding</em> the solver must come back
- * terminal: nothing will finish it, so leaving it {@code RUNNING} would hold
- * the global solver lock forever.</p>
+ * <p>Two properties matter. The queue is <b>not</b> replayed: a queued row comes
+ * back terminal with the reason said, and a queued job is never written. And a
+ * job that was <em>holding</em> the solver must come back terminal too: nothing
+ * will finish it, so leaving it {@code RUNNING} would hold the global solver
+ * lock forever.</p>
  */
 @QuarkusTest
 class SolverJobRepriseTest {
@@ -71,27 +69,38 @@ class SolverJobRepriseTest {
         clearTable();
     }
 
+    /** The queue is in memory only (ADR 0110): rows a 3.x server left queued come back interrupted, and say why. */
     @Test
-    void uneFileEcriteAvantLeRedemarrageRepartEtVaAuBout() {
-        planImporte();
-        // What a server stopped mid-queue leaves behind: two runs planned, in
-        // order. Different types on purpose — the same type twice on the same
-        // edition is what the double-click guard refuses at submit time.
+    void uneFileEcriteAvantLeRedemarrageNeRepartPasEtLeDit() {
         String solveId = writeRow(JobType.SOLVE, JobStatus.QUEUED, true, null);
         String incrementalId = writeRow(JobType.SOLVE_INCREMENTAL, JobStatus.QUEUED, true, null);
 
-        assertThat(jobService.restaurer()).isEqualTo(2);
+        assertThat(jobService.restaurer()).isZero();
 
-        // Nobody clicked anything: the first one took the solver by itself, and
-        // it really solved — only possible if the task was rebuilt, not just
-        // the row.
-        assertThat(pollUntilFinished(solveId).getString("status")).isEqualTo("COMPLETED");
-        JsonPath incremental = pollUntilFinished(incrementalId);
-        assertThat(incremental.getString("status")).isEqualTo("COMPLETED");
-        assertThat(incremental.getString("type")).isEqualTo("SOLVE_INCREMENTAL");
-        // Built when it started, after the restored solve persisted its plan:
-        // an incremental re-solve fails outright without one.
-        assertThat(incremental.getInt("result.statistiques.postesFiges")).isPositive();
+        for (String id : List.of(solveId, incrementalId)) {
+            SolverJob job = jobService.find(id).orElseThrow();
+            assertThat(job.getStatus()).isEqualTo(JobStatus.INTERROMPU);
+            assertThat(job.getError()).contains("file d'attente");
+            assertThat(statut(id)).isEqualTo(JobStatus.INTERROMPU);
+        }
+        assertThat(jobService.fileAttente()).isEmpty();
+        assertThat(jobService.findActive()).isEmpty();
+    }
+
+    /** A job waiting behind the running one lives in memory: nothing of it reaches {@code solver_job}. */
+    @Test
+    void unJobEnFileNEstPasEcritEnBase() {
+        planImporte();
+        String running = submit("/api/solve/async/reference-data?seconds=30");
+        String queued = submit("/api/solve/incremental/async?enFile=true");
+
+        assertThat(jobService.find(queued).orElseThrow().getStatus()).isEqualTo(JobStatus.QUEUED);
+        assertThat(jobRepository.list().stream().map(LigneJob::id))
+                .contains(running)
+                .doesNotContain(queued);
+
+        given().header("X-Edition-Id", "E1").when().delete("/api/jobs/" + queued);
+        given().header("X-Edition-Id", "E1").when().post("/api/jobs/" + running + "/cancel");
     }
 
     @Test
@@ -198,7 +207,6 @@ class SolverJobRepriseTest {
                     1L,
                     null,
                     null,
-                    null,
                     demande,
                     true,
                     null,
@@ -214,49 +222,6 @@ class SolverJobRepriseTest {
         }
     }
 
-    /**
-     * A queued job's budget is part of what it was promised: replayed after a
-     * restart it runs the duration <b>and</b> the plateau it was launched with,
-     * not whatever the edition says by then.
-     */
-    @Test
-    void aQueuedJobKeepsItsDurationAndPlateauAcrossARestart() {
-        planImporte();
-        String id = UUID.randomUUID().toString();
-        jobRepository.save(new LigneJob(
-                id,
-                editionContext.editionIdCourant(),
-                "Édition de test",
-                JobType.SOLVE,
-                JobStatus.QUEUED,
-                2L,
-                1L,
-                new SolveBudget.CappedFrom(7200L, null),
-                null,
-                null,
-                true,
-                null,
-                Instant.now(),
-                null,
-                null));
-
-        assertThat(jobService.restaurer()).isEqualTo(1);
-
-        SolverJob job = jobService.find(id).orElseThrow();
-        assertThat(job.getSecondsLimit()).isEqualTo(2L);
-        assertThat(job.getPlateauSeconds()).isEqualTo(1L);
-        assertThat(job.getCappedFrom()).isEqualTo(new SolveBudget.CappedFrom(7200L, null));
-        assertThat(job.getBudgetWarning()).contains("2 h");
-        assertThat(pollUntilFinished(id).getLong("plateauSeconds")).isEqualTo(1L);
-        assertThat(jobRepository.list().stream().filter(ligne -> ligne.id().equals(id)))
-                .singleElement()
-                .satisfies(ligne -> {
-                    assertThat(ligne.secondsLimit()).isEqualTo(2L);
-                    assertThat(ligne.plateauSeconds()).isEqualTo(1L);
-                    assertThat(ligne.cappedFrom()).isEqualTo(new SolveBudget.CappedFrom(7200L, null));
-                });
-    }
-
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Writes the row a server stopped in that state would have left behind. */
@@ -270,7 +235,6 @@ class SolverJobRepriseTest {
                 type,
                 statut,
                 1L,
-                null,
                 null,
                 scope,
                 null,
@@ -297,6 +261,18 @@ class SolverJobRepriseTest {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to clear solver_job", e);
         }
+    }
+
+    private static String submit(String path) {
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body("{}")
+                .when()
+                .post(path)
+                .then()
+                .statusCode(202)
+                .extract()
+                .path("id");
     }
 
     private void planImporte() {

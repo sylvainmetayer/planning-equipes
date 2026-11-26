@@ -80,11 +80,11 @@ class IdColumnsInventoryStructuralTest {
             Map.entry(
                     "notification_planifiee.cle",
                     "animateurId|date, animateurId|publicationInstant, or a swap request UUID — the dedup key"),
-            Map.entry("plan_snapshot.consignes", "dates, hours and motifs of the consignes, no id"),
+            Map.entry("version_plan.consignes", "dates, hours and motifs of the consignes, no id"),
             Map.entry(
-                    "plan_snapshot.contenu",
+                    "version_plan.contenu",
                     "standId and animateurId of every seat — what the stability of the published plan joins on"),
-            Map.entry("plan_snapshot.kpi", "figures only, no id"),
+            Map.entry("version_plan.kpi", "figures only, no id"),
             Map.entry(
                     "publication_destinataire.animateur_id",
                     "who a publication was sent to; the trace outlives the fiche"),
@@ -94,7 +94,8 @@ class IdColumnsInventoryStructuralTest {
                     "sauvegarde_avant_vidage.plan",
                     "standId, creneauId and animateurId of every seat and lock as they were before the wipe — found"
                             + " again by natural keys on restore, never joined on (ADR 0084)"),
-            Map.entry("solver_job.perimetre", "animateurIds and standIds of a queued solve, replayed at startup"),
+            Map.entry(
+                    "solver_job.perimetre", "animateurIds and standIds of a solve's scope, kept in the solve history"),
             Map.entry(
                     "resolution_distante.job_id",
                     "the solver job a remote solve belongs to (ADR 0086): a row of solver_job, itself global and"

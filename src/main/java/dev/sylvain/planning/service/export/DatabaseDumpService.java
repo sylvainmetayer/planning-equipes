@@ -46,7 +46,7 @@ import org.flywaydb.core.api.MigrationVersion;
  * <p>
  * <b>It is still not a backup of the database.</b> What it restores is exactly
  * {@link #TABLES}: the referential, the plan and its publications, what the
- * animateurs declared, and the settings that shape a solve. Eleven tables stay
+ * animateurs declared, and the settings that shape a solve. Nine tables stay
  * out, and {@link #DELIBERATELY_NOT_DUMPED} says why each one does — they
  * describe the machine, its current sessions, or what it has been asked to do
  * next, none of which is the dataset. {@code DatabaseDumpCoverageTest} keeps
@@ -80,6 +80,8 @@ public class DatabaseDumpService {
             "creneau_stand_ouvert",
             "stand_indisponibilite",
             "stand_ouverture",
+            "stand_horaire",
+            "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
             "journee_type_date",
@@ -152,7 +154,7 @@ public class DatabaseDumpService {
             // The published plan, and who was told about it. Before
             // publication_destinataire, "already told" and "still to tell" are
             // the same thing.
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             // Which of those mails reached their recipient: without it, a
             // restore says « envoyé » of nothing and hides every failure.
@@ -207,8 +209,9 @@ public class DatabaseDumpService {
      *       right covers: part of the right it hangs from, with the same reason.
      *       Not even a foreign key to {@code stand}, which a restore deletes and
      *       recreates.</li>
-     *   <li>{@code solver_job} — the queue, replayed at startup. A restore
-     *       would make the receiving instance run somebody else's solves.</li>
+     *   <li>{@code solver_job} — the solve history, and the remote solves
+     *       followed again at startup. A restore would make the receiving
+     *       instance follow somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
      *       opposite reason to all the others: including it would mean every
      *       import <em>erases</em> the local journal, since the dump deletes
@@ -254,6 +257,14 @@ public class DatabaseDumpService {
      *       number, read by the RH right and the administrators only. A file
      *       that leaves the instance does not carry them; restoring a dump
      *       recreates the fiches without them.</li>
+     *   <li>{@code declaration_coequipier_avant_4_0} — the covoiturage
+     *       demands 3.x had set aside or cancelled, free-text motif included,
+     *       archived by V142 and dropped in 5.0: an archive nothing reads, not
+     *       a dataset, and a text about a person that a file leaving the
+     *       instance has no reason to carry.</li>
+     *   <li>{@code solve_budget_avant_4_0} — the solve budgets editions had
+     *       set of their own, archived by V145 and dropped in 5.0: an archive
+     *       nothing reads, the budget being the instance's now.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -281,11 +292,8 @@ public class DatabaseDumpService {
             "machine_calcul",
             "resolution_distante",
             "animateur_contact",
-            // The recurring rules of 3.x, kept (renamed) by V141 for the editions that had no timeslot to
-            // lay them on, and dropped in 5.0: an archive, not a dataset — a dump written by 4.0 has
-            // nothing to say about rules that no longer exist.
-            "stand_horaire_avant_4_0",
-            "stand_horaire_fenetre_avant_4_0");
+            "declaration_coequipier_avant_4_0",
+            "solve_budget_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
@@ -300,6 +308,8 @@ public class DatabaseDumpService {
             "creneau",
             "stand_indisponibilite",
             "stand_ouverture",
+            "stand_horaire",
+            "stand_horaire_fenetre",
             "journee_type",
             "journee_type_vacation",
             // BIGSERIAL since V48: left unsynced, the first measurement
@@ -307,7 +317,7 @@ public class DatabaseDumpService {
             // replayed.
             "kpi_historique",
             // BIGSERIAL too, V40 and V54, for the same reason.
-            "plan_snapshot",
+            "version_plan",
             "publication_destinataire",
             // BIGSERIAL since V110.
             "envoi_planning",

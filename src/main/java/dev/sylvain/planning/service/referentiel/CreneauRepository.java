@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.WriteStamp;
@@ -21,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.sql.DataSource;
 
 /**
@@ -37,11 +40,18 @@ public class CreneauRepository {
 
     private final JdbcEditionScope scope;
 
+    private final StandRepository stands;
+
     @Inject
-    public CreneauRepository(ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope) {
+    public CreneauRepository(
+            ConcurrentModificationGuard staleWrites,
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            StandRepository stands) {
         this.staleWrites = staleWrites;
         this.dataSource = dataSource;
         this.scope = scope;
+        this.stands = stands;
     }
 
     private static final String SELECT_CRENEAU_SQL = """
@@ -226,6 +236,7 @@ public class CreneauRepository {
 
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */
     Long insertCreneauTx(Connection connection, Creneau creneau) throws SQLException {
+        Set<LocalDate> newDays = newDays(connection, creneau, -1L);
         try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO creneau (edition_id, date_creneau, heure_debut, heure_fin, couverture_pause)
                 VALUES (?, ?, ?, ?, ?)
@@ -242,12 +253,45 @@ public class CreneauRepository {
                         rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
             }
         }
+        stands.unfoldModels(connection, newDays);
         return creneau.getId();
+    }
+
+    /**
+     * The days this timeslot is the first of the edition to cover — its own, and the next when it
+     * crosses midnight. A stand's model (ADR 0104) is unfolded on exactly those: a day is new once,
+     * so a model never lands twice on one, and the rows an operator deleted by hand do not come
+     * back. Empty at once, with no query on the grid, while no stand holds a model.
+     */
+    private Set<LocalDate> newDays(Connection connection, Creneau creneau, long ownId) throws SQLException {
+        if (creneau.getDate() == null || !stands.hasModels(connection)) {
+            return Set.of();
+        }
+        Set<LocalDate> days = new TreeSet<>(
+                HorairesRecurrents.datesConcernees(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()));
+        days.removeIf(day -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT 1 FROM creneau
+                    WHERE edition_id = ? AND id <> ?
+                    AND (date_creneau = ? OR (date_creneau = ?::date - 1 AND heure_fin <= heure_debut))
+                    LIMIT 1""")) {
+                ps.setLong(2, ownId);
+                ps.setObject(3, day);
+                ps.setObject(4, day);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
+            } catch (SQLException e) {
+                throw new IllegalStateException("Failed to look the grid up around " + day, e);
+            }
+        });
+        return days;
     }
 
     private void updateCreneauTx(Connection connection, Creneau creneau) throws SQLException {
         // Not prepareScoped: an UPDATE's first placeholder belongs to its SET
         // clause, so the edition predicate can't be the statement's first one.
+        Set<LocalDate> newDays = newDays(connection, creneau, creneau.getId());
         try (PreparedStatement ps = connection.prepareStatement("""
                 UPDATE creneau
                 SET date_creneau = ?, heure_debut = ?, heure_fin = ?, couverture_pause = ?,
@@ -272,5 +316,6 @@ public class CreneauRepository {
             }
             creneau.setModifieLe(ecrit);
         }
+        stands.unfoldModels(connection, newDays);
     }
 }

@@ -109,7 +109,7 @@ class NotificationsPlanifieesTest {
     @BeforeEach
     void seed() {
         mailbox.clear();
-        execute("DELETE FROM plan_snapshot");
+        execute("DELETE FROM version_plan");
         execute("DELETE FROM notification_planifiee");
         execute("DELETE FROM confirmation_planning");
         execute("DELETE FROM envoi_mail");
