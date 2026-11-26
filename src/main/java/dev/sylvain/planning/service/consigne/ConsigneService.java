@@ -52,12 +52,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * Proposing, previewing, laying down, changing and lifting an edition's
  * consignes (issue #4), and the presets they are made from.
  *
- * <p>Laying a consigne down writes one row per date and, when the grid does
- * not reach one of its openings, <b>adds</b> the missing créneaux — the only
- * write this feature makes on the grid, and it is additive. Changing a date
- * replaces its row in place, keeping the added créneaux its windows still need
- * and removing the others. Lifting removes the rows of the dates still to come
- * and deletes the créneaux they had added, with their seats: the next
+ * <p>Laying a consigne down writes one row per date, the dated plages it lays
+ * on every stand — closures over the band, openings for the compensation, each
+ * marked as the consigne's ({@link ConsignePlages}, ADR 0125) — and, when the
+ * grid does not reach one of its openings, <b>adds</b> the missing créneaux —
+ * the only write this feature makes on the grid, and it is additive. Changing
+ * a date replaces its row and its plages in place, keeping the added créneaux
+ * its windows still need and removing the others. Lifting removes the rows of
+ * the dates still to come, exactly the plages still carrying their mark — one
+ * edited by hand since lost the mark and stays — and deletes the créneaux they
+ * had added, with their seats: the next
  * publication announces the retrait from the published snapshot, which names
  * those vacations by day and hours.</p>
  *
@@ -214,12 +218,12 @@ public class ConsigneService {
             List<PosteAffectation> avant =
                     ProblemBuilder.buildPostes(nominal(referenceDataService.listStands(), nominale), nominale);
             List<Stand> apres = nominal(referenceDataService.listStands(), duJour);
-            ConsigneResolver.apply(apres, List.of(consigne), duJour);
+            ConsignePlages.apply(apres, List.of(consigne), duJour);
             List<PosteAffectation> postesApres = ProblemBuilder.buildPostes(apres, duJour);
-            int[] bande = ConsigneResolver.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
+            int[] bande = ConsignePlages.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
             int fermees = 0;
             for (PosteAffectation poste : avant) {
-                int[] fenetre = ConsigneResolver.minutes(poste.heureDebutEffectif(), poste.heureFinEffectif());
+                int[] fenetre = ConsignePlages.minutes(poste.heureDebutEffectif(), poste.heureFinEffectif());
                 fermees += Math.max(0, Math.min(fenetre[1], bande[1]) - Math.max(fenetre[0], bande[0]));
             }
             int rouvertes = Math.max(0, minutes(postesApres) - (minutes(avant) - fermees));
@@ -326,7 +330,7 @@ public class ConsigneService {
             throw new BusinessError.Invalid("Date manquante");
         }
         checkBande(fermetureDebut, fermetureFin);
-        int[] bande = ConsigneResolver.minutes(fermetureDebut, fermetureFin);
+        int[] bande = ConsignePlages.minutes(fermetureDebut, fermetureFin);
         List<Creneau> duJour = creneauxOfDay(referenceDataService.listCreneaux(), date);
         List<Stand> stands = nominal(referenceDataService.listStands(), duJour);
         Map<String, List<Ouverture>> actuelles = new HashMap<>();
@@ -575,7 +579,7 @@ public class ConsigneService {
         List<Creneau> grilleApres = new ArrayList<>(nominale);
         grilleApres.addAll(apresGrille);
         List<Stand> apres = nominal(referenceDataService.listStands(), grilleApres);
-        ConsigneResolver.apply(apres, List.of(appliquee), grilleApres);
+        ConsignePlages.apply(apres, List.of(appliquee), grilleApres);
         List<PosteAffectation> postesApres = ProblemBuilder.buildPostes(apres, grilleApres);
 
         List<VacationRef> sansSiege = seatlessTimeslots(nominale, postesAvant, postesApres);
@@ -605,7 +609,7 @@ public class ConsigneService {
                 .count();
         int majeurs = disponibles.size() - mineurs;
 
-        int[] bande = ConsigneResolver.minutes(demandee.fermetureDebut(), demandee.fermetureFin());
+        int[] bande = ConsignePlages.minutes(demandee.fermetureDebut(), demandee.fermetureFin());
 
         return new ApercuJour(
                 date,
@@ -707,15 +711,15 @@ public class ConsigneService {
      * the windows alone leaves their créneaux — and their seats — alone too.
      */
     static Plan planifier(ConsigneEdition consigne, List<Creneau> duJour, List<Creneau> nominale) {
-        int[] bande = ConsigneResolver.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
+        int[] bande = ConsignePlages.minutes(consigne.fermetureDebut(), consigne.fermetureFin());
         List<int[]> couverts =
                 nominale.stream().map(ConsigneService::bornes).collect(Collectors.toCollection(ArrayList::new));
         List<int[]> manques = new ArrayList<>();
         List<Ouverture> tri = new ArrayList<>(consigne.ouvertures());
         tri.sort(Comparator.comparing(Ouverture::debut));
         for (Ouverture ouverture : tri) {
-            for (int[] horsBande : ConsigneResolver.soustraire(
-                    ConsigneResolver.minutes(ouverture.debut(), ouverture.fin()), List.of(bande))) {
+            for (int[] horsBande : ConsignePlages.soustraire(
+                    ConsignePlages.minutes(ouverture.debut(), ouverture.fin()), List.of(bande))) {
                 for (int[] manque : gaps(horsBande[0], horsBande[1], couverts)) {
                     manques.add(manque);
                     couverts.add(manque);
@@ -795,6 +799,7 @@ public class ConsigneService {
         List<ApercuJour> apercu = apercu(demande);
         Map<LocalDate, ConsigneEdition> existantes = byDate();
         List<Creneau> grille = referenceDataService.listCreneaux();
+        List<Stand> stands = referenceDataService.listStands();
         scope.write("Failed to lay the consignes down", connection -> {
             for (ConsigneEdition consigne : consignes) {
                 ConsigneEdition existante = existantes.get(consigne.date());
@@ -805,14 +810,19 @@ public class ConsigneService {
                         .toList();
                 Plan plan = planifier(consigne, duJour, nominale);
                 List<Long> ids = new ArrayList<>();
+                List<Creneau> ajoutes = new ArrayList<>(plan.conserves());
                 plan.conserves().forEach(creneau -> ids.add(creneau.getId()));
                 for (Creneau aCreer : plan.aCreer()) {
-                    ids.add(referenceDataService
+                    Creneau cree = referenceDataService
                             .writeCreneau(connection, aCreer)
-                            .creneau()
-                            .getId());
+                            .creneau();
+                    ids.add(cree.getId());
+                    ajoutes.add(cree);
                 }
-                repository.save(connection, consigne.withCreneauxAjoutes(ids));
+                ConsigneEdition posee = consigne.withCreneauxAjoutes(ids);
+                repository.save(connection, posee);
+                // What the consigne does to the stands is written, not applied on read (ADR 0125).
+                repository.replacePlages(connection, posee.date(), ConsignePlages.of(stands, posee, ajoutes));
                 if (!plan.aSupprimer().isEmpty()) {
                     referenceDataService.deleteCreneaux(
                             connection,
@@ -906,7 +916,7 @@ public class ConsigneService {
         List<Creneau> nominale =
                 duJour.stream().filter(c -> !ajoutes.contains(c.getId())).toList();
         List<Stand> sous = nominal(referenceDataService.listStands(), duJour);
-        ConsigneResolver.apply(sous, List.of(consigne), duJour);
+        ConsignePlages.apply(sous, List.of(consigne), duJour);
         int now = minutes(ProblemBuilder.buildPostes(sous, duJour));
         int after = minutes(ProblemBuilder.buildPostes(nominal(referenceDataService.listStands(), nominale), nominale));
         return LiftStaffingRisk.assess(
@@ -1205,8 +1215,8 @@ public class ConsigneService {
                 && !fenetre.debut().isBefore(fenetre.fin())) {
             throw new BusinessError.Invalid(sujet + " : une fenêtre doit finir après son début, dans la même journée");
         }
-        int[] bande = ConsigneResolver.minutes(bandeDebut, bandeFin);
-        if (ConsigneResolver.soustraire(ConsigneResolver.minutes(fenetre.debut(), fenetre.fin()), List.of(bande))
+        int[] bande = ConsignePlages.minutes(bandeDebut, bandeFin);
+        if (ConsignePlages.soustraire(ConsignePlages.minutes(fenetre.debut(), fenetre.fin()), List.of(bande))
                 .isEmpty()) {
             throw new BusinessError.Invalid(
                     sujet + " : la fenêtre " + libelle(fenetre) + " est entièrement dans la bande interdite");
@@ -1228,9 +1238,9 @@ public class ConsigneService {
 
     /* -------------------------------- helpers -------------------------------- */
 
-    /** The stands with their rules and dated exceptions expanded — the day a consigne departs from. */
+    /** The stands on their own hours, the plages a consigne wrote left out — the day a consigne departs from. */
     private static List<Stand> nominal(List<Stand> stands, List<Creneau> creneaux) {
-        HoraireStandResolver.apply(stands, creneaux);
+        HoraireStandResolver.applyOwnHours(stands);
         return stands;
     }
 
@@ -1273,7 +1283,7 @@ public class ConsigneService {
         if (debut == null) {
             return false;
         }
-        return ConsigneResolver.chevauchent(ConsigneResolver.minutes(debut, fin), bande);
+        return ConsignePlages.chevauchent(ConsignePlages.minutes(debut, fin), bande);
     }
 
     private static LocalTime heure(int minutes) {

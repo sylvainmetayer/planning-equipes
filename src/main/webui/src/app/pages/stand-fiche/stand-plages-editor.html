@@ -48,7 +48,7 @@
             <td><span class="stand-plage-badge" [class.stand-plage-ferme]="plage.mode === 'FERMETURE'">{{ modeLabel(plage.mode) }}</span></td>
             <td>{{ plage.mode === 'OUVERTURE' ? (plage.effectif ?? '') : '' }}</td>
             <td>
-              <span class="stand-plage-badge" [class.stand-plage-modele]="plage.depliee" [class.stand-plage-saisie]="!plage.depliee"
+              <span class="stand-plage-badge" [class.stand-plage-modele]="plage.depliee" [class.stand-plage-saisie]="!plage.depliee && !plage.consigne"
                     [matTooltip]="originTip(plage)">{{ originLabel(plage) }}</span>
             </td>
             <td>{{ plage.motif }}</td>

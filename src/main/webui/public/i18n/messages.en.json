@@ -5098,6 +5098,8 @@
   "standFiche.plages.jour.titre": "Remove every window of this day?",
   "standFiche.plages.mode.fermeture": "Closure",
   "standFiche.plages.mode.ouverture": "Opening",
+  "standFiche.plages.origine.consigne": "consigne",
+  "standFiche.plages.origine.consigne.aide": "Laid by the day's consigne: lifting the consigne removes it.",
   "standFiche.plages.origine.modele": "model",
   "standFiche.plages.origine.modele.aide": "Laid by the recurring model: saving the model again replaces it.",
   "standFiche.plages.origine.saisie": "typed",

@@ -80,8 +80,13 @@ function isValidWindow(fenetre: { heureDebut: string; heureFin: string | null })
  * combination the backend rejects at write time anyway).
  */
 export function resoudreJour(stand: Stand, date: string): JourResolu {
-  const ouvertures = (stand.ouvertures ?? []).filter((ouverture) => ouverture.date === date);
-  const fermetures = (stand.indisponibilites ?? []).filter((indispo) => indispo.date === date);
+  // The stand's own hours: a consigne's plages lie above them and are shown by the consigne itself.
+  const ouvertures = (stand.ouvertures ?? []).filter(
+    (ouverture) => ouverture.date === date && !ouverture.consigne,
+  );
+  const fermetures = (stand.indisponibilites ?? []).filter(
+    (indispo) => indispo.date === date && !indispo.consigne,
+  );
   // Plages the server unfolded from the model are the stand's regime; one typed by hand is an exception.
   const source = (plages: readonly { depliee?: boolean }[]): 'EXCEPTION' | 'REGLE' =>
     plages.every((plage) => plage.depliee) ? 'REGLE' : 'EXCEPTION';

@@ -1,0 +1,61 @@
+# One line per shipped scenario under the two consignes of ConsigneAsPlagesEquivalenceTest: name, SHA-256
+# of the open segments and seats the 3.x consigne layer gave (origin/main 22d6a4ff, re-read on a094e0dc
+# once gamme-27 was removed: every other line unchanged), seat count.
+# Written by that test with -Dconsignes.resolues.generer, the layer put back in lay(); never from the plages.
+extreme-01-3j-30stands-1000animateurs-surdotation 7e6b3cfc4faeb638f729e2273b41385832fe5f7ce9d6ab544e688ace6be6aa71 211
+extreme-02-30j-150stands-1000animateurs-mois bca3590408afa48c6190e050d641e19e24de5dd6c4aee8be7967b3b8944fe301 6362
+extreme-03-120j-40stands-84animateurs-saison f7b19920ce784d63f7da09af59e5bb13834c5ca996aa9823aa040aa4972e435e 5064
+extreme-04-120j-10stands-14animateurs-sans-relache 912125bcfabc1f3ac795d9ff8eb5a5943bda7f67031265a72023af61d470dad7 2399
+extreme-05-1j-500stands-800animateurs-un-jour-dense SANS-OBJET
+extreme-06-7j-20stands-120animateurs-24h-sur-24 8d49686bf97d120a615d3fa08397aa5aa1f118fab068f8f9b59f53a86c348a5a 790
+extreme-07-3j-60stands-172animateurs-creneaux-d-une-heure 697c66948ce975520c2f8871f8b30f07ab5b02f489dbd11c1d6cfb6b27596bec 1505
+extreme-08-2j-1stands-300animateurs-un-stand-de-200-places 41af608a94eec3101bd6c6d43875b3c9024bb556a4bbac7a64613c104c6e58dd 604
+extreme-09-120j-400stands-1000animateurs-cumul b26ce2db8f0eaae73d1dfddcc728043372a8bf7f9718f9a72dd056757d273545 41691
+extreme-10-sans-animateur SANS-OBJET
+extreme-11-un-siege-pour-1000-animateurs SANS-OBJET
+extreme-12-uniquement-des-mineurs c2436dd1059776f566a81e9107aa876bfdae061aa54927697af371dcb4946a95 18
+extreme-13-2000-contraintes-ad-hoc 48fec9164b8661b978f4dcfe4c455c7993b4a6b77471a709537b040429bda598 410
+extreme-14-stands-jamais-ouverts SANS-OBJET
+extreme-15-sans-creneau SANS-OBJET
+festival-hivernal f749d7504f7f03d3d5162b02231841e9f2b8c43c4a597121f28a50099ea7b6ba 3494
+festival-realiste-canicule 21cf83f09cad6aa40cc7d9789e6e8b8d0d356a32ea7c6543ed2aa163a7df1a56 2161
+gamme-01-1j-2stands-3animateurs SANS-OBJET
+gamme-02-1j-2stands-4animateurs-relais-midi SANS-OBJET
+gamme-03-1j-3stands-5animateurs-competences-souhaits SANS-OBJET
+gamme-04-2j-3stands-6animateurs-postes-explicites-indisponibilites 57de2f214bec854d33f758e55907138018881fcac36c530a8d82a746006336db 13
+gamme-05-2j-4stands-8animateurs-mineurs 0c813e07e95f1ddfd8938ce0a0197a0244d8b892bc759c475b16cf002ce7a4db 20
+gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc 9fe6fec58ea6d92bc3780476a5479ded74f27920ba2ce647fc6d8ac3041c9654 27
+gamme-07-3j-5stands-10animateurs-horaires-recurrents 14f98176ab6cacf9733a8d4d76b47356d04baa7df6db642b24271044454dbdb2 36
+gamme-08-3j-5stands-16animateurs-relais-midi-reduit 1bca9e6826267780b13e2ad84320a2534d8247c8fc478280f62e8672bc210e9e 68
+gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements f18c5b85a894a395705c27683ce8871a48893c52e6df0a98b660c9e0c7f5fd01 59
+gamme-10-4j-8stands-20animateurs-journees-types-multiples 5d0ad8883a8736202c0f34b0c6a077f393d77da24553254637e0b9cbc000dbef 116
+gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit 857f2713599d091ab6ecd05bff51a91d4c9fe501996cb86fee7521de031ff3c3 52
+gamme-12-7j-10stands-24animateurs-semaine-complete-ferie 25a0cc478bc33c103ad9745c5ce98142d4d6d58fdd4311d3517ddf0f0f4e65ea 163
+gamme-13-7j-12stands-30animateurs-premium-epuisants 2e3c994e16b86f2b3e7f1cb356bec37082963a05e2e73a3e6256140c5a0c510f 175
+gamme-14-10j-15stands-52animateurs-releve-repas 296769e2bc2451274facec7e6fc4a74297cbe832910458f6a27644266aa98e73 471
+gamme-15-10j-20stands-56animateurs-deux-week-ends a43d21586ba651809b6b78d01521a1207148a6c5169d6d90116af5f141dd6fe1 486
+gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes c4c3903abb9dc21e8cd2ab8c8505321a54b78a8cbc0e46f0b99aefa58064b9d5 987
+gamme-17-14j-30stands-78animateurs-contraintes-desactivees e5e55ecde5347ddb13bfc24388777b1ba962fcffb1f40eaae5d42df54ffa4568 660
+gamme-18-14j-35stands-132animateurs-effectifs-par-fenetre 8d4a1d74153ac0c5a4eed3ff6e89bf115a3e8513a1d08b8ed3eb04dd3afa2476 1637
+gamme-19-21j-40stands-118animateurs-saisonniers-plages fdc78fa704feb3ecc8f76afdd2ac83b224fa9fede578708c6009249f9b0bad13 1776
+gamme-20-21j-50stands-172animateurs-festival-type bef9b506cea40d45fbbfcf785006ffe10b1100b4440d9aff512c126cfe3835ad 4987
+gamme-21-30j-60stands-104animateurs-mois-journees-types 7f5fe791cdd04e640b729b04ef1fc06ae76d0b31048b3a312447358bbdb96d93 1874
+gamme-22-30j-80stands-256animateurs-mois-week-ends 2e981decb86fd2464d5fa9a1c0cef1be217eb029d0c1d8de0a3579ef646faf24 3794
+gamme-23-30j-100stands-144animateurs-ad-hoc-souhaits 688d8d426faf07571b087ccb3d3c10eeb332a6db642f89afec88cff20b35e195 3454
+gamme-24-30j-120stands-260animateurs-mineurs-emplacements 9d8d8a9fdc110f8a62de271a12032d567aa7afa7e2d63bfced49a8a23de6b177 6064
+gamme-25-30j-150stands-320animateurs-edition-complete 462f502efce5c82365b5a4b9f3b7c584e579f9a72cc332279d0acdd551bcb304 5116
+gamme-26-infaisable-sous-effectif SANS-OBJET
+gamme-28-infaisable-mur-des-six-jours 146c57e93b55c6db273f8ddcdaeb1f25d6bf4e5e335bc3ad28dab6219adfac8e 18
+gamme-29-infaisable-mineurs-en-soiree SANS-OBJET
+gamme-30-infaisable-coupure-repas SANS-OBJET
+scenario-avec-erreur-planning 836bd09b14a63e7bffe6ec13cf825ce6cd9df4ce706900fa81b4f22af392c114 33
+scenario-complet 59e14e0b300396db09f9cd3d5f610c3c365ac3785a87e35349e0f6a6bb19763a 2755
+scenario-continu-avec-coupure a9ae47f42727ded5f4d9c7e271c155880d6bf826bb626bba9d17604e8c6b2fd8 3776
+scenario-continu 7929094a508f4f45a83e9fc3520da4dbde347bcb7b10969bfdf35d1ebdf8309e 3772
+scenario-contraintes SANS-OBJET
+scenario-horaires-recurrents cea8f11f3abf3d090593d57464297ab3019ea04f296e346289f186cec93560ad 15
+scenario-parametres-optionnels SANS-OBJET
+scenario-sans-postes SANS-OBJET
+scenario-typologies SANS-OBJET
+scenario SANS-OBJET
+vitrine-fete-du-jeu-de-pierrefeuille c4c3903abb9dc21e8cd2ab8c8505321a54b78a8cbc0e46f0b99aefa58064b9d5 987

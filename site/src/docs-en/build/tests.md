@@ -74,7 +74,7 @@ A structural test plays no scenario: it reads the code (sources, annotations, SQ
 | Exposed JSON keys do not move silently | `JsonContractTest` (`json-contract.txt`) |
 | Layers (an MCP tool calls a service, never a resource) | `LayeringStructuralTest` |
 | The repository imports `ai.timefold.solver.core.impl` only in the listed places | `TimefoldInternalApiStructuralTest` |
-| The consigne layer is applied only by `StandService.resolve` | `ConsigneCoucheStructurelleTest` |
+| Every reading of a stand's plages goes through `StandService.resolve` (a consigne's plages are read above the stand's own there) | `ConsigneCoucheStructurelleTest` |
 | The stand manager sees only projections, never a domain type | `ResponsableProjectionStructurelleTest` |
 | The routes open to the organiser and to the stand manager, one by one | `InstanceRoutesStructuralTest`, `RoutesOuvertesStructuralTest` |
 | The list of tests that start the application | `ContainerTestsInventoryTest` |

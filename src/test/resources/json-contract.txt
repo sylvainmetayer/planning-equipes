@@ -418,6 +418,7 @@ domain.ParametresQualite.typologiesDistinctesMax
 domain.ParametresQualite.vitesseMarcheKmH
 domain.ParametresSolveur.mailFinResolution
 domain.ParametresSolveur.modifieLe
+domain.PlageStand.consigne
 domain.PlageStand.date
 domain.PlageStand.depliee
 domain.PlageStand.effectif
