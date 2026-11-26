@@ -2,12 +2,16 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   effect,
   inject,
   Injector,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, take } from 'rxjs';
 import { consumeQueryParam } from '../../core/view-query-params';
 import { FormationPage } from '../formation/formation-page';
 import { FragilitePage } from '../fragilite/fragilite-page';
@@ -33,6 +37,8 @@ import { SECTIONS_RISQUES, SectionRisques } from './diagnostic';
 })
 export class RisquesTab {
   private readonly injector = inject(Injector);
+  private readonly router = inject(Router, { optional: true });
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fragilite = viewChild(FragilitePage);
   private readonly formation = viewChild(FormationPage);
   private readonly tension = viewChild(TensionTab);
@@ -43,6 +49,25 @@ export class RisquesTab {
         ? this.scrollToOnceLoaded(section as SectionRisques)
         : undefined,
     );
+  }
+
+  /**
+   * The reading resumes at the section landed on, not at the top of the page.
+   * Not at once: dropping `section` is a navigation, on whose end the shell
+   * hands the focus to `main` (a microtask) — the next task comes after it.
+   */
+  private focusOnceParamDropped(target: HTMLElement): void {
+    this.router?.events
+      .pipe(
+        // The end of the drop, not of a navigation still landing (`section=fragilite` scrolls at once).
+        filter(
+          (event) =>
+            event instanceof NavigationEnd && !/[?&]section=/.test(event.urlAfterRedirects),
+        ),
+        take(1),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => setTimeout(() => target.focus({ preventScroll: true })));
   }
 
   /** Scrolls once the sections above the target have loaded: their rows push it down meanwhile. */
@@ -64,8 +89,9 @@ export class RisquesTab {
             () => {
               const target = document.getElementById(`risques-${section}`);
               target?.scrollIntoView({ block: 'start' });
-              // The reading resumes at the section landed on, not at the top of the page.
-              target?.focus({ preventScroll: true });
+              if (target) {
+                this.focusOnceParamDropped(target);
+              }
               resolve();
             },
             { injector: this.injector },
