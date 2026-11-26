@@ -4,48 +4,13 @@
 // split as `stand-bulk-edit.ts`.
 
 import { DetailRow } from '../../shared/detail-dialog';
-import {
-  decrireFenetre,
-  libelleJour,
-  libelleJourSemaine,
-  resumerHoraires,
-} from '../../core/horaire-stand';
+import { decrireFenetre, libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import {
   AnomalieOuverture,
   HoraireStand,
   IndisponibiliteStand,
   OuvertureStand,
-  Stand,
 } from '../../core/models';
-
-/**
- * The schedule of a stand in lines: the summary, then each recurring rule
- * spelled out and each dated exception — what the « Règles » section of the
- * fiche stand shows, the condensed form of its grid.
- */
-export function scheduleRows(stand: Stand): DetailRow[] {
-  return [
-    {
-      label: $localize`:@@stands.column.horaires:Horaires`,
-      value: resumerHoraires(stand, {
-        aucun: $localize`:@@detail.stand.horairesAucun:Ouvert par défaut, aucune règle`,
-        regles: (n) => $localize`:@@stands.horaires.summary.regles:${n}:count: règle(s)`,
-        exceptions: (n) =>
-          $localize`:@@stands.horaires.summary.exceptions:${n}:count: exception(s)`,
-      }),
-    },
-    // Each rule spelled out, not just counted: "2 règles" says nothing about
-    // when the stand is actually open.
-    ...(stand.horaires ?? []).map((horaire, index) => ({
-      label: $localize`:@@detail.stand.regle:Règle ${index + 1}:numero:`,
-      value: describeRule(horaire),
-    })),
-    ...(stand.ouvertures ?? []).map((ouverture) => describeException(ouverture, true)),
-    ...(stand.indisponibilites ?? []).map((indisponibilite) =>
-      describeException(indisponibilite, false),
-    ),
-  ];
-}
 
 /** What an anomaly of the openings is about: the day it falls on, or how the rules are written. */
 export function anomalyLabel(anomalie: AnomalieOuverture): string {

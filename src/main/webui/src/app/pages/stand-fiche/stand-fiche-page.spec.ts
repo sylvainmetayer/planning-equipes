@@ -1,4 +1,4 @@
-// The fiche stand over what it reads: the head, the grid, what the plan did of
+// The fiche stand over what it reads: the head, the model and its plages, what the plan did of
 // its seats, « précédent / suivant » in the table's order, `?modifier=1` — the
 // landing of the `?edit=` links — opening the identity form, and an unknown id.
 
@@ -10,7 +10,6 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { StandsApi } from '../../core/api/stands-api';
 import { ApiService } from '../../core/api.service';
 import { Animateur, Creneau, PlanningEvenement, Stand } from '../../core/models';
@@ -132,7 +131,6 @@ describe('StandFichePage', () => {
         provideRouter([]),
         { provide: ApiService, useValue: { get: vi.fn(() => Promise.resolve([])) } },
         provideFake(StandsApi, standsApi),
-        { provide: JourneesTypesApi, useValue: { etat: vi.fn(() => Promise.resolve(null)) } },
         {
           provide: PlanningStateService,
           useValue: { set: vi.fn(), loadForDisplay: vi.fn(() => Promise.resolve(PLAN)) },
@@ -176,7 +174,7 @@ describe('StandFichePage', () => {
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(
-        root().querySelector('app-stand-grid-editor, .stand-fiche-introuvable'),
+        root().querySelector('app-stand-plages-editor, .stand-fiche-introuvable'),
       ).not.toBeNull();
     });
   }
@@ -236,12 +234,12 @@ describe('StandFichePage', () => {
     expect(config.data?.identityOnly).toBe(true);
   });
 
-  it('reads the stand again once its grid is saved, its new stamp and headcounts with it', async () => {
+  it('reads the stand again once its model or a plage is written, its new stamp with it', async () => {
     await render('S2');
     store.reload.mockClear();
     const before = standsApi.openings.mock.calls.length;
 
-    fixture.componentInstance['onGridSaved']();
+    fixture.componentInstance['onScheduleChanged']();
     await fixture.whenStable();
 
     expect(store.reload).toHaveBeenCalledWith(['stands']);
