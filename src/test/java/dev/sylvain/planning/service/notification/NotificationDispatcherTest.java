@@ -247,7 +247,8 @@ class NotificationDispatcherTest {
         List<Recorded> log = new ArrayList<>();
         NotificationDispatcher dispatcher = recordingDispatcher(mails -> envoyes.addAll(List.of(mails)), log);
 
-        dispatcher.surNotification(new Notification.CarpoolValidated("A9", "alice@example.org", "Alice", List.of("Bob"), null));
+        dispatcher.surNotification(
+                new Notification.CarpoolValidated("A9", "alice@example.org", "Alice", List.of("Bob"), null));
         dispatcher.surNotification(oneSubmission());
 
         assertThat(log).containsExactly(new Recorded("A9", "mail/covoiturage-valide", MailDeliveryOutcome.SENT));
