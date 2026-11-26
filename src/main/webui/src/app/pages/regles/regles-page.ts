@@ -1,4 +1,4 @@
-import { Location } from '@angular/common';
+import { Location, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,7 +6,9 @@ import {
   computed,
   inject,
   OnInit,
+  effect,
   signal,
+  untracked,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -38,9 +40,8 @@ import {
   ConstraintView,
   ConstraintsView,
   NiveauContrainte,
+  NiveauRegle,
   ParametreContrainte,
-  ParametresLegaux,
-  ParametresQualite,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -59,18 +60,16 @@ import { ConsignesPage } from '../consignes/consignes-page';
 import { VerrouillagesPage } from '../verrouillages/verrouillages-page';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
 import {
+  BLOCS_REGLES,
+  BlocRegle,
+  blocOfRule,
   OngletRegles,
   SEUILS,
-  SettingsRecord,
   articlesOf,
-  hasChanges,
-  mergeSettings,
-  ongletOfRule,
   isRuleTab,
+  niveauEffectif,
   readOngletRegles,
-  rulesOfTab,
-  shownValue,
-  storedValue,
+  rulesOfBloc,
 } from './regles';
 import { WeightHistoryView } from './weight-history-view';
 
@@ -85,6 +84,28 @@ function niveauLabel(niveau: NiveauContrainte): string {
       return $localize`:@@regles.niveau.soft:Préférence : départage deux plans valables`;
     default:
       return niveau;
+  }
+}
+
+/** The levels an organisation rule can take, the most binding first. */
+const NIVEAUX_REGLE: readonly NiveauRegle[] = [
+  'OBLIGATOIRE',
+  'PREFERENCE_FORTE',
+  'PREFERENCE_NORMALE',
+  'PREFERENCE_LEGERE',
+];
+
+/** Called lazily: a level in the words of the screen. */
+function niveauRegleLabel(niveau: NiveauRegle): string {
+  switch (niveau) {
+    case 'OBLIGATOIRE':
+      return $localize`:@@regles.niveauRegle.obligatoire:Obligatoire`;
+    case 'PREFERENCE_FORTE':
+      return $localize`:@@regles.niveauRegle.forte:Forte`;
+    case 'PREFERENCE_NORMALE':
+      return $localize`:@@regles.niveauRegle.normale:Normale`;
+    case 'PREFERENCE_LEGERE':
+      return $localize`:@@regles.niveauRegle.legere:Légère`;
   }
 }
 
@@ -105,22 +126,26 @@ function importanceLabel(importance: Importance): string {
  * respect, on one screen, in tabs carried by `?onglet=` — first the three of
  * the former « Consignes au solveur » (issue #719): the adjustments (the
  * default), the locks and the consignes, each emitting `changed` after a
- * write, upon which « Relancer le calcul » is offered in place; then —
+ * write, upon which « Relancer le calcul » is offered in place; then
+ * « Règles », the rules themselves in three blocks:
  *
- * - « Légal » — one row per hard rule: its short label, the article
- *   that founds it, on/off, the thresholds it reads edited on the row itself
- *   (weekly caps, the break, the meal window…), the breaches of the last
- *   analysis. The detail — the long text, the history of its settings — opens
- *   in a panel beside the table, which `?regle=<name>` opens directly: the
- *   stable address the Diagnostic and the reading of the score link to.
- * - « Qualité » — the same table for the medium and soft rules, with their
- *   importance in three positions (faible / normale / forte, weights 1 / 5 /
- *   25) and the exact weight in the panel for whoever wants it.
+ * - « Obligations légales » — read only: what the law imposes, its article, the
+ *   thresholds it reads as stored, and a link to Paramètres › Légal, where they
+ *   are set. A threshold is edited in one place only.
+ * - « Politique de l'organisation » — the rules whose level the edition
+ *   chooses: obligatoire, or a preference (forte, normale, légère). The exact
+ *   weight opens in the panel and is offered only to a preference: a mandatory
+ *   rule counts, it is not weighed.
+ * - « Réglages avancés » (folded, `?avance=1`) — the rest: assignment, adjustments,
+ *   locks, preferences. Which block holds a rule comes from the catalogue
+ *   (`legale`, `niveauReglable`), never from its name.
  *
- * Nothing is written as it is typed: « Légal » and « Qualité » share one set
- * of pending changes — a threshold like the meal window is read by a rule of
- * each — and each tab carries its « Enregistrer ». A navigation away with
- * changes pending asks first, and the Solveur asks too before « Calculer ».
+ * The detail — the long text, the history of its settings — opens in a panel
+ * beside the blocks, which `?regle=<name>` opens directly: the stable address
+ * the Diagnostic and the reading of the score link to. Nothing is written as it
+ * is typed: the switches, levels and weights share one set of pending changes
+ * and one « Enregistrer ». A navigation away with changes pending asks first,
+ * and the Solveur asks too before « Calculer ».
  */
 @Component({
   selector: 'app-regles-page',
@@ -136,6 +161,7 @@ function importanceLabel(importance: Importance): string {
     MatProgressBarModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    NgTemplateOutlet,
     ReglagesAvancesToggle,
     RelancerCalcul,
     RouterLink,
@@ -165,8 +191,6 @@ export class ReglesPage implements OnInit {
   protected readonly error = signal('');
 
   protected readonly view = signal<ConstraintsView | null>(null);
-  private readonly legaux = signal<ParametresLegaux | null>(null);
-  private readonly qualite = signal<ParametresQualite | null>(null);
 
   /* ------------------------------ Tab and rule ------------------------------ */
 
@@ -181,25 +205,21 @@ export class ReglesPage implements OnInit {
   });
 
   /**
-   * The tab on screen: the one chosen, else the tab of the rule the address
-   * named — `/regles?regle=<a quality rule>` opens on « Qualité » —, else
-   * « Légal ». A rule open on a tab that does not list it moves the tab.
+   * The tab on screen: the one chosen, else « Règles » when the address
+   * named a rule, else the adjustments.
    */
-  protected readonly onglet = computed<OngletRegles>(() => {
-    const choisi = this.ongletChoisi();
+  protected readonly onglet = computed<OngletRegles>(
+    () => this.ongletChoisi() ?? (this.selectedRule() ? 'regles' : 'ajustements'),
+  );
+
+  private readonly selectedBloc = computed(() => {
     const rule = this.selectedRule();
-    if (rule && (choisi === null || isRuleTab(choisi)) && choisi !== ongletOfRule(rule)) {
-      return ongletOfRule(rule);
-    }
-    return choisi ?? 'ajustements';
+    return rule ? blocOfRule(rule) : null;
   });
 
   protected readonly isRuleTab = isRuleTab;
 
-  /**
-   * The rules themselves and the solve budget are an expert's settings: their
-   * tabs show under « Réglages avancés », or when the address names one.
-   */
+  /** The rules nobody tunes every day — assignment, adjustments, locks, preferences — are folded. */
   protected readonly avance = reglagesAvances();
 
   /**
@@ -218,18 +238,24 @@ export class ReglesPage implements OnInit {
     );
   }
 
-  /** The rows of the tab on screen. */
-  protected readonly rows = computed(() => {
-    const onglet = this.onglet();
-    return isRuleTab(onglet) ? rulesOfTab(this.view()?.contraintes ?? [], onglet) : [];
+  /** The rows of each block, in reading order. */
+  protected readonly blocs = computed(() => {
+    const contraintes = this.view()?.contraintes ?? [];
+    return BLOCS_REGLES.map((bloc) => ({ bloc, rows: rulesOfBloc(contraintes, bloc) }));
   });
+  protected readonly legalRows = computed(() => this.rowsOf('legal'));
+  protected readonly organisationRows = computed(() => this.rowsOf('organisation'));
+  protected readonly avanceRows = computed(() => this.rowsOf('avance'));
+
+  private rowsOf(bloc: BlocRegle): ConstraintView[] {
+    return this.blocs().find((each) => each.bloc === bloc)?.rows ?? [];
+  }
 
   /* ---------------------------- Pending changes ----------------------------- */
 
   private readonly actifsDraft = signal<Readonly<Record<string, boolean>>>({});
   private readonly poidsDraft = signal<Readonly<Record<string, number>>>({});
-  private readonly legauxDraft = signal<SettingsRecord>({});
-  private readonly qualiteDraft = signal<SettingsRecord>({});
+  private readonly niveauxDraft = signal<Readonly<Record<string, NiveauRegle>>>({});
 
   private readonly actifsChanges = computed(() =>
     (this.view()?.contraintes ?? []).filter(
@@ -241,20 +267,13 @@ export class ReglesPage implements OnInit {
       (rule) => rule.name in this.poidsDraft() && this.poidsDraft()[rule.name] !== rule.poids,
     ),
   );
-  private readonly legauxDirty = computed(() =>
-    hasChanges(this.legaux() as SettingsRecord | null, this.legauxDraft()),
-  );
-  private readonly qualiteDirty = computed(() =>
-    hasChanges(this.qualite() as SettingsRecord | null, this.qualiteDraft()),
+  private readonly niveauxChanges = computed(() =>
+    (this.view()?.contraintes ?? []).filter((rule) => rule.name in this.niveauxDraft()),
   );
 
-  /** How many things « Enregistrer » would write: rules switched, reweighted, and the records touched. */
+  /** How many things « Enregistrer » would write: rules switched, re-levelled and reweighted. */
   protected readonly pendingCount = computed(
-    () =>
-      this.actifsChanges().length +
-      this.poidsChanges().length +
-      (this.legauxDirty() ? 1 : 0) +
-      (this.qualiteDirty() ? 1 : 0),
+    () => this.actifsChanges().length + this.poidsChanges().length + this.niveauxChanges().length,
   );
   protected readonly dirty = computed(() => this.pendingCount() > 0);
 
@@ -265,7 +284,9 @@ export class ReglesPage implements OnInit {
   protected readonly hardIssues = computed(
     () =>
       this.view()
-        ?.contraintes.filter((rule) => rule.niveau === 'HARD' && (rule.matchCount ?? 0) > 0)
+        ?.contraintes.filter(
+          (rule) => niveauEffectif(rule) === 'HARD' && (rule.matchCount ?? 0) > 0,
+        )
         .map((rule) => ({ name: rule.name, matchCount: rule.matchCount ?? 0 })) ?? [],
   );
   /** Shared with the Solveur screen: see `ProblemesStore.alerteReglesLegales`. */
@@ -276,6 +297,10 @@ export class ReglesPage implements OnInit {
     return at ? new Date(at).toLocaleString(intlLocale()) : '';
   });
 
+  protected readonly niveaux = NIVEAUX_REGLE.map((niveau) => ({
+    value: niveau,
+    label: niveauRegleLabel(niveau),
+  }));
   protected readonly importances = IMPORTANCES.map((importance) => ({
     value: importance,
     label: importanceLabel(importance),
@@ -299,6 +324,14 @@ export class ReglesPage implements OnInit {
       onglet: this.onglet() === 'ajustements' ? null : this.onglet(),
       regle: optionalParam(this.regle()),
     }));
+    // `?regle=` naming a rule of the folded block opens the fold, once: a rule asked for is never hidden.
+    // Tracked through the block's name, not the rule object: a reload hands out new objects, and must not
+    // reopen a fold the reader just closed.
+    effect(() => {
+      if (this.selectedBloc() === 'avance' && !untracked(() => this.avance.ouvert())) {
+        untracked(() => this.avance.basculer());
+      }
+    });
     // A solve that lands writes a fresh analysis: its breaches are the column
     // this screen reads. Unregistered with the page, rebuilt on every visit.
     const destroyRef = inject(DestroyRef);
@@ -322,14 +355,7 @@ export class ReglesPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [view, legaux, qualite] = await Promise.all([
-        this.constraintsApi.catalogue(),
-        this.constraintsApi.legalParameters(),
-        this.constraintsApi.qualityParameters(),
-      ]);
-      this.apply(view);
-      this.legaux.set(legaux);
-      this.qualite.set(qualite);
+      this.apply(await this.constraintsApi.catalogue());
     } catch (error) {
       this.error.set(errorPrefix(error));
     } finally {
@@ -375,8 +401,7 @@ export class ReglesPage implements OnInit {
       this.location.replaceState(chemin || '/');
     }
     this.ongletChoisi.set(onglet);
-    const rule = this.selectedRule();
-    if (rule && onglet !== ongletOfRule(rule)) {
+    if (!isRuleTab(onglet)) {
       this.regle.set(null);
     }
   }
@@ -410,6 +435,7 @@ export class ReglesPage implements OnInit {
   }
 
   protected readonly niveauLabel = niveauLabel;
+  protected readonly niveauEffectifOf = niveauEffectif;
 
   protected libelle(rule: ConstraintView): string {
     return rule.libelleCourt || rule.categorie;
@@ -442,6 +468,43 @@ export class ReglesPage implements OnInit {
     this.actifsDraft.update((draft) => withEntry(draft, rule.name, actif, rule.actif));
   }
 
+  /** Switches a legal rule back on: the legal block has no switch, but a rule left off must not stay stuck. */
+  protected reactivate(rule: ConstraintView): void {
+    this.actifsDraft.update((draft) => withEntry(draft, rule.name, true, rule.actif));
+  }
+
+  protected reactivateLabel(rule: ConstraintView): string {
+    const regle = this.libelle(rule);
+    return $localize`:@@regles.reactiver.aria:Réactiver — ${regle}:regle:`;
+  }
+
+  /** The level an organisation rule shows: the one pending, else the one the edition stored. */
+  protected niveauOf(rule: ConstraintView): NiveauRegle | null {
+    const draft = this.niveauxDraft();
+    return rule.name in draft ? draft[rule.name] : (rule.niveauChoisi ?? null);
+  }
+
+  /** Whether the rule counts as a hard one as it shows — a mandatory rule is counted, never weighed. */
+  protected obligatoire(rule: ConstraintView): boolean {
+    return rule.niveauReglable
+      ? this.niveauOf(rule) === 'OBLIGATOIRE'
+      : niveauEffectif(rule) === 'HARD';
+  }
+
+  /**
+   * Chooses the level of an organisation rule, on « Enregistrer » like the rest.
+   * A level writes the weight of its position, so a weight typed meanwhile is
+   * dropped; choosing the stored level again is no change, unless the rule
+   * carries a weight of its own that the position would bring back to its figure.
+   */
+  protected setNiveau(rule: ConstraintView, niveau: NiveauRegle): void {
+    const same =
+      niveau === (rule.niveauChoisi ?? null) &&
+      (niveau === 'OBLIGATOIRE' || importanceOf(rule.poids) !== null);
+    this.niveauxDraft.update((draft) => withEntry(draft, rule.name, niveau, same ? niveau : null));
+    this.poidsDraft.update((draft) => withoutEntry(draft, rule.name));
+  }
+
   protected setImportance(rule: ConstraintView, importance: Importance): void {
     this.setPoids(rule, POIDS_IMPORTANCE[importance]);
   }
@@ -458,7 +521,10 @@ export class ReglesPage implements OnInit {
    * stopped being dosed (ADR 0057), and otherwise invisible on this screen.
    */
   protected hardWeightCustomised(rule: ConstraintView): boolean {
-    return rule.niveau === 'HARD' && this.poidsOf(rule) !== POIDS_DUR;
+    // A rule shipped medium and made mandatory keeps its preference weight for the way back: it does not apply.
+    return (
+      rule.niveau === 'HARD' && niveauEffectif(rule) === 'HARD' && this.poidsOf(rule) !== POIDS_DUR
+    );
   }
 
   /** Brings a hard rule back to the weight every hard rule carries, on « Enregistrer » like the rest. */
@@ -472,79 +538,40 @@ export class ReglesPage implements OnInit {
 
   /* ---------------------- The settings a rule reads ------------------------- */
 
-  /** Whether the row can edit this setting; an unknown key is shown read-only, never dropped. */
-  protected editable(parametre: ParametreContrainte): boolean {
-    return parametre.cle !== undefined && parametre.cle in SEUILS;
-  }
-
-  protected seuil(parametre: ParametreContrainte) {
-    return SEUILS[parametre.cle ?? ''];
-  }
-
-  protected valeurSeuil(parametre: ParametreContrainte, field: string): string | number | null {
+  /**
+   * Where a setting is edited, in Paramètres: the legal ceilings in « Légal », the
+   * comfort thresholds in « Organisation ». `null` for a key this screen does not
+   * know — its value is shown, with nowhere to go.
+   */
+  protected sectionOf(parametre: ParametreContrainte): 'legal' | 'organisation' | null {
     const descriptor = SEUILS[parametre.cle ?? ''];
-    return descriptor.source === 'legaux'
-      ? shownValue(descriptor, field, this.legaux() as SettingsRecord | null, this.legauxDraft())
-      : shownValue(descriptor, field, this.qualite() as SettingsRecord | null, this.qualiteDraft());
-  }
-
-  protected onSeuilTyped(parametre: ParametreContrainte, field: string, typed: string): void {
-    const descriptor = SEUILS[parametre.cle ?? ''];
-    const draft = descriptor.source === 'legaux' ? this.legauxDraft : this.qualiteDraft;
-    draft.update((current) => ({ ...current, [field]: storedValue(descriptor, typed) }));
-  }
-
-  /** A field read out of context by a screen reader: the setting, and for a window which end. */
-  protected seuilLabel(
-    parametre: ParametreContrainte,
-    rule: ConstraintView,
-    index: number,
-  ): string {
-    const descriptor = SEUILS[parametre.cle ?? ''];
-    const regle = this.libelle(rule);
-    const libelle = parametre.libelle;
-    if (descriptor.kind === 'plage') {
-      return index === 0
-        ? $localize`:@@regles.seuil.debut:${libelle}:libelle:, début — ${regle}:regle:`
-        : $localize`:@@regles.seuil.fin:${libelle}:libelle:, fin — ${regle}:regle:`;
+    if (!descriptor) {
+      return null;
     }
-    return $localize`:@@regles.seuil.aria:${libelle}:libelle: — ${regle}:regle:`;
+    return descriptor.source === 'legaux' ? 'legal' : 'organisation';
   }
-
-  protected uniteSeuil(parametre: ParametreContrainte): string {
-    switch (SEUILS[parametre.cle ?? '']?.kind) {
-      case 'heures':
-        return $localize`:@@regles.unite.heures:h`;
-      case 'minutes':
-        return $localize`:@@regles.unite.minutes:min`;
-      default:
-        return '';
-    }
-  }
-
-  /* ------------------------------ Grid check -------------------------------- */
 
   /**
-   * The two legal settings no rule reads: the grid check of the timeslots
-   * warns with them (a daily rest the grid leaves no room for, a shift that
-   * needs a relay). They were on the legal card, and stay on the legal tab.
+   * The section of Paramètres a row links to: « Légal » for every legal rule —
+   * the whole block points there, a rule with no figure of its own included —,
+   * else the one that holds a setting the rule reads, `null` when it reads none.
    */
-  protected valeurGrille(field: 'reposQuotidienMinimalMinutes' | 'dureeVacationMaxMinutes') {
-    const descriptor = { source: 'legaux' as const, kind: 'heures' as const, fields: [field] };
-    return shownValue(
-      descriptor,
-      field,
-      this.legaux() as SettingsRecord | null,
-      this.legauxDraft(),
-    );
+  protected parametresLien(rule: ConstraintView, bloc: BlocRegle): 'legal' | 'organisation' | null {
+    if (bloc === 'legal') {
+      return 'legal';
+    }
+    for (const parametre of rule.parametres ?? []) {
+      const section = this.sectionOf(parametre);
+      if (section) {
+        return section;
+      }
+    }
+    return null;
   }
 
-  protected onGrilleTyped(
-    field: 'reposQuotidienMinimalMinutes' | 'dureeVacationMaxMinutes',
-    typed: string,
-  ): void {
-    const descriptor = { source: 'legaux' as const, kind: 'heures' as const, fields: [field] };
-    this.legauxDraft.update((current) => ({ ...current, [field]: storedValue(descriptor, typed) }));
+  protected lienParametresLabel(rule: ConstraintView): string {
+    const regle = this.libelle(rule);
+    return $localize`:@@regles.lienParametres.aria:Régler dans Paramètres — ${regle}:regle:`;
   }
 
   /* ---------------------------------- Save ---------------------------------- */
@@ -552,17 +579,14 @@ export class ReglesPage implements OnInit {
   protected cancel(): void {
     this.actifsDraft.set({});
     this.poidsDraft.set({});
-    this.legauxDraft.set({});
-    this.qualiteDraft.set({});
+    this.niveauxDraft.set({});
     this.error.set('');
   }
 
   /**
-   * Writes the pending changes, one record after the other, each cleared once
+   * Writes the pending changes, one after the other, each cleared once
    * stored — a refusal on the third leaves the first two saved and says why.
-   * The two parameter records are re-read just before being written: the
-   * server replaces a whole record, and Paramètres › Calcul writes a field of the legal
-   * one too.
+   * The levels go first: a level writes the weight of its position.
    */
   protected async save(): Promise<void> {
     if (!this.dirty() || this.saving()) {
@@ -571,21 +595,9 @@ export class ReglesPage implements OnInit {
     this.saving.set(true);
     this.error.set('');
     try {
-      if (this.legauxDirty()) {
-        const stored = await this.constraintsApi.legalParameters();
-        this.legaux.set(
-          await this.constraintsApi.saveLegalParameters(mergeSettings(stored, this.legauxDraft())),
-        );
-        this.legauxDraft.set({});
-      }
-      if (this.qualiteDirty()) {
-        const stored = await this.constraintsApi.qualityParameters();
-        this.qualite.set(
-          await this.constraintsApi.saveQualityParameters(
-            mergeSettings(stored, this.qualiteDraft()),
-          ),
-        );
-        this.qualiteDraft.set({});
+      for (const rule of this.niveauxChanges()) {
+        await this.constraintsApi.setNiveau(rule.name, this.niveauxDraft()[rule.name]);
+        this.niveauxDraft.update((draft) => withoutEntry(draft, rule.name));
       }
       for (const rule of this.actifsChanges()) {
         await this.constraintsApi.setActive(rule.name, this.actifsDraft()[rule.name]);
@@ -654,7 +666,7 @@ function withEntry<T>(
   draft: Readonly<Record<string, T>>,
   name: string,
   value: T,
-  stored: T,
+  stored: T | null,
 ): Readonly<Record<string, T>> {
   return value === stored ? withoutEntry(draft, name) : { ...draft, [name]: value };
 }

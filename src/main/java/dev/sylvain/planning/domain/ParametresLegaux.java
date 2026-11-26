@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import java.time.Instant;
 import java.time.LocalTime;
 
 /**
@@ -125,6 +126,9 @@ public class ParametresLegaux {
     private LocalTime coupureRepasSoirFin = COUPURE_REPAS_SOIR_FIN_PAR_DEFAUT;
     private LocalTime heureDebutSoiree = HEURE_DEBUT_SOIREE_PAR_DEFAUT;
 
+    /** When the stored row was last written; sent back by a write as its precondition, {@code null} checks nothing. */
+    private Instant modifieLe;
+
     public ParametresLegaux() {}
 
     public ParametresLegaux(int dureeHebdomadaireMaxMinutes) {
@@ -134,6 +138,14 @@ public class ParametresLegaux {
     public ParametresLegaux(int dureeHebdomadaireMaxMinutes, int dureeHebdomadaireMaxMineurMinutes) {
         this.dureeHebdomadaireMaxMinutes = dureeHebdomadaireMaxMinutes;
         this.dureeHebdomadaireMaxMineurMinutes = dureeHebdomadaireMaxMineurMinutes;
+    }
+
+    public Instant getModifieLe() {
+        return modifieLe;
+    }
+
+    public void setModifieLe(Instant modifieLe) {
+        this.modifieLe = modifieLe;
     }
 
     public int getDureeHebdomadaireMaxMinutes() {

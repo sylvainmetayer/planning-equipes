@@ -93,6 +93,21 @@ class WriteStampStructurelleTest {
                 .contains("animateur_contact", "journee_type", "webhook", "consigne_edition", "prereglage_consigne");
     }
 
+    /**
+     * The four single-row tables of the edition's parameters carry the stamp too, and their write has its
+     * clause: the derived scan above covers them, this names them so that dropping one fails loudly.
+     */
+    @Test
+    void theFourParameterTablesAreStampedAndTheirWritesCarryTheClause() throws IOException {
+        List<String> parametres =
+                List.of("parametres_legaux", "parametres_qualite", "parametres_solveur", "parametres_notifications");
+        assertThat(tablesEstampillees()).containsAll(parametres);
+        String sources = read(SOURCES);
+        for (String table : parametres) {
+            assertThat(sources).contains("date_trunc('milliseconds', " + table + ".modifie_le)");
+        }
+    }
+
     /** Every precondition clause is bound, and bound through the one helper that words it. */
     @Test
     void everyPreconditionIsBoundThroughTheHelper() throws IOException {

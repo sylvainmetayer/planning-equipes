@@ -1,16 +1,22 @@
 // « Paramètres › Légal » and « Organisation »: the section's settings on one
-// form. Nothing is written before « Enregistrer », and the save re-reads the
-// record so a field edited elsewhere meanwhile is not reset.
+// form. Nothing is written before « Enregistrer », and the save carries the
+// `modifieLe` the section was loaded with: a section written since is a 409,
+// answered by overwriting (the record re-read, no stamp), reloading or neither.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError, CODE_MODIFICATION_CONCURRENTE } from '../../core/api.service';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { NotificationService } from '../../core/notification.service';
+import { ConfirmService } from '../../shared/confirm-dialog';
 import { ParametresSection, SectionReglages } from './parametres-section';
 
+const STAMP = '2026-11-26T10:00:00Z';
+
 const LEGAUX = {
+  modifieLe: STAMP,
   dureeHebdomadaireMaxMinutes: 2880,
   dureeHebdomadaireMaxMineurMinutes: 2100,
   reposQuotidienMinimalMinutes: 660,
@@ -26,6 +32,7 @@ const LEGAUX = {
 
 describe('ParametresSection', () => {
   let api: Record<string, ReturnType<typeof vi.fn>>;
+  let confirm: { askThreeWay: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<ParametresSection>;
 
   async function openSection(section: SectionReglages): Promise<void> {
@@ -43,10 +50,11 @@ describe('ParametresSection', () => {
   }
 
   beforeEach(() => {
+    confirm = { askThreeWay: vi.fn() };
     api = {
       legalParameters: vi.fn(() => Promise.resolve({ ...LEGAUX })),
       saveLegalParameters: vi.fn((legaux: unknown) => Promise.resolve(legaux)),
-      qualityParameters: vi.fn(() => Promise.resolve({ joursConsecutifsMax: 6 })),
+      qualityParameters: vi.fn(() => Promise.resolve({ joursConsecutifsMax: 6, modifieLe: STAMP })),
       saveQualityParameters: vi.fn((qualite: unknown) => Promise.resolve(qualite)),
     };
     TestBed.configureTestingModule({
@@ -55,6 +63,7 @@ describe('ParametresSection', () => {
         provideRouter([]),
         { provide: ConstraintsApi, useValue: api },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
+        { provide: ConfirmService, useValue: confirm },
       ],
     });
   });
@@ -68,23 +77,77 @@ describe('ParametresSection', () => {
     expect(api['saveLegalParameters']).not.toHaveBeenCalled();
   });
 
-  it('saves over the record as it is stored now, through the legal section', async () => {
-    await openSection('legal');
+  function typePause(): void {
     const pause = champ('Durée de la pause légale');
     pause.value = '45';
     pause.dispatchEvent(new Event('input'));
+  }
+
+  const STALE = new ApiError(409, 'conflict', 'Modifiée.', CODE_MODIFICATION_CONCURRENTE);
+
+  it('saves the record as loaded under its stamp, through the legal section', async () => {
+    await openSection('legal');
+    typePause();
     expect(fixture.componentInstance.dirty()).toBe(true);
-    // Edited elsewhere between the opening and the save: kept.
-    api['legalParameters'].mockResolvedValue({ ...LEGAUX, heureDebutSoiree: '19:00:00' });
 
     await fixture.componentInstance['save']();
 
     expect(api['saveLegalParameters']).toHaveBeenCalledExactlyOnceWith({
       ...LEGAUX,
-      heureDebutSoiree: '19:00:00',
       dureePauseMinutes: 45,
+      modifieLe: STAMP,
     });
     expect(fixture.componentInstance.dirty()).toBe(false);
+  });
+
+  it('overwrites a section written since: the record re-read, sent without a stamp', async () => {
+    await openSection('legal');
+    typePause();
+    api['saveLegalParameters'].mockRejectedValueOnce(STALE);
+    confirm.askThreeWay.mockResolvedValue(true);
+    api['legalParameters'].mockResolvedValue({
+      ...LEGAUX,
+      heureDebutSoiree: '19:00:00',
+      modifieLe: '2026-11-26T11:00:00Z',
+    });
+
+    await fixture.componentInstance['save']();
+
+    expect(api['saveLegalParameters']).toHaveBeenLastCalledWith({
+      ...LEGAUX,
+      heureDebutSoiree: '19:00:00',
+      dureePauseMinutes: 45,
+      modifieLe: null,
+    });
+    expect(fixture.componentInstance.dirty()).toBe(false);
+  });
+
+  it('reloads on request and drops what was typed, nothing having been written', async () => {
+    await openSection('legal');
+    typePause();
+    api['saveLegalParameters'].mockRejectedValueOnce(STALE);
+    confirm.askThreeWay.mockResolvedValue(false);
+    const reads = api['legalParameters'].mock.calls.length;
+
+    await fixture.componentInstance['save']();
+
+    expect(api['saveLegalParameters']).toHaveBeenCalledOnce();
+    expect(api['legalParameters'].mock.calls.length).toBe(reads + 1);
+    expect(fixture.componentInstance.dirty()).toBe(false);
+  });
+
+  it('keeps what was typed when the dialog is dismissed, and says the refusal', async () => {
+    await openSection('legal');
+    typePause();
+    api['saveLegalParameters'].mockRejectedValueOnce(STALE);
+    confirm.askThreeWay.mockResolvedValue(null);
+
+    await fixture.componentInstance['save']();
+    fixture.detectChanges();
+
+    expect(api['saveLegalParameters']).toHaveBeenCalledOnce();
+    expect(fixture.componentInstance.dirty()).toBe(true);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Modifiée.');
   });
 
   it('writes the organisation section through the quality thresholds', async () => {
@@ -97,6 +160,7 @@ describe('ParametresSection', () => {
 
     expect(api['saveQualityParameters']).toHaveBeenCalledExactlyOnceWith({
       joursConsecutifsMax: 5,
+      modifieLe: STAMP,
     });
     expect(api['saveLegalParameters']).not.toHaveBeenCalled();
   });

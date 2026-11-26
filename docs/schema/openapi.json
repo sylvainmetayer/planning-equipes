@@ -7219,6 +7219,9 @@
           },
           "heureDebutSoiree" : {
             "$ref" : "#/components/schemas/LocalTime"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -7272,6 +7275,9 @@
           "ancienneteEchangeJours" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -7316,6 +7322,9 @@
           "toleranceArriveeGroupeeMinutes" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -7325,6 +7334,9 @@
         "properties" : {
           "mailFinResolution" : {
             "type" : "boolean"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -10050,6 +10062,9 @@
           },
           "instance" : {
             "$ref" : "#/components/schemas/SolverBudgetBounds"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },

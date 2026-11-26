@@ -20,6 +20,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -32,6 +33,11 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
  * for the screens and clients of the 3.x; they are removed in 5.0.
  * {@code /parametres-contact} is not a section and stays as it is, and so does
  * the weather alert, which has its own page.
+ *
+ * <p>A section's {@code PUT} carries the {@code modifieLe} its {@code GET} gave:
+ * a section written since is a 409 {@code MODIFICATION_CONCURRENTE}, and a body
+ * without it checks nothing. The deprecated aliases keep their 3.x behaviour —
+ * last writer wins — so they drop the stamp even when a client sends one.</p>
  */
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -199,13 +205,13 @@ public class ParametresResource {
      * {@link ParametresSolveur} as stored plus {@code instance}, what the
      * operator decided: the solve budget and the ceiling nothing may exceed.
      * Read-only: a {@code PUT} sends {@link ParametresSolveur} and nothing of
-     * {@code instance}.
+     * {@code instance}. {@code modifieLe} is the stamp to send back with the write.
      */
     @Schema(requiredProperties = {"mailFinResolution", "instance"})
-    public record SolverSettingsView(boolean mailFinResolution, SolverBudgetBounds instance) {
+    public record SolverSettingsView(boolean mailFinResolution, SolverBudgetBounds instance, Instant modifieLe) {
 
         static SolverSettingsView of(ParametresSolveur parametres, SolverBudgetBounds bounds) {
-            return new SolverSettingsView(parametres.mailFinResolution(), bounds);
+            return new SolverSettingsView(parametres.mailFinResolution(), bounds, parametres.modifieLe());
         }
     }
 
@@ -224,6 +230,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-legaux")
     public Response updateParametresLegaux(ParametresLegaux parametres) {
+        parametres.setModifieLe(null);
         return writeLegaux(parametres);
     }
 
@@ -240,7 +247,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-qualite")
     public Response updateParametresQualite(ParametresQualite parametres) {
-        return writeQualite(parametres);
+        return writeQualite(parametres.withStamp(null));
     }
 
     /** @deprecated alias of {@code /parametres/calcul}, removed in 5.0 */
@@ -256,7 +263,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-solveur")
     public SolverSettingsView updateParametresSolveur(ParametresSolveur parametres) {
-        return writeSolveur(parametres);
+        return writeSolveur(parametres.withStamp(null));
     }
 
     /** @deprecated alias of {@code /parametres/notifications}, removed in 5.0 */
@@ -272,7 +279,7 @@ public class ParametresResource {
     @PUT
     @Path("/parametres-notifications")
     public Response updateParametresNotifications(ParametresNotifications parametres) {
-        return writeNotifications(parametres);
+        return writeNotifications(parametres.withStamp(null));
     }
 
     /**
