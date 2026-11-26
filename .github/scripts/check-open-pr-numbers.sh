@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Warns when a pull request adds a Flyway migration or a decision record under
 # a number another open pull request adds too. Neither has merged, so neither
-# is wrong yet: whichever merges second will have to renumber, and
-# check-reserved-numbers.sh refuses it the moment the first one lands. This
-# only says so earlier, as a warning on the files, and never fails on it.
+# is wrong yet: whichever merges second renumbers — renumeroter-migration.py
+# for a migration, by hand for a decision record, which check-reserved-numbers.sh
+# refuses the moment the first one lands. This only says so earlier, as a
+# warning on the files, and never fails on it.
 #
 #   REPO=owner/name PR=123 scripts/check-open-pr-numbers.sh
 #

@@ -1,0 +1,9 @@
+---
+ordre: 240
+---
+
+### Les deux règles de repas n'ont plus qu'une ligne
+
+- **Avant (3.x)** : *Règles du planning* montrait deux lignes pour la coupure repas, `coupureRepasObligatoire` (dure par défaut) et `coupureRepasPlacementPrefere` (une préférence), et le sens de la préférence était câblé : tard le midi, tôt le soir.
+- **Après (4.0)** : une seule ligne, « Coupure repas », au niveau réglable (obligatoire par défaut), avec son lien vers le paramètre `placementRepas` de *Paramètres › Organisation* ([ADR 0123](repo:docs/decisions/0123-une-seule-entree-de-repas-placement-en-parametre.md)) : `FIN_MIDI_DEBUT_SOIR` (défaut, le sens d'avant), `DEBUT`, `FIN` ou `AUCUN`. Les deux règles ne fusionnent **pas** dans le score : fusionnées à un seul niveau, elles rendaient quatre des six scénarios livrés infaisables. `coupureRepasPlacementPrefere` reste un terme souple de poids 1 sous la ligne, et `GET /api/constraints` le marque `termeDe: coupureRepasObligatoire`. L'outil MCP `modifier_parametres` (section `organisation`) et l'export YAML (`parametresQualite.placementRepas`) portent le nouveau paramètre.
+- **Ce que vous faites** : rien pour vos plans : la migration `V165` donne le sens d'avant à chaque édition, et aucun score ne bouge ; une édition qui avait désactivé `coupureRepasPlacementPrefere` voit son placement passer à `AUCUN` (si elle a enregistré ses paramètres d'organisation ; sinon l'interrupteur reste, et `PUT /api/constraints/coupureRepasPlacementPrefere` (`{"actif": true}`) le rétablit). Un script qui écrit tout l'enregistrement des paramètres d'organisation sans le champ `placementRepas` le remet à sa valeur par défaut. Un script qui lisait la liste des règles et attendait la ligne `coupureRepasPlacementPrefere` doit ignorer les entrées qui portent `termeDe`, ou lire le paramètre. Un poids, un interrupteur ou un fichier YAML qui nomme encore cette règle fonctionne comme avant.

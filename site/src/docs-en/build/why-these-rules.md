@@ -3,7 +3,7 @@ twin: comprendre/pourquoi-ces-regles
 ---
 # The solver's rules and their catalogue
 
-You will know where to read the list of the 39 rules, how they are arranged by level, why the screen and the code do not use the same word for a breach, and what two fields of the record do not drive. The table at the end of the page is the complete list, kept up to date by a test.
+You will know where to read the list of the {{ regles.total }} rules, how they are arranged by level, why the screen and the code do not use the same word for a breach, and what two fields of the record do not drive. The table at the end of the page is the complete list, kept up to date by a test.
 
 A schedule is valid when no hard rule is breached, and good when the quality rules are barely penalised. The rules are arranged on the three levels of Timefold's `HardMediumSoftScore`: **hard** (blocking), **medium** (heavily penalised, flagged to the organiser) and **soft** (a preference that separates two valid schedules).
 

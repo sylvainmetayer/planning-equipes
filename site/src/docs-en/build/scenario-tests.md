@@ -401,7 +401,7 @@ What to take from it:
 
 ## The comfort-rules bench
 
-`ComfortRulesBenchTest` measures what merging neighbouring comfort rules would cost, before anybody writes it (the target is about 36 rules, against 40 today). Three pairs are looked at: the two balances (`equilibrerCharge`, medium, and `equilibrerCreneauxPenibles`, soft), the two rules of premium and exhausting stands (`eviterRoulementStandsPremium` and `eviterEnchainementStandsEpuisants`), and the two mismatches of a seat (`appreciationIncompatible` and `experienceRequisePourStandsPremium`, the latter measured alone). `souhaitsIncompatibles`, `standComplexeAvecReferent`, `mineurNecessiteEncadrementMajeur` and the distribution of minors are not candidates. It touches nothing in production: the variants are rule toggles and a weight that carries a rule to another level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+`ComfortRulesBenchTest` measures what merging neighbouring comfort rules would cost, before anybody writes it (the target is to remove about four). Three pairs are looked at: the two balances (`equilibrerCharge`, medium, and `equilibrerCreneauxPenibles`, soft), the two rules of premium and exhausting stands (`eviterRoulementStandsPremium` and `eviterEnchainementStandsEpuisants`), and the two mismatches of a seat (`appreciationIncompatible` and `experienceRequisePourStandsPremium`, the latter measured alone). `souhaitsIncompatibles`, `standComplexeAvecReferent`, `mineurNecessiteEncadrementMajeur` and the distribution of minors are not candidates. It touches nothing in production: the variants are rule toggles and a weight that carries a rule to another level ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=ComfortRulesBenchTest \
@@ -510,11 +510,11 @@ The 5% rule decided for these measures: a loss of medium beyond 5%, or a default
 | `eviterRoulementStandsPremium` + `eviterEnchainementStandsEpuisants` | no (no common tuple) | -17.6% (`sans-roulement`, Timefold, `gamme-20`) | keep |
 | `appreciationIncompatible` + `experienceRequisePourStandsPremium` | yes, by construction (two reasons, one medium point each) | -10.8% (`sans-experience-premium`, Timefold, `gamme-20`), which does not apply to a merge at equal score | keep: the score would hold, but two organiser settings would disappear |
 
-No pair therefore merges while meeting both criteria: merging the comfort rules removes none of the 39 rules. The differential test and a before/after test on the scenarios would be enough, were the third pair chosen despite the lost setting.
+No pair therefore merges while meeting both criteria: merging the comfort rules removes no rule. The differential test and a before/after test on the scenarios would be enough, were the third pair chosen despite the lost setting.
 
 ## The direct engine: two tests that keep the rules in duplicate
 
-`solver/handsearch` writes the 39 rules a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.
+`solver/handsearch` writes every rule of the catalogue a second time, to search without going through the constraint streams ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), default engine since [ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Two tests of the default suite, with no container, keep the two copies from diverging.
 
 `HandSearchCoverageStructuralTest` requires that every constraint of `ConstraintCatalog` have its constant in `Rule` and that every constant be counted in the engine's score. It fails first, by name, when a constraint is added on one side only.
 

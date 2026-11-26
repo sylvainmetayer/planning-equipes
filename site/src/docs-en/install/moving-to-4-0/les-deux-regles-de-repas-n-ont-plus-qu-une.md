@@ -1,0 +1,9 @@
+---
+ordre: 240
+---
+
+### The two meal rules have only one line
+
+- **Before (3.x)**: *Planning rules* showed two lines for the meal break, `coupureRepasObligatoire` (hard by default) and `coupureRepasPlacementPrefere` (a preference), and the direction of the preference was wired in: late at midday, early in the evening.
+- **After (4.0)**: a single line for the meal break, with a choosable level (mandatory by default), with its link to the `placementRepas` setting of *Settings › Organisation* ([ADR 0123](repo:docs/decisions/0123-une-seule-entree-de-repas-placement-en-parametre.md)): `FIN_MIDI_DEBUT_SOIR` (default, the former direction), `DEBUT`, `FIN` or `AUCUN`. The two rules do **not** merge in the score: merged at a single level, they made four of the six shipped scenarios infeasible. `coupureRepasPlacementPrefere` stays a soft term of weight 1 under the line, and `GET /api/constraints` flags it `termeDe: coupureRepasObligatoire`. The MCP tool `modifier_parametres` (section `organisation`) and the YAML export (`parametresQualite.placementRepas`) carry the new setting.
+- **What you do**: nothing for your plans: migration `V165` gives every edition the former direction, and no score moves; an edition that had disabled `coupureRepasPlacementPrefere` sees its placement become `AUCUN` (if it has stored its organisation settings; otherwise the toggle stays, and `PUT /api/constraints/coupureRepasPlacementPrefere` (`{"actif": true}`) restores it). A script that writes the whole organisation settings record without the `placementRepas` field puts it back to its default value. A script that read the list of rules and expected the `coupureRepasPlacementPrefere` line must skip the entries that carry `termeDe`, or read the setting. A weight, a toggle or a YAML file that still names this rule works as before.
