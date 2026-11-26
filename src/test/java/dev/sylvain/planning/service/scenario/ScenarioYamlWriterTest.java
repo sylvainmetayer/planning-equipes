@@ -302,6 +302,57 @@ class ScenarioYamlWriterTest {
     }
 
     /**
+     * The level an edition chose for a rule (ADR 0106) goes out under
+     * {@code contraintes.niveaux} and comes back as the same choice; a position
+     * also gives the weight of that position, and a rule with no level to
+     * choose is refused rather than read as the catalogue's.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void theLevelsAnEditionChoseSurviveTheRoundTrip() {
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+                List.of(animateur),
+                List.of(stand),
+                List.of(creneau),
+                List.of(),
+                List.of(new TypologieItem("STRATEGIE", "Stratégie", false)),
+                List.of(),
+                new ParametresLegaux(),
+                null,
+                null,
+                Map.of(),
+                Map.of("equilibrerCharge", 25),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of("stabiliteDuPlanPublie", true, "coupureRepasObligatoire", false)));
+
+        Map<String, Object> contraintes =
+                (Map<String, Object>) new Yaml().<Map<String, Object>>load(yaml).get("contraintes");
+        assertThat((Map<String, Object>) contraintes.get("niveaux"))
+                .containsEntry("stabiliteDuPlanPublie", "OBLIGATOIRE")
+                .containsEntry("coupureRepasObligatoire", "PREFERENCE");
+        assertThat(ScenarioValidator.validate(yaml)).isEmpty();
+        ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
+        assertThat(relu.planning().getNiveauxScenario())
+                .containsEntry("stabiliteDuPlanPublie", true)
+                .containsEntry("coupureRepasObligatoire", false);
+
+        String position = yaml.replace("stabiliteDuPlanPublie: OBLIGATOIRE", "stabiliteDuPlanPublie: PREFERENCE_FORTE");
+        ScenarioYamlReader.ScenarioImporte parPosition =
+                ScenarioYamlReader.buildFromScenarioText(position, ParametresLegaux::new);
+        assertThat(parPosition.planning().getNiveauxScenario()).containsEntry("stabiliteDuPlanPublie", false);
+        assertThat(parPosition.planning().getPonderationsScenario()).containsEntry("stabiliteDuPlanPublie", 25);
+
+        String sansChoix = yaml.replace("stabiliteDuPlanPublie: OBLIGATOIRE", "dureeQuotidienneMaxMajeur: PREFERENCE");
+        assertThatThrownBy(() -> ScenarioYamlReader.buildFromScenarioText(sansChoix, ParametresLegaux::new))
+                .hasMessageContaining("dureeQuotidienneMaxMajeur")
+                .hasMessageContaining("pas de niveau");
+    }
+
+    /**
      * Nothing switched off and nothing reweighted is what a file without the
      * section already means: writing an empty {@code contraintes:} block would
      * be noise in a file meant to be read and diffed by hand.

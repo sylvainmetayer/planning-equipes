@@ -158,6 +158,7 @@ public final class CatalogueActions {
     private static final String CONTRAINTE_ACTIVEE = "CONTRAINTE_ACTIVEE";
     private static final String CONTRAINTE_DESACTIVEE = "CONTRAINTE_DESACTIVEE";
     private static final String CONTRAINTE_PONDEREE = "CONTRAINTE_PONDEREE";
+    private static final String CONTRAINTE_NIVEAU = "CONTRAINTE_NIVEAU";
     private static final String SAUVEGARDE_BASCULEE = "SAUVEGARDE_BASCULEE";
     private static final String DATE_JOUR_J_FORCEE = "DATE_JOUR_J_FORCEE";
     private static final String CLE_MCP_REVELEE = "CLE_MCP_REVELEE";
@@ -432,6 +433,7 @@ public final class CatalogueActions {
         changesData(CONTRAINTE_ACTIVEE, "Contrainte activée", Entite.PARAMETRES);
         changesData(CONTRAINTE_DESACTIVEE, "Contrainte désactivée", Entite.PARAMETRES);
         changesData(CONTRAINTE_PONDEREE, "Poids d'une contrainte modifié", Entite.PARAMETRES);
+        changesData(CONTRAINTE_NIVEAU, "Niveau d'une contrainte modifié", Entite.PARAMETRES);
         action(SAUVEGARDE_BASCULEE, "Sauvegarde nocturne suspendue ou reprise", Entite.SAUVEGARDE);
         action(DATE_JOUR_J_FORCEE, "Date et heure simulées", Entite.PARAMETRES);
         action(CLE_MCP_REVELEE, "Clé MCP révélée", Entite.PARAMETRES);
@@ -661,6 +663,7 @@ public final class CatalogueActions {
         route("ReglageResponsablesResource#put", REGLAGE_RESPONSABLES_MODIFIE);
         route("ConstraintResource#setActif", CONTRAINTE_ACTIVEE);
         route("ConstraintResource#setPoids", CONTRAINTE_PONDEREE);
+        route("ConstraintResource#setNiveau", CONTRAINTE_NIVEAU);
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);
         route("HorlogeResource#setDateJourJ", DATE_JOUR_J_FORCEE);
         route("McpResource#reveal", CLE_MCP_REVELEE);
@@ -815,6 +818,7 @@ public final class CatalogueActions {
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);
         outil("desactiver_contrainte", CONTRAINTE_DESACTIVEE);
         outil("modifier_poids_contrainte", CONTRAINTE_PONDEREE);
+        outil("modifier_niveau_contrainte", CONTRAINTE_NIVEAU);
 
         outil("modifier_sauvegardes", SAUVEGARDE_BASCULEE);
 

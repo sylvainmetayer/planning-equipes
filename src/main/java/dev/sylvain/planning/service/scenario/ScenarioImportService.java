@@ -328,6 +328,12 @@ public class ScenarioImportService {
                 referenceDataService.setContrainteActive(definition.name(), actif, WeightChangeOrigin.SCENARIO);
                 referenceDataService.setConstraintWeight(
                         definition.name(), contraintes.poids().get(definition.name()), WeightChangeOrigin.SCENARIO);
+                if (definition.niveauReglable()) {
+                    referenceDataService.setNiveauObligatoire(
+                            definition.name(),
+                            contraintes.obligatoires().get(definition.name()),
+                            WeightChangeOrigin.SCENARIO);
+                }
             }
         });
     }

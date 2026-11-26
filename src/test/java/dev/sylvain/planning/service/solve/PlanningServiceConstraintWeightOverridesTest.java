@@ -192,6 +192,88 @@ class PlanningServiceConstraintWeightOverridesTest {
     }
 
     /**
+     * The check ADR 0106 leaves to the mechanism: Timefold takes a weight on
+     * another level than the one the rule is written on. The same breach as
+     * above, the edition having made {@code standComplexeAvecReferent}
+     * obligatoire: it scores one point of <b>hard</b>, none of medium — and
+     * under the direct engine's rules the plan is infeasible, not merely worse.
+     */
+    @Test
+    void aRuleMadeObligatoireScoresOnTheHardLevelAtOnePointAMatch() {
+        ReferenceData referenceDataService = new EmptyReferenceData() {
+            @Override
+            public Map<String, Integer> getConstraintWeights() {
+                return Map.of("standComplexeAvecReferent", 7); // kept for the way back, not applied
+            }
+
+            @Override
+            public Map<String, Boolean> getNiveauxObligatoires() {
+                return Map.of("standComplexeAvecReferent", true);
+            }
+        };
+        PlanningService planningService = planningService(referenceDataService);
+
+        assertThat(planningService.effectiveConstraintWeights()).containsEntry("standComplexeAvecReferent", 1);
+
+        PlanningEvenement solved = planningService.solve(problemWithoutReferent());
+
+        assertThat(solved.getScore().hardScore()).isEqualTo(-1);
+        assertThat(solved.getScore().mediumScore()).isZero();
+    }
+
+    @Test
+    void aRuleTheCatalogueShipsHardCanBeMadeAPreferenceAtTheMiddlePositionOrTheStoredWeight() {
+        PlanningService fresh = planningService(new EmptyReferenceData() {
+            @Override
+            public Map<String, Boolean> getNiveauxObligatoires() {
+                return Map.of("coupureRepasObligatoire", false);
+            }
+        });
+        PlanningService stored = planningService(new EmptyReferenceData() {
+            @Override
+            public Map<String, Integer> getConstraintWeights() {
+                return Map.of("coupureRepasObligatoire", 7);
+            }
+
+            @Override
+            public Map<String, Boolean> getNiveauxObligatoires() {
+                return Map.of("coupureRepasObligatoire", false);
+            }
+        });
+
+        assertThat(fresh.effectiveConstraintWeights()).containsEntry("coupureRepasObligatoire", 5);
+        assertThat(stored.effectiveConstraintWeights()).containsEntry("coupureRepasObligatoire", 7);
+    }
+
+    /** A level the catalogue does not let an edition choose is never applied, whoever asks for it. */
+    @Test
+    void aLegalRuleStaysObligatoireWhateverALevelMapSays() {
+        PlanningService planningService = planningService(new EmptyReferenceData() {
+            @Override
+            public Map<String, Boolean> getNiveauxObligatoires() {
+                return Map.of("dureeQuotidienneMaxMajeur", false, "posteDoitEtrePourvu", false);
+            }
+        });
+
+        assertThat(planningService.effectiveLevels()).isEmpty();
+    }
+
+    private static PlanningService planningService(ReferenceData referenceDataService) {
+        return new PlanningService(
+                2L,
+                1L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                referenceDataService,
+                new FeasibilityAnalyzer(),
+                null,
+                null,
+                ConfigProviderResolver.instance()
+                        .getBuilder()
+                        .withSources(mapConfigSource(Map.of()))
+                        .build());
+    }
+
+    /**
      * A single animateur, débutant, alone on a stand: he is also the only
      * value in the planning variable's range, so the solver has no alternative
      * assignment to try and the "no referent on this stand/créneau" match

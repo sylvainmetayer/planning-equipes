@@ -31,8 +31,10 @@ public final class ScenarioMigrations {
     }
 
     /** Ordered by {@code from}; the last link must end at {@link ScenarioBinder#SCHEMA_VERSION}. */
-    static final List<Link> CHAIN =
-            List.of(new Link(1, ScenarioMigrations::v1ToV2), new Link(2, ScenarioParametresLink::convert));
+    static final List<Link> CHAIN = List.of(
+            new Link(1, ScenarioMigrations::v1ToV2),
+            new Link(2, ScenarioParametresLink::convert),
+            new Link(3, ScenarioMigrations::v3ToV4));
 
     private ScenarioMigrations() {}
 
@@ -53,6 +55,18 @@ public final class ScenarioMigrations {
     }
 
     public record Migrated(Map<String, Object> document, List<String> warnings) {}
+
+    /**
+     * 3 → 4: {@code contraintes.niveaux} (the level an edition chooses per
+     * organisation rule, ADR 0106) joins the file. Nothing to convert: a v3 file
+     * names no level, and a rule with none follows the catalogue's own — what
+     * every v3 edition scored under. The version is raised all the same, so that
+     * a file carrying levels is refused by a reader that does not know them
+     * (« format plus récent ») rather than read with them silently dropped.
+     */
+    static Map<String, Object> v3ToV4(Map<String, Object> document, List<String> warnings) {
+        return document;
+    }
 
     /**
      * 1 → 2, the version that opens the 4.x chain; the links of the model

@@ -199,6 +199,11 @@ public class PlanningService {
         return solverConfiguration.effectiveConstraintWeights(scenario);
     }
 
+    /** @see SolverConfiguration#effectiveLevels(Map) */
+    public Map<String, Boolean> effectiveLevels() {
+        return solverConfiguration.effectiveLevels(null);
+    }
+
     // --- Problem building: façade over ProblemBuilder -----------------------
 
     /** @see ProblemBuilder#buildFromReferenceData() */
@@ -294,7 +299,8 @@ public class PlanningService {
                 referenceDataService.listJourneesTypes(),
                 referenceDataService.calendrierJourneesTypes(),
                 referenceDataService.listConsignes(),
-                referenceDataService.listPrereglagesConsigne()));
+                referenceDataService.listPrereglagesConsigne(),
+                referenceDataService.getNiveauxObligatoires()));
     }
 
     // --- Scenario reading: façade over ScenarioYamlReader -------------------

@@ -52,6 +52,10 @@ public final class ScenarioYamlWriter {
      *               thing as one that switched everything on: a rule the
      *               catalogue ships off stays off, and the file says nothing
      *               about it
+     * @param niveauxContraintes the level this edition explicitly chose per
+     *               organisation rule (ADR 0106), {@code true} for obligatoire —
+     *               what the {@code obligatoire} column of the weights holds,
+     *               without the catalogue's defaults filled in
      * @param postes an explicit seat list to pin in the file, or {@code null}
      *               to leave the section out. Production exports always pass
      *               {@code null}: the import regenerates the seats from the
@@ -78,7 +82,46 @@ public final class ScenarioYamlWriter {
             List<JourneeType> journeesTypes,
             List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes,
             List<ConsigneEdition> consignes,
-            List<PrereglageConsigne> prereglagesConsigne) {
+            List<PrereglageConsigne> prereglagesConsigne,
+            Map<String, Boolean> niveauxContraintes) {
+
+        /** Without levels — the callers that predate them: every rule at the catalogue's own level. */
+        public ScenarioExport(
+                List<Animateur> animateurs,
+                List<Stand> stands,
+                List<Creneau> creneaux,
+                List<PosteAffectation> postes,
+                List<TypologieItem> typologies,
+                List<Emplacement> emplacements,
+                ParametresLegaux parametresLegaux,
+                ParametresQualite parametresQualite,
+                ParametresSolveur parametresSolveur,
+                Map<String, Boolean> etatsContraintes,
+                Map<String, Integer> poidsContraintes,
+                List<ContrainteAdHoc> contraintesAdHoc,
+                List<JourneeType> journeesTypes,
+                List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes,
+                List<ConsigneEdition> consignes,
+                List<PrereglageConsigne> prereglagesConsigne) {
+            this(
+                    animateurs,
+                    stands,
+                    creneaux,
+                    postes,
+                    typologies,
+                    emplacements,
+                    parametresLegaux,
+                    parametresQualite,
+                    parametresSolveur,
+                    etatsContraintes,
+                    poidsContraintes,
+                    contraintesAdHoc,
+                    journeesTypes,
+                    calendrierJourneesTypes,
+                    consignes,
+                    prereglagesConsigne,
+                    Map.of());
+        }
 
         /** Without consignes — the tests that predate them, and an edition that has none. */
         public ScenarioExport(

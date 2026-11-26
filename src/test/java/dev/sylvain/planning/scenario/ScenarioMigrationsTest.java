@@ -91,6 +91,15 @@ class ScenarioMigrationsTest {
     }
 
     @Test
+    void v3ToV4ChangesNothingAndAFileWithoutLevelsReadsAsTheCatalogue() {
+        Map<String, Object> document = document();
+        document.put("contraintes", Map.of("poids", Map.of("equilibrerCharge", 25)));
+
+        assertThat(ScenarioMigrations.v3ToV4(document, new java.util.ArrayList<>()))
+                .isEqualTo(document);
+    }
+
+    @Test
     void migrateStampsTheCurrentVersionAndLeavesTheInputUntouched() {
         Map<String, Object> input = document();
 

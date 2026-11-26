@@ -267,9 +267,13 @@ class HandSearchFuzzTest {
                 ConstraintCatalog.ConstraintDefinition rule =
                         ConstraintCatalog.definitions().get(random.nextInt(rules.size()));
                 int weight = new int[] {0, 2, 3, 7}[random.nextInt(4)];
+                // A choosable rule may be moved to the other level (ADR 0106), weighed there like any other.
+                ConstraintCatalog.Niveau level = rule.niveauReglable() && random.nextBoolean()
+                        ? rule.niveauEffectif(rule.niveau() != ConstraintCatalog.Niveau.HARD)
+                        : rule.niveau();
                 weights.put(
                         rule.name(),
-                        switch (rule.niveau()) {
+                        switch (level) {
                             case HARD -> HardMediumSoftScore.ofHard(weight);
                             case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
                             case SOFT -> HardMediumSoftScore.ofSoft(weight);

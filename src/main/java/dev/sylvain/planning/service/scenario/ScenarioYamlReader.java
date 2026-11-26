@@ -406,7 +406,11 @@ public final class ScenarioYamlReader {
      * @param poids       weight per constraint name; what is absent keeps the
      *                    deployment default
      */
-    public record ContraintesScenario(Set<String> desactivees, Set<String> activees, Map<String, Integer> poids) {}
+    public record ContraintesScenario(
+            Set<String> desactivees,
+            Set<String> activees,
+            Map<String, Integer> poids,
+            Map<String, Boolean> obligatoires) {}
 
     /**
      * The optional sections of a bundled scenario, <b>without</b> building its
