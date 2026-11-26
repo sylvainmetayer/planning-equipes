@@ -80,7 +80,7 @@ La même lecture sert le planning individuel : `pauses[]` de `GET /api/espace-an
 
 ## Intendance des repas
 
-`GET /api/pauses/intendance` est la même lecture, comptée au lieu d'être nommée : par jour et par fenêtre, combien de personnes sont en coupure, heure pleine par heure pleine et par emplacement. Le rendu « Pauses et repas » de la page Planning dit qui sort et quand ; celui-ci dit combien de repas préparer et où les porter.
+`GET /api/pauses/intendance` est la même lecture, comptée au lieu d'être nommée : par jour et par fenêtre, combien de personnes sont en coupure, heure pleine par heure pleine et par emplacement. Le rapport des pauses (`GET /api/pauses`) dit qui sort et quand ; celui-ci dit combien de repas préparer et où les porter.
 
 - `journees[].fenetres[]` : une table par fenêtre déclarée, avec `tranches[]` (début de chaque bande, calé sur l'heure et non sur le début de la fenêtre : 12:15-13:45 se lit 12-13 puis 13-14, la largeur étant `pasMinutes`), `emplacements[]` et les totaux.
 - `emplacements[].personnes[]` et `mineurs[]` : un compte par tranche. `total` compte les personnes distinctes de la fenêtre, jamais la somme de `personnes[]`, qui compte quelqu'un une fois par heure que sa coupure traverse.

@@ -21,6 +21,8 @@ import {
   benchTabToJournee,
   equityFicheUrl,
   parametresOngletsDeplaces,
+  planningFormerViews,
+  planningFormerViewUrl,
   redirectCalculToParametres,
   redirectConstraintsToRegles,
   redirectEditionComparison,
@@ -58,8 +60,10 @@ function redirectTarget(
   const route = allRoutes(routes).find(
     (candidate) => candidate.path === path && candidate.redirectTo,
   );
-  const redirectTo = route?.redirectTo as RedirectFunction;
-  return redirectTo(snapshotOf(queryParams, fragment)) as string;
+  const redirectTo = route?.redirectTo as RedirectFunction | string;
+  return typeof redirectTo === 'string'
+    ? redirectTo
+    : (redirectTo(snapshotOf(queryParams, fragment)) as string);
 }
 
 /**
@@ -247,12 +251,11 @@ describe('app.routes', () => {
       );
     });
 
-    it('traduit la vue « sans relais » des pauses en son filtre, et le jour en date', () => {
-      // `/pauses` always wrote an ISO date in `jour`: that is the bookmark the
-      // redirect has to read back, not a day number.
+    it('mène les pauses et l’intendance aux problèmes du Diagnostic, faute de vue à elles', () => {
       expect(redirectTarget('pauses', { vue: 'sans-relais', jour: '2026-08-02' })).toBe(
-        '/journee?vue=pauses&relais=sans&date=2026-08-02',
+        '/diagnostic?onglet=problemes',
       );
+      expect(redirectTarget('intendance', {})).toBe('/diagnostic?onglet=problemes');
     });
 
     it('mène au tableau de la vue Jour sans paramètre superflu', () => {
@@ -266,7 +269,6 @@ describe('app.routes', () => {
         redirectTarget('calendar', { date: '2026-09-05', month: '2026-09', stand: 'S1' }),
       ).toBe('/journee?date=2026-09-05&stand=S1');
       expect(redirectTarget('calendar', {})).toBe('/journee');
-      expect(redirectTarget('intendance', {})).toBe('/journee?vue=pauses');
       expect(redirectTarget('graphe', { q: 'x' })).toBe('/journee?vue=carte&q=x');
     });
 
@@ -302,7 +304,62 @@ describe('app.routes', () => {
       expect(
         redirectTarget('repartition-heures', { date: '2026-09-05', regroupement: 'typologie' }),
       ).toBe('/journee?axe=stand&vue=treemap&jourTreemap=2026-09-05&regroupement=typologie');
-      expect(redirectTarget('typologies-planning', {})).toBe('/journee?axe=typologie');
+      expect(redirectTarget('typologies-planning', {})).toBe('/stands?onglet=typologies');
+    });
+
+    // 4.0: the Planning page keeps Jour, Stand, Personne and Carte. The views
+    // it gave up land on the screen holding their reading today — and no
+    // address, old or new, is left on an empty page.
+    describe('les vues retirées de la page Planning', () => {
+      const formerView = (queryParams: Record<string, string>): string | null =>
+        planningFormerViewUrl(queryParams);
+
+      it('mène « Par typologie » à l’onglet Typologies des stands', () => {
+        expect(formerView({ axe: 'typologie' })).toBe('/stands?onglet=typologies');
+        expect(formerView({ axe: 'typologie', typologie: 'T1', q: 'x' })).toBe(
+          '/stands?onglet=typologies',
+        );
+      });
+
+      it('mène les pauses aux problèmes du Diagnostic', () => {
+        expect(formerView({ vue: 'pauses', date: '2026-08-02', relais: 'sans' })).toBe(
+          '/diagnostic?onglet=problemes',
+        );
+      });
+
+      it('mène les changements à Diffuser, le jour gardé', () => {
+        expect(formerView({ vue: 'changements', date: '2026-08-02' })).toBe(
+          '/publication?onglet=envoyer&jour=2026-08-02',
+        );
+        expect(
+          formerView({ vue: 'changements', jour: '2026-08-03', reference: 'resolution' }),
+        ).toBe('/publication?onglet=envoyer&jour=2026-08-03');
+        expect(formerView({ vue: 'changements', jour: '2' })).toBe('/publication?onglet=envoyer');
+      });
+
+      it('laisse passer chaque vue que la page lit encore, 3.x comprises', () => {
+        const queries: Record<string, string>[] = [
+          {},
+          { vue: 'jour', mode: 'rail' },
+          { vue: 'jour', mode: 'tableau' },
+          { vue: 'calendrier' },
+          { vue: 'rail' },
+          { vue: 'carte' },
+          { vue: 'stand' },
+          { vue: 'personne', rendu: 'synthese' },
+          { axe: 'stand', vue: 'treemap' },
+          { axe: 'personne', vue: 'frise' },
+          { vue: 'carte', comparer: '2026-08-02' },
+        ];
+        for (const query of queries) {
+          expect(formerView(query)).toBeNull();
+        }
+      });
+
+      it('est la garde de la route /journee', () => {
+        const route = allRoutes(routes).find((candidate) => candidate.path === 'journee');
+        expect(route?.canActivate).toContain(planningFormerViews);
+      });
     });
 
     // The two addresses carrying the most params: the map's cursor, and the

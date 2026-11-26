@@ -7,6 +7,7 @@ import {
   jourInconnu,
   planningDays,
   readAxe,
+  readRendu,
   readView,
   JOURNEE_VIEWS,
   viewParams,
@@ -51,8 +52,9 @@ describe('readView', () => {
     expect(readView('jour', 'rail')).toBe('rail');
     expect(readView('calendrier')).toBe('calendrier');
     expect(readView('carte')).toBe('carte');
-    expect(readView('pauses')).toBe('pauses');
-    expect(readView('changements')).toBe('changements');
+    // The breaks and the changes left the page: their addresses are redirected before it reads them.
+    expect(readView('pauses')).toBe('rail');
+    expect(readView('changements')).toBe('rail');
     expect(readView('libres')).toBe('rail');
     expect(readView(null)).toBe('rail');
     expect(readView(null, 'tableau')).toBe('calendrier');
@@ -65,17 +67,27 @@ describe('readView', () => {
     }
     expect(viewParams('rail')).toEqual({ vue: null, mode: null });
     expect(viewParams('calendrier')).toEqual({ vue: 'jour', mode: 'tableau' });
-    expect(JOURNEE_VIEWS.map(tabOf)).toEqual(['jour', 'jour', 'carte', 'pauses', 'changements']);
+    expect(JOURNEE_VIEWS.map(tabOf)).toEqual(['jour', 'jour', 'carte']);
   });
 });
 
 describe('readAxe', () => {
-  it('names one of the four axes, the day otherwise', () => {
+  it('names a grid by `vue`, or by the 3.x `axe`, the day otherwise', () => {
     expect(readAxe('stand')).toBe('stand');
     expect(readAxe('personne')).toBe('personne');
-    expect(readAxe('typologie')).toBe('typologie');
+    expect(readAxe(null, 'stand')).toBe('stand');
+    expect(readAxe('synthese', 'personne')).toBe('personne');
+    expect(readAxe('carte', 'typologie')).toBe('jour');
     expect(readAxe('animateur')).toBe('jour');
     expect(readAxe(null)).toBe('jour');
+  });
+
+  it('reads the rendering of a grid from `rendu`, or from the 3.x `vue` of the axis', () => {
+    const query = (params: Record<string, string>) => new URLSearchParams(params);
+    expect(readRendu(query({ vue: 'stand', rendu: 'treemap' }))).toBe('treemap');
+    expect(readRendu(query({ axe: 'personne', vue: 'frise' }))).toBe('frise');
+    expect(readRendu(query({ vue: 'personne' }))).toBeNull();
+    expect(readRendu(query({}))).toBeNull();
   });
 });
 

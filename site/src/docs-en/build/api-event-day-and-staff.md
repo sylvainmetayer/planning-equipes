@@ -91,7 +91,7 @@ The control room screen (`/mural/:jeton`) reads `GET /api/mural/{token}` every m
 - "Now" is the server time, and the day follows the rule above: at 1:00, the 22:00-02:00 shift is still the previous day's, and in progress.
 - The whole day travels, not only the shift in progress and the next one: the screen chooses them against `now`, advanced by the time elapsed since the read, so a shift ends at its minute without waiting for the next read. `?impression=1` shows the whole day.
 - A shift groups the seats of a stand that share the same effective window; an end that is not after the start falls on the next day.
-- The alerts are the free seats of a shift in progress or starting within two hours, and the breaks without relay for the day not yet finished, read in the same report as the Breaks screen.
+- The alerts are the free seats of a shift in progress or starting within two hours, and the breaks without relay for the day not yet finished, read in the breaks report.
 - A consigne "until midnight" has no end: `closedUntil` is `null` and the screen writes "midnight".
 - A link restricted to certain locations stays so: if those locations are deleted, the screen shows nothing, never the whole edition without warning.
 - `lastAccessAt` is stamped at most once a minute: it says that a screen is reading, not how many times.

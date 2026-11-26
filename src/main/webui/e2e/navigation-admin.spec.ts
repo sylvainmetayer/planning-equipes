@@ -96,19 +96,18 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // Same for the Planning page and its renderings of the day.
   { path: '/journee', marker: 'Planning', sheet: 'planning-barre' },
   { path: '/journee?vue=jour&mode=tableau', sheet: 'jour-table' },
-  // Its three other axes, where six former screens went: each brings its own
+  // Its two grids, where six former screens went: each brings its own
   // stylesheet, the shared grid's included.
-  { path: '/journee?axe=stand', marker: 'Couverture', sheet: 'planning-grille' },
-  { path: '/journee?axe=stand', sheet: 'planning-stand-pourvu' },
-  { path: '/journee?axe=stand&vue=treemap', sheet: 'repartition-toolbar' },
+  { path: '/journee?vue=stand', marker: 'Couverture', sheet: 'planning-grille' },
+  { path: '/journee?vue=stand', sheet: 'planning-stand-pourvu' },
+  { path: '/journee?vue=stand&rendu=treemap', sheet: 'repartition-toolbar' },
   {
-    path: '/journee?axe=personne',
+    path: '/journee?vue=personne',
     marker: 'Heures pour la paie (CSV)',
     sheet: 'planning-personne-travaille',
   },
-  { path: '/journee?axe=personne&vue=frise', sheet: 'personne-frise-ligne' },
-  { path: '/journee?axe=personne&vue=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
-  { path: '/journee?axe=typologie', marker: 'Compétents', sheet: 'planning-typologie-table' },
+  { path: '/journee?vue=personne&rendu=frise', sheet: 'personne-frise-ligne' },
+  { path: '/journee?vue=personne&rendu=synthese', marker: 'Écart méd.', sheet: 'planning-grille' },
   {
     path: '/creneaux?onglet=horaires',
     marker: 'Horaires des stands',
@@ -136,18 +135,6 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'carte-jour-curseur',
   },
   { path: '/parametres?onglet=historique', sheet: 'historique-controles' },
-  { path: '/journee?vue=pauses', sheet: 'pauses-message' },
-  // The meal intendance, under the breaks since the Planning page absorbed it.
-  {
-    path: '/journee?vue=pauses',
-    marker: 'Combien de personnes mangent',
-    sheet: 'intendance-jour-entete',
-  },
-  {
-    path: '/journee?vue=changements',
-    marker: 'Changements de la journée',
-    sheet: 'journee-changements-toolbar',
-  },
   { path: '/animateurs?onglet=disponibilites', sheet: 'espace-dispo-intro' },
   // The three tabs of the former « Consignes au solveur » lead « Règles du
   // planning »: the default tab, and the other two by their `?onglet=`.

@@ -382,7 +382,7 @@ describe('parametrer-pour-un-planning-complet', () => {
     const etapes = section.blocks.find((block) => block.kind === 'steps')!;
     expect(etapes.kind === 'steps' && etapes.items).toHaveLength(5);
     expect(etapes.kind === 'steps' && etapes.items[0]).toMatch(/^Besoin en animateurs/);
-    expect(etapes.kind === 'steps' && etapes.items[4]).toMatch(/^Fragilité, puis Pauses/);
+    expect(etapes.kind === 'steps' && etapes.items[4]).toMatch(/^Fragilité, puis Problèmes/);
   });
 
   it('links every screen the guide names, and only real routes', () => {
@@ -394,7 +394,7 @@ describe('parametrer-pour-un-planning-complet', () => {
       '/diagnostic',
       '/diagnostic',
       '/diagnostic',
-      '/journee',
+      '/diagnostic',
     ]);
     // Four screens became two pages: a link names which tab or rendering.
     expect(section.links.map((link) => link.queryParams)).toEqual([
@@ -405,7 +405,7 @@ describe('parametrer-pour-un-planning-complet', () => {
       { onglet: 'besoin' },
       undefined,
       { onglet: 'fragilite' },
-      { vue: 'pauses' },
+      { onglet: 'problemes' },
     ]);
   });
 

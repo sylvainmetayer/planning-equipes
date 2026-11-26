@@ -361,39 +361,48 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the stand and animateur filters as `shared/selection-recherche` autocompletes;
   the relecture as one line (`relecture-barre.ts`) — one count of the empty
   seats and the breaks without relay, leading to the Diagnostic's problems
-  (`?sieges=vides|verrous` and `?relais=sans` still narrow the table and the
-  breaks from the address), and the state of the day — À relire, Relue
+  (`?sieges=vides|verrous` still narrows the table from the address), and the state of the day — À relire, Relue
   (the date) or Figée (ADR 0121) — as a button opening the three-valued
   control with the comment (`relecture-dialog.ts` over `validation-panel.ts`;
   « Figée » asks first; a lecteur sees the state and no button; written
   through `PUT /api/etats-journee/{jour}`, never the `/api/validations`
   aliases); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
   journée » (`/impression/:date`) and « Afficher sur la TV » (Paramètres ›
-  Affichage mural). One day under four views chosen by
-  `?vue=jour|carte|pauses|changements`, the first with two modes in
-  `?mode=rail|tableau` (the rail, the default, is the absence of both; the 3.x
-  `?vue=calendrier` and `?vue=rail` are still read, `journee.ts`' `readView`):
-  the table stands ×
+  Affichage mural). Four views chosen by
+  `?vue=jour|stand|personne|carte` (ADR 0018: written by the page's one
+  `keepViewInQueryParams`, nothing for the default, the rail), « Jour » having
+  two modes in `?mode=rail|tableau` (the rail, the default, is the absence of
+  both; the 3.x `?vue=calendrier` and `?vue=rail` are still read,
+  `journee.ts`' `readView`): « Jour », one day — the table stands ×
   timeslots across the whole width (`calendar-day-vue`, one name per chip,
   empty seats in red, a closed timeslot in a neutral « fermé », a partial
-  opening as its hours), the rail animateur by animateur, the day replayed on
-  the emplacement map with one time cursor — and under it the load per
-  emplacement, place × span or `?charge=evenement` place × day, over the pure
-  `carte-jour/charge-emplacement.ts` —, the breaks and meals (the intendance of
-  the day under them, `pages/intendance/intendance-jour`), and what changed since
-  the last publication or the last solve (`?reference=publication|resolution`,
-  absent = the publication when one exists; `?lecture=animateurs` for the
-  per-person reading); `?comparer=<day>` puts a second day beside the first
-  on the calendar and the rail — aligned lines, a banner of écarts, read-only,
-  `?ecarts=1` for the differences only — in `pages/journee/comparaison-vue`;
-  one day selector (`date`, and `jour` read as a date or as the number of the
+  opening as its hours) or the rail animateur by animateur —, « Carte », the
+  day replayed on the emplacement map with one time cursor — and under it the
+  load per emplacement, place × span or `?charge=evenement` place × day, over
+  the pure `carte-jour/charge-emplacement.ts` —, and « Stand » and
+  « Personne », the whole event as two grids (below). The 3.x `?axe=stand|personne`
+  is still read, and its `vue` (`treemap`, `frise`, `synthese`) too: they are
+  rewritten to `?vue=stand|personne` and the grid's own rendering `?rendu=`
+  (`readAxe` and `readRendu` of `journee.ts`). **Four readings left the page in
+  4.0**, their addresses redirected by the route's `planningFormerViews` guard
+  (`app.routes.ts`, tested in `app.routes.spec.ts`) until the screens built for
+  them exist: `?axe=typologie` (and `/typologies-planning`) to
+  `/stands?onglet=typologies` — the table read by game category is that tab's,
+  it will move into the Diagnostic's Besoin —, `?vue=pauses` (and `/pauses`,
+  `/intendance`) to `/diagnostic?onglet=problemes` — a « Repas et pauses » screen
+  will take the rotation and the intendance —, `?vue=changements` to
+  `/publication?onglet=envoyer&jour=` — what moved since the publication is the
+  Envoyer table's, since the last solve the Solveur's result —, and
+  « Comparer deux jours » (`?comparer=`, `?ecarts=`) is gone and ignored; the page
+  clears those keys, `axe` and the removed views' own from the address. One
+  day selector (`date`, and `jour` read as a date or as the number of the
   former screens) and the
   same `stand`, `animateur` and `q` filters in the URL — with `emplacement`
-  and `typologie`, the four kept across the axes: `?axe=stand|personne|typologie`
-  turns the page from one day to the whole event (absent = the day); the bar
+  and `typologie`, the four kept across the views: « Jour » and the two grids
+  turn the page from one day to the whole event; the bar
   shows only the filters the rendering on screen reads, and keeps the value of
-  a hidden one. « Par
-  stand » and « Par personne » are two readings of the shared
+  a hidden one. « Stand »
+  and « Personne » are two readings of the shared
   `pages/planning-grille` (a frozen first column, one tab stop moved by the
   arrows, templates for the header and the cell, a sort asked of the caller),
   as wide as the page — the days share its width and their text wraps, so a
@@ -405,18 +414,17 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   span, the frise and the treemap ignore it:
   per stand, a density in `?densite=noms|compteurs|couverture`, closed told
   from empty, a total per day, and the treemap of the former Répartition des
-  heures as `?vue=treemap` (`pages/repartition-heures`, its day in
+  heures as `?rendu=treemap` (`pages/repartition-heures`, its day in
   `?jourTreemap=`); per person, the days alone in the grid, and the Équité and
-  payroll columns, all sortable, in a table of their own as `?vue=synthese`
+  payroll columns, all sortable, in a table of their own as `?rendu=synthese`
   (where `/equite` and `/hours` land), the always-empty ones hidden until
-  `?colonnes=toutes`, the frise as `?vue=frise`, and the two CSV files. « Par typologie » is a table whose
-  figures are links. The one evening is `EquiteService`'s settable start; the
+  `?colonnes=toutes`, the frise as `?rendu=frise`, and the two CSV files. The one evening is `EquiteService`'s settable start; the
   fixed 22:00 is the payroll's night alone (ADR 0055). The plan and the breaks
   read once by the page and handed to the rendering on screen — the views under
-  `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and
-  `pages/pauses`, and `pages/journee/changements-vue`, are its components, not
+  `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour`,
+  `pages/planning-stand` and `pages/planning-personne` are its components, not
   routes; a click on any cell of them — a name or a free seat, a shift, a
-  stand of the map, a break without relay, a line of the changes — opens beside
+  stand of the map — opens beside
   the rendering the **Siège panel** (`shared/siege-panel/`, an `aside` labelled
   by its title, focus moved to it and given back on close — to the cell drawn
   in the opener's place, found by its `data-siege-cle`, when a gesture re-read
@@ -567,7 +575,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and `stand` —, `/marge`, landing on `/diagnostic?onglet=besoin`, or on
   `?onglet=tension` for its `mode=apres|tension`, and the three the Planning page absorbed in issue #712:
   `/calendar` (its `date`, `stand` and `animateur`; the `month` it showed is
-  the day's own), `/intendance` (`?vue=pauses`) and `/graphe` (`?vue=carte`),
+  the day's own), `/intendance` (now the Diagnostic's problems) and `/graphe` (`?vue=carte`),
   through `redirectToPlanning` of `app.routes.ts`, and the six its axes
   absorbed in issue #713: `/heatmap`, `/repartition-heures` (`?vue=treemap`,
   its `date` becoming `jourTreemap`) and `/typologies-planning`, then `/hours`,
