@@ -200,18 +200,21 @@ public final class ScenarioMigrations {
             }
             result.addAll(replacements);
             String cible = Objects.requireNonNullElse(
-                    lock.get("animateurId"),
-                    Objects.requireNonNullElse(
-                            lock.get("standId"),
-                            lock.get("creneauDate") + " " + lock.get("creneauHeureDebut") + "-"
-                                    + lock.get("creneauHeureFin")))
+                            lock.get("animateurId"),
+                            Objects.requireNonNullElse(
+                                    lock.get("standId"),
+                                    lock.get("creneauDate") + " " + lock.get("creneauHeureDebut") + "-"
+                                            + lock.get("creneauHeureFin")))
                     .toString();
-            warnings.add(replacements.isEmpty()
-                    ? "Verrou " + type + " (" + cible + ") : type retiré en 4.0, aucune place ne lui correspond dans"
-                            + " le planning, il ne figeait rien et n'est pas repris."
-                    : "Verrou " + type + " (" + cible + ") : type retiré en 4.0, converti en " + replacements.size()
-                            + " verrou(s) " + ("STAND".equals(type) ? "stand + journée" : "animateur + créneau")
-                            + ", les places qu'il figeait.");
+            warnings.add(
+                    replacements.isEmpty()
+                            ? "Verrou " + type + " (" + cible
+                                    + ") : type retiré en 4.0, aucune place ne lui correspond dans"
+                                    + " le planning, il ne figeait rien et n'est pas repris."
+                            : "Verrou " + type + " (" + cible + ") : type retiré en 4.0, converti en "
+                                    + replacements.size()
+                                    + " verrou(s) " + ("STAND".equals(type) ? "stand + journée" : "animateur + créneau")
+                                    + ", les places qu'il figeait.");
         }
         return result;
     }

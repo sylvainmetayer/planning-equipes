@@ -38,8 +38,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -275,7 +275,7 @@ public class WipeBackupService {
     private List<LockBackup> locks() {
         return referenceDataService.listVerrouillages().stream()
                 .map(v -> new LockBackup(
-                        v.getType().name(),
+                        v.getType(),
                         v.getAnimateurId(),
                         v.getStandId(),
                         v.getCreneauDate(),

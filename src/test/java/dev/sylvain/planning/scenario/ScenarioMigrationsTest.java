@@ -162,7 +162,8 @@ class ScenarioMigrationsTest {
         document.put("plan", Map.of("verrous", List.of(Map.of("type", "JOUR", "jour", "2026-07-02"))));
         List<String> warnings = new java.util.ArrayList<>();
 
-        assertThat(ScenarioMigrations.withRetiredLockTypesConverted(document, warnings)).isSameAs(document);
+        assertThat(ScenarioMigrations.withRetiredLockTypesConverted(document, warnings))
+                .isSameAs(document);
         assertThat(warnings).isEmpty();
     }
 }

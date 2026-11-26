@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 /**
  * V149 reduces the five lock types to three, each converted into what it froze
  * on the persisted plan. Played on a database filled the way 3.x filled it —
- * the migrations up to V148 in a schema of their own, then the rows and the
+ * the migrations up to V147 in a schema of their own, then the rows and the
  * V149 file itself in a transaction rolled back afterwards.
  */
 @QuarkusTest
@@ -32,7 +32,7 @@ class LockTypesMigrationTest {
     private static final String V149 = "db/migration/V149__trois_types_de_verrou.sql";
 
     @BeforeAll
-    static void migrateUpToV148() throws SQLException {
+    static void migrateUpToV147() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -43,7 +43,7 @@ class LockTypesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("148")
+                .target("147")
                 .load()
                 .migrate();
     }

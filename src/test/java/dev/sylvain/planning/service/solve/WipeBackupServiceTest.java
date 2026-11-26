@@ -189,7 +189,7 @@ class WipeBackupServiceTest {
             ScenarioDto file = ScenarioYamlReader.parseScenarioText(wipeBackup.loadContent(backup));
 
             assertThat(file.plan().affectations()).isNotEmpty();
-            assertThat(file.plan().verrous()).hasSize(4);
+            assertThat(file.plan().verrous()).hasSize(3);
             assertThat(planColumnIsNull(backup)).isTrue();
         });
     }
@@ -277,8 +277,8 @@ class WipeBackupServiceTest {
                     .map(AffectationPlanDto::date)
                     .distinct()
                     .count();
-            ObjectNode column = objectMapper.valueToTree(
-                    new WipeBackupService.PlanBackup(WipeBackupService.fromDto(file.plan()).affectations(), List.of()));
+            ObjectNode column = objectMapper.valueToTree(new WipeBackupService.PlanBackup(
+                    WipeBackupService.fromDto(file.plan()).affectations(), List.of()));
             ArrayNode retired = column.putArray("verrouillages");
             retired.addObject().put("type", "ANIMATEUR").put("animateurId", seat.animateurId());
             retired.addObject().put("type", "STAND").put("standId", seat.standId());

@@ -33,7 +33,14 @@ class WipeBackupPlanFileTest {
                             null,
                             "à garder"),
                     new LockBackup(
-                            TypeVerrouillage.STAND_JOUR, null, "S1", null, null, null, LocalDate.of(2026, 7, 4), null)));
+                            TypeVerrouillage.STAND_JOUR,
+                            null,
+                            "S1",
+                            null,
+                            null,
+                            null,
+                            LocalDate.of(2026, 7, 4),
+                            null)));
 
     @Test
     void thePlanSurvivesBeingWrittenAsTheLastSectionOfTheFile() {
