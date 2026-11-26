@@ -467,8 +467,8 @@ class FeasibilityAnalyzerTest {
         // Recorded before the entry-time check existed, or imported together:
         // nothing else would ever point at them (issue #84).
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
-        ContrainteAdHoc indisponibilite = contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau);
-        ContrainteAdHoc forcee = contrainte("C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau);
+        ContrainteAdHoc indisponibilite = contrainte("C1", TypeContrainteAdHoc.INCOMPATIBILITE, creneau);
+        ContrainteAdHoc forcee = contrainte("C2", TypeContrainteAdHoc.AFFINITE, creneau);
 
         FeasibilityReport report = analyzer.analyze(
                 List.of(animateur("a1", "STRATEGIE")),
@@ -478,10 +478,7 @@ class FeasibilityAnalyzerTest {
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.manqueAnimateurs()).isZero();
-        assertThat(report.message())
-                .contains("1 cause bloquante")
-                .contains("C1")
-                .contains("C2");
+        assertThat(report.message()).contains("1 cause bloquante").contains("C1");
 
         CauseInfaisabilite cause = report.causes().getFirst();
         assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES);
@@ -500,8 +497,8 @@ class FeasibilityAnalyzerTest {
                 List.of(stand("stand-1", 3, "STRATEGIE")),
                 List.of(creneau),
                 List.of(
-                        contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneau),
-                        contrainte("C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau)));
+                        contrainte("C1", TypeContrainteAdHoc.INCOMPATIBILITE, creneau),
+                        contrainte("C2", TypeContrainteAdHoc.AFFINITE, creneau)));
 
         assertThat(report.causes())
                 .extracting(CauseInfaisabilite::type)
@@ -518,7 +515,7 @@ class FeasibilityAnalyzerTest {
                 List.of(animateur("a1", "STRATEGIE")),
                 List.of(stand("stand-1", 1, "STRATEGIE")),
                 List.of(creneau),
-                List.of(contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneau)));
+                List.of(contrainte("C1", TypeContrainteAdHoc.AFFINITE, creneau)));
 
         assertThat(report.feasible()).isTrue();
         assertThat(report.causes()).isEmpty();
@@ -556,11 +553,8 @@ class FeasibilityAnalyzerTest {
                         List.of(creneau),
                         List.of(),
                         false,
-                        new FeasibilityAnalyzer.PlanContext(
-                                List.of(),
-                                Set::of,
-                                new dev.sylvain.planning.domain.PastHorizon(
-                                        LocalDate.of(2026, 8, 1), LocalTime.of(11, 0))))
+                        new FeasibilityAnalyzer.PlanContext(new dev.sylvain.planning.domain.PastHorizon(
+                                LocalDate.of(2026, 8, 1), LocalTime.of(11, 0))))
                 .causes()
                 .getFirst();
 
@@ -602,7 +596,7 @@ class FeasibilityAnalyzerTest {
                         List.of(creneau),
                         List.of(),
                         false,
-                        new FeasibilityAnalyzer.PlanContext(List.of(), Set::of, horizon))
+                        new FeasibilityAnalyzer.PlanContext(horizon))
                 .causes()
                 .getFirst();
     }
@@ -698,7 +692,9 @@ class FeasibilityAnalyzerTest {
         contrainte.setCreneau(creneau);
         Animateur animateur = new Animateur();
         animateur.setId("a1");
-        contrainte.setAnimateursConcernes(List.of(animateur));
+        Animateur autre = new Animateur();
+        autre.setId("a2");
+        contrainte.setAnimateursConcernes(List.of(animateur, autre));
         return contrainte;
     }
 

@@ -336,28 +336,31 @@ final class HandSearchFixtures {
         adHoc.add(adHoc("fixture-affinite", TypeContrainteAdHoc.AFFINITE, null, null, animateurs, order, 5, 6));
         adHoc.add(adHoc("fixture-incompat", TypeContrainteAdHoc.INCOMPATIBILITE, null, null, animateurs, order, 7, 8));
         adHoc.add(adHoc(
-                "fixture-indispo",
-                TypeContrainteAdHoc.INDISPONIBILITE_FORCEE,
+                "fixture-incompat-creneau",
+                TypeContrainteAdHoc.INCOMPATIBILITE,
                 lastSeat.getCreneau(),
                 null,
                 animateurs,
                 order,
-                9));
+                9,
+                10));
         adHoc.add(adHoc(
-                "fixture-forcee",
-                TypeContrainteAdHoc.AFFECTATION_FORCEE,
+                "fixture-affinite-stand",
+                TypeContrainteAdHoc.AFFINITE,
                 null,
                 lastSeat.getStand(),
                 animateurs,
                 order,
-                10));
+                10,
+                11));
         adHoc.add(adHoc(
-                "fixture-forcee-passee",
-                TypeContrainteAdHoc.AFFECTATION_FORCEE,
+                "fixture-incompat-passee",
+                TypeContrainteAdHoc.INCOMPATIBILITE,
                 pastSeat.getCreneau(),
                 pastSeat.getStand(),
                 animateurs,
                 order,
+                9,
                 11));
         problem.setContraintesAdHoc(adHoc);
 

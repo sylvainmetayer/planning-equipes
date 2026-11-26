@@ -82,7 +82,7 @@ The application publishes nothing outside, sends no message and opens no espace 
 | Floor | The part of a rule that no solve can improve, because data is missing (nobody has declared a wish, for example) |
 | Partial re-solve | A solve that keeps the schedule in place and redoes only what a change broke |
 | Lock | The schedule of a person, a stand or a day, which no solve will touch any more |
-| Manual adjustment | An exception set by hand: a person unavailable on a given day, two people not to be put together, an imposed assignment |
+| Manual adjustment | An exception set by hand: two people not to be put together, a pair to favour, a carpool |
 | Consigne | A closure imposed from outside (a prefectoral order, a heatwave) applied to all stands for a few dates |
 | Version | A copy of the schedule set aside (by hand, before a solve or at publication), which you can put back in place later |
 | CSV, ICS, PDF | The file formats: CSV opens in a spreadsheet, ICS is added to a calendar (phone, Outlook, Google), PDF is printed |

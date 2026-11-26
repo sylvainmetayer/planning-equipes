@@ -69,6 +69,7 @@ class IdColumnsInventoryStructuralTest {
             Map.entry(
                     "mesure_edition.typologie_id",
                     "a game category id of that edition, empty for the whole event's row; its name is kept beside"),
+            Map.entry("contrainte_ad_hoc_avant_4_0.stand_id", "archive of contrainte_ad_hoc, dropped in 5.0"),
             // The two tables V148 replaced, kept as archives until 5.0.
             Map.entry("kpi_historique_avant_4_0.edition_id", "archive of kpi_historique, dropped in 5.0"),
             Map.entry("kpi_historique_avant_4_0.kpi", "archive of kpi_historique, dropped in 5.0"),

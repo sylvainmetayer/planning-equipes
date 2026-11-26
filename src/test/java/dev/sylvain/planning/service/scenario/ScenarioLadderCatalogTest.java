@@ -37,11 +37,17 @@ class ScenarioLadderCatalogTest {
         return ScenariosLivres.noms(ScenarioLadder.GAMME_PREFIX);
     }
 
+    /** Rung 27 (a forced assignment on a day off) went with the type it exercised (ADR 0117): its number is not reused. */
+    private static final int RETIRED_RUNG = 27;
+
     @Test
-    void theRungsAreNumberedOneToThirtyWithoutAGap() throws IOException {
+    void theRungsAreNumberedOneToThirtyWithoutAGapButTheRetiredOne() throws IOException {
         assertThat(ladder())
                 .extracting(name -> Integer.parseInt(name.substring("gamme-".length(), "gamme-".length() + 2)))
-                .containsExactlyElementsOf(IntStream.rangeClosed(1, 30).boxed().toList());
+                .containsExactlyElementsOf(IntStream.rangeClosed(1, 30)
+                        .filter(rung -> rung != RETIRED_RUNG)
+                        .boxed()
+                        .toList());
     }
 
     @ParameterizedTest

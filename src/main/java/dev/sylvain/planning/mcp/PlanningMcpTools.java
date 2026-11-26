@@ -155,10 +155,7 @@ public class PlanningMcpTools {
                 FeasibilityAnalyzer.ConsecutiveDaysRule.of(
                         referenceDataService.getContraintesDesactivees(), referenceDataService.getParametresQualite()),
                 new FeasibilityAnalyzer.PlanContext(
-                        referenceDataService.listVerrouillages(),
-                        persistenceService::loadPlacesTenues,
-                        planningService.pastHorizon(),
-                        persistenceService::loadEmployedByDay));
+                        planningService.pastHorizon(), persistenceService::loadEmployedByDay));
     }
 
     @Tool(

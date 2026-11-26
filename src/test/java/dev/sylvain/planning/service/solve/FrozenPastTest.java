@@ -10,7 +10,6 @@ import ai.timefold.solver.core.config.solver.EnvironmentMode;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -18,7 +17,6 @@ import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
@@ -323,9 +321,7 @@ class FrozenPastTest {
     @Test
     void theIncrementalReconciliationSettlesThePastBeforeItsOwnRules() {
         alice.setJoursIndisponibles(Set.of(HIER));
-        ContrainteAdHoc indisponibilite = new ContrainteAdHoc("AH1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        indisponibilite.setAnimateursConcernes(List.of(bob));
-        indisponibilite.setCreneau(matinHier);
+        bob.setJoursIndisponibles(Set.of(HIER));
         List<PosteAffectation> postes = List.of(
                 poste("p0", matinHier), poste("p1", matinHier), poste("p2", matinHier), poste("p3", matinDemain));
 
@@ -334,11 +330,10 @@ class FrozenPastTest {
                 animateurs,
                 Map.of(key("STAND-A", 1L), List.of("A1", "A2"), key("STAND-A", 6L), List.of("A1")),
                 new ReplanificationScope(Set.of(), Set.of(HIER), Set.of()),
-                List.of(indisponibilite),
                 MIDI);
 
         // Yesterday: Alice kept although unavailable since, Bob kept although
-        // a forced unavailability now covers him, the third seat pinned empty
+        // a day off declared since covers him, the third seat pinned empty
         // — and none of the three re-opened by the perimeter naming that day.
         assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
         assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);

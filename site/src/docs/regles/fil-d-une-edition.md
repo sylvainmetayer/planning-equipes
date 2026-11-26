@@ -79,7 +79,7 @@ L'application ne publie rien vers l'extérieur, n'envoie aucun message et n'ouvr
 | Plancher | La part d'une règle qu'aucun calcul ne peut améliorer, parce qu'une donnée manque (personne n'a déclaré de souhait, par exemple) |
 | Recalcul partiel | Un calcul qui garde le planning en place et ne refait que ce qu'un changement a cassé |
 | Verrou | Le planning d'une personne, d'un stand ou d'une journée, qu'aucun calcul ne touchera plus |
-| Ajustement manuel | Une exception posée à la main : une personne indisponible tel jour, deux personnes à ne pas mettre ensemble, une affectation imposée |
+| Ajustement manuel | Une exception posée à la main : deux personnes à ne pas mettre ensemble, une paire à privilégier, un covoiturage |
 | Consigne | Une fermeture imposée de l'extérieur (un arrêté préfectoral, une canicule) appliquée à tous les stands pour quelques dates |
 | Version | Une copie du planning mise de côté (à la main, avant un calcul ou à la publication), qu'on peut remettre en place plus tard |
 | CSV, ICS, PDF | Les formats de fichier : CSV s'ouvre dans un tableur, ICS s'ajoute à un agenda (téléphone, Outlook, Google), PDF s'imprime |

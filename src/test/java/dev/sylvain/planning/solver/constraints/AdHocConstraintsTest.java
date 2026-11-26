@@ -26,28 +26,6 @@ class AdHocConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void indisponibiliteForceeVioleeEstPenalisee() {
-        Animateur a1 = referentMajeur("A1");
-        verify("indisponibiliteForcee")
-                .given(
-                        a1,
-                        poste(standStrat, creneauMatin, a1),
-                        contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneauMatin, null, a1))
-                .penalizesBy(1);
-    }
-
-    @Test
-    void indisponibiliteForceeSurUnAutreCreneauNEstPasPenalisee() {
-        Animateur a1 = referentMajeur("A1");
-        verify("indisponibiliteForcee")
-                .given(
-                        a1,
-                        poste(standStrat, creneauMatin, a1),
-                        contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneauAprem, null, a1))
-                .penalizesBy(0);
-    }
-
-    @Test
     void incompatibiliteEntreDeuxAnimateursSurMemeCreneauEstPenalisee() {
         Animateur a1 = referentMajeur("A1");
         Animateur a2 = majeurAutonome("A2");
@@ -72,29 +50,6 @@ class AdHocConstraintsTest extends ConstraintTestBase {
                         poste(standStrat, creneauMatin, a1),
                         poste(standStrat, creneauAprem, a2),
                         contrainte("C1", TypeContrainteAdHoc.INCOMPATIBILITE, null, null, a1, a2))
-                .penalizesBy(0);
-    }
-
-    @Test
-    void affectationForceeNonSatisfaiteEstPenalisee() {
-        Animateur a1 = referentMajeur("A1");
-        // No seat assigns A1 on the timeslot aimed at.
-        verify("affectationForcee")
-                .given(
-                        a1,
-                        poste(standStrat, creneauMatin, majeurAutonome("A2")),
-                        contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
-                .penalizesBy(1);
-    }
-
-    @Test
-    void affectationForceeSatisfaiteNEstPasPenalisee() {
-        Animateur a1 = referentMajeur("A1");
-        verify("affectationForcee")
-                .given(
-                        a1,
-                        poste(standStrat, creneauMatin, a1),
-                        contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
                 .penalizesBy(0);
     }
 
@@ -158,33 +113,25 @@ class AdHocConstraintsTest extends ConstraintTestBase {
     /* ------------------- counted, never reproached (ADR 0044) ------------------- */
 
     @Test
-    void aForcedUnavailabilityBreachedOnAPastSeatIsHistory() {
-        Animateur a1 = referentMajeur("A1");
-        verify("indisponibiliteForcee")
-                .given(
-                        a1,
-                        postePasse(standStrat, creneauMatin, a1),
-                        contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneauMatin, null, a1))
-                .penalizesBy(0);
-    }
-
-    @Test
-    void aForcedAssignmentOnATimeslotAlreadyWorkedWithoutItIsHistory() {
+    void anIncompatibilityBreachedOnPastSeatsIsHistory() {
         Animateur a1 = referentMajeur("A1");
         Animateur a2 = majeurAutonome("A2");
-        verify("affectationForcee")
+        ContrainteAdHoc incompatibilite = contrainte("C1", TypeContrainteAdHoc.INCOMPATIBILITE, null, null, a1, a2);
+        verify("incompatibiliteAdHoc")
                 .given(
                         a1,
                         a2,
-                        postePasse(standStrat, creneauMatin, a2),
-                        contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
+                        postePasse(standStrat, creneauMatin, a1),
+                        postePasse(standWithStrategy("STAND-2"), creneauMatin, a2),
+                        incompatibilite)
                 .penalizesBy(0);
-        verify("affectationForcee")
+        verify("incompatibiliteAdHoc")
                 .given(
                         a1,
                         a2,
-                        poste(standStrat, creneauMatin, a2),
-                        contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
+                        postePasse(standStrat, creneauMatin, a1),
+                        poste(standWithStrategy("STAND-2"), creneauMatin, a2),
+                        incompatibilite)
                 .penalizesBy(1);
     }
 

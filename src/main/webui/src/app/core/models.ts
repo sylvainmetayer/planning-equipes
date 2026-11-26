@@ -3,12 +3,7 @@
 
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
 export type NiveauEffort = 'NORMAL' | 'EPUISANT';
-export type TypeContrainteAdHoc =
-  | 'INDISPONIBILITE_FORCEE'
-  | 'INCOMPATIBILITE'
-  | 'AFFECTATION_FORCEE'
-  | 'AFFINITE'
-  | 'ARRIVEE_GROUPEE';
+export type TypeContrainteAdHoc = 'INCOMPATIBILITE' | 'AFFINITE' | 'ARRIVEE_GROUPEE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 
 /** `/api/typologies` items: the enum id plus a display label. */
@@ -734,9 +729,6 @@ export type TypeAvertissement =
   | 'STAND_FENETRE_SANS_EFFET'
   | 'STAND_JAMAIS_OUVERT'
   | 'CRENEAU_DEBORDE_OUVERTURE_STANDS'
-  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
-  | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
-  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
   | 'ARRIVEE_GROUPEE_JOURS_DIVERGENTS'
   | 'VERROUILLAGE_SUR_VIOLATION_DURE'
   | 'STAND_SANS_EMPLACEMENT';
@@ -1181,11 +1173,6 @@ export interface ConstraintDiagnostic {
  *   cannot both hold, whatever the solver does. Refused at entry time, so this
  *   only ever reports what was recorded before that check existed or imported
  *   in one go — `contrainteIds` names the exceptions to arbitrate.
- * - The three `AFFECTATION_FORCEE_*`: one forced assignment nobody can honour.
- *   Its animateurs declared the days off, no seat of its scope may hold them
- *   (a minor on a night slot, an adults-only stand…), or their schedule is
- *   locked over the whole scope. Warned at entry time, reported here for as
- *   long as it stands — `contrainteIds` names the exception to move or delete.
  * - `PLAFOND_JOURS_CONSECUTIFS`: the cap on days worked in a row against the
  *   grid, or the plan in place, on its worst window of (cap + 1) days. `date`
  *   is the window's first day, `demande` and `capacite` are person-days, not
@@ -1193,12 +1180,7 @@ export interface ConstraintDiagnostic {
  *   warning and leaves `feasible` true.
  */
 export type TypeCauseInfaisabilite =
-  | 'CRENEAU_SOUS_EFFECTIF'
-  | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
-  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
-  | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
-  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
-  | 'PLAFOND_JOURS_CONSECUTIFS';
+  'CRENEAU_SOUS_EFFECTIF' | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES' | 'PLAFOND_JOURS_CONSECUTIFS';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';

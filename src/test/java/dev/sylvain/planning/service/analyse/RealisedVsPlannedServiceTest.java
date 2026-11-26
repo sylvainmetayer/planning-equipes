@@ -5,13 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
-import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.GapCounts;
 import dev.sylvain.planning.service.analyse.RealisedVsPlanned.PreviousEdition;
@@ -384,17 +382,14 @@ class RealisedVsPlannedServiceTest {
         return edition.getId();
     }
 
-    /** The mode jour J's two writes: Alice missing on day one, Chloé on her seat. */
+    /** The mode jour J's two writes: Alice off on day one, Chloé on her seat. */
     private void markAbsentAndReplace() {
-        ContrainteAdHoc absence = new ContrainteAdHoc(null, TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
-        Animateur cible = new Animateur();
-        cible.setId("RV-A");
-        absence.setAnimateursConcernes(new ArrayList<>(List.of(cible)));
-        Creneau creneau = new Creneau();
-        creneau.setId(970_300_000L);
-        absence.setCreneau(creneau);
-        absence.setRaison("Absente (mode jour J)");
-        referenceData.createContrainteAdHoc(absence);
+        Animateur alice = referenceData.listAnimateurs().stream()
+                .filter(animateur -> animateur.getId().equals("RV-A"))
+                .findFirst()
+                .orElseThrow();
+        alice.getJoursIndisponibles().add(JOUR1);
+        referenceData.updateAnimateur("RV-A", alice);
         persistence.reaffecterPoste("RV-P1", "RV-C");
     }
 

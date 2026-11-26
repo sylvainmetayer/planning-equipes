@@ -270,6 +270,10 @@ public class DatabaseDumpService {
      *       the two tables {@code mesure_edition} replaced, kept by V148 and
      *       dropped in 5.0: archives nothing reads, the measures being dumped
      *       from {@code mesure_edition} now.</li>
+     *   <li>{@code contrainte_ad_hoc_avant_4_0} — the forced assignments and
+     *       unavailabilities the 4.0 withdrew, kept by V156 and dropped in 5.0:
+     *       an archive nothing reads, a free-text reason that may name a person
+     *       included.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -300,7 +304,8 @@ public class DatabaseDumpService {
             "declaration_coequipier_avant_4_0",
             "solve_budget_avant_4_0",
             "kpi_historique_avant_4_0",
-            "kpi_realise_avant_4_0");
+            "kpi_realise_avant_4_0",
+            "contrainte_ad_hoc_avant_4_0");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

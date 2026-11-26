@@ -47,13 +47,10 @@ The other reference data answer the bare entity: a missing `avertissements` key 
 | `STAND_EXCEPTION_HORS_EVENEMENT` | A dated stand exception names a day outside the interval `[first timeslot, last timeslot]`. The day after a timeslot that crosses midnight is not counted as outside the event: the domain really reads that date. |
 | `STAND_JAMAIS_OUVERT` | After the write, the stand is open on no timeslot. |
 | `STAND_SANS_EMPLACEMENT` | The stand is saved with no location while its neighbours share one: same name root ("Buvette 3" and "Buvette B" have the root "Buvette"), failing that the same game categories offered. It takes at least two placed neighbours and a location held by more than half of them. Emitted only when the write changes the location, the name or the game categories, and never on an edition with no locations. A suggestion, never a write: `GET /api/stands/suggestions-emplacement` gives the same reading for the whole edition. |
-| `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` | The forced assignment falls only on days when all the staff members it names have declared themselves unavailable: it cannot be held. Written anyway (the unavailability day can be removed), and taken up as a blocking cause by the feasibility analysis as long as it holds. |
-| `AFFECTATION_FORCEE_MOTIF_LEGAL` | No seat in the forced assignment's scope accepts one of the named staff members, under a hard rule readable on the seat and staff member pair: minor at night, a public holiday, a stand reserved for adults, the daily ceiling exceeded. The message names the catalogue rules. |
-| `AFFECTATION_FORCEE_SIEGE_VERROUILLE` | The schedule of each named staff member is locked over its whole scope without any of them already holding a seat there: the solver can neither move the lock nor ignore the exception. Only `ANIMATEUR_CRENEAU` locks count; the others pin the held seats and leave the empty seats fillable. |
 | `ARRIVEE_GROUPEE_JOURS_DIVERGENTS` | The members of a grouped arrival have not declared the same unavailability days: on those days, the group cannot arrive together. The message gives the number of days and the first one. |
 | `VERROUILLAGE_SUR_VIOLATION_DURE` | The lock written freezes situations that already break a hard rule in the last analysis. Written anyway: a lock freezes without exempting ([ADR 0003](repo:docs/decisions/0003-verrouillage-par-pin-natif.md)) and the seats are still judged. The message names the rules and the number of situations. Nothing is said on an edition that no solve has analysed: there is nothing to read, and nothing is guessed. |
 
-The three `AFFECTATION_FORCEE_*` types and `ARRIVEE_GROUPEE_JOURS_DIVERGENTS` concern an ad hoc exception; their business meaning is in [ad hoc exceptions](exceptions-ad-hoc.md).
+`ARRIVEE_GROUPEE_JOURS_DIVERGENTS` concerns an ad hoc exception; its business meaning is in [ad hoc exceptions](exceptions-ad-hoc.md).
 
 ## Only what the write changes is reported
 

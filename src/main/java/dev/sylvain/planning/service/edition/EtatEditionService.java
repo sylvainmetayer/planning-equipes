@@ -469,10 +469,7 @@ public class EtatEditionService {
                                 referenceDataService.getContraintesDesactivees(),
                                 referenceDataService.getParametresQualite()),
                         new FeasibilityAnalyzer.PlanContext(
-                                referenceDataService.listVerrouillages(),
-                                persistenceService::loadPlacesTenues,
-                                planningService.pastHorizon(),
-                                persistenceService::loadEmployedByDay)),
+                                planningService.pastHorizon(), persistenceService::loadEmployedByDay)),
                 publicationService.apercu(),
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),
@@ -501,9 +498,7 @@ public class EtatEditionService {
                                 animateurs,
                                 () -> Set.copyOf(confirmationService.unconfirmed())),
                         backupService.lastConfiguredRun(),
-                        phase(joursEvenement, jourEnCours) == Phase.EVENEMENT
-                                ? dayUnderWay(creneaux, contraintes)
-                                : null,
+                        phase(joursEvenement, jourEnCours) == Phase.EVENEMENT ? dayUnderWay(creneaux) : null,
                         jourEnCours),
                 gelService.etat());
     }
@@ -551,20 +546,17 @@ public class EtatEditionService {
     /**
      * The day under way, read by the two screens that already answer it: the
      * wall display for the stands it shows and their empty seats, the mode
-     * jour J for the absences — over the timeslots and the ad hoc constraints
+     * jour J for the absences — over the timeslots
      * this call already read. Only ever called while the event runs.
      */
-    private JourFacts dayUnderWay(List<Creneau> creneaux, List<ContrainteAdHoc> contraintes) {
+    private JourFacts dayUnderWay(List<Creneau> creneaux) {
         AffichageMuralView vue = affichageMuralService.currentEditionView();
         int placesVides = vue.stands().stream()
                 .flatMap(stand -> stand.vacations().stream())
                 .mapToInt(AffichageMuralView.MuralShift::emptySeats)
                 .sum();
         return new JourFacts(
-                vue.jour(),
-                vue.stands().size(),
-                placesVides,
-                jourJService.absentCount(vue.jour(), creneaux, contraintes));
+                vue.jour(), vue.stands().size(), placesVides, jourJService.absentCount(vue.jour(), creneaux));
     }
 
     /** Before the first day, from the first to the last, after the last; before, too, without any day. */

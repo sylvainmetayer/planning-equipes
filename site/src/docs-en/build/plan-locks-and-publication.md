@@ -52,7 +52,7 @@ Matching is **positional**, on stand × timeslot, like that of locks: seats of t
 | Timeslot already started | **Pinned as worked**, before any other rule: holder kept even if invalidated since, empty seat left empty, never reopened by the scope. Counted separately (`postesPasses`). See [the frozen past](horaires-et-fenetres-des-stands.md#le-passé-est-figé) |
 | Designated by the requested scope | Released no matter what: the user says "redo this" |
 | Holder still valid | **Pinned** |
-| Holder invalidated by a late change (deleted, unavailable, covered by a forced unavailability) | Released: pinning would freeze a hard breach that nobody could correct any more. The validity test reuses the solver's predicate, so the two cannot diverge |
+| Holder invalidated by a late change (deleted, unavailable that day) | Released: pinning would freeze a hard breach that nobody could correct any more. The validity test reuses the solver's predicate, so the two cannot diverge |
 | Never filled, or new | Left free |
 
 Two choices to know about:
@@ -72,7 +72,7 @@ The `reamorcage` parameter takes three values (`Reamorcage`): `AUTO` (the defaul
 | --- | --- |
 | Holder still valid | Re-seeded with them, **movable** |
 | Covered by a lock | Left as the locks have put it (pinned) |
-| Holder gone, unavailable that day, or covered by a forced unavailability | Starts empty, counted as "released" |
+| Holder gone, or unavailable that day | Starts empty, counted as "released" |
 | Never filled, or new | Free |
 
 The solver scores the starting solution first and keeps the best one it meets: with equal data, the result never falls below the starting plan. It can fall when the reference data has changed in the meantime (the starting plan is no longer a solution of the new problem) or on a cold start.

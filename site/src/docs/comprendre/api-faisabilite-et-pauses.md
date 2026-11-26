@@ -16,11 +16,8 @@ Une cause n'est pas toujours un manque d'animateurs. Les causes suivantes sont `
 | Cause | Sens |
 | --- | --- |
 | `CONTRAINTES_AD_HOC_CONTRADICTOIRES` | Des exceptions qui ne peuvent pas toutes tenir. Elles sont refusées à la saisie : celles-ci ont été enregistrées avant ce contrôle ou importées en bloc. Classée avant les sous-effectifs, car elle se corrige en supprimant une ligne saisie |
-| `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` | Tous les animateurs nommés se sont déclarés indisponibles sur tout le périmètre |
-| `AFFECTATION_FORCEE_MOTIF_LEGAL` | Aucune place du périmètre ne les accepte, au titre d'une règle dure du couple place x animateur |
-| `AFFECTATION_FORCEE_SIEGE_VERROUILLE` | Leur emploi du temps est verrouillé sur tout le périmètre sans qu'aucun y tienne déjà de place. Ne se lit que pour un appelant qui apporte les verrous (`GET /api/feasibility`, l'état d'édition, le diagnostic post-résolution, `analyser_faisabilite`) |
 
-Les trois dernières sont aussi averties à l'écriture ([décision 0046](repo:docs/decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)). Ces trois causes et la contradiction déclenchent une confirmation sur les trois boutons de l'écran Solveur, car elles garantissent un score dur négatif quel que soit le budget. Le sous-effectif, même `CRITIQUE`, n'en déclenche aucune : le solveur l'atténue encore, et une confirmation qui se déclenche à chaque soirée tendue n'est plus lue.
+La contradiction déclenche une confirmation sur les trois boutons de l'écran Solveur, car elles garantissent un score dur négatif quel que soit le budget. Le sous-effectif, même `CRITIQUE`, n'en déclenche aucune : le solveur l'atténue encore, et une confirmation qui se déclenche à chaque soirée tendue n'est plus lue.
 
 `PLAFOND_JOURS_CONSECUTIFS` lit le plafond de jours travaillés d'affilée contre toute la grille, dès que l'une des deux formes de la règle est allumée. C'est une seule cause, sur la fenêtre la plus tendue, dont `date` est le premier jour. `demande` et `capacite` comptent des jours-personnes, `manque` le déficit (0 sur une simple marge mince). Elle est `CRITIQUE` seulement comme preuve sous la forme dure, `ELEVE` sinon, et une cause `ELEVE` ne rend pas le rapport non réalisable. Une `CRITIQUE` se range avec les contradictions pour ne jamais tomber hors des dix causes renvoyées. Le plan enregistré n'est relu que dans deux cas : pendant l'événement, un jour passé compte les personnes qui l'ont réellement travaillé ; sous la forme dure, quand la grille passe, la même cause peut venir du plan en place.
 

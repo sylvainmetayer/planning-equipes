@@ -297,7 +297,7 @@ export function buildNavGroups(): NavGroup[] {
               'onglet',
               'ajustements',
               $localize`:@@consignesSolveur.onglet.ajustements:Ajustements`,
-              $localize`:@@nav.keywords.ajustements:affinités incompatibilités affectation forcée`,
+              $localize`:@@nav.keywords.ajustements:affinités incompatibilités arrivée groupée`,
             ),
             tab(
               'onglet',

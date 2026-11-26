@@ -12,7 +12,6 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.RefusedWhileFrozen;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -1016,25 +1015,6 @@ public class PlanningPersistenceService {
             throw new IllegalStateException("Failed to load the animateurs employed per day", e);
         }
         return parJour;
-    }
-
-    /**
-     * The same seats as {@link #loadAnimateursByStandCreneau()}, as the triples
-     * {@link ForcedAssignmentOnLockedSchedule} reads: who holds what, on which
-     * stand and which timeslot. That check lives in the referential package and
-     * has no business parsing a storage key, so the bridge is here — where the
-     * storage is.
-     */
-    public Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> loadPlacesTenues() {
-        Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> tenues = new LinkedHashSet<>();
-        loadAnimateursByStandCreneau().forEach((key, animateurIds) -> {
-            int separateur = key.lastIndexOf('#');
-            String standId = key.substring(0, separateur);
-            long creneauId = Long.parseLong(key.substring(separateur + 1));
-            animateurIds.forEach(animateurId ->
-                    tenues.add(new ForcedAssignmentOnLockedSchedule.PlaceTenue(animateurId, standId, creneauId)));
-        });
-        return Set.copyOf(tenues);
     }
 
     /** Grouping key of {@link #loadAnimateursByStandCreneau()}. */

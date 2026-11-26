@@ -39,7 +39,6 @@ import {
   AnimateurProfile,
   ConfirmationView,
   ConstraintView,
-  ContrainteAdHoc,
   DayOff,
   DaySeat,
   LastMailDelivery,
@@ -62,10 +61,6 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { openBenchDialog } from '../../shared/siege-panel/bench-dialog';
 import { catalogueByName } from '../../shared/siege-panel/seat';
 import { StatusMessage } from '../../shared/status-message';
-import {
-  AdHocConstraintFormData,
-  AdHocConstraintFormDialog,
-} from '../ad-hoc-constraints/ad-hoc-constraint-form-dialog';
 import { AnimateurFormData, AnimateurFormDialog } from '../animateurs/animateur-form-dialog';
 import {
   firstDay,
@@ -312,12 +307,6 @@ export class AnimateurFichePage implements OnInit {
     const profile = this.profile();
     return profile ? daysOffOutsideEvent(profile) : [];
   });
-  protected readonly forcedOffAdjustments = computed(
-    () =>
-      this.profile()?.ajustements.filter(
-        (ajustement) => ajustement.type === 'INDISPONIBILITE_FORCEE',
-      ) ?? [],
-  );
   /** The day of the strip clicked: its panel says what marking it would free. */
   protected readonly selectedDay = linkedSignal<string, string | null>({
     source: this.animateurId,
@@ -334,7 +323,6 @@ export class AnimateurFichePage implements OnInit {
     return {
       date,
       declaredOff: jour?.declaredOff ?? false,
-      forcedOff: jour?.forcedOff ?? false,
       ahead: seats.filter((seat) => !seat.passe && !seat.verrouille),
       locked: seats.filter((seat) => !seat.passe && seat.verrouille),
       started: seats.filter((seat) => seat.passe).length,
@@ -690,36 +678,6 @@ export class AnimateurFichePage implements OnInit {
         timeout: 4000,
       });
       this.reload();
-    });
-  }
-
-  /**
-   * « Poser un ajustement » : the adjustment form, this person already named —
-   * the form, not the network view of the adjustments screen.
-   */
-  protected async addAdjustment(): Promise<void> {
-    const animateurId = this.animateurId();
-    await this.run('ajustement', async () => {
-      await this.store.reload(['creneaux', 'stands', 'animateurs']);
-      const contrainte: ContrainteAdHoc = {
-        id: '',
-        type: 'INDISPONIBILITE_FORCEE',
-        animateursConcernes: [{ id: animateurId }],
-        creneau: null,
-        stand: null,
-        raison: '',
-      };
-      const saved = await firstValueFrom(
-        this.dialog
-          .open<AdHocConstraintFormDialog, AdHocConstraintFormData, boolean>(
-            AdHocConstraintFormDialog,
-            { data: { contrainte }, width: '40rem', maxWidth: '95vw', autoFocus: 'first-tabbable' },
-          )
-          .afterClosed(),
-      );
-      if (saved) {
-        this.reload();
-      }
     });
   }
 

@@ -333,7 +333,7 @@ class PlanningPersistenceServiceTest {
         Map<String, List<String>> persiste = persistenceService.loadAnimateursByStandCreneau();
         List<PosteAffectation> reconstruits =
                 ProblemBuilder.buildPostes(List.of(cell.stand()), List.of(cell.creneau()));
-        ProblemBuilder.reamorcerDepuisAffectations(reconstruits, animateurs, persiste, List.of());
+        ProblemBuilder.reamorcerDepuisAffectations(reconstruits, animateurs, persiste);
 
         assertThat(reconstruits).extracting(PosteAffectation::getAnimateur).containsExactlyElementsOf(animateurs);
         assertThat(reconstruits.subList(0, 6))

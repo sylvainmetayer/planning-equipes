@@ -425,7 +425,7 @@ class EditionResourceTest {
                 .path("animateur.id");
         given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"type\":\"INDISPONIBILITE_FORCEE\"," + "\"animateursConcernes\":[{\"id\":\"" + animateur
+                .body("{\"type\":\"INCOMPATIBILITE\"," + "\"animateursConcernes\":[{\"id\":\"" + animateur
                         + "\"}],\"raison\":\"Absent\"}")
                 .when()
                 .post("/api/contraintes-ad-hoc")

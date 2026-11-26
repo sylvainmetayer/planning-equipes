@@ -139,7 +139,9 @@ class IsolationEditionStructurelleTest {
             // statement names it today, but it is partitioned like its source.
             "declaration_coequipier_avant_4_0",
             // V145's archive of the budgets editions had set: partitioned like its source.
-            "solve_budget_avant_4_0");
+            "solve_budget_avant_4_0",
+            // V156's archive of the forced assignments and unavailabilities: partitioned like its source.
+            "contrainte_ad_hoc_avant_4_0");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An

@@ -94,7 +94,7 @@ The meal break is the organiser's rule, not the Labour Code's ([meals and breaks
 
 ## The past is frozen
 
-Every solve, full or incremental, from the screen or through MCP, takes from the saved plan the seats of the timeslots that have already started and pins them, whatever their state ([decision 0044](repo:docs/decisions/0044-le-passe-est-fige.md)). The holder is kept even if they have since declared the day unavailable or a forced unavailability now covers them (they were there); a deleted holder leaves the seat empty; a past seat that is empty is pinned anyway, since nobody can hold yesterday.
+Every solve, full or incremental, from the screen or through MCP, takes from the saved plan the seats of the timeslots that have already started and pins them, whatever their state ([decision 0044](repo:docs/decisions/0044-le-passe-est-fige.md)). The holder is kept even if they have since declared the day unavailable (they were there); a deleted holder leaves the seat empty; a past seat that is empty is pinned anyway, since nobody can hold yesterday.
 
 A timeslot has *started* if its date is past, or if it is today and the seat's effective start has been reached. A timeslot straddling midnight belongs to its start date. "Today" is that of the event-day clock: the machine in production, or the date frozen from Settings › Instance under `quarkus:dev` or with `HORLOGE_SIMULEE_AUTORISEE=true`.
 

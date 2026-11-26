@@ -35,8 +35,8 @@ export class JourJService {
   }
 
   /**
-   * Forced unavailability on every remaining timeslot — or on `creneauId`
-   * alone, the Siège panel's shift — and the seats it frees.
+   * The day joins the fiche's days off — `creneauId`, the Siège panel's shift,
+   * only has to be one still ahead — and the seats it frees.
    */
   marquerAbsent(
     animateurId: string,

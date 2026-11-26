@@ -90,7 +90,7 @@ class ScoreReadingTest {
                         rule("favoriserMixiteDesNiveaux", "0hard/0medium/-70soft", 7),
                         rule("equilibrerCreneauxPenibles", "0hard/0medium/-10soft", 1)),
                 List.of(new ContributionAdHoc(
-                        "C12", "AFFECTATION_FORCEE", "Pour Sarah Martin", 2, List.of("affectationForcee"))),
+                        "C12", "INCOMPATIBILITE", "Pour Sarah Martin", 2, List.of("incompatibiliteAdHoc"))),
                 -5000,
                 0,
                 List.of(
@@ -202,7 +202,7 @@ class ScoreReadingTest {
                 phrase(ScoreReading.read(busy()), ReadingSubject.AJUSTEMENTS).orElseThrow();
 
         assertThat(ajustements.texte())
-                .isEqualTo("1 ajustement manuel est en cause : 2 écarts sur « Affectations forcées ».");
+                .isEqualTo("1 ajustement manuel est en cause : 2 écarts sur « Incompatibilités entre animateurs ».");
         assertThat(ajustements.texte()).doesNotContain("Sarah").doesNotContain("Martin");
         assertThat(ajustements.liens().getFirst().parametres()).containsEntry("ids", "C12");
     }
@@ -248,7 +248,7 @@ class ScoreReadingTest {
     @Test
     void anyHardRuleSwitchedOffKeepsTheVerdictFromVouchingForEverything() {
         ScoreSentence verdict = ScoreReading.read(
-                        clean(), Optional.empty(), Set.of("posteDoitEtrePourvu", "affectationForcee"))
+                        clean(), Optional.empty(), Set.of("posteDoitEtrePourvu", "incompatibiliteAdHoc"))
                 .getFirst();
 
         assertThat(verdict.texte())
@@ -298,9 +298,8 @@ class ScoreReadingTest {
     @Test
     void theExceptionSentenceIsTheSameWhateverTheOrderOfTheContributions() {
         ContributionAdHoc forcee =
-                new ContributionAdHoc("C9", "AFFECTATION_FORCEE", null, 1, List.of("affectationForcee"));
-        ContributionAdHoc indispo =
-                new ContributionAdHoc("C2", "INDISPONIBILITE_FORCEE", null, 1, List.of("indisponibiliteForcee"));
+                new ContributionAdHoc("C9", "INCOMPATIBILITE", null, 1, List.of("incompatibiliteAdHoc"));
+        ContributionAdHoc indispo = new ContributionAdHoc("C2", "AFFINITE", null, 1, List.of("affiniteAdHoc"));
 
         ScoreSentence one = phrase(
                         ScoreReading.read(withAdjustments(List.of(forcee, indispo))), ReadingSubject.AJUSTEMENTS)
@@ -310,7 +309,8 @@ class ScoreReadingTest {
                 .orElseThrow();
 
         assertThat(one).isEqualTo(other);
-        assertThat(one.texte()).contains("«\u00a0Affectations forcées\u00a0» et «\u00a0Indisponibilités posées");
+        assertThat(one.texte())
+                .contains("«\u00a0Affinités entre animateurs\u00a0» et «\u00a0Incompatibilités entre animateurs");
         assertThat(one.liens().getFirst().parametres()).containsEntry("ids", "C2,C9");
     }
 
