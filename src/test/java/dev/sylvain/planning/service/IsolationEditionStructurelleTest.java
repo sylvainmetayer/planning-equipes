@@ -138,7 +138,7 @@ class IsolationEditionStructurelleTest {
             // V142's archive of the 3.x set-aside and cancelled covoiturages: no
             // statement names it today, but it is partitioned like its source.
             "declaration_coequipier_avant_4_0",
-            // V144's archive of the budgets editions had set: partitioned like its source.
+            // V145's archive of the budgets editions had set: partitioned like its source.
             "solve_budget_avant_4_0");
 
     /**

@@ -37,7 +37,7 @@ Trois autres choses allaient avec :
    budget, ses deux colonnes de l'historique des calculs et l'avertissement
    qui l'accompagnait disparaissent. L'écran *Règles du planning › Calcul*
    affiche le budget sans le modifier.
-2. **La migration archive avant de retirer.** `V144` copie les durées et
+2. **La migration archive avant de retirer.** `V145` copie les durées et
    plateaux qu'une édition avait réglés dans `solve_budget_avant_4_0`, puis
    retire les deux colonnes de `parametres_solveur`. L'archive n'est ni lue,
    ni exportée, ni sauvegardée par l'export SQL ; la 5.0 la supprime.
@@ -94,7 +94,12 @@ Trois autres choses allaient avec :
 
 - Une instance qui était en production et ne déclare pas `PUBLIC_INSTANCE`
   cesse de refuser de démarrer sans mentions et d'appliquer son quota : le guide
-  de passage à la 4.0 le dit en toutes lettres, avec l'action à faire.
+  de passage à la 4.0 le dit en toutes lettres, avec l'action à faire. La
+  rupture est aussi **bruyante** : sans `PUBLIC_INSTANCE` du tout (ni `true` ni
+  `false`), une instance dont le quota est posé ou dont les mentions exigées
+  sont incomplètes avertit au démarrage qu'elle n'est plus traitée comme
+  publique et nomme la variable à poser ; le démarrage, lui, continue.
+  `PUBLIC_INSTANCE=false` confirme et fait taire cet avertissement.
 - Un redémarrage perd les calculs planifiés ; le guide le dit aussi.
 - `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` est lue pour avertir (`RetiredVariables`)
   puis retirée en 5.0.

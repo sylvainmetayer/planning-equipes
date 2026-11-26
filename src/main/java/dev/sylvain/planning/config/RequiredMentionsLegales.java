@@ -55,21 +55,22 @@ public class RequiredMentionsLegales {
 
     private final ConfigMentionsLegales mentions;
 
-    private final boolean publicInstance;
+    /** {@code PUBLIC_INSTANCE}, {@code null} when not set at all. */
+    private final Boolean publicInstance;
 
     @Inject
     public RequiredMentionsLegales(
             ConfigMentionsLegales mentions,
-            @ConfigProperty(name = "planning.public-instance", defaultValue = "false") boolean publicInstance) {
+            @ConfigProperty(name = "planning.public-instance") Optional<Boolean> publicInstance) {
         this.mentions = mentions;
-        this.publicInstance = publicInstance;
+        this.publicInstance = publicInstance.orElse(null);
     }
 
     void checkAtStartup(@Observes StartupEvent startup) {
         // Dev and test run on the shipped empty defaults on purpose, exactly
         // as they do for the two passwords.
         if (LaunchMode.current().isProduction()) {
-            check(
+            String warning = check(
                     mentions.demoInstance(),
                     publicInstance,
                     value(mentions.editeur()),
@@ -77,6 +78,9 @@ public class RequiredMentionsLegales {
                     value(mentions.contact()),
                     value(mentions.donnees().baseLegale()),
                     value(mentions.donnees().conservation()));
+            if (warning != null) {
+                Log.warn(warning);
+            }
         }
     }
 
@@ -89,17 +93,21 @@ public class RequiredMentionsLegales {
      * production boot, like {@link DefaultSecrets#check}. Takes the values
      * rather than the mapping for the same reason: the rule is about what an
      * operator wrote, and a test should not have to stand in for Quarkus.
+     *
+     * @param publicInstance {@code PUBLIC_INSTANCE}, {@code null} when not set
+     * @return the warning to log on an instance that is not public, or
+     *         {@code null} when nothing is missing
      */
-    static void check(
+    static String check(
             boolean demoInstance,
-            boolean publicInstance,
+            Boolean publicInstance,
             String editeur,
             String hebergeur,
             String contact,
             String baseLegale,
             String conservation) {
         if (demoInstance) {
-            return;
+            return null;
         }
         Map<String, String> required = new LinkedHashMap<>();
         required.put("editeur", editeur);
@@ -117,7 +125,7 @@ public class RequiredMentionsLegales {
             }
         });
         if (missing.isEmpty()) {
-            return;
+            return null;
         }
         // Every one of them at once: an operator who fixes one variable per
         // boot pays five restarts to learn what a single message can say.
@@ -125,13 +133,17 @@ public class RequiredMentionsLegales {
                 + "LEGAL_MENTIONS ne renseigne pas " + String.join(", ", missing) + ". "
                 + "La LCEN exige un éditeur et un hébergeur identifiés, le RGPD une base légale, "
                 + "une durée de conservation et une adresse pour exercer ses droits. ";
-        if (publicInstance) {
+        if (Boolean.TRUE.equals(publicInstance)) {
             throw new IllegalStateException(
                     message
                             + "Renseignez-les, ou posez LEGAL_DEMO_INSTANCE=true s'il ne s'agit pas d'une instance en service.");
         }
         // Not public: the operator is told, never blocked (ADR 0110).
-        Log.warn(message + "Renseignez-les avant d'ouvrir l'instance au public : avec PUBLIC_INSTANCE=true, "
-                + "le démarrage serait refusé.");
+        if (publicInstance == null) {
+            // A 3.x public instance refused this boot; say why it no longer does.
+            return message + PublicInstance.undeclared("et son démarrage n'est plus refusé faute de mentions légales");
+        }
+        return message + "Renseignez-les avant d'ouvrir l'instance au public : avec PUBLIC_INSTANCE=true, "
+                + "le démarrage serait refusé.";
     }
 }

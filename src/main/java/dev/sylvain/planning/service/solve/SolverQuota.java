@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.solve;
 
+import dev.sylvain.planning.config.PublicInstance;
 import dev.sylvain.planning.service.BusinessError;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -76,6 +78,9 @@ public class SolverQuota {
     /** Whether the limits apply at all: only a public instance has them. */
     private final boolean publicInstance;
 
+    /** Whether {@code PUBLIC_INSTANCE} was set at all, true or false: absent, the 4.0 break is said at boot. */
+    private final boolean publicInstanceDeclared;
+
     /** Submission instants still inside the window, oldest first. Guarded by this object's monitor. */
     private final Deque<Instant> submissions = new ArrayDeque<>();
 
@@ -84,25 +89,54 @@ public class SolverQuota {
             @ConfigProperty(name = "planning.solver.max-solves-per-hour", defaultValue = "0") int maxPerHour,
             @ConfigProperty(name = "planning.solver.max-queued-jobs", defaultValue = "0") int maxQueued,
             @ConfigProperty(name = "planning.notifications.zone", defaultValue = "Europe/Paris") String zone,
-            @ConfigProperty(name = "planning.public-instance", defaultValue = "false") boolean publicInstance) {
-        this(maxPerHour, maxQueued, zoneOf(zone), Clock.systemUTC(), publicInstance);
+            @ConfigProperty(name = "planning.public-instance") Optional<Boolean> publicInstance) {
+        this(
+                maxPerHour,
+                maxQueued,
+                zoneOf(zone),
+                Clock.systemUTC(),
+                publicInstance.orElse(false),
+                publicInstance.isPresent());
     }
 
     /** For the plain tests: a clock they move. */
     SolverQuota(int maxPerHour, int maxQueued, ZoneId zone, Clock clock, boolean publicInstance) {
+        this(maxPerHour, maxQueued, zone, clock, publicInstance, true);
+    }
+
+    private SolverQuota(
+            int maxPerHour, int maxQueued, ZoneId zone, Clock clock, boolean publicInstance, boolean declared) {
         this.maxPerHour = maxPerHour;
         this.maxQueued = maxQueued;
         this.zone = zone;
         this.clock = clock;
         this.publicInstance = publicInstance;
+        this.publicInstanceDeclared = declared;
     }
 
     /** Says at boot that a limit set on an instance that is not public does nothing. */
     void warnIfIgnored(@Observes StartupEvent startup) {
-        if (!publicInstance && (maxPerHour > 0 || maxQueued > 0)) {
-            LOG.warn("SOLVER_MAX_SOLVES_PER_HOUR and SOLVER_MAX_QUEUED_JOBS are ignored: the instance is not public."
-                    + " Set PUBLIC_INSTANCE=true to apply them.");
+        String warning = ignoredWarning(publicInstance, publicInstanceDeclared, maxPerHour, maxQueued);
+        if (warning != null) {
+            LOG.warn(warning);
         }
+    }
+
+    /**
+     * The boot warning for limits an instance that is not public ignores, or
+     * {@code null}. Undeclared, it says the 4.0 break: a 3.x instance setting
+     * these limits applied them without being told it was public.
+     */
+    static String ignoredWarning(boolean publicInstance, boolean declared, int maxPerHour, int maxQueued) {
+        if (publicInstance || (maxPerHour <= 0 && maxQueued <= 0)) {
+            return null;
+        }
+        if (!declared) {
+            return PublicInstance.undeclared(
+                    "et SOLVER_MAX_SOLVES_PER_HOUR et SOLVER_MAX_QUEUED_JOBS, qui sont posées, n'ont plus d'effet");
+        }
+        return "SOLVER_MAX_SOLVES_PER_HOUR and SOLVER_MAX_QUEUED_JOBS are ignored: the instance is not public."
+                + " Set PUBLIC_INSTANCE=true to apply them.";
     }
 
     private static ZoneId zoneOf(String zone) {

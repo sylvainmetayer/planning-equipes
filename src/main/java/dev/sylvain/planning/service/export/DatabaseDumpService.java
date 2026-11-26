@@ -209,8 +209,9 @@ public class DatabaseDumpService {
      *       right covers: part of the right it hangs from, with the same reason.
      *       Not even a foreign key to {@code stand}, which a restore deletes and
      *       recreates.</li>
-     *   <li>{@code solver_job} — the queue, replayed at startup. A restore
-     *       would make the receiving instance run somebody else's solves.</li>
+     *   <li>{@code solver_job} — the solve history, and the remote solves
+     *       followed again at startup. A restore would make the receiving
+     *       instance follow somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
      *       opposite reason to all the others: including it would mean every
      *       import <em>erases</em> the local journal, since the dump deletes
@@ -262,7 +263,7 @@ public class DatabaseDumpService {
      *       a dataset, and a text about a person that a file leaving the
      *       instance has no reason to carry.</li>
      *   <li>{@code solve_budget_avant_4_0} — the solve budgets editions had
-     *       set of their own, archived by V144 and dropped in 5.0: an archive
+     *       set of their own, archived by V145 and dropped in 5.0: an archive
      *       nothing reads, the budget being the instance's now.</li>
      * </ul>
      */

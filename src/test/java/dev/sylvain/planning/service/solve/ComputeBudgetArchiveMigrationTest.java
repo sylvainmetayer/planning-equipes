@@ -20,18 +20,18 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V144 takes the solve budget out of {@code parametres_solveur} (it is the
+ * V145 takes the solve budget out of {@code parametres_solveur} (it is the
  * instance's now, ADR 0110) and out of the job history's capping columns.
  * Played on a database filled the way 3.x filled it — the migrations up to V142
- * in a schema of their own, then the rows and the V144 file itself in a
+ * in a schema of their own, then the rows and the V145 file itself in a
  * transaction rolled back afterwards: nothing it removes is lost, the budgets
  * an edition had set move to the archive.
  */
 @QuarkusTest
 class ComputeBudgetArchiveMigrationTest {
 
-    private static final String SCHEMA = "migration_v144";
-    private static final String V144 = "db/migration/V144__budget_de_calcul_d_instance.sql";
+    private static final String SCHEMA = "migration_v145";
+    private static final String V145 = "db/migration/V145__budget_de_calcul_d_instance.sql";
 
     @BeforeAll
     static void migrateUpToV142() throws SQLException {
@@ -106,8 +106,8 @@ class ComputeBudgetArchiveMigrationTest {
     }
 
     private static void migrate(Statement sql) throws Exception {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V144)) {
-            assertThat(file).as(V144).isNotNull();
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V145)) {
+            assertThat(file).as(V145).isNotNull();
             sql.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }

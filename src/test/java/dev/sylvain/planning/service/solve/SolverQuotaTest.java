@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.solve;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -166,5 +167,28 @@ class SolverQuotaTest {
         public Instant instant() {
             return now;
         }
+    }
+
+    /**
+     * Limits set on an instance without {@code PUBLIC_INSTANCE}: a 3.x
+     * instance applied them, a 4.0 one ignores them, and the boot says so.
+     */
+    @Test
+    void limitsOnAnUndeclaredInstanceSayThe40Break() {
+        assertThat(SolverQuota.ignoredWarning(false, false, 5, 0))
+                .contains("n'est plus traitée comme publique")
+                .contains("PUBLIC_INSTANCE=true")
+                .contains("SOLVER_MAX_SOLVES_PER_HOUR");
+        assertThat(SolverQuota.ignoredWarning(false, false, 0, 2)).contains("PUBLIC_INSTANCE=true");
+    }
+
+    /** Declared either way, or without limits, nothing about the 4.0 break. */
+    @Test
+    void limitsOnADeclaredInstanceDoNotRepeatThe40Break() {
+        assertThat(SolverQuota.ignoredWarning(false, true, 5, 0))
+                .contains("PUBLIC_INSTANCE=true")
+                .doesNotContain("n'est plus traitée comme publique");
+        assertThat(SolverQuota.ignoredWarning(true, true, 5, 2)).isNull();
+        assertThat(SolverQuota.ignoredWarning(false, false, 0, 0)).isNull();
     }
 }

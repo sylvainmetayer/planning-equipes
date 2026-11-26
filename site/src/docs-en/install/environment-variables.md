@@ -136,7 +136,7 @@ compose file, in the following cases, each detailed on its line further down:
 | `SOLVER_SECONDS_LIMIT` | `900` | The instance's solve budget: maximum duration of a solve, in seconds. The same for every edition |
 | `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Stop if the already feasible plan has not improved for this long, in seconds; `0`: never |
 | `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Cap, in seconds, on the time a launch may request (`?seconds=`, MCP); below `SOLVER_SECONDS_LIMIT`, startup is refused |
-| `PUBLIC_INSTANCE` | `false` | `true`: public instance. Applies the solve quota below and refuses to start without legal notices. Without it, the quota is ignored (with a warning) and missing notices are a warning |
+| `PUBLIC_INSTANCE` | `false` | `true`: public instance. Applies the solve quota below and refuses to start without legal notices. Without it, the quota is ignored (with a warning) and missing notices are a warning. Not set at all, the warning also says that a 3.x public instance no longer is one; `false` silences it |
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (no limit) | Public instance only: solves accepted over the last 60 sliding minutes, all editions and all callers combined; beyond that, a refusal that says when to come back |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (no limit) | Public instance only: jobs that can wait behind the solve in progress |
 | `PASSE_FIGE` | `true` | `false`: the solver can again rewrite the days already worked. To reserve for an acceptance test that replays an old edition |

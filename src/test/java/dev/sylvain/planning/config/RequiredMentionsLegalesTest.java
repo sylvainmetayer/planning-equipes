@@ -1,5 +1,6 @@
 package dev.sylvain.planning.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -77,5 +78,27 @@ class RequiredMentionsLegalesTest {
     void anInstanceThatIsNotPublicBootsWithAnEmptyNotice() {
         assertThatCode(() -> RequiredMentionsLegales.check(false, false, "", "", "", "", ""))
                 .doesNotThrowAnyException();
+    }
+
+    /**
+     * A 3.x public instance that does not set {@code PUBLIC_INSTANCE} stopped
+     * refusing this boot in 4.0: the warning says so and names the variable.
+     */
+    @Test
+    void anUndeclaredInstanceIsToldItIsNoLongerTreatedAsPublic() {
+        assertThat(RequiredMentionsLegales.check(false, null, "", "", "", "", ""))
+                .contains("editeur")
+                .contains("n'est plus traitée comme publique")
+                .contains("PUBLIC_INSTANCE=true");
+    }
+
+    /** {@code PUBLIC_INSTANCE=false} is a decision: the 4.0 sentence is not repeated to it. */
+    @Test
+    void anInstanceDeclaredNotPublicIsNotToldAboutThe40Break() {
+        assertThat(RequiredMentionsLegales.check(false, false, "", "", "", "", ""))
+                .contains("editeur")
+                .doesNotContain("n'est plus traitée comme publique");
+        assertThat(RequiredMentionsLegales.check(false, null, EDITEUR, HEBERGEUR, CONTACT, BASE_LEGALE, CONSERVATION))
+                .isNull();
     }
 }

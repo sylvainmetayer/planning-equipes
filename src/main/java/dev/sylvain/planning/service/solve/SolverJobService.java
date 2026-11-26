@@ -133,9 +133,10 @@ public class SolverJobService {
     private final SolverMetrics metrics;
 
     /**
-     * Whether the queue is replayed at startup. On by default — that is the
-     * whole point — but switched off under {@code %test}, where a job left
-     * queued by a previous run would start a real solve as the next test boots.
+     * Whether the jobs a previous run left unfinished are settled at startup
+     * ({@link #restaurer}). On by default, switched off under {@code %test},
+     * where a job left on a worker by a previous run would be followed again
+     * as the next test boots.
      */
     private final boolean replayAtStartup;
 
@@ -466,8 +467,8 @@ public class SolverJobService {
 
     /**
      * Binds the queue and the solver lock to their gauges at startup, so a
-     * scrape before the first solve already reads them — and reads the queue
-     * replayed from the database like any other.
+     * scrape before the first solve already reads them — a solve found again
+     * on its worker at startup included.
      */
     void bindMetrics(@Observes StartupEvent startup) {
         metrics.bind(() -> fileAttente().size(), () -> findActive().isPresent());
@@ -764,8 +765,9 @@ public class SolverJobService {
      * would start in it.
      *
      * <p>Unlike {@link #findActive}, a {@link JobStatus#QUEUED} job counts:
-     * it will read that edition when its turn comes. A queue replayed at
-     * startup ({@link #restaurer}) is in the same registry, so it counts too.
+     * it will read that edition when its turn comes. A solve found again on
+     * its worker at startup ({@link #restaurer}) is in the same registry, so it
+     * counts too.
      * Not a {@code refuseIfSolving}: the question is not whether a landing
      * would undo a write in the current edition, but whether a job still
      * needs the edition the caller names — which is never the current one,

@@ -132,7 +132,7 @@ compose, dans les cas suivants, chacun détaillé à sa ligne plus bas :
 | `SOLVER_SECONDS_LIMIT` | `900` | Budget de calcul de l'instance : durée maximale d'un calcul, en secondes. Le même pour toutes les éditions |
 | `SOLVER_UNIMPROVED_SECONDS_LIMIT` | `180` | Arrêt si le plan, déjà faisable, ne progresse plus depuis ce temps, en secondes ; `0` : jamais |
 | `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, du temps qu'un lancement peut demander (`?seconds=`, MCP) ; sous `SOLVER_SECONDS_LIMIT`, démarrage refusé |
-| `PUBLIC_INSTANCE` | `false` | `true` : instance publique. Applique le quota de calcul ci-dessous et refuse de démarrer sans mentions légales. Sans elle, le quota est ignoré (avec un avertissement) et les mentions manquantes sont un avertissement |
+| `PUBLIC_INSTANCE` | `false` | `true` : instance publique. Applique le quota de calcul ci-dessous et refuse de démarrer sans mentions légales. Sans elle, le quota est ignoré (avec un avertissement) et les mentions manquantes sont un avertissement. Non posée du tout, l'avertissement dit aussi qu'une instance publique en 3.x ne l'est plus ; `false` le fait taire |
 | `SOLVER_MAX_SOLVES_PER_HOUR` | `0` (aucune limite) | Instance publique seulement : calculs acceptés sur les 60 dernières minutes glissantes, toutes éditions et tous appelants confondus ; au-delà, refus qui dit quand revenir |
 | `SOLVER_MAX_QUEUED_JOBS` | `0` (aucune limite) | Instance publique seulement : tâches qui peuvent attendre derrière le calcul en cours |
 | `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. À réserver à une recette qui rejoue une édition ancienne |
