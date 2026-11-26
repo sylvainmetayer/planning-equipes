@@ -157,6 +157,7 @@
 .planning.dateDebutFestival = 2027-02-01
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  85c54c6119702d6a
+.planning.niveauxScenario = null
 .planning.parametresLegaux[0]  49c8d4302d724166
 .planning.parametresQualite[0]  b88694d9f3a53d10
 .planning.pastHorizon = null

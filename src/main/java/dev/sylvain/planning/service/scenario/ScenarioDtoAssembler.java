@@ -325,13 +325,17 @@ final class ScenarioDtoAssembler {
                 .filter(Map.Entry::getValue)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toCollection(TreeSet::new));
-        if (desactivees.isEmpty() && activees.isEmpty() && poids.isEmpty()) {
+        Map<String, String> niveaux = new TreeMap<>();
+        (export.niveauxContraintes() == null ? Map.<String, Boolean>of() : export.niveauxContraintes())
+                .forEach((nom, obligatoire) -> niveaux.put(nom, obligatoire ? "OBLIGATOIRE" : "PREFERENCE"));
+        if (desactivees.isEmpty() && activees.isEmpty() && poids.isEmpty() && niveaux.isEmpty()) {
             return null;
         }
         return new ContraintesDto(
                 desactivees.isEmpty() ? null : List.copyOf(desactivees),
                 activees.isEmpty() ? null : List.copyOf(activees),
-                poids.isEmpty() ? null : new TreeMap<>(poids));
+                poids.isEmpty() ? null : new TreeMap<>(poids),
+                niveaux.isEmpty() ? null : niveaux);
     }
 
     /**

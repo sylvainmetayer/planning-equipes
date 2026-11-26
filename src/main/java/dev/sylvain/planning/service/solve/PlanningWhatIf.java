@@ -1689,7 +1689,7 @@ public final class PlanningWhatIf {
         for (ConstraintContribution ca : apres.contributions()) {
             String name = ca.constraintName();
             int supplement = ca.matchCount() - matchesAvant.getOrDefault(name, 0);
-            if (ConstraintCatalog.NOMS_DURS.contains(name) && supplement > 0) {
+            if (ConstraintCatalog.isHardIn(name, ca.score()) && supplement > 0) {
                 ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
                 violations.add(
                         new HardViolation(name, definition == null ? name : definition.description(), supplement));

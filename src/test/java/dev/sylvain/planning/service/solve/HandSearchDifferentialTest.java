@@ -55,6 +55,20 @@ class HandSearchDifferentialTest {
 
     private static final Set<String> CASES_RUN = new ConcurrentSkipListSet<>();
 
+    /**
+     * The choosable rules compared on a non-zero score at each level they can
+     * be given (ADR 0106): « OBLIGATOIRE » and « PREFERENCE » name the level
+     * every choosable rule of the case was moved to.
+     */
+    private static final Map<String, Set<String>> ABOVE_ZERO_AT_LEVEL = Map.of(
+            "OBLIGATOIRE", new ConcurrentSkipListSet<>(),
+            "PREFERENCE", new ConcurrentSkipListSet<>());
+
+    private static final Set<String> LEVEL_CASES_RUN = new ConcurrentSkipListSet<>();
+
+    /** The cases of {@link #scoresEveryChoosableRuleAtEachLevelLikeTheConstraintProvider}. */
+    private static final int LEVEL_CASES = 18;
+
     /** The cases of the default suite: {@link #everyRuleWasScoredAboveZero} only judges a complete run. */
     private static final int DEFAULT_CASES = 11;
 
@@ -84,6 +98,41 @@ class HandSearchDifferentialTest {
     }
 
     /**
+     * The level an edition chooses for an organisation rule (ADR 0106) moves
+     * where the rule scores, not what it counts: the two engines must agree
+     * <b>at each level</b>, with every choosable rule moved together to the hard
+     * level, and to the medium level — which is also the catalogue's own for
+     * all but the meal break and the adult beside a minor, so the shipped
+     * level of those two is covered by the cases above.
+     */
+    @ParameterizedTest(name = "{0}, fabricated branches: {1}, every choosable rule {2}")
+    @CsvSource({
+        "gamme-02-1j-2stands-4animateurs-relais-midi.yaml, false, OBLIGATOIRE",
+        "gamme-02-1j-2stands-4animateurs-relais-midi.yaml, false, PREFERENCE",
+        "gamme-05-2j-4stands-8animateurs-mineurs.yaml, false, OBLIGATOIRE",
+        "gamme-05-2j-4stands-8animateurs-mineurs.yaml, false, PREFERENCE",
+        "gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc.yaml, true, OBLIGATOIRE",
+        "gamme-06-3j-4stands-8animateurs-contraintes-ad-hoc.yaml, true, PREFERENCE",
+        "gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml, true, OBLIGATOIRE",
+        "gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml, true, PREFERENCE",
+        "gamme-10-4j-8stands-20animateurs-journees-types-multiples.yaml, true, OBLIGATOIRE",
+        "gamme-10-4j-8stands-20animateurs-journees-types-multiples.yaml, true, PREFERENCE",
+        "gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit.yaml, true, OBLIGATOIRE",
+        "gamme-11-5j-8stands-18animateurs-semaine-a-cheval-nuit.yaml, true, PREFERENCE",
+        "gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml, true, OBLIGATOIRE",
+        "gamme-12-7j-10stands-24animateurs-semaine-complete-ferie.yaml, true, PREFERENCE",
+        "gamme-13-7j-12stands-30animateurs-premium-epuisants.yaml, false, OBLIGATOIRE",
+        "gamme-13-7j-12stands-30animateurs-premium-epuisants.yaml, false, PREFERENCE",
+        "gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes.yaml, true, OBLIGATOIRE",
+        "gamme-16-14j-25stands-72animateurs-mineurs-ferie-nocturnes.yaml, true, PREFERENCE",
+    })
+    void scoresEveryChoosableRuleAtEachLevelLikeTheConstraintProvider(
+            String scenario, boolean fabricated, String level) {
+        compare(scenario, fabricated, 1, level);
+        LEVEL_CASES_RUN.add(scenario + fabricated + level);
+    }
+
+    /**
      * A premium stand whose only held seats are remainders of split seats: the
      * constraint provider finds it no crew to compare its faces to and says
      * nothing, where counting « faces beyond a crew of none » would charge it.
@@ -107,11 +156,11 @@ class HandSearchDifferentialTest {
         for (int i = 0; i < remainders.size(); i++) {
             remainders.get(i).setAnimateur(loaded.problem().getAnimateurs().get(i));
         }
-        agree(loaded, "remainders alone");
+        agree(null, loaded, "remainders alone");
 
         // One origin held again and the stand has a crew of one: three faces for it.
         first.setAnimateur(loaded.problem().getAnimateurs().get(5));
-        agree(loaded, "one origin back");
+        agree(null, loaded, "one origin back");
         assertThat(loaded.refereeBreakdown().get("eviterRoulementStandsPremium"))
                 .isPositive();
     }
@@ -134,7 +183,7 @@ class HandSearchDifferentialTest {
         SplittableRandom random = new SplittableRandom(8);
         // A solved plan first: dense and legal, it is where a break is owed and somebody does cover it.
         HandSearchFixtures.search(loaded.problem(), 2, 0);
-        agree(loaded, "break of 90 minutes, solved");
+        agree(null, loaded, "break of 90 minutes, solved");
         long relayed = 0;
         long minors = 0;
         for (int i = 0; i < 6; i++) {
@@ -143,12 +192,12 @@ class HandSearchDifferentialTest {
             } else {
                 HandSearchFixtures.sparsePlan(loaded.problem(), random);
             }
-            agree(loaded, "break of 90 minutes " + i);
+            agree(null, loaded, "break of 90 minutes " + i);
             relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
             minors += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMineur", 0L);
         }
         HandSearchFixtures.overloadedPlan(loaded.problem());
-        agree(loaded, "break of 90 minutes, overloaded");
+        agree(null, loaded, "break of 90 minutes, overloaded");
         relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L);
         assertThat(relayed).as("unrelayed breaks compared").isPositive();
         if (scenario.contains("mineurs")) {
@@ -193,12 +242,12 @@ class HandSearchDifferentialTest {
         night.setAnimateur(adults.get(0));
 
         afterMidnight.setAnimateur(adults.get(1));
-        agree(loaded, "break after midnight, relayed");
+        agree(null, loaded, "break after midnight, relayed");
         assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L))
                 .isZero();
 
         afterMidnight.setAnimateur(null);
-        agree(loaded, "break after midnight, nobody to relay it");
+        agree(null, loaded, "break after midnight, nobody to relay it");
         assertThat(loaded.refereeBreakdown().getOrDefault("travailContinuMaxMajeur", 0L))
                 .isPositive();
     }
@@ -247,7 +296,7 @@ class HandSearchDifferentialTest {
             } else {
                 HandSearchFixtures.sparsePlan(loaded.problem(), random);
             }
-            agree(loaded, "ninety more game categories " + i);
+            agree(null, loaded, "ninety more game categories " + i);
             spread += loaded.refereeBreakdown().getOrDefault("limiterTypologiesDistinctesParAnimateur", 0L);
         }
         assertThat(spread)
@@ -265,25 +314,37 @@ class HandSearchDifferentialTest {
     }
 
     private static void compare(String scenario, boolean fabricated, long searchSeconds) {
+        compare(scenario, fabricated, searchSeconds, null);
+    }
+
+    /** {@code level} names the level every choosable rule is moved to, or is {@code null} for the catalogue's. */
+    private static void compare(String scenario, boolean fabricated, long searchSeconds, String level) {
         HandSearchFixtures.Loaded loaded = HandSearchFixtures.load(scenario);
+        if (level != null) {
+            Map<String, Boolean> chosen = new HashMap<>();
+            ConstraintCatalog.definitions().stream()
+                    .filter(ConstraintCatalog.ConstraintDefinition::niveauReglable)
+                    .forEach(definition -> chosen.put(definition.name(), "OBLIGATOIRE".equals(level)));
+            loaded.problem().setPonderationsContraintes(loaded.configuration().constraintWeightOverrides(null, chosen));
+        }
         SplittableRandom random = new SplittableRandom(scenario.hashCode());
         if (fabricated) {
             HandSearchFixtures.search(loaded.problem(), 1, 0);
             HandSearchFixtures.fabricateBranches(loaded.problem(), random);
             HandSearchFixtures.remaindersOnlyPlan(loaded.problem(), random);
-            agree(loaded, "remainders only");
+            agree(level, loaded, "remainders only");
         }
-        agree(loaded, "empty");
+        agree(level, loaded, "empty");
         for (int i = 0; i < 3; i++) {
             HandSearchFixtures.randomPlan(loaded.problem(), random);
-            agree(loaded, "random " + i);
+            agree(level, loaded, "random " + i);
         }
         for (int i = 0; i < 3; i++) {
             HandSearchFixtures.sparsePlan(loaded.problem(), random);
-            agree(loaded, "without double booking " + i);
+            agree(level, loaded, "without double booking " + i);
         }
         HandSearchFixtures.overloadedPlan(loaded.problem());
-        agree(loaded, "overloaded");
+        agree(level, loaded, "overloaded");
         // The one plan reached move by move: the score the search kept through every one of its
         // moves is the constraint provider's, which no comparison of freshly built scores shows.
         HandSearchFixtures.emptyPlan(loaded.problem());
@@ -291,36 +352,48 @@ class HandSearchDifferentialTest {
         assertThat(kept)
                 .as("the score the search kept move by move, against the constraint provider's")
                 .isEqualTo(loaded.configuration().solutionManager().update(loaded.problem()));
-        agree(loaded, "searched");
+        agree(level, loaded, "searched");
         for (int i = 0; i < 2; i++) {
             HandSearchFixtures.perturb(loaded.problem(), random);
-            agree(loaded, "searched then perturbed " + i);
+            agree(level, loaded, "searched then perturbed " + i);
         }
     }
 
-    private static void agree(HandSearchFixtures.Loaded loaded, String plan) {
+    private static void agree(String level, HandSearchFixtures.Loaded loaded, String plan) {
         assertThat(loaded.disagreements())
                 .as("rules scored differently on the %s plan, as « engine / constraint provider »", plan)
                 .isEmpty();
         loaded.refereeBreakdown().forEach((constraint, points) -> {
             if (points != 0) {
-                ABOVE_ZERO.add(constraint);
+                (level == null ? ABOVE_ZERO : ABOVE_ZERO_AT_LEVEL.get(level)).add(constraint);
             }
         });
     }
 
     @AfterAll
     static void everyRuleWasScoredAboveZero() {
-        if (CASES_RUN.size() < DEFAULT_CASES) {
-            return; // a filtered run: nothing to conclude from part of the cases
+        if (CASES_RUN.size() >= DEFAULT_CASES) {
+            Set<String> onlyAtZero = ConstraintCatalog.definitions().stream()
+                    .map(ConstraintCatalog.ConstraintDefinition::name)
+                    .filter(name -> !ABOVE_ZERO.contains(name))
+                    .collect(Collectors.toCollection(TreeSet::new));
+            assertThat(onlyAtZero)
+                    .as("constraints only ever compared at zero: give one of the cases a plan that breaks them,"
+                            + " or name them in NEVER_ABOVE_ZERO with the reason")
+                    .isEqualTo(new TreeSet<>(NEVER_ABOVE_ZERO.keySet()));
         }
-        Set<String> onlyAtZero = ConstraintCatalog.definitions().stream()
-                .map(ConstraintCatalog.ConstraintDefinition::name)
-                .filter(name -> !ABOVE_ZERO.contains(name))
-                .collect(Collectors.toCollection(TreeSet::new));
-        assertThat(onlyAtZero)
-                .as("constraints only ever compared at zero: give one of the cases a plan that breaks them,"
-                        + " or name them in NEVER_ABOVE_ZERO with the reason")
-                .isEqualTo(new TreeSet<>(NEVER_ABOVE_ZERO.keySet()));
+        if (LEVEL_CASES_RUN.size() >= LEVEL_CASES) {
+            // « Above zero » is judged per level, or a level would stay checked by nobody (ADR 0106).
+            ABOVE_ZERO_AT_LEVEL.forEach((level, seen) -> {
+                Set<String> onlyAtZero = ConstraintCatalog.definitions().stream()
+                        .filter(ConstraintCatalog.ConstraintDefinition::niveauReglable)
+                        .map(ConstraintCatalog.ConstraintDefinition::name)
+                        .filter(name -> !seen.contains(name))
+                        .collect(Collectors.toCollection(TreeSet::new));
+                assertThat(onlyAtZero)
+                        .as("choosable rules only ever compared at zero at the level " + level)
+                        .isEmpty();
+            });
+        }
     }
 }

@@ -59,7 +59,18 @@ Timeslots always come out as they are, with `couverturePause: true` when they co
 
 ## `schemaVersion`
 
-A file written by the application starts with `schemaVersion: 3` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+A file written by the application starts with `schemaVersion: 4` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+
+## `contraintes.niveaux`: the level chosen per rule
+
+From format version 4, the `contraintes` section also carries `niveaux`, the level the edition chose for an organisation rule: `OBLIGATOIRE` (mandatory), `PREFERENCE`, or a position (`PREFERENCE_FORTE`, `PREFERENCE_NORMALE`, `PREFERENCE_LEGERE`) which also gives the weight of that position (25, 5, 1) when `poids` does not name the rule. A rule the file does not name goes back to the catalogue's level. A rule with no level to choose (legal, assignment, ad hoc, lock, soft preference) is **refused by name**. A 3.x or v3 file carries none and reads as before: the 3 → 4 link changes nothing ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+
+```yaml
+contraintes:
+  niveaux:
+    stabiliteDuPlanPublie: OBLIGATOIRE
+    equilibrerCharge: PREFERENCE_FORTE
+```
 
 ## `postes`: absent and empty do not say the same thing
 

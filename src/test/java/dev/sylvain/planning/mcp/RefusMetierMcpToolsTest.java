@@ -29,6 +29,23 @@ class RefusMetierMcpToolsTest {
     @Inject
     JourneeTypeMcpTools journeeTypeTools;
 
+    @Inject
+    ContrainteMcpTools contrainteTools;
+
+    /** The REST route answers 400 here; over MCP the same refusal comes back with its sentence. */
+    @Test
+    void aLegalOrBaseRuleHasNoLevelToChoose() {
+        for (String rule : java.util.List.of("dureeQuotidienneMaxMajeur", "posteDoitEtrePourvu")) {
+            for (String level : java.util.List.of("OBLIGATOIRE", "PREFERENCE_LEGERE")) {
+                assertThatThrownBy(() -> contrainteTools.updateContrainteNiveau(rule, level, "E1"))
+                        .isInstanceOf(ToolCallException.class)
+                        .hasCauseInstanceOf(BusinessError.Invalid.class)
+                        .hasMessageContaining(rule)
+                        .hasMessageContaining("pas de niveau à choisir");
+            }
+        }
+    }
+
     @Test
     void aDateInTheWrongFormatStatesTheExpectedFormat() {
         assertThatThrownBy(() -> creneauTools.createCreneau("18/07/2026", "09:00", "12:00", null, "E1"))

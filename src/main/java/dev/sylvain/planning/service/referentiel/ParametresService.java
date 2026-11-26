@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
@@ -229,6 +230,47 @@ public class ParametresService {
             return avant == apres ? null : WeightChange.of(nom, avant, apres, poids == null, null, null, origin, null);
         });
         changeTracker.markModified();
+    }
+
+    /** The level this edition explicitly chose per organisation rule: {@code true} for obligatoire. */
+    public Map<String, Boolean> niveauxObligatoires() {
+        return repository.getNiveauxObligatoires();
+    }
+
+    /**
+     * Stores the level of one organisation rule, or forgets it when
+     * {@code obligatoire} is {@code null}. Asking for exactly what the catalogue
+     * ships drops the choice rather than pinning it, as a weight or a toggle does.
+     * Refused for a rule whose level is not the edition's to choose.
+     */
+    public void setNiveauObligatoire(String nom, Boolean obligatoire, WeightChangeOrigin origin) {
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        if (definition == null || !definition.niveauReglable()) {
+            throw new BusinessError.Invalid("La règle « " + nom + " » n'a pas de niveau à choisir : les règles "
+                    + "légales et les règles de base restent obligatoires, les préférences restent des préférences.");
+        }
+        boolean parDefaut = obligatoire != null && definition.niveauEffectif(obligatoire) == definition.niveau();
+        repository.setNiveauObligatoire(nom, parDefaut ? null : obligatoire);
+        changeTracker.markModified();
+    }
+
+    /**
+     * The gesture of the screen and the MCP tool: {@code OBLIGATOIRE}, or one of
+     * the three preference positions, which also writes the weight of the
+     * position (ADR 0057) — a preference is the same rule weighed.
+     */
+    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau, WeightChangeOrigin origin) {
+        setNiveauObligatoire(nom, niveau.obligatoire(), origin);
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        boolean shippedHard = definition.niveau() == ConstraintCatalog.Niveau.HARD;
+        if (!niveau.obligatoire()) {
+            int defaut = shippedHard ? ConstraintCatalog.POIDS_NORMAL : configuredWeight(nom);
+            setConstraintWeight(nom, niveau.poids() == defaut ? null : niveau.poids(), origin);
+        } else if (shippedHard) {
+            // Back on its own hard level, a stored weight applies again as a hard one: the preference
+            // weight the way out wrote would make one breach weigh 25 legal ones. Obligatoire is hard 1.
+            setConstraintWeight(nom, null, origin);
+        }
     }
 
     /**

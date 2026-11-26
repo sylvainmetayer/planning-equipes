@@ -216,6 +216,8 @@ class GelReferentielStructuralTest {
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),
             Map.entry("ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)", "same"),
             Map.entry("ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)", "same"),
+            Map.entry("ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", "same"),
+            Map.entry("ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", "same"),
             Map.entry(
                     "ReferenceDataService#recordInheritedDosage(String)",
                     "a history line on the settings a duplicated edition inherited, not one of the four families"));

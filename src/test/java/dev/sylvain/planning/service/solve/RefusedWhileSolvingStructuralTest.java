@@ -96,7 +96,7 @@ class RefusedWhileSolvingStructuralTest {
             + "|typologiePolyvalent|abonnementToken|idBy|idsBy|typologyIdsBy|report|joursEvenement|on[A-Z]"
             + "|standsOnOwnHours|apercu|byDate|creneauxAjoutes|datesSousConsigne|indicateurs|lignesJourneesModifiees"
             + "|preselection|check|fenetre|impact|is[A-Z]|libelle|pendingDemandes|decisionsNonCommuniquees|simulate"
-            + "|absentCount|suggestions|between|build|configuredWeight|constraintWeights|disabledContraintes"
+            + "|absentCount|suggestions|between|build|configuredWeight|constraintWeights|niveauxObligatoires|disabledContraintes"
             + "|effective|qualite|solverBudgetBounds|load|lastPublication|assemblerPlanning|for[A-Z]|csv|zip"
             + "|stateOf|view|refuseIfFrozen).*");
 
@@ -235,6 +235,12 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)",
                     "ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)"),
             Map.entry(
+                    "ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)",
+                    "ParametresService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)"),
+            Map.entry(
+                    "ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)",
+                    "ParametresService#setNiveau(String,NiveauRegle,WeightChangeOrigin)"),
+            Map.entry(
                     "ReferenceDataService#recordInheritedDosage(String)",
                     "ParametresService#recordInheritedDosage(String)"));
 
@@ -281,6 +287,8 @@ class RefusedWhileSolvingStructuralTest {
             Map.entry("ParametresService#updateContactOrganisation(ContactOrganisation)", NOT_LANDED),
             Map.entry("ParametresService#setContrainteActive(String,boolean,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#setConstraintWeight(String,Integer,WeightChangeOrigin)", NOT_LANDED),
+            Map.entry("ParametresService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", NOT_LANDED),
+            Map.entry("ParametresService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", NOT_LANDED),
             Map.entry("ParametresService#recordInheritedDosage(String)", NOT_LANDED),
             Map.entry(
                     "GelReferentielService#freeze(ReferentialFamily)",
