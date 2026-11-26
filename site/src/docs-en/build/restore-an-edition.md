@@ -22,7 +22,7 @@ The default does not change. Duplicating with the people is the action for a "he
 
 ## Backups before a wipe
 
-Before writing anything, a scenario import, "Empty this edition", `reinitialiser_donnees` and the restore itself store the scenario export of the target edition and its schedule (seats and locks) in `sauvegarde_avant_vidage` ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)). If this backup fails, nothing is emptied.
+Before writing anything, a scenario import, "Empty this edition", `reinitialiser_donnees` and the restore itself store **one YAML export** of the target edition in `sauvegarde_avant_vidage`: its scenario and, as the last section, its schedule (`plan:`, the seats and the locks) ([ADR 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md), partly replaced by [ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)). If this backup fails, nothing is emptied. Backups taken by a 3.x version, whose schedule stayed in a separate column, are read as the same file and remain restorable.
 
 - Nothing purges them: they stay until the edition is deleted, or until an administrator deletes one (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`).
 - A half-built edition (a team with no grid, a grid with no stands) is backed up like the others. Only an edition that contains nothing (no reference data, no schedule, no parameters, weights or typical days) receives none, and a state already backed up last is not backed up twice.
@@ -36,19 +36,17 @@ With the `X-Edition-Id` header:
 1. `GET /api/planning/sauvegardes-avant-vidage` lists the edition's backups, the most recent first. Each row gives its origin (`RESET`, `IMPORT`, `RESTORE`) and its date (`creeLe`). A `RESTORE` row also says which backup the restore targeted (`restaureId`, empty if that one was deleted) and its outcome (`restaurationAboutie`: `true` completed, `false` not completed or unknown); its row is the state just before that restore. The file of a backup is read through `GET /api/planning/sauvegardes-avant-vidage/{id}`.
 2. `POST /api/planning/sauvegardes-avant-vidage/{id}/restauration` restores it.
 
-The restore proceeds in order:
+The restore is **the usual import of the backup's file**, preceded by the backup of the current state:
 
 1. the refusals, before any write: solve in progress, frozen family, file that the import would refuse (reading, invalid stands, contradictory ad hoc exceptions, then named by the backup's identifiers);
 2. the backup of the current state;
-3. the scenario import through the usual import, which also recreates the stands and timeslots that no seat links to;
-4. the schedule;
-5. the locks.
+3. the import of the file, which also recreates the stands and timeslots that no seat links to, then puts the schedule of its `plan:` section back (the seats, then the locks through the usual lock write).
 
 The response gives `sauvegardeAvant`, the identifier of the backup of the replaced state: restoring that one undoes the restore.
 
 ### An operation that is not atomic
 
-The repository has no transaction spanning the import, which is made of several services (see the ADR). A restore that fails after the backup of the current state leaves the edition half restored. The error says at which step it stopped and names the backup of the state just before this attempt: `409` for a business error, `500` for a failure, with the same message in the log. Other, rarer refusals of the import (a consigne, a typical day that the file describes badly) may occur after the parameters have been written: the recovery then applies too.
+The repository has no transaction spanning the import, which is made of several services (see the ADR). A restore that fails after the backup of the current state leaves the edition half restored. The error names the backup of the state just before this attempt: `409` for a business error, `500` for a failure, with the same message in the log. Other, rarer refusals of the import (a consigne, a typical day that the file describes badly) may occur after the parameters have been written: the recovery then applies too.
 
 To recover, restore the backup named by the error, which puts the edition back as it was, or run the restore again once the cause is removed. Each attempt backs up the edition it replaces (except for a state identical to the last backup), so the work done between two attempts is never lost. The error names only the last one: to go back further (before a series of attempts, for example), choose from the list according to the dates, origins, targeted backups and outcomes. Retries after a halfway failure write one row per attempt, because each failure leaves a different state (the recreated timeslots change identifier); they accumulate and are cleaned up by manual deletion. A successful restore whose outcome could not be recorded is reported successful with a warning, its row remaining "not completed".
 
@@ -63,7 +61,7 @@ The response counts the seats filled, the locks written and those already in pla
 - Day validations and swap requests are not backed up.
 - Technical identifiers change (stands recreated, timeslots, staff members of an emptied edition): a snapshot that named them can no longer be restored, and the action journal keeps the old ones.
 
-Re-importing a backup's file yourself (Files, Import) remains possible but is not the procedure: this import discards stands and timeslots with no seat and does not put the schedule back.
+Re-importing a backup's file yourself (Files, Import) also puts the schedule back, since the import reads the `plan:` section like the others: only the stands and timeslots with no seat do not come back, which the restore does in addition. The file holds the staff members' names, dates of birth, addresses and phone numbers: treat it like the database ([retention](../installer/rgpd-limites-a-consigner.md#les-copies-avant-vidage)).
 
 ## The SQL dump for test tooling
 

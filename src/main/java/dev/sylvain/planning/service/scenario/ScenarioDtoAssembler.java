@@ -101,7 +101,8 @@ final class ScenarioDtoAssembler {
                 export.postes() == null ? null : postes(export.postes()),
                 nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)),
                 nullWhenEmpty(prereglagesConsigne(export.prereglagesConsigne())),
-                nullWhenEmpty(consignes(export.consignes(), creneaux)));
+                nullWhenEmpty(consignes(export.consignes(), creneaux)),
+                null);
     }
 
     private static <T> List<T> nullWhenEmpty(List<T> liste) {

@@ -427,9 +427,12 @@ The edition is copied before each wipe, and these copies are not
 purged (`sauvegarde_avant_vidage`,
 [decision 0084](repo:docs/decisions/0084-sauvegarder-l-edition-avant-de-la-vider.md)):
 a reset, a scenario import or the restore of a backup first stores
-the edition's scenario export (first name, last name,
-date of birth, address and phone of each staff member included) and its
-schedule (seats and locks, by ids only). **One copy per
+**one YAML export** of the edition (first name, last name,
+date of birth, address and phone of each staff member included), its
+schedule (seats and locks, by ids only) as the last section
+([decision 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)).
+This file is personal data under the GDPR, like the exported scenario, and is
+restored through the normal import. **One copy per
 wipe (except when the state is exactly that of the previous copy),
 kept as long as the edition**: the only purge is the
 deletion of the edition, in cascade on `edition_id`, so the annual purge
@@ -438,7 +441,8 @@ the edition**, and it is recorded as such in the register. An administrator
 can delete one (`DELETE /api/planning/sauvegardes-avant-vidage/{id}`,
 logged). They go neither into the SQL export nor through MCP; only an
 administrator lists, downloads, restores or deletes one, through
-the API; downloading, restoring and deleting are
+the API; the downloaded file is a full export and is kept like the
+database; downloading, restoring and deleting are
 logged, the plain list (dates and origins, no personal data)
 is not. What does not bound them: a deleted
 record stays in the backups taken before its deletion, and

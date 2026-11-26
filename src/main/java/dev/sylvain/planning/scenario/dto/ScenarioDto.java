@@ -44,7 +44,31 @@ public record ScenarioDto(
         // the dated consignes, whose openings and added créneaux name entries of
         // the sections above.
         List<@Valid PrereglageConsigneDto> prereglagesConsigne,
-        List<@Valid ConsigneDto> consignes) {
+        List<@Valid ConsigneDto> consignes,
+        // Closes the file: the seats and locks of a copy kept before a wipe, put back on what the sections above
+        // wrote (ADR 0112). An ordinary export carries none.
+        @Valid PlanDto plan) {
+
+    /** The same scenario carrying {@code plan} as its last section. */
+    public ScenarioDto withPlan(PlanDto plan) {
+        return new ScenarioDto(
+                schemaVersion,
+                edition,
+                festival,
+                parametres,
+                contraintes,
+                typologies,
+                creneaux,
+                journeesTypes,
+                emplacements,
+                stands,
+                animateurs,
+                postes,
+                contraintesAdHoc,
+                prereglagesConsigne,
+                consignes,
+                plan);
+    }
 
     // Shortcuts for the readers that want one section; the file only knows « parametres ».
     @JsonIgnore

@@ -94,7 +94,7 @@ public class ScenarioImportService {
      * {@code src/main/resources/scenarios}, by name.
      */
     public ScenarioImportOutcome importBundled(String name) {
-        return importScenario(ScenarioYamlReader.readBundledScenario(name), null);
+        return importScenario(ScenarioYamlReader.readBundledScenario(name), new Landing(false, null));
     }
 
     /**
@@ -105,25 +105,49 @@ public class ScenarioImportService {
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
         ScenarioBinder.Bound bound = ScenarioYamlReader.parseScenarioTextWithWarnings(yamlContent);
-        ScenarioImportOutcome outcome = importScenario(bound.scenario(), null);
+        Landing landing = new Landing(false, null);
+        ScenarioImportOutcome outcome = importScenario(bound.scenario(), landing);
+        List<String> avertissements = new ArrayList<>(bound.warnings());
+        if (landing.plan != null) {
+            // A file carrying a plan section: what of it could not be put back is said, never dropped.
+            avertissements.addAll(landing.plan.affectationsNonRestaurees());
+            avertissements.addAll(landing.plan.verrouillagesNonRestaures());
+            avertissements.addAll(landing.plan.avertissements());
+        }
         return new ScenarioImportOutcome(
-                outcome.editionId(), outcome.editionNom(), outcome.editionCreee(), bound.warnings());
+                outcome.editionId(), outcome.editionNom(), outcome.editionCreee(), avertissements);
     }
 
     /**
-     * The import of a backup being restored (ADR 0084), by the same path as
+     * The import of a backup being restored (ADR 0112), by the same path as
      * any other: the restore has backed the edition up itself, so this import
-     * does not. And what an ordinary import
-     * drops, because no seat ties it to the rest — a stand without a
-     * timeslot, a timeslot without a stand — comes back here too, through the
-     * usual creation: a backup brings back the whole edition it was taken of.
+     * does not. What an ordinary import drops, because no seat ties it to the
+     * rest — a stand without a timeslot, a timeslot without a stand — comes
+     * back here too, through the usual creation: a backup brings back the
+     * whole edition it was taken of. The file's plan section is then put back
+     * on it, as any file carrying one.
      *
-     * @return what of those could not be created again, one sentence each
+     * @param avant the backup of the state this replaces, named in the answer
      */
-    public List<String> importForRestore(String yamlContent) {
-        List<String> nonRecrees = new ArrayList<>();
-        importScenario(ScenarioYamlReader.parseScenarioText(yamlContent), nonRecrees);
-        return nonRecrees;
+    public WipeBackupService.Restoration importForRestore(ScenarioDto scenario, Long avant) {
+        Landing landing = new Landing(true, avant);
+        importScenario(scenario, landing);
+        return landing.plan;
+    }
+
+    /** What an import is told of where it lands, and what it reports back besides its outcome. */
+    private static final class Landing {
+        /** A restore: it has backed the edition up itself, and brings back what no seat ties to the rest. */
+        final boolean restore;
+
+        final Long avant;
+        final List<String> nonRecrees = new ArrayList<>();
+        WipeBackupService.Restoration plan;
+
+        Landing(boolean restore, Long avant) {
+            this.restore = restore;
+            this.avant = avant;
+        }
     }
 
     /**
@@ -138,11 +162,10 @@ public class ScenarioImportService {
      * by an interceptor, since the file may name another edition than the
      * call's.</p>
      *
-     * @param restore    {@code null} for an ordinary import; for the import
-     *                   of a restore, where to say what could not be created
-     *                   again
+     * @param landing    whether this is the import of a restore, and where to
+     *                   report what the plan section did
      */
-    private ScenarioImportOutcome importScenario(ScenarioDto scenario, List<String> restore) {
+    private ScenarioImportOutcome importScenario(ScenarioDto scenario, Landing landing) {
         // Built once before anything is written, so that a file the mapper
         // refuses is refused before its edition: section is acted upon.
         ScenarioYamlReader.fromDto(scenario, referenceDataService::getParametresLegaux);
@@ -152,7 +175,7 @@ public class ScenarioImportService {
             // edition as it was, and a failed one stops the import. It is
             // refused, like the import, while a solve holds this edition
             // (ADR 0084).
-            if (restore == null) {
+            if (!landing.restore) {
                 wipeBackup.backUpBeforeImport();
             }
             // The ids of the file are its own; the ones of the edition are
@@ -174,14 +197,18 @@ public class ScenarioImportService {
             sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
-            if (restore != null) {
+            if (landing.restore) {
                 // After the typologies: an unseated stand may offer one no
                 // seated stand or animateur names, which only that section brings.
-                restore.addAll(recreateUnseated(remappe));
+                landing.nonRecrees.addAll(recreateUnseated(remappe));
             }
             applyJourneesTypes(sections);
             applyContraintes(sections);
             applyConsignes(sections);
+            // Last: the seats and locks name the referential, the grid and the parameters just written.
+            if (scenario.plan() != null) {
+                landing.plan = wipeBackup.applyPlan(scenario, landing.avant, landing.nonRecrees);
+            }
         });
     }
 

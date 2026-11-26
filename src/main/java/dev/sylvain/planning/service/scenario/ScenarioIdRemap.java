@@ -126,7 +126,9 @@ final class ScenarioIdRemap {
                 postes(scenario.postes()),
                 contraintesAdHoc(scenario.contraintesAdHoc()),
                 scenario.prereglagesConsigne(),
-                consignes(scenario.consignes()));
+                consignes(scenario.consignes()),
+                // Named by natural keys and matched after the import, against the file's own ids.
+                scenario.plan());
     }
 
     /* ------------------------------ Matching ------------------------------ */
