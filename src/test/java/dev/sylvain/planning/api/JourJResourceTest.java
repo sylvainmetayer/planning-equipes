@@ -313,10 +313,33 @@ class JourJResourceTest {
     /* ----------------------- Regressions of the review ---------------------- */
 
     /**
+     * With nothing published there is no plan to be missing from: the day off an
+     * absence writes is listed all the same, so it is seen and can be cancelled.
+     */
+    @Test
+    void anAbsenceMarkedBeforeAnyPublicationIsListedAndCancellable() {
+        solveScenario();
+        String absent = firstAnimateurOnDuty();
+
+        markAbsent(absent, null, ENTRE_LES_DEUX, 200);
+
+        JsonPath etat = etat(ENTRE_LES_DEUX);
+        assertThat(etat.getList("absences.animateurId", String.class)).containsExactly(absent);
+        assertThat(etat.getList("absences[0].entrees.annulable", Boolean.class)).containsOnly(true);
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .delete("/api/jour-j/absences/" + absent + "?date=" + JOUR)
+                .then()
+                .statusCode(200)
+                .body("supprimees", equalTo(1));
+        assertThat(etat(ENTRE_LES_DEUX).getList("absences")).isEmpty();
+    }
+
+    /**
      * A day off on the fiche is a missing person only for the screen that asks
      * « who is missing today »: somebody the published plan expected that day.
-     * With nothing published nobody is expected, hence nobody is missing; once
-     * it is, the animateur is listed and flagged on the on-duty list. Written by
+     * The animateur is listed and flagged on the on-duty list. Written by
      * hand on the fiche rather than through this screen, because marking
      * somebody absent frees their seats — they then hold none and leave the
      * on-duty list altogether, where the flag could not be seen.
@@ -326,8 +349,6 @@ class JourJResourceTest {
         solveScenario();
         String surPlace = firstAnimateurOnDuty();
         putDaysOff(surPlace, List.of(JOUR));
-
-        assertThat(etat(ENTRE_LES_DEUX).getList("absences")).isEmpty();
 
         publish();
 

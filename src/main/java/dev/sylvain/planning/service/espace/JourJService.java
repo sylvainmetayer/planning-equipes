@@ -259,7 +259,8 @@ public class JourJService {
     /**
      * How many animateurs are absent on one journée — the absences the mode
      * jour J lists for it, counted the same way: the people the published plan
-     * expected that day whose fiche now lists it as a day off. What the home
+     * expected that day (everybody, while nothing was ever published) whose
+     * fiche now lists it as a day off. What the home
      * screen's « Aujourd'hui » line says, without a second reading of who is
      * missing — over the timeslots its caller has already read.
      */
@@ -569,13 +570,16 @@ public class JourJService {
      * it whose fiche now lists it as a day off, whoever recorded it. An absence
      * declared weeks ahead shows here exactly like one marked this morning —
      * what the screen answers is « who is missing today ». With nothing
-     * published there is nobody expected, hence nobody missing.
+     * published there is no reference to be missing from: every day off of
+     * the day is listed, so that an absence marked here is seen, and can be
+     * cancelled, before the first publication.
      */
     private List<AbsenceJourJ> absencesOf(
             LocalDate jour, List<Creneau> creneauxDuJour, Map<String, Identite> identites, List<Animateur> animateurs) {
         Set<String> attendus = expectedOn(jour);
         return animateurs.stream()
-                .filter(animateur -> attendus.contains(animateur.getId()) && animateur.isIndisponibleOn(jour))
+                .filter(animateur ->
+                        (attendus == null || attendus.contains(animateur.getId())) && animateur.isIndisponibleOn(jour))
                 .map(animateur -> new AbsenceJourJ(
                         animateur.getId(),
                         nomAffiche(identites.get(animateur.getId()), animateur.getId()),
@@ -586,10 +590,10 @@ public class JourJService {
                 .toList();
     }
 
-    /** The animateurs the published plan seats on {@code jour}. */
+    /** The animateurs the published plan seats on {@code jour}; {@code null} when nothing was ever published. */
     private Set<String> expectedOn(LocalDate jour) {
         if (planPublieService.jamaisPublie()) {
-            return Set.of();
+            return null;
         }
         return planPublieService.planPublie().getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null

@@ -4039,6 +4039,8 @@ export interface RapportPublication {
   echecs: string[];
   /** Who the admin took out of this send: they come back in the next count. */
   differes: string[];
+  /** Sentences for the caller (a 3.x field that no longer exists); none from this app. */
+  avertissements?: string[];
 }
 
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */

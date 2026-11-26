@@ -72,7 +72,7 @@ Chaque envoi, d'une publication ou d'un renvoi, laisse son état dans `envoi_pla
 
 ### Le corps du POST
 
-Le `POST` prend un corps JSON `{"cibles": ["id", …]}` et exige `Content-Type: application/json` : la liste est de longueur libre et un id d'animateur vient du client, donc ni un séparateur ni une URL n'est un endroit sûr pour la porter. Un corps vide, ou sans `cibles`, publie pour toutes les personnes concernées. Le champ `exclusions` de la 3.x a disparu ; un client qui l'envoie encore est lu sans erreur et **ignoré** : personne n'est écarté d'une publication générale.
+Le `POST` prend un corps JSON `{"cibles": ["id", …]}` et exige `Content-Type: application/json` : la liste est de longueur libre et un id d'animateur vient du client, donc ni un séparateur ni une URL n'est un endroit sûr pour la porter. Un corps vide, ou sans `cibles`, publie pour toutes les personnes concernées. Le champ `exclusions` de la 3.x a disparu ; un client qui l'envoie encore reçoit un `200` : le champ est **ignoré** (personne n'est écarté d'une publication générale) et la réponse porte `avertissements`, une liste de phrases qui dit que l'exclusion n'existe plus, jusqu'en 5.0. L'alerte `EXCLUSION_PUBLICATION_RETIREE` de l'accueil se referme, personne par personne, quand une publication a réellement prévenu cette personne (envoi réussi).
 
 Une personne différée garde son repère de comparaison (`animateur.plan_notifie_id`) : la publication suivante la nomme à nouveau, avec l'écart cumulé depuis ce qu'elle a réellement reçu, et `reporte` vaut `true` sur sa ligne d'aperçu.
 

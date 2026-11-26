@@ -18,6 +18,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Publishing the planning (issue #245): the button that replaced « envoyer à
@@ -63,11 +64,16 @@ public class PublicationResource {
      *               2 personnes » after an échange or a replacement.
      *               Everybody else concerned is deferred: they come back in
      *               the next count. An absent body, or an empty list,
-     *               publishes to everybody concerned. A former
-     *               {@code exclusions} field is ignored: nobody can be left
-     *               out of a general send any more.
+     *               publishes to everybody concerned.
+     * @param exclusions the 3.x field, read until 5.0: ignored — nobody can be
+     *               left out of a general send any more — and answered with
+     *               an {@code avertissements} sentence
      */
-    public record DemandePublication(List<String> cibles) {}
+    public record DemandePublication(
+            List<String> cibles,
+
+            @Schema(deprecated = true, description = "Retiré en 4.0 : ignoré, signalé par avertissements.")
+            List<String> exclusions) {}
 
     /**
      * Publishes, and writes to the people concerned.
@@ -82,7 +88,9 @@ public class PublicationResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public RapportPublication publier(DemandePublication demande) {
-        return publicationService.publier(demande == null ? null : demande.cibles());
+        return demande == null
+                ? publicationService.publier()
+                : publicationService.publier(demande.cibles(), demande.exclusions());
     }
 
     /**
