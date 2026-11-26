@@ -1,0 +1,19 @@
+/* « Mesures d'édition », view of the indicators: one table of the finished solves. */
+
+.mesures-sous-titre {
+  margin: -0.5rem 0 1rem;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.mesures-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.mesures-resultat {
+  max-width: 36rem;
+}

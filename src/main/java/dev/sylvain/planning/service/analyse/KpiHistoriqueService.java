@@ -19,7 +19,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
 /**
- * KPI history (issue #89): one row per completed solve, kept forever so the
+ * The indicators of an edition's solves ({@code mesure_edition}, nature {@code INDICATEURS}; the
+ * former {@code kpi_historique}, issue #89): one row per completed solve, kept forever so the
  * editions can be compared year over year.
  *
  * <p>The table is deliberately free of any foreign key, and the edition
@@ -93,8 +94,8 @@ public class KpiHistoriqueService {
         String editionId = editionContext.editionIdCourant();
         String editionNom = editionRepository.nameOf(editionId);
         String sql = """
- INSERT INTO kpi_historique (edition_id, edition_nom, kpi, cree_le)
- VALUES (?, ?, ?::jsonb, ?)""";
+ INSERT INTO mesure_edition (nature, edition_id, edition_nom, kpi, cree_le)
+ VALUES ('INDICATEURS', ?, ?, ?::jsonb, ?)""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, editionId);
@@ -113,7 +114,8 @@ public class KpiHistoriqueService {
     public List<KpiHistoriqueEntry> list() {
         String sql = """
  SELECT id, edition_id, edition_nom, kpi, cree_le
- FROM kpi_historique
+ FROM mesure_edition
+ WHERE nature = 'INDICATEURS'
  ORDER BY cree_le DESC, id DESC""";
         List<KpiHistoriqueEntry> entries = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
@@ -142,7 +144,8 @@ public class KpiHistoriqueService {
             return false;
         }
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("DELETE FROM kpi_historique WHERE id = ?")) {
+                PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM mesure_edition WHERE nature = 'INDICATEURS' AND id = ?")) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {

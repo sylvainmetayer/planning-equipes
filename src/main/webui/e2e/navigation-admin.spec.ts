@@ -123,7 +123,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/diagnostic?onglet=fragilite', marker: 'Fragilité', sheet: 'fragilite-message' },
   { path: '/aujourdhui', marker: "Aujourd'hui", sheet: 'jour-j-entete' },
-  { path: '/aujourdhui?onglet=realise', marker: 'Réalisé vs planifié', sheet: 'realise-toolbar' },
+  { path: '/mesures', marker: "Mesures d'édition", sheet: 'realise-toolbar' },
   // The former Marge disponible lands on the Diagnostic's Tension tab.
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
