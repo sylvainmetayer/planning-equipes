@@ -40,7 +40,7 @@ export interface ColonneGabarit {
 export type ValeurGabarit = number | null | 'ecart';
 
 /** The dates of a template, in order, from the calendar. */
-function datesParGabarit(calendrier: readonly AffectationGabarit[]): Map<number, string[]> {
+function datesByGabarit(calendrier: readonly AffectationGabarit[]): Map<number, string[]> {
   const dates = new Map<number, string[]>();
   for (const affectation of [...calendrier].sort((a, b) => a.date.localeCompare(b.date))) {
     const connues = dates.get(affectation.gabaritId) ?? [];
@@ -81,7 +81,7 @@ export function colonnesGabarits(
   }
   const grille = colonnes(rapport);
   const parHeures = colonnesParHeures(grille);
-  const dates = datesParGabarit(etat.calendrier);
+  const dates = datesByGabarit(etat.calendrier);
   const ordre = [...etat.gabarits]
     .filter((gabarit) => (dates.get(gabarit.id ?? -1) ?? []).length > 0)
     .sort((a, b) =>
@@ -147,7 +147,7 @@ export function valeurGabarit(
 }
 
 /** A copy of `cellules` with the value written onto every date the column stands for. */
-export function ecrireColonneGabarit(
+export function writeGabaritColumn(
   cellules: Cellules,
   standId: string,
   colonne: ColonneGabarit,
@@ -233,7 +233,7 @@ export function accesGrilleGabarits(
       const colonne = colonnesParId.get(colonneId);
       return colonne === undefined
         ? cellules
-        : ecrireColonneGabarit(cellules, standId, colonne, valeur);
+        : writeGabaritColumn(cellules, standId, colonne, valeur);
     },
   };
 }

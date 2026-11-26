@@ -4,7 +4,7 @@ import { cellulesDepuis, colonnes } from './grille-horaires';
 import {
   accesGrilleGabarits,
   colonnesGabarits,
-  ecrireColonneGabarit,
+  writeGabaritColumn,
   libelleColonneGabarit,
   resumeGabarits,
   valeurGabarit,
@@ -198,22 +198,22 @@ describe('l’écriture par gabarit', () => {
     const cellules = cellulesDepuis(rapport());
     const colonnesJT = colonnesGabarits(rapport(), etat());
 
-    const apres = ecrireColonneGabarit(cellules, 'A', colonnesJT[1], 5);
+    const after = writeGabaritColumn(cellules, 'A', colonnesJT[1], 5);
 
-    expect(valeurGabarit(apres, 'A', colonnesJT[1])).toBe(5);
+    expect(valeurGabarit(after, 'A', colonnesJT[1])).toBe(5);
     // The Nocturne shares those hours and is a different template: untouched.
-    expect(valeurGabarit(apres, 'A', colonnesJT[3])).toBe(2);
+    expect(valeurGabarit(after, 'A', colonnesJT[3])).toBe(2);
     // And the other stand never moves.
-    expect(valeurGabarit(apres, 'B', colonnesJT[1])).toBe(1);
+    expect(valeurGabarit(after, 'B', colonnesJT[1])).toBe(1);
   });
 
   it('ferme les dates d’un gabarit d’un seul geste', () => {
     const cellules = cellulesDepuis(rapport());
     const colonnesJT = colonnesGabarits(rapport(), etat());
 
-    const apres = ecrireColonneGabarit(cellules, 'A', colonnesJT[0], null);
+    const after = writeGabaritColumn(cellules, 'A', colonnesJT[0], null);
 
-    expect(valeurGabarit(apres, 'A', colonnesJT[0])).toBeNull();
+    expect(valeurGabarit(after, 'A', colonnesJT[0])).toBeNull();
   });
 
   it('ne touche rien quand la colonne ne couvre aucune date', () => {
@@ -221,7 +221,7 @@ describe('l’écriture par gabarit', () => {
     const colonnesJT = colonnesGabarits(rapport(), etat());
     const orpheline = { ...colonnesJT[0], colonnes: [], datesSansColonne: ['2026-07-08'] };
 
-    expect(ecrireColonneGabarit(cellules, 'A', orpheline, 9)).toBe(cellules);
+    expect(writeGabaritColumn(cellules, 'A', orpheline, 9)).toBe(cellules);
   });
 });
 

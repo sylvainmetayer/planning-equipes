@@ -186,7 +186,7 @@ export class GabaritsCard implements OnInit {
 
   /* ------------------------------ Templates ------------------------------ */
 
-  protected ouvrir(gabarit: Gabarit | null): void {
+  protected open(gabarit: Gabarit | null): void {
     if (this.verrouille()) {
       return;
     }
@@ -211,7 +211,7 @@ export class GabaritsCard implements OnInit {
       });
   }
 
-  protected async supprimer(gabarit: Gabarit): Promise<void> {
+  protected async remove(gabarit: Gabarit): Promise<void> {
     if (this.verrouille() || gabarit.id == null) {
       return;
     }
@@ -248,14 +248,14 @@ export class GabaritsCard implements OnInit {
     if (!this.peutAjouter() || gabaritId === null) {
       return;
     }
-    await this.ecrireCalendrier(affecterDates(this.calendrier(), this.datesAAjouter(), gabaritId));
+    await this.writeCalendar(affecterDates(this.calendrier(), this.datesAAjouter(), gabaritId));
   }
 
   protected async changerGabarit(date: string, gabaritId: number): Promise<void> {
     if (this.verrouille() || this.ecriture()) {
       return;
     }
-    await this.ecrireCalendrier(affecterDates(this.calendrier(), [date], gabaritId));
+    await this.writeCalendar(affecterDates(this.calendrier(), [date], gabaritId));
   }
 
   protected async retirer(date: string): Promise<void> {
@@ -272,7 +272,7 @@ export class GabaritsCard implements OnInit {
     }
   }
 
-  private async ecrireCalendrier(calendrier: AffectationGabarit[]): Promise<void> {
+  private async writeCalendar(calendrier: AffectationGabarit[]): Promise<void> {
     this.ecriture.set(true);
     try {
       this.etat.set(await this.api.setCalendrier(calendrier));
@@ -286,7 +286,7 @@ export class GabaritsCard implements OnInit {
   /* ------------------------------ Apply, recognise ------------------------------ */
 
   /** Previewed first, always: the dialog shows what the write will do and does it. */
-  async appliquer(): Promise<void> {
+  async apply(): Promise<void> {
     // The page's menu item stays enabled on an empty calendar: say why nothing opens.
     if (this.calendrier().length === 0 && !this.chargement()) {
       this.notifications.notify({

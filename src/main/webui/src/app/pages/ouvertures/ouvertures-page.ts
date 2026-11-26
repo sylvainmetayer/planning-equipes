@@ -65,7 +65,7 @@ import {
   ColonneGabarit,
   accesGrilleGabarits,
   colonnesGabarits,
-  ecrireColonneGabarit,
+  writeGabaritColumn,
   libelleColonneGabarit,
   resumeGabarits,
   valeurGabarit,
@@ -566,7 +566,7 @@ export class OuverturesPage implements OnInit {
     return rapport ? colonnesGabarits(rapport, this.etatGabarits()) : [];
   });
 
-  private readonly colonnesGabaritsParId = computed(
+  private readonly gabaritColumnsById = computed(
     () => new Map(this.colonnesGabarits().map((colonne) => [colonne.colonneId, colonne])),
   );
 
@@ -673,7 +673,7 @@ export class OuverturesPage implements OnInit {
             clef: key(ligne.standId, colonne.colonneId),
             colonneId: colonne.colonneId,
             premierDuJour: colonne.rang === 0,
-            valeur: this.texteGabarit(valeur),
+            valeur: this.gabaritText(valeur),
             modifiee: valeur !== lue,
             partielle: valeur === 'ecart',
             fermee: valeur === null,
@@ -1065,9 +1065,9 @@ export class OuverturesPage implements OnInit {
 
   /** What the field shows: the headcount, or nothing for closed — one meaning for an empty cell. */
   protected valeur(standId: string, colonneId: string): string {
-    const colonneJT = this.colonnesGabaritsParId().get(colonneId);
+    const colonneJT = this.gabaritColumnsById().get(colonneId);
     if (colonneJT) {
-      return this.texteGabarit(valeurGabarit(this.cellules(), standId, colonneJT));
+      return this.gabaritText(valeurGabarit(this.cellules(), standId, colonneJT));
     }
     const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
     return effectif === null ? '' : String(effectif);
@@ -1108,18 +1108,18 @@ export class OuverturesPage implements OnInit {
     if (lu === undefined) {
       return;
     }
-    const colonneJT = this.colonnesGabaritsParId().get(colonneId);
+    const colonneJT = this.gabaritColumnsById().get(colonneId);
     if (colonneJT) {
       // One keystroke, every date the template governs: that is the whole
       // point of the grid by kind of day.
-      this.cellules.update((cellules) => ecrireColonneGabarit(cellules, standId, colonneJT, lu));
+      this.cellules.update((cellules) => writeGabaritColumn(cellules, standId, colonneJT, lu));
       return;
     }
     this.cellules.update((cellules) => ecrireCellule(cellules, { standId, colonneId }, lu));
   }
 
   /** `2`, empty or `≠` — what a template cell shows, and what a blur puts back. */
-  private texteGabarit(valeur: number | null | 'ecart'): string {
+  private gabaritText(valeur: number | null | 'ecart'): string {
     if (valeur === 'ecart') {
       return ECART;
     }
@@ -1282,7 +1282,7 @@ export class OuverturesPage implements OnInit {
   /** How the grid on screen reads and writes one cell: by date, or by template. */
   private readonly accesGrille = computed<AccesGrille<Cellules, number | null>>(() =>
     this.view() === 'JOURNEES_TYPES'
-      ? accesGrilleGabarits(this.colonnesGabaritsParId())
+      ? accesGrilleGabarits(this.gabaritColumnsById())
       : accesGrilleDates,
   );
 

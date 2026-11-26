@@ -17,7 +17,7 @@
 
 <app-gel-notice family="CRENEAUX" />
 
-<app-gabarits [verrouille]="editingLocked()" (applique)="apresGabarits()" (serie)="openSerie($event)" />
+<app-gabarits [verrouille]="editingLocked()" (applique)="afterGabarits()" (serie)="openSerie($event)" />
 
 <!-- The control of the grid runs by itself after every write, and reads as a
      band under the calendar rather than as a card with a button to remember. -->
@@ -93,7 +93,7 @@
       <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
     </button>
     <mat-menu #generateur="matMenu">
-      <button mat-menu-item type="button" [disabled]="gridLocked()" (click)="appliquerGabarits()"
+      <button mat-menu-item type="button" [disabled]="gridLocked()" (click)="applyGabarits()"
               i18n-matTooltip="@@calendrier.generateur.gabarits.tooltip"
               matTooltip="Pose les gabarits sur leurs dates, prévisualisé avant d'écrire : un créneau identique garde ses postes.">
         <mat-icon>event_repeat</mat-icon>

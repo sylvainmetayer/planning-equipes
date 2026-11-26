@@ -21,11 +21,11 @@
               <div class="gabarit-entete">
                 <strong>{{ gabarit.nom }}</strong>
                 <span class="gabarit-actions">
-                  <button matIconButton type="button" [disabled]="verrouille()" (click)="ouvrir(gabarit)"
+                  <button matIconButton type="button" [disabled]="verrouille()" (click)="open(gabarit)"
                           i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier">
                     <mat-icon>edit</mat-icon>
                   </button>
-                  <button matIconButton type="button" class="danger-action" [disabled]="verrouille() || ecriture()" (click)="supprimer(gabarit)"
+                  <button matIconButton type="button" class="danger-action" [disabled]="verrouille() || ecriture()" (click)="remove(gabarit)"
                           i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer">
                     <mat-icon>delete</mat-icon>
                   </button>
@@ -45,7 +45,7 @@
           }
         </ul>
         <div class="card-actions">
-          <button matButton="filled" type="button" [disabled]="verrouille()" (click)="ouvrir(null)">
+          <button matButton="filled" type="button" [disabled]="verrouille()" (click)="open(null)">
             <mat-icon>add</mat-icon>
             <ng-container i18n="@@gabarits.creer">Nouveau gabarit</ng-container>
           </button>
@@ -137,7 +137,7 @@
           </div>
         }
         <div class="card-actions">
-          <button matButton="filled" type="button" [disabled]="!peutAppliquer()" (click)="appliquer()"
+          <button matButton="filled" type="button" [disabled]="!peutAppliquer()" (click)="apply()"
                   i18n-matTooltip="@@gabarits.appliquer.tooltip"
                   matTooltip="Écrit les créneaux du calendrier : un créneau identique garde ses sièges, un créneau en trop sur une date gouvernée est supprimé. Aperçu avant d'écrire.">
             @if (ecriture()) {

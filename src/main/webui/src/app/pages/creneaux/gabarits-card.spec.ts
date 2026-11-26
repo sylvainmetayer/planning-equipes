@@ -157,7 +157,7 @@ describe('GabaritsCard', () => {
     api.preview.mockResolvedValue({ source: 'GABARITS', application: apercu });
     const { card } = await mount();
 
-    await card['appliquer']();
+    await card['apply']();
 
     expect(api.preview).toHaveBeenCalledExactlyOnceWith({ source: 'GABARITS' });
     expect(api.apply).not.toHaveBeenCalled();
@@ -173,7 +173,7 @@ describe('GabaritsCard', () => {
     const { fixture, card } = await mount();
     await fixture.whenStable();
 
-    await card['appliquer']();
+    await card['apply']();
 
     expect(api.preview).not.toHaveBeenCalled();
     expect(dialog.open).not.toHaveBeenCalled();
@@ -193,7 +193,7 @@ describe('GabaritsCard', () => {
       (each) => each.textContent?.includes('Appliquer le calendrier'),
     )!;
     expect(applyButton.disabled).toBe(true);
-    await card['appliquer']();
+    await card['apply']();
     expect(api.preview).not.toHaveBeenCalled();
     expect(dialog.open).not.toHaveBeenCalled();
 

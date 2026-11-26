@@ -447,8 +447,8 @@ export class CreneauxPage implements OnInit {
   }
 
   /** « Depuis les gabarits », from the page's menu: the card owns the preview and the write of its calendar. */
-  protected appliquerGabarits(): void {
-    void this.gabaritsCard()?.appliquer();
+  protected applyGabarits(): void {
+    void this.gabaritsCard()?.apply();
   }
 
   /** « Reconnaître les gabarits », from the page's menu: the card owns the gesture. */
@@ -479,7 +479,7 @@ export class CreneauxPage implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((rapport) => {
         if (rapport) {
-          void this.apresSerie(rapport);
+          void this.afterGeneration(rapport);
         }
       });
   }
@@ -507,12 +507,12 @@ export class CreneauxPage implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((rapport) => {
         if (rapport) {
-          void this.apresSerie(rapport);
+          void this.afterGeneration(rapport);
         }
       });
   }
 
-  private async apresSerie(rapport: Generation): Promise<void> {
+  private async afterGeneration(rapport: Generation): Promise<void> {
     await Promise.all([
       this.crud.reload(),
       this.resolution.reload(),
@@ -532,7 +532,7 @@ export class CreneauxPage implements OnInit {
    * persisted plan may all have moved, and the card already told the user what
    * happened.
    */
-  protected async apresGabarits(): Promise<void> {
+  protected async afterGabarits(): Promise<void> {
     await Promise.all([
       this.crud.reload(),
       this.resolution.reload(),
