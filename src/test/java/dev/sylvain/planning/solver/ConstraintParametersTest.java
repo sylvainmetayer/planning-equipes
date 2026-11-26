@@ -42,7 +42,10 @@ class ConstraintParametersTest {
         // 10 h amplitude pass.
         assertThat(parametres)
                 .extracting(ConstraintParameter::libelle)
-                .containsExactly("Durée hebdomadaire maximale, majeurs", "Durée de la pause légale");
+                .containsExactly(
+                        "Durée hebdomadaire maximale, majeurs",
+                        "Durée hebdomadaire maximale, mineurs",
+                        "Durée de la pause légale");
         assertThat(parametres).first().extracting(ConstraintParameter::valeur).isEqualTo("48 h");
     }
 

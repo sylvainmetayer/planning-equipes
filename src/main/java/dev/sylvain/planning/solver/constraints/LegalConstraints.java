@@ -6,7 +6,6 @@ import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification;
 import ai.timefold.solver.core.api.score.stream.Joiners;
-import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintBuilder;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintCollector;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintStream;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
@@ -27,12 +26,12 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.ToIntBiFunction;
-import java.util.function.ToIntFunction;
 
 /**
  * Legal / safety hard constraints. None of these may ever be violated in a
@@ -79,12 +78,10 @@ public final class LegalConstraints {
             dureeQuotidienneMax(seats),
             dureeHebdomadaireMax(seats),
             dureeHebdomadaireMaxDeuxSemaines(seats),
-            dureeHebdomadaireMaxMineur(seats),
             reposQuotidienMinimal(seats),
             travailContinuMax(seats),
             maxJoursTravaillesParSemaine(seats),
             reposHebdomadaireMinimal(seats),
-            reposHebdomadaireMineur(seats),
             travailInterditJourFerieMineur(seats)
         };
     }
@@ -474,14 +471,15 @@ public final class LegalConstraints {
     }
 
     /**
-     * Every animateur gets 35 consecutive hours of rest credited to each ISO
-     * week in which they work.
+     * The weekly rest, one rule for every age: 35 consecutive hours credited to
+     * each ISO week in which an animateur works, and, for a minor, two
+     * <i>consecutive</i> rest days inside each ISO week (ADR 0116).
      *
-     * <p>Code du travail art. <b>L3132-2</b>: <i>« Le repos hebdomadaire a une
-     * durée minimale de vingt-quatre heures consécutives auxquelles s'ajoutent
-     * les heures consécutives de repos quotidien prévu au chapitre Ier. »</i>
-     * The daily rest of art. L3131-1 being 11 h, the floor is 24 + 11 = 35
-     * consecutive hours.</p>
+     * <p>Every animateur — Code du travail art. <b>L3132-2</b>: <i>« Le repos
+     * hebdomadaire a une durée minimale de vingt-quatre heures consécutives
+     * auxquelles s'ajoutent les heures consécutives de repos quotidien prévu au
+     * chapitre Ier. »</i> The daily rest of art. L3131-1 being 11 h, the floor is
+     * 24 + 11 = 35 consecutive hours.</p>
      *
      * <p>The week is the ISO week (Monday 00:00 → next Monday 00:00), the same
      * window as {@code Creneau.semaineIso()} and the weekly hour caps. A rest
@@ -508,18 +506,24 @@ public final class LegalConstraints {
      * runs once, on seconds since the epoch, with the same result: the solve
      * follows the same trajectory move for move, faster. The grouping stays
      * per animateur.</p>
+     *
+     * <p>A minor owes the two consecutive days on top, see
+     * {@link #deficitJoursReposMineur}: the same group, the same tuple, the two
+     * deficits summed. The two were separate rules (and so two switches, two
+     * weights) before the merge; their points are unchanged, so is the score.</p>
      */
     private Constraint reposHebdomadaireMinimal(SeatStreams seats) {
         return ConstraintToggleSupport.actif(
                         seats.perAnimateur()
-                                // The sweep runs once per update of the group,
-                                // its result carried to the filter and the
+                                // The sweeps run once per update of the group,
+                                // their result carried to the filter and the
                                 // penalty: the profile had it high, computed
                                 // twice.
                                 .map(
                                         (animateur, postes) -> animateur,
                                         (animateur, postes) -> postes,
-                                        (animateur, postes) -> deficitReposHebdomadaireMinutes(postes))
+                                        (animateur, postes) -> deficitReposHebdomadaireMinutes(postes)
+                                                + deficitJoursReposMineur(animateur, postes))
                                 .filter((animateur, postes, deficit) -> deficit > 0),
                         "reposHebdomadaireMinimal")
                 .penalize(HardMediumSoftScore.ONE_HARD, (animateur, postes, deficit) -> deficit)
@@ -531,7 +535,9 @@ public final class LegalConstraints {
     }
 
     /**
-     * A minor gets two <i>consecutive</i> rest days inside each ISO week.
+     * Days missing, summed over the ISO weeks, for a minor to get two
+     * <i>consecutive</i> rest days inside each of them: zero for an adult, and
+     * for a minor on the dates they are one.
      *
      * <p>Code du travail art. <b>L3164-2</b>: <i>« Les jeunes travailleurs ont
      * droit à deux jours de repos consécutifs par semaine. »</i></p>
@@ -556,38 +562,49 @@ public final class LegalConstraints {
      * n° 24-10.733, on L3132-2), and each of the two weeks then holds one free
      * day only.</p>
      *
-     * <p>Deliberately different from {@link #reposHebdomadaireMinimal}, which
-     * <em>does</em> credit one rest straddling the Monday to both weeks — but
-     * only what it spends in each: reaching the 35 h floor takes 24 h
+     * <p>Deliberately different from {@link #deficitReposHebdomadaireMinutes},
+     * which <em>does</em> credit one rest straddling the Monday to both weeks —
+     * but only what it spends in each: reaching the 35 h floor takes 24 h
      * <em>inside</em> the week, and only the adjoining daily rest is allowed to
      * overflow, as L3132-2 is written. Two consecutive days cannot be split
      * that way. See {@code site/src/docs/comprendre/repos-et-jours-d-affilee.md}.</p>
+     *
+     * <p>Same reading as {@link #maxJoursTravaillesParSemaine} (ADR 0044): a week
+     * is charged only while one of its days still holds a seat ahead of now.
+     * Only the dates a minor works count towards the set of worked days — a day
+     * worked as an adult (the week of an eighteenth birthday) is a free day to
+     * this half of the rule, as it was when it was a rule of its own.</p>
      */
-    private Constraint reposHebdomadaireMineur(SeatStreams seats) {
-        // Same reading as maxJoursTravaillesParSemaine (ADR 0044): the week is
-        // charged only while one of its days still holds a seat ahead, folded
-        // next to the set of dates. Read on the shared days: the minor's days,
-        // then their dates per week.
-        return ConstraintToggleSupport.actif(
-                        seats.days()
-                                .filter((animateur, date, jour) -> animateur.isMineurOn(date))
-                                .groupBy(
-                                        (animateur, date, jour) -> animateur,
-                                        (animateur, date, jour) -> Creneau.semaineIso(date),
-                                        ConstraintCollectors.compose(
-                                                ConstraintCollectors.toSet((animateur, date, jour) -> date),
-                                                ConstraintCollectors.sum((animateur, date, jour) ->
-                                                        PastSeats.reproachable(jour) ? 1L : 0L),
-                                                PastSeats.Ahead::new))
-                                .filter((animateur, semaine, jours) -> jours.ahead() > 0
-                                        && longestRunOfFreeDays(jours.value())
-                                                < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE),
-                        "reposHebdomadaireMineur")
-                .penalize(
-                        HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, jours) -> PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
-                                - longestRunOfFreeDays(jours.value()))
-                .asConstraint("reposHebdomadaireMineur");
+    static int deficitJoursReposMineur(Animateur animateur, List<PosteAffectation> postes) {
+        Map<LocalDate, Set<LocalDate>> workedByWeek = null;
+        Set<LocalDate> weeksAhead = null;
+        for (PosteAffectation poste : postes) {
+            LocalDate date = poste.getCreneau().getDate();
+            if (!animateur.isMineurOn(date)) {
+                continue;
+            }
+            if (workedByWeek == null) {
+                workedByWeek = new HashMap<>();
+                weeksAhead = new HashSet<>();
+            }
+            LocalDate monday = debutSemaine(date).toLocalDate();
+            workedByWeek.computeIfAbsent(monday, week -> new HashSet<>()).add(date);
+            if (PastSeats.reproachable(poste)) {
+                weeksAhead.add(monday);
+            }
+        }
+        if (workedByWeek == null) {
+            return 0;
+        }
+        int deficit = 0;
+        for (Map.Entry<LocalDate, Set<LocalDate>> week : workedByWeek.entrySet()) {
+            int longest = longestRunOfFreeDays(week.getValue());
+            if (weeksAhead.contains(week.getKey())
+                    && longest < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE) {
+                deficit += PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE - longest;
+            }
+        }
+        return deficit;
     }
 
     /**
@@ -922,65 +939,74 @@ public final class LegalConstraints {
     }
 
     /**
-     * Weekly working-time cap for adult animateurs (all paid, manager or not).
+     * Weekly working-time cap, one rule for every age: 48 h for an adult, 35 h
+     * for a minor (ADR 0116). A week is measured per age regime — the days
+     * worked as an adult against the adult cap, the days worked as a minor
+     * against the minor one — so the week of an eighteenth birthday is judged
+     * as it was when the two were rules of their own: each half on its own days.
      *
-     * <p>Code du travail art. L3121-20 : <i>« Au cours d'une même semaine, la
-     * durée maximale hebdomadaire de travail est de quarante-huit heures. »</i>
-     * — disposition d'ordre public, and the only text this ceiling rests on:
-     * the organisation has confirmed it does not fall under the Convention
-     * collective de l'Animation (ÉCLAT, IDCC 1518), which used to be cited
-     * here at art. 5.2 — an article about rest days, not about hours (the
-     * high week is its art. 5.7.2.3). The
-     * effective value is the admin-configurable
-     * {@link ParametresLegaux#getDureeHebdomadaireMaxMinutes()}, which the
-     * server refuses to set above 48 h.</p>
+     * <p>Adults — Code du travail art. L3121-20 : <i>« Au cours d'une même
+     * semaine, la durée maximale hebdomadaire de travail est de quarante-huit
+     * heures. »</i> — disposition d'ordre public, and the only text this ceiling
+     * rests on: the organisation has confirmed it does not fall under the
+     * Convention collective de l'Animation (ÉCLAT, IDCC 1518), which used to be
+     * cited here at art. 5.2 — an article about rest days, not about hours (the
+     * high week is its art. 5.7.2.3). The effective value is the
+     * admin-configurable {@link ParametresLegaux#getDureeHebdomadaireMaxMinutes()},
+     * which the server refuses to set above 48 h.</p>
      *
-     * <p>Restricted to adults: minors are capped at 35 h by art. L3162-1, see
-     * {@link #dureeHebdomadaireMaxMineur}. Before that split, a minor was
-     * allowed 48 h/week by this application, 13 h above their ordre public
-     * maximum.</p>
+     * <p>Minors — art. L3162-1 : <i>« Les jeunes travailleurs ne peuvent être
+     * employés à un travail effectif excédant huit heures par jour et
+     * trente-cinq heures par semaine. »</i> For the 14-to-under-16 bracket
+     * employed during school holidays, art. D4153-3 sets the same weekly figure
+     * (<i>« La durée du travail du mineur ne peut excéder trente-cinq heures par
+     * semaine ni sept heures par jour »</i>). The daily half of L3162-1 lives in
+     * {@link #dureeQuotidienneMax}; the 8 h/day cap alone does not bound the
+     * week: 8 h × 6 days = 48 h. The effective value is
+     * {@link ParametresLegaux#getDureeHebdomadaireMaxMineurMinutes()}.</p>
      *
      * <p>Week attribution convention: a créneau is attributed in full to the
-     * ISO week of its start date, see {@code Creneau.semaineIso()}.</p>
+     * ISO week of its start date, see {@code Creneau.semaineIso()}. One tuple per
+     * animateur and week carries both regimes' minutes, and the penalty is the
+     * sum of their excesses: the same points the two rules gave, under one name.
+     * An animateur with no birth date has neither regime.</p>
      */
     private Constraint dureeHebdomadaireMax(SeatStreams seats) {
-        return weeklyCapPenalty(
-                        ConstraintToggleSupport.actif(
-                                weeklyCap(
-                                        seats,
-                                        Animateur::isMajeurOn,
-                                        LegalConstraints::effectiveWorkMajeurMinutes,
-                                        ParametresLegaux::getDureeHebdomadaireMaxMinutes),
-                                "dureeHebdomadaireMax"),
-                        ParametresLegaux::getDureeHebdomadaireMaxMinutes)
+        return ConstraintToggleSupport.actif(
+                        joursAvecParametres(seats, LegalConstraints::ofAge)
+                                .groupBy(
+                                        (animateur, date, jour, parametres) -> animateur,
+                                        (animateur, date, jour, parametres) -> Creneau.semaineIso(date),
+                                        chargeSemaine())
+                                .join(ParametresLegaux.class)
+                                .filter((animateur, semaine, charge, parametres) ->
+                                        depassementHebdomadaire(charge, parametres) > 0),
+                        "dureeHebdomadaireMax")
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, semaine, charge, parametres) -> depassementHebdomadaire(charge, parametres))
                 .asConstraint("dureeHebdomadaireMax");
     }
 
     /**
-     * Weekly working-time cap for minors: 35 h.
-     *
-     * <p>Code du travail art. L3162-1 : <i>« Les jeunes travailleurs ne peuvent
-     * être employés à un travail effectif excédant huit heures par jour et
-     * trente-cinq heures par semaine. »</i> For the 14-to-under-16 bracket
-     * employed during school holidays, art. D4153-3 sets the same weekly
-     * figure (<i>« La durée du travail du mineur ne peut excéder trente-cinq
-     * heures par semaine ni sept heures par jour »</i>).</p>
-     *
-     * <p>The daily half of L3162-1 lives in {@link #dureeQuotidienneMax}.
-     * The 8 h/day cap alone does not bound the week: 8 h × 6 days = 48 h, which
-     * this application used to allow.</p>
+     * One ISO week of one animateur: the effective minutes worked as an adult
+     * and as a minor, each with how many of its days still hold a seat ahead of
+     * now (ADR 0044) — a regime is charged as soon as one of its days is; the
+     * days already worked count towards its sum all the same.
      */
-    private Constraint dureeHebdomadaireMaxMineur(SeatStreams seats) {
-        return weeklyCapPenalty(
-                        ConstraintToggleSupport.actif(
-                                weeklyCap(
-                                        seats,
-                                        Animateur::isMineurOn,
-                                        LegalConstraints::effectiveWorkMineurMinutes,
-                                        ParametresLegaux::getDureeHebdomadaireMaxMineurMinutes),
-                                "dureeHebdomadaireMaxMineur"),
-                        ParametresLegaux::getDureeHebdomadaireMaxMineurMinutes)
-                .asConstraint("dureeHebdomadaireMaxMineur");
+    record WeekCharge(long adultMinutes, long adultAhead, long minorMinutes, long minorAhead) {}
+
+    /** The minutes over the cap of each age regime of the week, those still charged, summed. */
+    private static long depassementHebdomadaire(WeekCharge charge, ParametresLegaux parametres) {
+        // No `if` here: ConstraintParametersStructuralTest reads bodies by name and
+        // would hand every rule holding an `if` the settings read inside this one.
+        long adult = charge.adultAhead() > 0
+                ? Math.max(0, charge.adultMinutes() - parametres.getDureeHebdomadaireMaxMinutes())
+                : 0;
+        long minor = charge.minorAhead() > 0
+                ? Math.max(0, charge.minorMinutes() - parametres.getDureeHebdomadaireMaxMineurMinutes())
+                : 0;
+        return adult + minor;
     }
 
     /**
@@ -1074,7 +1100,7 @@ public final class LegalConstraints {
 
     /**
      * The days of one animateur, each with its seats and the edition's legal
-     * parameters — the prefix {@link #dailyCap}, {@link #weeklyCap} and
+     * parameters — the prefix {@link #dureeQuotidienneMax}, {@link #dureeHebdomadaireMax} and
      * {@link #dureeHebdomadaireMaxDeuxSemaines} share.
      *
      * <p><b>Why a day level under the weekly rules.</b> A break taken on the
@@ -1107,61 +1133,35 @@ public final class LegalConstraints {
     }
 
     /**
-     * A week's effective minutes, and how many of its days still hold a seat
-     * ahead of now (ADR 0044) — the aggregate {@link #weeklyCap} groups its
-     * days into. A week is charged as soon as one of its days is; the days
-     * already worked count towards the sum all the same.
+     * A week's effective minutes per age regime, and how many of its days still
+     * hold a seat ahead of now — the aggregate {@link #dureeHebdomadaireMax}
+     * groups its days into.
+     *
+     * <p>The measure is {@code effectiveWork*Minutes}, the very one
+     * {@link #dureeQuotidienneMax} weighs — so a break the organiser declares
+     * taken on the post is deducted from the week exactly as it is from the day.
+     * Until this was so, the two rules read the same planning differently: five
+     * days of 10 h amplitude are 48 h 20 of travail effectif under a declared
+     * 30-minute break, and the weekly rule counted them 50 h and refused the
+     * plan. The over-count was protective, but it contradicted the daily rule's
+     * own arithmetic, and no organiser can act on two contradictory readings.
+     * See {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
      */
     private static QuadConstraintCollector<
-                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, ?, PastSeats.Ahead<Long>>
-            chargeSemaine(ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure) {
+                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, ?, WeekCharge>
+            chargeSemaine() {
         // Long, not int: at this arity `ConstraintCollectors.sum` only offers
         // the long form — as does `penalize`, so nothing is cast on the way
         // out either.
         return ConstraintCollectors.compose(
-                ConstraintCollectors.sum((animateur, date, jour, parametres) -> measure.applyAsInt(jour, parametres)),
-                ConstraintCollectors.sum((animateur, date, jour, parametres) -> PastSeats.reproachable(jour) ? 1L : 0L),
-                PastSeats.Ahead::new);
-    }
-
-    /**
-     * A week's effective minutes against the cap the edition sets for one age
-     * bracket. Week attribution convention: a créneau is attributed in full to
-     * the ISO week of its start date, see {@code Creneau.semaineIso()}.
-     *
-     * <p>The measure is {@code effectiveWork*Minutes}, the very one
-     * {@link #dailyCap} weighs — so a break the organiser declares taken on the
-     * post is deducted from the week exactly as it is from the day. Until this
-     * was so, the two rules read the same planning differently: five days of
-     * 10 h amplitude are 48 h 20 of travail effectif under a declared 30-minute
-     * break, and the weekly rule counted them 50 h and refused the plan. The
-     * over-count was protective, but it contradicted the daily rule's own
-     * arithmetic, and no organiser can act on two contradictory readings. See
-     * {@code site/src/docs/comprendre/regles-legales-et-pauses.md}.</p>
-     */
-    private static QuadConstraintStream<Animateur, String, PastSeats.Ahead<Long>, ParametresLegaux> weeklyCap(
-            SeatStreams seats,
-            BiPredicate<Animateur, LocalDate> bracket,
-            ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
-            ToIntFunction<ParametresLegaux> cap) {
-        return joursAvecParametres(seats, bracket)
-                .groupBy(
-                        (animateur, date, jour, parametres) -> animateur,
-                        (animateur, date, jour, parametres) -> Creneau.semaineIso(date),
-                        chargeSemaine(measure))
-                .join(ParametresLegaux.class)
-                .filter((animateur, semaine, duree, parametres) ->
-                        duree.ahead() > 0 && duree.value() > cap.applyAsInt(parametres));
-    }
-
-    /** The breaches of {@link #weeklyCap}, weighed: the minutes over the cap. */
-    private static QuadConstraintBuilder<
-                    Animateur, String, PastSeats.Ahead<Long>, ParametresLegaux, HardMediumSoftScore>
-            weeklyCapPenalty(
-                    QuadConstraintStream<Animateur, String, PastSeats.Ahead<Long>, ParametresLegaux> breaches,
-                    ToIntFunction<ParametresLegaux> cap) {
-        return breaches.penalize(
-                HardMediumSoftScore.ONE_HARD,
-                (animateur, semaine, duree, parametres) -> duree.value() - cap.applyAsInt(parametres));
+                ConstraintCollectors.sum((animateur, date, jour, parametres) ->
+                        animateur.isMineurOn(date) ? 0L : effectiveWorkMajeurMinutes(jour, parametres)),
+                ConstraintCollectors.sum((animateur, date, jour, parametres) ->
+                        !animateur.isMineurOn(date) && PastSeats.reproachable(jour) ? 1L : 0L),
+                ConstraintCollectors.sum((animateur, date, jour, parametres) ->
+                        animateur.isMineurOn(date) ? effectiveWorkMineurMinutes(jour, parametres) : 0L),
+                ConstraintCollectors.sum((animateur, date, jour, parametres) ->
+                        animateur.isMineurOn(date) && PastSeats.reproachable(jour) ? 1L : 0L),
+                WeekCharge::new);
     }
 }

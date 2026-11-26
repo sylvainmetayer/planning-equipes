@@ -191,9 +191,10 @@ public final class ConstraintParameters {
             // minors' own, read on the age at the date), never a field — what an organiser sets is how much
             // of the day is not work.
             Map.entry("dureeQuotidienneMax", List.of(DUREE_PAUSE_MINUTES)),
-            Map.entry("dureeHebdomadaireMax", List.of(DUREE_HEBDOMADAIRE_MAX_MINUTES, DUREE_PAUSE_MINUTES)),
+            Map.entry(
+                    "dureeHebdomadaireMax",
+                    List.of(DUREE_HEBDOMADAIRE_MAX_MINUTES, "dureeHebdomadaireMaxMineurMinutes", DUREE_PAUSE_MINUTES)),
             Map.entry("dureeHebdomadaireMaxDeuxSemaines", List.of(DUREE_HEBDOMADAIRE_MAX_MINUTES, DUREE_PAUSE_MINUTES)),
-            Map.entry("dureeHebdomadaireMaxMineur", List.of("dureeHebdomadaireMaxMineurMinutes", DUREE_PAUSE_MINUTES)),
             Map.entry("travailContinuMax", List.of(DUREE_PAUSE_MINUTES)),
             Map.entry(
                     "coupureRepasObligatoire", List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),

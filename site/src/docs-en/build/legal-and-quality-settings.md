@@ -49,8 +49,8 @@ The number of seats of an open segment (at least one, half rounded up on a break
 
 | Field | Default | Origin |
 | --- | --- | --- |
-| `dureeHebdomadaireMaxMinutes` | 48 h | French Labour Code (*Code du travail*) art. [L3121-20], public policy. Constraint `dureeHebdomadaireMax`, adults only |
-| `dureeHebdomadaireMaxMineurMinutes` | 35 h | Art. [L3162-1]; art. [D4153-3] for ages 14 to under 16. Constraint `dureeHebdomadaireMaxMineur` |
+| `dureeHebdomadaireMaxMinutes` | 48 h | French Labour Code (*Code du travail*) art. [L3121-20], public policy. Constraint `dureeHebdomadaireMax`, for adults |
+| `dureeHebdomadaireMaxMineurMinutes` | 35 h | Art. [L3162-1]; art. [D4153-3] for ages 14 to under 16. Constraint `dureeHebdomadaireMax`, for minors |
 | `reposQuotidienMinimalMinutes` | 11 h | Art. L3131-1 |
 | `dureeVacationMaxMinutes` | 6 h | Threshold of the grid check (art. L3121-16) |
 | `dureePauseMinutes` | 30 min | Legal floor of 20 min, see [the legal break](#la-pause-légale) |

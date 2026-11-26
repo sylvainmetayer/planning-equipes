@@ -46,8 +46,8 @@ Le nombre de sièges d'un segment ouvert (au moins un, la moitié arrondie au su
 
 | Champ | Défaut | Origine |
 | --- | --- | --- |
-| `dureeHebdomadaireMaxMinutes` | 48 h | Code du travail art. [L3121-20], ordre public. Contrainte `dureeHebdomadaireMax`, majeurs uniquement |
-| `dureeHebdomadaireMaxMineurMinutes` | 35 h | Art. [L3162-1] ; art. [D4153-3] pour les 14 à moins de 16 ans. Contrainte `dureeHebdomadaireMaxMineur` |
+| `dureeHebdomadaireMaxMinutes` | 48 h | Code du travail art. [L3121-20], ordre public. Contrainte `dureeHebdomadaireMax`, pour les majeurs |
+| `dureeHebdomadaireMaxMineurMinutes` | 35 h | Art. [L3162-1] ; art. [D4153-3] pour les 14 à moins de 16 ans. Contrainte `dureeHebdomadaireMax`, pour les mineurs |
 | `reposQuotidienMinimalMinutes` | 11 h | Art. L3131-1 |
 | `dureeVacationMaxMinutes` | 6 h | Seuil du contrôle de grille (art. L3121-16) |
 | `dureePauseMinutes` | 30 min | Plancher légal de 20 min, voir [la pause légale](#la-pause-légale) |

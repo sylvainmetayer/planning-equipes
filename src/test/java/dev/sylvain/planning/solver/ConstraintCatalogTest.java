@@ -140,9 +140,7 @@ class ConstraintCatalogTest {
                         "travailDeNuitInterditPourMineur",
                         "dureeQuotidienneMax",
                         "travailInterditJourFerieMineur",
-                        "reposHebdomadaireMineur",
                         "travailContinuMax",
-                        "dureeHebdomadaireMaxMineur",
                         "mineurNecessiteEncadrementMajeur",
                         "dureeHebdomadaireMax",
                         "dureeHebdomadaireMaxDeuxSemaines",
@@ -243,6 +241,16 @@ class ConstraintCatalogTest {
         assertThat(ConstraintCatalog.formerNamesOf("dureeQuotidienneMax"))
                 .containsExactly("dureeQuotidienneMaxMajeur", "dureeQuotidienneMaxMineur");
         assertThat(ConstraintCatalog.formerNamesOf("reposQuotidienMinimal")).isEmpty();
+        // the two rules that kept their name: the retired one reads as them, and they vote with it
+        assertThat(ConstraintCatalog.currentName("dureeHebdomadaireMaxMineur")).isEqualTo("dureeHebdomadaireMax");
+        assertThat(ConstraintCatalog.currentName("reposHebdomadaireMineur")).isEqualTo("reposHebdomadaireMinimal");
+        assertThat(ConstraintCatalog.currentName("reposHebdomadaireMinimal")).isEqualTo("reposHebdomadaireMinimal");
+        assertThat(ConstraintCatalog.formerNamesOf("dureeHebdomadaireMax"))
+                .containsExactly("dureeHebdomadaireMaxMineur");
+        assertThat(ConstraintCatalog.formerNamesOf("reposHebdomadaireMinimal"))
+                .containsExactly("reposHebdomadaireMineur");
+        assertThat(ConstraintCatalog.NOMS_CONSERVES)
+                .allSatisfy(name -> assertThat(ConstraintCatalog.PAR_NOM).containsKey(name));
     }
 
     @Test
@@ -257,9 +265,15 @@ class ConstraintCatalogTest {
                 name -> java.util.Optional.ofNullable(properties.get(name));
         assertThat(ConstraintCatalog.configuredWeight(property, "dureeQuotidienneMax"))
                 .isEqualTo(25);
-        // its own property wins over a former one
+        // a rule that is also written under its own name: the strongest of them all
         assertThat(ConstraintCatalog.configuredWeight(property, "travailContinuMax"))
-                .isEqualTo(4);
+                .isEqualTo(50);
+        assertThat(ConstraintCatalog.configuredWeight(
+                        name -> java.util.Optional.ofNullable(
+                                java.util.Map.of("dureeHebdomadaireMax", 30, "dureeHebdomadaireMaxMineur", 7)
+                                        .get(name)),
+                        "dureeHebdomadaireMax"))
+                .isEqualTo(30);
         assertThat(ConstraintCatalog.configuredWeight(property, "reposQuotidienMinimal"))
                 .isEqualTo(ConstraintCatalog.defaultWeight("reposQuotidienMinimal"));
     }

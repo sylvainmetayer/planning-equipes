@@ -139,7 +139,7 @@ Single Quarkus service, no separate solver microservice. Package root:
 - `solver/handsearch/` — the **direct engine** (ADR 0087): a local search
   written by hand (`HandSearch`) over a score kept up to date move by move
   (`IncrementalScore`, on the problem laid flat by `FlatProblem`), where the
-  43 rules are written **a second time**. The default engine since 3.0.0
+  41 rules are written **a second time**. The default engine since 3.0.0
   (ADR 0088; `planning.solver.engine=hand`, `SOLVER_ENGINE=timefold` gives the
   former search back). It is never believed:
   `service/solve/HandSearchSolver` has Timefold score the plan again and

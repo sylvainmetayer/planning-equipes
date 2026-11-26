@@ -212,7 +212,7 @@ Ce qu'on en retient :
 
 ## Le moteur direct : deux tests qui tiennent les règles en double
 
-`solver/handsearch` écrit les 43 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
+`solver/handsearch` écrit les 41 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
 
 `HandSearchCoverageStructuralTest` exige que toute contrainte de `ConstraintCatalog` ait sa constante dans `Rule` et que toute constante soit comptée dans le score du moteur. Il échoue le premier, par son nom, quand une contrainte n'est ajoutée que d'un côté.
 

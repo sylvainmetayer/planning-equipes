@@ -10,6 +10,8 @@ Une seule durée de pause vaut pour l'édition : `dureePauseMinutes`, réglée d
 
 C'est un **plancher**, à l'inverse des deux durées hebdomadaires qui sont des plafonds : 20 minutes (art. [L3121-16]), refusées en dessous par le service, libres au-dessus. Le défaut est de 30 minutes. Donner plus que le Code est un choix d'organisation (une relève de 30 minutes s'organise plus simplement qu'une de 20) ; la seule direction qu'une application ne doit pas laisser prendre est l'autre. Un assistant la règle aussi, avec le même plancher, par l'outil MCP `modifier_parametres_legaux`.
 
+**L'application ne réclame la pause d'un majeur qu'au-delà de six heures de travail continu.** L'art. [L3121-16] la rend due « dès que le temps de travail quotidien atteint six heures » : c'est un écart assumé au texte, que `travailContinuMax` lit comme un dépassement. Choix volontaire : un créneau de six heures exactes (14 h-20 h par exemple) deviendrait sinon un écart dur impossible à couvrir, la pause tombant à sa fin, où personne n'a plus rien à relayer. À reprendre si une lecture contraire était retenue pour l'événement.
+
 **Le plancher du mineur ne se stocke pas, il s'applique à la lecture.** Les 30 minutes de l'art. [L3162-3] sont d'ordre public, mais une édition qui accorde 25 minutes n'est pas illégale : elle donne 25 à ses majeurs et 30 à ses mineurs. `dureePauseMinutes(true)` rend `max(valeur, 30)` au lieu de refuser le réglage, ce qui aurait forcé l'édition à donner 30 à tout le monde. Les constantes `PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES` et `PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES` sont les deux planchers.
 
 ### Ce que la pause déduit, ce que l'amplitude compte
@@ -19,7 +21,7 @@ La pause est du repos, pas du travail effectif (art. L3121-1) : elle est **dédu
 | Où | Ce qui est mesuré |
 |---|---|
 | `dureeQuotidienneMax` | travail effectif : amplitude moins les pauses dues |
-| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`, `dureeHebdomadaireMaxDeuxSemaines` | idem, sommé sur la semaine ISO |
+| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxDeuxSemaines` | idem, sommé sur la semaine ISO |
 | page Planning par personne, CSV « Heures pour la paie » (`PlanningHoursService`), outil `heures_travaillees` | idem : total et colonnes hebdomadaires |
 | tableau d'équité (`EquiteService`) | idem : c'est cette grandeur qu'on répartit |
 | KPI (`PlanningKpiService`) | idem, sauf les instantanés anciens |

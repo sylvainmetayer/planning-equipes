@@ -17,16 +17,19 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
- * The daily cap and the continuous-work cap became one rule each, the cap read
- * on the age at the date (ADR 0114). The merge must change <b>nothing</b>: on
- * fixed plans of the shipped scenarios, the score of each level and the
- * points of each rule are those the two rules of each pair gave before, the
- * pair summed under its new name.
+ * The daily cap, the continuous-work cap, the weekly cap and the weekly rest
+ * became one rule each, the cap read on the age at the date (ADR 0114, 0116).
+ * The merge must change <b>nothing</b>: on fixed plans of the shipped
+ * scenarios, the score of each level and the points of each rule are those the
+ * two rules of each pair gave before, the pair summed under its new name.
  *
  * <p>The reference, {@code plafonds-par-age-avant.txt}, was written by this very
- * test on the code <b>before</b> the merge (the four old names summed into the
- * two new ones below), with {@code -Dplafonds.dump=<file>}; the plans are
- * built from fixed seeds, so the same cases are scored again today. Rewriting
+ * test on the code <b>before</b> the merge (the old names summed into the
+ * new ones below), with {@code -Dplafonds.dump=<file>}; the plans are built
+ * from fixed seeds, so the same cases are scored again today. It was written
+ * before the first merge (the daily and continuous-work caps, already summed in
+ * it) and still carries the two weekly rules of each pair apart: they are
+ * summed into the merged name when it is read, which is the same sum. Rewriting
  * it is a decision, never a convenience: a diff in that file is a score that
  * moved.</p>
  */
@@ -34,12 +37,14 @@ class AgeCapMergeEquivalenceTest {
 
     private static final String REFERENCE = "/plafonds-par-age-avant.txt";
 
-    /** What the four rules of 3.x were called, and the rule that replaces each pair. */
+    /** What the rules of 3.x were called, and the rule that replaces each pair. */
     private static final Map<String, String> MERGED = Map.of(
             "dureeQuotidienneMaxMajeur", "dureeQuotidienneMax",
             "dureeQuotidienneMaxMineur", "dureeQuotidienneMax",
             "travailContinuMaxMajeur", "travailContinuMax",
-            "travailContinuMaxMineur", "travailContinuMax");
+            "travailContinuMaxMineur", "travailContinuMax",
+            "dureeHebdomadaireMaxMineur", "dureeHebdomadaireMax",
+            "reposHebdomadaireMineur", "reposHebdomadaireMinimal");
 
     /** Grids with minors, nights and holidays, from two days to two weeks. */
     private static final List<String> SCENARIOS = List.of(
@@ -61,9 +66,13 @@ class AgeCapMergeEquivalenceTest {
             return;
         }
         assertThat(now).containsExactlyElementsOf(reference());
-        // The reference is not an empty promise: the merged rules do bite in it, for both ages.
+        // The reference is not an empty promise: the merged rules do bite in it.
         String all = String.join("\n", now);
-        assertThat(all).contains("dureeQuotidienneMax=").contains("travailContinuMax=");
+        assertThat(all)
+                .contains("dureeQuotidienneMax=")
+                .contains("travailContinuMax=")
+                .contains("dureeHebdomadaireMax=")
+                .contains("reposHebdomadaireMinimal=");
     }
 
     private static List<String> scoreEveryCase() {
@@ -93,16 +102,35 @@ class AgeCapMergeEquivalenceTest {
                 points.merge(MERGED.getOrDefault(rule, rule), lost, Long::sum);
             }
         });
-        String rules = points.entrySet().stream()
+        return scenario + " | " + plan + " | " + score + " | " + serialise(points);
+    }
+
+    private static String serialise(Map<String, Long> points) {
+        return points.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining(","));
-        return scenario + " | " + plan + " | " + score + " | " + rules;
+    }
+
+    /** A reference line with the rules of a merged pair summed under the merged name. */
+    private static String merged(String line) {
+        int cut = line.lastIndexOf(" | ");
+        Map<String, Long> points = new TreeMap<>();
+        for (String entry : line.substring(cut + 3).split(",")) {
+            if (!entry.isEmpty()) {
+                String[] pair = entry.split("=");
+                points.merge(MERGED.getOrDefault(pair[0], pair[0]), Long.parseLong(pair[1]), Long::sum);
+            }
+        }
+        return line.substring(0, cut + 3) + serialise(points);
     }
 
     private static List<String> reference() throws IOException {
         try (InputStream in = AgeCapMergeEquivalenceTest.class.getResourceAsStream(REFERENCE)) {
             assertThat(in).as(REFERENCE).isNotNull();
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8).lines().toList();
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8)
+                    .lines()
+                    .map(AgeCapMergeEquivalenceTest::merged)
+                    .toList();
         }
     }
 }

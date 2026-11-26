@@ -702,7 +702,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 poste(standStrat, longDay("WM-J3", 3, D3), mineur),
                 poste(standStrat, longDay("WM-J4", 4, D4), mineur));
 
-        verify("dureeHebdomadaireMaxMineur")
+        verify("dureeHebdomadaireMax")
                 .given(concat(quatreLonguesJournees, new ParametresLegaux()))
                 .penalizesBy(0);
     }
@@ -849,7 +849,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         // Four 9 h days in the same ISO week = 36 h, that is 60 min above the
         // public-order ceiling of 35 h (art. L3162-1).
         Animateur mineur = mineurDebutant("M1");
-        verify("dureeHebdomadaireMaxMineur")
+        verify("dureeHebdomadaireMax")
                 .given(
                         poste(standStrat, longDay("J1-LONG", 1, D1), mineur),
                         poste(standStrat, longDay("J2-LONG", 2, D2), mineur),
@@ -860,10 +860,31 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(180);
     }
 
+    /**
+     * The week of an eighteenth birthday: two days as a minor, two as an adult.
+     * Each regime is measured on its own days against its own cap — 17 h each
+     * under a 20 h cap — never pooled (34 h), as when the two were two rules.
+     */
+    @Test
+    void laSemaineDesDixHuitAnsJugeChaqueAgeSurSesPropresJours() {
+        Animateur anniversaire = animateur(
+                "M18",
+                D3.minusYears(18),
+                java.util.Map.of("STRATEGIE", dev.sylvain.planning.domain.NiveauCompetence.DEBUTANT));
+        verify("dureeHebdomadaireMax")
+                .given(
+                        poste(standStrat, longDay("A-J1", 1, D1), anniversaire),
+                        poste(standStrat, longDay("A-J2", 2, D2), anniversaire),
+                        poste(standStrat, longDay("A-J3", 3, D3), anniversaire),
+                        poste(standStrat, longDay("A-J4", 4, D4), anniversaire),
+                        new ParametresLegaux(20 * 60, 20 * 60))
+                .penalizesBy(0);
+    }
+
     @Test
     void mineurSousLes35HeuresParSemaineNEstPasPenalise() {
         Animateur mineur = mineurDebutant("M1");
-        verify("dureeHebdomadaireMaxMineur")
+        verify("dureeHebdomadaireMax")
                 .given(
                         poste(standStrat, longDay("J1-LONG", 1, D1), mineur),
                         poste(standStrat, longDay("J2-LONG", 2, D2), mineur),
@@ -875,7 +896,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     @Test
     void majeurNEstPasConcerneParLePlafondHebdomadaireMineur() {
         Animateur majeur = referentMajeur("A1");
-        verify("dureeHebdomadaireMaxMineur")
+        verify("dureeHebdomadaireMax")
                 .given(
                         poste(standStrat, longDay("J1-LONG", 1, D1), majeur),
                         poste(standStrat, longDay("J2-LONG", 2, D2), majeur),
@@ -1055,7 +1076,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
         // Work on Monday, Tuesday, Thursday, Friday, Sunday: the free days
         // (Wednesday, Saturday) are never consecutive (art. L3164-2).
         Animateur mineur = mineurDebutant("M1");
-        verify("reposHebdomadaireMineur")
+        verify("reposHebdomadaireMinimal")
                 .given(
                         poste(standStrat, jourSemaine29(0), mineur),
                         poste(standStrat, jourSemaine29(1), mineur),
@@ -1069,7 +1090,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     void mineurAvecDeuxJoursDeReposConsecutifsNEstPasPenalise() {
         // Work from Monday to Friday, Saturday and Sunday free.
         Animateur mineur = mineurDebutant("M1");
-        verify("reposHebdomadaireMineur")
+        verify("reposHebdomadaireMinimal")
                 .given(
                         poste(standStrat, jourSemaine29(0), mineur),
                         poste(standStrat, jourSemaine29(1), mineur),
@@ -1097,17 +1118,23 @@ class LegalConstraintsTest extends ConstraintTestBase {
             postes[i] = poste(standStrat, jourSemaine29(i), mineur);
             postes[6 + i] = poste(standStrat, jourSemaine30(1 + i, LocalTime.of(11, 0), LocalTime.of(15, 0)), mineur);
         }
-        verify("reposHebdomadaireMineur").given(postes).penalizesBy(1 + 1);
+        verify("reposHebdomadaireMinimal").given(postes).penalizesBy(1 + 1);
     }
 
     @Test
     void majeurNEstPasConcerneParLeReposHebdomadaireDesMineurs() {
+        // The schedule a minor is refused above (the free days, Wednesday and Saturday, never
+        // adjoin): an adult owes the 35 hours only, and their 44 h rest in the middle of the
+        // week pays them.
         Animateur majeur = referentMajeur("A1");
-        Object[] postes = new Object[7];
-        for (int i = 0; i < 7; i++) {
-            postes[i] = poste(standStrat, jourSemaine29(i), majeur);
-        }
-        verify("reposHebdomadaireMineur").given(postes).penalizesBy(0);
+        verify("reposHebdomadaireMinimal")
+                .given(
+                        poste(standStrat, jourSemaine29(0), majeur),
+                        poste(standStrat, jourSemaine29(1), majeur),
+                        poste(standStrat, jourSemaine29(3), majeur),
+                        poste(standStrat, jourSemaine29(4), majeur),
+                        poste(standStrat, jourSemaine29(6), majeur))
+                .penalizesBy(0);
     }
 
     @Test
