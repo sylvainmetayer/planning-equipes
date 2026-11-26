@@ -319,7 +319,7 @@ function remainingPeople(ids: readonly string[]): number {
 
 /**
  * The line of a rule on « Règles du planning ». The page opens the tab of the
- * rule's level by itself (`ongletOfRule`): naming it here too would be a
+ * rules by itself, and the block of the rule (`blocOfRule`): naming it here too would be a
  * second answer to the same question, free to drift from the first.
  */
 export function ruleLink(contrainte: ConstraintView): LienProbleme {

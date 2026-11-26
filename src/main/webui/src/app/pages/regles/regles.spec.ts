@@ -5,9 +5,10 @@ import {
   articlesOf,
   hasChanges,
   mergeSettings,
-  ongletOfRule,
+  blocOfRule,
+  niveauEffectif,
   readOngletRegles,
-  rulesOfTab,
+  rulesOfBloc,
   shownValue,
   storedValue,
 } from './regles';
@@ -21,6 +22,7 @@ function rule(overrides: Partial<ConstraintView>): ConstraintView {
     actif: true,
     protegee: false,
     legale: false,
+    niveauReglable: false,
     dosable: false,
     poids: 1,
     score: null,
@@ -34,36 +36,56 @@ function rule(overrides: Partial<ConstraintView>): ConstraintView {
 }
 
 describe('regles', () => {
-  it('reads the two rule tabs, and nothing else', () => {
-    expect(readOngletRegles('legal')).toBe('legal');
-    expect(readOngletRegles('qualite')).toBe('qualite');
+  it('reads the rules tab, and the two it replaced', () => {
+    expect(readOngletRegles('regles')).toBe('regles');
+    expect(readOngletRegles('legal')).toBe('regles');
+    expect(readOngletRegles('qualite')).toBe('regles');
     expect(readOngletRegles('calcul')).toBeNull();
     expect(readOngletRegles('legaux')).toBeNull();
     expect(readOngletRegles(null)).toBeNull();
   });
 
-  it('lists every hard rule on « Légal » and the others on « Qualité »', () => {
-    expect(ongletOfRule({ niveau: 'HARD' })).toBe('legal');
-    expect(ongletOfRule({ niveau: 'MEDIUM' })).toBe('qualite');
-    expect(ongletOfRule({ niveau: 'SOFT' })).toBe('qualite');
+  it('files a rule by what the catalogue says of it, never by its name', () => {
+    expect(blocOfRule({ legale: true, niveauReglable: false })).toBe('legal');
+    expect(blocOfRule({ legale: false, niveauReglable: true })).toBe('organisation');
+    expect(blocOfRule({ legale: false, niveauReglable: false })).toBe('avance');
   });
 
-  it('orders a tab by category, the law first, and keeps the catalogue order inside one', () => {
+  it('reads the level a rule scores on from the edition’s choice', () => {
+    const base = { niveau: 'MEDIUM', niveauReglable: true } as const;
+    expect(niveauEffectif({ ...base, niveauChoisi: 'OBLIGATOIRE' })).toBe('HARD');
+    expect(niveauEffectif({ ...base, niveauChoisi: 'PREFERENCE_FORTE' })).toBe('MEDIUM');
+    // A rule the catalogue ships hard, brought down to a preference.
+    expect(niveauEffectif({ ...base, niveau: 'HARD', niveauChoisi: 'PREFERENCE_LEGERE' })).toBe(
+      'MEDIUM',
+    );
+    // No choice to make: the catalogue's own.
+    expect(niveauEffectif({ niveau: 'HARD', niveauReglable: false, niveauChoisi: null })).toBe(
+      'HARD',
+    );
+  });
+
+  it('orders a block by category, the law first, and keeps the catalogue order inside one', () => {
     const rules = [
       rule({ name: 'affectation', categorie: 'Affectation' }),
-      rule({ name: 'mineurs1', categorie: 'Légal (mineurs)' }),
-      rule({ name: 'travail', categorie: 'Légal (temps de travail)' }),
-      rule({ name: 'mineurs2', categorie: 'Légal (mineurs)' }),
-      rule({ name: 'qualite', niveau: 'MEDIUM', categorie: "Qualité d'organisation" }),
+      rule({ name: 'mineurs1', categorie: 'Légal (mineurs)', legale: true }),
+      rule({ name: 'travail', categorie: 'Légal (temps de travail)', legale: true }),
+      rule({ name: 'mineurs2', categorie: 'Légal (mineurs)', legale: true }),
+      rule({
+        name: 'qualite',
+        niveau: 'MEDIUM',
+        categorie: "Qualité d'organisation",
+        niveauReglable: true,
+      }),
     ];
 
-    expect(rulesOfTab(rules, 'legal').map((each) => each.name)).toEqual([
+    expect(rulesOfBloc(rules, 'legal').map((each) => each.name)).toEqual([
       'travail',
       'mineurs1',
       'mineurs2',
-      'affectation',
     ]);
-    expect(rulesOfTab(rules, 'qualite').map((each) => each.name)).toEqual(['qualite']);
+    expect(rulesOfBloc(rules, 'organisation').map((each) => each.name)).toEqual(['qualite']);
+    expect(rulesOfBloc(rules, 'avance').map((each) => each.name)).toEqual(['affectation']);
   });
 
   it('finds the articles a description cites, once each', () => {
