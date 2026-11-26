@@ -238,7 +238,6 @@ StaffingResource#verification GET /staffing/verification
 StaffingResource#verify POST /staffing/verification
 StandResource#analyseCsv POST /stands/import-csv/analyse
 StandResource#analyseGrille POST /stands/import-grille/analyse
-StandResource#compactHoraires POST /stands/compactage-horaires
 StandResource#countStandUsages GET /stands/usages
 StandResource#createStand POST /stands
 StandResource#deleteStand DELETE /stands/{id}

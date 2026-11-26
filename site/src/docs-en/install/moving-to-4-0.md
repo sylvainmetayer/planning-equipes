@@ -65,8 +65,8 @@ The details and an example are in [the environment variables](variables-environn
 ### YAML scenario format
 
 - **Before**: the application writes `schemaVersion: 1`.
-- **After**: it writes `schemaVersion: 4`. It still reads v1 files (key absent or equal to 1): they go through a chain of conversions, link by link, as the model changes during 4.x. What the chain cannot convert is ignored, and every ignored item appears in the import report's warnings, never silently. The 1 → 2 link already renames the game categories' `ninja` key to `polyvalent`, losing nothing.
-- **What you do**: nothing to read your old files, end-of-event archives or copies taken before a wipe. A v2, v3 or v4 scenario cannot be imported into a 3.x application ("newer format"): keep a v1 export before upgrading, it is your way back. The v1 reader is removed in 5.0.
+- **After**: it writes `schemaVersion: 5`. It still reads v1 files (key absent or equal to 1): they go through a chain of conversions, link by link, as the model changes during 4.x. What the chain cannot convert is ignored, and every ignored item appears in the import report's warnings, never silently. The 1 → 2 link already renames the game categories' `ninja` key to `polyvalent`, losing nothing; the 4 → 5 link converts the stands' opening hours into plages (see [Stand opening hours](#horaires-des-stands)).
+- **What you do**: nothing to read your old files, end-of-event archives or copies taken before a wipe. A v2 to v5 scenario cannot be imported into a 3.x application ("newer format"): keep a v1 export before upgrading, it is your way back. The v1 reader is removed in 5.0.
 
 ### The level of an organisation rule is chosen per edition
 
@@ -102,6 +102,16 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 - **Before**: the game category that makes its holders available on every stand was called "ninja": `ninja` flag of the game categories (REST, YAML, CSV, MCP tools) and `typologie.ninja` column.
 - **After**: it is called "all-rounder" (`polyvalent`). Migration `V140` renames the column and its index, and fixes the field names already recorded in the action journal. The rule's name (`preserverBufferPolyvalents`), its weights and its switch do not change. API responses, YAML and CSV exports and the MCP tools' field say `polyvalent`; the derived keys follow (`polyvalentConfigure` of the fragility and tension reports, `typologiePolyvalenteDefinie` of the staffing-need report). The screens say "All-rounder category". The stands' `premium` flag keeps its name and is displayed as "Premium stand".
 - **What you do**: nothing for your data or your files. The old names are still read throughout 4.x (`ninja` JSON and YAML key, `ninja` CSV header, the latter flagged line by line in the import report) and removed in 5.0. Only your scripts that *read* a `ninja` key from an API response or an export need to move to its new name.
+
+### Stand opening hours
+
+- **Before**: a stand stated its hours through **recurring rules** ("every day from 10:00 to 12:00 then from 14:00 to closing", or every Saturday, or a date range, or specific dates), plus dated exceptions. The application folded these rules at every read, and the screen offered to "compact" dated entries into rules.
+- **After**: a stand carries a **list of dated plages**, an opening or a closure per day ([decision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)), and that is all the resolution reads. A recurrence stays the stand's **model** ("Saturday and Sunday, 10:00-18:00"): while the edition has no dates it waits; as soon as the edition has timeslots, the model is **unfolded** into plages over the days of the event, then on every day the edition gains afterwards. Migration `V159` converts your rules over the days of each edition that has timeslots (from the first to the last, plus the day after a timeslot that runs past midnight), **with the exact reading the application had of them**: a test replays it on each shipped scenario and compares, day by day, the windows obtained with those of 3.x. The YAML moves to version 5 likewise, the `plages` key replacing `ouvertures` and `indisponibilites`, and `horaires` becoming the stand's model.
+- **What you do**:
+  - **Export each edition to YAML before upgrading** (Files, "Export the current data as a scenario"). It is your way back, and the only way to recover the detail of your rules: the migration does not go back down.
+  - **An edition with no timeslot at all keeps its rules as the model**, as they are: nothing is converted or lost, no warning. They are laid on the days of the timeslots you create next, and the future timeslot generator will start from them.
+  - **The rules are neither deleted nor renamed**: they stay the model of their stand, in the same tables, including for an edition that has timeslots. A day added afterwards therefore gets the stand's schedule, as in 3.x. An edition's YAML carries the rule (`horaires`) and its plages.
+  - The recurring-hours entry screen is replaced by a plages editor in a later change; meanwhile a rule the current screen sends is kept as the model and, when the edition has timeslots, unfolded at once into plages over the days of the event, never refused. **The "Compact the hours" action is removed**: the `POST /api/stands/compactage-horaires` route and the MCP tool `compacter_horaires_stands` no longer exist, a dated plage having no rule left to fold into (see [the old tool names](../comprendre/mcp-outils.md#anciens-noms-doutils)). On the assistant side, `consulter_stand` and `lister_stands` show each stand's model (`horaires`), `ajouter_horaire_stand` adds to it (a rule identical to an existing one changes nothing) and `effacer_horaires_stand`, which stays, clears the model **and** the plages it unfolded, but keeps the hand-entered ones.
 
 ### Carpooling is reduced to validated or not
 
@@ -173,4 +183,4 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 
 ### Data and migrations
 
-Coming: the migrations that convert data, and what they do to your existing editions.
+The migrations that convert data are described above, one per change, as they are merged: for now, [the stands' opening hours](#horaires-des-stands).

@@ -5,10 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
@@ -31,7 +28,6 @@ import dev.sylvain.planning.service.notification.JournalNotificationsRepository.
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService.PlanningResolution;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.ProgressionValidations;
 import java.time.Duration;
@@ -536,7 +532,7 @@ class EtatEditionServiceTest {
     @Test
     void aWindowOutsideEveryCreneauIsCountedOnItsOwnOnTheOpeningsLine() {
         Stand stand = new Stand("S1", "Stand un", Set.of(), 1, 1, false);
-        stand.setOuvertures(List.of(new OuvertureStand(null, JOUR, LocalTime.of(7, 0), LocalTime.of(8, 0), null)));
+        stand.setOuvertures(List.of(PlageStand.ouverture(null, JOUR, LocalTime.of(7, 0), LocalTime.of(8, 0), null)));
         Creneau creneau = creneau(1L);
         Facts f = filledFacts();
         Facts facts = new Facts(
@@ -569,50 +565,6 @@ class EtatEditionServiceTest {
         assertThat(ouvertures.fenetresSansEffet()).isEqualTo(1);
         assertThat(ouvertures.anomalies()).isGreaterThanOrEqualTo(1);
         assertThat(ouvertures.statut()).isEqualTo(Statut.ATTENTION);
-    }
-
-    /** Overlapping rules are settled by the resolver: counted, said, and never « à vérifier » on their own. */
-    @Test
-    void overlappingRulesAloneLeaveTheOpeningsLineForInformation() {
-        Stand stand = new Stand("S1", "Stand un", Set.of(), 1, 4, false);
-        stand.setHoraires(List.of(
-                HoraireStand.everyDay(
-                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(9, 0), LocalTime.of(12, 0), 1)),
-                HoraireStand.everyDay(
-                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(9, 0), LocalTime.of(12, 0), 2))));
-        List<Creneau> creneaux = List.of(creneau(1L));
-        HoraireStandResolver.apply(List.of(stand), creneaux);
-        Facts f = filledFacts();
-        Facts facts = new Facts(
-                f.edition(),
-                1,
-                2,
-                1,
-                0,
-                false,
-                0,
-                0,
-                OuvertureStandsAnalyzer.analyze(List.of(stand), creneaux),
-                f.staffing(),
-                f.resolution(),
-                f.diagnostic(),
-                f.lastDataChange(),
-                false,
-                f.faisabilite(),
-                f.publication(),
-                f.confirmations(),
-                f.foireOuverte(),
-                0,
-                new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE,
-                NOTHING_TODAY);
-
-        EtatEditionView.EtatOuvertures ouvertures =
-                EtatEditionService.assemble(facts).ouvertures();
-
-        assertThat(ouvertures.anomalies()).isEqualTo(1);
-        assertThat(ouvertures.informations()).isEqualTo(1);
-        assertThat(ouvertures.statut()).isEqualTo(Statut.INFO);
     }
 
     /* ------------------------ « À traiter aujourd'hui » ------------------------ */

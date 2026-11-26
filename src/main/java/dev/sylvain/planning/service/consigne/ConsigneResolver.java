@@ -2,8 +2,7 @@ package dev.sylvain.planning.service.consigne;
 
 import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import java.time.LocalDate;
@@ -46,9 +45,9 @@ import java.util.stream.Collectors;
  * </ol>
  *
  * <p>The day comes out stated as explicit openings — closed-by-default, in the
- * three-state vocabulary of {@link OuvertureStand} — or as a whole-day closure
+ * three-state vocabulary of {@link PlageStand} — or as a whole-day closure
  * when nothing is left open. The result lands on
- * {@link Stand#setFenetresEffectives} only, like the resolver's: the persisted
+ * {@link Stand#setPlagesEffectives} only, like the resolver's: the persisted
  * lists are never written. Pure and static, unit-testable on plain objects.</p>
  */
 public final class ConsigneResolver {
@@ -157,17 +156,14 @@ public final class ConsigneResolver {
 
     /** Lands the day: every dated row of that date is replaced by what is left. */
     private static void land(Stand stand, LocalDate date, List<Segment> restes) {
-        List<IndisponibiliteStand> fermetures = stand.getIndisponibilitesEffectives().stream()
-                .filter(fermeture -> !date.equals(fermeture.getDate()))
-                .collect(Collectors.toCollection(ArrayList::new));
-        List<OuvertureStand> ouvertures = stand.getOuverturesEffectives().stream()
-                .filter(ouverture -> !date.equals(ouverture.getDate()))
+        List<PlageStand> plages = stand.getPlagesEffectives().stream()
+                .filter(plage -> !date.equals(plage.getDate()))
                 .collect(Collectors.toCollection(ArrayList::new));
         if (restes.isEmpty()) {
-            fermetures.add(new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_CONSIGNE));
+            plages.add(PlageStand.fermeture(null, date, LocalTime.MIDNIGHT, null, MOTIF_CONSIGNE));
         }
-        ouvertures.addAll(restes.stream()
-                .map(reste -> new OuvertureStand(
+        plages.addAll(restes.stream()
+                .map(reste -> PlageStand.ouverture(
                         null,
                         date,
                         heure(reste.bornes()[0]),
@@ -175,7 +171,7 @@ public final class ConsigneResolver {
                         MOTIF_CONSIGNE,
                         reste.effectif()))
                 .toList());
-        stand.setFenetresEffectives(fermetures, ouvertures);
+        stand.setPlagesEffectives(plages);
     }
 
     /** One open stretch of a day, {@code [debut, fin)} in minutes, and its headcount ({@code null} = minimum). */
@@ -202,12 +198,12 @@ public final class ConsigneResolver {
     /**
      * The stand's day before the consigne, as open segments: the opening
      * windows when the day is closed-by-default, the whole day minus the
-     * closures otherwise (see {@link OuvertureStand} for the three states).
+     * closures otherwise (see {@link PlageStand} for the three states).
      */
     static List<Segment> journeeNominale(Stand stand, LocalDate date) {
         List<Segment> segments = new ArrayList<>();
         boolean modeOuverture = false;
-        for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
+        for (PlageStand ouverture : stand.getOuverturesEffectives()) {
             if (date.equals(ouverture.getDate()) && ouverture.hasValidRange()) {
                 modeOuverture = true;
                 segments.add(new Segment(

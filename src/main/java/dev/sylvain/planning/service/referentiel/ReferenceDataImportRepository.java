@@ -96,6 +96,11 @@ public class ReferenceDataImportRepository {
                 typologieRepository.insertTypologieDerivee(connection, typologie);
             }
             for (Stand stand : standsById.values()) {
+                // The import replaces the stand: a file carrying no model clears the one a stand of the
+                // same id holds (null would mean « keep the stored rules »).
+                if (stand.horairesEnvoyes() == null) {
+                    stand.setHoraires(List.of());
+                }
                 standRepository.upsertStand(connection, stand);
             }
             Set<String> animateurIds = upsertAnimateursTx(connection, animateurs);

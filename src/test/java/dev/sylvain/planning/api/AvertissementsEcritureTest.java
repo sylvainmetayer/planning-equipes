@@ -55,9 +55,7 @@ class AvertissementsEcritureTest {
                           "effectifMin":1,
                           "effectifMax":2,
                           "reserveMajeurs":false,
-                          "horaires":[
-                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"14:00:00"}]}
-                          ]
+                          "ouvertures":[{"date":"2027-06-10","heureDebut":"14:00:00"}]
                         }
                         """)
                 .when()
@@ -166,9 +164,7 @@ class AvertissementsEcritureTest {
                           "effectifMin":1,
                           "effectifMax":1,
                           "reserveMajeurs":false,
-                          "horaires":[
-                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
-                          ]
+                          "ouvertures":[{"date":"2027-06-10","heureDebut":"08:00:00","heureFin":"10:00:00"}]
                         }
                         """)
                 .when()
@@ -181,14 +177,14 @@ class AvertissementsEcritureTest {
                 .extract()
                 .path("stand.id");
 
-        // Written despite the warnings, rules included — under the id the
+        // Written despite the warnings, plages included — under the id the
         // application drew, the one the body carried being ignored (ADR 0050).
         given().header("X-Edition-Id", "E1")
                 .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == '" + matin + "' }.horaires.size()", equalTo(1));
+                .body("find { it.id == '" + matin + "' }.ouvertures.size()", equalTo(1));
     }
 
     /**
@@ -206,9 +202,7 @@ class AvertissementsEcritureTest {
                         {
                           "nom":"Stand du matin","typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
-                          "horaires":[
-                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
-                          ]
+                          "ouvertures":[{"date":"2027-06-10","heureDebut":"08:00:00","heureFin":"10:00:00"}]
                         }
                         """)
                 .when()
@@ -225,9 +219,7 @@ class AvertissementsEcritureTest {
                         {
                           "nom":"Renommé","typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
-                          "horaires":[
-                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
-                          ]
+                          "ouvertures":[{"date":"2027-06-10","heureDebut":"08:00:00","heureFin":"10:00:00"}]
                         }
                         """)
                 .when()
@@ -251,9 +243,7 @@ class AvertissementsEcritureTest {
                           "effectifMin":1,
                           "effectifMax":2,
                           "reserveMajeurs":false,
-                          "horaires":[
-                            {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"14:00:00"}]}
-                          ]
+                          "ouvertures":[{"date":"2027-06-10","heureDebut":"14:00:00"}]
                         }
                         """)
                 .when()

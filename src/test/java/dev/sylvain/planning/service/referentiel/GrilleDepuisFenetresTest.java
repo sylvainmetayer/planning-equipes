@@ -5,10 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
-import dev.sylvain.planning.domain.HoraireStand;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.ModeHoraire;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
+import dev.sylvain.planning.domain.RecurringRules;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.GrilleDepuisFenetres.Derivation;
@@ -34,9 +34,11 @@ class GrilleDepuisFenetresTest {
         Stand stand = new Stand(id, id, Set.of(), 1, 1, false);
         stand.setIndisponibilites(new ArrayList<>());
         stand.setOuvertures(new ArrayList<>());
-        stand.setHoraires(new ArrayList<>());
         if (fenetres.length > 0) {
-            stand.getHoraires().add(HoraireStand.everyDay(ModeHoraire.OUVERTURE, fenetres));
+            RecurringRules.poserSurJours(
+                    stand,
+                    List.of(JOUR_1, JOUR_1.plusDays(1), JOUR_1.plusDays(2)),
+                    Regle.everyDay(ModeHoraire.OUVERTURE, fenetres));
         }
         return stand;
     }
@@ -89,8 +91,10 @@ class GrilleDepuisFenetresTest {
         List<Stand> stands = List.of(stand("A", fenetre(10, 12)), stand("B", fenetre(10, 12), fenetre(12, null)));
         // A second stand opening 12:05: a five-minute stretch 12:00-12:05 is an artefact.
         Stand tard = stand("C");
-        tard.getHoraires()
-                .add(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(12, 5), null)));
+        RecurringRules.poserSurJours(
+                tard,
+                List.of(JOUR_1),
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(12, 5), null)));
         List<Stand> tous = new ArrayList<>(stands);
         tous.add(tard);
 
@@ -105,9 +109,10 @@ class GrilleDepuisFenetresTest {
     void uneDerniereTrancheTropCourteRejointLaPrecedente() {
         Stand a = stand("A", fenetre(10, 18));
         Stand b = stand("B");
-        b.getHoraires()
-                .add(HoraireStand.everyDay(
-                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 5))));
+        RecurringRules.poserSurJours(
+                b,
+                List.of(JOUR_1),
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 5))));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(List.of(a, b), oneDay(LocalTime.of(20, 0)));
 
@@ -132,9 +137,10 @@ class GrilleDepuisFenetresTest {
     void unTrouTropCourtEstRefermeAuLieuDeCouperEnDeux() {
         Stand a = stand("A", fenetre(10, 12));
         Stand b = stand("B");
-        b.getHoraires()
-                .add(HoraireStand.everyDay(
-                        ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(12, 5), LocalTime.of(18, 0))));
+        RecurringRules.poserSurJours(
+                b,
+                List.of(JOUR_1),
+                Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(12, 5), LocalTime.of(18, 0))));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(List.of(a, b), oneDay(LocalTime.of(20, 0)));
 
@@ -149,8 +155,7 @@ class GrilleDepuisFenetresTest {
     void unJourOuAucunStandNeDitRienEstSignaleEtSansCreneau() {
         Stand libre = stand("LIBRE");
         Stand ferme = stand("FERME");
-        ferme.getIndisponibilites()
-                .add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(12, 0), LocalTime.of(14, 0), null));
+        ferme.getPlages().add(PlageStand.fermeture(null, JOUR_1, LocalTime.of(12, 0), LocalTime.of(14, 0), null));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(List.of(libre, ferme), oneDay(LocalTime.of(20, 0)));
 
@@ -161,9 +166,12 @@ class GrilleDepuisFenetresTest {
 
     @Test
     void uneExceptionDateeDeplaceLaCoupureDuSeulJourQuElleNomme() {
-        Stand stand = stand("A", fenetre(10, 20));
-        stand.getOuvertures()
-                .add(new OuvertureStand(null, JOUR_1.plusDays(1), LocalTime.of(14, 0), LocalTime.of(20, 0), null));
+        Stand stand = stand("A");
+        stand.getPlages()
+                .add(PlageStand.ouverture(null, JOUR_1.plusDays(1), LocalTime.of(14, 0), LocalTime.of(20, 0), null));
+        // The rule leaves the day that already carries a plage as it is.
+        RecurringRules.poserSurJours(
+                stand, List.of(JOUR_1, JOUR_1.plusDays(1)), Regle.everyDay(ModeHoraire.OUVERTURE, fenetre(10, 20)));
 
         Derivation derivation = GrilleDepuisFenetres.deriver(
                 List.of(stand), new Parametres(JOUR_1, JOUR_1.plusDays(1), LocalTime.of(20, 0), 15));

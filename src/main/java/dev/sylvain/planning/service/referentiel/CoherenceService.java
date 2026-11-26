@@ -221,7 +221,7 @@ public class CoherenceService {
             }
             return List.copyOf(avertissements);
         } finally {
-            apres.setFenetresEffectives(null, null);
+            apres.setPlagesEffectives(null);
         }
     }
 

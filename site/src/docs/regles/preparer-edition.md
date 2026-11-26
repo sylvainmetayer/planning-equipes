@@ -34,7 +34,7 @@ Les **lieux** sont les emplacements géolocalisés rattachés aux stands. Ils se
 
 1. Ouvrez *Stands* et cliquez sur « Ajouter ». L'assistant guide la création : identité, typologies, lieu, puis les créneaux de l'édition, à décocher, avec l'effectif de chacun. Aucune règle à écrire.
 2. Renseignez au moins une typologie (toujours), les effectifs minimum et maximum, et si le stand est réservé aux majeurs. Les indicateurs *premium* et *effort* se règlent aussi dans la fiche.
-3. Réglez les horaires : des règles récurrentes complétées d'exceptions datées. Chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne. Le détail est dans [Construire le calendrier et les horaires](calendrier-et-horaires.md).
+3. Réglez les horaires : des plages datées, d'ouverture ou de fermeture, jour par jour. Chaque fenêtre d'ouverture peut nommer son propre effectif, pour un stand qui n'a pas le même besoin le matin, l'après-midi et en nocturne. Le détail est dans [Construire le calendrier et les horaires](calendrier-et-horaires.md).
 
 Le tableau des stands se trie sur chaque colonne et dit, pour chacun, ses jours ouverts, ses postes et, après calcul, sa couverture.
 

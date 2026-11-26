@@ -447,17 +447,16 @@ public class McpPrompts {
                 si je le demande.
                 2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
                 que d'une page blanche, et dis-moi ce que le planning retiendrait en l'état.
-                3. Pour chaque stand à régler, ajouter_horaire_stand pose une règle récurrente — la \
-                forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture ». Une \
-                fenêtre peut nommer son propre effectif ; sans effectif, elle reprend le minimum du \
-                stand. Garde ajouter_ouverture_stand et ajouter_fermeture_stand pour les exceptions \
-                datées, qui priment sur les règles du jour qu'elles nomment.
-                4. Si les horaires ont été saisis jour par jour, compacter_horaires_stands les replie \
-                en règles quand le motif se répète. Dis-moi ce qu'il n'a pas su compacter, et pourquoi.
-                5. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
+                3. Pour chaque stand à régler, ajouter_horaire_stand écrit un horaire récurrent — la \
+                forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture » — sous la \
+                forme d'une plage datée par jour d'événement. Une fenêtre peut nommer son propre \
+                effectif ; sans effectif, elle reprend le minimum du stand. Garde \
+                ajouter_ouverture_stand et ajouter_fermeture_stand pour les jours à part : un jour qui \
+                porte déjà une plage n'est pas modifié par ajouter_horaire_stand.
+                4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
-                6. Si la grille de créneaux n'existe pas encore, previsualiser_derivation_creneaux la \
+                5. Si la grille de créneaux n'existe pas encore, previsualiser_derivation_creneaux la \
                 déduit de ces fenêtres — une coupure à chaque heure où un stand ouvre ou ferme. Montre \
                 l'aperçu avant d'écrire quoi que ce soit.
 

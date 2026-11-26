@@ -1,7 +1,9 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.IdGenerator;
@@ -15,6 +17,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,9 +74,8 @@ public class StandService {
     }
 
     /**
-     * Stands as entered: the recurring {@link HoraireStand} rules and the dated
-     * exceptions, side by side, with no expansion. This is the CRUD view — what
-     * the admin UI edits and what a save writes back. Anything that needs the
+     * Stands as entered: their stored plages, nothing laid on top. This is the
+     * CRUD view — what the admin UI edits and what a save writes back. Anything that needs the
      * <em>effective</em> windows of a given day wants {@link #listSolved()}
      * instead.
      */
@@ -82,13 +84,13 @@ public class StandService {
     }
 
     /**
-     * Stands with their rules already expanded against the edition's days, so
+     * Stands with the consignes already laid on their plages, so
      * {@link Creneau#segmentsOuvertsMinutes(Stand)} sees the effective
      * windows — what the solver, the poste generation and the feasibility
      * analysis all build on.
      *
-     * <p>The expansion lands on {@link Stand#setFenetresEffectives} and never on
-     * the persisted lists, so these instances stay safe to hand to a save path
+     * <p>The result lands on {@link Stand#setPlagesEffectives} and never on
+     * the persisted list, so these instances stay safe to hand to a save path
      * (see {@link HoraireStandResolver}).</p>
      */
     public List<Stand> listSolved() {
@@ -98,9 +100,9 @@ public class StandService {
     }
 
     /**
-     * Rules and dated exceptions first, then the edition's consignes on top
-     * (issue #4): the one entry point every reader of effective windows goes
-     * through. A caller that expanded the rules itself would silently ignore
+     * The stored plages first, then the edition's consignes on top (issue
+     * #4): the one entry point every reader of effective windows goes
+     * through. A caller that read the plages itself would silently ignore
      * a consigne and staff a band an arrêté closed —
      * {@code ConsigneCoucheStructurelleTest} refuses any such caller.
      */
@@ -125,6 +127,8 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public Stand create(Stand stand) {
+        // A new stand has nothing stored to be unfolded from: whatever a client marked is a typed plage.
+        stand.getPlages().forEach(plage -> plage.setDepliee(false));
         validate(stand);
         scope.write("Failed to create stand " + stand.getNom(), connection -> {
             stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
@@ -143,6 +147,7 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     Stand create(Connection connection, Stand stand) throws SQLException {
+        layDownReceivedRules(stand);
         StandValidator.check(stand);
         stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
         Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, THE_STAND);
@@ -182,6 +187,9 @@ public class StandService {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
+        if (!stand.getPlages().isEmpty()) {
+            markOrigins(stand, repository.findStand(id));
+        }
         // Before the freeze compares: the game categories may be named by
         // their code, and a code is not the id the stored stand holds.
         validate(stand);
@@ -272,62 +280,74 @@ public class StandService {
         return lignes;
     }
 
+    /**
+     * What a stand does with the recurring rules it is sent under {@code horaires} (ADR 0104), the
+     * bridge of the 3.x schedule editor until the plages editor replaces it. They are always the
+     * stand's <b>model</b>, stored as sent — the editor reads them back — and, when the edition has
+     * days, also unfolded into plages on them, with the reading 3.x applied at every read:
+     * <ul>
+     * <li>none sent, or the stored ones sent back unchanged: nothing moves;</li>
+     * <li>no timeslot: no day to lay them on, the model waits for the days the edition gains
+     * ({@code CreneauRepository});</li>
+     * <li>timeslots: the plages the previous model had unfolded are withdrawn (recomputed, then
+     * removed where they are still there unchanged), the new model is unfolded, and a day that
+     * carries a plage of its own keeps it.</li>
+     * </ul>
+     */
+    private void layDownReceivedRules(Stand stand) {
+        List<HorairesRecurrents.Regle> regles = stand.horairesEnvoyes();
+        if (regles == null) {
+            return;
+        }
+        for (HorairesRecurrents.Regle regle : regles) {
+            if (regle.fenetres().isEmpty()) {
+                throw new BusinessError.Invalid("Un horaire de stand requiert au moins une fenêtre horaire");
+            }
+            if (!regle.fenetres().stream().allMatch(FenetreHoraire::hasValidRange)) {
+                throw new BusinessError.Invalid("Une fenêtre horaire requiert une heure de début, et une heure de "
+                        + "fin après elle (vide : jusqu'à la fermeture) — une fenêtre ne peut pas chevaucher minuit");
+            }
+        }
+        StandValidator.checkRules(stand, regles);
+        List<HorairesRecurrents.Regle> stored =
+                stand.getId() == null ? List.of() : repository.modelRules(stand.getId());
+        if (sameRules(regles, stored)) {
+            stand.setHoraires(null);
+            return;
+        }
+        Set<LocalDate> jours = HorairesRecurrents.datesConcernees(creneaux.list());
+        if (jours.isEmpty() && !regles.isEmpty()) {
+            return;
+        }
+        // The plages the previous model unfolded carry their origin: they go, whatever day they are on, and
+        // what somebody typed stays — even when it looks exactly like one of them.
+        List<PlageStand> handMade =
+                stand.getPlages().stream().filter(plage -> !plage.isDepliee()).toList();
+        stand.setPlages(HorairesRecurrents.expand(regles, handMade, jours));
+    }
+
+    /**
+     * The origin of a plage is the server's to say, never the client's: a plage sent back as it was
+     * stored keeps its mark, one the editor changed, or a client wrote, is typed by hand.
+     */
+    private static void markOrigins(Stand sent, Stand stored) {
+        PlageStand.carryOrigins(stored != null ? stored.getPlages() : List.of(), sent.getPlages());
+    }
+
+    private static boolean sameRules(List<HorairesRecurrents.Regle> sent, List<HorairesRecurrents.Regle> stored) {
+        return sent.stream()
+                .map(HorairesRecurrents.Regle::withoutId)
+                .toList()
+                .equals(stored.stream().map(HorairesRecurrents.Regle::withoutId).toList());
+    }
+
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
     private void validate(Stand stand) {
+        layDownReceivedRules(stand);
         stand.setTypologiesProposees(typologies.resolveIds(stand.getTypologiesProposees()));
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {
             typologies.validateIds(stand.getTypologiesProposees());
         }
-    }
-
-    /**
-     * Rewrites every stand's hand-entered dated windows as the recurring
-     * horaires they repeat, against the edition's days. With
-     * {@code apply} false nothing is written: the returned report describes
-     * what the operation <em>would</em> do, which is what makes it safe to show
-     * before committing to it.
-     *
-     * <p>Only stands the compaction proved equivalent are saved
-     * ({@link HoraireCompaction#maxGapMinutes}); the others come back in
-     * the report with the reason they were left alone. Each one is saved
-     * individually so a single problematic stand cannot roll back the rest.</p>
-     */
-    public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
-        List<Stand> stands = list();
-        HoraireCompaction.RapportCompactage rapport = HoraireCompaction.compact(stands, creneaux.list(), apply);
-        if (!apply) {
-            return rapport;
-        }
-        // Checked once for the whole compaction, not per stand: it rewrites every
-        // compacted stand through saveStand, and a landing solve would revert
-        // their typologies, indisponibilités and ouvertures. A dry run writes
-        // nothing, hence the check sitting after the early return — and the
-        // freeze with it: a compaction rewrites opening hours, which a
-        // STANDS freeze covers, but a dry run may still be read.
-        solverJobs.refuseIfSolving();
-        gel.refuseIfFrozen(ReferentialFamily.STANDS);
-        Set<String> compactes = rapport.stands().stream()
-                .filter(HoraireCompaction.LigneCompactage::compacte)
-                .map(HoraireCompaction.LigneCompactage::standId)
-                .collect(Collectors.toSet());
-        boolean modifie = false;
-        try {
-            for (Stand stand : stands) {
-                if (compactes.contains(stand.getId())) {
-                    repository.saveStand(stand, false);
-                    modifie = true;
-                }
-            }
-        } finally {
-            // One transaction per stand, so a failure midway leaves the earlier
-            // ones committed: mark what was written rather than nothing. See
-            // CreneauService#createInBulk for why over-marking is the safe
-            // direction.
-            if (modifie) {
-                changeTracker.markModified();
-            }
-        }
-        return rapport;
     }
 }

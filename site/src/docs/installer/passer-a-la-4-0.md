@@ -61,8 +61,8 @@ Le détail et un exemple sont dans [les variables d'environnement](variables-env
 ### Format du scénario YAML
 
 - **Avant** : l'application écrit `schemaVersion: 1`.
-- **Après** : elle écrit `schemaVersion: 4`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le maillon 1 → 2 renomme déjà la clé `ninja` des typologies en `polyvalent`, sans rien perdre.
-- **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2, v3 ou v4 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
+- **Après** : elle écrit `schemaVersion: 5`. Elle lit toujours les fichiers v1 (clé absente ou égale à 1) : ils traversent une chaîne de conversions, maillon par maillon, au fil des changements de modèle de la 4.x. Ce que la chaîne ne peut pas convertir est ignoré, et chaque élément ignoré apparaît dans les avertissements du rapport d'import, jamais en silence. Le maillon 1 → 2 renomme déjà la clé `ninja` des typologies en `polyvalent`, sans rien perdre ; le maillon 4 → 5 convertit les horaires des stands en plages (voir [Horaires des stands](#horaires-des-stands)).
+- **Ce que vous faites** : rien pour relire vos anciens fichiers, archives de fin d'événement ou copies avant vidage. Un scénario v2 à v5 ne s'importe pas dans une application 3.x (« format plus récent ») : gardez un export v1 avant de monter, c'est votre retour arrière. Le lecteur v1 est retiré en 5.0.
 
 ### Le niveau d'une règle d'organisation se choisit par édition
 
@@ -98,6 +98,16 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 - **Avant** : la typologie qui rend ses titulaires disponibles sur tous les stands s'appelait « ninja » : drapeau `ninja` des typologies (REST, YAML, CSV, outils MCP) et colonne `typologie.ninja`.
 - **Après** : elle s'appelle « polyvalent ». La migration `V140` renomme la colonne et son index, et corrige les noms de champs déjà inscrits au journal des actions. Le nom de la règle (`preserverBufferPolyvalents`), ses poids et son interrupteur ne changent pas. Les réponses de l'API, les exports YAML et CSV et le champ des outils MCP disent `polyvalent` ; les clés dérivées suivent (`polyvalentConfigure` des rapports de fragilité et de tension, `typologiePolyvalenteDefinie` du rapport de besoin). Les écrans disent « Typologie polyvalente ». Le drapeau `premium` des stands garde son nom et s'affiche « Stand premium ».
 - **Ce que vous faites** : rien pour vos données ni vos fichiers. Les anciens noms sont encore lus pendant toute la 4.x (clé JSON et YAML `ninja`, en-tête CSV `ninja`, ce dernier signalé ligne par ligne dans le rapport d'import) et retirés en 5.0. Seuls vos scripts qui *lisent* une clé `ninja` d'une réponse de l'API ou d'un export doivent passer à son nouveau nom.
+
+### Horaires des stands
+
+- **Avant** : un stand disait ses horaires par des **règles récurrentes** (« tous les jours de 10 h à 12 h puis de 14 h à la fermeture », ou chaque samedi, ou une plage de dates, ou des dates précises), plus des exceptions datées. L'application repliait ces règles à chaque lecture, et l'écran proposait de « compacter » des saisies datées en règles.
+- **Après** : un stand porte une **liste de plages datées**, une ouverture ou une fermeture par jour ([décision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)), et c'est la seule chose que la résolution lit. Une récurrence reste le **modèle du stand** (« samedi et dimanche, 10 h–18 h ») : tant que l'édition n'a pas de dates, elle attend ; dès qu'elle a des créneaux, le modèle est **déplié** en plages sur les jours de l'événement, puis sur chaque jour que l'édition gagne ensuite. La migration `V159` convertit vos règles sur les jours de chaque édition qui a des créneaux (du premier au dernier, plus le lendemain d'un créneau qui passe minuit), **avec la lecture exacte que l'application en avait** : un test la rejoue sur chacun des scénarios livrés et compare, jour par jour, les fenêtres obtenues à celles de la 3.x. Le YAML passe de même en version 5, la clé `plages` remplaçant `ouvertures` et `indisponibilites`, et `horaires` devenant le modèle du stand.
+- **Ce que vous faites** :
+  - **Exportez chaque édition en YAML avant de monter** (Fichiers, « Exporter les données actuelles en scénario »). C'est votre retour arrière, et le seul moyen de retrouver le détail de vos règles : la migration ne redescend pas.
+  - **Une édition sans aucun créneau garde ses règles comme modèle**, telles quelles : rien n'est converti ni perdu, aucun avertissement. Elles sont posées sur les jours des créneaux que vous créerez ensuite, et le futur générateur de créneaux partira d'elles.
+  - **Les règles ne sont ni supprimées ni renommées** : elles restent le modèle de leur stand, dans les mêmes tables, y compris pour une édition qui a des créneaux. Un jour ajouté après coup reçoit donc l'horaire du stand, comme en 3.x. Le YAML d'une édition porte la règle (`horaires`) et ses plages.
+  - L'écran de saisie des horaires récurrents est remplacé par un éditeur de plages dans un changement suivant ; pendant ce temps, une règle que l'écran actuel envoie est gardée comme modèle et, quand l'édition a des créneaux, dépliée aussitôt en plages sur les jours de l'événement, jamais refusée. **L'action « Compacter les horaires » est retirée** : la route `POST /api/stands/compactage-horaires` et l'outil MCP `compacter_horaires_stands` n'existent plus, une plage datée n'ayant plus de règle à rejoindre (voir [les anciens noms d'outils](../comprendre/mcp-outils.md#anciens-noms-doutils)). Côté assistant, `consulter_stand` et `lister_stands` montrent le modèle de chaque stand (`horaires`), `ajouter_horaire_stand` le complète (une règle identique à une règle existante ne change rien) et `effacer_horaires_stand`, qui reste, efface le modèle **et** les plages qu'il a dépliées, mais garde celles saisies à la main.
 
 ### Le covoiturage se réduit à validé ou non
 
@@ -169,4 +179,4 @@ Côté écran, *Paramètres* a désormais un onglet par section (*Notifications*
 
 ### Données et migrations
 
-À venir : les migrations qui convertissent des données, et ce qu'elles font de vos éditions existantes.
+Les migrations qui convertissent des données sont décrites ci-dessus, une par changement, au fil de leur fusion : pour l'instant, [les horaires des stands](#horaires-des-stands).
