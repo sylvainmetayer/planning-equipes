@@ -146,8 +146,9 @@ class SolveEnginesPerimetersTest {
         PlanningEvenement problem = loaded.problem();
         VerrouillagePlanning day = new VerrouillagePlanning("lock-day", TypeVerrouillage.JOUR);
         day.setJour(days.get(1));
-        VerrouillagePlanning stand = new VerrouillagePlanning("lock-stand", TypeVerrouillage.STAND);
+        VerrouillagePlanning stand = new VerrouillagePlanning("lock-stand", TypeVerrouillage.STAND_JOUR);
         stand.setStandId(problem.getPostes().get(0).getStand().getId());
+        stand.setJour(problem.getPostes().get(0).getCreneau().getDate());
         List<VerrouillagePlanning> locks = List.of(day, stand);
         ProblemBuilder.applyVerrouillages(problem.getPostes(), problem.getAnimateurs(), locks, persisted);
         problem.setVerrouillages(locks);

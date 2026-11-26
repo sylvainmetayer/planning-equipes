@@ -234,7 +234,7 @@ class JourJResourceTest {
         String standVerrouille = standHeldInTheAfternoon(absent);
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"type\":\"STAND\",\"standId\":\"" + standVerrouille + "\"}")
+                .body("{\"type\":\"STAND_JOUR\",\"standId\":\"" + standVerrouille + "\",\"jour\":\"" + JOUR + "\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

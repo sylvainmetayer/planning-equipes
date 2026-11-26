@@ -16,7 +16,6 @@ import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -111,17 +110,18 @@ class PlanificationMcpToolsTest {
     @Test
     void lockThenUnlockAnAnimateurOfThePlanning() {
         solve();
-        String animateurId = planningTools.listAffectations(null, null, null, false, null, "E1").affectations().stream()
-                .map(AffectationView::animateurId)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        AffectationView tenu =
+                planningTools.listAffectations(null, null, null, false, null, "E1").affectations().stream()
+                        .filter(vue -> vue.animateurId() != null)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        String animateurId = tenu.animateurId();
 
         VerrouillageView pose = verrouillageTools
-                .lock("ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", "E1")
+                .lock("ANIMATEUR_CRENEAU", animateurId, null, tenu.creneauId(), null, "vérifié avec l'équipe", "E1")
                 .verrouillage();
 
-        assertThat(pose.type()).isEqualTo("ANIMATEUR");
+        assertThat(pose.type()).isEqualTo("ANIMATEUR_CRENEAU");
         assertThat(pose.animateurId()).isEqualTo(animateurId);
         assertThat(pose.id()).isNotBlank();
         assertThat(verrouillageTools.listVerrouillages("E1"))
@@ -136,7 +136,8 @@ class PlanificationMcpToolsTest {
 
     @Test
     void lockingAnUnknownTargetIsRefused() {
-        assertThatThrownBy(() -> verrouillageTools.lock("STAND", null, "STAND-QUI-NEXISTE-PAS", null, null, null, "E1"))
+        assertThatThrownBy(() -> verrouillageTools.lock(
+                        "STAND_JOUR", null, "STAND-QUI-NEXISTE-PAS", null, "2026-08-15", null, "E1"))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("STAND-QUI-NEXISTE-PAS");

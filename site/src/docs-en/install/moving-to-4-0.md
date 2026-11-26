@@ -87,6 +87,21 @@ Coming: mapping of old names, rules merged or removed.
 - **After (4.0)**: a request is not validated (`EN_ATTENTE`) or validated (`VALIDEE`). Setting a request aside or cancelling a grouped arrival deletes the request, with no reason and no e-mail. One e-mail remains: the validation, sent to each member. The `arriveeGroupee` rule does not change, nor does the adjustment a validation creates. Migration `V142` takes the requests already set aside or cancelled out of the table, and the reason column: they are kept, reason included, in the `declaration_coequipier_avant_4_0` archive, which the application no longer reads and which 5.0 will drop ([retention](conservation-des-donnees.md#larchive-du-covoiturage-3x)); the API no longer returns `reason`, and the `.../ecart` and `.../annulation` routes answer `204` with no body. The status returned by `lister_demandes_covoiturage` has only two values.
 - **What you do**: nothing for your data. After a cancellation, tell the group yourself, since no e-mail goes out any more. A script that read `ECARTEE`, `ANNULEE` or `reason` must do without. Add the archive to your record of processing, with its retention ([the limits to record](rgpd-limites-a-consigner.md#les-demandes-de-covoiturage)).
 
+### The lock has only three types
+
+- **Before (3.x)**: a lock could target a staff member over the whole event (`ANIMATEUR`), a stand over the whole event (`STAND`), a day (`JOUR`), a timeslot for every stand (`CRENEAU`) or a staff member on a timeslot (`ANIMATEUR_CRENEAU`, also laid by an accepted swap).
+- **After (4.0)**: three types ([ADR 0109](repo:docs/decisions/0109-trois-types-de-verrou.md)): staff member + timeslot (`ANIMATEUR_CRENEAU`), stand + day (`STAND_JOUR`), day (`JOUR`). Migration `V144` converts each old lock into what it froze on the saved plan, so that plan does not move at the next solve:
+
+| Old lock | Becomes |
+| --- | --- |
+| `ANIMATEUR` | one staff member + timeslot lock per timeslot where the staff member holds a seat |
+| `STAND` | one stand + day lock per day on which the stand has seats |
+| `CRENEAU` | one staff member + timeslot lock per staff member holding a seat on that timeslot |
+| `JOUR`, `ANIMATEUR_CRENEAU` | unchanged |
+
+  A lock for which the plan has no matching seat froze nothing and disappears. The `animateurVerrouilleFige` rule is removed: a staff member is no longer locked "everywhere", so nothing forbids giving them a seat elsewhere, and empty seats are not frozen (as before). The number of rules goes from 47 to 46. The `verrouiller` MCP tool keeps its name; its `type` argument takes `ANIMATEUR_CRENEAU`, `STAND_JOUR` or `JOUR`, and the API refuses the old values with a `400`. A scenario's YAML file holds no locks: its format does not change for this.
+- **What you do**: nothing for your locks. The locks of older editions are converted the same way. A script or prompt that laid an `ANIMATEUR`, `STAND` or `CRENEAU` lock must lay one lock per timeslot or per day. A before-wipe backup taken in 3.x that contains such locks says, on restore, that it does not lay them.
+
 ### Data and migrations
 
 Coming: the migrations that convert data, and what they do to your existing editions.

@@ -10780,7 +10780,7 @@
       },
       "TypeVerrouillage" : {
         "type" : "string",
-        "enum" : [ "ANIMATEUR", "STAND", "JOUR", "CRENEAU", "ANIMATEUR_CRENEAU" ]
+        "enum" : [ "ANIMATEUR_CRENEAU", "STAND_JOUR", "JOUR" ]
       },
       "TypologieAFormer" : {
         "type" : "object",

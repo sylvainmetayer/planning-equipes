@@ -26,7 +26,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | --- | --- | --- |
 | [0001](0001-cloisonnement-par-edition.md) | Cloisonner le référentiel et les résultats de solveur par édition | Accepté · révisé par 0009 |
 | [0002](0002-diagnostic-decouple-du-solveur.md) | Découpler le diagnostic de contraintes de l'édition du solveur | **Remplacé** par 0013 |
-| [0003](0003-verrouillage-par-pin-natif.md) | Figer les affectations validées par le mécanisme natif du solveur | Accepté |
+| [0003](0003-verrouillage-par-pin-natif.md) | Figer les affectations validées par le mécanisme natif du solveur | Accepté · remplacé en partie par 0109 (les types de verrou) |
 | [0004](0004-competence-transverse-dans-les-typologies.md) | Une compétence transverse réutilise l'énumération des typologies | Accepté |
 | [0005](0005-polyvalence-reserve-plutot-que-reservation.md) | Polyvalence : garantir une réserve, plutôt que réserver les personnes | Accepté |
 | [0006](0006-obligation-legale-ou-politique-organisateur.md) | Distinguer l'obligation légale de la politique de l'organisateur | Accepté · principe transverse |
@@ -138,3 +138,4 @@ sur le parallélisme.
 | [0105](0105-variables-de-marque-et-de-mentions-groupees.md) | Les vingt-six variables `BRANDING_*` et `LEGAL_*` deviennent huit, dont quatre groupées en `clé=valeur;clé=valeur` ; les anciens noms restent lus avec un avertissement jusqu'en 5.0, le refus de démarrer sans mentions reste | Accepté · précise 0040 |
 | [0106](0106-obligatoire-est-un-niveau-reglable-par-edition.md) | « Obligatoire » pour une règle d'organisation est un niveau dur réglable par édition sur une règle unique (et non un poids très élevé au niveau medium, ni deux contraintes par règle) : deux écritures qui lisent le même niveau, un test différentiel joué à chaque niveau | Accepté · prolonge 0045 |
 | [0107](0107-parametres-en-quatre-sections.md) | Les paramètres de l'édition ont quatre sections (`legal`, `organisation`, `notifications`, `instance`) : une racine d'API, deux outils MCP à argument `section`, une clé `parametres` dans le scénario YAML ; les tables ne sont pas fusionnées, les anciennes racines d'API restent des alias jusqu'en 5.0 | Accepté · prolonge 0100, 0101 |
+| [0109](0109-trois-types-de-verrou.md) | Un verrou a trois types (animateur + créneau, stand + journée, journée) ; les anciens se convertissent en ce qu'ils figeaient sur le plan enregistré, la règle de l'animateur verrouillé est retirée | Accepté · remplace en partie 0003 |

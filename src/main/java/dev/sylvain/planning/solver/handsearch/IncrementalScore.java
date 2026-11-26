@@ -13,7 +13,7 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 
 /**
- * The score of a plan, kept up to date move by move (ADR 0087): the same 47
+ * The score of a plan, kept up to date move by move (ADR 0087): the same 46
  * rules as {@code PlanningConstraintProvider}, written a second time so that a
  * move costs the re-reading of the one or two animateurs it touches instead of
  * a pass through a constraint network.

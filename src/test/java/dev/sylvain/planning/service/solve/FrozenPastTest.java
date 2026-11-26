@@ -179,8 +179,9 @@ class FrozenPastTest {
     void aPastSeatTheLocksAlreadyPinnedIsLeftAsTheyLeftIt() {
         List<PosteAffectation> postes = List.of(poste("p0", matinHier), poste("p1", matinHier));
         Map<String, List<String>> plan = Map.of(key("STAND-A", 1L), List.of("A1", "A2"));
-        VerrouillagePlanning verrouBob = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+        VerrouillagePlanning verrouBob = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR_CRENEAU);
         verrouBob.setAnimateurId("A2");
+        verrouBob.setCreneauId(1L);
 
         ProblemBuilder.applyVerrouillages(postes, animateurs, List.of(verrouBob), plan);
         assertThat(postes.get(0).getAnimateur()).isNull();

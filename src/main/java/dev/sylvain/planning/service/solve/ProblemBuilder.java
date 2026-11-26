@@ -572,7 +572,7 @@ public final class ProblemBuilder {
      * solve has been persisted simply freezes nothing.</p>
      *
      * <p>Seats are re-seeded before the locks are evaluated because a
-     * {@link TypeVerrouillage#ANIMATEUR} lock is expressed in terms of who
+     * {@link TypeVerrouillage#ANIMATEUR_CRENEAU} lock is expressed in terms of who
      * holds the seat; anything seeded but not covered by a lock is cleared
      * again, leaving the unlocked part of the problem exactly as it was
      * before.</p>

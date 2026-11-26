@@ -163,7 +163,7 @@ class WipeBackupServiceTest {
                     .isNotEmpty()
                     .allSatisfy(ligne -> assertThat(ligne).contains("animateur A999 introuvable"));
             assertThat(restoration.verrouillagesNonRestaures())
-                    .containsExactly("Verrou ANIMATEUR : animateur A999 introuvable");
+                    .containsExactly("Verrou ANIMATEUR_CRENEAU : animateur A999 introuvable");
             assertThat(plan()).isEqualTo(attendu);
         });
     }
@@ -818,9 +818,14 @@ class WipeBackupServiceTest {
         Animateur verrouille = animateurs.get(0);
         Stand stand = referenceDataService.listStands().get(0);
         Creneau creneau = referenceDataService.listCreneaux().get(0);
-        lock(TypeVerrouillage.ANIMATEUR, v -> v.setAnimateurId(verrouille.getId()));
-        lock(TypeVerrouillage.STAND, v -> v.setStandId(stand.getId()));
-        lock(TypeVerrouillage.CRENEAU, v -> v.setCreneauId(creneau.getId()));
+        lock(TypeVerrouillage.ANIMATEUR_CRENEAU, v -> {
+            v.setAnimateurId(verrouille.getId());
+            v.setCreneauId(creneau.getId());
+        });
+        lock(TypeVerrouillage.STAND_JOUR, v -> {
+            v.setStandId(stand.getId());
+            v.setJour(creneau.getDate());
+        });
         lock(TypeVerrouillage.JOUR, v -> v.setJour(creneau.getDate()));
         return verrouille;
     }

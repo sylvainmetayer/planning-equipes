@@ -111,7 +111,8 @@ public class WipeBackupService {
 
     /** A lock, its timeslot named by its natural key — the one the lock itself stores. */
     record LockBackup(
-            TypeVerrouillage type,
+            // A String, not the enum: a backup taken before 4.0 may carry a type that no longer exists.
+            String type,
             String animateurId,
             String standId,
             LocalDate creneauDate,
@@ -263,7 +264,7 @@ public class WipeBackupService {
     private List<LockBackup> locks() {
         return referenceDataService.listVerrouillages().stream()
                 .map(v -> new LockBackup(
-                        v.getType(),
+                        v.getType().name(),
                         v.getAnimateurId(),
                         v.getStandId(),
                         v.getCreneauDate(),
@@ -451,7 +452,7 @@ public class WipeBackupService {
                 restaurees.stream().filter(seat -> seat.animateurId() != null).count();
 
         LockPass locks = restoreLocks(plan, stands, animateurs, grille);
-        // Read once the locks are in: an animateur lock weighs in the score.
+        // Read once the locks are in: an animateur + créneau lock weighs in the score.
         try {
             analysisStore.refreshFromPersistedPlan();
         } catch (RuntimeException _) {
@@ -536,6 +537,14 @@ public class WipeBackupService {
         return pass;
     }
 
+    private static TypeVerrouillage typeOf(String name) {
+        try {
+            return name == null ? null : TypeVerrouillage.valueOf(name);
+        } catch (IllegalArgumentException retired) {
+            return null;
+        }
+    }
+
     private void restoreLock(
             LockBackup lock,
             Map<String, String> stands,
@@ -543,7 +552,13 @@ public class WipeBackupService {
             List<Creneau> grille,
             Set<VerrouillageTarget> poses,
             LockPass pass) {
-        VerrouillagePlanning verrou = new VerrouillagePlanning(null, lock.type());
+        TypeVerrouillage type = typeOf(lock.type());
+        if (type == null) {
+            pass.notRestored.add("Verrou " + lock.type()
+                    + " : type retiré en 4.0, à reposer à la main (animateur et créneau, " + "stand et jour, ou jour)");
+            return;
+        }
+        VerrouillagePlanning verrou = new VerrouillagePlanning(null, type);
         verrou.setJour(lock.jour());
         verrou.setRaison(lock.raison());
         Optional<String> introuvable = Optional.empty();

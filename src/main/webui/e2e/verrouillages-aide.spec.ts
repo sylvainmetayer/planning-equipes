@@ -27,7 +27,7 @@ test('poser un verrouillage de journée, mesurer son impact, le retirer', async 
   // The work-in-progress banner is gone: the lock is honoured by every solve.
   await expect(page.locator('#contenu')).not.toContainText('en cours de développement');
 
-  // « Animateur » is the default type, the frequent case; a day is one choice away.
+  // « Animateur sur un créneau » is the default type; a day is one choice away.
   await expect(page.getByLabel('Animateur', { exact: true })).toBeVisible();
   await page.getByLabel('Type').click();
   await page.getByRole('option', { name: 'Journée' }).click();

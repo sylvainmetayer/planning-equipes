@@ -83,6 +83,21 @@ Le détail et un exemple sont dans [les variables d'environnement](variables-env
 - **Après (4.0)** : une demande est non validée (`EN_ATTENTE`) ou validée (`VALIDEE`). Écarter une demande ou annuler une arrivée groupée supprime la demande, sans motif et sans courriel. Un seul courriel subsiste : la validation, envoyée à chaque membre. La règle `arriveeGroupee` ne change pas, ni l'ajustement qu'une validation crée. La migration `V142` retire de la table les demandes déjà écartées ou annulées, et la colonne du motif : elles sont gardées, motif compris, dans l'archive `declaration_coequipier_avant_4_0`, que l'application ne lit plus et que la 5.0 supprimera ([durée de conservation](conservation-des-donnees.md#larchive-du-covoiturage-3x)) ; l'API ne rend plus `reason`, et les routes `.../ecart` et `.../annulation` répondent `204` sans corps. Le statut rendu par `lister_demandes_covoiturage` n'a plus que deux valeurs.
 - **Ce que vous faites** : rien pour vos données. Après une annulation, prévenez vous-même le groupe, puisque plus aucun courriel ne part. Un script qui lisait `ECARTEE`, `ANNULEE` ou `reason` doit s'en passer. Ajoutez l'archive à votre registre des traitements, avec sa durée ([les limites à consigner](rgpd-limites-a-consigner.md#les-demandes-de-covoiturage)).
 
+### Le verrou n'a plus que trois types
+
+- **Avant (3.x)** : un verrou pouvait cibler un animateur sur tout l'événement (`ANIMATEUR`), un stand sur tout l'événement (`STAND`), une journée (`JOUR`), un créneau pour tous les stands (`CRENEAU`) ou un animateur sur un créneau (`ANIMATEUR_CRENEAU`, posé aussi par un échange accepté).
+- **Après (4.0)** : trois types ([ADR 0109](repo:docs/decisions/0109-trois-types-de-verrou.md)) : animateur + créneau (`ANIMATEUR_CRENEAU`), stand + journée (`STAND_JOUR`), journée (`JOUR`). La migration `V144` convertit chaque ancien verrou en ce qu'il figeait sur le plan enregistré, pour que ce plan ne bouge pas à la prochaine résolution :
+
+| Ancien verrou | Devient |
+| --- | --- |
+| `ANIMATEUR` | un verrou animateur + créneau par créneau où l'animateur tient une place |
+| `STAND` | un verrou stand + journée par jour où le stand a des places |
+| `CRENEAU` | un verrou animateur + créneau par animateur qui tient une place sur ce créneau |
+| `JOUR`, `ANIMATEUR_CRENEAU` | inchangés |
+
+  Un verrou dont le plan n'a aucune place correspondante ne figeait rien et disparaît. La règle `animateurVerrouilleFige` est retirée : un animateur ne se verrouille plus « partout », donc plus rien n'interdit de lui donner une place ailleurs, et les places vides ne se figent pas (comme avant). Le nombre de règles passe de 47 à 46. L'outil MCP `verrouiller` garde son nom ; son argument `type` prend `ANIMATEUR_CRENEAU`, `STAND_JOUR` ou `JOUR`, et l'API refuse les anciennes valeurs en `400`. Le fichier YAML d'un scénario ne contient pas de verrous : son format ne change pas pour ce point.
+- **Ce que vous faites** : rien pour vos verrous. Les verrouillages des anciennes éditions sont convertis de même. Un script ou une invite qui posait un verrou `ANIMATEUR`, `STAND` ou `CRENEAU` doit poser un verrou par créneau ou par journée. Une sauvegarde d'avant vidage prise en 3.x qui en contient dit, à la restauration, qu'elle ne les repose pas.
+
 ### Données et migrations
 
 À venir : les migrations qui convertissent des données, et ce qu'elles font de vos éditions existantes.

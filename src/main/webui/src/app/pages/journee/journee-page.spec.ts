@@ -212,7 +212,7 @@ describe('JourneePage', () => {
             reload: vi.fn(() => Promise.resolve(undefined)),
             estJourVerrouille: () => false,
             estStandVerrouille: () => false,
-            estCreneauVerrouille: () => false,
+            estAnimateurCreneauVerrouille: () => false,
           },
         },
         {

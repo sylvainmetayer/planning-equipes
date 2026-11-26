@@ -490,7 +490,7 @@ class GelReferentielResourceTest {
                 .then()
                 .statusCode(200);
         edition()
-                .body(Map.of("type", "ANIMATEUR", "animateurId", id("/api/animateurs", "A1@example.org")))
+                .body(Map.of("type", "JOUR", "jour", "2026-07-01"))
                 .when()
                 .post("/api/verrouillages")
                 .then()

@@ -134,7 +134,7 @@ class VerrouillageResourceTest {
     void unTypeSansCibleCorrespondanteEstRefuse() {
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"type\":\"STAND\"}")
+                .body("{\"type\":\"STAND_JOUR\",\"jour\":\"2026-07-01\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()
@@ -146,7 +146,7 @@ class VerrouillageResourceTest {
     void uneCibleInconnueEstRefusee() {
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"type\":\"ANIMATEUR\",\"animateurId\":\"ANIMATEUR-INEXISTANT\"}")
+                .body("{\"type\":\"ANIMATEUR_CRENEAU\",\"animateurId\":\"ANIMATEUR-INEXISTANT\",\"creneauId\":1}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

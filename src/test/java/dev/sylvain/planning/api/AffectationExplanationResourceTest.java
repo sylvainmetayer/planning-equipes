@@ -483,12 +483,13 @@ class AffectationExplanationResourceTest {
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
         String standId = solved.getString("postes.find { it.id == '" + posteId + "' }.stand.id");
+        String jourDuPoste = solved.getString("postes.find { it.id == '" + posteId + "' }.creneau.date");
         String occupantId = solved.getString("postes.find { it.id == '" + posteId + "' }.animateur.id");
         String remplacantId = solved.getString("animateurs.find { it.id != '" + occupantId + "' }.id");
 
         given().header("X-Edition-Id", "E1")
                 .contentType("application/json")
-                .body("{\"type\":\"STAND\",\"standId\":\"" + standId + "\"}")
+                .body("{\"type\":\"STAND_JOUR\",\"standId\":\"" + standId + "\",\"jour\":\"" + jourDuPoste + "\"}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

@@ -58,7 +58,7 @@
                           psychology
                         </mat-icon>
                       }
-                      @if (estLigneVerrouillee(cellule.slot, stand)) {
+                      @if (estLigneVerrouillee(tableau.day, stand)) {
                         <mat-icon inline aria-hidden="false" class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
                           lock
                         </mat-icon>

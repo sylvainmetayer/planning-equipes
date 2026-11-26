@@ -55,8 +55,9 @@ class ProblemBuilderColdStartLockTest {
 
         @Override
         public List<VerrouillagePlanning> listVerrouillages() {
-            VerrouillagePlanning verrou = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+            VerrouillagePlanning verrou = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR_CRENEAU);
             verrou.setAnimateurId("A1");
+            verrou.setCreneauId(1L);
             return List.of(verrou);
         }
     }

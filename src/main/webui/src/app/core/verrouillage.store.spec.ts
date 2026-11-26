@@ -49,30 +49,29 @@ describe('VerrouillageStore', () => {
   it("recharge et applique tous les verrouillages de l'édition", async () => {
     api.responses['/api/verrouillages'] = [
       verrouillage('V1', 'JOUR', { jour: '2026-07-08' }),
-      verrouillage('V2', 'STAND', { standId: 'STAND-A' }),
+      verrouillage('V2', 'STAND_JOUR', { standId: 'STAND-A', jour: '2026-07-08' }),
     ];
 
     await store.reload();
 
     expect(store.verrouillages()).toHaveLength(2);
     expect(store.estJourVerrouille('2026-07-08')).toBe(true);
-    expect(store.estStandVerrouille('STAND-A')).toBe(true);
+    expect(store.estStandVerrouille('STAND-A', '2026-07-08')).toBe(true);
   });
 
   it('reconnaît chaque type de cible', async () => {
     api.responses['/api/verrouillages'] = [
-      verrouillage('V1', 'ANIMATEUR', { animateurId: 'A1' }),
-      verrouillage('V2', 'STAND', { standId: 'STAND-A' }),
-      verrouillage('V3', 'CRENEAU', { creneauId: 42 }),
+      verrouillage('V1', 'ANIMATEUR_CRENEAU', { animateurId: 'A1', creneauId: 42 }),
+      verrouillage('V2', 'STAND_JOUR', { standId: 'STAND-A', jour: '2026-07-08' }),
     ];
 
     await store.reload();
 
-    expect(store.estAnimateurVerrouille('A1')).toBe(true);
-    expect(store.estAnimateurVerrouille('A2')).toBe(false);
-    expect(store.estStandVerrouille('STAND-A')).toBe(true);
-    expect(store.estCreneauVerrouille(42)).toBe(true);
-    expect(store.estCreneauVerrouille(43)).toBe(false);
+    expect(store.estAnimateurCreneauVerrouille('A1', 42)).toBe(true);
+    expect(store.estAnimateurCreneauVerrouille('A1', 43)).toBe(false);
+    expect(store.estAnimateurCreneauVerrouille('A2', 42)).toBe(false);
+    expect(store.estStandVerrouille('STAND-A', '2026-07-08')).toBe(true);
+    expect(store.estStandVerrouille('STAND-A', '2026-07-09')).toBe(false);
     expect(store.estJourVerrouille(null)).toBe(false);
   });
 

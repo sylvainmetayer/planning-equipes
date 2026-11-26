@@ -253,8 +253,8 @@ export class CalendarDayView {
       (sieges !== 'vides' || ligne.postesLibres.length > 0) &&
       (sieges !== 'verrous' ||
         this.isDayLocked(day) ||
-        this.verrous.estStandVerrouille(ligne.standId) ||
-        ligne.entries.some((entry) => this.verrous.estCreneauVerrouille(entry.poste.creneau?.id)));
+        this.verrous.estStandVerrouille(ligne.standId, day.date) ||
+        ligne.entries.some((entry) => this.estPosteVerrouille(entry.poste)));
     return tableauJour(day, garde);
   });
 
@@ -269,12 +269,17 @@ export class CalendarDayView {
     return this.verrous.estJourVerrouille(day.date);
   }
 
-  /** True when this stand-line is frozen, either by its stand or by its créneau. */
-  protected estLigneVerrouillee(slot: SlotCard, stand: StandLine): boolean {
+  /** True when this stand-line is frozen: its stand on this day, or somebody kept on it. */
+  protected estLigneVerrouillee(day: Pick<DayCard, 'date'>, stand: StandLine): boolean {
     return (
-      this.verrous.estStandVerrouille(stand.standId) ||
-      this.verrous.estCreneauVerrouille(slot.creneauId)
+      this.verrous.estStandVerrouille(stand.standId, day.date) ||
+      stand.entries.some((entry) => this.estPosteVerrouille(entry.poste))
     );
+  }
+
+  /** The seat's holder is kept on its timeslot by an animateur + créneau lock. */
+  private estPosteVerrouille(poste: PosteAffectation): boolean {
+    return this.verrous.estAnimateurCreneauVerrouille(poste.animateur?.id, poste.creneau?.id);
   }
 
   protected readonly verrouilleTooltip = $localize`:@@verrouillages.indicator:Verrouillé : ces affectations ne bougeront plus à la prochaine résolution`;

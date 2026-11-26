@@ -10,11 +10,13 @@ import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angul
 import {
   AnimateurFragilite,
   CompetenceRare,
+  PlanningEvenement,
   RapportFragilite,
   Stand,
   TypologieItem,
 } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,11 +40,40 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
   };
 }
 
+/** Where « Verrouiller » reads the seats of a person: Alice holds one timeslot. */
+const PLANNING: PlanningEvenement = {
+  animateurs: [],
+  score: null,
+  postes: [
+    {
+      id: 'p1',
+      stand: null,
+      creneau: {
+        id: 12,
+        jour: 1,
+        date: '2026-07-12',
+        heureDebut: '10:00:00',
+        heureFin: '12:00:00',
+      },
+      animateur: {
+        id: 'a1',
+        prenom: 'Alice',
+        nom: 'Martin',
+        dateNaissance: '1990-01-01',
+        manager: false,
+        competences: {},
+        souhaits: [],
+        joursIndisponibles: [],
+      },
+    },
+  ],
+};
+
 /** What « Verrouiller » writes through; its creations are read back by the gestures' tests. */
 const verrous = fakeOf<VerrouillageStore>({
   create: () => Promise.resolve([]),
   reload: () => Promise.resolve(undefined),
-  estAnimateurVerrouille: () => false,
+  estAnimateurCreneauVerrouille: () => false,
 });
 
 /**
@@ -64,6 +95,13 @@ function referentiel(
     },
     provideFake(VerrouillageStore, verrous),
     { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
+    {
+      provide: PlanningStateService,
+      useValue: {
+        loadForDisplay: () => Promise.resolve(PLANNING),
+        require: () => Promise.resolve(PLANNING),
+      },
+    },
   ];
 }
 
@@ -413,14 +451,18 @@ describe('FragilitePage gestures', () => {
     ]);
   });
 
-  it("locks the person's whole schedule", async () => {
+  it("locks the person's schedule, one timeslot at a time", async () => {
     const root = await render();
     const button = root.querySelector<HTMLButtonElement>('.fragilite-gestes button')!;
 
     expect(button.getAttribute('aria-label')).toBe('Verrouiller le planning de Alice Martin');
     button.click();
     await vi.waitFor(() =>
-      expect(verrous.create).toHaveBeenCalledWith({ type: 'ANIMATEUR', animateurId: 'a1' }),
+      expect(verrous.create).toHaveBeenCalledWith({
+        type: 'ANIMATEUR_CRENEAU',
+        animateurId: 'a1',
+        creneauId: 12,
+      }),
     );
   });
 

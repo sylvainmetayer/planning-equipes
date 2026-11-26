@@ -73,8 +73,8 @@ interface Options {
   animateur?: string;
   verrous?: Partial<{
     estJourVerrouille: (date: string | null) => boolean;
-    estStandVerrouille: (id: string) => boolean;
-    estCreneauVerrouille: (id: number) => boolean;
+    estStandVerrouille: (id: string, jour: string | null) => boolean;
+    estAnimateurCreneauVerrouille: (animateurId: string, creneauId: number) => boolean;
   }>;
 }
 
@@ -97,7 +97,8 @@ function mount(options: Options = {}) {
           reload: vi.fn(() => Promise.resolve(undefined)),
           estJourVerrouille: options.verrous?.estJourVerrouille ?? (() => false),
           estStandVerrouille: options.verrous?.estStandVerrouille ?? (() => false),
-          estCreneauVerrouille: options.verrous?.estCreneauVerrouille ?? (() => false),
+          estAnimateurCreneauVerrouille:
+            options.verrous?.estAnimateurCreneauVerrouille ?? (() => false),
         },
       },
       { provide: MatDialog, useValue: { open } },

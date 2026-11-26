@@ -19,11 +19,11 @@ import java.util.Optional;
  *   <li>every covered seat that already holds an animateur is re-seeded with
  *       that animateur and pinned ({@link PosteAffectation#isVerrouille()}), so
  *       no move can change it;</li>
- *   <li>for {@link TypeVerrouillage#ANIMATEUR} only, the lock also travels into
- *       the solve as a problem fact, so
- *       {@code VerrouillageConstraints.animateurVerrouilleFige} can forbid
- *       <em>adding</em> a new seat to a frozen animateur — pinning alone would
- *       only freeze the seats they already hold.</li>
+ *   <li>for {@link TypeVerrouillage#ANIMATEUR_CRENEAU} only, the lock also
+ *       travels into the solve as a problem fact, so
+ *       {@code VerrouillageConstraints.animateurVerrouilleCreneauFige} can
+ *       forbid <em>adding</em> a new seat to that animateur on that créneau —
+ *       pinning alone would only freeze the seat they already hold.</li>
  * </ul>
  */
 public class VerrouillagePlanning {
@@ -49,7 +49,7 @@ public class VerrouillagePlanning {
 
     /**
      * Whether this lock freezes {@code poste}. The {@link
-     * TypeVerrouillage#ANIMATEUR} case reads the poste's current animateur, so
+     * TypeVerrouillage#ANIMATEUR_CRENEAU} case reads the poste's current animateur, so
      * it only answers usefully once the seat has been seeded from the persisted
      * planning.
      */
@@ -65,7 +65,7 @@ public class VerrouillagePlanning {
      * the adapter.
      *
      * <p>Empty when the row describes nothing usable: the {@code CHECK} of
-     * `V30`/`V41` forbids that case in the database, but a lock built in memory
+     * `V30`/`V41`/`V144` forbids that case in the database, but a lock built in memory
      * (a request body not validated yet, a test) may perfectly well carry
      * neither type nor target. Returning {@link Optional#empty()} rather than
      * throwing keeps the previous behaviour: an incomplete lock freezes
@@ -76,11 +76,10 @@ public class VerrouillagePlanning {
             return Optional.empty();
         }
         return switch (type) {
-            case ANIMATEUR ->
-                animateurId == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnAnimateur(animateurId));
-            case STAND -> standId == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnStand(standId));
-            case CRENEAU ->
-                creneauId == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnCreneau(creneauId));
+            case STAND_JOUR ->
+                standId == null || jour == null
+                        ? Optional.empty()
+                        : Optional.of(new VerrouillageTarget.OnStandAndJour(standId, jour));
             case JOUR -> jour == null ? Optional.empty() : Optional.of(new VerrouillageTarget.OnJour(jour));
             case ANIMATEUR_CRENEAU ->
                 animateurId == null || creneauId == null
@@ -111,9 +110,10 @@ public class VerrouillagePlanning {
         this.creneauHeureFin = null;
         this.jour = null;
         switch (target) {
-            case VerrouillageTarget.OnAnimateur(String animateur) -> this.animateurId = animateur;
-            case VerrouillageTarget.OnStand(String stand) -> this.standId = stand;
-            case VerrouillageTarget.OnCreneau(long creneau) -> this.creneauId = creneau;
+            case VerrouillageTarget.OnStandAndJour(String stand, LocalDate date) -> {
+                this.standId = stand;
+                this.jour = date;
+            }
             case VerrouillageTarget.OnJour(LocalDate date) -> this.jour = date;
             case VerrouillageTarget.OnAnimateurAndCreneau(String animateur, long creneau) -> {
                 this.animateurId = animateur;

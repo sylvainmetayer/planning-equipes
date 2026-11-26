@@ -277,7 +277,8 @@ class SignalementAbsenceFlowTest {
         RestAssured.requestSpecification = null;
         given().header("X-Edition-Id", "E1")
                 .contentType(ContentType.JSON)
-                .body("{\"id\":\"SIG-VERROU\",\"type\":\"ANIMATEUR\",\"animateurId\":\"SIG-A\"}")
+                .body("{\"id\":\"SIG-VERROU\",\"type\":\"ANIMATEUR_CRENEAU\",\"animateurId\":\"SIG-A\",\"creneauId\":"
+                        + creneauId + "}")
                 .when()
                 .post("/api/verrouillages")
                 .then()

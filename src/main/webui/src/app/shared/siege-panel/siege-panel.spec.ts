@@ -83,7 +83,7 @@ describe('SeatPanel', () => {
     create: () => Promise.resolve([]),
     remove: () => Promise.resolve(undefined),
     estStandVerrouille: () => false,
-    estCreneauVerrouille: () => false,
+    estAnimateurCreneauVerrouille: () => false,
     estJourVerrouille: () => false,
   });
   const jobs = {
