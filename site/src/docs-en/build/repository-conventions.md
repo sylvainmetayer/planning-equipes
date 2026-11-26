@@ -3,7 +3,7 @@ twin: comprendre/conventions-du-depot
 ---
 # Repository conventions
 
-You will know who decides formatting, which language is written where, how a PlantUML diagram enters a page and stays faithful to the code, how the stylesheets are kept, and where the showcase site and the sources of this documentation live.
+You will know who decides formatting, which language is written where, how a PlantUML diagram enters a page and stays faithful to the code, how the stylesheets are kept, how several branches change the same files without a conflict, and where the showcase site and the sources of this documentation live.
 
 ## Formatting is decided by a tool
 
@@ -74,6 +74,59 @@ A class that several pages use goes in `pages.css`. `npm run css-scope-check` (f
 The presentation page, which also carries this documentation, is a separate Eleventy site in `site/`. It has its own dependencies (`site/package.json`, none of which enters the application), its workflow `.github/workflows/site.yml` and its publication by Cloudflare Pages. The workflow is filtered on `site/**`, on `docs/**` (the site publishes the diagrams and the licence inventory) and on `ConstraintCatalog.java`, whose Labour Code articles are reread by `site/test/articles.test.mjs`. The texts are edited in Pages CMS, configured by `.pages.yml` at the root of the repository.
 
 `mise run site`, from the root, installs the dependencies and starts the Eleventy server. The commands, the tests, the shooting of the screenshots and the Cloudflare settings are in [`site/README.md`](repo:site/README.md), and the design system (tokens, fonts, rules, the "Documentation" part) in [`site/design.md`](repo:site/design.md), to be read before any change to `site/`. The scenario `vitrine-fete-du-jeu-de-pierrefeuille.yaml`, shipped with the others, is the backdrop of the screenshots: it does not change without redoing them.
+
+## Files that several branches change
+
+Several PRs open at the same time touch the same files, and every conflict costs one more merge and one more CI run. These files are cut so that two branches do not write the same lines.
+
+| File | Shape | What holds it |
+| --- | --- | --- |
+| "Moving from 3.x to 4.0" guide | one section per file, in `site/src/docs/installer/passer-a-la-4-0/` and `site/src/docs-en/install/moving-to-4-0/` | the site build |
+| Number of rules of the catalogue | never written in figures: `{{ regles.total }}` in a page, "every rule of the catalogue" in the code and `AGENTS.md` | `DocumentationStructuralTest` |
+| `src/test/resources/migrations-empreintes.txt` | one line per migration, sorted by version | `FlywayMigrationsFrozenTest` |
+| `docs/decisions/README.md` | one line per ADR, sorted by number, the table at the end of the file | `DocumentationStructuralTest` |
+| `src/test/resources/json-contract.txt` | one key per line, `Type.key`, sorted | `JsonContractTest` |
+| `src/main/resources/mcp-renommages.tsv` | one line per tool, sorted by former name | `McpRenommageTest` |
+| `src/main/webui/public/i18n/messages.en.json` | sorted by id | `npm run i18n-check` |
+
+The site counts `{{ regles.total }}` on the catalogue table of [Why these rules](pourquoi-ces-regles.md), which `DocumentationStructuralTest` holds equal to `ConstraintCatalog`.
+
+The four lists of one line per entry are merged as a union of lines (`merge=union` in `.gitattributes`): two branches that each add a line no longer get in each other's way. A union can leave lines out of order, or two lines for one entry when both sides changed it: the test of each file refuses it, and the fix is made by hand. The English catalogue stays out of the union, because of the commas of JSON; a conflict there is resolved by keeping both sides, then `npm run i18n-check` reports the orphans:
+
+```bash
+jq -S -s '.[0] * .[1]' <(git show MERGE_HEAD:src/main/webui/public/i18n/messages.en.json) <(git show HEAD:src/main/webui/public/i18n/messages.en.json) > src/main/webui/public/i18n/messages.en.json
+```
+
+### Adding a section to the 4.0 moving guide
+
+The page `passer-a-la-4-0.md` keeps only the introduction; each change is a file of the folder `passer-a-la-4-0/`, which the site appends to the page. The published page, its address and its anchors stay the same.
+
+1. Create `site/src/docs/installer/passer-a-la-4-0/<topic>.md`. It opens on a level 3 heading and carries a numeric `ordre:` in its front matter:
+
+   ```markdown
+   ---
+   ordre: 245
+   ---
+
+   ### The title of the change
+   ```
+
+2. Create its English twin in `site/src/docs-en/install/moving-to-4-0/`, under the **same file name** and with the same `ordre:`.
+3. The sections are sorted by increasing `ordre:`, then by file name. The sections already there go in steps of 10, and "Data and migrations" carries 1000 to stay last: take a value between two tens, where the section must appear, so as not to cross another branch.
+4. Write the links as in the page itself, relative to the `installer/` folder and not to the section's.
+
+The build refuses a section without a numeric `ordre:` and an English page whose sections are not the French one's in the same order; the twin check compares the assembled pages.
+
+### Migration numbers
+
+Nobody reserves a migration number: a branch takes the next one of `main` when it pushes. If another PR takes it before the merge, the coordinator runs the renumbering script on the clean branch, right before merging it:
+
+```bash
+git fetch origin
+python3 .github/scripts/renumeroter-migration.py origin/main
+```
+
+When the lowest migration the branch adds is no longer above the highest of `main`, the script renames them all, in their order, to the numbers that follow. It carries the change **into the lines the branch added only**: the file name and every `Vnnn`, the Flyway targets of the tests (`target("…")`, `fromVersion("…")`), the fingerprint, recomputed, and the order of the fingerprints file. A line of `main` that speaks of its own migration of the same number is not touched. It prints every change and leaves the whole to commit. It refuses, writing nothing, a modified tree, two added migrations under one number and an added line that names the `main` file of that number. Its test, `.github/scripts/test_renumeroter_migration.py`, plays it on a temporary repository in the `frontend` job.
 
 ## Where the documentation sources live
 
