@@ -43,7 +43,8 @@ public final class ScenarioMigrations {
     static final List<Link> CHAIN = List.of(
             new Link(1, ScenarioMigrations::v1ToV2),
             new Link(2, ScenarioParametresLink::convert),
-            new Link(3, ScenarioMigrations::v3ToV4));
+            new Link(3, ScenarioMigrations::v3ToV4),
+            new Link(4, ScenarioPlagesLink::convert));
 
     private ScenarioMigrations() {}
 

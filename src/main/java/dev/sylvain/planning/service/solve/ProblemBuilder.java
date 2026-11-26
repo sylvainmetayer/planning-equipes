@@ -616,7 +616,7 @@ public final class ProblemBuilder {
      * effectif.</p>
      *
      * <p>A stand closed for only part of a créneau (see
-     * {@link dev.sylvain.planning.domain.IndisponibiliteStand})
+     * {@link dev.sylvain.planning.domain.PlageStand})
      * still generates a poste for the créneau's open remainder(s), each one
      * carrying an effective time-window override
      * ({@link PosteAffectation#getHeureDebutEffective()}) narrower than the

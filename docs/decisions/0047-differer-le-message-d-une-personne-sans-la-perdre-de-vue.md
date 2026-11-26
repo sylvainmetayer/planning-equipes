@@ -1,6 +1,6 @@
 # 0047 — Différer le message d'une personne sans la perdre de vue
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; l'exclusion à la publication est retirée en 4.0 (le report par « prévenir seulement quelques personnes » demeure)
 - **Date** : septembre 2026
 - **Portée** : persistance, service, API, frontend
 - **Voisines** : [0011](0011-publier-plutot-qu-envoyer-a-tous.md) (la publication

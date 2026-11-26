@@ -219,12 +219,6 @@ class GelReferentielResourceTest {
                         .put("/api/ouvertures-stands/grille")
                         .then(),
                 "STANDS");
-        refused(
-                edition()
-                        .when()
-                        .post("/api/stands/compactage-horaires?appliquer=true")
-                        .then(),
-                "STANDS");
 
         // The message names the family to lift, and where.
         edition()

@@ -3,10 +3,17 @@
 // and the screen that makes the step move. Pure functions, called at runtime
 // (never at module scope) so `$localize` resolves after the catalog is loaded.
 
-import { CoherenceReport, EtatEdition, ScoreSentence, StatutEtat } from '../../core/models';
+import {
+  CoherenceReport,
+  EditionPhase,
+  EtatEdition,
+  ScoreSentence,
+  StatutEtat,
+} from '../../core/models';
 import { intlLocale } from '../../core/locale';
 import { libelleJour } from '../../core/horaire-stand';
 import { familyLabel } from '../../core/gel-referentiel-labels';
+import { phaseLabel } from '../../core/phase-edition';
 import { coherenceLines } from './coherence';
 
 /** One line of the checklist, ready to render. */
@@ -22,7 +29,7 @@ export interface LigneEtat {
   /** A second way out, beside the first: the setting that would move the step on its own. */
   lienSecondaire?: LienEtat;
   /** A detail this line unfolds below itself rather than on another screen. */
-  panneau?: 'coherence';
+  panneau?: 'coherence' | 'phase';
   /** Sentences read out below the detail — the reading of the score, never the score itself. */
   lecture?: ScoreSentence[];
 }
@@ -119,29 +126,28 @@ function referentiels(etat: EtatEdition): LigneEtat {
 }
 
 /**
- * The freeze of the referential (ADR 0052), beside the referentials it
- * protects: which families are frozen. It is set in one place only,
- * Paramètres › Édition, which the line links to — two editable cards saying
- * the same thing were two places to wonder which one counts.
+ * The phase of the edition (ADR 0115), beside the referentials it protects:
+ * where the edition stands in its cycle and which families that freezes. The
+ * line unfolds the phase control under itself — the same component as the
+ * Éditions page — so the phase is moved where the cycle is read.
  */
-function gel(etat: EtatEdition): LigneEtat {
+function phase(etat: EtatEdition, phaseCourante: EditionPhase | null): LigneEtat {
   const figees = etat.gel.familles.filter((famille) => famille.fige);
+  const nom = phaseCourante ? phaseLabel(phaseCourante) : '';
+  const detail =
+    figees.length === 0
+      ? $localize`:@@accueil.detail.phase.aucun:Rien n'est figé : toute fiche reste modifiable`
+      : $localize`:@@accueil.detail.phase.figees:Figé : ${figees
+          .map((famille) => familyLabel(famille.famille))
+          .join(', ')}:familles:`;
   return {
-    id: 'gel',
-    titre: $localize`:@@accueil.ligne.gel:Gel du référentiel`,
+    id: 'phase',
+    titre: nom
+      ? $localize`:@@accueil.ligne.phaseNom:Phase de l'édition : ${nom}:phase:`
+      : $localize`:@@accueil.ligne.phase:Phase de l'édition`,
     statut: etat.gel.statut,
-    detail:
-      figees.length === 0
-        ? $localize`:@@accueil.detail.gel.aucun:Rien n'est figé : toute fiche reste modifiable`
-        : $localize`:@@accueil.detail.gel.figees:Figé : ${figees
-            .map((famille) => familyLabel(famille.famille))
-            .join(', ')}:familles:`,
-    lien: {
-      route: '/parametres',
-      queryParams: { onglet: 'edition' },
-      fragment: 'gel-referentiel',
-      libelle: $localize`:@@accueil.lien.gel:Régler dans les Paramètres`,
-    },
+    detail,
+    panneau: 'phase',
   };
 }
 
@@ -532,10 +538,11 @@ function foire(etat: EtatEdition): LigneEtat {
 export function buildLignes(
   etat: EtatEdition,
   coherenceReport: CoherenceReport | null = null,
+  phaseCourante: EditionPhase | null = null,
 ): LigneEtat[] {
   return [
     referentiels(etat),
-    gel(etat),
+    phase(etat, phaseCourante),
     coherence(etat, coherenceReport),
     collecte(etat),
     ouvertures(etat),

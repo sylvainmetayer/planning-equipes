@@ -28,7 +28,7 @@ To retouch a seat without starting the solve again, `suggerer_reparations` looks
 
 `modifier_niveau_contrainte` chooses the level of an organisation rule for the edition: `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` or `PREFERENCE_LEGERE` (a preference writes the weight of its position). `lister_contraintes` gives `niveauReglable` and `niveauChoisi`; a legal, assignment, ad hoc or lock rule, or a soft preference, refuses the level. Like `modifier_poids_contrainte`, the tool is accepted during a computation and says so (`RESOLUTION_EN_COURS`).
 
-`consulter_historique_ponderation` returns what `GET /api/constraints/{name}/historique` returns, or the global view without `contrainte`: changes of weight and activation, values before and after, typed origin, then the edition's solves with the weighting of each. A setting made by `modifier_poids_contrainte`, `activer_contrainte` or `desactiver_contrainte` carries the origin `ASSISTANT` there.
+A setting made by `modifier_poids_contrainte`, `modifier_niveau_contrainte`, `activer_contrainte` or `desactiver_contrainte` is read in the application's action journal ("Rules" filter), under the `ASSISTANT` actor and with the rule's name, without the value. The former `consulter_historique_ponderation` tool is removed: the journal keeps no value, and no tool reads it.
 
 ## Reading the plan from different angles
 
@@ -52,6 +52,8 @@ The break is set by `consulter_parametres` and `modifier_parametres` (section `l
 A grid is made of shifts and is no longer asked for in a mode: a timeslot is a shift, and two timeslots that overlap on the same day are two staggered handovers, never an anomaly ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). The check (`valider_creneaux`, `previsualiser_creneaux_recurrents`, `diagnostiquer_grille_creneaux`) always flags a shift beyond `dureeVacationMaxMinutes` (6 h by default), a shift that the daily rest makes untenable, a meal relay outside the window, a duplicate, a gap, an isolated date. `diagnostiquer_grille_creneaux` is the first call to discover an edition.
 
 When the stands have their hours, `previsualiser_derivation_creneaux` shows the grid they imply (a cut at each hour where a stand opens or closes) and `generer_creneaux_depuis_stands` writes it, as an addition or, with `remplacer=true`, in place of the grid and of the plan along with it. `creer_creneau` and `modifier_creneau` take an optional `couverturePause`: the meal relay keeps the stand open at half its headcount, rounded up.
+
+A stand's schedule model (its recurring rules, ADR 0104) appears in `consulter_stand` and `lister_stands` under `horaires`. `ajouter_horaire_stand` with a rule identical to an existing one changes nothing; `effacer_horaires_stand` clears the model **and** the plages it unfolded, and keeps the hand-entered ones (`ajouter_fermeture_stand`, `ajouter_ouverture_stand`).
 
 An opening window (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) can name its headcount with the suffix `@N` (`10:00-12:00@2,14:00-@4`) or the `effectif` argument of a dated opening; without it, it takes the stand's minimum. Zero is refused (a stand with nobody is a closure) and the suffix is rejected on a timeslot's recurrence.
 
@@ -102,21 +104,28 @@ Two **resources**, to attach once to inform all following calls:
 <!-- mcp-renommages:debut -->
 | Name in 3.x | Name in 4.0 |
 | --- | --- |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
+| `compacter_horaires_stands` | removed |
 | `comparer_instantanes` | `comparer_versions` |
+| `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `figer_referentiel` | `modifier_phase_edition` |
+| `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->

@@ -1,6 +1,6 @@
 # 0115 — La phase de l'édition remplace le gel du référentiel par famille
 
-- **Statut** : accepté, implémenté (côté serveur ; l'écran et l'outil MCP de la phase suivent)
+- **Statut** : accepté, implémenté (serveur, écran de la phase et outil MCP)
 - **Date** : novembre 2026
 - **Portée** : schéma (migration `V155`), `domain/Edition`, `service/edition/EditionPhaseService`, `service/referentiel/GelReferentielService`, publication, API (`/api/editions/courant/phase`, `/api/editions/courant/deblocage-structure`), routes et outils du gel gardés en alias
 - **Remplace** : [0052](0052-gel-du-referentiel-distinct-du-verrou.md) (le gel posé famille par famille) ; ses familles, ses champs couverts et son contrat d'annotation sont gardés
@@ -85,13 +85,20 @@ figé que ses compétences les voit rouvertes. Le guide « Passer à la 4.0 » l
 dit. `gel_referentiel` n'est plus lue ni écrite : elle reste en place sous son
 nom, hors de l'export SQL, pour un retour à la 3.x, et la 5.0 la supprimera.
 
-**D6 — Les routes et outils du gel restent, en alias, jusqu'en 5.0.**
-`PUT`/`DELETE /api/editions/courant/gel/{famille}` (dépréciées) et les outils
-`figer_referentiel`, `lever_gel` traduisent le geste en phase : figer une
+**D6 — Les routes du gel restent, en alias, jusqu'en 5.0 ; les outils sont
+remplacés.** `PUT`/`DELETE /api/editions/courant/gel/{famille}` (dépréciées)
+traduisent le geste en phase : figer une
 famille en Préparation fait passer en Calcul, lever en Calcul ramène en
 Préparation ; dans une édition publiée, lever débloque la structure et figer
 la refige ; lever dans une édition terminée est refusé. La lecture
 `GET /api/editions/courant/gel` dit l'état de chaque famille d'après la phase.
+Les outils MCP `figer_referentiel` et `lever_gel` n'ont pas d'alias : la
+convention de nommage (0100) veut qu'un outil ne se publie que sous son nom
+courant, et `modifier_phase_edition` les remplace (argument `phase`, ou
+`structure` pour débloquer et refiger) ; le tableau des anciens noms les y
+renvoie. Côté écran, la phase se change au même composant dans l'accueil et
+dans Administrer › Éditions, la carte « Gel du référentiel » de Paramètres est
+retirée, et un bandeau de la barre d'édition signale une structure débloquée.
 
 **D7 — La duplication repart en Préparation**, comme le gel de 0052 ne se
 recopiait pas. L'import d'un scénario, la restauration d'une copie avant

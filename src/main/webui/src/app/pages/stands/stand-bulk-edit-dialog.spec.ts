@@ -546,10 +546,11 @@ describe('StandBulkEditDialog', () => {
     await fill(fixture, { effectifMin: 2 });
 
     expect(root(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
-    // The padlock sits outside the disabled fieldset: « Lever le gel » stays clickable.
-    expect(root(fixture).querySelector<HTMLButtonElement>('.gel-notice-lever')!.disabled).toBe(
-      false,
-    );
+    // The padlock sits outside the disabled fieldset: its way out (the phase control) stays clickable.
+    expect(root(fixture).querySelector('.gel-notice-lever')).not.toBeNull();
+    expect(
+      root(fixture).querySelector('.gel-notice-lever')!.closest('fieldset.form-fieldset'),
+    ).toBeNull();
     expect(
       (root(fixture).querySelector('fieldset.form-fieldset') as HTMLFieldSetElement).disabled,
     ).toBe(true);

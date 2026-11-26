@@ -1,6 +1,6 @@
 # 0033 — Un stand qui déclare ses ouvertures est fermé les jours qu'il ne déclare pas
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté · remplacé en partie par [0104](0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md) (il n'y a plus de règle à résoudre : cette lecture n'est plus appliquée qu'une fois, à la conversion des règles en plages)
 - **Date** : septembre 2026
 - **Portée** : résolution des horaires de stand, compactage, grille des
   ouvertures, import de scénario

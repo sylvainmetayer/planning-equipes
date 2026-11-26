@@ -4,8 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
-import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
@@ -78,8 +77,8 @@ class PlanningServicePosteGenerationTest {
     @Test
     void standFermeIntegralementNeGenereAucunPoste() {
         Stand standFerme = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
-        standFerme.setIndisponibilites(List.of(new IndisponibiliteStand(
-                null, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0), null)));
+        standFerme.setIndisponibilites(List.of(
+                PlageStand.fermeture(null, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0), null)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standA, standFerme), List.of(creneauOuvert));
 
@@ -92,7 +91,7 @@ class PlanningServicePosteGenerationTest {
     void fermeturePartielleGenereUnPostePourChaqueSegmentOuvert() {
         Creneau creneau = new Creneau(3L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(14, 0));
         Stand standPartiel = new Stand("STAND-A", "A", Set.of(), 1, 1, false);
-        standPartiel.setIndisponibilites(List.of(new IndisponibiliteStand(
+        standPartiel.setIndisponibilites(List.of(PlageStand.fermeture(
                 null, LocalDate.of(2026, 8, 14), LocalTime.of(11, 0), LocalTime.of(13, 0), "Pause")));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standPartiel), List.of(creneau));
@@ -134,8 +133,8 @@ class PlanningServicePosteGenerationTest {
         Creneau apresMidi = new Creneau(4L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("STAND-D", "D", Set.of(), 1, 6, false);
         stand.setOuvertures(List.of(
-                new OuvertureStand(null, jour, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4),
-                new OuvertureStand(null, jour, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2)));
+                PlageStand.ouverture(null, jour, LocalTime.of(14, 0), LocalTime.of(19, 0), null, 4),
+                PlageStand.ouverture(null, jour, LocalTime.of(19, 0), LocalTime.of(20, 0), null, 2)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
@@ -161,7 +160,7 @@ class PlanningServicePosteGenerationTest {
         LocalDate jour = LocalDate.of(2026, 8, 14);
         Creneau apresMidi = new Creneau(5L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("STAND-E", "E", Set.of(), 3, 6, false);
-        stand.setOuvertures(List.of(new OuvertureStand(null, jour, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
+        stand.setOuvertures(List.of(PlageStand.ouverture(null, jour, LocalTime.of(14, 0), LocalTime.of(20, 0), null)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
@@ -181,7 +180,8 @@ class PlanningServicePosteGenerationTest {
         Creneau releve = new Creneau(6L, 1, jour, LocalTime.of(12, 0), LocalTime.of(13, 0));
         releve.setCouverturePause(true);
         Stand stand = new Stand("STAND-F", "F", Set.of(), 1, 6, false);
-        stand.setOuvertures(List.of(new OuvertureStand(null, jour, LocalTime.of(12, 0), LocalTime.of(13, 0), null, 5)));
+        stand.setOuvertures(
+                List.of(PlageStand.ouverture(null, jour, LocalTime.of(12, 0), LocalTime.of(13, 0), null, 5)));
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(releve));
 

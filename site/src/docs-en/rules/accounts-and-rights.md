@@ -59,6 +59,7 @@ A few filters:
 
 - "Exports": who exported which file and when, including a schedule downloaded by a staff member from their espace, over the whole retention period.
 - "Data": the changes the next solve will see. A period is chosen down to the minute, and the Solver screen leads there on exactly the changes it counts since the last solve.
+- "Rules": the changes of a rule's activation, weight or level, with its name, the date and the author, without the value. The Planning rules page links there from a rule's panel.
 - The staffing-need checks appear there with their team, their duration and their result, and a filter isolates them.
 
 No name is kept there: identities are looked up at display time, and rows that are too old drop out by themselves.

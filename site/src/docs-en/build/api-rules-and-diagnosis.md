@@ -29,18 +29,13 @@ Two routes, one body each: `PUT /api/constraints/{name}` switches on or off, `PU
 
 What each setting changes for the plan is explained in [weight and disable rules](doser-et-desactiver-les-regles.md).
 
-## History of weighting changes
+## History of weighting changes: the action journal
 
-`GET /api/constraints/{name}/historique` (one rule) and `GET /api/constraints/historique` (all of them) answer `{ changes, resolutions }`.
+There is no weighting history any more. `GET /api/constraints/{name}/historique` and `GET /api/constraints/historique` are removed; changes of a rule's activation, weight and level are read in [the action journal](api-integrations.md#journal-des-actions), `GET /api/historique?nature=regles`.
 
-- `changes`: every change of weight or activation of the edition, with the **effective values** before and after, deployment default included (`backToDefault` for "20 to default (1)"), the `origin` (`SCREEN`, `ASSISTANT`, `SCENARIO`, `DUPLICATION`, the last one with `sourceEdition`) and the journal's `actor` derived from it. A row is written only if the effective value changes: a `PUT` that sets the same value writes nothing, and neither does a scenario import that moves nothing.
-- `resolutions`: the rows of the edition's Autopsy, with their score, the `dosage` under which each one ran and, for a given rule, `ruleViolations`, its number of breaches.
-
-Three traps:
-
-- This is not the [action journal](api-integrations.md#journal-des-actions). The journal keeps only field names and expires; this table keeps the values, lasts as long as the edition and holds nothing nominative (the origin is typed, never a person).
-- The dosage is the one of the **launch**. It is taken just before the solver starts and stored with the KPI row (`kpi.dosage`) and with the plan (`planning_resolution.dosage`, copied by every snapshot): a weight changed during the solve applies to the next one. It keeps only what departs from a default: `weights` (departure from the deployment), `disabled` and `enabled` (departure from the catalogue), plus `instanceWeights`, the deployment's weights, which tell when it is the instance and not the edition that changed. `null` on an old row means "dosage unknown", never "default".
-- The screen lays out the scores that followed a setting without claiming to isolate its effect: the reference data may have moved between two solves.
+- Each row says **which rule** (`entiteId`), **which action** (`CONTRAINTE_ACTIVEE`, `CONTRAINTE_DESACTIVEE`, `CONTRAINTE_PONDEREE`, `CONTRAINTE_NIVEAU`), **when** and **by whom**, and never the value: the journal keeps only names and expires.
+- The weighting under which a solve ran is still stored with the KPI row (`kpi.dosage`) and with the plan (`planning_resolution.dosage`, copied by each snapshot): it is taken just before the solver starts, and a weight changed during the solve applies to the next one. It keeps only what departs from a default: `weights` (deviation from the deployment), `disabled` and `enabled` (deviation from the catalogue), plus `instanceWeights`, the deployment's weights. `null` on an old row means "weighting unknown", never "default".
+- The old rows are not migrated: migration `V158` renames the table to `ponderation_contrainte_historique_avant_4_0`, which 5.0 deletes; the application neither reads nor exports it.
 
 Each row of `GET /api/mesures-edition/indicateurs` carries `kpi.couvertureParJour`: by ISO date, `{ postes, pourvus }`, seats and never people, which stays compatible with the unlimited retention of this history. The sums of the days equal `postesTotal` and `postesPourvus`. The key is `null` on an old row and on a snapshot recomputed in degraded mode: the reader says "not measured", never "empty day". The `kpi` column is a `jsonb`, and `lister_mesures_edition` (MCP) returns it as is.
 

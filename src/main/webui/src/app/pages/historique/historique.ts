@@ -23,9 +23,11 @@ export type FiltreResultat = 'TOUS' | 'SUCCES' | 'REFUS';
  * et quand » : every file that left the application, from the admin screens
  * as from an animateur's espace. `DONNEES` keeps the changes a solve would be
  * given — what the Solveur counts as « modification(s) depuis la dernière
- * résolution », and opens here.
+ * résolution », and opens here. `REGLES` keeps the changes of a rule's activation,
+ * weight or level — which rule and which action, never the value — where the
+ * weight history used to be read.
  */
-export type FiltreNature = 'TOUTES' | 'EXPORTS' | 'DONNEES';
+export type FiltreNature = 'TOUTES' | 'EXPORTS' | 'DONNEES' | 'REGLES';
 
 /** How many lines a page shows; « Charger plus » asks for the next as many. */
 export const PAGE_HISTORIQUE = 200;
@@ -45,12 +47,14 @@ const RESULTATS: ReadonlySet<string | null> = new Set<FiltreResultat>(['TOUS', '
  * nature is applied by the server, over the whole retention, never over the
  * page already loaded — so the URL carries the server's own word for it.
  */
-export function natureQuery(nature: FiltreNature): 'exports' | 'donnees' | null {
+export function natureQuery(nature: FiltreNature): 'exports' | 'donnees' | 'regles' | null {
   switch (nature) {
     case 'EXPORTS':
       return 'exports';
     case 'DONNEES':
       return 'donnees';
+    case 'REGLES':
+      return 'regles';
     default:
       return null;
   }
@@ -159,6 +163,8 @@ export function readNatureFilter(valeur: string | null): FiltreNature {
       return 'EXPORTS';
     case 'donnees':
       return 'DONNEES';
+    case 'regles':
+      return 'REGLES';
     default:
       return 'TOUTES';
   }

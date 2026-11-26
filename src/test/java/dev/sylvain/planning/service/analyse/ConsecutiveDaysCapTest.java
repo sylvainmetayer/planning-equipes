@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.ConsecutiveDaysRule;
@@ -269,8 +269,8 @@ class ConsecutiveDaysCapTest {
     void aTimeslotNoStandOpensFreezesNothing() {
         Creneau soir = creneau(8, J1, 18, 20);
         Stand fermeLeSoir = new Stand("stand-3", "Stand 3", Set.of("STRATEGIE"), 1, 1, false);
-        fermeLeSoir.setIndisponibilites(List.of(
-                new IndisponibiliteStand(null, soir.getDate(), soir.getHeureDebut(), soir.getHeureFin(), null)));
+        fermeLeSoir.setIndisponibilites(
+                List.of(PlageStand.fermeture(null, soir.getDate(), soir.getHeureDebut(), soir.getHeureFin(), null)));
         PastHorizon quinzeHeures = new PastHorizon(J1, LocalTime.of(15, 0));
 
         assertThat(FeasibilityAnalyzer.frozenDays(

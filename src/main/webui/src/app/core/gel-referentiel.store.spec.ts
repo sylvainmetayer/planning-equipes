@@ -1,5 +1,5 @@
-// The freeze store: one read shared by every padlock, what a freeze and a lift
-// leave behind, and a failure that says so without pretending nothing is frozen.
+// The freeze store: one read shared by every padlock, re-read on demand after a
+// phase gesture, and a failure that says so without pretending nothing is frozen.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -16,19 +16,11 @@ const OUVERTES: EtatGel[] = [
 ];
 
 describe('GelReferentielStore', () => {
-  let api: {
-    gel: ReturnType<typeof vi.fn>;
-    freeze: ReturnType<typeof vi.fn>;
-    lift: ReturnType<typeof vi.fn>;
-  };
+  let api: { gel: ReturnType<typeof vi.fn> };
   let store: GelReferentielStore;
 
   beforeEach(() => {
-    api = {
-      gel: vi.fn().mockResolvedValue(OUVERTES),
-      freeze: vi.fn(),
-      lift: vi.fn().mockResolvedValue(undefined),
-    };
+    api = { gel: vi.fn().mockResolvedValue(OUVERTES) };
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), { provide: EditionsApi, useValue: api }],
     });
@@ -47,17 +39,13 @@ describe('GelReferentielStore', () => {
     expect(store.frozenFamilies()).toEqual(['CRENEAUX']);
   });
 
-  it('reads every family again after a freeze and a lift, which move the phase', async () => {
+  it('reads every family again on demand, since a phase moves them all', async () => {
     await store.ensureLoaded();
-    const figees = OUVERTES.map((state) => ({
-      ...state,
-      fige: true,
-      figeLe: '2026-07-02T08:00:00Z',
-    }));
-    api.freeze.mockResolvedValue(figees[0]);
-    api.gel.mockResolvedValueOnce(figees);
+    api.gel.mockResolvedValueOnce(
+      OUVERTES.map((state) => ({ ...state, fige: true, figeLe: '2026-07-02T08:00:00Z' })),
+    );
 
-    await store.freeze('STANDS');
+    await store.reload();
     expect(store.frozenFamilies()).toEqual([
       'STANDS',
       'CRENEAUX',
@@ -68,9 +56,8 @@ describe('GelReferentielStore', () => {
     api.gel.mockResolvedValueOnce(
       OUVERTES.map((state) => ({ ...state, fige: false, figeLe: null })),
     );
-    await store.lift('CRENEAUX');
+    await store.reload();
     expect(store.anyFrozen()).toBe(false);
-    expect(store.busy()).toBe(false);
   });
 
   it('says a failed read and treats an unexpected answer as nothing frozen', async () => {

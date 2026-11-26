@@ -50,7 +50,7 @@ class ActiveEditionEmissionStructuralTest {
      */
     private static final Map<String, Method> OUTWARD_TOOLS = Map.of(
             "publier_planning",
-            method(PlanPublicationService.class, "publier", List.class, List.class),
+            method(PlanPublicationService.class, "publier"),
             "envoyer_planning_animateur",
             method(PlanningDeliveryService.class, "sendToOneAnimateur", String.class),
             "relancer_animateurs",

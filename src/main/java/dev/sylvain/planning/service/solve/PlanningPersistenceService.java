@@ -4,10 +4,9 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -344,18 +343,19 @@ public class PlanningPersistenceService {
                         connection, "DELETE FROM stand_indisponibilite WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
-                        heure_debut, heure_fin, motif)
-                        VALUES (?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, depliee)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
                 if (stand.getIndisponibilites() != null) {
-                    for (IndisponibiliteStand indispo : stand.getIndisponibilites()) {
+                    for (PlageStand indispo : stand.getIndisponibilites()) {
                         insert.setString(2, stand.getId());
                         insert.setObject(3, indispo.getDate());
                         insert.setObject(4, indispo.getHeureDebut());
                         insert.setObject(5, indispo.getHeureFin());
                         insert.setString(6, indispo.getMotif());
+                        insert.setBoolean(7, indispo.isDepliee());
                         insert.addBatch();
                     }
                 }
@@ -370,19 +370,20 @@ public class PlanningPersistenceService {
                         connection, "DELETE FROM stand_ouverture WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(connection, """
                         INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture,
-                        heure_debut, heure_fin, motif, effectif)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
+                        heure_debut, heure_fin, motif, effectif, depliee)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
             for (Stand stand : stands) {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
                 if (stand.getOuvertures() != null) {
-                    for (OuvertureStand ouverture : stand.getOuvertures()) {
+                    for (PlageStand ouverture : stand.getOuvertures()) {
                         insert.setString(2, stand.getId());
                         insert.setObject(3, ouverture.getDate());
                         insert.setObject(4, ouverture.getHeureDebut());
                         insert.setObject(5, ouverture.getHeureFin());
                         insert.setString(6, ouverture.getMotif());
                         insert.setObject(7, ouverture.getEffectif());
+                        insert.setBoolean(8, ouverture.isDepliee());
                         insert.addBatch();
                     }
                 }

@@ -3,25 +3,25 @@ twin: comprendre/api-horaires-des-stands
 ---
 # Stand opening hours through the API
 
-A stand's hours are read and written at three levels: the stand record (rules and exceptions), the openings report (what the solver would receive) and the entry grid. You will know what each one returns, which anomalies the report detects, and what saving a grid keeps or replaces. How the effective window is worked out (rules, exceptions, consignes) is described in [stand hours and windows](horaires-et-fenetres-des-stands.md); the timeslot grid and concurrent writes are in [writing the reference data](api-referentiels.md).
+A stand's hours are read and written at three levels: the stand record (its plages), the openings report (what the solver would receive) and the entry grid. You will know what each one returns, which anomalies the report detects, and what saving a grid keeps or replaces. How the effective window is worked out (rules, exceptions, consignes) is described in [stand hours and windows](horaires-et-fenetres-des-stands.md); the timeslot grid and concurrent writes are in [writing the reference data](api-referentiels.md).
 
-## Rules and exceptions
+## Plages
 
-The stand record (`horaires`) returns two levels with no expansion, the view the UI edits: recurring rules, and dated exceptions that override the day they name. A null `heureFin` means "until closing". A write answers `400` if a rule is inconsistent or if two rules of the same scope on overlapping days contradict each other.
+The stand record returns its dated plages with no expansion, the view the UI edits: openings under `ouvertures` and closures under `indisponibilites` (each plage also carries its `mode`). A null `heureFin` means "until closing". A write answers `400` if a plage is inconsistent or if one day carries both an opening and a closure.
 
-`POST /api/stands/compactage-horaires` rewrites repeated dated windows as equivalent rules; `appliquer=false` (the default) is a dry run. A stand is rewritten only if the proposed rules reproduce exactly its open segments. `gapMinutes` counts the opening minutes that disagree: `1` when an old `23:59` had become the day's real closing time.
+The recurring rules of 3.x no longer exist ([decision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)): the record's `horaires` key carries the stand's **model**: the rules it keeps while the edition has no timeslot, which the resolution never reads. A write that sends rules there (the current schedule editor does) has them **kept as the model**, then unfolded into plages on every day the edition gains; when it already has timeslots, they are **also converted at once into plages** over its days, with the 3.x reading (a day that already carries a plage keeps it, the plages the previous model had unfolded are withdrawn first). A write without `horaires` leaves the model as it is; `horaires: []` clears it; sending the stored model back unchanged unfolds nothing. Never a refusal, never a rule lost in silence. This bridge goes away with the plages editor. The compaction of the hours is removed (its route no longer exists): a dated plage has no rule left to fold into.
 
 ## Openings view
 
-`GET /api/ouvertures-stands` returns a stand-by-day grid built from the seats the solver would receive: the screen validates the real data, with no second interpretation of the entry. `source` (`DEFAUT`, `REGLE`, `EXCEPTION`) says which layer decided. None of the six anomalies blocks a solve. Three are defects: `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (no timeslot of the day overlapped) and `SEGMENT_TROP_COURT`, the signature of the `23:59` workaround. Three are given for information:
+`GET /api/ouvertures-stands` returns a stand-by-day grid built from the seats the solver would receive: the screen validates the real data, with no second interpretation of the entry. `source` says what decided: `DEFAUT` (no plage, open all day), `REGLE` (only plages **unfolded from the model** speak of that day: the stand's normal regime) or `EXCEPTION` (a plage typed by hand). Each plage carries `depliee`; the server states the origin, never the client: a plage sent back as it was stored keeps its mark, a plage that was changed or written by a client is a hand-typed one. No anomaly blocks a solve. Three are defects: `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (no timeslot of the day overlapped) and `SEGMENT_TROP_COURT`, the signature of the `23:59` workaround. Three codes of 3.x, born of the recurring rules, are never raised any more:
 
-| Code | Trigger |
+| Code | What it said |
 | --- | --- |
-| `REGLES_CHEVAUCHANTES` | two rules of the same scope and the same mode decide the same day with overlapping windows: union of the windows, highest headcount, which the message names |
-| `REGLE_MASQUEE` | a rule covers days of the edition and decides none of them: a more specific rule or a dated exception wins everywhere |
-| `FENETRES_CHEVAUCHANTES` | two windows of the same rule (or two dated openings of the same day) overlap with different headcounts |
+| `REGLES_CHEVAUCHANTES` | two rules of the same scope and the same mode decided the same day with overlapping windows |
+| `REGLE_MASQUEE` | a rule covered days of the edition and decided none of them |
+| `FENETRES_CHEVAUCHANTES` | two windows of the same rule overlapped with different headcounts |
 
-They are judged on the edition's real days (the dates that carry a timeslot, and the day after a timeslot that runs past midnight). A `PLAGE` rule outside the edition is not masked, a consigne masks nothing, and different scopes in opposite modes (closed on weekends over a daily opening) are the mechanism, not an anomaly. `horaireId` designates the rule concerned. The edition status counts them (`ouvertures.informations`) without their being enough to push the line to "to check". The rule editor replays the detection live (`core/horaire-stand.ts`), kept in agreement with the server by a shared set of cases, `horaire-stand-anomalies.cas.json`.
+`horaireId` designated the rule concerned; it stays on the response, always empty.
 
 A day carries its public holiday label (`jours[].ferie`) and its columns (`jours[].creneaux`): a whole timeslot, or its slices when a window starts or ends inside it (4 people from 14:00 to 19:00 then 2 until 20:00 split the 14-20 timeslot into 14-19 and 19-20, for all stands). Nothing is stored; the bounds are read back from the windows. Each cell carries one entry per column (`creneaux[]`: `creneauId`, `tranche`, `effectif`, `partiel`, `segments`), with `effectif` set to `null` if the stand is closed there. `partiel` remains only for a bound that no column follows; `effectif` is then the highest one and `segments` says what the cell holds.
 
@@ -31,7 +31,7 @@ A day carries its public holiday label (`jours[].ferie`) and its columns (`jours
 
 | Field | Layer | Read from |
 | --- | --- | --- |
-| `source`, `horaireIds`, `motif`, `nominal` | recurring rule, dated exception or open by default | `HoraireStandResolver` alone |
+| `source`, `horaireIds`, `motif`, `nominal` | dated plage or open by default (`horaireIds` is always empty) | `HoraireStandResolver` alone |
 | `jours[].consigne`, `reopenings` | the band the consigne closes and the windows where it reopens this stand | the consigne in place |
 | `effective` | what remains once the consigne has been applied, with its seats split | `StandService.resolve`, the same entry point as the solver |
 | `jours[].vacations` | the timeslots, `addedByConsigne` for those a consigne created | the grid |
@@ -49,6 +49,6 @@ Windows are in minutes since midnight of the day: a timeslot that runs past midn
                               { "creneauId": 2, "heureDebut": "19:00", "heureFin": "20:00", "effectif": 2 } ] } ] }
 ```
 
-A stand that is sent has its rules and exceptions replaced in full by its cells: consecutive timeslots with the same headcount become one dated window, the one that reaches the end of the day stays open, and a day with no cell is an explicit closure, since saying nothing would mean open. `effectifMin` is the smallest value entered, `effectifMax` the largest. The minutes of a timeslot that no cell covers keep what the stand had there; two cells that overlap, or fall outside their timeslot, give `400`, as do an unknown timeslot or stand or a zero headcount (leave the cell empty to close).
+A stand that is sent has its plages replaced in full by its cells: consecutive timeslots with the same headcount become one dated window, the one that reaches the end of the day stays open, and a day with no cell is an explicit closure, since saying nothing would mean open. `effectifMin` is the smallest value entered, `effectifMax` the largest. The minutes of a timeslot that no cell covers keep what the stand had there; two cells that overlap, or fall outside their timeslot, give `400`, as do an unknown timeslot or stand or a zero headcount (leave the cell empty to close).
 
-The grid never destroys what it cannot display. A partial cell (the report marks it `partiel`) sent back with the same value keeps its segments; retyped with another value, the value covers the whole timeslot. Flattening a stand's partial cells is an explicit request, `stands[].aplatir: true`, never a side effect of saving a neighbour. Compaction then folds repeated days back into rules when it proves the equivalence; the response says so stand by stand (`regles`, `exceptions`, `compacte`, `raison`). All stands are validated first, then written in one transaction, `409` during a solve. A grid carries a single variant of each shift ([ADR 0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md)).
+The grid never destroys what it cannot display. A partial cell (the report marks it `partiel`) sent back with the same value keeps its segments; retyped with another value, the value covers the whole timeslot. Flattening a stand's partial cells is an explicit request, `stands[].aplatir: true`, never a side effect of saving a neighbour. The response says so stand by stand (`exceptions` counts the plages written; `regles` is always 0 and `compacte` always false, leftovers of 3.x). All stands are validated first, then written in one transaction, `409` during a solve. A grid carries a single variant of each shift ([ADR 0029](repo:docs/decisions/0029-retrait-des-familles-de-relais.md)).

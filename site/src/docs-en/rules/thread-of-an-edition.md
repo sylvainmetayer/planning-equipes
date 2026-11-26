@@ -28,10 +28,10 @@ The application opens on the **edition status**, which tells you where you stand
 
 The home screen takes the shape of the moment.
 
-**During preparation**, it is a list of steps: reference data, freeze, referential coherence, availability collection, openings, staffing need, solve, problems, review, publication, acknowledgements, swap fair. Each line says whether the step is done, to check, for information or to do, with the figure that matters and the link to the screen concerned. A few lines in detail:
+**During preparation**, it is a list of steps: reference data, phase of the edition, referential coherence, availability collection, openings, staffing need, solve, problems, review, publication, acknowledgements, swap fair. Each line says whether the step is done, to check, for information or to do, with the figure that matters and the link to the screen concerned. A few lines in detail:
 
 - the last solve is read as sentences, never as a raw score;
-- the reference data freeze, which the phase of the edition decides, is recalled there, and is set in the Settings;
+- the phase of the edition (Preparation, Solving, Published, Finished), which decides what the reference data lets you edit, is read and changed there, with its "Unblock the structure" and "Freeze again" buttons in Published;
 - the acknowledgements say whether the automatic reminders are active and only alert beyond the reminder delay;
 - the "Referential coherence" line gathers all the anomalies detected elsewhere. Identical anomalies are merged into one line with their count ("16 days: nothing between 12:00 and 13:00") and each line leads to the fiche that fixes it;
 - two lines count without listing: the fiches with no phone number (including those assigned on an upcoming date) and, on an edition that enters locations, the stands with no location. For the latter, the application shows those for which neighbouring stands suggest a location, with its reason. Each line opens the filtered list; the suggestion also appears in the Location column of the stands and when a stand left without a location is saved.

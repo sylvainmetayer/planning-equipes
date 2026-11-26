@@ -16,8 +16,6 @@ ArchiveEvenementResource#availability GET /exports/archive-evenement/disponibili
 ChangementsJourneeResource#changements GET /journees/{jour}/changements
 ConsigneResource#etat GET /consignes
 ConsigneResource#prereglages GET /consignes/prereglages
-ConstraintResource#history GET /constraints/historique
-ConstraintResource#history GET /constraints/{name}/historique
 ConstraintResource#list GET /constraints
 ContrainteAdHocResource#listContraintesAdHoc GET /contraintes-ad-hoc
 CreneauAvailabilityResource#creneauAvailability GET /banc-de-touche/{creneauId}
@@ -26,6 +24,7 @@ CreneauResource#countCreneauUsages GET /creneaux/usages
 CreneauResource#diagnoseGrid GET /creneaux/diagnostic
 CreneauResource#listCreneaux GET /creneaux
 CreneauResource#validateGrid GET /creneaux/controle
+DayStateResource#list GET /etats-journee
 DeclarationDisponibiliteResource#carpools GET /disponibilites/coequipiers
 DeclarationDisponibiliteResource#configuration GET /disponibilites/configuration
 DeclarationDisponibiliteResource#list GET /disponibilites

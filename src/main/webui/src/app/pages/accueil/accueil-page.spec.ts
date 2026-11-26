@@ -247,7 +247,6 @@ describe('AccueilPage', () => {
     );
     expect(hrefs).toEqual([
       '/stands',
-      '/parametres?onglet=edition#gel-referentiel',
       '/animateurs?onglet=disponibilites',
       '/creneaux?onglet=horaires',
       '/diagnostic?onglet=besoin',
@@ -340,20 +339,17 @@ describe('AccueilPage', () => {
     }
   });
 
-  // The freeze is set in Paramètres only: the home screen says its state and
-  // leads there, with no switch of its own.
-  it('states the freeze and leads to Paramètres, with no editable panel', async () => {
+  // The phase is moved on the home screen itself: the line unfolds the control,
+  // with no link out and no second editable card.
+  it('unfolds the phase control under its line', async () => {
     editionsApi.etat.mockResolvedValue(etat());
     const page = createPage();
     await vi.waitFor(() => expect(page['etatEdition']()).not.toBeNull());
     await fixture.whenStable();
 
-    const ligne = element().querySelector<HTMLElement>('li[data-ligne="gel"]')!;
-    expect(ligne.querySelector('button')).toBeNull();
-    expect(ligne.querySelector('a')!.getAttribute('href')).toBe(
-      '/parametres?onglet=edition#gel-referentiel',
-    );
-    expect(element().querySelector('app-gel-referentiel-card')).toBeNull();
+    const ligne = element().querySelector<HTMLElement>('li[data-ligne="phase"]')!;
+    expect(ligne.querySelector('a')).toBeNull();
+    expect(ligne.querySelector('app-phase-edition-control')).not.toBeNull();
   });
 
   // Several subjects: the coherence line unfolds its detail below itself; each

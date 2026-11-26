@@ -325,10 +325,6 @@ public class ReferenceDataService implements ReferenceData {
         return usages.forStands(ids);
     }
 
-    public HoraireCompaction.RapportCompactage compactHoraires(boolean apply) {
-        return stands.compactHoraires(apply);
-    }
-
     public List<GrilleHorairesStands.LigneGrille> saisirGrilleHoraires(List<GrilleHorairesStands.SaisieStand> saisies) {
         return stands.saisirGrille(saisies);
     }
@@ -870,8 +866,8 @@ public class ReferenceDataService implements ReferenceData {
     }
 
     /** @see ParametresService#setContrainteActive */
-    public void setContrainteActive(String nom, boolean actif, WeightChangeOrigin origin) {
-        parametres.setContrainteActive(nom, actif, origin);
+    public void setContrainteActive(String nom, boolean actif) {
+        parametres.setContrainteActive(nom, actif);
     }
 
     @Override
@@ -885,22 +881,17 @@ public class ReferenceDataService implements ReferenceData {
     }
 
     /** @see ParametresService#setNiveauObligatoire */
-    public void setNiveauObligatoire(String nom, Boolean obligatoire, WeightChangeOrigin origin) {
-        parametres.setNiveauObligatoire(nom, obligatoire, origin);
+    public void setNiveauObligatoire(String nom, Boolean obligatoire) {
+        parametres.setNiveauObligatoire(nom, obligatoire);
     }
 
     /** @see ParametresService#setNiveau */
-    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau, WeightChangeOrigin origin) {
-        parametres.setNiveau(nom, niveau, origin);
+    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau) {
+        parametres.setNiveau(nom, niveau);
     }
 
     /** @see ParametresService#setConstraintWeight */
-    public void setConstraintWeight(String nom, Integer poids, WeightChangeOrigin origin) {
-        parametres.setConstraintWeight(nom, poids, origin);
-    }
-
-    /** @see ParametresService#recordInheritedDosage */
-    public void recordInheritedDosage(String sourceEditionId) {
-        parametres.recordInheritedDosage(sourceEditionId);
+    public void setConstraintWeight(String nom, Integer poids) {
+        parametres.setConstraintWeight(nom, poids);
     }
 }

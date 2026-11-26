@@ -99,7 +99,7 @@ dev/sylvain/planning/api/PlacementResourceTest.java
 dev/sylvain/planning/api/PlanSnapshotResourceTest.java
 dev/sylvain/planning/api/PlanningHoursResourceTest.java
 dev/sylvain/planning/api/PlanningResourceTest.java
-dev/sylvain/planning/api/PublicationExclusionTest.java
+dev/sylvain/planning/api/PublicationCibleeTest.java
 dev/sylvain/planning/api/PublicationResourceTest.java
 dev/sylvain/planning/api/ReferenceDataResourceTest.java
 dev/sylvain/planning/api/ReferenceDataResourceTypologiesTest.java
@@ -123,17 +123,16 @@ dev/sylvain/planning/api/SpaCacheControlTest.java
 dev/sylvain/planning/api/StaffingResourceTest.java
 dev/sylvain/planning/api/StaleWriteResourceTest.java
 dev/sylvain/planning/api/StandGrilleImportResourceTest.java
-dev/sylvain/planning/api/StandHoraireDatesResourceTest.java
+dev/sylvain/planning/api/StandPlagesResourceTest.java
 dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
 dev/sylvain/planning/api/WalkingTimeResourceTest.java
 dev/sylvain/planning/api/WebhookResourceTest.java
-dev/sylvain/planning/api/WeightHistoryResourceTest.java
 dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
-dev/sylvain/planning/mcp/GelReferentielMcpToolsTest.java
+dev/sylvain/planning/mcp/PhaseEditionMcpToolsTest.java
 dev/sylvain/planning/mcp/McpApiKeyAuthenticationMechanismTest.java
 dev/sylvain/planning/mcp/McpKeyLockoutTest.java
 dev/sylvain/planning/mcp/McpPromptsResourcesTest.java
@@ -173,6 +172,7 @@ dev/sylvain/planning/service/mcp/McpKeyServiceTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java
 dev/sylvain/planning/service/notification/NotificationsPlanifieesTest.java
 dev/sylvain/planning/service/notification/RelanceCollecteJobTest.java
+dev/sylvain/planning/service/publication/ExclusionArchiveMigrationTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvExempleTest.java
 dev/sylvain/planning/service/referentiel/AnimateurCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/CreneauCsvImportServiceTest.java
@@ -183,6 +183,7 @@ dev/sylvain/planning/service/referentiel/ReferenceDataServiceSuppressionTest.jav
 dev/sylvain/planning/service/referentiel/ReferentielCsvExportServiceTest.java
 dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
+dev/sylvain/planning/service/referentiel/WeightHistoryArchiveMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
 dev/sylvain/planning/service/solve/AgeCapMergeMigrationTest.java
@@ -203,6 +204,7 @@ dev/sylvain/planning/service/solve/SolverJobRepriseTest.java
 dev/sylvain/planning/service/solve/SolverMetricsTest.java
 dev/sylvain/planning/service/solve/VersionPlanMigrationTest.java
 dev/sylvain/planning/service/solve/WipeBackupServiceTest.java
+dev/sylvain/planning/service/validation/DayStateMigrationTest.java
 dev/sylvain/planning/service/validation/ValidationJourneeServiceTest.java
 dev/sylvain/planning/service/weather/WeatherAlertJobTest.java
 dev/sylvain/planning/api/OidcSignInTest.java
@@ -217,3 +219,4 @@ dev/sylvain/planning/api/LecteurCanariTest.java
 dev/sylvain/planning/mcp/OidcMcpLecteurTest.java
 dev/sylvain/planning/service/referentiel/AdHocTypesMigrationTest.java
 dev/sylvain/planning/service/referentiel/LockTypesMigrationTest.java
+dev/sylvain/planning/service/referentiel/StandPlagesMigrationTest.java

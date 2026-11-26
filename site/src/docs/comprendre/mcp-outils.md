@@ -25,7 +25,7 @@ Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche 
 
 `modifier_niveau_contrainte` choisit le niveau d'une règle d'organisation pour l'édition : `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` ou `PREFERENCE_LEGERE` (une préférence écrit le poids de sa position). `lister_contraintes` donne `niveauReglable` et `niveauChoisi` ; une règle légale, d'affectation, ad hoc, de verrou ou une préférence souple refuse le niveau. Comme `modifier_poids_contrainte`, l'outil est accepté pendant un calcul et le dit (`RESOLUTION_EN_COURS`).
 
-`consulter_historique_ponderation` rend ce que rend `GET /api/constraints/{name}/historique`, ou la vue globale sans `contrainte` : changements de poids et d'activation, valeurs avant et après, origine typée, puis les résolutions de l'édition avec le dosage de chacune. Un réglage fait par `modifier_poids_contrainte`, `activer_contrainte` ou `desactiver_contrainte` y porte l'origine `ASSISTANT`.
+Un réglage fait par `modifier_poids_contrainte`, `modifier_niveau_contrainte`, `activer_contrainte` ou `desactiver_contrainte` se lit dans le journal des actions de l'application (filtre « Règles »), sous l'acteur `ASSISTANT` et avec le nom de la règle, sans la valeur. L'ancien outil de lecture de l'historique des pondérations est retiré (voir le tableau des anciens noms) : le journal ne garde pas de valeur, et aucun outil ne le lit.
 
 ## Lire le plan sous différents angles
 
@@ -49,6 +49,8 @@ La pause se règle par `consulter_parametres` et `modifier_parametres` (section 
 Une grille est faite de vacations et ne se demande plus en mode : un créneau est une vacation, et deux créneaux qui se chevauchent le même jour sont deux relèves décalées, jamais une anomalie ([ADR 0037](repo:docs/decisions/0037-une-grille-est-toujours-des-vacations.md)). Le contrôle (`valider_creneaux`, `previsualiser_creneaux_recurrents`, `diagnostiquer_grille_creneaux`) signale toujours une vacation au-delà de `dureeVacationMaxMinutes` (6 h par défaut), une vacation que le repos quotidien rend intenable, un relais repas hors fenêtre, un doublon, un trou, une date isolée. `diagnostiquer_grille_creneaux` est le premier appel pour découvrir une édition.
 
 Quand les stands ont leurs horaires, `previsualiser_derivation_creneaux` montre la grille qu'ils impliquent (une coupure à chaque heure où un stand ouvre ou ferme) et `generer_creneaux_depuis_stands` l'écrit, en ajout ou, avec `remplacer=true`, à la place de la grille et du plan avec elle. `creer_creneau` et `modifier_creneau` prennent un `couverturePause` facultatif : le relais repas garde le stand ouvert à la moitié de son effectif, arrondie au supérieur.
+
+Le modèle d'horaires d'un stand (ses règles récurrentes, ADR 0104) figure dans `consulter_stand` et `lister_stands` sous `horaires`. `ajouter_horaire_stand` d'une règle identique à une règle existante ne change rien ; `effacer_horaires_stand` efface le modèle **et** les plages qu'il a dépliées, et garde les plages saisies à la main (`ajouter_fermeture_stand`, `ajouter_ouverture_stand`).
 
 Une fenêtre d'ouverture (`ajouter_horaire_stand`, `creer_stand_complet`, `ajouter_ouverture_stand`) peut nommer son effectif par le suffixe `@N` (`10:00-12:00@2,14:00-@4`) ou l'argument `effectif` d'une ouverture datée ; sans lui elle reprend le minimum du stand. Zéro est refusé (un stand sans personne est une fermeture) et le suffixe est rejeté sur la récurrence d'un créneau.
 
@@ -99,21 +101,28 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 <!-- mcp-renommages:debut -->
 | Nom en 3.x | Nom en 4.0 |
 | --- | --- |
+| `ajouter_validation_journee` | `modifier_etat_journee` |
 | `capturer_instantane` | `creer_version` |
+| `compacter_horaires_stands` | retiré |
 | `comparer_instantanes` | `comparer_versions` |
+| `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |
 | `consulter_parametres_qualite` | `consulter_parametres` |
 | `consulter_parametres_solveur` | `consulter_parametres` |
+| `figer_referentiel` | `modifier_phase_edition` |
+| `lever_gel` | `modifier_phase_edition` |
 | `lister_instantanes` | `lister_versions` |
 | `lister_kpi_historique` | `lister_mesures_edition` |
+| `lister_validations_journee` | `consulter_etats_journee` |
 | `modifier_parametres_legaux` | `modifier_parametres` |
 | `modifier_parametres_notifications` | `modifier_parametres` |
 | `modifier_parametres_qualite` | `modifier_parametres` |
 | `modifier_parametres_solveur` | `modifier_parametres` |
 | `realise_vs_planifie` | `comparer_realise_planifie` |
 | `restaurer_instantane` | `restaurer_version` |
+| `retirer_validation_journee` | `modifier_etat_journee` |
 | `supprimer_instantane` | `supprimer_version` |
 | `supprimer_kpi_historique` | `supprimer_mesure_edition` |
 <!-- mcp-renommages:fin -->

@@ -52,7 +52,6 @@ public final class CatalogueActions {
     private static final String STAND_CREE = "STAND_CREE";
     private static final String STAND_MODIFIE = "STAND_MODIFIE";
     private static final String STAND_SUPPRIME = "STAND_SUPPRIME";
-    private static final String STAND_HORAIRES_COMPACTES = "STAND_HORAIRES_COMPACTES";
     private static final String STAND_HORAIRE_AJOUTE = "STAND_HORAIRE_AJOUTE";
     private static final String STAND_HORAIRES_EFFACES = "STAND_HORAIRES_EFFACES";
     private static final String STAND_PLAGE_AJOUTEE = "STAND_PLAGE_AJOUTEE";
@@ -85,6 +84,7 @@ public final class CatalogueActions {
     private static final String VERROU_RETIRE = "VERROU_RETIRE";
     private static final String JOURNEE_VALIDEE = "JOURNEE_VALIDEE";
     private static final String JOURNEE_VALIDATION_RETIREE = "JOURNEE_VALIDATION_RETIREE";
+    private static final String JOURNEE_ETAT_CHANGE = "JOURNEE_ETAT_CHANGE";
     private static final String CONSIGNE_POSEE = "CONSIGNE_POSEE";
     private static final String CONSIGNE_LEVEE = "CONSIGNE_LEVEE";
     private static final String PREREGLAGE_CONSIGNE_ENREGISTRE = "PREREGLAGE_CONSIGNE_ENREGISTRE";
@@ -265,7 +265,6 @@ public final class CatalogueActions {
         changesData(STAND_CREE, "Stand ajouté", Entite.STAND);
         changesData(STAND_MODIFIE, "Stand modifié", Entite.STAND);
         changesData(STAND_SUPPRIME, "Stand supprimé", Entite.STAND);
-        changesData(STAND_HORAIRES_COMPACTES, "Horaires de stands compactés", Entite.STAND);
         changesData(STAND_HORAIRE_AJOUTE, "Horaire de stand ajouté", Entite.STAND);
         changesData(STAND_HORAIRES_EFFACES, "Horaires de stand effacés", Entite.STAND);
         changesData(STAND_PLAGE_AJOUTEE, "Plage d'ouverture ou de fermeture ajoutée", Entite.STAND);
@@ -310,6 +309,10 @@ public final class CatalogueActions {
         // validation lays a lock down: that lock writes its own VERROU_POSE.
         action(JOURNEE_VALIDEE, "Journée relue et acceptée", Entite.PLANNING);
         action(JOURNEE_VALIDATION_RETIREE, "Validation de journée retirée", Entite.PLANNING);
+        // The state of a day (ADR 0121) lays the day lock down when it
+        // freezes, and lifts it when it leaves the frozen state: what a solve
+        // is given may change, hence changesData.
+        changesData(JOURNEE_ETAT_CHANGE, "État de la journée changé", Entite.PLANNING);
         // A consigne (issue #4) changes which seats a solve is given — a band
         // closed for every stand, openings chosen, créneaux added to the grid
         // — hence changesData. A preset changes nothing until a consigne is
@@ -552,7 +555,6 @@ public final class CatalogueActions {
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);
         route("StandResource#deleteStand", STAND_SUPPRIME);
-        route("StandResource#compactHoraires", STAND_HORAIRES_COMPACTES);
         route("StandResource#importGrille", STANDS_IMPORTES);
         route("OuvertureStandsResource#saisir", OUVERTURES_SAISIES);
 
@@ -587,6 +589,7 @@ public final class CatalogueActions {
         route("VerrouillageResource#delete", VERROU_RETIRE);
         route("ValidationJourneeResource#accept", JOURNEE_VALIDEE);
         route("ValidationJourneeResource#withdraw", JOURNEE_VALIDATION_RETIREE);
+        route("DayStateResource#set", JOURNEE_ETAT_CHANGE);
         route("ConsigneResource#poser", CONSIGNE_POSEE);
         route("ConsigneResource#lever", CONSIGNE_LEVEE);
         route("ConsigneResource#createPrereglage", PREREGLAGE_CONSIGNE_ENREGISTRE);
@@ -765,7 +768,6 @@ public final class CatalogueActions {
         outil("effacer_plages_stand", STAND_PLAGES_EFFACEES);
         outil("ajouter_horaire_stand", STAND_HORAIRE_AJOUTE);
         outil("effacer_horaires_stand", STAND_HORAIRES_EFFACES);
-        outil("compacter_horaires_stands", STAND_HORAIRES_COMPACTES);
 
         outil("creer_creneau", CRENEAU_CREE);
         outil("modifier_creneau", CRENEAU_MODIFIE);
@@ -791,8 +793,7 @@ public final class CatalogueActions {
         outil("supprimer_contrainte_ad_hoc", AJUSTEMENT_SUPPRIME);
         outil("verrouiller", VERROU_POSE);
         outil("deverrouiller", VERROU_RETIRE);
-        outil("ajouter_validation_journee", JOURNEE_VALIDEE);
-        outil("retirer_validation_journee", JOURNEE_VALIDATION_RETIREE);
+        outil("modifier_etat_journee", JOURNEE_ETAT_CHANGE);
         outil("appliquer_consigne", CONSIGNE_POSEE);
         outil("lever_consigne", CONSIGNE_LEVEE);
         outil("definir_prereglage_consigne", PREREGLAGE_CONSIGNE_ENREGISTRE);
@@ -804,8 +805,7 @@ public final class CatalogueActions {
         outil("activer_edition", EDITION_ACTIVEE);
         outil("desactiver_edition", EDITION_DESACTIVEE);
         outil("supprimer_edition", EDITION_SUPPRIMEE);
-        outil("figer_referentiel", GEL_POSE);
-        outil("lever_gel", GEL_LEVE);
+        outil("modifier_phase_edition", PHASE_CHANGEE);
 
         outil("lancer_solveur", SOLVE_LANCE);
         outil("resoudre_incremental", SOLVE_INCREMENTAL_LANCE);
@@ -938,6 +938,15 @@ public final class CatalogueActions {
                 .filter(ActionJournalisee::export)
                 .map(ActionJournalisee::code)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * The codes that moved a rule's activation, weight or level, for the
+     * history's « Règles » filter — what the former weight history listed,
+     * minus the values, which the journal never keeps.
+     */
+    public static Set<String> ruleCodes() {
+        return Set.of(CONTRAINTE_ACTIVEE, CONTRAINTE_DESACTIVEE, CONTRAINTE_PONDEREE, CONTRAINTE_NIVEAU);
     }
 
     /** What {@code cle} does, {@code empty} when it is not a journalled action. */

@@ -80,7 +80,6 @@ class GelReferentielStructuralTest {
     /** Method → the method of the same class whose body calls {@code gel.refuseIfFrozen}. */
     private static final Map<String, String> CHECKED_IN_BODY = Map.ofEntries(
             Map.entry("StandService#update(String,Stand)", "update"),
-            Map.entry("StandService#compactHoraires(boolean)", "compactHoraires"),
             Map.entry("TypologieService#update(String,TypologieItem)", "update"),
             Map.entry("AnimateurService#update(String,Animateur)", "update"),
             Map.entry("AnimateurService#update(String,Animateur,Animateur)", "update"),
@@ -123,7 +122,6 @@ class GelReferentielStructuralTest {
             Map.entry(
                     "ReferenceDataService#writeStand(String,Stand)", "ReferenceDataService#updateStand(String,Stand)"),
             Map.entry("ReferenceDataService#deleteStand(String)", "StandService#delete(String)"),
-            Map.entry("ReferenceDataService#compactHoraires(boolean)", "StandService#compactHoraires(boolean)"),
             Map.entry("ReferenceDataService#saisirGrilleHoraires(List)", "StandService#saisirGrille(List)"),
             Map.entry("ReferenceDataService#createEmplacement(Emplacement)", "EmplacementService#create(Emplacement)"),
             Map.entry(
@@ -224,13 +222,10 @@ class GelReferentielStructuralTest {
             Map.entry("ReferenceDataService#updateParametresNotifications(ParametresNotifications)", "same"),
             Map.entry("ReferenceDataService#updateParametresQualite(ParametresQualite)", "same"),
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),
-            Map.entry("ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)", "same"),
-            Map.entry("ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)", "same"),
-            Map.entry("ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", "same"),
-            Map.entry("ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", "same"),
-            Map.entry(
-                    "ReferenceDataService#recordInheritedDosage(String)",
-                    "a history line on the settings a duplicated edition inherited, not one of the four families"));
+            Map.entry("ReferenceDataService#setContrainteActive(String,boolean)", "same"),
+            Map.entry("ReferenceDataService#setConstraintWeight(String,Integer)", "same"),
+            Map.entry("ReferenceDataService#setNiveauObligatoire(String,Boolean)", "same"),
+            Map.entry("ReferenceDataService#setNiveau(String,NiveauRegle)", "same"));
 
     @Test
     void everyWriteMethodOfAGuardedServiceIsClassified() {

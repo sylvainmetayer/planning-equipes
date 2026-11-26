@@ -123,6 +123,32 @@ class JournalCoverageStructurelleTest {
                 .doesNotContain("ReferenceDataResource#volumesExportCsv", "HistoriqueResource#list");
     }
 
+    /**
+     * The « Règles » filter replaces the weight history: every door that moves
+     * a rule's activation, weight or level must land on one of its four codes.
+     */
+    @Test
+    void theRulesFilterKeepsWhatEveryRuleDoorWrites() {
+        assertThat(CatalogueActions.ruleCodes())
+                .containsExactlyInAnyOrder(
+                        "CONTRAINTE_ACTIVEE", "CONTRAINTE_DESACTIVEE", "CONTRAINTE_PONDEREE", "CONTRAINTE_NIVEAU");
+        assertThat(CatalogueActions.actions().keySet()).containsAll(CatalogueActions.ruleCodes());
+        assertThat(CatalogueActions.forRoute("ConstraintResource#setPoids"))
+                .map(ActionJournalisee::code)
+                .contains("CONTRAINTE_PONDEREE");
+        assertThat(CatalogueActions.forRoute("ConstraintResource#setNiveau"))
+                .map(ActionJournalisee::code)
+                .contains("CONTRAINTE_NIVEAU");
+        assertThat(CatalogueActions.forTool("modifier_poids_contrainte"))
+                .map(ActionJournalisee::code)
+                .contains("CONTRAINTE_PONDEREE");
+        assertThat(CatalogueActions.forTool("modifier_niveau_contrainte"))
+                .map(ActionJournalisee::code)
+                .contains("CONTRAINTE_NIVEAU");
+        // The history tool went with the history: nothing may stay filed under it.
+        assertThat(CatalogueActions.forTool("consulter_historique_ponderation")).isEmpty();
+    }
+
     /* ---------------- Fixtures of the download detector ---------------- */
 
     static final String CSV = "text/csv";

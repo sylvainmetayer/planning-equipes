@@ -83,7 +83,9 @@
     "ChangementAnimateur": "AnimateurLine",
     "ChangementAnimateurLigne": "AnimateurChange",
     "DemandeVerification": "VerificationRequest",
-    "EditionSituation": "Situation"
+    "EditionSituation": "Situation",
+    "IndisponibiliteStand": "PlageStand",
+    "OuvertureStand": "PlageStand"
   },
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",

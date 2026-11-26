@@ -3,13 +3,16 @@ package dev.sylvain.planning.service.validation;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
+import dev.sylvain.planning.domain.DayState;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.ValidationJournee;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.validation.ValidationJourneeService.DayStateView;
 import dev.sylvain.planning.service.validation.ValidationJourneeService.DemandeValidation;
 import dev.sylvain.planning.service.validation.ValidationJourneeService.KeepReason;
 import dev.sylvain.planning.service.validation.ValidationJourneeService.KeptReading;
@@ -237,5 +240,106 @@ class ValidationJourneeServiceTest {
     void withdrawingAnUnknownReadingIsReportedRatherThanAccepted() {
         assertThatThrownBy(() -> validationService.withdraw("inconnu")).isInstanceOf(BusinessError.NotFound.class);
         assertThatThrownBy(() -> validationService.withdraw(" ")).isInstanceOf(BusinessError.Invalid.class);
+    }
+
+    /* ------------------------- The state of a day ------------------------- */
+
+    @Test
+    void freezingWithoutCommentKeepsTheReadingComment() {
+        validationService.setState(JOUR, DayState.RELUE, "vu avec la régie");
+
+        DayStateView figee = validationService.setState(JOUR, DayState.FIGEE, null);
+
+        assertThat(figee.commentaire()).isEqualTo("vu avec la régie");
+        assertThat(validationService.setState(JOUR, DayState.FIGEE, "autre").commentaire())
+                .isEqualTo("autre");
+    }
+
+    @Test
+    void freezingADayLaysItsLockAndReadingOrUnreadingLiftsIt() {
+        assertThat(validationService.stateOf(JOUR)).isEqualTo(DayState.A_RELIRE);
+
+        DayStateView figee = validationService.setState(JOUR, DayState.FIGEE, "vu avec la régie");
+
+        assertThat(figee.etat()).isEqualTo(DayState.FIGEE);
+        assertThat(figee.commentaire()).isEqualTo("vu avec la régie");
+        assertThat(dayLocks()).isEqualTo(1);
+        validationService.setState(JOUR, DayState.FIGEE, null);
+        assertThat(dayLocks()).as("freezing a frozen day lays no second lock").isEqualTo(1);
+
+        assertThat(validationService.setState(JOUR, DayState.RELUE, null).etat())
+                .isEqualTo(DayState.RELUE);
+        assertThat(dayLocks()).isZero();
+
+        validationService.setState(JOUR, DayState.FIGEE, null);
+        DayStateView aRelire = validationService.setState(JOUR, DayState.A_RELIRE, null);
+
+        assertThat(aRelire.etat()).isEqualTo(DayState.A_RELIRE);
+        assertThat(aRelire.validationId()).isNull();
+        assertThat(dayLocks()).isZero();
+        assertThat(validationService.list()).isEmpty();
+    }
+
+    /**
+     * ADR 0039, kept by 0121: no gesture but an explicit « figée » lays a lock
+     * down — not reading a day, not the 3.x validation without its box ticked,
+     * not withdrawing a reading, not a solve's landing.
+     */
+    @Test
+    void nothingButAskingForFrozenEverLaysALockDown() {
+        validationService.setState(JOUR, DayState.RELUE, null);
+        validationService.accept(new DemandeValidation(JOUR, null, false));
+        validationService.withdrawAfterSolve(Set.of(), Set.of(), false);
+        validationService.withdrawAfterSolve(Set.of(JOUR), Set.of(), true);
+        validationService.accept(new DemandeValidation(JOUR, null, false));
+        validationService.withdraw(validationService.list().getFirst().id());
+        validationService.setState(JOUR, DayState.A_RELIRE, null);
+
+        assertThat(referenceDataService.listVerrouillages()).isEmpty();
+    }
+
+    /** The migration rules, on the live rows: a day lock alone is a frozen day, reading or not. */
+    @Test
+    void aDayLockLaidFromTheLocksScreenIsAFrozenDayWithoutAReading() {
+        VerrouillagePlanning verrouillage = new VerrouillagePlanning();
+        verrouillage.setType(TypeVerrouillage.JOUR);
+        verrouillage.setJour(JOUR);
+        referenceDataService.createVerrouillage(verrouillage);
+
+        assertThat(validationService.states())
+                .extracting(DayStateView::jour, DayStateView::etat, DayStateView::validationId)
+                .containsExactly(tuple(JOUR, DayState.FIGEE, null));
+        assertThat(validationService.withdrawAfterSolve(Set.of(JOUR), Set.of(), true))
+                .as("a solve keeps a frozen day, reading or not")
+                .isEqualTo(new ReadingsOutcome(0, 0, 1, 0));
+        assertThat(validationService.keptByColdStart(null)).containsExactly(new KeptReading(JOUR, KeepReason.VERROU));
+    }
+
+    /** The 3.x withdrawal leaves the lock alone, as it always did: a frozen day stays frozen. */
+    @Test
+    void withdrawingTheReadingOfAFrozenDayLeavesItFrozen() {
+        validationService.setState(JOUR, DayState.FIGEE, null);
+
+        validationService.withdraw(validationService.list().getFirst().id());
+
+        assertThat(validationService.stateOf(JOUR)).isEqualTo(DayState.FIGEE);
+        assertThat(dayLocks()).isEqualTo(1);
+    }
+
+    @Test
+    void aStateNeedsADayOfTheGridAndAState() {
+        assertThatThrownBy(() -> validationService.setState(JOUR, null, null))
+                .isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> validationService.setState(null, DayState.RELUE, null))
+                .isInstanceOf(BusinessError.Invalid.class);
+        assertThatThrownBy(() -> validationService.setState(LocalDate.of(2000, 1, 1), DayState.FIGEE, null))
+                .isInstanceOf(BusinessError.Invalid.class);
+        assertThat(referenceDataService.listVerrouillages()).isEmpty();
+    }
+
+    private long dayLocks() {
+        return referenceDataService.listVerrouillages().stream()
+                .filter(lock -> lock.getType() == TypeVerrouillage.JOUR && JOUR.equals(lock.getJour()))
+                .count();
     }
 }

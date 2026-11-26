@@ -256,7 +256,7 @@ class McpWarnsWhileSolvingTest {
             assertWarned(() ->
                     verrouillageTools.unlock(verrou.verrouillage().id(), ed).avertissements());
             assertWarned(() -> validationTools
-                    .addJourneeValidation("2031-08-01", null, false, ed)
+                    .updateJourneeState("2031-08-01", "RELUE", null, ed)
                     .avertissements());
         } finally {
             editions.delete(ed);

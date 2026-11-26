@@ -45,8 +45,6 @@ ConsigneResource#prereglages GET /consignes/prereglages
 ConsigneResource#preselection POST /consignes/preselection
 ConsigneResource#updatePrereglage PUT /consignes/prereglages/{id}
 ConstraintResource#diagnose POST /constraints/diagnostic
-ConstraintResource#history GET /constraints/historique
-ConstraintResource#history GET /constraints/{name}/historique
 ConstraintResource#list GET /constraints
 ConstraintResource#setActif PUT /constraints/{name}
 ConstraintResource#setNiveau PUT /constraints/{name}/niveau
@@ -70,6 +68,8 @@ CreneauResource#previewDerivation POST /creneaux/derivation/apercu
 CreneauResource#previewRecurrence POST /creneaux/recurrence/apercu
 CreneauResource#updateCreneau PUT /creneaux/{id}
 CreneauResource#validateGrid GET /creneaux/controle
+DayStateResource#list GET /etats-journee
+DayStateResource#set PUT /etats-journee/{jour}
 DeclarationDisponibiliteResource#apply POST /disponibilites/{id}/application
 DeclarationDisponibiliteResource#cancelCarpool POST /disponibilites/coequipiers/{id}/annulation
 DeclarationDisponibiliteResource#carpools GET /disponibilites/coequipiers
@@ -238,7 +238,6 @@ StaffingResource#verification GET /staffing/verification
 StaffingResource#verify POST /staffing/verification
 StandResource#analyseCsv POST /stands/import-csv/analyse
 StandResource#analyseGrille POST /stands/import-grille/analyse
-StandResource#compactHoraires POST /stands/compactage-horaires
 StandResource#countStandUsages GET /stands/usages
 StandResource#createStand POST /stands
 StandResource#deleteStand DELETE /stands/{id}

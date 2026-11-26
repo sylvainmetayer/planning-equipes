@@ -7,7 +7,7 @@ Vous savez choisir entre scénario, duplication et modèle d'année pour démarr
 | Geste | Ce que ça fait | Les personnes |
 | --- | --- | --- |
 | Scénario YAML | décrit un événement entier et remplace le référentiel de l'édition visée ([le fichier](scenario-yaml.md)) | oui, section `animateurs` |
-| Duplication d'édition (`POST /api/editions/{id}/dupliquer`) | crée une nouvelle édition et y recopie tout le référentiel de la source : stands, emplacements, typologies, horaires récurrents, créneaux, dosages de contraintes, paramètres et préréglages de consigne. Ni le planning résolu ni les consignes datées : « 2026 = 2025 moins les affectations » | oui, par défaut |
+| Duplication d'édition (`POST /api/editions/{id}/dupliquer`) | crée une nouvelle édition et y recopie tout le référentiel de la source : stands, emplacements, typologies, plages de stand, créneaux, dosages de contraintes, paramètres et préréglages de consigne. Ni le planning résolu ni les consignes datées : « 2026 = 2025 moins les affectations » | oui, par défaut |
 | Modèle d'année (`…/dupliquer?avecAnimateurs=false`) | la même duplication, sans les personnes | non |
 
 Il n'y a pas de bibliothèque de modèles à part : la liste des éditions en tient lieu, et appliquer un modèle, c'est dupliquer. Une table de gabarits parallèle serait un second référentiel redondant pour le même service.

@@ -6,7 +6,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -312,7 +312,7 @@ class PlanningPersistenceServiceTest {
                         new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
                 Stand stand = referenceDataService.createStand(
                         new Stand(null, "Stand fermé à midi", Set.of("STRATEGIE"), 6, 6, false));
-                stand.setIndisponibilites(List.of(new IndisponibiliteStand(
+                stand.setIndisponibilites(List.of(PlageStand.fermeture(
                         null, LocalDate.of(2026, 7, 17), LocalTime.of(11, 0), LocalTime.of(13, 0), "Midi")));
                 Creneau creneau = referenceDataService.createCreneau(
                         new Creneau(null, 1, LocalDate.of(2026, 7, 17), LocalTime.of(9, 0), LocalTime.of(15, 0)));

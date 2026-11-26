@@ -1,6 +1,6 @@
 # Les règles du solveur et leur catalogue
 
-Vous savez où lire la liste des 42 règles, comment elles se rangent par niveau, pourquoi l'écran et le code n'emploient pas le même mot pour un écart, et ce que deux champs de la fiche ne pilotent pas. Le tableau en fin de page est la liste complète, tenue à jour par un test.
+Vous savez où lire la liste des 40 règles, comment elles se rangent par niveau, pourquoi l'écran et le code n'emploient pas le même mot pour un écart, et ce que deux champs de la fiche ne pilotent pas. Le tableau en fin de page est la liste complète, tenue à jour par un test.
 
 Un planning est valide quand aucune règle dure n'est violée, et bon quand les règles de qualité sont peu pénalisées. Les règles se rangent sur les trois niveaux du `HardMediumSoftScore` de Timefold : **dur** (bloquant), **medium** (fortement pénalisé, signalé à l'organisateur) et **soft** (préférence qui départage deux plannings valides).
 

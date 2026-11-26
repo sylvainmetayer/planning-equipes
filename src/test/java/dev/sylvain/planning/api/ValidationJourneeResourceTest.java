@@ -328,4 +328,108 @@ class ValidationJourneeResourceTest {
                 .statusCode(200)
                 .body("journeesNonValidees", is(0));
     }
+
+    /* ------------------- The state of a day (ADR 0121) ------------------- */
+
+    private static JsonPath setState(String etat) {
+        return given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("etat", etat))
+                .when()
+                .put("/api/etats-journee/" + JOUR)
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+    }
+
+    private static int dayLocks() {
+        return given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/verrouillages")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("findAll { it.type == 'JOUR' }")
+                .size();
+    }
+
+    @Test
+    void aDayGoesThroughItsThreeStatesAndOnlyFrozenHoldsALock() {
+        aPersistedPlan();
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/etats-journee")
+                .then()
+                .statusCode(200)
+                .body("size()", is(1))
+                .body("[0].jour", equalTo(JOUR))
+                .body("[0].etat", equalTo("A_RELIRE"));
+
+        assertThat(setState("RELUE").getString("etat")).isEqualTo("RELUE");
+        assertThat(dayLocks()).isZero();
+
+        assertThat(setState("FIGEE").getString("etat")).isEqualTo("FIGEE");
+        assertThat(dayLocks()).isEqualTo(1);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations/progression")
+                .then()
+                .statusCode(200)
+                .body("journeesValidees", is(1));
+
+        assertThat(setState("A_RELIRE").getString("etat")).isEqualTo("A_RELIRE");
+        assertThat(dayLocks()).isZero();
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/validations/progression")
+                .then()
+                .statusCode(200)
+                .body("journeesValidees", is(0));
+    }
+
+    @Test
+    void aFrozenDayStaysFrozenAcrossASolve() {
+        aPersistedPlan();
+        setState("FIGEE");
+        markUnavailable(aSeatedAnimateur());
+
+        aPersistedPlan();
+
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/etats-journee")
+                .then()
+                .statusCode(200)
+                .body("[0].etat", equalTo("FIGEE"));
+    }
+
+    @Test
+    void aStateTheDayCannotTakeIsRefused() {
+        aPersistedPlan();
+
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("etat", "VALIDEE"))
+                .when()
+                .put("/api/etats-journee/" + JOUR)
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of())
+                .when()
+                .put("/api/etats-journee/" + JOUR)
+                .then()
+                .statusCode(400);
+        given().header("X-Edition-Id", "E1")
+                .contentType("application/json")
+                .body(Map.of("etat", "FIGEE"))
+                .when()
+                .put("/api/etats-journee/2000-01-01")
+                .then()
+                .statusCode(400);
+        assertThat(dayLocks()).isZero();
+    }
 }

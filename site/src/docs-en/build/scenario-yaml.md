@@ -59,7 +59,7 @@ Timeslots always come out as they are, with `couverturePause: true` when they co
 
 ## `schemaVersion`
 
-A file written by the application starts with `schemaVersion: 4` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
+A file written by the application starts with `schemaVersion: 5` (`ScenarioBinder.SCHEMA_VERSION`). On reading, the key is optional and is 1 when missing. A file older than the current version goes through a **chain of conversions** (`ScenarioMigrations`) before being bound: each link is a pure function from version *n* to *n + 1*, with its test, and each model change adds its own. What a link cannot convert is ignored **with a warning in the import report** (`avertissements`), never silently. The shipped scenarios, the end-of-event archives and the copies made before a wipe thus remain readable. The v1 reader is kept throughout 4.x and removed in 5.0 ([ADR 0101](repo:docs/decisions/0101-schema-yaml-2-et-chaine-de-conversions.md)). A number higher than the one the version reads is refused with a clear sentence ("produced by a more recent version") rather than with an "unknown field" on the first new key. A version of the application older than the key refuses any file that carries it, like any unknown key.
 
 ## `contraintes.niveaux`: the level chosen per rule
 
@@ -80,7 +80,7 @@ When present, it is taken as is, even if empty, which allows off-rule staffing; 
 
 ## `plan`: the schedule of a copy before a wipe
 
-Last section, optional: the seats filled (`affectations`) and the locks (`verrous`) of the edition, with the file's identifiers; a timeslot is named there by its date and hours. Only the copy stored before a wipe writes it ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)): the Files export does not carry one, and a file without this section is read as before (the format stays at version 3). Only the restore of that copy applies the section: it puts the seats and locks back on the reference data it has just written, found by code then name for a stand, address then first and last name for a staff member, day and hours for a timeslot, and lists what is not found. An ordinary import (Files, `importer_scenario_yaml`) ignores it, with a warning in the report. Restore details: [Restore an edition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
+Last section, optional: the seats filled (`affectations`) and the locks (`verrous`) of the edition, with the file's identifiers; a timeslot is named there by its date and hours. Only the copy stored before a wipe writes it ([ADR 0112](repo:docs/decisions/0112-la-copie-avant-vidage-est-un-export-yaml-avec-son-plan.md)): the Files export does not carry one, and a file without this section is read as before (the format stays at version 5). Only the restore of that copy applies the section: it puts the seats and locks back on the reference data it has just written, found by code then name for a stand, address then first and last name for a staff member, day and hours for a timeslot, and lists what is not found. An ordinary import (Files, `importer_scenario_yaml`) ignores it, with a warning in the report. Restore details: [Restore an edition](restaurer-une-edition.md#les-sauvegardes-avant-vidage).
 
 ## `contraintes`: as a block, never merged
 
@@ -96,12 +96,25 @@ Weights are read on the current scale (low 1, normal 5, high 25, see [ADR 0057](
 
 ## Stand hours
 
-The day selector is flat: `jours` names which of the neighbouring fields applies (`TOUS` by default, `JOURS_SEMAINE`, `PLAGE`, `DATES`), and only that one is read.
+A stand carries a `plages` list: each one is a dated window, open or closed (`mode: OUVERTURE` or `FERMETURE`), with its `date` and its hours. A daily schedule is written as one plage per day ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). A stand may also carry, under `horaires`, its **model**: recurring rules ("Saturday and Sunday, 10:00-18:00") that the application keeps and unfolds into plages over the edition's days, then over those it gains: a file of a dated edition carries the rule and its plages. On reading, the model is unfolded on every day of the file's `creneaux` on which the stand has no plage: a hand-written file can therefore give the rule without its plages, and a plage removed by hand from an edition comes back when its file is imported again.
 
-- An omitted `heureFin` means "until closing": the window runs to the end of the evaluated timeslot. A single rule thus covers a day that closes at 20:00 and a day that closes at midnight, without the `23:59` workaround that a concrete hour required (a window cannot straddle midnight).
-- An omitted `effectif` means "inherit from `effectifMin`", the most common case. Filling it in on a window lets a stand whose load varies during the day (4 people in the morning, 5 in the evening) remain a single stand. The field exists on a recurring rule window and on a dated opening.
+```yaml
+stands:
+  - id: BOURSE
+    nom: Bourse
+    # …
+    plages:
+      - { date: 2026-07-08, mode: OUVERTURE, heureDebut: '10:00', heureFin: '12:00' }
+      - { date: 2026-07-08, mode: OUVERTURE, heureDebut: '14:00', effectif: 3 }
+      - { date: 2026-07-09, mode: FERMETURE, heureDebut: '00:00', motif: Absent ce jour }
+```
 
-A more precise scope takes precedence over a wider one, and a dated exception takes precedence over all rules for the single day it names. The full arbitration is in [Hours, consignes and effective windows](horaires-et-fenetres-des-stands.md).
+- `depliee: true` marks a plage the application unfolded from the stand's model (`horaires`): its normal regime, as opposed to a typed exception. Absent, the plage is hand-typed; a file of a dated edition writes it on the plages the model produced, and the 4 → 5 step sets it on those it unfolds.
+- An omitted `heureFin` means "until closing": the window runs to the end of the evaluated timeslot. A window cannot straddle midnight: the night is written as two plages, one per day.
+- An omitted `effectif` means "inherit from `effectifMin`", the most common case. Filling it in on an opening lets a stand whose load varies during the day (4 people in the morning, 5 in the evening) remain a single stand. A closure carries none.
+- A day with no plage is open all day; a day never carries both an opening and a closure. The full arbitration is in [Hours, consignes and effective windows](horaires-et-fenetres-des-stands.md).
+
+A version 1 to 4 file still carries `horaires` (recurring rules), `ouvertures` and `indisponibilites`: link 4 → 5 converts them into plages over the days of the file's `creneaux`, with the reading the application gave them. A stand whose rules have no day to land on (the file has no timeslot) keeps them under `horaires`, as its model: nothing is lost, nothing is said. A file that has timeslots keeps its rules under `horaires` too, with the plages they gave.
 
 ## Game categories, typical days and removed keys
 
@@ -209,6 +222,6 @@ After modifying a DTO, regenerate the schema:
 ./mvnw process-classes -Pgenerate-schema
 ```
 
-The schema cannot express the conditional rules of an opening-hours selector, checked by `StandValidator`, nor the cross-references, checked at the real import.
+The schema cannot express that a day never carries both an opening and a closure, checked by `StandValidator`, nor the cross-references, checked at the real import.
 
 The file is read in a single pass, by `ScenarioYamlReader.buildFromScenarioText` ([`ScenarioYamlReader`](repo:src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java)), which returns the schedule and all the optional sections together (`ScenarioImporte`, `ScenarioSections`). Adding an optional section means a field in `ScenarioSections` and its filling in `ScenarioDomainMapper.sections`, not one more public method: one method per section would reread the whole file at each call, that is as many full parses as there are sections for a single click.
