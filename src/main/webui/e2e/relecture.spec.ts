@@ -125,7 +125,10 @@ test('figer demande confirmation et pose le verrou, relire le retire', async ({ 
   expect(await (await admin.get('/api/verrouillages')).json()).toEqual([]);
 
   await dialogue.getByRole('button', { name: "Enregistrer l'état" }).click();
-  await page.getByRole('button', { name: 'Figer la journée' }).click();
+  await page
+    .getByRole('dialog', { name: 'Figer cette journée ?' })
+    .getByRole('button', { name: 'Figer la journée' })
+    .click();
   await expect(page.locator('.relecture-barre')).toContainText('Figée');
 
   const verrous = (await (await admin.get('/api/verrouillages')).json()) as { type: string }[];
