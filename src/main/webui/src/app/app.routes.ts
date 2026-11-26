@@ -424,10 +424,15 @@ export const redirectCalculToParametres: CanActivateFn = (route) => {
 /**
  * `/diagnostic?onglet=fragilite|former|tension…`: the three are sections of the
  * Risques tab now — the address opens that tab scrolled to the section
- * (`section=`), its other params kept (the fragility filters, the day).
+ * (`section=`), its other params kept (the fragility filters, the day) — as
+ * does `?onglet=besoin&section=former`, where « À former » sat before.
  */
 export const formerTabsToRisques: CanActivateFn = (route) => {
   const onglet = route.queryParamMap.get('onglet');
+  // P82's landing on « À former », the foot of Besoin before it moved here.
+  if (onglet === 'besoin' && route.queryParamMap.get('section') === 'former') {
+    return inject(Router).parseUrl(risquesUrl('former', route.queryParams));
+  }
   if (onglet !== 'fragilite' && onglet !== 'former' && onglet !== 'tension') {
     return true;
   }
@@ -523,6 +528,9 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.diagnostic:Diagnostic`,
     data: { aide: 'lire-les-resultats' },
     canActivate: [benchTabToJournee, formerTabsToRisques],
+    // An old `onglet=` followed from inside the page changes the query alone:
+    // the redirections above must run on it too, not only on the way in.
+    runGuardsAndResolvers: 'paramsOrQueryParamsChange',
     loadComponent: () => import('./pages/diagnostic/diagnostic-page').then((m) => m.DiagnosticPage),
   },
   // The screens the Diagnostic page gathers, kept for the bookmarks; the

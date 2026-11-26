@@ -467,8 +467,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   of its timeslot. Fragilité: « Verrouiller », « Qui peut remplacer »,
   « Former » per person. The tab components keep their own view state in the
   URL next to the page's key; `?onglet=banc` is sent to the Planning page by
-  `benchTabToJournee`, `?onglet=fragilite|former|tension` to
-  `?onglet=risques&section=…` by `formerTabsToRisques`), `/echanges` (« Échanges » —
+  `benchTabToJournee`, `?onglet=fragilite|former|tension` and
+  `?onglet=besoin&section=former` to `?onglet=risques&section=…` by
+  `formerTabsToRisques` — guards the route re-runs on a query change alone), `/echanges` (« Échanges » —
   opens on the queue, under the foire's one-line state (`shared/guichet-etat`);
   an accepted swap offers « Prévenir les 2 personnes », a publication
   aimed at those two through `PlanningApi.publishTo`, and « Corriger le
@@ -575,7 +576,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   whose redirects carry their query params along, renamed where the page now
   owns the key — `/banc-de-touche` landing on `/journee` with its `creneau`
   and `stand` —, `/marge`, landing on `/diagnostic?onglet=besoin`, or on
-  `?onglet=tension` for its `mode=apres|tension`, and the three the Planning page absorbed in issue #712:
+  `?onglet=risques&section=tension` for its `mode=apres|tension`, and the three the Planning page absorbed in issue #712:
   `/calendar` (its `date`, `stand` and `animateur`; the `month` it showed is
   the day's own), `/intendance` (now the Diagnostic's problems) and `/graphe` (`?vue=carte`),
   through `redirectToPlanning` of `app.routes.ts`, and the six its axes

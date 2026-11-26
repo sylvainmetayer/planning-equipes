@@ -62,7 +62,10 @@ export class RisquesTab {
           loaded.destroy();
           afterNextRender(
             () => {
-              document.getElementById(`risques-${section}`)?.scrollIntoView({ block: 'start' });
+              const target = document.getElementById(`risques-${section}`);
+              target?.scrollIntoView({ block: 'start' });
+              // The reading resumes at the section landed on, not at the top of the page.
+              target?.focus({ preventScroll: true });
               resolve();
             },
             { injector: this.injector },

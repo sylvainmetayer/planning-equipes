@@ -166,8 +166,14 @@ test('the addresses of former screens lead to the right rendering, parameters in
   await page.goto('/diagnostic?onglet=fragilite');
   await expect(page).toHaveURL(/onglet=risques/);
   await expect(page.locator('#risques-fragilite')).toContainText('Fragilité');
+  // A landing, not a view: once obeyed, `section` leaves the address.
+  await page.goto('/diagnostic?onglet=besoin&section=former');
+  await expect(page.locator('#risques-former')).toBeFocused();
+  await expect(page).toHaveURL(/onglet=risques/);
+  await expect(page).not.toHaveURL(/section=/);
 
-  // The volumetry and the plan by typologie are sections of Besoin too.
+  // The volumetry and the plan by typologie are sections of Besoin.
+  await page.goto('/diagnostic?onglet=besoin');
   await expect(page.locator('#besoin-volumetrie')).toContainText('Volumétrie du problème');
   await expect(page.locator('#besoin-par-typologie')).toContainText('typologie par typologie');
   await page.context().close();

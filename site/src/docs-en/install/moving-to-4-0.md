@@ -230,7 +230,7 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 
 - **Before (3.x)**: the plan's fragility, the hour-by-hour tension (the former Available margin screen) and "To train" were three tabs of the Diagnostic reading the same shortage from three angles.
 - **After (4.0)**: the Diagnostic has only three tabs besides Compliance (Problems, Staffing need, **Risks**). Risks stacks, from top to bottom, *Fragility*, "To train" and *Tension*, each with its own filters in the address. "To train" therefore leaves the Staffing need tab.
-- **What you do**: nothing for your links. `?onglet=fragilite`, `?onglet=former`, `?onglet=tension`, `/fragilite` and `/marge?mode=apres|tension` are read as before and lead to `?onglet=risques&section=fragilite|former|tension` (the other parameters, fragility filters or day, are kept); `?onglet=besoin&section=former` no longer exists, the section changed tabs. 5.0 will remove the old addresses.
+- **What you do**: nothing for your links. `?onglet=fragilite`, `?onglet=former`, `?onglet=tension`, `?onglet=besoin&section=former`, `/fragilite` and `/marge?mode=apres|tension` are read as before and lead to `?onglet=risques&section=fragilite|former|tension` (the other parameters, fragility filters or day, are kept). 5.0 will remove the old addresses.
 
 ### The Planning page offers only four views
 

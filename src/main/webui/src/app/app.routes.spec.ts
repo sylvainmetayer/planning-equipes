@@ -500,8 +500,17 @@ describe('app.routes', () => {
       expect(String(guard({ onglet: 'fragilite', q: 'Alice' }))).toBe(
         '/diagnostic?onglet=risques&section=fragilite&q=Alice',
       );
+      expect(String(guard({ onglet: 'besoin', section: 'former' }))).toBe(
+        '/diagnostic?onglet=risques&section=former',
+      );
       expect(guard({ onglet: 'besoin' })).toBe(true);
+      expect(guard({ onglet: 'besoin', section: 'typologie' })).toBe(true);
       expect(guard({})).toBe(true);
+    });
+
+    it('runs its redirections again when only the query changes', () => {
+      const diagnostic = allRoutes(routes).find((route) => route.path === 'diagnostic');
+      expect(diagnostic?.runGuardsAndResolvers).toBe('paramsOrQueryParamsChange');
     });
   });
 
