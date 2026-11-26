@@ -575,6 +575,7 @@ public class PlanPublicationService {
         List<EnvoiPlanningRepository.Envoi> livraisons = new ArrayList<>();
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
+        List<String> envoyesA = new ArrayList<>();
         int envoyes = 0;
         for (DestinatairePublication destinataire : retenus) {
             Issue issue = send(planning, reference, referencesParAnimateur, destinataire);
@@ -587,7 +588,10 @@ public class PlanPublicationService {
                     issue.cause(),
                     envoyeLe));
             switch (statut) {
-                case ENVOYE -> envoyes++;
+                case ENVOYE -> {
+                    envoyes++;
+                    envoyesA.add(destinataire.animateurId());
+                }
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
                 case ECHEC -> {
                     echecs.add(destinataire.nomAffiche());
@@ -632,9 +636,10 @@ public class PlanPublicationService {
         }
         traceRepository.recordRecipients(meta.id(), trace);
         envois.recordAll(livraisons);
-        // The first 4.0 publication of the edition settles what V160 warned
-        // about: the people whose 3.x exclusion was set aside are written to.
-        alertes.releaseAll(JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE);
+        // V160's alert says who the next publication will write to: it closes
+        // for the people this one really told, and for them only — somebody
+        // deferred, without an address or whose mail failed keeps it.
+        envoyesA.forEach(id -> alertes.release(JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE, id));
         // The marker moves for the people this publication addressed, and for
         // them only. Somebody it had nothing to say to was told nothing, so
         // claiming they know this plan would turn their next message from

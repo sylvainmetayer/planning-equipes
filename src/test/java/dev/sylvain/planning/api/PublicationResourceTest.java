@@ -12,10 +12,12 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.AlerteService;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
+import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
@@ -168,24 +170,71 @@ class PublicationResourceTest {
         assertThat(publier().getList("avertissements")).isEmpty();
     }
 
-    /** V160's alert is one open question for the whole edition: the first publication closes it. */
+    /** V160's alert says who the next publication writes to: it closes for the people really told. */
     @Test
-    void theFirstPublicationClosesTheRetiredExclusionAlert() {
-        alertes.claim(
-                JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE,
-                "PUB-A",
-                "PUB-A",
-                "Exclusion de publication retirée en 4.0.",
-                JournalNotificationsRepository.Severite.WARNING);
-        assertThat(alerteService.alertes(null))
-                .filteredOn(alerte -> "EXCLUSION_PUBLICATION_RETIREE".equals(alerte.type()))
-                .hasSize(1);
+    void aPublicationClosesTheRetiredExclusionAlertOfThePeopleItTold() {
+        raiseAlert("PUB-A");
+        raiseAlert("PUB-B");
 
         publier();
 
-        assertThat(alerteService.alertes(null))
-                .filteredOn(alerte -> "EXCLUSION_PUBLICATION_RETIREE".equals(alerte.type()))
-                .isEmpty();
+        // Alice was mailed; Bruno has no address, so he still has to be told.
+        assertThat(alertedIds()).containsExactly("PUB-B");
+    }
+
+    @Test
+    void aTargetedPublicationKeepsTheAlertOfThePeopleItDeferred() {
+        raiseAlert("PUB-A");
+        raiseAlert("PUB-B");
+
+        given().header("X-Edition-Id", "E1")
+                .contentType(ContentType.JSON)
+                .body("{\"cibles\":[\"PUB-A\"]}")
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
+
+        assertThat(alertedIds()).containsExactly("PUB-B");
+    }
+
+    @Test
+    void aFailedSendKeepsTheAlert() {
+        QuarkusMock.installMockForType(new BouncingMailService(), MailService.class);
+        raiseAlert("PUB-A");
+
+        assertThat(publier().getList("echecs")).hasSize(1);
+
+        assertThat(alertedIds()).containsExactly("PUB-A");
+    }
+
+    private void raiseAlert(String animateurId) {
+        alertes.claim(
+                JournalNotificationsRepository.Type.EXCLUSION_PUBLICATION_RETIREE,
+                animateurId,
+                animateurId,
+                "Exclusion de publication retirée en 4.0.",
+                JournalNotificationsRepository.Severite.WARNING);
+    }
+
+    private List<String> alertedIds() {
+        return alerteService.alertes(null).stream()
+                .filter(alerte -> "EXCLUSION_PUBLICATION_RETIREE".equals(alerte.type()))
+                .map(alerte -> alerte.animateurId())
+                .toList();
+    }
+
+    /** A mail server refusing every recipient. */
+    private static final class BouncingMailService extends MailService {
+        BouncingMailService() {
+            super(null, null, null, null, null);
+        }
+
+        @Override
+        public void sendPlanningPublie(
+                String animateurId, String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
+            throw new IllegalStateException("550 5.1.1 recipient refused");
+        }
     }
 
     @Test
