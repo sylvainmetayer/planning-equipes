@@ -78,42 +78,30 @@ export class GelReferentielStore {
     }
   }
 
-  /** Freezes `family`; the failure propagates to the caller, which says it. */
+  /**
+   * Freezes `family`; the failure propagates to the caller, which says it.
+   * Since 4.0 the gesture moves the phase of the edition (ADR 0115), which
+   * freezes every family at once: the whole state is read again.
+   */
   async freeze(family: FreezeFamily): Promise<void> {
     this._busy.set(true);
     try {
-      const state = await this.api.freeze(family);
-      this.replace(state);
+      await this.api.freeze(family);
+      await this.read();
     } finally {
       this._busy.set(false);
     }
   }
 
-  /** Lifts the freeze of `family`; the failure propagates to the caller, which says it. */
+  /** Lifts the freeze of `family`, then reads the whole state again (see `freeze`). */
   async lift(family: FreezeFamily): Promise<void> {
     this._busy.set(true);
     try {
       await this.api.lift(family);
-      const current = this.states().find((state) => state.famille === family);
-      if (current) {
-        this.replace({ ...current, fige: false, figeLe: null });
-      } else {
-        await this.reload();
-      }
+      await this.read();
     } finally {
       this._busy.set(false);
     }
-  }
-
-  private replace(state: EtatGel): void {
-    const others = this.states().filter((candidate) => candidate.famille !== state.famille);
-    this._states.set(
-      [...others, state].sort(
-        (left, right) =>
-          FREEZE_FAMILIES.indexOf(left.famille) - FREEZE_FAMILIES.indexOf(right.famille),
-      ),
-    );
-    this.loaded = true;
   }
 }
 

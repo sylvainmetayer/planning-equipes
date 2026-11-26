@@ -143,11 +143,29 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
   A lock for which the plan has no matching seat froze nothing and disappears. The `animateurVerrouilleFige` rule is removed: a staff member is no longer locked "everywhere", so nothing forbids giving them a seat elsewhere, and empty seats are not frozen (as before). The number of rules goes from 47 to 46. The `verrouiller` MCP tool keeps its name; its `type` argument takes `ANIMATEUR_CRENEAU`, `STAND_JOUR` or `JOUR`, and the API refuses the old values with a `400`. The `plan:` section of a YAML file (the one of the copy before a wipe) carries only these three types; a file naming an old one is read with the same conversion, and each converted lock is reported by a warning.
 - **What you do**: nothing for your locks. The locks of older editions are converted the same way. A script or prompt that laid an `ANIMATEUR`, `STAND` or `CRENEAU` lock must lay one lock per timeslot or per day. A copy before a wipe taken in 3.x that contains such locks stays restorable: its locks are converted on reading, the same way, without the stored copy being rewritten.
 
+<<<<<<< HEAD
 ### "Exclude from the publication" is removed
 
 - **Before (3.x)**: the review list of a publication had a box per person, and the "Who received which version" table a "Defer" button: an unticked person received nothing and stayed to be notified. The body of `POST /api/planning/publication` carried `exclusions`, and the MCP tool `publier_planning` an `exclusions` argument.
 - **After (4.0)**: a publication notifies **everybody** concerned. The boxes, the "Defer" button, the `exclusions` field and the MCP argument are gone; a client still sending `exclusions` is read without error and ignored. "Notify only a few people" (`cibles`: the two people of an accepted swap, a replacement) stays, and defers the others as before. Existing exclusions are **ignored**: the deferred person was already to be notified, the next publication writes to them. Migration `V160` stores every person whose last publication line was a deferral in `exclusion_publication_avant_4_0`, which the application no longer reads and 5.0 will drop, and the home screen shows one alert per person, designated **by identifier**, never by name. 3.x did not tell an exclusion deferral from a "notify only a few people" one: the archive keeps them all.
 - **What you do**: before running the first 4.0 publication, read the home alerts (or `SELECT animateur_id FROM exclusion_publication_avant_4_0`): those people will receive their planning. If you wanted to call them first, do it beforehand. A script that sent `exclusions` must use `cibles`. Add the archive to your processing register ([retention](conservation-des-donnees.md#larchive-des-exclusions-de-publication-3x)): `DROP TABLE exclusion_publication_avant_4_0;` removes it with no effect on the application.
+=======
+### The reference data freeze becomes the phase of the edition
+
+- **Before (3.x)**: reference data was frozen family by family (stands, timeslots, game categories and locations, skills), each laid down and lifted on its own in Settings (table `gel_referentiel`). Nothing froze by itself, not even after a publication.
+- **After (4.0)**: an edition has a **phase**, Preparation, Solving, Published or Finished ([ADR 0115](repo:docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md)), and the phase is what freezes. In Solving and Finished, the four families are frozen. In Published, the structure (stands, timeslots, game categories and locations) is frozen but the staff fiches, skills included, stay editable; the structure can be **unblocked** for a last-minute change without leaving the phase, and the next publication freezes it again. **The first publication moves the edition to Published**; every other change of phase is an explicit gesture (`PUT /api/editions/courant/phase`). Consignes, availability, adjustments and locks remain free in every phase, and the frozen past (`PASSE_FIGE`) stays an instance setting, unrelated to the phase.
+- **Migration `V155` derives the phase from the state of each edition, and this mapping loses information**:
+
+| 3.x state | 4.0 phase |
+| --- | --- |
+| At least one publication, no structure family frozen | Published, structure unblocked: nothing closes at the upgrade, the next publication freezes it |
+| At least one publication, a structure family frozen | Published, structure frozen **as a whole** |
+| No publication, at least one family frozen | Solving: the **four** families frozen |
+| No publication, no family frozen | Preparation |
+
+  What is lost: the per-family detail. An edition that had frozen only its stands sees its timeslots, game categories and locations and skills frozen too; a published edition that had frozen its skills finds them editable again; the freeze date of each family becomes a single phase date. The `gel_referentiel` table stays in place, read by nothing and left out of the SQL export, for a way back to 3.x, and 5.0 drops it.
+- **What you do**: after the upgrade, open each ongoing edition and check its phase on the home page ("freeze" block) or with `GET /api/editions/courant`. If a family is frozen while you wanted it open, lift it in Settings, *Edition* tab: in Solving, the edition goes back to Preparation (the four families reopen); in Published, the structure is unblocked. Until 5.0, the `PUT` and `DELETE /api/editions/courant/gel/{famille}` routes and the MCP tools `figer_referentiel` and `lever_gel` remain aliases of the phase (freezing one family in Preparation freezes them all); a script that calls them must move to `PUT /api/editions/courant/phase` and `/api/editions/courant/deblocage-structure` before 5.0. After a publication, a script or import that changed stands or timeslots is refused with `409 REFERENTIEL_FIGE` until the structure is unblocked.
+>>>>>>> origin/main
 
 ### Data and migrations
 

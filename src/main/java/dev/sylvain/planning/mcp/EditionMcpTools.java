@@ -44,7 +44,8 @@ import java.util.stream.Stream;
  *
  * <p>Three tools here work <em>inside</em> an edition rather than on the
  * list — {@code etat_edition}, which reads it, and {@code figer_referentiel}
- * and {@code lever_gel}, which freeze and lift a family of its referential —
+ * and {@code lever_gel}, the 3.x freeze kept as aliases of the phase until
+ * 5.0 (ADR 0115) —
  * hence the {@code @EditionCiblee} on the class: their {@code edition}
  * argument designates the edition to work in, the way every other tool's
  * does. Dropping the annotation would let all three run without an edition.
@@ -158,8 +159,8 @@ public class EditionMcpTools {
                     + "disponibilité en attente, demandes d'échange à arbitrer et celles en alerte, journées non "
                     + "relues des sept jours à venir (aujourd'hui compris), silencieux à relancer, données modifiées depuis la "
                     + "résolution, personnes à prévenir — des comptes et des dates, jamais un nom ; et le bloc gel : les "
-                    + "familles du référentiel figées (stands, créneaux, typologies et emplacements, compétences) et "
-                    + "depuis quand. Chaque ligne porte un "
+                    + "familles du référentiel que la phase de l'édition fige (stands, créneaux, typologies et "
+                    + "emplacements, compétences) et depuis quand. Chaque ligne porte un "
                     + "statut A_FAIRE, ATTENTION, INFO (des chiffres à lire, rien qui bloque) ou FAIT, et les "
                     + "chiffres qui le décident ; aucune donnée nominative. "
                     + "À appeler en premier pour savoir où en est l'organisateur, avant de choisir un outil plus fin.",
@@ -175,15 +176,14 @@ public class EditionMcpTools {
 
     @Tool(
             name = "figer_referentiel",
-            description = "Fige une famille du référentiel de l'édition une fois sa préparation terminée : "
-                    + "STANDS (création, suppression, effectifs, réserve majeurs, typologies proposées, horaires), "
-                    + "CRENEAUX (création, suppression, date, heures, couverture de pause, journées types "
-                    + "appliquées, dérivation, séries), TYPOLOGIES_EMPLACEMENTS (création, suppression, quota par "
-                    + "typologie, typologie polyvalente) ou COMPETENCES (niveaux des animateurs déjà inscrits). "
-                    + "Toute écriture de ces champs est ensuite refusée (REFERENTIEL_FIGE), par tous les chemins, "
-                    + "jusqu'à lever_gel. Restent libres : disponibilités, souhaits, déclarations, ajustements, "
-                    + "verrous et consignes. Distinct de verrouiller, qui fige des sièges du planning. Idempotent : "
-                    + "une famille déjà figée garde sa date.",
+            description = "Ancien nom, gardé jusqu'en 5.0 : la 4.0 remplace le gel par famille par la phase de "
+                    + "l'édition (Préparation, Calcul, Publiée, Terminée). En Préparation, fait passer l'édition en "
+                    + "Calcul, ce qui fige les quatre familles, pas seulement celle nommée : STANDS, CRENEAUX, "
+                    + "TYPOLOGIES_EMPLACEMENTS, COMPETENCES. Dans une édition publiée dont la structure a été "
+                    + "débloquée, refige la structure (stands, créneaux, typologies et emplacements). Ailleurs, ne "
+                    + "change rien. Toute écriture figée est refusée (REFERENTIEL_FIGE), par tous les chemins. "
+                    + "Restent libres : disponibilités, souhaits, déclarations, ajustements, verrous et consignes. "
+                    + "Distinct de verrouiller, qui fige des sièges du planning.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -200,10 +200,13 @@ public class EditionMcpTools {
 
     @Tool(
             name = "lever_gel",
-            description = "Lève le gel d'une famille du référentiel (voir figer_referentiel) : ses fiches "
-                    + "redeviennent modifiables. À ne faire que sur demande explicite : après une publication, "
-                    + "toute modification fera bouger des plannings déjà envoyés. Une bande horaire fermée à "
-                    + "tous les stands passe par une consigne (appliquer_consigne), ouverte même sous gel.",
+            description = "Ancien nom, gardé jusqu'en 5.0 (voir figer_referentiel). En Calcul, ramène l'édition en "
+                    + "Préparation, ce qui rouvre les quatre familles. Dans une édition publiée, débloque la "
+                    + "structure (stands, créneaux, typologies et emplacements) pour un changement de dernière "
+                    + "minute, sans quitter la phase Publiée ; la publication suivante la refige. Refusé dans une "
+                    + "édition terminée. À ne faire que sur demande explicite : après une publication, toute "
+                    + "modification fera bouger des plannings déjà envoyés. Une bande horaire fermée à tous les "
+                    + "stands passe par une consigne (appliquer_consigne), ouverte dans toutes les phases.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

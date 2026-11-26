@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.edition;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.EditionPhase;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -159,15 +160,20 @@ public class EditionRepository {
         List<Edition> editions = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(
-                        "SELECT id, nom, active, cree_le FROM edition ORDER BY cree_le, id");
+                        "SELECT id, nom, active, cree_le, phase, phase_depuis, structure_debloquee FROM edition"
+                                + " ORDER BY cree_le, id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Timestamp creeLe = rs.getTimestamp("cree_le");
-                editions.add(new Edition(
+                Edition edition = new Edition(
                         rs.getString("id"),
                         rs.getString("nom"),
                         rs.getBoolean("active"),
-                        creeLe != null ? creeLe.toInstant() : null));
+                        creeLe != null ? creeLe.toInstant() : null);
+                edition.setPhase(EditionPhase.valueOf(rs.getString("phase")));
+                edition.setPhaseDepuis(rs.getTimestamp("phase_depuis").toInstant());
+                edition.setStructureDebloquee(rs.getBoolean("structure_debloquee"));
+                editions.add(edition);
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to list editions", e);
@@ -263,6 +269,58 @@ public class EditionRepository {
                 ps.executeUpdate();
             }
         });
+    }
+
+    /**
+     * Moves the edition to {@code phase} (ADR 0115). Entering a phase always
+     * leaves the structure frozen: an unblocking belongs to the publication it
+     * was asked under, never to the next phase. The date moves only when the
+     * phase does, so declaring the same phase twice is one declaration.
+     */
+    public void setPhase(String id, EditionPhase phase) {
+        update("Failed to set the phase of edition " + id, """
+                UPDATE edition SET phase_depuis = CASE WHEN phase = ? THEN phase_depuis ELSE now() END,
+                    phase = ?, structure_debloquee = FALSE
+                WHERE id = ?""", phase.name(), phase.name(), id);
+    }
+
+    /**
+     * Unblocks or refreezes the structure of a published edition; {@code false}
+     * when the edition is not {@link EditionPhase#PUBLIEE}, where the flag
+     * means nothing (a check constraint holds it there).
+     */
+    public boolean setStructureDebloquee(String id, boolean debloquee) {
+        return update(
+                        "Failed to unblock the structure of edition " + id,
+                        "UPDATE edition SET structure_debloquee = ? WHERE id = ? AND phase = 'PUBLIEE'",
+                        debloquee,
+                        id)
+                > 0;
+    }
+
+    /**
+     * What a publication does to the phase: a first publication moves the
+     * edition to {@link EditionPhase#PUBLIEE}, a later one keeps it there and
+     * refreezes a structure unblocked meanwhile. A finished edition stays
+     * {@link EditionPhase#TERMINEE}: publishing never reopens anything.
+     */
+    public void markPublished(String id) {
+        update("Failed to mark edition " + id + " published", """
+                UPDATE edition SET phase_depuis = CASE WHEN phase = 'PUBLIEE' THEN phase_depuis ELSE now() END,
+                    phase = 'PUBLIEE', structure_debloquee = FALSE
+                WHERE id = ? AND phase <> 'TERMINEE'""", id);
+    }
+
+    private int update(String failure, String sql, Object... parameters) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(sql)) {
+            for (int i = 0; i < parameters.length; i++) {
+                ps.setObject(i + 1, parameters[i]);
+            }
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException(failure, e);
+        }
     }
 
     /** Leaves no edition active — the state between two events. */

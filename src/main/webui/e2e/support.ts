@@ -339,6 +339,10 @@ export async function seedPlanning(
   });
   expect(importReponse.ok(), await importReponse.text()).toBe(true);
   await publierPlanning(admin);
+  // Publishing moved the edition to PUBLIEE, which freezes its structure (ADR 0115). The fixture
+  // stands for an edition still in preparation, whose stands and timeslots the specs then edit.
+  const phase = await admin.put('/api/editions/courant/phase', { data: { phase: 'PREPARATION' } });
+  expect(phase.ok(), await phase.text()).toBe(true);
 }
 
 /**

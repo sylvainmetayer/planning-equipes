@@ -93,9 +93,6 @@ public class DatabaseDumpService {
             // do — a restore that dropped them would hand the organiser back a
             // plan nobody had read.
             "validation_journee",
-            // The freeze of the referential: which families the organiser
-            // declared ready. A restore without it would reopen them unasked.
-            "gel_referentiel",
             // The edition's consignes (issue #4): a band closed on given dates,
             // the compensation chosen, and the créneaux they added — plus the
             // presets they are made from. They change which seats a solve is
@@ -274,6 +271,10 @@ public class DatabaseDumpService {
      *       the two tables {@code mesure_edition} replaced, kept by V148 and
      *       dropped in 5.0: archives nothing reads, the measures being dumped
      *       from {@code mesure_edition} now.</li>
+     *   <li>{@code gel_referentiel} — the 3.x per-family freeze, replaced by
+     *       the phase of the edition (ADR 0115) and dropped in 5.0: an archive
+     *       nothing reads. The phase travels with the {@code edition} row, so a
+     *       restore does not reopen what the organiser had frozen.</li>
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
@@ -305,7 +306,8 @@ public class DatabaseDumpService {
             "solve_budget_avant_4_0",
             "exclusion_publication_avant_4_0",
             "kpi_historique_avant_4_0",
-            "kpi_realise_avant_4_0");
+            "kpi_realise_avant_4_0",
+            "gel_referentiel");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 

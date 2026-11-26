@@ -12,9 +12,11 @@ import java.lang.annotation.Target;
 /**
  * Marks a service method that writes a family of the referential, and binds
  * {@link RefusedWhileFrozenInterceptor}, which refuses the call in
- * {@code 409 REFERENTIEL_FIGE} while any of {@link #value()} is frozen in the
- * current edition — every family when the list is empty, for the operations
- * that replace the whole edition.
+ * {@code 409 REFERENTIEL_FIGE} while the phase of the current edition freezes
+ * any of {@link #value()} (ADR 0115) — every family when the list is empty,
+ * for the operations that replace the whole edition. The name is the 3.x one,
+ * kept: what the annotation says of a method — it writes these families — did
+ * not change, only what decides they are frozen.
  *
  * <p>On the service, not on the resource or the tool: the service is the one
  * door every path goes through — the form, the bulk edit, a CSV import, an MCP

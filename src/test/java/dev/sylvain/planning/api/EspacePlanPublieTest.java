@@ -16,6 +16,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.edition.EditionPhaseService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.espace.JourJClock;
@@ -68,6 +69,9 @@ class EspacePlanPublieTest {
 
     @Inject
     ReferenceDataService referenceData;
+
+    @Inject
+    EditionPhaseService phases;
 
     @Inject
     MockMailbox mailbox;
@@ -619,10 +623,12 @@ class EspacePlanPublieTest {
      * send.</p>
      */
     @Test
-    void unCreneauSupprimeApresPublicationFaitUnRetraitEtUnDestinataire() {
+    void aTimeslotDeletedAfterPublicationMakesAWithdrawalAndARecipient() {
         persistPlanSurDeuxJours();
         publication.publier();
 
+        // A published edition freezes its structure: the last-minute change unblocks it (ADR 0115).
+        phases.unblockStructure();
         referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
 
         given().header("X-Edition-Id", "E1")
@@ -644,10 +650,12 @@ class EspacePlanPublieTest {
      * then says so in the words that were mailed.
      */
     @Test
-    void laVacationSupprimeeResteAfficheeJusquAuRetraitAnnonce() {
+    void theDeletedShiftStaysShownUntilTheWithdrawalIsAnnounced() {
         persistPlanSurDeuxJours();
         publication.publier();
 
+        // A published edition freezes its structure: the last-minute change unblocks it (ADR 0115).
+        phases.unblockStructure();
         referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
 
         given().header("X-Edition-Id", "E1")
@@ -677,7 +685,7 @@ class EspacePlanPublieTest {
      * new fields could be added without a migration.
      */
     @Test
-    void unInstantanePublieSansDateRetombeSurLaResolutionDuJour() {
+    void aPublishedSnapshotWithoutDateFallsBackOnTheDaysSolve() {
         persistPlanSurDeuxJours();
         publication.publier();
         stripVacationSnapshots();
@@ -690,6 +698,8 @@ class EspacePlanPublieTest {
                 .statusCode(200)
                 .body("postes.size()", equalTo(2));
 
+        // A published edition freezes its structure: the last-minute change unblocks it (ADR 0115).
+        phases.unblockStructure();
         referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
 
         given().header("X-Edition-Id", "E1")

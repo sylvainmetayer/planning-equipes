@@ -1,10 +1,12 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.EditionPhase;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionActivationService;
 import dev.sylvain.planning.service.edition.EditionDelta;
 import dev.sylvain.planning.service.edition.EditionDeltaService;
+import dev.sylvain.planning.service.edition.EditionPhaseService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
@@ -46,6 +48,8 @@ public class EditionResource {
 
     private final GelReferentielService gelService;
 
+    private final EditionPhaseService phaseService;
+
     private final EditionActivationService activationService;
 
     private final EditionDeltaService deltaService;
@@ -58,6 +62,7 @@ public class EditionResource {
             EtatEditionService etatEditionService,
             CoherenceReferentielService coherenceService,
             GelReferentielService gelService,
+            EditionPhaseService phaseService,
             EditionActivationService activationService,
             EditionDeltaService deltaService,
             EditionContext editionContext) {
@@ -67,6 +72,7 @@ public class EditionResource {
         this.etatEditionService = etatEditionService;
         this.coherenceService = coherenceService;
         this.gelService = gelService;
+        this.phaseService = phaseService;
         this.deltaService = deltaService;
     }
 
@@ -116,9 +122,44 @@ public class EditionResource {
         return coherenceService.report();
     }
 
+    /** Body of {@code PUT /api/editions/courant/phase}: the phase to enter. */
+    public record PhaseChange(EditionPhase phase) {}
+
     /**
-     * The freeze of the current edition's referential, family by family
-     * (ADR 0052): which of the four are frozen, and since when.
+     * Declares the phase of the current edition (ADR 0115) — any move,
+     * backwards included — and answers the edition as it now stands. Entering
+     * a phase refreezes a structure unblocked in {@code PUBLIEE}. Accepted
+     * while a solve runs, which read its data at its start.
+     */
+    @PUT
+    @Path("/courant/phase")
+    public Edition setPhase(PhaseChange change) {
+        return phaseService.setPhase(change == null ? null : change.phase());
+    }
+
+    /**
+     * Unblocks the structure of a published edition — stands, timeslots, game
+     * categories, locations — for a last-minute change, without leaving
+     * {@code PUBLIEE}; {@code 409} in any other phase. The next publication,
+     * or {@code DELETE} on this path, freezes it again.
+     */
+    @PUT
+    @Path("/courant/deblocage-structure")
+    public Edition unblockStructure() {
+        return phaseService.unblockStructure();
+    }
+
+    /** Freezes the structure of a published edition again; {@code 409} in any other phase. */
+    @DELETE
+    @Path("/courant/deblocage-structure")
+    public Edition refreezeStructure() {
+        return phaseService.refreezeStructure();
+    }
+
+    /**
+     * The freeze of the current edition's referential, family by family, as
+     * the phase decides it (ADR 0115): which of the four are frozen, and
+     * since when.
      */
     @GET
     @Path("/courant/gel")
@@ -133,20 +174,27 @@ public class EditionResource {
     }
 
     /**
-     * Freezes the family: from now on every write of it is refused in
-     * {@code 409 REFERENTIEL_FIGE}, whatever path it takes. Idempotent — a
-     * family already frozen keeps its date. Accepted while a solve runs, which
-     * read its data at its start.
+     * The 3.x « freeze this family », an alias until 5.0: moves an edition in
+     * preparation to {@code CALCUL}, which freezes the four families, or
+     * refreezes the unblocked structure of a published one. Use
+     * {@code PUT /courant/phase}.
      */
     @PUT
+    @Deprecated
     @Path("/courant/gel/{famille}")
     public GelReferentielService.EtatGel freeze(@PathParam("famille") ReferentialFamily famille) {
         gelService.freeze(famille);
         return gelService.etat(famille);
     }
 
-    /** Lifts the freeze of the family; lifting an open family changes nothing. */
+    /**
+     * The 3.x « lift this family », an alias until 5.0: moves an edition in
+     * {@code CALCUL} back to preparation, which opens the four families, or
+     * unblocks the structure of a published one; {@code 409} in
+     * {@code TERMINEE}. Use {@code PUT /courant/phase}.
+     */
     @DELETE
+    @Deprecated
     @Path("/courant/gel/{famille}")
     public GelReferentielService.EtatGel lift(@PathParam("famille") ReferentialFamily famille) {
         gelService.lift(famille);
