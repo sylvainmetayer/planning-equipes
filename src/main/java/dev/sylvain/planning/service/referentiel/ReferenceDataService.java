@@ -233,7 +233,9 @@ public class ReferenceDataService implements ReferenceData {
 
     @Override
     public List<FenetreRepas> fenetresRepas() {
-        return FenetreRepas.from(getParametresLegaux(), consignes.list());
+        return FenetreRepas.withPlacement(
+                FenetreRepas.from(getParametresLegaux(), consignes.list()),
+                getParametresQualite().placementRepas());
     }
 
     public Stand createStand(Stand stand) {

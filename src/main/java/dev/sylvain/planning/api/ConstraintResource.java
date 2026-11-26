@@ -244,6 +244,7 @@ public class ConstraintResource {
                 definition.activeByDefault(),
                 definition.dosable(),
                 definition.niveauReglable(),
+                ConstraintCatalog.TERMES.get(definition.name()),
                 choisi,
                 weight,
                 diagnostic == null ? null : diagnostic.score(),
@@ -283,6 +284,10 @@ public class ConstraintResource {
      *                    « Qualité d'organisation »)
      * @param niveauReglable whether this edition chooses the level of the rule
      *                    (ADR 0106): an organisation rule, never a legal one
+     * @param termeDe     the rule this one is a scoring term of, {@code null}
+     *                    for a rule that stands on its own: a term has no row
+     *                    of its own on the rules screen, it is read through
+     *                    the rule it belongs to (ADR 0123)
      * @param niveauChoisi the level the rule has on this edition,
      *                    {@code OBLIGATOIRE} or a preference position read from
      *                    its weight; {@code null} when the level is not the
@@ -359,6 +364,7 @@ public class ConstraintResource {
             boolean activeByDefault,
             boolean dosable,
             boolean niveauReglable,
+            String termeDe,
             ConstraintCatalog.NiveauRegle niveauChoisi,
             int poids,
             String score,

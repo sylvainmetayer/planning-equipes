@@ -180,6 +180,7 @@ final class FlatProblem {
     int[] mwClose;
     int[] mwDur;
     boolean[] mwLate;
+    boolean[] mwNoPlacement;
     boolean[][] mwOn;
     int adultWeekly;
     int pauseMinor;
@@ -640,6 +641,7 @@ final class FlatProblem {
         mwClose = new int[meals.size()];
         mwDur = new int[meals.size()];
         mwLate = new boolean[meals.size()];
+        mwNoPlacement = new boolean[meals.size()];
         mwOn = new boolean[meals.size()][nDays];
         for (int m = 0; m < meals.size(); m++) {
             FenetreRepas f = meals.get(m);
@@ -647,6 +649,7 @@ final class FlatProblem {
             mwClose[m] = f.finMinutes();
             mwDur[m] = f.dureeMinutes();
             mwLate[m] = f.auPlusTard();
+            mwNoPlacement[m] = f.sansPlacement();
             for (int d = 0; d < nDays; d++) {
                 mwOn[m][d] = f.appliesTo(first.plusDays(d));
             }

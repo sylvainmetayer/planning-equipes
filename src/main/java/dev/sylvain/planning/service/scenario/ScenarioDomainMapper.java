@@ -149,8 +149,11 @@ final class ScenarioDomainMapper {
         // block, which no assignment could satisfy. A file that declares
         // nothing inherits the defaults, exactly like an edition that never
         // configured them.
-        evenement.setFenetresRepas(
-                FenetreRepas.from(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)));
+        evenement.setFenetresRepas(FenetreRepas.withPlacement(
+                FenetreRepas.from(parametresLegaux(scenario.parametresLegaux()).orElseGet(parametresLegauxParDefaut)),
+                parametresQualite(scenario.parametresQualite())
+                        .orElseGet(ParametresQualite::new)
+                        .placementRepas()));
         // Same reasoning as the ad hoc constraints above, for the dosage: a file
         // that pins its weights describes the problem it was verified against,
         // and solving it must apply them whether or not it was ever imported.
@@ -752,7 +755,9 @@ final class ScenarioDomainMapper {
                 dto.toleranceTrajetMinutes() != null ? dto.toleranceTrajetMinutes() : defauts.toleranceTrajetMinutes(),
                 dto.toleranceArriveeGroupeeMinutes() != null
                         ? dto.toleranceArriveeGroupeeMinutes()
-                        : defauts.toleranceArriveeGroupeeMinutes()));
+                        : defauts.toleranceArriveeGroupeeMinutes(),
+                dto.placementRepas() != null ? dto.placementRepas() : defauts.placementRepas(),
+                null));
     }
 
     /**

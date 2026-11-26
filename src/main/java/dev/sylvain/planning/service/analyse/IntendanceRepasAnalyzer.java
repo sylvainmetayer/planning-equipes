@@ -36,8 +36,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * (issue #598).</p>
  *
  * <p><b>When</b> is where {@link PauseAnalyzer} places the break — as early as
- * the free stretch allows — not where {@code FenetreRepas.auPlusTard} says the
- * organisation would rather it fell (issue #596). The two screens then read
+ * the free stretch allows — not where the edition's {@code placementRepas} setting
+ * (and so {@code FenetreRepas.auPlusTard}) says the organisation would rather it
+ * fell (issue #596, ADR 0123). The two screens then read
  * the same day the same way; the day a break is reported where it is
  * <i>preferred</i> rather than where it first fits, both move together.</p>
  *

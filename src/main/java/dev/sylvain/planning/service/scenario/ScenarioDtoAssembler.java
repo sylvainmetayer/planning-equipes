@@ -399,7 +399,8 @@ final class ScenarioDtoAssembler {
                         parametres.vitesseMarcheKmH(),
                         parametres.facteurDetour(),
                         parametres.toleranceTrajetMinutes(),
-                        parametres.toleranceArriveeGroupeeMinutes());
+                        parametres.toleranceArriveeGroupeeMinutes(),
+                        parametres.placementRepas());
     }
 
     /** Only the fields a scenario file is read back with. */

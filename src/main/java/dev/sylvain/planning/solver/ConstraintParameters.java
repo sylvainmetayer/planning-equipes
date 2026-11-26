@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PlacementRepas;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
@@ -59,6 +60,7 @@ public final class ConstraintParameters {
     private static final String COUPURE_REPAS_MINUTES = "coupureRepasMinutes";
     private static final String COUPURE_REPAS_MIDI = "coupureRepasMidi";
     private static final String COUPURE_REPAS_SOIR = "coupureRepasSoir";
+    private static final String PLACEMENT_REPAS = "placementRepas";
     private static final String JOURS_CONSECUTIFS_MAX = "joursConsecutifsMax";
 
     private ConstraintParameters() {}
@@ -125,6 +127,11 @@ public final class ConstraintParameters {
                             contexte -> plage(
                                     contexte.legaux().getCoupureRepasSoirDebut(),
                                     contexte.legaux().getCoupureRepasSoirFin()))),
+            Map.entry(
+                    PLACEMENT_REPAS,
+                    new Reference(
+                            "Placement préféré de la coupure repas",
+                            contexte -> placement(contexte.qualite().placementRepas()))),
             Map.entry(
                     "maxEmplacementsDistinctsParJour",
                     new Reference(
@@ -197,10 +204,11 @@ public final class ConstraintParameters {
             Map.entry("dureeHebdomadaireMaxDeuxSemaines", List.of(DUREE_HEBDOMADAIRE_MAX_MINUTES, DUREE_PAUSE_MINUTES)),
             Map.entry("travailContinuMax", List.of(DUREE_PAUSE_MINUTES)),
             Map.entry(
-                    "coupureRepasObligatoire", List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),
+                    "coupureRepasObligatoire",
+                    List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR, PLACEMENT_REPAS)),
             Map.entry(
                     "coupureRepasPlacementPrefere",
-                    List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),
+                    List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR, PLACEMENT_REPAS)),
             Map.entry("limiterEmplacementsParJour", List.of("maxEmplacementsDistinctsParJour")),
             Map.entry("arriveeGroupee", List.of("toleranceArriveeGroupeeMinutes")),
             Map.entry(
@@ -259,6 +267,15 @@ public final class ConstraintParameters {
         int heures = minutes / 60;
         int reste = minutes % 60;
         return reste == 0 ? heures + " h" : heures + " h " + String.format("%02d", reste);
+    }
+
+    private static String placement(PlacementRepas placement) {
+        return switch (placement) {
+            case FIN_MIDI_DEBUT_SOIR -> "fin du midi, début du soir";
+            case DEBUT -> "début de la fenêtre";
+            case FIN -> "fin de la fenêtre";
+            case AUCUN -> "aucun";
+        };
     }
 
     private static String heure(LocalTime heure) {

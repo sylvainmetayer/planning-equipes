@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.PlacementRepas;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
@@ -198,6 +201,40 @@ class HandSearchDifferentialTest {
         agree(null, loaded, "break of 90 minutes, overloaded");
         relayed += loaded.refereeBreakdown().getOrDefault("travailContinuMax", 0L);
         assertThat(relayed).as("unrelayed breaks compared").isPositive();
+    }
+
+    /**
+     * The meal-break placement (ADR 0123) moves where the soft term counts, not
+     * the rule: the two engines must score every value alike, and the term must
+     * bite wherever it is not switched off.
+     */
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(PlacementRepas.class)
+    void scoresTheMealPlacementLikeTheConstraintProviderForEachValue(PlacementRepas placement) {
+        HandSearchFixtures.Loaded loaded =
+                HandSearchFixtures.load("gamme-09-4j-6stands-14animateurs-typologies-polyvalente-emplacements.yaml");
+        loaded.problem()
+                .setFenetresRepas(FenetreRepas.withPlacement(loaded.problem().getFenetresRepas(), placement));
+        assertThat(loaded.problem().getFenetresRepas())
+                .as("meal windows of the fixture")
+                .isNotEmpty();
+        SplittableRandom random = new SplittableRandom(placement.ordinal());
+        long placementPoints = 0;
+        for (int i = 0; i < 4; i++) {
+            HandSearchFixtures.sparsePlan(loaded.problem(), random);
+            agree(null, loaded, "placement " + placement + ", without double booking " + i);
+            placementPoints += loaded.refereeBreakdown().getOrDefault("coupureRepasPlacementPrefere", 0L);
+        }
+        HandSearchFixtures.search(loaded.problem(), 1, 0);
+        agree(null, loaded, "placement " + placement + ", searched");
+        placementPoints += loaded.refereeBreakdown().getOrDefault("coupureRepasPlacementPrefere", 0L);
+        if (placement == PlacementRepas.AUCUN) {
+            assertThat(placementPoints).as("no placement, no preference").isZero();
+        } else {
+            assertThat(placementPoints)
+                    .as("the preference was compared above zero")
+                    .isPositive();
+        }
     }
 
     /**

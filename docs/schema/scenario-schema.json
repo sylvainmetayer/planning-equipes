@@ -546,6 +546,9 @@
           "format" : "int32",
           "exclusiveMinimum" : 0
         },
+        "placementRepas" : {
+          "$ref" : "#/$defs/PlacementRepas"
+        },
         "reposSouhaiteApresServiceTardifMinutes" : {
           "type" : "integer",
           "format" : "int32",
@@ -575,6 +578,10 @@
           "maximum" : 15
         }
       }
+    },
+    "PlacementRepas" : {
+      "type" : "string",
+      "enum" : [ "FIN_MIDI_DEBUT_SOIR", "DEBUT", "FIN", "AUCUN" ]
     },
     "PlanDto" : {
       "type" : "object",

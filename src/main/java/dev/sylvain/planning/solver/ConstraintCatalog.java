@@ -633,17 +633,23 @@ public final class ConstraintCatalog {
                             + "règle d'organisation de l'événement, tenue en dur par choix. La pause légale et "
                             + "la coupure repas restent deux choses distinctes : la coupure d'une heure ne tient "
                             + "pas lieu de relais, et un relais ne tient pas lieu de repas — même si un trou "
-                            + "d'une heure coupe bien la séquence de six heures au passage.",
+                            + "d'une heure coupe bien la séquence de six heures au passage. Entre deux coupures "
+                            + "possibles, un terme souple (coupureRepasPlacementPrefere, poids 1, sans niveau) "
+                            + "préfère celle que règle le paramètre « placement de la coupure repas » : fin du "
+                            + "midi et début du soir par défaut, début ou fin de chaque fenêtre, ou aucune "
+                            + "préférence.",
                     "Coupure repas"),
             new ConstraintDefinition(
                     "coupureRepasPlacementPrefere",
                     Niveau.SOFT,
                     CATEGORIE_PREFERENCES,
-                    "Entre deux coupures repas possibles dans la même fenêtre, préférer celle vers laquelle la "
-                            + "fenêtre penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands "
-                            + "viennent d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite. La couverture des "
-                            + "stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la "
-                            + "rotation.",
+                    "Terme de « Coupure repas » : entre deux coupures possibles dans la même fenêtre, préférer "
+                            + "celle que règle le paramètre de placement. Par défaut, vers laquelle la fenêtre "
+                            + "penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands viennent "
+                            + "d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite ; « début » ou « fin » "
+                            + "imposent le même sens aux deux fenêtres, « aucun » éteint la préférence. La "
+                            + "couverture des stands, elle, est dure : c'est son arbitrage avec cette préférence "
+                            + "qui répartit la rotation.",
                     "Placement de la coupure repas"),
             new ConstraintDefinition(
                     "indisponibiliteForcee",
@@ -875,6 +881,16 @@ public final class ConstraintCatalog {
             .filter(definition -> definition.niveau() == Niveau.HARD)
             .map(ConstraintDefinition::name)
             .collect(Collectors.toUnmodifiableSet());
+
+    /**
+     * The rules that are a scoring term of another rather than a rule of their
+     * own, mapped to the rule they belong to: {@code coupureRepasPlacementPrefere}
+     * is read through « Coupure repas », whose placement setting tunes it
+     * (ADR 0123). The term keeps its own constraint, weight and toggle — a level
+     * would be meaningless on a preference, and merging it into the hard
+     * rule made four scenarios out of six infeasible — but no row of its own.
+     */
+    public static final Map<String, String> TERMES = Map.of("coupureRepasPlacementPrefere", COUPURE_REPAS_OBLIGATOIRE);
 
     /** Marks a rule of {@link #ANCIENS_NOMS} removed in 4.0 rather than renamed. */
     public static final String RETIREE = "retirée";

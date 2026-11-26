@@ -1044,7 +1044,9 @@ final class IncrementalScore {
                 if (biggest < need) {
                     cost += cost(Rule.COUPURE_REPAS_OBLIGATOIRE, need - biggest);
                 } else {
-                    int off = flat.mwLate[m] ? Math.max(0, close - need - lastGap) : firstGap - open;
+                    int off = flat.mwNoPlacement[m]
+                            ? 0
+                            : flat.mwLate[m] ? Math.max(0, close - need - lastGap) : firstGap - open;
                     if (off > 0) {
                         cost += cost(Rule.COUPURE_REPAS_PLACEMENT_PREFERE, off);
                     }

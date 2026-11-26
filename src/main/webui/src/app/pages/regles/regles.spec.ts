@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ConstraintView, ParametresLegaux } from '../../core/models';
 import {
+  BLOCS_REGLES,
   SEUILS,
   articlesOf,
   hasChanges,
@@ -86,6 +87,26 @@ describe('regles', () => {
     ]);
     expect(rulesOfBloc(rules, 'organisation').map((each) => each.name)).toEqual(['qualite']);
     expect(rulesOfBloc(rules, 'avance').map((each) => each.name)).toEqual(['affectation']);
+  });
+
+  it('lists a scoring term of another rule nowhere: it is read through that rule', () => {
+    const rules = [
+      rule({ name: 'repas', niveau: 'HARD', niveauReglable: true }),
+      rule({ name: 'repasPlacement', niveau: 'SOFT', termeDe: 'repas' }),
+    ];
+
+    expect(
+      BLOCS_REGLES.flatMap((bloc) => rulesOfBloc(rules, bloc)).map((each) => each.name),
+    ).toEqual(['repas']);
+  });
+
+  it('shows and stores the meal-break placement as the value it is', () => {
+    const descriptor = SEUILS['placementRepas'];
+    const stored = { placementRepas: 'DEBUT' };
+
+    expect(shownValue(descriptor, 'placementRepas', stored, {})).toBe('DEBUT');
+    expect(shownValue(descriptor, 'placementRepas', stored, { placementRepas: 'FIN' })).toBe('FIN');
+    expect(storedValue(descriptor, 'AUCUN')).toBe('AUCUN');
   });
 
   it('finds the articles a description cites, once each', () => {
