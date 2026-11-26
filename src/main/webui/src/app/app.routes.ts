@@ -267,6 +267,19 @@ const FORMER_DEBUG_TABS: Readonly<Record<string, string>> = {
   yaml: 'verifier',
 };
 
+/**
+ * `/aujourdhui?onglet=realise`, the tab the realised had until 4.0, lands on
+ * the Mesures d'édition, its other query params kept.
+ */
+export const redirectFormerRealiseTab: CanActivateFn = (route) => {
+  if (route.queryParamMap.get('onglet') !== 'realise') {
+    return true;
+  }
+  const queryParams = { ...route.queryParams };
+  delete queryParams['onglet'];
+  return inject(Router).createUrlTree(['/mesures'], { queryParams });
+};
+
 function redirectFormerDebugTabs(route: { queryParamMap: { get(name: string): string | null } }) {
   if (route.queryParamMap.get('focus') === TODAY_ANCHOR) {
     return inject(Router).createUrlTree(['/parametres'], {
@@ -438,15 +451,26 @@ const adminRoutes: Routes = [
     // The event day's hub (ADR 0066): what « Mode jour J » became.
     path: 'aujourdhui',
     title: () => $localize`:@@route.aujourdhui:Aujourd'hui`,
-    data: { aide: 'jour-j', aideOnglets: { realise: 'realise' } },
+    data: { aide: 'jour-j' },
+    canActivate: [redirectFormerRealiseTab],
     loadComponent: () => import('./pages/jour-j/jour-j-page').then((m) => m.JourJPage),
+  },
+  {
+    // What an edition leaves behind (issue #272): the realised against the
+    // published plan, and the indicators of its solves, as two views
+    // (`?vue=realise`, the default, or `?vue=indicateurs`).
+    path: 'mesures',
+    title: () => $localize`:@@route.mesures:Mesures d'édition`,
+    data: { aide: 'realise' },
+    loadComponent: () => import('./pages/mesures/mesures-page').then((m) => m.MesuresPage),
   },
   // The former address, kept for the bookmarks and the links already sent;
   // its query parameters travel with it.
   { path: 'jour-j', redirectTo: redirectKeepingQuery('aujourdhui') },
   // The gap between the published plan and the plan held, per stand and per
-  // elapsed day, became the « Réalisé vs planifié » tab of Aujourd'hui.
-  { path: 'realise', redirectTo: redirectToOnglet('aujourdhui', 'realise') },
+  // elapsed day, was the « Réalisé vs planifié » tab of Aujourd'hui: it is a
+  // view of the Mesures d'édition since 4.0.
+  { path: 'realise', redirectTo: redirectKeepingQuery('mesures') },
   {
     path: 'diagnostic',
     title: () => $localize`:@@route.diagnostic:Diagnostic`,

@@ -454,19 +454,22 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and `mesure` (what a figure counts beyond a statut: the colleague's answer,
   the requests a delay was measured over) read by the server, `statuts`,
   `dirigees`, `prevalidee`, `jour`, `stand`, `contrainte` — shown as removable
-  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — two tabs chosen by
-  `?onglet=`: the day-of hub, and `?onglet=realise` the former `/realise`
-  (described there); the hub:
-  `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
+  chips; opened on that tab, the page loads no list), `/aujourdhui` (« Aujourd'hui » — the day-of hub, its former
+  `?onglet=realise` tab now a view of `/mesures`, which the route guard sends
+  there; the hub: `pages/jour-j/`, `/jour-j` redirecting to it with its query params: a
   search over the whole roster — name, id or phone —, mark somebody absent,
   repair the seats they held — the timeslot under way included, split at
   « now » server-side (ADR 0066) —, « Chercher plus loin » when the first
   twenty candidates hold nobody viable, the new holes told from the published ones, « Prévenir les N
   personnes » through the targeted publication, « Fermer des stands demain »,
-  the TV link), `/realise` (a redirect to `/aujourdhui?onglet=realise`:
+  the TV link), `/mesures` (« Mesures d'édition », issue #272, ADR 0113 —
+  two views chosen by `?vue=`, hosted by `pages/mesures/`: `realise`, the
+  default, and `indicateurs`, the history of every finished solve across
+  editions with its delete; `/realise` redirects there; the API is
+  `/api/mesures-edition`, the 3.x paths staying deprecated aliases until 5.0).
   « Réalisé vs planifié » — the gap between the
   published plan and the plan held over the elapsed days, read from
-  `GET /api/planning/realise`: the declared-realised notice, the event's
+  `GET /api/mesures-edition/realise`: the declared-realised notice, the event's
   figures, the shared `pages/planning-grille` with one line per stand and one
   column per counted day, each cell coloured by its worst gap and opening its
   shifts under the grid — holders named, on this admin screen only — kept as

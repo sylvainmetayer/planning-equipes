@@ -19,11 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The frozen measure of finished editions ({@code kpi_realise}): one row per
+ * The frozen measure of finished editions ({@code mesure_edition}, nature {@code REALISE}; the
+ * former {@code kpi_realise}): one row per
  * edition and game category, and one for the whole event under the empty
  * game category id.
  *
- * <p>Like {@code kpi_historique}, the table carries no foreign key and keeps
+ * <p>Like the indicators history, the table carries no foreign key and keeps
  * the names it shows: the measure outlives the edition it describes, since
  * the edition that reads it is the next one. Writing goes through the
  * edition's own scope — the service enters each edition before caching
@@ -36,14 +37,15 @@ public class RealisedHistoryRepository {
     /** The game category id of the whole event's row. */
     static final String EVENT_ROW = "";
 
-    private static final String EXISTS = "SELECT 1 FROM kpi_realise WHERE edition_id = ? LIMIT 1";
+    private static final String EXISTS =
+            "SELECT 1 FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ? LIMIT 1";
 
     private static final String INSERT = """
- INSERT INTO kpi_realise (edition_id, typologie_id, edition_nom, typologie_nom, premier_jour, dernier_jour,
- jours_comptes, sieges_publies, sieges_tenus, absences, remplacements, sieges_vides, sieges_retires,
- sieges_ajoutes, minutes_publiees, minutes_realisees, minutes_perdues, fige_le)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
- ON CONFLICT (edition_id, typologie_id) DO NOTHING""";
+ INSERT INTO mesure_edition (nature, edition_id, typologie_id, edition_nom, typologie_nom, premier_jour,
+ dernier_jour, jours_comptes, sieges_publies, sieges_tenus, absences, remplacements, sieges_vides, sieges_retires,
+ sieges_ajoutes, minutes_publiees, minutes_realisees, minutes_perdues, cree_le)
+ VALUES ('REALISE', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ ON CONFLICT (edition_id, typologie_id) WHERE nature = 'REALISE' DO NOTHING""";
 
     /**
      * The event row of the edition whose event ended last before {@code
@@ -57,17 +59,17 @@ public class RealisedHistoryRepository {
      * whatever the order they were cached in.</p>
      */
     private static final String SELECT_PREVIOUS_EVENT = """
- SELECT edition_id, edition_nom, premier_jour, dernier_jour, jours_comptes, fige_le
- FROM kpi_realise
- WHERE edition_id <> ? AND typologie_id = '' AND dernier_jour < ?
- ORDER BY dernier_jour DESC, jours_comptes DESC, fige_le ASC, edition_id
+ SELECT edition_id, edition_nom, premier_jour, dernier_jour, jours_comptes, cree_le AS fige_le
+ FROM mesure_edition
+ WHERE nature = 'REALISE' AND edition_id <> ? AND typologie_id = '' AND dernier_jour < ?
+ ORDER BY dernier_jour DESC, jours_comptes DESC, cree_le ASC, edition_id
  LIMIT 1""";
 
     private static final String SELECT_ROWS = """
  SELECT typologie_id, typologie_nom, sieges_publies, absences, remplacements, sieges_vides, sieges_retires,
  sieges_ajoutes, minutes_publiees, minutes_realisees, minutes_perdues
- FROM kpi_realise
- WHERE edition_id = ?
+ FROM mesure_edition
+ WHERE nature = 'REALISE' AND edition_id = ?
  ORDER BY typologie_nom, typologie_id""";
 
     private final JdbcEditionScope scope;

@@ -20,7 +20,7 @@ The application opens on the **edition status**, which tells you where you stand
 | Understand | When a schedule is not feasible or leaves seats empty, the application says why and what is best to fix first | [Understand a stuck schedule](comprendre-un-planning.md), [View the schedule](consulter-planning.md) |
 | Share | Publish the schedule, send each staff member their own (PDF, calendar), then follow who has received and confirmed it | [Publish the schedule](publier-planning.md) |
 | Event day | The *Today* screen shows the day under way, the gaps to fill and the unforeseen; the wall display shows the day on a television in the control room | [Follow the event day](suivre-le-jour-j.md) |
-| After | Compare planned and realised (the *Realised vs planned* tab of the Today screen), archive the event, start from this edition for the next one | [Chain editions](enchainer-les-editions.md), [Import and export files](importer-exporter.md) |
+| After | Compare planned and realised (the *Realised vs planned* view of the Edition measures screen), archive the event, start from this edition for the next one | [Chain editions](enchainer-les-editions.md), [Import and export files](importer-exporter.md) |
 
 ## Reading the edition status
 

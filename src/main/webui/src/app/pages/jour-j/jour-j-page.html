@@ -1,19 +1,11 @@
 <h1 class="page-title" i18n="@@nav.link.aujourdhui">Aujourd'hui</h1>
-<mat-button-toggle-group class="page-onglets" [value]="ongletsPage.onglet()" (change)="ongletsPage.changer($event.value)"
-                         aria-label="Onglet de la page Aujourd'hui" i18n-aria-label="@@aujourdhui.onglet.label">
-  <mat-button-toggle value="jour">
-    <mat-icon>emergency</mat-icon>
-    <ng-container i18n="@@aujourdhui.onglet.jour">La journée</ng-container>
-  </mat-button-toggle>
-  <mat-button-toggle value="realise">
+<!-- Where the « Réalisé vs planifié » tab stood until 4.0: the measure lives in the Mesures d'édition now. -->
+<p class="jour-j-mesures">
+  <a matButton routerLink="/mesures">
     <mat-icon>balance</mat-icon>
-    <ng-container i18n="@@nav.link.realise">Réalisé vs planifié</ng-container>
-  </mat-button-toggle>
-</mat-button-toggle-group>
-
-@if (ongletsPage.onglet() === 'realise') {
-  <app-realise-page />
-} @else {
+    <ng-container i18n="@@aujourdhui.lienMesures">Réalisé vs planifié, dans les Mesures d'édition</ng-container>
+  </a>
+</p>
 <mat-card appearance="outlined" class="page-card jour-j-entete">
   <mat-card-header>
     <mat-card-subtitle>
@@ -387,5 +379,4 @@
       </ul>
     </mat-card-content>
   </mat-card>
-}
 }

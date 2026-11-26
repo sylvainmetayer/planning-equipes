@@ -580,14 +580,17 @@ Single Quarkus service, no separate solver microservice. Package root:
   application has four `@Scheduled`, not five): `RealisedVsPlannedService.report`
   answers from the plan, and the first report asked once the edition's last
   timeslot has ended, with something published, writes the measure into
-  `kpi_realise` as a cache, where the next edition reads it. **It writes
+  `mesure_edition` as a cache, where the next edition reads it. **It writes
   once**: an edition that has its rows is left alone (`ON CONFLICT DO NOTHING`
-  behind the check), so `fige_le` is the first read after the event; a report
+  behind the check), so `cree_le` of the `REALISE` rows is the first read after the event; a report
   whose past is not frozen is not cached and is logged; a failed write is
   logged, never propagated; re-freezing is an operator's SQL `DELETE` of the
-  edition's rows, never a route. `kpi_realise` carries no foreign key and
-  keeps the names it shows, like `kpi_historique`: the measure outlives the
-  deletion of its edition.
+  edition's `REALISE` rows, never a route. `mesure_edition` (V148: the former
+  `kpi_historique` — the indicators of each solve, `INDICATEURS` — and
+  `kpi_realise`, kept as `*_avant_4_0` archives until 5.0) carries no foreign
+  key and keeps the names it shows: the measure outlives the deletion of its
+  edition. Its routes are `/api/mesures-edition/*`; `/api/kpi/historique` and
+  `/api/planning/realise` stay deprecated aliases until 5.0.
   The measure itself is `RealisedVsPlannedAnalyzer`, over
   `ChangementsJourneeService.compareSeats` — never a comparison of its own —
   each day elapsed (its last timeslot over) against the publication in force

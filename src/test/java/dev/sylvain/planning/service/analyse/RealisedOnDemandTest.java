@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.analyse;
 
 import static io.restassured.RestAssured.given;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -36,6 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,6 +95,9 @@ class RealisedOnDemandTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    RealisedHistoryRepository history;
+
     /** The editions a test created, deleted when it ends. */
     private final List<String> creees = new ArrayList<>();
 
@@ -101,7 +109,7 @@ class RealisedOnDemandTest {
         debut = Instant.now();
         String edition = editionContext.editionIdCourant();
         execute("DELETE FROM version_plan WHERE edition_id = ?", edition);
-        execute("DELETE FROM kpi_realise WHERE edition_id = ?", edition);
+        execute("DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?", edition);
         persistence.clearDatabase();
     }
 
@@ -109,13 +117,16 @@ class RealisedOnDemandTest {
     void cleanUp() {
         clock.setMocked(null, null);
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("DELETE FROM kpi_realise WHERE fige_le >= ?")) {
+                PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM mesure_edition WHERE nature = 'REALISE' AND cree_le >= ?")) {
             ps.setTimestamp(1, Timestamp.from(debut));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
-        execute("DELETE FROM kpi_realise WHERE edition_id = ?", editionContext.editionIdCourant());
+        execute(
+                "DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?",
+                editionContext.editionIdCourant());
         for (String edition : creees) {
             editionService.delete(edition);
         }
@@ -147,6 +158,48 @@ class RealisedOnDemandTest {
         assertThat(rows(edition)).isEqualTo(premiere);
         assertThat(journal.page(new HistoryFilter(List.of("REALISE_FIGE"), false, null, null), null, 1000))
                 .hasSize(journalAvant + 1);
+    }
+
+    /**
+     * Two readings that both found nothing cached write at the same instant:
+     * the partial unique index makes the second one write nothing, and the
+     * measure — its freeze instant included — is the first writer's alone.
+     */
+    @Test
+    void twoReadingsRacingPastTheCheckWriteTheMeasureOnce() throws Exception {
+        persistence.persist(RealisedVsPlannedServiceTest.planOn("RVJ-", Set.of("STRATEGIE"), 970_340_000L, JOUR1));
+        publishAt(AVANT_EVENEMENT);
+        String edition = editionContext.editionIdCourant();
+        // Before the last timeslot ends: answered, not cached.
+        RealisedVsPlanned report = service.report(JOUR3.atTime(11, 0));
+        assertThat(rows(edition)).isEmpty();
+        Instant first = Instant.parse("2027-08-12T00:00:00Z");
+        CyclicBarrier start = new CyclicBarrier(2);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            List<Future<Integer>> writes = new ArrayList<>();
+            for (Instant at : List.of(first, first.plusSeconds(3600))) {
+                writes.add(pool.submit(() -> editionContext.executeIn(edition, () -> {
+                    start.await(10, SECONDS);
+                    return history.insert("Édition", JOUR1, JOUR3, report, at);
+                })));
+            }
+            int written = 0;
+            for (Future<Integer> write : writes) {
+                written += write.get(30, SECONDS);
+            }
+
+            List<String> rows = rows(edition);
+            assertThat(rows).hasSize(2);
+            assertThat(written).isEqualTo(rows.size());
+            assertThat(rows.stream()
+                            .map(row -> row.substring(row.lastIndexOf('|')))
+                            .distinct())
+                    .as("every row from one writer")
+                    .hasSize(1);
+        } finally {
+            pool.shutdownNow();
+        }
     }
 
     private static final LocalDate JOUR_PASSE = LocalDate.of(2020, 8, 9);
@@ -284,8 +337,8 @@ class RealisedOnDemandTest {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
                         SELECT typologie_id, premier_jour, dernier_jour, jours_comptes, sieges_publies, absences,
-                               remplacements, sieges_vides, minutes_perdues, fige_le
-                        FROM kpi_realise WHERE edition_id = ? ORDER BY typologie_id""")) {
+                               remplacements, sieges_vides, minutes_perdues, cree_le
+                        FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ? ORDER BY typologie_id""")) {
             ps.setString(1, editionId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

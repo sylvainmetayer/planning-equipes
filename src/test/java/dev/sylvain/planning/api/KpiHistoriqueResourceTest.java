@@ -31,7 +31,7 @@ class KpiHistoriqueResourceTest {
     void everySolveWritesAKpiHistoryLine() {
         int avant = given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/kpi/historique")
+                .get("/api/mesures-edition/indicateurs")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -43,7 +43,7 @@ class KpiHistoriqueResourceTest {
 
         JsonPath historique = given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/kpi/historique")
+                .get("/api/mesures-edition/indicateurs")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -61,7 +61,7 @@ class KpiHistoriqueResourceTest {
         persistedPlan();
         long id = given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/kpi/historique")
+                .get("/api/mesures-edition/indicateurs")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -70,14 +70,46 @@ class KpiHistoriqueResourceTest {
 
         given().header("X-Edition-Id", "E1")
                 .when()
-                .delete("/api/kpi/historique/" + id)
+                .delete("/api/mesures-edition/indicateurs/" + id)
                 .then()
                 .statusCode(204);
         given().header("X-Edition-Id", "E1")
                 .when()
-                .delete("/api/kpi/historique/" + id)
+                .delete("/api/mesures-edition/indicateurs/" + id)
                 .then()
                 .statusCode(404);
+    }
+
+    /** The 3.x path stays an alias of the new one until 5.0: same rows, same ids. */
+    @Test
+    void theFormerPathServesTheSameRowsUntil5() {
+        List<Object> nouveau = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mesures-edition/indicateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id");
+        List<Object> ancien = given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/kpi/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("id");
+        assertThat(ancien).isEqualTo(nouveau);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/planning/realise/precedente")
+                .then()
+                .statusCode(200);
+        given().header("X-Edition-Id", "E1")
+                .when()
+                .get("/api/mesures-edition/realise/precedente")
+                .then()
+                .statusCode(200);
     }
 
     private void persistedPlan() {

@@ -13,7 +13,7 @@ import { heures, pourcentage } from '../realise/mesure';
 /**
  * « Réalisé de l'édition précédente » on the Versions page: the measure the
  * nightly job froze at the end of the previous event, read from
- * `GET /api/planning/realise/precedente` — the edition whose event ended last
+ * `GET /api/mesures-edition/realise/precedente` — the edition whose event ended last
  * before this one's first day, even when it has been deleted since. Nothing
  * at all while there is none: an edition without a predecessor has nothing to
  * read here.

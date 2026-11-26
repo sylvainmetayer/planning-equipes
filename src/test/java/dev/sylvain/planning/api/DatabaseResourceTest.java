@@ -345,7 +345,7 @@ class DatabaseResourceTest {
             deleteEdition(defautInitial, restauree);
             String dump = exportDump();
 
-            // Read on the edition table alone: kpi_historique also carries an
+            // Read on the edition table alone: mesure_edition also carries an
             // edition_id, and no foreign key ties the two, so measurements taken
             // before the deletion outlive it and the dump keeps naming the
             // initial edition further down.
@@ -561,7 +561,7 @@ class DatabaseResourceTest {
                 .contains("DELETE FROM notification_planifiee")
                 .contains("DELETE FROM version_plan")
                 .contains("DELETE FROM publication_destinataire")
-                .contains("DELETE FROM kpi_historique")
+                .contains("DELETE FROM mesure_edition")
                 // And the tables that must not travel stay out, in both directions.
                 .doesNotContain("horloge_jour_j")
                 .doesNotContain("backup_settings")
@@ -576,7 +576,7 @@ class DatabaseResourceTest {
     /**
      * The KPI history survives an export/import round trip.
      *
-     * <p>It did not. {@code kpi_historique} was outside {@code TABLES}, so the
+     * <p>It did not. {@code mesure_edition} was outside {@code TABLES}, so the
      * dump neither carried it nor deleted it — and its {@code edition_id} has no
      * foreign key, so the dump's {@code DELETE FROM edition} did not reach it
      * either. An operator restoring a dump kept whatever history the target
@@ -600,12 +600,12 @@ class DatabaseResourceTest {
 
         try {
             // An apostrophe on both sides of the row, deliberately: in the label
-            // and inside the jsonb column, as a constraint name. kpi_historique
+            // and inside the jsonb column, as a constraint name. mesure_edition
             // is the first jsonb column this dump has ever carried, so the
             // branch of literal() that quotes it had never run in anger — and a
             // quote reaching the import unescaped cuts the statement in half.
-            sqlRequest("INSERT INTO kpi_historique (id, edition_id, edition_nom, kpi, cree_le) VALUES "
-                            + "(4242, '" + defaut + "', 'Edition d''essai', "
+            sqlRequest("INSERT INTO mesure_edition (id, nature, edition_id, edition_nom, kpi, cree_le) VALUES "
+                            + "(4242, 'INDICATEURS', '" + defaut + "', 'Edition d''essai', "
                             + "'{\"heuresTotal\": 7.5, \"violationsParContrainte\": {\"repos d''une nuit\": 3}}', "
                             + "'2026-07-01T10:00:00Z');")
                     .when()
@@ -616,7 +616,7 @@ class DatabaseResourceTest {
             assertTheMeasurementReadsBack();
 
             String dump = exportDump();
-            assertThat(dump).contains("INSERT INTO kpi_historique (");
+            assertThat(dump).contains("INSERT INTO mesure_edition (");
 
             // The wipe the restore is supposed to undo.
             given().header("X-Edition-Id", "E1")
@@ -636,7 +636,7 @@ class DatabaseResourceTest {
             // itself rather than this cleanup.
             given().header("X-Edition-Id", "E1")
                     .when()
-                    .delete("/api/kpi/historique/4242")
+                    .delete("/api/mesures-edition/indicateurs/4242")
                     .then()
                     .statusCode(anyOf(equalTo(204), equalTo(404)));
         }
@@ -650,7 +650,7 @@ class DatabaseResourceTest {
     private static void assertTheMeasurementReadsBack() {
         JsonPath historique = given().header("X-Edition-Id", "E1")
                 .when()
-                .get("/api/kpi/historique")
+                .get("/api/mesures-edition/indicateurs")
                 .then()
                 .statusCode(200)
                 .extract()
