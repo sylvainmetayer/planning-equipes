@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -104,6 +105,23 @@ class McpRenommageTest {
                 .collect(Collectors.toCollection(TreeSet::new));
         assertThat(frozen).as("the frozen 3.1.0 list").hasSize(157);
         assertThat(violation(frozen, published(), table())).isNull();
+    }
+
+    /**
+     * One row per tool, sorted by its 3.x name, the file ending on one newline: {@code
+     * .gitattributes} merges the table as a union of lines, and this puts the order back after
+     * one. Two branches renaming the same tool leave two rows, which {@link #table(String)} refuses.
+     */
+    @Test
+    void theTableIsSortedByItsFormerName() throws IOException {
+        String tsv = Files.readString(TABLE, StandardCharsets.UTF_8);
+        assertThat(tsv)
+                .as(TABLE + " ends on exactly one newline")
+                .endsWith("\n")
+                .doesNotEndWith("\n\n");
+        assertThat(List.copyOf(table(tsv).keySet()))
+                .as("rows of %s, in the order of their former name", TABLE)
+                .isSortedAccordingTo(String::compareTo);
     }
 
     @Test

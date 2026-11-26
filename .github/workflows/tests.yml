@@ -493,15 +493,32 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: bash .github/scripts/check-commits.sh "origin/$BASE_REF"
 
-      # Same job, same reason (the base's tip is needed): a migration or a
-      # decision record added under a number the base already holds. The
-      # other open pull requests are numeros-reserves.yml, which only warns.
-      - name: Check that no migration or decision record reuses a number of the base
+      # Same job, same reason (the base's tip is needed): a decision record
+      # added under a number the base already holds fails; a migration that is
+      # no longer above the base only warns, renumeroter-migration.py moves it
+      # at merge. The other open pull requests are numeros-reserves.yml.
+      - name: Check that no decision record reuses a number of the base
         if: github.event_name == 'pull_request'
         working-directory: .
         env:
           BASE_REF: ${{ github.base_ref }}
         run: bash .github/scripts/check-reserved-numbers.sh "origin/$BASE_REF"
+
+      # The net under a forgotten renumbering: on main, a migration that landed
+      # under a version main already held fails here, before an image ships it.
+      - name: Check that the push added no migration below main
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        working-directory: .
+        env:
+          BEFORE: ${{ github.event.before }}
+          STRICT_MIGRATIONS: '1'
+        run: bash .github/scripts/check-reserved-numbers.sh "$BEFORE"
+
+      # The script the coordinator runs before a merge, played on a throwaway
+      # repository: it rewrites files, so it is tested before anybody trusts it.
+      - name: Test the migration renumbering script
+        working-directory: .
+        run: python3 -B .github/scripts/test_renumeroter_migration.py
 
       # Same job, same reason: the SHA a reformatting had on its branch is not
       # the one main received, and `git blame` ignores an unknown one silently.

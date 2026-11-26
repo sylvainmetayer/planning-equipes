@@ -72,7 +72,7 @@ The day on the map of locations, with a time slider. Each place is coloured acco
 
 ## What is no longer on this page
 
-- **By game category**: the reading by game category (seats, hours, skilled, assigned without the skill) is the table of the *Typologies* tab of the *Stands* page.
+- **By game category**: the reading by game category (seats, hours, skilled, assigned without the skill) is the *Typology* section of the *Staffing need* tab of the Diagnostic.
 - **Breaks and meals**: the breaks without relay are read in *Diagnostic*, *Problems* tab.
 - **Changes**: what moved since the last publication is read in *Publish*, *Send* tab, one row per person, and what the last solve rewrote in the result of the *Solver* page.
 - **Compare two days**: removed.

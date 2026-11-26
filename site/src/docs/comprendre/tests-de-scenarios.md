@@ -398,7 +398,7 @@ Ce qu'on en retient :
 
 ## Le banc des règles de confort
 
-`ComfortRulesBenchTest` mesure ce que coûterait la fusion de règles de confort voisines, avant que personne ne l'écrive (la cible est d'environ 36 règles pour 40 aujourd'hui). Trois paires sont regardées : les deux équilibrages (`equilibrerCharge`, medium, et `equilibrerCreneauxPenibles`, soft), les deux règles des stands premium et épuisants (`eviterRoulementStandsPremium` et `eviterEnchainementStandsEpuisants`), et les deux écarts d'un siège (`appreciationIncompatible` et `experienceRequisePourStandsPremium`, cette dernière mesurée seule). `souhaitsIncompatibles`, `standComplexeAvecReferent`, `mineurNecessiteEncadrementMajeur` et la répartition des mineurs ne sont pas candidats. Il ne touche pas la production : les variantes sont des interrupteurs de règles et un poids qui porte une règle à un autre niveau ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
+`ComfortRulesBenchTest` mesure ce que coûterait la fusion de règles de confort voisines, avant que personne ne l'écrive (la cible est d'en retirer quatre environ). Trois paires sont regardées : les deux équilibrages (`equilibrerCharge`, medium, et `equilibrerCreneauxPenibles`, soft), les deux règles des stands premium et épuisants (`eviterRoulementStandsPremium` et `eviterEnchainementStandsEpuisants`), et les deux écarts d'un siège (`appreciationIncompatible` et `experienceRequisePourStandsPremium`, cette dernière mesurée seule). `souhaitsIncompatibles`, `standComplexeAvecReferent`, `mineurNecessiteEncadrementMajeur` et la répartition des mineurs ne sont pas candidats. Il ne touche pas la production : les variantes sont des interrupteurs de règles et un poids qui porte une règle à un autre niveau ([ADR 0111](repo:docs/decisions/0111-le-niveau-d-une-regle-est-le-niveau-de-son-poids.md)).
 
 ```bash
 ./mvnw test -Pscenario-tests -Dtest=ComfortRulesBenchTest \
@@ -507,11 +507,11 @@ La règle des 5 % décidée pour ces mesures : une perte de medium au-delà de 5
 | `eviterRoulementStandsPremium` + `eviterEnchainementStandsEpuisants` | non (aucun tuple commun) | -17,6 % (`sans-roulement`, Timefold, `gamme-20`) | garder |
 | `appreciationIncompatible` + `experienceRequisePourStandsPremium` | oui, par construction (deux motifs, un point medium chacun) | -10,8 % (`sans-experience-premium`, Timefold, `gamme-20`), qui ne s'applique pas à une fusion à score égal | garder : le score tiendrait, mais deux réglages de l'organisateur disparaîtraient |
 
-Aucune paire ne se fond donc en respectant les deux critères : la fusion des règles de confort ne retire aucune des 39 règles. Le test différentiel et un test « avant/après » sur les scénarios suffiraient, si l'on choisissait la troisième paire malgré la perte de réglage.
+Aucune paire ne se fond donc en respectant les deux critères : la fusion des règles de confort ne retire aucune règle. Le test différentiel et un test « avant/après » sur les scénarios suffiraient, si l'on choisissait la troisième paire malgré la perte de réglage.
 
 ## Le moteur direct : deux tests qui tiennent les règles en double
 
-`solver/handsearch` écrit les 39 règles une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
+`solver/handsearch` écrit chaque règle du catalogue une seconde fois, pour chercher sans traverser les contraintes en flux ([ADR 0087](repo:docs/decisions/0087-un-second-moteur-de-recherche-arbitre-par-timefold.md), moteur par défaut depuis l'[ADR 0088](repo:docs/decisions/0088-le-moteur-direct-devient-le-moteur-par-defaut.md)). Deux tests de la suite par défaut, sans conteneur, empêchent les deux exemplaires de diverger.
 
 `HandSearchCoverageStructuralTest` exige que toute contrainte de `ConstraintCatalog` ait sa constante dans `Rule` et que toute constante soit comptée dans le score du moteur. Il échoue le premier, par son nom, quand une contrainte n'est ajoutée que d'un côté.
 
