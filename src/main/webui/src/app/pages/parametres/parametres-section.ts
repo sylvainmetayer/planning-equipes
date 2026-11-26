@@ -3,11 +3,13 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   input,
   OnInit,
   signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -87,6 +89,25 @@ function fieldsOf(section: SectionReglages): Champ[] {
   }));
 }
 
+/** A typed value the server can store as is: a number in its bounds, a window end. A single hour may be emptied: no hour makes its rule inert. */
+function acceptable(descriptor: SeuilDescriptor, field: string, draft: SettingsRecord): boolean {
+  if (descriptor.kind === 'heure') {
+    return true;
+  }
+  if (draft[field] === null || draft[field] === undefined || draft[field] === '') {
+    return false;
+  }
+  if (descriptor.kind === 'plage') {
+    return true;
+  }
+  // Bounds are in the unit of the screen (hours for a duration in hours).
+  const shown = Number(shownValue(descriptor, field, null, draft));
+  return (
+    (descriptor.min === undefined || shown >= descriptor.min) &&
+    (descriptor.max === undefined || shown <= descriptor.max)
+  );
+}
+
 /**
  * « Paramètres › Légal » and « Paramètres › Organisation »: every setting of
  * the section on one form, one « Enregistrer ». The same values are edited in
@@ -97,7 +118,8 @@ function fieldsOf(section: SectionReglages): Champ[] {
  */
 @Component({
   selector: 'app-parametres-section',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink, StatusMessage],
+  // FormsModule for `ngSubmit`: without NgForm, « Enregistrer » or Enter would submit natively and reload the page.
+  imports: [FormsModule, MatButtonModule, MatCardModule, MatIconModule, RouterLink, StatusMessage],
   templateUrl: './parametres-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -115,6 +137,23 @@ export class ParametresSection implements OnInit {
 
   protected readonly champs = computed(() => fieldsOf(this.section()));
   readonly dirty = computed(() => hasChanges(this.stored(), this.draft()));
+
+  /** Set by a save refused for a typed value: from then on, each field says what is wrong with it. */
+  protected readonly attempted = signal(false);
+
+  /** The typed fields the save would refuse: an emptied number would be stored as 0, an out-of-range one refused by the server. */
+  protected readonly invalid = computed(() => {
+    const draft = this.draft();
+    return new Set(
+      this.champs().flatMap((champ) =>
+        champ.descriptor.fields.filter(
+          (field) => field in draft && !acceptable(champ.descriptor, field, draft),
+        ),
+      ),
+    );
+  });
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly registry = inject(ModifiedFormsRegistry);
   private readonly destroyRef = inject(DestroyRef);
@@ -174,8 +213,40 @@ export class ParametresSection implements OnInit {
     }
   }
 
+  protected shownInvalid(field: string): boolean {
+    return this.attempted() && this.invalid().has(field);
+  }
+
+  protected champInvalid(champ: Champ): boolean {
+    return champ.descriptor.fields.some((field) => this.shownInvalid(field));
+  }
+
+  /** What a field refused at save time expects, read out with it. */
+  protected expected(champ: Champ): string {
+    const { min, max } = champ.descriptor;
+    if (champ.descriptor.kind === 'plage') {
+      return $localize`:@@parametres.section.attendu.heure:Saisir une heure.`;
+    }
+    if (min !== undefined && max !== undefined) {
+      return $localize`:@@parametres.section.attendu.entre:Saisir une valeur entre ${min}:min: et ${max}:max:.`;
+    }
+    if (min !== undefined) {
+      return $localize`:@@parametres.section.attendu.min:Saisir une valeur d'au moins ${min}:min:.`;
+    }
+    return $localize`:@@parametres.section.attendu.valeur:Saisir une valeur.`;
+  }
+
+  /** The two ends of a window, told apart for a screen reader. */
+  protected endLabel(champ: Champ, index: number): string {
+    const libelle = champ.libelle;
+    return index === 0
+      ? $localize`:@@parametres.section.debut:${libelle}:libelle:, début`
+      : $localize`:@@parametres.section.fin:${libelle}:libelle:, fin`;
+  }
+
   protected cancel(): void {
     this.draft.set({});
+    this.attempted.set(false);
     this.error.set('');
   }
 
@@ -183,6 +254,21 @@ export class ParametresSection implements OnInit {
     if (!this.dirty() || this.saving()) {
       return;
     }
+    const first = this.champs()
+      .flatMap((champ) => champ.descriptor.fields)
+      .find((field) => this.invalid().has(field));
+    if (first !== undefined) {
+      // Nothing is sent: the alert says why, the focus goes where to fix it.
+      this.attempted.set(true);
+      this.error.set(
+        $localize`:@@parametres.section.invalide:Des valeurs sont à corriger : chacune est signalée sous son champ. Rien n'a été enregistré.`,
+      );
+      this.host.nativeElement
+        .querySelector<HTMLInputElement>(`input[data-field="${first}"]`)
+        ?.focus();
+      return;
+    }
+    this.attempted.set(false);
     this.saving.set(true);
     this.error.set('');
     try {

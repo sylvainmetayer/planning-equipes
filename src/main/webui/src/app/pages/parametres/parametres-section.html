@@ -16,18 +16,20 @@
           @switch (champ.descriptor.kind) {
             @case ('plage') {
               <span class="parametres-section-saisie">
-                <input type="time" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
-                       [value]="value(champ, champ.descriptor.fields[0])"
-                       (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
-                –
-                <input type="time" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
-                       [value]="value(champ, champ.descriptor.fields[1])"
-                       (input)="typed(champ, champ.descriptor.fields[1], $any($event.target).value)" />
+                @for (field of champ.descriptor.fields; track field; let index = $index) {
+                  @if (index > 0) { – }
+                  <input type="time" [disabled]="loading() || saving()" [attr.aria-label]="endLabel(champ, index)"
+                         [attr.data-field]="field" [attr.aria-invalid]="shownInvalid(field) || null"
+                         [attr.aria-describedby]="shownInvalid(field) ? 'seuil-erreur-' + champ.cle : null"
+                         [value]="value(champ, field)"
+                         (input)="typed(champ, field, $any($event.target).value)" />
+                }
               </span>
             }
             @case ('heure') {
               <span class="parametres-section-saisie">
                 <input type="time" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
+                       [attr.data-field]="champ.descriptor.fields[0]"
                        [value]="value(champ, champ.descriptor.fields[0])"
                        (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
               </span>
@@ -37,11 +39,17 @@
                 <input type="number" [disabled]="loading() || saving()" [attr.aria-labelledby]="'seuil-' + champ.cle"
                        [attr.min]="champ.descriptor.min ?? null" [attr.max]="champ.descriptor.max ?? null"
                        [attr.step]="champ.descriptor.step ?? null"
+                       [attr.data-field]="champ.descriptor.fields[0]"
+                       [attr.aria-invalid]="shownInvalid(champ.descriptor.fields[0]) || null"
+                       [attr.aria-describedby]="shownInvalid(champ.descriptor.fields[0]) ? 'seuil-erreur-' + champ.cle : null"
                        [value]="value(champ, champ.descriptor.fields[0])"
                        (input)="typed(champ, champ.descriptor.fields[0], $any($event.target).value)" />
                 {{ unit(champ) }}
               </span>
             }
+          }
+          @if (champInvalid(champ)) {
+            <span class="parametres-section-erreur" [id]="'seuil-erreur-' + champ.cle">{{ expected(champ) }}</span>
           }
         </div>
       }

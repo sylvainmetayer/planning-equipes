@@ -100,4 +100,63 @@ describe('ParametresSection', () => {
     });
     expect(api['saveLegalParameters']).not.toHaveBeenCalled();
   });
+
+  it('saves through « Enregistrer » without a native submit reloading the page', async () => {
+    await openSection('legal');
+    const pause = champ('Durée de la pause légale');
+    pause.value = '45';
+    pause.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const form = (fixture.nativeElement as HTMLElement).querySelector('form')!;
+    const submit = new SubmitEvent('submit', { cancelable: true });
+
+    form.dispatchEvent(submit);
+    await fixture.whenStable();
+
+    expect(submit.defaultPrevented).toBe(true);
+    expect(api['saveLegalParameters']).toHaveBeenCalledOnce();
+  });
+
+  it('sends nothing for an emptied or out-of-range value, says why and focuses it', async () => {
+    await openSection('legal');
+    const hebdo = champ('Durée hebdomadaire maximale, majeurs');
+    hebdo.value = '60';
+    hebdo.dispatchEvent(new Event('input'));
+    const pause = champ('Durée de la pause légale');
+    pause.value = '';
+    pause.dispatchEvent(new Event('input'));
+
+    await fixture.componentInstance['save']();
+    fixture.detectChanges();
+
+    expect(api['saveLegalParameters']).not.toHaveBeenCalled();
+    expect(api['legalParameters']).toHaveBeenCalledOnce();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[role="alert"]')!.textContent).toContain(
+      "Rien n'a été enregistré",
+    );
+    // The first field of the form in error, in reading order.
+    expect(document.activeElement).toBe(hebdo);
+    expect(hebdo.getAttribute('aria-invalid')).toBe('true');
+    expect(pause.getAttribute('aria-invalid')).toBe('true');
+    expect(document.getElementById(hebdo.getAttribute('aria-describedby')!)!.textContent).toContain(
+      'entre 1 et 48',
+    );
+  });
+
+  it('shows the server refusal', async () => {
+    await openSection('organisation');
+    api['saveQualityParameters'].mockRejectedValue(new Error('Le facteur de détour est refusé.'));
+    const jours = champ("Jours travaillés d'affilée");
+    jours.value = '5';
+    jours.dispatchEvent(new Event('input'));
+
+    await fixture.componentInstance['save']();
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')!.textContent,
+    ).toContain('Le facteur de détour est refusé.');
+    expect(fixture.componentInstance.dirty()).toBe(true);
+  });
 });

@@ -239,3 +239,9 @@
 .polyvalent-select {
   min-width: 18rem;
 }
+
+.parametres-section-erreur {
+  flex-basis: 100%;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-error);
+}
