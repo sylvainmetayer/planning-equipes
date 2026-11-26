@@ -677,8 +677,7 @@ public final class BlockerPlaybook {
         return new ActionType(
                 CODE_MEAL_WINDOW,
                 "Régler la fenêtre repas",
-                "La fenêtre repas et sa durée se règlent sur la ligne de la coupure repas, dans Règles du"
-                        + " planning.",
+                "La fenêtre repas et sa durée se règlent dans Paramètres › Légal.",
                 ROUTE_RULES,
                 Map.of(PARAM_ONGLET, "legal", PARAM_REGLE, "coupureRepasObligatoire"));
     }

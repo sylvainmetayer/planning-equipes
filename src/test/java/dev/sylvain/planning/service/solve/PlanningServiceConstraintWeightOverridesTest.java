@@ -261,7 +261,7 @@ class PlanningServiceConstraintWeightOverridesTest {
         PlanningService planningService = planningService(new EmptyReferenceData() {
             @Override
             public Map<String, Boolean> getNiveauxObligatoires() {
-                return Map.of("dureeQuotidienneMaxMajeur", false, "posteDoitEtrePourvu", false);
+                return Map.of("dureeQuotidienneMax", false, "posteDoitEtrePourvu", false);
             }
         });
 

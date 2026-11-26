@@ -74,7 +74,7 @@ Le couple est choisi, pas tiré puis filtré : un bloc (animateur, date) uniform
 | --- | --- |
 | Chaque poste va à un animateur éligible (`EligibleAnimateurMoveFilter.isEligible`) | indisponibilité, règles des mineurs propres au couple poste-animateur |
 | Aucun poste reçu ne chevauche un poste figé que son receveur garde ce jour-là | le passé et les verrouillages ne changent pas de mains, mais ils occupent leur heure |
-| La journée d'un mineur, postes reçus compris, reste sous `dureeQuotidienneMaxMineur` | mesurée comme la règle la mesure, et seulement quand elle est active |
+| La journée d'un mineur, postes reçus compris, reste sous le plafond de `dureeQuotidienneMax` pour son âge | mesurée comme la règle la mesure, et seulement quand elle est active |
 
 Deux journées faites des mêmes postes s'échangent quand même : les refuser coûte du medium (-30 852 contre -30 293 sur `festival-hivernal`). C'est ce qui distingue ce mouvement des *pillar moves* de Timefold, écartés après mesure : le `pillarSwapMoveSelector` tirait deux blocs au hasard et son filtre en rejetait 99,97 %, ce qui divisait la vitesse par neuf, et le `pillarChangeMoveSelector` perdait du medium sur sept scénarios sur neuf ([ADR 0078](repo:docs/decisions/0078-echange-de-journees-plutot-que-mouvements-pillar.md)).
 

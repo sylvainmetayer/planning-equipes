@@ -58,7 +58,7 @@ still current before citing them — see "How you review"):
   the catalogue for organisations without such a manager, and turning it on is
   what stores a toggle. The legal framework for minors is untouched by that
   decision — say so rather than letting it read as a loosening of the law.
-- Durée quotidienne maximale d'un mineur, 8h (`dureeQuotidienneMaxMineur`).
+- Durée quotidienne maximale, lue selon l'âge à la date du créneau : 10h majeur, 8h mineur, 7h avant 16 ans (`dureeQuotidienneMax`).
 - Repos quotidien d'un mineur après un créneau de nuit
   (`reposQuotidienMineur`).
 - Durée hebdomadaire maximale absolue, 48h, pour tout animateur majeur

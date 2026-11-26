@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  *
  * <p>The meal break is <b>not</b> the legal break of art. L3121-16, which is
  * twenty minutes owed at the sixth hour and is carried by
- * {@code travailContinuMaxMajeur}. It is the organiser's own rule — the
+ * {@code travailContinuMax}. It is the organiser's own rule — the
  * staffing workbook's midday and evening rotations — and the two are distinct objects:
  * declaring the legal break taken on the post
  * ({@link ParametresLegaux#isPauseSurPoste()}) says nothing about lunch, which

@@ -869,9 +869,7 @@ final class IncrementalScore {
                             tenu = after >= 0 ? after : before;
                         }
                         if (live && !flat.sPast[tenu] && !relayed(tenu, a, limit, limit + pause)) {
-                            cost += minor
-                                    ? cost(Rule.TRAVAIL_CONTINU_MAX_MINEUR, FORFAIT + 1)
-                                    : cost(Rule.TRAVAIL_CONTINU_MAX_MAJEUR, 1);
+                            cost += cost(Rule.TRAVAIL_CONTINU_MAX, minor ? FORFAIT + 1 : 1);
                         }
                     }
                     if (endOfDay) {
@@ -945,9 +943,7 @@ final class IncrementalScore {
                     ? PlafondsLegauxMineurs.dureeQuotidienneMaxMinutes(flat.under16At[a][d])
                     : PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES;
             if (aged && live && effective > dailyCap) {
-                cost += minor
-                        ? cost(Rule.DUREE_QUOTIDIENNE_MAX_MINEUR, FORFAIT + effective - dailyCap)
-                        : cost(Rule.DUREE_QUOTIDIENNE_MAX_MAJEUR, effective - dailyCap);
+                cost += cost(Rule.DUREE_QUOTIDIENNE_MAX, (minor ? FORFAIT : 0) + effective - dailyCap);
             }
             int w = flat.sWeek[list[from]];
             if (minor) {

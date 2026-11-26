@@ -181,7 +181,7 @@ class StaffingBoundEquivalenceTest {
                 ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), "reposQuotidienMinimal")
                         ? legaux.getReposQuotidienMinimalMinutes()
                         : 0,
-                ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), "travailContinuMaxMajeur")
+                ConstraintCatalog.isActive(problem.getConstraintsDesactivees(), "travailContinuMax")
                         ? legaux.getDureeVacationMaxMinutes()
                         : 0);
     }

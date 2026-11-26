@@ -182,13 +182,13 @@ class RepasConstraintsTest extends ConstraintTestBase {
 
         // Twelve hours in one go, on a stand this animateur holds alone: one
         // break due past the sixth hour, and nobody to relay it.
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(new ParametresLegaux(), poste(standA, journeeEntiere, a84))
                 .penalizesBy(1);
 
         // The same twelve hours cut by the midday break: two stretches of five
         // and six hours, neither of them over.
-        verify("travailContinuMaxMajeur")
+        verify("travailContinuMax")
                 .given(
                         new ParametresLegaux(),
                         poste(standA, vacation("07-12", 7, 12), a84),

@@ -1115,7 +1115,7 @@ public class StaffingAnalyzer {
      *
      * <h3>Proof</h3>
      *
-     * <p>{@code travailContinuMaxMajeur} owes, to a stretch of back-to-back seats
+     * <p>{@code travailContinuMax} owes, to a stretch of back-to-back seats
      * (holes shorter than the break do not split it) that outlasts the cap
      * {@code C}, a break at {@code C} after the stretch's start, which a seat of
      * the same stand must cover for its whole length. Call {@code x} a

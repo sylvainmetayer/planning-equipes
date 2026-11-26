@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.config.Config;
+import org.jboss.logging.Logger;
 
 /**
  * How this deployment configures a solve: the {@link SolverFactory} built from
@@ -38,6 +39,8 @@ import org.eclipse.microprofile.config.Config;
  * {@code new}, and pass a {@link Config} through.</p>
  */
 final class SolverConfiguration {
+
+    private static final Logger LOG = Logger.getLogger(SolverConfiguration.class);
 
     /** The classpath resource every solver this class builds starts from. */
     private static final String SOLVER_CONFIG_XML = "solver/solverConfig.xml";
@@ -179,8 +182,18 @@ final class SolverConfiguration {
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             poids.put(
                     definition.name(),
-                    config.getOptionalValue("planning.constraint-weights." + definition.name(), Integer.class)
-                            .orElse(ConstraintCatalog.defaultWeight(definition.name())));
+                    ConstraintCatalog.configuredWeight(
+                            rule -> config.getOptionalValue("planning.constraint-weights." + rule, Integer.class),
+                            definition.name()));
+            for (String former : ConstraintCatalog.formerNamesOf(definition.name())) {
+                if (config.getOptionalValue("planning.constraint-weights." + former, Integer.class)
+                        .isPresent()) {
+                    LOG.warnf(
+                            "planning.constraint-weights.%s is read as planning.constraint-weights.%s"
+                                    + " (rule merged in 4.0, the strongest weight wins): rename it",
+                            former, definition.name());
+                }
+            }
         }
         return Map.copyOf(poids);
     }

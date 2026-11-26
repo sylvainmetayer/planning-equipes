@@ -76,7 +76,9 @@ The details and an example are in [the environment variables](variables-environn
 
 ### Schedule rule names
 
-Coming: mapping of old names, rules merged or removed.
+- **Before (3.x)**: each legal cap existed as two rules, one for adults and one for minors: `dureeQuotidienneMaxMajeur` and `dureeQuotidienneMaxMineur` (effective work of a day), `travailContinuMaxMajeur` and `travailContinuMaxMineur` (uninterrupted stretch of work before the legal break). Each rule had its own switch and weight.
+- **After (4.0)**: one rule per cap, the cap being read on the animateur's age at the timeslot's date: `dureeQuotidienneMax` (10 h for an adult, 8 h for a minor aged 16 to under 18, 7 h under 16) and `travailContinuMax` (6 h for an adult, 4 h 30 for a minor). The caps are the Labour Code's, unchanged: same breaches, same score for an unchanged setting. The catalogue goes from 46 to 44 rules; the Planning rules screen, `GET /api/constraints`, the diagnostics and the MCP tools now say one rule, with its cap per age.
+- **What you do**: nothing for editions already stored. Migration `V152` merges their settings **on the most protective reading**: the rule stays on if either was (it is off only if both were), takes the hardest level and the strongest weight. What it does not rewrite: the settings history and the dosage kept with each plan still say the old names, as they tell what was done at the time. **Old names are read, with a warning, throughout 4.x, and removed in 5.0**: in a YAML scenario file (`contraintes` section, the more protective of the two settings wins, the warning appears in the import report), in `planning.constraint-weights.<old name>` (the strongest weight, warning at startup), in the `PUT /api/constraints/{name}…` routes and the rule-setting MCP tools (the answer carries the new name). Rename them before 5.0 ([ADR 0114](repo:docs/decisions/0114-une-regle-par-plafond-lue-selon-l-age.md)).
 
 ### MCP tools
 
