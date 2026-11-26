@@ -78,10 +78,6 @@
           }
         }
       },
-      "Acteur" : {
-        "type" : "string",
-        "enum" : [ "ADMIN", "ANIMATEUR", "ANONYME", "ASSISTANT", "SYSTEME" ]
-      },
       "ActionImport" : {
         "type" : "string",
         "enum" : [ "CREE", "MIS_A_JOUR", "REFUSE" ]
@@ -2196,27 +2192,6 @@
           },
           "lien" : {
             "type" : "string"
-          }
-        }
-      },
-      "ConstraintHistory" : {
-        "required" : [ "changes", "resolutions" ],
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "changes" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/WeightChange"
-            }
-          },
-          "resolutions" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ResolutionUnderDosage"
-            }
           }
         }
       },
@@ -9441,45 +9416,6 @@
           }
         }
       },
-      "ResolutionUnderDosage" : {
-        "type" : "object",
-        "required" : [ "id", "createdAt" ],
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "createdAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          },
-          "score" : {
-            "type" : "string"
-          },
-          "scoreHard" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "scoreMedium" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "scoreSoft" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "scoreMediumHorsPlancher" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "ruleViolations" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dosage" : {
-            "$ref" : "#/components/schemas/Dosage"
-          }
-        }
-      },
       "ResponsableView" : {
         "required" : [ "stands" ],
         "type" : "object",
@@ -11535,52 +11471,6 @@
           }
         }
       },
-      "WeightChange" : {
-        "type" : "object",
-        "required" : [ "id", "name", "backToDefault", "origin", "actor", "createdAt" ],
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "weightBefore" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "weightAfter" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "backToDefault" : {
-            "type" : "boolean"
-          },
-          "activeBefore" : {
-            "type" : "boolean"
-          },
-          "activeAfter" : {
-            "type" : "boolean"
-          },
-          "origin" : {
-            "$ref" : "#/components/schemas/WeightChangeOrigin"
-          },
-          "actor" : {
-            "$ref" : "#/components/schemas/Acteur"
-          },
-          "sourceEdition" : {
-            "type" : "string"
-          },
-          "createdAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          }
-        }
-      },
-      "WeightChangeOrigin" : {
-        "type" : "string",
-        "enum" : [ "SCREEN", "ASSISTANT", "SCENARIO", "DUPLICATION" ]
-      },
       "WipeBackup" : {
         "type" : "object",
         "properties" : {
@@ -13218,24 +13108,6 @@
         "tags" : [ "Constraint Resource" ]
       }
     },
-    "/api/constraints/historique" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ConstraintHistory"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "History",
-        "tags" : [ "Constraint Resource" ]
-      }
-    },
     "/api/constraints/{name}" : {
       "put" : {
         "parameters" : [ {
@@ -13272,32 +13144,6 @@
           }
         },
         "summary" : "Set Actif",
-        "tags" : [ "Constraint Resource" ]
-      }
-    },
-    "/api/constraints/{name}/historique" : {
-      "get" : {
-        "parameters" : [ {
-          "name" : "name",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ConstraintHistory"
-                }
-              }
-            }
-          }
-        },
-        "summary" : "History",
         "tags" : [ "Constraint Resource" ]
       }
     },
@@ -15866,7 +15712,7 @@
           "in" : "query",
           "schema" : {
             "type" : "string",
-            "enum" : [ "exports", "donnees" ]
+            "enum" : [ "exports", "donnees", "regles" ]
           }
         } ],
         "responses" : {

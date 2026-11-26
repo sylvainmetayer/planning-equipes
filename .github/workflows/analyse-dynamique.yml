@@ -1,0 +1,169 @@
+name: Analyse dynamique
+
+# Un regard de l'extérieur sur l'application démarrée : OWASP ZAP en mode
+# *baseline* parcourt ce qu'un visiteur sans compte atteint et lit chaque
+# réponse — en-têtes, cookies, contenu des erreurs, fichiers servis. Il
+# n'attaque rien (aucun scan actif) : c'est la vérification, sur le jar de
+# production de `main`, de ce que site/src/docs/installer/securite.md affirme
+# et que `SecurityHeadersFilter` teste de l'intérieur.
+#
+# Chaque alerte fait échouer le job, avertissements compris : une règle
+# qu'on accepte s'écrit dans `.github/zap-baseline.tsv`, en IGNORE et avec sa
+# raison, et une règle qui ne doit jamais revenir y passe en FAIL. Le rapport
+# complet est dans le résumé du job et dans l'artefact `zap-baseline`.
+#
+# Chaque nuit plutôt qu'à chaque PR : le job occupait un runner par poussée,
+# et six PR en parallèle saturaient la limite de jobs simultanés. Ce qu'il
+# regarde (en-têtes, filtres HTTP) bouge rarement ; une régression se voit
+# le lendemain, par l'issue que le job `signaler` ouvre.
+on:
+  schedule:
+    # 1 h 30 UTC, avant les runs nocturnes de 3 h (e2e-lourd, oidc-keycloak).
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analyse-dynamique-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  dast:
+    name: Analyse dynamique (ZAP baseline)
+    runs-on: ubuntu-latest
+    # Le packaging (bundle Angular compris) se fait désormais ici.
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:19
+        env:
+          POSTGRES_DB: festival
+          POSTGRES_USER: festival
+          # Pas de mot de passe : base jetable du runner, et GitGuardian lit
+          # les workflows. L'application en envoie un (généré plus bas), que
+          # `trust` ignore — même recette que le smoke test de docker-ghcr.yml.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U festival -d festival"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Les caches de Quinoa, mêmes clés que le job `test` de tests.yml : le
+      # binaire Node qu'il télécharge et le cache npm de son `npm ci`.
+      - name: Cache Quinoa's Node.js binary
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .quinoa
+          key: quinoa-node-${{ runner.os }}-${{ hashFiles('src/main/resources/application.properties') }}
+
+      - name: Cache npm's download cache for Quinoa's npm ci
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: quinoa-npm-${{ runner.os }}-${{ hashFiles('src/main/webui/package-lock.json') }}
+
+      # Le jar de production, bundle Angular compris : celui que tests.yml
+      # packageait pour ce job quand il tournait sur chaque PR.
+      - name: Package the application
+        run: ./mvnw -B --no-transfer-progress package -DskipTests
+
+      # Le profil de production, comme un déploiement : c'est lui que ZAP doit
+      # voir. Les secrets sont générés ici, aucun n'est écrit dans ce fichier.
+      - name: Start the application
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/festival
+          DB_USER: festival
+          LEGAL_DEMO_INSTANCE: 'true'
+          MAIL_MOCK: 'true'
+          PUBLIC_URL: http://localhost:8080
+        run: |
+          DB_PASSWORD="$(openssl rand -hex 16)" \
+          ADMIN_PASSWORD="$(openssl rand -hex 16)" \
+          QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY="$(openssl rand -hex 16)" \
+            java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/q/health/ready > /dev/null; then
+              echo "Application prête."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "L'application n'a pas répondu en 120 s :"
+          cat app.log
+          exit 1
+
+      # Le conteneur ZAP tourne sous l'uid 1000 et écrit ses rapports dans
+      # /zap/wrk : le dossier lui est ouvert en écriture.
+      - name: Scan baseline (ZAP)
+        env:
+          # renovate: datasource=docker depName=ghcr.io/zaproxy/zaproxy
+          ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:2.17.0
+        run: |
+          mkdir -p "$RUNNER_TEMP/zap"
+          cp .github/zap-baseline.tsv "$RUNNER_TEMP/zap/"
+          chmod -R a+rwX "$RUNNER_TEMP/zap"
+          status=0
+          docker run --rm --network host \
+            --volume "$RUNNER_TEMP/zap:/zap/wrk:rw" \
+            "$ZAP_IMAGE" \
+            zap-baseline.py -t http://localhost:8080 \
+              -c zap-baseline.tsv \
+              -r rapport.html -J rapport.json -w rapport.md \
+            || status=$?
+          if [ -f "$RUNNER_TEMP/zap/rapport.md" ]; then
+            cat "$RUNNER_TEMP/zap/rapport.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
+      - name: Upload the ZAP report
+        if: success() || failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zap-baseline
+          path: |
+            ${{ runner.temp }}/zap/rapport.*
+            app.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Le run de la nuit n'a personne devant l'écran : son échec devient une
+  # issue, une seule tant qu'elle reste ouverte (les nuits suivantes la
+  # commentent). Même recette que le job `signaler` de site.yml.
+  signaler:
+    needs: dast
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Ouvrir ou commenter l'issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          titre="Analyse dynamique nocturne (ZAP) en échec"
+          corps="Le scan ZAP baseline de la nuit a échoué : $RUN_URL"
+          num=$(gh issue list --state open --search "\"$titre\" in:title" --json number --jq '.[0].number')
+          if [ -n "$num" ]; then
+            gh issue comment "$num" --body "$corps"
+          else
+            gh issue create --title "$titre" --body "$corps"
+          fi

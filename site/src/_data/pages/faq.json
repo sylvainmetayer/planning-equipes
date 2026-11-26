@@ -41,6 +41,11 @@
       "a": "Le logiciel est conçu pour environ 150 animateurs. Il est éprouvé sur des scénarios de 320 animateurs et 150 stands sur 30 jours. Comment estimer l'équipe : [savoir combien de personnes recruter](/docs/regles/dimensionner-l-equipe/)."
     },
     {
+      "id": "cas-d-usage",
+      "q": "Est-ce adapté à un festival, un salon ou une course ?",
+      "a": "Oui. Ce qui change d'un événement à l'autre se lit page par page : [un festival ou une convention](/planning-festival/) (compétences, soirées tardives), [un salon ou une foire](/planning-salon-foire/) (pauses, relais, plusieurs jours de suite), [une course ou un tournoi](/planning-evenement-sportif/) (beaucoup de petits postes, bénévoles d'un jour)."
+    },
+    {
       "id": "tarif",
       "q": "Combien ça coûte ?",
       "a": "[Le tarif dépend de la taille](/#contact) de votre événement : dites-nous combien de personnes et combien de jours, et on vous envoie un chiffre. Le logiciel est libre, vous pouvez aussi [l'héberger chez vous](/heberger/)."
@@ -131,6 +136,11 @@
         "id": "taille",
         "q": "For how many people and stands?",
         "a": "The software is designed for about 150 staff. It is tested on scenarios of 320 staff and 150 stands over 30 days. How to estimate the team: [knowing how many people to recruit](/en/docs/rules/size-the-team/)."
+      },
+      {
+        "id": "cas-d-usage",
+        "q": "Does it suit a festival, a trade show or a race?",
+        "a": "Yes. What changes from one event to the next is read page by page: [a festival or convention](/en/festival-staff-rota/) (skills, late evenings), [a trade show or fair](/en/trade-show-staff-rota/) (breaks, relays, several days in a row), [a race or tournament](/en/sports-event-volunteer-rota/) (many small posts, one-day volunteers)."
       },
       {
         "id": "tarif",

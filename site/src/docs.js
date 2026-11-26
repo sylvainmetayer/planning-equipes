@@ -16,6 +16,11 @@ import home from './_data/pages/docs.json' with { type: 'json' };
 import { parse as yaml } from 'yaml';
 import { typo } from './text.js';
 import { compare } from '../scripts/docs-twins.mjs';
+import urls from './_data/urls.js';
+
+// An English page keeps the French targets of its twin; a link to an answer page of the
+// site ("/planning-festival/") is turned into that page's English address.
+const ENGLISH_OF = new Map(Object.keys(urls().fr).map((k) => [urls().fr[k], urls().en[k]]));
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 // DOCS_DIR: read the pages from elsewhere (a snapshot, while they are being rewritten)
@@ -66,8 +71,13 @@ function target(href, published, state) {
     const hash = decode(href.slice(1));
     return state.lang === 'en' ? { href: `#@@${state.name}|${hash}@@`, doc: state.name, hash, twinAnchor: true } : { href: `#${hash}` };
   }
-  // Absolute links (a site address, an image under /images, a diagram) are left as they are
-  if (/^(https?:|mailto:|tel:|\/)/i.test(href)) return { href };
+  // Absolute links (a site address, an image under /images, a diagram) are left as they are,
+  // but an answer page of the site is read in the language of the page that links it
+  if (/^(https?:|mailto:|tel:|\/)/i.test(href)) {
+    const [bare, hash] = href.split('#');
+    const english = state.lang === 'en' && ENGLISH_OF.get(bare);
+    return { href: english ? english + (hash === undefined ? '' : `#${hash}`) : href };
+  }
   const [path, rawHash] = href.split('#');
   // The anchors are written as the headings are, accents included: what GitHub's slugs and our ids are
   const hash = rawHash === undefined ? undefined : decode(rawHash);
