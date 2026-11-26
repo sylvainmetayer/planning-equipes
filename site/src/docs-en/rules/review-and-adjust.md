@@ -44,7 +44,7 @@ In the *Table* view, each name and each empty seat opens the seat panel. "Move t
 2. Click the day's state button ("To review", "Reviewed on..." or "Frozen"). A three-valued control opens, with the prerequisites of that day: hard breaches, empty seats, breaks with no relay, irreplaceable seats.
 3. Choose "Reviewed", possibly anyway, with a comment, then "Save the state". Choosing "Frozen" asks for confirmation: the solver will no longer touch that day, and the review comment is kept.
 
-A lecteur sees the state of the day, with no button to change it.
+A read-only user sees the state of the day, with no button to change it.
 
 Progress is read in the Solver ("3 days out of 12") and by a tick on each reviewed day of the Planning page's mini-month. The state always covers the whole day, whatever the filter displayed.
 

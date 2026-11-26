@@ -560,8 +560,8 @@ public class McpPrompts {
 
     @Prompt(
             name = "relire_et_valider_les_journees",
-            description = "Relire le planning journée par journée et dire où en est chacune : à relire, "
-                    + "relue ou figée.")
+            description =
+                    "Relire le planning journée par journée et dire où en est chacune : à relire, " + "relue ou figée.")
     PromptMessage reviewAndValidateDays(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
                 Aide-moi à relire le planning%s journée par journée.
