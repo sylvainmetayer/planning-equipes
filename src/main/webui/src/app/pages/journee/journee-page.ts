@@ -91,6 +91,9 @@ import {
   jourInconnu,
   planningDays,
   readView,
+  viewParams,
+  tabOf,
+  JourneeTab,
   resolveComparison,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
@@ -180,8 +183,8 @@ interface Option {
 
 /**
  * « Planning » (issue #712, the former Journée): one day of the persisted plan
- * under five renderings — the table stands × timeslots, the rail animateur by
- * animateur, the map hour by hour, the breaks and meals, what changed since a
+ * under four views — « Jour », in two modes: the rail animateur by animateur
+ * (the default) or the table stands × timeslots —, the map hour by hour, the breaks and meals, what changed since a
  * reference — with the plan at the top: the title on one line, the day chosen
  * on a foldable month, the stand and animateur filters as autocompletes, the
  * relecture as four chips that narrow the rendering, the consigne in a line,
@@ -255,7 +258,9 @@ export class JourneePage implements OnInit {
 
   /** The axis (issue #713): the day, the stands, the people, the game categories. */
   protected readonly axe = signal<PlanningAxe>('jour');
-  protected readonly view = signal<JourneeView>('calendrier');
+  protected readonly view = signal<JourneeView>('rail');
+  /** The view toggle's value: « Jour » for both of its modes. */
+  protected readonly currentTab = computed(() => tabOf(this.view()));
   protected readonly filtre = signal('');
   protected readonly stand = signal('');
   protected readonly animateur = signal('');
@@ -494,9 +499,13 @@ export class JourneePage implements OnInit {
       case 'typologie':
         return null;
       default:
-        return this.view() === 'calendrier' ? null : this.view();
+        return viewParams(this.view()).vue;
     }
   });
+  /** What the `mode` param carries, in the day's view: the table; nothing on the rail. */
+  private readonly modeParam = computed(() =>
+    this.axe() === 'jour' ? viewParams(this.view()).mode : null,
+  );
   /** What the `densite` param carries, on the two grids only. */
   private readonly densiteParam = computed(() => {
     if (this.axe() === 'stand') {
@@ -658,6 +667,7 @@ export class JourneePage implements OnInit {
       date: this.dateParam(),
       jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
       vue: this.viewParam(),
+      mode: this.modeParam(),
       densite: this.densiteParam(),
       portee: this.gridSpanParam(),
       ...sortQueryParams(this.shownPersonSort()),
@@ -857,6 +867,20 @@ export class JourneePage implements OnInit {
     this.view.set(view);
   }
 
+  /** The mode « Jour » was left in: coming back from the map, the breaks or the changes restores it. */
+  private dayMode: JourneeView = 'rail';
+
+  /** The view toggle: « Jour » comes back in the mode it was left in, the rail at first. */
+  protected changeTab(vue: JourneeTab): void {
+    if (vue === this.currentTab()) {
+      return;
+    }
+    if (this.currentTab() === 'jour') {
+      this.dayMode = this.view();
+    }
+    this.view.set(vue === 'jour' ? this.dayMode : vue);
+  }
+
   protected choisirStand(ids: string[]): void {
     this.stand.set(ids[0] ?? '');
   }
@@ -881,7 +905,7 @@ export class JourneePage implements OnInit {
     } else if (this.axe() === 'personne') {
       this.personView.set(readPersonView(requestedView ?? impliedPersonView(query)));
     } else if (this.axe() === 'jour') {
-      this.view.set(readView(requestedView));
+      this.view.set(readView(requestedView, query.get('mode')));
     }
   }
 

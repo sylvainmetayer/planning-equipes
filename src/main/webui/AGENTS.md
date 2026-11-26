@@ -369,8 +369,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   through `PUT /api/etats-journee/{jour}`, never the `/api/validations`
   aliases); the consigne in one line (`consigne-ligne.ts`); « Imprimer cette
   journée » (`/impression/:date`) and « Afficher sur la TV » (Paramètres ›
-  Affichage mural). One day under five renderings chosen by
-  `?vue=calendrier|rail|carte|pauses|changements`: the table stands ×
+  Affichage mural). One day under four views chosen by
+  `?vue=jour|carte|pauses|changements`, the first with two modes in
+  `?mode=rail|tableau` (the rail, the default, is the absence of both; the 3.x
+  `?vue=calendrier` and `?vue=rail` are still read, `journee.ts`' `readView`):
+  the table stands ×
   timeslots across the whole width (`calendar-day-vue`, one name per chip,
   empty seats in red, a closed timeslot in a neutral « fermé », a partial
   opening as its hours), the rail animateur by animateur, the day replayed on

@@ -95,7 +95,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/exports', marker: 'Export CSV' },
   // Same for the Planning page and its renderings of the day.
   { path: '/journee', marker: 'Planning', sheet: 'planning-barre' },
-  { path: '/journee?vue=calendrier', sheet: 'jour-table' },
+  { path: '/journee?vue=jour&mode=tableau', sheet: 'jour-table' },
   // Its three other axes, where six former screens went: each brings its own
   // stylesheet, the shared grid's included.
   { path: '/journee?axe=stand', marker: 'Couverture', sheet: 'planning-grille' },
@@ -129,7 +129,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/marge?mode=tension', marker: 'Tension, tranche par tranche' },
   // The former timeline lands on a fiche's planning section; its own sheet is gone.
   { path: '/animateurs/E2E-A?section=timeline', marker: 'Planning', sheet: 'timeline-day' },
-  { path: '/journee?vue=rail', marker: 'Mobilisables', sheet: 'rail-toolbar' },
+  { path: '/journee?vue=jour&mode=rail', marker: 'Mobilisables', sheet: 'rail-toolbar' },
   {
     path: '/journee?vue=carte',
     marker: 'Emplacements à cette heure-là',

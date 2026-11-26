@@ -120,7 +120,7 @@
           <p>
             <ng-container i18n="@@standFiche.plan.resume">{{ filled() + emptySeats().length }} poste(s) · {{ filled() }} pourvu(s) · {{ emptySeats().length }} vide(s)</ng-container>
             ·
-            <a routerLink="/journee" [queryParams]="{ stand: current.id }" i18n="@@standFiche.plan.voir">Voir dans Planning</a>
+            <a routerLink="/journee" [queryParams]="{ vue: 'jour', mode: 'tableau', stand: current.id }" i18n="@@standFiche.plan.voir">Voir dans Planning</a>
           </p>
           @if (emptySeats().length > 0) {
             <ul class="fiche-liste">
