@@ -35,7 +35,7 @@ Les fichiers de déploiement se prennent dans le [dépôt du projet](repo:docker
    cp .env.prod.example .env.prod
    ```
 
-   Les sept variables obligatoires sont `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et `MAIL_FROM`. Le compose refuse de démarrer si l'une manque, et l'application refuse de son côté les deux mots de passe d'exemple et cinq mentions légales vides. La liste complète de ses refus ouvre [l'inventaire des variables](variables-environnement.md#obligatoires-en-production).
+   Les sept variables obligatoires sont `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et `MAIL_FROM`. Le compose refuse de démarrer si l'une manque, et l'application refuse de son côté les deux mots de passe d'exemple et, sur une instance publique (`PUBLIC_INSTANCE=true`), cinq mentions légales vides. La liste complète de ses refus ouvre [l'inventaire des variables](variables-environnement.md#obligatoires-en-production).
 
 2. Choisissez une version nommée. `APP_VERSION=1.2.0` dans le `.env.prod`, jamais `main` ni `latest`. `main` est l'image de recette, reconstruite à chaque fusion et chaque dimanche ; `latest` désigne ce que le registre veut bien. Un rapport d'incident doit pouvoir nommer le déploiement : « la 1.2.0 » le fait, « l'image de mardi » non. Ce que promet un numéro est dans [les numéros de version](versioning.md).
 

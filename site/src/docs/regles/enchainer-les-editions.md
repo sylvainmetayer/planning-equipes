@@ -35,7 +35,7 @@ Dupliquez l'édition pour essayer une vraie variante (autre grille, autre équip
 
 ## Comparer deux éditions
 
-La page *Comparer deux éditions* (bouton « Comparer deux éditions » de la page Éditions) montre ce qui a changé dans le référentiel d'une édition à l'autre, par exemple l'an dernier et cette année, ou une édition et sa variante.
+La vue *Éditions* de l'écran *Comparer deux versions* (bouton « Comparer deux éditions » de la page Éditions ; la vue *Versions du plan* du même écran compare deux plans) montre ce qui a changé dans le référentiel d'une édition à l'autre, par exemple l'an dernier et cette année, ou une édition et sa variante.
 
 - Un résumé chiffré en tête (« +3 stands, −12 animateurs, +410 heures à pourvoir »).
 - Le détail : stands, animateurs arrivés et partis, typologies, emplacements, journées types, créneaux alignés sur le rang du jour d'ouverture, paramètres, ajustements comptés par type, et la volumétrie des deux côte à côte.

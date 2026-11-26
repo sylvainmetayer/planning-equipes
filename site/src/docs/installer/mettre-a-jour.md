@@ -59,7 +59,7 @@ Une restauration par `scripts/restaurer.sh` d'un dump `pg_dump` pris avant la mi
 
 ### Les mentions légales et l'édition active
 
-Une instance déjà en service qui n'a jamais renseigné les mentions légales ne redémarre pas ([les renseigner](mentions-legales.md#monter-de-version-avec-une-instance-déjà-en-service)). À la mise à jour vers `V118`, l'édition active est choisie automatiquement ([les envois automatiques](envois-automatiques.md#2-activer-lédition-qui-doit-écrire)).
+Une instance publique (`PUBLIC_INSTANCE=true`) déjà en service qui n'a jamais renseigné les mentions légales ne redémarre pas, et toute autre l'avertit au démarrage ([les renseigner](mentions-legales.md#monter-de-version-avec-une-instance-déjà-en-service)). À la mise à jour vers `V118`, l'édition active est choisie automatiquement ([les envois automatiques](envois-automatiques.md#2-activer-lédition-qui-doit-écrire)).
 
 ## La version de PostgreSQL
 

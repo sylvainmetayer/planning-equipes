@@ -75,7 +75,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.historique.term.contenu:Ce qu'une ligne ne dit pas`,
-              text: $localize`:@@aide.historique.def.contenu:Aucune valeur : « nom, e-mail » dit ce qui a bougé, jamais ce que c'est devenu. L'historique n'est pas une sauvegarde et ne permet pas de revenir en arrière ; pour cela, il y a les instantanés. Aucune identité non plus : la ligne garde un identifiant, si bien qu'une fiche supprimée depuis laisse une ligne qui ne nomme plus personne. Sont tracées les écritures et les sorties de données (exports, dumps, envois de courriel), mais ni les consultations ni les calculs qui n'écrivent rien.`,
+              text: $localize`:@@aide.historique.def.contenu:Aucune valeur : « nom, e-mail » dit ce qui a bougé, jamais ce que c'est devenu. L'historique n'est pas une sauvegarde et ne permet pas de revenir en arrière ; pour cela, il y a les versions. Aucune identité non plus : la ligne garde un identifiant, si bien qu'une fiche supprimée depuis laisse une ligne qui ne nomme plus personne. Sont tracées les écritures et les sorties de données (exports, dumps, envois de courriel), mais ni les consultations ni les calculs qui n'écrivent rien.`,
             },
             {
               term: $localize`:@@aide.historique.term.portee:Ce que la page charge`,
@@ -163,7 +163,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.mcp.term.pouvoir:Ce que la clé permet`,
-              text: $localize`:@@aide.mcp.def.pouvoir:Tout ce que fait l'administration, écriture comprise : créer et supprimer des données, lancer une résolution, publier, vider une édition. Elle n'est propre à personne et n'expire pas : traitez-la comme un mot de passe et faites-la remplacer au moindre doute. Un assistant branché dessus agit sans confirmation à l'écran. Avant de lui faire toucher une édition réelle, prenez un instantané.`,
+              text: $localize`:@@aide.mcp.def.pouvoir:Tout ce que fait l'administration, écriture comprise : créer et supprimer des données, lancer une résolution, publier, vider une édition. Elle n'est propre à personne et n'expire pas : traitez-la comme un mot de passe et faites-la remplacer au moindre doute. Un assistant branché dessus agit sans confirmation à l'écran. Avant de lui faire toucher une édition réelle, enregistrez une version.`,
             },
             {
               term: $localize`:@@aide.mcp.term.edition:L'édition visée`,

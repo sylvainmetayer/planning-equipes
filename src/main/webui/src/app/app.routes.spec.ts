@@ -21,6 +21,7 @@ import {
   equityFicheUrl,
   parametresOngletsDeplaces,
   redirectConstraintsToRegles,
+  redirectEditionComparison,
   redirectKpiToVersions,
   standEditToFicheUrl,
   routes,
@@ -170,7 +171,7 @@ describe('app.routes', () => {
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic;
-    // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another;
+    // `/realise` (Réalisé vs planifié) brought one, `/comparer` another;
     // the nine screens that became tabs of another page gave theirs up;
     // `/mot-de-passe`, the page of a mailed link, and `/responsable` (« Mon stand »)
     // brought one each, and `/rh` (« Conformité RH ») and `/animateur/:jeton/contacts` one more each.
@@ -498,6 +499,14 @@ describe('app.routes', () => {
     expect(allRoutes(routes).find((route) => route.path === 'kpi')?.redirectTo).toBe(
       redirectKpiToVersions,
     );
+  });
+
+  /** The editions' comparison became the « Éditions » view of `/comparer` (4.0). */
+  it('mène l’ancienne comparaison d’éditions à sa vue, la paire gardée', () => {
+    expect(redirectEditionComparison(snapshotOf({ a: 'E1', b: 'E2', x: 'y' }))).toBe(
+      '/comparer?vue=editions&a=E1&b=E2',
+    );
+    expect(redirectEditionComparison(snapshotOf({}))).toBe('/comparer?vue=editions');
   });
 
   /** `/constraints` became « Règles du planning » (issue #720). */

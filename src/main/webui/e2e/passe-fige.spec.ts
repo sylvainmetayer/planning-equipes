@@ -54,10 +54,6 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   expect(reset.ok(), await reset.text()).toBe(true);
   const importation = await admin.post(`/api/reference-data/import-scenario?name=${SCENARIO}`);
   expect(importation.ok(), await importation.text()).toBe(true);
-  const parametres = await admin.put('/api/parametres-solveur', {
-    data: { dureeResolutionSecondes: DUREE_SECONDES },
-  });
-  expect(parametres.ok(), await parametres.text()).toBe(true);
 });
 
 test.afterAll(async () => {

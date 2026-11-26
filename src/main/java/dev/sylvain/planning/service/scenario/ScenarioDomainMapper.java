@@ -15,7 +15,6 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
@@ -38,7 +37,6 @@ import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
-import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
 import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
@@ -434,7 +432,6 @@ final class ScenarioDomainMapper {
         return new ScenarioSections(
                 parametresLegaux(scenario.parametresLegaux()),
                 parametresQualite(scenario.parametresQualite()),
-                parametresSolveur(scenario.parametresSolveur()),
                 typologies(scenario.typologies()),
                 edition(scenario),
                 contraintes(scenario.contraintes()),
@@ -753,13 +750,6 @@ final class ScenarioDomainMapper {
                 dto.toleranceArriveeGroupeeMinutes() != null
                         ? dto.toleranceArriveeGroupeeMinutes()
                         : defauts.toleranceArriveeGroupeeMinutes()));
-    }
-
-    private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {
-        if (dto == null || (dto.dureeResolutionSecondes() == null && dto.plateauSecondes() == null)) {
-            return Optional.empty();
-        }
-        return Optional.of(new ParametresSolveur(dto.dureeResolutionSecondes(), dto.plateauSecondes(), false));
     }
 
     /**

@@ -36,9 +36,8 @@ class SolverConfigurationBudgetTest {
     /** A duration off the default keeps its plateau, still gated on feasibility. */
     @Test
     void aNonDefaultDurationKeepsItsFeasiblePlateau() {
-        TerminationConfig termination = configuration
-                .solverConfigFor(new SolveBudget(1800L, 120L, null))
-                .getTerminationConfig();
+        TerminationConfig termination =
+                configuration.solverConfigFor(new SolveBudget(1800L, 120L)).getTerminationConfig();
 
         assertThat(termination.getSecondsSpentLimit()).isEqualTo(1800L);
         assertThat(termination.getTerminationConfigList()).singleElement().satisfies(plateau -> {
@@ -159,7 +158,7 @@ class SolverConfigurationBudgetTest {
     @Test
     void aZeroPlateauLeavesThePlainTimeBudget() {
         TerminationConfig termination =
-                configuration.solverConfigFor(new SolveBudget(1800L, 0L, null)).getTerminationConfig();
+                configuration.solverConfigFor(new SolveBudget(1800L, 0L)).getTerminationConfig();
 
         assertThat(termination.getSecondsSpentLimit()).isEqualTo(1800L);
         assertThat(termination.getTerminationConfigList()).isNullOrEmpty();

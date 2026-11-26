@@ -229,11 +229,11 @@ public class PlanningService {
      * {@link ScenarioYamlReader#SCENARIOS_DIR} folder and reloaded as-is.
      *
      * <p>Everything that shapes a solve is written, not only the entities:
-     * {@code typologies}, {@code emplacements}, {@code parametresLegaux} and
-     * {@code parametresSolveur} — re-importing the file therefore reproduces
-     * the very same problem, which is the whole point of exporting it. A file
-     * missing those sections silently fell back to the importing instance's own
-     * settings (its solve duration, its legal ceilings), so the "same" scenario
+     * {@code typologies}, {@code emplacements} and {@code parametresLegaux} —
+     * re-importing the file therefore reproduces the very same problem, which
+     * is the whole point of exporting it. A file missing those sections
+     * silently fell back to the importing instance's own settings (its legal
+     * ceilings), so the "same" scenario
      * replayed elsewhere solved a different problem.</p>
      *
      * <p><b>The créneaux are always written as they are, and the seat list is
@@ -288,7 +288,6 @@ public class PlanningService {
                 referenceDataService.listEmplacements(),
                 referenceDataService.getParametresLegaux(),
                 referenceDataService.getParametresQualite(),
-                referenceDataService.getParametresSolveur(),
                 referenceDataService.getEtatsContraintes(),
                 referenceDataService.getConstraintWeights(),
                 referenceDataService.snapshotContraintes(),

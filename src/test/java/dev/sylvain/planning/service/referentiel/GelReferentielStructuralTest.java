@@ -211,7 +211,6 @@ class GelReferentielStructuralTest {
                     "ReferenceDataService#updateParametresLegaux(ParametresLegaux)",
                     "the settings are not one of the four families"),
             Map.entry("ReferenceDataService#updateParametresSolveur(ParametresSolveur)", "same"),
-            Map.entry("ReferenceDataService#importParametresSolveur(ParametresSolveur)", "same"),
             Map.entry("ReferenceDataService#updateParametresNotifications(ParametresNotifications)", "same"),
             Map.entry("ReferenceDataService#updateParametresQualite(ParametresQualite)", "same"),
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),

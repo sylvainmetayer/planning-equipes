@@ -1,12 +1,12 @@
 // « Versions du plan »: rendered for real on mocked stores. What the page
 // decides beyond listing: which rows can be restored, compared and ticked,
-// that two ticks open the comparator beside the table with the older side as
-// the reference, and that restoring waits while a solve runs.
+// that two ticks open « Comparer deux versions » with the pair in the address,
+// that each version says its origin, and that restoring waits while a solve runs.
 
-import { Component, input, output, provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
@@ -17,16 +17,7 @@ import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { ComparaisonPanel } from './comparaison-panel';
 import { VersionsPage } from './versions-page';
-
-@Component({ selector: 'app-comparaison-panel', template: '' })
-class FakePanel {
-  readonly base = input.required<string>();
-  readonly variante = input.required<string>();
-  readonly snapshots = input<readonly PlanSnapshot[]>([]);
-  readonly closed = output<void>();
-}
 
 function kpi(): PlanningKpi {
   return {
@@ -136,10 +127,6 @@ describe('VersionsPage', () => {
         },
       ],
     });
-    TestBed.overrideComponent(VersionsPage, {
-      remove: { imports: [ComparaisonPanel] },
-      add: { imports: [FakePanel] },
-    });
     fixture = TestBed.createComponent(VersionsPage);
     await vi.waitFor(async () => {
       await fixture.whenStable();
@@ -186,8 +173,9 @@ describe('VersionsPage', () => {
     expect(solve.querySelector('button[aria-label="Restaurer ce plan"]')).toBeNull();
   });
 
-  it('opens the comparator beside the table on two ticks, the older side as reference', async () => {
+  it('opens « Comparer deux versions » on two ticks, the pair in the address', async () => {
     await rendre([snapshot(7, '2026-08-01T10:00:00Z'), snapshot(8, '2026-08-02T10:00:00Z')]);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const [courant, , recent] = lignes();
 
     checkbox(courant)!.click();
@@ -201,13 +189,27 @@ describe('VersionsPage', () => {
       (button) => button.textContent!.includes('Comparer'),
     ) as HTMLButtonElement;
     comparer.click();
-    await fixture.whenStable();
 
-    const panel = fixture.debugElement.query((element) => element.name === 'app-comparaison-panel')
-      .componentInstance as FakePanel;
-    expect(panel.base()).toBe('8');
-    expect(panel.variante()).toBe('courant');
-    expect(racine().querySelector('.versions-layout-panneau')).not.toBeNull();
+    expect(navigate).toHaveBeenCalledWith(['/comparer'], {
+      queryParams: { vue: 'versions', comparer: 'courant,8' },
+      replaceUrl: false,
+    });
+  });
+
+  it('says the origin of each version: manual, before a solve, published', async () => {
+    await rendre([
+      snapshot(7, '2026-08-01T10:00:00Z'),
+      snapshot(8, '2026-08-02T10:00:00Z', { origine: 'AVANT_CALCUL', automatique: true }),
+      snapshot(9, '2026-08-03T10:00:00Z', {
+        origine: 'PUBLIEE',
+        publieLe: '2026-08-03T11:00:00Z',
+      }),
+    ]);
+
+    const texts = lignes().map((ligne) => ligne.textContent!.replace(/\s+/g, ' '));
+    expect(texts.find((text) => text.includes('Instantané 7'))).toContain('manuelle');
+    expect(texts.find((text) => text.includes('Instantané 8'))).toContain('avant calcul');
+    expect(texts.find((text) => text.includes('Instantané 9'))).toContain('plan publié');
   });
 
   it('keeps « Restaurer » off while a solve runs', async () => {

@@ -203,8 +203,8 @@ cap according to use.
 
 ## Solve quota
 
-An instance exposed with a shared password (a public
-demonstration) lets anyone launch solves, and a solve occupies the machine
+A public instance (`PUBLIC_INSTANCE=true`), for example exposed with a
+shared password for a demonstration, lets anyone launch solves, and a solve occupies the machine
 for minutes. If that machine also carries a production, two operator guards
 bound what a visitor can cost it:
 `SOLVER_MAX_SOLVES_PER_HOUR` (solves accepted over a sliding 60 minutes) and
@@ -212,6 +212,8 @@ bound what a visitor can cost it:
 the duration of each. Unlike the previous limiters, they count for
 the **whole instance**, not per address: it is the machine being protected, and a
 visitor who changes address does not start again from zero. The refusal is a `409` that
-says when to come back, not a `429`. Off by default; setting and scope in
-[tuning the solve](calcul-du-planning.md#borner-le-nombre-de-calculs-dune-instance-partagée), the choice
-in [ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md).
+says when to come back, not a `429`. Off by default, and ignored on an
+instance not declared public; setting and scope in
+[tuning the solve](calcul-du-planning.md#borner-le-nombre-de-calculs-dune-instance-publique), the choice
+in [ADR 0075](repo:docs/decisions/0075-quota-de-calcul-de-l-instance-dans-l-application.md)
+and [ADR 0110](repo:docs/decisions/0110-budget-de-calcul-d-instance-file-en-memoire-quota-public.md).

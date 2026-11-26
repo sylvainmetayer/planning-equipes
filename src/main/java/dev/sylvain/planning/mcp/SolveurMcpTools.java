@@ -107,8 +107,9 @@ public class SolveurMcpTools {
                             openWorldHint = false))
     JobMcpView startSolver(
             @ToolArg(
-                            description = "Durée max en secondes (défaut : le budget de l'édition, voir "
-                                    + "consulter_parametres_solveur) ; refusée au-dessus du plafond de l'instance",
+                            description = "Durée max en secondes (défaut : le budget de l'instance, voir "
+                                    + "consulter_parametres, section calcul) ; refusée au-dessus du plafond de "
+                                    + "l'instance",
                             required = false)
                     Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
@@ -153,7 +154,7 @@ public class SolveurMcpTools {
                     List<String> standIds,
             @ToolArg(
                             description = "Durée max en secondes (défaut 60) ; refusée au-dessus du plafond de "
-                                    + "l'instance. L'arrêt sur plateau de l'édition s'applique",
+                                    + "l'instance. Aucun arrêt sur plateau",
                             required = false)
                     Long secondes,
             @ToolArg(description = "Attendre son tour si le solveur est occupé, au lieu d'échouer", required = false)
@@ -462,7 +463,7 @@ public class SolveurMcpTools {
                 job.getFeasibleAtSeconds(),
                 job.getRemoteStage(),
                 job.getError(),
-                avertissement(job.getBudgetWarning(), job.getResult()),
+                avertissement(job.getResult()),
                 job.getEditionId(),
                 job.getEditionNom());
     }
@@ -473,7 +474,7 @@ public class SolveurMcpTools {
      * during the event would otherwise hide them. {@code null} when there is
      * nothing to warn about, on a job without a result included.
      */
-    private static String avertissement(String budgetWarning, Object result) {
+    private static String avertissement(Object result) {
         int vides =
                 switch (result) {
                     case SolverJobService.ResultatSolve solve ->
@@ -482,11 +483,7 @@ public class SolveurMcpTools {
                         incremental.statistiques().postesPassesVides();
                     case null, default -> 0;
                 };
-        String sieges = vides > 0 ? vides + " sièges passés sont restés vides." : null;
-        if (budgetWarning == null) {
-            return sieges;
-        }
-        return sieges == null ? budgetWarning : budgetWarning + " " + sieges;
+        return vides > 0 ? vides + " sièges passés sont restés vides." : null;
     }
 
     private static AffectationView toView(PosteAffectation poste) {

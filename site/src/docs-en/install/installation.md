@@ -38,7 +38,7 @@ The deployment files are taken from the [project repository](repo:docker-compose
    cp .env.prod.example .env.prod
    ```
 
-   The seven mandatory variables are `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` and `MAIL_FROM`. The compose file refuses to start if one is missing, and the application for its part refuses the two sample passwords and five empty legal fields. The full list of its refusals opens [the variable inventory](variables-environnement.md#obligatoires-en-production).
+   The seven mandatory variables are `APP_VERSION`, `DB_PASSWORD`, `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` and `MAIL_FROM`. The compose file refuses to start if one is missing, and the application for its part refuses the two sample passwords and, on a public instance (`PUBLIC_INSTANCE=true`), five empty legal fields. The full list of its refusals opens [the variable inventory](variables-environnement.md#obligatoires-en-production).
 
 2. Choose a named version. `APP_VERSION=1.2.0` in the `.env.prod`, never `main` or `latest`. `main` is the trial image, rebuilt at every merge and every Sunday; `latest` designates whatever the registry decides. An incident report must be able to name the deployment: "1.2.0" does, "Tuesday's image" does not. What a number promises is in [version numbers](versioning.md).
 

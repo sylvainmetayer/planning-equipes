@@ -60,4 +60,4 @@ The summary says how many reviews are removed and how many are kept, with their 
 
 ## Go back
 
-A snapshot of the plan is taken automatically before each solve, and you can create others: see [Solve the schedule](calculer-planning.md#garder-des-versions-du-plan).
+A version of the plan is taken automatically before each solve, and you can save others: see [Solve the schedule](calculer-planning.md#garder-des-versions-du-plan).

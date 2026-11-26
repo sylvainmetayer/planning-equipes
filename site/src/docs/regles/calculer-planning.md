@@ -43,14 +43,14 @@ Après un changement tardif, « Corriger après un changement » bouge le minimu
 
 - La courbe de score en direct. Les trois niveaux de la note (règles impératives, places à pourvoir, qualité) se tracent pendant la résolution, chacun à sa propre échelle. Vous voyez quand le calcul plafonne et vous pouvez l'arrêter à propos. Seule la résolution en cours est tracée.
 - Plan faisable depuis… Dès que le calcul tient un planning faisable (toutes les places pourvues, toutes les règles impératives tenues), la page le dit et compte depuis combien de temps. La suite n'améliore plus que la qualité. « Arrêter et garder ce plan » enregistre ce planning sans attendre la fin du budget.
-- La file d'attente. Vous pouvez planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file survit à un redémarrage du serveur ; la résolution qui était en cours est perdue et signalée comme interrompue.
+- La file d'attente. Vous pouvez planifier une résolution derrière celle qui tourne : elle démarre d'elle-même, ce qui permet de préparer l'édition suivante sans attendre devant l'écran. La file est **en mémoire** : un redémarrage du serveur perd les résolutions planifiées comme celle qui était en cours, signalées comme interrompues ; relancez-les.
 - L'e-mail de fin. Activez-le par édition (Règles du planning, onglet *Calcul*) pour être prévenu dès qu'une résolution se termine, avec l'édition, le score et la faisabilité.
 
 ![Le suivi d'un calcul en cours](/images/fr/docs/solveur.webp "L'écran Solveur pendant un calcul")
 
 ## Régler la durée du calcul
 
-Chaque édition règle combien de temps un calcul peut durer, et quand il s'arrête faute de progrès. L'arrêt faute de progrès ne joue qu'une fois le planning faisable, jamais tant que des places restent à pourvoir. Ces réglages sont plafonnés par une valeur que fixe l'exploitant de l'instance, affichée dans *Règles du planning*, onglet *Calcul* (derrière « Réglages avancés »). « Revenir au défaut » rend l'édition aux valeurs de l'instance.
+La durée maximale d'un calcul et l'arrêt faute de progrès sont **ceux de l'instance**, les mêmes pour toutes les éditions : c'est l'exploitant qui les règle sur le serveur, et *Règles du planning*, onglet *Calcul*, les affiche sans les modifier. L'arrêt faute de progrès ne joue qu'une fois le planning faisable, jamais tant que des places restent à pourvoir.
 
 ## Lire le résultat
 
@@ -62,10 +62,10 @@ Pour comprendre pourquoi une place reste vide ou une règle cède, voir [Compren
 
 ## Garder des versions du plan
 
-*Solveur*, onglet *Versions du plan*, réunit dans un seul tableau les résolutions terminées et les instantanés de l'édition, du plus récent au plus ancien, avec le résultat de chacun en phrases (rien de nominatif).
+*Solveur*, onglet *Versions du plan*, réunit dans un seul tableau les résolutions terminées et les versions de l'édition, du plus récent au plus ancien, avec le résultat de chacun en phrases (rien de nominatif).
 
-- Un **instantané** met un planning de côté et le remet en place plus tard. Une capture est prise automatiquement avant chaque résolution ; en remettre un périmé demande une confirmation qui nomme la cause.
-- Deux versions cochées, ou une version et le plan en place, se comparent côte à côte : score, couverture, équité et écarts aux règles, toutes éditions confondues sur demande.
+- Une **version** met un planning de côté et le remet en place plus tard. Elle a une origine, écrite sur sa ligne : *manuelle* (« Enregistrer cet état »), *avant calcul* (prise automatiquement avant chaque résolution) ou *publiée* (le plan que les animateurs ont reçu). En remettre une périmée demande une confirmation qui nomme la cause.
+- Deux versions cochées, ou une version et le plan en place, s'ouvrent dans *Comparer deux versions* : score, couverture, équité et écarts aux règles, toutes éditions confondues sur demande. L'adresse garde la paire, pour la partager.
 - Chaque résolution garde le dosage des règles sous lequel elle a été lancée, et le comparateur prévient quand deux plans ont été calculés sous des poids différents.
 - Les mesures des résolutions survivent à la suppression de l'édition.
 

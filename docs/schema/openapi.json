@@ -5840,14 +5840,6 @@
             "type" : "integer",
             "format" : "int64"
           },
-          "cappedFromSecondsLimit" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "cappedFromPlateauSeconds" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "reamorcage" : {
             "$ref" : "#/components/schemas/Reamorcage"
           },
@@ -7352,21 +7344,13 @@
         "required" : [ "mailFinResolution" ],
         "type" : "object",
         "properties" : {
-          "dureeResolutionSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "plateauSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "mailFinResolution" : {
             "type" : "boolean"
           }
         }
       },
       "ParametresView" : {
-        "required" : [ "legal", "organisation", "notifications", "instance" ],
+        "required" : [ "legal", "organisation", "notifications", "calcul" ],
         "type" : "object",
         "properties" : {
           "legal" : {
@@ -7378,7 +7362,7 @@
           "notifications" : {
             "$ref" : "#/components/schemas/ParametresNotifications"
           },
-          "instance" : {
+          "calcul" : {
             "$ref" : "#/components/schemas/SolverSettingsView"
           }
         }
@@ -10034,7 +10018,7 @@
       },
       "SolverBudgetBounds" : {
         "type" : "object",
-        "required" : [ "defaultSecondsLimit", "defaultPlateauSeconds", "maxSecondsLimit", "maxPlateauSeconds" ],
+        "required" : [ "defaultSecondsLimit", "defaultPlateauSeconds", "maxSecondsLimit" ],
         "properties" : {
           "defaultSecondsLimit" : {
             "type" : "integer",
@@ -10047,10 +10031,6 @@
           "maxSecondsLimit" : {
             "type" : "integer",
             "format" : "int64"
-          },
-          "maxPlateauSeconds" : {
-            "type" : "integer",
-            "format" : "int64"
           }
         }
       },
@@ -10058,14 +10038,6 @@
         "type" : "object",
         "required" : [ "mailFinResolution", "instance" ],
         "properties" : {
-          "dureeResolutionSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "plateauSecondes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "mailFinResolution" : {
             "type" : "boolean"
           },
@@ -17254,7 +17226,7 @@
         "tags" : [ "Parametres Resource" ]
       }
     },
-    "/api/parametres/instance" : {
+    "/api/parametres/calcul" : {
       "put" : {
         "requestBody" : {
           "content" : {
@@ -17281,7 +17253,7 @@
             "description" : "Bad Request"
           }
         },
-        "summary" : "Update Instance",
+        "summary" : "Update Calcul",
         "tags" : [ "Parametres Resource" ]
       },
       "get" : {
@@ -17297,7 +17269,7 @@
             }
           }
         },
-        "summary" : "Get Instance",
+        "summary" : "Get Calcul",
         "tags" : [ "Parametres Resource" ]
       }
     },

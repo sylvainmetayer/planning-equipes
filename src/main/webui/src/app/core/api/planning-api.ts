@@ -190,12 +190,12 @@ export class PlanningApi {
 
   /** The snapshots of every edition — a variant of an edition is another edition. */
   comparableSnapshots(): Promise<PlanSnapshot[]> {
-    return this.api.get<PlanSnapshot[]>('/api/planning/snapshots/comparables');
+    return this.api.get<PlanSnapshot[]>('/api/planning/versions/comparables');
   }
 
   compareSnapshots(base: string, variante: string): Promise<ComparaisonSnapshots> {
     const params = new URLSearchParams({ base, variante });
-    return this.api.get<ComparaisonSnapshots>(`/api/planning/snapshots/compare?${params}`);
+    return this.api.get<ComparaisonSnapshots>(`/api/planning/versions/compare?${params}`);
   }
 
   /** Structural validation of a scenario file, without importing anything. */

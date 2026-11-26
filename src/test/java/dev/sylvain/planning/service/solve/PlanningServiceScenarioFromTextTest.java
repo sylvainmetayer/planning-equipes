@@ -82,9 +82,6 @@ class PlanningServiceScenarioFromTextTest {
         assertThat(importe.sections().parametresLegaux()).isPresent();
         assertThat(importe.sections().parametresLegaux().orElseThrow().getReposQuotidienMinimalMinutes())
                 .isEqualTo(500);
-        assertThat(importe.sections().parametresSolveur()).isPresent();
-        assertThat(importe.sections().parametresSolveur().orElseThrow().dureeResolutionSecondes())
-                .isEqualTo(400);
     }
 
     /**

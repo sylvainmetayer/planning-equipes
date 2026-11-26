@@ -78,7 +78,7 @@
   </mat-card-header>
   @if (store.editions().length > 1) {
     <mat-card-actions>
-      <a matButton routerLink="/editions/comparer">
+      <a matButton routerLink="/comparer" [queryParams]="{ vue: 'editions' }">
         <mat-icon>difference</mat-icon>
         <ng-container i18n="@@editions.action.comparerDeux">Comparer deux éditions</ng-container>
       </a>
@@ -121,7 +121,7 @@
           <a matIconButton i18n-matTooltip="@@editions.action.comparer" matTooltip="Comparer à l'édition consultée"
              i18n-aria-label="@@editions.action.comparer" aria-label="Comparer à l'édition consultée"
              [disabled]="edition.id === courantId()"
-             routerLink="/editions/comparer" [queryParams]="{ a: edition.id, b: courantId() }">
+             routerLink="/comparer" [queryParams]="{ vue: 'editions', a: edition.id, b: courantId() }">
             <mat-icon>difference</mat-icon>
           </a>
           @if (edition.active) {

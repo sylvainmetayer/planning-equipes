@@ -8,6 +8,7 @@ import {
   output,
   signal,
   untracked,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,9 +26,9 @@ import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 import { DosageDifference, dosageDifferences } from '../../core/dosage';
 
 /**
- * The A/B comparator (issue #70), opened as a panel beside « Versions du plan »
- * (issue #702): the two sides come from the rows ticked there, the older one
- * as the reference (A). A pure read of metrics already measured — it never
+ * The A/B comparator (issue #70), the « Versions » view of « Comparer deux
+ * versions »: the two sides are picked there, the older one as the
+ * reference (A). A pure read of metrics already measured — it never
  * triggers a solve.
  */
 @Component({
@@ -42,6 +43,9 @@ import { DosageDifference, dosageDifferences } from '../../core/dosage';
     ScoreReadingPanel,
   ],
   templateUrl: './comparaison-panel.html',
+  styleUrl: './comparaison-panel.css',
+  // Global by design (AGENTS.md): the page that opens it and the table share its classes.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ComparaisonPanel {
