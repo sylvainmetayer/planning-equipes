@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.testing.PhaseReset;
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -368,6 +369,8 @@ class ArchiveEvenementResourceTest {
                 .statusCode(200)
                 .body("publie", equalTo(true));
 
+        // Publishing froze the structure; emptying the edition is a gesture of the preparation (ADR 0115).
+        PhaseReset.backToPreparation();
         persistence.clearDatabase();
 
         given().header("X-Edition-Id", "E1")

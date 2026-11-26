@@ -24,6 +24,7 @@ import dev.sylvain.planning.service.responsable.ReglageNoms;
 import dev.sylvain.planning.service.responsable.ReglageResponsableService;
 import dev.sylvain.planning.service.responsable.ReglagesResponsables;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.testing.PhaseReset;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -358,6 +359,8 @@ class ResponsableResourceTest {
     @Test
     void aResetBringsTheSettingBackToShiftsOnlyAndWithdrawsTheRights() {
         reglages.replace(new ReglagesResponsables(new ReglageNoms(true, null), Map.of()));
+        // The fixture published, which froze the structure; emptying is a preparation gesture (ADR 0115).
+        PhaseReset.backToPreparation();
         persistence.clearDatabase();
         assertThat(reglages.get().parDefaut().nomsVisibles()).isFalse();
         given().header("Authorization", bearer())

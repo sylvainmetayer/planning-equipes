@@ -59,11 +59,11 @@ L'atterrissage d'un calcul réécrit les places et reprend les stands, créneaux
 
 Ne transformez jamais un refus en avertissement : il protège contre la résurrection de données par l'atterrissage. Les écrans verrouillent ces saisies le temps du calcul ; un assistant sans écran n'a que l'avertissement.
 
-## Respecter le gel du référentiel
+## Respecter la phase de l'édition
 
-`figer_referentiel` et `lever_gel` posent et lèvent le gel d'une famille du référentiel (`STANDS`, `CRENEAUX`, `TYPOLOGIES_EMPLACEMENTS`, `COMPETENCES`, [ADR 0052](repo:docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md)), et `etat_edition` dit lesquelles le sont dans son bloc `gel`. Les deux sont journalisés comme leurs routes REST et classés « sans rapport » avec un calcul : un gel refuse les écritures à venir, il ne change aucune donnée qu'un calcul lit.
+La phase de l'édition décide quelles familles du référentiel sont figées (`STANDS`, `CRENEAUX`, `TYPOLOGIES_EMPLACEMENTS`, `COMPETENCES`, [ADR 0115](repo:docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md)), et `etat_edition` dit lesquelles le sont dans son bloc `gel`. `figer_referentiel` et `lever_gel` restent jusqu'en 5.0 comme alias de la phase : en Préparation, figer une famille fait passer l'édition en Calcul, qui les fige toutes ; en Calcul, lever ramène en Préparation ; dans une édition publiée, lever débloque la structure et figer la refige. Les deux sont journalisés comme leurs routes REST et classés « sans rapport » avec un calcul : une phase refuse les écritures à venir, elle ne change aucune donnée qu'un calcul lit.
 
-Le refus d'une écriture figée est posé sur les services, que les outils appellent comme les écrans : `modifier_stand` qui change un effectif, `supprimer_creneau`, `creer_typologie` ou `modifier_animateur` qui change des compétences reviennent en refus métier, avec la phrase qui nomme les familles à lever ; `modifier_stand` qui ne touche que le nom, ou `appliquer_consigne`, passent. Ne levez un gel que sur demande explicite : après une publication, toute retouche fait bouger des plannings déjà envoyés.
+Le refus d'une écriture figée est posé sur les services, que les outils appellent comme les écrans : `modifier_stand` qui change un effectif, `supprimer_creneau`, `creer_typologie` ou `modifier_animateur` qui change des compétences reviennent en refus métier, avec la phrase qui nomme les familles figées et dit comment les rouvrir ; `modifier_stand` qui ne touche que le nom, ou `appliquer_consigne`, passent. Ne rouvrez le référentiel que sur demande explicite : après une publication, toute retouche fait bouger des plannings déjà envoyés.
 
 ## Signaler un courriel sortant
 

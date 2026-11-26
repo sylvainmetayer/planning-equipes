@@ -82,9 +82,13 @@ If two tabs or two people open the same fiche, the second to save is warned that
 
 ## Freeze the reference data when preparation is finished
 
-A finished preparation is frozen by family: stands, timeslots, game categories and locations, skills. While the freeze lasts, no path (form, bulk edit, import, wizard) modifies these fiches, and the frozen fields are displayed read-only with a padlock.
+An edition moves through phases: Preparation, Solving, Published, Finished. While it is in Preparation, everything can be edited. As soon as it moves to Solving, the reference data is frozen: stands, timeslots, game categories and locations, staff skills. No path (form, bulk edit, import, wizard) then modifies these fiches, and the frozen fields are displayed read-only with a padlock.
 
-The freeze is suggested after the first solve and the first publication, never imposed. It is set in Settings, *Edition* tab. Availability, adjustments, locks and consignes (official orders relayed to the whole event) remain free. When the freeze is lifted, the application recalls whether the schedule is already published.
+To move to Solving, freeze a family in Settings, *Edition* tab: the four freeze together. Lift one to go back to Preparation, and the four reopen.
+
+The first publication moves the edition to Published. The structure (stands, timeslots, game categories and locations) stays frozen there, but the staff fiches can be edited again. For a last-minute change, such as adding a stand the day before, lift the stand freeze: the structure is unblocked without leaving the Published phase, and the next publication freezes it again by itself.
+
+In every phase, availability, adjustments, locks and consignes (official orders relayed to the whole event) remain free. When the freeze is lifted, the application recalls whether the schedule is already published.
 
 ## What next
 

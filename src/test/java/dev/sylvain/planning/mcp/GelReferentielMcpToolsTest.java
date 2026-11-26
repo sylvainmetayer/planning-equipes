@@ -18,9 +18,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The freeze through MCP (ADR 0052): {@code figer_referentiel} and
- * {@code lever_gel} work in the edition their argument names, {@code etat_edition}
- * reads the freeze back, and a write tool of a frozen family comes back as a
+ * The 3.x freeze through MCP, kept as aliases of the phase of the edition
+ * until 5.0 (ADR 0115): {@code figer_referentiel} and {@code lever_gel} work
+ * in the edition their argument names, {@code etat_edition} reads the freeze
+ * back, and a write tool of a frozen family comes back as a
  * refusal carrying the sentence — the same guard as over HTTP, since both reach
  * the same services.
  */
@@ -81,7 +82,7 @@ class GelReferentielMcpToolsTest {
     }
 
     @Test
-    void freezingIsReadBackByEtatEditionAndLiftedAgain() {
+    void freezingAFamilyEntersTheCalculPhaseAndLiftingLeavesIt() {
         GelReferentielService.EtatGel fige = editionTools.freezeReferential("stands", edition);
         assertThat(fige.fige()).isTrue();
         assertThat(fige.figeLe()).isNotNull();
@@ -90,11 +91,13 @@ class GelReferentielMcpToolsTest {
         assertThat(etat.gel().familles())
                 .filteredOn(GelReferentielService.EtatGel::fige)
                 .extracting(GelReferentielService.EtatGel::famille)
-                .containsExactly(ReferentialFamily.STANDS);
+                .as("the Calcul phase freezes the four families, not the one named")
+                .containsExactly(ReferentialFamily.values());
         // Another edition is not frozen by this one.
         assertThat(editionTools.editionState("E1").gel().familles()).noneMatch(GelReferentielService.EtatGel::fige);
 
         assertThat(editionTools.liftFreeze("STANDS", edition).fige()).isFalse();
+        assertThat(editionTools.editionState(edition).gel().familles()).noneMatch(GelReferentielService.EtatGel::fige);
     }
 
     @Test
@@ -108,9 +111,6 @@ class GelReferentielMcpToolsTest {
     @Test
     void theWriteToolsOfAFrozenFamilyAreRefused() {
         editionTools.freezeReferential("STANDS", edition);
-        editionTools.freezeReferential("CRENEAUX", edition);
-        editionTools.freezeReferential("TYPOLOGIES_EMPLACEMENTS", edition);
-        editionTools.freezeReferential("COMPETENCES", edition);
 
         String stand = idOfCode("/api/stands", "STAND-STRAT");
         String strategie = idOfCode("/api/typologies", "STRATEGIE");

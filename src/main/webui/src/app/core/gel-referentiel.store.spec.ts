@@ -47,21 +47,29 @@ describe('GelReferentielStore', () => {
     expect(store.frozenFamilies()).toEqual(['CRENEAUX']);
   });
 
-  it('keeps the families in the server order after a freeze and a lift', async () => {
+  it('reads every family again after a freeze and a lift, which move the phase', async () => {
     await store.ensureLoaded();
-    api.freeze.mockResolvedValue({ ...OUVERTES[0], fige: true, figeLe: '2026-07-02T08:00:00Z' });
+    const figees = OUVERTES.map((state) => ({
+      ...state,
+      fige: true,
+      figeLe: '2026-07-02T08:00:00Z',
+    }));
+    api.freeze.mockResolvedValue(figees[0]);
+    api.gel.mockResolvedValueOnce(figees);
 
     await store.freeze('STANDS');
-    await store.lift('CRENEAUX');
-
-    expect(store.states().map((state) => state.famille)).toEqual([
+    expect(store.frozenFamilies()).toEqual([
       'STANDS',
       'CRENEAUX',
       'TYPOLOGIES_EMPLACEMENTS',
       'COMPETENCES',
     ]);
-    expect(store.isFrozen('STANDS')).toBe(true);
-    expect(store.isFrozen('CRENEAUX')).toBe(false);
+
+    api.gel.mockResolvedValueOnce(
+      OUVERTES.map((state) => ({ ...state, fige: false, figeLe: null })),
+    );
+    await store.lift('CRENEAUX');
+    expect(store.anyFrozen()).toBe(false);
     expect(store.busy()).toBe(false);
   });
 
