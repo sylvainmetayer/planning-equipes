@@ -77,8 +77,13 @@ class Renumbering(unittest.TestCase):
         self.git('add', '-A')
         self.git('commit', '-q', '-m', message)
 
-    def run_script(self):
-        return subprocess.run([sys.executable, str(SCRIPT), 'main'], cwd=self.repo, env=ENV, capture_output=True, text=True)
+    def run_script(self, base='main'):
+        return subprocess.run([sys.executable, str(SCRIPT), base], cwd=self.repo, env=ENV, capture_output=True, text=True)
+
+    def test_refuses_a_base_that_is_not_a_ref_name(self):
+        result = self.run_script('--output=/tmp/x')
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('not a branch or commit name', result.stderr)
 
     def test_moves_the_migration_and_its_references_above_the_base(self):
         result = self.run_script()

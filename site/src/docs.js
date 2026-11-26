@@ -241,10 +241,7 @@ function readDoc(name, published, twinOf) {
   const front = raw.match(FRONT);
   const meta = front ? yaml(front[1]) : {};
   const sections = EXTERNAL[name] ? [] : sectionsOf(`${DIRS[lang]}${bare}/`);
-  const page = front ? raw.slice(front[0].length) : raw;
-  const whole = sections.length ? `${[page.trimEnd(), ...sections.map((s) => s.body.trim())].join('\n\n')}\n` : page;
-  // In a code span (`{{ regles.total }}`) the placeholder is shown as written
-  const source = whole.replace(/(?<!`)\{\{ regles\.total \}\}(?!`)/g, () => String(ruleCount()));
+  const source = assemble(front ? raw.slice(front[0].length) : raw, sections);
   // The page a link is read from: for an English page, its French twin (the links are written as there)
   const from = lang === 'en' ? meta.twin : name;
   const state = { name, from, lang, twinOf, ids: new Set(), idList: [], toc: [], links: [], h1: '', lead: '' };
@@ -273,6 +270,13 @@ function readDoc(name, published, twinOf) {
     sections: sections.map((s) => s.file),
     state,
   };
+}
+
+// The page followed by its sections, the rule count written in
+function assemble(page, sections) {
+  const whole = sections.length ? `${[page.trimEnd(), ...sections.map((s) => s.body.trim())].join('\n\n')}\n` : page;
+  // In a code span (`{{ regles.total }}`) the placeholder is shown as written
+  return whole.replace(/(?<!`)\{\{ regles\.total \}\}(?!`)/g, () => String(ruleCount()));
 }
 
 // A page `x.md` may be cut into sections, the files of the folder `x/` next to it, appended

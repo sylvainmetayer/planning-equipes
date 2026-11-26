@@ -37,6 +37,7 @@ FINGERPRINTS = 'src/test/resources/migrations-empreintes.txt'
 MIGRATION = re.compile(r'V(\d+)__.*\.sql$')
 TOKEN = re.compile(r'\bV(\d+)(?!\d)')
 TARGET = re.compile(r'((?:target|fromVersion)\(\s*")(\d+)(")')
+REF = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_./-]*')
 HUNK = re.compile(r'^@@ -\S+ \+(\d+)(?:,(\d+))? @@', re.M)
 
 
@@ -53,13 +54,16 @@ def version(name):
     return int(m.group(1)) if m else None
 
 
-def added_lines(base, path):
-    """The line numbers (1-based, in HEAD) the branch added to a file."""
-    numbers = set()
-    for start, count in HUNK.findall(git('diff', '-U0', '--no-renames', f'{base}...HEAD', '--', path)):
-        first, n = int(start), int(count or '1')
-        numbers.update(range(first, first + n))
-    return numbers
+def added_lines(base):
+    """The line numbers (1-based, in HEAD) the branch added, file by file, from one diff."""
+    lines, path = {}, None
+    for line in git('-c', 'core.quotePath=false', 'diff', '-U0', '--no-renames', '--diff-filter=AM', f'{base}...HEAD').splitlines():
+        if line.startswith('+++ '):
+            path = line[6:] if line.startswith('+++ b/') else None
+        elif path and (m := HUNK.match(line)):
+            first, n = int(m.group(1)), int(m.group(2) or '1')
+            lines.setdefault(path, set()).update(range(first, first + n))
+    return lines
 
 
 def plan(base):
@@ -99,38 +103,45 @@ def rewrite(line, moves):
     return TARGET.sub(target, TOKEN.sub(token, line))
 
 
-def main(base):
-    os.chdir(git('rev-parse', '--show-toplevel').strip())
-    if git('status', '--porcelain', '--untracked-files=no'):
-        raise Ambiguity('the working tree has uncommitted changes: commit or stash them first')
-    git('rev-parse', '--verify', '--quiet', f'{base}^{{commit}}')
-    highest, moves, renames = plan(base)
-    if not moves:
-        print(f'renumeroter-migration: nothing to move, no migration of this branch is at or below V{highest} of {base}')
-        return
+def edits_of(base, label, moves):
+    """Every added line the moves change, file by file; raises before anything is written."""
     # The base's own migrations of a moved number, by file name: a line naming one is ambiguous
     taken = {Path(f).name for f in git('ls-tree', '-r', '--name-only', base, '--', MIGRATIONS).splitlines() if version(f) in moves}
-    touched = git('diff', '--name-only', '--no-renames', '--diff-filter=AM', f'{base}...HEAD').splitlines()
     edits = {}
-    for path in touched:
+    for path, numbers in added_lines(base).items():
         try:
             # newline='': a CRLF file keeps its line endings, only the changed lines move
             lines = Path(path).read_text(encoding='utf-8', newline='').split('\n')
         except UnicodeDecodeError:
             continue
         changed = []
-        for number in sorted(added_lines(base, path)):
+        for number in sorted(numbers):
             old = lines[number - 1]
             clash = next((name for name in taken if name in old), None)
             if clash:
-                raise Ambiguity(f'{path}:{number} names {clash}, the migration of {base} under that number')
+                raise Ambiguity(f'{path}:{number} names {clash}, the migration of {label} under that number')
             new = rewrite(old, moves)
             if new != old:
                 lines[number - 1] = new
                 changed.append((number, old, new))
         if changed:
             edits[path] = (lines, changed)
-    # Nothing is written before every file has been read without an ambiguity
+    return edits
+
+
+def main(label):
+    os.chdir(git('rev-parse', '--show-toplevel').strip())
+    if git('status', '--porcelain', '--untracked-files=no'):
+        raise Ambiguity('the working tree has uncommitted changes: commit or stash them first')
+    # A ref name, never an option: git reads it, so it is checked before it gets there
+    if not REF.fullmatch(label):
+        raise Ambiguity(f'« {label} » is not a branch or commit name')
+    base = git('rev-parse', '--verify', '--quiet', '--end-of-options', f'{label}^{{commit}}').strip()
+    highest, moves, renames = plan(base)
+    if not moves:
+        print(f'renumeroter-migration: nothing to move, no migration of this branch is at or below V{highest} of {label}')
+        return
+    edits = edits_of(base, label, moves)
     for path, (lines, changed) in edits.items():
         Path(path).write_text('\n'.join(lines), encoding='utf-8', newline='')
         for number, old, new in changed:
@@ -139,7 +150,7 @@ def main(base):
         git('mv', old, new)
         print(f'renamed {old} -> {new}')
     fingerprints(renames)
-    print(f'renumeroter-migration: {len(renames)} migration(s) moved above V{highest} of {base}; read `git diff HEAD`, then commit')
+    print(f'renumeroter-migration: {len(renames)} migration(s) moved above V{highest} of {label}; read `git diff HEAD`, then commit')
 
 
 def fingerprints(renames):
