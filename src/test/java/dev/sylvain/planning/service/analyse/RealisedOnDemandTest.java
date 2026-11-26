@@ -101,7 +101,7 @@ class RealisedOnDemandTest {
         debut = Instant.now();
         String edition = editionContext.editionIdCourant();
         execute("DELETE FROM version_plan WHERE edition_id = ?", edition);
-        execute("DELETE FROM kpi_realise WHERE edition_id = ?", edition);
+        execute("DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?", edition);
         persistence.clearDatabase();
     }
 
@@ -109,13 +109,16 @@ class RealisedOnDemandTest {
     void cleanUp() {
         clock.setMocked(null, null);
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = connection.prepareStatement("DELETE FROM kpi_realise WHERE fige_le >= ?")) {
+                PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM mesure_edition WHERE nature = 'REALISE' AND cree_le >= ?")) {
             ps.setTimestamp(1, Timestamp.from(debut));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
-        execute("DELETE FROM kpi_realise WHERE edition_id = ?", editionContext.editionIdCourant());
+        execute(
+                "DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ?",
+                editionContext.editionIdCourant());
         for (String edition : creees) {
             editionService.delete(edition);
         }
@@ -284,8 +287,8 @@ class RealisedOnDemandTest {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
                         SELECT typologie_id, premier_jour, dernier_jour, jours_comptes, sieges_publies, absences,
-                               remplacements, sieges_vides, minutes_perdues, fige_le
-                        FROM kpi_realise WHERE edition_id = ? ORDER BY typologie_id""")) {
+                               remplacements, sieges_vides, minutes_perdues, cree_le
+                        FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = ? ORDER BY typologie_id""")) {
             ps.setString(1, editionId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

@@ -157,6 +157,7 @@ dev/sylvain/planning/service/EditionContextFailClosedTest.java
 dev/sylvain/planning/service/ForeignKeyIndexStructuralTest.java
 dev/sylvain/planning/service/IdColumnsInventoryStructuralTest.java
 dev/sylvain/planning/service/SchemaIntegrityTest.java
+dev/sylvain/planning/service/analyse/MesureEditionMigrationTest.java
 dev/sylvain/planning/service/analyse/RealisedOnDemandTest.java
 dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java

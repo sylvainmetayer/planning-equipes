@@ -365,16 +365,6 @@ export function buildNavGroups(): NavGroup[] {
           icon: 'emergency',
           shortcut: 'a',
           keywords: $localize`:@@nav.keywords.aujourdhui:jour J absent remplacer téléphone TV mural`,
-          tabs: [
-            // The days already held, read against what had been published:
-            // during the event for the elapsed days, and after it.
-            tab(
-              'onglet',
-              'realise',
-              $localize`:@@nav.link.realise:Réalisé vs planifié`,
-              $localize`:@@nav.keywords.realise:écart bilan absences remplacements tenu publié jour J`,
-            ),
-          ],
         },
       ],
     },
@@ -475,6 +465,24 @@ export function buildOffMenuLinks(devMode: boolean): NavLink[] {
           'editions',
           $localize`:@@nav.link.comparerEditions:Comparer deux éditions`,
           $localize`:@@nav.keywords.comparerEditions:delta différences année précédente référentiel`,
+        ),
+      ],
+    },
+    // What the edition leaves behind (issue #272): the realised against the
+    // published plan, and the indicators of the solves. Served without a menu
+    // entry — the thirteen are the moments of the cycle —, found by the palette
+    // and the help.
+    {
+      path: '/mesures',
+      label: $localize`:@@nav.link.mesures:Mesures d'édition`,
+      icon: 'balance',
+      keywords: $localize`:@@nav.keywords.mesures:réalisé écart bilan absences remplacements tenu publié indicateurs historique kpi`,
+      tabs: [
+        tab(
+          'vue',
+          'indicateurs',
+          $localize`:@@mesures.vue.indicateurs:Indicateurs des résolutions`,
+          $localize`:@@nav.keywords.mesuresIndicateurs:historique kpi résolutions score couverture comparer éditions`,
         ),
       ],
     },

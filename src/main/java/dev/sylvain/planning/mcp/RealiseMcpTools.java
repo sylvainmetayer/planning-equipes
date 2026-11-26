@@ -8,7 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * MCP tool mirroring {@code GET /api/planning/realise}: the gap between the
+ * MCP tool mirroring {@code GET /api/mesures-edition/realise}: the gap between the
  * published plan and the plan held, per stand and per elapsed day.
  *
  * <p>The report is returned as the screen reads it, because it carries no
@@ -29,7 +29,7 @@ public class RealiseMcpTools {
     }
 
     @Tool(
-            name = "realise_vs_planifie",
+            name = "comparer_realise_planifie",
             description =
                     "Réalisé vs planifié : l'écart entre le plan publié et le plan tenu, par stand et par "
                             + "journée écoulée — sa dernière vacation terminée, jamais les jours à venir. Chaque journée est "

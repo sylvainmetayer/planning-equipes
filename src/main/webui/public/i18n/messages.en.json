@@ -4861,7 +4861,6 @@
   "echanges.stats.periode.edition": "Whole edition",
   "nav.keywords.echanges.stats": "rate acceptance delays volumes fair statistics",
   "nav.link.realise": "Realised vs planned",
-  "nav.keywords.realise": "gap review absences replacements held published event day",
   "realise.subtitle": "The gap between the published plan and what was actually held, stand by stand, over the elapsed days.",
   "realise.export": "Export as CSV",
   "realise.exporting": "Building the CSV export...",
@@ -5226,8 +5225,6 @@
   "stands.onglet.typologies": "Categories ({$INTERPOLATION})",
   "solver.onglet.label": "Tab of the Solver page",
   "solver.onglet.calcul": "Solve",
-  "aujourdhui.onglet.label": "Tab of the Today page",
-  "aujourdhui.onglet.jour": "The day",
   "nav.group.planifier": "Plan",
   "nav.keywords.stands": "categories game categories locations",
   "nav.keywords.calendrier": "time slots day templates opening hours openings",
@@ -5415,5 +5412,15 @@
   "mcp.cle.renouveler.confirmer": "Generate and show the key",
   "mcp.oauth": " An MCP client that can do OAuth needs no key: it discovers the identity provider from {$START_TAG_CODE}{$INTERPOLATION}/mcp{$CLOSE_TAG_CODE}. An active account is required. ",
   "mcp.cle.reconnexion": "Your last sign-in is more than ten minutes old: sign in again to show or generate a key.",
-  "mcp.cle.reconnecter": "Sign in again"
+  "mcp.cle.reconnecter": "Sign in again",
+  "nav.link.mesures": "Edition measures",
+  "nav.keywords.mesures": "realised gap review absences replacements held published indicators history kpi",
+  "nav.keywords.mesuresIndicateurs": "history kpi solves score coverage compare editions",
+  "route.mesures": "Edition measures",
+  "mesures.vue.label": "What is measured",
+  "mesures.vue.indicateurs": "Solve indicators",
+  "mesures.indicateurs.subtitle": "One row per finished solve, every edition together, newest first: what it takes to compare an edition with the previous one. A row outlives the edition it describes.",
+  "mesures.indicateurs.caption": "Solve indicators: date, edition, result in sentences and actions",
+  "mesures.indicateurs.edition": "Edition",
+  "mesures.indicateurs.empty": "No measure yet: every finished solve adds one."
 }

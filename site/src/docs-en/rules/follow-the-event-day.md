@@ -58,7 +58,7 @@ By default the screen shows the first name and the initial; one more letter, the
 
 ## Measure the realised against the planned
 
-The *Realised vs planned* tab of the Today page gives, afterwards or day by day, the gap between the published schedule and what was actually held, stand by stand and day by day:
+The *Realised vs planned* view of the *Edition measures* screen (*Today* group) gives, afterwards or day by day, the gap between the published schedule and what was actually held, stand by stand and day by day:
 
 - seats published, held, absences marked on the event day, replacements, seats left empty;
 - hours published, realised and lost;
@@ -73,6 +73,8 @@ A few rules for reading it:
 - A cell opens its shifts, names included, on screen only. The CSV export only contains stands, days and counters.
 
 Once the event is over, the edition's measure is computed then frozen once and for all (at the first read of the screen, of the Versions screen of the next edition, or when the edition is deleted). It outlives the edition: the Versions screen of the next edition recalls it, and the Staffing need tab displays, for information, the absence rate and hours lost of each game category the previous year.
+
+The *Solve indicators* view, on the same screen (`?vue=indicateurs`), lists the result of every finished solve, every edition together, so that an edition can be compared with the previous one; a row can be deleted there, and otherwise outlives its edition.
 
 ## After the event
 

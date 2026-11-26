@@ -3,7 +3,7 @@ import { pageRoutes } from '../core/testing/page-routes';
 import { readOngletAnimateurs } from '../pages/animateurs/animateurs-onglet';
 import { readOngletCalendrier } from '../pages/creneaux/calendrier-onglet';
 import { readComparerView } from '../pages/comparer-editions/comparer-page';
-import { readOngletAujourdhui } from '../pages/jour-j/aujourdhui-onglet';
+import { readMesuresView } from '../pages/mesures/mesures-page';
 import { readOngletSolveur } from '../pages/solver/solveur-onglet';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
 import { ONGLETS_DIAGNOSTIC, readOnglet } from '../pages/diagnostic/diagnostic';
@@ -57,11 +57,7 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     values: ['horaires'],
   },
   '/solveur': { param: 'onglet', opens: (v) => readOngletSolveur(v) === v, values: ['versions'] },
-  '/aujourdhui': {
-    param: 'onglet',
-    opens: (v) => readOngletAujourdhui(v) === v,
-    values: ['realise'],
-  },
+  '/mesures': { param: 'vue', opens: (v) => readMesuresView(v) === v, values: ['indicateurs'] },
   // The requests are the default tab: only the statistics are named.
   '/echanges': { param: 'onglet', opens: (v) => readEchangesTab(v) === v, values: ['stats'] },
   '/fichiers': [

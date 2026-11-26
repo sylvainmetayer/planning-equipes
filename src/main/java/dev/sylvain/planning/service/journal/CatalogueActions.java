@@ -622,6 +622,7 @@ public final class CatalogueActions {
         route("EnvoiPlanningResource#sendToOneAnimateur", PLANNING_ENVOYE);
         route("DebugResource#sendTestMail", MAIL_TEST_ENVOYE);
         route("KpiResource#delete", KPI_SUPPRIME);
+        route("MesuresEditionResource#deleteIndicator", KPI_SUPPRIME);
 
         route("PlanningExportResource#exportAllPdfZip", EXPORT_PDF);
         route("PlanningExportResource#exportAnimateurPdf", EXPORT_PDF_ANIMATEUR);
@@ -646,6 +647,7 @@ public final class CatalogueActions {
         route("FormationResource#exportCsv", EXPORT_FORMATION);
         route("AnimateurResource#recordListExport", EXPORT_LISTE_ANIMATEURS);
         route("RealiseResource#exportCsv", EXPORT_REALISE);
+        route("MesuresEditionResource#exportCsv", EXPORT_REALISE);
         route("EditionResource#exportDeltaCsv", EXPORT_DELTA_EDITIONS);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
@@ -806,7 +808,7 @@ public final class CatalogueActions {
         outil("publier_planning", PLANNING_PUBLIE);
         outil("envoyer_planning_animateur", PLANNING_ENVOYE);
         outil("relancer_animateurs", ANIMATEURS_RELANCES);
-        outil("supprimer_kpi_historique", KPI_SUPPRIME);
+        outil("supprimer_mesure_edition", KPI_SUPPRIME);
 
         outil("importer_scenario", SCENARIO_IMPORTE);
         outil("importer_scenario_yaml", SCENARIO_IMPORTE);

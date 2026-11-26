@@ -39,7 +39,7 @@ Une fois la 4.0 en place et le retour à la 3.x exclu, rien ne vous oblige à at
 
 ## La mesure du réalisé
 
-Aucune tâche planifiée ne la calcule : l'écran « Réalisé vs planifié » la calcule à la demande ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). La première lecture faite une fois le dernier créneau de l'édition terminé, quand quelque chose a été publié, écrit la mesure dans `kpi_realise` : absences, remplacements, sièges vides et heures perdues, par typologie, sans aucune personne.
+Aucune tâche planifiée ne la calcule : l'écran « Mesures d'édition » la calcule à la demande ([ADR 0092](repo:docs/decisions/0092-le-realise-se-calcule-a-la-demande.md)). La première lecture faite une fois le dernier créneau de l'édition terminé, quand quelque chose a été publié, écrit la mesure dans `mesure_edition` (nature `REALISE`) : absences, remplacements, sièges vides et heures perdues, par typologie, sans aucune personne.
 
 C'est ce que l'édition suivante lit sur son écran Versions et sur l'onglet Besoin : cette lecture calcule d'abord la mesure de chaque édition terminée et publiée qui n'en a pas, et la suppression d'une édition écrit la sienne avant de l'effacer. Il n'y a donc rien à ouvrir à la main. Une horloge simulée n'écrit rien.
 
@@ -50,7 +50,7 @@ La mesure **n'est écrite qu'une fois** par édition : une correction faite apr�
 Pour **refiger** une édition après une correction qui doit compter, il n'y a pas de bouton : supprimez ses lignes, la prochaine lecture les réécrit à partir du plan du moment.
 
 ```sql
-DELETE FROM kpi_realise WHERE edition_id = '<id de l''édition>';
+DELETE FROM mesure_edition WHERE nature = 'REALISE' AND edition_id = '<id de l''édition>';
 ```
 
 L'identifiant se lit sur l'écran Éditions. La mesure supprimée disparaît aussi de l'écran Versions de l'édition suivante jusqu'à la lecture qui la réécrit ; une édition supprimée entre-temps ne sera plus jamais refigée.
