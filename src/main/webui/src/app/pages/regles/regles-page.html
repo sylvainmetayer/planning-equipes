@@ -136,7 +136,10 @@
           </p>
         }
         <h3 i18n="@@regles.panneau.historique">Historique des réglages</h3>
-        <app-weight-history-view [name]="rule.name" />
+        <p class="regles-panneau-poids">
+          <a routerLink="/parametres" [queryParams]="{ onglet: 'historique', nature: 'regles' }"
+             i18n="@@regles.panneau.historiqueLien">Voir les changements de règles dans le Journal des actions</a>
+        </p>
       </aside>
     }
   </div>

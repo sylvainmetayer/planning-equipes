@@ -25,7 +25,7 @@ Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche 
 
 `modifier_niveau_contrainte` choisit le niveau d'une règle d'organisation pour l'édition : `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` ou `PREFERENCE_LEGERE` (une préférence écrit le poids de sa position). `lister_contraintes` donne `niveauReglable` et `niveauChoisi` ; une règle légale, d'affectation, ad hoc, de verrou ou une préférence souple refuse le niveau. Comme `modifier_poids_contrainte`, l'outil est accepté pendant un calcul et le dit (`RESOLUTION_EN_COURS`).
 
-`consulter_historique_ponderation` rend ce que rend `GET /api/constraints/{name}/historique`, ou la vue globale sans `contrainte` : changements de poids et d'activation, valeurs avant et après, origine typée, puis les résolutions de l'édition avec le dosage de chacune. Un réglage fait par `modifier_poids_contrainte`, `activer_contrainte` ou `desactiver_contrainte` y porte l'origine `ASSISTANT`.
+Un réglage fait par `modifier_poids_contrainte`, `modifier_niveau_contrainte`, `activer_contrainte` ou `desactiver_contrainte` se lit dans le journal des actions de l'application (filtre « Règles »), sous l'acteur `ASSISTANT` et avec le nom de la règle, sans la valeur. L'ancien outil de lecture de l'historique des pondérations est retiré (voir le tableau des anciens noms) : le journal ne garde pas de valeur, et aucun outil ne le lit.
 
 ## Lire le plan sous différents angles
 
@@ -101,6 +101,7 @@ La 4.0 renomme, regroupe ou retire des outils de la 3.x, sans alias : un outil n
 | --- | --- |
 | `capturer_instantane` | `creer_version` |
 | `comparer_instantanes` | `comparer_versions` |
+| `consulter_historique_ponderation` | retiré |
 | `consulter_instantane` | `consulter_version` |
 | `consulter_parametres_legaux` | `consulter_parametres` |
 | `consulter_parametres_notifications` | `consulter_parametres` |

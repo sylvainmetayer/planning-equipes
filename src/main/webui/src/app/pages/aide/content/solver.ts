@@ -124,7 +124,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.historique:Historique des réglages`,
-              text: $localize`:@@aide.config.def.historique:Le panneau d'une règle, qui s'ouvre d'un clic sur son nom dans Règles du planning, montre chaque changement de son poids ou de son activation : valeur avant et après, défaut compris, date et origine (écran, assistant, import de scénario ou duplication d'édition). Entre deux changements, il montre aussi les résolutions qui ont suivi, avec leur score et le nombre d'écarts à cette règle, en liste datée et en petit graphique. Remettre la même valeur n'écrit rien. Les deux sont mis côte à côte sans mesurer d'effet, car le référentiel a pu changer entre deux résolutions. L'historique appartient à l'édition et disparaît avec elle ; une édition dupliquée démarre avec le dosage hérité de sa source, pas avec l'historique de celle-ci.`,
+              text: $localize`:@@aide.config.def.historique:Chaque changement d'activation, de poids ou de niveau d'une règle entre dans le journal des actions de l'édition : quelle règle, quand, par qui, jamais la valeur. Le panneau d'une règle, qui s'ouvre d'un clic sur son nom dans Règles du planning, y renvoie (Paramètres, onglet Historique, filtre « Règles »). Le dosage sous lequel chaque résolution a tourné reste lisible dans les mesures de l'édition et dans la comparaison de Versions du plan.`,
             },
             {
               term: $localize`:@@aide.config.term.adhoc:Ajustements manuels`,

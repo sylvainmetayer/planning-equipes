@@ -501,7 +501,7 @@ public class McpPrompts {
 
     @Prompt(
             name = "regler_les_regles",
-            description = "Régler le dosage des règles et le budget de calcul : lire ce qui a déjà été essayé, "
+            description = "Régler le dosage des règles et le budget de calcul : lire les dosages déjà essayés, "
                     + "changer un poids ou activer une règle, en sachant ce que cela coûte.")
     PromptMessage tuneTheRules(@PromptArg(description = EDITION, required = false) String edition) {
         return PromptMessage.withUserRole("""
@@ -513,9 +513,9 @@ public class McpPrompts {
                 la dernière analyse. Une règle qui porte ratioPlancher pénalise presque tout ce qu'elle \
                 évalue : ses points s'expliquent par une donnée absente du référentiel, pas par son \
                 poids.
-                2. consulter_historique_ponderation : ce qui a déjà été essayé, quand, et sous quel \
-                dosage chaque résolution a tourné. C'est une juxtaposition, pas une causalité — le \
-                référentiel a pu bouger entre deux.
+                2. lister_mesures_edition : le score de chaque résolution et le dosage sous lequel \
+                elle a tourné. C'est une juxtaposition, pas une causalité — le référentiel a pu \
+                bouger entre deux.
                 3. modifier_poids_contrainte, activer_contrainte ou desactiver_contrainte, une règle \
                 à la fois et après mon accord. Le niveau HARD, MEDIUM ou SOFT ne se règle pas ; seul \
                 le poids, à niveau égal. Une règle légale désactivée doit être une décision que je \
@@ -784,13 +784,11 @@ public class McpPrompts {
                 2. lister_mesures_edition : score, couverture des postes, heures et écarts par \
                 contrainte, résolution par résolution et toutes éditions confondues — compare la \
                 dernière résolution de cette édition à celle de l'édition précédente.
-                3. consulter_historique_ponderation : quels réglages ont changé en cours de route, et \
-                sous quel dosage chaque résolution a tourné. Une juxtaposition, pas une causalité.
-                4. equite_planning et heures_travaillees : les écarts d'heures, de soirées, de \
+                3. equite_planning et heures_travaillees : les écarts d'heures, de soirées, de \
                 week-ends et de postes pénibles, que l'organisation doit pouvoir expliquer.
-                5. synthese_confirmations et consulter_foire_echanges : combien ont accusé réception, \
+                4. synthese_confirmations et consulter_foire_echanges : combien ont accusé réception, \
                 et ce que la foire aux échanges a donné.
-                6. Conclus par trois listes courtes : ce qui a tenu, ce qui a coûté, et ce qu'il faudra \
+                5. Conclus par trois listes courtes : ce qui a tenu, ce qui a coûté, et ce qu'il faudra \
                 régler autrement pour l'édition suivante — recrutement, formation, horaires, \
                 pondérations.
 

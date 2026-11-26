@@ -56,6 +56,7 @@ Quelques filtres :
 
 - « Exports » : qui a sorti quel fichier et quand, planning téléchargé par un animateur depuis son espace compris, sur toute la durée conservée.
 - « Données » : les modifications que le prochain calcul verra. Une période se choisit à la minute près, et l'écran Solveur y mène sur exactement les modifications qu'il compte depuis la dernière résolution.
+- « Règles » : les changements d'activation, de poids ou de niveau d'une règle, avec son nom, la date et l'auteur, sans la valeur. La page Règles du planning y renvoie depuis le panneau d'une règle.
 - Les vérifications du besoin en animateurs y figurent avec leur équipe, leur durée et leur résultat, et un filtre les isole.
 
 Aucun nom n'y est conservé : les identités sont retrouvées à l'affichage, et les lignes trop anciennes sortent d'elles-mêmes.

@@ -80,7 +80,6 @@ class IsolationEditionStructurelleTest {
             "contrainte_animateur",
             "constraint_toggle",
             "ponderation_contrainte",
-            "ponderation_contrainte_historique",
             "verrouillage_planning",
             "validation_journee",
             "parametres_legaux",
@@ -139,7 +138,9 @@ class IsolationEditionStructurelleTest {
             // statement names it today, but it is partitioned like its source.
             "declaration_coequipier_avant_4_0",
             // V145's archive of the budgets editions had set: partitioned like its source.
-            "solve_budget_avant_4_0");
+            "solve_budget_avant_4_0",
+            // V158's archive of the weight history the action journal replaced: partitioned like its source.
+            "ponderation_contrainte_historique_avant_4_0");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An
