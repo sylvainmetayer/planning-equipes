@@ -194,7 +194,13 @@ public class JournalActionService {
          * « N modifications depuis la dernière résolution » opens this
          * selection, and must find its N lines there.
          */
-        DATA_CHANGES
+        DATA_CHANGES,
+        /**
+         * The changes of a rule's activation, weight or level — the former
+         * weight history, which the journal took over: which rule and which
+         * action, never the value.
+         */
+        RULES
     }
 
     /**
@@ -215,6 +221,7 @@ public class JournalActionService {
                     case EXPORTS -> new HistoryFilter(CatalogueActions.exportCodes(), false, since, until, author);
                     case DATA_CHANGES ->
                         new HistoryFilter(CatalogueActions.codesChangingData(), true, since, until, author);
+                    case RULES -> new HistoryFilter(CatalogueActions.ruleCodes(), false, since, until, author);
                 };
         return repository.page(filter, before, limite == null ? LIMITE_DEFAUT : limite);
     }

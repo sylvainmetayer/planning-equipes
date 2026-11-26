@@ -96,7 +96,7 @@ Une règle dure est respectée ou le planning est invalide : son poids ne change
 
 ### Garder la trace d'un dosage
 
-Un dosage se règle à tâtons, et le tâtonnement ne vaut que si l'on peut relire ce qu'il a donné. Chaque changement effectif de poids ou d'activation est historisé par édition, valeurs comprises (`GET /api/constraints/historique`, `GET /api/constraints/{name}/historique`, outil `consulter_historique_ponderation`), et chaque résolution mémorise le dosage sous lequel elle a été **lancée**. Le panneau d'une règle pose les changements et les scores qui ont suivi, et la comparaison de Versions du plan signale deux plans que des poids différents rendent incomparables. C'est une juxtaposition, pas une mesure d'effet.
+Un dosage se règle à tâtons, et le tâtonnement ne vaut que si l'on peut relire ce qu'il a donné. Chaque changement d'activation, de poids ou de niveau d'une règle entre dans le journal des actions (filtre « Règles » : quelle règle, quand, par qui, jamais la valeur), et chaque résolution mémorise le dosage sous lequel elle a été **lancée**. La comparaison de Versions du plan signale deux plans que des poids différents rendent incomparables. C'est une juxtaposition, pas une mesure d'effet.
 
 ### Les règles d'équité
 

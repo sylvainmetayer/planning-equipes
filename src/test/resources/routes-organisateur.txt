@@ -45,8 +45,6 @@ ConsigneResource#prereglages GET /consignes/prereglages
 ConsigneResource#preselection POST /consignes/preselection
 ConsigneResource#updatePrereglage PUT /consignes/prereglages/{id}
 ConstraintResource#diagnose POST /constraints/diagnostic
-ConstraintResource#history GET /constraints/historique
-ConstraintResource#history GET /constraints/{name}/historique
 ConstraintResource#list GET /constraints
 ConstraintResource#setActif PUT /constraints/{name}
 ConstraintResource#setNiveau PUT /constraints/{name}/niveau
@@ -95,6 +93,9 @@ EditionResource#gel GET /editions/courant/gel
 EditionResource#gel GET /editions/courant/gel/{famille}
 EditionResource#lift DELETE /editions/courant/gel/{famille}
 EditionResource#list GET /editions
+EditionResource#refreezeStructure DELETE /editions/courant/deblocage-structure
+EditionResource#setPhase PUT /editions/courant/phase
+EditionResource#unblockStructure PUT /editions/courant/deblocage-structure
 EmplacementResource#analyseCsv POST /emplacements/import-csv/analyse
 EmplacementResource#createEmplacement POST /emplacements
 EmplacementResource#deleteEmplacement DELETE /emplacements/{id}

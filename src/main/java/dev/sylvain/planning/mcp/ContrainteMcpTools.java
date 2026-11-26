@@ -3,9 +3,8 @@ package dev.sylvain.planning.mcp;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
-import dev.sylvain.planning.service.analyse.WeightHistoryService;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -38,41 +37,18 @@ public class ContrainteMcpTools {
 
     private final PlanningService planningService;
 
-    private final WeightHistoryService weightHistory;
+    private final CurrentAction currentAction;
 
     @Inject
     ContrainteMcpTools(
             ConstraintAnalysisStore analysisStore,
             ReferenceDataService referenceDataService,
             PlanningService planningService,
-            WeightHistoryService weightHistory) {
-        this.weightHistory = weightHistory;
+            CurrentAction currentAction) {
+        this.currentAction = currentAction;
         this.analysisStore = analysisStore;
         this.referenceDataService = referenceDataService;
         this.planningService = planningService;
-    }
-
-    @Tool(
-            name = "consulter_historique_ponderation",
-            description = "Historique des réglages de pondération de l'édition : chaque changement de poids ou "
-                    + "d'activation d'une règle, valeurs effectives avant et après (défaut compris), origine "
-                    + "(SCREEN, ASSISTANT, SCENARIO, DUPLICATION) et date ; puis les résolutions de l'édition, "
-                    + "avec leur score, le dosage sous lequel chacune a tourné (null = inconnu) et, pour une "
-                    + "règle donnée, son nombre d'écarts. Juxtaposition, pas causalité : le référentiel a pu "
-                    + "changer entre deux résolutions.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = true,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    WeightHistoryService.ConstraintHistory weightHistory(
-            @ToolArg(description = "Nom d'une contrainte ; absent = toutes les règles", required = false)
-                    String contrainte,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        return contrainte == null || contrainte.isBlank()
-                ? weightHistory.all()
-                : weightHistory.forConstraint(contrainte);
     }
 
     @Tool(
@@ -173,7 +149,7 @@ public class ContrainteMcpTools {
         if (poids != null && poids <= 0) {
             throw new BusinessError.Invalid("poids : attendu un entier strictement positif, reçu " + poids);
         }
-        referenceDataService.setConstraintWeight(rule, poids, WeightChangeOrigin.ASSISTANT);
+        referenceDataService.setConstraintWeight(rule, poids);
         return new PoidsResult(
                 rule, planningService.effectiveConstraintWeights().getOrDefault(rule, 1), poids == null);
     }
@@ -208,7 +184,7 @@ public class ContrainteMcpTools {
                     "niveau : attendu OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE, reçu "
                             + niveau);
         }
-        referenceDataService.setNiveau(rule, choisi, WeightChangeOrigin.ASSISTANT);
+        referenceDataService.setNiveau(rule, choisi);
         return new NiveauResult(rule, choisi.name());
     }
 
@@ -216,9 +192,7 @@ public class ContrainteMcpTools {
         String rule = requireConnue(nom);
         // The 3.x hard run form is a level, not a rule: the service reads it under its own name.
         referenceDataService.setContrainteActive(
-                ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom) ? nom : rule,
-                actif,
-                WeightChangeOrigin.ASSISTANT);
+                ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom) ? nom : rule, actif);
         return new ToggleResult(rule, actif);
     }
 
@@ -232,6 +206,8 @@ public class ContrainteMcpTools {
         if (!ConstraintCatalog.PAR_NOM.containsKey(current)) {
             throw new BusinessError.NotFound("Contrainte inconnue : " + nom);
         }
+        // The journal's line says which rule moved (the REST route's path parameter does it there).
+        currentAction.entiteId(current);
         return current;
     }
 

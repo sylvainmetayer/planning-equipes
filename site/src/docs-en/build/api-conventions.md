@@ -34,14 +34,14 @@ A deliberate refusal is a `BusinessError` (a sealed hierarchy) that [`BusinessEr
 | `404` | path segment that names nothing | `message` |
 | `409` | state that refuses the request (e.g. a busy solver, a publication with no recipient) | `message` |
 | `409` | write based on a stale read: `code: "MODIFICATION_CONCURRENTE"` | `message`, `code`, `modifieLe` (the real date of the last write, to send back to overwrite knowingly) |
-| `409` | frozen reference data family: `code: "REFERENTIEL_FIGE"` | `message`, `code`, `familles` |
+| `409` | reference data family frozen by the phase of the edition: `code: "REFERENTIEL_FIGE"` | `message`, `code`, `familles` |
 | `400` / `409` | edition refusal, see above | `message`, `code` |
 | `409` | session too old for a sensitive action: `RECONNEXION_REQUISE_<mode>` | `code`, `mode`, `message` |
 | `429` | too many attempts (sign-in, access codes) | `Retry-After` header |
 
 Three consequences for a client:
 
-- **the status is not enough for a `409`**. You must read `code` (`MODIFICATION_CONCURRENTE` calls for "reload or overwrite", `REFERENTIEL_FIGE` calls for "lift the freeze"), and, for a refusal to start a solve, the shape of the body ([the solve](api-calcul.md#un-seul-calcul-à-la-fois));
+- **the status is not enough for a `409`**. You must read `code` (`MODIFICATION_CONCURRENTE` calls for "reload or overwrite", `REFERENTIEL_FIGE` calls for "change the phase or unblock the structure"), and, for a refusal to start a solve, the shape of the body ([the solve](api-calcul.md#un-seul-calcul-à-la-fois));
 - **the variant is chosen by where the identifier came from**: a path segment that designates nothing is a `404`, a body field that designates nothing is a `400`;
 - **a write that a running solve would undo is refused with `409`** with the job at issue in the body, by the service itself: a REST route and an MCP tool meet the same refusal.
 

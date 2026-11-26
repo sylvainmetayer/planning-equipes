@@ -15,12 +15,9 @@ import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.Config;
 
@@ -203,26 +200,22 @@ public class ParametresService {
     }
 
     /**
-     * Enables or disables a constraint for the next solve, and records the
-     * change in the weight history when the effective state moved — asking
-     * for the state already in force writes nothing.
+     * Enables or disables a constraint for the next solve.
      *
      * <p>Disabling a legal constraint lets the solver return a plan with a
      * hard score of zero that nonetheless breaks the Code du travail, so the
      * UI confirms first (see {@code ConstraintCatalog.CATEGORIES_PROTEGEES}
      * and {@code LegalDisableDialog}). That confirmation is deliberately all
-     * there is: with no authenticated user, an author column could only ever
-     * hold the constant "ui" — which is what had V39 drop the traceability
-     * columns of V16. The history keeps an origin, never a person.</p>
+     * there is. Who changed it, and when, is the action journal's.</p>
      */
-    public void setContrainteActive(String nom, boolean actif, WeightChangeOrigin origin) {
+    public void setContrainteActive(String nom, boolean actif) {
         if (ConstraintCatalog.FORME_DURE_JOURS_CONSECUTIFS.equals(nom)) {
             // The 3.x hard form names a level of the merged rule (ADR 0118): on is
             // obligatoire, and the rule enforced; off is back to a preference.
             String merged = ConstraintCatalog.currentName(nom);
-            setNiveauObligatoire(merged, actif, origin);
+            setNiveauObligatoire(merged, actif);
             if (actif) {
-                setContrainteActive(merged, true, origin);
+                setContrainteActive(merged, true);
             }
             return;
         }
@@ -232,10 +225,7 @@ public class ParametresService {
         // took, and nothing else — the same convention as a constraint weight
         // reset to its default.
         boolean parDefaut = definition != null && definition.activeByDefault() == actif;
-        repository.setEtatContrainte(nom, parDefaut ? null : actif, stored -> {
-            boolean avant = stored != null ? stored : defaultActive(nom);
-            return avant == actif ? null : WeightChange.of(nom, null, null, false, avant, actif, origin, null);
-        });
+        repository.setEtatContrainte(nom, parDefaut ? null : actif);
         changeTracker.markModified();
     }
 
@@ -250,21 +240,13 @@ public class ParametresService {
 
     /**
      * Sets one constraint's weight for this edition, or drops the override
-     * when {@code poids} is {@code null} (back to the configured default), and
-     * records the change in the weight history when the effective weight
-     * moved: putting the same value back writes nothing, and so does dropping
-     * an override equal to the default.
+     * when {@code poids} is {@code null} (back to the configured default).
      */
-    public void setConstraintWeight(String nom, Integer poids, WeightChangeOrigin origin) {
+    public void setConstraintWeight(String nom, Integer poids) {
         if (poids != null) {
             ParametresValidator.checkConstraintWeight(poids);
         }
-        int defaut = configuredWeight(nom);
-        int apres = poids != null ? poids : defaut;
-        repository.setConstraintWeight(nom, poids, stored -> {
-            int avant = stored != null ? stored : defaut;
-            return avant == apres ? null : WeightChange.of(nom, avant, apres, poids == null, null, null, origin, null);
-        });
+        repository.setConstraintWeight(nom, poids);
         changeTracker.markModified();
     }
 
@@ -279,7 +261,7 @@ public class ParametresService {
      * ships drops the choice rather than pinning it, as a weight or a toggle does.
      * Refused for a rule whose level is not the edition's to choose.
      */
-    public void setNiveauObligatoire(String nom, Boolean obligatoire, WeightChangeOrigin origin) {
+    public void setNiveauObligatoire(String nom, Boolean obligatoire) {
         ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
         if (definition == null || !definition.niveauReglable()) {
             throw new BusinessError.Invalid("La règle « " + nom + " » n'a pas de niveau à choisir : les règles "
@@ -295,53 +277,18 @@ public class ParametresService {
      * the three preference positions, which also writes the weight of the
      * position (ADR 0057) — a preference is the same rule weighed.
      */
-    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau, WeightChangeOrigin origin) {
-        setNiveauObligatoire(nom, niveau.obligatoire(), origin);
+    public void setNiveau(String nom, ConstraintCatalog.NiveauRegle niveau) {
+        setNiveauObligatoire(nom, niveau.obligatoire());
         ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
         boolean shippedHard = definition.niveau() == ConstraintCatalog.Niveau.HARD;
         if (!niveau.obligatoire()) {
             int defaut = shippedHard ? ConstraintCatalog.POIDS_NORMAL : configuredWeight(nom);
-            setConstraintWeight(nom, niveau.poids() == defaut ? null : niveau.poids(), origin);
+            setConstraintWeight(nom, niveau.poids() == defaut ? null : niveau.poids());
         } else if (shippedHard) {
             // Back on its own hard level, a stored weight applies again as a hard one: the preference
             // weight the way out wrote would make one breach weigh 25 legal ones. Obligatoire is hard 1.
-            setConstraintWeight(nom, null, origin);
+            setConstraintWeight(nom, null);
         }
-    }
-
-    /**
-     * Opens the history of a duplicated edition — the current one — with one
-     * line per rule whose dosage it inherited from {@code sourceEditionId},
-     * rather than with the source's whole history: those changes were made to
-     * another edition.
-     */
-    public void recordInheritedDosage(String sourceEditionId) {
-        Map<String, Integer> poids = repository.getConstraintWeights();
-        Map<String, Boolean> etats = repository.getEtatsContraintes();
-        List<WeightChange> lines = new ArrayList<>();
-        for (String nom : new TreeSet<>(poids.keySet())) {
-            int defaut = configuredWeight(nom);
-            if (poids.get(nom) != defaut) {
-                lines.add(WeightChange.of(
-                        nom,
-                        defaut,
-                        poids.get(nom),
-                        false,
-                        null,
-                        null,
-                        WeightChangeOrigin.DUPLICATION,
-                        sourceEditionId));
-            }
-        }
-        for (String nom : new TreeSet<>(etats.keySet())) {
-            boolean defaut = defaultActive(nom);
-            boolean actif = etats.get(nom);
-            if (actif != defaut) {
-                lines.add(WeightChange.of(
-                        nom, null, null, false, defaut, actif, WeightChangeOrigin.DUPLICATION, sourceEditionId));
-            }
-        }
-        repository.recordHistory(lines);
     }
 
     /** The weight the next solve gives {@code nom} in this edition: its own, else the deployment's. */

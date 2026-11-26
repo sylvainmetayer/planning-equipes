@@ -35,7 +35,7 @@ import {
  * cursor — the id of the last line already shown — when it is a next page.
  */
 export interface HistoryQuery {
-  nature: 'exports' | 'donnees' | null;
+  nature: 'exports' | 'donnees' | 'regles' | null;
   auteur: string | null;
   depuis: string | null;
   jusqua: string | null;

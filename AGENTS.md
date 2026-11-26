@@ -61,7 +61,8 @@ Read before working on constraints or the domain model:
   plays the whole suite, and so should you before pushing.
 - Integration tests (`*IT.java`, failsafe, `skipITs=true` by default):
   `./mvnw verify -DskipITs=false`
-- Mutation tests on the constraint streams (PIT, weekly in CI, ~4 min):
+- Mutation tests on the constraint streams (PIT, nightly on `main` in CI,
+  never on a pull request, ~4 min):
   `./mvnw -Pmutation test-compile pitest:mutationCoverage`. Below
   `mutationThreshold` the build fails; a surviving mutant is killed by a test
   case, never by lowering the threshold. See *Les tests de mutation* in
@@ -330,16 +331,27 @@ Single Quarkus service, no separate solver microservice. Package root:
     PDF); and the ones that predate the split — `service/diagnostic/`,
     `service/journal/`, `service/mail/`, `service/notification/`,
     `service/backup/` (nightly `pg_dump` — see below).
-- **A frozen family of the referential refuses every write, by annotation.**
-  `service/referentiel/GelReferentielService` holds the freeze (ADR 0052); a
-  service method writing stands, timeslots, game categories/locations or
-  competences carries `@RefusedWhileFrozen(ReferentialFamily.X)` (interceptor,
+- **The phase of the edition freezes the referential, and a frozen family
+  refuses every write, by annotation** (ADR 0115, replacing the per-family
+  freeze of ADR 0052). `edition.phase` is `PREPARATION` (all open), `CALCUL`
+  and `TERMINEE` (the four families frozen) or `PUBLIEE` (the structure —
+  stands, timeslots, game categories/locations — frozen unless
+  `structure_debloquee`, the animateurs' competences open); the first
+  publication moves the edition to `PUBLIEE` and every publication refreezes
+  an unblocked structure (`EditionPhaseService`, the one writer of the phase).
+  `service/referentiel/GelReferentielService` reads the phase; a service method
+  writing stands, timeslots, game categories/locations or competences carries
+  `@RefusedWhileFrozen(ReferentialFamily.X)` (interceptor,
   `409 REFERENTIEL_FIGE`), or compares with its before-image and calls
   `gel.refuseIfFrozen` itself when only some fields are frozen.
   `GelReferentielStructuralTest` fails on a method of those services in neither
   case nor argued as open — and on an annotated method called on `this`, which
   bypasses the interceptor. Consignes stay open: their grid write goes through
-  the in-transaction timeslot methods, which only `ConsigneService` calls.
+  the in-transaction timeslot methods, which only `ConsigneService` calls. The
+  3.x freeze routes and the `figer_referentiel` / `lever_gel` tools are aliases
+  of the phase until 5.0, and the table `gel_referentiel` is read by nothing.
+  A test that publishes leaves its edition `PUBLIEE`: the `PhaseReset` test
+  callback puts every edition back in preparation before each `@QuarkusTest`.
 - **A write a running solve would undo is refused, by annotation too.** A
   solve's landing re-upserts the stands, timeslots and animateurs its problem
   names and rewrites every seat, so a service method writing them carries

@@ -24,9 +24,10 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * No write path of a family the organiser can freeze goes without its guard
- * (ADR 0052) — and the list of what is deliberately left open is written down,
- * never left to omission.
+ * No write path of a family the phase of the edition can freeze goes without
+ * its guard (ADR 0115, which keeps the families of ADR 0052 and decides from
+ * the phase which are frozen) — and the list of what is deliberately left open
+ * in every phase is written down, never left to omission.
  *
  * <p>The guard sits on the services, because they are the one door every path
  * goes through: the REST resources, the bulk edit (one {@code PUT} per row),
@@ -214,13 +215,10 @@ class GelReferentielStructuralTest {
             Map.entry("ReferenceDataService#updateParametresNotifications(ParametresNotifications)", "same"),
             Map.entry("ReferenceDataService#updateParametresQualite(ParametresQualite)", "same"),
             Map.entry("ReferenceDataService#updateContactOrganisation(ContactOrganisation)", "same"),
-            Map.entry("ReferenceDataService#setContrainteActive(String,boolean,WeightChangeOrigin)", "same"),
-            Map.entry("ReferenceDataService#setConstraintWeight(String,Integer,WeightChangeOrigin)", "same"),
-            Map.entry("ReferenceDataService#setNiveauObligatoire(String,Boolean,WeightChangeOrigin)", "same"),
-            Map.entry("ReferenceDataService#setNiveau(String,NiveauRegle,WeightChangeOrigin)", "same"),
-            Map.entry(
-                    "ReferenceDataService#recordInheritedDosage(String)",
-                    "a history line on the settings a duplicated edition inherited, not one of the four families"));
+            Map.entry("ReferenceDataService#setContrainteActive(String,boolean)", "same"),
+            Map.entry("ReferenceDataService#setConstraintWeight(String,Integer)", "same"),
+            Map.entry("ReferenceDataService#setNiveauObligatoire(String,Boolean)", "same"),
+            Map.entry("ReferenceDataService#setNiveau(String,NiveauRegle)", "same"));
 
     @Test
     void everyWriteMethodOfAGuardedServiceIsClassified() {

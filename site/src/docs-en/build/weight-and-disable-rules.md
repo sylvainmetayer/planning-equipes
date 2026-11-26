@@ -99,7 +99,7 @@ A hard rule is respected or the schedule is invalid: its weight only changes the
 
 ### Keeping a trace of a weighting
 
-A weighting is tuned by trial and error, and the trial and error is only worth it if you can reread what it produced. Every effective change of weight or activation is recorded per edition, values included (`GET /api/constraints/historique`, `GET /api/constraints/{name}/historique`, `consulter_historique_ponderation` tool), and each solve stores the weighting under which it was **started**. A rule's panel lays out the changes and the scores that followed, and the Plan versions comparison flags two plans that different weights make incomparable. It is a juxtaposition, not a measurement of effect.
+A weighting is tuned by trial and error, and the trial and error is only worth it if you can reread what it produced. Every change of a rule's activation, weight or level enters the action journal ("Rules" filter: which rule, when, by whom, never the value), and each solve stores the weighting under which it was **started**. The Plan versions comparison flags two plans that different weights make incomparable. It is a juxtaposition, not a measurement of effect.
 
 ### The fairness rules
 

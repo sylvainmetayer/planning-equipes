@@ -1,6 +1,6 @@
 # 0052 — Le gel du référentiel, distinct du verrou de planning
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; **remplacé** par [0115](0115-la-phase-de-l-edition-remplace-le-gel.md) : la phase de l'édition décide quelles familles sont figées, la table `gel_referentiel` n'est plus lue ; les familles, les champs couverts (D1), le refus par annotation (D2), le test structurel (D3) et ce qui reste ouvert (D4) tiennent
 - **Date** : septembre 2026
 - **Portée** : schéma (migration `V106`), services du référentiel, API, MCP, écrans de saisie
 - **Voisines** : [0003](0003-verrouillage-par-pin-natif.md) (le verrou de planning), [0039](0039-validation-de-relecture-distincte-du-verrou.md) (« relu et accepté »), [0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md) (la consigne)

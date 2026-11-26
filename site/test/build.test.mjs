@@ -174,3 +174,87 @@ test('every docs page has its twin in the other language, and the language switc
     assert.ok(!html.includes(`<li><a href="${lang === 'fr' ? '/docs/' : '/en/docs/'}" hreflang`), `${self} : hreflang sur l'onglet Docs`);
   }
 });
+
+// Search-visibility locks: a page Google crawls but does not index is usually thin,
+// a near-duplicate, or reached by too few links.
+const pathOf = (f) => `/${dirname(f).slice(dist.length + 1)}/`.replace('//', '/');
+const byPath = new Map(pages.map((f) => [pathOf(f), read(f)]));
+const SECTORS = [
+  ['/planning-festival/', '/en/festival-staff-rota/'],
+  ['/planning-salon-foire/', '/en/trade-show-staff-rota/'],
+  ['/planning-evenement-sportif/', '/en/sports-event-volunteer-rota/'],
+];
+// The links a reader meets in the text of a page: neither the menu, the footer nor the language switch
+const contextLinks = (html) =>
+  [...(html.match(/<main[\s\S]*<\/main>/)?.[0] ?? '').replace(/<nav[\s\S]*?<\/nav>/g, '').matchAll(/<a [^>]*href="(\/[^"#?]*)[^"]*"[^>]*>/g)]
+    .filter(([tag]) => !tag.includes('hreflang='))
+    .map((m) => m[1]);
+const wordsOf = (html) => (html.match(/<main[\s\S]*<\/main>/)?.[0] ?? '').replace(/<script[\s\S]*?<\/script>|<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+
+test('titles and descriptions are unique across the site', () => {
+  const seen = { title: new Map(), description: new Map() };
+  for (const [path, html] of byPath) {
+    if (path === '/404.html/' || html.includes('<meta name="robots" content="noindex">')) continue;
+    const title = html.match(/<title>(.*?)<\/title>/)?.[1];
+    const description = html.match(/<meta name="description" content="(.*?)"/)?.[1];
+    assert.ok(title && description, `${path} : title or description missing`);
+    for (const [kind, value] of [['title', title], ['description', description]]) {
+      assert.ok(!seen[kind].has(value), `${path} : same ${kind} as ${seen[kind].get(value)}`);
+      seen[kind].set(value, path);
+    }
+  }
+});
+
+test('a page never links the other language where its own exists', () => {
+  const fr = [...byPath.keys()].filter((p) => !p.startsWith('/en/'));
+  const frAnswers = fr.filter((p) => p.split('/').length === 3 && p !== '/' && p !== '/docs/');
+  for (const [path, html] of byPath) {
+    if (!path.startsWith('/en/')) continue;
+    for (const link of contextLinks(html)) {
+      assert.ok(!frAnswers.includes(link) || link === '/mentions-legales/', `${path} : links the French page ${link}`);
+    }
+  }
+});
+
+test('each sector page is long enough and has contextual links from the home page, the docs and the FAQ', () => {
+  for (const pair of SECTORS) {
+    for (const path of pair) {
+      const lang = path.startsWith('/en/') ? 'en' : 'fr';
+      assert.ok(wordsOf(byPath.get(path)) >= 500, `${path} : trop courte (${wordsOf(byPath.get(path))} mots)`);
+      const sources = new Set();
+      for (const [from, html] of byPath) {
+        if (from !== path && contextLinks(html).includes(path)) {
+          sources.add(from === '/' || from === '/en/' ? 'home' : from.includes('/docs/') ? 'docs' : from.endsWith('/questions/') ? 'faq' : 'other');
+        }
+      }
+      for (const origin of ['home', 'docs', 'faq']) assert.ok(sources.has(origin), `${path} : aucun lien contextuel depuis ${origin} (${lang})`);
+    }
+  }
+});
+
+test('the sector pages differ from one another', () => {
+  const shingles = (html) => {
+    const w = (html.match(/<main[\s\S]*<\/main>/)?.[0] ?? '').replace(/<[^>]+>/g, ' ').toLowerCase().split(/\W+/).filter(Boolean);
+    return new Set(w.slice(0, -4).map((_, i) => w.slice(i, i + 5).join(' ')));
+  };
+  for (const lang of [0, 1]) {
+    for (const [i, a] of SECTORS.entries()) {
+      for (const b of SECTORS.slice(i + 1)) {
+        const sa = shingles(byPath.get(a[lang]));
+        const sb = shingles(byPath.get(b[lang]));
+        const shared = [...sa].filter((s) => sb.has(s)).length / Math.min(sa.size, sb.size);
+        assert.ok(shared < 0.3, `${a[lang]} et ${b[lang]} se répètent à ${Math.round(shared * 100)} %`);
+      }
+    }
+  }
+});
+
+test('a docs page links the answer pages in its own language', () => {
+  const links = (path) => contextLinks(byPath.get(path));
+  const en = links('/en/docs/rules/prepare-your-first-edition/');
+  const fr = links('/docs/regles/preparer-edition/');
+  for (const [frPath, enPath] of SECTORS) {
+    assert.ok(en.includes(enPath) && !en.includes(frPath), `la page anglaise doit pointer ${enPath}, pas ${frPath}`);
+    assert.ok(fr.includes(frPath) && !fr.includes(enPath), `la page française doit pointer ${frPath}, pas ${enPath}`);
+  }
+});

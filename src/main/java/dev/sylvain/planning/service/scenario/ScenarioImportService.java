@@ -14,7 +14,6 @@ import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.service.solve.WipeBackupService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -359,14 +358,12 @@ public class ScenarioImportService {
                 } else {
                     actif = definition.activeByDefault();
                 }
-                referenceDataService.setContrainteActive(definition.name(), actif, WeightChangeOrigin.SCENARIO);
+                referenceDataService.setContrainteActive(definition.name(), actif);
                 referenceDataService.setConstraintWeight(
-                        definition.name(), contraintes.poids().get(definition.name()), WeightChangeOrigin.SCENARIO);
+                        definition.name(), contraintes.poids().get(definition.name()));
                 if (definition.niveauReglable()) {
                     referenceDataService.setNiveauObligatoire(
-                            definition.name(),
-                            contraintes.obligatoires().get(definition.name()),
-                            WeightChangeOrigin.SCENARIO);
+                            definition.name(), contraintes.obligatoires().get(definition.name()));
                 }
             }
         });

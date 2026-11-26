@@ -4,7 +4,8 @@ import java.util.List;
 
 /**
  * Body of the {@code 409} a write of a frozen family gets
- * ({@code BusinessError.Frozen}, ADR 0052).
+ * ({@code BusinessError.Frozen}, ADR 0052, decided by the phase of the
+ * edition since ADR 0115).
  *
  * @param message  what happened and which freeze to lift, in the user's words
  * @param code     always {@link #FROZEN_CODE}: the discriminator the frontend

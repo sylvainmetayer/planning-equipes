@@ -19,7 +19,6 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.arc.ClientProxy;
 import io.quarkus.test.junit.QuarkusMock;
@@ -513,7 +512,7 @@ class ConsigneResourceTest {
                 .body("[0].joursADeverrouiller", equalTo(List.of("2026-07-07")));
 
         // the weekly rule switched off, the week no longer holds anybody
-        parametres.setContrainteActive("maxJoursTravaillesParSemaine", false, WeightChangeOrigin.SCREEN);
+        parametres.setContrainteActive("maxJoursTravaillesParSemaine", false);
         try {
             given().header("X-Edition-Id", "E1")
                     .contentType("application/json")
@@ -525,7 +524,7 @@ class ConsigneResourceTest {
                     .body("[0].animateursSansJourLibre", is(0))
                     .body("[0].joursADeverrouiller", hasSize(0));
         } finally {
-            parametres.setContrainteActive("maxJoursTravaillesParSemaine", true, WeightChangeOrigin.SCREEN);
+            parametres.setContrainteActive("maxJoursTravaillesParSemaine", true);
         }
     }
 

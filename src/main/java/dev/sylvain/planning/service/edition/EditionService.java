@@ -6,7 +6,6 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.analyse.RealisedVsPlannedService;
 import dev.sylvain.planning.service.compte.CompteService;
-import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import dev.sylvain.planning.service.solve.StaffingVerificationService;
@@ -34,9 +33,6 @@ public class EditionService {
 
     private final IdGenerator ids;
 
-    /** Opens a duplicated edition's weight history with the dosage it inherited. */
-    private final ParametresService parametres;
-
     /** The solver jobs and staffing checks still working on an edition refuse its deletion. */
     private final SolverJobService solverJobs;
 
@@ -50,7 +46,6 @@ public class EditionService {
             EditionRepository repository,
             EditionContext editionContext,
             IdGenerator ids,
-            ParametresService parametres,
             SolverJobService solverJobs,
             StaffingVerificationService staffingChecks,
             RealisedVsPlannedService realised,
@@ -59,7 +54,6 @@ public class EditionService {
         this.realised = realised;
         this.solverJobs = solverJobs;
         this.staffingChecks = staffingChecks;
-        this.parametres = parametres;
         this.repository = repository;
         this.editionContext = editionContext;
         this.ids = ids;
@@ -118,9 +112,6 @@ public class EditionService {
         // groups over, and seeding a 'DEFAUT' one first would collide with it.
         Edition cree = createEmpty(target);
         repository.duplicate(sourceId, cree.getId(), avecAnimateurs);
-        // The copy starts its weight history with what it inherited — one
-        // line per rule off the default — rather than the source's own past.
-        editionContext.executeIn(cree.getId(), () -> parametres.recordInheritedDosage(sourceId));
         return cree;
     }
 
@@ -133,7 +124,8 @@ public class EditionService {
         Edition cree = new Edition(ids.nextEditionId(), nom, false, null);
         repository.save(cree);
         editionContext.invaliderCache();
-        return cree;
+        // Read back, so the answer carries the phase and its date like every other read.
+        return repository.find(cree.getId()).orElse(cree);
     }
 
     /**

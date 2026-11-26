@@ -97,6 +97,9 @@ public final class CatalogueActions {
     private static final String EDITION_SUPPRIMEE = "EDITION_SUPPRIMEE";
     private static final String GEL_POSE = "GEL_POSE";
     private static final String GEL_LEVE = "GEL_LEVE";
+    private static final String PHASE_CHANGEE = "PHASE_CHANGEE";
+    private static final String STRUCTURE_DEBLOQUEE = "STRUCTURE_DEBLOQUEE";
+    private static final String STRUCTURE_REFIGEE = "STRUCTURE_REFIGEE";
     private static final String SOLVE_LANCE = "SOLVE_LANCE";
     private static final String VERIFICATION_BESOIN_LANCEE = "VERIFICATION_BESOIN_LANCEE";
     private static final String SOLVE_INCREMENTAL_LANCE = "SOLVE_INCREMENTAL_LANCE";
@@ -323,10 +326,14 @@ public final class CatalogueActions {
         action(EDITION_ACTIVEE, "Édition activée", Entite.EDITION);
         action(EDITION_DESACTIVEE, "Édition désactivée", Entite.EDITION);
         action(EDITION_SUPPRIMEE, "Édition supprimée", Entite.EDITION);
-        // The freeze of the referential (ADR 0052) moves no data a solve
-        // reads: it only refuses the writes to come, hence action().
+        // The phase of the edition (ADR 0115), and the 3.x freeze kept as its
+        // alias, move no data a solve reads: they only refuse the writes to
+        // come, hence action().
         action(GEL_POSE, "Gel du référentiel posé", Entite.EDITION);
         action(GEL_LEVE, "Gel du référentiel levé", Entite.EDITION);
+        action(PHASE_CHANGEE, "Phase de l'édition changée", Entite.EDITION);
+        action(STRUCTURE_DEBLOQUEE, "Structure de l'édition publiée débloquée", Entite.EDITION);
+        action(STRUCTURE_REFIGEE, "Structure de l'édition publiée refigée", Entite.EDITION);
 
         /* ------------------- The planning itself -------------------- */
         action(SOLVE_LANCE, "Résolution lancée", Entite.PLANNING);
@@ -594,6 +601,9 @@ public final class CatalogueActions {
         route("EditionResource#delete", EDITION_SUPPRIMEE);
         route("EditionResource#freeze", GEL_POSE);
         route("EditionResource#lift", GEL_LEVE);
+        route("EditionResource#setPhase", PHASE_CHANGEE);
+        route("EditionResource#unblockStructure", STRUCTURE_DEBLOQUEE);
+        route("EditionResource#refreezeStructure", STRUCTURE_REFIGEE);
 
         route("PlanningResource#solve", SOLVE_LANCE);
         route("PlanningResource#reset", PLANNING_REINITIALISE);
@@ -928,6 +938,15 @@ public final class CatalogueActions {
                 .filter(ActionJournalisee::export)
                 .map(ActionJournalisee::code)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * The codes that moved a rule's activation, weight or level, for the
+     * history's « Règles » filter — what the former weight history listed,
+     * minus the values, which the journal never keeps.
+     */
+    public static Set<String> ruleCodes() {
+        return Set.of(CONTRAINTE_ACTIVEE, CONTRAINTE_DESACTIVEE, CONTRAINTE_PONDEREE, CONTRAINTE_NIVEAU);
     }
 
     /** What {@code cle} does, {@code empty} when it is not a journalled action. */

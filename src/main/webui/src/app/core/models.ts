@@ -845,6 +845,12 @@ export interface Edition {
   nom: string;
   active: boolean;
   creeLe: string | null;
+  /** Where the edition stands in its cycle (ADR 0115). */
+  phase?: 'PREPARATION' | 'CALCUL' | 'PUBLIEE' | 'TERMINEE';
+  /** When the edition entered its phase. */
+  phaseDepuis?: string;
+  /** In `PUBLIEE` only: the structure was reopened for a last-minute change. */
+  structureDebloquee?: boolean;
 }
 
 /** What activating an edition would close in the one active today (`GET /api/editions/{id}/activation`). */
@@ -4169,47 +4175,6 @@ export interface Dosage {
 /** The level of an organisation rule on an edition: mandatory, or a preference at one of three positions. */
 export type NiveauRegle =
   'OBLIGATOIRE' | 'PREFERENCE_FORTE' | 'PREFERENCE_NORMALE' | 'PREFERENCE_LEGERE';
-
-/** Where a change of weight or activation came from — never who. */
-export type WeightChangeOrigin = 'SCREEN' | 'ASSISTANT' | 'SCENARIO' | 'DUPLICATION';
-
-/** One change of a rule's effective weight or activation in the edition, values included. */
-export interface WeightChange {
-  id: number;
-  name: string;
-  weightBefore: number | null;
-  weightAfter: number | null;
-  /** The edition dropped its own weight: « 20 → défaut (1) ». */
-  backToDefault: boolean;
-  activeBefore: boolean | null;
-  activeAfter: boolean | null;
-  origin: WeightChangeOrigin;
-  actor: string;
-  /** For a DUPLICATION, the edition the dosage was inherited from. */
-  sourceEdition: string | null;
-  createdAt: string;
-}
-
-/** One finished solve of the edition, as the weight history reads it. */
-export interface ResolutionUnderDosage {
-  id: number;
-  createdAt: string;
-  score: string | null;
-  scoreHard: number | null;
-  scoreMedium: number | null;
-  scoreSoft: number | null;
-  scoreMediumHorsPlancher: number | null;
-  /** Violations of the rule asked about; null on the global history or when unmeasured. */
-  ruleViolations: number | null;
-  dosage: Dosage | null;
-}
-
-/** `GET /api/constraints/{name}/historique` — changes and solves, each oldest first. */
-export interface ConstraintHistory {
-  name: string | null;
-  changes: WeightChange[];
-  resolutions: ResolutionUnderDosage[];
-}
 
 /** One row of `GET /api/mesures-edition/indicateurs` (issue #89) — survives its edition's deletion. */
 export interface KpiHistoriqueEntry {
