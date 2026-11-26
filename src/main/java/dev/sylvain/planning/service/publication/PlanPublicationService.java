@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutDemandeEchange;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionPhaseService;
 import dev.sylvain.planning.service.edition.RequiresActiveEdition;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.export.PlanningExportService;
@@ -107,6 +108,9 @@ public class PlanPublicationService {
     /** What a publication tells the outside world: counts, through the webhooks. */
     private final Event<PlanningPublished> published;
 
+    /** A publication moves the edition to its published phase (ADR 0115). */
+    private final EditionPhaseService phaseService;
+
     @Inject
     public PlanPublicationService(
             PlanningPersistenceService persistenceService,
@@ -126,7 +130,8 @@ public class PlanPublicationService {
             NotifiedPlanRepository notifiedPlans,
             dev.sylvain.planning.service.journal.JournalActionService journal,
             EnvoiPlanningRepository envois,
-            Event<PlanningPublished> published) {
+            Event<PlanningPublished> published,
+            EditionPhaseService phaseService) {
         this.persistenceService = persistenceService;
         this.planPublieService = planPublieService;
         this.snapshotService = snapshotService;
@@ -145,6 +150,7 @@ public class PlanPublicationService {
         this.journal = journal;
         this.envois = envois;
         this.published = published;
+        this.phaseService = phaseService;
     }
 
     /**
@@ -547,6 +553,10 @@ public class PlanPublicationService {
         if (meta == null) {
             throw new BusinessError.Conflict("Aucun planning résolu à publier.");
         }
+        // The first publication moves the edition to PUBLIEE and freezes its
+        // structure; a later one keeps it there and refreezes a structure
+        // unblocked for a last-minute change (ADR 0115).
+        phaseService.markPublished();
 
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
         Instant envoyeLe = Instant.now();

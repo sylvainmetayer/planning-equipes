@@ -66,7 +66,7 @@ A structural test plays no scenario: it reads the code (sources, annotations, SQ
 | No staff name leaves over MCP; every tool names its edition, declares its four hints, translates business refusals, says what happens during a solve | `McpConfidentialiteStructurelleTest`, `McpEditionStructurelleTest`, `McpAnnotationsStructurelleTest`, `McpRefusMetierStructurelleTest`, `McpWarnsWhileSolvingStructuralTest` ([MCP tools](mcp-outils.md)) |
 | The three writings of a constraint's name: `actif(stream, "X")`, `.asConstraint("X")` and the catalogue | `ConstraintToggleStructurelleTest` and `ConstraintCatalogTest` |
 | The two engines score the same rules | `HandSearchCoverageStructuralTest`, `HandSearchDifferentialTest` ([solver tests](tests-de-scenarios.md)) |
-| A frozen referential refuses every write; a write that a solve would undo is refused | `GelReferentielStructuralTest`, `RefusedWhileSolvingStructuralTest` |
+| A referential frozen by the phase of the edition refuses every write; a write that a solve would undo is refused | `GelReferentielStructuralTest`, `RefusedWhileSolvingStructuralTest` |
 | Only the active edition publishes and sends mails | `ActiveEditionEmissionStructuralTest` |
 | Every write route and write tool is in the catalogue of journalled actions | `JournalCoverageStructurelleTest` |
 | Every referential table carries `modifie_le` and its write precondition | `WriteStampStructurelleTest` |

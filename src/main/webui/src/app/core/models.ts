@@ -845,6 +845,12 @@ export interface Edition {
   nom: string;
   active: boolean;
   creeLe: string | null;
+  /** Where the edition stands in its cycle (ADR 0115). */
+  phase?: 'PREPARATION' | 'CALCUL' | 'PUBLIEE' | 'TERMINEE';
+  /** When the edition entered its phase. */
+  phaseDepuis?: string;
+  /** In `PUBLIEE` only: the structure was reopened for a last-minute change. */
+  structureDebloquee?: boolean;
 }
 
 /** What activating an edition would close in the one active today (`GET /api/editions/{id}/activation`). */

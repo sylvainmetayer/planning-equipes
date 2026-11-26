@@ -28,7 +28,7 @@ L'accueil prend la forme du moment.
 **En préparation**, c'est une liste d'étapes : référentiels, gel, cohérence du référentiel, collecte des disponibilités, ouvertures, besoin, résolution, problèmes, relecture, publication, accusés de réception, foire. Chaque ligne dit si l'étape est faite, à vérifier, pour information ou à faire, avec le chiffre qui compte et le lien vers l'écran concerné. Quelques lignes en détail :
 
 - la dernière résolution se lit en phrases, jamais en score brut ;
-- le gel du référentiel y est rappelé, et se règle dans les Paramètres ;
+- le gel du référentiel, que décide la phase de l'édition, y est rappelé, et se règle dans les Paramètres ;
 - les accusés de réception disent si les relances automatiques sont actives et n'alertent qu'au-delà du délai de relance ;
 - la ligne « Cohérence du référentiel » rassemble toutes les anomalies détectées ailleurs. Les anomalies identiques sont réunies en une ligne avec leur compte (« 16 jours : rien entre 12:00 et 13:00 ») et chaque ligne mène à la fiche qui la corrige ;
 - deux lignes comptent sans lister : les fiches sans téléphone (dont celles affectées à une date à venir) et, sur une édition qui saisit des emplacements, les stands sans emplacement. Pour ces derniers, l'application indique ceux pour lesquels les stands voisins suggèrent un emplacement, avec sa raison. Chaque ligne ouvre la liste filtrée ; la suggestion apparaît aussi dans la colonne Lieu des stands et à l'enregistrement d'un stand laissé sans emplacement.

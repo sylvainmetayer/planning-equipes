@@ -5,8 +5,10 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 /**
- * The four families of the referential an organiser can freeze once their
- * preparation is over (see {@code docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md}).
+ * The four families of the referential the phase of the edition freezes (see
+ * {@code docs/decisions/0052-gel-du-referentiel-distinct-du-verrou.md} for what
+ * each covers, and {@code docs/decisions/0115-la-phase-de-l-edition-remplace-le-gel.md}
+ * for which phase freezes which).
  *
  * <p>A family, not a field nor a fiche: freezing closes a phase of the
  * preparation (« les stands sont prêts »), it is not a fine-grained setting —
@@ -26,8 +28,9 @@ import java.util.stream.Collectors;
  *       in the roster.</li>
  * </ul>
  *
- * <p>The constant names are on the wire: the {@code famille} column, the
- * path of {@code /api/editions/courant/gel/{famille}} and the MCP argument.</p>
+ * <p>The constant names are on the wire: the {@code familles} of a
+ * {@code 409 REFERENTIEL_FIGE}, the path of {@code /api/editions/courant/gel/{famille}}
+ * and the MCP argument.</p>
  */
 public enum ReferentialFamily {
     STANDS("Stands"),
