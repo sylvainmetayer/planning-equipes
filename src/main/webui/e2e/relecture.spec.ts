@@ -122,6 +122,7 @@ test('figer demande confirmation et pose le verrou, relire le retire', async ({ 
   const confirmation = page.getByRole('dialog', { name: 'Figer cette journée ?' });
   await expect(confirmation).toContainText('Le calcul ne touchera plus');
   await confirmation.getByRole('button', { name: 'Annuler' }).click();
+  await expect(confirmation).toBeHidden();
   expect(await (await admin.get('/api/verrouillages')).json()).toEqual([]);
 
   await dialogue.getByRole('button', { name: "Enregistrer l'état" }).click();
