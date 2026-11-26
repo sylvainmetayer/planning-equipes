@@ -52,7 +52,6 @@ import {
   readOngletParametres,
 } from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
-import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { HorlogeSimuleeCard } from './horloge-simulee-card';
 import { WebhooksCard } from './webhooks-card';
 import { TODAY_ANCHOR } from '../../core/date-mock.service';
@@ -110,7 +109,6 @@ import { TODAY_ANCHOR } from '../../core/date-mock.service';
     ParametresNotificationsPanel,
     ParametresSection,
     ParametresMeteoPanel,
-    GelReferentielCard,
     HorlogeSimuleeCard,
     WebhooksCard,
   ],

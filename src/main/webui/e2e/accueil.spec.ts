@@ -22,7 +22,7 @@ test.afterAll(async () => {
 
 const LIGNES = [
   'referentiels',
-  'gel',
+  'phase',
   'coherence',
   'collecte',
   'ouvertures',
@@ -47,15 +47,12 @@ test('the home page lists the twelve steps of the cycle', async ({ browser }) =>
   }
   // Every line carries its state and a link: nothing is a dead end. The
   // coherence alone may unfold in place instead, when it holds several
-  // subjects — each of its anomalies linking on. The freeze has no switch
-  // here any more: it links to Paramètres, the one place it is set.
+  // subjects — each of its anomalies linking on. The phase unfolds its own
+  // control in place, so it has no link out either.
   expect(await page.locator('li.accueil-ligne a.accueil-lien').count()).toBeGreaterThanOrEqual(
-    LIGNES.length - 1,
+    LIGNES.length - 2,
   );
-  await expect(page.locator('li[data-ligne="gel"] a.accueil-lien')).toHaveAttribute(
-    'href',
-    '/parametres?onglet=edition#gel-referentiel',
-  );
+  await expect(page.locator('li[data-ligne="phase"] app-phase-edition-control')).toBeVisible();
   // Never the raw score: the reading is in sentences.
   await expect(page.locator('#contenu')).not.toContainText(/\dhard\//);
   await expect(page.locator('.accueil-bilan')).toContainText('à faire');

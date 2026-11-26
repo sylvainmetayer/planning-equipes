@@ -12,10 +12,10 @@ import { EditionStore } from '../../core/edition.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PublicationPanel } from './publication-panel';
-import { GelInvitation } from '../../core/gel-invitation';
+import { PhaseEditionActions } from '../../shared/phase-edition-actions';
 import { PublicationSelection } from './publication-selection';
 
-const gelOffer = vi.fn().mockResolvedValue(undefined);
+const phaseRefresh = vi.fn().mockResolvedValue(undefined);
 
 function recipient(partiel: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -78,8 +78,7 @@ describe('PublicationPanel', () => {
         { provide: EditionStore, useValue: { inactive: editionInactive } },
         { provide: ConfirmService, useValue: confirm },
         { provide: SolverJobService, useValue: { editingLocked: () => editingLocked() } },
-        // The freeze invitation writes to localStorage: kept out of this file's storage.
-        { provide: GelInvitation, useValue: { offer: gelOffer } },
+        { provide: PhaseEditionActions, useValue: { refresh: phaseRefresh } },
       ],
     });
   });
@@ -148,8 +147,8 @@ describe('PublicationPanel', () => {
 
     envoi.terminer();
     await publication;
-    // A published plan is the second milestone at which freezing is offered.
-    expect(gelOffer).toHaveBeenCalledWith('publication');
+    // Publishing moved the edition to Publiée: the phase is read again.
+    expect(phaseRefresh).toHaveBeenCalled();
     expect(panel['busy']()).toBe(false);
     // And the preview was re-read once the mail went out.
     expect(planningApi.publicationPreview).toHaveBeenCalledTimes(2);

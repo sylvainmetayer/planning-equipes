@@ -1,22 +1,16 @@
-// The freeze of the referential (ADR 0052), shared by every screen that
-// writes a freezable family: the forms show the frozen fields read-only with
-// a padlock, the imports say so before a file is read, the home card and the
-// Paramètres switches freeze and lift. Server state, re-read on demand and
-// never persisted in the browser — the server refuses the write anyway
-// (`409 REFERENTIEL_FIGE`), the screens only say it before the click.
+// What the phase of the edition freezes, family by family (ADR 0052, 0115),
+// shared by every screen that writes a freezable family: the forms show the
+// frozen fields read-only with a padlock, the imports say so before a file is
+// read. Read from `GET /api/editions/courant/gel`, the server's answer for the
+// phase and the structure's unblocking; the gestures that move them are
+// those of `PhaseEditionActions`. Server state, re-read on demand and never persisted
+// in the browser — the server refuses the write anyway (`409 REFERENTIEL_FIGE`),
+// the screens only say it before the click.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { EditionsApi } from './api/editions-api';
 import { errorMessage } from './error-message';
 import { EtatGel, FreezeFamily } from './models';
-
-/** The four families, in the server's order — what a screen lists before the first read lands. */
-export const FREEZE_FAMILIES: readonly FreezeFamily[] = [
-  'STANDS',
-  'CRENEAUX',
-  'TYPOLOGIES_EMPLACEMENTS',
-  'COMPETENCES',
-];
 
 @Injectable({ providedIn: 'root' })
 export class GelReferentielStore {
@@ -27,8 +21,6 @@ export class GelReferentielStore {
   readonly states = this._states.asReadonly();
   private readonly _error = signal('');
   readonly error = this._error.asReadonly();
-  private readonly _busy = signal(false);
-  readonly busy = this._busy.asReadonly();
 
   private pending: Promise<void> | null = null;
   private loaded = false;
@@ -60,7 +52,7 @@ export class GelReferentielStore {
     return this.reload();
   }
 
-  /** Re-reads the freeze — after a refusal told this browser another session froze a family. */
+  /** Re-reads the freeze — after a phase gesture, or a refusal telling another session moved it. */
   reload(): Promise<void> {
     this.pending ??= this.read().finally(() => (this.pending = null));
     return this.pending;
@@ -75,32 +67,6 @@ export class GelReferentielStore {
       this.loaded = true;
     } catch (error) {
       this._error.set(errorMessage(error));
-    }
-  }
-
-  /**
-   * Freezes `family`; the failure propagates to the caller, which says it.
-   * Since 4.0 the gesture moves the phase of the edition (ADR 0115), which
-   * freezes every family at once: the whole state is read again.
-   */
-  async freeze(family: FreezeFamily): Promise<void> {
-    this._busy.set(true);
-    try {
-      await this.api.freeze(family);
-      await this.read();
-    } finally {
-      this._busy.set(false);
-    }
-  }
-
-  /** Lifts the freeze of `family`, then reads the whole state again (see `freeze`). */
-  async lift(family: FreezeFamily): Promise<void> {
-    this._busy.set(true);
-    try {
-      await this.api.lift(family);
-      await this.read();
-    } finally {
-      this._busy.set(false);
     }
   }
 }

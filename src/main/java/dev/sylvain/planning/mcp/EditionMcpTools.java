@@ -2,21 +2,23 @@ package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.EditionPhase;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionActivationService;
 import dev.sylvain.planning.service.edition.EditionDelta;
 import dev.sylvain.planning.service.edition.EditionDeltaService;
+import dev.sylvain.planning.service.edition.EditionPhaseService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
-import dev.sylvain.planning.service.referentiel.GelReferentielService;
+import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.ReferentialFamily;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -42,13 +44,13 @@ import java.util.stream.Stream;
  * ("2025", "2026", "2026 bis") gives an assistant nothing to recognise
  * the right one by, and editions are counted in units, not in thousands.</p>
  *
- * <p>Three tools here work <em>inside</em> an edition rather than on the
- * list — {@code etat_edition}, which reads it, and {@code figer_referentiel}
- * and {@code lever_gel}, the 3.x freeze kept as aliases of the phase until
- * 5.0 (ADR 0115) —
+ * <p>Two tools here work <em>inside</em> an edition rather than on the
+ * list — {@code etat_edition}, which reads it, and {@code modifier_phase_edition},
+ * which moves its phase (ADR 0115, in place of the 3.x {@code figer_referentiel}
+ * and {@code lever_gel}) —
  * hence the {@code @EditionCiblee} on the class: their {@code edition}
  * argument designates the edition to work in, the way every other tool's
- * does. Dropping the annotation would let all three run without an edition.
+ * does. Dropping the annotation would let both run without an edition.
  * The other tools name their edition as a plain argument,
  * resolved by hand — the interceptor only reads {@code @EditionArg}, so it
  * leaves them alone.</p>
@@ -62,10 +64,15 @@ public class EditionMcpTools {
     /** Argument names, as a refusal quotes them back to the caller. */
     private static final String ARG_EDITION = "edition";
 
-    private static final String ARG_FAMILLE = "famille";
+    private static final String ARG_PHASE = "phase";
 
-    private static final String FAMILLE_DESCRIPTION =
-            "Famille du référentiel : STANDS, CRENEAUX, TYPOLOGIES_EMPLACEMENTS ou COMPETENCES";
+    private static final String ARG_STRUCTURE = "structure";
+
+    /** What {@code modifier_phase_edition} does to the structure of a published edition. */
+    private enum StructureAction {
+        DEBLOQUER,
+        REFIGER
+    }
 
     private final EditionService editionService;
 
@@ -77,7 +84,9 @@ public class EditionMcpTools {
 
     private final EtatEditionService etatEditionService;
 
-    private final GelReferentielService gelService;
+    private final EditionPhaseService phaseService;
+
+    private final CurrentAction currentAction;
 
     private final EditionActivationService activationService;
 
@@ -91,7 +100,8 @@ public class EditionMcpTools {
             ReferenceDataService referenceDataService,
             McpEditions editions,
             EtatEditionService etatEditionService,
-            GelReferentielService gelService,
+            EditionPhaseService phaseService,
+            CurrentAction currentAction,
             EditionDeltaService deltaService) {
         this.activationService = activationService;
         this.editionService = editionService;
@@ -99,7 +109,8 @@ public class EditionMcpTools {
         this.referenceDataService = referenceDataService;
         this.editions = editions;
         this.etatEditionService = etatEditionService;
-        this.gelService = gelService;
+        this.phaseService = phaseService;
+        this.currentAction = currentAction;
         this.deltaService = deltaService;
     }
 
@@ -175,50 +186,55 @@ public class EditionMcpTools {
     }
 
     @Tool(
-            name = "figer_referentiel",
-            description = "Ancien nom, gardé jusqu'en 5.0 : la 4.0 remplace le gel par famille par la phase de "
-                    + "l'édition (Préparation, Calcul, Publiée, Terminée). En Préparation, fait passer l'édition en "
-                    + "Calcul, ce qui fige les quatre familles, pas seulement celle nommée : STANDS, CRENEAUX, "
-                    + "TYPOLOGIES_EMPLACEMENTS, COMPETENCES. Dans une édition publiée dont la structure a été "
-                    + "débloquée, refige la structure (stands, créneaux, typologies et emplacements). Ailleurs, ne "
-                    + "change rien. Toute écriture figée est refusée (REFERENTIEL_FIGE), par tous les chemins. "
-                    + "Restent libres : disponibilités, souhaits, déclarations, ajustements, verrous et consignes. "
-                    + "Distinct de verrouiller, qui fige des sièges du planning.",
+            name = "modifier_phase_edition",
+            description = "Change la phase de l'édition (ADR 0115), qui décide ce que le référentiel laisse "
+                    + "modifier. PREPARATION : tout est modifiable. CALCUL : stands, créneaux, typologies, "
+                    + "emplacements et compétences des animateurs sont figés pendant que le planning se calcule et "
+                    + "se corrige. PUBLIEE : la structure (stands, créneaux, typologies, emplacements) reste figée, "
+                    + "les compétences se modifient ; la première publication y fait passer l'édition. TERMINEE : "
+                    + "tout est figé, comme en CALCUL. Toute écriture figée est refusée (REFERENTIEL_FIGE), par tous "
+                    + "les chemins ; restent libres : disponibilités, souhaits, déclarations, ajustements, verrous "
+                    + "et consignes. Tout passage est permis, retour compris : repasser en PREPARATION rouvre le "
+                    + "référentiel, ce qui, après une publication, fera bouger des plannings déjà envoyés — à ne "
+                    + "faire que sur demande explicite. Pour un changement de dernière minute dans une édition "
+                    + "PUBLIEE sans quitter la phase, passer « structure » à DEBLOQUER (la publication suivante, ou "
+                    + "REFIGER, refige la structure ; refusé hors de PUBLIEE). Donner « phase » ou « structure », "
+                    + "jamais les deux. Distinct de verrouiller, qui fige "
+                    + "des sièges du planning.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    GelReferentielService.EtatGel freezeReferential(
-            @ToolArg(description = FAMILLE_DESCRIPTION) String famille,
+    PhaseView changeEditionPhase(
+            @ToolArg(
+                            description = "Phase à déclarer : PREPARATION, CALCUL, PUBLIEE ou TERMINEE. "
+                                    + "Absent quand « structure » est donné.",
+                            required = false)
+                    String phase,
+            @ToolArg(
+                            description = "Seulement en PUBLIEE : DEBLOQUER rouvre la structure, REFIGER la ferme. "
+                                    + "Absent quand « phase » est donné.",
+                            required = false)
+                    String structure,
             @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        ReferentialFamily cible = requireFamily(famille);
-        gelService.freeze(cible);
-        return gelService.etat(cible);
-    }
-
-    @Tool(
-            name = "lever_gel",
-            description = "Ancien nom, gardé jusqu'en 5.0 (voir figer_referentiel). En Calcul, ramène l'édition en "
-                    + "Préparation, ce qui rouvre les quatre familles. Dans une édition publiée, débloque la "
-                    + "structure (stands, créneaux, typologies et emplacements) pour un changement de dernière "
-                    + "minute, sans quitter la phase Publiée ; la publication suivante la refige. Refusé dans une "
-                    + "édition terminée. À ne faire que sur demande explicite : après une publication, toute "
-                    + "modification fera bouger des plannings déjà envoyés. Une bande horaire fermée à tous les "
-                    + "stands passe par une consigne (appliquer_consigne), ouverte dans toutes les phases.",
-            annotations =
-                    @Tool.Annotations(
-                            readOnlyHint = false,
-                            destructiveHint = false,
-                            idempotentHint = true,
-                            openWorldHint = false))
-    GelReferentielService.EtatGel liftFreeze(
-            @ToolArg(description = FAMILLE_DESCRIPTION) String famille,
-            @ToolArg(description = EditionArg.DESCRIPTION) @EditionArg String edition) {
-        ReferentialFamily cible = requireFamily(famille);
-        gelService.lift(cible);
-        return gelService.etat(cible);
+        EditionPhase cible = McpArgs.enumeration(EditionPhase.class, phase, ARG_PHASE);
+        StructureAction action = McpArgs.enumeration(StructureAction.class, structure, ARG_STRUCTURE);
+        if ((cible == null) == (action == null)) {
+            throw new BusinessError.Invalid(
+                    "Donner « phase » (PREPARATION, CALCUL, PUBLIEE ou TERMINEE) ou « structure » (DEBLOQUER ou"
+                            + " REFIGER), l'un des deux et pas les deux.");
+        }
+        if (cible != null) {
+            return phaseView(phaseService.setPhase(cible));
+        }
+        // The line of the history says what was done, not only that a phase moved.
+        currentAction.action(action == StructureAction.DEBLOQUER ? "STRUCTURE_DEBLOQUEE" : "STRUCTURE_REFIGEE");
+        return phaseView(
+                action == StructureAction.DEBLOQUER
+                        ? phaseService.unblockStructure()
+                        : phaseService.refreezeStructure());
     }
 
     @InstanceOnlyTool
@@ -397,12 +413,9 @@ public class EditionMcpTools {
         return editions.solve(edition);
     }
 
-    private static ReferentialFamily requireFamily(String famille) {
-        ReferentialFamily cible = McpArgs.enumeration(ReferentialFamily.class, famille, ARG_FAMILLE);
-        if (cible == null) {
-            throw new BusinessError.Invalid(ARG_FAMILLE + " est requis : " + FAMILLE_DESCRIPTION);
-        }
-        return cible;
+    private static PhaseView phaseView(Edition edition) {
+        return new PhaseView(
+                edition.getId(), edition.getPhase().name(), edition.getPhaseDepuis(), edition.isStructureDebloquee());
     }
 
     private Edition find(String id) {
@@ -438,6 +451,12 @@ public class EditionMcpTools {
     private static Stream<LocalDate> dates(List<Creneau> creneaux) {
         return creneaux.stream().map(Creneau::getDate).filter(Objects::nonNull);
     }
+
+    /**
+     * The phase an edition stands in (ADR 0115) and whether its structure is unblocked —
+     * what {@code modifier_phase_edition} answers.
+     */
+    public record PhaseView(String edition, String phase, Instant phaseDepuis, boolean structureDebloquee) {}
 
     /**
      * @param active the edition allowed to reach outside (ADR 0072) — at most one

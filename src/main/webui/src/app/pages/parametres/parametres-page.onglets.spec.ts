@@ -264,7 +264,7 @@ describe('ParametresPage — onglets', () => {
       'MCP',
     ]);
     expect(textOf()).toContain("Nom de l'édition");
-    expect(textOf()).toContain('Gel du référentiel');
+    expect(textOf()).not.toContain('Gel du référentiel');
     expect(textOf()).toContain('Guichets');
     expect(textOf()).not.toContain('Rappels et relances automatiques');
     expect(textOf()).toContain("Contact de l'organisation");

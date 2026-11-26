@@ -348,8 +348,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   case nor argued as open — and on an annotated method called on `this`, which
   bypasses the interceptor. Consignes stay open: their grid write goes through
   the in-transaction timeslot methods, which only `ConsigneService` calls. The
-  3.x freeze routes and the `figer_referentiel` / `lever_gel` tools are aliases
-  of the phase until 5.0, and the table `gel_referentiel` is read by nothing.
+  3.x freeze routes are aliases of the phase until 5.0 (the MCP tools
+  `figer_referentiel` / `lever_gel` are replaced by `modifier_phase_edition`),
+  and the table `gel_referentiel` is read by nothing. The screen side is one
+  component, `shared/phase-edition-control`, unfolded by the home checklist and
+  Administrer › Éditions, over `PhaseEditionActions`; the padlocks read the
+  server's per-family state (`GET /api/editions/courant/gel`, from the phase).
   A test that publishes leaves its edition `PUBLIEE`: the `PhaseReset` test
   callback puts every edition back in preparation before each `@QuarkusTest`.
 - **A write a running solve would undo is refused, by annotation too.** A

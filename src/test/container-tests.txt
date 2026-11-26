@@ -133,7 +133,7 @@ dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
-dev/sylvain/planning/mcp/GelReferentielMcpToolsTest.java
+dev/sylvain/planning/mcp/PhaseEditionMcpToolsTest.java
 dev/sylvain/planning/mcp/McpApiKeyAuthenticationMechanismTest.java
 dev/sylvain/planning/mcp/McpKeyLockoutTest.java
 dev/sylvain/planning/mcp/McpPromptsResourcesTest.java

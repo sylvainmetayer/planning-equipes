@@ -778,7 +778,10 @@ describe('StandsPage table', () => {
     const plan = await paste('Nom\tEffectif minimum\nLoup\t2');
     expect(plan.rows).toEqual([expect.objectContaining({ id: 's1', nom: 'Loup', effectifMin: 1 })]);
     expect(plan.refusals).toEqual([
-      expect.objectContaining({ column: 'Effectif minimum', reason: 'figé par le gel des stands' }),
+      expect.objectContaining({
+        column: 'Effectif minimum',
+        reason: "figé par la phase de l'édition",
+      }),
     ]);
   });
 

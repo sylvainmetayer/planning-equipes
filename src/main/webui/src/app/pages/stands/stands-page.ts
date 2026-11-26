@@ -637,7 +637,7 @@ function effectifColumn(
     read: (stand) => String(stand[key]),
     write: (stand, text) => {
       if (frozen()) {
-        return $localize`:@@stands.collage.fige:figé par le gel des stands`;
+        return $localize`:@@stands.collage.fige:figé par la phase de l'édition`;
       }
       const value = Number(text);
       if (!Number.isInteger(value) || value < 1) {

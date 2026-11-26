@@ -72,48 +72,52 @@ export function buildReferenceDataSections(): HelpSection[] {
       ],
     },
     {
-      id: 'gel-du-referentiel',
+      id: 'phase-de-l-edition',
       icon: 'lock',
-      title: $localize`:@@aide.gel.title:Gel du référentiel`,
-      summary: $localize`:@@aide.gel.summary:Figer une famille de fiches une fois sa préparation terminée, pour qu'aucune retouche ne fasse bouger le planning.`,
+      title: $localize`:@@aide.phase.title:Phase de l'édition`,
+      summary: $localize`:@@aide.phase.summary:Dire où en est l'édition (Préparation, Calcul, Publiée, Terminée), ce qui fige les fiches dont le planning est calculé.`,
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.gel.intro.parametres:Une fois les stands prêts, ou les créneaux arrêtés, on les fige : jusqu'à la levée du gel, ni formulaire, ni modification en masse, ni import de fichier, ni assistant ne peut les modifier. Le gel se pose famille par famille, dans l'édition courante, depuis l'onglet Édition des Paramètres ; l'État de l'édition en rappelle l'état et y mène. L'application le propose après le premier calcul et après la première publication, sans jamais l'imposer.`,
+          text: $localize`:@@aide.phase.intro:Une édition passe par quatre phases. En Préparation, tout se modifie. En Calcul, les stands, les créneaux, les typologies, les emplacements et les compétences des animateurs sont figés : ni formulaire, ni modification en masse, ni import de fichier, ni assistant ne peut les modifier. En Publiée, la structure (stands, créneaux, typologies, emplacements) reste figée et les compétences des animateurs se modifient. Terminée fige comme Calcul. La phase se change depuis l'État de l'édition ou depuis Administrer › Éditions, après une confirmation qui dit ce que la nouvelle phase fige ou ouvre ; tout retour en arrière est permis.`,
         },
         {
           kind: 'definitions',
           items: [
             {
-              term: $localize`:@@aide.gel.stands.terme:Stands`,
-              text: $localize`:@@aide.gel.stands.def:Création, suppression, effectifs, réserve aux majeurs, typologies proposées et horaires. Le nom, l'emplacement, premium et effort restent modifiables.`,
+              term: $localize`:@@aide.phase.stands.terme:Stands`,
+              text: $localize`:@@aide.phase.stands.def:Création, suppression, effectifs, réserve aux majeurs, typologies proposées et horaires. Le nom, l'emplacement, premium et effort restent modifiables.`,
             },
             {
-              term: $localize`:@@aide.gel.creneaux.terme:Créneaux`,
-              text: $localize`:@@aide.gel.creneaux.def:Création, suppression, date, heures, relais repas, et ce qui génère la grille : journées types appliquées, séries, dérivation. Les journées types elles-mêmes restent modifiables.`,
+              term: $localize`:@@aide.phase.creneaux.terme:Créneaux`,
+              text: $localize`:@@aide.phase.creneaux.def:Création, suppression, date, heures, relais repas, et ce qui génère la grille : journées types appliquées, séries, dérivation. Les journées types elles-mêmes restent modifiables.`,
             },
             {
-              term: $localize`:@@aide.gel.typologies.terme:Typologies et emplacements`,
-              text: $localize`:@@aide.gel.typologies.def:Création, suppression, plafond par typologie et typologie polyvalente. Libellés, descriptions, noms et positions restent modifiables.`,
+              term: $localize`:@@aide.phase.typologies.terme:Typologies et emplacements`,
+              text: $localize`:@@aide.phase.typologies.def:Création, suppression, plafond par typologie et typologie polyvalente. Libellés, descriptions, noms et positions restent modifiables.`,
             },
             {
-              term: $localize`:@@aide.gel.competences.terme:Compétences`,
-              text: $localize`:@@aide.gel.competences.def:Les appréciations des animateurs déjà inscrits, par la fiche, la grille ou l'import. Un nouvel animateur arrive avec les siennes.`,
+              term: $localize`:@@aide.phase.competences.terme:Compétences`,
+              text: $localize`:@@aide.phase.competences.def:Les appréciations des animateurs déjà inscrits, par la fiche, la grille ou l'import. Un nouvel animateur arrive avec les siennes.`,
             },
           ],
         },
         {
           kind: 'callout',
-          title: $localize`:@@aide.gel.ouvert.titre:Ce qui reste ouvert`,
-          text: $localize`:@@aide.gel.ouvert.texte:Disponibilités, souhaits, déclarations, e-mails, ajustements manuels, verrouillages et consignes. Un stand à fermer en urgence se ferme par une consigne, sans lever le gel. L'import d'un scénario et la remise à zéro, qui remplacent tout, sont refusés tant qu'une famille est figée.`,
+          title: $localize`:@@aide.phase.ouvert.titre:Ce qui reste ouvert`,
+          text: $localize`:@@aide.phase.ouvert.texte:Disponibilités, souhaits, déclarations, e-mails, ajustements manuels, verrouillages et consignes. Un stand à fermer en urgence se ferme par une consigne, sans changer de phase. L'import d'un scénario et la remise à zéro, qui remplacent tout, sont refusés tant que la phase fige une famille.`,
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.gel.lever:Un champ figé s'affiche en lecture seule, avec un cadenas et la date du gel ; « Lever le gel » demande confirmation et rappelle si le planning est déjà publié. Pose et levée figurent dans l'Historique des actions. Le gel n'est pas le verrouillage : le verrou fige des affectations d'un planning calculé, le gel fige les fiches dont il est calculé. Une édition dupliquée repart sans gel.`,
+          text: $localize`:@@aide.phase.publiee:La première publication fait passer l'édition en Publiée. Pour un changement de dernière minute, « Débloquer la structure » rouvre stands, créneaux, typologies et emplacements sans quitter la phase, un bandeau le rappelle tant qu'elle est débloquée, et la publication suivante la refige (« Refiger » le fait à la main). Un compte en lecture seule voit la phase et n'a aucun bouton.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.phase.lever:Un champ figé s'affiche en lecture seule, avec un cadenas et la date de la phase ; la confirmation d'un déblocage rappelle si le planning est déjà publié. Les changements de phase figurent dans l'Historique des actions. La phase n'est pas le verrouillage : le verrou fige des affectations d'un planning calculé, la phase fige les fiches dont il est calculé. Une édition dupliquée repart en Préparation.`,
         },
       ],
       links: [
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        { route: '/editions', label: $localize`:@@nav.link.editions:Éditions` },
         lienVerrouillages(),
         lienConsignes(),
       ],

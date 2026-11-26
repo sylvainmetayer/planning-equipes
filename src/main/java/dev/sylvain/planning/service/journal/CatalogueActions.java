@@ -804,8 +804,7 @@ public final class CatalogueActions {
         outil("activer_edition", EDITION_ACTIVEE);
         outil("desactiver_edition", EDITION_DESACTIVEE);
         outil("supprimer_edition", EDITION_SUPPRIMEE);
-        outil("figer_referentiel", GEL_POSE);
-        outil("lever_gel", GEL_LEVE);
+        outil("modifier_phase_edition", PHASE_CHANGEE);
 
         outil("lancer_solveur", SOLVE_LANCE);
         outil("resoudre_incremental", SOLVE_INCREMENTAL_LANCE);

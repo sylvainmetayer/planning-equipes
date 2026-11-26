@@ -139,8 +139,8 @@ describe('ImportScenarioCard', () => {
     const notice = racine.querySelector('app-gel-edition-notice .gel-edition-notice');
     expect(notice).not.toBeNull();
     expect(notice!.textContent).toContain('« Stands » et « Créneaux »');
-    expect(notice!.textContent).toContain('sera refusé jusqu');
-    expect(notice!.querySelector('a')!.getAttribute('href')).toContain('/parametres');
+    expect(notice!.textContent).toContain('sera refusé tant qu');
+    expect(notice!.querySelector('a')!.getAttribute('href')).toContain('/editions');
     expect(importButton(racine).disabled).toBe(false);
 
     await choisirFichier(racine);
