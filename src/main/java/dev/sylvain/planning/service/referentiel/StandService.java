@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
@@ -127,6 +128,9 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public Stand create(Stand stand) {
+        if (stand.carriesBothScheduleForms()) {
+            settleScheduleForms(stand, List.of());
+        }
         // A new stand has nothing stored to be unfolded from: whatever a client marked is a typed plage.
         stand.getPlages().forEach(plage -> plage.setDepliee(false));
         validate(stand);
@@ -183,12 +187,81 @@ public class StandService {
      */
     @RefusedWhileSolving
     public Stand update(String id, Stand stand) {
+        return save(id, stand);
+    }
+
+    /**
+     * Lays one dated plage on the stand, kept as typed by hand ({@code depliee} false). Refused as a whole
+     * under a freeze of the stands: a plage is the schedule the solve is given, and no field of the
+     * fiche is left to compare.
+     */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
+    public Stand addPlage(String id, PlageStand plage) {
+        if (plage == null) {
+            throw new BusinessError.Invalid("Une plage est attendue dans le corps de la requête");
+        }
+        Stand stand = existing(id);
+        plage.setId(null);
+        plage.setDepliee(false);
+        stand.getPlages().add(plage);
+        save(id, stand);
+        // Read back: the new plage has its id only once stored, and the caller wants it.
+        return repository.findStand(id);
+    }
+
+    /**
+     * Removes the plage of this id, or every plage of {@code date} when no id is given; exactly one of
+     * the two. Refused as a whole under a freeze, like {@link #addPlage}.
+     */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
+    @RefusedWhileSolving
+    public Stand removePlages(String id, Long plageId, LocalDate date) {
+        if ((plageId == null) == (date == null)) {
+            throw new BusinessError.Invalid("Indiquer la plage (plageId) ou le jour dont retirer les plages (date)");
+        }
+        Stand stand = existing(id);
+        boolean removed = stand.getPlages()
+                .removeIf(plage -> plageId != null ? plageId.equals(plage.getId()) : date.equals(plage.getDate()));
+        if (!removed && plageId != null) {
+            throw new BusinessError.NotFound("Plage inconnue sur le stand " + id + " : " + plageId);
+        }
+        save(id, stand);
+        return repository.findStand(id);
+    }
+
+    private static void settleScheduleForms(Stand stand, List<PlageStand> stored) {
+        Set<ModeHoraire> contradictory = stand.settleDeprecatedLists(stored);
+        if (!contradictory.isEmpty()) {
+            throw new BusinessError.Invalid("La fiche porte \"plages\" et "
+                    + (contradictory.size() > 1
+                            ? "\"ouvertures\" et \"indisponibilites\""
+                            : contradictory.contains(ModeHoraire.OUVERTURE) ? "\"ouvertures\"" : "\"indisponibilites\"")
+                    + " qui ne disent pas la même chose, et aucune ne reprend ce qui est enregistré : "
+                    + "n'en envoyer qu'une (plages), ou la modifier seule");
+        }
+    }
+
+    private Stand existing(String id) {
+        Stand stand = repository.findStand(id);
+        if (stand == null) {
+            throw new BusinessError.NotFound("Stand inconnu : " + id);
+        }
+        return stand;
+    }
+
+    private Stand save(String id, Stand stand) {
         if (!repository.standExists(id)) {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
+        Stand stored =
+                stand.carriesBothScheduleForms() || !stand.getPlages().isEmpty() ? repository.findStand(id) : null;
+        if (stand.carriesBothScheduleForms()) {
+            settleScheduleForms(stand, stored.getPlages());
+        }
         if (!stand.getPlages().isEmpty()) {
-            markOrigins(stand, repository.findStand(id));
+            markOrigins(stand, stored);
         }
         // Before the freeze compares: the game categories may be named by
         // their code, and a code is not the id the stored stand holds.

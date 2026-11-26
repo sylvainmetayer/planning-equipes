@@ -340,7 +340,7 @@ public class McpPrompts {
                 PUBLIEE, avec structure DEBLOQUER) seulement si je le demande explicitement : après \
                 une publication, toute modification fait bouger des plannings déjà envoyés. Fermer \
                 une bande horaire à tous les stands reste possible sous gel, par une consigne (prompt \
-                preparer_un_plan_de_repli) ; fermer un seul stand, non : ajouter_fermeture_stand est \
+                preparer_un_plan_de_repli) ; fermer un seul stand, non : creer_plage_stand est \
                 refusé tant que la phase fige les stands.""".formatted(suffixe(edition), editionFrame(edition)));
     }
 
@@ -445,12 +445,12 @@ public class McpPrompts {
                 si je le demande.
                 2. lister_stands puis analyser_ouvertures_stands : pars de ce qui existe déjà plutôt \
                 que d'une page blanche, et dis-moi ce que le planning retiendrait en l'état.
-                3. Pour chaque stand à régler, ajouter_horaire_stand écrit un horaire récurrent — la \
+                3. Pour chaque stand à régler, creer_horaire_stand écrit un horaire récurrent — la \
                 forme normale, « tous les jours de 10 h à 12 h puis de 14 h à la fermeture » — sous la \
                 forme d'une plage datée par jour d'événement. Une fenêtre peut nommer son propre \
                 effectif ; sans effectif, elle reprend le minimum du stand. Garde \
-                ajouter_ouverture_stand et ajouter_fermeture_stand pour les jours à part : un jour qui \
-                porte déjà une plage n'est pas modifié par ajouter_horaire_stand.
+                creer_plage_stand (mode OUVERTURE ou FERMETURE) pour les jours à part : un jour qui \
+                porte déjà une plage n'est pas modifié par creer_horaire_stand.
                 4. Relance analyser_ouvertures_stands et traite les trois erreurs habituelles : un \
                 stand finalement ouvert aucun jour, une fenêtre hors des heures du jour donc sans \
                 effet, une plage trop courte pour être une vraie vacation.
@@ -707,7 +707,7 @@ public class McpPrompts {
                 ont peut-être déjà lu.
                 2. Applique le changement, après mon accord :
                    - un désistement : modifier_animateur, pour le jour indisponible ;
-                   - un seul stand qui ferme à une date à venir : ajouter_fermeture_stand sur ce stand. \
+                   - un seul stand qui ferme à une date à venir : creer_plage_stand sur ce stand. \
                 Il est refusé quand la famille STANDS est figée (etat_edition dit lesquelles le sont) : \
                 dis-le-moi, modifier_phase_edition ne se fait que si je le demande ;
                    - une bande horaire fermée à tous les stands (arrêté, alerte météo) : une consigne — \

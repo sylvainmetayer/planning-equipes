@@ -10230,6 +10230,13 @@
           "emplacement" : {
             "$ref" : "#/components/schemas/Emplacement"
           },
+          "plages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PlageStand"
+            },
+            "readOnly" : false
+          },
           "horaires" : {
             "type" : "array",
             "items" : {
@@ -10243,13 +10250,15 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PlageStand"
-            }
+            },
+            "deprecated" : true
           },
           "ouvertures" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PlageStand"
-            }
+            },
+            "deprecated" : true
           }
         }
       },
@@ -20162,6 +20171,109 @@
           }
         },
         "summary" : "Delete Stand",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/{id}/plages" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "date",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenStand"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Remove Plages Of Day",
+        "tags" : [ "Stand Resource" ]
+      },
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlageStand"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenStand"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Add Plage",
+        "tags" : [ "Stand Resource" ]
+      }
+    },
+    "/api/stands/{id}/plages/{plageId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "plageId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenStand"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Remove Plage",
         "tags" : [ "Stand Resource" ]
       }
     },

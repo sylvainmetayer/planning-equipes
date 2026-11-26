@@ -145,6 +145,12 @@ class RefusedWhileSolvingStructuralTest {
                     "ReferenceDataService#writeStand(Stand,List,Emplacement)", "StandService#create(Connection,Stand)"),
             Map.entry(
                     "ReferenceDataService#writeStand(String,Stand)", "ReferenceDataService#updateStand(String,Stand)"),
+            Map.entry(
+                    "ReferenceDataService#addStandPlage(String,PlageStand)",
+                    "StandService#addPlage(String,PlageStand)"),
+            Map.entry(
+                    "ReferenceDataService#removeStandPlages(String,Long,LocalDate)",
+                    "StandService#removePlages(String,Long,LocalDate)"),
             Map.entry("ReferenceDataService#deleteStand(String)", "StandService#delete(String)"),
             Map.entry("ReferenceDataService#saisirGrilleHoraires(List)", "StandService#saisirGrille(List)"),
             Map.entry("ReferenceDataService#createEmplacement(Emplacement)", "EmplacementService#create(Emplacement)"),

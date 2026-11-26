@@ -555,6 +555,9 @@ public final class CatalogueActions {
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);
         route("StandResource#deleteStand", STAND_SUPPRIME);
+        route("StandResource#addPlage", STAND_PLAGE_AJOUTEE);
+        route("StandResource#removePlage", STAND_PLAGES_EFFACEES);
+        route("StandResource#removePlagesOfDay", STAND_PLAGES_EFFACEES);
         route("StandResource#importGrille", STANDS_IMPORTES);
         route("OuvertureStandsResource#saisir", OUVERTURES_SAISIES);
 
@@ -763,11 +766,10 @@ public final class CatalogueActions {
         outil("creer_stand_complet", STAND_CREE);
         outil("modifier_stand", STAND_MODIFIE);
         outil("supprimer_stand", STAND_SUPPRIME);
-        outil("ajouter_fermeture_stand", STAND_PLAGE_AJOUTEE);
-        outil("ajouter_ouverture_stand", STAND_PLAGE_AJOUTEE);
-        outil("effacer_plages_stand", STAND_PLAGES_EFFACEES);
-        outil("ajouter_horaire_stand", STAND_HORAIRE_AJOUTE);
-        outil("effacer_horaires_stand", STAND_HORAIRES_EFFACES);
+        outil("creer_plage_stand", STAND_PLAGE_AJOUTEE);
+        outil("supprimer_plage_stand", STAND_PLAGES_EFFACEES);
+        outil("creer_horaire_stand", STAND_HORAIRE_AJOUTE);
+        outil("supprimer_horaires_stand", STAND_HORAIRES_EFFACES);
 
         outil("creer_creneau", CRENEAU_CREE);
         outil("modifier_creneau", CRENEAU_MODIFIE);

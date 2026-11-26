@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.PrereglageConsigne;
@@ -31,6 +32,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -299,6 +301,23 @@ public class ReferenceDataService implements ReferenceData {
     public WrittenStand writeStand(String id, Stand stand) {
         Stand avant = stands.find(id);
         Stand ecrit = updateStand(id, stand);
+        currentAction.champsModifies(ChampsModifies.surStand(avant, ecrit));
+        return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
+    }
+
+    /** Lays one plage on a stand and reports what its schedule leaves unread, like {@link #writeStand(String, Stand)}. */
+    public WrittenStand addStandPlage(String id, PlageStand plage) {
+        Stand avant = stands.find(id);
+        return written(avant, stands.addPlage(id, plage));
+    }
+
+    /** Removes a plage by id, or a day's plages by date; see {@link StandService#removePlages}. */
+    public WrittenStand removeStandPlages(String id, Long plageId, LocalDate date) {
+        Stand avant = stands.find(id);
+        return written(avant, stands.removePlages(id, plageId, date));
+    }
+
+    private WrittenStand written(Stand avant, Stand ecrit) {
         currentAction.champsModifies(ChampsModifies.surStand(avant, ecrit));
         return new WrittenStand(ecrit, coherence.onStand(avant, ecrit));
     }
