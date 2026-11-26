@@ -26,7 +26,7 @@ The screen says what the solve will take into account:
 - the changes made since the last solve;
 - the availability declarations still pending, which the solve **will not see** until they are applied.
 
-Each counter leads to the screen that lists it. Feasibility and alerts come first; the size of the problem is folded at the bottom. A gap counter shows the changes made since the saved solve. Only actions that change what the solve receives are counted: a send or an export makes nothing stale.
+Each counter leads to the screen that lists it. Feasibility and alerts come first. A gap counter shows the changes made since the saved solve. Only actions that change what the solve receives are counted: a send or an export makes nothing stale.
 
 If exceptions set by hand contradict each other, or if a cap on days in a row cannot hold, "Calculate the schedule" asks for confirmation before spending solve time on a problem that will end up breaking a mandatory rule. Lack of people asks for nothing: the solve still mitigates it.
 
