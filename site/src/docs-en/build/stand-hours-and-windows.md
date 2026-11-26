@@ -31,35 +31,21 @@ A timeslot straddling two windows of different headcounts produces **two groups 
 
 `manager` is a profile label (list filter, column of the CSV imports, comparison between editions). No rule reads it: a staff member marked manager is scheduled like the others and counts in the duration caps, legal ones included. Supervision by managers outside the schedule is an organisational fact, which is why `mineurNecessiteEncadrementMajeur` is switched off by default; switched on, it requires an adult scheduled on the same stand and the same timeslot, manager or not.
 
-## Recurring hours: three layers, one mode per day
+## Opening hours are a list of dated plages
 
-Dated windows are **exceptions**. The pattern that repeats is entered above them, as rules (`HoraireStand`) carrying a mode (`OUVERTURE` or `FERMETURE`) and a day selector (`TypeJoursHoraire`) of increasing specificity: `TOUS` (0), `JOURS_SEMAINE` (1), `PLAGE` (2), `DATES` (3).
+Since 4.0, a stand carries only a **list of plages** (`PlageStand`): a day, hours, a mode (`OUVERTURE` or `FERMETURE`), a headcount for an opening, a reason ([decision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). No recurring rule is stored any more: "every Monday from 10:00 to 12:00" is a **generator** that writes one plage per Monday, and the plage is what is read afterwards, never the pattern that produced it.
 
-Resolution is done calendar day by calendar day (`HoraireStandResolver`):
+Resolution (`HoraireStandResolver`) therefore only lays the stand's plages down as its effective windows, on which the consigne is then applied. The three states per day at the top of this page read off them as they are: a day with no plage is open all day, a day that carries an opening is open only on those, a day that carries only closures is open outside them. The result is always **a single mode per day**, which preserves the three-state invariant and keeps the segment computation, the constraints and the exports from having to know anything but plages.
 
-1. **a window dated that day** wins alone and entirely replaces what the rules said about the day;
-2. **otherwise the rules that cover the day**, at maximum specificity, as a union of their windows. Two rules of the same specificity and opposite modes on days that intersect are refused on write. For data that arrived another way (a hand-written scenario), the resolver keeps a deterministic arbitration: `OUVERTURE` wins, the most restrictive reading;
-3. **otherwise**, it depends on what the stand declares. If it declares openings anywhere in its rules, the day is **closed**: "open these twelve days" is a schedule, and an absent day is a day when the stand does not open. If its rules only close, it describes exceptions to an open stand and the day is **open all day**.
+**What it costs, and is accepted.** A day added to the event afterwards (a timeslot on a date nobody had counted) has no plage: the stand is open all day there, even if it "only opened at weekends". A daily schedule over a long edition makes one row per day and per window.
 
-The result is always **a single mode per day**. This is what preserves the three-state invariant, and what spares the segment computation, the constraints and the exports from having to know the rules. If a single day of the event remains unstated, no rule can take `TOUS`: it would govern a day deliberately left open by default.
+### The former rules
 
-The third layer avoids a trap: "open these twelve dates and nothing else" used to require a second filler rule, a closure starting early enough to cover all the timeslots, which the slightest timeslot added earlier silently reopened. `HoraireElagage` removes these closures that have become mute, after checking segment by segment that no opening moves. It **never** removes an opening, even one with no effect on the day's grid: it is a statement waiting for a timeslot.
-
-**Accepted limit**: an exception *replaces* the day instead of being subtracted from the rules. "Open 10:00-12:00 and 14:00-closing every day, except the afternoon of 14 July" requires re-entering the whole day. This is the price of the one-mode-per-day invariant; the alternative would mix two modes in one day, the ambiguity this invariant rules out.
-
-### What resolution settles silently
-
-The openings analysis flags it **without refusing it**: two rules of the same scope and the same mode that overlap on the same day (union of the windows, highest headcount: "@4" then "@2" on the same hours gives 4), a rule that no day applies because a more specific rule or a dated exception wins everywhere, two windows of the same rule that overlap at different headcounts. We warn because the result is deterministic, because some overlaps are intended (a base rule plus a peak rule) and because a refusal would break existing scenarios. Only the truly ambiguous case, same scope and opposite modes, stays refused. `HoraireStandResolver.resolveDayWithRules` returns the rules that decided each day, without changing the verdict.
-
-### Raw view, effective view, compaction
-
-The expansion of the rules is **never written** onto the dated lists: a resolved stand can go through a save again without freezing its expansion into hundreds of lines. The service exposes two views, a raw CRUD view and an effective view resolved over the days of the edition, which the solver, seat generation and the feasibility analysis use.
-
-**Compaction** derives the rules on demand and rewrites a stand only if they reproduce its own open segments. The gap is measured in **opening minutes** in disagreement, never by matching segments: a "closed 10:00-23:59" rewritten as "closed until closing" takes the number of segments from 1 to 0, whereas the real disagreement is a single minute. Counting segments would make us refuse the stands the rewrite helps most.
+In 3.x, a stand stated its hours as rules (scope `TOUS`, `JOURS_SEMAINE`, `PLAGE` or `DATES`, of increasing specificity), which a resolver folded at every read under the dated exceptions. The 4.0 migration converts them **once**, day by day, over the days of the event, with the application's exact reading: a dated exception keeps its day, otherwise the rules of the most precise scope win and merge their windows, two rules of the same scope and opposite modes give the opening, and a stand whose rules declare openings is closed on a day none of them names. `HorairesRecurrents` keeps that reading, for the migration, for link 2 → 3 of the YAML format and for the MCP tool `ajouter_horaire_stand`, which writes plages. An edition with no timeslot has no day to lay its rules on: they are kept aside and the migration says so ([moving to 4.0](../installer/passer-a-la-4-0.md)).
 
 ## The consigne, a fourth layer
 
-A prefectoral arrêté (heatwave, storm) closes an hours band for **all** stands on a few dates, with extensions and lifts. It is neither a stand rule nor a dated exception: the decision comes from outside, applies to all without anyone having declared it, and must be lifted without rewriting anything. It is an **edition consigne** ([decision 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)), read by `ConsigneResolver` on top of the three layers and through a single entry point, `StandService.resolve`. A caller that unrolled the rules itself would silently staff a closed band, and `ConsigneCoucheStructurelleTest` refuses it.
+A prefectoral arrêté (heatwave, storm) closes an hours band for **all** stands on a few dates, with extensions and lifts. It is neither a stand rule nor a dated exception: the decision comes from outside, applies to all without anyone having declared it, and must be lifted without rewriting anything. It is an **edition consigne** ([decision 0043](repo:docs/decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)), read by `ConsigneResolver` on top of the stand's plages and through a single entry point, `StandService.resolve`. A caller that read the plages itself would silently staff a closed band, and `ConsigneCoucheStructurelleTest` refuses it.
 
 **The model**: one line per date, which carries:
 
