@@ -768,13 +768,7 @@ export function construireProblemes(
       details: detailsDePauses(pauses),
       references: [],
       actions: actionsOfBreaks(pauses),
-      liens: [
-        {
-          route: '/journee',
-          queryParams: { vue: 'pauses' },
-          libelle: $localize`:@@problemes.lien.pauses:Voir les pauses`,
-        },
-      ],
+      liens: [],
     });
   }
 

@@ -193,11 +193,8 @@ test.describe('typologies', () => {
   });
 
   // The organiser's own note, the same round trip as the cap above: written in
-  // the form, read back from the server, and shown again where the plan is read
-  // by typologie — « cette typologie nécessite d'apprendre 45 jeux ».
-  test('la description saisie dans le formulaire se relit, et se retrouve dans la vue', async ({
-    browser,
-  }) => {
+  // the form, read back from the server — « cette typologie nécessite d'apprendre 45 jeux ».
+  test('la description saisie dans le formulaire se relit', async ({ browser }) => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/stands?onglet=typologies');
 
@@ -227,43 +224,20 @@ test.describe('typologies', () => {
     await edition.getByRole('button', { name: /Modifier la typologie/ }).click();
     await expect(edition).toBeHidden();
 
-    await page.goto('/journee?axe=typologie');
-    await expect(page.getByText("Nécessite d'apprendre 45 jeux").first()).toBeVisible();
     await page.context().close();
   });
 
-  // « Par typologie » of the Planning page: one table, the page's filters, and
-  // every figure a way to where it is acted on.
-  test('la vue par typologie filtre et renvoie chaque chiffre là où on agit', async ({
+  // « Par typologie » left the Planning page in 4.0: its addresses land on the
+  // table of the Stands' typologies tab, which reads the same plan.
+  test('les anciennes adresses de « Par typologie » mènent à l’onglet Typologies', async ({
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
-    // The former address lands on the axis, which draws the table.
-    await page.goto('/typologies-planning');
-    await expect(page).toHaveURL(/\/journee\?.*axe=typologie/);
-    const table = page.locator('.planning-typologie-table');
-    await expect(table).toBeVisible();
-
-    // A text nothing matches empties it and says so, rather than looking like
-    // an edition with no typologies at all.
-    await page.getByLabel('Filtrer par nom').fill('zzz-aucune-typologie');
-    await expect(page.getByText('Aucune typologie ne correspond aux filtres.')).toBeVisible();
-    await page.getByLabel('Filtrer par nom').fill('');
-    await expect(table).toBeVisible();
-
-    // The vetted go to the Animateurs list filtered on the category.
-    const competents = table.locator('tbody tr').first().getByRole('link').first();
-    await expect(competents).toHaveAttribute('href', /\/animateurs\?typologie=/);
-
-    // The seats open « Par stand », narrowed to the category.
-    await table
-      .locator('tbody tr')
-      .first()
-      .locator('button.planning-typologie-lien')
-      .first()
-      .click();
-    await expect(page).toHaveURL(/axe=stand/);
-    await expect(page).toHaveURL(/typologie=/);
+    for (const ancienne of ['/typologies-planning', '/journee?axe=typologie']) {
+      await page.goto(ancienne);
+      await expect(page).toHaveURL(/\/stands\?onglet=typologies/);
+      await expect(page.locator('#contenu')).toContainText('Typologies');
+    }
     await page.context().close();
   });
 });

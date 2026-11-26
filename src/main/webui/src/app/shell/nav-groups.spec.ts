@@ -11,7 +11,7 @@ import { readHistoriqueTab } from '../pages/historique/historique';
 import { readEchangesTab } from '../pages/echanges/echanges-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
-import { PLANNING_AXES, readAxe, readView, tabOf } from '../pages/journee/journee';
+import { PLANNING_VIEWS, readAxe, readView, tabOf } from '../pages/journee/journee';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
 import { readOngletDiffuser } from '../pages/publication/onglet';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
@@ -32,20 +32,12 @@ interface TabReader {
 }
 
 const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
-  '/journee': [
-    // « Jour » gathers the rail and the table: `calendrier` and `rail` are 3.x values, still read.
-    {
-      param: 'vue',
-      opens: (v) => tabOf(readView(v)) === v,
-      values: ['jour', 'carte', 'pauses', 'changements'],
-    },
-    // « Par jour » is the page itself, its address naming no axis.
-    {
-      param: 'axe',
-      opens: (v) => readAxe(v) === v,
-      values: PLANNING_AXES.filter((axe) => axe !== 'jour'),
-    },
-  ],
+  '/journee': {
+    // « Jour » gathers the rail and the table; « Stand » and « Personne » are the two grids.
+    param: 'vue',
+    opens: (v) => readAxe(v) === v || tabOf(readView(v)) === v,
+    values: PLANNING_VIEWS,
+  },
   // The roster is the default tab; « covoiturage », the second tab of the
   // Disponibilités screen, opens that screen.
   '/animateurs': {

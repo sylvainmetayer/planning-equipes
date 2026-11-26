@@ -25,7 +25,7 @@ test('le planning par personne liste les animateurs du planning enregistré', as
   const page = await pageAdmin(browser, admin);
   // The former Heures address lands on the axis that absorbed it.
   await page.goto('/hours');
-  await expect(page).toHaveURL(/\/journee\?.*axe=personne/);
+  await expect(page).toHaveURL(/\/journee\?.*vue=personne/);
   await expect(page.locator('#contenu')).toContainText('Heures pour la paie (CSV)');
   await expect(page.locator('#contenu')).toContainText('E2E');
   await page.context().close();
@@ -35,7 +35,7 @@ test('le planning par stand dit ce qui est pourvu, stand par stand et jour par j
   browser,
 }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/journee?axe=stand');
+  await page.goto('/journee?vue=stand');
   await expect(page.locator('#contenu')).toContainText('Stand E2E un');
   await expect(page.locator('#contenu')).toContainText('Total du jour');
   // A cell of the grid opens the Siège panel, as a cell of the day does.
@@ -65,7 +65,7 @@ test('la grille des ouvertures montre les stands ensemencés', async ({ browser 
 test('les jours de repos se lisent au pied du planning par personne', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/repos');
-  await expect(page).toHaveURL(/\/journee\?.*axe=personne/);
+  await expect(page).toHaveURL(/\/journee\?.*vue=personne/);
   await expect(page.locator('#contenu')).toContainText('Alice E2E');
   await expect(page.locator('#contenu')).toContainText('Au repos ce jour-là');
   await page.context().close();

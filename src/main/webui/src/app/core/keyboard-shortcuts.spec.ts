@@ -263,7 +263,7 @@ describe('chercherCommandes', () => {
     const resultats = chercherCommandes('heatmap', sources);
     expect(
       resultats.some(
-        (commande) => commande.route === '/journee' && commande.queryParams?.['axe'] === 'stand',
+        (commande) => commande.route === '/journee' && commande.queryParams?.['vue'] === 'stand',
       ),
     ).toBe(true);
   });
