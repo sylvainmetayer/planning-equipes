@@ -1,0 +1,178 @@
+package dev.sylvain.planning.service.solve;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import io.quarkus.test.junit.QuarkusTest;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.flywaydb.core.api.MigrationVersion;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+/**
+ * V154 folds the settings an edition stored for the weekly cap and the weekly
+ * rest of minors into the two rules that absorbed them and kept their name
+ * (ADR 0116), on the most protective reading of each pair: switched on if
+ * either was, the hardest level, the strongest weight. Played on a database
+ * filled the way 3.x filled it — editions that touched one rule of a pair,
+ * both, or neither, a level on one side, rows of other rules that must not move.
+ */
+@QuarkusTest
+class AgeWeeklyCapMergeMigrationTest {
+
+    private static final String SCHEMA = "migration_v154";
+    private static final String V154 = "db/migration/V154__une_regle_par_plafond_hebdomadaire_et_par_age.sql";
+
+    @BeforeAll
+    static void migrateUpToTheMigrationBefore() throws SQLException {
+        drop();
+        Config config = ConfigProvider.getConfig();
+        org.flywaydb.core.api.configuration.FluentConfiguration flyway = org.flywaydb.core.Flyway.configure()
+                .dataSource(
+                        config.getValue("quarkus.datasource.jdbc.url", String.class),
+                        config.getValue("quarkus.datasource.username", String.class),
+                        config.getValue("quarkus.datasource.password", String.class))
+                .schemas(SCHEMA)
+                .createSchemas(true)
+                .locations("classpath:db/migration");
+        // The last migration before V154, whichever number the others took.
+        String before = java.util.Arrays.stream(flyway.load().info().all())
+                .map(info -> info.getVersion())
+                .filter(version -> version != null && version.compareTo(MigrationVersion.fromVersion("154")) < 0)
+                .max(Comparable::compareTo)
+                .orElseThrow()
+                .getVersion();
+        flyway.target(before).load().migrate();
+    }
+
+    @AfterAll
+    static void dropSchema() throws SQLException {
+        drop();
+    }
+
+    @Test
+    void eachPairIsFoldedOnTheMostProtectiveReadingAndNothingElseMoves() throws Exception {
+        try (Connection connection = connect()) {
+            connection.setAutoCommit(false);
+            try (Statement sql = connection.createStatement()) {
+                sql.execute("SET LOCAL search_path TO " + SCHEMA);
+                sql.execute("INSERT INTO edition (id, nom) VALUES ('E-ALL', 'a'), ('E-ONE', 'b'), ('E-MIX', 'c'),"
+                        + " ('E-W', 'd'), ('E-L1', 'e'), ('E-L2', 'f'), ('E-L3', 'g'), ('E-L4', 'i')");
+                sql.execute(
+                        "INSERT INTO constraint_toggle (edition_id, nom, actif) VALUES"
+                                // both weekly caps off: the merged one stays off
+                                + " ('E-ALL', 'dureeHebdomadaireMax', false), ('E-ALL', 'dureeHebdomadaireMaxMineur', false),"
+                                // the weekly rest off for adults only: the minors' half stays on, so does the rule
+                                + " ('E-ALL', 'reposHebdomadaireMinimal', false),"
+                                // one off, one explicitly on: on, whichever side
+                                + " ('E-ONE', 'reposHebdomadaireMinimal', false), ('E-ONE', 'reposHebdomadaireMineur', true),"
+                                // the minors' side off alone: the adults' side, unwritten, is on
+                                + " ('E-MIX', 'dureeHebdomadaireMaxMineur', false), ('E-MIX', 'reposHebdomadaireMineur', false),"
+                                + " ('E-MIX', 'reposHebdomadaireMinimal', false),"
+                                // other rules: untouched
+                                + " ('E-ALL', 'reposQuotidienMinimal', false), ('E-MIX', 'maxJoursTravaillesParSemaine', true)");
+                sql.execute(
+                        "INSERT INTO ponderation_contrainte (edition_id, nom, poids, obligatoire) VALUES"
+                                // the strongest weight of the two, or the only one
+                                + " ('E-W', 'dureeHebdomadaireMax', 3, NULL), ('E-W', 'dureeHebdomadaireMaxMineur', 25, NULL),"
+                                + " ('E-W', 'reposHebdomadaireMinimal', 7, NULL),"
+                                // two preferences stay a preference, with the strongest weight
+                                + " ('E-L1', 'dureeHebdomadaireMax', 5, false), ('E-L1', 'dureeHebdomadaireMaxMineur', 2, false),"
+                                // one obligatoire among them: obligatoire
+                                + " ('E-L2', 'reposHebdomadaireMinimal', 5, false), ('E-L2', 'reposHebdomadaireMineur', 1, true),"
+                                // a preference on one side only: the other side followed the catalogue, which is hard
+                                + " ('E-L3', 'dureeHebdomadaireMaxMineur', 5, false),"
+                                // a level with no weight, a rule not concerned
+                                + " ('E-L3', 'reposHebdomadaireMinimal', NULL, true), ('E-L3', 'equilibrerCharge', 9, NULL),"
+                                // two preferences, one with no weight (5): the age that had 5 keeps 5
+                                + " ('E-L4', 'dureeHebdomadaireMax', NULL, false), ('E-L4', 'dureeHebdomadaireMaxMineur', 1, false)");
+
+                sql.execute(migration());
+
+                assertThat(toggles(sql))
+                        .containsExactlyInAnyOrder(
+                                "E-ALL|dureeHebdomadaireMax|false",
+                                "E-ALL|reposQuotidienMinimal|false",
+                                "E-MIX|maxJoursTravaillesParSemaine|true",
+                                "E-MIX|reposHebdomadaireMinimal|false");
+                assertThat(weights(sql))
+                        .containsExactlyInAnyOrder(
+                                "E-L1|dureeHebdomadaireMax|5|false",
+                                "E-L2|reposHebdomadaireMinimal|5|true",
+                                "E-L3|dureeHebdomadaireMax|5|null",
+                                "E-L3|equilibrerCharge|9|null",
+                                "E-L4|dureeHebdomadaireMax|5|false",
+                                "E-L3|reposHebdomadaireMinimal|null|true",
+                                "E-W|dureeHebdomadaireMax|25|null",
+                                "E-W|reposHebdomadaireMinimal|7|null");
+                String former = "'(dureeHebdomadaireMaxMineur|reposHebdomadaireMineur)'";
+                assertThat(text(sql, "SELECT count(*) FROM constraint_toggle WHERE nom ~ " + former))
+                        .isEqualTo("0");
+                assertThat(text(sql, "SELECT count(*) FROM ponderation_contrainte WHERE nom ~ " + former))
+                        .isEqualTo("0");
+            } finally {
+                connection.rollback();
+            }
+        }
+    }
+
+    private static List<String> toggles(Statement sql) throws SQLException {
+        return rows(sql, "SELECT edition_id || '|' || nom || '|' || actif FROM constraint_toggle ORDER BY 1");
+    }
+
+    private static List<String> weights(Statement sql) throws SQLException {
+        return rows(
+                sql,
+                "SELECT edition_id || '|' || nom || '|' || coalesce(poids::text, 'null') || '|'"
+                        + " || coalesce(obligatoire::text, 'null') FROM ponderation_contrainte ORDER BY 1");
+    }
+
+    private static String migration() throws Exception {
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V154)) {
+            assertThat(file).as(V154).isNotNull();
+            return new String(file.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static String text(Statement sql, String query) throws SQLException {
+        try (ResultSet rs = sql.executeQuery(query)) {
+            rs.next();
+            return rs.getString(1);
+        }
+    }
+
+    private static List<String> rows(Statement sql, String query) throws SQLException {
+        List<String> rows = new ArrayList<>();
+        try (ResultSet rs = sql.executeQuery(query)) {
+            while (rs.next()) {
+                rows.add(rs.getString(1));
+            }
+        }
+        return rows;
+    }
+
+    private static Connection connect() throws SQLException {
+        Config config = ConfigProvider.getConfig();
+        return DriverManager.getConnection(
+                config.getValue("quarkus.datasource.jdbc.url", String.class),
+                config.getValue("quarkus.datasource.username", String.class),
+                config.getValue("quarkus.datasource.password", String.class));
+    }
+
+    private static void drop() throws SQLException {
+        try (Connection connection = connect();
+                Statement statement = connection.createStatement()) {
+            statement.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE");
+        }
+    }
+}

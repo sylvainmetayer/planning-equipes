@@ -14,6 +14,8 @@ A single break length applies to the edition: `dureePauseMinutes`, set in Settin
 
 It is a **floor**, unlike the two weekly durations, which are ceilings: 20 minutes (art. [L3121-16]), refused below that by the service, free above it. The default is 30 minutes. Giving more than the Code requires is an organisational choice (a 30-minute relief is easier to organise than a 20-minute one); the only direction an application must not allow is the other one. An assistant also sets it, with the same floor, through the MCP tool `modifier_parametres_legaux`.
 
+**The application only asks for an adult's break beyond six hours of continuous work.** Art. [L3121-16] makes it due "as soon as the daily working time reaches six hours": this is a knowing departure from the text, `travailContinuMax` reading the threshold as an excess. It is deliberate: a timeslot of exactly six hours (14:00-20:00, for instance) would otherwise become a hard breach nobody can cover, the break falling at its very end, where nobody has anything left to relay. To be revisited if a contrary legal reading were adopted for the event.
+
 **The minor's floor is not stored, it is applied on read.** The 30 minutes of art. [L3162-3] are a matter of public policy, but an edition that grants 25 minutes is not unlawful: it gives 25 to its adults and 30 to its minors. `dureePauseMinutes(true)` returns `max(valeur, 30)` instead of refusing the setting, which would have forced the edition to give 30 to everyone. The constants `PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES` and `PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES` are the two floors.
 
 ### What the break deducts, what the opening span counts
@@ -23,7 +25,7 @@ The break is rest, not actual work (art. L3121-1): it is **deducted**, paid or n
 | Where | What is measured |
 |---|---|
 | `dureeQuotidienneMax` | actual work: opening span minus the breaks due |
-| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`, `dureeHebdomadaireMaxDeuxSemaines` | same, summed over the ISO week |
+| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxDeuxSemaines` | same, summed over the ISO week |
 | Planning by person page, "Hours for the payroll" CSV (`PlanningHoursService`), `heures_travaillees` tool | same: total and weekly columns |
 | fairness table (`EquiteService`) | same: this is the quantity being shared out |
 | KPIs (`PlanningKpiService`) | same, except old snapshots |
