@@ -17,7 +17,7 @@ Avant de publier, vous voyez une ligne par personne à prévenir : ce qui change
 - trier par ampleur et replier les changements mineurs ;
 - exporter le détail en CSV.
 
-Toutes les personnes de la liste reçoivent leur planning : on ne peut plus en retirer une de la publication. Pour appeler quelqu'un d'abord, passez par « Prévenir seulement quelques personnes » ci-dessous.
+Toutes les personnes de la liste reçoivent leur planning : on ne peut plus en retirer une de la publication. Pour appeler quelqu'un d'abord, faites-le avant de publier : « Prévenir seulement quelques personnes » ci-dessous ne couvre que les suites d'un échange accepté ou d'un remplacement.
 
 Le panneau de publication dit aussi combien de journées non relues partiraient.
 

@@ -20,7 +20,7 @@ Before publishing, you see one line per person to notify: what changes for them,
 - sort by size and collapse the minor changes;
 - export the detail as CSV.
 
-Everybody on the list receives their planning: a person can no longer be taken out of a publication. To call somebody first, use "Notify only a few people" below.
+Everybody on the list receives their planning: a person can no longer be taken out of a publication. To call somebody first, do it before publishing: "Notify only a few people" below only covers what follows an accepted swap or a replacement.
 
 The publication panel also says how many unreviewed days would go out.
 
