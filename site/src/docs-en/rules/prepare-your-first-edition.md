@@ -94,4 +94,4 @@ In every phase, availability, adjustments, locks and consignes (official orders 
 
 ## What next
 
-Describe [the staff and their skills](animateurs-et-competences.md), then [the calendar and the opening hours](calendrier-et-horaires.md). When everything is in place, [solve the schedule](calculer-planning.md).
+Describe [the staff and their skills](animateurs-et-competences.md), then [the calendar and the opening hours](calendrier-et-horaires.md) (the timeslot generator and its templates). When everything is in place, [solve the schedule](calculer-planning.md).

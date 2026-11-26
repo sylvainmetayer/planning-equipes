@@ -14,7 +14,7 @@ import { repartirDeLaReference } from './reference';
  * The edition is found by its name: its id (`E2`, `E3`…) is drawn by the
  * application, like every id below. What the spec types is a name or a code.
  */
-const EDITION_NOM = 'E2E Journées types';
+const EDITION_NOM = 'E2E Gabarits';
 /** Codes: the readable keys the spec gives, and finds its rows by. */
 const TYPOLOGIE = 'E2E-JT-JEU';
 const STANDS = [
@@ -63,27 +63,21 @@ async function supprimerEdition(): Promise<void> {
 /** Set once the edition exists: the header that aims the API reads at it. */
 let DANS_EDITION: { headers: Record<string, string> } = { headers: {} };
 
-async function creerJourneeType(page: Page, nom: string, vacations: string): Promise<void> {
-  await page.getByRole('button', { name: 'Nouvelle journée type' }).click();
+async function creerGabarit(page: Page, nom: string, vacations: string): Promise<void> {
+  await page.getByRole('button', { name: 'Nouveau gabarit' }).click();
   const dialog = await dialogueOuvert(page);
   await dialog.getByLabel('Nom').fill(nom);
   await dialog.getByLabel('Vacations de la journée').fill(vacations);
-  await dialog.getByRole('button', { name: 'Créer la journée type' }).click();
+  await dialog.getByRole('button', { name: 'Créer le gabarit' }).click();
   await expect(dialog).toBeHidden();
 }
 
-async function affecterDates(
-  page: Page,
-  du: string,
-  au: string,
-  journeeType: string,
-  attendu: number,
-) {
-  const ajout = page.locator('.journees-types-ajout');
+async function affecterDates(page: Page, du: string, au: string, gabarit: string, attendu: number) {
+  const ajout = page.locator('.gabarits-ajout');
   await ajout.getByLabel('Du', { exact: true }).fill(du);
   await ajout.getByLabel('Au', { exact: true }).fill(au);
-  await ajout.locator('mat-form-field').filter({ hasText: 'Journée type' }).click();
-  await page.getByRole('option', { name: journeeType }).click();
+  await ajout.locator('mat-form-field').filter({ hasText: 'Gabarit' }).click();
+  await page.getByRole('option', { name: gabarit }).click();
   await page.getByRole('button', { name: `Affecter ${attendu} date(s)` }).click();
 }
 
@@ -125,7 +119,7 @@ async function creerAnimateur(
 
 /**
  * L'effectif du stand un sur les deux matins de « Jour normal » : ce qu'une
- * seule case de la grille par journée type doit avoir écrit sur les deux dates.
+ * seule case de la grille par gabarit doit avoir écrit sur les deux dates.
  */
 async function effectifsDesMatins(): Promise<(number | null)[]> {
   const reponse = await admin.get('/api/ouvertures-stands', DANS_EDITION);
@@ -204,25 +198,21 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await dialog.getByRole('button', { name: /Créer/ }).click();
   await expect(dialog).toBeHidden();
 
-  // 3. Les journées types et leur calendrier : c'est là que l'édition prend ses dates.
+  // 3. Les gabarits et leur calendrier : c'est là que l'édition prend ses dates.
   await page.goto('/creneaux');
-  await creerJourneeType(
-    page,
-    'Jour normal',
-    '09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-18:00',
-  );
+  await creerGabarit(page, 'Jour normal', '09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-18:00');
   // La nocturne : ses vacations se coupent à 19 h, l'ouverture de la fenêtre
   // repas du soir — une vacation 18-22 d'un bloc ne laisserait à personne
   // l'heure de coupure que la règle exige.
-  await creerJourneeType(page, 'Nocturne', '14:00-19:00, 19:00-23:00');
-  await expect(page.locator('.journee-type-item')).toHaveCount(2);
+  await creerGabarit(page, 'Nocturne', '14:00-19:00, 19:00-23:00');
+  await expect(page.locator('.gabarit-item')).toHaveCount(2);
   await expect(page.locator('.vacation-chip-relais')).toHaveCount(2);
 
   await affecterDates(page, JOUR1, JOUR2, 'Jour normal', 2);
-  await expect(page.locator('.journees-types-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.gabarits-table tbody tr')).toHaveCount(2);
   await affecterDates(page, JOUR3, JOUR3, 'Nocturne', 1);
-  await expect(page.locator('.journees-types-table tbody tr')).toHaveCount(3);
-  await expect(page.locator('.journees-types-bornes')).toContainText(`du ${JOUR1} au ${JOUR3}`);
+  await expect(page.locator('.gabarits-table tbody tr')).toHaveCount(3);
+  await expect(page.locator('.gabarits-bornes')).toContainText(`du ${JOUR1} au ${JOUR3}`);
   await expect(page.locator('.journee-ecart')).toHaveCount(3);
 
   await page.getByRole('button', { name: 'Appliquer le calendrier' }).click();
@@ -264,13 +254,13 @@ test('an edition entered end to end, solved, and read back in the opening hours 
   await page.getByRole('button', { name: /^Enregistrer/ }).click();
   await expect(page.getByText(/enregistré/i).last()).toBeVisible();
 
-  // 4 bis. La même grille lue par journée type (ADR 0033) : six colonnes au
+  // 4 bis. La même grille lue par gabarit (ADR 0033) : six colonnes au
   // lieu de dix, et une case qui vaut pour les deux jours normaux d'un coup.
   await page.goto('/creneaux?onglet=horaires&vue=journees-types');
-  await expect(page.locator('.grille-journees-types')).toBeVisible();
+  await expect(page.locator('.grille-gabarits')).toBeVisible();
   // Six colonnes — quatre vacations de « Jour normal », deux de « Nocturne » —
   // là où la grille par date en aligne dix.
-  await expect(page.locator('.grille-journees-types .entete-creneau')).toHaveCount(6);
+  await expect(page.locator('.grille-gabarits .entete-creneau')).toHaveCount(6);
   const matinJourNormal = page.getByLabel('Stand un E2E · Jour normal 09:00-12:00');
   const effectifInitial = await matinJourNormal.inputValue();
 

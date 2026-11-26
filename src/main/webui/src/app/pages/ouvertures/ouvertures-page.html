@@ -12,9 +12,9 @@
         <mat-icon>grid_on</mat-icon>
         <ng-container i18n="@@ouvertures.vue.grille">Grille</ng-container>
       </mat-button-toggle>
-      <mat-button-toggle value="JOURNEES_TYPES" [disabled]="colonnesJourneesTypes().length === 0">
+      <mat-button-toggle value="JOURNEES_TYPES" [disabled]="colonnesGabarits().length === 0">
         <mat-icon>event_repeat</mat-icon>
-        <ng-container i18n="@@ouvertures.vue.journeesTypes">Par journée type</ng-container>
+        <ng-container i18n="@@ouvertures.vue.gabarits">Par gabarit</ng-container>
       </mat-button-toggle>
       <mat-button-toggle value="COMPARER">
         <mat-icon>compare</mat-icon>
@@ -224,8 +224,8 @@
               </a>
               <a matButton routerLink="/creneaux">
                 <mat-icon>event_repeat</mat-icon>
-                @if (e.journeeType) {
-                  <ng-container i18n="@@ouvertures.explication.journeeType">Journée type « {{ e.journeeType }} »</ng-container>
+                @if (e.gabarit) {
+                  <ng-container i18n="@@ouvertures.explication.gabarit">Gabarit « {{ e.gabarit }} »</ng-container>
                 } @else {
                   <ng-container i18n="@@ouvertures.explication.creneaux">Grille des créneaux</ng-container>
                 }
@@ -360,43 +360,43 @@
             </tbody>
           </table>
         </div>
-      } @else if (view() === 'JOURNEES_TYPES' && colonnesJourneesTypes().length === 0) {
-        <p class="empty-hint" i18n="@@ouvertures.journeesTypes.sansJourneeType">
-          Cette édition n'a pas de journée type gouvernant ses dates : déclarez-les sur la page Créneaux pour saisir les ouvertures par type de journée.
+      } @else if (view() === 'JOURNEES_TYPES' && colonnesGabarits().length === 0) {
+        <p class="empty-hint" i18n="@@ouvertures.gabarits.sansGabarit">
+          Cette édition n'a pas de gabarit gouvernant ses dates : déclarez-les sur la page Créneaux pour saisir les ouvertures par type de journée.
         </p>
         <a matButton routerLink="/creneaux">
           <mat-icon>event_repeat</mat-icon>
-          <ng-container i18n="@@ouvertures.journeesTypes.versCreneaux">Déclarer les journées types</ng-container>
+          <ng-container i18n="@@ouvertures.gabarits.versCreneaux">Déclarer les gabarits</ng-container>
         </a>
       } @else if (view() === 'JOURNEES_TYPES') {
         <!-- The same cells, said once per kind of day: a column is a vacation of
              a template and writes to every date that template governs. -->
-        <p class="empty-hint" i18n="@@ouvertures.journeesTypes.hint">
-          Une case vaut pour toutes les dates de sa journée type. « ≠ » signale des dates qui divergent : retapez la case pour les aligner.
+        <p class="empty-hint" i18n="@@ouvertures.gabarits.hint">
+          Une case vaut pour toutes les dates de son gabarit. « ≠ » signale des dates qui divergent : retapez la case pour les aligner.
         </p>
-        <p class="empty-hint journees-types-resume">
-          <ng-container i18n="@@ouvertures.journeesTypes.resume">{{ resumeJourneesTypes().colonnes }} cases ici, pour {{ resumeJourneesTypes().cellulesDatees }} dans la grille par date.</ng-container>
-          @if (resumeJourneesTypes().ecarts > 0) {
-            <ng-container i18n="@@ouvertures.journeesTypes.resumeEcarts">{{ resumeJourneesTypes().ecarts }} case(s) en écart entre les dates de leur journée type.</ng-container>
+        <p class="empty-hint gabarits-resume">
+          <ng-container i18n="@@ouvertures.gabarits.resume">{{ resumeGabarits().colonnes }} cases ici, pour {{ resumeGabarits().cellulesDatees }} dans la grille par date.</ng-container>
+          @if (resumeGabarits().ecarts > 0) {
+            <ng-container i18n="@@ouvertures.gabarits.resumeEcarts">{{ resumeGabarits().ecarts }} case(s) en écart entre les dates de leur gabarit.</ng-container>
           }
-          @if (resumeJourneesTypes().datesSansColonne > 0) {
-            <ng-container i18n="@@ouvertures.journeesTypes.resumeHorsGrille">{{ resumeJourneesTypes().datesSansColonne }} date(s) dont un créneau est scindé restent à régler dans la grille par date.</ng-container>
+          @if (resumeGabarits().datesSansColonne > 0) {
+            <ng-container i18n="@@ouvertures.gabarits.resumeHorsGrille">{{ resumeGabarits().datesSansColonne }} date(s) dont un créneau est scindé restent à régler dans la grille par date.</ng-container>
           }
         </p>
         <app-gel-notice family="STANDS" />
         @if (editingLocked()) {
-          <p class="locked-hint" i18n="@@ouvertures.journeesTypes.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
+          <p class="locked-hint" i18n="@@ouvertures.gabarits.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
         <div class="table-wrapper grille-defilement">
-          <table class="ouvertures-grille grille-saisie grille-journees-types">
-            <caption class="visually-hidden" i18n="@@ouvertures.journeesTypes.caption">Saisie des ouvertures par journée type : une ligne par stand, une colonne par vacation de chaque journée type, l'effectif dans chaque case</caption>
+          <table class="ouvertures-grille grille-saisie grille-gabarits">
+            <caption class="visually-hidden" i18n="@@ouvertures.gabarits.caption">Saisie des ouvertures par gabarit : une ligne par stand, une colonne par vacation de chaque gabarit, l'effectif dans chaque case</caption>
             <thead>
               <tr>
                 <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
-                @for (entete of journeesTypesEntetes(); track entete.journeeTypeId) {
+                @for (entete of gabaritsEntetes(); track entete.gabaritId) {
                   <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="entete.colonnes">
                     <span class="entete-jour">{{ entete.nom }}</span>
-                    <span class="entete-date" i18n="@@ouvertures.journeesTypes.dates">{{ entete.dates }} jour(s)</span>
+                    <span class="entete-date" i18n="@@ouvertures.gabarits.dates">{{ entete.dates }} jour(s)</span>
                     @if (entete.feries) {
                       <app-pastille-ferie [libelle]="entete.feries" compact />
                     }
@@ -404,9 +404,9 @@
                 }
               </tr>
               <tr>
-                @for (colonne of colonnesJourneesTypes(); track colonne.colonneId) {
+                @for (colonne of colonnesGabarits(); track colonne.colonneId) {
                   <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
-                    <span class="libelle-colonne">{{ libelleColonneJourneeType(colonne) }}</span>
+                    <span class="libelle-colonne">{{ libelleColonneGabarit(colonne) }}</span>
                     @if (colonne.couverturePause) {
                       <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
                     }
@@ -425,7 +425,7 @@
             <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -- delegation: the listeners serve the <input>s of the cells, which are the focusable elements; the <tbody> itself is never a target -->
             <tbody (input)="onInput($event)" (focusin)="onFocus($event)" (focusout)="onBlur($event)"
                    (keydown)="onKeydownBody($event)" (paste)="onPasteBody($event)">
-              @for (ligne of rowViewsJourneesTypes(); track ligne.standId) {
+              @for (ligne of rowViewsGabarits(); track ligne.standId) {
                 <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
                     <span class="stand-nom">{{ ligne.nom }}</span>
@@ -454,7 +454,7 @@
               }
               @if (lignes().length === 0) {
                 <tr>
-                  <td [attr.colspan]="colonnesJourneesTypes().length + 1" class="empty-hint" i18n="@@ouvertures.journeesTypes.aucuneLigne">
+                  <td [attr.colspan]="colonnesGabarits().length + 1" class="empty-hint" i18n="@@ouvertures.gabarits.aucuneLigne">
                     Aucun stand ne correspond à ce filtre.
                   </td>
                 </tr>

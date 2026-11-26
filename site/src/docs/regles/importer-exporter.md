@@ -14,7 +14,7 @@ L'onglet *Importer* propose une carte par référentiel, dans l'ordre où les do
 2. emplacements ;
 3. stands ;
 4. créneaux ;
-5. journées types ;
+5. gabarits ;
 6. animateurs ;
 7. la grille des stands ;
 8. enfin le fichier scénario, **le seul qui remplace l'édition** au lieu de la compléter.
@@ -25,7 +25,7 @@ Les règles communes :
 
 - Les trois premiers fichiers demandent le minimum : un code et un libellé (typologies), un code et un nom (emplacements), un code, un nom et des typologies (stands). L'effectif d'un stand et les coordonnées d'un emplacement restent facultatifs.
 - Les créneaux se reconnaissent à leur date et à leurs deux heures plutôt qu'à un identifiant.
-- Les journées types se reconnaissent à leur nom. Leurs vacations tiennent sur une ligne (« 09:00-12:00, 12:00-13:00 R, 14:00-20:00 »). Leurs dates complètent le calendrier sans le remplacer : la grille ne bouge qu'à l'application du calendrier.
+- Les gabarits se reconnaissent à leur nom. Leurs vacations tiennent sur une ligne (« 09:00-12:00, 12:00-13:00 R, 14:00-20:00 »). Leurs dates complètent le calendrier sans le remplacer : la grille ne bouge qu'à l'application du calendrier.
 - Une colonne absente n'efface rien, et une ligne dont le code est connu est mise à jour.
 - Une typologie citée sans exister est créée, après l'avoir annoncée.
 - Aucun identifiant n'est jamais saisi ni lu dans un fichier : l'application attribue les siens (A1, A2… pour les animateurs, S1… pour les stands), numérotés dans chaque édition. Une ligne se désigne par son code, sinon par son nom ; un animateur par son adresse e-mail, sinon par ses nom et prénom.
@@ -63,7 +63,7 @@ Avant de remplacer une édition par un scénario, l'application en garde une cop
 
 L'onglet *Exporter* offre deux formes.
 
-- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, journées types, animateurs), chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit. De quoi recopier une édition sur l'autre, rejouer le calendrier d'une année sur l'autre, ou corriger en masse dans un tableur puis réimporter.
+- L'archive ZIP : un CSV par référentiel (typologies, emplacements, stands, créneaux, gabarits, animateurs), chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit. De quoi recopier une édition sur l'autre, rejouer le calendrier d'une année sur l'autre, ou corriger en masse dans un tableur puis réimporter.
 - Le fichier scénario : l'édition entière dans un seul fichier, celui que la carte Scénario des imports relit.
 
 Chaque liste de référentiel offre aussi « Exporter cette liste », qui télécharge en CSV ce que le tableau montre.

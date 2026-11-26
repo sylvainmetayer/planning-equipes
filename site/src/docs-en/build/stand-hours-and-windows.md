@@ -76,7 +76,7 @@ Three rules, written as plages on each stand of a date under a consigne:
 
 **Effective hours, everywhere.** Totals, rest, hours, fairness, indicators: everything already reads the effective window, so a day under a consigne counts what is really worked without any computation changing. A snapshot carries the consignes in force at its capture (empty on an earlier snapshot: "unknown", never "none").
 
-**Accepted limits**: the band is mandatory (a consigne without a band is a day template); there is one band per day; availability stays per day; the night and rest rules read the whole timeslot, not the effective window, which closes the late windows to minors; an evening window that extends the afternoon requires two people per seat as long as the evening meal break forbids chaining 18:00-20:00 and 20:00-22:00.
+**Accepted limits**: the band is mandatory (a consigne without a band is a template); there is one band per day; availability stays per day; the night and rest rules read the whole timeslot, not the effective window, which closes the late windows to minors; an evening window that extends the afternoon requires two people per seat as long as the evening meal break forbids chaining 18:00-20:00 and 20:00-22:00.
 
 ### Restating the meal break for a date
 

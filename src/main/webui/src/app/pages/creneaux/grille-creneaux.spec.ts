@@ -52,7 +52,7 @@ function rapport(anomalies: AnomalieGrille[], faisable: boolean | null = true): 
 }
 
 describe('regleDepuis', () => {
-  it('lit une journée type sur une ligne et une plage de jours', () => {
+  it('lit un gabarit sur une ligne et une plage de jours', () => {
     const resultat = regleDepuis({
       ...serieVide(),
       fenetres: '9h-12h, 14:00-18:00',

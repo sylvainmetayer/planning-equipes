@@ -15,13 +15,13 @@
 
 import { AccesGrille } from '../../core/grille-saisie';
 import { formatHeure } from '../../core/time-of-day';
-import { AffectationJourneeType, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
+import { AffectationGabarit, EtatGenerateur, RapportOuvertures } from '../../core/models';
 import { Cellules, ColonneGrille, colonnes, ecrireCellule } from './grille-horaires';
 
 /** One column: a vacation of a template, and the dated columns it stands for. */
-export interface ColonneJourneeType {
-  journeeTypeId: number;
-  nomJourneeType: string;
+export interface ColonneGabarit {
+  gabaritId: number;
+  nomGabarit: string;
   /** `jt:<id>@HH:mm-HH:mm` — the template and the vacation's bounds. */
   colonneId: string;
   heureDebut: string;
@@ -37,15 +37,15 @@ export interface ColonneJourneeType {
 }
 
 /** What one stand does on one template column: a headcount, closed, or dates that disagree. */
-export type ValeurJourneeType = number | null | 'ecart';
+export type ValeurGabarit = number | null | 'ecart';
 
 /** The dates of a template, in order, from the calendar. */
-function datesParJourneeType(calendrier: readonly AffectationJourneeType[]): Map<number, string[]> {
+function datesParGabarit(calendrier: readonly AffectationGabarit[]): Map<number, string[]> {
   const dates = new Map<number, string[]>();
   for (const affectation of [...calendrier].sort((a, b) => a.date.localeCompare(b.date))) {
-    const connues = dates.get(affectation.journeeTypeId) ?? [];
+    const connues = dates.get(affectation.gabaritId) ?? [];
     connues.push(affectation.date);
-    dates.set(affectation.journeeTypeId, connues);
+    dates.set(affectation.gabaritId, connues);
   }
   return dates;
 }
@@ -72,26 +72,26 @@ function colonnesParHeures(grille: readonly ColonneGrille[]): Map<string, string
  * vacation, so it lands in `datesSansColonne` and keeps its dated value: the
  * per-template view never flattens a shape it cannot show.</p>
  */
-export function colonnesJourneesTypes(
+export function colonnesGabarits(
   rapport: RapportOuvertures,
-  etat: EtatJourneesTypes | null,
-): ColonneJourneeType[] {
+  etat: EtatGenerateur | null,
+): ColonneGabarit[] {
   if (!etat) {
     return [];
   }
   const grille = colonnes(rapport);
   const parHeures = colonnesParHeures(grille);
-  const dates = datesParJourneeType(etat.calendrier);
-  const ordre = [...etat.journeesTypes]
-    .filter((journeeType) => (dates.get(journeeType.id ?? -1) ?? []).length > 0)
+  const dates = datesParGabarit(etat.calendrier);
+  const ordre = [...etat.gabarits]
+    .filter((gabarit) => (dates.get(gabarit.id ?? -1) ?? []).length > 0)
     .sort((a, b) =>
       (dates.get(a.id ?? -1)?.[0] ?? '').localeCompare(dates.get(b.id ?? -1)?.[0] ?? ''),
     );
-  const resultat: ColonneJourneeType[] = [];
-  for (const journeeType of ordre) {
-    const id = journeeType.id ?? -1;
+  const resultat: ColonneGabarit[] = [];
+  for (const gabarit of ordre) {
+    const id = gabarit.id ?? -1;
     const gouvernees = dates.get(id) ?? [];
-    for (const [rang, vacation] of journeeType.vacations.entries()) {
+    for (const [rang, vacation] of gabarit.vacations.entries()) {
       const debut = formatHeure(vacation.heureDebut);
       const fin = formatHeure(vacation.heureFin);
       const couvertes: string[] = [];
@@ -105,8 +105,8 @@ export function colonnesJourneesTypes(
         }
       }
       resultat.push({
-        journeeTypeId: id,
-        nomJourneeType: journeeType.nom,
+        gabaritId: id,
+        nomGabarit: gabarit.nom,
         colonneId: `jt:${id}@${debut}-${fin}`,
         heureDebut: vacation.heureDebut,
         heureFin: vacation.heureFin,
@@ -126,11 +126,11 @@ export function colonnesJourneesTypes(
  * typing into it writes nowhere — which is why the template view says so
  * rather than pretending the cell is empty.
  */
-export function valeurJourneeType(
+export function valeurGabarit(
   cellules: Cellules,
   standId: string,
-  colonne: ColonneJourneeType,
-): ValeurJourneeType {
+  colonne: ColonneGabarit,
+): ValeurGabarit {
   const ligne = cellules.get(standId);
   let commune: number | null = null;
   let premier = true;
@@ -147,10 +147,10 @@ export function valeurJourneeType(
 }
 
 /** A copy of `cellules` with the value written onto every date the column stands for. */
-export function ecrireColonneJourneeType(
+export function ecrireColonneGabarit(
   cellules: Cellules,
   standId: string,
-  colonne: ColonneJourneeType,
+  colonne: ColonneGabarit,
   valeur: number | null,
 ): Cellules {
   let resultat = cellules;
@@ -163,7 +163,7 @@ export function ecrireColonneJourneeType(
 }
 
 /** How many dated cells one column stands for, and how many of them a stand states. */
-export interface ResumeJourneesTypes {
+export interface ResumeGabarits {
   /** Columns the per-template grid shows. */
   colonnes: number;
   /** Dated cells those columns stand for — what the grid by date would ask for instead. */
@@ -178,11 +178,11 @@ export interface ResumeJourneesTypes {
  * What the per-template grid saves, and what it cannot say: the number the
  * screen shows so the choice between the two grids is made on facts.
  */
-export function resumeJourneesTypes(
+export function resumeGabarits(
   cellules: Cellules,
   standIds: readonly string[],
-  colonnesJT: readonly ColonneJourneeType[],
-): ResumeJourneesTypes {
+  colonnesJT: readonly ColonneGabarit[],
+): ResumeGabarits {
   let cellulesDatees = 0;
   let ecarts = 0;
   const datesSansColonne = new Set<string>();
@@ -192,7 +192,7 @@ export function resumeJourneesTypes(
       datesSansColonne.add(date);
     }
     for (const standId of standIds) {
-      if (valeurJourneeType(cellules, standId, colonne) === 'ecart') {
+      if (valeurGabarit(cellules, standId, colonne) === 'ecart') {
         ecarts++;
       }
     }
@@ -206,7 +206,7 @@ export function resumeJourneesTypes(
 }
 
 /** `10:00-12:00`, plus the relay marker — the header of one template column. */
-export function libelleColonneJourneeType(colonne: ColonneJourneeType): string {
+export function libelleColonneGabarit(colonne: ColonneGabarit): string {
   return `${formatHeure(colonne.heureDebut)}-${formatHeure(colonne.heureFin)}`;
 }
 
@@ -217,8 +217,8 @@ export function libelleColonneJourneeType(colonne: ColonneJourneeType): string {
  * writing there would write nowhere, and the move says so rather than
  * pretending it worked.
  */
-export function accesGrilleJourneesTypes(
-  colonnesParId: ReadonlyMap<string, ColonneJourneeType>,
+export function accesGrilleGabarits(
+  colonnesParId: ReadonlyMap<string, ColonneGabarit>,
 ): AccesGrille<Cellules, number | null> {
   return {
     read: (cellules, standId, colonneId) => {
@@ -226,14 +226,14 @@ export function accesGrilleJourneesTypes(
       if (colonne === undefined || colonne.colonnes.length === 0) {
         return undefined;
       }
-      const valeur = valeurJourneeType(cellules, standId, colonne);
+      const valeur = valeurGabarit(cellules, standId, colonne);
       return valeur === 'ecart' ? undefined : valeur;
     },
     write: (cellules, standId, colonneId, valeur) => {
       const colonne = colonnesParId.get(colonneId);
       return colonne === undefined
         ? cellules
-        : ecrireColonneJourneeType(cellules, standId, colonne, valeur);
+        : ecrireColonneGabarit(cellules, standId, colonne, valeur);
     },
   };
 }

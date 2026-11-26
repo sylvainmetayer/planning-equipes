@@ -41,7 +41,7 @@ Duplicate the edition to try a real variant (another grid, another team) and sol
 The *Editions* view of the *Compare two versions* screen ("Compare two editions" button of the Editions page; the *Plan versions* view of the same screen compares two plans) shows what changed in the reference data from one edition to the other, for example last year and this year, or an edition and its variant.
 
 - A summary in figures at the top ("+3 stands, -12 staff, +410 hours to fill").
-- The detail: stands, staff arrived and left, game categories, locations, day templates, timeslots aligned on the rank of the opening day, settings, adjustments counted by type, and the volumes of both side by side.
+- The detail: stands, staff arrived and left, game categories, locations, templates, timeslots aligned on the rank of the opening day, settings, adjustments counted by type, and the volumes of both side by side.
 - Each row says what it was matched on (code, name to check, e-mail, identity), never on the identifier, and opens its profile in the edition that holds it.
 - A duplication without the people is stated at the top rather than listing the whole team as departed.
 

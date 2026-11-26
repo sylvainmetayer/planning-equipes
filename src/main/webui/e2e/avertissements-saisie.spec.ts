@@ -136,10 +136,8 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
-    // A single timeslot is the exception on this screen, which builds the grid
-    // from day templates: it sits in the menu of the other ways.
-    await page.getByRole('button', { name: 'Autres façons de créer la grille' }).click();
-    await page.getByRole('menuitem', { name: 'Ajouter un créneau' }).click();
+    // A single timeslot typed by hand sits next to the generator's menu.
+    await page.getByRole('button', { name: 'Ajouter un créneau' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('10:00');
@@ -165,10 +163,8 @@ test.describe('avertissements de saisie', () => {
     const page = await pageAdmin(browser, admin);
     await page.goto('/creneaux');
 
-    // A single timeslot is the exception on this screen, which builds the grid
-    // from day templates: it sits in the menu of the other ways.
-    await page.getByRole('button', { name: 'Autres façons de créer la grille' }).click();
-    await page.getByRole('menuitem', { name: 'Ajouter un créneau' }).click();
+    // A single timeslot typed by hand sits next to the generator's menu.
+    await page.getByRole('button', { name: 'Ajouter un créneau' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date').fill(JOUR);
     await dialog.getByLabel('Début').fill('15:00');

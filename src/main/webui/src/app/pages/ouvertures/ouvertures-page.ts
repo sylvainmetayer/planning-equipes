@@ -62,19 +62,19 @@ import { readStandsParam, writeStandsParam } from './comparaison-ouvertures';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { labelOf, labelsOf } from '../../core/reference-labels';
 import {
-  ColonneJourneeType,
-  accesGrilleJourneesTypes,
-  colonnesJourneesTypes,
-  ecrireColonneJourneeType,
-  libelleColonneJourneeType,
-  resumeJourneesTypes,
-  valeurJourneeType,
-} from './grille-journees-types';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+  ColonneGabarit,
+  accesGrilleGabarits,
+  colonnesGabarits,
+  ecrireColonneGabarit,
+  libelleColonneGabarit,
+  resumeGabarits,
+  valeurGabarit,
+} from './grille-gabarits';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import {
   AnomalieOuverture,
   CelluleJourOuverture,
-  EtatJourneesTypes,
+  EtatGenerateur,
   LayerCell,
   LayerDay,
   LigneStandOuverture,
@@ -186,7 +186,7 @@ export interface ExplicationCellule {
   horsGrille: string[];
   partielle: string | null;
   modifiee: boolean;
-  journeeType: string | null;
+  gabarit: string | null;
   consigne: boolean;
 }
 
@@ -241,7 +241,7 @@ export interface ExplicationCellule {
 })
 export class OuverturesPage implements OnInit {
   private readonly standsApi = inject(StandsApi);
-  private readonly journeesTypesApi = inject(JourneesTypesApi);
+  private readonly generateurApi = inject(GenerateurCreneauxApi);
   /** The consignes (issue #4): a day under one is marked, and its closed cells are not anomalies. */
   private readonly consignes = inject(ConsignesStore);
   /** Date → the badge's wording, for the days under a consigne. */
@@ -558,26 +558,26 @@ export class OuverturesPage implements OnInit {
   /* -------------------- entry grid, by kind of day (ADR 0033) -------------------- */
 
   /** The templates and their calendar; absent until the first read, and null when the read fails. */
-  protected readonly etatJourneesTypes = signal<EtatJourneesTypes | null>(null);
+  protected readonly etatGabarits = signal<EtatGenerateur | null>(null);
 
   /** One column per timeslot of every template the calendar actually uses. */
-  protected readonly colonnesJourneesTypes = computed<ColonneJourneeType[]>(() => {
+  protected readonly colonnesGabarits = computed<ColonneGabarit[]>(() => {
     const rapport = this.rapport();
-    return rapport ? colonnesJourneesTypes(rapport, this.etatJourneesTypes()) : [];
+    return rapport ? colonnesGabarits(rapport, this.etatGabarits()) : [];
   });
 
-  private readonly colonnesJourneesTypesParId = computed(
-    () => new Map(this.colonnesJourneesTypes().map((colonne) => [colonne.colonneId, colonne])),
+  private readonly colonnesGabaritsParId = computed(
+    () => new Map(this.colonnesGabarits().map((colonne) => [colonne.colonneId, colonne])),
   );
 
   /** Date → the name of the template governing it, for the panel's link. */
   private readonly dayTemplateByDate = computed(() => {
-    const etat = this.etatJourneesTypes();
-    const noms = new Map((etat?.journeesTypes ?? []).map((each) => [each.id, each.nom]));
+    const etat = this.etatGabarits();
+    const noms = new Map((etat?.gabarits ?? []).map((each) => [each.id, each.nom]));
     return new Map(
       (etat?.calendrier ?? []).map((affectation) => [
         affectation.date,
-        noms.get(affectation.journeeTypeId) ?? '',
+        noms.get(affectation.gabaritId) ?? '',
       ]),
     );
   });
@@ -594,60 +594,60 @@ export class OuverturesPage implements OnInit {
   });
 
   /** Template → its dates that fall on a public holiday, « 14/07 Fête nationale », for its header. */
-  private readonly holidaysByJourneeType = computed(() => {
+  private readonly holidaysByGabarit = computed(() => {
     const feries = this.holidaysByDate();
-    const byJourneeType = new Map<number, string[]>();
-    for (const affectation of this.etatJourneesTypes()?.calendrier ?? []) {
+    const byGabarit = new Map<number, string[]>();
+    for (const affectation of this.etatGabarits()?.calendrier ?? []) {
       const libelle = feries.get(affectation.date);
       if (libelle) {
-        const liste = byJourneeType.get(affectation.journeeTypeId) ?? [];
+        const liste = byGabarit.get(affectation.gabaritId) ?? [];
         liste.push(`${this.libelleJour(affectation.date)} ${libelle}`);
-        byJourneeType.set(affectation.journeeTypeId, liste);
+        byGabarit.set(affectation.gabaritId, liste);
       }
     }
-    return byJourneeType;
+    return byGabarit;
   });
 
   /** Where a template column starts a new template, for the header's own row. */
-  protected readonly journeesTypesEntetes = computed(() => {
-    const feries = this.holidaysByJourneeType();
+  protected readonly gabaritsEntetes = computed(() => {
+    const feries = this.holidaysByGabarit();
     const entetes: {
-      journeeTypeId: number;
+      gabaritId: number;
       nom: string;
       colonnes: number;
       dates: number;
       /** Its holiday dates, named, joined; empty when none. */
       feries: string;
     }[] = [];
-    for (const colonne of this.colonnesJourneesTypes()) {
+    for (const colonne of this.colonnesGabarits()) {
       const dernier = entetes.at(-1);
-      if (dernier?.journeeTypeId === colonne.journeeTypeId) {
+      if (dernier?.gabaritId === colonne.gabaritId) {
         dernier.colonnes++;
         continue;
       }
       entetes.push({
-        journeeTypeId: colonne.journeeTypeId,
-        nom: colonne.nomJourneeType,
+        gabaritId: colonne.gabaritId,
+        nom: colonne.nomGabarit,
         colonnes: 1,
         dates: colonne.colonnes.length + colonne.datesSansColonne.length,
-        feries: (feries.get(colonne.journeeTypeId) ?? []).join(', '),
+        feries: (feries.get(colonne.gabaritId) ?? []).join(', '),
       });
     }
     return entetes;
   });
 
   /** What the per-template grid saves, and what it cannot say — the line above the table. */
-  protected readonly resumeJourneesTypes = computed(() =>
-    resumeJourneesTypes(
+  protected readonly resumeGabarits = computed(() =>
+    resumeGabarits(
       this.cellules(),
       (this.rapport()?.stands ?? []).map((ligne) => ligne.standId),
-      this.colonnesJourneesTypes(),
+      this.colonnesGabarits(),
     ),
   );
 
   /** The same rows as {@link rowViews}, one cell per template column instead of per date. */
-  protected readonly rowViewsJourneesTypes = computed<LigneView[]>(() => {
-    const colonnesJT = this.colonnesJourneesTypes();
+  protected readonly rowViewsGabarits = computed<LigneView[]>(() => {
+    const colonnesJT = this.colonnesGabarits();
     const cellules = this.cellules();
     const reference = this.reference();
     const modifies = new Set(this.standsModifies());
@@ -667,13 +667,13 @@ export class OuverturesPage implements OnInit {
         minutesOuvertes: 0,
         postes: 0,
         cellules: colonnesJT.map((colonne) => {
-          const valeur = valeurJourneeType(cellules, ligne.standId, colonne);
-          const lue = valeurJourneeType(reference, ligne.standId, colonne);
+          const valeur = valeurGabarit(cellules, ligne.standId, colonne);
+          const lue = valeurGabarit(reference, ligne.standId, colonne);
           return {
             clef: key(ligne.standId, colonne.colonneId),
             colonneId: colonne.colonneId,
             premierDuJour: colonne.rang === 0,
-            valeur: this.texteJourneeType(valeur),
+            valeur: this.texteGabarit(valeur),
             modifiee: valeur !== lue,
             partielle: valeur === 'ecart',
             fermee: valeur === null,
@@ -681,10 +681,10 @@ export class OuverturesPage implements OnInit {
             ajouteeParConsigne: false,
             ferie: false,
             desactivee: verrouille || colonne.colonnes.length === 0,
-            libelle: `${nom} · ${colonne.nomJourneeType} ${libelleColonneJourneeType(colonne)}`,
+            libelle: `${nom} · ${colonne.nomGabarit} ${libelleColonneGabarit(colonne)}`,
             infobulle:
               valeur === 'ecart'
-                ? $localize`:@@ouvertures.journeesTypes.ecartInfobulle:Les dates de cette journée type ne disent pas la même chose. Retapez la case pour les aligner, ou réglez-les une à une dans la grille par date.`
+                ? $localize`:@@ouvertures.gabarits.ecartInfobulle:Les dates de ce gabarit ne disent pas la même chose. Retapez la case pour les aligner, ou réglez-les une à une dans la grille par date.`
                 : null,
             rendu: noRendering,
           };
@@ -774,7 +774,7 @@ export class OuverturesPage implements OnInit {
         ? this.infobullePartielle(active.standId, active.colonneId)
         : null,
       modifiee: this.isModified(active.standId, active.colonneId),
-      journeeType: this.dayTemplateByDate().get(colonne.date) || null,
+      gabarit: this.dayTemplateByDate().get(colonne.date) || null,
       consigne: this.consigneByDate().has(colonne.date),
     };
   });
@@ -932,7 +932,7 @@ export class OuverturesPage implements OnInit {
       // The templates come along, not on demand: the toggle to the grid by
       // kind of day must not wait on a second round trip, and an edition
       // without templates simply shows no such grid.
-      this.etatJourneesTypes.set(await this.journeesTypesApi.etat().catch(() => null));
+      this.etatGabarits.set(await this.generateurApi.etat().catch(() => null));
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -1065,9 +1065,9 @@ export class OuverturesPage implements OnInit {
 
   /** What the field shows: the headcount, or nothing for closed — one meaning for an empty cell. */
   protected valeur(standId: string, colonneId: string): string {
-    const colonneJT = this.colonnesJourneesTypesParId().get(colonneId);
+    const colonneJT = this.colonnesGabaritsParId().get(colonneId);
     if (colonneJT) {
-      return this.texteJourneeType(valeurJourneeType(this.cellules(), standId, colonneJT));
+      return this.texteGabarit(valeurGabarit(this.cellules(), standId, colonneJT));
     }
     const effectif = this.cellules().get(standId)?.get(colonneId) ?? null;
     return effectif === null ? '' : String(effectif);
@@ -1091,8 +1091,8 @@ export class OuverturesPage implements OnInit {
     return libelleColonne(colonne);
   }
 
-  protected libelleColonneJourneeType(colonne: ColonneJourneeType): string {
-    return libelleColonneJourneeType(colonne);
+  protected libelleColonneGabarit(colonne: ColonneGabarit): string {
+    return libelleColonneGabarit(colonne);
   }
 
   /**
@@ -1108,20 +1108,18 @@ export class OuverturesPage implements OnInit {
     if (lu === undefined) {
       return;
     }
-    const colonneJT = this.colonnesJourneesTypesParId().get(colonneId);
+    const colonneJT = this.colonnesGabaritsParId().get(colonneId);
     if (colonneJT) {
       // One keystroke, every date the template governs: that is the whole
       // point of the grid by kind of day.
-      this.cellules.update((cellules) =>
-        ecrireColonneJourneeType(cellules, standId, colonneJT, lu),
-      );
+      this.cellules.update((cellules) => ecrireColonneGabarit(cellules, standId, colonneJT, lu));
       return;
     }
     this.cellules.update((cellules) => ecrireCellule(cellules, { standId, colonneId }, lu));
   }
 
   /** `2`, empty or `≠` — what a template cell shows, and what a blur puts back. */
-  private texteJourneeType(valeur: number | null | 'ecart'): string {
+  private texteGabarit(valeur: number | null | 'ecart'): string {
     if (valeur === 'ecart') {
       return ECART;
     }
@@ -1197,7 +1195,7 @@ export class OuverturesPage implements OnInit {
   /** The column ids of the grid on screen, in display order: what the keyboard and the moves walk over. */
   private readonly colonneIdsAffiches = computed(() =>
     this.view() === 'JOURNEES_TYPES'
-      ? this.colonnesJourneesTypes().map((colonne) => colonne.colonneId)
+      ? this.colonnesGabarits().map((colonne) => colonne.colonneId)
       : this.shownColumns().map((colonne) => colonne.colonneId),
   );
 
@@ -1284,7 +1282,7 @@ export class OuverturesPage implements OnInit {
   /** How the grid on screen reads and writes one cell: by date, or by template. */
   private readonly accesGrille = computed<AccesGrille<Cellules, number | null>>(() =>
     this.view() === 'JOURNEES_TYPES'
-      ? accesGrilleJourneesTypes(this.colonnesJourneesTypesParId())
+      ? accesGrilleGabarits(this.colonnesGabaritsParId())
       : accesGrilleDates,
   );
 

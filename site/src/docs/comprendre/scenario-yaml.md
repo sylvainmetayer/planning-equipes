@@ -112,7 +112,7 @@ stands:
 
 Un fichier de version 1 à 4 porte encore `horaires` (règles récurrentes), `ouvertures` et `indisponibilites` : le maillon 4 → 5 les convertit en plages sur les jours des `creneaux` du fichier, avec la lecture que l'application leur donnait. Un stand dont les règles n'ont aucun jour où se poser (le fichier ne compte aucun créneau) les garde sous `horaires`, comme modèle : rien n'est perdu, rien n'est dit. Un fichier qui a des créneaux garde aussi ses règles sous `horaires`, avec les plages qu'elles ont données.
 
-## Typologies, journées types et clés retirées
+## Typologies, gabarits et clés retirées
 
 Chaque stand du fichier propose au moins une typologie : `typologiesProposees: []` est refusé par le validateur comme par l'import, qui nomme l'entrée et son id. Une typologie citée sans être déclarée est créée avec un libellé et un code égaux à la valeur citée ; la section `typologies`, appliquée après l'import pour ne pas être écrasée par cette création, fixe un vrai libellé et un `code`. Au plus une typologie porte `polyvalent: true` (en déclarer une retire le drapeau de la précédente). Chaque entrée peut porter `maxCreneauxParAnimateur`, le plafond de créneaux sur l'édition entière, et `description`, la note affichée sur l'écran Typologies.
 

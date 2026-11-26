@@ -248,7 +248,7 @@ describe('ImportReferentielCard', () => {
     await fixture.whenStable();
 
     const lien = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find(
-      (each) => (each.textContent ?? '').includes('Voir les journées types'),
+      (each) => (each.textContent ?? '').includes('Voir les gabarits'),
     );
     expect(lien?.getAttribute('href')).toBe('/creneaux');
     expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('lignes importées');

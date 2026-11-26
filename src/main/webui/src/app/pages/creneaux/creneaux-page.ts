@@ -78,16 +78,15 @@ import {
   CauseInfaisabilite,
   Creneau,
   DiagnosticGrille,
-  RapportDerivation,
   RapportGrille,
-  RapportRecurrence,
+  Generation,
 } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { CreneauBulkEditData, CreneauBulkEditDialog } from './creneau-bulk-edit-dialog';
 import { CreneauFormData, CreneauFormDialog } from './creneau-form-dialog';
 import { CreneauDerivationData, CreneauDerivationDialog } from './creneau-derivation-dialog';
 import { CreneauSerieData, CreneauSerieDialog } from './creneau-serie-dialog';
-import { JourneesTypesCard } from './journees-types-card';
+import { GabaritsCard } from './gabarits-card';
 import {
   OuverturesCreneau,
   bilanGrille,
@@ -134,7 +133,7 @@ import { HhmmPipe } from '../../shared/hhmm-pipe';
     RouterLink,
     BulkActionsBar,
     EmptyState,
-    JourneesTypesCard,
+    GabaritsCard,
     PastilleFerie,
     RowMenu,
     RowWarning,
@@ -276,7 +275,7 @@ export class CreneauxPage implements OnInit {
   protected readonly ouvertures = signal<ReadonlyMap<number, OuverturesCreneau>>(new Map());
 
   /** The day templates' card: « Reconnaître » lives in this page's menu, and acts on the card. */
-  private readonly journeesTypesCard = viewChild(JourneesTypesCard);
+  private readonly gabaritsCard = viewChild(GabaritsCard);
 
   /**
    * Keyed on the displayed slots, so "select all" only ever reaches what the
@@ -447,9 +446,14 @@ export class CreneauxPage implements OnInit {
     }
   }
 
-  /** « Reconnaître les journées types », from the page's menu: the card owns the gesture. */
+  /** « Depuis les gabarits », from the page's menu: the card owns the preview and the write of its calendar. */
+  protected appliquerGabarits(): void {
+    void this.gabaritsCard()?.appliquer();
+  }
+
+  /** « Reconnaître les gabarits », from the page's menu: the card owns the gesture. */
   protected reconnaitre(): void {
-    void this.journeesTypesCard()?.reconnaitre();
+    void this.gabaritsCard()?.reconnaitre();
   }
 
   /**
@@ -462,7 +466,7 @@ export class CreneauxPage implements OnInit {
     if (this.gridLocked()) {
       return;
     }
-    const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, RapportRecurrence | null>(
+    const ref = this.dialog.open<CreneauSerieDialog, CreneauSerieData, Generation | null>(
       CreneauSerieDialog,
       {
         data: { controleActuel: this.controle(), fenetres },
@@ -489,30 +493,25 @@ export class CreneauxPage implements OnInit {
       .creneaux()
       .map((creneau) => creneau.date)
       .sort();
-    const ref = this.dialog.open<
+    const ref = this.dialog.open<CreneauDerivationDialog, CreneauDerivationData, Generation | null>(
       CreneauDerivationDialog,
-      CreneauDerivationData,
-      RapportDerivation | null
-    >(CreneauDerivationDialog, {
-      data: { dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
-      width: '44rem',
-      autoFocus: 'first-tabbable',
-    });
+      {
+        data: { dateDebut: dates[0] ?? null, dateFin: dates.at(-1) ?? null },
+        width: '44rem',
+        autoFocus: 'first-tabbable',
+      },
+    );
     ref
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((rapport) => {
         if (rapport) {
-          void this.apresSerie({
-            nombreGeneres: rapport.nombreGeneres,
-            creneaux: rapport.creneaux,
-            controle: rapport.controle,
-          });
+          void this.apresSerie(rapport);
         }
       });
   }
 
-  private async apresSerie(rapport: RapportRecurrence): Promise<void> {
+  private async apresSerie(rapport: Generation): Promise<void> {
     await Promise.all([
       this.crud.reload(),
       this.resolution.reload(),
@@ -532,7 +531,7 @@ export class CreneauxPage implements OnInit {
    * persisted plan may all have moved, and the card already told the user what
    * happened.
    */
-  protected async apresJourneesTypes(): Promise<void> {
+  protected async apresGabarits(): Promise<void> {
     await Promise.all([
       this.crud.reload(),
       this.resolution.reload(),

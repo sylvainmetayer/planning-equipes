@@ -666,7 +666,7 @@ const adminRoutes: Routes = [
     // (`?onglet=horaires`, the former `/ouvertures`).
     path: 'creneaux',
     title: () => $localize`:@@route.calendrier:Calendrier`,
-    data: { aide: 'creneaux-et-journees-types' },
+    data: { aide: 'calendrier' },
     // `?vue=journee` and `?vue=calendrier` of the openings were folded into
     // the grid: their addresses land where the same question is now answered.
     canActivate: [retiredOpeningsViews],

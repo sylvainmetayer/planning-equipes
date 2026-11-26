@@ -96,12 +96,12 @@ export function buildNavGroups(): NavGroup[] {
           ],
         },
         {
-          // The timeslots and the stands' opening hours over them.
+          // The timeslots, their generator (templates, stands' hours, recurrence) and the stands' opening hours over them.
           path: '/creneaux',
           label: $localize`:@@nav.link.calendrier:Calendrier`,
           icon: 'schedule',
           shortcut: 'c',
-          keywords: $localize`:@@nav.keywords.calendrier:créneaux journées types horaires ouvertures`,
+          keywords: $localize`:@@nav.keywords.calendrier:créneaux gabarits générateur horaires ouvertures`,
           tabs: [
             tab(
               'onglet',
@@ -146,7 +146,7 @@ export function buildNavGroups(): NavGroup[] {
             tab(
               'cible',
               'journees-types',
-              $localize`:@@nav.tab.importJourneesTypes:Importer des journées types`,
+              $localize`:@@nav.tab.importJourneesTypes:Importer des gabarits`,
             ),
             tab(
               'cible',

@@ -72,7 +72,7 @@ export function referentialLinkLabel(target: ReferentielImportTarget): string {
     case 'CRENEAUX':
       return $localize`:@@importRef.voir.creneaux:Voir les créneaux`;
     case 'JOURNEES_TYPES':
-      return $localize`:@@importRef.voir.journeesTypes:Voir les journées types`;
+      return $localize`:@@importRef.voir.journeesTypes:Voir les gabarits`;
   }
 }
 

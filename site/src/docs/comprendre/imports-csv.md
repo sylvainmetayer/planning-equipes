@@ -6,7 +6,7 @@ Le scénario YAML décrit un événement entier et remplace le référentiel de 
 
 Un tableur de bénévoles est le cas typique ; pour décider s'il faut quitter le tableur, voir [tableur ou logiciel de planning](/tableur-ou-logiciel-de-planning/).
 
-L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, une carte chacun, la carte ouverte étant portée par `?cible=`. Cinq sont des référentiels courts (typologies, emplacements, stands, créneaux, journées types), deux sont des imports plus riches (animateurs, grille des stands). Chaque écran de référentiel ouvre la même carte dans un dialogue par son bouton « Importer ». Les routes sont `/api/<référentiel>/import-csv/analyse` (aperçu, aucune écriture), `/api/<référentiel>/import-csv` (écriture) et `/api/<référentiel>/import-csv/exemple` ; la liste exacte est dans le contrat OpenAPI ([Les référentiels côté API](api-referentiels.md)).
+L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, une carte chacun, la carte ouverte étant portée par `?cible=`. Cinq sont des référentiels courts (typologies, emplacements, stands, créneaux, gabarits), deux sont des imports plus riches (animateurs, grille des stands). Chaque écran de référentiel ouvre la même carte dans un dialogue par son bouton « Importer ». Les routes sont `/api/<référentiel>/import-csv/analyse` (aperçu, aucune écriture), `/api/<référentiel>/import-csv` (écriture) et `/api/<référentiel>/import-csv/exemple` ; la liste exacte est dans le contrat OpenAPI ([Les référentiels côté API](api-referentiels.md)).
 
 ## Ce que partagent les cinq référentiels courts
 
@@ -16,7 +16,7 @@ L'onglet Importer de l'écran Fichiers (`/fichiers`) réunit sept imports CSV, u
 | Emplacements | `code`, `nom` | `latitude`, `longitude` |
 | Stands | `code`, `nom`, `typologies` | `effectifMin`, `effectifMax` |
 | Créneaux | `date`, `heureDebut`, `heureFin` | `couverturePause` |
-| Journées types | `nom`, `vacations` | `dates` |
+| Gabarits | `nom`, `vacations` | `dates` |
 
 Les en-têtes se reconnaissent à la casse et aux accents près, et plusieurs valeurs dans une case se séparent par `|`, `;` ou une virgule. Les imports se rangent dans l'ordre où les données se tiennent, et les dates passent avant les animateurs : un jour d'indisponibilité importé n'est conservé que si l'édition porte déjà le créneau correspondant.
 
@@ -30,14 +30,14 @@ L'aperçu n'écrit rien. L'écriture relit le fichier et refait tous les contrô
 
 Un collage depuis un tableur est accepté sur chaque carte : les cellules, séparées par des tabulations, sont réécrites en CSV à `;` avec chaque cellule entre guillemets, puis envoyées comme un fichier `collage.csv`. Les guillemets sont nécessaires, car le serveur reconnaît le séparateur en comptant `,`, `;` et la tabulation hors guillemets et ne doit pas prendre les virgules de `09:00-12:00, 12:00-13:00 R` pour lui. Une fois l'import écrit, « Voir les N lignes importées » ouvre l'écran du référentiel filtré par `?ids=` ; « Tout afficher » retire le filtre.
 
-### Créneaux et journées types
+### Créneaux et gabarits
 
 Ces deux référentiels n'ont pas de `code` que le fichier nomme, ce qui décide de leur clé :
 
 - Un créneau est reconnu à son triplet `(date, heureDebut, heureFin)`. Son identifiant est engendré par la base et un import de scénario le réattribue, donc il ne voyage pas. Une ligne déjà présente n'écrit que son `couverturePause`, le reste étant la clé. Une fin antérieure ou égale au début passe minuit, comme dans le formulaire, mais un début égal à la fin est refusé : c'est une vacation sans durée.
-- Une journée type est reconnue à son `nom`, à la casse près. Ses `vacations` tiennent sur une ligne (`09:00-12:00, 12:00-13:00 R, 14:00-20:00`, `R` marquant un relais repas), la même écriture compacte que celle des outils MCP. Ses `dates` sont fusionnées dans le calendrier : une date que le fichier nomme change de journée type, une date qu'il ne nomme pas garde la sienne.
+- Un gabarit est reconnu à son `nom`, à la casse près. Ses `vacations` tiennent sur une ligne (`09:00-12:00, 12:00-13:00 R, 14:00-20:00`, `R` marquant un relais repas), la même écriture compacte que celle des outils MCP. Ses `dates` sont fusionnées dans le calendrier : une date que le fichier nomme change de gabarit, une date qu'il ne nomme pas garde la sienne.
 
-L'import des journées types ne déplace aucun créneau. Un modèle est un générateur, jamais la vérité ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)) : matérialiser le calendrier reste le geste explicite « Appliquer » de l'écran Journées types, qui montre d'abord ce qu'il changerait. C'est aussi pourquoi cet import ne marque pas l'édition comme modifiée depuis la dernière résolution : rien de ce que le solveur lit n'a bougé.
+L'import des gabarits ne déplace aucun créneau. Un modèle est un générateur, jamais la vérité ([ADR 0032](repo:docs/decisions/0032-journees-types-nommees-vacations-fixes.md)) : matérialiser le calendrier reste le geste explicite « Appliquer » de l'écran Calendrier, qui montre d'abord ce qu'il changerait. C'est aussi pourquoi cet import ne marque pas l'édition comme modifiée depuis la dernière résolution : rien de ce que le solveur lit n'a bougé.
 
 ### Dates et heures
 

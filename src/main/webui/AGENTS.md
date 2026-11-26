@@ -328,10 +328,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solves), `/export-csv`, `/creneaux` (« Calendrier » — two tabs chosen by
   `?onglet=`: the timeslots, and `?onglet=horaires` the former `/ouvertures`
   (described there), whose retired views the route's guard still redirects;
-  the timeslots: one path
-  first — day templates laid on the calendar, or applied without being kept;
-  a single timeslot, recognition and derivation from the stands' hours sit in
-  one « Autres façons de créer la grille » menu; the grid check is a band read
+  the timeslots: the generator's gabarits first — templates (the former
+  journées types, ADR 0126) and their calendar, `pages/creneaux/gabarits-card`
+  over `GenerateurCreneauxApi` (`/api/generateur-creneaux`, the one client of
+  the generator: gabarits, calendar, `apercu`, `application`, `retrait`,
+  recognition); the « Générer des créneaux » menu offers its three sources
+  (gabarits, the stands' hours, a recurring pattern, each previewed before it
+  writes) and the recognition, a single timeslot typed by hand being the
+  « Ajouter un créneau » button beside it; withdrawing a date from the calendar
+  keeps its timeslots; the grid check is a band read
   by itself on every visit and after every write), `/typologies` (a redirect
   to `/stands?onglet=typologies`: every count
   links to the list it counts, the polyvalent category is ticked in the table, and
@@ -691,7 +696,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a
   bulk edit only writes what the user explicitly filled in. The **entry grids**
-  (`/ouvertures`, by date and by journée type, and `/competences`) are the other
+  (`/ouvertures`, by date and by gabarit, and `/competences`) are the other
   way in and follow the same law from the other end: a move writes only the
   cells it names — the row it fills, or the one column it runs down — and
   writes them locally, so « Enregistrer » stays the only thing that reaches the

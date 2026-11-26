@@ -16,8 +16,8 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { EtatGel, OpeningLayers, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
-import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { EtatGel, OpeningLayers, EtatGenerateur, RapportOuvertures } from '../../core/models';
+import { GenerateurCreneauxApi } from '../../core/api/generateur-creneaux-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { fakeOf, provideFake } from '../../core/testing/fake';
 import { OuverturesPage } from './ouvertures-page';
@@ -110,9 +110,9 @@ function rapport(): RapportOuvertures {
 }
 
 /** Both days are « Jour normal »: 10-12 then 14-20, the shape the fixture repeats. */
-function etatJourneesTypes(): EtatJourneesTypes {
+function etatGabarits(): EtatGenerateur {
   return {
-    journeesTypes: [
+    gabarits: [
       {
         id: 4,
         nom: 'Jour normal',
@@ -123,8 +123,8 @@ function etatJourneesTypes(): EtatJourneesTypes {
       },
     ],
     calendrier: [
-      { date: '2026-07-08', journeeTypeId: 4 },
-      { date: '2026-07-09', journeeTypeId: 4 },
+      { date: '2026-07-08', gabaritId: 4 },
+      { date: '2026-07-09', gabaritId: 4 },
     ],
     datesEnEcart: [],
     datesSousConsigne: [],
@@ -178,7 +178,7 @@ function mount(
     editingLocked?: boolean;
     confirme?: boolean;
     rapport?: RapportOuvertures;
-    journeesTypes?: EtatJourneesTypes | null;
+    gabarits?: EtatGenerateur | null;
     couches?: string;
     du?: string;
     au?: string;
@@ -207,9 +207,9 @@ function mount(
   const confirm = fakeOf<ConfirmService>({ ask: () => Promise.resolve(options.confirme ?? true) });
   const location = fakeOf<Location>({ path: () => '/ouvertures', replaceState: () => undefined });
   const etatJT = vi.fn(() => {
-    const etat = options.journeesTypes === undefined ? etatJourneesTypes() : options.journeesTypes;
+    const etat = options.gabarits === undefined ? etatGabarits() : options.gabarits;
     if (etat === null) {
-      return Promise.reject(new Error('pas de journées types'));
+      return Promise.reject(new Error('pas de gabarits'));
     }
     return Promise.resolve(etat);
   });
@@ -243,7 +243,7 @@ function mount(
           consigneOf: () => null,
         },
       },
-      { provide: JourneesTypesApi, useValue: { etat: etatJT } },
+      { provide: GenerateurCreneauxApi, useValue: { etat: etatJT } },
       { provide: EditionsApi, useValue: { gel: vi.fn(() => Promise.resolve(options.gel ?? [])) } },
       {
         provide: ReferenceDataStore,
@@ -348,7 +348,7 @@ describe('OuverturesPage — saisie', () => {
     );
     expect(toggles.slice(0, 3)).toEqual([
       'grid_onGrille',
-      'event_repeatPar journée type',
+      'event_repeatPar gabarit',
       'compareComparer',
     ]);
   });
@@ -423,7 +423,7 @@ describe('OuverturesPage — saisie', () => {
   it('wraps each grid in the scrolling box its sticky header needs', async () => {
     for (const [vue, grille] of [
       ['grille', '.grille-saisie'],
-      ['journees-types', '.grille-journees-types'],
+      ['journees-types', '.grille-gabarits'],
     ] as const) {
       const { fixture } = mount(vue === 'grille' ? {} : { vue });
       await fixture.whenStable();
@@ -452,7 +452,7 @@ describe('OuverturesPage — saisie', () => {
     expect(panneau().textContent).toContain('2 poste(s) ce jour');
     const liens = [...panneau().querySelectorAll('a')].map((lien) => lien.getAttribute('href'));
     expect(liens).toEqual(['/stands?edit=A', '/creneaux']);
-    expect(panneau().textContent).toContain('Journée type « Jour normal »');
+    expect(panneau().textContent).toContain('Gabarit « Jour normal »');
     // Hovering says the same, on the field itself.
     expect(champ(fixture, 'A', 3).title).toContain('règle récurrente 10:00–20:00');
   });
@@ -1030,18 +1030,18 @@ describe('OuverturesPage — saisie', () => {
 // The grid by kind of day: the same cells, said once per template. What is
 // checked here is the wiring — the columns, one keystroke reaching every date,
 // and the drift a cell cannot hold.
-describe('OuverturesPage — grille par journée type', () => {
-  it('montre une colonne par vacation de la journée type, pas une par date', async () => {
+describe('OuverturesPage — grille par gabarit', () => {
+  it('montre une colonne par vacation du gabarit, pas une par date', async () => {
     const { fixture } = mount({ vue: 'journees-types' });
     await fixture.whenStable();
 
     const entetes = Array.from(
-      root(fixture).querySelectorAll('.grille-journees-types .entete-creneau .libelle-colonne'),
+      root(fixture).querySelectorAll('.grille-gabarits .entete-creneau .libelle-colonne'),
     ).map((each) => each.textContent!.trim());
     expect(entetes).toEqual(['10:00-12:00', '14:00-20:00']);
-    expect(
-      root(fixture).querySelector('.grille-journees-types .entete-jour')!.textContent!.trim(),
-    ).toBe('Jour normal');
+    expect(root(fixture).querySelector('.grille-gabarits .entete-jour')!.textContent!.trim()).toBe(
+      'Jour normal',
+    );
   });
 
   it('writes a cell on every date of its day template', async () => {
@@ -1065,7 +1065,7 @@ describe('OuverturesPage — grille par journée type', () => {
     ).toEqual([2, 4]);
   });
 
-  it('annonce « ≠ » quand deux dates de la même journée type divergent', async () => {
+  it('annonce « ≠ » quand deux dates de la même gabarit divergent', async () => {
     const divergent = rapport();
     divergent.stands[0].jours[1].creneaux[1].effectif = 3;
 
@@ -1084,7 +1084,7 @@ describe('OuverturesPage — grille par journée type', () => {
     champ(fixture, 'A', 0, 'jt:4@14:00-20:00').focus();
     await fixture.whenStable();
     root(fixture)
-      .querySelectorAll<HTMLButtonElement>('.grille-journees-types .appliquer-colonne')[1]
+      .querySelectorAll<HTMLButtonElement>('.grille-gabarits .appliquer-colonne')[1]
       .click();
     await fixture.whenStable();
 
@@ -1112,7 +1112,7 @@ describe('OuverturesPage — grille par journée type', () => {
     champ(fixture, 'A', 0, 'jt:4@14:00-20:00').focus();
     await fixture.whenStable();
     root(fixture)
-      .querySelectorAll<HTMLButtonElement>('.grille-journees-types .appliquer-colonne')[1]
+      .querySelectorAll<HTMLButtonElement>('.grille-gabarits .appliquer-colonne')[1]
       .click();
     await fixture.whenStable();
 
@@ -1128,25 +1128,25 @@ describe('OuverturesPage — grille par journée type', () => {
 
     expect(root(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
     expect(
-      Array.from(
-        root(fixture).querySelectorAll<HTMLInputElement>('.grille-journees-types input'),
-      ).every((each) => each.disabled),
+      Array.from(root(fixture).querySelectorAll<HTMLInputElement>('.grille-gabarits input')).every(
+        (each) => each.disabled,
+      ),
     ).toBe(true);
     expect(
       Array.from(
         root(fixture).querySelectorAll<HTMLButtonElement>(
-          '.grille-journees-types .appliquer-colonne, .grille-journees-types .dupliquer-ligne',
+          '.grille-gabarits .appliquer-colonne, .grille-gabarits .dupliquer-ligne',
         ),
       ).every((each) => each.disabled),
     ).toBe(true);
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
-  it('reste sur la grille par date quand l’édition n’a pas de journées types', async () => {
-    const { fixture } = mount({ vue: 'journees-types', journeesTypes: null });
+  it('reste sur la grille par date quand l’édition n’a pas de gabarits', async () => {
+    const { fixture } = mount({ vue: 'journees-types', gabarits: null });
     await fixture.whenStable();
 
-    expect(root(fixture).querySelector('.grille-journees-types')).toBeNull();
+    expect(root(fixture).querySelector('.grille-gabarits')).toBeNull();
   });
   it('reopens « Comparer » from ?vue=comparer&stands=A,B&ref=B, identically', async () => {
     const { fixture, reloadStore, location } = mount({ vue: 'comparer', stands: 'A,B', ref: 'B' });

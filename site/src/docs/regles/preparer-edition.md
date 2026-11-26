@@ -91,4 +91,4 @@ Dans toutes les phases, les disponibilités, les ajustements, les verrous et les
 
 ## Et ensuite
 
-Décrivez [les animateurs et leurs compétences](animateurs-et-competences.md), puis [le calendrier et les horaires](calendrier-et-horaires.md). Quand tout est en place, [calculez le planning](calculer-planning.md).
+Décrivez [les animateurs et leurs compétences](animateurs-et-competences.md), puis [le calendrier et les horaires](calendrier-et-horaires.md) (le générateur de créneaux et ses gabarits). Quand tout est en place, [calculez le planning](calculer-planning.md).

@@ -106,7 +106,7 @@ export function importTitle(card: ReferentialImportCard): string {
     case 'creneaux':
       return $localize`:@@nav.tab.importCreneaux:Importer des créneaux`;
     case 'journees-types':
-      return $localize`:@@importButton.titre.journeesTypes:Importer des journées types`;
+      return $localize`:@@importButton.titre.journeesTypes:Importer des gabarits`;
     case 'animateurs':
       return $localize`:@@nav.tab.importAnimateurs:Importer des animateurs`;
   }

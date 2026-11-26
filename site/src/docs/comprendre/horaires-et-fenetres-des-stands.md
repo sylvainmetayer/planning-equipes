@@ -73,7 +73,7 @@ Trois règles, écrites en plages sur chaque stand d'une date sous consigne :
 
 **Les heures effectives, partout.** Cumuls, repos, heures, équité, indicateurs : tout lit déjà la fenêtre effective, donc une journée sous consigne compte ce qui est réellement travaillé sans qu'aucun calcul change. Un instantané porte les consignes en vigueur à sa capture (vide sur un instantané antérieur : « inconnu », jamais « aucune »).
 
-**Limites assumées** : la bande est obligatoire (une consigne sans bande est une journée type) ; il y a une bande par jour ; les disponibilités restent à la journée ; les règles de nuit et de repos lisent le créneau entier, pas la fenêtre effective, ce qui ferme les fenêtres tardives aux mineurs ; une fenêtre du soir qui prolonge l'après-midi demande deux personnes par siège tant que la coupure repas du soir interdit d'enchaîner 18 h-20 h et 20 h-22 h.
+**Limites assumées** : la bande est obligatoire (une consigne sans bande est un gabarit) ; il y a une bande par jour ; les disponibilités restent à la journée ; les règles de nuit et de repos lisent le créneau entier, pas la fenêtre effective, ce qui ferme les fenêtres tardives aux mineurs ; une fenêtre du soir qui prolonge l'après-midi demande deux personnes par siège tant que la coupure repas du soir interdit d'enchaîner 18 h-20 h et 20 h-22 h.
 
 ### Restater la coupure repas pour une date
 

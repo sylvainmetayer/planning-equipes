@@ -5,8 +5,7 @@ import {
   datesDePlage,
   formatVacations,
   parseVacations,
-  retirerDate,
-} from './journees-types';
+} from './gabarits';
 
 describe('parseVacations', () => {
   it('reads one vacation per comma and a trailing R as a meal relay', () => {
@@ -75,19 +74,18 @@ describe('the calendar helpers', () => {
   it('assigns dates, moving one already there, and keeps the calendar sorted', () => {
     const calendrier = affecterDates(
       [
-        { date: '2027-07-13', journeeTypeId: 1 },
-        { date: '2027-07-12', journeeTypeId: 1 },
+        { date: '2027-07-13', gabaritId: 1 },
+        { date: '2027-07-12', gabaritId: 1 },
       ],
       ['2027-07-13', '2027-07-14'],
       2,
     );
 
     expect(calendrier).toEqual([
-      { date: '2027-07-12', journeeTypeId: 1 },
-      { date: '2027-07-13', journeeTypeId: 2 },
-      { date: '2027-07-14', journeeTypeId: 2 },
+      { date: '2027-07-12', gabaritId: 1 },
+      { date: '2027-07-13', gabaritId: 2 },
+      { date: '2027-07-14', gabaritId: 2 },
     ]);
-    expect(retirerDate(calendrier, '2027-07-13')).toHaveLength(2);
     expect(bornesCalendrier(calendrier)).toEqual({ du: '2027-07-12', au: '2027-07-14' });
     expect(bornesCalendrier([])).toBeNull();
   });
