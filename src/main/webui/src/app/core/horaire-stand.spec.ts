@@ -163,6 +163,23 @@ describe('resoudreJour', () => {
     expect(resolu.fenetres).toEqual([{ heureDebut: '10:00', heureFin: null }]);
   });
 
+  it('ne signale comme exception que les plages saisies, pas celles que le modèle a dépliées', () => {
+    const deplie = stand({
+      indisponibilites: [
+        {
+          id: 1,
+          date: '2026-07-10',
+          heureDebut: '10:00',
+          heureFin: null,
+          motif: null,
+          depliee: true,
+        },
+      ],
+    });
+
+    expect(resoudreJour(deplie, '2026-07-10').source).toBe('REGLE');
+  });
+
   it("donne l'ouverture gagnante en cas d'égalité de spécificité — le choix le plus restrictif", () => {
     const ambigu = stand({
       horaires: [

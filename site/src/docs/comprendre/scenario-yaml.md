@@ -105,6 +105,7 @@ stands:
       - { date: 2026-07-09, mode: FERMETURE, heureDebut: '00:00', motif: Absent ce jour }
 ```
 
+- `depliee: true` marque une plage que l'application a dépliée du modèle du stand (`horaires`) : le régime normal, par opposition à une exception saisie. Absente, la plage est une saisie à la main ; un fichier d'une édition datée l'écrit sur les plages que le modèle a données, et le maillon 4 → 5 le pose sur celles qu'il déplie.
 - `heureFin` omise signifie « jusqu'à la fermeture » : la fenêtre court jusqu'à la fin du créneau évalué. Une fenêtre ne peut pas chevaucher minuit : la nuit s'écrit en deux plages, une par jour.
 - `effectif` omis signifie « hériter de `effectifMin` », le cas le plus courant. Le renseigner sur une ouverture permet à un stand dont la charge varie dans la journée (4 personnes le matin, 5 le soir) de rester un seul stand. Une fermeture n'en porte pas.
 - Un jour sans plage est ouvert toute la journée ; un jour ne porte pas à la fois une ouverture et une fermeture. L'arbitrage complet est dans [Horaires, consignes et fenêtres effectives](horaires-et-fenetres-des-stands.md).

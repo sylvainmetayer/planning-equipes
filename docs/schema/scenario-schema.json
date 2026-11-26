@@ -541,6 +541,9 @@
         "date" : {
           "$ref" : "#/$defs/LocalDate"
         },
+        "depliee" : {
+          "type" : "boolean"
+        },
         "effectif" : {
           "type" : "integer",
           "format" : "int32",

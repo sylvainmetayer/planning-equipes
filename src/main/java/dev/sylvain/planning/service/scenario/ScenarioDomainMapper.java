@@ -37,6 +37,7 @@ import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
+import dev.sylvain.planning.scenario.dto.PlageStandDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
 import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
@@ -273,14 +274,7 @@ final class ScenarioDomainMapper {
         }
         if (dto.plages() != null) {
             stand.setPlages(dto.plages().stream()
-                    .map(plage -> new PlageStand(
-                            null,
-                            plage.mode(),
-                            required(plage.date(), "stands.plages.date"),
-                            required(plage.heureDebut(), "stands.plages.heureDebut"),
-                            plage.heureFin(),
-                            plage.motif(),
-                            plage.mode() == ModeHoraire.OUVERTURE ? plage.effectif() : null))
+                    .map(ScenarioDomainMapper::plage)
                     .collect(Collectors.toCollection(ArrayList::new)));
         }
         if (dto.horaires() != null) {
@@ -288,6 +282,19 @@ final class ScenarioDomainMapper {
                     dto.horaires().stream().map(ScenarioDomainMapper::regle).toList());
         }
         return stand;
+    }
+
+    private static PlageStand plage(PlageStandDto plage) {
+        PlageStand converted = new PlageStand(
+                null,
+                plage.mode(),
+                required(plage.date(), "stands.plages.date"),
+                required(plage.heureDebut(), "stands.plages.heureDebut"),
+                plage.heureFin(),
+                plage.motif(),
+                plage.mode() == ModeHoraire.OUVERTURE ? plage.effectif() : null);
+        converted.setDepliee(Boolean.TRUE.equals(plage.depliee()));
+        return converted;
     }
 
     /**

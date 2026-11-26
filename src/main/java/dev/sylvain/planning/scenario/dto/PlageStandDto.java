@@ -12,7 +12,8 @@ import java.time.LocalTime;
  * ({@code mode}). {@code heureFin} is optional: absent means "until closing
  * time"; {@code effectif} is optional too, absent meaning the stand's own
  * minimum headcount, and only an opening carries one — see
- * {@code dev.sylvain.planning.domain.PlageStand}.
+ * {@code dev.sylvain.planning.domain.PlageStand}. {@code depliee} says the application unfolded
+ * the plage from the stand's model (its normal regime); absent, somebody typed it.
  */
 public record PlageStandDto(
         @NotNull LocalDate date,
@@ -20,4 +21,5 @@ public record PlageStandDto(
         @NotNull LocalTime heureDebut,
         LocalTime heureFin,
         String motif,
-        @Positive Integer effectif) {}
+        @Positive Integer effectif,
+        Boolean depliee) {}

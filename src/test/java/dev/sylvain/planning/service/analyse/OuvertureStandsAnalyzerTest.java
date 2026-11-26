@@ -109,7 +109,7 @@ class OuvertureStandsAnalyzerTest {
 
         CelluleJour cellule = rapport.stands().get(0).jours().get(0);
         assertThat(cellule.etat()).isEqualTo(EtatOuverture.OUVERT_PARTIEL);
-        assertThat(cellule.source()).isEqualTo(SourceHoraire.EXCEPTION);
+        assertThat(cellule.source()).isEqualTo(SourceHoraire.REGLE);
         assertThat(cellule.minutesOuvertes()).isEqualTo(360);
         assertThat(cellule.minutesAmplitude()).isEqualTo(600);
         assertThat(cellule.fenetres()).singleElement().satisfies(fenetre -> {
@@ -166,7 +166,7 @@ class OuvertureStandsAnalyzerTest {
         assertThat(jours.get(0).source()).isEqualTo(SourceHoraire.EXCEPTION);
         assertThat(jours.get(0).etat()).isEqualTo(EtatOuverture.FERME);
         assertThat(jours.get(0).postes()).isZero();
-        assertThat(jours.get(1).source()).isEqualTo(SourceHoraire.EXCEPTION);
+        assertThat(jours.get(1).source()).isEqualTo(SourceHoraire.REGLE);
     }
 
     /**

@@ -48,6 +48,22 @@ class HoraireStandResolverTest {
                 .isEqualTo(HoraireStandResolver.SourceHoraire.DEFAUT);
     }
 
+    @Test
+    void aDayOnlyTheModelExplainsIsTheNormalRegimeNotAnException() {
+        Stand stand = stand();
+        PlageStand unfolded = PlageStand.ouverture(null, MERCREDI, LocalTime.of(10, 0), null, null);
+        unfolded.setDepliee(true);
+        stand.getPlages().add(unfolded);
+
+        assertThat(HoraireStandResolver.sourceOfDay(stand, MERCREDI))
+                .isEqualTo(HoraireStandResolver.SourceHoraire.REGLE);
+
+        stand.getPlages().add(PlageStand.ouverture(null, MERCREDI, LocalTime.of(15, 0), null, null));
+
+        assertThat(HoraireStandResolver.sourceOfDay(stand, MERCREDI))
+                .isEqualTo(HoraireStandResolver.SourceHoraire.EXCEPTION);
+    }
+
     private static Stand stand() {
         return new Stand("S", "S", Set.of(), 1, 1, false);
     }

@@ -27,6 +27,12 @@
 -- jour où poser ses règles : rien n'est converti, elles attendent ses créneaux, et
 -- rien n'est perdu ni inventé. La résolution, elle, ne lit jamais que des plages.
 
+-- L'origine d'une plage : dépliée par l'application depuis le modèle (le régime normal du stand), ou
+-- saisie à la main (une exception). Les plages existantes sont toutes de la seconde sorte ; seules les
+-- lignes que cette migration insère plus bas sont dépliées.
+ALTER TABLE stand_ouverture ADD COLUMN depliee BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE stand_indisponibilite ADD COLUMN depliee BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TEMP TABLE jour_evenement ON COMMIT DROP AS
 SELECT DISTINCT c.edition_id, d.jour
 FROM creneau c
@@ -109,19 +115,19 @@ FROM retenue r
 JOIN motif_jour m USING (edition_id, stand_id, jour);
 ANALYZE jour_resolu;
 
-INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif)
-SELECT DISTINCT edition_id, stand_id, jour, heure_debut, heure_fin, motif, effectif
+INSERT INTO stand_ouverture (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee)
+SELECT DISTINCT edition_id, stand_id, jour, heure_debut, heure_fin, motif, effectif, TRUE
 FROM jour_resolu
 WHERE mode = 'OUVERTURE';
 
-INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif)
-SELECT DISTINCT edition_id, stand_id, jour, heure_debut, heure_fin, motif
+INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee)
+SELECT DISTINCT edition_id, stand_id, jour, heure_debut, heure_fin, motif, TRUE
 FROM jour_resolu
 WHERE mode = 'FERMETURE';
 
 -- Un jour qu'aucune règle ne nomme, pour un stand dont les règles déclarent des ouvertures : fermé.
-INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif)
-SELECT sj.edition_id, sj.stand_id, sj.jour, TIME '00:00', NULL, 'Jour non déclaré par le stand'
+INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee)
+SELECT sj.edition_id, sj.stand_id, sj.jour, TIME '00:00', NULL, 'Jour non déclaré par le stand', TRUE
 FROM stand_jour sj
 WHERE EXISTS (SELECT 1 FROM regle_fenetre r
               WHERE r.edition_id = sj.edition_id AND r.stand_id = sj.stand_id AND r.mode = 'OUVERTURE')

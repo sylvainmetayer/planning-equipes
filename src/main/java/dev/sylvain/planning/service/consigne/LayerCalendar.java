@@ -99,7 +99,8 @@ public final class LayerCalendar {
     /**
      * One stand on one day, layer by layer.
      *
-     * @param source       whether the stand's own plages decide the day, or nothing does (open by default)
+     * @param source       what decided the day: nothing (open by default), plages unfolded from the stand's model
+     *                     ({@code REGLE}) or plages somebody typed ({@code EXCEPTION})
      * @param horaireIds   always empty since 4.0 (the recurring rules it listed no longer exist); kept on the
      *                     payload until the API speaks plages
      * @param motif        the reason written on the plage, if any
@@ -218,7 +219,7 @@ public final class LayerCalendar {
         SourceHoraire source = HoraireStandResolver.sourceOfDay(nominal, date);
         List<Long> horaireIds = List.of();
         String motif = null;
-        if (source == SourceHoraire.EXCEPTION) {
+        if (source != SourceHoraire.DEFAUT) {
             motif = Stream.concat(
                             nominal.getOuvertures().stream()
                                     .filter(ouverture -> date.equals(ouverture.getDate()))

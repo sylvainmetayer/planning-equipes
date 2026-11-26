@@ -1,7 +1,7 @@
 # 0104 — Les horaires d'un stand sont une liste de plages datées
 
 - **Statut** : accepté, implémenté (modèle, migration, format YAML) · l'écran suivra dans son propre changement
-- **Date** : novembre 2026 · révisé le 26 novembre : « modèle gardé, déplié ensuite » (§ 1, 3, 5, 6, 7, 8)
+- **Date** : novembre 2026 · révisé le 26 novembre : « modèle gardé, déplié ensuite » (§ 1, 3, 5, 6, 7, 8) · plus tard le même jour : l'origine d'une plage est stockée (§ 9)
 - **Portée** : modèle du stand, résolution des horaires, migration de la base, format du scénario YAML (version 5), sauvegardes avant vidage
 
 ## Contexte
@@ -68,7 +68,8 @@ l'application s'en souvenait.
    qui s'ajouteront, il est la source du futur générateur de créneaux : une
    règle envoyée à une édition qui a déjà des créneaux est stockée **et**
    dépliée aussitôt sur ses jours (les plages que l'ancien modèle avait
-   dépliées sont retirées d'abord, une plage saisie à la main reste) ;
+   dépliées, marquées comme telles (§ 9), sont retirées d'abord, une plage
+   saisie à la main reste) ;
    renvoyer le modèle stocké tel quel ne déplie rien.
 6. **Le format YAML passe en version 5** : la clé `plages` remplace
    `ouvertures` et `indisponibilites` d'un stand, et `horaires` devient le
@@ -90,19 +91,33 @@ l'application s'en souvenait.
    vues MCP d'un stand (`lister_stands`, `consulter_stand`) portent le modèle
    (`horaires`). `ajouter_horaire_stand` d'une règle identique à une règle
    existante ne change rien. `effacer_horaires_stand` revient : il efface le
-   modèle **et** les plages que ce modèle a dépliées (recalculées comme au § 5,
-   sur les jours des créneaux et ceux que portent les plages), et garde les
-   plages saisies à la main. Le compactage des horaires (la route
+   modèle **et** les plages que ce modèle a dépliées (celles qui portent la marque
+   du § 9, sur quelque jour que ce soit), et garde les plages saisies à la main. Le compactage des horaires (la route
    `POST /api/stands/compactage-horaires`, l'outil `compacter_horaires_stands`)
    est retiré dès la 4.0 : une plage datée n'a plus de règle à rejoindre.
 
+9. **Une plage dit d'où elle vient.** Chaque plage porte `depliee` : vrai quand
+   l'application l'a dépliée du modèle (le dépliage du § 5, la migration du § 3,
+   le maillon 4 → 5 du § 6), faux quand quelqu'un l'a saisie. La colonne vit
+   dans les deux tables de plages (défaut faux), la clé `depliee` dans le
+   fichier YAML (absente = saisie), et `sourceOfDay` en tire trois réponses :
+   `DEFAUT` (aucune plage), `REGLE` (que des plages dépliées : le régime normal
+   du stand) et `EXCEPTION` (au moins une plage saisie). Seule une exception
+   est une « exception » : la présélection d'une consigne, qui range à part les
+   stands aux horaires posés à la main, ne confond plus un stand ordinaire avec
+   eux. L'origine est dite par le serveur : à l'écriture d'une fiche, une plage
+   garde sa marque si elle est identique, à l'identifiant près, à une plage
+   stockée marquée ; une plage modifiée, ou écrite par un client, est une
+   saisie. La saisie de la grille de stands réécrit la fiche entière : ce
+   qu'elle pose est saisi à la main.
+
 ## Ce que ça coûte
 
-- **Un modèle et des plages se côtoient** dans une édition qui en a les deux :
-  un jour déplié n'est plus distinguable d'un jour saisi à la main, sinon par
-  recalcul (modifier le modèle retire les plages que l'ancien aurait posées,
-  s'il en reste d'identiques). Une plage saisie à la main qui ressemble en tout
-  point à une plage dépliée part avec elles. L'éditeur de plages, qui
+- **Un modèle et des plages se côtoient** dans une édition qui en a les deux,
+  et une colonne de plus à garder en phase (copie d'édition, réécriture après
+  un calcul, fichier YAML, échange avec un worker). Retirer les plages d'un
+  ancien modèle ne se recalcule plus : on retire les marquées, et une plage
+  saisie qui leur ressemble en tout point reste. L'éditeur de plages, qui
   remplacera le pont, a le dernier mot.
 - **Un fichier YAML d'une édition datée porte la règle et ses plages** : plus
   long qu'un fichier de plages seules, mais il se relit comme la base que la
@@ -113,6 +128,11 @@ l'application s'en souvenait.
   relu par la 3.x, ou la sauvegarde de la base.
 
 ## Alternatives écartées
+
+- **Recalculer l'origine depuis le modèle** (la première rédaction du § 8 :
+  déplier à blanc et comparer) : sans colonne, mais `sourceOfDay` aurait dû lire
+  le modèle et les créneaux à chaque cellule, et une plage saisie identique à
+  une plage dépliée aurait été prise pour elle. La marque règle les deux.
 
 - **Garder les règles comme troisième couche de la résolution** : c'est l'état
   d'avant. Le modèle n'est lu que pour être déplié ; la résolution, les

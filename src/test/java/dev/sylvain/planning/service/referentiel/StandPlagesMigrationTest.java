@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 /**
  * V153 turns the recurring rules of a stand into dated plages. It runs once on
  * every database in service, so it is played here on a database filled the way
- * 3.x filled it: the migrations up to V148 once, in a schema of their own, then
+ * 3.x filled it: the migrations up to V152 once, in a schema of their own, then
  * for each case the rows and the V153 file itself — not a copy — in a transaction
  * rolled back afterwards.
  *
@@ -57,7 +57,7 @@ class StandPlagesMigrationTest {
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
-    static void migrateUpToV153() throws SQLException {
+    static void migrateUpToV152() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -68,7 +68,7 @@ class StandPlagesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("153")
+                .target("152")
                 .load()
                 .migrate();
     }
@@ -185,6 +185,38 @@ class StandPlagesMigrationTest {
         });
 
         assertThat(plages).containsExactlyInAnyOrder("2026-07-08|O|14:00|null|null", "2026-07-09|F|10:00|null|null");
+    }
+
+    /** What the migration lays down is unfolded from the model; a plage that was already dated stays typed by hand. */
+    @Test
+    void theMigrationMarksWhatItUnfoldsAndNothingElse() throws Exception {
+        Map<String, Object> document = Map.of(
+                "creneaux",
+                List.of(creneau("2026-07-08", "10:00", "20:00"), creneau("2026-07-09", "10:00", "20:00")),
+                "stands",
+                List.of(Map.of(
+                        "id",
+                        "S",
+                        "horaires",
+                        List.of(Map.of("mode", "OUVERTURE", "fenetres", List.of(Map.of("heureDebut", "14:00")))),
+                        "indisponibilites",
+                        List.of(Map.of("date", "2026-07-09", "heureDebut", "10:00", "motif", "Férié")))));
+
+        List<String> origines = inRolledBackTransaction(connection -> {
+            load(connection, document);
+            migrate(connection);
+            List<String> out = new ArrayList<>();
+            try (Statement statement = connection.createStatement();
+                    ResultSet rs = statement.executeQuery("SELECT date_ouverture, depliee FROM stand_ouverture"
+                            + " UNION ALL SELECT date_indisponibilite, depliee FROM stand_indisponibilite")) {
+                while (rs.next()) {
+                    out.add(rs.getObject(1, LocalDate.class) + "|" + rs.getBoolean(2));
+                }
+            }
+            return out;
+        });
+
+        assertThat(origines).containsExactlyInAnyOrder("2026-07-08|true", "2026-07-09|false");
     }
 
     /** The day after a timeslot crossing midnight is a day to resolve. */

@@ -159,25 +159,32 @@ public final class HorairesRecurrents {
         return plages;
     }
 
+    /** A plage the model produced carries its origin: it is the stand's regime, not an exception. */
+    private static PlageStand deployed(PlageStand plage) {
+        plage.setDepliee(true);
+        return plage;
+    }
+
     private static void expandDay(List<Regle> regles, LocalDate date, boolean declaresOpenings, List<PlageStand> out) {
         Jour jour = resolveDay(regles, date);
         if (jour == null) {
             if (declaresOpenings) {
-                out.add(PlageStand.fermeture(null, date, LocalTime.MIDNIGHT, null, MOTIF_JOUR_NON_DECLARE));
+                out.add(deployed(PlageStand.fermeture(null, date, LocalTime.MIDNIGHT, null, MOTIF_JOUR_NON_DECLARE)));
             }
             return;
         }
         for (FenetreHoraire fenetre : jour.fenetres()) {
             if (jour.mode() == ModeHoraire.OUVERTURE) {
-                out.add(PlageStand.ouverture(
+                out.add(deployed(PlageStand.ouverture(
                         null,
                         date,
                         fenetre.getHeureDebut(),
                         fenetre.getHeureFin(),
                         jour.motif(),
-                        fenetre.getEffectif()));
+                        fenetre.getEffectif())));
             } else {
-                out.add(PlageStand.fermeture(null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), jour.motif()));
+                out.add(deployed(PlageStand.fermeture(
+                        null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), jour.motif())));
             }
         }
     }

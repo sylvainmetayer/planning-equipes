@@ -146,6 +146,8 @@ export interface IndisponibiliteStand {
   motif: string | null;
   /** Always null on a closure. */
   effectif?: number | null;
+  /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
+  depliee?: boolean;
 }
 
 /** A single dated opening window of a stand — the inverse of `IndisponibiliteStand`. */
@@ -160,6 +162,8 @@ export interface OuvertureStand {
   motif: string | null;
   /** Seats to fill on this dated window; absent or null = the stand's `effectifMin`. Never below 1. */
   effectif?: number | null;
+  /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
+  depliee?: boolean;
 }
 
 /** `OUVERTURE` = open only on the listed windows; `FERMETURE` = closed only on them. */

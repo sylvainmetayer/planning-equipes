@@ -71,8 +71,10 @@ public class EditionRepository {
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),
             new TableToCopy("stand_typologie", "stand_id, typologie"),
-            new TableToCopy("stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif"),
-            new TableToCopy("stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif"),
+            new TableToCopy(
+                    "stand_indisponibilite", "stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee"),
+            new TableToCopy(
+                    "stand_ouverture", "stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee"),
             // The stand's model (V37, ADR 0104): the recurring rules a dateless edition keeps until
             // it has days. Their BIGSERIAL ids are kept as-is — the PKs are composite (edition_id,
             // id), the child FK follows the new edition_id, and the shared sequence has already

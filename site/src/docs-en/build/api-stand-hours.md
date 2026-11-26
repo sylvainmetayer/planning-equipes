@@ -13,7 +13,7 @@ The recurring rules of 3.x no longer exist ([decision 0104](repo:docs/decisions/
 
 ## Openings view
 
-`GET /api/ouvertures-stands` returns a stand-by-day grid built from the seats the solver would receive: the screen validates the real data, with no second interpretation of the entry. `source` (`DEFAUT` or `EXCEPTION`, that is: the stand carries a plage that day) says what decided. No anomaly blocks a solve. Three are defects: `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (no timeslot of the day overlapped) and `SEGMENT_TROP_COURT`, the signature of the `23:59` workaround. Three codes of 3.x, born of the recurring rules, are never raised any more:
+`GET /api/ouvertures-stands` returns a stand-by-day grid built from the seats the solver would receive: the screen validates the real data, with no second interpretation of the entry. `source` says what decided: `DEFAUT` (no plage, open all day), `REGLE` (only plages **unfolded from the model** speak of that day: the stand's normal regime) or `EXCEPTION` (a plage typed by hand). Each plage carries `depliee`; the server states the origin, never the client: a plage sent back as it was stored keeps its mark, a plage that was changed or written by a client is a hand-typed one. No anomaly blocks a solve. Three are defects: `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (no timeslot of the day overlapped) and `SEGMENT_TROP_COURT`, the signature of the `23:59` workaround. Three codes of 3.x, born of the recurring rules, are never raised any more:
 
 | Code | What it said |
 | --- | --- |

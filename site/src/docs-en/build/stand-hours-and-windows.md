@@ -37,6 +37,8 @@ Since 4.0, a stand carries only a **list of plages** (`PlageStand`): a day, hour
 
 Resolution (`HoraireStandResolver`) therefore only lays the stand's plages down as its effective windows, on which the consigne is then applied. The three states per day at the top of this page read off them as they are: a day with no plage is open all day, a day that carries an opening is open only on those, a day that carries only closures is open outside them. The result is always **a single mode per day**, which preserves the three-state invariant and keeps the segment computation, the constraints and the exports from having to know anything but plages.
 
+**A plage's origin is stored.** A plage unfolded from the model carries `depliee` (a column, a key of the YAML file); a hand-typed one does not. Unfolding and the migration mark what they lay down; the resolution does not use it, but whatever reads "where does this day come from" does: a day only the model explains is the stand's normal regime (`REGLE`), not an exception, so a consigne's preselection finds the open stands again. Changing the model withdraws exactly the marked plages; a hand-typed plage stays, even identical to an unfolded one.
+
 **What it costs, and is accepted.** A day added to the event afterwards (a timeslot on a date nobody had counted) has no plage, but gets the stand's model if it keeps one: without it, the stand is open all day there, even if it "only opened at weekends". A daily schedule over a long edition makes one row per day and per window.
 
 ### The former rules

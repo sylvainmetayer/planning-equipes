@@ -109,6 +109,7 @@ stands:
       - { date: 2026-07-09, mode: FERMETURE, heureDebut: '00:00', motif: Absent ce jour }
 ```
 
+- `depliee: true` marks a plage the application unfolded from the stand's model (`horaires`): its normal regime, as opposed to a typed exception. Absent, the plage is hand-typed; a file of a dated edition writes it on the plages the model produced, and the 4 → 5 step sets it on those it unfolds.
 - An omitted `heureFin` means "until closing": the window runs to the end of the evaluated timeslot. A window cannot straddle midnight: the night is written as two plages, one per day.
 - An omitted `effectif` means "inherit from `effectifMin`", the most common case. Filling it in on an opening lets a stand whose load varies during the day (4 people in the morning, 5 in the evening) remain a single stand. A closure carries none.
 - A day with no plage is open all day; a day never carries both an opening and a closure. The full arbitration is in [Hours, consignes and effective windows](horaires-et-fenetres-des-stands.md).

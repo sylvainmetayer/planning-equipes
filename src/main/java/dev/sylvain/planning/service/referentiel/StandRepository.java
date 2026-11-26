@@ -53,6 +53,7 @@ public class StandRepository {
     private static final String COL_HEURE_DEBUT = "heure_debut";
     private static final String COL_HEURE_FIN = "heure_fin";
     private static final String COL_MOTIF = "motif";
+    private static final String COL_DEPLIEE = "depliee";
 
     private final ConcurrentModificationGuard staleWrites;
 
@@ -116,7 +117,7 @@ public class StandRepository {
                 }
             }
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif
+                    SELECT id, stand_id, date_indisponibilite, heure_debut, heure_fin, motif, depliee
                     FROM stand_indisponibilite
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -124,18 +125,19 @@ public class StandRepository {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString(COL_STAND_ID));
                     if (stand != null) {
-                        stand.getPlages()
-                                .add(PlageStand.fermeture(
-                                        rs.getLong("id"),
-                                        rs.getObject("date_indisponibilite", LocalDate.class),
-                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
-                                        rs.getObject(COL_HEURE_FIN, LocalTime.class),
-                                        rs.getString(COL_MOTIF)));
+                        PlageStand fermeture = PlageStand.fermeture(
+                                rs.getLong("id"),
+                                rs.getObject("date_indisponibilite", LocalDate.class),
+                                rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                rs.getObject(COL_HEURE_FIN, LocalTime.class),
+                                rs.getString(COL_MOTIF));
+                        fermeture.setDepliee(rs.getBoolean(COL_DEPLIEE));
+                        stand.getPlages().add(fermeture);
                     }
                 }
             }
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif
+                    SELECT id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee
                     FROM stand_ouverture
                     WHERE edition_id = ?
                     ORDER BY id""");
@@ -143,14 +145,15 @@ public class StandRepository {
                 while (rs.next()) {
                     Stand stand = byId.get(rs.getString(COL_STAND_ID));
                     if (stand != null) {
-                        stand.getPlages()
-                                .add(PlageStand.ouverture(
-                                        rs.getLong("id"),
-                                        rs.getObject("date_ouverture", LocalDate.class),
-                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
-                                        rs.getObject(COL_HEURE_FIN, LocalTime.class),
-                                        rs.getString(COL_MOTIF),
-                                        rs.getObject("effectif", Integer.class)));
+                        PlageStand ouverture = PlageStand.ouverture(
+                                rs.getLong("id"),
+                                rs.getObject("date_ouverture", LocalDate.class),
+                                rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                rs.getObject(COL_HEURE_FIN, LocalTime.class),
+                                rs.getString(COL_MOTIF),
+                                rs.getObject("effectif", Integer.class));
+                        ouverture.setDepliee(rs.getBoolean(COL_DEPLIEE));
+                        stand.getPlages().add(ouverture);
                     }
                 }
             }
@@ -493,14 +496,15 @@ public class StandRepository {
         if (!fermetures.isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_indisponibilite (edition_id, stand_id, date_indisponibilite,
-                    heure_debut, heure_fin, motif)
-                    VALUES (?, ?, ?, ?, ?, ?)""")) {
+                    heure_debut, heure_fin, motif, depliee)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
                 for (PlageStand indispo : fermetures) {
                     ins.setString(2, standId);
                     ins.setObject(3, indispo.getDate());
                     ins.setObject(4, indispo.getHeureDebut());
                     ins.setObject(5, indispo.getHeureFin());
                     ins.setString(6, indispo.getMotif());
+                    ins.setBoolean(7, indispo.isDepliee());
                     ins.addBatch();
                 }
                 ins.executeBatch();
@@ -512,8 +516,8 @@ public class StandRepository {
         if (!ouvertures.isEmpty()) {
             try (PreparedStatement ins = scope.prepareScoped(connection, """
                     INSERT INTO stand_ouverture
-                        (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
+                        (edition_id, stand_id, date_ouverture, heure_debut, heure_fin, motif, effectif, depliee)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""")) {
                 for (PlageStand ouverture : ouvertures) {
                     ins.setString(2, standId);
                     ins.setObject(3, ouverture.getDate());
@@ -521,6 +525,7 @@ public class StandRepository {
                     ins.setObject(5, ouverture.getHeureFin());
                     ins.setString(6, ouverture.getMotif());
                     ins.setObject(7, ouverture.getEffectif());
+                    ins.setBoolean(8, ouverture.isDepliee());
                     ins.addBatch();
                 }
                 ins.executeBatch();

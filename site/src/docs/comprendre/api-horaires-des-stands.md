@@ -10,7 +10,7 @@ Les règles récurrentes de la 3.x n'existent plus ([décision 0104](repo:docs/d
 
 ## Visualisation des ouvertures
 
-`GET /api/ouvertures-stands` rend une grille stand par jour construite à partir des postes que le solveur recevrait : l'écran valide la donnée réelle, sans seconde interprétation de la saisie. `source` (`DEFAUT` ou `EXCEPTION`, c'est-à-dire : le stand porte une plage ce jour-là) dit ce qui a décidé. Aucune anomalie ne bloque un calcul. Trois sont des défauts : `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (aucun créneau du jour recoupé) et `SEGMENT_TROP_COURT`, signature du contournement `23:59`. Trois codes de la 3.x, nés des règles récurrentes, ne sont plus jamais levés :
+`GET /api/ouvertures-stands` rend une grille stand par jour construite à partir des postes que le solveur recevrait : l'écran valide la donnée réelle, sans seconde interprétation de la saisie. `source` dit ce qui a décidé : `DEFAUT` (aucune plage, ouvert toute la journée), `REGLE` (seules des plages **dépliées du modèle** parlent de ce jour : le régime normal du stand) ou `EXCEPTION` (une plage saisie à la main). Chaque plage porte `depliee` ; l'origine est dite par le serveur, jamais par le client : une plage renvoyée telle qu'elle était stockée garde sa marque, une plage modifiée ou écrite par un client est une saisie à la main. Aucune anomalie ne bloque un calcul. Trois sont des défauts : `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (aucun créneau du jour recoupé) et `SEGMENT_TROP_COURT`, signature du contournement `23:59`. Trois codes de la 3.x, nés des règles récurrentes, ne sont plus jamais levés :
 
 | Code | Ce qu'il disait |
 | --- | --- |

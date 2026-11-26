@@ -232,7 +232,8 @@ final class ScenarioDtoAssembler {
                         plage.getHeureDebut(),
                         plage.getHeureFin(),
                         plage.getMotif(),
-                        plage.getEffectif()))
+                        plage.getEffectif(),
+                        plage.isDepliee() ? Boolean.TRUE : null))
                 .toList();
     }
 

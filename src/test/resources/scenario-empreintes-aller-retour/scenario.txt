@@ -16,7 +16,7 @@
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 25
 .planning.postes[0]  dc35196d29c17f1d
 .planning.postes[1]  27c09612605d28de
-.planning.postes[2]  5a5161fc921d90f3
+.planning.postes[2]  7c1349390e5d9b6a
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)

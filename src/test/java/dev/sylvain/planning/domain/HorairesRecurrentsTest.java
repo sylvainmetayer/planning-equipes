@@ -47,6 +47,18 @@ class HorairesRecurrentsTest {
         assertThat(openings(plages)).hasSize(24);
         assertThat(openings(plages)).extracting(PlageStand::getDate).containsAll(DOUZE_JOURS);
         assertThat(closures(plages)).isEmpty();
+        assertThat(plages).allMatch(PlageStand::isDepliee);
+    }
+
+    @Test
+    void unfoldingMarksWhatTheModelLaysDownAndNotTheExceptions() {
+        PlageStand saisie = PlageStand.fermeture(null, MERCREDI, LocalTime.of(14, 0), LocalTime.of(16, 0), null);
+
+        List<PlageStand> plages = expand(
+                List.of(Regle.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null))), saisie);
+
+        assertThat(saisie.isDepliee()).isFalse();
+        assertThat(plages.stream().filter(p -> p != saisie)).isNotEmpty().allMatch(PlageStand::isDepliee);
     }
 
     @Test

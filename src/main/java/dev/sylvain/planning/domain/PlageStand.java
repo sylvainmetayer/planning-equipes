@@ -47,6 +47,11 @@ public class PlageStand {
     private String motif;
     /** Seats to fill on an opening; {@code null} = inherit {@link Stand#getEffectifMin()}. */
     private Integer effectif;
+    /**
+     * Where the plage comes from: {@code true} when the application unfolded it from the stand's model
+     * (the stand's normal regime), {@code false} when somebody typed it (an exception).
+     */
+    private boolean depliee;
 
     public PlageStand() {}
 
@@ -138,6 +143,14 @@ public class PlageStand {
 
     public void setEffectif(Integer effectif) {
         this.effectif = effectif;
+    }
+
+    public boolean isDepliee() {
+        return depliee;
+    }
+
+    public void setDepliee(boolean depliee) {
+        this.depliee = depliee;
     }
 
     /** True when {@code heureDebut}/{@code heureFin} form a non-empty, same-day window (an open end counts as valid). */

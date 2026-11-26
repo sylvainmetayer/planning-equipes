@@ -122,6 +122,9 @@ final class ScenarioPlagesLink {
         if (plage.getMotif() != null) {
             map.put("motif", plage.getMotif());
         }
+        if (plage.isDepliee()) {
+            map.put("depliee", true);
+        }
         return map;
     }
 

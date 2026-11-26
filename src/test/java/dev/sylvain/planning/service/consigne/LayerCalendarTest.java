@@ -67,7 +67,7 @@ class LayerCalendarTest {
                 .extracting(LayerCalendar.LayerTimeslot::addedByConsigne)
                 .containsExactly(false, true);
         LayerCell cellule = couches.stands().get(0).jours().get(0);
-        assertThat(cellule.source()).isEqualTo(SourceHoraire.EXCEPTION);
+        assertThat(cellule.source()).isEqualTo(SourceHoraire.REGLE);
         assertThat(cellule.horaireIds()).isEmpty();
         assertThat(cellule.nominal()).containsExactly(new LayerWindow(14 * 60, 20 * 60, 3));
         assertThat(cellule.reopenings()).containsExactly(new LayerWindow(20 * 60, 22 * 60, null));

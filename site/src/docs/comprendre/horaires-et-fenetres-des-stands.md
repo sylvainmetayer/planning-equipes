@@ -34,6 +34,8 @@ Depuis la 4.0, un stand ne porte qu'une **liste de plages** (`PlageStand`) : un 
 
 La résolution (`HoraireStandResolver`) ne fait donc que poser les plages du stand comme ses fenêtres effectives, sur lesquelles la consigne vient ensuite s'appliquer. Les trois états par jour du début de cette page s'y lisent tels quels : un jour sans plage est ouvert toute la journée, un jour qui porte une ouverture n'est ouvert que sur elles, un jour qui ne porte que des fermetures est ouvert hors d'elles. Le résultat est toujours **un seul mode par jour**, ce qui préserve l'invariant des trois états et évite que le calcul de segments, les contraintes ou les exports aient à connaître autre chose que des plages.
 
+**L'origine d'une plage est stockée.** Une plage dépliée du modèle porte `depliee` (colonne, clé du fichier YAML) ; une plage saisie à la main, non. Le dépliage et la migration marquent ce qu'ils posent ; la résolution ne s'en sert pas, mais ce qui lit « d'où vient ce jour » le fait : un jour que seul le modèle explique est le régime normal du stand (`REGLE`), pas une exception, de sorte que la présélection d'une consigne retrouve les stands ouverts. Modifier le modèle retire exactement les plages marquées ; une plage tapée à la main reste, même identique à une plage dépliée.
+
 **Ce que cela coûte, et qui est assumé.** Un jour ajouté après coup à l'événement (un créneau sur une date que personne n'avait comptée) n'a pas de plage, mais reçoit le modèle du stand s'il en garde un : sans lui, le stand y est ouvert toute la journée, même s'il « n'ouvrait que le week-end ». Un horaire quotidien sur une longue édition fait une ligne par jour et par fenêtre.
 
 ### Les anciennes règles

@@ -19,12 +19,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /** CRUD of the stand referential, plus the two views the rest of the app reads it through. */
@@ -128,6 +128,8 @@ public class StandService {
      */
     @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public Stand create(Stand stand) {
+        // A new stand has nothing stored to be unfolded from: whatever a client marked is a typed plage.
+        stand.getPlages().forEach(plage -> plage.setDepliee(false));
         validate(stand);
         scope.write("Failed to create stand " + stand.getNom(), connection -> {
             stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
@@ -186,6 +188,9 @@ public class StandService {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
         stand.setId(id);
+        if (!stand.getPlages().isEmpty()) {
+            markOrigins(stand, repository.findStand(id));
+        }
         // Before the freeze compares: the game categories may be named by
         // their code, and a code is not the id the stored stand holds.
         validate(stand);
@@ -315,22 +320,26 @@ public class StandService {
         if (jours.isEmpty() && !regles.isEmpty()) {
             return;
         }
-        // Clearing the model also withdraws what it unfolded, on days a deleted timeslot may have left behind.
-        Set<LocalDate> joursDepliables = new TreeSet<>(jours);
-        stand.getPlages().stream()
-                .map(PlageStand::getDate)
-                .filter(Objects::nonNull)
-                .forEach(joursDepliables::add);
-        Set<String> unfoldedBefore = HorairesRecurrents.expand(stored, List.of(), joursDepliables).stream()
-                .map(StandService::key)
-                .collect(Collectors.toSet());
-        List<PlageStand> handMade = stand.getPlages().stream()
-                .filter(plage -> !unfoldedBefore.contains(key(plage)))
-                .toList();
+        // The plages the previous model unfolded carry their origin: they go, whatever day they are on, and
+        // what somebody typed stays — even when it looks exactly like one of them.
+        List<PlageStand> handMade =
+                stand.getPlages().stream().filter(plage -> !plage.isDepliee()).toList();
         stand.setPlages(HorairesRecurrents.expand(regles, handMade, jours));
     }
 
-    /** What makes two plages the same one for the withdrawal: everything but the row id. */
+    /**
+     * The origin of a plage is the server's to say, never the client's: a plage sent back as it was
+     * stored keeps its mark, one the editor changed, or a client wrote, is typed by hand.
+     */
+    private static void markOrigins(Stand sent, Stand stored) {
+        Set<String> unfolded = new HashSet<>();
+        if (stored != null) {
+            stored.getPlages().stream().filter(PlageStand::isDepliee).forEach(plage -> unfolded.add(key(plage)));
+        }
+        sent.getPlages().forEach(plage -> plage.setDepliee(unfolded.contains(key(plage))));
+    }
+
+    /** What makes two plages the same one: everything but the row id and the origin. */
     private static String key(PlageStand plage) {
         return plage.getMode() + "|" + plage.getDate() + "|" + plage.getHeureDebut() + "|" + plage.getHeureFin() + "|"
                 + plage.getEffectif() + "|" + plage.getMotif();

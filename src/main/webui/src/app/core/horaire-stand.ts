@@ -82,11 +82,19 @@ function isValidWindow(fenetre: { heureDebut: string; heureFin: string | null })
 export function resoudreJour(stand: Stand, date: string): JourResolu {
   const ouvertures = (stand.ouvertures ?? []).filter((ouverture) => ouverture.date === date);
   const fermetures = (stand.indisponibilites ?? []).filter((indispo) => indispo.date === date);
+  // Plages the server unfolded from the model are the stand's regime; one typed by hand is an exception.
+  const source = (plages: readonly { depliee?: boolean }[]): 'EXCEPTION' | 'REGLE' =>
+    plages.every((plage) => plage.depliee) ? 'REGLE' : 'EXCEPTION';
   if (ouvertures.length > 0) {
-    return { date, mode: 'OUVERTURE', fenetres: sort(ouvertures), source: 'EXCEPTION' };
+    return {
+      date,
+      mode: 'OUVERTURE',
+      fenetres: sort(ouvertures),
+      source: source([...ouvertures, ...fermetures]),
+    };
   }
   if (fermetures.length > 0) {
-    return { date, mode: 'FERMETURE', fenetres: sort(fermetures), source: 'EXCEPTION' };
+    return { date, mode: 'FERMETURE', fenetres: sort(fermetures), source: source(fermetures) };
   }
 
   const horaires = stand.horaires ?? [];

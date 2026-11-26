@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -53,7 +54,9 @@ public final class HoraireStandResolver {
     public enum SourceHoraire {
         /** Nothing states anything about that day: open all day. */
         DEFAUT,
-        /** The stand carries at least one plage dated that day. */
+        /** Only plages the application unfolded from the stand's model state that day: its normal regime. */
+        REGLE,
+        /** The stand carries at least one plage somebody typed for that day. */
         EXCEPTION
     }
 
@@ -66,8 +69,12 @@ public final class HoraireStandResolver {
         if (stand == null || date == null) {
             return SourceHoraire.DEFAUT;
         }
-        return stand.getPlages().stream().anyMatch(plage -> date.equals(plage.getDate()))
-                ? SourceHoraire.EXCEPTION
-                : SourceHoraire.DEFAUT;
+        List<PlageStand> duJour = stand.getPlages().stream()
+                .filter(plage -> date.equals(plage.getDate()))
+                .toList();
+        if (duJour.isEmpty()) {
+            return SourceHoraire.DEFAUT;
+        }
+        return duJour.stream().allMatch(PlageStand::isDepliee) ? SourceHoraire.REGLE : SourceHoraire.EXCEPTION;
     }
 }
