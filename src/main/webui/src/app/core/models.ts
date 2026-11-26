@@ -145,6 +145,8 @@ export interface PlageStand {
   effectif?: number | null;
   /** Unfolded by the server from the stand's model; read-only, the server decides the origin of every plage it stores. */
   depliee?: boolean;
+  /** Written by the consigne of its date, which removes it when lifted; read-only, like `depliee`. */
+  consigne?: boolean;
 }
 
 /**
