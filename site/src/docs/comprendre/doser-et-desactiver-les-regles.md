@@ -74,7 +74,7 @@ L'écran demande une confirmation qui nomme la règle, rappelle ce qui la fonde 
 
 ## Pondérer une règle
 
-Chaque règle pénalise d'un poids littéral dans son code ; ce défaut est surchargeable par `ConstraintWeightOverrides` sans toucher au Java. Trois couches, la plus proche l'emportant : le déploiement (`planning.constraint-weights.*`, **1 pour une règle dure, 5 pour une règle medium ou soft**, 25 pour la stabilité du plan publié), l'édition (`ponderation_contrainte`), et le scénario quand le fichier épingle son dosage. Le poids d'une règle va de 1 à 500 ; `0` est refusé. Il se pose par `PUT /api/constraints/{name}/poids` ou l'outil `modifier_poids_contrainte` ([API des règles](api-regles-et-diagnostic.md)).
+Chaque règle pénalise d'un poids littéral dans son code ; ce défaut est surchargeable par `ConstraintWeightOverrides` sans toucher au Java. Trois couches, la plus proche l'emportant : le déploiement (`planning.constraint-weights.*`, **1 pour une règle dure, 5 pour une règle medium ou soft**, 25 pour la stabilité du plan publié), l'édition (`ponderation_contrainte`), et le scénario quand le fichier épingle son dosage. Le poids d'une règle va de 1 à 500 ; `0` est refusé. Il se pose par `PUT /api/constraints/{name}/poids` ou l'outil `modifier_contrainte` ([API des règles](api-regles-et-diagnostic.md)).
 
 ### L'importance en trois positions
 

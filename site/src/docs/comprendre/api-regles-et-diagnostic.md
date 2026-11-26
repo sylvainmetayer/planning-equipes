@@ -76,15 +76,15 @@ Réenregistrer une contrainte **sous son propre id** n'est jamais refusé : la v
 
 ## Expliquer une affectation
 
-`GET /api/postes/{posteId}/explication` cible un seul poste du plan enregistré, **déjà résolu et jamais re-résolu**. Le plan est préparé côté serveur comme une résolution le prépare (contraintes désactivées, poids et quotas de l'édition) ; l'outil MCP `expliquer_affectation` lit la même chose. Un plan envoyé par l'écran ne porterait pas ces règles : expliqué nu, il reprocherait au titulaire une contrainte que l'organisateur a éteinte.
+`GET /api/postes/{posteId}/explication` cible un seul poste du plan enregistré, **déjà résolu et jamais re-résolu**. Le plan est préparé côté serveur comme une résolution le prépare (contraintes désactivées, poids et quotas de l'édition) ; l'outil MCP `analyser_affectation` lit la même chose. Un plan envoyé par l'écran ne porterait pas ces règles : expliqué nu, il reprocherait au titulaire une contrainte que l'organisateur a éteinte.
 
 « Respectée » signifie seulement qu'aucun écart n'a été trouvé pour ce poste précis, pas que la contrainte s'applique à lui : l'IHM ne la présente pas comme un satisfecit.
 
-`POST /api/postes/{posteId}/simulation-swap` note un candidat qu'on lui désigne, sans rien persister. Aucun écran ne l'appelle (l'IHM n'expose que les remplaçants viables de l'assistant, pour ne pas laisser choisir un remplacement qui casse une règle dure) ; il reste ouvert à l'API et à l'outil MCP `simuler_swap`.
+`POST /api/postes/{posteId}/simulation-swap` note un candidat qu'on lui désigne, sans rien persister. Aucun écran ne l'appelle (l'IHM n'expose que les remplaçants viables de l'assistant, pour ne pas laisser choisir un remplacement qui casse une règle dure) ; il reste ouvert à l'API et à l'outil MCP `simuler_affectation`.
 
 ## Déplacer une affectation à la main
 
-Deux routes : `POST /api/postes/{posteId}/deplacement/simulation` chiffre, `POST /api/postes/{posteId}/deplacement` écrit. Le geste se désigne par `?cible=P` (un siège) ou `?animateur=A` (une personne). Les outils MCP sont `simuler_deplacement` et `deplacer_affectation`.
+Deux routes : `POST /api/postes/{posteId}/deplacement/simulation` chiffre, `POST /api/postes/{posteId}/deplacement` écrit. Le geste se désigne par `?cible=P` (un siège) ou `?animateur=A` (une personne). Les outils MCP sont `simuler_affectation` et `modifier_affectation`.
 
 La simulation ne persiste rien. Sans corps, elle lit le verdict sur les règles de l'édition, celles que l'organisateur a désactivées comprises : l'appelant n'a pas à les fournir. L'écriture porte sur le plan enregistré ; `&occupant=X` dit qui l'appelant croit sur le siège de départ, et si quelqu'un d'autre l'occupe, c'est `409` sans écriture.
 
@@ -105,7 +105,7 @@ Les refus :
 
 ## Placer quelqu'un sur un siège vide
 
-`POST /api/postes/{posteId}/placement?animateur=A` assied `A` sur le siège vide du plan enregistré, écrit et répond comme un déplacement (`animateurSourceId` nul, scores avant et après). Il porte les mêmes contrôles que l'écriture directe de l'assistant de réparation et de l'outil MCP `affecter_poste`, dont c'est le service :
+`POST /api/postes/{posteId}/placement?animateur=A` assied `A` sur le siège vide du plan enregistré, écrit et répond comme un déplacement (`animateurSourceId` nul, scores avant et après). Il porte les mêmes contrôles que l'écriture directe de l'assistant de réparation et de l'outil MCP `modifier_affectation`, dont c'est le service :
 
 - résolution en cours (`409`), créneau commencé ([ADR 0044](repo:docs/decisions/0044-le-passe-est-fige.md)), siège verrouillé ;
 - **règle dure lue deux fois**, sur le planning entier et sur le siège. Remplir un siège vide rend son point `posteDoitEtrePourvu` ; le verdict global seul laisserait passer un mineur posé sur une nuit (`400`, règle nommée) ;
@@ -135,6 +135,6 @@ Appliquer une suggestion réaffecte **ce seul siège** dans `poste_affectation`,
 - **Un poste dont le créneau est en cours est scindé, pas refusé** ([ADR 0066](repo:docs/decisions/0066-le-passe-est-fige-a-la-minute.md)). L'écriture coupe le siège à la minute courante de l'horloge du jour J : l'origine garde son titulaire jusqu'à cette minute et la **suite**, un siège nouveau d'identifiant `<id>~HHmm` qui porte `suiteDe`, reçoit l'écriture. L'identifiant écrit n'est donc pas celui qu'on a envoyé. Pour le retrouver, relisez le plan (`GET /api/planning/persisted`) ou la réponse de `POST /api/jour-j/absences`, dont `postesLiberes` nomme les suites. Les suggestions d'un tel siège sont calculées sur sa suite, comme l'écriture le fera.
 - **Aucun candidat qui casserait une règle dure sur ce siège n'est proposé**, même quand le score dur global ne bouge pas : sur un siège vide, pourvoir la place règle un point dur (`posteDoitEtrePourvu`) et peut le dépenser une seconde fois ailleurs, ce qui placerait en tête de liste, à delta nul, l'animateur qu'on vient de déclarer indisponible. `violationsIntroduites` ne porte donc jamais de `HARD`.
 
-**`occupant` est une précondition portée par l'écriture même.** Le panneau du siège montre un plan lu plus tôt : « Libérer » et « Remplacer puis Appliquer » envoient la personne affichée, et le serveur répond `409` sans rien écrire si quelqu'un d'autre tient le siège entre-temps (un échange accepté, une réparation du jour J, un autre onglet). La vérification sur le plan lu donne le message ; la clause `animateur_id IS NOT DISTINCT FROM ?` de l'`UPDATE` ferme la fenêtre entre cette lecture et l'écriture, même principe que `placement`, qui n'écrit que sur un siège encore vide. Sans `occupant`, aucune précondition : l'outil MCP `affecter_poste` et le mode jour J écrivent ainsi.
+**`occupant` est une précondition portée par l'écriture même.** Le panneau du siège montre un plan lu plus tôt : « Libérer » et « Remplacer puis Appliquer » envoient la personne affichée, et le serveur répond `409` sans rien écrire si quelqu'un d'autre tient le siège entre-temps (un échange accepté, une réparation du jour J, un autre onglet). La vérification sur le plan lu donne le message ; la clause `animateur_id IS NOT DISTINCT FROM ?` de l'`UPDATE` ferme la fenêtre entre cette lecture et l'écriture, même principe que `placement`, qui n'écrit que sur un siège encore vide. Sans `occupant`, aucune précondition : l'outil MCP `modifier_affectation` et le mode jour J écrivent ainsi.
 
 L'`UPDATE` ne revérifie rien d'autre, hors verrouillage. Une liste de suggestions calculée **avant** une autre écriture est périmée, et l'appliquer peut créer un chevauchement que personne ne signale. Une IHM qui garde plusieurs listes à l'écran les invalide après chaque application, comme le fait le mode jour J ([API du jour J](api-jour-j-et-animateurs.md)).

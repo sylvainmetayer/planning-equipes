@@ -34,7 +34,7 @@ final class WarningCodes {
      * <p>MCP only, and on purpose: the screens lock these writes for the length
      * of a solve, so the REST side never needs to say it. Added by
      * {@link WarnsWhileSolvingInterceptor}, never by a service; the job
-     * holding the edition is what {@code statut_solveur} reads.</p>
+     * holding the edition is what {@code consulter_calcul} reads.</p>
      */
     static final String RESOLUTION_EN_COURS = "RESOLUTION_EN_COURS";
 

@@ -77,7 +77,7 @@ The screen asks for a confirmation that names the rule, recalls what grounds it 
 
 ## Weight a rule
 
-Each rule penalises with a literal weight in its code; that default can be overridden by `ConstraintWeightOverrides` without touching the Java. Three layers, the closest one winning: the deployment (`planning.constraint-weights.*`, **1 for a hard rule, 5 for a medium or soft rule**, 25 for the stability of the published plan), the edition (`ponderation_contrainte`), and the scenario when the file pins its weighting. A rule's weight ranges from 1 to 500; `0` is refused. It is set through `PUT /api/constraints/{name}/poids` or the `modifier_poids_contrainte` tool ([rules API](api-regles-et-diagnostic.md)).
+Each rule penalises with a literal weight in its code; that default can be overridden by `ConstraintWeightOverrides` without touching the Java. Three layers, the closest one winning: the deployment (`planning.constraint-weights.*`, **1 for a hard rule, 5 for a medium or soft rule**, 25 for the stability of the published plan), the edition (`ponderation_contrainte`), and the scenario when the file pins its weighting. A rule's weight ranges from 1 to 500; `0` is refused. It is set through `PUT /api/constraints/{name}/poids` or the `modifier_contrainte` tool ([rules API](api-regles-et-diagnostic.md)).
 
 ### Importance in three positions
 

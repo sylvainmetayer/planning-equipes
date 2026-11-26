@@ -109,7 +109,7 @@ class PlanningMcpToolsHeuresTest {
             }
         };
         PlanningHoursReader reader = new PlanningHoursReader(new PlanningHoursService(), persistence, publications);
-        return new PlanningMcpTools(null, null, persistence, null, null, reader, null, null, null);
+        return new PlanningMcpTools(null, null, persistence, null, null, reader, null, null, null, null);
     }
 
     private static PlanSnapshotService.SnapshotMeta publication() {
