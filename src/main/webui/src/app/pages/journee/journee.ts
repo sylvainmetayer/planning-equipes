@@ -46,11 +46,34 @@ export interface JourEvenement {
   title: string;
 }
 
-/** Reads the `vue` query param; anything unknown is the calendar, the rendering the page opens on. */
-export function readView(value: string | null): JourneeView {
-  return (JOURNEE_VIEWS as readonly string[]).includes(value ?? '')
-    ? (value as JourneeView)
-    : 'calendrier';
+/**
+ * Reads the `vue` and `mode` query params. The view « Jour » (`vue=jour`, or no
+ * `vue`) is the rail unless `mode=tableau`; the 3.x values `vue=calendrier` and
+ * `vue=rail` still name their rendering; anything else is the day's rail.
+ */
+export function readView(value: string | null, mode: string | null = null): JourneeView {
+  if (value === 'calendrier' || value === 'rail') {
+    return value;
+  }
+  if (value !== null && value !== 'jour' && (JOURNEE_VIEWS as readonly string[]).includes(value)) {
+    return value as JourneeView;
+  }
+  return mode === 'tableau' ? 'calendrier' : 'rail';
+}
+
+/** What the `vue` and `mode` params carry for a rendering: nothing on the default, the rail. */
+export function viewParams(view: JourneeView): { vue: string | null; mode: string | null } {
+  if (view === 'rail') {
+    return { vue: null, mode: null };
+  }
+  return view === 'calendrier' ? { vue: 'jour', mode: 'tableau' } : { vue: view, mode: null };
+}
+
+/** The views of the page: « Jour » gathers the rail and the table, two modes of one view. */
+export type JourneeVue = 'jour' | 'carte' | 'pauses' | 'changements';
+
+export function vueOf(view: JourneeView): JourneeVue {
+  return view === 'rail' || view === 'calendrier' ? 'jour' : view;
 }
 
 /** The key of a day in the URL: its date when it has one, its number otherwise. */

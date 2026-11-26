@@ -39,15 +39,11 @@
   </mat-button-toggle-group>
   }
   @case ('jour') {
-  <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
+  <mat-button-toggle-group class="journee-vues" [value]="vueOf(view())" (change)="changeVue($event.value)"
                            aria-label="Rendu de la journée" i18n-aria-label="@@journee.vue.label">
-    <mat-button-toggle value="calendrier">
-      <mat-icon>table_rows</mat-icon>
-      <ng-container i18n="@@journee.vue.calendrier">Tableau</ng-container>
-    </mat-button-toggle>
-    <mat-button-toggle value="rail">
-      <mat-icon>view_timeline</mat-icon>
-      <ng-container i18n="@@journee.vue.rail">Rail</ng-container>
+    <mat-button-toggle value="jour">
+      <mat-icon>view_day</mat-icon>
+      <ng-container i18n="@@journee.vue.jour">Jour</ng-container>
     </mat-button-toggle>
     <mat-button-toggle value="carte">
       <mat-icon>map</mat-icon>
@@ -62,6 +58,19 @@
       <ng-container i18n="@@journee.vue.changements">Changements</ng-container>
     </mat-button-toggle>
   </mat-button-toggle-group>
+  @if (vueOf(view()) === 'jour') {
+  <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
+                           aria-label="Mode de la vue Jour" i18n-aria-label="@@journee.mode.label">
+    <mat-button-toggle value="rail">
+      <mat-icon>view_timeline</mat-icon>
+      <ng-container i18n="@@journee.vue.rail">Rail</ng-container>
+    </mat-button-toggle>
+    <mat-button-toggle value="calendrier">
+      <mat-icon>table_rows</mat-icon>
+      <ng-container i18n="@@journee.vue.calendrier">Tableau</ng-container>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  }
   }
   }
 </div>

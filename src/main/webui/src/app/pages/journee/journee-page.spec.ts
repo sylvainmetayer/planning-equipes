@@ -157,7 +157,7 @@ describe('JourneePage', () => {
   });
 
   async function mount(queryParams: Record<string, string> = {}): Promise<JourneePage> {
-    queryParams$ = new BehaviorSubject(convertToParamMap(queryParams));
+    queryParams$ = new BehaviorSubject(convertToParamMap({ mode: 'tableau', ...queryParams }));
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -235,14 +235,14 @@ describe('JourneePage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('reads the plan, the breaks and the referentials once, and opens on the calendar of the first day', async () => {
-    const page = await mount();
+  it('reads the plan, the breaks and the referentials once, and opens on the rail of the first day', async () => {
+    const page = await mount({ mode: 'rail' });
 
     expect(loadForDisplay).toHaveBeenCalledOnce();
     expect(analysesApi.breaks).toHaveBeenCalledOnce();
-    expect(page['view']()).toBe('calendrier');
+    expect(page['view']()).toBe('rail');
     expect(page['jourCourant']()?.key).toBe('2026-08-01');
-    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
+    expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
     expect(page['stands']().map((each) => each.id)).toEqual(['Dixit', 'Tir']);
     expect(page['animateurs']()[0].label).toBe('Alice Martin');
   });
@@ -357,15 +357,15 @@ describe('JourneePage', () => {
   // The palette's « Journée › Rail », used from the Journée page itself: the
   // router reuses the component and only the query params move.
   it('follows a navigation to itself with another rendering, on the same day', async () => {
-    const page = await mount({ date: '2026-08-02' });
-    expect(page['view']()).toBe('calendrier');
+    const page = await mount({ date: '2026-08-02', mode: 'rail' });
+    expect(page['view']()).toBe('rail');
 
-    queryParams$.next(convertToParamMap({ vue: 'rail' }));
+    queryParams$.next(convertToParamMap({ vue: 'jour', mode: 'tableau' }));
     TestBed.tick();
     await fixture.whenStable();
 
-    expect(page['view']()).toBe('rail');
-    expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
+    expect(page['view']()).toBe('calendrier');
+    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
     expect(page['jourCourant']()?.jour).toBe(2);
     expect(loadForDisplay).toHaveBeenCalledOnce();
   });
@@ -491,7 +491,7 @@ describe('JourneePage', () => {
     page['changeAxe']('jour');
     TestBed.tick();
     await fixture.whenStable();
-    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
+    expect(racine().querySelector('app-rail-jour-vue')).not.toBeNull();
     const url = TestBed.inject(Location).path();
     expect(url).toContain('animateur=alice');
     expect(url).not.toContain('axe=');

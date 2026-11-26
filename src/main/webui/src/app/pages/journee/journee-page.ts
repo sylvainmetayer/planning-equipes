@@ -91,6 +91,9 @@ import {
   jourInconnu,
   planningDays,
   readView,
+  viewParams,
+  vueOf,
+  JourneeVue,
   resolveComparison,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
@@ -255,7 +258,8 @@ export class JourneePage implements OnInit {
 
   /** The axis (issue #713): the day, the stands, the people, the game categories. */
   protected readonly axe = signal<PlanningAxe>('jour');
-  protected readonly view = signal<JourneeView>('calendrier');
+  protected readonly view = signal<JourneeView>('rail');
+  protected readonly vueOf = vueOf;
   protected readonly filtre = signal('');
   protected readonly stand = signal('');
   protected readonly animateur = signal('');
@@ -494,9 +498,13 @@ export class JourneePage implements OnInit {
       case 'typologie':
         return null;
       default:
-        return this.view() === 'calendrier' ? null : this.view();
+        return viewParams(this.view()).vue;
     }
   });
+  /** What the `mode` param carries, in the day's view: the table; nothing on the rail. */
+  private readonly modeParam = computed(() =>
+    this.axe() === 'jour' ? viewParams(this.view()).mode : null,
+  );
   /** What the `densite` param carries, on the two grids only. */
   private readonly densiteParam = computed(() => {
     if (this.axe() === 'stand') {
@@ -658,6 +666,7 @@ export class JourneePage implements OnInit {
       date: this.dateParam(),
       jour: this.jours().length > 0 ? null : this.route.snapshot.queryParamMap.get('jour'),
       vue: this.viewParam(),
+      mode: this.modeParam(),
       densite: this.densiteParam(),
       portee: this.gridSpanParam(),
       ...sortQueryParams(this.shownPersonSort()),
@@ -857,6 +866,13 @@ export class JourneePage implements OnInit {
     this.view.set(view);
   }
 
+  /** The view toggle: « Jour » keeps the mode on screen, the rail when coming from another view. */
+  protected changeVue(vue: JourneeVue): void {
+    if (vue !== vueOf(this.view())) {
+      this.view.set(vue === 'jour' ? 'rail' : vue);
+    }
+  }
+
   protected choisirStand(ids: string[]): void {
     this.stand.set(ids[0] ?? '');
   }
@@ -881,7 +897,7 @@ export class JourneePage implements OnInit {
     } else if (this.axe() === 'personne') {
       this.personView.set(readPersonView(requestedView ?? impliedPersonView(query)));
     } else if (this.axe() === 'jour') {
-      this.view.set(readView(requestedView));
+      this.view.set(readView(requestedView, query.get('mode')));
     }
   }
 

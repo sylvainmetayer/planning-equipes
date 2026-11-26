@@ -243,7 +243,7 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     const titulaire = noms.get(titulaireId)!;
     const remplacant = noms.get(autre!.animateur!.id)!;
 
-    await page.goto(`/journee?vue=calendrier&date=${J1}`);
+    await page.goto(`/journee?vue=jour&mode=tableau&date=${J1}`);
     await page.locator(`button.affectation-link[data-siege-cle="${lundi[0].id}"]`).click();
     await page
       .getByRole('complementary', { name: /Siège/ })

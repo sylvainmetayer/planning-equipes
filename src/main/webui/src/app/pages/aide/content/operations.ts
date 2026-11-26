@@ -298,11 +298,11 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.day:Tableau de la journée`,
-              text: $localize`:@@aide.views.def.day:Une journée en tableau sur toute la largeur : un stand par ligne, son emplacement sous son nom, un créneau par colonne, un nom par étiquette et chaque siège vide en rouge. Un stand fermé sur un créneau le dit en gris, et une ouverture partielle donne simplement ses heures. Le nom d'un stand mène à sa fiche. C'est là qu'on corrige à la main : un clic sur un nom ou sur un « siège libre » ouvre à droite le panneau du siège (voir Panneau Siège ci-dessous), qui explique le siège et porte tous les gestes. « Déplacer vers… » y est toujours proposé : choisissez le siège libre où aller ou la personne avec qui échanger ; le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure, et un siège verrouillé ne bouge pas.`,
+              text: $localize`:@@aide.views.def.day:Mode « Tableau » de la vue Jour (choisi à côté de « Jour », dans l'adresse : mode=tableau) : une journée en tableau sur toute la largeur : un stand par ligne, son emplacement sous son nom, un créneau par colonne, un nom par étiquette et chaque siège vide en rouge. Un stand fermé sur un créneau le dit en gris, et une ouverture partielle donne simplement ses heures. Le nom d'un stand mène à sa fiche. C'est là qu'on corrige à la main : un clic sur un nom ou sur un « siège libre » ouvre à droite le panneau du siège (voir Panneau Siège ci-dessous), qui explique le siège et porte tous les gestes. « Déplacer vers… » y est toujours proposé : choisissez le siège libre où aller ou la personne avec qui échanger ; le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure, et un siège verrouillé ne bouge pas.`,
             },
             {
               term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
-              text: $localize`:@@aide.views.def.railJour:La même journée vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable ; celles marquées « indisponible » disent de ne pas solliciter la personne. Un clic sur une vacation ouvre le panneau de son siège. Au clavier, Espace sur une ligne l'ouvre sur sa vacation (sur la suivante si on appuie de nouveau).`,
+              text: $localize`:@@aide.views.def.railJour:Mode « Rail » de la vue Jour, celui qui s'ouvre par défaut : la même journée vue par personne : une ligne par animateur, les vacations placées dans le temps. Les trous, les amplitudes et les enchaînements sautent aux yeux, et les lignes vides disent qui reste mobilisable ; celles marquées « indisponible » disent de ne pas solliciter la personne. Un clic sur une vacation ouvre le panneau de son siège. Au clavier, Espace sur une ligne l'ouvre sur sa vacation (sur la suivante si on appuie de nouveau).`,
             },
             {
               term: $localize`:@@aide.views.term.carteJour:Carte de la journée`,
@@ -392,7 +392,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           route: '/journee',
-          queryParams: { vue: 'rail' },
+          queryParams: { vue: 'jour', mode: 'rail' },
           label: $localize`:@@aide.link.railJour:Rail de la journée`,
         },
         {

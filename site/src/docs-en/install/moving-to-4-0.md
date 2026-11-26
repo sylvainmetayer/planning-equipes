@@ -188,6 +188,12 @@ On screen, *Settings* now has one tab per section (*Notifications*, then *Legal*
 - **The Day screen**: "Reviewed and accepted" and the day lock are no longer two gestures. The review bar shows the state of the day and opens a three-valued control (To review, Reviewed, Frozen) with the review comment. "Frozen" asks for confirmation, saying that the solver will no longer touch the day; freezing without writing a comment keeps the review's comment. A read-only user sees the state, with no button. The progress figure and the banners count the days reviewed or frozen.
 - **What you do**: if an assistant or a prompt names the MCP tools `lister_validations_journee`, `ajouter_validation_journee` or `retirer_validation_journee`, change the names, with no alias: `consulter_etats_journee` lists the state of each day and the progress, `modifier_etat_journee` (arguments `jour`, `etat`, `commentaire`) replaces the other two (`RELUE` or `FIGEE` to add, `A_RELIRE` to withdraw; only `FIGEE` lays the lock, and withdrawing a review no longer leaves a lock in place). Until 5.0, the routes `GET`, `POST /api/validations` and `DELETE /api/validations/{id}` remain aliases: they write the same reading and the same lock, and never remove a lock. A script that calls them must move to `/api/etats-journee` before 5.0.
 
+### The Day, Rail and Table views become the Day view
+
+- **Before (3.x)**: for one day, the Planning page offered five renderings side by side, including "Table" (`?vue=calendrier`, open by default) and "Rail" (`?vue=rail`).
+- **After (4.0)**: the table and the rail are two **modes** of a single **Day** view: `?vue=jour&mode=rail` or `?vue=jour&mode=tableau`. **The rail is the default mode**: an address with neither `vue` nor `mode` opens the rail, where it used to open the table. The map, the breaks and meals and the changes remain separate views, and the review bar with the state of the day (to review, reviewed, frozen) stays in both modes.
+- **What you do**: nothing for your links. `?vue=calendrier` and `?vue=rail` are read as before (the first opens the table) for the whole 4.x, and `/day-calendar` and `/rail-jour` lead to the right mode; 5.0 will remove the old values. A bookmark or an internal help page that should open the table must carry `mode=tableau`.
+
 ### Data and migrations
 
 The migrations that convert data are described above, one per change, as they are merged: for now, [the stands' opening hours](#horaires-des-stands).

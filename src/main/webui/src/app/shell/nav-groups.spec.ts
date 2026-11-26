@@ -11,7 +11,7 @@ import { readHistoriqueTab } from '../pages/historique/historique';
 import { readEchangesTab } from '../pages/echanges/echanges-filter';
 import { ONGLETS_FICHIERS, readOngletFichiers } from '../pages/fichiers/fichiers';
 import { IMPORT_CARDS, readImportCard } from '../pages/imports/imports';
-import { JOURNEE_VIEWS, PLANNING_AXES, readAxe, readView } from '../pages/journee/journee';
+import { PLANNING_AXES, readAxe, readView, vueOf } from '../pages/journee/journee';
 import { ONGLETS_PARAMETRES, readOngletParametres } from '../pages/parametres/parametres';
 import { readOngletDiffuser } from '../pages/publication/onglet';
 import { ONGLETS_REGLES, readOngletRegles } from '../pages/regles/regles';
@@ -33,7 +33,12 @@ interface TabReader {
 
 const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
   '/journee': [
-    { param: 'vue', opens: (v) => readView(v) === v, values: JOURNEE_VIEWS },
+    // « Jour » gathers the rail and the table: `calendrier` and `rail` are 3.x values, still read.
+    {
+      param: 'vue',
+      opens: (v) => vueOf(readView(v)) === v,
+      values: ['jour', 'carte', 'pauses', 'changements'],
+    },
     // « Par jour » is the page itself, its address naming no axis.
     {
       param: 'axe',
