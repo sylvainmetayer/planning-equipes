@@ -38,6 +38,7 @@ dev/sylvain/planning/api/ConfigResourceTest.java
 dev/sylvain/planning/api/ConfirmationPlanningTest.java
 dev/sylvain/planning/api/ConsigneResourceTest.java
 dev/sylvain/planning/api/ConstraintDiagnosticResourceTest.java
+dev/sylvain/planning/api/ConstraintNiveauResourceTest.java
 dev/sylvain/planning/api/ConstraintPoidsResourceTest.java
 dev/sylvain/planning/api/ContactOrganisationResourceTest.java
 dev/sylvain/planning/api/ContrainteAdHocAuthorTest.java
@@ -183,6 +184,7 @@ dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
 dev/sylvain/planning/service/solve/ComputeBudgetArchiveMigrationTest.java
+dev/sylvain/planning/service/solve/ConstraintLevelMigrationTest.java
 dev/sylvain/planning/service/solve/EditionDeletionWhileComputingTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java

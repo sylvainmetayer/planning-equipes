@@ -47,8 +47,10 @@ public class McpResources {
                 cherche le meilleur compromis, pas la perfection.
 
                 Chaque contrainte peut être désactivée (`desactiver_contrainte`) ou pondérée
-                (`modifier_poids_contrainte`) pour une édition, sans toucher aux autres. Le niveau,
-                lui, n'est pas réglable.
+                (`modifier_poids_contrainte`) pour une édition, sans toucher aux autres. Le niveau d'une
+                règle d'organisation se choisit par édition (`modifier_niveau_contrainte` :
+                obligatoire, ou préférence forte, normale ou légère) ; la colonne Niveau ci-dessous
+                est celui que le catalogue livre. Une règle légale reste toujours obligatoire.
 
                 | Contrainte | Niveau | Catégorie | Ce qu'elle cherche |
                 | --- | --- | --- | --- |

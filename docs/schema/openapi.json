@@ -2220,6 +2220,15 @@
           }
         }
       },
+      "ConstraintNiveauUpdate" : {
+        "required" : [ "niveau" ],
+        "type" : "object",
+        "properties" : {
+          "niveau" : {
+            "$ref" : "#/components/schemas/NiveauRegle"
+          }
+        }
+      },
       "ConstraintParameter" : {
         "type" : "object",
         "properties" : {
@@ -2270,7 +2279,7 @@
         }
       },
       "ConstraintView" : {
-        "required" : [ "actif", "activeByDefault", "dosable", "legale", "poids", "protegee" ],
+        "required" : [ "actif", "activeByDefault", "dosable", "legale", "niveauReglable", "poids", "protegee" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -2305,6 +2314,12 @@
           },
           "dosable" : {
             "type" : "boolean"
+          },
+          "niveauReglable" : {
+            "type" : "boolean"
+          },
+          "niveauChoisi" : {
+            "$ref" : "#/components/schemas/NiveauRegle"
           },
           "poids" : {
             "type" : "integer",
@@ -3727,7 +3742,7 @@
         }
       },
       "Dosage" : {
-        "required" : [ "weights", "instanceWeights", "disabled", "enabled" ],
+        "required" : [ "weights", "instanceWeights", "disabled", "enabled", "levels" ],
         "type" : "object",
         "properties" : {
           "weights" : {
@@ -3753,6 +3768,12 @@
           "enabled" : {
             "type" : "array",
             "items" : {
+              "type" : "string"
+            }
+          },
+          "levels" : {
+            "type" : "object",
+            "additionalProperties" : {
               "type" : "string"
             }
           }
@@ -6995,6 +7016,10 @@
       "NiveauEffort" : {
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
+      },
+      "NiveauRegle" : {
+        "type" : "string",
+        "enum" : [ "OBLIGATOIRE", "PREFERENCE_FORTE", "PREFERENCE_NORMALE", "PREFERENCE_LEGERE" ]
       },
       "NouveauCompte" : {
         "type" : "object",
@@ -13252,6 +13277,45 @@
           }
         },
         "summary" : "History",
+        "tags" : [ "Constraint Resource" ]
+      }
+    },
+    "/api/constraints/{name}/niveau" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConstraintNiveauUpdate"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConstraintNiveauUpdate"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Niveau",
         "tags" : [ "Constraint Resource" ]
       }
     },

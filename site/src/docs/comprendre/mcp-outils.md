@@ -23,6 +23,8 @@ Partout, un outil qui lit un plan lit le **plan enregistré**, et une personne s
 
 Pour retoucher un poste sans relancer le calcul, `suggerer_reparations` cherche qui pourrait le tenir et chiffre chaque candidat, `affecter_poste` applique le choix. Deux outils et non un seul : un assistant qui évalue et applique dans le même appel ne laisse aucune étape où un humain puisse dire non. `affecter_poste` refuse un poste **verrouillé**, le verrou étant ce qu'on lui demande de respecter, et un poste dont le créneau est commencé. `accepter_demande_echange` est, avec lui, l'un des deux seuls outils qui écrivent dans le plan sans solveur : il applique l'échange puis le fige par des verrouillages `ANIMATEUR_CRENEAU`. D'où `analyser_impact_echange` à côté, car la prévalidation stockée avec la demande décrit le plan du jour où elle a été envoyée.
 
+`modifier_niveau_contrainte` choisit le niveau d'une règle d'organisation pour l'édition : `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` ou `PREFERENCE_LEGERE` (une préférence écrit le poids de sa position). `lister_contraintes` donne `niveauReglable` et `niveauChoisi` ; une règle légale, d'affectation, ad hoc, de verrou ou une préférence souple refuse le niveau. Comme `modifier_poids_contrainte`, l'outil est accepté pendant un calcul et le dit (`RESOLUTION_EN_COURS`).
+
 `consulter_historique_ponderation` rend ce que rend `GET /api/constraints/{name}/historique`, ou la vue globale sans `contrainte` : changements de poids et d'activation, valeurs avant et après, origine typée, puis les résolutions de l'édition avec le dosage de chacune. Un réglage fait par `modifier_poids_contrainte`, `activer_contrainte` ou `desactiver_contrainte` y porte l'origine `ASSISTANT`.
 
 ## Lire le plan sous différents angles

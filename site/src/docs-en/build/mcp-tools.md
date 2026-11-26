@@ -26,6 +26,8 @@ Everywhere, a tool that reads a plan reads the **saved plan**, and a person come
 
 To retouch a seat without starting the solve again, `suggerer_reparations` looks for who could hold it and prices each candidate, `affecter_poste` applies the choice. Two tools and not one: an assistant that evaluates and applies in the same call leaves no step where a human can say no. `affecter_poste` refuses a **locked** seat, the lock being what it is asked to respect, and a seat whose timeslot has begun. `accepter_demande_echange` is, with it, one of the only two tools that write into the plan without a solver: it applies the swap then freezes it with `ANIMATEUR_CRENEAU` locks. Hence `analyser_impact_echange` alongside, because the prevalidation stored with the request describes the plan of the day it was sent.
 
+`modifier_niveau_contrainte` chooses the level of an organisation rule for the edition: `OBLIGATOIRE`, `PREFERENCE_FORTE`, `PREFERENCE_NORMALE` or `PREFERENCE_LEGERE` (a preference writes the weight of its position). `lister_contraintes` gives `niveauReglable` and `niveauChoisi`; a legal, assignment, ad hoc or lock rule, or a soft preference, refuses the level. Like `modifier_poids_contrainte`, the tool is accepted during a computation and says so (`RESOLUTION_EN_COURS`).
+
 `consulter_historique_ponderation` returns what `GET /api/constraints/{name}/historique` returns, or the global view without `contrainte`: changes of weight and activation, values before and after, typed origin, then the edition's solves with the weighting of each. A setting made by `modifier_poids_contrainte`, `activer_contrainte` or `desactiver_contrainte` carries the origin `ASSISTANT` there.
 
 ## Reading the plan from different angles

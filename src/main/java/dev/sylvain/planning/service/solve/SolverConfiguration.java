@@ -214,14 +214,67 @@ final class SolverConfiguration {
      *                 applies, unchanged
      */
     public Map<String, Integer> effectiveConstraintWeights(Map<String, Integer> scenario) {
+        return effectiveConstraintWeights(scenario, null);
+    }
+
+    /**
+     * Same, and the levels a scenario pinned: its {@code contraintes.niveaux}
+     * replace the edition's as its weights do, and a file that pins either
+     * pins both — one that names no level describes the catalogue's.
+     *
+     * <p>The weight returned is the one applied <b>at the level the rule scores
+     * on</b> (ADR 0106): a rule made obligatoire counts, hard weight 1, and the
+     * weight the edition stored for it stays stored for the day it goes back to
+     * a preference; a rule the catalogue ships hard and an edition made a
+     * preference weighs what the edition stored for it, the middle position
+     * otherwise.</p>
+     *
+     * @param scenarioLevels name → {@code true} for obligatoire, {@code false}
+     *                       for a preference, or {@code null} when the file
+     *                       pinned none
+     */
+    public Map<String, Integer> effectiveConstraintWeights(
+            Map<String, Integer> scenario, Map<String, Boolean> scenarioLevels) {
         Map<String, Integer> poids = new HashMap<>(configuredWeights);
-        Map<String, Integer> surcharges = scenario != null ? scenario : referenceDataService.getConstraintWeights();
+        boolean pinned = scenario != null || scenarioLevels != null;
+        Map<String, Integer> surcharges =
+                scenario != null ? scenario : pinned ? Map.of() : referenceDataService.getConstraintWeights();
+        Map<String, Boolean> niveaux = effectiveLevels(scenarioLevels);
         surcharges.forEach((nom, valeur) -> {
             if (valeur != null && configuredWeights.containsKey(nom)) {
                 poids.put(nom, valeur);
             }
         });
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            Boolean obligatoire = niveaux.get(definition.name());
+            if (definition.niveauEffectif(obligatoire) == definition.niveau()) {
+                continue;
+            }
+            poids.put(
+                    definition.name(),
+                    obligatoire
+                            ? ConstraintCatalog.POIDS_DUR
+                            : surcharges.getOrDefault(definition.name(), ConstraintCatalog.POIDS_NORMAL));
+        }
         return poids;
+    }
+
+    /**
+     * The levels the next solve applies, name → {@code true} for obligatoire:
+     * the scenario's when it pinned some, the edition's otherwise. A rule with
+     * no choice, or that chose what the catalogue ships, is absent.
+     */
+    Map<String, Boolean> effectiveLevels(Map<String, Boolean> scenarioLevels) {
+        Map<String, Boolean> source =
+                scenarioLevels != null ? scenarioLevels : referenceDataService.getNiveauxObligatoires();
+        Map<String, Boolean> levels = new HashMap<>();
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            Boolean obligatoire = source.get(definition.name());
+            if (obligatoire != null && definition.niveauEffectif(obligatoire) != definition.niveau()) {
+                levels.put(definition.name(), obligatoire);
+            }
+        }
+        return levels;
     }
 
     /**
@@ -241,13 +294,17 @@ final class SolverConfiguration {
         }
         Map<String, Integer> weights = new HashMap<>();
         Map<String, Integer> instanceWeights = new HashMap<>();
+        Map<String, String> levels = new HashMap<>();
         List<String> disabled = new ArrayList<>();
         List<String> enabled = new ArrayList<>();
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             String name = definition.name();
             int configured = configuredWeights.getOrDefault(name, 1);
             int weight = appliedWeight(overrides, definition);
-            if (weight != configured) {
+            ConstraintCatalog.Niveau scoredOn = levelApplied(overrides, definition);
+            if (scoredOn != definition.niveau()) {
+                levels.put(name, scoredOn == ConstraintCatalog.Niveau.HARD ? "OBLIGATOIRE" : "PREFERENCE");
+            } else if (weight != configured) {
                 weights.put(name, weight);
             }
             if (configured != 1) {
@@ -258,10 +315,10 @@ final class SolverConfiguration {
                 (etat ? enabled : disabled).add(name);
             }
         }
-        return new Dosage(weights, instanceWeights, disabled, enabled);
+        return new Dosage(weights, instanceWeights, disabled, enabled, levels);
     }
 
-    /** The weight {@code overrides} gives a rule, on its own level; 1 when it names none — the inverse of {@link #constraintWeightOverrides}. */
+    /** The weight {@code overrides} gives a rule, on whichever level it puts it; 1 when it names none — the inverse of {@link #constraintWeightOverrides}. */
     private static int appliedWeight(
             ConstraintWeightOverrides<HardMediumSoftScore> overrides,
             ConstraintCatalog.ConstraintDefinition definition) {
@@ -269,17 +326,27 @@ final class SolverConfiguration {
         if (weight == null) {
             return 1;
         }
-        return (int)
-                switch (definition.niveau()) {
-                    case HARD -> weight.hardScore();
-                    case MEDIUM -> weight.mediumScore();
-                    case SOFT -> weight.softScore();
-                };
+        return (int) (weight.hardScore() + weight.mediumScore() + weight.softScore());
+    }
+
+    /** The level {@code overrides} puts a rule on: its own when they name none, the first the weight is not zero on otherwise. */
+    private static ConstraintCatalog.Niveau levelApplied(
+            ConstraintWeightOverrides<HardMediumSoftScore> overrides,
+            ConstraintCatalog.ConstraintDefinition definition) {
+        HardMediumSoftScore weight = overrides == null ? null : overrides.getConstraintWeight(definition.name());
+        if (weight == null) {
+            return definition.niveau();
+        }
+        if (weight.hardScore() != 0) {
+            return ConstraintCatalog.Niveau.HARD;
+        }
+        return weight.mediumScore() != 0 ? ConstraintCatalog.Niveau.MEDIUM : ConstraintCatalog.Niveau.SOFT;
     }
 
     /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */
-    ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides(Map<String, Integer> scenario) {
-        return overridesOf(effectiveConstraintWeights(scenario));
+    ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides(
+            Map<String, Integer> scenario, Map<String, Boolean> scenarioLevels) {
+        return overridesOf(effectiveConstraintWeights(scenario, scenarioLevels), effectiveLevels(scenarioLevels));
     }
 
     /**
@@ -303,16 +370,18 @@ final class SolverConfiguration {
         return ConstraintWeightOverrides.of(overrides);
     }
 
-    private static ConstraintWeightOverrides<HardMediumSoftScore> overridesOf(Map<String, Integer> weights) {
+    private static ConstraintWeightOverrides<HardMediumSoftScore> overridesOf(
+            Map<String, Integer> weights, Map<String, Boolean> levels) {
         Map<String, HardMediumSoftScore> overrides = new HashMap<>();
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             int weight = weights.getOrDefault(definition.name(), 1);
-            if (weight == 1) {
+            ConstraintCatalog.Niveau level = definition.niveauEffectif(levels.get(definition.name()));
+            if (weight == 1 && level == definition.niveau()) {
                 continue;
             }
             overrides.put(
                     definition.name(),
-                    switch (definition.niveau()) {
+                    switch (level) {
                         case HARD -> HardMediumSoftScore.ofHard(weight);
                         case MEDIUM -> HardMediumSoftScore.ofMedium(weight);
                         case SOFT -> HardMediumSoftScore.ofSoft(weight);

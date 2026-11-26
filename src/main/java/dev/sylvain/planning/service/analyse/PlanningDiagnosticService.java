@@ -156,7 +156,7 @@ public final class PlanningDiagnosticService {
         Predicate<Creneau> timeslotFrozen = frozenTimeslots(solved.getPostes(), solved.getPastHorizon());
         for (ConstraintContribution ca : analysis.contributions()) {
             String name = ca.constraintName();
-            boolean hard = ConstraintCatalog.NOMS_DURS.contains(name);
+            boolean hard = ConstraintCatalog.isHardIn(name, ca.score());
             if (!ca.matches().isEmpty()) {
                 matchesParContrainte.put(name, ca.matches());
             }
@@ -639,6 +639,12 @@ public final class PlanningDiagnosticService {
 
         public ConstraintDiagnostic {
             hotspots = hotspots == null ? List.of() : List.copyOf(hotspots);
+        }
+
+        /** Whether the rule scored on the hard level in the plan this reads — see {@link ConstraintCatalog#isHardIn}. */
+        @JsonIgnore
+        public boolean hard() {
+            return ConstraintCatalog.isHardIn(name, ScoreReading.parse(score));
         }
 
         /** A rule read with a position and no hotspot. */

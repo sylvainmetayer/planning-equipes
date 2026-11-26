@@ -1478,7 +1478,15 @@ export interface ConstraintView {
    * relative importance genuinely varies from one organiser to the next.
    */
   dosable: boolean;
-  /** What one match of the rule is worth on the next solve (1 to 500 — ADR 0057). */
+  /**
+   * The edition chooses this rule's level (ADR 0106, 0111): an organisation
+   * rule — never a legal, assignment, ad hoc or lock rule, nor a soft
+   * preference. `niveau` stays the catalogue's own.
+   */
+  niveauReglable?: boolean;
+  /** The level the rule has on this edition; null when it is not the edition's to choose. */
+  niveauChoisi?: NiveauRegle | null;
+  /** What one match of the rule is worth on the next solve at the level it scores on (1 to 500 — ADR 0057). */
   poids: number;
   score: string | null;
   matchCount: number | null;
@@ -4154,7 +4162,13 @@ export interface Dosage {
   instanceWeights: Record<string, number>;
   disabled: string[];
   enabled: string[];
+  /** Rules the edition moved to the other level than the catalogue's (ADR 0106). */
+  levels?: Record<string, 'OBLIGATOIRE' | 'PREFERENCE'>;
 }
+
+/** The level of an organisation rule on an edition: mandatory, or a preference at one of three positions. */
+export type NiveauRegle =
+  'OBLIGATOIRE' | 'PREFERENCE_FORTE' | 'PREFERENCE_NORMALE' | 'PREFERENCE_LEGERE';
 
 /** Where a change of weight or activation came from — never who. */
 export type WeightChangeOrigin = 'SCREEN' | 'ASSISTANT' | 'SCENARIO' | 'DUPLICATION';

@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.BreachHotspots;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PivotEcarts;
@@ -105,13 +106,14 @@ public class ConstraintResource {
                                 ConstraintDiagnostic::name, Function.identity(), (first, second) -> first));
         Set<String> desactivees = referenceDataService.getContraintesDesactivees();
         Map<String, Integer> poids = planningService.effectiveConstraintWeights();
+        Map<String, Boolean> niveaux = planningService.effectiveLevels();
 
         ParametresLegaux legaux = referenceDataService.getParametresLegaux();
         ParametresQualite qualite = referenceDataService.getParametresQualite();
 
         List<ConstraintView> constraints = ConstraintCatalog.definitions().stream()
                 .map(definition ->
-                        toView(definition, byName.get(definition.name()), desactivees, poids, legaux, qualite))
+                        toView(definition, byName.get(definition.name()), desactivees, poids, niveaux, legaux, qualite))
                 .toList();
 
         return new ConstraintsView(
@@ -167,6 +169,45 @@ public class ConstraintResource {
     }
 
     /**
+     * Chooses the level of one organisation rule <b>for the current edition</b>
+     * (ADR 0106): {@code OBLIGATOIRE} — a plan that breaks it is not
+     * deliverable, as for a legal rule — or a preference position, which writes
+     * the weight of that position. Refused (400) for a rule whose level is not
+     * the edition's to choose: the legal rules, assignment, ad hoc and lock
+     * rules, and the soft preferences.
+     */
+    @PUT
+    @Path("/{name}/niveau")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ConstraintNiveauUpdate setNiveau(@PathParam("name") String name, ConstraintNiveauUpdate update) {
+        requireKnown(name);
+        if (update == null || update.niveau() == null) {
+            throw new BusinessError.Invalid(
+                    "niveau : attendu OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE " + "ou PREFERENCE_LEGERE");
+        }
+        referenceDataService.setNiveau(name, update.niveau(), WeightChangeOrigin.SCREEN);
+        return new ConstraintNiveauUpdate(chosenLevel(
+                ConstraintCatalog.PAR_NOM.get(name),
+                planningService.effectiveLevels(),
+                planningService.effectiveConstraintWeights().getOrDefault(name, 1)));
+    }
+
+    /**
+     * The position the edition's choice reads as for a rule it can choose for,
+     * {@code null} for one it cannot: obligatoire when the rule scores hard on
+     * this edition, otherwise the position its weight sits at.
+     */
+    private static ConstraintCatalog.NiveauRegle chosenLevel(
+            ConstraintDefinition definition, Map<String, Boolean> niveaux, int weight) {
+        if (!definition.niveauReglable()) {
+            return null;
+        }
+        Boolean obligatoire = niveaux.get(definition.name());
+        boolean hard = definition.niveauEffectif(obligatoire) == ConstraintCatalog.Niveau.HARD;
+        return hard ? ConstraintCatalog.NiveauRegle.OBLIGATOIRE : ConstraintCatalog.NiveauRegle.ofPoids(weight);
+    }
+
+    /**
      * Every change of weight or activation in the current edition, values
      * included, beside the edition's solves and the dosage each ran under.
      * Nothing nominative: the origin is typed, never a person.
@@ -202,9 +243,11 @@ public class ConstraintResource {
             ConstraintDiagnostic diagnostic,
             Set<String> desactivees,
             Map<String, Integer> poids,
+            Map<String, Boolean> niveaux,
             ParametresLegaux legaux,
             ParametresQualite qualite) {
         int weight = poids.getOrDefault(definition.name(), 1);
+        ConstraintCatalog.NiveauRegle choisi = chosenLevel(definition, niveaux, weight);
         return new ConstraintView(
                 definition.name(),
                 definition.niveau().name(),
@@ -217,6 +260,8 @@ public class ConstraintResource {
                 definition.legale(),
                 definition.activeByDefault(),
                 definition.dosable(),
+                definition.niveauReglable(),
+                choisi,
                 weight,
                 diagnostic == null ? null : diagnostic.score(),
                 diagnostic == null ? null : diagnostic.matchCount(),
@@ -253,9 +298,17 @@ public class ConstraintResource {
      * @param dosable     whether this rule is one of those meant to be dosed
      *                    rather than switched off (the MEDIUM rules of
      *                    « Qualité d'organisation »)
+     * @param niveauReglable whether this edition chooses the level of the rule
+     *                    (ADR 0106): an organisation rule, never a legal one
+     * @param niveauChoisi the level the rule has on this edition,
+     *                    {@code OBLIGATOIRE} or a preference position read from
+     *                    its weight; {@code null} when the level is not the
+     *                    edition's to choose. {@code niveau} stays the
+     *                    catalogue's own
      * @param poids       weight applied to a single match of this constraint
-     *                    on the next solve: the deployment default, overridden
-     *                    by what this edition stored
+     *                    on the next solve at the level it scores on: the
+     *                    deployment default, overridden by what this edition
+     *                    stored
      * @param score       score contributed by this constraint on the last
      *                    analysis, {@code null} when never analysed
      * @param matchCount  number of times the rule matched (i.e. was violated
@@ -307,7 +360,9 @@ public class ConstraintResource {
      *                    screen names them; empty when never analysed or when
      *                    the breaches name no place (see {@code BreachHotspots})
      */
-    @Schema(requiredProperties = {"actif", "activeByDefault", "dosable", "legale", "poids", "protegee"})
+    @Schema(
+            requiredProperties = {"actif", "activeByDefault", "dosable", "legale", "niveauReglable", "poids", "protegee"
+            })
     public record ConstraintView(
             String name,
             String niveau,
@@ -320,6 +375,8 @@ public class ConstraintResource {
             boolean legale,
             boolean activeByDefault,
             boolean dosable,
+            boolean niveauReglable,
+            ConstraintCatalog.NiveauRegle niveauChoisi,
             int poids,
             String score,
             Integer matchCount,
@@ -343,6 +400,13 @@ public class ConstraintResource {
      *              fall back to the configured default
      */
     public record ConstraintPoidsUpdate(Integer poids) {}
+
+    /**
+     * @param niveau the level to give the rule on this edition; read back, the
+     *               level it has after the write
+     */
+    @Schema(requiredProperties = {"niveau"})
+    public record ConstraintNiveauUpdate(ConstraintCatalog.NiveauRegle niveau) {}
 
     /**
      * @param hardScore the hard score actually reached by the last analysed

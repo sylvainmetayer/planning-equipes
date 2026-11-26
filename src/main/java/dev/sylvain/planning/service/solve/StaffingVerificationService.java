@@ -16,7 +16,6 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.ProblemBuilder.Seats;
-import dev.sylvain.planning.solver.ConstraintCatalog;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -619,7 +618,7 @@ public class StaffingVerificationService {
     private List<String> brokenHardRules(PlanningEvenement solved) {
         return planningService.diagnose(solved).contraintes().stream()
                 .filter(diagnostic -> diagnostic.matchCount() > 0)
-                .filter(diagnostic -> ConstraintCatalog.NOMS_DURS.contains(diagnostic.name()))
+                .filter(ConstraintDiagnostic::hard)
                 .sorted(Comparator.comparingInt(ConstraintDiagnostic::matchCount)
                         .reversed())
                 .map(ConstraintDiagnostic::name)

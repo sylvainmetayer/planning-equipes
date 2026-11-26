@@ -157,6 +157,9 @@ final class ScenarioDomainMapper {
         evenement.setPonderationsScenario(contraintes(scenario.contraintes())
                 .map(ContraintesScenario::poids)
                 .orElse(null));
+        evenement.setNiveauxScenario(contraintes(scenario.contraintes())
+                .map(ContraintesScenario::obligatoires)
+                .orElse(null));
         return evenement;
     }
 
@@ -791,7 +794,46 @@ final class ScenarioDomainMapper {
                 }
             }
         }
-        return Optional.of(new ContraintesScenario(desactivees, activees, poids));
+        Map<String, Boolean> obligatoires = new LinkedHashMap<>();
+        if (dto.niveaux() != null) {
+            dto.niveaux()
+                    .forEach((nom, niveau) -> readNiveau(requireKnownConstraint(nom), niveau, obligatoires, poids));
+        }
+        return Optional.of(new ContraintesScenario(desactivees, activees, poids, obligatoires));
+    }
+
+    /**
+     * One {@code niveaux:} entry (ADR 0106): {@code OBLIGATOIRE}, {@code PREFERENCE},
+     * or a position — {@code PREFERENCE_FORTE}, {@code _NORMALE}, {@code _LEGERE} —
+     * which also writes the weight the position stands for unless {@code poids:}
+     * names the rule. Refused for a rule whose level is not the edition's to choose.
+     */
+    private static void readNiveau(
+            String nom, String niveau, Map<String, Boolean> obligatoires, Map<String, Integer> poids) {
+        if (!ConstraintCatalog.PAR_NOM.get(nom).niveauReglable()) {
+            throw new BusinessError.Invalid(
+                    "La règle « " + nom + " » n'a pas de niveau à choisir : "
+                            + "les règles légales et les règles de base restent obligatoires, les préférences restent des préférences.");
+        }
+        String value = String.valueOf(niveau).trim();
+        if ("OBLIGATOIRE".equals(value)) {
+            obligatoires.put(nom, true);
+        } else if ("PREFERENCE".equals(value)) {
+            obligatoires.put(nom, false);
+        } else {
+            ConstraintCatalog.NiveauRegle position;
+            try {
+                position = ConstraintCatalog.NiveauRegle.valueOf(value);
+            } catch (IllegalArgumentException e) {
+                throw new BusinessError.Invalid(
+                        "Le niveau « " + value + " » de la règle « " + nom
+                                + " » est inconnu : OBLIGATOIRE, PREFERENCE, PREFERENCE_FORTE, PREFERENCE_NORMALE ou PREFERENCE_LEGERE.");
+            }
+            obligatoires.put(nom, position.obligatoire());
+            if (!position.obligatoire()) {
+                poids.putIfAbsent(nom, position.poids());
+            }
+        }
     }
 
     private static String requireKnownConstraint(String nom) {

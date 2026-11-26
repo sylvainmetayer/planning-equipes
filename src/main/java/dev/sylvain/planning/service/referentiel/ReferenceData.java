@@ -86,6 +86,15 @@ public interface ReferenceData {
      */
     Map<String, Integer> getConstraintWeights();
 
+    /**
+     * The level this edition explicitly chose per organisation rule (ADR 0106):
+     * {@code true} for obligatoire, {@code false} for a preference. A rule
+     * absent from the map follows the catalogue's own level.
+     */
+    default Map<String, Boolean> getNiveauxObligatoires() {
+        return Map.of();
+    }
+
     ParametresLegaux getParametresLegaux();
 
     /**

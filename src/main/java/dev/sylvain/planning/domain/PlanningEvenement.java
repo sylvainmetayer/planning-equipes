@@ -95,6 +95,12 @@ public class PlanningEvenement {
     @JsonIgnore
     private Map<String, Integer> ponderationsScenario;
 
+    // The levels the scenario pinned (rule → true for obligatoire, ADR 0106), or
+    // null when it pinned none: carried beside the weights for the same reason,
+    // and @JsonIgnore for the same one.
+    @JsonIgnore
+    private Map<String, Boolean> niveauxScenario;
+
     /**
      * The moment this problem's past was judged against (ADR 0044), set once
      * — by the builder, or by the first preparation of a problem that came
@@ -248,6 +254,14 @@ public class PlanningEvenement {
 
     public void setPonderationsScenario(Map<String, Integer> ponderationsScenario) {
         this.ponderationsScenario = ponderationsScenario;
+    }
+
+    public Map<String, Boolean> getNiveauxScenario() {
+        return niveauxScenario;
+    }
+
+    public void setNiveauxScenario(Map<String, Boolean> niveauxScenario) {
+        this.niveauxScenario = niveauxScenario;
     }
 
     public void setPonderationsContraintes(ConstraintWeightOverrides<HardMediumSoftScore> ponderationsContraintes) {
