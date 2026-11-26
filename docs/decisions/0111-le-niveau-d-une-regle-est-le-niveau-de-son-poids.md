@@ -2,7 +2,7 @@
 
 - **Statut** : accepté, implémenté
 - **Date** : novembre 2026
-- **Portée** : catalogue des règles, calcul des poids, moteur direct, schéma (migration `V146`), scénario YAML (`schemaVersion: 4`), API et outils MCP
+- **Portée** : catalogue des règles, calcul des poids, moteur direct, schéma (migration `V149`), scénario YAML (`schemaVersion: 4`), API et outils MCP
 - **Applique** : [0106](0106-obligatoire-est-un-niveau-reglable-par-edition.md) (option A, la vérification qu'elle laissait)
 - **Prolonge** : [0057](0057-importance-d-une-regle-en-trois-positions.md)
 

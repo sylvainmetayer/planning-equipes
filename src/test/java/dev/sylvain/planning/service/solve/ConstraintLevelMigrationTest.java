@@ -33,7 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * V146 gives every organisation rule a level an edition may choose (ADR 0111).
+ * V149 gives every organisation rule a level an edition may choose (ADR 0111).
  * An edition that stored weights and switches before it — every production
  * edition — must score <b>exactly</b> as before: played on a database filled
  * the way 3.x filled it (a weight and a switch on many rules, legal and fixed
@@ -45,8 +45,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class ConstraintLevelMigrationTest {
 
-    private static final String SCHEMA = "migration_v146";
-    private static final String V146 = "db/migration/V146__niveau_par_regle_et_par_edition.sql";
+    private static final String SCHEMA = "migration_v149";
+    private static final String V149 = "db/migration/V149__niveau_par_regle_et_par_edition.sql";
 
     /** Varied on purpose: the three positions, the bounds, and weights no position has. */
     private static final int[] WEIGHTS = {3, 1, 25, 7, 500, 5, 2};
@@ -68,10 +68,10 @@ class ConstraintLevelMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration");
-        // The last migration before V146, whichever number the others took.
+        // The last migration before V149, whichever number the others took.
         String before = java.util.Arrays.stream(flyway.load().info().all())
                 .map(info -> info.getVersion())
-                .filter(version -> version != null && version.compareTo(MigrationVersion.fromVersion("146")) < 0)
+                .filter(version -> version != null && version.compareTo(MigrationVersion.fromVersion("149")) < 0)
                 .max(Comparable::compareTo)
                 .orElseThrow()
                 .getVersion();
@@ -159,7 +159,7 @@ class ConstraintLevelMigrationTest {
 
     /**
      * One plan, scored under the 3.x reading of the rows and under the
-     * weights applied after V146: the same points on the same level, rule by
+     * weights applied after V149: the same points on the same level, rule by
      * rule; and the direct engine agreeing with Timefold under the latter.
      */
     private static void sameScore(
@@ -298,8 +298,8 @@ class ConstraintLevelMigrationTest {
     }
 
     private static void migrate(Statement sql) throws Exception {
-        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V146)) {
-            assertThat(file).as(V146).isNotNull();
+        try (InputStream file = Thread.currentThread().getContextClassLoader().getResourceAsStream(V149)) {
+            assertThat(file).as(V149).isNotNull();
             sql.execute(new String(file.readAllBytes(), StandardCharsets.UTF_8));
         }
     }
