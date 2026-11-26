@@ -38,7 +38,7 @@ Duplicate the edition to try a real variant (another grid, another team) and sol
 
 ## Compare two editions
 
-The *Compare two editions* page ("Compare two editions" button of the Editions page) shows what changed in the reference data from one edition to the other, for example last year and this year, or an edition and its variant.
+The *Editions* view of the *Compare two versions* screen ("Compare two editions" button of the Editions page; the *Plan versions* view of the same screen compares two plans) shows what changed in the reference data from one edition to the other, for example last year and this year, or an edition and its variant.
 
 - A summary in figures at the top ("+3 stands, -12 staff, +410 hours to fill").
 - The detail: stands, staff arrived and left, game categories, locations, day templates, timeslots aligned on the rank of the opening day, settings, adjustments counted by type, and the volumes of both side by side.

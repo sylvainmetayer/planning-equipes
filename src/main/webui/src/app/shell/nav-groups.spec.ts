@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pageRoutes } from '../core/testing/page-routes';
 import { readOngletAnimateurs } from '../pages/animateurs/animateurs-onglet';
 import { readOngletCalendrier } from '../pages/creneaux/calendrier-onglet';
+import { readComparerView } from '../pages/comparer-editions/comparer-page';
 import { readOngletAujourdhui } from '../pages/jour-j/aujourdhui-onglet';
 import { readOngletSolveur } from '../pages/solver/solveur-onglet';
 import { ONGLETS_DEBUG, readOngletDebug } from '../pages/debug/debug';
@@ -87,6 +88,7 @@ const TAB_READERS: Record<string, TabReader | readonly TabReader[]> = {
     values: [...ONGLETS_PARAMETRES, 'connexions'],
   },
   '/regles': { param: 'onglet', opens: (v) => readOngletRegles(v) === v, values: ONGLETS_REGLES },
+  '/comparer': { param: 'vue', opens: (v) => readComparerView(v) === v, values: ['editions'] },
   '/debug': { param: 'onglet', opens: (v) => readOngletDebug(v) === v, values: ONGLETS_DEBUG },
   // The stands are the default tab: only the locations and the game categories are named.
   '/stands': {

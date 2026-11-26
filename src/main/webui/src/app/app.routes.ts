@@ -307,6 +307,18 @@ export const redirectConstraintsToRegles: RedirectFunction = ({ queryParams, fra
   return `/regles?${params.toString()}`;
 };
 
+/** `/editions/comparer?a=&b=` → the « Éditions » view of `/comparer`, with its pair. */
+export const redirectEditionComparison: RedirectFunction = ({ queryParams }) => {
+  const params = new URLSearchParams({ vue: 'editions' });
+  for (const key of ['a', 'b']) {
+    const value = queryParams[key];
+    if (typeof value === 'string' && value) {
+      params.set(key, value);
+    }
+  }
+  return `/comparer?${params.toString()}`;
+};
+
 /**
  * `/kpi` (the Autopsie) became « Versions du plan » (issue #702). Its
  * `?edition=*` listed every edition's solves, which the page still does under
@@ -507,16 +519,18 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
   {
-    // What changed in the referential from one edition to another, `?a=&b=`.
-    // Served without a menu entry: the Éditions page opens it.
-    path: 'editions/comparer',
-    title: () => $localize`:@@route.comparerEditions:Comparer deux éditions`,
-    data: { aide: 'editions' },
+    // « Comparer deux versions »: two plan versions (`?vue=versions&comparer=a,b`,
+    // the default) or two editions' reference data (`?vue=editions&a=&b=`).
+    // Served without a menu entry: Versions and Éditions open it.
+    path: 'comparer',
+    title: () => $localize`:@@route.comparer:Comparer deux versions`,
+    data: { aide: 'calculer' },
     loadComponent: () =>
-      import('./pages/comparer-editions/comparer-editions-page').then(
-        (m) => m.ComparerEditionsPage,
-      ),
+      import('./pages/comparer-editions/comparer-page').then((m) => m.ComparerPage),
   },
+  // The editions' comparison was a page of its own until 4.0: it is now the
+  // « Éditions » view of that screen, its pair `?a=&b=` kept.
+  { path: 'editions/comparer', redirectTo: redirectEditionComparison },
   // The solver was the home page until #485, under `/exports` and `/solver`.
   // `/exports` became the export screen, now a tab of Fichiers; only
   // `/solver` still lands on the solver.
