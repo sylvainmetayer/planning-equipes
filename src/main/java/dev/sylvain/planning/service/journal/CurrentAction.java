@@ -32,6 +32,7 @@ import java.util.Set;
 public class CurrentAction {
 
     private String action;
+    private String entiteId;
     private final Set<String> champs = new LinkedHashSet<>();
 
     /**
@@ -56,6 +57,19 @@ public class CurrentAction {
         if (noms != null) {
             champs.addAll(noms);
         }
+    }
+
+    /**
+     * Names what the call bore upon when no identifier argument says it — an
+     * MCP tool whose argument is called {@code nom}, a word other tools use for
+     * a display name that must never reach the journal.
+     */
+    public void entiteId(String id) {
+        this.entiteId = id;
+    }
+
+    public String entiteId() {
+        return entiteId;
     }
 
     /** The action the request declared, {@code null} when the route's own is right. */

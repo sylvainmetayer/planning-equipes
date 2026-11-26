@@ -127,7 +127,6 @@ dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
 dev/sylvain/planning/api/WalkingTimeResourceTest.java
 dev/sylvain/planning/api/WebhookResourceTest.java
-dev/sylvain/planning/api/WeightHistoryResourceTest.java
 dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
@@ -181,6 +180,7 @@ dev/sylvain/planning/service/referentiel/ReferenceDataServiceSuppressionTest.jav
 dev/sylvain/planning/service/referentiel/ReferentielCsvExportServiceTest.java
 dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/referentiel/StandHoraireDatesMigrationTest.java
+dev/sylvain/planning/service/referentiel/WeightHistoryArchiveMigrationTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/schema/SchemaCompatibilityGuardTest.java
 dev/sylvain/planning/service/solve/AgeCapMergeMigrationTest.java

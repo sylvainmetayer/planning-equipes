@@ -71,7 +71,6 @@ import {
   readOngletRegles,
   rulesOfBloc,
 } from './regles';
-import { WeightHistoryView } from './weight-history-view';
 
 /** Called lazily (never at module scope): the level of a rule in the words of the screen. */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -167,7 +166,6 @@ function importanceLabel(importance: Importance): string {
     RouterLink,
     StatusMessage,
     VerrouillagesPage,
-    WeightHistoryView,
   ],
   templateUrl: './regles-page.html',
   styleUrls: ['./regles-page.css'],

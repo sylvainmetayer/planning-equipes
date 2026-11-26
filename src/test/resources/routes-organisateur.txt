@@ -45,8 +45,6 @@ ConsigneResource#prereglages GET /consignes/prereglages
 ConsigneResource#preselection POST /consignes/preselection
 ConsigneResource#updatePrereglage PUT /consignes/prereglages/{id}
 ConstraintResource#diagnose POST /constraints/diagnostic
-ConstraintResource#history GET /constraints/historique
-ConstraintResource#history GET /constraints/{name}/historique
 ConstraintResource#list GET /constraints
 ConstraintResource#setActif PUT /constraints/{name}
 ConstraintResource#setNiveau PUT /constraints/{name}/niveau

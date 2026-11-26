@@ -11,11 +11,9 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.Constraint
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
 import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.analyse.ViolationFormatter;
-import dev.sylvain.planning.service.analyse.WeightHistoryService;
 import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -62,16 +60,12 @@ public class ConstraintResource {
 
     private final PlanningService planningService;
 
-    private final WeightHistoryService weightHistory;
-
     @Inject
     public ConstraintResource(
             ConstraintAnalysisStore analysisStore,
             ReferenceDataService referenceDataService,
             CurrentAction currentAction,
-            PlanningService planningService,
-            WeightHistoryService weightHistory) {
-        this.weightHistory = weightHistory;
+            PlanningService planningService) {
         this.analysisStore = analysisStore;
         this.referenceDataService = referenceDataService;
         this.currentAction = currentAction;
@@ -145,7 +139,7 @@ public class ConstraintResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
         String rule = requireKnown(name);
-        referenceDataService.setContrainteActive(rule, update.actif(), WeightChangeOrigin.SCREEN);
+        referenceDataService.setContrainteActive(rule, update.actif());
         // One method, two actions: the history keys on the route, so without
         // this it would record « Contrainte activée » for a deactivation —
         // the one thing a journal must never do (issue #406).
@@ -166,7 +160,7 @@ public class ConstraintResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
         String rule = requireKnown(name);
-        referenceDataService.setConstraintWeight(rule, update.poids(), WeightChangeOrigin.SCREEN);
+        referenceDataService.setConstraintWeight(rule, update.poids());
         return new ConstraintPoidsUpdate(
                 planningService.effectiveConstraintWeights().getOrDefault(rule, 1));
     }
@@ -188,7 +182,7 @@ public class ConstraintResource {
             throw new BusinessError.Invalid(
                     "niveau : attendu OBLIGATOIRE, PREFERENCE_FORTE, PREFERENCE_NORMALE " + "ou PREFERENCE_LEGERE");
         }
-        referenceDataService.setNiveau(rule, update.niveau(), WeightChangeOrigin.SCREEN);
+        referenceDataService.setNiveau(rule, update.niveau());
         return new ConstraintNiveauUpdate(chosenLevel(
                 ConstraintCatalog.PAR_NOM.get(rule),
                 planningService.effectiveLevels(),
@@ -208,28 +202,6 @@ public class ConstraintResource {
         Boolean obligatoire = niveaux.get(definition.name());
         boolean hard = definition.niveauEffectif(obligatoire) == ConstraintCatalog.Niveau.HARD;
         return hard ? ConstraintCatalog.NiveauRegle.OBLIGATOIRE : ConstraintCatalog.NiveauRegle.ofPoids(weight);
-    }
-
-    /**
-     * Every change of weight or activation in the current edition, values
-     * included, beside the edition's solves and the dosage each ran under.
-     * Nothing nominative: the origin is typed, never a person.
-     */
-    @GET
-    @Path("/historique")
-    public WeightHistoryService.ConstraintHistory history() {
-        return weightHistory.all();
-    }
-
-    /**
-     * One rule's changes, and the edition's solves with the number of times
-     * that rule was broken in each. Answered for a rule that left the
-     * catalogue too: its history stays readable by name.
-     */
-    @GET
-    @Path("/{name}/historique")
-    public WeightHistoryService.ConstraintHistory history(@PathParam("name") String name) {
-        return weightHistory.forConstraint(name);
     }
 
     /**

@@ -13,6 +13,7 @@ You will know how to read the action journal and what it refuses to contain, how
 | --- | --- |
 | `nature=exports` | returns only the files that left the application |
 | `nature=donnees` | returns only the changes a solve would receive |
+| `nature=regles` | returns only the changes of a rule's activation, weight or level (`entiteId`: the rule), without the value |
 | `depuis`, `jusqua` | bound a period (two ISO-8601 instants), **`depuis` excluded, `jusqua` included** |
 | `avant` | cursor: the id of the last line displayed, for the next page |
 
