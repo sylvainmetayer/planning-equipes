@@ -92,7 +92,7 @@ Les poids se lisent sur l'échelle actuelle (faible 1, normale 5, forte 25, voir
 
 ## Horaires d'un stand
 
-Un stand porte une liste `plages` : chacune est une fenêtre datée, ouverte ou fermée (`mode: OUVERTURE` ou `FERMETURE`), avec sa `date` et ses heures. Un horaire quotidien s'écrit une plage par jour ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). Un stand peut aussi porter, sous `horaires`, son **modèle** : des règles récurrentes (« samedi et dimanche, 10 h–18 h ») que l'application garde et déplie en plages sur les jours de l'édition, puis sur ceux qu'elle gagne : un fichier d'une édition datée porte la règle et ses plages.
+Un stand porte une liste `plages` : chacune est une fenêtre datée, ouverte ou fermée (`mode: OUVERTURE` ou `FERMETURE`), avec sa `date` et ses heures. Un horaire quotidien s'écrit une plage par jour ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). Un stand peut aussi porter, sous `horaires`, son **modèle** : des règles récurrentes (« samedi et dimanche, 10 h–18 h ») que l'application garde et déplie en plages sur les jours de l'édition, puis sur ceux qu'elle gagne : un fichier d'une édition datée porte la règle et ses plages. À la lecture, le modèle est déplié sur chaque jour des `creneaux` du fichier où le stand n'a aucune plage : un fichier écrit à la main peut donc donner la règle sans ses plages, et une plage retirée à la main d'une édition revient quand son fichier est réimporté.
 
 ```yaml
 stands:

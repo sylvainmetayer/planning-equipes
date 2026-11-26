@@ -52,12 +52,12 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class StandPlagesMigrationTest {
 
-    private static final String SCHEMA = "migration_v152";
+    private static final String SCHEMA = "migration_v153";
     private static final String V153 = "db/migration/V153__plages_de_stand.sql";
     private static final Path EMPREINTES = Path.of("src/test/resources/horaires-resolus-avant-4-0.txt");
 
     @BeforeAll
-    static void migrateUpToV149() throws SQLException {
+    static void migrateUpToV152() throws SQLException {
         drop();
         Config config = ConfigProvider.getConfig();
         Flyway.configure()
@@ -68,7 +68,7 @@ class StandPlagesMigrationTest {
                 .schemas(SCHEMA)
                 .createSchemas(true)
                 .locations("classpath:db/migration")
-                .target("149")
+                .target("152")
                 .load()
                 .migrate();
     }

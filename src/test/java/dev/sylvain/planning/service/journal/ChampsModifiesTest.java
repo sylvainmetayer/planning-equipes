@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.HorairesRecurrents;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
@@ -91,6 +94,19 @@ class ChampsModifiesTest {
         apres.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 19), 14, 20)));
 
         assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("indisponibilites");
+    }
+
+    @Test
+    void theModelIsNamedOnlyWhenTheWriteSentADifferentOne() {
+        Stand avant = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        avant.setHoraires(List.of(HorairesRecurrents.Regle.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), null, null))));
+        Stand notSent = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        Stand changed = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
+        changed.setHoraires(List.of());
+
+        assertThat(ChampsModifies.surStand(avant, notSent)).isEmpty();
+        assertThat(ChampsModifies.surStand(avant, changed)).containsExactly("horaires");
     }
 
     private static PlageStand fermeture(Long id, LocalDate date, int debut, int fin) {

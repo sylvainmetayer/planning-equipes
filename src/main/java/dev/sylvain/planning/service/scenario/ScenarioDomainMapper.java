@@ -227,6 +227,13 @@ final class ScenarioDomainMapper {
             Stand stand = stand(standsDto.get(i), i, emplacementsParId);
             standsParId.put(stand.getId(), stand);
         }
+        // A file that has days unfolds each stand's model on those of them the stand carries no plage
+        // on (ADR 0104), as a model sent to a dated edition is: otherwise the rules of a hand-written
+        // file would be kept and never read. A file the application exported already carries them.
+        Set<LocalDate> jours = HorairesRecurrents.datesConcernees(creneauxParId.values());
+        for (Stand stand : standsParId.values()) {
+            stand.setPlages(new ArrayList<>(HorairesRecurrents.expand(stand.getHoraires(), stand.getPlages(), jours)));
+        }
 
         List<Animateur> animateurs = required(scenario.animateurs(), "animateurs").stream()
                 .map(ScenarioDomainMapper::animateur)
@@ -276,10 +283,14 @@ final class ScenarioDomainMapper {
                             plage.mode() == ModeHoraire.OUVERTURE ? plage.effectif() : null))
                     .collect(Collectors.toCollection(ArrayList::new)));
         }
-        if (dto.horaires() != null) {
-            stand.setHoraires(
-                    dto.horaires().stream().map(ScenarioDomainMapper::regle).toList());
-        }
+        // Always set, even empty: the import replaces the stand, so a file carrying no model must clear
+        // the one an existing stand of the same id holds (null would mean « keep the stored rules »).
+        stand.setHoraires(
+                dto.horaires() == null
+                        ? List.of()
+                        : dto.horaires().stream()
+                                .map(ScenarioDomainMapper::regle)
+                                .toList());
         return stand;
     }
 

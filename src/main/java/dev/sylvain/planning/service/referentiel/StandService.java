@@ -303,6 +303,7 @@ public class StandService {
                         + "fin après elle (vide : jusqu'à la fermeture) — une fenêtre ne peut pas chevaucher minuit");
             }
         }
+        StandValidator.checkRules(stand, regles);
         List<HorairesRecurrents.Regle> stored =
                 stand.getId() == null ? List.of() : repository.modelRules(stand.getId());
         if (sameRules(regles, stored)) {

@@ -15,6 +15,7 @@ import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -102,7 +103,8 @@ public final class SolveExchange {
                 .addMixIn(Stand.class, StandMixin.class)
                 .addMixIn(ContrainteAdHoc.class, FreeTextMixin.class)
                 .addMixIn(VerrouillagePlanning.class, FreeTextMixin.class)
-                .addMixIn(PlageStand.class, FreeTextMixin.class);
+                .addMixIn(PlageStand.class, FreeTextMixin.class)
+                .addMixIn(HorairesRecurrents.Regle.class, RuleMixin.class);
     }
 
     /** What travels: the problem, and its weights beside it — Timefold's own type is not a bean. */
@@ -518,4 +520,10 @@ public final class SolveExchange {
     /** What somebody typed, and who typed it, stays home. */
     @JsonIgnoreProperties({"raison", "motif", "creeParUtilisateurId", "creeLe", "modifieLe"})
     private abstract static class FreeTextMixin {}
+
+    /** The stand's model: the rule's motif stays home too; the mixin replaces the class's own annotation, so it repeats it. */
+    @JsonIgnoreProperties(
+            value = {"motif"},
+            ignoreUnknown = true)
+    private abstract static class RuleMixin {}
 }

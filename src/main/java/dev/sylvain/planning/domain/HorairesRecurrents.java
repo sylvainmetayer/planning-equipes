@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * converts a 3.x file, by the assistant tools that still take a rule, and by
  * the unfolding of a stand's <b>model</b> on the days an edition gains — with
  * <b>one</b> reading of the rules. A rule is the stand's model while its
- * edition has no dates, then it is unfolded into plages (ADR 0114).
+ * edition has no dates, then it is unfolded into plages (ADR 0104).
  *
  * <p>Per calendar day: a dated exception wins outright; otherwise the covering
  * rules of the highest specificity ({@link TypeJoursHoraire#specificite()}) do,

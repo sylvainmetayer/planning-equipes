@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.journal;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.HorairesRecurrents;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import java.util.ArrayList;
@@ -106,7 +107,21 @@ public final class ChampsModifies {
     }
 
     public static List<String> surStand(Stand avant, Stand apres) {
-        return comparer(STAND, avant, apres);
+        List<String> modifies = new ArrayList<>(comparer(STAND, avant, apres));
+        // The model (ADR 0104) is compared only when the write sent one: « not sent » keeps it.
+        if (avant != null
+                && apres != null
+                && apres.horairesEnvoyes() != null
+                && !rulesWithoutId(avant).equals(rulesWithoutId(apres))) {
+            modifies.add("horaires");
+        }
+        return modifies;
+    }
+
+    private static List<HorairesRecurrents.Regle> rulesWithoutId(Stand stand) {
+        return stand.getHoraires().stream()
+                .map(HorairesRecurrents.Regle::withoutId)
+                .toList();
     }
 
     public static List<String> surCreneau(Creneau avant, Creneau apres) {

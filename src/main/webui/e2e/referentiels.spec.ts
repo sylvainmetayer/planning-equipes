@@ -358,6 +358,11 @@ test.describe('horaires de stand', () => {
     expect(exceptionCible[0].id).not.toBe(
       modele.ouvertures.find((each) => each.date === SEED.jour)?.id,
     );
+    expect(exceptionCible[0].heureDebut).toMatch(/^11:00/);
+    // Every other day carries the unfolded rule, and there is at least one such day.
+    const deplies = cible.ouvertures.filter((each) => each.date !== SEED.jour);
+    expect(deplies.length).toBeGreaterThan(0);
+    expect(deplies.every((each) => each.heureDebut.startsWith('10:00'))).toBe(true);
 
     // The openings grid reads the store afresh: the seeded day now opens at 11:00,
     // which the cells of that day say on hover.
@@ -399,10 +404,10 @@ test.describe('horaires de stand', () => {
       expect(stand.horaires, id).toHaveLength(1);
       expect(stand.horaires[0].fenetres[0].heureDebut).toMatch(/^10:00/);
       // The rule is unfolded on the days of the edition; the exception of the seeded day stays alone on it.
-      expect(
-        stand.ouvertures.filter((each) => each.date === SEED.jour),
-        id,
-      ).toHaveLength(1);
+      const duJour = stand.ouvertures.filter((each) => each.date === SEED.jour);
+      expect(duJour, id).toHaveLength(1);
+      expect(duJour[0].heureDebut, id).toMatch(/^11:00/);
+      expect(stand.ouvertures.length, id).toBe((await lireStand(standModeleId)).ouvertures.length);
     }
     // The model itself was not in the selection and keeps its own rows.
     expect((await lireStand(standModeleId)).horaires).toHaveLength(1);

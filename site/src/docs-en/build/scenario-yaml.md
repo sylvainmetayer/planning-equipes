@@ -96,7 +96,7 @@ Weights are read on the current scale (low 1, normal 5, high 25, see [ADR 0057](
 
 ## Stand hours
 
-A stand carries a `plages` list: each one is a dated window, open or closed (`mode: OUVERTURE` or `FERMETURE`), with its `date` and its hours. A daily schedule is written as one plage per day ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). A stand may also carry, under `horaires`, its **model**: recurring rules ("Saturday and Sunday, 10:00-18:00") that the application keeps and unfolds into plages over the edition's days, then over those it gains: a file of a dated edition carries the rule and its plages.
+A stand carries a `plages` list: each one is a dated window, open or closed (`mode: OUVERTURE` or `FERMETURE`), with its `date` and its hours. A daily schedule is written as one plage per day ([ADR 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)). A stand may also carry, under `horaires`, its **model**: recurring rules ("Saturday and Sunday, 10:00-18:00") that the application keeps and unfolds into plages over the edition's days, then over those it gains: a file of a dated edition carries the rule and its plages. On reading, the model is unfolded on every day of the file's `creneaux` on which the stand has no plage: a hand-written file can therefore give the rule without its plages, and a plage removed by hand from an edition comes back when its file is imported again.
 
 ```yaml
 stands:

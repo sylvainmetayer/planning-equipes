@@ -1,9 +1,12 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.HorairesRecurrents.Regle;
 import dev.sylvain.planning.domain.PlageStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -133,6 +136,54 @@ final class StandValidator {
             throw new BusinessError.Invalid("effectif (" + effectif + ") dépasse l'effectif maximum du stand ("
                     + stand.getEffectifMax() + ") sur " + porteur
                     + " — relevez l'effectif maximum du stand, ou baissez celui de la fenêtre");
+        }
+    }
+
+    /**
+     * The model's rules (ADR 0104), checked as they are sent, before any day lays them down: the data
+     * each selector needs, the years a {@code date[]} column holds (V122, refused here by name rather
+     * than by its CHECK as a 500), and the headcount of each window. A model kept for an edition with
+     * no timeslot is otherwise never read by a check until the days that unfold it appear.
+     */
+    static void checkRules(Stand stand, List<Regle> regles) {
+        for (Regle regle : regles) {
+            switch (regle.jours()) {
+                case JOURS_SEMAINE ->
+                    requireSome(
+                            regle.joursSemaine(),
+                            "Un horaire de portée JOURS_SEMAINE requiert au moins un jour de la semaine");
+                case PLAGE -> {
+                    if (regle.dateDebut() == null || regle.dateFin() == null) {
+                        throw new BusinessError.Invalid(
+                                "Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
+                    }
+                    if (regle.dateFin().isBefore(regle.dateDebut())) {
+                        throw new BusinessError.Invalid("dateFin (" + regle.dateFin() + ") doit être après ou égale "
+                                + "à dateDebut (" + regle.dateDebut() + ")");
+                    }
+                }
+                case DATES -> {
+                    requireSome(regle.dates(), "Un horaire de portée DATES requiert au moins une date");
+                    for (LocalDate date : regle.dates()) {
+                        if (date.getYear() < 1 || date.getYear() > 9999) {
+                            throw new BusinessError.Invalid(
+                                    "Un horaire de portée DATES ne prend que des dates des années 1 à 9999 (" + date
+                                            + ")");
+                        }
+                    }
+                }
+                case TOUS -> {
+                    // Nothing else to check: the selector carries no data of its own.
+                }
+            }
+            regle.fenetres()
+                    .forEach(fenetre -> checkEffectifFenetre(fenetre.getEffectif(), "une fenêtre horaire", stand));
+        }
+    }
+
+    private static void requireSome(Collection<?> valeurs, String message) {
+        if (valeurs.isEmpty()) {
+            throw new BusinessError.Invalid(message);
         }
     }
 
