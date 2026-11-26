@@ -25,14 +25,14 @@ These exceptions are set **before** the solve: every solve honours them, includi
 
 Grouped arrival most often comes from a request. In the Carpool tab of their espace, during the availability collection window, a staff member names up to three teammates ("I'm coming with…"). The request is **independent of the availability declaration**: its own submission, its own decision. It is stored in `declaration_coequipier`, a generic table (`nature` = `COVOITURAGE`, `BINOME` reserved), and applying or refusing a declaration does not touch it. Only one request stays pending per staff member.
 
-The administrator **validates** it (Carpool tab of the Availability page), which creates the adjustment, or **sets it aside** with an optional `motif` that the staff member rereads in their espace before sending another. Each decision is notified by e-mail, on a best-effort basis. A validated group can no longer be changed from the espace: the adjustment belongs to the organisation, which can **cancel** it from the same tab. Cancelling deletes the adjustment and, in the same transaction, moves all the requests validated with it (`contrainte_id`) to `ANNULEE`; they stay in the history, each member is notified, and a new request follows the ordinary rule (during the collection window only).
+The administrator **validates** it (Carpool tab of the Availability page), which creates the adjustment, or **sets it aside**, which deletes the request: the staff member may send another. Only the validation goes out by e-mail, on a best-effort basis, to each member. A validated group can no longer be changed from the espace: the adjustment belongs to the organisation, which can **cancel** it from the same tab. Cancelling deletes the adjustment and, in the same transaction, all the requests validated with it (`contrainte_id`); nobody is notified by e-mail, and a new request follows the ordinary rule (during the collection window only).
 
 | `statut` (`StatutDemandeCoequipier`) | Meaning |
 | --- | --- |
 | `EN_ATTENTE` | Sent from the espace, waiting for the administrator |
 | `VALIDEE` | Turned into an `ARRIVEE_GROUPEE` adjustment (`contrainte_id`) |
-| `ECARTEE` | Filed with no effect, nothing was written |
-| `ANNULEE` | Validated then cancelled: the adjustment was deleted |
+
+A request set aside or cancelled has no state: it is deleted.
 
 As long as a `VALIDEE` request points to a grouped arrival, **no other write modifies or deletes it**: the Manual adjustments page, MCP tools, any call to `ContrainteAdHocService` answers `409` with a single sentence that points to the Carpool tab. A grouped arrival entered by hand stays editable. A scenario import and the reset, which replace the adjustments of the whole edition, are not affected. A grouped arrival has 2 to 4 distinct members, with no timeslot or stand: a badly filled shape is refused on entry as on import.
 

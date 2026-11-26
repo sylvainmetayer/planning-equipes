@@ -161,6 +161,7 @@ dev/sylvain/planning/service/analyse/RealisedVsPlannedServiceTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/backup/BackupWithoutAlertRecipientTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
+dev/sylvain/planning/service/espace/CarpoolArchiveMigrationTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
 dev/sylvain/planning/service/mcp/McpKeyServiceTest.java
 dev/sylvain/planning/service/notification/AlerteEchangeJobTest.java

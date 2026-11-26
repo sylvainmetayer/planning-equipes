@@ -39,8 +39,7 @@ import { espaceToday } from './espace-maintenant';
  * and its own decision, so applying or refusing a declaration never touches
  * the car. It shares the declaration's window — open for input while the
  * collection is, read-only otherwise — and shows where the request stands:
- * pending, validated with whom, or set aside with the reason the organisation
- * gave.</p>
+ * pending or validated with whom.</p>
  */
 @Component({
   selector: 'app-espace-covoiturage-page',
@@ -97,7 +96,7 @@ export class EspaceCovoituragePage implements OnInit {
     this.draft().map((id) => ({ id, name: this.names().get(id) ?? id })),
   );
 
-  /** The car the organisation holds or held — validated, pending or set aside — named. */
+  /** The car the organisation holds or held — validated or pending — named. */
   protected readonly current = computed(() =>
     (this.view()?.teammateIds ?? []).map((id) => this.names().get(id) ?? id).join(', '),
   );

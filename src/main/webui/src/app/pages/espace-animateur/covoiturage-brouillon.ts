@@ -16,9 +16,8 @@ export function carpoolLocked(view: CarpoolEspaceView | null): boolean {
 
 /**
  * The teammates the pending request names — the reference a new request is
- * compared with. A request set aside, or a car the organisation cancelled,
- * is decided: it is not what the organisation is holding any more, so the
- * picker starts blank after it.
+ * compared with. Once the organisation refuses or cancels a car, nothing is
+ * held any more: the picker starts blank.
  */
 export function pendingTeammates(view: CarpoolEspaceView | null): string[] {
   return view?.status === 'EN_ATTENTE' ? [...view.teammateIds] : [];

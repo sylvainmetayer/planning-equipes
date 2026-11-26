@@ -3769,7 +3769,8 @@ export interface NouvelleDeclaration {
 
 /* ---------- Carpool: the grouped arrival ---------- */
 
-export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE' | 'ECARTEE' | 'ANNULEE';
+/** Validated, or not yet (`EN_ATTENTE`): a refused or cancelled demand is deleted. */
+export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE';
 
 /**
  * `GET /api/espace-animateur/{jeton}/covoiturage`: the Covoiturage tab —
@@ -3782,18 +3783,11 @@ export interface CarpoolEspaceView {
   collectionEnd?: string | null;
   /** Who can be named: the edition's other animateurs. */
   colleagues: CollegueView[];
-  /** The others in my car: validated group, else pending request, else the last one set aside or cancelled. */
+  /** The others in my car: validated group, else pending request. */
   teammateIds: string[];
   /** `null` when there is no car. */
   status?: StatutDemandeCoequipier | null;
-  /** Why my last request was set aside, or my car cancelled, when the organisation said. */
-  reason?: string | null;
   decidedAt?: string | null;
-}
-
-/** Payload of `POST /api/disponibilites/coequipiers/{id}/annulation`: an optional reason for the group. */
-export interface CarpoolCancellation {
-  reason?: string | null;
 }
 
 /** Payload of `POST /api/espace-animateur/{jeton}/covoiturage`; empty withdraws the pending request. */
@@ -3824,8 +3818,6 @@ export interface TeammateRequestView {
   contrainteId: string | null;
   createdAt: string;
   decidedAt: string | null;
-  /** Why it was set aside or cancelled, as typed for the animateur; `null` when none. */
-  reason?: string | null;
 }
 
 /** Answer of a validation: the demand, and what the created exception raised. */
