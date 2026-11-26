@@ -4,10 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 public class Stand {
 
@@ -40,6 +43,9 @@ public class Stand {
      * {@link Creneau#segmentsOuvertsMinutes(Stand)} for how the solver reads it.
      */
     private List<PlageStand> plages = new ArrayList<>();
+    /** The deprecated per-mode lists a body carried, re-applied over {@code plages} whichever key came first. */
+    @JsonIgnore
+    private final Map<ModeHoraire, List<PlageStand>> legacy = new EnumMap<>(ModeHoraire.class);
     /**
      * The plages to actually reason about, once something laid on top of them
      * (a consigne) has been resolved — {@code null} until
@@ -189,7 +195,8 @@ public class Stand {
     }
 
     /** The stored schedule — what a write changes, and the only list a save persists. */
-    @JsonIgnore
+    @JsonProperty("plages")
+    @Schema(readOnly = false)
     public List<PlageStand> getPlages() {
         return plages;
     }
@@ -200,30 +207,59 @@ public class Stand {
     }
 
     /**
-     * The closures, as a read-only view of {@link #getPlages()}. Serialized as
-     * {@code indisponibilites}: the key the REST payload kept through 4.0's
-     * model change, until the API speaks plages (the editor still reads it).
+     * The {@code plages} key of a body. A deprecated {@code ouvertures} / {@code indisponibilites} key
+     * in the same body still wins for its mode, whatever the order of the keys: an editor of the 3.x
+     * sends back the {@code plages} it read next to the lists it changed.
      */
+    @JsonProperty("plages")
+    public void receivePlages(List<PlageStand> plages) {
+        setPlages(plages);
+        legacy.forEach(this::replace);
+    }
+
+    /**
+     * The closures, as a read-only view of {@link #getPlages()}.
+     *
+     * @deprecated read {@code plages} (mode {@code FERMETURE}); kept on the wire until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
     @JsonProperty("indisponibilites")
     public List<PlageStand> getIndisponibilites() {
         return filter(plages, ModeHoraire.FERMETURE);
     }
 
-    /** Replaces every closure of the stand by {@code fermetures}, whatever their own mode says. */
+    /**
+     * Replaces every closure of the stand by {@code fermetures}, whatever their own mode says.
+     *
+     * @deprecated write {@code plages}; accepted until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
     @JsonProperty("indisponibilites")
     public void setIndisponibilites(List<PlageStand> fermetures) {
+        legacy.put(ModeHoraire.FERMETURE, fermetures);
         replace(ModeHoraire.FERMETURE, fermetures);
     }
 
-    /** The openings, as a read-only view of {@link #getPlages()} — serialized as {@code ouvertures}, like the closures. */
+    /**
+     * The openings, as a read-only view of {@link #getPlages()}.
+     *
+     * @deprecated read {@code plages} (mode {@code OUVERTURE}); kept on the wire until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
     @JsonProperty("ouvertures")
     public List<PlageStand> getOuvertures() {
         return filter(plages, ModeHoraire.OUVERTURE);
     }
 
-    /** Replaces every opening of the stand by {@code ouvertures}, whatever their own mode says. */
+    /**
+     * Replaces every opening of the stand by {@code ouvertures}, whatever their own mode says.
+     *
+     * @deprecated write {@code plages}; accepted until 5.0 for the clients of 3.x
+     */
+    @Deprecated(since = "4.0")
     @JsonProperty("ouvertures")
     public void setOuvertures(List<PlageStand> ouvertures) {
+        legacy.put(ModeHoraire.OUVERTURE, ouvertures);
         replace(ModeHoraire.OUVERTURE, ouvertures);
     }
 

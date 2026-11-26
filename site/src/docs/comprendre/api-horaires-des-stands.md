@@ -4,7 +4,19 @@ Les horaires d'un stand se lisent et s'écrivent à trois niveaux : la fiche (se
 
 ## Les plages
 
-La fiche du stand rend ses plages datées, sans expansion, la vue que l'IHM édite : les ouvertures sous `ouvertures` et les fermetures sous `indisponibilites` (chaque plage porte aussi son `mode`). Un `heureFin` nul vaut « jusqu'à la fermeture ». Une écriture répond `400` si une plage est incohérente ou si un même jour porte à la fois une ouverture et une fermeture.
+La fiche du stand rend ses plages datées sous `plages`, sans expansion : chacune porte son `id`, son `mode` (`OUVERTURE` ou `FERMETURE`), son jour, ses heures, un `motif`, un `effectif` (pour une ouverture) et `depliee`, qui dit d'où elle vient (dépliée du modèle, ou saisie à la main ; l'origine est dite par le serveur). Un `heureFin` nul vaut « jusqu'à la fermeture ». Une écriture répond `400` si une plage est incohérente ou si un même jour porte à la fois une ouverture et une fermeture.
+
+`ouvertures` et `indisponibilites` (les mêmes plages, séparées par mode) sont **dépréciées** : la fiche les rend encore et accepte de les recevoir, pour les clients de la 3.x, jusqu'en 5.0. Quand un corps porte `plages` **et** l'une de ces listes, la liste dépréciée l'emporte pour son mode, quel que soit l'ordre des clés : c'est ce qui laisse un éditeur de la 3.x renvoyer les `plages` qu'il a lues à côté de la liste qu'il a changée. Un client nouveau n'envoie que `plages`.
+
+Trois routes écrivent une plage sans renvoyer toute la fiche, et répondent la fiche et ses avertissements comme `PUT /api/stands/{id}` :
+
+| Route | Effet |
+| --- | --- |
+| `POST /api/stands/{id}/plages` | pose une plage (corps : `mode`, `date`, `heureDebut`, `heureFin`, `motif`, `effectif`), saisie à la main |
+| `DELETE /api/stands/{id}/plages/{plageId}` | retire la plage de cet identifiant (`404` s'il n'existe pas sur ce stand) |
+| `DELETE /api/stands/{id}/plages?date=AAAA-MM-JJ` | retire toutes les plages d'un jour : le stand y redevient ouvert toute la journée (`400` sans date) |
+
+Ces écritures, comme celles de la fiche, répondent `409` pendant un calcul et quand la phase de l'édition fige les stands (`REFERENTIEL_FIGE`) : une plage est le planning que le calcul reçoit, aucun champ n'est laissé ouvert. Une plage retirée à la main ne revient pas : le modèle ne déplie que les jours nouveaux.
 
 Les règles récurrentes de la 3.x n'existent plus ([décision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)) : la clé `horaires` de la fiche porte le **modèle** du stand : les règles qu'il garde tant que l'édition n'a aucun créneau, et que la résolution ne lit jamais. Une écriture qui y envoie des règles (l'éditeur d'horaires actuel le fait) les voit **gardées comme modèle**, puis dépliées en plages sur chaque jour que l'édition gagne ; quand elle a déjà des créneaux, elles sont **aussi converties aussitôt en plages** sur ses jours, avec la lecture de la 3.x (un jour qui porte déjà une plage la garde, les plages que l'ancien modèle avait dépliées sont retirées d'abord). Une écriture sans `horaires` laisse le modèle tel quel ; `horaires: []` l'efface ; renvoyer le modèle stocké sans le changer ne déplie rien. Jamais de refus ni de règle perdue en silence. Ce pont disparaît avec l'éditeur de plages. Le compactage des horaires est retiré (sa route n'existe plus) : une plage datée n'a plus de règle à rejoindre.
 

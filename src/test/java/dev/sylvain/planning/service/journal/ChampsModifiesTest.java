@@ -93,7 +93,7 @@ class ChampsModifiesTest {
         Stand apres = new Stand("S1", "Village", Set.of("STRATEGIE"), 2, 4, false);
         apres.setIndisponibilites(List.of(fermeture(7L, LocalDate.of(2030, 7, 19), 14, 20)));
 
-        assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("indisponibilites");
+        assertThat(ChampsModifies.surStand(avant, apres)).containsExactly("plages");
     }
 
     @Test

@@ -7,7 +7,19 @@ A stand's hours are read and written at three levels: the stand record (its plag
 
 ## Plages
 
-The stand record returns its dated plages with no expansion, the view the UI edits: openings under `ouvertures` and closures under `indisponibilites` (each plage also carries its `mode`). A null `heureFin` means "until closing". A write answers `400` if a plage is inconsistent or if one day carries both an opening and a closure.
+The stand record returns its dated plages under `plages`, with no expansion: each carries its `id`, its `mode` (`OUVERTURE` or `FERMETURE`), its day, its hours, a `motif`, an `effectif` (for an opening) and `depliee`, which says where it comes from (unfolded from the model, or typed by hand; the server states the origin). A null `heureFin` means "until closing". A write answers `400` if a plage is inconsistent or if one day carries both an opening and a closure.
+
+`ouvertures` and `indisponibilites` (the same plages, split by mode) are **deprecated**: the record still returns them and accepts them, for 3.x clients, until 5.0. When a body carries `plages` **and** one of these lists, the deprecated list wins for its mode, whatever the key order: that lets a 3.x editor send back the `plages` it read next to the list it changed. A new client sends only `plages`.
+
+Three routes write a plage without sending the whole record back, and answer the record and its warnings like `PUT /api/stands/{id}`:
+
+| Route | Effect |
+| --- | --- |
+| `POST /api/stands/{id}/plages` | lays a plage (body: `mode`, `date`, `heureDebut`, `heureFin`, `motif`, `effectif`), typed by hand |
+| `DELETE /api/stands/{id}/plages/{plageId}` | removes the plage of that id (`404` if it is not on this stand) |
+| `DELETE /api/stands/{id}/plages?date=YYYY-MM-DD` | removes every plage of a day: the stand is open all day again (`400` without a date) |
+
+These writes, like those of the record, answer `409` during a solve and when the edition's phase freezes the stands (`REFERENTIEL_FIGE`): a plage is the schedule the solve receives, no field is left open. A plage removed by hand does not come back: the model unfolds new days only.
 
 The recurring rules of 3.x no longer exist ([decision 0104](repo:docs/decisions/0104-les-horaires-d-un-stand-sont-une-liste-de-plages-datees.md)): the record's `horaires` key carries the stand's **model**: the rules it keeps while the edition has no timeslot, which the resolution never reads. A write that sends rules there (the current schedule editor does) has them **kept as the model**, then unfolded into plages on every day the edition gains; when it already has timeslots, they are **also converted at once into plages** over its days, with the 3.x reading (a day that already carries a plage keeps it, the plages the previous model had unfolded are withdrawn first). A write without `horaires` leaves the model as it is; `horaires: []` clears it; sending the stored model back unchanged unfolds nothing. Never a refusal, never a rule lost in silence. This bridge goes away with the plages editor. The compaction of the hours is removed (its route no longer exists): a dated plage has no rule left to fold into.
 

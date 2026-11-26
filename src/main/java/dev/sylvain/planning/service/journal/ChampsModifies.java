@@ -67,20 +67,14 @@ public final class ChampsModifies {
         // caller's instance, so identity said « unchanged » on a dated
         // closure moved under the same id.
         map.put(
-                "indisponibilites",
-                stand -> stand.getIndisponibilites().stream()
-                        .map(ChampsModifies::valeur)
-                        .toList());
-        map.put(
-                "ouvertures",
-                stand -> stand.getOuvertures().stream()
-                        .map(ChampsModifies::valeur)
-                        .toList());
+                "plages",
+                stand -> stand.getPlages().stream().map(ChampsModifies::valeur).toList());
     });
 
     /** What the fiche shows of a dated window; the id is storage, not content. */
     private static List<Object> valeur(PlageStand fenetre) {
         return Arrays.asList(
+                fenetre.getMode(),
                 fenetre.getDate(),
                 fenetre.getHeureDebut(),
                 fenetre.getHeureFin(),

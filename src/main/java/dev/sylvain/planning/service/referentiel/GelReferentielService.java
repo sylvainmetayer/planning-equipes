@@ -62,14 +62,8 @@ public class GelReferentielService {
      * the effort level and the location a stand sits on stay editable: none
      * of them changes which seats a solve is given.
      */
-    static final Set<String> STAND_FIELDS = Set.of(
-            "typologiesProposees",
-            "effectifMin",
-            "effectifMax",
-            "reserveMajeurs",
-            "indisponibilites",
-            "ouvertures",
-            "horaires");
+    static final Set<String> STAND_FIELDS =
+            Set.of("typologiesProposees", "effectifMin", "effectifMax", "reserveMajeurs", "plages", "horaires");
 
     /** The structure of the event: what a published edition keeps frozen unless unblocked. */
     static final Set<ReferentialFamily> STRUCTURE = Collections.unmodifiableSet(EnumSet.of(
