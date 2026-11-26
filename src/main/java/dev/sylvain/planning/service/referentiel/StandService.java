@@ -243,10 +243,11 @@ public class StandService {
     }
 
     private Stand existing(String id) {
-        if (!repository.standExists(id)) {
+        Stand stand = repository.findStand(id);
+        if (stand == null) {
             throw new BusinessError.NotFound("Stand inconnu : " + id);
         }
-        return repository.findStand(id);
+        return stand;
     }
 
     private Stand save(String id, Stand stand) {
